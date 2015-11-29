@@ -72,6 +72,8 @@ int countObjectsviaContours(cv::Mat& srcimg );
 int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,string frameNumber);
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
+int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber);
+
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback
 
@@ -86,21 +88,19 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
 
     QString invideoname = QFileDialog::getOpenFileName(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0); // getting the filename (full path)
-    QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output", invideoname + "_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
-
-
-    //Getting the screen information
-    //screenx = GetSystemMetrics(SM_CXSCREEN);
-    //screeny = GetSystemMetrics(SM_CYSCREEN);
+    QString outfilename = invideoname;
+    outfilename.truncate(outfilename.lastIndexOf("."));
+    outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output", outfilename + "_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
 
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
 
     // get the applications dir path and expose it to QML
 
        //create GUI windows
-       cv::namedWindow("VialFrame",CV_WINDOW_AUTOSIZE);
+       string strwinName = "VialFrame";
+       cv::namedWindow(strwinName,CV_WINDOW_AUTOSIZE);
        //set the callback function for any mouse event
-       cv::setMouseCallback("VialFrame", CallBackFunc, NULL);
+       cv::setMouseCallback(strwinName, CallBackFunc, NULL);
 
        //create Background Subtractor objects
               //(int history=500, double varThreshold=16, bool detectShadows=true
@@ -110,6 +110,8 @@ int main(int argc, char *argv[])
        //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
 
 
+       //unsigned int hWnd = cvGetWindowHandle("VialFrame");
+       //cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 2000 );
        //"//home/kostasl/workspace/QtTestOpenCV/pics/20151124-timelapse.mpg"
        processVideo(invideoname,outfilename);
 
@@ -143,12 +145,27 @@ void processVideo(QString videoFilename,QString outFileCSV) {
     //Speed that stationary objects are removed
     double dLearningRate = 0.1;
 
+    //Font for Tracking
+    CvFont trackFnt;
+    cvInitFont(&trackFnt, CV_FONT_HERSHEY_DUPLEX, 0.4, 0.4, 0, 1);
+
+    //Make Variation of FileNames for other Output
     QString trkoutFileCSV = outFileCSV;
+    trkoutFileCSV.truncate(trkoutFileCSV.lastIndexOf("."));
     trkoutFileCSV.append("_tracks.csv");
+    QString vialcountFileCSV = outFileCSV;
+    vialcountFileCSV.truncate(vialcountFileCSV.lastIndexOf("."));
+    vialcountFileCSV.append("_N.csv");
+    //REPORT
+    cout << "Tracking data saved to :" << vialcountFileCSV.toStdString()  << endl;
+    cout << "\t " << outFileCSV.toStdString() << endl;
+    cout << "\t " << trkoutFileCSV.toStdString()  << endl;
+
+
     //For Morphological Filter
     //cv::Size sz = cv::Size(3,3);
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
-    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2,2),cv::Point(-1,-1));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
+    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(2,2),cv::Point(-1,-1));
 
     //Structures to hold blobs & Tracks
     cvb::CvBlobs blobs;
@@ -162,16 +179,25 @@ void processVideo(QString videoFilename,QString outFileCSV) {
         std::exit(EXIT_FAILURE);
     }
 
+    unsigned int nFrame = 0;
 
     //read input data. ESC or 'q' for quitting
     while( (char)keyboard != 'q' && (char)keyboard != 27 ){
         //read the current frame
         if(!capture.read(frame)) {
-            std::cerr << "Unable to read next frame." << std::endl;
-            std::cerr << "Exiting..." <<  std::endl;
-            exit(EXIT_FAILURE);
+            if (nFrame ==0)
+            {
+                std::cerr << "Unable to read first frame." << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            else
+            {
+                std::cerr << "Unable to read next frame." << std::endl;
+                cout << "Video processing done! " << endl;
+                break;
+            }
         }
-        unsigned int nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
 
         if (nFrame > 200) //Slow Down Learning After Initial Exposure
             dLearningRate = 0.00010;
@@ -185,10 +211,10 @@ void processVideo(QString videoFilename,QString outFileCSV) {
 
         //Apply Open Operation
          cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
-         cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernel,cv::Point(-1,-1),1);
+         cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernel,cv::Point(-1,-1),2);
          //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
-         //cv::erode(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
-
+         //Needs extra erode to get rid to food marks
+         cv::erode(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),2);
 
 
         //Put Info TextOn Frame
@@ -204,11 +230,10 @@ void processVideo(QString videoFilename,QString outFileCSV) {
         //Count on Original Frame
         std::stringstream strCount;
         strCount << "N:" << (nLarva);
-
-        cv::rectangle(frame, cv::Point(540, 2), cv::Point(690,20), cv::Scalar(255,255,255), -1);
-        cv::putText(frame, strCount.str(), cv::Point(545, 15),
+        cv::rectangle(frame, cv::Point(10, 25), cv::Point(100,45), cv::Scalar(255,255,255), -1);
+        cv::putText(frame, strCount.str(), cv::Point(15, 35),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
+        //DRAW ROI RECT
         cv::rectangle(frame,roi,cv::Scalar(50,250,50));
 
         //cvb::CvBlobs blobs;
@@ -220,6 +245,8 @@ void processVideo(QString videoFilename,QString outFileCSV) {
            // cvb::CvBlobs blobs;
            nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks);
            saveTrackedBlobs(blobs,outFileCSV,frameNumberString);
+           saveTrackedBlobsTotals(blobs,tracks,vialcountFileCSV,frameNumberString);
+
             //ROI with TRACKs Fails
             const int inactiveFrameCount = 10; //Number of frames inactive until track is deleted
             const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
@@ -227,14 +254,12 @@ void processVideo(QString videoFilename,QString outFileCSV) {
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             cvb::cvUpdateTracks(blobs,tracks, 10, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
-            cvb::cvRenderTracks(tracks, &frameImg, &frameImg);
+            cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID,&trackFnt);
         }
 
 
         //show the current frame and the fg masks
         cv::imshow("VialFrame", frame);
-
-
 
         if (showMask)
         {
@@ -284,6 +309,9 @@ void checkPauseRun(int& keyboard,string frameNumberString)
             //Toggle Show the masked - where blob id really happens
             if ((char)keyboard == 'm')
                  showMask = !showMask;
+
+            if ((char)keyboard == 'q')
+                 break; //Main Loop Will handle this
 
 
             //if ((char)keyboard == 'c')
@@ -420,14 +448,19 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber)
 {
-
+    int cnt = 0;
+    bool bNewFileFlag = true;
     QFile data(filename);
+    if (data.exists())
+        bNewFileFlag = false;
+
     if(data.open(QFile::WriteOnly |QFile::Append))
     {
         QTextStream output(&data);
+        if (bNewFileFlag)
+             output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area" << endl;
 
-        output << frameNumber.c_str() << "," << blobs.size() <<",X" << ",X"<<",X"<< endl;
-        int cnt = 0;
+
         for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
         {
             cnt++;
@@ -435,36 +468,72 @@ int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumbe
             cvb::CvLabel cvL = it->first;
 
             //Printing the position information
-            output << frameNumber.c_str() << "," << cnt <<","<< cvB.label << "," << cvB.centroid.x <<","<< cvB.centroid.y  <<  endl;
+            output << frameNumber.c_str() << "," << cnt <<","<< cvB.label << "," << cvB.centroid.x <<","<< cvB.centroid.y  <<","<< cvB.area  <<  endl;
           }
         }
     data.close();
+
+    return cnt;
 }
+
+//Saves the total Number of Counted Blobs and Tracks only
+int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber)
+{
+
+    bool bNewFileFlag = true;
+    QFile data(filename);
+    if (data.exists())
+        bNewFileFlag = false;
+    if(data.open(QFile::WriteOnly |QFile::Append))
+    {
+
+        QTextStream output(&data);
+        if (bNewFileFlag)
+             output << "frameN,blobN,TracksN" << endl;
+
+        output << frameNumber.c_str() << "," << blobs.size() << "," << tracks.size() << endl;
+    }
+    data.close();
+
+    return 1;
+}
+
+
+
 
 
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
 {
-
+    bool bNewFileFlag = true;
     QFile data(filename);
+    if (data.exists())
+        bNewFileFlag = false;
+    int cnt = 0;
+
     if(data.open(QFile::WriteOnly |QFile::Append))
     {
-        QTextStream output(&data);
 
-        int cnt = 0;
+        QTextStream output(&data);
+        if (bNewFileFlag)
+             output << "frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive" << endl;
+
+
         for (cvb::CvTracks::const_iterator it=tracks.begin(); it!=tracks.end(); ++it)
         {
             cnt++;
             cvb::CvTrack cvT = *it->second;
-            cvb::CvLabel cvL = it->first;
+            //cvb::CvLabel cvL = it->first;
 
             //Printing the position information +
             //+ lifetime; ///< Indicates how much frames the object has been in scene.
             //+active; ///< Indicates number of frames that has been active from last inactive period.
             //+ inactive; ///< Indicates number of frames that has been missing.
-            output << frameNumber.c_str()  << "," << cvT.id << "," << cvT.centroid.x << "," << cvT.centroid.y  << "," << cvT.lifetime  << "," << cvT.active  << "," << cvT.inactive <<  endl;
+            output << frameNumber.c_str()  << "," << cvT.id  << "," << cvT.label  << "," << cvT.centroid.x << "," << cvT.centroid.y << "," << cvT.lifetime  << "," << cvT.active  << "," << cvT.inactive <<  endl;
           }
         }
     data.close();
+
+     return cnt;
 }
 //Mouse Call Back Function
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
