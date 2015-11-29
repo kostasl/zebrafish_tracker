@@ -13,7 +13,7 @@ INCLUDEPATH += /usr/include/cvblob
 #`pkg-config opencv cvblob --cflags`
 
 LIBS += `pkg-config opencv --libs`
-LIBS += -L/usr/local/lib -lcvblob
+#LIBS += -L/usr/local/lib -lcvblob
 #LIBS += -L/home/kostasl/workspace -lcvblob
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
@@ -22,7 +22,7 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 
-#unix:!macx: LIBS += -L$$PWD/../build-cvblobLib-Desktop-Debug/ -lcvblobLib
+unix:!macx: LIBS += -L$$PWD/../build-cvblobLib-Desktop-Debug/ -lcvblobLib
 
-#INCLUDEPATH += $$PWD/../cvblobLib
-#DEPENDPATH += $$PWD/../cvblobLib
+INCLUDEPATH += $$PWD/../cvblob
+DEPENDPATH += $$PWD/../cvblob

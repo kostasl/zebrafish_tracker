@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 void processVideo(QString videoFilename,QString outFileCSV) {
     unsigned int nLarva=  0;
     //Speed that stationary objects are removed
-    double dLearningRate = 0.00010;
+    double dLearningRate = 0.1;
 
     QString trkoutFileCSV = outFileCSV;
     trkoutFileCSV.append("_tracks.csv");
@@ -171,6 +171,11 @@ void processVideo(QString videoFilename,QString outFileCSV) {
             std::cerr << "Exiting..." <<  std::endl;
             exit(EXIT_FAILURE);
         }
+        unsigned int nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+
+        if (nFrame > 200) //Slow Down Learning After Initial Exposure
+            dLearningRate = 0.00010;
+
         //update the background model
         pMOG2->operator()(frame, fgMaskMOG2,dLearningRate);
         //pMOG->operator()(frame, fgMaskMOG);
@@ -182,7 +187,7 @@ void processVideo(QString videoFilename,QString outFileCSV) {
          cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
          cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernel,cv::Point(-1,-1),1);
          //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
-         cv::erode(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
+         //cv::erode(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
 
 
 
@@ -191,7 +196,7 @@ void processVideo(QString videoFilename,QString outFileCSV) {
         std::stringstream ss;
         cv::rectangle(frame, cv::Point(10, 2), cv::Point(100,20),
                   cv::Scalar(255,255,255), -1);
-        ss << capture.get(CV_CAP_PROP_POS_FRAMES);
+        ss << nFrame;
         std::string frameNumberString = ss.str();
         cv::putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
@@ -209,6 +214,9 @@ void processVideo(QString videoFilename,QString outFileCSV) {
         //cvb::CvBlobs blobs;
         if (bTracking)
         {
+            //Simple Solution was to Use Contours To measure Larvae
+            //countObjectsviaContours(fgMaskMOG2); //But not as efficient
+
            // cvb::CvBlobs blobs;
            nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks);
            saveTrackedBlobs(blobs,outFileCSV,frameNumberString);
@@ -217,25 +225,22 @@ void processVideo(QString videoFilename,QString outFileCSV) {
             const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
-            //cvb::cvUpdateTracks(blobs,tracks, 10, inactiveFrameCount,thActive);
-            //saveTracks(tracks,trkoutFileCSV,frameNumberString);
+            cvb::cvUpdateTracks(blobs,tracks, 10, inactiveFrameCount,thActive);
+            saveTracks(tracks,trkoutFileCSV,frameNumberString);
+            cvb::cvRenderTracks(tracks, &frameImg, &frameImg);
         }
-        //cvb::cvRenderTracks(tracks, &frameImg, &frameImg);
-
-        // render blobs in original image
-        //cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_COLOR|CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX );
 
 
-        //Use Contours To measure Larvae
-        //countObjectsviaContours(fgMaskMOG2);
         //show the current frame and the fg masks
         cv::imshow("VialFrame", frame);
 
 
-        //cv::imshow("FG Mask MOG 1", fgMaskMOG);
+
         if (showMask)
+        {
             cv::imshow("FG Mask MOG 2 after Morph", fgMaskMOG2);
             //cv::imshow("FG Mask GMG ", fgMaskGMG);
+        }
 
         //get the input from the keyboard
         keyboard = cv::waitKey( 30 );
@@ -372,24 +377,18 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
     ///// Finding the blobs ////////
 
-
-    //cv::Mat frameLabel(fgMaskMOG2.cols,fgMaskMOG2.rows,CV_8S);
-    //fgMaskMOG2.copyTo(frameLabel);
-    //IplImage labelImg =  frameLabel;
-
      IplImage fgMaskImg;
 ///  REGION OF INTEREST - UPDATE - SET
+     frameImg =  frame; //Convert The Global frame to lplImage
+     fgMaskImg =  srcimg;
+
     if (bROIChanged || ptROI2.x != 0)
     {
         cv::circle(frame,ptROI1,3,cv::Scalar(255,0,0),1);
         cv::circle(frame,ptROI2,3,cv::Scalar(255,0,0),1);
 
-        //Set fLAG sO FROM now on Region of interest is used.
+        //Set fLAG sO FROM now on Region of interest is used and cannot be changed.
         bROIChanged = true;
-        //ptROI1.x =0;
-        //ptROI1.y =0;
-        frameImg =  frame(roi); //Convert The Global frame to lplImage
-        fgMaskImg =  srcimg(roi);
     }
     else
     {
@@ -397,21 +396,10 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
         fgMaskImg =  srcimg;
     }
 
+    cvSetImageROI(&frameImg, roi);
+    cvSetImageROI(&fgMaskImg, roi);
 
- //     // Crop the original image to the defined ROI
-//     cv::Mat crop = img(roi);
-
-
-    //Set Region of interest - according to Global Rect - in this legacy structure
-    //IplROI imgROI;    imgROI.coi = 0;    imgROI.xOffset = roi.x;    imgROI.yOffset = roi.y ;    imgROI.width = roi.width;
-    //imgROI.height = roi.height;
-
-    //fgMaskImg.roi = &imgROI;
-    //frameImg.roi =&imgROI;
-
-    IplImage  *labelImg=cvCreateImage(cvSize(frameImg.width,frameImg.height), IPL_DEPTH_LABEL, 1);
-
-    //labelImg->roi = &imgROI;
+    IplImage  *labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
 
     unsigned int result = cvb::cvLabel( &fgMaskImg, labelImg, blobs );
 
@@ -420,8 +408,6 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
     // render blobs in original image
     cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR);
-
-
 
     //cout << strCount.str() << endl;
     // *always* remember freeing unused IplImages
