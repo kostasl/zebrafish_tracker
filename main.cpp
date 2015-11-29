@@ -3,11 +3,26 @@
  * App uses BG substyraction MOG2, with a slow learning rate.
  * then Uses Open and Close / Dilation contraction techniques to get rid of noise and fill gaps
  * //Next is to detect/Count Larva on screen use some Form of Particle Filter, concentration filter.
+ * User:
+ * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
+ * The green box defines the region over which the larvae are counted-tracked and recorded to file.
+ * Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
+ * Press p to pause Image. once paused:
+ *  s to save snapshot.
+ *  2 Left Clicks to define the 2 points of region-of interest for tracking.
+ *  m to show the masked image of the larva against BG.
+ *  t Start Tracking
+ *  q Exit Quit application
+ *
+ * NOTE: Changing ROI hits SEG. FAULTs in update tracks of the library. So I made setting of ROI only once.
+ * The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
+ * So I reverted to not tracking - as the code does not work well - I am recording blobs For now
  *
  */
 #include <iostream>
 #include <sstream>
 
+#include <QString>
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QDir>
@@ -35,25 +50,43 @@ cv::Ptr<cv::BackgroundSubtractor> pGMG; //GMG Background subtractor
 IplImage  *labelImg;
 IplImage frameImg;
 
+//Region of interest
+cv::Rect roi(cv::Point(0,0),cv::Point(1024,768));
+cv::Point ptROI1;
+cv::Point ptROI2;
+
 int keyboard; //input from keyboard
 int screenx,screeny;
+bool showMask; //True will show the BGSubstracted IMage/Processed Mask
+bool bROIChanged;
+bool bPaused;
+bool bTracking;
+bool b1stPointSet;
+
 using namespace std;
 
 void processVideo(QString videoFilename,QString outFileCSV);
 void checkPauseRun(int& keyboard,string frameNumberString);
 bool saveImage(string frameNumberString,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
-int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs);
+int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,string frameNumber);
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
 
+void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback
+
 int main(int argc, char *argv[])
 {
+    bROIChanged = false;
+    bPaused = true;
+    showMask = false;
+    bTracking = false;
+
     QApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
     QString invideoname = QFileDialog::getOpenFileName(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0); // getting the filename (full path)
-    QString outfilename = QFileDialog::getSaveFileName(0, "Save XY to output", "dataOut.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
+    QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output", invideoname + "_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
 
 
     //Getting the screen information
@@ -65,13 +98,17 @@ int main(int argc, char *argv[])
     // get the applications dir path and expose it to QML
 
        //create GUI windows
-       cv::namedWindow("Frame");
+       cv::namedWindow("VialFrame",CV_WINDOW_AUTOSIZE);
+       //set the callback function for any mouse event
+       cv::setMouseCallback("VialFrame", CallBackFunc, NULL);
+
        //create Background Subtractor objects
               //(int history=500, double varThreshold=16, bool detectShadows=true
        pMOG2 =  new cv::BackgroundSubtractorMOG2(30,16,false); //MOG2 approach
        //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
        //pMOG =  new cv::BackgroundSubtractorMOG(30,12,0.7,0.0); //MOG approach
        //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
+
 
        //"//home/kostasl/workspace/QtTestOpenCV/pics/20151124-timelapse.mpg"
        processVideo(invideoname,outfilename);
@@ -87,9 +124,12 @@ int main(int argc, char *argv[])
        pMOG2->~BackgroundSubtractor();
        //pGMG->~BackgroundSubtractor();
 
-       std::exit(0);
+       //
+       //return ;
+        app.exec();
+        app.quit();
        return EXIT_SUCCESS;
-    //return app.exec();
+
 }
 
 
@@ -99,16 +139,20 @@ int main(int argc, char *argv[])
  */
 
 void processVideo(QString videoFilename,QString outFileCSV) {
+    unsigned int nLarva=  0;
     //Speed that stationary objects are removed
-    double dLearningRate = 0.00015;
+    double dLearningRate = 0.00010;
+
+    QString trkoutFileCSV = outFileCSV;
+    trkoutFileCSV.append("_tracks.csv");
     //For Morphological Filter
     //cv::Size sz = cv::Size(3,3);
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
     cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2,2),cv::Point(-1,-1));
 
-    //Structure to hold blobs
+    //Structures to hold blobs & Tracks
     cvb::CvBlobs blobs;
-
+    cvb::CvTracks tracks;
 
     //create the capture object
     cv::VideoCapture capture(videoFilename.toStdString());
@@ -118,7 +162,7 @@ void processVideo(QString videoFilename,QString outFileCSV) {
         std::exit(EXIT_FAILURE);
     }
 
-    cvb::CvTracks tracks;
+
     //read input data. ESC or 'q' for quitting
     while( (char)keyboard != 'q' && (char)keyboard != 27 ){
         //read the current frame
@@ -138,7 +182,9 @@ void processVideo(QString videoFilename,QString outFileCSV) {
          cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
          cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernel,cv::Point(-1,-1),1);
          //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
-        cv::erode(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
+         cv::erode(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
+
+
 
         //Put Info TextOn Frame
         //Frame Number
@@ -152,32 +198,44 @@ void processVideo(QString videoFilename,QString outFileCSV) {
 
         //Count on Original Frame
         std::stringstream strCount;
-        strCount << "N:" << ((int)tracks.size());
+        strCount << "N:" << (nLarva);
 
         cv::rectangle(frame, cv::Point(540, 2), cv::Point(690,20), cv::Scalar(255,255,255), -1);
         cv::putText(frame, strCount.str(), cv::Point(545, 15),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
+        cv::rectangle(frame,roi,cv::Scalar(50,250,50));
 
-        cvb::CvBlobs blobs;
-        countObjectsviaBlobs(fgMaskMOG2, blobs);
+        //cvb::CvBlobs blobs;
+        if (bTracking)
+        {
+           // cvb::CvBlobs blobs;
+           nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks);
+           saveTrackedBlobs(blobs,outFileCSV,frameNumberString);
+            //ROI with TRACKs Fails
+            const int inactiveFrameCount = 10; //Number of frames inactive until track is deleted
+            const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
-        const int inactiveFrameCount = 10; //Number of frames inactive until track is deleted
-        cvb::cvUpdateTracks(blobs,tracks, 25, inactiveFrameCount,2);
-        cvb::cvRenderTracks(tracks, &frameImg, &frameImg);
+            //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
+            //cvb::cvUpdateTracks(blobs,tracks, 10, inactiveFrameCount,thActive);
+            //saveTracks(tracks,trkoutFileCSV,frameNumberString);
+        }
+        //cvb::cvRenderTracks(tracks, &frameImg, &frameImg);
+
+        // render blobs in original image
+        //cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_COLOR|CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX );
 
 
-        //saveTrackedBlobs(blobs,outFileCSV,frameNumberString);
-        saveTracks(tracks,outFileCSV,frameNumberString);
         //Use Contours To measure Larvae
         //countObjectsviaContours(fgMaskMOG2);
         //show the current frame and the fg masks
-        cv::imshow("Frame", frame);
+        cv::imshow("VialFrame", frame);
 
 
         //cv::imshow("FG Mask MOG 1", fgMaskMOG);
-        cv::imshow("FG Mask MOG 2 after Morph", fgMaskMOG2);
-        //cv::imshow("FG Mask GMG ", fgMaskGMG);
+        if (showMask)
+            cv::imshow("FG Mask MOG 2 after Morph", fgMaskMOG2);
+            //cv::imshow("FG Mask GMG ", fgMaskGMG);
 
         //get the input from the keyboard
         keyboard = cv::waitKey( 30 );
@@ -188,13 +246,21 @@ void processVideo(QString videoFilename,QString outFileCSV) {
     } //main While loop
     //delete capture object
     capture.release();
+
+    cvb::cvReleaseTracks(tracks);
+    cvb::cvReleaseBlobs(blobs);
 }
 
 void checkPauseRun(int& keyboard,string frameNumberString)
 {
     //implemend Pause
     if ((char)keyboard == 'p')
-        while ((char)keyboard != 'r')
+            bPaused = true;
+
+    if ((char)keyboard == 't') //Toggle Tracking
+        bTracking = !bTracking;
+
+        while (bPaused)
         {
             int ms = 20;
             struct timespec ts = { ms / 1000, (ms % 1000) * 1000 * 1000 };
@@ -207,9 +273,22 @@ void checkPauseRun(int& keyboard,string frameNumberString)
                saveImage(frameNumberString,frame);
             }
 
+            if ((char)keyboard == 'r')
+                bPaused = false;
+
+            //Toggle Show the masked - where blob id really happens
+            if ((char)keyboard == 'm')
+                 showMask = !showMask;
+
+
             //if ((char)keyboard == 'c')
+            cv::imshow("VialFrame", frame);
 
         }
+
+    //Toggle Show the masked - where blob id really happens
+    if ((char)keyboard == 'm')
+             showMask = !showMask;
 }
 
 bool saveImage(string frameNumberString,cv::Mat& img)
@@ -233,6 +312,7 @@ bool saveImage(string frameNumberString,cv::Mat& img)
         cv::putText(img,"Failed to Save " + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(250,250,250));
         cv::putText(img,"Failed to Save" + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
         cerr << "Unable to save " << imageToSave.toStdString() << endl;
+        return false;
     }
     else
     {
@@ -241,6 +321,7 @@ bool saveImage(string frameNumberString,cv::Mat& img)
 
     cv::imshow("Saved Frame", img);
 
+    return true;
 }
 
 int countObjectsviaContours(cv::Mat& srcimg )
@@ -251,7 +332,7 @@ int countObjectsviaContours(cv::Mat& srcimg )
      vector< cv::Vec4i > hierarchy;
 
      cv::findContours( imgTraced, contours, hierarchy,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
-     for( int i = 0; i< contours.size(); i=hierarchy[i][0] ) // iterate through each contour.
+     for( unsigned int i = 0; i< contours.size(); i=hierarchy[i][0] ) // iterate through each contour.
         {
           cv::Rect r= cv::boundingRect(contours[i]);
           cv::rectangle(imgTraced,r, cv::Scalar(255,0,0),1,8,0);
@@ -286,19 +367,51 @@ int countObjectsviaContours(cv::Mat& srcimg )
 }
 
 
-int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs)
+int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks)
 {
 
-    cvb::CvTracks tracks;
     ///// Finding the blobs ////////
-    // get blobsq
-    IplImage fgMaskImg =  srcimg;
-    frameImg =  frame; //Convert The Global frame to lplImage
-    cv::Mat frameLabel(fgMaskMOG2.cols,fgMaskMOG2.rows,CV_8S);
+
+
+    //cv::Mat frameLabel(fgMaskMOG2.cols,fgMaskMOG2.rows,CV_8S);
     //fgMaskMOG2.copyTo(frameLabel);
     //IplImage labelImg =  frameLabel;
 
+     IplImage fgMaskImg;
+///  REGION OF INTEREST - UPDATE - SET
+    if (bROIChanged || ptROI2.x != 0)
+    {
+        cv::circle(frame,ptROI1,3,cv::Scalar(255,0,0),1);
+        cv::circle(frame,ptROI2,3,cv::Scalar(255,0,0),1);
+
+        //Set fLAG sO FROM now on Region of interest is used.
+        bROIChanged = true;
+        //ptROI1.x =0;
+        //ptROI1.y =0;
+        frameImg =  frame(roi); //Convert The Global frame to lplImage
+        fgMaskImg =  srcimg(roi);
+    }
+    else
+    {
+        frameImg =  frame; //Convert The Global frame to lplImage
+        fgMaskImg =  srcimg;
+    }
+
+
+ //     // Crop the original image to the defined ROI
+//     cv::Mat crop = img(roi);
+
+
+    //Set Region of interest - according to Global Rect - in this legacy structure
+    //IplROI imgROI;    imgROI.coi = 0;    imgROI.xOffset = roi.x;    imgROI.yOffset = roi.y ;    imgROI.width = roi.width;
+    //imgROI.height = roi.height;
+
+    //fgMaskImg.roi = &imgROI;
+    //frameImg.roi =&imgROI;
+
     IplImage  *labelImg=cvCreateImage(cvSize(frameImg.width,frameImg.height), IPL_DEPTH_LABEL, 1);
+
+    //labelImg->roi = &imgROI;
 
     unsigned int result = cvb::cvLabel( &fgMaskImg, labelImg, blobs );
 
@@ -306,7 +419,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs)
     cvb::cvFilterByArea(blobs,10,100);
 
     // render blobs in original image
-    //cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_COLOR|CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX );
+    cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR);
 
 
 
@@ -327,6 +440,7 @@ int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumbe
     {
         QTextStream output(&data);
 
+        output << frameNumber.c_str() << "," << blobs.size() <<",X" << ",X"<<",X"<< endl;
         int cnt = 0;
         for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
         {
@@ -365,4 +479,54 @@ int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
           }
         }
     data.close();
+}
+//Mouse Call Back Function
+void CallBackFunc(int event, int x, int y, int flags, void* userdata)
+{
+     if  ( event == cv::EVENT_LBUTTONDOWN )
+     {
+
+         //ROI is locked once tracking begins
+        if (bPaused && !bROIChanged) //CHANGE ROI Only when Paused and ONCE
+        { //Change 1st Point if not set or If 2nd one has been set
+             if ( b1stPointSet == false)
+             {
+                ptROI1.x = x;
+                ptROI1.y = y;
+
+                cv::circle(frame,ptROI1,3,cv::Scalar(255,0,0),1);
+                b1stPointSet = true;
+
+             }
+             else //Second & Final Point
+             {
+                ptROI2.x = x;
+                ptROI2.y = y;
+                cv::Rect newROI(ptROI1,ptROI2);
+                roi = newROI;
+                //Draw the 2 points
+                cv::circle(frame,ptROI2,3,cv::Scalar(255,0,0),1);
+                cv::rectangle(frame,newROI,cv::Scalar(0,0,250));
+
+                b1stPointSet = false; //Rotate To 1st Point Again
+             }
+        }
+
+
+        cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+     }
+     else if  ( event == cv::EVENT_RBUTTONDOWN )
+     {
+
+         //cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+     }
+     else if  ( event == cv::EVENT_MBUTTONDOWN )
+     {
+          cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+     }
+     else if ( event == cv::EVENT_MOUSEMOVE )
+     {
+         // cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
+
+     }
 }
