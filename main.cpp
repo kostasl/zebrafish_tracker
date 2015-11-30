@@ -18,6 +18,7 @@
  * The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
  * So I reverted to not tracking - as the code does not work well - I am recording blobs For now
  *
+ *  Dependencies : opencv3
  */
 #include <iostream>
 #include <sstream>
@@ -192,14 +193,14 @@ void processVideo(QString videoFilename,QString outFileCSV) {
             else
             {
                 std::cerr << "Unable to read next frame." << std::endl;
-                cout << "Video processing done! " << endl;
+                cout << nFrame << " frames of Video processing done! " << endl;
                 break;
            }
         }
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
 
         if (nFrame > 200) //Slow Down Learning After Initial Exposure
-            dLearningRate = 0.00010;
+            dLearningRate = 0.00020;
 
         //update the background model
         pMOG2->apply(frame, fgMaskMOG2,dLearningRate);

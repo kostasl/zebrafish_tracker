@@ -7,7 +7,7 @@ SOURCES += main.cpp
 
 RESOURCES += qml.qrc
 INCLUDEPATH += /usr/include/opencv
-INCLUDEPATH += /usr/include/cvblob
+#INCLUDEPATH += /usr/include/cvblob
 
 #INCLUDEPATH += /home/kostasl/workspace/cvblobLib
 #`pkg-config opencv cvblob --cflags`
@@ -21,8 +21,7 @@ QML_IMPORT_PATH =
 # Default rules for deployment.
 include(deployment.pri)
 
+unix: LIBS += -L$$PWD/../cvblob/build-cvBlobLib-Desktop-Release/ -lcvBlobLib
 
-unix:!macx: LIBS += -L$$PWD/../build-cvblobLib-Desktop-Debug/ -lcvblobLib
-
-INCLUDEPATH += $$PWD/../cvblob
-DEPENDPATH += $$PWD/../cvblob
+INCLUDEPATH += $$PWD/../cvblob/cvBlob
+DEPENDPATH += $$PWD/../cvblob/cvBlob
