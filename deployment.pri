@@ -25,3 +25,7 @@ android-no-sdk {
 }
 
 export(INSTALLS)
+
+
+###FOUND THIS For deployment :
+#cp `ldd NAMEOFYOURRELEASE | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` FOLDERNAMETOPUTLIBRARIES/

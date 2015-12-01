@@ -23,6 +23,11 @@ LIBS += `pkg-config opencv --libs`
 #LIBS += -L/home/kostasl/workspace -lcvblob
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
+##
+##Assume Libs are copied with the package into
+QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
+QMAKE_LFLAGS_RPATH=
+###Using command : cp `ldd larvatrack | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` /libs
 
 # Default rules for deployment.
 include(deployment.pri)

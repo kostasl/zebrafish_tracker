@@ -2,7 +2,9 @@
  * 25/11/2015 : kostasl Testing OpenCV bg substraction - to process larva in vial recording timelapses.
  * App uses BG substyraction MOG2, with a slow learning rate.
  * then Uses Open and Close / Dilation contraction techniques to get rid of noise and fill gaps
- * //Next is to detect/Count Larva on screen use some Form of Particle Filter, concentration filter.
+ * Then uses cvBlob library to track and count larva on BG-processed images.
+ * The lib sources have been included to the source and slightly modified in update tracks to fix a bug.
+ *
  * User:
  * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
  * The green box defines the region over which the larvae are counted-tracked and recorded to file.
