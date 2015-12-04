@@ -215,10 +215,16 @@ void processVideo(QString videoFilename,QString outFileCSV) {
         }
         else
         {
-            if (dLearningRate > 0.0003 && dLearningRate < 0.9) //Slow Down Learning After Initial Exposure
+            if (dLearningRate > 0.9)
+                dLearningRate = 0.9;
+
+
+            if (dLearningRate > 0.0003 ) //Slow Down Learning After Initial Exposure
                 dLearningRate = dLearningRate*0.0001; //Takes 1000 frames to reach final low value learning rate
-            else
-                dLearningRate = 0.0003;
+            else{
+                 dLearningRate = 0.0003;
+                }
+
         }
         //update the background model
         pMOG2->apply(frame, fgMaskMOG2,dLearningRate);
@@ -226,7 +232,6 @@ void processVideo(QString videoFilename,QString outFileCSV) {
         //pGMG->operator ()(frame,fgMaskGMG);
         //get the frame number and write it on the current frame
          //cv::imshow("FG Mask MOG 2 Before MoRPH", fgMaskMOG2);
-
 
         //erode to get rid to food marks
          //cv::erode(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
