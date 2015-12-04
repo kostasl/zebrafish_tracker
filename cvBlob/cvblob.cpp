@@ -61,11 +61,11 @@ namespace cvb
       CvBlob *blob=(*it).second;
       if ((blob->area<minArea)||(blob->area>maxArea))
       {
-	cvReleaseBlob(blob);
+        cvReleaseBlob(blob);
 
-	CvBlobs::iterator tmp=it;
-	++it;
-	blobs.erase(tmp);
+        CvBlobs::iterator tmp=it;
+        ++it;
+        blobs.erase(tmp);
       }
       else
 	++it;
