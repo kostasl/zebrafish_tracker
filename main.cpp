@@ -180,8 +180,8 @@ void processVideo(QString videoFilename,QString outFileCSV) {
 
     //For Morphological Filter
     //cv::Size sz = cv::Size(3,3);
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,4),cv::Point(-1,-1));
-    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(4,5),cv::Point(-1,-1));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,2),cv::Point(-1,-1));
+    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,4),cv::Point(-1,-1));
 
     //Structures to hold blobs & Tracks
     cvb::CvBlobs blobs;
@@ -243,12 +243,13 @@ void processVideo(QString videoFilename,QString outFileCSV) {
          //cv::imshow("FG Mask MOG 2 Before MoRPH", fgMaskMOG2);
 
         //erode to get rid to food marks
-         //cv::erode(fgMaskMOG2,fgMaskMOG2,kernelClose, cv::Point(-1,-1),1);
-        //Apply Open Operation dilate(erode())
-         //cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
+         cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
          //Do Close : erode(dilate())
-         cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernel,cv::Point(-1,-1),1);
+         cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),1);
          //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
+         //Apply Open Operation dilate(erode())
+          cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
+
 
 
         //Put Info TextOn Frame
@@ -336,8 +337,12 @@ void processVideo(QString videoFilename,QString outFileCSV) {
     //delete capture object
     capture.release();
 
+    //delete kernel;
+    //delete kernelClose;
+
     cvb::cvReleaseTracks(tracks);
     cvb::cvReleaseBlobs(blobs);
+
     std::cout << "Exiting video processing loop." << endl;
 }
 
