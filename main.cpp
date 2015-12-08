@@ -59,8 +59,11 @@ IplImage  *labelImg;
 IplImage frameImg;
 
 //Region of interest
+//typedef std::map<unsigned int, cv::Rect> ltROIlist;
+typedef std::vector<cv::Rect> ltROIlist;
+
 cv::Rect roi(cv::Point(0,0),cv::Point(1024,768));
-std::vector<cv::Rect> vRoi;
+ltROIlist vRoi;
 cv::Point ptROI1;
 cv::Point ptROI2;
 
@@ -72,10 +75,9 @@ bool bPaused;
 bool bTracking;
 bool b1stPointSet;
 
-
 using namespace std;
 
-void processVideo(QString videoFilename,QString outFileCSV);
+unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int istartFrame);
 void checkPauseRun(int& keyboard,string frameNumberString);
 bool saveImage(string frameNumberString,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
@@ -100,51 +102,69 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
-    QString invideoname = QFileDialog::getOpenFileName(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0); // getting the filename (full path)
-    QString outfilename = invideoname;
-    outfilename.truncate(outfilename.lastIndexOf("."));
-    outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output", outfilename + "_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
+
+    //outfilename.truncate(outfilename.lastIndexOf("."));
+    QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
 
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
 
     // get the applications dir path and expose it to QML
 
-        gTimer.start();
-       //create GUI windows
-       string strwinName = "VialFrame";
-       cv::namedWindow(strwinName,CV_WINDOW_AUTOSIZE);
-       //set the callback function for any mouse event
-       cv::setMouseCallback(strwinName, CallBackFunc, NULL);
+    gTimer.start();
+    //create GUI windows
+    string strwinName = "VialFrame";
+    cv::namedWindow(strwinName,CV_WINDOW_AUTOSIZE);
+    //set the callback function for any mouse event
+    cv::setMouseCallback(strwinName, CallBackFunc, NULL);
 
-       //create Background Subtractor objects
-              //(int history=500, double varThreshold=16, bool detectShadows=true
-       pMOG2 =  cv::createBackgroundSubtractorMOG2(30,16,false); //MOG2 approach
-       //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
-       //pMOG =  new cv::BackgroundSubtractorMOG(30,12,0.7,0.0); //MOG approach
-       //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
+    //create Background Subtractor objects
+          //(int history=500, double varThreshold=16, bool detectShadows=true
+    pMOG2 =  cv::createBackgroundSubtractorMOG2(30,16,false); //MOG2 approach
+    //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
+    //pMOG =  new cv::BackgroundSubtractorMOG(30,12,0.7,0.0); //MOG approach
+    //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
 
-       //unsigned int hWnd = cvGetWindowHandle("VialFrame");
-       //cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 2000 );
-       //"//home/kostasl/workspace/QtTestOpenCV/pics/20151124-timelapse.mpg"
-       processVideo(invideoname,outfilename);
+    //unsigned int hWnd = cvGetWindowHandle("VialFrame");
+    //cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 2000 );
+    //"//home/kostasl/workspace/QtTestOpenCV/pics/20151124-timelapse.mpg"
 
+    QString invideoname = "*.mpg";
+    unsigned int istartFrame = 0;
+    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0);
 
-       //destroy GUI windows
-       cv::destroyAllWindows();
+    for (int i = 0; i<invideonames.size(); ++i)
+    {
+        invideoname = invideonames.at(i);
+        cout << invideoname.toStdString() << endl;
+    }
+    //    while ((char)keyboard != 27 )
+    for (int i = 0; i<invideonames.size(); ++i)
+    {
+//        invideoname= QFileDialog::getOpenFileName(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0); // getting the filename (full path)
+        invideoname = invideonames.at(i);
+        istartFrame = processVideo(invideoname,outfilename,istartFrame);
 
-       cv::waitKey(0);                                          // Wait for a keystroke in the window
+        if (istartFrame == 0)
+        {
+            cerr << "Could not load last video - Exiting loop." <<  endl;
+            break;
+        }
+    }
 
+    //destroy GUI windows
+    cv::destroyAllWindows();
+    cv::waitKey(0);                                          // Wait for a keystroke in the window
 
-       //pMOG->~BackgroundSubtractor();
-       pMOG2->~BackgroundSubtractor();
-       //pGMG->~BackgroundSubtractor();
+    //pMOG->~BackgroundSubtractor();
+    pMOG2->~BackgroundSubtractor();
+    //pGMG->~BackgroundSubtractor();
 
-       //
-       //return ;
+    //
+    //return ;
 
-       cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << endl;
-       app.quit();
-       return EXIT_SUCCESS;
+    cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << endl;
+    app.quit();
+    return EXIT_SUCCESS;
 
 }
 
@@ -154,11 +174,13 @@ int main(int argc, char *argv[])
  * to remove a pupa from the scene -
  */
 
-void processVideo(QString videoFilename,QString outFileCSV) {
+unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int startFrameCount) {
     unsigned int nLarva         =  0;
     //Speed that stationary objects are removed
     double dLearningRate        = 0.01;
     double dblRatioPxChanged    = 0.0;
+    unsigned int nFrame = startFrameCount; //Current Frame Number
+
 
     //Font for Tracking
     CvFont trackFnt;
@@ -195,61 +217,40 @@ void processVideo(QString videoFilename,QString outFileCSV) {
         std::exit(EXIT_FAILURE);
     }
 
-    unsigned int nFrame = 0;
-
 
     //read input data. ESC or 'q' for quitting
     while( (char)keyboard != 'q' && (char)keyboard != 27 ){
         //read the current frame
         if(!capture.read(frame)) {
-            if (nFrame ==0)
+            if (nFrame == startFrameCount)
             {
                 std::cerr << "Unable to read first frame." << std::endl;
+                nFrame = 0; //Signals To caller that video could not be loaded.
                 exit(EXIT_FAILURE);
             }
             else
             {
-                std::cerr << "Unable to read next frame." << std::endl;
-                cout << nFrame << " frames of Video processing done! " << endl;
+                std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
+                cout << nFrame << " frames of Video processed. Move on to next timelapse video? " << endl;
                 break;
            }
         }
-        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+        //Add frames from Last video
+        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
         if (nFrame > 2500)
             dLearningRate = 0.002;
-//        if (dblRatioPxChanged > 0.002) //Too many Fg Pixels
-//        {
-//            dLearningRate = dLearningRate*1.2;
-//        }
-//        else
-//        {
-//            if (dLearningRate > 0.9)
-//                dLearningRate = 0.9;
 
-
-//            if (dLearningRate > 0.0003 ) //Slow Down Learning After Initial Exposure
-//                dLearningRate = dLearningRate*0.0001; //Takes 1000 frames to reach final low value learning rate
-//            else{
-//                 dLearningRate = 0.0003;
-//                }
-
-//        }
 
         //update the background model
         pMOG2->apply(frame, fgMaskMOG2,dLearningRate);
-        //pMOG->operator()(frame, fgMaskMOG);
-        //pGMG->operator ()(frame,fgMaskGMG);
         //get the frame number and write it on the current frame
-         //cv::imshow("FG Mask MOG 2 Before MoRPH", fgMaskMOG2);
-
         //erode to get rid to food marks
-         cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
-         //Do Close : erode(dilate())
-         cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),1);
-         //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
-         //Apply Open Operation dilate(erode())
-          cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
-
+        cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
+        //Do Close : erode(dilate())
+        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),1);
+        //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
+        //Apply Open Operation dilate(erode())
+        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
 
 
         //Put Info TextOn Frame
@@ -344,6 +345,8 @@ void processVideo(QString videoFilename,QString outFileCSV) {
     cvb::cvReleaseBlobs(blobs);
 
     std::cout << "Exiting video processing loop." << endl;
+
+    return nFrame;
 }
 
 void checkPauseRun(int& keyboard,string frameNumberString)
