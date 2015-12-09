@@ -536,9 +536,9 @@ extern "C" {
   /// \fn cvUpdateTracks(CvBlobs const &b, CvTracks &t, const double thDistance, const unsigned int thInactive, const unsigned int thActive=0)
   /// \brief Updates list of tracks based on current blobs.
   /// Tracking based on:
-  /// A. Senior, A. Hampapur, Y-L Tian, L. Brown, S. Pankanti, R. Bolle. Appearance Models for
-  /// Occlusion Handling. Second International workshop on Performance Evaluation of Tracking and
-  /// Surveillance Systems & CVPR'01. December, 2001.
+  /// A. Senior, A. Hampapur, Y-L Tian, L. Brown, S. Pankanti, R. Bolle. Appearance Models for
+  /// Occlusion Handling. Second International workshop on Performance Evaluation of Tracking and
+  /// Surveillance Systems & CVPR'01. December, 2001.
   /// (http://www.research.ibm.com/peoplevision/PETS2001.pdf)
   /// \param b List of blobs.
   /// \param t List of tracks.
@@ -566,7 +566,14 @@ extern "C" {
   /// \see CV_TRACK_RENDER_TO_LOG
   /// \see CV_TRACK_RENDER_TO_STD
   void cvRenderTracks(CvTracks const tracks, IplImage *imgSource, IplImage *imgDest, unsigned short mode=0x000f, CvFont *font=NULL);
+
+  /// \fn void cvRenderTrack(CvTrack& track, IplImage *imgSource, IplImage *imgDest, unsigned short mode, CvFont *font );
+  /// \brief Prints Single Track info
+  void cvRenderTrack(CvTrack& track,CvID trackID, IplImage *imgSource, IplImage *imgDest, unsigned short mode, CvFont *font );
   }
+
+
+
 #ifdef __cplusplus
 }
 #endif

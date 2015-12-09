@@ -67,6 +67,10 @@ ltROIlist vRoi;
 cv::Point ptROI1;
 cv::Point ptROI2;
 
+//Font for Reporting - Tracking
+CvFont trackFnt;
+
+
 int keyboard; //input from keyboard
 int screenx,screeny;
 bool showMask; //True will show the BGSubstracted IMage/Processed Mask
@@ -107,9 +111,10 @@ int main(int argc, char *argv[])
     //outfilename.truncate(outfilename.lastIndexOf("."));
     QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
 
-    //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
-
     // get the applications dir path and expose it to QML
+    //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
+    //Init Font
+    cvInitFont(&trackFnt, CV_FONT_HERSHEY_DUPLEX, 0.4, 0.4, 0, 1);
 
     gTimer.start();
     //create GUI windows
@@ -185,10 +190,6 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
     unsigned int nFrame = startFrameCount; //Current Frame Number
 
 
-
-    //Font for Tracking
-    CvFont trackFnt;
-    cvInitFont(&trackFnt, CV_FONT_HERSHEY_DUPLEX, 0.4, 0.4, 0, 1);
 
     //Make Variation of FileNames for other Output
     QString outDirCSV = outFileCSV.left(outFileCSV.lastIndexOf("/"));
@@ -320,7 +321,9 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             cvb::cvUpdateTracks(blobs,tracks, 10, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
-            cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID,&trackFnt);
+
+
+            //cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID,&trackFnt);
         }
 
 
@@ -446,11 +449,11 @@ int countObjectsviaContours(cv::Mat& srcimg )
 
      cv::findContours( imgTraced, contours, hierarchy,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
      for( unsigned int i = 0; i< contours.size(); i=hierarchy[i][0] ) // iterate through each contour.
-        {
+     {
           cv::Rect r= cv::boundingRect(contours[i]);
           cv::rectangle(imgTraced,r, cv::Scalar(255,0,0),1,8,0);
           cv::rectangle(frame,r, cv::Scalar(255,0,0),1,8,0);
-        }
+     }
 
      //Write text For Count on Original Frame
      std::stringstream strCount;
@@ -483,6 +486,10 @@ int countObjectsviaContours(cv::Mat& srcimg )
 int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString)
 {
 
+
+
+
+
     ///// Finding the blobs ////////
      int cnt = 0;
 
@@ -514,7 +521,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
         cv::Rect iroi = (cv::Rect)(*it);
         RoiID++;
 
-        //Filtering the blobs
+        //Custom Filtering the blobs for Rendering
         //Count Blobs in ROI
         for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
         {
@@ -529,6 +536,18 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
                 cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR, cv::Scalar(0,200,0),0.6);
             }
         }
+        //Custom Render Tracks in ROI Loop
+        for (cvb::CvTracks::const_iterator it=tracks.begin(); it!=tracks.end(); ++it)
+        {
+            cv::Point pnt;
+            pnt.x = it->second->centroid.x;
+            pnt.y = it->second->centroid.y;
+            if (iroi.contains(pnt))
+                cvRenderTrack(*((*it).second) ,it->first ,  &fgMaskImg, &frameImg, CV_TRACK_RENDER_ID,&trackFnt );
+
+        }
+
+
 
 
         //cvSetImageROI(&frameImg, iroi);

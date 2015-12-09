@@ -349,7 +349,7 @@ namespace cvb
 
   CvFont *defaultFont = NULL;
 
-  void cvRenderTracks(CvTracks const tracks, IplImage *imgSource, IplImage *imgDest, unsigned short mode, CvFont *font)
+  void cvRenderTracks(CvTracks const tracks, IplImage *imgSource, IplImage *imgDest, unsigned short mode, CvFont *font )
   {
     CV_FUNCNAME("cvRenderTracks");
     __CV_BEGIN__;
@@ -374,53 +374,65 @@ namespace cvb
 
     if (mode)
     {
-      for (CvTracks::const_iterator it=tracks.begin(); it!=tracks.end(); ++it)
-      {
-	if (mode&CV_TRACK_RENDER_ID)
-	  if (!it->second->inactive)
-	  {
-	    stringstream buffer;
-	    buffer << it->first;
-	    cvPutText(imgDest, buffer.str().c_str(), cvPoint((int)it->second->centroid.x, (int)it->second->centroid.y), font, CV_RGB(0.,255.,0.));
-	  }
-
-	if (mode&CV_TRACK_RENDER_BOUNDING_BOX)
-	  if (it->second->inactive)
-	    cvRectangle(imgDest, cvPoint(it->second->minx, it->second->miny), cvPoint(it->second->maxx-1, it->second->maxy-1), CV_RGB(0., 0., 50.));
-	  else
-	    cvRectangle(imgDest, cvPoint(it->second->minx, it->second->miny), cvPoint(it->second->maxx-1, it->second->maxy-1), CV_RGB(0., 0., 255.));
-
-	if (mode&CV_TRACK_RENDER_TO_LOG)
-	{
-	  clog << "Track " << it->second->id << endl;
-	  if (it->second->inactive)
-	    clog << " - Inactive for " << it->second->inactive << " frames" << endl;
-	  else
-	    clog << " - Associated with blob " << it->second->label << endl;
-	  clog << " - Lifetime " << it->second->lifetime << endl;
-	  clog << " - Active " << it->second->active << endl;
-	  clog << " - Bounding box: (" << it->second->minx << ", " << it->second->miny << ") - (" << it->second->maxx << ", " << it->second->maxy << ")" << endl;
-	  clog << " - Centroid: (" << it->second->centroid.x << ", " << it->second->centroid.y << ")" << endl;
-	  clog << endl;
-	}
-
-	if (mode&CV_TRACK_RENDER_TO_STD)
-	{
-	  cout << "Track " << it->second->id << endl;
-	  if (it->second->inactive)
-	    cout << " - Inactive for " << it->second->inactive << " frames" << endl;
-	  else
-	    cout << " - Associated with blobs " << it->second->label << endl;
-	  cout << " - Lifetime " << it->second->lifetime << endl;
-	  cout << " - Active " << it->second->active << endl;
-	  cout << " - Bounding box: (" << it->second->minx << ", " << it->second->miny << ") - (" << it->second->maxx << ", " << it->second->maxy << ")" << endl;
-	  cout << " - Centroid: (" << it->second->centroid.x << ", " << it->second->centroid.y << ")" << endl;
-	  cout << endl;
-	}
-      }
+        for (CvTracks::const_iterator it=tracks.begin(); it!=tracks.end(); ++it)
+        {
+            cvRenderTrack(*((*it).second) ,it->first , imgSource, imgDest, mode, font );
+        }
     }
 
     __CV_END__;
   }
 
-}
+
+  void cvRenderTrack(CvTrack& track,const unsigned int trackID, IplImage *imgSource, IplImage *imgDest, unsigned short mode, CvFont *font )
+  {
+      CV_FUNCNAME("cvRenderTrack");
+      __CV_BEGIN__;
+
+        if (mode&CV_TRACK_RENDER_ID)
+          if (!track.inactive)
+          {
+            stringstream buffer;
+            buffer << trackID;
+            cvPutText(imgDest, buffer.str().c_str(), cvPoint((int)track.centroid.x, (int)track.centroid.y), font, CV_RGB(0.,255.,0.));
+          }
+
+        if (mode&CV_TRACK_RENDER_BOUNDING_BOX)
+          if (track.inactive)
+            cvRectangle(imgDest, cvPoint(track.minx, track.miny), cvPoint(track.maxx-1,track.maxy-1), CV_RGB(0., 0., 50.));
+          else
+            cvRectangle(imgDest, cvPoint(track.minx, track.miny), cvPoint(track.maxx-1, track.maxy-1), CV_RGB(0., 0., 255.));
+
+        if (mode&CV_TRACK_RENDER_TO_LOG)
+        {
+          clog << "Track " << track.id << endl;
+          if (track.inactive)
+            clog << " - Inactive for " << track.inactive << " frames" << endl;
+          else
+            clog << " - Associated with blob " << track.label << endl;
+          clog << " - Lifetime " <<track.lifetime << endl;
+          clog << " - Active " << track.active << endl;
+          clog << " - Bounding box: (" << track.minx << ", " <<track.miny << ") - (" << track.maxx << ", " << track.maxy << ")" << endl;
+          clog << " - Centroid: (" << track.centroid.x << ", " << track.centroid.y << ")" << endl;
+          clog << endl;
+        }
+
+        if (mode&CV_TRACK_RENDER_TO_STD)
+        {
+          cout << "Track " << track.id << endl;
+          if (track.inactive)
+            cout << " - Inactive for " <<track.inactive << " frames" << endl;
+          else
+            cout << " - Associated with blobs " << track.label << endl;
+          cout << " - Lifetime " << track.lifetime << endl;
+          cout << " - Active " << track.active << endl;
+          cout << " - Bounding box: (" <<track.minx << ", " << track.miny << ") - (" << track.maxx << ", " <<track.maxy << ")" << endl;
+          cout << " - Centroid: (" << track.centroid.x << ", " << track.centroid.y << ")" << endl;
+          cout << endl;
+        }
+__CV_END__;
+  }
+
+
+} //END OF NAMESPACE
+
