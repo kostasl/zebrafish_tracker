@@ -78,6 +78,7 @@ bool bROIChanged;
 bool bPaused;
 bool bTracking;
 bool b1stPointSet;
+bool bMouseLButtonDown;
 
 using namespace std;
 
@@ -513,7 +514,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
    // cout << "Roi Sz:" << vRoi.size() << endl;
     IplImage  *labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
     unsigned int result = cvb::cvLabel( &fgMaskImg, labelImg, blobs );
-    cvb::cvFilterByArea(blobs,10,100);
+    cvb::cvFilterByArea(blobs,20,100);
     unsigned int RoiID = 0;
     for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
@@ -566,7 +567,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
         strroiFilePos.append(buff);
 
         saveTrackedBlobs(blobs,strroiFilePos,frameNumberString,iroi);
-        cnt = saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
+        cnt += saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
     }
 
     // *always* remember freeing unused IplImages
@@ -745,7 +746,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
      if  ( event == cv::EVENT_LBUTTONDOWN )
      {
-
+        bMouseLButtonDown = true;
          //ROI is locked once tracking begins
         if (bPaused && !bROIChanged) //CHANGE ROI Only when Paused and ONCE
         { //Change 1st Point if not set or If 2nd one has been set
@@ -772,6 +773,11 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 
 
         cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+     }
+
+     if (event == cv::EVENT_LBUTTONUP)
+     {
+        bMouseLButtonDown = false;
      }
      else if  ( event == cv::EVENT_RBUTTONDOWN )
      {
