@@ -82,9 +82,10 @@ void checkPauseRun(int& keyboard,string frameNumberString);
 bool saveImage(string frameNumberString,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
 int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString);
-int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,string frameNumber);
+
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
-int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber);
+int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,string frameNumber,cv::Rect& roi);
+int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,cv::Rect& roi);
 
 void deleteROI(cv::Point mousePos);
 void addROI(cv::Rect& newRoi);
@@ -132,16 +133,18 @@ int main(int argc, char *argv[])
     unsigned int istartFrame = 0;
     QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0);
 
+    cout << "Video List To process:" << endl;
     for (int i = 0; i<invideonames.size(); ++i)
     {
         invideoname = invideonames.at(i);
-        cout << invideoname.toStdString() << endl;
+        cout << "*" <<  invideoname.toStdString() << endl;
     }
     //    while ((char)keyboard != 27 )
     for (int i = 0; i<invideonames.size(); ++i)
     {
 //        invideoname= QFileDialog::getOpenFileName(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0); // getting the filename (full path)
         invideoname = invideonames.at(i);
+        cout << " Now Processing : "<< invideoname.toStdString() << endl;
         istartFrame = processVideo(invideoname,outfilename,istartFrame);
 
         if (istartFrame == 0)
@@ -182,11 +185,13 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
     unsigned int nFrame = startFrameCount; //Current Frame Number
 
 
+
     //Font for Tracking
     CvFont trackFnt;
     cvInitFont(&trackFnt, CV_FONT_HERSHEY_DUPLEX, 0.4, 0.4, 0, 1);
 
     //Make Variation of FileNames for other Output
+    QString outDirCSV = outFileCSV.left(outFileCSV.lastIndexOf("/"));
     QString trkoutFileCSV = outFileCSV;
     trkoutFileCSV.truncate(trkoutFileCSV.lastIndexOf("."));
     trkoutFileCSV.append("_tracks.csv");
@@ -306,7 +311,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             //countObjectsviaContours(fgMaskMOG2); //But not as efficient
 
            // cvb::CvBlobs blobs;
-            nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,outFileCSV,frameNumberString);
+            nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,outDirCSV,frameNumberString);
 
             //ROI with TRACKs Fails
             const int inactiveFrameCount = 10; //Number of frames inactive until track is deleted
@@ -475,7 +480,7 @@ int countObjectsviaContours(cv::Mat& srcimg )
 }
 
 
-int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString)
+int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString)
 {
 
     ///// Finding the blobs ////////
@@ -488,9 +493,6 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
     if (bROIChanged || ptROI2.x != 0)
     {
-//        cv::circle(frame,ptROI1,3,cv::Scalar(255,0,0),1);
-//        cv::circle(frame,ptROI2,3,cv::Scalar(255,0,0),1);
-
         //Set fLAG sO FROM now on Region of interest is used and cannot be changed.
         bROIChanged = true;
     }
@@ -505,12 +507,13 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     IplImage  *labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
     unsigned int result = cvb::cvLabel( &fgMaskImg, labelImg, blobs );
     cvb::cvFilterByArea(blobs,10,100);
-
+    unsigned int RoiID = 0;
     for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
-        cv::Rect iroi = (cv::Rect)(*it);
 
-        //cnt +=(int)blobs.size(); //Add To Count
+        cv::Rect iroi = (cv::Rect)(*it);
+        RoiID++;
+
         //Filtering the blobs
         //Count Blobs in ROI
         for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
@@ -522,8 +525,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
             if (iroi.contains(pnt))
             {
-             //   cnt++;
-
+                //cnt++;
                 cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR, cv::Scalar(0,200,0),0.6);
             }
         }
@@ -535,133 +537,125 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
         // render blobs in original image
         //cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR);
 
-        saveTrackedBlobs(blobs,outFileCSV,frameNumberString);
-        cnt = saveTrackedBlobsTotals(blobs,tracks,outFileCSV,frameNumberString);
+        //Make File Names For Depending on the Vial - Crude but does the  job
+        QString strroiFileN = outDirCSV;
+        QString strroiFilePos = outDirCSV;
+        char buff[50];
+        sprintf(buff,"/V%d_pos_N.csv",RoiID);
+        strroiFileN.append(buff);
+        sprintf(buff,"/V%d_pos.csv",RoiID);
+        strroiFilePos.append(buff);
+
+        saveTrackedBlobs(blobs,strroiFilePos,frameNumberString,iroi);
+        cnt = saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
     }
 
     // *always* remember freeing unused IplImages
     cvReleaseImage( &labelImg );
 
     return cnt;
-
 }
 
-int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber)
+int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,cv::Rect& roi)
 {
     int cnt = 0;
     int Vcnt = 1;
     bool bNewFileFlag = true;
 
     //Loop Over ROI
-    for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    Vcnt++; //Vial Count
+    cnt = 0;
+
+    QFile data(filename);
+    if (data.exists())
+        bNewFileFlag = false;
+
+    if(data.open(QFile::WriteOnly |QFile::Append))
     {
-        Vcnt++; //Vial Count
-        cnt = 0;
-        cv::Rect iroi = (cv::Rect)(*it);
-        QString strroiFile = filename.left(filename.lastIndexOf("/"));
-        char buff[50];
-        sprintf(buff,"/V%d_pos.csv",Vcnt);
-        strroiFile.append(buff);
+        QTextStream output(&data);
+        if (bNewFileFlag)
+             output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area" << endl;
 
-        QFile data(strroiFile);
-        if (data.exists())
-            bNewFileFlag = false;
-
-        if(data.open(QFile::WriteOnly |QFile::Append))
+        //Loop Over Blobs
+        for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
         {
-            QTextStream output(&data);
-            if (bNewFileFlag)
-                 output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area" << endl;
 
-            //Loop Over Blobs
-            for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
-            {
+            cvb::CvBlob* cvB = it->second;
+            cv::Point pnt;
+            pnt.x = cvB->centroid.x;
+            pnt.y = cvB->centroid.y;
 
-                cvb::CvBlob* cvB = it->second;
-                cv::Point pnt;
-                pnt.x = cvB->centroid.x;
-                pnt.y = cvB->centroid.y;
+            cnt++;
 
-                cnt++;
-
-                if (iroi.contains(pnt))
-                    //Printing the position information
-                    output << frameNumber.c_str() << "," << cnt <<","<< cvB->label << "," << cvB->centroid.x <<","<< cvB->centroid.y  <<","<< cvB->area  <<  endl;
-              }
-
-
-           data.close();
-
+            if (roi.contains(pnt))
+                //Printing the position information
+                output << frameNumber.c_str() << "," << cnt <<","<< cvB->label << "," << cvB->centroid.x <<","<< cvB->centroid.y  <<","<< cvB->area  <<  endl;
           }
 
 
-    }
+       data.close();
+
+      }
+
 
     return cnt;
 }
 
 //Saves the total Number of Counted Blobs and Tracks only
-int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber)
+int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,cv::Rect& roi)
 {
 
     bool bNewFileFlag = true;
     int cnt = 0;
     int Larvacnt = 0;
-    for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    cnt++;
+    //cv::Rect iroi = (cv::Rect)(*it);
+
+    QFile data(filename);
+    if (data.exists())
+        bNewFileFlag = false;
+
+    if(data.open(QFile::WriteOnly |QFile::Append))
     {
-        cnt++;
-        cv::Rect iroi = (cv::Rect)(*it);
-        QString strroiFile = filename.left(filename.lastIndexOf("/"));
-        char buff[50];
-        sprintf(buff,"/V%d_pos_N.csv",cnt);
-        strroiFile.append(buff);
 
-        QFile data(strroiFile);
-        if (data.exists())
-            bNewFileFlag = false;
+        int blobCount = 0;
+        int trackCount = 0;
 
-        if(data.open(QFile::WriteOnly |QFile::Append))
+        //Count Blobs in ROI
+        for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
         {
+            cvb::CvBlob* blob = it->second;
+            cv::Point pnt;
+            pnt.x = blob->centroid.x;
+            pnt.y = blob->centroid.y;
 
-            int blobCount = 0;
-            int trackCount = 0;
+            if (roi.contains(pnt))
+                blobCount++;
+        }
 
-            //Count Blobs in ROI
-            for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
-            {
-                cvb::CvBlob* blob = it->second;
-                cv::Point pnt;
-                pnt.x = blob->centroid.x;
-                pnt.y = blob->centroid.y;
+        //Count Tracks in ROI
+        for (cvb::CvTracks::const_iterator it = tracks.begin(); it!=tracks.end(); ++it)
+        {
+            cvb::CvTrack* track = it->second;
+            cv::Point pnt;
+            pnt.x = track->centroid.x;
+            pnt.y = track->centroid.y;
 
-                if (iroi.contains(pnt))
-                    blobCount++;
-            }
-
-            //Count Tracks in ROI
-            for (cvb::CvTracks::const_iterator it = tracks.begin(); it!=tracks.end(); ++it)
-            {
-                cvb::CvTrack* track = it->second;
-                cv::Point pnt;
-                pnt.x = track->centroid.x;
-                pnt.y = track->centroid.y;
-
-                if (iroi.contains(pnt))
-                    trackCount++;
-            }
-
-
-                QTextStream output(&data);
-                if (bNewFileFlag)
-                     output << "frameN,blobN,TracksN" << endl;
-
-                output << frameNumber.c_str() << "," << blobCount << "," << trackCount << endl;
-                Larvacnt +=blobCount;
-            data.close();
+            if (roi.contains(pnt))
+                trackCount++;
         }
 
 
+        QTextStream output(&data);
+        if (bNewFileFlag)
+             output << "frameN,blobN,TracksN" << endl;
+
+        output << frameNumber.c_str() << "," << blobCount << "," << trackCount << endl;
+        Larvacnt +=blobCount;
+        data.close();
     }
+
+
     return Larvacnt;
 }
 
