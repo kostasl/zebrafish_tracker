@@ -1,8 +1,10 @@
 %% Import CSV Files
 
+%%FOLDER NAMES SHOULD BE OF THE FORMAT: EXP_6-7_20151123_5sec
+%5sec is the timelapse period in seconds
 
 scriptPath = which('processFiles.m');
-ExpN = importCSVtoCell( '*V*_N','EXP*' );
+[framePeriod,VialAge,ExpN ] = importCSVtoCell( '*V*_N','EXP*' );
 save('LarvaCountData.mat','ExpN');
 
 
@@ -12,9 +14,13 @@ save('LarvaCountData.mat','ExpN');
 ConditionIndex = 1; %Experimental Condition ID Say 1 OR NF 
 % The videos have 2 rows of 9 vials - Vials 1-10 have identical conditions so they go in PAIRS
 VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
-timePoints = 24*3*3600;%Total Time points in seconds over which to analyse data
-%FramePeriod sampled at each timelapse Experiment
-framePeriod = [20;5;5;2;2;2;2;2];
+timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which to analyse data
+%FramePeriod sampled at each timelapse Experiment -
+
+%%THESE DO NOT CORRESPOND TO TIMES OF VIDEOS
+%framePeriod = [20;5;5;2;2;2;2;2];
+display('The loaded videos had frame Periods designed in folder name:')
+display(framePeriod);
 
 %N = length(timePoints);
 %datV{iVial} = zeros([size(ExpN,1),timePoints]);
@@ -23,7 +29,7 @@ framePeriod = [20;5;5;2;2;2;2;2];
 
 for (ConditionIndex=1:9)
     VialPairs = VialPairsPerCondition(ConditionIndex,:);
-    datV{ConditionIndex} = collectResultsInTimeVector( ExpN,VialPairs,framePeriod,timePoints );
+    datV{ConditionIndex} = collectResultsInTimeVector( ExpN,VialPairs,VialAge,framePeriod,timePoints );
     meanNLarva{ConditionIndex} = mean(datV{ConditionIndex}(:,1:timePoints));
     %STD Error - (Std dev normalized by sample size
     stdNLarva{ConditionIndex} = std(datV{ConditionIndex}(:,1:timePoints),1,1) ;
