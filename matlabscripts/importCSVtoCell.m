@@ -1,10 +1,11 @@
-function [ frameRates,ExpVialAge , ResultsCell] = importCSVtoCell(filePatt,dirPatt )
+function [ frameRates,ExpVialAge,ExpID ,ResultsCell] = importCSVtoCell(filePatt,dirPatt )
 %IMPORTCSVTOCELL Imports experiment results from CSV to CELLArray
 %   scans all sub dirs that start with Exp, use filePatt like '*V*_N'
 dataFileCount = 0;
 
 files = dir(fullfile(dirPatt));
 Dirs = files(find(vertcat(files.isdir)));
+ExpID = {'','','','',''};
 
 for d=1:length(Dirs)
 
@@ -13,6 +14,7 @@ for d=1:length(Dirs)
 %        continue;
 %    else
      display(strcat('Importing from Dir:',importDir.name));
+     ExpID{d} = importDir.name; %Save Directory Name To Identify Experiment
 %    end
     %%Get Time Data stored in File timing.csv
     timings = csvread(fullfile(importDir.name,'timing.csv'),1);
@@ -25,7 +27,7 @@ for d=1:length(Dirs)
     
     strtimelapsePeriod= regexp(importDir.name,'\d+sec','match');
     frameRates(d) = str2double(regexp(strtimelapsePeriod{1},'\d+','match'));
-    
+   
     for i=1:length(files);
         %Get Vial Number from File Name
         VNo = regexp(files(i).name,'V\d+','match');

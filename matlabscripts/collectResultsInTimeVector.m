@@ -1,4 +1,4 @@
-function [ dataMatrix ] = collectResultsInTimeVector( ExpDataCell,vialIndexes,VialAge,framePeriod,timePoints )
+function [ ResultsSourceRefIndex,dataMatrix ] = collectResultsInTimeVector( ExpDataCell,vialIndexes,VialAge,framePeriod,timePoints )
 %UNTITLED Collects results per vial across conditions from the Imported ExpData cell to a  Matrix
 %   The data are collected in a data/second vector that syncs the data in
 %   time according to the given framerate ie. The period of the timelapse experiment  
@@ -6,9 +6,12 @@ function [ dataMatrix ] = collectResultsInTimeVector( ExpDataCell,vialIndexes,Vi
 % Can combine data across vial indexes given as a vector in vialIndex
 % Performes MedianFiltering to reduce the gaps/noise 
 % VialAge: Time in Seconds since Embryos were collected
+%Returns : 
+% ResultsSourceRefIndex : index of Vial Experiment Pair for Each Row of
+% datamatrix
 
 dataMatrix = zeros([length(vialIndexes)*size(ExpDataCell,1),timePoints+max(framePeriod)]);
-
+ResultsSourceRefIndex = zeros(size(dataMatrix,1),2);
 
 %Combine the vial Indexes
 for (vi = 1:length(vialIndexes)) 
@@ -34,10 +37,13 @@ for (vi = 1:length(vialIndexes))
                 dataMatrix(rescolIndex,cl:(cl+framePeriod(e))) = ExpDataCell{e, vialIndexes(vi)}(i,3);
                 cl = cl + framePeriod(e); %INCREMENT TO NEXT REAL TIME SAMPLED
             end
+            
+            %Record Source Of Data Record
+            ResultsSourceRefIndex(rescolIndex,:) = [e,vialIndexes(vi)];
         end
         %Filter
         %dataMatrix(e,:) = medfilt1(dataMatrix(e,:),2*40*framePeriod(e));
-        display(strcat('Median Filter applied :',num2str(40*framePeriod(e))) );
+        %display(strcat('Median Filter applied :',num2str(40*framePeriod(e))) );
     end
 end
 

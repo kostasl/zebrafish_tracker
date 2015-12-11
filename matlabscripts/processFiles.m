@@ -4,7 +4,7 @@
 %5sec is the timelapse period in seconds
 
 scriptPath = which('processFiles.m');
-[framePeriod,VialAge,ExpN ] = importCSVtoCell( '*V*_N','EXP*' );
+[framePeriod,VialAge,ExpIDs,ExpN ] = importCSVtoCell( '*V*_N','EXP*' );
 save('LarvaCountData.mat','ExpN');
 
 
@@ -29,54 +29,88 @@ display(framePeriod);
 
 for (ConditionIndex=1:9)
     VialPairs = VialPairsPerCondition(ConditionIndex,:);
-    datV{ConditionIndex} = collectResultsInTimeVector( ExpN,VialPairs,VialAge,framePeriod,timePoints );
-    meanNLarva{ConditionIndex} = mean(datV{ConditionIndex}(:,1:timePoints));
+    [ResultsSourceRefIndex,datNV] = collectResultsInTimeVector( ExpN,VialPairs,VialAge,framePeriod,timePoints );
+    %Make Cell Array of Data organized in Structures
+    %Could Start Mean from min(VialAge) so to exclude lots of empty indexes
+    meanNLarva = mean(datV{ConditionIndex}(:,1:timePoints));
     %STD Error - (Std dev normalized by sample size
-    stdNLarva{ConditionIndex} = std(datV{ConditionIndex}(:,1:timePoints),1,1) ;
+    stdNLarva = std(datV{ConditionIndex}(:,1:timePoints),1,1) ;
+    
+    %Make structure for each experimental condition such that it contains
+    %raw & processed data but also a table we can refer to Which Experiment
+    %and Vial the data was sourced
+    vialtrackerResults{ConditionIndex} = struct('ActiveCount',datNV,'MeanActiveCount',meanNLarva,'MeanErrCount',stdNLarva,'DataRowSourceIndex',ResultsSourceRefIndex);
 end
 
+
+
 %% PLOT MEAN Active LARVAE
-figure('Name','Mean Number of Larva Moving ');
-plot((1:timePoints)/3600,meanNLarva{1},(1:timePoints)/3600,meanNLarva{2},(1:timePoints)/3600,meanNLarva{3});
+h=figure('Name','Mean Number of Larva Moving NF');
+plot((1:timePoints)/3600,vialtrackerResults{1}.MeanActiveCount,(1:timePoints)/3600,vialtrackerResults{2}.MeanActiveCount,(1:timePoints)/3600,vialtrackerResults{3}.MeanActiveCount);
 xlabel('hours');
 ylabel('N active larva');
 legend('NF OR','NF CT','NF AB');
+saveas(h,'figures/NFMeanNActive.pdf');
 
-figure('Name','Mean Number of Larva Moving ');
-plot((1:timePoints)/3600,meanNLarva{4},(1:timePoints)/3600,meanNLarva{5},(1:timePoints)/3600,meanNLarva{6});
+h=figure('Name','Mean Number of Larva Moving DMSO 0.5%');
+plot((1:timePoints)/3600,vialtrackerResults{4}.MeanActiveCount,(1:timePoints)/3600,vialtrackerResults{5}.MeanActiveCount,(1:timePoints)/3600,vialtrackerResults{6}.MeanActiveCount);
 xlabel('hours');
 ylabel('N active larva');
 legend('0.5% OR','0.5% CT','0.5% AB');
+saveas(h,'figures/DMSO05NActive.pdf');
 
-
-figure('Name','Mean Number of Larva Moving ');
-plot((1:timePoints)/3600,meanNLarva{7},(1:timePoints)/3600,meanNLarva{8},(1:timePoints)/3600,meanNLarva{9});
+h=figure('Name','Mean Number of Larva Moving DMSO 1.0%');
+plot((1:timePoints)/3600,vialtrackerResults{7}.MeanActiveCount,(1:timePoints)/3600,vialtrackerResults{8}.MeanActiveCount,(1:timePoints)/3600,vialtrackerResults{9}.MeanActiveCount);
 xlabel('hours');
 ylabel('N active larva');
 legend('1% OR','1% CT','1% AB');
+saveas(h,'figures/DMSO10NActive.pdf');
 
+%% PLOT STD Error Of MEAN
+h= figure('Name','STD Error in Mean Number of Larva Moving NF');;
+plot((1:timePoints)/3600,vialtrackerResults{1}.MeanErrCount,(1:timePoints)/3600,vialtrackerResults{2}.MeanErrCount,(1:timePoints)/3600,vialtrackerResults{3}.MeanErrCount);
+xlabel('hours');
+ylabel('N active larva');
+legend('NF OR','NF CT','NF AB');
+saveas(h,'figures/NFSTDErrorMeanNActive.pdf');
+
+
+h=figure('Name','STD Error in Mean Number of Larva Moving DMSO 0.5%');;
+plot((1:timePoints)/3600,vialtrackerResults{4}.MeanErrCount,(1:timePoints)/3600,vialtrackerResults{5}.MeanErrCount,(1:timePoints)/3600,vialtrackerResults{6}.MeanErrCount);
+xlabel('hours');
+ylabel('N active larva');
+legend('0.5% OR','0.5% CT','0.5% AB');
+saveas(h,'figures/DMSO05STDErrorMeanNActive.pdf');
+
+h=figure('Name','STD Error in Mean Number of Larva Moving DMSO 1.0%');;
+plot((1:timePoints)/3600,vialtrackerResults{7}.MeanErrCount,(1:timePoints)/3600,vialtrackerResults{8}.MeanErrCount,(1:timePoints)/3600,vialtrackerResults{9}.MeanErrCount);
+xlabel('hours');
+ylabel('N active larva');
+legend('1% OR','1% CT','1% AB');
+saveas(h,'figures/DMSO10STDErrorMeanNActive.pdf');
 
 %% Plot Control Vials In High DMSO 1%
 ConditionIndex = 8;
 
-h=figure('Name','Individual Vials CT with 1%DMSO Smoothed 2.5Hours');
-span = 20000; %10K points is 2.5 hours
-plot((1:timePoints)/3600,smooth(datV{ConditionIndex}(1,1:timePoints),span),...
-    (1:timePoints)/3600,smooth(datV{ConditionIndex}(2,1:timePoints),span), ...
-    (1:timePoints)/3600,smooth(datV{ConditionIndex}(3,1:timePoints),span), ...
-    (1:timePoints)/3600,smooth(datV{ConditionIndex}(4,1:timePoints),span), ...
-    (1:timePoints)/3600,smooth(datV{ConditionIndex}(5,1:timePoints),span), ...
-    (1:timePoints)/3600,smooth(datV{ConditionIndex}(6,1:timePoints),span), ...
-    (1:timePoints)/3600,smooth(datV{ConditionIndex}(7,1:timePoints),span), ...
-        (1:timePoints)/3600,smooth(datV{ConditionIndex}(8,1:timePoints),span), ...
-    (1:timePoints)/3600,smooth(datV{ConditionIndex}(9,1:timePoints),span) ...
+
+span = 2000; %10K points is 2.5 hours
+h=figure('Name',strcat('Individual Vials CT with 1%DMSO Smoothed ',num2str(2000/3600), ' Hours'));
+plot((1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(1,1:timePoints),span),...
+    (1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(2,1:timePoints),span), ...
+    (1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(3,1:timePoints),span), ...
+    (1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(4,1:timePoints),span), ...
+    (1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(5,1:timePoints),span), ...
+    (1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(6,1:timePoints),span), ...
+    (1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(7,1:timePoints),span), ...
+    (1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(8,1:timePoints),span), ...
+    (1:timePoints)/3600,smooth(vialtrackerResults{ConditionIndex}.ActiveCount(9,1:timePoints),span),'*' ...
 );
 xlabel('hours');
 ylabel('N active larva');
 %%CT Vial with 1%DMSO Legends
-legend('Exp1 V8','Exp2 V8','Exp2 V17','Exp3 V8','Exp3 V17','Exp4 V8','Exp4 V17','Exp5 V8','Exp5 V17');
+legend(strcat(num2str(vialtrackerResults{ConditionIndex}.DataRowSourceIndex(1,:)),'V'),strcat(ExpIDs{2},'V'),strcat(ExpIDs{3},'V'),strcat(ExpIDs{4},'V'),strcat(ExpIDs{5},'V')); %,strcat(ExpIDs{6},'V'),strcat(ExpIDs{7},'V'),strcat(ExpIDs{8},'V'),strcat(ExpIDs{9},'V')
 
-saveas(h,'CTIndividualVialsNSmoothed.pdf');
+saveas(h,'figures/CTIndividualVialsNSmoothed.pdf');
 
 % ALL TOGETHER
 %% PLOT MEAN Active LARVAE
@@ -94,28 +128,6 @@ plot((1:timePoints)/3600,smooth(meanNLarva{1},2000),'.', ...
 xlabel('hours');
 ylabel('N active larva');
 legend('NF OR','NF CT','NF AB');
-
-figure('Name','STD Error in Mean Number of Larva Moving ');;
-plot((1:timePoints)/3600,stdNLarva{1},(1:timePoints)/3600,stdNLarva{2},(1:timePoints)/3600,stdNLarva{3});
-xlabel('hours');
-ylabel('N active larva');
-legend('NF OR','NF CT','NF AB');
-
-
-figure('Name','STD Error in Mean Number of Larva Moving ');;
-plot((1:timePoints)/3600,stdNLarva{4},(1:timePoints)/3600,stdNLarva{5},(1:timePoints)/3600,stdNLarva{6});
-xlabel('hours');
-ylabel('N active larva');
-legend('0.5% OR','0.5% CT','0.5% AB');
-
-
-figure('Name','STD Error in Mean Number of Larva Moving ');;
-plot((1:timePoints)/3600,stdNLarva{7},(1:timePoints)/3600,stdNLarva{8},(1:timePoints)/3600,stdNLarva{9});
-xlabel('hours');
-ylabel('N active larva');
-legend('1% OR','1% CT','1% AB');
-
-
 
 %figure('Name','Error Bars');
 %errorbar((1:timePoints)/3600,meanNLarva{ConditionIndex},stdNLarva{ConditionIndex},'r')
