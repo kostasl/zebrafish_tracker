@@ -35,7 +35,7 @@ display(framePeriod);
 % * mean Tracklet In Time
 %%
 %Holds Track id That fit the spec of lifetime
-FilteredTrackIDs = {}; 
+FilteredTracks = {}; 
 %Filter Each Experiments Data set
 MinLifetime = 50;
 for (e=1:size(ExpTrack,1))
@@ -45,15 +45,16 @@ for (e=1:size(ExpTrack,1))
             continue;
        end
        % Get Track Ids that are longer than MinLifetime
-       FilteredTrackIDs{e,v} = [unique(ExpTrack{e,v}(find(ExpTrack{e,v}(:,6)>MinLifetime),2))];
+       FilteredTrackIDs = [unique(ExpTrack{e,v}(find(ExpTrack{e,v}(:,6)>MinLifetime),2))];
+       
        
        %Go through Each ID - Get Mean Speed
-       for i = 1:length(FilteredTrackIDs{e,v})
-           trkID = FilteredTrackIDs{e,v}(i);
-           
+       for i = 1:length(FilteredTrackIDs)
+           trkID = FilteredTrackIDs(i);
            % Find Positions /Sorted By Frame Number / Get distance
            % travelled
-           
+           trackData = sort(ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]),1);
+           FilteredTrack{e,v} = struct('TrackID',trkID,'Positions',trackData);
        end
            
     end
