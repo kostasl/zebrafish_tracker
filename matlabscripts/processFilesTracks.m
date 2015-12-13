@@ -40,7 +40,7 @@ display(framePeriod);
 FilteredTracks = {}; 
 ExpTrackResults = {};
 %Filter Each Experiments Data set
-MinLifetime = 5;
+MinLifetime = 30;
 for (e=1:size(ExpTrack,1))
     display(char(ExpIDs(e)));
     for (v=1:size(ExpTrack,2))
@@ -52,13 +52,13 @@ for (e=1:size(ExpTrack,1))
        % Get Track Ids that are longer than MinLifetime
        FilteredTrackIDs = unique(ExpTrack{e,v}( find(ExpTrack{e,v}(:,6)>MinLifetime) ,2 ));
        %Unfiltered Unique Ids
-       FilteredTrackIDs = unique(ExpTrack{e,v}(:,2));
+       %FilteredTrackIDs = unique(ExpTrack{e,v}(:,2));
        
        %Go through Each ID - Get Mean Speed
-       ii = 0;
-       for i = 1:length(FilteredTrackIDs)
-           
-           trkID = FilteredTrackIDs(i);
+        ii = 0;
+         for (i=1:length(FilteredTrackIDs))
+            trkID = FilteredTrackIDs(i);           
+           %trkID = FilteredTrackIDs(i);
            % Find Positions /Sorted By Frame Number / Get distance
            % travelled
            trackData = sort(ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]),1);
@@ -69,19 +69,24 @@ for (e=1:size(ExpTrack,1))
            ii = ii + 1;
            %Calc distance moved in px at each frame -frameN is on col 1, X(col 2) Y (col 3) Take Diff in sqrt((Xn-Xn+1)^2+(Yn-Yn+1)^2) -
            %Normalize By FrameRate
-           meanspeed(ii) = mean(sqrt(diff(trackData(:,2)).^2+diff(trackData(:,3)).^2)) / framePeriod(e);
-           stdspeed(ii) = std(sqrt(diff(trackData(:,2)).^2+diff(trackData(:,3)).^2)) / framePeriod(e);
-           FilteredTracks{ii} = struct('TrackID',trkID,'Length',length(trackData),'Positions',trackData,'MeanSpeed',meanspeed(ii),'StdDevSpeed', stdspeed(ii));
+           pathSteps     = sqrt(diff(trackData(:,2)).^2+diff(trackData(:,3)).^2);
+           pathdistance(ii)  = sum(pathSteps);
+           meanspeed(ii) = mean(pathSteps) / framePeriod(e);
+           stdspeed(ii)  = std(pathSteps) / framePeriod(e);
+           
+           FilteredTracks{ii} = struct('TrackID',trkID,'PointCount',length(trackData),'Positions',trackData,'Length',pathdistance(ii),'MeanSpeed',meanspeed(ii),'StdDevSpeed', stdspeed(ii));
            
            assert(~( isnan(meanspeed(ii)) || isnan(stdspeed(ii))  ), ...
            sprintf('NaN Encountered in mean track speeds, %s  V:%d, TrackID: %d',char(ExpIDs(e)),v,trkID ));
        
        end %Each TrackID
        
-       meanVialSpeed = mean(meanspeed);
-       meanVialStd   = mean(stdspeed);
+       meanVialSpeed    = mean(meanspeed);
+       meanVialStd      = mean(stdspeed);
+       meanVialDistance = mean(pathdistance);
        assert(~(isnan(meanVialSpeed) || isnan(meanVialStd)),'NaN Encountered in mean track speeds');
        
+       sprintf('Mean Vial Speed: %0.3f std:%0.4f mean path Distance: %0.3f',meanVialSpeed,meanVialStd,meanVialDistance)
        %%%,'VialTrackCount',length(FilteredTracks),'VialMeanSpeed',meanVialSpeed,'VialMeanStdDevSpeeds',meanVialStd
        ExpTrackResults{e,v} = struct('Tracks',FilteredTracks);
        ExpTrackResults{e,v} = vertcat(ExpTrackResults{e,v}.Tracks);
@@ -94,131 +99,39 @@ end %Each Experiment
 clear FilteredTracks
 clear meanspeed
 clear stdspeed
-ylimits = 500;
-xlimits = 2;
-nbins = 1000;
-%%Plot Indicative results - Distribution of mean Tracklet Speeds
-hf = figure('Name','Normal Food');
-subplot(3,1,1);
-ConditionIndex = 1;
-ResSet                      = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hold off;
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('OR Normal Food');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','blue');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
 
-subplot(3,1,2);
-ConditionIndex = 2;
-ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('CT Normal Food');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','blue');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
-
-subplot(3,1,3);
-ConditionIndex = 3;
-ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('AB Normal Food');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
-saveas(hf,'figures/NFTrackletSpeedHist.pdf')
+%% Plot Indicative results - Distribution of mean Tracklet Speeds
+plotMeanSpeed;
+%% Plot Track Length
+plotTrackLengthDistributions;
 
 
 
-hold off;
-hf = figure('Name','0.5% DMSO');
-subplot(3,1,1);
-ConditionIndex = 4;
-ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('OR 0.5% DMSO ');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
+%% Plot Example Tracks
+colour = ['r','m','y','c','b','g','k'];
+hf = figure('Name','Tracks');
+hold on;
 
-subplot(3,1,2);
-ConditionIndex = 5;
-ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('CT 0.5% DMSO ');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
-
-subplot(3,1,3);
-ConditionIndex = 6;
-ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('AB 0.5% DMSO ');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
-saveas(hf,'figures/DMSO05TrackletSpeedHist.pdf')
-
-
-%DMSO 1%
-hold off;
-hf = figure('Name','1% DMSO');
-subplot(3,1,1);
-ConditionIndex = 7;
-ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('OR 1% DMSO ');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
-
-subplot(3,1,2);
-ConditionIndex = 8;
-ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('CT 1% DMSO ');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
-
-subplot(3,1,3);
-ConditionIndex = 9;
-ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-title('AB 1% DMSO ');
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
-saveas(hf,'figures/DMSO10TrackletSpeedHist.pdf')
-
+e = 1;
+MinLifetime = 150;
+for (v=1:1)
+    FilteredTrackIDs = unique(ExpTrack{e,v}( find(ExpTrack{e,v}(:,6)>MinLifetime),2 ));
+    
+    for (i=1:length(FilteredTrackIDs))
+        trkID = FilteredTrackIDs(i);
+        trackData = sort(ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]),1);
+        
+        plot(trackData(:,2),trackData(:,3),'Color',colour(randi(7)));
+        scatter(trackData(1,2),trackData(1,3),'x');
+        l = length(trackData);
+        lRec(i) = l;
+        scatter(trackData(l,2),trackData(l,3),'.')
+    end
+end
+title('Plot Sample Track');
+xlim([0 1024]);
+ylim([0 768]);
+saveas(hf,'figures/VialTrackLets.png')
 
 
 
