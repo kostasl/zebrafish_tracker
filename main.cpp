@@ -77,6 +77,7 @@ bool showMask; //True will show the BGSubstracted IMage/Processed Mask
 bool bROIChanged;
 bool bPaused;
 bool bTracking;
+bool bSaveImages = true;
 bool b1stPointSet;
 bool bMouseLButtonDown;
 
@@ -216,6 +217,8 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
     cvb::CvBlobs blobs;
     cvb::CvTracks tracks;
 
+    cvb::cvReleaseBlobs(blobs);
+    cvb::cvReleaseTracks(tracks);
     //create the capture object
     cv::VideoCapture capture(videoFilename.toStdString());
     if(!capture.isOpened()){
@@ -537,16 +540,23 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
                 cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR, cv::Scalar(0,200,0),0.6);
             }
         }
+
         //Custom Render Tracks in ROI Loop
         for (cvb::CvTracks::const_iterator it=tracks.begin(); it!=tracks.end(); ++it)
         {
             cv::Point pnt;
             pnt.x = it->second->centroid.x;
             pnt.y = it->second->centroid.y;
+
+
             if (iroi.contains(pnt))
                 cvRenderTrack(*((*it).second) ,it->first ,  &fgMaskImg, &frameImg, CV_TRACK_RENDER_ID,&trackFnt );
 
+
         }
+
+        if (bTracking && bSaveImages)
+            saveImage(frameNumberString,frame);
 
 
 

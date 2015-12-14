@@ -6,9 +6,15 @@
 %%FOLDER NAMES SHOULD BE OF THE FORMAT: EXP_6-7_20151123_5sec
 %5sec is the timelapse period in seconds
 
-scriptPath = which('processFilesTracks.m');
+%Put the script dir in the path
+addpath(fileparts(which('processFilesTracks.m')))
+%Change dir to where the data files are
 %frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+cd /home/klagogia/Videos/LarvaTrackPilot/DataOut
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','test-exp8*' );
+%Transform - Y Inversion
+ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
+
 save('LarvaTrackData.mat','ExpTrack');
 
 
@@ -40,7 +46,7 @@ display(framePeriod);
 FilteredTracks = {}; 
 ExpTrackResults = {};
 %Filter Each Experiments Data set
-MinLifetime = 30;
+MinLifetime = 4;
 for (e=1:size(ExpTrack,1))
     display(char(ExpIDs(e)));
     for (v=1:size(ExpTrack,2))
@@ -61,7 +67,7 @@ for (e=1:size(ExpTrack,1))
            %trkID = FilteredTrackIDs(i);
            % Find Positions /Sorted By Frame Number / Get distance
            % travelled
-           trackData = sort(ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]),1);
+           trackData = ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]);
            %Check Track Lifetime Again - Filter If Less than Required Size
            if (length(trackData) < MinLifetime)
                continue; %Go to Next
@@ -108,18 +114,18 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
-colour = ['r','m','y','c','b','g','k'];
+colour = ['r','m','k','c','b','g','k'];
 hf = figure('Name','Tracks');
 hold on;
 
 e = 1;
-MinLifetime = 150;
+MinLifetime = 0;
 for (v=1:1)
     FilteredTrackIDs = unique(ExpTrack{e,v}( find(ExpTrack{e,v}(:,6)>MinLifetime),2 ));
     
     for (i=1:length(FilteredTrackIDs))
-        trkID = FilteredTrackIDs(i);
-        trackData = sort(ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]),1);
+        trkID = FilteredTrackIDs(2);
+        trackData = ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]);
         
         plot(trackData(:,2),trackData(:,3),'Color',colour(randi(7)));
         scatter(trackData(1,2),trackData(1,3),'x');

@@ -1,6 +1,6 @@
 ylimits = 500;
-xlimits = 2;
-nbins = 1000;
+xlimits = 4;
+nbins = 100;
 
 hf = figure('Name','Normal Food MEAN SPEED');
 subplot(3,1,1);
