@@ -32,9 +32,9 @@ for (ConditionIndex=1:9)
     [ResultsSourceRefIndex,datNV] = collectResultsInTimeVector( ExpN,VialPairs,VialAge,framePeriod,timePoints );
     %Make Cell Array of Data organized in Structures
     %Could Start Mean from min(VialAge) so to exclude lots of empty indexes
-    meanNLarva = mean(datV{ConditionIndex}(:,1:timePoints));
+    meanNLarva = mean(datNV{ConditionIndex}(:,1:timePoints));
     %STD Error - (Std dev normalized by sample size
-    stdNLarva = std(datV{ConditionIndex}(:,1:timePoints),1,1) ;
+    stdNLarva = std(datNV{ConditionIndex}(:,1:timePoints),1,1) ;
     
     %Make structure for each experimental condition such that it contains
     %raw & processed data but also a table we can refer to Which Experiment

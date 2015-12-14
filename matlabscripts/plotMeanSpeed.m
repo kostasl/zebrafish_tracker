@@ -1,5 +1,5 @@
 
-nbins = 300;
+nbins = 100;
 
 hold off;
 hf = figure('Name','Normal Food MEAN SPEED');
@@ -11,12 +11,12 @@ meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
 hist(meanConditionSpeeds{ConditionIndex},nbins);
 
 title(strcat('OR NF \mu:',num2str(mean(meanConditionSpeeds{ConditionIndex}))));
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','blue');
-set(h,'EdgeColor','w');
+% h = findobj(gca,'Type','patch');
+% set(h,'FaceColor','blue');
+% set(h,'EdgeColor','w');
 
-ylimits =  ceil(max(cnt)/1000)*1000;
-xlimits = 25;
+ylimits =  ceil(max(cnt)/10)*10;
+xlimits = 10;
 ylim([0 ylimits]);
 xlim([0 xlimits]);
 
@@ -26,9 +26,6 @@ ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCon
 meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
 hist(meanConditionSpeeds{ConditionIndex},nbins);
 title(strcat('CT NF \mu:',num2str(mean(meanConditionSpeeds{ConditionIndex}))));
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','blue');
-set(h,'EdgeColor','w');
 ylim([0 ylimits]);
 xlim([0 xlimits]);
 
@@ -38,11 +35,8 @@ ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCon
 meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
 hist(meanConditionSpeeds{ConditionIndex},nbins);
 title(strcat('AB NF \mu:',num2str(mean(meanConditionSpeeds{ConditionIndex}))));
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
-ylim([0 ylimits]);
-xlim([0 xlimits]);
+ ylim([0 ylimits]);
+ xlim([0 xlimits]);
 saveas(hf,'figures/NFTrackletSpeedHist.pdf')
 
 
@@ -54,9 +48,6 @@ ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCon
 meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
 hist(meanConditionSpeeds{ConditionIndex},nbins);
 title(strcat('OR 0.5% DMSO \mu:',num2str(mean(meanConditionSpeeds{ConditionIndex}))));
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
 ylim([0 ylimits]);
 xlim([0 xlimits]);
 
@@ -66,9 +57,6 @@ ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCon
 meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
 hist(meanConditionSpeeds{ConditionIndex},nbins);
 title(strcat('CT 0.5% DMSO \mu:',num2str(mean(meanConditionSpeeds{ConditionIndex}))));
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
 ylim([0 ylimits]);
 xlim([0 xlimits]);
 
@@ -78,9 +66,6 @@ ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCon
 meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
 hist(meanConditionSpeeds{ConditionIndex},nbins);
 title(strcat('AB 0.5% DMSO \mu:',num2str(mean(meanConditionSpeeds{ConditionIndex}))));
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b');
-set(h,'EdgeColor','w');
 ylim([0 ylimits]);
 xlim([0 xlimits]);
 saveas(hf,'figures/DMSO05TrackletSpeedHist.pdf')

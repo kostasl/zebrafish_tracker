@@ -11,7 +11,7 @@ addpath(fileparts(which('processFilesTracks.m')))
 %Change dir to where the data files are
 %frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive
 cd /home/klagogia/Videos/LarvaTrackPilot/DataOut
-%[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
 
@@ -46,7 +46,7 @@ display(framePeriod);
 FilteredTracks = {}; 
 ExpTrackResults = {};
 %Filter Each Experiments Data set
-MinLifetime = 10;
+MinLifetime = 5;
 for (e=1:size(ExpTrack,1))
     display(char(ExpIDs(e)));
     for (v=1:size(ExpTrack,2))

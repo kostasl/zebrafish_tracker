@@ -1,6 +1,6 @@
 %% Plot Path Distance Distribution
 
-nbins = 300;
+nbins = 100;
 
 hf = figure('Name','NF Path Length Distribution in pixels');
 
@@ -16,7 +16,7 @@ h = findobj(gca,'Type','patch');
 set(h,'FaceColor','b');
 set(h,'EdgeColor','w');
 xlimits = 400;
-ylimits =  ceil(max(cnt)/1000)*1000;
+ylimits =  ceil(max(cnt)/10)*10;
 ylim([0 ylimits]);
 xlim([0 xlimits]);
 
