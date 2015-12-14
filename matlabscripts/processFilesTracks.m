@@ -157,7 +157,6 @@ for (v=1:1)
         l = length(trackData);
         lRec(i) = l;
         scatter(trackData(l,2),trackData(l,3),'.')
-        
     end
 end
 title('Plot Sample Track');
