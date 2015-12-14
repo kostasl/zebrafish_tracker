@@ -15,7 +15,7 @@ title(strcat('OR NF \mu:',num2str(mean(meanConditionSpeeds{ConditionIndex}))));
 % set(h,'FaceColor','blue');
 % set(h,'EdgeColor','w');
 
-ylimits =  ceil(max(cnt)/10)*10;
+ylimits =  2*ceil(max(cnt)/10)*10;
 xlimits = 10;
 ylim([0 ylimits]);
 xlim([0 xlimits]);
