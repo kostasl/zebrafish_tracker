@@ -1,7 +1,6 @@
 %% Plot Path Distance Distribution
-xlimits = 200;
-ylimits =  400;
-nbins = 100;
+
+nbins = 300;
 
 hf = figure('Name','NF Path Length Distribution in pixels');
 
@@ -9,12 +8,15 @@ subplot(3,1,1);
 ConditionIndex = 1;
 ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
 meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
-hist(meanConditionLength{ConditionIndex},nbins);
+[cnt,bin] = hist(meanConditionLength{ConditionIndex},nbins);
+hist(meanConditionLength{ConditionIndex},nbins)
 title(strcat('OR NF μ:',num2str(mean(meanConditionLength{ConditionIndex}))));
 %xlabel('px distance');
 h = findobj(gca,'Type','patch');
 set(h,'FaceColor','b');
 set(h,'EdgeColor','w');
+xlimits = 400;
+ylimits =  ceil(max(cnt)/1000)*1000;
 ylim([0 ylimits]);
 xlim([0 xlimits]);
 
