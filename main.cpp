@@ -77,7 +77,7 @@ bool showMask; //True will show the BGSubstracted IMage/Processed Mask
 bool bROIChanged;
 bool bPaused;
 bool bTracking;
-bool bSaveImages = true;
+bool bSaveImages = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
 
@@ -85,7 +85,7 @@ using namespace std;
 
 unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int istartFrame);
 void checkPauseRun(int& keyboard,string frameNumberString);
-bool saveImage(string frameNumberString,cv::Mat& img);
+bool saveImage(string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
 int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString);
 
@@ -383,7 +383,9 @@ void checkPauseRun(int& keyboard,string frameNumberString)
 
             if ((char)keyboard == 's')
             {
-               saveImage(frameNumberString,frame);
+                bSaveImages = !bSaveImages;
+
+                //saveImage(frameNumberString,frame);
             }
 
             if ((char)keyboard == 'r')
@@ -411,12 +413,12 @@ void checkPauseRun(int& keyboard,string frameNumberString)
              showMask = !showMask;
 }
 
-bool saveImage(string frameNumberString,cv::Mat& img)
+bool saveImage(string frameNumberString,QString dirToSave,cv::Mat& img)
 {
 
     //Save Output BG Masks
     QString imageToSave =   QString::fromStdString( "output_MOG_" + frameNumberString + ".png");
-    QString dirToSave = qApp->applicationDirPath();
+    //QString dirToSave = qApp->applicationDirPath();
 
     dirToSave.append("/pics/");
     imageToSave.prepend(dirToSave);
@@ -484,14 +486,12 @@ int countObjectsviaContours(cv::Mat& srcimg )
 }
       */
 
+    return contours.size();
 }
 
 
 int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString)
 {
-
-
-
 
 
     ///// Finding the blobs ////////
@@ -554,9 +554,14 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
 
         }
-
+        //Save to Disk
         if (bTracking && bSaveImages)
-            saveImage(frameNumberString,frame);
+        {
+            saveImage(frameNumberString,outDirCSV,frame);
+            cv::putText(frame, "Save ON", cv::Point(15, 600),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
+
+        }
 
 
 
