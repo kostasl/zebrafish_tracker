@@ -10,7 +10,7 @@
  * The green box defines the region over which the larvae are counted-tracked and recorded to file.
  * Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
  * Press p to pause Image. once paused:
- *  s to save snapshot.
+ *  s to save snapshots in CSV outdir pics subfolder.
  *  2 Left Clicks to define the 2 points of region-of interest for tracking.
  *  m to show the masked image of the larva against BG.
  *  t Start Tracking
