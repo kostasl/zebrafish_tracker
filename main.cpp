@@ -323,7 +323,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
-            cvb::cvUpdateTracks(blobs,tracks, 10, inactiveFrameCount,thActive);
+            cvb::cvUpdateTracks(blobs,tracks, 15, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
 
