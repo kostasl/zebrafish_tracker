@@ -441,7 +441,7 @@ bool saveImage(string frameNumberString,QString dirToSave,cv::Mat& img)
      cout << "Saved image " << imageToSave.toStdString() <<endl;
     }
 
-    cv::imshow("Saved Frame", img);
+    //cv::imshow("Saved Frame", img);
 
     return true;
 }
