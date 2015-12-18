@@ -1,4 +1,4 @@
-function [ExpTrackResults] = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, FromTime,TimeWindow, MinpxSpeed ) 
+function [ExpTrackResults] = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, FromTime,TimeWindow, MinpxSpeed,bVerb ) 
 % Summary: Returns Cell Array of Structures holding each track selected vial the given filters
 % Parameters :
 % ExpTrack - The imported track Data from the CSV files organized in cell
@@ -12,9 +12,12 @@ function [ExpTrackResults] = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePerio
 %TimeWindow  %TimeFrame Sliding Window in Sec Overwhich results are averaged
 FilteredTracks = {}; 
 %MinpxSpeed = 2;
+% bVerb = 0; Flag to Set if function should be verbose
 
 for (e=1:size(ExpTrack,1))
-    display(char(ExpIDs(e)));
+    if (bVerb)
+        disp(char(ExpIDs(e)));
+    end
     for (v=1:size(ExpTrack,2))
         %Check If Empty cell - Data for Vial N/A
        if isempty(ExpTrack{e,v}) 
@@ -88,7 +91,10 @@ for (e=1:size(ExpTrack,1))
        meanTrackSteps   = mean(npathSteps);
        assert(~(isnan(meanVialSpeed) || isnan(meanVialStd)),'NaN Encountered in mean track speeds');
        
-       sprintf('Mean Vial Speed: %0.3f std:%0.4f mean path Distance: %0.3f Steps:%d',meanVialSpeed,meanVialStd,meanVialDistance,meanTrackSteps)
+       if (bVerb)
+            disp( sprintf('V:%d Mean Vial Speed: %0.3f std:%0.4f mean path Distance: %0.3f Steps:%d',v,meanVialSpeed,meanVialStd,meanVialDistance,meanTrackSteps));
+       end
+       
        %%%,'VialTrackCount',length(FilteredTracks),'VialMeanSpeed',meanVialSpeed,'VialMeanStdDevSpeeds',meanVialStd
        ExpTrackResults{e,v} = struct('Tracks',FilteredTracks);
        ExpTrackResults{e,v} = vertcat(ExpTrackResults{e,v}.Tracks);

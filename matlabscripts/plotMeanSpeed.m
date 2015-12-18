@@ -31,10 +31,13 @@ for t=1:length(ExpTrackResultsInTime)
     end
 end
 
+hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'MEAN SPEED Sliding Window'));
 title('Mean Activity in hour frames');
 plot((1:t)*timeAdvance/3600,mu(:,1));
 legend(strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3}))
 xlabel('Hour');
+saveas(hf,'/home/klagogia/Dropbox/SMART MEETINGS NOTES_shared/Data/Results/InVialCrawlSpeedExp12-17/meanVialSpeedSlidingWindow.pdf');
+
 %% Plot Histogram Of Speed Within A time Window
 hold off;
 ConditionIndex = 1;

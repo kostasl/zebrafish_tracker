@@ -48,6 +48,7 @@ display(framePeriod);
 %Holds Track id That fit the spec of lifetime
 
 ExpTrackResultsInTime = {};
+bVerbose=0;
 %Filter Each Experiments Data set
 MinpxSpeed = 2; %%Cut Tracklet when 2-frame displacement drops below value 
 MinLifetime = 10; %Minimum Number of Path Steps
@@ -63,15 +64,18 @@ wi = 0;
 %Estimate Max FrameN from 1st Experiment
 e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
-timeAdvance = 60;
-for StartTime=1:60:(maxRecordingTime)
+timeAdvance = 5*60;
+
+for StartTime=1:timeAdvance:(maxRecordingTime)
    wi = wi+1;
-   ExpTrackResultsInTime{wi} = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, StartTime,TimeFrameWidth, MinpxSpeed );
+   ExpTrackResultsInTime{wi} = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, StartTime,TimeFrameWidth, MinpxSpeed ,bVerbose);
+   disp(StartTime/maxRecordingTime);%%Sho Fraction of Calculation Completed
 end
 
 
 %% Plot Indicative results - Distribution of mean Tracklet Speeds
 plotMeanSpeed;
+
 %% Plot Track Length
 plotTrackLengthDistributions;
 
