@@ -66,7 +66,7 @@ e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
 timeAdvance = 5*60;
 
-for StartTime=1:timeAdvance:(maxRecordingTime)
+for StartTime=TimeFrameWidth:timeAdvance:(maxRecordingTime)
    wi = wi+1;
    ExpTrackResultsInTime{wi} = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, StartTime,TimeFrameWidth, MinpxSpeed ,bVerbose);
    disp(StartTime/maxRecordingTime);%%Sho Fraction of Calculation Completed

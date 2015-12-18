@@ -33,7 +33,7 @@ end
 
 hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'MEAN SPEED Sliding Window'));
 title('Mean Activity in hour frames');
-plot((1:t)*timeAdvance/3600,mu(:,1));
+plot((1:t)*timeAdvance/3600,mu(:,1),(1:t)*timeAdvance/3600,mu(:,2),(1:t)*timeAdvance/3600,mu(:,3));
 legend(strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3}))
 xlabel('Hour');
 saveas(hf,'/home/klagogia/Dropbox/SMART MEETINGS NOTES_shared/Data/Results/InVialCrawlSpeedExp12-17/meanVialSpeedSlidingWindow.pdf');
