@@ -14,9 +14,13 @@ for d=1:length(Dirs)
 %        continue;
 %    else
      display(strcat('Importing from Dir:',importDir.name));
+     if exist(fullfile(importDir.name,'timing.csv'),'file') == 0 
+         error('Experiment folder is missing timing.csv file. This file needs two data rows 1st the embryo collected date-time,2nd and video recording date-time');
+     end
      ExpID{d} = importDir.name; %Save Directory Name To Identify Experiment
 %    end
     %%Get Time Data stored in File timing.csv
+    
     timings = csvread(fullfile(importDir.name,'timing.csv'),1);
     ExpVialAge(d) = etime(timings(2,:),timings(1,:));
     sprintf('VialAge in days %0.2f',((ExpVialAge(d)/3600)/24.0))

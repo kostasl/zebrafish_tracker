@@ -11,7 +11,10 @@ addpath(fileparts(which('processFilesTracks.m')))
 %Change dir to where the data files are
 %frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive
 cd /home/klagogia/Videos/LarvaTrackPilot/DataOut
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+%%Import FROM CSV FILES
+%VialAge : Age of vial from beginning of timelapse Recording
+%[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
 
@@ -43,93 +46,28 @@ display(framePeriod);
 % * mean Tracklet speed 
 % * mean Tracklet In Time
 %Holds Track id That fit the spec of lifetime
-FilteredTracks = {}; 
-ExpTrackResults = {};
+
+ExpTrackResultsInTime = {};
 %Filter Each Experiments Data set
-MinLifetime = 5;
-for (e=1:size(ExpTrack,1))
-    display(char(ExpIDs(e)));
-    for (v=1:size(ExpTrack,2))
-        %Check If Empty cell - Data for Vial N/A
-       if isempty(ExpTrack{e,v}) 
-            continue;
-       end
-       %Lifetimes In track data are not reliable!
-       % Get Track Ids that are longer than MinLifetime
-       FilteredTrackIDs = unique(ExpTrack{e,v}( find(ExpTrack{e,v}(:,6)>MinLifetime) ,2 ));
-       %Unfiltered Unique Ids
-       %FilteredTrackIDs = unique(ExpTrack{e,v}(:,2));
-       
-       %Go through Each ID - Get Mean Speed
-        ii = 0;
-        npathSteps   = zeros(1,1);
-        pathdistance = zeros(1,1);
-        meanspeed    = zeros(1,1);
-        stdspeed     = zeros(1,1);
-        
-         for (i=1:length(FilteredTrackIDs))
-            trkID = FilteredTrackIDs(i);           
-           %trkID = FilteredTrackIDs(i);
-           % Find Positions /Sorted By Frame Number / Get distance
-           % travelled
-           trackData = ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]);
-           
-           %Calc distance moved in px at each frame -frameN is on col 1, X(col 2) Y (col 3) Take Diff in sqrt((Xn-Xn+1)^2+(Yn-Yn+1)^2) -
-           
-           %Fix TrackData remove Spurious Jumps in frame
-           datbreakpoint  = find(diff(trackData(:,1))>1);
-           if ( isempty(datbreakpoint) == 0)
-                trackData = trackData(1:datbreakpoint(1),:);
-           end
-           %Check Track Lifetime Again - Filter If Less than Required Size
-           if (length(trackData) < MinLifetime)
-               continue; %Go to Next
-           end
-          
-           %Normalize By FrameRate
-           pathSteps          = sqrt(diff(trackData(:,2)).^2+diff(trackData(:,3)).^2);
-           
-           %Check When Track Stops And Truncate
-           datbreakpoint  = find(pathSteps(:,1)<2);
-            if (length(datbreakpoint) > 1)
-                pathSteps = pathSteps(1:datbreakpoint(1),:);
-            end
-           if (length(pathSteps) < MinLifetime)
-               continue; %Go to Next
-           end
-           ii = ii + 1;     
-            
-           npathSteps(ii)     = length(pathSteps);
-           pathdistance(ii)   = sum(pathSteps);
-           meanspeed(ii)      = pathdistance(ii)/(npathSteps(ii)*framePeriod(e));
-           stdspeed(ii)     = std(pathSteps) / framePeriod(e);
-           
-           FilteredTracks{ii} = struct('TrackID',trkID,'PointCount',length(trackData),'Positions',trackData,'Length',pathdistance(ii),'MeanSpeed',meanspeed(ii),'StdDevSpeed', stdspeed(ii));
-           
-           assert(~( isnan(meanspeed(ii)) || isnan(stdspeed(ii))  ), ...
-           sprintf('NaN Encountered in mean track speeds, %s  V:%d, TrackID: %d',char(ExpIDs(e)),v,trkID ));
-       
-       end %Each TrackID
-       
-       meanVialSpeed    = mean(meanspeed);
-       meanVialStd      = mean(stdspeed);
-       meanVialDistance = mean(pathdistance);
-       meanTrackSteps   = mean(npathSteps);
-       assert(~(isnan(meanVialSpeed) || isnan(meanVialStd)),'NaN Encountered in mean track speeds');
-       
-       sprintf('Mean Vial Speed: %0.3f std:%0.4f mean path Distance: %0.3f Steps:%d',meanVialSpeed,meanVialStd,meanVialDistance,meanTrackSteps)
-       %%%,'VialTrackCount',length(FilteredTracks),'VialMeanSpeed',meanVialSpeed,'VialMeanStdDevSpeeds',meanVialStd
-       ExpTrackResults{e,v} = struct('Tracks',FilteredTracks);
-       ExpTrackResults{e,v} = vertcat(ExpTrackResults{e,v}.Tracks);
-       %Empty Buffer Cell Array
-       FilteredTracks = {}; 
-    end %Each Vial
+MinpxSpeed = 2; %%Cut Tracklet when 2-frame displacement drops below value 
+MinLifetime = 10; %Minimum Number of Path Steps
+MaxLifetime = 150; %Maximum Number of Path Steps
+MinDistance   = 50; %Minimum Track length to consider
+MaxStepLength   = 50; %Between two frames rejects steps larger than this
+TimeFrameWidth = 3600; %Frame Sliding Window in sec Overwhich results are averaged
 
-end %Each Experiment
+% Organize data in a Sliding Window
+StartTime = 0;
+wi = 0;
+%maxRecordingTime = 3*24*3600; %3 Days
+%Estimate Max FrameN from 1st Experiment
+e = 1;
+maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
+for StartTime=1:600:(maxRecordingTime)
+   wi = wi+1;
+   ExpTrackResultsInTime{wi} = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, StartTime,TimeFrameWidth, MinpxSpeed );
+end
 
-clear FilteredTracks
-clear meanspeed
-clear stdspeed
 
 %% Plot Indicative results - Distribution of mean Tracklet Speeds
 plotMeanSpeed;
@@ -139,30 +77,39 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
+% NOTE: Y values are inverted since 0 Point in plot as at the bottom
+imgSize = [1024,768];
 colour = ['r','m','k','c','b','g','k'];
 hf = figure('Name','Tracks');
+xlim([0 imgSize(1)]);
+ylim([0 imgSize(2)]);
+
 hold on;
 
 e = 1;
 MinLifetime = 0;
-for (v=1:1)
-    FilteredTrackIDs = unique(ExpTrack{e,v}( find(ExpTrack{e,v}(:,6)>MinLifetime),2 ));
-    
-    for (i=1:length(FilteredTrackIDs))
-        trkID = FilteredTrackIDs(i);
-        trackData = ExpTrack{e,v}(find(ExpTrack{e,v}(:,2)==trkID),[1,4,5]);
+for e=1:size(ExpTrackResults,1)
+    for (v=1:3)
         
-        plot(trackData(:,2),trackData(:,3),'Color',colour(randi(7)));
-        scatter(trackData(1,2),trackData(1,3),'x');
-        l = length(trackData);
-        lRec(i) = l;
-        scatter(trackData(l,2),trackData(l,3),'.')
+        %FilteredTrackIDs = unique(ExpTrackResults{e,v}( find(ExpTrackResults{e,v}(:,6)>MinLifetime),2 ));
+        %find(vertcat(ExpTrackResults{e,v}.PointCount) > 6)
+        %trackN = length(FilteredTrackIDs);
+        trackN = length(ExpTrackResults{e,v});
+        for (i=1:1:trackN)
+            %trkID = FilteredTrackIDs(i);
+            trackData = ExpTrackResults{e,v}(i).Positions;
+            trackData(:,3) = imgSize(2) - trackData(:,3); 
+            plot(trackData(:,2),trackData(:,3),'Color',colour(randi(7)));
+            scatter(trackData(1,2),trackData(1,3),'x');
+            l = size(trackData,1); %Count Records
+
+            %lRec(i) = l;
+            scatter(trackData(l,2),trackData(l,3),'.')
+        end
     end
 end
 title('Plot Sample Track');
-xlim([0 1024]);
-ylim([0 768]);
-saveas(hf,'figures/VialTrackLets.png')
+saveas(hf,'figures/VialTracklets.png')
 
 
 
