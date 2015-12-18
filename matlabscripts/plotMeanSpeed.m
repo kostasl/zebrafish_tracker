@@ -31,8 +31,10 @@ for t=1:length(ExpTrackResultsInTime)
     end
 end
 
-hist(meanConditionSpeeds)
-
+title('Mean Activity in hour frames');
+plot((1:t)*timeAdvance/3600,mu(:,1));
+legend(strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3}))
+xlabel('Hour');
 %% Plot Histogram Of Speed Within A time Window
 hold off;
 ConditionIndex = 1;

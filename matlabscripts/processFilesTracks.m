@@ -63,7 +63,8 @@ wi = 0;
 %Estimate Max FrameN from 1st Experiment
 e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
-for StartTime=1:600:(maxRecordingTime)
+timeAdvance = 60;
+for StartTime=1:60:(maxRecordingTime)
    wi = wi+1;
    ExpTrackResultsInTime{wi} = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, StartTime,TimeFrameWidth, MinpxSpeed );
 end
