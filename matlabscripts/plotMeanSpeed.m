@@ -3,7 +3,7 @@ ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
 ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
 
 nbins = 100;
-
+ylimits = 12;
 clear meanConditionSpeeds;
 clear mu;
 clear n;
@@ -31,14 +31,28 @@ for t=1:length(ExpTrackResultsInTime)
     end
 end
 
-hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'MEAN SPEED Sliding Window'));
-title('Mean Activity in hour frames');
-plot((1:t)*timeAdvance/3600,mu(:,1),(1:t)*timeAdvance/3600,mu(:,2),(1:t)*timeAdvance/3600,mu(:,3));
-legend(strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3}))
-xlabel('Hour');
-saveas(hf,'/home/klagogia/Dropbox/SMART MEETINGS NOTES_shared/Data/Results/InVialCrawlSpeedExp12-17/meanVialSpeedSlidingWindow.pdf');
+Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
 
-%% Plot Histogram Of Speed Within A time Window
+hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Mean Activity hour Sliding Window'));
+subplot(3,1,1)
+plot(Exptime,mu(:,1),Exptime,mu(:,2),Exptime,mu(:,3));
+legend(strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3}))
+title('Mean Speed in px/sec');
+subplot(3,1,2)
+plot(Exptime,n(:,1),Exptime,n(:,2),Exptime,n(:,3));
+title('Number of samples');
+subplot(3,1,3)
+plot(Exptime,stdd(:,1),Exptime,stdd(:,2),Exptime,stdd(:,3));
+title('STD Dev ');
+xlabel('Hour');
+ylim([0 ylimits]);
+saveas(hf,'figures/meanVialSpeedSlidingWindow1.pdf');
+
+%% Plot Histogram Of Speed Within A chosen time Window
+goToHour = 61;
+t= (goToHour*3600 - VialAge(1))/timeAdvance;
+ExpTrackResults = ExpTrackResultsInTime{t};
+
 hold off;
 ConditionIndex = 1;
 strTitle = sprintf('%s %s mean: %0.3f std:%0.3f n:%d',ExpCondFood{ConditionIndex},ExpCondTitles{ConditionIndex},mu,stdd, n );
@@ -87,8 +101,8 @@ mu      = mean(meanConditionSpeeds{ConditionIndex});
 stdd    = std(meanConditionSpeeds{ConditionIndex});
 strTitle = sprintf('%s %s mean: %0.3f std:%0.3f n:%d',ExpCondFood{ConditionIndex},ExpCondTitles{ConditionIndex},mu,stdd, n );
 title(strTitle);
- ylim([0 ylimits]);
- xlim([0 xlimits]);
+ylim([0 ylimits]);
+xlim([0 xlimits]);
 saveas(hf,'figures/NFTrackletSpeedHist.pdf')
 
 

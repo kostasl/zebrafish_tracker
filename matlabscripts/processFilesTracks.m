@@ -10,10 +10,11 @@
 addpath(fileparts(which('processFilesTracks.m')))
 %Change dir to where the data files are
 %frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive
-cd /home/klagogia/Videos/LarvaTrackPilot/DataOut
+%cd /home/klagogia/Videos/LarvaTrackPilot/DataOut %Office
+cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
 %%Import FROM CSV FILES
 %VialAge : Age of vial from beginning of timelapse Recording
-%[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
@@ -50,11 +51,11 @@ display(framePeriod);
 ExpTrackResultsInTime = {};
 bVerbose=0;
 %Filter Each Experiments Data set
-MinpxSpeed = 2; %%Cut Tracklet when 2-frame displacement drops below value 
-MinLifetime = 10; %Minimum Number of Path Steps
-MaxLifetime = 150; %Maximum Number of Path Steps
-MinDistance   = 50; %Minimum Track length to consider
-MaxStepLength   = 50; %Between two frames rejects steps larger than this
+MinpxSpeed = 3; %%Cut Tracklet when 2-frame displacement drops below value 
+MinLifetime = 5; %Minimum Number of Path Steps
+MaxLifetime = 50; %Maximum Number of Path Steps
+MinDistance   = 10; %Minimum Track length to consider
+MaxStepLength   = 25; %Between two frames rejects steps larger than this
 TimeFrameWidth = 3600; %Frame Sliding Window in sec Overwhich results are averaged
 
 % Organize data in a Sliding Window
@@ -82,9 +83,13 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
+goToHour = 70;
+t= (goToHour*3600 - VialAge(1))/timeAdvance;
+ExpTrackResults = ExpTrackResultsInTime{t};
+
 % NOTE: Y values are inverted since 0 Point in plot as at the bottom
 imgSize = [1024,768];
-colour = ['r','m','k','c','b','g','k'];
+colour = {'r','m','k','c','b','g','k','--r','--m','--k','--c','--b','--g','--k','-r','-k','-g'};
 hf = figure('Name','Tracks');
 xlim([0 imgSize(1)]);
 ylim([0 imgSize(2)]);
@@ -104,17 +109,18 @@ for e=1:size(ExpTrackResults,1)
             %trkID = FilteredTrackIDs(i);
             trackData = ExpTrackResults{e,v}(i).Positions;
             trackData(:,3) = imgSize(2) - trackData(:,3); 
-            plot(trackData(:,2),trackData(:,3),'Color',colour(randi(7)));
-            scatter(trackData(1,2),trackData(1,3),'x');
+            mark = colour{randi(17)};
+            plot(trackData(:,2),trackData(:,3),mark);
+            scatter(trackData(1,2),trackData(1,3),'.'); %Start
             l = size(trackData,1); %Count Records
 
             %lRec(i) = l;
-            scatter(trackData(l,2),trackData(l,3),'.')
+            scatter(trackData(l,2),trackData(l,3),'X') %Finsih
         end
     end
 end
 title('Plot Sample Track');
-saveas(hf,'figures/VialTracklets.png')
+saveas(hf,sprintf('figures/VialTracklets-%dHour.png',goToHour));
 
 
 

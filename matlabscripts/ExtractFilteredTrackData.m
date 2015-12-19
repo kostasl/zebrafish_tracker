@@ -1,4 +1,4 @@
-function [ExpTrackResults] = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, FromTime,TimeWindow, MinpxSpeed,bVerb ) 
+function [ExpTrackResults] = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxpxSpeed, FromTime,TimeWindow, MinpxSpeed,bVerb ) 
 % Summary: Returns Cell Array of Structures holding each track selected vial the given filters
 % Parameters :
 % ExpTrack - The imported track Data from the CSV files organized in cell
@@ -63,20 +63,25 @@ for (e=1:size(ExpTrack,1))
            %Normalize By FrameRate
            pathSteps          = sqrt(diff(trackData(:,2)).^2+diff(trackData(:,3)).^2);
            
-           %Check When Track Stops And Truncate
-           datbreakpoint  = find(pathSteps(:,1)<MinpxSpeed);
+           %Check When Track Stops or goes too fast And Truncate
+           datbreakpoint  = find(pathSteps(:,1)<MinpxSpeed | pathSteps(:,1) > MaxpxSpeed);
             if (length(datbreakpoint) > 1)
                 pathSteps = pathSteps(1:datbreakpoint(1),:);
             end
-           if (length(pathSteps) < MinLifetime)
+            
+            stepsCount = length(pathSteps);
+            trackDist = sum(pathSteps);
+            %Apply Step Count and MinDistance Filter 
+           if (stepsCount < MinLifetime | stepsCount > MaxLifetime | trackDist < MinDistance)
                continue; %Go to Next
            end
+           
            ii = ii + 1;     
             
-           npathSteps(ii)     = length(pathSteps);
-           pathdistance(ii)   = sum(pathSteps);
-           meanspeed(ii)      = pathdistance(ii)/(npathSteps(ii)*framePeriod(e));
-           stdspeed(ii)     = std(pathSteps) / framePeriod(e);
+           npathSteps(ii)     = stepsCount;
+           pathdistance(ii)   = trackDist;
+           meanspeed(ii)      = trackDist/(stepsCount*framePeriod(e));
+           stdspeed(ii)       = std(pathSteps) / framePeriod(e);
            
            FilteredTracks{ii} = struct('TrackID',trkID,'PointCount',length(trackData),'Positions',trackData,'Length',pathdistance(ii),'MeanSpeed',meanspeed(ii),'StdDevSpeed', stdspeed(ii));
            
