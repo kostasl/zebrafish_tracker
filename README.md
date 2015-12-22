@@ -31,16 +31,20 @@ The directory where the data csv files are exported must have  format EXP_N_YYYY
 ### How do I get set up? ###
 
 * Summary of set up
+Install opencv 3.0 / best compiled with with flag -D WITH_QT=ON, improves experience and range of available functions.
+http://opencv.org/downloads.html
+
+* Uses a version of cvBlob which is embedded in the package, for independent development.
 * Configuration
 * Dependencies
- cvBlob
- openCV2.4
- qt4
+ openCV3.0 (compilied with WITH_QT support)
+ Qt4
 
 
-* Database configuration
 * How to run tests
+
 * Deployment instructions
+
 
 ### Contribution guidelines ###
 
