@@ -133,20 +133,25 @@ int main(int argc, char *argv[])
     //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
 
     //unsigned int hWnd = cvGetWindowHandle("VialFrame");
-    //cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 2000 );
-    //"//home/kostasl/workspace/QtTestOpenCV/pics/20151124-timelapse.mpg"
+    try{ //If cv is compiled with QT support
+        cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
+    }catch(int e)
+    {
+        cerr << "OpenCV not compiled with QT support! can display overlay" << endl;
+    }
 
     QString invideoname = "*.mpg";
     unsigned int istartFrame = 0;
     QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0);
 
+    //Show Video list to process
     cout << "Video List To process:" << endl;
     for (int i = 0; i<invideonames.size(); ++i)
     {
         invideoname = invideonames.at(i);
         cout << "*" <<  invideoname.toStdString() << endl;
     }
-    //    while ((char)keyboard != 27 )
+    //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
     for (int i = 0; i<invideonames.size(); ++i)
     {
 //        invideoname= QFileDialog::getOpenFileName(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0); // getting the filename (full path)
@@ -516,7 +521,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
    // cout << "Roi Sz:" << vRoi.size() << endl;
     IplImage  *labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
-    unsigned int result = cvb::cvLabel( &fgMaskImg, labelImg, blobs );
+    cvb::cvLabel( &fgMaskImg, labelImg, blobs );
     cvb::cvFilterByArea(blobs,20,100);
     unsigned int RoiID = 0;
     for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
@@ -695,11 +700,13 @@ int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString fil
 }
 
 
-std::vector<cvb::CvBlob*> getBlobsinROI(cvb::CvBlobs& blobs)
-{
-    std::vector<cvb::CvBlob*> vfiltBlobs(blobs.size());
+//std::vector<cvb::CvBlob*> getBlobsinROI(cvb::CvBlobs& blobs)
+//{
+    //std::vector<cvb::CvBlob*> *vfiltBlobs = new std::vector<cvb::CvBlob*>((blobs.size()));
 
-}
+   // return 0;
+
+//}
 
 
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)

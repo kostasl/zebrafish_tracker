@@ -69,15 +69,15 @@ namespace cvb
       unsigned int imgOut_offset = 0;
       if(img->roi)
       {
-	imgIn_width = img->roi->width;
-	imgIn_height = img->roi->height;
-	imgIn_offset = img->roi->xOffset + (img->roi->yOffset * stepIn);
+        imgIn_width = img->roi->width;
+        imgIn_height = img->roi->height;
+        imgIn_offset = img->roi->xOffset + (img->roi->yOffset * stepIn);
       }
       if(imgOut->roi)
       {
-	imgOut_width = imgOut->roi->width;
-	imgOut_height = imgOut->roi->height;
-	imgOut_offset = imgOut->roi->xOffset + (imgOut->roi->yOffset * stepOut);
+        imgOut_width = imgOut->roi->width;
+        imgOut_height = imgOut->roi->height;
+        imgOut_offset = imgOut->roi->xOffset + (imgOut->roi->yOffset * stepOut);
       }
 
       unsigned char *imgDataIn = (unsigned char *)img->imageData + imgIn_offset;
@@ -189,7 +189,7 @@ namespace cvb
 		    break;
 		  }
 		  
-		  if (contourEnd = ((xx==x) && (yy==y) && (direction==1)))
+          if (( contourEnd = ((xx==x) && (yy==y) && (direction==1)) ))
 		    break;
 		}
 	      }
