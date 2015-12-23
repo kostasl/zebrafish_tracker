@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
     QString invideoname = "*.mpg";
     unsigned int istartFrame = 0;
-    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0);
+    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi *.mp4)", 0, 0);
 
     //Show Video list to process
     cout << "Video List To process:" << endl;
