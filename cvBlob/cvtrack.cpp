@@ -462,8 +462,8 @@ namespace cvb
 
         //Render Path
         //cv::Mat img = cv::Mat::zeros(400, 400, CV_8UC3);
-        //if (mode&CV_TRACK_RENDER_PATH)
-        //{
+        if (mode&CV_TRACK_RENDER_PATH)
+        {
             std::vector<CvPoint>* pvec = &track.pointStack;
             CvPoint *pts = (CvPoint*) cv::Mat(track.pointStack).data;
             int npts = cv::Mat(track.pointStack).rows;
@@ -476,7 +476,7 @@ namespace cvb
                             cv::Scalar(c1,c2,c3),// colour RGB ordering (here = green)
                             1, 		        // line thickness
                             CV_AA, 0);
-        //}
+        }
 __CV_END__;
   }
 
