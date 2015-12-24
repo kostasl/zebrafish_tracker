@@ -38,17 +38,20 @@
 #include <stack>
 #include <list>
 
+
+#include <ltROI.h> //Defines the ROI types
+
 #if (defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) || defined(__WINDOWS__) || (defined(__APPLE__) & defined(__MACH__)))
-#include <cv.h>
+    #include <cv.h>
 #else
-#include <opencv/cv.h>
+    #include <opencv/cv.h>
 #endif
 
 #ifndef __CV_BEGIN__
-#define __CV_BEGIN__ __BEGIN__
+    #define __CV_BEGIN__ __BEGIN__
 #endif
 #ifndef __CV_END__
-#define __CV_END__ __END__
+    #define __CV_END__ __END__
 #endif
 
 #ifdef __cplusplus
@@ -107,6 +110,7 @@ extern "C" {
   /// \brief Chain code.
   /// \see CvChainCode
   typedef std::list<CvChainCode> CvChainCodes;
+
 
   /// \brief Chain code contour.
   /// \see CvChainCodes
@@ -495,14 +499,14 @@ extern "C" {
   typedef std::vector<CvPoint> CvTrackPoints;
 
 
-
   /// \brief Struct that contain information about one track.
   /// \see CvID
   /// \see CvLabel
+  /// \see ltROI
   struct CvTrack
   {
     CvID id; ///< Track identification number.
-
+    ltROI* pROI; ///< Pointer To Region of Interest structure to which this track belongs
     CvLabel label; ///< Label assigned to the blob related to this track.
 
     unsigned int minx; ///< X min.
@@ -555,17 +559,21 @@ extern "C" {
   /// (http://www.research.ibm.com/peoplevision/PETS2001.pdf)
   /// \param b List of blobs.
   /// \param t List of tracks.
+  /// \param ltROIlist list of Region of interests defining each vial
   /// \param thDistance Max distance to determine when a track and a blob match.
   /// \param thInactive Max number of frames a track can be inactive.
   /// \param thActive If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
   /// \see CvBlobs
   /// \see Tracks
-  void cvUpdateTracks(CvBlobs const &b, CvTracks &t, const double thDistance, const unsigned int thInactive, const unsigned int thActive=0);
+  /// \see ltROIlist
 
-#define CV_TRACK_RENDER_ID            0x0001 ///< Print the ID of each track in the image. \see cvRenderTracks
-#define CV_TRACK_RENDER_BOUNDING_BOX  0x0002 ///< Draw bounding box of each track in the image. \see cvRenderTracks
-#define CV_TRACK_RENDER_TO_LOG        0x0010 ///< Print track info to log out. \see cvRenderTracks
-#define CV_TRACK_RENDER_TO_STD        0x0020 ///< Print track info to log out. \see cvRenderTracks
+  void cvUpdateTracks(CvBlobs const &b, CvTracks &t, ltROIlist& vroi, const double thDistance, const unsigned int thInactive, const unsigned int thActive=0);
+
+#define CV_TRACK_RENDER_ID            0x0001 ///< Print the ID of each track in the image. \see cvRenderTrack
+#define CV_TRACK_RENDER_BOUNDING_BOX  0x0002 ///< Draw bounding box of each track in the image. \see cvRenderTrack
+#define CV_TRACK_RENDER_TO_LOG        0x0010 ///< Print track info to log out. \see cvRenderTrack
+#define CV_TRACK_RENDER_TO_STD        0x0020 ///< Print track info to log out. \see cvRenderTrack
+#define CV_TRACK_RENDER_PATH          0x0100 ///< Draw polyline of track positions \see cvRenderTrack
 
   /// \fn void cvRenderTracks(CvTracks const tracks, IplImage *imgSource, IplImage *imgDest, unsigned short mode=0x00ff, CvFont *font=NULL)
   /// \brief Prints tracks information.

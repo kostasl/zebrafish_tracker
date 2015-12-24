@@ -22,27 +22,11 @@
  *
  *  Dependencies : opencv3
  */
-#include <iostream>
-#include <sstream>
-
-#include <QString>
-#include <QApplication>
-#include <QQmlApplicationEngine>
-#include <QDir>
-#include <QFileDialog>
-#include <QTextStream>
-#include <QElapsedTimer>
-
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/core/core.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
-#include <opencv2/video/video.hpp>
-#include "opencv2/video/background_segm.hpp"
 
 
-#include <cvBlob/cvblob.h>
+#include <larvatrack.h>
 
-
+//Global Variables
 QElapsedTimer gTimer;
 
 cv::Mat frame; //current frame
@@ -58,11 +42,8 @@ cv::Ptr<cv::BackgroundSubtractor> pGMG; //GMG Background subtractor
 IplImage  *labelImg;
 IplImage frameImg;
 
-//Region of interest
-//typedef std::map<unsigned int, cv::Rect> ltROIlist;
-typedef std::vector<cv::Rect> ltROIlist;
 
-cv::Rect roi(cv::Point(0,0),cv::Point(1024,768));
+ltROI roi(cv::Point(0,0),cv::Point(1024,768));
 ltROIlist vRoi;
 cv::Point ptROI1;
 cv::Point ptROI2;
@@ -70,8 +51,6 @@ cv::Point ptROI2;
 //Structures to hold blobs & Tracks
 cvb::CvBlobs blobs;
 cvb::CvTracks tracks;
-
-
 
 //Font for Reporting - Tracking
 CvFont trackFnt;
@@ -88,22 +67,6 @@ bool b1stPointSet;
 bool bMouseLButtonDown;
 
 using namespace std;
-
-unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int istartFrame);
-void checkPauseRun(int& keyboard,string frameNumberString);
-bool saveImage(string frameNumberString,QString dirToSave,cv::Mat& img);
-int countObjectsviaContours(cv::Mat& srcimg );
-int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString);
-
-int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
-int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,string frameNumber,cv::Rect& roi);
-int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,cv::Rect& roi);
-
-void deleteROI(cv::Point mousePos);
-void addROI(cv::Rect& newRoi);
-void drawROI();
-
-void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback
 
 int main(int argc, char *argv[])
 {
@@ -264,7 +227,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         //Add frames from Last video
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
         if (nFrame > 2500)
-            dLearningRate = 0.002;
+            dLearningRate = 0.001;
 
 
         //update the background model
@@ -335,12 +298,12 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,outDirCSV,frameNumberString);
 
             //ROI with TRACKs Fails
-            const int inactiveFrameCount = 10; //Number of frames inactive until track is deleted
+            const int inactiveFrameCount = 5; //Number of frames inactive until track is deleted
             const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
-            //thDistance = 25 //Distance from Blob to track
-            cvb::cvUpdateTracks(blobs,tracks, 25, inactiveFrameCount,thActive);
+            //thDistance = 22 //Distance from Blob to track
+            cvb::cvUpdateTracks(blobs,tracks,vRoi, 22, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
 
@@ -537,7 +500,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
 
-        cv::Rect iroi = (cv::Rect)(*it);
+        ltROI iroi = (ltROI)(*it);
         RoiID++;
 
         //Custom Filtering the blobs for Rendering
@@ -565,7 +528,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
 
             if (iroi.contains(pnt))
-                cvRenderTrack(*((*it).second) ,it->first ,  &fgMaskImg, &frameImg, CV_TRACK_RENDER_ID,&trackFnt );
+                cvRenderTrack(*((*it).second) ,it->first ,  &fgMaskImg, &frameImg, CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt );
 
 
         }
@@ -652,7 +615,7 @@ int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumbe
 }
 
 //Saves the total Number of Counted Blobs and Tracks only
-int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,cv::Rect& roi)
+int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi)
 {
 
     bool bNewFileFlag = true;
@@ -719,6 +682,19 @@ int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString fil
 //}
 
 
+ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
+{
+    for (ltROIlist::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    {
+        ltROI* iroi = &(*it);
+        if (iroi->contains(pnt))
+                return iroi;
+    }
+
+    return 0; //Couldn't find it
+}
+
+
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
 {
     bool bNewFileFlag = true;
@@ -726,11 +702,11 @@ int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
     int Vcnt = 0;
 
     //Loop Over ROI
-    for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    for (ltROIlist::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
         cnt = 1;
         Vcnt++;
-        cv::Rect iroi = (cv::Rect)(*it);
+        ltROI iroi = (ltROI)(*it);
         QString strroiFile = filename.left(filename.lastIndexOf("/"));
         char buff[50];
         sprintf(buff,"/V%d_pos_tracks.csv",Vcnt);
@@ -835,7 +811,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      }
 }
 
-void addROI(cv::Rect& newRoi)
+void addROI(ltROI& newRoi)
 {
     //std::vector<cv::Rect>::iterator it= vRoi.end();
     //vRoi.insert(it,newRoi);
@@ -854,11 +830,11 @@ void deleteROI(cv::Point mousePos)
 
     while(it != vRoi.end())
     {
-        cv::Rect* roi=&(*it);
+        ltROI* roi=&(*it);
 
         if (roi->contains(mousePos))
         {
-            std::vector<cv::Rect>::iterator tmp = it;
+            std::vector<ltROI>::iterator tmp = it;
             vRoi.erase(tmp);
             cout << "Deleted:" << roi->x << " " << roi->y << endl;
             break;
@@ -872,9 +848,9 @@ void deleteROI(cv::Point mousePos)
 void drawROI()
 {
     frameCpy.copyTo(frame); //Restore Original IMage
-    for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it) {
+    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it) {
 
-        cv::Rect iroi = (cv::Rect)(*it);
+        ltROI iroi = (ltROI)(*it);
          cv::rectangle(frame,iroi,cv::Scalar(0,0,250));
 
          if (bTracking)

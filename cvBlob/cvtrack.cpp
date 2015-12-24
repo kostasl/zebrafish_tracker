@@ -46,27 +46,27 @@ namespace cvb
     if (b->centroid.x<t->minx)
     {
       if (b->centroid.y<t->miny)
-	d1 = MAX(t->minx - b->centroid.x, t->miny - b->centroid.y);
+        d1 = MAX(t->minx - b->centroid.x, t->miny - b->centroid.y);
       else if (b->centroid.y>t->maxy)
-	d1 = MAX(t->minx - b->centroid.x, b->centroid.y - t->maxy);
+        d1 = MAX(t->minx - b->centroid.x, b->centroid.y - t->maxy);
       else // if (t->miny < b->centroid.y)&&(b->centroid.y < t->maxy)
-	d1 = t->minx - b->centroid.x;
+        d1 = t->minx - b->centroid.x;
     }
     else if (b->centroid.x>t->maxx)
     {
       if (b->centroid.y<t->miny)
-	d1 = MAX(b->centroid.x - t->maxx, t->miny - b->centroid.y);
+        d1 = MAX(b->centroid.x - t->maxx, t->miny - b->centroid.y);
       else if (b->centroid.y>t->maxy)
-	d1 = MAX(b->centroid.x - t->maxx, b->centroid.y - t->maxy);
+        d1 = MAX(b->centroid.x - t->maxx, b->centroid.y - t->maxy);
       else
-	d1 = b->centroid.x - t->maxx;
+        d1 = b->centroid.x - t->maxx;
     }
     else // if (t->minx =< b->centroid.x) && (b->centroid.x =< t->maxx)
     {
       if (b->centroid.y<t->miny)
-	d1 = t->miny - b->centroid.y;
+           d1 = t->miny - b->centroid.y;
       else if (b->centroid.y>t->maxy)
-	d1 = b->centroid.y - t->maxy;
+            d1 = b->centroid.y - t->maxy;
       else 
 	return 0.;
     }
@@ -75,27 +75,27 @@ namespace cvb
     if (t->centroid.x<b->minx)
     {
       if (t->centroid.y<b->miny)
-	d2 = MAX(b->minx - t->centroid.x, b->miny - t->centroid.y);
+            d2 = MAX(b->minx - t->centroid.x, b->miny - t->centroid.y);
       else if (t->centroid.y>b->maxy)
-	d2 = MAX(b->minx - t->centroid.x, t->centroid.y - b->maxy);
+            d2 = MAX(b->minx - t->centroid.x, t->centroid.y - b->maxy);
       else // if (b->miny < t->centroid.y)&&(t->centroid.y < b->maxy)
-	d2 = b->minx - t->centroid.x;
+            d2 = b->minx - t->centroid.x;
     }
     else if (t->centroid.x>b->maxx)
     {
       if (t->centroid.y<b->miny)
-	d2 = MAX(t->centroid.x - b->maxx, b->miny - t->centroid.y);
+           d2 = MAX(t->centroid.x - b->maxx, b->miny - t->centroid.y);
       else if (t->centroid.y>b->maxy)
-	d2 = MAX(t->centroid.x - b->maxx, t->centroid.y - b->maxy);
+           d2 = MAX(t->centroid.x - b->maxx, t->centroid.y - b->maxy);
       else
-	d2 = t->centroid.x - b->maxx;
+           d2 = t->centroid.x - b->maxx;
     }
     else // if (b->minx =< t->centroid.x) && (t->centroid.x =< b->maxx)
     {
       if (t->centroid.y<b->miny)
-	d2 = b->miny - t->centroid.y;
+            d2 = b->miny - t->centroid.y;
       else if (t->centroid.y>b->maxy)
-	d2 = t->centroid.y - b->maxy;
+            d2 = t->centroid.y - b->maxy;
       else 
 	return 0.;
     }
@@ -145,23 +145,23 @@ namespace cvb
     {
       if (C(i, trackPos))
       {
-	bb.push_back(B(i));
+        bb.push_back(B(i));
 
-	unsigned int c = AB(i);
+        unsigned int c = AB(i);
 
-	C(i, trackPos) = 0;
-	AB(i)--;
-	AT(trackPos)--;
+        C(i, trackPos) = 0;
+        AB(i)--;
+        AT(trackPos)--;
 
-	if (c>1)
-	{
-	  getClusterForBlob(i, close, nBlobs, nTracks, blobs, tracks, bb, tt);
-	}
+        if (c>1)
+        {
+          getClusterForBlob(i, close, nBlobs, nTracks, blobs, tracks, bb, tt);
+        }
       }
     }
   }
 
-  void cvUpdateTracks(CvBlobs const &blobs, CvTracks &tracks, const double thDistance, const unsigned int thInactive, const unsigned int thActive)
+  void cvUpdateTracks(CvBlobs const &blobs, CvTracks &tracks, ltROIlist& vRoi, const double thDistance, const unsigned int thInactive, const unsigned int thActive)
   {
     CV_FUNCNAME("cvUpdateTracks");
     __CV_BEGIN__;
@@ -185,8 +185,8 @@ namespace cvb
         IB(i) = it->second->label;
       }
 
+      //KL:Reassign Max Track ID - Search through all trackss
       CvID maxTrackID = 0;
-
       unsigned int j=0;
       for (CvTracks::const_iterator jt = tracks.begin(); jt!=tracks.end(); ++jt, j++)
       {
@@ -229,13 +229,20 @@ namespace cvb
 
         if (c==0)
         {
+          CvBlob *blob = B(i);
           //cout << "Blob (new track): " << maxTrackID+1 << endl;
           //cout << *B(i) << endl;
+          //Check If Blob is within some ROI
+          cv::Point pntCentroid = cv::Point(blob->centroid.x,blob->centroid.y);
+          //KL: Detect Which ROI
+          ltROI* proi = ltGetFirstROIContainingPoint(vRoi ,pntCentroid);
+          if (proi == 0)
+              continue; //Ignore this blob its out of ROI
 
           // New track.
           maxTrackID++;
-          CvBlob *blob = B(i);
           CvTrack *track = new CvTrack;
+
           track->id = maxTrackID;
           track->label = blob->label;
           track->minx = blob->minx;
@@ -246,7 +253,10 @@ namespace cvb
           track->lifetime = 0;
           track->active = 0;
           track->inactive = 0;
-          track->pointStack.push_back(cv::Point(blob->centroid.x,blob->centroid.y)); //Add 1st Point to list of Track
+
+
+          track->pROI = proi; //Set Pointer to ROI containing the 1st blob
+          track->pointStack.push_back(pntCentroid); //Add 1st Point to list of Track
           tracks.insert(CvIDTrack(maxTrackID, track));
         }
       }
@@ -288,11 +298,18 @@ namespace cvb
             CvBlob *b = *it;
 
             //cout << b->label << " ";
-
-            if (b->area>area)
+            //Remove blobs that are not in the same ROI as the track - and those that fail the filter
+            if (track != NULL)
             {
-              area = b->area;
-              blob = b;
+               ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
+                if (blbroi == 0 )
+                    continue;
+
+                if (b->area>area && *blbroi == *track->pROI )
+                {
+                  area = b->area;
+                  blob = b;
+                }
             }
           }
           //cout << endl;
@@ -442,20 +459,24 @@ namespace cvb
           cout << endl;
         }
 
+
         //Render Path
         //cv::Mat img = cv::Mat::zeros(400, 400, CV_8UC3);
-        std::vector<CvPoint>* pvec = &track.pointStack;
-        CvPoint *pts = (CvPoint*) cv::Mat(track.pointStack).data;
-        int npts = cv::Mat(track.pointStack).rows;
-
-        int c1 =  rand() % 200 + 30;
-        int c2 =  rand() % 200 + 30;
-        int c3 =  rand() % 200 + 30;
-        cvPolyLine(imgDest, &pts,&npts, 1,
-                        false, 			// draw open contour (i.e. joint end to start)
-                        cv::Scalar(c1,c2,c3),// colour RGB ordering (here = green)
-                        1, 		        // line thickness
-                        CV_AA, 0);
+        //if (mode&CV_TRACK_RENDER_PATH)
+        //{
+            std::vector<CvPoint>* pvec = &track.pointStack;
+            CvPoint *pts = (CvPoint*) cv::Mat(track.pointStack).data;
+            int npts = cv::Mat(track.pointStack).rows;
+            //Random colour
+            int c1 =  rand() % 200 + 30;
+            int c2 =  rand() % 200 + 30;
+            int c3 =  rand() % 200 + 30;
+            cvPolyLine(imgDest, &pts,&npts, 1,
+                            false, 			// draw open contour (i.e. joint end to start)
+                            cv::Scalar(c1,c2,c3),// colour RGB ordering (here = green)
+                            1, 		        // line thickness
+                            CV_AA, 0);
+        //}
 __CV_END__;
   }
 

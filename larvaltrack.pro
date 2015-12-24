@@ -46,4 +46,6 @@ SUBDIRS += \
     cvBlob/cvBlobLib.pro
 
 HEADERS += \
-    cvBlob/cvblob.h
+    cvBlob/cvblob.h \
+    larvatrack.h \
+    ltROI.h
