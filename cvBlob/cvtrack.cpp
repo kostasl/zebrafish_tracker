@@ -17,17 +17,24 @@
 // along with cvBlob.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <stack>
+#include <list>
 using namespace std;
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) || defined(__WINDOWS__) || (defined(__APPLE__) & defined(__MACH__)))
-#include <cv.h>
+    #include <cv.h>
 #else
-#include <opencv/cv.h>
+    #include <opencv/cv.h>
 #endif
 
+//Trying to Find Mat includes
+#include <cv.h>   		// open cv general include file
+#include <opencv2/highgui/highgui.hpp>
+#include "opencv2/imgproc/imgproc.hpp" //Draw Polyline
 #include "cvblob.h"
 
 namespace cvb
@@ -167,14 +174,15 @@ namespace cvb
     // Last-1 "/" is for accumulation.
     CvID *close = new unsigned int[(nBlobs+2)*(nTracks+2)]; // XXX Must be same type than CvLabel.
 
+    //KL: Note Huge Try Block
     try
     {
       // Inicialization:
       unsigned int i=0;
       for (CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it, i++)
       {
-	AB(i) = 0;
-	IB(i) = it->second->label;
+        AB(i) = 0;
+        IB(i) = it->second->label;
       }
 
       CvID maxTrackID = 0;
@@ -182,64 +190,65 @@ namespace cvb
       unsigned int j=0;
       for (CvTracks::const_iterator jt = tracks.begin(); jt!=tracks.end(); ++jt, j++)
       {
-	AT(j) = 0;
-	IT(j) = jt->second->id;
-	if (jt->second->id > maxTrackID)
-	  maxTrackID = jt->second->id;
+        AT(j) = 0;
+        IT(j) = jt->second->id;
+        if (jt->second->id > maxTrackID)
+          maxTrackID = jt->second->id;
       }
 
       // Proximity matrix calculation and "used blob" list inicialization:
       for (i=0; i<nBlobs; i++)
-	for (j=0; j<nTracks; j++)
-	  if (C(i, j) = (distantBlobTrack(B(i), T(j)) < thDistance))
-	  {
-	    AB(i)++;
-	    AT(j)++;
-	  }
+        for (j=0; j<nTracks; j++)
+          if (C(i, j) = (distantBlobTrack(B(i), T(j)) < thDistance))
+          {
+            AB(i)++;
+            AT(j)++;
+          }
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // Detect inactive tracks
       for (j=0; j<nTracks; j++)
       {
-	unsigned int c = AT(j);
+        unsigned int c = AT(j);
 
-	if (c==0)
-	{
-	  //cout << "Inactive track: " << j << endl;
+        if (c==0)
+        {
+          //cout << "Inactive track: " << j << endl;
 
-	  // Inactive track.
-	  CvTrack *track = T(j);
-	  track->inactive++;
-	  track->label = 0;
-	}
-      }
+          // Inactive track.
+          CvTrack *track = T(j);
+          track->inactive++;
+          track->label = 0;
+        }
+       }
 
       // Detect new tracks
       for (i=0; i<nBlobs; i++)
       {
-	unsigned int c = AB(i);
+        unsigned int c = AB(i);
 
-	if (c==0)
-	{
-	  //cout << "Blob (new track): " << maxTrackID+1 << endl;
-	  //cout << *B(i) << endl;
+        if (c==0)
+        {
+          //cout << "Blob (new track): " << maxTrackID+1 << endl;
+          //cout << *B(i) << endl;
 
-	  // New track.
-	  maxTrackID++;
-	  CvBlob *blob = B(i);
-	  CvTrack *track = new CvTrack;
-	  track->id = maxTrackID;
-	  track->label = blob->label;
-	  track->minx = blob->minx;
-	  track->miny = blob->miny;
-	  track->maxx = blob->maxx;
-	  track->maxy = blob->maxy;
-	  track->centroid = blob->centroid;
-	  track->lifetime = 0;
-	  track->active = 0;
-	  track->inactive = 0;
-	  tracks.insert(CvIDTrack(maxTrackID, track));
-	}
+          // New track.
+          maxTrackID++;
+          CvBlob *blob = B(i);
+          CvTrack *track = new CvTrack;
+          track->id = maxTrackID;
+          track->label = blob->label;
+          track->minx = blob->minx;
+          track->miny = blob->miny;
+          track->maxx = blob->maxx;
+          track->maxy = blob->maxy;
+          track->centroid = blob->centroid;
+          track->lifetime = 0;
+          track->active = 0;
+          track->inactive = 0;
+          track->pointStack.push_back(cv::Point(blob->centroid.x,blob->centroid.y)); //Add 1st Point to list of Track
+          tracks.insert(CvIDTrack(maxTrackID, track));
+        }
       }
 
       // Clustering
@@ -295,6 +304,8 @@ namespace cvb
                   //cout << "Matching: track=" << track->id << ", blob=" << blob->label << endl;
                   track->label = blob->label;
                   track->centroid = blob->centroid;
+                  //KL: Make A point list
+                  track->pointStack.push_back(cv::Point(blob->centroid.x,blob->centroid.y)); //KL:Add The new point to the List
                   track->minx = blob->minx;
                   track->miny = blob->miny;
                   track->maxx = blob->maxx;
@@ -323,26 +334,26 @@ namespace cvb
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       for (CvTracks::iterator jt=tracks.begin(); jt!=tracks.end();)
-	if ((jt->second->inactive>=thInactive)||((jt->second->inactive)&&(thActive)&&(jt->second->active<thActive)))
-	{
-	  delete jt->second;
-	  tracks.erase(jt++);
-	}
-	else
-	{
-	  jt->second->lifetime++;
-	  if (!jt->second->inactive)
-	    jt->second->active++;
-	  ++jt;
-	}
-    }
-    catch (...)
-    {
-      delete[] close;
-      throw; // TODO: OpenCV style.
-    }
+        if ((jt->second->inactive>=thInactive)||((jt->second->inactive)&&(thActive)&&(jt->second->active<thActive)))
+        {
+          delete jt->second;
+          tracks.erase(jt++);
+        }
+        else
+        {
+          jt->second->lifetime++;
+          if (!jt->second->inactive)
+            jt->second->active++;
+          ++jt;
+        }
+     } //Closes Huge Try block
+        catch (...)
+        {
+          delete[] close;
+          throw; // TODO: OpenCV style.
+        }
 
-    delete[] close;
+        delete[] close;
 
     __CV_END__;
   }
@@ -430,6 +441,21 @@ namespace cvb
           cout << " - Centroid: (" << track.centroid.x << ", " << track.centroid.y << ")" << endl;
           cout << endl;
         }
+
+        //Render Path
+        //cv::Mat img = cv::Mat::zeros(400, 400, CV_8UC3);
+        std::vector<CvPoint>* pvec = &track.pointStack;
+        CvPoint *pts = (CvPoint*) cv::Mat(track.pointStack).data;
+        int npts = cv::Mat(track.pointStack).rows;
+
+        int c1 =  rand() % 200 + 30;
+        int c2 =  rand() % 200 + 30;
+        int c3 =  rand() % 200 + 30;
+        cvPolyLine(imgDest, &pts,&npts, 1,
+                        false, 			// draw open contour (i.e. joint end to start)
+                        cv::Scalar(c1,c2,c3),// colour RGB ordering (here = green)
+                        1, 		        // line thickness
+                        CV_AA, 0);
 __CV_END__;
   }
 

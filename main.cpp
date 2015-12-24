@@ -67,6 +67,12 @@ ltROIlist vRoi;
 cv::Point ptROI1;
 cv::Point ptROI2;
 
+//Structures to hold blobs & Tracks
+cvb::CvBlobs blobs;
+cvb::CvTracks tracks;
+
+
+
 //Font for Reporting - Tracking
 CvFont trackFnt;
 
@@ -125,6 +131,12 @@ int main(int argc, char *argv[])
     //set the callback function for any mouse event
     cv::setMouseCallback(strwinName, CallBackFunc, NULL);
 
+
+    //Initialize The Track and blob vectors
+    cvb::cvReleaseTracks(tracks);
+    cvb::cvReleaseBlobs(blobs);
+
+
     //create Background Subtractor objects
           //(int history=500, double varThreshold=16, bool detectShadows=true
     pMOG2 =  cv::createBackgroundSubtractorMOG2(30,16,false); //MOG2 approach
@@ -134,7 +146,7 @@ int main(int argc, char *argv[])
 
     //unsigned int hWnd = cvGetWindowHandle("VialFrame");
     try{ //If cv is compiled with QT support
-        cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
+    //    cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
     }catch(int e)
     {
         cerr << "OpenCV not compiled with QT support! can display overlay" << endl;
@@ -173,6 +185,10 @@ int main(int argc, char *argv[])
     //pMOG->~BackgroundSubtractor();
     pMOG2->~BackgroundSubtractor();
     //pGMG->~BackgroundSubtractor();
+
+    //Empty The Track and blob vectors
+    cvb::cvReleaseTracks(tracks);
+    cvb::cvReleaseBlobs(blobs);
 
     //
     //return ;
@@ -218,12 +234,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,2),cv::Point(-1,-1));
     cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,4),cv::Point(-1,-1));
 
-    //Structures to hold blobs & Tracks
-    cvb::CvBlobs blobs;
-    cvb::CvTracks tracks;
 
-    cvb::cvReleaseBlobs(blobs);
-    cvb::cvReleaseTracks(tracks);
     //create the capture object
     cv::VideoCapture capture(videoFilename.toStdString());
     if(!capture.isOpened()){
@@ -328,7 +339,8 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
-            cvb::cvUpdateTracks(blobs,tracks, 15, inactiveFrameCount,thActive);
+            //thDistance = 25 //Distance from Blob to track
+            cvb::cvUpdateTracks(blobs,tracks, 25, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
 
@@ -358,8 +370,6 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
     //delete kernel;
     //delete kernelClose;
 
-    cvb::cvReleaseTracks(tracks);
-    cvb::cvReleaseBlobs(blobs);
 
     std::cout << "Exiting video processing loop." << endl;
 
@@ -877,6 +887,7 @@ void drawROI()
 
              cv::circle(frame,pt1 ,3,cv::Scalar(255,0,0),1);
              cv::circle(frame,pt2,3,cv::Scalar(255,0,0),1);
+
 
          }
     }

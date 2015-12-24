@@ -35,6 +35,8 @@
 #include <list>
 #include <vector>
 #include <limits>
+#include <stack>
+#include <list>
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) || defined(__WINDOWS__) || (defined(__APPLE__) & defined(__MACH__)))
 #include <cv.h>
@@ -485,6 +487,15 @@ extern "C" {
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Tracking
 
+
+  /// \var typedef std::list<CvPoint2D64f> CvTrackPoints
+  /// \brief stores the stacked List of past centroid points that define this track.
+  /// \see CvPoint2D64f
+  /// \see CvTrack
+  typedef std::vector<CvPoint> CvTrackPoints;
+
+
+
   /// \brief Struct that contain information about one track.
   /// \see CvID
   /// \see CvLabel
@@ -500,7 +511,7 @@ extern "C" {
     unsigned int maxy; ///< y max.
     
     CvPoint2D64f centroid; ///< Centroid.
-
+    CvTrackPoints pointStack; /// <Holds list of past centroid positions along the track
     unsigned int lifetime; ///< Indicates how much frames the object has been in scene.
     unsigned int active; ///< Indicates number of frames that has been active from last inactive period.
     unsigned int inactive; ///< Indicates number of frames that has been missing.
@@ -518,6 +529,7 @@ extern "C" {
   /// \see CvTrack
   typedef std::pair<CvID, CvTrack *> CvIDTrack;
 
+
   /// \fn inline void cvReleaseTracks(CvTracks &tracks)
   /// \brief Clear tracks structure.
   /// \param tracks List of tracks.
@@ -527,6 +539,7 @@ extern "C" {
     for (CvTracks::iterator it=tracks.begin(); it!=tracks.end(); it++)
     {
       CvTrack *track = (*it).second;
+      track->pointStack.clear(); //Delete The points
       if (track) delete track;
     }
 
