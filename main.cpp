@@ -306,7 +306,6 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             cvb::cvUpdateTracks(blobs,tracks,vRoi, 35, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
-
             //cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID,&trackFnt);
         }
 
