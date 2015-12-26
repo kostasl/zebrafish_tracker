@@ -557,6 +557,16 @@ extern "C" {
   /// Occlusion Handling. Second International workshop on Performance Evaluation of Tracking and
   /// Surveillance Systems & CVPR'01. December, 2001.
   /// (http://www.research.ibm.com/peoplevision/PETS2001.pdf)
+  ///
+  /// KL: Found these notes online: https://code.google.com/p/cvblob/wiki/FAQ#1.4_What's_wrong_with_the_tracking_algorithm?
+  /// 1.5 What is the tracking algorithm that cvBlob uses?
+  /// In the beginning, my tracking algorithm was based on the high level tracking of the paper of A. Senior, A. Hampapur, Y-L Tian, L. Brown, S. Pankanti and R. Bolle called "Appearance Models for Occlusion Handling".
+  /// But then I rewrote it again and again.
+  /// As I said before, the tracking algorithm it's only for fast prototyping. It is not intended for serious projects. cvBlob's tracking algorithm only takes into account the position and bounding box of the blobs. But a good tracking algorithm need to consider:
+  /// The history of the positions of the blob (actually this could be added to cvBlob, as a Kalman filter, or something like that... maybe in the future).
+  /// Appearance models (this is outside the bounds of the project): this can be color histograms, shape features,...
+  /// This two points depends on the problem that you need to approach, and it's difficult to give a general solution.
+  ///
   /// \param b List of blobs.
   /// \param t List of tracks.
   /// \param ltROIlist list of Region of interests defining each vial
@@ -591,7 +601,17 @@ extern "C" {
   /// \fn void cvRenderTrack(CvTrack& track, IplImage *imgSource, IplImage *imgDest, unsigned short mode, CvFont *font );
   /// \brief Prints Single Track info
   void cvRenderTrack(CvTrack& track,CvID trackID, IplImage *imgSource, IplImage *imgDest, unsigned short mode, CvFont *font );
+
+  ///\fn getClusterForTrack(unsigned int trackPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, list<CvBlob*> &bb, list<CvTrack*> &tt);
+  /// \brief KL found this prototype in cvtrack.cpp - moved it to header - not sure what it does.
+  void getClusterForTrack(unsigned int trackPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, std::list<CvBlob*> &bb, std::list<CvTrack*> &tt);
+
+  ///\fn getClusterForBlob(unsigned int blobPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, std::list<CvBlob*> &bb, std::list<CvTrack*> &tt)
+  /// \brief KL found this prototype in cvtrack.cpp - moved it to header - not sure what it does.
+  void getClusterForBlob(unsigned int blobPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, std::list<CvBlob*> &bb, std::list<CvTrack*> &tt);
+
   }
+
 
 
 

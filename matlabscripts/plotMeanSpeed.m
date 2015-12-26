@@ -49,7 +49,7 @@ ylim([0 ylimits]);
 saveas(hf,'figures/meanVialSpeedSlidingWindow1.pdf');
 
 %% Plot Histogram Of Speed Within A chosen time Window
-goToHour = 61;
+goToHour = 85;
 t= (goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 

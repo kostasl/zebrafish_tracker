@@ -56,12 +56,13 @@ for (e=1:size(ExpTrack,1))
                 trackData = trackData(1:datbreakpoint(1),:);
            end
            %Check Track Lifetime Again - Filter If Less than Required Size
-           if (length(trackData) < MinLifetime)
+           if (length(trackData(:,2)) < MinLifetime || length(trackData(:,2)) < 2)
                continue; %Go to Next
            end
           
            %Normalize By FrameRate
            pathSteps          = sqrt(diff(trackData(:,2)).^2+diff(trackData(:,3)).^2);
+           
            
            %Check When Track Stops or goes too fast And Truncate
            datbreakpoint  = find(pathSteps(:,1)<MinpxSpeed | pathSteps(:,1) > MaxpxSpeed);

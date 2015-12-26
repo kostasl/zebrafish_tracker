@@ -103,19 +103,19 @@ namespace cvb
     return MIN(d1, d2);
   }
 
+  //KL: MACROS To access Proximity Matrix Data
   // Access to matrix
 #define C(blob, track) close[((blob) + (track)*(nBlobs+2))]
-  // Access to accumulators
+  // Access to accumulators //KLLast Rows have Sums
 #define AB(label) C((label), (nTracks))
 #define AT(id) C((nBlobs), (id))
-  // Access to identifications
+  // Access to identifications //KL : One Before Last has Labels
 #define IB(label) C((label), (nTracks)+1)
 #define IT(id) C((nBlobs)+1, (id))
   // Access to registers
 #define B(label) blobs.find(IB(label))->second
 #define T(id) tracks.find(IT(id))->second
 
-  void getClusterForTrack(unsigned int trackPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, list<CvBlob*> &bb, list<CvTrack*> &tt);
 
   void getClusterForBlob(unsigned int blobPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, list<CvBlob*> &bb, list<CvTrack*> &tt)
   {
@@ -123,18 +123,18 @@ namespace cvb
     {
       if (C(blobPos, j))
       {
-	tt.push_back(T(j));
+        tt.push_back(T(j));
 
-	unsigned int c = AT(j);
+        unsigned int c = AT(j);
 
-	C(blobPos, j) = 0;
-	AB(blobPos)--;
-	AT(j)--;
+        C(blobPos, j) = 0;
+        AB(blobPos)--;
+        AT(j)--;
 
-	if (c>1)
-	{
-	  getClusterForTrack(j, close, nBlobs, nTracks, blobs, tracks, bb, tt);
-	}
+        if (c>1)
+        {
+          getClusterForTrack(j, close, nBlobs, nTracks, blobs, tracks, bb, tt);
+        }
       }
     }
   }
@@ -143,6 +143,7 @@ namespace cvb
   {
     for (unsigned int i=0; i<nBlobs; i++)
     {
+        //KL: check if blob close to track using / Proximity matrix:?
       if (C(i, trackPos))
       {
         bb.push_back(B(i));
@@ -161,6 +162,17 @@ namespace cvb
     }
   }
 
+  /// \brief Initializes empty a proximity matrix, and uses macros C, AB,AT,.. to access label and counting the blob label proximities
+  ///
+  /// Reassign Max Track ID
+  /// Detect inactive tracks
+  /// Calculate/Fill Proximity Matrix :I added a limit to the track's ROI when assigning proximity based on fixed thDistance
+  /// Detect inactive tracks
+  /// // Detect new tracks
+  /// // Clustering
+  /// Updates Active/Inactive Stats
+  /// Erase Tracks that have been Inactive according to rule
+  /// delete Proximity Matrix
   void cvUpdateTracks(CvBlobs const &blobs, CvTracks &tracks, ltROIlist& vRoi, const double thDistance, const unsigned int thInactive, const unsigned int thActive)
   {
     CV_FUNCNAME("cvUpdateTracks");
@@ -185,7 +197,7 @@ namespace cvb
         IB(i) = it->second->label;
       }
 
-      //KL:Reassign Max Track ID - Search through all trackss
+      //KL:Reassign Max Track ID - Initialize TrackLabels Search through all trackss
       CvID maxTrackID = 0;
       unsigned int j=0;
       for (CvTracks::const_iterator jt = tracks.begin(); jt!=tracks.end(); ++jt, j++)
@@ -201,8 +213,19 @@ namespace cvb
         for (j=0; j<nTracks; j++)
           if (C(i, j) = (distantBlobTrack(B(i), T(j)) < thDistance))
           {
-            AB(i)++;
-            AT(j)++;
+
+             CvBlob* b = B(i); //Fetch The blob to examine ROI
+             ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
+             if (blbroi == 0 ) //Not In any tracked ROI - so ignore
+                continue;
+
+             CvTrack* t = T(j); //Fetch The blob to examine ROI
+             //Check if they Are in the Same ROI before Adding to accumulator
+             if (*blbroi == *(t->pROI) )
+             {
+                AB(i)++; //Add blobcount to the track
+                AT(j)++; //Add trackcount to the blob
+             }
           }
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -264,6 +287,7 @@ namespace cvb
       // Clustering
       for (j=0; j<nTracks; j++)
       {
+          //KL:Accumulators
         unsigned int c = AT(j);
 
         if (c)
@@ -301,11 +325,13 @@ namespace cvb
             //Remove blobs that are not in the same ROI as the track - and those that fail the filter
             if (track != NULL)
             {
-               ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
-                if (blbroi == 0 )
-                    continue;
+//              KL Moved to Proximity Matrix Calc.
+//               ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
+//              if (blbroi == 0 )
+//                   continue;
 
-                if (b->area>area && *blbroi == *track->pROI )
+//                if (b->area>area && *blbroi == *track->pROI )
+                if (b->area>area )
                 {
                   area = b->area;
                   blob = b;
@@ -347,9 +373,10 @@ namespace cvb
             }
           }
         }
-      }//CLUSTERINg
+      }// Loop Over nTracks (CLUSTERINg)
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+      //Erase Tracks that have been Inactive
       for (CvTracks::iterator jt=tracks.begin(); jt!=tracks.end();)
         if ((jt->second->inactive>=thInactive)||((jt->second->inactive)&&(thActive)&&(jt->second->active<thActive)))
         {

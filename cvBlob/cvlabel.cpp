@@ -378,15 +378,15 @@ namespace cvb
       int imgOut_offset = 0;
       if(imgIn->roi)
       {
-	imgIn_width = imgIn->roi->width;
-	imgIn_height = imgIn->roi->height;
-	imgIn_offset = imgIn->roi->xOffset + (imgIn->roi->yOffset * stepIn);
+        imgIn_width = imgIn->roi->width;
+        imgIn_height = imgIn->roi->height;
+        imgIn_offset = imgIn->roi->xOffset + (imgIn->roi->yOffset * stepIn);
       }
       if(imgOut->roi)
       {
-	imgOut_width = imgOut->roi->width;
-	imgOut_height = imgOut->roi->height;
-	imgOut_offset = imgOut->roi->xOffset + (imgOut->roi->yOffset * stepOut);
+        imgOut_width = imgOut->roi->width;
+        imgOut_height = imgOut->roi->height;
+        imgOut_offset = imgOut->roi->xOffset + (imgOut->roi->yOffset * stepOut);
       }
 
       char *imgDataOut=imgOut->imageData + imgOut_offset;
@@ -395,16 +395,16 @@ namespace cvb
       for (unsigned int r=0;r<(unsigned int)imgIn_height;r++,
 	  imgDataIn+=stepIn,imgDataOut+=stepOut)
       {
-	for (unsigned int c=0;c<(unsigned int)imgIn_width;c++)
-	{
-	  if (imgDataIn[c])
-	  {
-	    if (blobs.find(imgDataIn[c])==blobs.end()) imgDataOut[c]=0x00;
-	    else imgDataOut[c]=(char)0xff;
-	  }
-	  else
-	    imgDataOut[c]=0x00;
-	}
+        for (unsigned int c=0;c<(unsigned int)imgIn_width;c++)
+        {
+          if (imgDataIn[c])
+          {
+            if (blobs.find(imgDataIn[c])==blobs.end()) imgDataOut[c]=0x00;
+            else imgDataOut[c]=(char)0xff;
+          }
+          else
+            imgDataOut[c]=0x00;
+        }
       }
     }
     __CV_END__;
@@ -424,14 +424,14 @@ namespace cvb
       int img_offset = 0;
       if(img->roi)
       {
-	img_width = img->roi->width;
-	img_height = img->roi->height;
-	img_offset = img->roi->xOffset + (img->roi->yOffset * step);
+        img_width = img->roi->width;
+        img_height = img->roi->height;
+        img_offset = img->roi->xOffset + (img->roi->yOffset * step);
       }
       else
       {
-	img_width = img->width;
-	img_height= img->height;
+        img_width = img->width;
+        img_height= img->height;
       }
 
       CV_ASSERT((x>=0)&&(x<img_width)&&(y>=0)&&(y<img_height));

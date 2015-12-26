@@ -51,11 +51,11 @@ display(framePeriod);
 ExpTrackResultsInTime = {};
 bVerbose=0;
 %Filter Each Experiments Data set
-MinpxSpeed = 3; %%Cut Tracklet when 2-frame displacement drops below value 
-MinLifetime = 5; %Minimum Number of Path Steps
-MaxLifetime = 50; %Maximum Number of Path Steps
+MinpxSpeed = 2; %%Cut Tracklet when 2-frame displacement drops below value 
+MinLifetime = 2; %Minimum Number of Path Steps
+MaxLifetime = 10; %Maximum Number of Path Steps
 MinDistance   = 10; %Minimum Track length to consider
-MaxStepLength   = 25; %Between two frames rejects steps larger than this
+MaxStepLength   = 10; %Between two frames rejects steps larger than this
 TimeFrameWidth = 3600; %Frame Sliding Window in sec Overwhich results are averaged
 
 % Organize data in a Sliding Window
@@ -83,7 +83,7 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
-goToHour = 70;
+goToHour = 85;
 t= (goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 
