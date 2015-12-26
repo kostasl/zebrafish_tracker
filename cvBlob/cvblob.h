@@ -516,6 +516,7 @@ extern "C" {
     
     CvPoint2D64f centroid; ///< Centroid.
     CvTrackPoints pointStack; /// <Holds list of past centroid positions along the track
+    double effectiveDisplacement; ///< Used to indicate a px speed measure so as to estimate possible blob distance from track on next frame.
     unsigned int lifetime; ///< Indicates how much frames the object has been in scene.
     unsigned int active; ///< Indicates number of frames that has been active from last inactive period.
     unsigned int inactive; ///< Indicates number of frames that has been missing.

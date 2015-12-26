@@ -40,6 +40,7 @@ using namespace std;
 namespace cvb
 {
 
+ /// \note Need to understand this distance measure
   double distantBlobTrack(CvBlob const *b, CvTrack const *t)
   {
     double d1;
@@ -210,23 +211,31 @@ namespace cvb
 
       // Proximity matrix calculation and "used blob" list inicialization:
       for (i=0; i<nBlobs; i++)
+      {
         for (j=0; j<nTracks; j++)
-          if (C(i, j) = (distantBlobTrack(B(i), T(j)) < thDistance))
+        {
+          CvTrack* t = T(j); //Fetch The blob to examine ROI
+          CvBlob* b = B(i); //Fetch The blob to examine ROI
+          C(i, j) = distantBlobTrack(b,t) < min( 3*(t->effectiveDisplacement+4),thDistance);
+          //if (C(i, j) < thDistance  ) //< thDistance (t->effectiveDisplacement + 5)
+          if(C(i, j))
           {
 
-             CvBlob* b = B(i); //Fetch The blob to examine ROI
              ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
              if (blbroi == 0 ) //Not In any tracked ROI - so ignore
                 continue;
 
-             CvTrack* t = T(j); //Fetch The blob to examine ROI
              //Check if they Are in the Same ROI before Adding to accumulator
              if (*blbroi == *(t->pROI) )
              {
                 AB(i)++; //Add blobcount to the track
                 AT(j)++; //Add trackcount to the blob
+
+                //cout << t->effectiveDisplacement << endl;
              }
           }
+        }//Each Track
+      } //Each Blob
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // Detect inactive tracks
@@ -273,6 +282,7 @@ namespace cvb
           track->maxx = blob->maxx;
           track->maxy = blob->maxy;
           track->centroid = blob->centroid;
+          track->effectiveDisplacement = thDistance; //Set To largest value initially
           track->lifetime = 0;
           track->active = 0;
           track->inactive = 0;
@@ -289,6 +299,7 @@ namespace cvb
       {
           //KL:Accumulators
         unsigned int c = AT(j);
+        CvTrack* cTrack = T(j);
 
         if (c)
         {
@@ -301,21 +312,30 @@ namespace cvb
           //KL :SEG FAULT is caused by these searches failing -low rate occurance)
           CvTrack *track = NULL;
           unsigned int area = 0;
+          double dist       = thDistance; //Distance
+          //Go Through List Of tracks Around track
           for (list<CvTrack*>::const_iterator it=tt.begin(); it!=tt.end(); ++it)
           {
             CvTrack *t = *it;
 
             unsigned int a = (t->maxx-t->minx)*(t->maxy-t->miny);
-            if (a>area)
+            double d = round(sqrt( pow(t->centroid.x - cTrack->centroid.x,2) + pow( (t->centroid.y - cTrack->centroid.y),2)  ));
+
+            if (d<=dist)
             {
-              area = a;
-              track = t;
+                if (a>area) //Chooses the Track With Largest Area
+                {
+                  area = a;
+                  dist = d;
+                  track = t;
+                }
             }
           }
 
           // Select blob //KL SET TO NULL Detect not found
-          CvBlob *blob = NULL;
-          area = 0;
+          CvBlob *blob  = NULL;
+          area          = 0;
+          dist          = thDistance; //Reset to Max Distance
           //cout << "Matching blobs: ";
           for (list<CvBlob*>::const_iterator it=bb.begin(); it!=bb.end(); ++it)
           {
@@ -325,16 +345,21 @@ namespace cvb
             //Remove blobs that are not in the same ROI as the track - and those that fail the filter
             if (track != NULL)
             {
-//              KL Moved to Proximity Matrix Calc.
-//               ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
-//              if (blbroi == 0 )
-//                   continue;
+//              Also Checked at Proximity Matrix Calc. //But it doesnt seem to solve all prob.
+               ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
+               if (blbroi == 0 )
+                   continue;
 
-//                if (b->area>area && *blbroi == *track->pROI )
-                if (b->area>area )
-                {
-                  area = b->area;
-                  blob = b;
+               double d = round(sqrt( pow(b->centroid.x - cTrack->centroid.x,2) + pow( (b->centroid.y - cTrack->centroid.y),2)  ));
+                //KL: I think it chooses the one with largest area
+                if (d<=dist && *blbroi == *track->pROI )
+                { //1st Criterion is distance then area
+                    if (b->area>area )
+                    {
+                      area = b->area;
+                      dist = d; //Change to New minimum Distance
+                      blob = b;
+                    }
                 }
             }
           }
@@ -346,9 +371,12 @@ namespace cvb
                   // Update track
                   //cout << "Matching: track=" << track->id << ", blob=" << blob->label << endl;
                   track->label = blob->label;
+                  //Calc Last Displacement as a figure of last speed
+                  track->effectiveDisplacement = 1.0 + round(sqrt( pow(track->centroid.x - blob->centroid.x,2) + pow( (track->centroid.y - blob->centroid.y),2)  )); // round(distantBlobTrack(blob,track)+0.5)
                   track->centroid = blob->centroid;
                   //KL: Make A point list
                   track->pointStack.push_back(cv::Point(blob->centroid.x,blob->centroid.y)); //KL:Add The new point to the List
+
                   track->minx = blob->minx;
                   track->miny = blob->miny;
                   track->maxx = blob->maxx;
