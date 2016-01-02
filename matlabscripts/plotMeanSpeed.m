@@ -58,8 +58,8 @@ ConditionIndex = 1;
 strTitle = sprintf('%s %s mean: %0.3f std:%0.3f n:%d',ExpCondFood{ConditionIndex},ExpCondTitles{ConditionIndex},mu,stdd, n );
 
 hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'MEAN SPEED'));
-subplot(3,1,1);
 
+subplot(3,1,1);
 ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex )});
 meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
 [cnt,bin]                            = hist(meanConditionSpeeds{ConditionIndex},nbins);
@@ -67,7 +67,7 @@ hist(meanConditionSpeeds{ConditionIndex},nbins);
 n       = length(meanConditionSpeeds{ConditionIndex});
 mu      = mean(meanConditionSpeeds{ConditionIndex});
 stdd    = std(meanConditionSpeeds{ConditionIndex});
-
+title(strTitle);
 title(strTitle);
 % h = findobj(gca,'Type','patch');
 % set(h,'FaceColor','blue');
@@ -131,7 +131,7 @@ if size(ExpTrackResults,2) >= VialPairsPerCondition(ConditionIndex )
     xlim([0 xlimits]);
 else
     
-    error('Exp. Conditions Missing - Stopping Plots')
+    display('Exp. Conditions Missing - Stopping Plots')
     return;
 end
 

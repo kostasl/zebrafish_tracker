@@ -54,6 +54,8 @@ for (e=1:size(ExpTrack,1))
            datbreakpoint  = find(diff(trackData(:,1))>1);
            if ( isempty(datbreakpoint) == 0)
                 trackData = trackData(1:datbreakpoint(1),:);
+                %For some Reason Tracker Reuses  trackIDs
+                %error('Found Broken Lifetime');
            end
            %Check Track Lifetime Again - Filter If Less than Required Size
            if (length(trackData(:,2)) < MinLifetime || length(trackData(:,2)) < 2)
@@ -64,8 +66,10 @@ for (e=1:size(ExpTrack,1))
            pathSteps          = sqrt(diff(trackData(:,2)).^2+diff(trackData(:,3)).^2);
            
            
-           %Check When Track Stops or goes too fast And Truncate
-           datbreakpoint  = find(pathSteps(:,1)<MinpxSpeed | pathSteps(:,1) > MaxpxSpeed);
+           %Find 1st point When Track Stops or goes too fast And Truncate
+           datbreakpoint  = find(pathSteps(:,1) < MinpxSpeed | pathSteps(:,1) > MaxpxSpeed );
+           %datbreakpoint = join(datbreakpoint, );
+           
             if (length(datbreakpoint) > 1)
                 pathSteps = pathSteps(1:datbreakpoint(1),:);
             end
@@ -73,7 +77,7 @@ for (e=1:size(ExpTrack,1))
             stepsCount = length(pathSteps);
             trackDist = sum(pathSteps);
             %Apply Step Count and MinDistance Filter 
-           if (stepsCount < MinLifetime | stepsCount > MaxLifetime | trackDist < MinDistance)
+           if ((stepsCount < MinLifetime) || (stepsCount > MaxLifetime) || (trackDist < MinDistance))
                continue; %Go to Next
            end
            
