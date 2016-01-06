@@ -33,7 +33,7 @@ timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which t
 
 %%THESE DO NOT CORRESPOND TO TIMES OF VIDEOS
 %framePeriod = [20;5;5;2;2;2;2;2];
-display('The loaded videos had frame Periods designed in folder name:')
+display('The loaded videos had frame Periods designated in folder name:')
 display(framePeriod);
 
 %N = length(timePoints);
@@ -51,15 +51,16 @@ display(framePeriod);
 ExpTrackResultsInTime = {};
 bVerbose=0;
 %Filter Each Experiments Data set
-MinpxSpeed = 2; %%Cut Tracklet when 2-frame displacement drops below value 
-MinLifetime = 2; %Minimum Number of Path Steps
-MaxLifetime = 10; %Maximum Number of Path Steps
-MinDistance   = 10; %Minimum Track length to consider
-MaxStepLength   = 10; %Between two frames rejects steps larger than this
-TimeFrameWidth = 3600; %Frame Sliding Window in sec Overwhich results are averaged
+
+MinLifetime     = 2; %Minimum Number of Path Steps
+MaxLifetime     = 20000; %Maximum Number of Path Steps
+MinDistance     = 5; %Minimum Track length to consider def 10
+MinStepLength   = 1; %%Cut Tracklet when 2-frame displacement drops below value 
+MaxStepLength   = 35; %MaxpxSpeed -->Between two frames rejects steps larger than this
+TimeFrameWidth  = 3600; %Frame Sliding Window in sec Overwhich results are averaged
 
 % Organize data in a Sliding Window
-StartTime = 0;
+InitTime = 0*3600; %Start processing Data from InitTime / Default 0
 wi = 0;
 %maxRecordingTime = 3*24*3600; %3 Days
 %Estimate Max FrameN from 1st Experiment
@@ -67,9 +68,11 @@ e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
 timeAdvance = 5*60;
 
-for StartTime=TimeFrameWidth:timeAdvance:(maxRecordingTime)
+
+for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
    wi = wi+1;
-   ExpTrackResultsInTime{wi} = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, StartTime,TimeFrameWidth, MinpxSpeed ,bVerbose);
+   %                                                    (ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxpxSpeed, FromTime,TimeWindow, MinpxSpeed,bVerb ) 
+   ExpTrackResultsInTime{wi} = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, StartTime,TimeFrameWidth, MinStepLength ,bVerbose);
    disp(StartTime/maxRecordingTime);%%Sho Fraction of Calculation Completed
 end
 
@@ -83,7 +86,7 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
-goToHour = 85;
+goToHour = 115;
 t= (goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 
@@ -99,7 +102,7 @@ hold on;
 e = 1;
 MinLifetime = 0;
 for e=1:size(ExpTrackResults,1)
-    for (v=1:3)
+    for (v=1:size(ExpTrackResults,2))
         
         %FilteredTrackIDs = unique(ExpTrackResults{e,v}( find(ExpTrackResults{e,v}(:,6)>MinLifetime),2 ));
         %find(vertcat(ExpTrackResults{e,v}.PointCount) > 6)

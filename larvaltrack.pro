@@ -17,6 +17,9 @@ INCLUDEPATH += /usr/include/opencv
 
 #INCLUDEPATH += /home/kostasl/workspace/cvblobLib
 #`pkg-config opencv cvblob --cflags`
+##Figure out VERSION : pkg-config --modversion opencv
+##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
+
 
 LIBS += `pkg-config opencv --libs`
 #LIBS += -L/usr/local/lib -lcvblob

@@ -68,6 +68,7 @@ bool bMouseLButtonDown;
 
 using namespace std;
 
+
 int main(int argc, char *argv[])
 {
     bROIChanged = false;
@@ -109,7 +110,8 @@ int main(int argc, char *argv[])
 
     //unsigned int hWnd = cvGetWindowHandle("VialFrame");
     try{ //If cv is compiled with QT support
-    //    cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
+        cv::setWindowTitle(strwinName, outfilename.toStdString());
+        cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
     }catch(int e)
     {
         cerr << "OpenCV not compiled with QT support! can display overlay" << endl;
@@ -274,9 +276,9 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         cv::putText(frame, buff, cv::Point(15, 88),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
-        //Fg Pixel Ratio
+        //Count Fg Pixels // Ratio
         std::stringstream strFGPxRatio;
-        dblRatioPxChanged = (double)cv::countNonZero(fgMaskMOG2)/(double)fgMaskMOG2.total();
+        dblRatioPxChanged = (double)cv::countNonZero(fgMaskMOG2);
         strFGPxRatio << "Dpx:" <<  dblRatioPxChanged;
         cv::rectangle(frame, cv::Point(10, 100), cv::Point(100,120), cv::Scalar(255,255,255), -1);
         cv::putText(frame, strFGPxRatio.str(), cv::Point(15, 113),
