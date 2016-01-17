@@ -13,7 +13,7 @@ addpath(fileparts(which('processFilesTracks.m')))
 %cd /home/klagogia/Videos/LarvaTrackPilot/DataOut %Office
 cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
 %%Import FROM CSV FILES
-%VialAge : Age of vial from beginning of timelapse Recording
+%VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
 [framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
 
 
