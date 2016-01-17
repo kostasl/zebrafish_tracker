@@ -49,7 +49,7 @@ ylim([0 ylimits]);
 saveas(hf,'figures/meanVialSpeedSlidingWindow1.pdf');
 
 %% Plot Histogram Of Speed Within A chosen time Window
-goToHour = 115;
+goToHour = 105;
 t= (goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 
@@ -103,7 +103,7 @@ strTitle = sprintf('%s %s mean: %0.3f std:%0.3f n:%d',ExpCondFood{ConditionIndex
 title(strTitle);
 ylim([0 ylimits]);
 xlim([0 xlimits]);
-saveas(hf,'figures/NFTrackletSpeedHist.pdf')
+saveas(hf,sprintf('figures/NFTrackletSpeedHist-%dHour.png',goToHour))
 
 
 %%Box Plot Of Mean Speeds per tracklet
@@ -112,7 +112,8 @@ hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Crawl-Run SPEEDs'));
 groups = [ zeros( length(meanConditionSpeeds{1}) ,1); ones(length(meanConditionSpeeds{2}),1); 2*ones(length(meanConditionSpeeds{3}),1) ];
 boxplot([meanConditionSpeeds{1};meanConditionSpeeds{2};meanConditionSpeeds{3}],groups,'labels',{strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3})})
 ylim([0 15]);
-saveas(hf,'figures/NFTrackLetSpeedBoxPlot.pdf');
+saveas(hf,sprintf('figures/NFTrackletSpeedBoxPlot-%dHour.png',goToHour));
+
 %% DMSO 0.5
 %Check If Condition Exists
 

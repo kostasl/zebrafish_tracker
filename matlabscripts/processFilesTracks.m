@@ -86,7 +86,7 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
-goToHour = 115;
+goToHour = 105;
 t= (goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 
