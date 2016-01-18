@@ -13,16 +13,19 @@ addpath(fileparts(which('processFilesTracks.m')))
 %cd /home/klagogia/Videos/LarvaTrackPilot/DataOut %Office
 cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
 %%Import FROM CSV FILES
-%VialAge : Age of vial from beginning of timelapse Recording
+%VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
 [framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+
+
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
 
-%save('LarvaTrackData.mat','ExpTrack');
 
 
 %% Organize and Process Imported data
+%Put the script dir in the path
+
 %Give 3 days data points 1 sec each.
 % Genotypes are 3 organized in this order : 1st WT (oregonR), 2nd Genetic Control, 3rd AlfaBeta Mutant
 ConditionIndex = 1; %Experimental Condition ID : Food/Genetype Combinations
@@ -76,7 +79,7 @@ for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
    disp(StartTime/maxRecordingTime);%%Sho Fraction of Calculation Completed
 end
 
-
+save('LarvaTrackData.mat');
 %% Plot Indicative results - Distribution of mean Tracklet Speeds
 plotMeanSpeed;
 
@@ -86,7 +89,7 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
-goToHour = 115;
+goToHour = 105;
 t= (goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 

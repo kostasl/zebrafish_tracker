@@ -5,9 +5,10 @@
 
 scriptPath = which('processFiles.m');
 [framePeriod,VialAge,ExpIDs,ExpN ] = importCSVtoCell( '*V*_N','EXP*' );
-save('LarvaCountData.mat','ExpN');
+save('LarvaCountData.mat');
 
 
+%load('LarvaCountData.mat');
 %% Plot Results for Active Larva Per Vial
 %Give 3 days data points 1 sec each.
 % Genotypes are 3 organized in this order : 1st WT (oregonR), 2nd Genetic Control, 3rd AlfaBeta Mutant

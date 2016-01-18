@@ -109,7 +109,7 @@ for (e=1:size(ExpTrack,1))
        ExpTrackResults{e,v} = struct('Tracks',FilteredTracks);
        ExpTrackResults{e,v} = vertcat(ExpTrackResults{e,v}.Tracks);
        %Empty Buffer Cell Array
-       FilteredTracks = {}; 
+       FilteredTracks = {};
     end %Each Vial
 
 end %Each Experiment
