@@ -14,7 +14,7 @@ addpath(fileparts(which('processFilesTracks.m')))
 cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP_B*' );
 
 
 
@@ -28,9 +28,13 @@ cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
 
 %Give 3 days data points 1 sec each.
 % Genotypes are 3 organized in this order : 1st WT (oregonR), 2nd Genetic Control, 3rd AlfaBeta Mutant
-ConditionIndex = 1; %Experimental Condition ID : Food/Genetype Combinations
+ConditionIndex      = 1; %Experimental Condition ID : Food(Condition)/Genetype Combinations
+ConditionIndexMax   = 1; %Set to 1 For Exp. Setups with only 1 food condition
 % The videos have 2 rows of 9 vials - Vials 1-10 have identical conditions so they go in PAIRS
-VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
+%VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
+
+%For new 2016/03 Setup We have 1 row - 3 conditions - 3 reps Each
+VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];]; %OR Normal Food
 timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which to analyse data
 %FramePeriod sampled at each timelapse Experiment -
 
@@ -69,7 +73,7 @@ wi = 0;
 %Estimate Max FrameN from 1st Experiment
 e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
-timeAdvance = 5*60;
+timeAdvance = 5*60; %Fwd Time Step in secs
 
 
 for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
@@ -79,7 +83,7 @@ for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
    disp(StartTime/maxRecordingTime);%%Sho Fraction of Calculation Completed
 end
 
-save('LarvaTrackData.mat');
+save('LarvaTrackData_B.mat');
 %% Plot Indicative results - Distribution of mean Tracklet Speeds
 plotMeanSpeed;
 
@@ -89,9 +93,10 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
-goToHour = 105;
-t= (goToHour*3600 - VialAge(1))/timeAdvance;
-ExpTrackResults = ExpTrackResultsInTime{t};
+goToHour =67; %Exp Hour - with 0 being Embryo Placement
+
+t= (goToHour*3600 - VialAge(1))/timeAdvance; %
+ExpTrackResults = ExpTrackResultsInTime{t:t+8};
 
 % NOTE: Y values are inverted since 0 Point in plot as at the bottom
 imgSize = [1024,768];

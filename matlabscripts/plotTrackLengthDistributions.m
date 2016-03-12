@@ -23,6 +23,8 @@ title(strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(g
 ylim([0 250]);
 saveas(hf,sprintf('figures/NFTrackletLengthBoxPlot-%dHour.png',goToHour));
 
+if ConditionIndexMax < 4  break;
+
 ConditionIndex = 4;
 hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(goToHour)));
 groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
@@ -31,6 +33,7 @@ title(strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(g
 ylim([0 250]);
 saveas(hf,sprintf('figures/DMSO05TrackletLengthBoxPlot-%dHour.png',goToHour));
 
+if ConditionIndexMax < 7  break;
 ConditionIndex = 7;
 hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(goToHour)));
 groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
@@ -55,6 +58,7 @@ title('Track length across all time')
 ylim([0 250]);
 saveas(hf,sprintf('figures/NFTrackletLengthBoxPlot-Allt.png',goToHour));
 
+if ConditionIndexMax < 4  break;
 ConditionIndex = 4;
 hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths All time'));
 groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
@@ -63,6 +67,7 @@ title('Track length across all time')
 ylim([0 250]);
 saveas(hf,sprintf('figures/DMSO05TrackletLengthBoxPlot-Allt.png',goToHour));
 
+if ConditionIndexMax < 7  break;
 ConditionIndex = 7;
 hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths All time'));
 groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];

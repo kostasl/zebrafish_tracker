@@ -66,6 +66,12 @@ bool bSaveImages = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
 
+
+//Area Filters
+double dMeanBlobArea = 300;
+double dVarBlobArea = 50;
+
+
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -174,7 +180,6 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
     double dLearningRate        = 0.01;
     double dblRatioPxChanged    = 0.0;
     unsigned int nFrame = startFrameCount; //Current Frame Number
-
 
 
     //Make Variation of FileNames for other Output
@@ -288,6 +293,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         //cv::rectangle(frame,roi,cv::Scalar(50,250,50));
         drawROI();
 
+
         //cvb::CvBlobs blobs;
         if (bTracking)
         {
@@ -295,7 +301,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             //countObjectsviaContours(fgMaskMOG2); //But not as efficient
 
            // cvb::CvBlobs blobs;
-            nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,outDirCSV,frameNumberString);
+            nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,outDirCSV,frameNumberString,dMeanBlobArea);
 
             //ROI with TRACKs Fails
             const int inactiveFrameCount = 2; //Number of frames inactive until track is deleted
@@ -467,7 +473,7 @@ int countObjectsviaContours(cv::Mat& srcimg )
 }
 
 
-int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString)
+int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea)
 {
 
 
@@ -494,11 +500,14 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
    // cout << "Roi Sz:" << vRoi.size() << endl;
     IplImage  *labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
     cvb::cvLabel( &fgMaskImg, labelImg, blobs );
-    cvb::cvFilterByArea(blobs,20,100);
+
+    cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
+    cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
+    cvb::cvFilterByArea(blobs,dMeanBlobArea,3*dMeanBlobArea); //Remove Small Blobs
+    std::cout << dMeanBlobArea <<  " " << dVarBlobArea << endl;
     unsigned int RoiID = 0;
     for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
-
         ltROI iroi = (ltROI)(*it);
         RoiID++;
 

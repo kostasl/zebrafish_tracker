@@ -11,7 +11,7 @@ clear n;
 clear stdd;
 
 cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
-load('LarvaTrackData.mat');
+%load('LarvaTrackData_B.mat');
 %% Do Mean Speed Per Condition Per Time Window
 meanConditionSpeeds  = {};
 n  = zeros(length(ExpTrackResultsInTime),9);
@@ -20,7 +20,7 @@ stdd  = zeros(length(ExpTrackResultsInTime),9);
 ConditionIndex = 1;
 
 for t=1:length(ExpTrackResultsInTime)
-    for (ConditionIndex=1:9)
+    for (ConditionIndex=1:ConditionIndexMax)
             ExpTrackResults         = ExpTrackResultsInTime{t};
             ResSet                  = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
 

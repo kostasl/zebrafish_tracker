@@ -1,6 +1,6 @@
 function [ frameRates,ExpVialAge,ExpID ,ResultsCell] = importCSVtoCell(filePatt,dirPatt )
 %IMPORTCSVTOCELL Imports experiment results from CSV to CELLArray
-%   scans all sub dirs that start with Exp, use filePatt like '*V*_N'
+%   scans all sub dirs that start wit h Exp, use filePatt like '*V*_N'
 dataFileCount = 0;
 
 files = dir(fullfile(dirPatt));

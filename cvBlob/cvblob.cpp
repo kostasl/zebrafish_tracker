@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <iostream>
+#include "ltROI.h"
 using namespace std;
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) || defined(__WINDOWS__) || (defined(__APPLE__) & defined(__MACH__)))
@@ -70,6 +71,57 @@ namespace cvb
       else
 	++it;
     }
+  }
+
+  //Remove Blobs That Are not in a ROI
+  void cvFilterByROI(ltROIlist& vRoi,CvBlobs &blobs)
+  {
+    CvBlobs::iterator it=blobs.begin();
+    while(it!=blobs.end())
+    {
+      CvBlob *blob=(*it).second;
+      cv::Point pnt;
+      pnt.x = blob->centroid.x;
+      pnt.y = blob->centroid.y;
+
+      if ( ltGetFirstROIContainingPoint(vRoi ,pnt) == 0 )
+      {
+        cvReleaseBlob(blob);
+
+        CvBlobs::iterator tmp=it;
+        ++it;
+        blobs.erase(tmp);
+      }
+      else
+    ++it;
+    }
+  }
+
+
+  double cvBlobAreaMeanVar(CvBlobs &blobs, double& meanArea, double& dvarArea)
+  {
+    double nSum     = 0.0;
+    double nSumSq   = 0.0;
+    double n        = 0.0;
+
+    CvBlobs::iterator it=blobs.begin();
+    while(it!=blobs.end())
+    {
+      CvBlob *blob=(*it).second;
+      nSum      += blob->area;
+      nSumSq    += blob->area*blob->area;
+      n++;
+
+      ++it; //Next Blob
+    }
+    //Only Update If there are more than 2 blob Samples
+    if (n > 2)
+    {
+        meanArea = nSum/n;
+        dvarArea = (nSumSq - (nSum*nSum) /n) / (n-1);
+    }
+
+    return meanArea;
   }
 
   void cvFilterByLabel(CvBlobs &blobs, CvLabel label)
