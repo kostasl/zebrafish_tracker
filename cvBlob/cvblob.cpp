@@ -54,13 +54,17 @@ namespace cvb
     return label;
   }
 
-  void cvFilterByArea(CvBlobs &blobs, unsigned int minArea, unsigned int maxArea)
+  //Added Area Profile Filter
+  void cvFilterByArea(CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
   {
     CvBlobs::iterator it=blobs.begin();
     while(it!=blobs.end())
     {
       CvBlob *blob=(*it).second;
-      if ((blob->area<minArea)||(blob->area>maxArea))
+      //Get Height Weight Ratio / If shape x5 too narrow or too thin then not a larva
+      float fWHRatio = (float)(blob->maxy-blob->miny)/(float)(blob->maxx-blob->minx);
+
+      if ((blob->area<minArea) || (blob->area > maxArea) || fWHRatio > 5 || fWHRatio < 0.2 )
       {
         cvReleaseBlob(blob);
 
@@ -69,7 +73,7 @@ namespace cvb
         blobs.erase(tmp);
       }
       else
-	++it;
+        ++it;
     }
   }
 
@@ -108,10 +112,14 @@ namespace cvb
     while(it!=blobs.end())
     {
       CvBlob *blob=(*it).second;
-      nSum      += blob->area;
-      nSumSq    += blob->area*blob->area;
-      n++;
 
+      //Do not count pixel spec/tiny areas in Mean
+      if (blob->area > 4)
+      {
+          nSum      += blob->area;
+          nSumSq    += blob->area*blob->area;
+          n++;
+      }
       ++it; //Next Blob
     }
     //Only Update If there are more than 2 blob Samples

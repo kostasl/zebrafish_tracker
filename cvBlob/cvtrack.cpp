@@ -216,11 +216,12 @@ namespace cvb
         {
           CvTrack* t = T(j); //Fetch The blob to examine ROI
           CvBlob* b = B(i); //Fetch The blob to examine ROI
-          C(i, j) = distantBlobTrack(b,t) < min( 3*(t->effectiveDisplacement+4),thDistance);
+          C(i, j) = distantBlobTrack(b,t) < min( 1.2*(t->effectiveDisplacement+4),thDistance);
           //if (C(i, j) < thDistance  ) //< thDistance (t->effectiveDisplacement + 5)
           if(C(i, j))
           {
 
+             //No Need If blobs Are filtered by ROI / But need to check if they are in the same ROI
              ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
              if (blbroi == 0 ) //Not In any tracked ROI - so ignore
                 continue;

@@ -71,6 +71,11 @@ bool bMouseLButtonDown;
 double dMeanBlobArea = 300;
 double dVarBlobArea = 50;
 
+//BG History
+const int MOGhistory        = 100;
+//Processing Loop delay
+const uint cFrameDelayms    = 1;
+double dLearningRate        = 0.01;
 
 using namespace std;
 
@@ -88,7 +93,7 @@ int main(int argc, char *argv[])
     //outfilename.truncate(outfilename.lastIndexOf("."));
     QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
 
-    // get the applications dir path and expose it to QML
+    // get the applications dir pah and expose it to QML
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
     //Init Font
     cvInitFont(&trackFnt, CV_FONT_HERSHEY_DUPLEX, 0.4, 0.4, 0, 1);
@@ -108,7 +113,7 @@ int main(int argc, char *argv[])
 
     //create Background Subtractor objects
           //(int history=500, double varThreshold=16, bool detectShadows=true
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(30,16,false); //MOG2 approach
+    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false); //MOG2 approach
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
     //pMOG =  new cv::BackgroundSubtractorMOG(30,12,0.7,0.0); //MOG approach
     //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
@@ -177,7 +182,7 @@ int main(int argc, char *argv[])
 unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int startFrameCount) {
     unsigned int nLarva         =  0;
     //Speed that stationary objects are removed
-    double dLearningRate        = 0.01;
+
     double dblRatioPxChanged    = 0.0;
     unsigned int nFrame = startFrameCount; //Current Frame Number
 
@@ -231,8 +236,16 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         }
         //Add frames from Last video
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
-        if (nFrame > 2500)
-            dLearningRate = 0.001;
+
+        //If Mask shows that a large ratio of pixels is changing then - adjust learning rate to keep activity below 0.006
+        if (dblRatioPxChanged > 0.006)
+            dLearningRate = max(dLearningRate*2,1.0);
+        else if (nFrame > MOGhistory*8)
+            dLearningRate = 0.0001;
+        else
+            dLearningRate =  0.01;
+
+
 
 
         //update the background model
@@ -264,15 +277,17 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         cv::putText(frame, strCount.str(), cv::Point(15, 38),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
+        char buff[100];
         //Learning Rate
-        std::stringstream strLearningRate;
-        strLearningRate << "dL:" << (dLearningRate);
+        //std::stringstream strLearningRate;
+        std::sprintf(buff,"dL: %0.4f",dLearningRate);
+        //strLearningRate << "dL:" << (double)(dLearningRate);
         cv::rectangle(frame, cv::Point(10, 50), cv::Point(100,70), cv::Scalar(255,255,255), -1);
-        cv::putText(frame, strLearningRate.str(), cv::Point(15, 63),
+        cv::putText(frame, buff, cv::Point(15, 63),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
         //Time Rate - conv from ms to minutes
-        char buff[100];
+
         std::sprintf(buff,"t: %0.2f",gTimer.elapsed()/(1000.0*60.0) );
         //strTimeElapsed << "" <<  << " m";
         cv::rectangle(frame, cv::Point(10, 75), cv::Point(100,95), cv::Scalar(255,255,255), -1);
@@ -309,7 +324,8 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             //thDistance = 22 //Distance from Blob to track
-            cvb::cvUpdateTracks(blobs,tracks,vRoi, 35, inactiveFrameCount,thActive);
+            int thDistance = 35;
+            cvb::cvUpdateTracks(blobs,tracks,vRoi, thDistance, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
             //cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID,&trackFnt);
@@ -325,8 +341,10 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             //cv::imshow("FG Mask GMG ", fgMaskGMG);
         }
 
-        //get the input from the keyboard
-        keyboard = cv::waitKey( 30 );
+       // if (!bTracking)
+            //get the input from the keyboard
+            keyboard = cv::waitKey( cFrameDelayms );
+
 
         checkPauseRun(keyboard,frameNumberString);
 
@@ -503,8 +521,11 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
     cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
     cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
-    cvb::cvFilterByArea(blobs,dMeanBlobArea,3*dMeanBlobArea); //Remove Small Blobs
-    std::cout << dMeanBlobArea <<  " " << dVarBlobArea << endl;
+    double dsigma = 3.0*sqrt(dVarBlobArea);
+    cvb::cvFilterByArea(blobs,max(dMeanBlobArea-dsigma,4.0),(unsigned int)(dMeanBlobArea+dsigma)); //Remove Small Blobs
+
+    //Debug Show Mean Size Var
+    //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) << endl;
     unsigned int RoiID = 0;
     for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
