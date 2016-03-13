@@ -227,7 +227,7 @@ namespace cvb
         {
           CvTrack* t = T(j); //Fetch The blob to examine ROI
           CvBlob* b = B(i); //Fetch The blob to examine ROI
-          C(i, j) = distantBlobTrack(b,t) < max( 2*(t->effectiveDisplacement+4),thDistance);
+          C(i, j) = distantBlobTrack(b,t) < min( 2*(t->effectiveDisplacement+2),3*thDistance);
           //if (C(i, j) < thDistance  ) //< thDistance (t->effectiveDisplacement + 5)
           if(C(i, j))
           {
@@ -295,7 +295,7 @@ namespace cvb
           track->maxx = blob->maxx;
           track->maxy = blob->maxy;
           track->centroid = blob->centroid;
-          track->effectiveDisplacement = 4*thDistance; //Set To largest value initially
+          track->effectiveDisplacement = sqrt((double)blob->area); //Set To largest value initially
           track->lifetime = 0;
           track->active = 0;
           track->inactive = 0;
@@ -307,6 +307,9 @@ namespace cvb
         }
       } //END NEW Tracks
       ////////////////
+      unsigned int area;
+      double dist;
+
       // Clustering of the Tracks
       for (j=0; j<nTracks; j++)
       {
@@ -321,15 +324,15 @@ namespace cvb
 
           getClusterForTrack(j, close, nBlobs, nTracks, blobs, tracks, bb, tt);
 
-          // Select track
-          //KL :SEG FAULT is caused by these searches failing -low rate occurance)
-          CvTrack *track    = cTrack; //Start With the initial Track as picked
-          unsigned int area = (cTrack->maxx-cTrack->minx)*(cTrack->maxy-cTrack->miny); //Area Of track we compare against
-          double dist       = thDistance/2; //Distance
-          // Go Through List Of tracks Around track -
-          // Pick the one associated with the blob with larges area in proximity with picked track
-          for (list<CvTrack*>::const_iterator it=tt.begin(); it!=tt.end(); ++it)
-          {
+//          // Select track
+//          //KL :SEG FAULT is caused by these searches failing -low rate occurance)
+            CvTrack *track    = cTrack; //Start With the initial Track as picked //TODO:Change to NULL?
+          area = (cTrack->maxx-cTrack->minx)*(cTrack->maxy-cTrack->miny); //Area Of track we compare against
+          dist       = thDistance/2; //Distance over which Tracks are Clustered (Make Small so that we have higher track resolution)
+//          // Go Through List Of tracks Around track -
+//          // Pick the one associated with the blob with larges area in proximity with picked track
+           for (list<CvTrack*>::const_iterator it=tt.begin(); it!=tt.end(); ++it)
+           {
             CvTrack *t = *it;
 
             unsigned int a = (t->maxx-t->minx)*(t->maxy-t->miny);

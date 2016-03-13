@@ -319,12 +319,12 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,outDirCSV,frameNumberString,dMeanBlobArea);
 
             //ROI with TRACKs Fails
-            const int inactiveFrameCount = 2; //Number of frames inactive until track is deleted
+            const int inactiveFrameCount = 10; //Number of frames inactive until track is deleted
             const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             //thDistance = 22 //Distance from Blob to track
-            int thDistance = 10;
+            int thDistance = 20;
             cvb::cvUpdateTracks(blobs,tracks,vRoi, thDistance, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
