@@ -240,10 +240,10 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         //If Mask shows that a large ratio of pixels is changing then - adjust learning rate to keep activity below 0.006
         if (dblRatioPxChanged > 0.006)
             dLearningRate = max(min(dLearningRate*2,1.0),0.0);
-        else if (nFrame > MOGhistory*8)
+        else if (nFrame > MOGhistory*2)
             dLearningRate = 0.0001;
         else
-            dLearningRate =  0.01;
+            dLearningRate = 0.001;
 
 
 
@@ -531,8 +531,8 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
     cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
     cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
-    double dsigma = 2.0*sqrt(dVarBlobArea);
-    cvb::cvFilterByArea(blobs,max(dMeanBlobArea-dsigma,9.0),(unsigned int)(dMeanBlobArea+dsigma)); //Remove Small Blobs
+    double dsigma = 3.0*sqrt(dVarBlobArea);
+    cvb::cvFilterByArea(blobs,max(dMeanBlobArea-dsigma,9.0),(unsigned int)min((dMeanBlobArea+dsigma),15)); //Remove Small Blobs
 
     //Debug Show Mean Size Var
     //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) << endl;

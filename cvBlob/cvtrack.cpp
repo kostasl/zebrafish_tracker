@@ -227,7 +227,7 @@ namespace cvb
         {
           CvTrack* t = T(j); //Fetch The blob to examine ROI
           CvBlob* b = B(i); //Fetch The blob to examine ROI
-          C(i, j) = distantBlobTrack(b,t) < min( 1.2*(t->effectiveDisplacement+4),thDistance);
+          C(i, j) = distantBlobTrack(b,t) < max( 1.2*(t->effectiveDisplacement+4),thDistance);
           //if (C(i, j) < thDistance  ) //< thDistance (t->effectiveDisplacement + 5)
           if(C(i, j))
           {
