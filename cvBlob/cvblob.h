@@ -523,7 +523,7 @@ extern "C" {
     ltROI* pROI; ///< Pointer To Region of Interest structure to which this track belongs
     CvLabel label; ///< Label assigned to the blob related to this track.
 
-    unsigned int minx; ///< X min.
+    unsigned int minx; ///< X min.same as  corresponding blob bounding box
     unsigned int maxx; ///< X max.
     unsigned int miny; ///< Y min.
     unsigned int maxy; ///< y max.
