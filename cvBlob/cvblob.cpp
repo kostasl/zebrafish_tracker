@@ -217,21 +217,21 @@ namespace cvb
       int imgDest_offset = 0;
       if(imgLabel->roi)
       {
-	imgLabel_width = imgLabel->roi->width;
-	imgLabel_height = imgLabel->roi->height;
-	imgLabel_offset = (imgLabel->nChannels * imgLabel->roi->xOffset) + (imgLabel->roi->yOffset * stepLbl);
+        imgLabel_width = imgLabel->roi->width;
+        imgLabel_height = imgLabel->roi->height;
+        imgLabel_offset = (imgLabel->nChannels * imgLabel->roi->xOffset) + (imgLabel->roi->yOffset * stepLbl);
       }
       if(imgSource->roi)
       {
-	imgSource_width = imgSource->roi->width;
-	imgSource_height = imgSource->roi->height;
-	imgSource_offset = (imgSource->nChannels * imgSource->roi->xOffset) + (imgSource->roi->yOffset * stepSrc);
+        imgSource_width = imgSource->roi->width;
+        imgSource_height = imgSource->roi->height;
+        imgSource_offset = (imgSource->nChannels * imgSource->roi->xOffset) + (imgSource->roi->yOffset * stepSrc);
       }
       if(imgDest->roi)
       {
-	imgDest_width = imgDest->roi->width;
-	imgDest_height = imgDest->roi->height;
-	imgDest_offset = (imgDest->nChannels * imgDest->roi->xOffset) + (imgDest->roi->yOffset * stepDst);
+        imgDest_width = imgDest->roi->width;
+        imgDest_height = imgDest->roi->height;
+        imgDest_offset = (imgDest->nChannels * imgDest->roi->xOffset) + (imgDest->roi->yOffset * stepDst);
       }
 
       CvLabel *labels = (CvLabel *)imgLabel->imageData + imgLabel_offset + (blob->miny * stepLbl);
@@ -273,26 +273,27 @@ namespace cvb
       }
 
       if (mode&CV_BLOB_RENDER_BOUNDING_BOX)
-	cvRectangle(imgDest, cvPoint(blob->minx, blob->miny), cvPoint(blob->maxx-1, blob->maxy-1), CV_RGB(255., 0., 0.));
+        //cvRectangle(imgDest, cvPoint(blob->minx, blob->miny), cvPoint(blob->maxx-1, blob->maxy-1), CV_RGB(255., 0., 0.));
+        cvRenderContourChainCode(&blob->contour,imgDest,CV_RGB(255., 0., 0.));
 
       if (mode&CV_BLOB_RENDER_ANGLE)
       {
-	double angle = cvAngle(blob);
+        double angle = cvAngle(blob);
 
-	double x1,y1,x2,y2;
-	double lengthLine = MAX(blob->maxx-blob->minx, blob->maxy-blob->miny)/2.;
+        double x1,y1,x2,y2;
+        double lengthLine = MAX(blob->maxx-blob->minx, blob->maxy-blob->miny)/2.;
 
-	x1=blob->centroid.x-lengthLine*cos(angle);
-	y1=blob->centroid.y-lengthLine*sin(angle);
-	x2=blob->centroid.x+lengthLine*cos(angle);
-	y2=blob->centroid.y+lengthLine*sin(angle);
-	cvLine(imgDest,cvPoint(int(x1),int(y1)),cvPoint(int(x2),int(y2)),CV_RGB(0.,255.,0.));
+        x1=blob->centroid.x-lengthLine*cos(angle);
+        y1=blob->centroid.y-lengthLine*sin(angle);
+        x2=blob->centroid.x+lengthLine*cos(angle);
+        y2=blob->centroid.y+lengthLine*sin(angle);
+        cvLine(imgDest,cvPoint(int(x1),int(y1)),cvPoint(int(x2),int(y2)),CV_RGB(0.,255.,0.));
       }
 
       if (mode&CV_BLOB_RENDER_CENTROID)
       {
-	cvLine(imgDest,cvPoint(int(blob->centroid.x)-3,int(blob->centroid.y)),cvPoint(int(blob->centroid.x)+3,int(blob->centroid.y)),CV_RGB(0.,0.,255.));
-	cvLine(imgDest,cvPoint(int(blob->centroid.x),int(blob->centroid.y)-3),cvPoint(int(blob->centroid.x),int(blob->centroid.y)+3),CV_RGB(0.,0.,255.));
+        cvLine(imgDest,cvPoint(int(blob->centroid.x)-3,int(blob->centroid.y)),cvPoint(int(blob->centroid.x)+3,int(blob->centroid.y)),CV_RGB(0.,0.,255.));
+        cvLine(imgDest,cvPoint(int(blob->centroid.x),int(blob->centroid.y)-3),cvPoint(int(blob->centroid.x),int(blob->centroid.y)+3),CV_RGB(0.,0.,255.));
       }
     }
 

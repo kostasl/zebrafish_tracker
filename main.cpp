@@ -324,7 +324,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             //thDistance = 22 //Distance from Blob to track
-            int thDistance = 35;
+            int thDistance = 10;
             cvb::cvUpdateTracks(blobs,tracks,vRoi, thDistance, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
@@ -532,7 +532,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
     cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
     double dsigma = 3.0*sqrt(dVarBlobArea);
-    cvb::cvFilterByArea(blobs,max(dMeanBlobArea-dsigma,9.0),(unsigned int)min((dMeanBlobArea+dsigma),15)); //Remove Small Blobs
+    cvb::cvFilterByArea(blobs,max(dMeanBlobArea-dsigma,9.0),(unsigned int)max((dMeanBlobArea+dsigma),15.0)); //Remove Small Blobs
 
     //Debug Show Mean Size Var
     //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) << endl;
