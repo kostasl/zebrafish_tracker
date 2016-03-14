@@ -5,7 +5,7 @@ ExpCondTitles = {' ATTP40',' B47',' B48'};
 ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
 
 %% Box plot of track lengths at specific Time
-goToHour        = 90; %90 is arround the usual recording time ~ VialAge(1)
+goToHour        = 85; %90 is arround the usual recording time ~ VialAge(1)
 t               = (goToHour*3600- VialAge(1))/timeAdvance; %(goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 
@@ -44,8 +44,11 @@ if (ConditionIndexMax >= 7)
     ylim([0 250]);
     saveas(hf,sprintf('figures/DMSO10TrackletLengthBoxPlot-%dHour.png',goToHour));
 end
-%Across all time
-ExpTrackResultsAllTime = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, TimeFrameWidth ,maxRecordingTime, MinStepLength ,bVerbose);
+
+%% Across all time
+From = 0;
+TimeWindow = max(ExpTrack{1}(:,1));
+ExpTrackResultsAllTime = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, FromTime ,TimeWindow, MinStepLength ,bVerbose);
 for ConditionIndex=1:ConditionIndexMax
     ResSet                  = vertcat(ExpTrackResultsAllTime{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
@@ -58,7 +61,7 @@ groups = [ zeros( length(meanConditionLength{1}) ,1); ones(length(meanConditionL
 boxplot([meanConditionLength{1};meanConditionLength{2};meanConditionLength{3}],groups,'labels',{strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3})})
 title('Track length across all time')
 ylim([0 250]);
-saveas(hf,sprintf('figures/NFTrackletLengthBoxPlot-Allt.png',goToHour));
+saveas(hf,sprintf('figures/NFTrackletLengthBoxPlot-from%dtoEnd.png',goToHour));
 
 if ConditionIndexMax > 3  
    

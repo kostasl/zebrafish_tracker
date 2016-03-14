@@ -1,5 +1,5 @@
 %Produces plot of Mean Speed / Activity based on Number of tracklet samples
-%For EXp Set 1 - 9 conditions :
+%For EXp Set 1 - 9 conditions :clo
 %ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
 %For EXp Set 2 - 9 conditions :
 ExpCondTitles = {' ATTP40',' BWD47',' BWD48'};
@@ -13,7 +13,7 @@ clear mu;
 clear n;
 clear stdd;
 
-cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
+cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %load('LarvaTrackData_B.mat');
 %% Do Mean Speed Per Condition Per Time Window
 meanConditionSpeeds  = {};
@@ -38,6 +38,9 @@ for t=1:length(ExpTrackResultsInTime)
     
 end
 
+ylimitsTracklets = ceil(max(n(:))/100)*100;
+ylimits = ceil(max(mu(:)));
+
 strtitle = sprintf('Mean Activity -Sliding Window %d hours',TimeFrameWidth/3600);
 % Plot Results - In sets of 3-genotypes For each Food Condition
 for (ConditionIndex=1:3:ConditionIndexMax)
@@ -45,19 +48,25 @@ for (ConditionIndex=1:3:ConditionIndexMax)
     t = length(ExpTrackResultsInTime);
     Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
     hf = figure('Name',strcat(ExpCondFood{ConditionIndex},strtitle));
+    
     subplot(3,1,1)
     plot(Exptime,mu(:,ConditionIndex),Exptime,mu(:,ConditionIndex+1),Exptime,mu(:,ConditionIndex+2));
-    legend(strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2}))
+    
     title('Mean Speed in px/sec');
     ylim([0 ylimits]);
     subplot(3,1,2)
     plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
     title('Number of samples');
-    subplot(3,1,3)
+    hh= subplot(3,1,3)
+    %get(hh,'position')
+
+
     plot(Exptime,stdd(:,ConditionIndex+0),Exptime,stdd(:,ConditionIndex+1),Exptime,stdd(:,ConditionIndex+2));
     title('STD Dev ');
     xlabel('Hour');
     ylim([0 ylimits]);
+    legend(strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2}),'Location','southoutside','Orientation','horizontal')
+    set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
     saveas(hf,strcat('figures/meanVialSpeedSlidingWindow',ExpCondFood{ConditionIndex},'.png'));
 end
 
@@ -65,7 +74,7 @@ ConditionIndex =1;
 hf = figure('Name',strcat(ExpCondFood{ConditionIndex},strtitle));
 subplot(3,1,1)
     plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
-    legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
+    
     title(ExpCondFood{ConditionIndex});
     ylim([0 ylimitsTracklets ]);
     
@@ -86,6 +95,8 @@ if ConditionIndexMax > 6
     legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
     title(ExpCondFood{ConditionIndex});
 end
+
+legend(strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2}),'Location','southoutside','Orientation','horizontal')
 saveas(hf,strcat('figures/meanVialActivityFor3FoodConditions.png'));
 
 
