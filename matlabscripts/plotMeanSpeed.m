@@ -60,22 +60,23 @@ end
 ConditionIndex =1;
 hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Mean Activity - hourlong Sliding Window'));
 subplot(3,1,1)
-plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
-legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
-title(ExpCondFood{ConditionIndex});
-ylim([0 ylimitsTracklets ]);
+    plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
+    legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
+    title(ExpCondFood{ConditionIndex});
+    ylim([0 ylimitsTracklets ]);
 ConditionIndex =4;
-subplot(3,1,2)
-plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
-ylim([0 ylimitsTracklets ]);
-legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
-title(ExpCondFood{ConditionIndex});
+    subplot(3,1,2)
+    plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
+    ylim([0 ylimitsTracklets ]);
+    legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
+    title(ExpCondFood{ConditionIndex});
 ConditionIndex =7;
-subplot(3,1,3)
-plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
-ylim([0 ylimitsTracklets ]);
-legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
-title(ExpCondFood{ConditionIndex});
+    subplot(3,1,3)
+    plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
+    ylim([0 ylimitsTracklets ]);
+    legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
+    title(ExpCondFood{ConditionIndex});
+
 saveas(hf,strcat('figures/meanVialActivityFor3FoodConditions.png'));
 
 

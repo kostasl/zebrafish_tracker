@@ -29,7 +29,7 @@ cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
 %Give 3 days data points 1 sec each.
 % Genotypes are 3 organized in this order : 1st WT (oregonR), 2nd Genetic Control, 3rd AlfaBeta Mutant
 ConditionIndex      = 1; %Experimental Condition ID : Food(Condition)/Genetype Combinations
-ConditionIndexMax   = 1; %Set to 1 For Exp. Setups with only 1 food condition
+ConditionIndexMax   = 3; %Defines max exp. configuration being replicated - ex. 1= Food1/Gen1 1= Food2/Gen1. Combos
 
 % The videos have 2 rows of 9 vials - Vials 1-10 have identical conditions so they go in PAIRS
 %VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
@@ -133,7 +133,7 @@ for e=1:size(ExpTrackResults,1)
     end
 end
 title('Plot Sample Track');
-saveas(hf,sprintf('figures/VialTracklets_t%d-%dHours.png',goToHour,,goToHour+TimeFrameWidth/3600));
+saveas(hf,sprintf('figures/VialTracklets_t%d-%dHours.png',goToHour,goToHour+TimeFrameWidth/3600));
 
 
 
