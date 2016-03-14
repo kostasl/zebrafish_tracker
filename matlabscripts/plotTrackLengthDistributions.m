@@ -1,9 +1,11 @@
-
-ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
+%For Exp Set 1
+%ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
+%For exp Set 2
+ExpCondTitles = {' ATTP40',' B47',' B48'};
 ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
 
 %% Box plot of track lengths at specific Time
-goToHour        = 110; %90 is arround the usual recording time ~ VialAge(1)
+goToHour        = 90; %90 is arround the usual recording time ~ VialAge(1)
 t               = (goToHour*3600- VialAge(1))/timeAdvance; %(goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 

@@ -66,7 +66,7 @@ MaxLifetime     = 20000; %Maximum Number of Path Steps
 MinDistance     = 5; %Minimum Track length to consider def 10
 MinStepLength   = 1; %%Cut Tracklet when 2-frame displacement drops below value 
 MaxStepLength   = 55; %MaxpxSpeed -->Between two frames rejects steps larger than this
-TimeFrameWidth  = 5*3600; %Frame Sliding Window in sec Overwhich results are averaged
+TimeFrameWidth  = 1*3600; %Frame Sliding Window in sec Overwhich results are averaged
 
 % Organize data in a Sliding Window
 InitTime = 0*3600; %Start processing Data from InitTime / Default 0
@@ -95,7 +95,7 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
-goToHour =90; %Exp Hour - with 0 being Embryo Placement
+goToHour =85; %Exp Hour - with 0 being Embryo Placement
 
 t= (goToHour*3600 - VialAge(1))/timeAdvance; %
 ExpTrackResults = ExpTrackResultsInTime{t};
