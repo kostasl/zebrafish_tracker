@@ -1,27 +1,29 @@
-/*
- * 25/11/2015 : kostasl Testing OpenCV bg substraction - to process larva in vial recording timelapses.
- * App uses BG substyraction MOG2, with a slow learning rate.
- * then Uses Open and Close / Dilation contraction techniques to get rid of noise and fill gaps
- * Then uses cvBlob library to track and count larva on BG-processed images.
- * The lib sources have been included to the source and slightly modified in update tracks to fix a bug.
- *
- * User:
- * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
- * The green box defines the region over which the larvae are counted-tracked and recorded to file.
- * Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
- * Press p to pause Image. once paused:
- *  s to save snapshots in CSV outdir pics subfolder.
- *  2 Left Clicks to define the 2 points of region-of interest for tracking.
- *  m to show the masked image of the larva against BG.
- *  t Start Tracking
- *  q Exit Quit application
- *
- * NOTE: Changing ROI hits SEG. FAULTs in update tracks of the library. So I made setting of ROI only once.
- * The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
- * So I reverted to not tracking - as the code does not work well - I am recording blobs For now
- *
- *  Dependencies : opencv3
- */
+///*
+//// 25/11/2015 : kostasl Testing OpenCV bg substraction - to process larva in vial recording timelapses.
+ //// App uses BG substyraction MOG2, with a slow learning rate.
+ //// then Uses Open and Close / Dilation contraction techniques to get rid of noise and fill gaps
+ //// Then uses cvBlob library to track and count larva on BG-processed images.
+ //// The lib sources have been included to the source and slightly modified in update tracks to fix a bug.
+ ////
+ ///* User:
+ ///* Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
+ ///* The green box defines the region over which the larvae are counted-tracked and recorded to file.
+ ///* Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
+ ///* Press p to pause Image. once paused:
+ ///*  s to save snapshots in CSV outdir pics subfolder.
+ ///*  2 Left Clicks to define the 2 points of region-of interest for tracking.
+ ///*  m to show the masked image of the larva against BG.
+ ///*  t Start Tracking
+ ///*  q Exit Quit application
+ ///*
+ ///* NOTE: Changing ROI hits SEG. FAULTs in update tracks of the library. So I made setting of ROI only once.
+ ///* The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
+ ///* So I reverted to not tracking - as the code does not work well - I am recording blobs For now
+ ///*
+ ///*  Dependencies : opencv3
+ ///*
+ /// TODO: Detect stopped Larva - either pupating or stuck
+ ////////
 
 
 #include <larvatrack.h>

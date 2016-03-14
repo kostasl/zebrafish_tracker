@@ -36,7 +36,7 @@ for t=1:length(ExpTrackResultsInTime)
 end
 
 % Plot Results - In sets of 3-genotypes For each Food Condition
-for (ConditionIndex=1:3:9)
+for (ConditionIndex=1:3:ConditionIndexMax)
 
     t = length(ExpTrackResultsInTime);
     Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
