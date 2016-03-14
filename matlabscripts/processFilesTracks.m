@@ -103,7 +103,7 @@ ExpTrackResults = ExpTrackResultsInTime{t};
 % NOTE: Y values are inverted since 0 Point in plot as at the bottom
 imgSize = [1024,768];
 colour = {'r','m','k','c','b','g','k','--r','--m','--k','--c','--b','--g','--k','-r','-k','-g'};
-hf = figure('Name',sprintf('Tracks at t=%d hours',goToHour));
+hf = figure('Name',sprintf('Tracks at t=%d-%d hours',goToHour,goToHour+TimeFrameWidth/3600));
 xlim([0 imgSize(1)]);
 ylim([0 imgSize(2)]);
 
@@ -133,7 +133,7 @@ for e=1:size(ExpTrackResults,1)
     end
 end
 title('Plot Sample Track');
-saveas(hf,sprintf('figures/VialTracklets-%dHour.png',goToHour));
+saveas(hf,sprintf('figures/VialTracklets_t%d-%dHours.png',goToHour,,goToHour+TimeFrameWidth/3600));
 
 
 
