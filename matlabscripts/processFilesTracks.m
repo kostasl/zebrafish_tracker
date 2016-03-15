@@ -19,9 +19,9 @@ addpath(fileparts(which('processFilesTracks.m')))
 cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP_B*' );
 
-strOutputTag = '_ABC_';
+strOutputTag = '_B_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
