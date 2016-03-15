@@ -9,7 +9,7 @@ function [ExpTrackResults] = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePerio
 %MinDistance   Minimum Track length to consider
 %MaxStepLength  Between two frames rejects steps larger than this
 % FromTime : Filter Tracklets that are X sec after beginning of video
-%TimeWindow  %TimeFrame Sliding Window in Sec Overwhich results are averaged
+%TimeWindow  : Set Time after FromTime to extract data points from
 FilteredTracks = {}; 
 %MinpxSpeed = 2;
 % bVerb = 0; Flag to Set if function should be verbose
@@ -18,6 +18,7 @@ for (e=1:size(ExpTrack,1))
     if (bVerb)
         disp(char(ExpIDs(e)));
     end
+    
     for (v=1:size(ExpTrack,2))
         %Check If Empty cell - Data for Vial N/A
        if isempty(ExpTrack{e,v}) 
@@ -27,8 +28,8 @@ for (e=1:size(ExpTrack,1))
        % Get Track Ids that are longer than MinLifetime
        FiltIndexes = find( ExpTrack{e,v}(:,6)>MinLifetime & ...
                            ExpTrack{e,v}(:,6)  < MaxLifetime & ...           
-                           ExpTrack{e,v}(:,1)*framePeriod(e) < FromTime & ...
-                           ExpTrack{e,v}(:,1)*framePeriod(e) > (FromTime - TimeWindow) );
+                           ExpTrack{e,v}(:,1)*framePeriod(e) > FromTime & ...
+                           ExpTrack{e,v}(:,1)*framePeriod(e) < (FromTime + TimeWindow) );
        
        FilteredTrackIDs = unique(ExpTrack{e,v}(FiltIndexes, 2));
        %Unfiltered Unique Ids

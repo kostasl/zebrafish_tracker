@@ -107,9 +107,9 @@ namespace cvb
   //KL: MACROS To access Proximity Matrix Data
   // Access to matrix
 #define C(blob, track) close[((blob) + (track)*(nBlobs+2))]
-  // Access to accumulators //KLLast Rows have Sums
-#define AB(label) C((label), (nTracks))
-#define AT(id) C((nBlobs), (id))
+  // Access to accumulators //KLLast Rows/columns have Sums
+#define AB(label) C((label), (nTracks)) //Return Number of tracks proximal to blob
+#define AT(id) C((nBlobs), (id)) //Return Number of blobs proximal to Track
   // Access to identifications //KL : One Before Last has Labels
 #define IB(label) C((label), (nTracks)+1)
 #define IT(id) C((nBlobs)+1, (id))
@@ -118,21 +118,27 @@ namespace cvb
 #define T(id) tracks.find(IT(id))->second
 
 
+ //Populates list of tracks proximal to blob - and removes them from the proximity matrix
+  //This goes around all columns of C matrix, and for each it calls getClusterForTrack which goes down every row of that column
   void getClusterForBlob(unsigned int blobPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, list<CvBlob*> &bb, list<CvTrack*> &tt)
   {
+    //For each Track
     for (unsigned int j=0; j<nTracks; j++)
     {
+        //Check if blob is proxim. to track
       if (C(blobPos, j))
       {
+       //Add track to track list
         tt.push_back(T(j));
 
+        //Get blob count for track
         unsigned int c = AT(j);
 
-        C(blobPos, j) = 0;
-        AB(blobPos)--;
-        AT(j)--;
+        C(blobPos, j) = 0; //Reset proximity to 0
+        AB(blobPos)--; //reduce track Accumulator for blob
+        AT(j)--; //Reduce blob accum for track
 
-        if (c>1)
+        if (c>1) //If track blob was connected - run Cluster for Track
         {
           getClusterForTrack(j, close, nBlobs, nTracks, blobs, tracks, bb, tt);
         }
@@ -140,22 +146,27 @@ namespace cvb
     }
   }
 
+//Populates list of blobs proximal to a track - and removes them from the proximity matrix
   void getClusterForTrack(unsigned int trackPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, list<CvBlob*> &bb, list<CvTrack*> &tt)
   {
+      //For each blob
     for (unsigned int i=0; i<nBlobs; i++)
     {
-        //KL: check if blob close to track using / Proximity matrix:?
+       //KL: check if blob close to track using / Proximity matrix
       if (C(i, trackPos))
       {
+         //Add blob to list of blobs
         bb.push_back(B(i));
 
+        //Check number of tracks assigned to blob
         unsigned int c = AB(i);
 
+        //Reset Prox. entry to 0
         C(i, trackPos) = 0;
-        AB(i)--;
-        AT(trackPos)--;
+        AB(i)--; //reduce track Accumulator for blob
+        AT(trackPos)--; //Reduce blob accum for track
 
-        if (c>1)
+        if (c>1) //If these were connected Call
         {
           getClusterForBlob(i, close, nBlobs, nTracks, blobs, tracks, bb, tt);
         }
@@ -164,7 +175,7 @@ namespace cvb
   }
 
   /// \brief Initializes empty a proximity matrix, and uses macros C, AB,AT,.. to access label and counting the blob label proximities
-  ///
+  /// \param thDistance pixel distance used for radius that clusters tracks
   /// Reassign Max Track ID
   /// Detect inactive tracks
   /// Calculate/Fill Proximity Matrix :I added a limit to the track's ROI when assigning proximity based on fixed thDistance
@@ -216,11 +227,12 @@ namespace cvb
         {
           CvTrack* t = T(j); //Fetch The blob to examine ROI
           CvBlob* b = B(i); //Fetch The blob to examine ROI
-          C(i, j) = distantBlobTrack(b,t) < min( 3*(t->effectiveDisplacement+4),thDistance);
+          C(i, j) = distantBlobTrack(b,t) < min( 2*(t->effectiveDisplacement+5),3*thDistance);
           //if (C(i, j) < thDistance  ) //< thDistance (t->effectiveDisplacement + 5)
           if(C(i, j))
           {
 
+             //No Need If blobs Are filtered by ROI / But need to check if they are in the same ROI
              ltROI* blbroi = ltGetFirstROIContainingPoint(vRoi ,cv::Point(b->centroid.x,b->centroid.y) );
              if (blbroi == 0 ) //Not In any tracked ROI - so ignore
                 continue;
@@ -275,6 +287,7 @@ namespace cvb
           maxTrackID++;
           CvTrack *track = new CvTrack;
 
+          //Copies Blob data to track
           track->id = maxTrackID;
           track->label = blob->label;
           track->minx = blob->minx;
@@ -282,7 +295,7 @@ namespace cvb
           track->maxx = blob->maxx;
           track->maxy = blob->maxy;
           track->centroid = blob->centroid;
-          track->effectiveDisplacement = thDistance; //Set To largest value initially
+          track->effectiveDisplacement = sqrt((double)blob->area); //Set To largest value initially
           track->lifetime = 0;
           track->active = 0;
           track->inactive = 0;
@@ -292,30 +305,34 @@ namespace cvb
           track->pointStack.push_back(pntCentroid); //Add 1st Point to list of Track
           tracks.insert(CvIDTrack(maxTrackID, track));
         }
-      }
+      } //END NEW Tracks
+      ////////////////
+      unsigned int area;
+      double dist;
 
-      // Clustering
+      // Clustering of the Tracks
       for (j=0; j<nTracks; j++)
       {
-          //KL:Accumulators
+        //KL:Accumulators
         unsigned int c = AT(j);
         CvTrack* cTrack = T(j);
 
-        if (c)
+        if (c) //If Connected / Proximal to blob
         {
           list<CvTrack*> tt; tt.push_back(T(j));
           list<CvBlob*> bb;
 
           getClusterForTrack(j, close, nBlobs, nTracks, blobs, tracks, bb, tt);
 
-          // Select track
-          //KL :SEG FAULT is caused by these searches failing -low rate occurance)
-          CvTrack *track = NULL;
-          unsigned int area = 0;
-          double dist       = thDistance; //Distance
-          //Go Through List Of tracks Around track
-          for (list<CvTrack*>::const_iterator it=tt.begin(); it!=tt.end(); ++it)
-          {
+//          // Select track
+//          //KL :SEG FAULT is caused by these searches failing -low rate occurance)
+            CvTrack *track    = cTrack; //Start With the initial Track as picked //TODO:Change to NULL?
+          area = (cTrack->maxx-cTrack->minx)*(cTrack->maxy-cTrack->miny); //Area Of track we compare against
+          dist       = thDistance/2; //Distance over which Tracks are Clustered (Make Small so that we have higher track resolution)
+//          // Go Through List Of tracks Around track -
+//          // Pick the one associated with the blob with larges area in proximity with picked track
+           for (list<CvTrack*>::const_iterator it=tt.begin(); it!=tt.end(); ++it)
+           {
             CvTrack *t = *it;
 
             unsigned int a = (t->maxx-t->minx)*(t->maxy-t->miny);
@@ -323,24 +340,24 @@ namespace cvb
 
             if (d<=dist)
             {
-                if (a>area) //Chooses the Track With Largest Area
+                if (a>area) //Chooses the Track With Largest Area - To cluster Smaller Ones in the vicinity
                 {
                   area = a;
                   dist = d;
                   track = t;
                 }
             }
-          }
+          } //Finished Clustering tracks picked the one
 
           // Select blob //KL SET TO NULL Detect not found
           CvBlob *blob  = NULL;
           area          = 0;
           dist          = thDistance; //Reset to Max Distance
-          //cout << "Matching blobs: ";
+
+          //Go through All blobs - Find the one that is closeset to track and largest Area
           for (list<CvBlob*>::const_iterator it=bb.begin(); it!=bb.end(); ++it)
           {
             CvBlob *b = *it;
-
             //cout << b->label << " ";
             //Remove blobs that are not in the same ROI as the track - and those that fail the filter
             if (track != NULL)
@@ -350,17 +367,21 @@ namespace cvb
                if (blbroi == 0 )
                    continue;
 
-               double d = round(sqrt( pow(b->centroid.x - cTrack->centroid.x,2) + pow( (b->centroid.y - cTrack->centroid.y),2)  ));
-                //KL: I think it chooses the one with largest area
-                if (d<=dist && *blbroi == *track->pROI )
-                { //1st Criterion is distance then area
-                    if (b->area>area )
-                    {
-                      area = b->area;
-                      dist = d; //Change to New minimum Distance
-                      blob = b;
-                    }
-                }
+               double d = round(sqrt( pow(b->centroid.x - track->centroid.x,2) + pow( (b->centroid.y - track->centroid.y),2)  ));
+
+               /// Assigning Blob to track
+               /// 1st Criterion to assignment is to minimize distance
+               /// For equal distance among candidates Use Area
+               if (*blbroi == *track->pROI)
+               {
+                   if (d<dist || (d==dist && b->area>area) )
+                   {
+                       area = b->area;
+                       dist = d; //Change to New minimum Distance
+                       blob = b;
+                   }
+               }
+
             }
           }
           //cout << endl;
@@ -400,7 +421,7 @@ namespace cvb
               t->label = 0;
             }
           }
-        }
+        } //If c
       }// Loop Over nTracks (CLUSTERINg)
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

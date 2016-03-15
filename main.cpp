@@ -1,27 +1,29 @@
-/*
- * 25/11/2015 : kostasl Testing OpenCV bg substraction - to process larva in vial recording timelapses.
- * App uses BG substyraction MOG2, with a slow learning rate.
- * then Uses Open and Close / Dilation contraction techniques to get rid of noise and fill gaps
- * Then uses cvBlob library to track and count larva on BG-processed images.
- * The lib sources have been included to the source and slightly modified in update tracks to fix a bug.
- *
- * User:
- * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
- * The green box defines the region over which the larvae are counted-tracked and recorded to file.
- * Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
- * Press p to pause Image. once paused:
- *  s to save snapshots in CSV outdir pics subfolder.
- *  2 Left Clicks to define the 2 points of region-of interest for tracking.
- *  m to show the masked image of the larva against BG.
- *  t Start Tracking
- *  q Exit Quit application
- *
- * NOTE: Changing ROI hits SEG. FAULTs in update tracks of the library. So I made setting of ROI only once.
- * The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
- * So I reverted to not tracking - as the code does not work well - I am recording blobs For now
- *
- *  Dependencies : opencv3
- */
+///*
+//// 25/11/2015 : kostasl Testing OpenCV bg substraction - to process larva in vial recording timelapses.
+ //// App uses BG substyraction MOG2, with a slow learning rate.
+ //// then Uses Open and Close / Dilation contraction techniques to get rid of noise and fill gaps
+ //// Then uses cvBlob library to track and count larva on BG-processed images.
+ //// The lib sources have been included to the source and slightly modified in update tracks to fix a bug.
+ ////
+ ///* User:
+ ///* Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
+ ///* The green box defines the region over which the larvae are counted-tracked and recorded to file.
+ ///* Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
+ ///* Press p to pause Image. once paused:
+ ///*  s to save snapshots in CSV outdir pics subfolder.
+ ///*  2 Left Clicks to define the 2 points of region-of interest for tracking.
+ ///*  m to show the masked image of the larva against BG.
+ ///*  t Start Tracking
+ ///*  q Exit Quit application
+ ///*
+ ///* NOTE: Changing ROI hits SEG. FAULTs in update tracks of the library. So I made setting of ROI only once.
+ ///* The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
+ ///* So I reverted to not tracking - as the code does not work well - I am recording blobs For now
+ ///*
+ ///*  Dependencies : opencv3
+ ///*
+ /// TODO: Detect stopped Larva - either pupating or stuck
+ ////////
 
 
 #include <larvatrack.h>
@@ -66,6 +68,17 @@ bool bSaveImages = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
 
+
+//Area Filters
+double dMeanBlobArea = 300;
+double dVarBlobArea = 50;
+
+//BG History
+const int MOGhistory        = 100;
+//Processing Loop delay
+uint cFrameDelayms    = 1;
+double dLearningRate        = 0.01;
+
 using namespace std;
 
 
@@ -83,7 +96,7 @@ int main(int argc, char *argv[])
     //outfilename.truncate(outfilename.lastIndexOf("."));
     QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
 
-    // get the applications dir path and expose it to QML
+    // get the applications dir pah and expose it to QML
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
     //Init Font
     cvInitFont(&trackFnt, CV_FONT_HERSHEY_DUPLEX, 0.4, 0.4, 0, 1);
@@ -103,7 +116,7 @@ int main(int argc, char *argv[])
 
     //create Background Subtractor objects
           //(int history=500, double varThreshold=16, bool detectShadows=true
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(30,16,false); //MOG2 approach
+    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false); //MOG2 approach
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
     //pMOG =  new cv::BackgroundSubtractorMOG(30,12,0.7,0.0); //MOG approach
     //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
@@ -173,10 +186,9 @@ int main(int argc, char *argv[])
 unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int startFrameCount) {
     unsigned int nLarva         =  0;
     //Speed that stationary objects are removed
-    double dLearningRate        = 0.01;
+
     double dblRatioPxChanged    = 0.0;
     unsigned int nFrame = startFrameCount; //Current Frame Number
-
 
 
     //Make Variation of FileNames for other Output
@@ -228,8 +240,16 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         }
         //Add frames from Last video
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
-        if (nFrame > 2500)
+
+        //If Mask shows that a large ratio of pixels is changing then - adjust learning rate to keep activity below 0.006
+        if (dblRatioPxChanged > 0.006)
+            dLearningRate = max(min(dLearningRate*2,1.0),0.0);
+        else if (nFrame > MOGhistory*2)
+            dLearningRate = 0.0001;
+        else
             dLearningRate = 0.001;
+
+
 
 
         //update the background model
@@ -261,15 +281,17 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         cv::putText(frame, strCount.str(), cv::Point(15, 38),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
+        char buff[100];
         //Learning Rate
-        std::stringstream strLearningRate;
-        strLearningRate << "dL:" << (dLearningRate);
+        //std::stringstream strLearningRate;
+        std::sprintf(buff,"dL: %0.4f",dLearningRate);
+        //strLearningRate << "dL:" << (double)(dLearningRate);
         cv::rectangle(frame, cv::Point(10, 50), cv::Point(100,70), cv::Scalar(255,255,255), -1);
-        cv::putText(frame, strLearningRate.str(), cv::Point(15, 63),
+        cv::putText(frame, buff, cv::Point(15, 63),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
         //Time Rate - conv from ms to minutes
-        char buff[100];
+
         std::sprintf(buff,"t: %0.2f",gTimer.elapsed()/(1000.0*60.0) );
         //strTimeElapsed << "" <<  << " m";
         cv::rectangle(frame, cv::Point(10, 75), cv::Point(100,95), cv::Scalar(255,255,255), -1);
@@ -290,6 +312,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         //cv::rectangle(frame,roi,cv::Scalar(50,250,50));
         drawROI();
 
+
         //cvb::CvBlobs blobs;
         if (bTracking)
         {
@@ -297,15 +320,16 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             //countObjectsviaContours(fgMaskMOG2); //But not as efficient
 
            // cvb::CvBlobs blobs;
-            nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,outDirCSV,frameNumberString);
+            nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,outDirCSV,frameNumberString,dMeanBlobArea);
 
             //ROI with TRACKs Fails
-            const int inactiveFrameCount = 2; //Number of frames inactive until track is deleted
+            const int inactiveFrameCount = 10; //Number of frames inactive until track is deleted
             const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             //thDistance = 22 //Distance from Blob to track
-            cvb::cvUpdateTracks(blobs,tracks,vRoi, 35, inactiveFrameCount,thActive);
+            int thDistance = 20;
+            cvb::cvUpdateTracks(blobs,tracks,vRoi, thDistance, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
             //cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID,&trackFnt);
@@ -321,8 +345,10 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             //cv::imshow("FG Mask GMG ", fgMaskGMG);
         }
 
-        //get the input from the keyboard
-        keyboard = cv::waitKey( 30 );
+       // if (!bTracking)
+            //get the input from the keyboard
+            keyboard = cv::waitKey( cFrameDelayms );
+
 
         checkPauseRun(keyboard,frameNumberString);
 
@@ -348,6 +374,16 @@ void checkPauseRun(int& keyboard,string frameNumberString)
         //frame.copyTo(frameCpy);
         bPaused = true;
     }
+
+    //Make Frame rate faster
+    if ((char)keyboard == '+')
+        cFrameDelayms--;
+    //Slower
+    if ((char)keyboard == '-')
+        cFrameDelayms++;
+
+
+
 
     if ((char)keyboard == 't') //Toggle Tracking
         bTracking = !bTracking;
@@ -469,7 +505,7 @@ int countObjectsviaContours(cv::Mat& srcimg )
 }
 
 
-int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString)
+int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea)
 {
 
 
@@ -496,11 +532,17 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
    // cout << "Roi Sz:" << vRoi.size() << endl;
     IplImage  *labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
     cvb::cvLabel( &fgMaskImg, labelImg, blobs );
-    cvb::cvFilterByArea(blobs,20,100);
+
+    cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
+    cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
+    double dsigma = 3.0*sqrt(dVarBlobArea);
+    cvb::cvFilterByArea(blobs,max(dMeanBlobArea-dsigma,9.0),(unsigned int)max((dMeanBlobArea+dsigma),15.0)); //Remove Small Blobs
+
+    //Debug Show Mean Size Var
+    //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) << endl;
     unsigned int RoiID = 0;
     for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
-
         ltROI iroi = (ltROI)(*it);
         RoiID++;
 

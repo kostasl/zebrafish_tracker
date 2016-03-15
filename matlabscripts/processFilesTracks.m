@@ -1,6 +1,11 @@
-%%Import Track Data into A form that retains Experiment/vial structure -
+%Import Track Data into A form that retains Experiment/vial structure -
 % Process data giving Euclidean distance in Px / normalize by framerate
-% Note: Lifetimes In track data are not reliable!
+% Notes: Lifetimes In track data are not reliable!
+% After Processing videos You need to add a timings.csv file in the CSV output directory that has the following structure:
+%Year, Month,Day, Hour, Minute, Second
+%2016,03,05,13,00,00 <-This line is embryo placement datetime
+%2016,03,08,11,30,00 <-This is Beginning of recording datetime
+%
 
 %% Import CSV Files
 %%FOLDER NAMES SHOULD BE OF THE FORMAT: EXP_6-7_20151123_5sec
@@ -11,12 +16,12 @@ addpath(fileparts(which('processFilesTracks.m')))
 %Change dir to where the data files are
 %frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive
 %cd /home/klagogia/Videos/LarvaTrackPilot/DataOut %Office
-cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
+cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP_B*' );
 
-
+strOutputTag = '_B_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
@@ -28,9 +33,15 @@ cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
 
 %Give 3 days data points 1 sec each.
 % Genotypes are 3 organized in this order : 1st WT (oregonR), 2nd Genetic Control, 3rd AlfaBeta Mutant
-ConditionIndex = 1; %Experimental Condition ID : Food/Genetype Combinations
+ConditionIndex      = 1; %Experimental Condition ID : Food(Condition)/Genetype Combinations
+ConditionIndexMax   = 3; %Defines max exp. configuration being replicated - ex. 1= Food1/Gen1 1= Food2/Gen1. Combos
+
 % The videos have 2 rows of 9 vials - Vials 1-10 have identical conditions so they go in PAIRS
-VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
+%VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
+
+
+%For new 2016/03 Setup We have 1 row - 3 conditions - 3 reps Each
+VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];]; %OR Normal Food
 timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which to analyse data
 %FramePeriod sampled at each timelapse Experiment -
 
@@ -39,8 +50,6 @@ timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which t
 display('The loaded videos had frame Periods designated in folder name:')
 display(framePeriod);
 
-%N = length(timePoints);
-%datV{iVial} = zeros([size(ExpN,1),timePoints]);
 %Copies all Exp data from the imported in the Cells - to a matrix of fixed
 %time length with the data points place at the right timepoints
 
@@ -53,14 +62,15 @@ display(framePeriod);
 
 ExpTrackResultsInTime = {};
 bVerbose=0;
-%Filter Each Experiments Data set
 
+goToHour =87; %Focus Time - Used for BoxPlot And Example Track Displa - Exp Hour - with 0 being Embryo Placement
+%FILTERS Each Experiments Data set
 MinLifetime     = 2; %Minimum Number of Path Steps
 MaxLifetime     = 20000; %Maximum Number of Path Steps
 MinDistance     = 5; %Minimum Track length to consider def 10
 MinStepLength   = 1; %%Cut Tracklet when 2-frame displacement drops below value 
-MaxStepLength   = 35; %MaxpxSpeed -->Between two frames rejects steps larger than this
-TimeFrameWidth  = 3600; %Frame Sliding Window in sec Overwhich results are averaged
+MaxStepLength   = 55; %MaxpxSpeed -->Between two frames rejects steps larger than this
+TimeFrameWidth  = 1*3600; %Frame Sliding Window in sec Overwhich results are averaged
 
 % Organize data in a Sliding Window
 InitTime = 0*3600; %Start processing Data from InitTime / Default 0
@@ -69,7 +79,7 @@ wi = 0;
 %Estimate Max FrameN from 1st Experiment
 e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
-timeAdvance = 5*60;
+timeAdvance = 5*60; %Fwd Time Step in secs
 
 
 for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
@@ -79,7 +89,7 @@ for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
    disp(StartTime/maxRecordingTime);%%Sho Fraction of Calculation Completed
 end
 
-save('LarvaTrackData.mat');
+save(strcat('LarvaTrackData',strOutputTag,'.mat'));
 %% Plot Indicative results - Distribution of mean Tracklet Speeds
 plotMeanSpeed;
 
@@ -89,14 +99,15 @@ plotTrackLengthDistributions;
 
 
 %% Plot Example Tracks
-goToHour = 105;
-t= (goToHour*3600 - VialAge(1))/timeAdvance;
+
+
+t= (goToHour*3600 - VialAge(1))/timeAdvance; %
 ExpTrackResults = ExpTrackResultsInTime{t};
 
 % NOTE: Y values are inverted since 0 Point in plot as at the bottom
 imgSize = [1024,768];
 colour = {'r','m','k','c','b','g','k','--r','--m','--k','--c','--b','--g','--k','-r','-k','-g'};
-hf = figure('Name','Tracks');
+hf = figure('Name',sprintf('Tracks at t=%d-%d hours',goToHour,goToHour+TimeFrameWidth/3600));
 xlim([0 imgSize(1)]);
 ylim([0 imgSize(2)]);
 
@@ -126,7 +137,7 @@ for e=1:size(ExpTrackResults,1)
     end
 end
 title('Plot Sample Track');
-saveas(hf,sprintf('figures/VialTracklets-%dHour.png',goToHour));
+saveas(hf,sprintf('figures/VialTracklets%s_t%d-%dHours.png',strOutputTag,goToHour,goToHour+TimeFrameWidth/3600));
 
 
 

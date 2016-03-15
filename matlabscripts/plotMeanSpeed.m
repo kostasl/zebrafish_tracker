@@ -1,5 +1,8 @@
-
-ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
+%Produces plot of Mean Speed / Activity based on Number of tracklet samples
+%For EXp Set 1 - 9 conditions :clo
+%ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
+%For EXp Set 2 - 9 conditions :
+ExpCondTitles = {' ATTP40',' BWD47',' BWD48'};
 ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
 
 nbins = 100;
@@ -10,8 +13,8 @@ clear mu;
 clear n;
 clear stdd;
 
-cd /media/kostasl/FlashDrive/PilotVialTrack/DataOut %Home
-load('LarvaTrackData.mat');
+cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
+%load(strcat('LarvaTrackData',strOutputTag,'.mat'));
 %% Do Mean Speed Per Condition Per Time Window
 meanConditionSpeeds  = {};
 n  = zeros(length(ExpTrackResultsInTime),9);
@@ -20,7 +23,7 @@ stdd  = zeros(length(ExpTrackResultsInTime),9);
 ConditionIndex = 1;
 
 for t=1:length(ExpTrackResultsInTime)
-    for (ConditionIndex=1:9)
+    for (ConditionIndex=1:ConditionIndexMax)
             ExpTrackResults         = ExpTrackResultsInTime{t};
             ResSet                  = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
 
@@ -35,54 +38,72 @@ for t=1:length(ExpTrackResultsInTime)
     
 end
 
+ylimitsTracklets = ceil(max(n(:))/100)*100;
+ylimits = ceil(max(mu(:)));
+
+strtitle = sprintf('Mean Activity -Sliding Window %d hours',TimeFrameWidth/3600);
 % Plot Results - In sets of 3-genotypes For each Food Condition
-for (ConditionIndex=1:3:9)
+for (ConditionIndex=1:3:ConditionIndexMax)
 
     t = length(ExpTrackResultsInTime);
     Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
-    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Mean Activity - hourlong Sliding Window'));
+    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},strtitle));
+    
     subplot(3,1,1)
     plot(Exptime,mu(:,ConditionIndex),Exptime,mu(:,ConditionIndex+1),Exptime,mu(:,ConditionIndex+2));
-    legend(strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2}))
+    
     title('Mean Speed in px/sec');
     ylim([0 ylimits]);
     subplot(3,1,2)
     plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
     title('Number of samples');
-    subplot(3,1,3)
+    hh= subplot(3,1,3)
+    %get(hh,'position')
+
+
     plot(Exptime,stdd(:,ConditionIndex+0),Exptime,stdd(:,ConditionIndex+1),Exptime,stdd(:,ConditionIndex+2));
     title('STD Dev ');
     xlabel('Hour');
     ylim([0 ylimits]);
-    saveas(hf,strcat('figures/meanVialSpeedSlidingWindow',ExpCondFood{ConditionIndex},'.png'));
+    legend(strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2}),'Location','southoutside','Orientation','horizontal')
+    set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
+    saveas(hf,strcat('figures/meanVial',strOutputTag,'SpeedSlidingWindow',ExpCondFood{ConditionIndex},'.png'));
 end
 
 ConditionIndex =1;
-hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Mean Activity - hourlong Sliding Window'));
+hf = figure('Name',strcat(ExpCondFood{ConditionIndex},strtitle));
 subplot(3,1,1)
-plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
-legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
-title(ExpCondFood{ConditionIndex});
-ylim([0 ylimitsTracklets ]);
-ConditionIndex =4;
-subplot(3,1,2)
-plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
-ylim([0 ylimitsTracklets ]);
-legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
-title(ExpCondFood{ConditionIndex});
-ConditionIndex =7;
-subplot(3,1,3)
-plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
-ylim([0 ylimitsTracklets ]);
-legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
-title(ExpCondFood{ConditionIndex});
-saveas(hf,strcat('figures/meanVialActivityFor3FoodConditions.png'));
+    plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
+    
+    title(ExpCondFood{ConditionIndex});
+    ylim([0 ylimitsTracklets ]);
+    
+if ConditionIndexMax > 3
+    ConditionIndex =4;
+    subplot(3,1,2)
+    plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
+    ylim([0 ylimitsTracklets ]);
+    legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
+    title(ExpCondFood{ConditionIndex});
+end
+
+if ConditionIndexMax > 6
+    ConditionIndex =7;
+    subplot(3,1,3)
+    plot(Exptime,n(:,ConditionIndex+0),Exptime,n(:,ConditionIndex+1),Exptime,n(:,ConditionIndex+2));
+    ylim([0 ylimitsTracklets ]);
+    legend(strcat(ExpCondTitles{ConditionIndex+0}),strcat(ExpCondTitles{ConditionIndex+1}),strcat(ExpCondTitles{ConditionIndex+2}))
+    title(ExpCondFood{ConditionIndex});
+end
+
+legend(strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2}),'Location','southoutside','Orientation','horizontal')
+saveas(hf,strcat('figures/meanVial',strOutputTag,'ActivityFor3FoodConditions.png'));
 
 
 return;
 
 %% Plot Histogram Of Speed Within A chosen time Window
-goToHour = 105;
+
 t= (goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 
@@ -135,7 +156,7 @@ strTitle = sprintf('%s %s mean: %0.3f std:%0.3f n:%d',ExpCondFood{ConditionIndex
 title(strTitle);
 ylim([0 ylimits]);
 xlim([0 xlimits]);
-saveas(hf,sprintf('figures/NFTrackletSpeedHist-%dHour.png',goToHour))
+saveas(hf,sprintf('figures/NFTracklet%sSpeedHist-%dHour.png',strOutputTag,goToHour))
 
 
 %%Box Plot Of Mean Speeds per tracklet
@@ -144,7 +165,7 @@ hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Crawl-Run SPEEDs'));
 groups = [ zeros( length(meanConditionSpeeds{1}) ,1); ones(length(meanConditionSpeeds{2}),1); 2*ones(length(meanConditionSpeeds{3}),1) ];
 boxplot([meanConditionSpeeds{1};meanConditionSpeeds{2};meanConditionSpeeds{3}],groups,'labels',{strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3})})
 ylim([0 15]);
-saveas(hf,sprintf('figures/NFTrackletSpeedBoxPlot-%dHour.png',goToHour));
+saveas(hf,sprintf('figures/NFTracklet%sSpeedBoxPlot-%dHour.png',strOutputTag,goToHour));
 
 
 %% DMSO 0.5
@@ -186,7 +207,7 @@ hist(meanConditionSpeeds{ConditionIndex},nbins);
 title(strcat('AB 0.5% DMSO \mu:',num2str(mean(meanConditionSpeeds{ConditionIndex}))));
 ylim([0 ylimits]);
 xlim([0 xlimits]);
-saveas(hf,'figures/DMSO05TrackletSpeedHist.pdf')
+saveas(hf,sprintf('figures/DMSO05Tracklet%sSpeedHist.pdf',strOutputTag))
 
 
 %% DMSO 1%
@@ -228,4 +249,4 @@ set(h,'FaceColor','b');
 set(h,'EdgeColor','w');
 ylim([0 ylimits]);
 xlim([0 xlimits]);
-saveas(hf,'figures/DMSO10TrackletSpeedHist.pdf')
+saveas(hf,strcat('figures/DMSO10Tracklet',strOutputTag,'SpeedHist.pdf'));
