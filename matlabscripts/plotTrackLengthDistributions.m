@@ -18,37 +18,37 @@ for ConditionIndex=1:ConditionIndexMax
     
 end
 
-hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(goToHour)));
+hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)));
 groups = [ zeros( length(meanConditionLength{1}) ,1); ones(length(meanConditionLength{2}),1); 2*ones(length(meanConditionLength{3}),1) ];
 boxplot([meanConditionLength{1};meanConditionLength{2};meanConditionLength{3}],groups,'labels',{strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3})})
-title(strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(goToHour)))
+title(strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)))
 ylim([0 250]);
-saveas(hf,sprintf('figures/NFTrackletLengthBoxPlot-%dHour.png',goToHour));
+saveas(hf,sprintf('figures/NFTracklet%sLengthBoxPlot-%dHour.png',strOutputTag,goToHour));
 
 if ConditionIndexMax > 3  
     ConditionIndex = 4;
-    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(goToHour)));
+    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)));
     groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
     boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',{strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})})
-    title(strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(goToHour)))
+    title(strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)))
     ylim([0 250]);
-    saveas(hf,sprintf('figures/DMSO05TrackletLengthBoxPlot-%dHour.png',goToHour));
+    saveas(hf,sprintf('figures/DMSO05Tracklet%sLengthBoxPlot-%dHour.png',strOutputTag,goToHour));
 end
  
 if (ConditionIndexMax >= 7)
     ConditionIndex = 7;
-    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(goToHour)));
+    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)));
     groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
     boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',{strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})})
-    title(strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths hour@',num2str(goToHour)))
+    title(strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)))
     ylim([0 250]);
-    saveas(hf,sprintf('figures/DMSO10TrackletLengthBoxPlot-%dHour.png',goToHour));
+    saveas(hf,sprintf('figures/DMSO10Tracklet%sLengthBoxPlot-%dHour.png',strOutputTag,goToHour));
 end
 
 %% Across all time
-From = 0;
+FromFrame = 0;
 TimeWindow = max(ExpTrack{1}(:,1));
-ExpTrackResultsAllTime = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, FromTime ,TimeWindow, MinStepLength ,bVerbose);
+ExpTrackResultsAllTime = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePeriod,MinLifetime, MaxLifetime, MinDistance, MaxStepLength, FromFrame ,TimeWindow, MinStepLength ,bVerbose);
 for ConditionIndex=1:ConditionIndexMax
     ResSet                  = vertcat(ExpTrackResultsAllTime{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
@@ -56,53 +56,54 @@ for ConditionIndex=1:ConditionIndexMax
     
 end
 
-hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths All time'));
+hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths All time'));
 groups = [ zeros( length(meanConditionLength{1}) ,1); ones(length(meanConditionLength{2}),1); 2*ones(length(meanConditionLength{3}),1) ];
 boxplot([meanConditionLength{1};meanConditionLength{2};meanConditionLength{3}],groups,'labels',{strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3})})
 title('Track length across all time')
 ylim([0 250]);
-saveas(hf,sprintf('figures/NFTrackletLengthBoxPlot-from%dtoEnd.png',goToHour));
+saveas(hf,sprintf('figures/NFTracklet%sLengthBoxPlot-from%dtoEnd.png',strOutputTag,goToHour));
 
 if ConditionIndexMax > 3  
    
     ConditionIndex = 4;
-    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths All time'));
+    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths All time'));
     groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
     boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',{strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})})
     title('Track length across all time')
     ylim([0 250]);
-    saveas(hf,sprintf('figures/DMSO05TrackletLengthBoxPlot-Allt.png',goToHour));
+    saveas(hf,sprintf('figures/DMSO05Tracklet%sLengthBoxPlot-Allt.png',strOutputTag,goToHour));
 end
     
 if (ConditionIndexMax > 6)
     
     ConditionIndex = 7;
-    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'Run  tracklet lengths All time'));
+    hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths All time'));
     groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
     boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',{strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})})
     title('Track length across all time')
     ylim([0 250]);
-    saveas(hf,sprintf('figures/DMSO10TrackletLengthBoxPlot-Allt.png',goToHour));
+    saveas(hf,sprintf('figures/DMSO10Tracklet%sLengthBoxPlot-Allt.png',strOutputTag,goToHour));
 end
 %% Plot Path Distance Distribution
 
 nbins = 100;
 
-hf = figure('Name','NF Path Length Distribution in pixels');
+ConditionIndex = 1;
+hf = figure('Name',strcat(ExpCondFood{ConditionIndex}, ' Path Length Distribution in pixels'));
 
 subplot(3,1,1);
-ConditionIndex = 1;
+
 ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
 meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
 [cnt,bin] = hist(meanConditionLength{ConditionIndex},nbins);
 hist(meanConditionLength{ConditionIndex},nbins)
-title(strcat('OR NF \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+title(strcat(ExpCondTitles{ConditionIndex},'  \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
 %xlabel('px distance');
 h = findobj(gca,'Type','patch');
 set(h,'FaceColor','b');
 set(h,'EdgeColor','w');
 xlimits = max(ceil(bin/100))*100;
-ylimits =  2*ceil(max(cnt)/10);
+ylimits =  ceil(max(cnt)/10)*10;
 ylim([0 ylimits]);
 xlim([-1 xlimits]);
 
@@ -112,7 +113,7 @@ if ConditionIndexMax > 1
     ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
     hist(meanConditionLength{ConditionIndex},nbins);
-    title(strcat('CT NF \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+    title(strcat(ExpCondTitles{ConditionIndex},' \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
     %xlabel('px distance');
     ylim([0 ylimits]);
     xlim([0 xlimits]);
@@ -124,21 +125,21 @@ if ConditionIndexMax > 2
     ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
     hist(meanConditionLength{ConditionIndex},nbins);
-    title(strcat('AB NF \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+    title(strcat(ExpCondTitles{ConditionIndex}, '  \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
     %xlabel('px distance');
     ylim([0 ylimits]);
     xlim([0 xlimits]);
-    saveas(hf,sprintf('figures/NFTrackLengthHist-%dHour.png',goToHour));
+    saveas(hf,sprintf('figures/NFTrackLength%sHist-%dHour.png',strOutputTag,goToHour));
 end
 %%
 if ConditionIndexMax > 3 
-    hf = figure('Name','DMSO 0.5% Path Length Distribution ');
-    subplot(3,1,1);
     ConditionIndex = 4;
+    hf = figure('Name',ExpCondFood{ConditionIndex},' Path Length Distribution ');
+    subplot(3,1,1);
     ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
     hist(meanConditionLength{ConditionIndex},nbins);
-    title(strcat('OR DMSO 0.5% \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+    title(strcat(ExpCondTitles{ConditionIndex},ExpCondFood{ConditionIndex},' \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
     h = findobj(gca,'Type','patch');
     set(h,'FaceColor','b');
     set(h,'EdgeColor','w');
@@ -150,7 +151,7 @@ if ConditionIndexMax > 3
     ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
     hist(meanConditionLength{ConditionIndex},nbins);
-    title(strcat('CT DMSO 0.5% \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+    title(strcat(ExpCondTitles{ConditionIndex},ExpCondFood{ConditionIndex},' \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
     ylim([0 ylimits]);
     xlim([0 xlimits]);
 
@@ -159,20 +160,21 @@ if ConditionIndexMax > 3
     ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
     hist(meanConditionLength{ConditionIndex},nbins);
-    title(strcat('AB DMSO 0.5% \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+    title(strcat(ExpCondTitles{ConditionIndex},ExpCondFood{ConditionIndex},' \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
     ylim([0 ylimits]);
     xlim([0 xlimits]);
-    saveas(hf,sprintf('figures/DMSO05TrackLengthHist-%dHour.png',goToHour));
+    saveas(hf,sprintf('figures/DMSO05TrackLength%sHist-%dHour.png',strOutputTag,goToHour));
 end
 %%
 if ConditionIndexMax > 6 
-    hf = figure('Name','DMSO 1% Path Length Distribution ');
-    subplot(3,1,1);
     ConditionIndex = 7;
+    hf = figure('Name',ExpCondFood{ConditionIndex}, ' Path Length Distribution ');
+    subplot(3,1,1);
+    
     ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
     hist(meanConditionLength{ConditionIndex},nbins);
-    title(strcat('OR DMSO 1% \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+    title(strcat(ExpCondTitles{ConditionIndex},ExpCondFood{ConditionIndex},' \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
     h = findobj(gca,'Type','patch');
     set(h,'FaceColor','b');
     set(h,'EdgeColor','w');
@@ -184,7 +186,7 @@ if ConditionIndexMax > 6
     ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
     hist(meanConditionLength{ConditionIndex},nbins);
-    title(strcat('CT DMSO 1% \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+    title(strcat(ExpCondTitles{ConditionIndex},ExpCondFood{ConditionIndex},' \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
     ylim([0 ylimits]);
     xlim([0 xlimits]);
 
@@ -193,8 +195,8 @@ if ConditionIndexMax > 6
     ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
     meanConditionLength{ConditionIndex}  = vertcat(ResSet.Length);
     hist(meanConditionLength{ConditionIndex},nbins);
-    title(strcat('AB DMSO 1% \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
+    title(strcat(ExpCondTitles{ConditionIndex},ExpCondFood{ConditionIndex},' \mu:',num2str(mean(meanConditionLength{ConditionIndex}))));
     ylim([0 ylimits]);
     xlim([0 xlimits]);
-    saveas(hf,sprintf('figures/DMSO10TrackLengthHist-%dHour.png',goToHour));
+    saveas(hf,sprintf('figures/DMSO10TrackLength%sHist-%dHour.png',strOutputTag,goToHour));
 end
