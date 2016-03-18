@@ -398,7 +398,7 @@ void checkPauseRun(int& keyboard,string frameNumberString)
             {
                 bSaveImages = !bSaveImages;
 
-                //saveImage(frameNumberString,frame);
+                saveImage(frameNumberString,frame);
             }
 
             if ((char)keyboard == 'r')
