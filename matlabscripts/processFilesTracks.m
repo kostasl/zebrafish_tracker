@@ -19,9 +19,9 @@ addpath(fileparts(which('processFilesTracks.m')))
 cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP_B*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP_D*' );
 
-strOutputTag = '_B_';
+strOutputTag = '_D_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
@@ -70,7 +70,7 @@ MaxLifetime     = 20000; %Maximum Number of Path Steps
 MinDistance     = 5; %Minimum Track length to consider def 10
 MinStepLength   = 1; %%Cut Tracklet when 2-frame displacement drops below value 
 MaxStepLength   = 55; %MaxpxSpeed -->Between two frames rejects steps larger than this
-TimeFrameWidth  = 1*3600; %Frame Sliding Window in sec Overwhich results are averaged
+TimeFrameWidth  = 2*3600; %Frame Sliding Window in sec Overwhich results are averaged
 
 % Organize data in a Sliding Window
 InitTime = 0*3600; %Start processing Data from InitTime / Default 0
@@ -79,7 +79,7 @@ wi = 0;
 %Estimate Max FrameN from 1st Experiment
 e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
-timeAdvance = 5*60; %Fwd Time Step in secs
+timeAdvance = 10*60; %Fwd Time Step in secs
 
 
 for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
