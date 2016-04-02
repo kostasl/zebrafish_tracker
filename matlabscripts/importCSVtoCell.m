@@ -5,6 +5,8 @@ dataFileCount = 0;
 
 files = dir(fullfile(dirPatt));
 Dirs = files(find(vertcat(files.isdir)));
+
+assert(length(Dirs) > 0,'No source directories found');
 ExpID = {'','','','',''};
 
 for d=1:length(Dirs)
@@ -30,7 +32,7 @@ for d=1:length(Dirs)
     end
     
     strtimelapsePeriod= regexp(importDir.name,'\d+sec','match');
-    frameRates(d) = str2double(regexp(strtimelapsePeriod{1},'\d+','match'));
+    frameRates(d) = str2double(regexp(strtimelapsePeriod{1},'[-+]?([0-9]*\.[0-9]+|[0-9]+)','match'));
    
     for i=1:length(files);
         %Get Vial Number from File Name

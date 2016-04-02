@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     gTimer.start();
     //create GUI windows
     string strwinName = "VialFrame";
-    cv::namedWindow(strwinName,CV_WINDOW_AUTOSIZE);
+    cv::namedWindow(strwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     //set the callback function for any mouse event
     cv::setMouseCallback(strwinName, CallBackFunc, NULL);
 
