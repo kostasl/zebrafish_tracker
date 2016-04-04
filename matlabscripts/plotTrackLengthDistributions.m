@@ -1,14 +1,14 @@
 %For Exp Set 1
 %ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
 %For exp Set 2
-ExpCondTitles = {' ATTP40',' B47',' B48'};
-ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
+%Condition Titles ExpCondTitles & ExpCondFood - Are in ProcessFileTracks
 
 %% Box plot of track lengths at specific Time
-goToHour        = 85; %90 is arround the usual recording time ~ VialAge(1)
+goToHour        = 120; %90 is arround the usual recording time ~ VialAge(1)
 t               = (goToHour*3600- VialAge(1))/timeAdvance; %(goToHour*3600 - VialAge(1))/timeAdvance;
 ExpTrackResults = ExpTrackResultsInTime{t};
 
+ylimit = max(vertcat(meanConditionLength{:}))*1.2;
 ConditionIndex = 1;
 for ConditionIndex=1:ConditionIndexMax
     ExpTrackResults         = ExpTrackResultsInTime{t};
@@ -22,16 +22,19 @@ hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths ho
 groups = [ zeros( length(meanConditionLength{1}) ,1); ones(length(meanConditionLength{2}),1); 2*ones(length(meanConditionLength{3}),1) ];
 boxplot([meanConditionLength{1};meanConditionLength{2};meanConditionLength{3}],groups,'labels',{strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3})})
 title(strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)))
-ylim([0 250]);
+ylim([0 ylimit]);
+
+
 saveas(hf,sprintf('figures/NFTracklet%sLengthBoxPlot-%dHour.png',strOutputTag,goToHour));
 
 if ConditionIndexMax > 3  
     ConditionIndex = 4;
     hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)));
     groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
-    boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',{strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})})
+    strLabel = {strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})};
+    boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',strLabel)
     title(strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)))
-    ylim([0 250]);
+    ylim([0 ylimit]);
     saveas(hf,sprintf('figures/DMSO05Tracklet%sLengthBoxPlot-%dHour.png',strOutputTag,goToHour));
 end
  
@@ -41,7 +44,7 @@ if (ConditionIndexMax >= 7)
     groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
     boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',{strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})})
     title(strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths hour@',num2str(goToHour)))
-    ylim([0 250]);
+    ylim([0 ylimit]);
     saveas(hf,sprintf('figures/DMSO10Tracklet%sLengthBoxPlot-%dHour.png',strOutputTag,goToHour));
 end
 
@@ -60,7 +63,7 @@ hf = figure('Name',strcat(ExpCondFood{ConditionIndex},' Run  tracklet lengths Al
 groups = [ zeros( length(meanConditionLength{1}) ,1); ones(length(meanConditionLength{2}),1); 2*ones(length(meanConditionLength{3}),1) ];
 boxplot([meanConditionLength{1};meanConditionLength{2};meanConditionLength{3}],groups,'labels',{strcat(ExpCondFood{1},ExpCondTitles{1}),strcat(ExpCondFood{2},ExpCondTitles{2}),strcat(ExpCondFood{3},ExpCondTitles{3})})
 title('Track length across all time')
-ylim([0 250]);
+ylim([0 ylimit]);
 saveas(hf,sprintf('figures/NFTracklet%sLengthBoxPlot-from%dtoEnd.png',strOutputTag,goToHour));
 
 if ConditionIndexMax > 3  
@@ -70,7 +73,7 @@ if ConditionIndexMax > 3
     groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
     boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',{strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})})
     title('Track length across all time')
-    ylim([0 250]);
+    ylim([0 ylimit]);
     saveas(hf,sprintf('figures/DMSO05Tracklet%sLengthBoxPlot-Allt.png',strOutputTag,goToHour));
 end
     
@@ -81,7 +84,7 @@ if (ConditionIndexMax > 6)
     groups = [ zeros( length(meanConditionLength{ConditionIndex+0}) ,1); ones(length(meanConditionLength{ConditionIndex+1}),1); 2*ones(length(meanConditionLength{ConditionIndex+2}),1) ];
     boxplot([meanConditionLength{ConditionIndex+0};meanConditionLength{ConditionIndex+1};meanConditionLength{ConditionIndex+2}],groups,'labels',{strcat(ExpCondFood{ConditionIndex+0},ExpCondTitles{ConditionIndex+0}),strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})})
     title('Track length across all time')
-    ylim([0 250]);
+    ylim([0 ylimit]);
     saveas(hf,sprintf('figures/DMSO10Tracklet%sLengthBoxPlot-Allt.png',strOutputTag,goToHour));
 end
 %% Plot Path Distance Distribution

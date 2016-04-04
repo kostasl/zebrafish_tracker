@@ -1,11 +1,6 @@
 %Produces plot of Mean Speed / Activity based on Number of tracklet samples
-%For EXp Set 1 - 9 conditions :clo
-%ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
-%For EXp Set 2 - 9 conditions :
-ExpCondTitles = {' ATTP40',' BWD47',' BWD48',' ATTP2',' 48.2',' 34'};
-ExpCondFood = {'0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D'};
-%ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
 
+%Conditions Label Are in  process FileTracks
 nbins = 100;
 ylimits = 7;
 ylimitsTracklets =  2500;
@@ -75,8 +70,8 @@ for (ConditionIndex=1:CondGrouping:ConditionIndexMax)
         j=j+1; 
         strLegend{j} = strcat(ExpCondFood{i},ExpCondTitles{i});
     end
-    legend( strLegend,'Location','southoutside','Orientation','horizontal')
-    set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
+    legend( strLegend,'Location','southoutside','Orientation','vertical','Position',[0.84 0.01 0.124 0.43])
+    %set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
     saveas(hf,strcat('figures/meanVial',strOutputTag,'SpeedSlidingWindow',ExpCondFood{ConditionIndex},'.png'));
 end
 %,strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})
