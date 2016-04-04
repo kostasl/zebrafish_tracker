@@ -31,7 +31,7 @@ for d=1:length(Dirs)
         ResultsCell = cell(size(Dirs,1)-2,size(files,1) );
     end
     
-    strtimelapsePeriod= regexp(importDir.name,'\d+sec','match');
+    strtimelapsePeriod= regexp(importDir.name,'[-+]?([0-9]*\.[0-9]+|[0-9]+)sec','match');
     frameRates(d) = str2double(regexp(strtimelapsePeriod{1},'[-+]?([0-9]*\.[0-9]+|[0-9]+)','match'));
    
     for i=1:length(files);
