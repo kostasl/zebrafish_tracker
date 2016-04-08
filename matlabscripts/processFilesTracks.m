@@ -5,6 +5,8 @@
 %Year, Month,Day, Hour, Minute, Second
 %2016,03,05,13,00,00 <-This line is embryo placement datetime
 %2016,03,08,11,30,00 <-This is Beginning of recording datetime
+
+
 %
 %For EXp Set 1 - 9 conditions :clo
 %ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
@@ -12,6 +14,7 @@
 ExpCondTitles = {' ATTP40',' BWD47',' BWD48',' ATTP2',' 48.2',' 34'};
 ExpCondFood = {'0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D'};
 %ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
+
 
 
 %% Import CSV Files
@@ -27,9 +30,9 @@ addpath(fileparts(which('processFilesTracks.m')))
 cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR2*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR*' );
 
-strOutputTag = '_R2_';
+strOutputTag = '_R_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
@@ -49,11 +52,15 @@ CondReplicates      = 3; %# of replicates for each condition
 %VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
 
 
+%Notes on EXP R : Vial to Genotype correspondence %%
+%For EXP Set R The vial numbers are :1-3 ATTP40,4-6 BWD47 (Ita?),7-9
+%BWD48(Arc), 10-12 ATTP2, 13-16 BWD 48.2 , 17-19 34 (LacZ expression)
 %For new 2016/03 Setup We have 1 row - 3 conditions - 3 reps Each
-VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];]; %OR Normal Food
-
+%VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];]; %OR Normal Food
 %For new 2016/03-04 More Controls Setup We have 2 row - 6 Conditions - 3 reps Each
 VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];[10,11,12];[13,14,15];[16,17,18];]; %OR Normal Food
+%Condition Groups - Used for plotting genotypes against controls
+ConditionGroups = {[1,2,3,6];[4,5]}; %ATTP2 & 48.2 are plotted together
 
 timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which to analyse data
 %FramePeriod sampled at each timelapse Experiment -
