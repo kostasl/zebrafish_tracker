@@ -5,7 +5,17 @@
 %Year, Month,Day, Hour, Minute, Second
 %2016,03,05,13,00,00 <-This line is embryo placement datetime
 %2016,03,08,11,30,00 <-This is Beginning of recording datetime
+
+
 %
+%For EXp Set 1 - 9 conditions :clo
+%ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
+%For EXp Set 2 - 9 conditions :
+ExpCondTitles = {' ATTP40',' BWD47',' BWD48',' ATTP2',' 48.2',' 34'};
+ExpCondFood = {'0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D'};
+%ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
+
+
 
 %% Import CSV Files
 %%FOLDER NAMES SHOULD BE OF THE FORMAT: EXP_6-7_20151123_5sec
@@ -16,12 +26,13 @@ addpath(fileparts(which('processFilesTracks.m')))
 %Change dir to where the data files are
 %frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive
 %cd /home/klagogia/Videos/LarvaTrackPilot/DataOut %Office
-cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
+%cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
+cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXP_B*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR*' );
 
-strOutputTag = '_B_';
+strOutputTag = '_R_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
@@ -34,14 +45,23 @@ strOutputTag = '_B_';
 %Give 3 days data points 1 sec each.
 % Genotypes are 3 organized in this order : 1st WT (oregonR), 2nd Genetic Control, 3rd AlfaBeta Mutant
 ConditionIndex      = 1; %Experimental Condition ID : Food(Condition)/Genetype Combinations
-ConditionIndexMax   = 3; %Defines max exp. configuration being replicated - ex. 1= Food1/Gen1 1= Food2/Gen1. Combos
+ConditionIndexMax   = 6; %Defines max exp. configuration being replicated - ex. 1= Food1/Gen1 1= Food2/Gen1. Combos
+CondReplicates      = 3; %# of replicates for each condition
 
 % The videos have 2 rows of 9 vials - Vials 1-10 have identical conditions so they go in PAIRS
 %VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
 
 
+%Notes on EXP R : Vial to Genotype correspondence %%
+%For EXP Set R The vial numbers are :1-3 ATTP40,4-6 BWD47 (Ita?),7-9
+%BWD48(Arc), 10-12 ATTP2, 13-16 BWD 48.2 , 17-19 34 (LacZ expression)
 %For new 2016/03 Setup We have 1 row - 3 conditions - 3 reps Each
-VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];]; %OR Normal Food
+%VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];]; %OR Normal Food
+%For new 2016/03-04 More Controls Setup We have 2 row - 6 Conditions - 3 reps Each
+VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];[10,11,12];[13,14,15];[16,17,18];]; %OR Normal Food
+%Condition Groups - Used for plotting genotypes against controls
+ConditionGroups = {[1,2,3,6];[4,5]}; %ATTP2 & 48.2 are plotted together
+
 timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which to analyse data
 %FramePeriod sampled at each timelapse Experiment -
 
@@ -70,7 +90,7 @@ MaxLifetime     = 20000; %Maximum Number of Path Steps
 MinDistance     = 5; %Minimum Track length to consider def 10
 MinStepLength   = 1; %%Cut Tracklet when 2-frame displacement drops below value 
 MaxStepLength   = 55; %MaxpxSpeed -->Between two frames rejects steps larger than this
-TimeFrameWidth  = 1*3600; %Frame Sliding Window in sec Overwhich results are averaged
+TimeFrameWidth  = 2*3600; %Frame Sliding Window in sec Overwhich results are averaged
 
 % Organize data in a Sliding Window
 InitTime = 0*3600; %Start processing Data from InitTime / Default 0
@@ -79,7 +99,7 @@ wi = 0;
 %Estimate Max FrameN from 1st Experiment
 e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
-timeAdvance = 5*60; %Fwd Time Step in secs
+timeAdvance = 10*60; %Fwd Time Step in secs
 
 
 for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
