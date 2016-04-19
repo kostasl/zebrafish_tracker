@@ -7,7 +7,7 @@ function [ExpTrackResults] = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePerio
 % MinLifetime Minimum Number of Path Steps
 %MaxLifetime Maximum Number of Path Steps
 %MinDistance   Minimum Track length to consider
-%MaxStepLength  Between two frames rejects steps larger than this
+%MaxpxSpeed Reject if px step is larger than this Between two frames rejects 
 % FromTime : Filter Tracklets that are X sec after beginning of video
 %TimeWindow  : Set Time after FromTime to extract data points from
 FilteredTracks = {}; 

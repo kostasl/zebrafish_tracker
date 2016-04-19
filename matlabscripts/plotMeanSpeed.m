@@ -22,6 +22,9 @@ ConditionIndex = 1;
 for t=1:length(ExpTrackResultsInTime)
     for (ConditionIndex=1:ConditionIndexMax)
             ExpTrackResults         = ExpTrackResultsInTime{t};
+            %TODO: Add Filters Here
+            %ExpTrackResults =             
+            
             ResSet                  = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
 
             if isempty(ResSet)
