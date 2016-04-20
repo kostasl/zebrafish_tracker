@@ -15,7 +15,7 @@ ExpCondTitles = {' ATTP40',' BWD47',' BWD48',' ATTP2',' 48.2',' 34'};
 ExpCondFood = {'0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D'};
 %ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
 
-
+%load('/media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results/LarvaTrackData_R1-5_.mat')
 
 %% Import CSV Files
 %%FOLDER NAMES SHOULD BE OF THE FORMAT: EXP_6-7_20151123_5sec
@@ -32,7 +32,7 @@ cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
 [framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR*' );
 
-strOutputTag = '_R_';
+strOutputTag = '_R1-3-4-5_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
@@ -89,8 +89,8 @@ MinLifetime     = 2; %Minimum Number of Path Steps
 MaxLifetime     = 20000; %Maximum Number of Path Steps
 MinDistance     = 5; %Minimum Track length to consider def 10
 MinStepLength   = 1; %%Cut Tracklet when 2-frame displacement drops below value 
-MaxStepLength   = 55; %MaxpxSpeed -->Between two frames rejects steps larger than this
-TimeFrameWidth  = 2*3600; %Frame Sliding Window in sec Overwhich results are averaged
+MaxStepLength   = 13; %MaxpxSpeed -->Between two frames rejects steps larger than this - Larva length max 30px in 1600x1200 frame 2fps
+TimeFrameWidth  = 3*3600; %Frame Sliding Window in sec Overwhich results are averaged
 
 % Organize data in a Sliding Window
 InitTime = 0*3600; %Start processing Data from InitTime / Default 0
@@ -99,7 +99,7 @@ wi = 0;
 %Estimate Max FrameN from 1st Experiment
 e = 1;
 maxRecordingTime = max(vertcat([ExpTrack{e,1}(:,1)]))*framePeriod(e);
-timeAdvance = 10*60; %Fwd Time Step in secs
+timeAdvance = 30*60; %Fwd Time Step in secs 
 
 
 for StartTime=(InitTime + TimeFrameWidth):timeAdvance:(maxRecordingTime)
