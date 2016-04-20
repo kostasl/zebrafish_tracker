@@ -118,15 +118,24 @@ int main(int argc, char *argv[])
 
     //create Background Subtractor objects
           //(int history=500, double varThreshold=16, bool detectShadows=true
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false); //MOG2 approach
+
+    //OPENCV 2
+    //pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false); //MOG2 approach
+    //OPENCV 3
+    // BENA!!! *************************
+    pMOG2 = cv::createBackgroundSubtractorMOG2();
+    //pMOG2 = new cv::BackgroundSubtractorMOG2(MOGhistory,16,false); //MOG2 approach
+
+    // ************************************* END BENA
+
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
     //pMOG =  new cv::BackgroundSubtractorMOG(30,12,0.7,0.0); //MOG approach
     //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
 
     //unsigned int hWnd = cvGetWindowHandle("VialFrame");
-    try{ //If cv is compiled with QT support
-        cv::setWindowTitle(strwinName, outfilename.toStdString());
-        cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
+    try{ //If cv is compiled with QT support //Remove otherwise
+        //cv::setWindowTitle(strwinName, outfilename.toStdString());
+        //cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
     }catch(int e)
     {
         cerr << "OpenCV not compiled with QT support! can display overlay" << endl;
@@ -255,7 +264,10 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 
 
         //update the background model
+        //OPEN CV 2.4
         pMOG2->apply(frame, fgMaskMOG2,dLearningRate);
+        //OPENCV 3
+//        pMOG->operator()(frame, fgMaskMOG2,dLearningRate);
         //get the frame number and write it on the current frame
         //erode to get rid to food marks
         cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);

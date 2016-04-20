@@ -32,7 +32,7 @@ using namespace std;
 #endif
 
 //Trying to Find Mat includes
-#include <cv.h>   		// open cv general include file
+#include <opencv/cv.h>   		// open cv general include file
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/imgproc.hpp" //Draw Polyline
 #include "cvblob.h"
