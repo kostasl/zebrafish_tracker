@@ -117,11 +117,7 @@ int main(int argc, char *argv[])
 
 
     //create Background Subtractor objects
-          //(int history=500, double varThreshold=16, bool detectShadows=true
-<<<<<<< HEAD
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,10,false); //MOG2 approach
-=======
-
+    //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 2
     //pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false); //MOG2 approach
     //OPENCV 3
@@ -131,7 +127,6 @@ int main(int argc, char *argv[])
 
     // ************************************* END BENA
 
->>>>>>> 1662be1d6f806b07b08d21dcca7ba3d87a021a57
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
     //pMOG =  new cv::BackgroundSubtractorMOG(30,12,0.7,0.0); //MOG approach
     //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
