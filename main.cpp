@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
     //create Background Subtractor objects
           //(int history=500, double varThreshold=16, bool detectShadows=true
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false); //MOG2 approach
+    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,10,false); //MOG2 approach
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
     //pMOG =  new cv::BackgroundSubtractorMOG(30,12,0.7,0.0); //MOG approach
     //pGMG =  new cv::BackgroundSubtractorGMG(); //GMG approach
@@ -243,7 +243,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 
         //If Mask shows that a large ratio of pixels is changing then - adjust learning rate to keep activity below 0.006
         if (dblRatioPxChanged > 0.006)
-            dLearningRate = max(min(dLearningRate*2,1.0),0.0);
+            dLearningRate = max(min(dLearningRate*2,0.01),0.0);
         else if (nFrame > MOGhistory*2)
             dLearningRate = 0.0001;
         else

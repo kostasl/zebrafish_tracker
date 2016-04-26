@@ -6,7 +6,6 @@
 %2016,03,05,13,00,00 <-This line is embryo placement datetime
 %2016,03,08,11,30,00 <-This is Beginning of recording datetime
 
-
 %
 %For EXp Set 1 - 9 conditions :clo
 %ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
@@ -30,9 +29,9 @@ addpath(fileparts(which('processFilesTracks.m')))
 cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR9*' );
 
-strOutputTag = '_R1-3-4-5_';
+strOutputTag = '_R9_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
