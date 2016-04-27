@@ -253,8 +253,8 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
 
         //If Mask shows that a large ratio of pixels is changing then - adjust learning rate to keep activity below 0.006
-        if (dblRatioPxChanged > 0.006)
-            dLearningRate = max(min(dLearningRate*2,1.0),0.0);
+        if (dblRatioPxChanged > 0.01)
+            dLearningRate = max(min(dLearningRate*2,0.01),0.0);
         else if (nFrame > MOGhistory*2)
             dLearningRate = 0.0001;
         else
@@ -314,7 +314,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 
         //Count Fg Pixels // Ratio
         std::stringstream strFGPxRatio;
-        dblRatioPxChanged = (double)cv::countNonZero(fgMaskMOG2);
+        dblRatioPxChanged = (double)cv::countNonZero(fgMaskMOG2)/(double)fgMaskMOG2.size().area();
         strFGPxRatio << "Dpx:" <<  dblRatioPxChanged;
         cv::rectangle(frame, cv::Point(10, 100), cv::Point(100,120), cv::Scalar(255,255,255), -1);
         cv::putText(frame, strFGPxRatio.str(), cv::Point(15, 113),

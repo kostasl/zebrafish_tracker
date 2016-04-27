@@ -30,7 +30,7 @@ addpath(fileparts(which('processFilesTracks.m')))
 cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR*' );
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR8*' );
 
 strOutputTag = '_R1-3-4-5_';
 
