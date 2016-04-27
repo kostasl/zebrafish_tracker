@@ -117,8 +117,7 @@ int main(int argc, char *argv[])
 
 
     //create Background Subtractor objects
-          //(int history=500, double varThreshold=16, bool detectShadows=true
-
+    //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 2
     //pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false); //MOG2 approach
     //OPENCV 3
@@ -259,8 +258,6 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             dLearningRate = 0.0001;
         else
             dLearningRate = 0.001;
-
-
 
 
         //update the background model
