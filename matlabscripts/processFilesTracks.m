@@ -26,16 +26,13 @@ addpath(fileparts(which('processFilesTracks.m')))
 %frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive
 %cd /home/klagogia/Videos/LarvaTrackPilot/DataOut %Office
 %cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
-cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
+%cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
+cd /media/klagogia/SMART/PilotVialTrack/Flycam3/Results
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
-<<<<<<< HEAD
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR8*' );
-=======
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR9*' );
->>>>>>> 81b2deb53b11f0268682738533ccf17dbf96badd
 
-strOutputTag = '_R9_';
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR6*' );
+strOutputTag = '_R6_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)

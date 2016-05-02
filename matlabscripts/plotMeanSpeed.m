@@ -9,8 +9,106 @@ clear mu;
 clear n;
 clear stdd;
 
+plotcoloursPerVial = [1,0,0; ...
+                      1,0,0; ...
+                      1,0,0; ...
+                      0.5,0.3,0.1; ...
+                      0.5,0.3,0.1; ...
+                      0.5,0.3,0.1; ...
+                      0,0,1; ...
+                      0,0,1; ...
+                      0,0,1; ...
+                      0,0,0; ...
+                      0,0,0; ...
+                      0,0,0; ...
+                      1,0,1; ...
+                      1,0,1; ...
+                      1,0,1; ...
+                      0.3,1,0; ...
+                      0.3,1,0; ...
+                      0.3,1,0; ...
+                      ];
 %cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %load(strcat('LarvaTrackData',strOutputTag,'.mat'));
+
+%% Calc Data Per Vial Independently %%
+meanConditionSpeedsV  = {};
+maxVialCount = 18;
+nV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
+muV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
+stddV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
+ConditionIndex = 1;
+
+for t=1:length(ExpTrackResultsInTime)
+    for (VialIndex=1:1:maxVialCount)
+            ExpTrackResults         = ExpTrackResultsInTime{t};
+            %TODO: Add Filters Here
+            %ExpTrackResults =             
+            
+            ResSet                  = vertcat(ExpTrackResults{:,VialIndex});
+
+            if isempty(ResSet)
+                continue;
+            end
+            meanConditionSpeedsV{VialIndex}   = vertcat(ResSet.MeanSpeed);
+            nV(t,VialIndex)                   = length(meanConditionSpeedsV{VialIndex});
+            muV(t,VialIndex)                  = mean(meanConditionSpeedsV{VialIndex});
+            stddV(t,VialIndex)                = std(meanConditionSpeedsV{VialIndex});
+    end
+    
+end
+
+ylimitsNTracklets = ceil(max(nV(:))/100)*100;
+ylimitsmu = ceil(max(muV(:)));
+
+%% Plot All Vials Independently %%%
+        t = length(ExpTrackResultsInTime);
+        Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
+        hf = figure('Name',strcat(ExpCondFood{ConditionIndex},strtitle));
+
+        % Get the initial set of default plot colors.
+        initialColorOrder = get(gca,'ColorOrder') % Initial
+        
+        % Apply the new default colors to the current axes.
+        set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
+        
+        subplot(3,1,1)
+        plot(Exptime,muV(:,:));
+        title('Mean Speed in px/sec');
+        ylim([0 ylimitsmu]);
+
+        hh= subplot(3,1,2)
+        %get(hh,'position')
+         % Apply the new default colors to the current axes.
+        set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
+        plot(Exptime,stddV(:,:));
+        title('STD Dev ');
+
+        
+        subplot(3,1,3)
+        % Apply the new default colors to the current axes.
+        set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
+        plot(Exptime,nV(:,:),'LineWidth',2.0);
+        title('Number of samples');
+
+        xlabel('Hour');
+        ylim([0 ylimitsNTracklets]);
+
+        %Make Legend
+        strLegend = '';
+        j = 0;
+        for k=1:maxVialCount
+            [cond,vial] =find(VialPairsPerCondition==k);
+            
+            j=j+1; 
+            strLegend{j} = strcat(ExpCondTitles{cond},'-V',num2str(vial));
+        end
+        legend( strLegend,'Location','southoutside','Orientation','vertical','Position',[0.84 0.45 0.124 0.43])
+        %set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
+        saveas(hf,strcat('figures/meanALLVialIndy-',strOutputTag,'SpeedSlidingWindow',ExpCondFood{CondIndexes(1)},'.png'));
+%    end
+
+
 %% Do Mean Speed Per Condition Per Time Window
 meanConditionSpeeds  = {};
 n  = zeros(length(ExpTrackResultsInTime),9);
@@ -38,6 +136,9 @@ for t=1:length(ExpTrackResultsInTime)
     
 end
 
+
+
+%% Plot Vials Grouped per condition %%
 ylimitsTracklets = ceil(max(n(:))/100)*100;
 ylimits = ceil(max(mu(:)));
 
