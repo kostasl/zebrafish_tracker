@@ -1,4 +1,5 @@
 %Produces plot of Mean Speed / Activity based on Number of tracklet samples
+%Add Centroids To Plots And Save Centroid_TAG variable
 
 %Conditions Label Are in  process FileTracks
 nbins = 100;
@@ -28,8 +29,20 @@ plotcoloursPerVial = [1,0,0; ...
                       0.3,1,0; ...
                       0.3,1,0; ...
                       ];
-%cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
+
+plotcoloursPerCondition = [1,0,0; ...
+                      0.5,0.3,0.1; ...
+                      0,0,1; ...
+                      0,0,0; ...
+                      1,0,1; ...
+                      0.3,1,0; ...
+                      ];
+
+                  %cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %load(strcat('LarvaTrackData',strOutputTag,'.mat'));
+
+%%Collect Centroids
+%centroid = [centroid_R6_(1,:); centroid_R7_(1,:);centroid_R8_(1,:); centroid_R9_(1,:); centroid_R10_(1,:);]
 
 %% Calc Data Per Vial Independently %%
 meanConditionSpeedsV  = {};
@@ -39,8 +52,9 @@ muV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
 stddV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
 ConditionIndex = 1;
 
-for t=1:length(ExpTrackResultsInTime)
-    for (VialIndex=1:1:maxVialCount)
+for (VialIndex=1:1:maxVialCount)
+    for t=1:length(ExpTrackResultsInTime)
+    
             ExpTrackResults         = ExpTrackResultsInTime{t};
             %TODO: Add Filters Here
             %ExpTrackResults =             
@@ -54,9 +68,21 @@ for t=1:length(ExpTrackResultsInTime)
             nV(t,VialIndex)                   = length(meanConditionSpeedsV{VialIndex});
             muV(t,VialIndex)                  = mean(meanConditionSpeedsV{VialIndex});
             stddV(t,VialIndex)                = std(meanConditionSpeedsV{VialIndex});
+
     end
-    
+           %Calc Centroids
+           centrTime = sum((1:t)'.*nV(:,VialIndex))/sum( nV(:,VialIndex)); %Time Cntr X
+           if ~isnan(centrTime)
+                tcV(VialIndex) =  Exptime( max( round(centrTime ),1 )) ;
+           else
+                tcV(VialIndex) = NaN;
+           end
+           
+           ncV(VialIndex) = mean(nV(:,VialIndex));
 end
+%Make Output Var Of Centroids - Append to file
+eval(strcat('centroid',strOutputTag,'= [tcV; ncV]'));
+save('ActivityCentroids.mat',strcat('centroid',strOutputTag),'-append')
 
 ylimitsNTracklets = ceil(max(nV(:))/100)*100;
 ylimitsmu = ceil(max(muV(:)));
@@ -74,27 +100,42 @@ ylimitsmu = ceil(max(muV(:)));
         set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
         
         subplot(3,1,1)
+        set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
         plot(Exptime,muV(:,:));
         title('Mean Speed in px/sec');
         ylim([0 ylimitsmu]);
 
-        hh= subplot(3,1,2)
+        hh= subplot(3,1,2);
         %get(hh,'position')
          % Apply the new default colors to the current axes.
         set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
         plot(Exptime,stddV(:,:));
         title('STD Dev ');
-
+        
+        
         
         subplot(3,1,3)
-        % Apply the new default colors to the current axes.
-        set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
-        plot(Exptime,nV(:,:),'LineWidth',2.0);
         title('Number of samples');
+        % Apply the new default colors to the current axes.
+                
+        hold on;
+   
+
+        set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
+        plot(Exptime,nV,'LineWidth',1.6);
+        
+        hold on;
+        %Plot Centroids
+        for (VialIndex=1:1:maxVialCount)
+            plot(tcV( VialIndex) ,ncV(VialIndex),'.','markers',22,'MarkerEdgeColor',plotcoloursPerVial(VialIndex,:)) ;
+            pltC = plot(  tcV( VialIndex) ,ncV(VialIndex),'o','markers',22,'MarkerEdgeColor','k');
+        end
+      
 
         xlabel('Hour');
         ylim([0 ylimitsNTracklets]);
-
+        hold off;
+        
         %Make Legend
         strLegend = '';
         j = 0;
@@ -106,7 +147,7 @@ ylimitsmu = ceil(max(muV(:)));
         end
         legend( strLegend,'Location','southoutside','Orientation','vertical','Position',[0.84 0.45 0.124 0.43])
         %set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
-        saveas(hf,strcat('figures/meanALLVialIndy-',strOutputTag,'SpeedSlidingWindow',ExpCondFood{CondIndexes(1)},'.png'));
+        saveas(hf,strcat('figures/meanALLVialIndy-',strOutputTag,'SpeedSlidingWindow',ExpCondFood{cond},'.png'));
 %    end
 
 
@@ -118,8 +159,8 @@ stdd  = zeros(length(ExpTrackResultsInTime),9);
 ConditionIndex = 1;
 
 
-for t=1:length(ExpTrackResultsInTime)
-    for (ConditionIndex=1:ConditionIndexMax)
+for (ConditionIndex=1:(ConditionIndexMax))
+    for t=1:length(ExpTrackResultsInTime)
             ExpTrackResults         = ExpTrackResultsInTime{t};
             %TODO: Add Filters Here
             %ExpTrackResults =             
@@ -134,6 +175,10 @@ for t=1:length(ExpTrackResultsInTime)
             mu(t,ConditionIndex)                  = mean(meanConditionSpeeds{ConditionIndex});
             stdd(t,ConditionIndex)                = std(meanConditionSpeeds{ConditionIndex});
     end
+    
+         %Calc Central Moment of Inertia
+         tc(ConditionIndex) = sum((1:t)'.*n(:,ConditionIndex))/sum( n(:,ConditionIndex));
+         nc(ConditionIndex) =   mean(n(:,ConditionIndex));
     
 end
 
@@ -161,9 +206,18 @@ for i=1:length(ConditionGroups) %plot Per Condition Groups
         plot(Exptime,mu(:,CondIndexes)   );
         title('Mean Speed in px/sec');
         ylim([0 ylimits]);
+
         subplot(3,1,2)
         plot(Exptime,n(:,CondIndexes));
+
+
+        hold on;
         title('Number of samples');
+        %Plot Centroids
+        plot(Exptime(max(round(tc),1)),nc,'x')
+        
+        hold off;
+        
         hh= subplot(3,1,3)
         %get(hh,'position')
 
@@ -186,6 +240,7 @@ for i=1:length(ConditionGroups) %plot Per Condition Groups
 end %end Condition Groups
 %,strcat(ExpCondFood{ConditionIndex+1},ExpCondTitles{ConditionIndex+1}),strcat(ExpCondFood{ConditionIndex+2},ExpCondTitles{ConditionIndex+2})
 
+
 %% PLOT ALL GENOTYPES %%%
 for (ConditionIndex=1:CondGrouping:ConditionIndexMax)
         CondIndexes = ConditionIndex:(ConditionIndex+CondGrouping-1);
@@ -197,17 +252,28 @@ for (ConditionIndex=1:CondGrouping:ConditionIndexMax)
         plot(Exptime,mu(:,ConditionIndex:(ConditionIndex+CondGrouping-1))   );
         title('Mean Speed in px/sec');
         ylim([0 ylimits]);
-        subplot(3,1,2)
-        plot(Exptime,n(:,CondIndexes));
-        title('Number of samples');
-        hh= subplot(3,1,3)
+                
+        hh= subplot(3,1,2)
         %get(hh,'position')
-
+        set(gca, 'ColorOrder', plotcoloursPerCondition, 'NextPlot', 'replacechildren');
         plot(Exptime,stdd(:,CondIndexes));
         title('STD Dev ');
         xlabel('Hour');
         ylim([0 ylimits]);
 
+        
+        subplot(3,1,3)
+        set(gca, 'ColorOrder', plotcoloursPerCondition, 'NextPlot', 'replacechildren');
+        plot(Exptime,n(:,CondIndexes),'LineWidth',2.1);
+        title('Number of samples');
+        hold on;
+        %Plot Centroids
+        for (k=1:1:ConditionIndexMax)
+            plot(Exptime(max(round(tc(k)),1)),nc(k),'.','markers',22,'MarkerEdgeColor',plotcoloursPerCondition(k,:));
+            pltC = plot(Exptime(max(round( tc(k) ),1) ),nc(k),'o','markers',22,'MarkerEdgeColor','k');
+        end
+      
+        
         %Make Legend
         strLegend = '';
         j = 0;
@@ -239,6 +305,10 @@ for i=1:length(ConditionGroups) %plot Per Condition Groups
 
         subplot(length(CondIndexes),1,k);
         ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
+        
+        if (length(ResSet) == 0) 
+            continue;
+        end
         meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
         [cnt,bin]                            = hist(meanConditionSpeeds{ConditionIndex},nbins);
         hist(meanConditionSpeeds{ConditionIndex},nbins);
@@ -276,14 +346,17 @@ hf = figure('Name',strcat(ExpCondFood{ConditionIndex},'MEAN SPEED'));
 
 subplot(3,1,1);
 ResSet                               = vertcat(ExpTrackResults{:,VialPairsPerCondition(ConditionIndex,: )});
-meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-[cnt,bin]                            = hist(meanConditionSpeeds{ConditionIndex},nbins);
-hist(meanConditionSpeeds{ConditionIndex},nbins);
-n       = length(meanConditionSpeeds{ConditionIndex});
-mu      = mean(meanConditionSpeeds{ConditionIndex});
-stdd    = std(meanConditionSpeeds{ConditionIndex});
-strTitle = sprintf('%s %s mean: %0.3f std:%0.3f n:%d',ExpCondFood{ConditionIndex},ExpCondTitles{ConditionIndex},mu,stdd, n );
-title(strTitle);
+if length(ResSet) > 0 
+    meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
+    [cnt,bin]                            = hist(meanConditionSpeeds{ConditionIndex},nbins);
+    hist(meanConditionSpeeds{ConditionIndex},nbins);
+    n       = length(meanConditionSpeeds{ConditionIndex});
+    mu      = mean(meanConditionSpeeds{ConditionIndex});
+    stdd    = std(meanConditionSpeeds{ConditionIndex});
+    strTitle = sprintf('%s %s mean: %0.3f std:%0.3f n:%d',ExpCondFood{ConditionIndex},ExpCondTitles{ConditionIndex},mu,stdd, n );
+    title(strTitle);
+end
+
 % h = findobj(gca,'Type','patch');
 % set(h,'FaceColor','blue');
 % set(h,'EdgeColor','w');

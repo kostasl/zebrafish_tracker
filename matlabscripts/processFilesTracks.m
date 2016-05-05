@@ -27,7 +27,9 @@ addpath(fileparts(which('processFilesTracks.m')))
 %cd /home/klagogia/Videos/LarvaTrackPilot/DataOut %Office
 %cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
-cd /media/klagogia/SMART/PilotVialTrack/Flycam3/Results
+%cd /media/klagogia/SMART/PilotVialTrack/Flycam3/Results
+
+cd /media/klagogia/0464DBA964DB9BAC/PilotVialTrack
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
 
