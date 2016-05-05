@@ -62,6 +62,7 @@ ylimitsNTracklets = ceil(max(nV(:))/100)*100;
 ylimitsmu = ceil(max(muV(:)));
 
 %% Plot All Vials Independently %%%
+        strtitle = sprintf('Mean Activity Of Each Vial-Sliding Window %d hours',TimeFrameWidth/3600);
         t = length(ExpTrackResultsInTime);
         Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
         hf = figure('Name',strcat(ExpCondFood{ConditionIndex},strtitle));
