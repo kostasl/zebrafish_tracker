@@ -41,8 +41,6 @@ plotcoloursPerCondition = [1,0,0; ...
                   %cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %load(strcat('LarvaTrackData',strOutputTag,'.mat'));
 
-%%Collect Centroids
-%centroid = [centroid_R6_(1,:); centroid_R7_(1,:);centroid_R8_(1,:); centroid_R9_(1,:); centroid_R10_(1,:);]
 
 %% Calc Data Per Vial Independently %%
 meanConditionSpeedsV  = {};
@@ -83,6 +81,11 @@ end
 %Make Output Var Of Centroids - Append to file
 eval(strcat('centroid',strOutputTag,'= [tcV; ncV]'));
 save('ActivityCentroids.mat',strcat('centroid',strOutputTag),'-append')
+
+%%Collect Centroids of Interest
+%centroidT = [centroid_R7_(1,:);centroid_R8_(1,:); centroid_R9_(1,:); centroid_R10_(1,:); centroid_R11_(1,:); centroid_R12_(1,:);]
+%save('ActivityCentroids.mat','centroidT','-append')
+
 
 ylimitsNTracklets = ceil(max(nV(:))/100)*100;
 ylimitsmu = ceil(max(muV(:)));
