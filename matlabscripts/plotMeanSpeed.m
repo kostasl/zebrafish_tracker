@@ -5,6 +5,9 @@
 nbins = 100;
 ylimits = 7;
 ylimitsTracklets =  2500;
+
+xvalues = [0:0.2:10]; %Defi nes Max Speed too
+
 clear meanConditionSpeeds;
 clear mu;
 clear n;
@@ -45,6 +48,9 @@ plotcoloursPerCondition = [1,0,0; ...
 %% Calc Data Per Vial Independently %%
 meanConditionSpeedsV  = {};
 maxVialCount = 18;
+
+Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
+
 nV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
 muV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
 stddV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
@@ -78,13 +84,11 @@ for (VialIndex=1:1:maxVialCount)
            
            ncV(VialIndex) = mean(nV(:,VialIndex));
 end
+
 %Make Output Var Of Centroids - Append to file
 eval(strcat('centroid',strOutputTag,'= [tcV; ncV]'));
-save('ActivityCentroids.mat',strcat('centroid',strOutputTag),'-append')
+save('ActivityCentroids.mat',strcat('centroid',strOutputTag),'-append') %
 
-%%Collect Centroids of Interest
-%centroidT = [centroid_R7_(1,:);centroid_R8_(1,:); centroid_R9_(1,:); centroid_R10_(1,:); centroid_R11_(1,:); centroid_R12_(1,:);]
-%save('ActivityCentroids.mat','centroidT','-append')
 
 
 ylimitsNTracklets = ceil(max(nV(:))/100)*100;
@@ -295,7 +299,8 @@ goToHour = 110;
 t= round((goToHour*3600 - VialAge(1))/timeAdvance);
 ExpTrackResults = ExpTrackResultsInTime{t};
 
-strtitle = sprintf('Speed Histogram -@t:%d for %d hours',goToHour,TimeFrameWidth/3600);
+strtitle = sprintf(' Speed Histogram-@t:%d for %d hours',goToHour,TimeFrameWidth/3600);
+
 
 for i=1:length(ConditionGroups) %plot Per Condition Groups 
     CondIndexes = ConditionGroups{i};
@@ -312,9 +317,17 @@ for i=1:length(ConditionGroups) %plot Per Condition Groups
         if (length(ResSet) == 0) 
             continue;
         end
+        
         meanConditionSpeeds{ConditionIndex}  = vertcat(ResSet.MeanSpeed);
-        [cnt,bin]                            = hist(meanConditionSpeeds{ConditionIndex},nbins);
-        hist(meanConditionSpeeds{ConditionIndex},nbins);
+        %Filter Out Of Range Values below Max X value
+        meanConditionSpeeds{ConditionIndex}(find(meanConditionSpeeds{ConditionIndex} < xvalues(length(xvalues))));
+        
+        [cnt,bin]                            = hist(meanConditionSpeeds{ConditionIndex},xvalues);
+        hist(meanConditionSpeeds{ConditionIndex},xvalues);
+        
+        xlim([xvalues(1) xvalues(length(xvalues))]);
+        ylim([0 50]);
+        
         n       = length(meanConditionSpeeds{ConditionIndex});
         mu      = mean(meanConditionSpeeds{ConditionIndex});
         stdd    = std(meanConditionSpeeds{ConditionIndex});
@@ -330,7 +343,8 @@ for i=1:length(ConditionGroups) %plot Per Condition Groups
         end
         %legend( strLegend,'Location','southoutside','Orientation','vertical','Position',[0.84 0.01 0.124 0.43])
         %set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
-        saveas(hf,strcat('figures/SpeedHistTracklet',strOutputTag,'tHour',num2str(goToHour),'_',ExpCondFood{CondIndexes(1)},'-G',num2str(i),'.png'));
+        saveas(hf,strcat(pwd,'/figures/SpeedHistTracklet',strOutputTag,'tHour',num2str(goToHour),'_',ExpCondFood{CondIndexes(1)},'-G',num2str(i),'.png'));
+        
     end
 end %end Condition Groups
 
@@ -338,6 +352,7 @@ end %end Condition Groups
 
 
 %% Plot Histogram Of Speed Within A chosen time Window
+goToHour = 110;
 t= round((goToHour*3600 - VialAge(1))/timeAdvance);
 ExpTrackResults = ExpTrackResultsInTime{t};
 
@@ -455,4 +470,72 @@ for ConditionIndex=1:ConditionIndexMax
 
 end
 saveas(hf,sprintf('figures/TrackletMeanSpeedScatter-%s-%dHour.png',strOutputTag,goToHour))
+
+
+%% PLOT HISTOGRAM OF CENTROIDS %%
+
+%%Collect Centroids of Interest
+centroidT = [centroid_R1_(1,:); centroid_R2_(1,:); centroid_R3_(1,:); centroid_R4_(1,:); centroid_R5_(1,:); centroid_R6_(1,:); centroid_R7_(1,:);centroid_R8_(1,:); centroid_R9_(1,:); centroid_R10_(1,:); centroid_R11_(1,:); centroid_R12_(1,:);]
+
+%Make  ANOVA Group Labels
+strGroups = '';
+j = 0;
+for k=1:maxVialCount
+    [cond,vial] =find(VialPairsPerCondition==k);
+
+    j=j+1; 
+    % strGroups{j} = strcat(ExpCondTitles{cond},'-V',num2str(vial)); % With
+    % Vials
+     strGroups{j} = strcat(ExpCondTitles{cond}); % No Vials
+
+end
+
+% Tabulate Data - EXperiment No, Condition, Centroid Time
+%Exp_Con_centroid_DAT = vertcat(ones(12,1)'.*(1:12),centroidT(:,1)')'
+%Exp_Cond_centroid_DAT = vertcat(Exp_Gen_centroid_DAT,ones(12,1)'.*(1:12),centroidT(:,2)')'
+save('ActivityCentroids.mat','centroidT','Exp_Cond_centroidT_DAT','-append')
+
+% ANOVA TESTS
+[p,tbl,stats] = anova1(centroidT(7:12,:),strGroups);
+multcompare(stats)
+
+%%HISTOGRAM PLOTS
+
+hf = figure
+xrange = 95:1:140; 
+hist([centroidT(:,1); centroidT(:,2); centroidT(:,3)],xrange,'facecolor', plotcoloursPerCondition(1,:),'facealpha',.5,'edgecolor','none')
+ylim([0 6])
+hold on
+hist([centroidT(:,4); centroidT(:,5); centroidT(:,6)],xrange,'facecolor', 'red','facealpha',.5,'edgecolor','k')
+hist([centroidT(:,7); centroidT(:,8); centroidT(:,9)],xrange,'facecolor', plotcoloursPerCondition(3,:),'facealpha',.5,'edgecolor','none')
+hist([centroidT(:,10); centroidT(:,11); centroidT(:,12)],xrange,'facecolor', plotcoloursPerCondition(4,:),'facealpha',.5,'edgecolor','none')
+hist([centroidT(:,13); centroidT(:,14); centroidT(:,15)],xrange,'facecolor', plotcoloursPerCondition(5,:),'facealpha',.5,'edgecolor','none')
+hist([centroidT(:,16); centroidT(:,17); centroidT(:,18)],xrange,'facecolor', plotcoloursPerCondition(6,:),'facealpha',.5,'edgecolor','none')
+alpha(.8)
+box off
+axis tight
+
+
+h = findobj(gca,'Type','patch');
+display(h)
+ 
+for k=1:ConditionIndexMax
+    set(h(k),'FaceColor', plotcoloursPerCondition(ConditionIndexMax-k+1,:),'EdgeColor','k');
+end
+
+
+%Make Legend
+strLegend = '';
+j = 0;
+for k=1:ConditionIndexMax
+    j=j+1; 
+    strLegend{j} = strcat(ExpCondTitles{k});
+end
+legend( strLegend,'Location','southoutside','Orientation','vertical','Position',[0.84 0.45 0.124 0.43])
+
+%legalpha(ExpCondTitles(1),ExpCondTitles(2),ExpCondTitles(3),'location','northwest')
+legend boxoff
+
+saveas(hf,sprintf('figures/CentroidsOFExpR7-12.png',strOutputTag,goToHour))
+
 
