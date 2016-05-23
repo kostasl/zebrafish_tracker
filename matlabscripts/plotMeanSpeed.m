@@ -48,7 +48,7 @@ plotcoloursPerCondition = [1,0,0; ...
 %% Calc Data Per Vial Independently %%
 meanConditionSpeedsV  = {};
 maxVialCount = 18;
-
+t = length(ExpTrackResultsInTime);
 Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
 
 nV  = zeros(length(ExpTrackResultsInTime),maxVialCount);
@@ -85,10 +85,14 @@ for (VialIndex=1:1:maxVialCount)
            ncV(VialIndex) = mean(nV(:,VialIndex));
 end
 
-%Make Output Var Of Centroids - Append to file
+%Make Output Var Of Centroids - Append variable to file if Exists
 eval(strcat('centroid',strOutputTag,'= [tcV; ncV]'));
-save('ActivityCentroids.mat',strcat('centroid',strOutputTag),'-append') %
-
+outCentrFile = '/media/klagogia/SMART/PilotVialTrack/ActivityCentroids-EXPL.mat';
+if exist(outCentrFile)
+    save(outCentrFile,strcat('centroid',strOutputTag),'-append') 
+else
+    save(outCentrFile,strcat('centroid',strOutputTag),) 
+end
 
 
 ylimitsNTracklets = ceil(max(nV(:))/100)*100;

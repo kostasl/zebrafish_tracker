@@ -29,13 +29,16 @@ addpath(fileparts(which('processFilesTracks.m')))
 %cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
 %cd /media/klagogia/0464DBA964DB9BAC/PilotVialTrack
 cd /media/klagogia/SMART/PilotVialTrack/Flycam3/Results
+%cd /media/klagogia/SMART/PilotVialTrack/Flycam4/Results
 
+%File To ssave/append centroid Data
+outCentrFile = '/media/klagogia/SMART/PilotVialTrack/ActivityCentroids-EXPL.mat';
 
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
 
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPR14*' );
-strOutputTag = '_R14_';
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPL4*' );
+strOutputTag = '_L4_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
