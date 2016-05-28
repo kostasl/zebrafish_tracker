@@ -1,7 +1,8 @@
 #ifndef LTROI_H
 #define LTROI_H
 
-#include <cv.h>
+//#include <cv.h> //Deprecated Header
+#include <opencv2/core/core.hpp>
 
 /// \typedef ltROI
 /// \brief Larva Tracker Region of interest - used to define vials

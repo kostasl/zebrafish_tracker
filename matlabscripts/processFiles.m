@@ -1,21 +1,27 @@
-%% Import CSV Files
-
-%%FOLDER NAMES SHOULD BE OF THE FORMAT: EXP_6-7_20151123_5sec
+%% File Imports Data from CSV Files and produces mean activity plots for Each Exp condition
+% 
+% NOTE:FOLDER NAMES SHOULD BE OF THE FORMAT: EXP_6-7_20151123_5sec
 %5sec is the timelapse period in seconds
 
 scriptPath = which('processFiles.m');
-[framePeriod,VialAge,ExpIDs,ExpN ] = importCSVtoCell( '*V*_N','EXP*' );
-save('LarvaCountData.mat','ExpN');
+[framePeriod,VialAge,ExpIDs,ExpN ] = importCSVtoCell( '*V*_N','EXP_B*' );
+save('LarvaCountData.mat');
 
 
+%load('LarvaCountData.mat');
 %% Plot Results for Active Larva Per Vial
 %Give 3 days data points 1 sec each.
 % Genotypes are 3 organized in this order : 1st WT (oregonR), 2nd Genetic Control, 3rd AlfaBeta Mutant
 ConditionIndex = 1; %Experimental Condition ID Say 1 OR NF 
-% The videos have 2 rows of 9 vials - Vials 1-10 have identical conditions so they go in PAIRS
-VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
 timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which to analyse data
 %FramePeriod sampled at each timelapse Experiment -
+
+% The videos have 2 rows of 9 vials - Vials 1-10 have identical conditions so they go in PAIRS
+%VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
+
+%For new 2016/03 Setup We have 1 row - 3 conditions - 3 reps Each - 
+%NOTE: Change this in ProcessFilesTracks.m too
+VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];]; %OR Normal Food
 
 %%THESE DO NOT CORRESPOND TO TIMES OF VIDEOS
 %framePeriod = [20;5;5;2;2;2;2;2];

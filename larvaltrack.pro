@@ -1,3 +1,5 @@
+#Good to have compiled opencv with qt support so the window can autoresize.
+
 TEMPLATE = app
 
 QT += qml quick widgets gui

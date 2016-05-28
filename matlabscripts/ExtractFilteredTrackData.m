@@ -7,9 +7,9 @@ function [ExpTrackResults] = ExtractFilteredTrackData(ExpTrack,ExpIDs,framePerio
 % MinLifetime Minimum Number of Path Steps
 %MaxLifetime Maximum Number of Path Steps
 %MinDistance   Minimum Track length to consider
-%MaxStepLength  Between two frames rejects steps larger than this
+%MaxpxSpeed Reject if px step is larger than this Between two frames rejects 
 % FromTime : Filter Tracklets that are X sec after beginning of video
-%TimeWindow  %TimeFrame Sliding Window in Sec Overwhich results are averaged
+%TimeWindow  : Set Time after FromTime to extract data points from
 FilteredTracks = {}; 
 %MinpxSpeed = 2;
 % bVerb = 0; Flag to Set if function should be verbose
@@ -18,6 +18,7 @@ for (e=1:size(ExpTrack,1))
     if (bVerb)
         disp(char(ExpIDs(e)));
     end
+    
     for (v=1:size(ExpTrack,2))
         %Check If Empty cell - Data for Vial N/A
        if isempty(ExpTrack{e,v}) 
@@ -27,8 +28,8 @@ for (e=1:size(ExpTrack,1))
        % Get Track Ids that are longer than MinLifetime
        FiltIndexes = find( ExpTrack{e,v}(:,6)>MinLifetime & ...
                            ExpTrack{e,v}(:,6)  < MaxLifetime & ...           
-                           ExpTrack{e,v}(:,1)*framePeriod(e) < FromTime & ...
-                           ExpTrack{e,v}(:,1)*framePeriod(e) > (FromTime - TimeWindow) );
+                           ExpTrack{e,v}(:,1)*framePeriod(e) > FromTime & ...
+                           ExpTrack{e,v}(:,1)*framePeriod(e) < (FromTime + TimeWindow) );
        
        FilteredTrackIDs = unique(ExpTrack{e,v}(FiltIndexes, 2));
        %Unfiltered Unique Ids
@@ -54,6 +55,8 @@ for (e=1:size(ExpTrack,1))
            datbreakpoint  = find(diff(trackData(:,1))>1);
            if ( isempty(datbreakpoint) == 0)
                 trackData = trackData(1:datbreakpoint(1),:);
+                %For some Reason Tracker Reuses  trackIDs
+                %error('Found Broken Lifetime');
            end
            %Check Track Lifetime Again - Filter If Less than Required Size
            if (length(trackData(:,2)) < MinLifetime || length(trackData(:,2)) < 2)
@@ -64,8 +67,10 @@ for (e=1:size(ExpTrack,1))
            pathSteps          = sqrt(diff(trackData(:,2)).^2+diff(trackData(:,3)).^2);
            
            
-           %Check When Track Stops or goes too fast And Truncate
-           datbreakpoint  = find(pathSteps(:,1)<MinpxSpeed | pathSteps(:,1) > MaxpxSpeed);
+           %Find 1st point When Track Stops or goes too fast And Truncate
+           datbreakpoint  = find(pathSteps(:,1) < MinpxSpeed | pathSteps(:,1) > MaxpxSpeed );
+           %datbreakpoint = join(datbreakpoint, );
+           
             if (length(datbreakpoint) > 1)
                 pathSteps = pathSteps(1:datbreakpoint(1),:);
             end
@@ -73,7 +78,7 @@ for (e=1:size(ExpTrack,1))
             stepsCount = length(pathSteps);
             trackDist = sum(pathSteps);
             %Apply Step Count and MinDistance Filter 
-           if (stepsCount < MinLifetime | stepsCount > MaxLifetime | trackDist < MinDistance)
+           if ((stepsCount < MinLifetime) || (stepsCount > MaxLifetime) || (trackDist < MinDistance))
                continue; %Go to Next
            end
            
@@ -105,7 +110,7 @@ for (e=1:size(ExpTrack,1))
        ExpTrackResults{e,v} = struct('Tracks',FilteredTracks);
        ExpTrackResults{e,v} = vertcat(ExpTrackResults{e,v}.Tracks);
        %Empty Buffer Cell Array
-       FilteredTracks = {}; 
+       FilteredTracks = {};
     end %Each Vial
 
 end %Each Experiment

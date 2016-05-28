@@ -348,6 +348,12 @@ extern "C" {
     return cvLargestBlob(blobs);
   }
 
+  /// \fn CvLabel cvBlobAreaMeanVar(const CvBlobs &blobs)
+  /// \brief Get Mean And Variance Of blob Areas.
+  /// \param blobs List of blobs.
+  /// \return meanArea, dvarArea  0 if there are no blobs.
+  double cvBlobAreaMeanVar(CvBlobs &blobs, double& meanArea, double& dvarArea);
+
   /// \fn void cvFilterByArea(CvBlobs &blobs, unsigned int minArea, unsigned int maxArea)
   /// \brief Filter blobs by area.
   /// Those blobs whose areas are not in range will be erased from the input list of blobs.
@@ -355,6 +361,14 @@ extern "C" {
   /// \param minArea Minimun area.
   /// \param maxArea Maximun area.
   void cvFilterByArea(CvBlobs &blobs, unsigned int minArea, unsigned int maxArea);
+
+
+  /// \fn void cvFilterByROI(ltROIlist& vRoi,CvBlobs &blobs)
+  /// \brief Filter blobs by memberhip to Regions of Interest.
+  /// Blobs who do not belong to any ROI will be erased.
+  /// \param vRoi  List of ROIs.
+  /// \param blobs List of blobs.
+  void cvFilterByROI(ltROIlist& vRoi,CvBlobs &blobs);
 
   /// \fn void cvFilterByLabel(CvBlobs &blobs, CvLabel label)
   /// \brief Filter blobs by label.
@@ -509,7 +523,7 @@ extern "C" {
     ltROI* pROI; ///< Pointer To Region of Interest structure to which this track belongs
     CvLabel label; ///< Label assigned to the blob related to this track.
 
-    unsigned int minx; ///< X min.
+    unsigned int minx; ///< X min.same as  corresponding blob bounding box
     unsigned int maxx; ///< X max.
     unsigned int miny; ///< Y min.
     unsigned int maxy; ///< y max.

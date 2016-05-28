@@ -16,6 +16,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/videoio/videoio.hpp>
 #include <opencv2/video/video.hpp>
 #include "opencv2/video/background_segm.hpp"
 
@@ -38,7 +39,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 void checkPauseRun(int& keyboard,std::string frameNumberString);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
-int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString);
+int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString,double& dMeanBlobArea);
 
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,cv::Rect& roi);
