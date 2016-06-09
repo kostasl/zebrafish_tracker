@@ -10,7 +10,12 @@
 %For EXp Set 1 - 9 conditions :clo
 %ExpCondTitles = {' OR',' GC',' AB',' OR',' GC',' AB',' OR',' GC',' AB'};
 %For EXp Set 2 - 9 conditions :
-ExpCondTitles = {' ATTP40',' BWD47',' BWD48',' ATTP2',' 48.2',' 34'};
+%ExpCondTitles = {' ATTP40',' BWD47',' BWD48',' ATTP2',' 48.2',' 34'};
+
+%On 31/5 we run experiments with 9 vials for each 4 conditions, one including
+%the tau genotype - Thus using both cameras flycam3 (18 vials) flycam4 -
+%I Combined the vial numbers manually by renaming the files of flycam4
+ExpCondTitles = {' ATTP40',' BWD47',' 36','29τ'}; %For T experiments
 ExpCondFood = {'0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D'};
 %ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
 
@@ -28,17 +33,17 @@ addpath(fileparts(which('processFilesTracks.m')))
 %cd /media/kostasl/FlashDrive/PilotVialTrack/ExpSet2_201603/DataOut %Home
 %cd /media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results
 %cd /media/klagogia/0464DBA964DB9BAC/PilotVialTrack
-cd /media/klagogia/SMART/PilotVialTrack/Flycam3/Results
+cd /media/kostasl/SMART/PilotVialTrack/Flycam4/Results
 %cd /media/klagogia/SMART/PilotVialTrack/Flycam4/Results
 
 %File To ssave/append centroid Data
-outCentrFile = '/media/klagogia/SMART/PilotVialTrack/ActivityCentroids-EXPL.mat';
+outCentrFile = '/media/klagogia/SMART/PilotVialTrack/ActivityCentroids-EXPT.mat';
 
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
 
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPL4*' );
-strOutputTag = '_L4_';
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPT1*' );
+strOutputTag = '_T1_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
@@ -51,8 +56,8 @@ strOutputTag = '_L4_';
 %Give 3 days data points 1 sec each.
 % Genotypes are 3 organized in this order : 1st WT (oregonR), 2nd Genetic Control, 3rd AlfaBeta Mutant
 ConditionIndex      = 1; %Experimental Condition ID : Food(Condition)/Genetype Combinations
-ConditionIndexMax   = 6; %Defines max exp. configuration being replicated - ex. 1= Food1/Gen1 1= Food2/Gen1. Combos
-CondReplicates      = 3; %# of replicates for each condition
+ConditionIndexMax   = 4; %Defines max exp. configuration being replicated - ex. 1= Food1/Gen1 1= Food2/Gen1. Combos
+CondReplicates      = 9; %# of replicates for each condition
 
 % The videos have 2 rows of 9 vials - Vials 1-10 have identical conditions so they go in PAIRS
 %VialPairsPerCondition = [[1,10];[2,11];[3,12];[4,13];[5,14];[6,15];[7,16];[8,17];[9,18]]; %OR Normal Food
@@ -64,9 +69,14 @@ CondReplicates      = 3; %# of replicates for each condition
 %For new 2016/03 Setup We have 1 row - 3 conditions - 3 reps Each
 %VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];]; %OR Normal Food
 %For new 2016/03-04 More Controls Setup We have 2 row - 6 Conditions - 3 reps Each
-VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];[10,11,12];[13,14,15];[16,17,18];]; %OR Normal Food
+%VialPairsPerCondition = [[1,2,3];[4,5,6];[7,8,9];[10,11,12];[13,14,15];[16,17,18];]; %OR Normal Food
+
+VialPairsPerCondition = [[1:9];[10:18];[19:27];[28:36]]; %For T experiment 
+
 %Condition Groups - Used for plotting genotypes against controls
-ConditionGroups = {[1,2,3,6];[4,5]}; %ATTP2 & 48.2 are plotted together
+%ConditionGroups = {[1,2,3,6];[4,5]}; %ATTP2 & 48.2 are plotted together
+
+ConditionGroups = {[1,2,3,4]}; %ATTP2 & 48.2 are plotted together
 
 timePoints = max(VialAge) + 24*3*3600;%Total Time points in seconds over which to analyse data
 %FramePeriod sampled at each timelapse Experiment -
