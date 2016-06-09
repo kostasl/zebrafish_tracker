@@ -6,13 +6,19 @@ nbins = 100;
 ylimits = 7;
 ylimitsTracklets =  2500;
 
+maxVialCount = 18;
+maxVialCount = 36; %For the T  experiments
+
+
 xvalues = [0:0.2:10]; %Defi nes Max Speed too
 
 clear meanConditionSpeeds;
 clear mu;
 clear n;
 clear stdd;
+                
 
+%For 18 Vial Experiments - 
 plotcoloursPerVial = [1,0,0; ...
                       1,0,0; ...
                       1,0,0; ...
@@ -34,6 +40,8 @@ plotcoloursPerVial = [1,0,0; ...
                       ];
 
 
+         
+% TODO: Need to Make this smarter : For 36 Vial Experiments :
 plotcoloursPerVial = [1,0,0; ...
                       1,0,0; ...
                       1,0,0; ...
@@ -76,8 +84,7 @@ plotcoloursPerVial = [1,0,0; ...
                       0.3,1,0; ...
                       0.3,1,0; ...
                       0.3,1,0; ...
-                      ];                  
-                  
+                      ];           
                   
 plotcoloursPerCondition = [1,0,0; ...
                       0.5,0.3,0.1; ...
@@ -93,8 +100,6 @@ plotcoloursPerCondition = [1,0,0; ...
 
 %% Calc Data Per Vial Independently %%
 meanConditionSpeedsV  = {};
-maxVialCount = 18;
-maxVialCount = 36; %For the T  experiments
 t = length(ExpTrackResultsInTime);
 Exptime = (VialAge(1)+(1:t)*timeAdvance)/3600;
 
@@ -132,9 +137,13 @@ for (VialIndex=1:1:maxVialCount)
            ncV(VialIndex) = mean(nV(:,VialIndex));
 end
 
+
+
 %Make Output Var Of Centroids - Append variable to file if Exists
 eval(strcat('centroid',strOutputTag,'= [tcV; ncV]'));
-outCentrFile = strcat('/media/kostasl/SMART/PilotVialTrack/ActivityCentroids-EXP',strOutputTag,'.mat');
+
+
+outCentrFile = strcat(strOutputDir,'ActivityCentroids-EXP',strOutputTag,'.mat');
 if exist(outCentrFile)
     save(outCentrFile,strcat('centroid',strOutputTag),'-append') 
 else
@@ -528,6 +537,7 @@ saveas(hf,sprintf('figures/TrackletMeanSpeedScatter-%s-%dHour.png',strOutputTag,
 %%Collect Centroids of Interest
 centroidT = [centroid_R1_(1,:); centroid_R2_(1,:); centroid_R3_(1,:); centroid_R4_(1,:); centroid_R5_(1,:); centroid_R6_(1,:); centroid_R7_(1,:);centroid_R8_(1,:); centroid_R9_(1,:); centroid_R10_(1,:); centroid_R11_(1,:); centroid_R12_(1,:);]
 
+centroidL = [centroid_L1_(1,:); centroid_L2_(1,:); centroid_L3_(1,:); centroid_L4_(1,:);;]
 %Make  ANOVA Group Labels
 strGroups = '';
 j = 0;
