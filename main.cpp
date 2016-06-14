@@ -586,16 +586,6 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
 
         }
-        //Save to Disk
-        if (bTracking && bSaveImages)
-        {
-            saveImage(frameNumberString,outDirCSV,frame);
-            cv::putText(frame, "Save ON", cv::Point(15, 600),
-                    cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
-        }
-
-
 
 
         //cvSetImageROI(&frameImg, iroi);
@@ -615,7 +605,18 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
         saveTrackedBlobs(blobs,strroiFilePos,frameNumberString,iroi);
         cnt += saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
+    } //For Each ROI
+
+    //Save to Disk
+    if (bTracking && bSaveImages)
+    {
+        saveImage(frameNumberString,outDirCSV,frame);
+        cv::putText(frame, "Save ON", cv::Point(15, 600),
+                cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
+
     }
+
+
 
     // *always* remember freeing unused IplImages
     cvReleaseImage( &labelImg );
