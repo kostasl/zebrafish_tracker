@@ -97,6 +97,8 @@ int main(int argc, char *argv[])
 
     //outfilename.truncate(outfilename.lastIndexOf("."));
     QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
+    QString outDir = outfilename.left(outfilename.lastIndexOf('/') ).toStdString().c_str();
+    cout << "Csv Output Dir is " << outDir.toStdString()  << "\n " <<  endl;
 
     // get the applications dir pah and expose it to QML
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
@@ -142,7 +144,7 @@ int main(int argc, char *argv[])
 
     QString invideoname = "*.mpg";
     unsigned int istartFrame = 0;
-    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi *.mp4 *.h264)", 0, 0);
+    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",outDir.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264)", 0, 0);
 
     //Show Video list to process
     cout << "Video List To process:" << endl;
@@ -253,11 +255,11 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 
         //If Mask shows that a large ratio of pixels is changing then - adjust learning rate to keep activity below 0.006
         if (dblRatioPxChanged > 0.01)
-            dLearningRate = max(min(dLearningRate*2,0.01),0.0);
-        else if (nFrame > MOGhistory*2)
+            dLearningRate = max(min(dLearningRate*2.0,0.01),0.00001);
+        else if (nFrame > MOGhistory*10)
             dLearningRate = 0.0001;
         else
-            dLearningRate = 0.001;
+            dLearningRate = 0.01;
 
 
         //update the background model
