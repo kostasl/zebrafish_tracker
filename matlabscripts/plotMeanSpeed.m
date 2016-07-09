@@ -243,8 +243,9 @@ for (ConditionIndex=1:(ConditionIndexMax))
             stdd(t,ConditionIndex)                = std(meanConditionSpeeds{ConditionIndex});
     end
     
-         %Calc Central Moment of Inertia
-         tc(ConditionIndex) = sum((1:t)'.*n(:,ConditionIndex))/sum( n(:,ConditionIndex));
+         %Calc Central Moment of Inertia - of Track Numbers  (Activity)
+         tc(ConditionIndex)    = sum((1:t)'.*n(:,ConditionIndex))/sum( n(:,ConditionIndex));
+         
          nc(ConditionIndex) =   mean(n(:,ConditionIndex));
     
 end
@@ -253,7 +254,7 @@ end
 
 %% Plot Vials Grouped per condition %%
 ylimitsTracklets = ceil(max(n(:))/100)*100;
-ylimits = ceil(max(mu(:)));
+ylimits = ceil(max(mu(:)))+2;
 
 strtitle = sprintf('Mean Activity -Sliding Window %d hours',TimeFrameWidth/3600);
 % Plot Results - In Groups or - In sets of 3-genotypes For each Food Condition
@@ -316,14 +317,15 @@ for (ConditionIndex=1:CondGrouping:ConditionIndexMax)
         hf = figure('Name',strcat(ExpCondFood{ConditionIndex},strtitle));
 
         subplot(3,1,1)
-        plot(Exptime,mu(:,ConditionIndex:(ConditionIndex+CondGrouping-1))   );
+        set(gca, 'ColorOrder', plotcoloursPerCondition, 'NextPlot', 'replacechildren');
+        plot(Exptime,mu(:,ConditionIndex:(ConditionIndex+CondGrouping-1)),'LineWidth',2.0   );
         title('Mean Speed in px/sec');
         ylim([0 ylimits]);
                 
         hh= subplot(3,1,2)
         %get(hh,'position')
         set(gca, 'ColorOrder', plotcoloursPerCondition, 'NextPlot', 'replacechildren');
-        plot(Exptime,stdd(:,CondIndexes));
+        plot(Exptime,stdd(:,CondIndexes),'LineWidth',2  );
         title('STD Dev ');
         xlabel('Hour');
         ylim([0 ylimits]);
@@ -337,7 +339,10 @@ for (ConditionIndex=1:CondGrouping:ConditionIndexMax)
         %Plot Centroids
         for (k=1:1:ConditionIndexMax)
             plot(Exptime(max(round(tc(k)),1)),nc(k),'.','markers',22,'MarkerEdgeColor',plotcoloursPerCondition(k,:));
-            pltC = plot(Exptime(max(round( tc(k) ),1) ),nc(k),'o','markers',22,'MarkerEdgeColor','k');
+            %Make circle size reflect variance
+            
+            circleSize = 3 + 15*std(tcV(VialPairsPerCondition(k,:)));
+            pltC = plot(Exptime(max(round( tc(k) ),1) ),nc(k),'o','markers',circleSize,'MarkerEdgeColor','k');
         end
       
         
@@ -350,7 +355,7 @@ for (ConditionIndex=1:CondGrouping:ConditionIndexMax)
         end
         legend( strLegend,'Location','southoutside','Orientation','vertical','Position',[0.84 0.01 0.124 0.43])
         %set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
-        saveas(hf,strcat('figures/meanALLVial',strOutputTag,'SpeedSlidingWindow',ExpCondFood{CondIndexes(1)},'.png'));
+        saveas(hf,strcat('~/meanALLVial',strOutputTag,'SpeedSlidingWindow',ExpCondFood{CondIndexes(1)},'.png'));
 %    end
 end %end Condition Groups
 

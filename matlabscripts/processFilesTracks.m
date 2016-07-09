@@ -15,8 +15,8 @@
 %On 31/5 we run experiments with 9 vials for each 4 conditions, one including
 %the tau genotype - Thus using both cameras flycam3 (18 vials) flycam4 -
 %I Combined the vial numbers manually by renaming the files of flycam4
-ExpCondTitles = {' ATTP40',' BWD47',' 36','29τ'}; %For T experiments
-ExpCondFood = {'0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D'};
+ExpCondTitles = {' ATTP40',' AsynE46K',' AsynE46K',' AsynE46K'}; %For T experiments
+ExpCondFood = {' 0.1% D','0.1% D','Perg 75mM','Anle 5mM','0.0% D','0.0% D','0.0% D','0.0% D','0.0% D'};
 %ExpCondFood = {'0.0% DMSO','0.0% DMSO','0.0% DMSO','0.5% DMSO','0.5% DMSO','0.5% DMSO','1.0% DMSO','1.0% DMSO','1.0% DMSO'};
 
 %load('/media/ntfspart2/PilotVialTrack/ExpSetR_201603/Flycam3/Results/LarvaTrackData_R1-5_.mat')
@@ -38,13 +38,13 @@ addpath(fileparts(which('processFilesTracks.m')))
 
 %File To ssave/append centroid Data
 strOutputDir = '/media/klagogia/SMART/PilotVialTrack/';
-outCentrFile = strcat(strOutputDir,'/ActivityCentroids-EXPT.mat');
+outCentrFile = strcat(strOutputDir,'/ActivityCentroids-EXPD.mat');
 cd(strcat(strOutputDir,'Flycam4/Results'));
 %%Import FROM CSV FILES
 %VialAge : Age of the vials for an experiment j - from embryo to the beginning of timelapse Recording
 
-[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPT5*' );
-strOutputTag = '_T5_';
+[framePeriod,VialAge,ExpIDs,ExpTrack ] = importCSVtoCell( '*V*_tracks','EXPD1*' );
+strOutputTag = '_D1_';
 
 %Transform - Y Inversion
 %ExpTrack{:,:}(:,5) = 768 - ExpTrack{:,:}(:,5)
