@@ -355,7 +355,7 @@ for (ConditionIndex=1:CondGrouping:ConditionIndexMax)
         end
         legend( strLegend,'Location','southoutside','Orientation','vertical','Position',[0.84 0.01 0.124 0.43])
         %set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
-        saveas(hf,strcat('~/meanALLVial',strOutputTag,'SpeedSlidingWindow',ExpCondFood{CondIndexes(1)},'.png'));
+        saveas(hf,strcat('figures/meanALLVial',strOutputTag,'SpeedSlidingWindow',ExpCondFood{CondIndexes(1)},'.png'));
 %    end
 end %end Condition Groups
 
