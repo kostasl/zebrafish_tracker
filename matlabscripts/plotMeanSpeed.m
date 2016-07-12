@@ -189,13 +189,13 @@ ylimitsmu = ceil(max(muV(:)));
    
 
         set(gca, 'ColorOrder', plotcoloursPerVial, 'NextPlot', 'replacechildren');
-        plot(Exptime,nV,'LineWidth',1.6);
+        plot(Exptime,nV,'LineWidth',1.5);
         
         hold on;
         %Plot Centroids
         for (VialIndex=1:1:maxVialCount)
-            plot(tcV( VialIndex) ,ncV(VialIndex),'.','markers',22,'MarkerEdgeColor',plotcoloursPerVial(VialIndex,:)) ;
-            pltC = plot(  tcV( VialIndex) ,ncV(VialIndex),'o','markers',22,'MarkerEdgeColor','k');
+            plot(tcV( VialIndex) ,ncV(VialIndex),'.','markers',18,'MarkerEdgeColor',plotcoloursPerVial(VialIndex,:)) ;
+            pltC = plot(  tcV( VialIndex) ,ncV(VialIndex),'o','markers',18,'MarkerEdgeColor','k');
         end
       
 
@@ -214,7 +214,7 @@ ylimitsmu = ceil(max(muV(:)));
         end
         legend( strLegend,'Location','southoutside','Orientation','vertical','Position',[0.84 0.45 0.124 0.43])
         %set(hh,'position',[0.13 0.2 0.77 0.12]); %Fix Last plot after adding legends
-        saveas(hf,strcat('figures/meanALLVialIndy-',strOutputTag,'SpeedSlidingWindow',ExpCondFood{cond},'.png'));
+        saveas(hf,strcat('figures/meanALLVialIndy-',strOutputTag,'SpeedSlidingWindow',ExpCondFood{cond},'.epsc'));
 %    end
 
 
@@ -342,6 +342,10 @@ for (ConditionIndex=1:CondGrouping:ConditionIndexMax)
             %Make circle size reflect variance
             
             circleSize = 3 + 15*std(tcV(VialPairsPerCondition(k,:)));
+            if isnan(circleSize)
+                warning('Nan Std deviation of centroid time for condition ');
+                circleSize = 1;
+            end
             pltC = plot(Exptime(max(round( tc(k) ),1) ),nc(k),'o','markers',circleSize,'MarkerEdgeColor','k');
         end
       
