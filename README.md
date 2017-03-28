@@ -17,7 +17,14 @@ User:
 The directory where the data csv files are exported must have  format EXP_N_YYYYMMDD_Ssec giving the experiment number N (can be a range or anything really),the date when the embryos were collected, and the timelapse frame period in seconds).
 
  * The video begins paused -  use to left mouse clicks to define a new region in the image over which you want to count the larvae.
- * Define the regions of interest using two left mouse click for each region. The red box defines the region over which the larvae are counted-tracked and recorded to file VN_XXX.csv - with N defined by the order by which the ROI was created. First ROI 1, 2nd ROI gets V2_...
+ * Define the regions of interest using two left mouse click for each region. The red box defines the region over which the larvae are counted-tracked and recorded.
+
+The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the order by which the ROI was created. First ROI 1, 2nd ROI gets V2_... For each ROI n it generates the following three types of file:
+
+* Vn_pos.csv -> contains summary counts of the number of blobs, and the number of tracks identified on each video frame.
+* Vn_pos.csv -> identified Blob  Positions and area, per frame - file header is : frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area 
+* Vn_pos_tracks.csv -> is the main file for using to plot, analyse tracks. It columns info are    frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive. This file allows analysis of tracks by giving positions Centroid_X, Centroid_Y along with TrackID - ie X,Y positions with the same TrackID belong to the same track (as identified by the tracker).
+
 
 
  * Press p to pause Image. once paused:
