@@ -27,6 +27,7 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 
 *Note:* The package of source files contains example MATLAB scripts that can process these output files, plot and extract statistics.
 
+##Control keys for tracker during Run time :
  * Press p to pause Image. once paused:
  *  s to save snapshots in CSV outdir pics subfolder.
  *  2 Left Clicks to define the 2 points of region-of interest for tracking.
