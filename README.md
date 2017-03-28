@@ -50,10 +50,22 @@ http://opencv.org/downloads.html
 * Configuration
 * Dependencies
  openCV3.0 (compilied with WITH_QT support)
- Qt4
+ Qt4 and above
+
+        sudo apt-get install git libopencv-dev qt5-default g++
+
+* Building
+        git clone https://github.com/i-git/FIMTrack.git FIMTrack
+        cd larvatrack
+        qmake larvatrack.pro
+        make
 
 
 * How to run tests
+get videos with vials,
+save videos in correct folder naming.make output folders, run application from build folder. Choose video(s) (more than one can be selected if they are in sequence), choose output file location, set regions of interest, click r (run) and then t (track).
+
+Wait until the video(s) have been tracked in full, the tracks will be displayed on screen realtime as the tracker is processing the video.
 
 * Deployment instructions
 
