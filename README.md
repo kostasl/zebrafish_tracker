@@ -33,8 +33,10 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 * Vn_pos.csv -> contains summary counts of the number of blobs, and the number of tracks identified on each video frame.
 * Vn_pos.csv -> identified Blob  Positions and area, per frame - file header is : frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area 
 * Vn_pos_tracks.csv -> is the main file for using to plot, analyse tracks. It columns info are    frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive. This file allows analysis of tracks by giving positions Centroid_X, Centroid_Y along with TrackID - ie X,Y positions with the same TrackID belong to the same track (as identified by the tracker).
+* if the Save-Mode is enabled (via pressing the s key) then a subfolder named "pics" will contain an image per frame of the tracked video. This can be then combined into a new "tracked" video with avcodec or ffmpeg.
 
 *Note:* The package of source files contains example MATLAB scripts that can process these output files, plot and extract statistics.
+
 
 
  
