@@ -19,6 +19,15 @@ The directory where the data csv files are exported must have  format EXP_N_YYYY
  * The video begins paused -  use to left mouse clicks to define a new region in the image over which you want to count the larvae.
  * Define the regions of interest using two left mouse click for each region. The red box defines the region over which the larvae are counted-tracked and recorded.
 
+####Control keys for tracker during Run time :
+ * Press p to pause Image. once paused:
+ *  s to save snapshots in CSV outdir pics subfolder.
+ *  2 Left Clicks to define the 2 points of region-of interest for tracking.
+ *  m to show the masked image of the larva against BG.
+ *  t Start Tracking
+ *  q Exit Quit application
+
+##Output
 The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the order by which the ROI was created. First ROI 1, 2nd ROI gets V2_... For each ROI n it generates the following three types of file:
 
 * Vn_pos.csv -> contains summary counts of the number of blobs, and the number of tracks identified on each video frame.
@@ -27,15 +36,8 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 
 *Note:* The package of source files contains example MATLAB scripts that can process these output files, plot and extract statistics.
 
-##Control keys for tracker during Run time :
- * Press p to pause Image. once paused:
- *  s to save snapshots in CSV outdir pics subfolder.
- *  2 Left Clicks to define the 2 points of region-of interest for tracking.
- *  m to show the masked image of the larva against BG.
- *  t Start Tracking
- *  q Exit Quit application
- *
 
+ 
 ### How do I get set up? ###
 
 * Summary of set up
