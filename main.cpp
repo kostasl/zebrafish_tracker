@@ -437,7 +437,7 @@ void checkPauseRun(MainWindow& win, int& keyboard,std::string frameNumberString)
 
 
             //if ((char)keyboard == 'c')
-            //cv::imshow("VialFrame", frame);
+            cv::imshow("VialFrame", frame);
             win.showCVimg(frame); //Show On QT Window
 
         }
