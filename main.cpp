@@ -28,6 +28,8 @@
 
 #include <larvatrack.h>
 
+#include <GUI/mainwindow.h>
+
 //Global Variables
 QElapsedTimer gTimer;
 
@@ -47,7 +49,7 @@ IplImage  *labelImg;
 IplImage frameImg;
 
 
-ltROI roi(cv::Point(0,0),cv::Point(1024,768));
+ltROI roi( cv::Point(0,0) , cv::Point(1024,768));
 ltROIlist vRoi;
 cv::Point ptROI1;
 cv::Point ptROI2;
@@ -81,7 +83,7 @@ const int MOGhistory        = 100;
 uint cFrameDelayms    = 1;
 double dLearningRate        = 0.01;
 
-using namespace std;
+//using namespace std;
 
 
 int main(int argc, char *argv[])
@@ -94,11 +96,15 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
+    MainWindow window_main;
+
+    window_main.show();
+
 
     //outfilename.truncate(outfilename.lastIndexOf("."));
     QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
     QString outDir = outfilename.left(outfilename.lastIndexOf('/') ).toStdString().c_str();
-    cout << "Csv Output Dir is " << outDir.toStdString()  << "\n " <<  endl;
+   std::cout << "Csv Output Dir is " << outDir.toStdString()  << "\n " <<std::endl;
 
     // get the applications dir pah and expose it to QML
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
@@ -107,7 +113,7 @@ int main(int argc, char *argv[])
 
     gTimer.start();
     //create GUI windows
-    string strwinName = "VialFrame";
+    std::string strwinName = "VialFrame";
     cv::namedWindow(strwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     //set the callback function for any mouse event
     cv::setMouseCallback(strwinName, CallBackFunc, NULL);
@@ -139,7 +145,7 @@ int main(int argc, char *argv[])
         //cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
     }catch(int e)
     {
-        cerr << "OpenCV not compiled with QT support! can display overlay" << endl;
+        std::cerr << "OpenCV not compiled with QT support! can display overlay" <<std::endl;
     }
 
     QString invideoname = "*.mpg";
@@ -147,23 +153,23 @@ int main(int argc, char *argv[])
     QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",outDir.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264)", 0, 0);
 
     //Show Video list to process
-    cout << "Video List To process:" << endl;
+   std::cout << "Video List To process:" <<std::endl;
     for (int i = 0; i<invideonames.size(); ++i)
     {
         invideoname = invideonames.at(i);
-        cout << "*" <<  invideoname.toStdString() << endl;
+       std::cout << "*" <<  invideoname.toStdString() << std::endl;
     }
     //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
     for (int i = 0; i<invideonames.size(); ++i)
     {
 //        invideoname= QFileDialog::getOpenFileName(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0); // getting the filename (full path)
         invideoname = invideonames.at(i);
-        cout << " Now Processing : "<< invideoname.toStdString() << endl;
-        istartFrame = processVideo(invideoname,outfilename,istartFrame);
+       std::cout << " Now Processing : "<< invideoname.toStdString() <<std::endl;
+        istartFrame = processVideo(window_main,invideoname,outfilename,istartFrame);
 
         if (istartFrame == 0)
         {
-            cerr << "Could not load last video - Exiting loop." <<  endl;
+            std::cerr << "Could not load last video - Exiting loop." <<std::endl;
             break;
         }
     }
@@ -180,12 +186,11 @@ int main(int argc, char *argv[])
     cvb::cvReleaseTracks(tracks);
     cvb::cvReleaseBlobs(blobs);
 
-    //
-    //return ;
+   std::cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
 
-    cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << endl;
     app.quit();
-    return EXIT_SUCCESS;
+
+    return app.exec();
 
 }
 
@@ -195,7 +200,7 @@ int main(int argc, char *argv[])
  * to remove a pupa from the scene -
  */
 
-unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int startFrameCount) {
+unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount) {
     unsigned int nLarva         =  0;
     //Speed that stationary objects are removed
 
@@ -213,9 +218,9 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
     vialcountFileCSV.append("_N.csv");
 
     //REPORT
-    cout << "Tracking data saved to :" << vialcountFileCSV.toStdString()  << endl;
-    cout << "\t " << outFileCSV.toStdString() << endl;
-    cout << "\t " << trkoutFileCSV.toStdString()  << endl;
+   std::cout << "Tracking data saved to :" << vialcountFileCSV.toStdString()  <<std::endl;
+   std::cout << "\t " << outFileCSV.toStdString() <<std::endl;
+   std::cout << "\t " << trkoutFileCSV.toStdString()  <<std::endl;
 
 
     //For Morphological Filter
@@ -246,7 +251,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             else
             {
                 std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
-                cout << nFrame << " frames of Video processed. Move on to next timelapse video? " << endl;
+               std::cout << nFrame << " frames of Video processed. Move on to next timelapse video? " <<std::endl;
                 break;
            }
         }
@@ -255,7 +260,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 
         //If Mask shows that a large ratio of pixels is changing then - adjust learning rate to keep activity below 0.006
         if (dblRatioPxChanged > 0.01)
-            dLearningRate = max(min(dLearningRate*2.0,0.01),0.00001);
+            dLearningRate =std::max(std::min(dLearningRate*2.0,0.01),0.00001);
         else if (nFrame > MOGhistory*10)
             dLearningRate = 0.0001;
         else
@@ -350,7 +355,8 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
 
 
         //show the current frame and the fg masks
-        cv::imshow("VialFrame", frame);
+        //cv::imshow("VialFrame", frame);
+        window_main.showCVimg(frame); //Show On QT Window
 
         if (showMask)
         {
@@ -363,7 +369,7 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
             keyboard = cv::waitKey( cFrameDelayms );
 
 
-        checkPauseRun(keyboard,frameNumberString);
+        checkPauseRun(window_main,keyboard,frameNumberString);
 
 
     } //main While loop
@@ -374,12 +380,12 @@ unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int 
     //delete kernelClose;
 
 
-    std::cout << "Exiting video processing loop." << endl;
+    std::cout << "Exiting video processing loop." <<std::endl;
 
     return nFrame;
 }
 
-void checkPauseRun(int& keyboard,string frameNumberString)
+void checkPauseRun(MainWindow& win, int& keyboard,std::string frameNumberString)
 {
     //implemend Pause
     if ((char)keyboard == 'p')
@@ -413,7 +419,7 @@ void checkPauseRun(int& keyboard,string frameNumberString)
             {
                 bSaveImages = !bSaveImages;
 
-                saveImage(frameNumberString,gstroutDirCSV,frame);
+                ::saveImage(frameNumberString,gstroutDirCSV,frame);
             }
 
             if ((char)keyboard == 'r')
@@ -431,7 +437,8 @@ void checkPauseRun(int& keyboard,string frameNumberString)
 
 
             //if ((char)keyboard == 'c')
-            cv::imshow("VialFrame", frame);
+            //cv::imshow("VialFrame", frame);
+            win.showCVimg(frame); //Show On QT Window
 
         }
 
@@ -441,11 +448,11 @@ void checkPauseRun(int& keyboard,string frameNumberString)
              showMask = !showMask;
 }
 
-bool saveImage(string frameNumberString,QString dirToSave,cv::Mat& img)
+bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img)
 {
 
     //Save Output BG Masks
-    QString imageToSave =   QString::fromStdString( "output_MOG_" + frameNumberString + ".png");
+    QString imageToSave =   QString::fromStdString( std::string("output_MOG_") + frameNumberString + std::string(".png"));
     //QString dirToSave = qApp->applicationDirPath();
 
     dirToSave.append("/pics/");
@@ -453,7 +460,7 @@ bool saveImage(string frameNumberString,QString dirToSave,cv::Mat& img)
 
     if (!QDir(dirToSave).exists())
     {
-        cerr << "Make directory " << dirToSave.toStdString() << std::endl;
+        std::cerr << "Make directory " << dirToSave.toStdString() << std::endl;
         QDir().mkpath(dirToSave);
     }
 
@@ -461,12 +468,12 @@ bool saveImage(string frameNumberString,QString dirToSave,cv::Mat& img)
     if(!saved) {
         cv::putText(img,"Failed to Save " + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(250,250,250));
         cv::putText(img,"Failed to Save" + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
-        cerr << "Unable to save " << imageToSave.toStdString() << endl;
+       std::cerr << "Unable to save " << imageToSave.toStdString() << std::endl;
         return false;
     }
     else
     {
-     cout << "Saved image " << imageToSave.toStdString() <<endl;
+     std::cout << "Saved image " << imageToSave.toStdString() <<std::endl;
     }
 
     //cv::imshow("Saved Frame", img);
@@ -478,8 +485,8 @@ int countObjectsviaContours(cv::Mat& srcimg )
 {
      cv::Mat imgTraced;
      srcimg.copyTo(imgTraced);
-     vector< vector <cv::Point> > contours; // Vector for storing contour
-     vector< cv::Vec4i > hierarchy;
+     std::vector< std::vector <cv::Point> > contours; // Vector for storing contour
+     std::vector< cv::Vec4i > hierarchy;
 
      cv::findContours( imgTraced, contours, hierarchy,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
      for( unsigned int i = 0; i< contours.size(); i=hierarchy[i][0] ) // iterate through each contour.
@@ -497,7 +504,7 @@ int countObjectsviaContours(cv::Mat& srcimg )
      cv::putText(frame, strCount.str(), cv::Point(545, 15),
              cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
-    std::cout << " Larvae  "<< strCount.str() << endl;
+    std::cout << " Larvae  "<< strCount.str() << std::endl;
     //imshow("Contoured Image",frame);
 
 
@@ -542,17 +549,17 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     }
 
 
-   // cout << "Roi Sz:" << vRoi.size() << endl;
+   //std::cout << "Roi Sz:" << vRoi.size() <<std::endl;
     IplImage  *labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
     cvb::cvLabel( &fgMaskImg, labelImg, blobs );
 
     cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
     cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
-    double dsigma = 3.0*sqrt(dVarBlobArea);
-    cvb::cvFilterByArea(blobs,max(dMeanBlobArea-dsigma,9.0),(unsigned int)max((dMeanBlobArea+dsigma),15.0)); //Remove Small Blobs
+    double dsigma = 3.0*std::sqrt(dVarBlobArea);
+    cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,9.0),(unsigned int)std::max((dMeanBlobArea+dsigma),15.0)); //Remove Small Blobs
 
     //Debug Show Mean Size Var
-    //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) << endl;
+    //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;
     unsigned int RoiID = 0;
     for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
@@ -644,7 +651,7 @@ int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumbe
     {
         QTextStream output(&data);
         if (bNewFileFlag)
-             output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area" << endl;
+             output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area\n" ;
 
         //Loop Over Blobs
         for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
@@ -659,7 +666,7 @@ int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumbe
 
             if (roi.contains(pnt))
                 //Printing the position information
-                output << frameNumber.c_str() << "," << cnt <<","<< cvB->label << "," << cvB->centroid.x <<","<< cvB->centroid.y  <<","<< cvB->area  <<  endl;
+                output << frameNumber.c_str() << "," << cnt <<","<< cvB->label << "," << cvB->centroid.x <<","<< cvB->centroid.y  <<","<< cvB->area  <<"\n";
           }
 
 
@@ -718,9 +725,9 @@ int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString fil
 
         QTextStream output(&data);
         if (bNewFileFlag)
-             output << "frameN,blobN,TracksN" << endl;
+             output << "frameN,blobN,TracksN \n";
 
-        output << frameNumber.c_str() << "," << blobCount << "," << trackCount << endl;
+        output << frameNumber.c_str() << "," << blobCount << "," << trackCount <<"\n";
         Larvacnt +=blobCount;
         data.close();
     }
@@ -780,7 +787,7 @@ int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
 
             QTextStream output(&data);
             if (bNewFileFlag)
-                 output << "frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive" << endl;
+                 output << "frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive\n";
 
             //Save Tracks In ROI
             for (cvb::CvTracks::const_iterator it=tracks.begin(); it!=tracks.end(); ++it)
@@ -798,7 +805,7 @@ int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
                     //+ lifetime; ///< Indicates how much frames the object has been in scene.
                     //+active; ///< Indicates number of frames that has been active from last inactive period.
                     //+ inactive; ///< Indicates number of frames that has been missing.
-                    output << frameNumber.c_str()  << "," << cvT->id  << "," << cvT->label  << "," << cvT->centroid.x << "," << cvT->centroid.y << "," << cvT->lifetime  << "," << cvT->active  << "," << cvT->inactive <<  endl;
+                    output << frameNumber.c_str()  << "," << cvT->id  << "," << cvT->label  << "," << cvT->centroid.x << "," << cvT->centroid.y << "," << cvT->lifetime  << "," << cvT->active  << "," << cvT->inactive <<"\n";
               }
             }
         data.close();
@@ -837,7 +844,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
         }
 
 
-        cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+        std::cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" <<std::endl;
      }
 
      if (event == cv::EVENT_LBUTTONUP)
@@ -849,7 +856,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
         cv::Point mousepnt;
         mousepnt.x = x;
         mousepnt.y = y;
-        cout << "Right button of the mouse is clicked - Delete ROI position (" << x << ", " << y << ")" << endl;
+       std::cout << "Right button of the mouse is clicked - Delete ROI position (" << x << ", " << y << ")" <<std::endl;
 
         if (bPaused && !bROIChanged)
         {
@@ -859,11 +866,11 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      }
      else if  ( event == cv::EVENT_MBUTTONDOWN )
      {
-          cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+         std::cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" <<std::endl;
      }
      else if ( event == cv::EVENT_MOUSEMOVE )
      {
-         // cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
+         //std::cout << "Mouse move over the window - position (" << x << ", " << y << ")" <<std::endl;
 
      }
 }
@@ -877,7 +884,7 @@ void addROI(ltROI& newRoi)
     cv::circle(frame,ptROI1,3,cv::Scalar(255,0,0),1);
     cv::circle(frame,ptROI2,3,cv::Scalar(255,0,0),1);
 
-    cout << "Added, total:" << vRoi.size() << endl;
+   std::cout << "Added, total:" << vRoi.size() <<std::endl;
 
 }
 
@@ -893,7 +900,7 @@ void deleteROI(cv::Point mousePos)
         {
             std::vector<ltROI>::iterator tmp = it;
             vRoi.erase(tmp);
-            cout << "Deleted:" << roi->x << " " << roi->y << endl;
+           std::cout << "Deleted:" << roi->x << " " << roi->y <<std::endl;
             break;
         }
          ++it;

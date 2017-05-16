@@ -11,7 +11,10 @@ SOURCES += main.cpp \
     cvBlob/cvcontour.cpp \
     cvBlob/cvcolor.cpp \
     cvBlob/cvblob.cpp \
-    cvBlob/cvaux.cpp
+    cvBlob/cvaux.cpp \
+    GUI/QtOpencvCore.cpp \
+    GUI/mainwindow.cpp
+    #GUI/TrackerScene.cpp
 
 RESOURCES += qml.qrc
 INCLUDEPATH += /usr/include/opencv
@@ -53,4 +56,11 @@ SUBDIRS += \
 HEADERS += \
     cvBlob/cvblob.h \
     larvatrack.h \
-    ltROI.h
+    ltROI.h \
+    GUI/QtOpencvCore.hpp \
+    #GUI/TrackerScene.hpp \
+    GUI/mainwindow.h
+
+
+FORMS += \
+    GUI/mainwindow.ui

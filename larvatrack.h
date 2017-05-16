@@ -5,6 +5,8 @@
 #include <iostream>
 #include <sstream>
 
+
+
 #include <QString>
 #include <QApplication>
 #include <QQmlApplicationEngine>
@@ -12,17 +14,14 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QElapsedTimer>
-
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/core/core.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
-#include <opencv2/videoio/videoio.hpp>
-#include <opencv2/video/video.hpp>
-#include "opencv2/video/background_segm.hpp"
+#include <QPixmap>
 
 #include <cvBlob/cvblob.h>
 #include <ltROI.h> //Defines the ROI types
 
+#include <GUI/mainwindow.h>
+
+class MainWindow;
 
 /// \file larvatrack.h
 /// \brief OpenCV based in-vial larva tracker header file.
@@ -35,8 +34,8 @@
 /// \param videoFilename
 /// \param outFileCSV
 /// \param istartFrame
-unsigned int processVideo(QString videoFilename,QString outFileCSV,unsigned int istartFrame);
-void checkPauseRun(int& keyboard,std::string frameNumberString);
+unsigned int processVideo(MainWindow& window_main, QString videoFilename,QString outFileCSV,unsigned int istartFrame);
+void checkPauseRun(MainWindow& win,int& keyboard,std::string frameNumberString);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
 int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString,double& dMeanBlobArea);
