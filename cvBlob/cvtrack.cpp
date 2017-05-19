@@ -299,7 +299,12 @@ namespace cvb
           track->lifetime = 0;
           track->active = 0;
           track->inactive = 0;
-
+          //Set Track Colour
+          //Random colour
+          int c1 =  rand() % 200 + 30;
+          int c2 =  rand() % 200 + 30;
+          int c3 =  rand() % 200 + 30;
+          track->colour = CvScalar(c1,c2,c3,0);
 
           track->pROI = proi; //Set Pointer to ROI containing the 1st blob
           track->pointStack.push_back(pntCentroid); //Add 1st Point to list of Track
@@ -547,9 +552,10 @@ namespace cvb
             int c1 =  rand() % 200 + 30;
             int c2 =  rand() % 200 + 30;
             int c3 =  rand() % 200 + 30;
+            //&track.colour
             cvPolyLine(imgDest, &pts,&npts, 1,
                             false, 			// draw open contour (i.e. joint end to start)
-                            cv::Scalar(c1,c2,c3),// colour RGB ordering (here = green)
+                            track.colour ,// colour RGB ordering (here = green)
                             1, 		        // line thickness
                             CV_AA, 0);
         }

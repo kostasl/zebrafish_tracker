@@ -10,11 +10,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
-    mScene->setSceneRect(this->ui->graphicsView->rect());
+    //mScene->setSceneRect(this->ui->graphicsView->rect());
     this->ui->graphicsView->setScene(this->mScene);
     this->ui->graphicsView->setFixedSize(1024,1200);
 
+    //Add Empty/New PixMap on Which we will set the images onto
     this->mImage = mScene->addPixmap(QPixmap());
+    this->mImage->setPos(10, 10);
 
 
 }
@@ -31,8 +33,11 @@ void MainWindow::showCVimg(cv::Mat& img)
 
     //this->mImage->setPixmap(pixMap);
     //this->mScene->setSceneRect(0, 0, img.width(), img.height());
-    this->mScene->addPixmap(pixMap);
+    //this->mScene->clear();
+    mImage->setPixmap(pixMap);
+    //this->mScene->addPixmap(pixMap);
     this->ui->graphicsView->show();
+    //mImage
 
 }
 

@@ -4,6 +4,7 @@
 #include <larvatrack.h>
 #include <QMainWindow>
 #include <QGraphicsScene>
+#include <QGraphicsPixmapItem>
 #include <QPixmap>
 
 

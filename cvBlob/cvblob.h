@@ -522,6 +522,7 @@ extern "C" {
     CvID id; ///< Track identification number.
     ltROI* pROI; ///< Pointer To Region of Interest structure to which this track belongs
     CvLabel label; ///< Label assigned to the blob related to this track.
+    CvScalar colour = CvScalar(0,100,0,0);///>Colourwhen drawing Track
 
     unsigned int minx; ///< X min.same as  corresponding blob bounding box
     unsigned int maxx; ///< X max.

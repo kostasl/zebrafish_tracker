@@ -34,13 +34,10 @@
 #ifndef QTOPENCVCORE_HPP
 #define QTOPENCVCORE_HPP
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-register"
 #include <QImage>
 #include <QString>
 #include <QStringList>
 #include <QSize>
-#pragma clang diagnostic pop
 
 #include <string>
 #include <iterator>

@@ -19,6 +19,7 @@ SOURCES += main.cpp \
 RESOURCES += qml.qrc
 INCLUDEPATH += /usr/include/opencv
 #INCLUDEPATH += /usr/include/cvblob
+#INCLUDEPATH += ~/opencv/
 
 #INCLUDEPATH += /home/kostasl/workspace/cvblobLib
 #`pkg-config opencv cvblob --cflags`
@@ -34,11 +35,16 @@ QML_IMPORT_PATH =
 ##
 ##Assume Libs are copied with the package into
 QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
+QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.8/gcc_64/lib/
+QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/opencv/build/lib/
 QMAKE_LFLAGS_RPATH=
 ###Using command : cp `ldd larvatrack | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` /libs
 
 # Default rules for deployment.
 include(deployment.pri)
+
+
+LIBS+=-L/home/kostasl/Qt/5.8/gcc_64/lib/ #Compilation At office DEsktop
 
 #unix: LIBS += -L$$PWD/../cvblob/build-cvBlobLib-Desktop-Release/ -lcvBlobLib
 #INCLUDEPATH += $$PWD/../cvblob/cvBlob

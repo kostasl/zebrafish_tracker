@@ -81,7 +81,7 @@ double dVarBlobArea = 50;
 const int MOGhistory        = 100;
 //Processing Loop delay
 uint cFrameDelayms    = 1;
-double dLearningRate        = 0.01;
+double dLearningRate        = 0.0002;
 
 //using namespace std;
 
@@ -224,9 +224,9 @@ unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString 
 
 
     //For Morphological Filter
-    //cv::Size sz = cv::Size(3,3);
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,2),cv::Point(-1,-1));
-    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,4),cv::Point(-1,-1));
+    ////cv::Size sz = cv::Size(3,3);
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
+    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2,2),cv::Point(-1,-1));
 
 
     //create the capture object
@@ -259,12 +259,12 @@ unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString 
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
 
         //If Mask shows that a large ratio of pixels is changing then - adjust learning rate to keep activity below 0.006
-        if (dblRatioPxChanged > 0.01)
-            dLearningRate =std::max(std::min(dLearningRate*2.0,0.01),0.00001);
-        else if (nFrame > MOGhistory*10)
-            dLearningRate = 0.0001;
-        else
-            dLearningRate = 0.01;
+        //if (dblRatioPxChanged > 0.3)
+//            dLearningRate =std::max(std::min(dLearningRate*2.0,0.001),0.001);
+//        else if (nFrame > MOGhistory*200.0)
+//            dLearningRate = 0.001;
+//        else
+//            dLearningRate = 0.01;
 
 
         //update the background model
@@ -277,9 +277,9 @@ unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString 
         cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
         //Do Close : erode(dilate())
         cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),1);
-        //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
+        cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
         //Apply Open Operation dilate(erode())
-        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
+        //cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
 
 
         //Put Info TextOn Frame
@@ -341,12 +341,12 @@ unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString 
             nLarva = countObjectsviaBlobs(fgMaskMOG2, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
 
             //ROI with TRACKs Fails
-            const int inactiveFrameCount = 10; //Number of frames inactive until track is deleted
+            const int inactiveFrameCount = 1000; //Number of frames inactive until track is deleted
             const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             //thDistance = 22 //Distance from Blob to track
-            int thDistance = 20;
+            int thDistance = 60;
             cvb::cvUpdateTracks(blobs,tracks,vRoi, thDistance, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
@@ -556,7 +556,8 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
     cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
     double dsigma = 3.0*std::sqrt(dVarBlobArea);
-    cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,9.0),(unsigned int)std::max((dMeanBlobArea+dsigma),15.0)); //Remove Small Blobs
+    //                  (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
+    cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),2500.0)); //Remove Small Blobs
 
     //Debug Show Mean Size Var
     //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;
@@ -578,7 +579,8 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
             if (iroi.contains(pnt))
             {
                 //cnt++;
-                cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR, cv::Scalar(0,200,0),0.6);
+                //CV_BLOB_RENDER_COLOR
+                cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX , cv::Scalar(0,200,0),0.6);
             }
         }
 
