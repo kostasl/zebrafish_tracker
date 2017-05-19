@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 
-
+#include <QDebug>
 
 #include <QString>
 #include <QApplication>

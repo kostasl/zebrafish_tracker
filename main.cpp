@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
 
     window_main.show();
 
-
     //outfilename.truncate(outfilename.lastIndexOf("."));
     QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
     QString outDir = outfilename.left(outfilename.lastIndexOf('/') ).toStdString().c_str();
@@ -163,9 +162,11 @@ int main(int argc, char *argv[])
     for (int i = 0; i<invideonames.size(); ++i)
     {
 //        invideoname= QFileDialog::getOpenFileName(0, "Select timelapse video to Process", qApp->applicationDirPath(), "Video file (*.mpg *.avi)", 0, 0); // getting the filename (full path)
-        invideoname = invideonames.at(i);
+       invideoname = invideonames.at(i);
        std::cout << " Now Processing : "<< invideoname.toStdString() <<std::endl;
-        istartFrame = processVideo(window_main,invideoname,outfilename,istartFrame);
+       istartFrame = processVideo(window_main,invideoname,outfilename,istartFrame);
+
+       window_main.setWindowTitle("Tracking:" + invideoname);
 
         if (istartFrame == 0)
         {
@@ -225,8 +226,8 @@ unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString 
 
     //For Morphological Filter
     ////cv::Size sz = cv::Size(3,3);
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
-    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2,2),cv::Point(-1,-1));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
+    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(2,2),cv::Point(-1,-1));
 
 
     //create the capture object
@@ -274,12 +275,12 @@ unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString 
 //        pMOG->operator()(frame, fgMaskMOG2,dLearningRate);
         //get the frame number and write it on the current frame
         //erode to get rid to food marks
-        cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
+        cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),2);
         //Do Close : erode(dilate())
         cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),1);
-        cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),1);
+        //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),4);
         //Apply Open Operation dilate(erode())
-        //cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
+        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
 
 
         //Put Info TextOn Frame
@@ -342,7 +343,7 @@ unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString 
 
             //ROI with TRACKs Fails
             const int inactiveFrameCount = 1000; //Number of frames inactive until track is deleted
-            const int thActive = 2;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
+            const int thActive = 60;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             //thDistance = 22 //Distance from Blob to track
@@ -557,7 +558,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
     double dsigma = 3.0*std::sqrt(dVarBlobArea);
     //                  (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
-    cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),2500.0)); //Remove Small Blobs
+    //cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),2500.0)); //Remove Small Blobs
 
     //Debug Show Mean Size Var
     //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;

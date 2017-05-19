@@ -9,15 +9,17 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
-    //mScene->setSceneRect(this->ui->graphicsView->rect());
+    mScene->setSceneRect(this->ui->graphicsView->rect());
     this->ui->graphicsView->setScene(this->mScene);
     this->ui->graphicsView->setFixedSize(1024,1200);
 
     //Add Empty/New PixMap on Which we will set the images onto
     this->mImage = mScene->addPixmap(QPixmap());
-    this->mImage->setPos(10, 10);
 
+
+    this->mScene->installEventFilter(this);
 
 }
 
@@ -32,14 +34,70 @@ void MainWindow::showCVimg(cv::Mat& img)
 
 
     //this->mImage->setPixmap(pixMap);
-    //this->mScene->setSceneRect(0, 0, img.width(), img.height());
-    //this->mScene->clear();
+    this->mScene->setSceneRect(0, 0, qimg.width(), qimg.height());
+
+
     mImage->setPixmap(pixMap);
-    //this->mScene->addPixmap(pixMap);
+    this->mImage->setPos(-200, -300);
+
+    //this->ui->graphicsView->fitInView(mImage);
     this->ui->graphicsView->show();
     //mImage
 
 }
+
+
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+    if (event->type() == QEvent::GraphicsSceneWheel) {
+        handleWheelOnGraphicsScene(dynamic_cast<QGraphicsSceneWheelEvent*> (event));
+
+        // Don't propagate
+        event->accept();
+        return true;
+    }
+
+    if (event->type() == QEvent::KeyPress) {
+         QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+         qDebug() << "Ate key press" << keyEvent->key();
+         return true;
+     } else {
+         return false;
+     }
+
+    return false;
+}
+
+
+
+void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent)
+{
+  const int degrees = scrollevent->delta()  / 8;
+  qDebug() << degrees;
+
+  int steps = degrees / 15;
+  qDebug() << steps;
+
+  double scaleFactor = 1.0; //How fast we zoom
+  const qreal minFactor = 1.0;
+  const qreal maxFactor = 10.0;
+  qreal h11 = 1.0, h22 = 0;
+
+  if(steps > 0)
+  {
+     h11 = (h11 >= maxFactor) ? h11 : (h11 + scaleFactor);
+     h22 = (h22 >= maxFactor) ? h22 : (h22 + scaleFactor);
+  }
+  else
+ {
+     h11 = (h11 <= minFactor) ? minFactor : (h11 - scaleFactor);
+     h22 = (h22 <= minFactor) ? minFactor : (h22 - scaleFactor);
+ }
+    this->ui->graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    this->ui->graphicsView->setTransform(QTransform(h11, 0, 0,0, h22, 0, 0,0,1));
+
+}
+
 
 MainWindow::~MainWindow()
 {

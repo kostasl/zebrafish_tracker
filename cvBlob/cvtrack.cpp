@@ -548,11 +548,6 @@ namespace cvb
             std::vector<CvPoint>* pvec = &track.pointStack;
             CvPoint *pts = (CvPoint*) cv::Mat(track.pointStack).data;
             int npts = cv::Mat(track.pointStack).rows;
-            //Random colour
-            int c1 =  rand() % 200 + 30;
-            int c2 =  rand() % 200 + 30;
-            int c3 =  rand() % 200 + 30;
-            //&track.colour
             cvPolyLine(imgDest, &pts,&npts, 1,
                             false, 			// draw open contour (i.e. joint end to start)
                             track.colour ,// colour RGB ordering (here = green)

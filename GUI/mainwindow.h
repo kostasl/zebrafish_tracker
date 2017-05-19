@@ -5,8 +5,10 @@
 #include <QMainWindow>
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
+#include <QGraphicsSceneWheelEvent>
 #include <QPixmap>
-
+#include <QEvent>
+#include <QKeyEvent>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
@@ -29,6 +31,9 @@ public:
     void showCVimg(cv::Mat& img);
 
     ~MainWindow();
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
+    void handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent);
 
 private:
     Ui::MainWindow      *ui;
@@ -47,3 +52,5 @@ private:
 };
 
 #endif // MAINWINDOW_H
+
+
