@@ -277,10 +277,10 @@ unsigned int processVideo(MainWindow& window_main,QString videoFilename,QString 
         //erode to get rid to food marks
         cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),2);
         //Do Close : erode(dilate())
-        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),1);
+        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
         //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),4);
         //Apply Open Operation dilate(erode())
-        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),1);
+        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),2);
 
 
         //Put Info TextOn Frame
