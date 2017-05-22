@@ -11,10 +11,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
-    mScene->setSceneRect(this->ui->graphicsView->rect());
-    this->ui->graphicsView->setScene(this->mScene);
-    this->ui->graphicsView->setFixedSize(1024,1200);
 
+    this->ui->graphicsView->setScene(this->mScene);
+    this->ui->graphicsView->setFixedSize(1280,1024);
+    mScene->setSceneRect(this->ui->graphicsView->rect());
     //Add Empty/New PixMap on Which we will set the images onto
     this->mImage = mScene->addPixmap(QPixmap());
 
@@ -35,10 +35,10 @@ void MainWindow::showCVimg(cv::Mat& img)
 
     //this->mImage->setPixmap(pixMap);
     this->mScene->setSceneRect(0, 0, qimg.width(), qimg.height());
-
+    this->ui->graphicsView->setFixedSize(qimg.width(),qimg.height());
 
     mImage->setPixmap(pixMap);
-    this->mImage->setPos(-200, -300);
+    this->mImage->setPos(-0, -0);
 
     //this->ui->graphicsView->fitInView(mImage);
     this->ui->graphicsView->show();
@@ -79,8 +79,8 @@ void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrolleven
   qDebug() << steps;
 
   double scaleFactor = 1.0; //How fast we zoom
-  const qreal minFactor = 1.0;
-  const qreal maxFactor = 10.0;
+  const qreal minFactor = -100.0;
+  const qreal maxFactor = 100.0;
   qreal h11 = 1.0, h22 = 0;
 
   if(steps > 0)

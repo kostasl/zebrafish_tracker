@@ -85,10 +85,10 @@ double dMeanBlobArea = 300;
 double dVarBlobArea = 50;
 
 //BG History
-const int MOGhistory        = 600.0;
+const int MOGhistory        = 1200.0;
 //Processing Loop delay
 uint cFrameDelayms    = 1;
-double dLearningRate        = 1.0/(2.0*MOGhistory);
+double dLearningRate        = 1.0/(MOGhistory);
 
 //using namespace std;
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
     QString invideoname = "*.mpg";
     unsigned int istartFrame = 0;
-    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",outDir.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264)", 0, 0);
+    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",outDir.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv)", 0, 0);
 
     //Show Video list to process
    std::cout << "Video List To process:" <<std::endl;
@@ -174,6 +174,7 @@ int main(int argc, char *argv[])
        std::cout << " Now Processing : "<< invideoname.toStdString() <<std::endl;
 
        getBGModelVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
+       std::cout << "Press r to run Video processing" << endl;
        istartFrame = processVideo(fgMask,window_main,invideoname,outfilename,istartFrame);
 
        window_main.setWindowTitle("Tracking:" + invideoname);
@@ -245,7 +246,8 @@ unsigned int getBGModelVideo(cv::Mat& fgMask,MainWindow& window_main,QString vid
                 {
                     std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
                    std::cout << nFrame << " frames of Video processed. Move on to next timelapse video? " <<std::endl;
-                    break;
+                  //  break;
+                   continue;
                }
             }
             //Add frames from Last video
@@ -263,23 +265,21 @@ unsigned int getBGModelVideo(cv::Mat& fgMask,MainWindow& window_main,QString vid
             //update the background model
             //OPEN CV 2.4
             if (nFrame > MOGhistory)
-
                 dLearningRate =0.0;
-
                 pMOG2->apply(frame, fgMaskMOG2,dLearningRate);
 
-            pMOG->apply(frame, fgMaskMOG,dLearningRate);
-            pGMG->apply(frame,fgMaskGMG,dLearningRate);
+            //pMOG->apply(frame, fgMaskMOG,dLearningRate);
+            //pGMG->apply(frame,fgMaskGMG,dLearningRate);
             //OPENCV 3 MORPHOLOGICAL
     //        pMOG->operator()(frame, fgMaskMOG2,dLearningRate);
             //get the frame number and write it on the current frame
             //erode to get rid to food marks
-            cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),2);
+            //cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),3);
             //Do Close : erode(dilate())
-            cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
+            //cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
             //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),4);
             //Apply Open Operation dilate(erode())
-            cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),2);
+            //cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),2);
 
 
             //Put Info TextOn Frame
@@ -332,12 +332,12 @@ unsigned int getBGModelVideo(cv::Mat& fgMask,MainWindow& window_main,QString vid
 
             //cvb::CvBlobs blobs;
             //show the current frame and the fg masks
-            //cv::imshow("VialFrame", frame);
+            cv::imshow("VialFrame", frame);
             window_main.showCVimg(frame); //Show On QT Window
 
             cv::imshow("FG Mask MOG 2 after Morph", fgMaskMOG2);
-            cv::imshow("FG Mask MOG", fgMaskMOG);
-            cv::imshow("FG Mask GMG ", fgMaskGMG);
+            //cv::imshow("FG Mask MOG", fgMaskMOG);
+            //cv::imshow("FG Mask GMG ", fgMaskGMG);
 
            // if (!bTracking)
            //get the input from the keyboard
@@ -355,7 +355,7 @@ unsigned int getBGModelVideo(cv::Mat& fgMask,MainWindow& window_main,QString vid
         //delete kernelClose;
 
 
-        std::cout << "Exiting video processing loop." <<std::endl;
+        std::cout << "Background Processing  loop. Finished" <<std::endl;
 
         return nFrame;
     }
@@ -428,7 +428,8 @@ unsigned int nLarva         =  0;
             {
                 std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
                std::cout << nFrame << " frames of Video processed. Move on to next timelapse video? " <<std::endl;
-                break;
+               continue;
+               //break;
            }
         }
         //Add frames from Last video
@@ -449,8 +450,8 @@ unsigned int nLarva         =  0;
         dLearningRate =0.0;
         pMOG2->apply(frame, fgMaskMOG2,dLearningRate);
 
-        pMOG->apply(frame, fgMaskMOG,dLearningRate);
-        pGMG->apply(frame,fgMaskGMG,dLearningRate);
+        //pMOG->apply(frame, fgMaskMOG,dLearningRate);
+        //pGMG->apply(frame,fgMaskGMG,dLearningRate);
         //OPENCV 3
 //        pMOG->operator()(frame, fgMaskMOG2,dLearningRate);
         //get the frame number and write it on the current frame
@@ -536,14 +537,14 @@ unsigned int nLarva         =  0;
 
 
         //show the current frame and the fg masks
-        //cv::imshow("VialFrame", frame);
+        cv::imshow("VialFrame", frame);
         window_main.showCVimg(frame); //Show On QT Window
 
         if (showMask)
         {
             cv::imshow("FG Mask MOG 2 after Morph", fgMaskMOG2);
-            cv::imshow("FG Mask MOG", fgMaskMOG);
-            cv::imshow("FG Mask GMG ", fgMaskGMG);
+            //cv::imshow("FG Mask MOG", fgMaskMOG);
+            //cv::imshow("FG Mask GMG ", fgMaskGMG);
         }
 
        // if (!bTracking)
