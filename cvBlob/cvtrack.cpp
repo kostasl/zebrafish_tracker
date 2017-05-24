@@ -304,7 +304,7 @@ namespace cvb
           int c1 =  rand() % 200 + 30;
           int c2 =  rand() % 200 + 30;
           int c3 =  rand() % 200 + 30;
-          track->colour = CvScalar(c1,c2,c3,0);
+          track->colour = CV_RGB(c1,c2,c3);
 
           track->pROI = proi; //Set Pointer to ROI containing the 1st blob
           track->pointStack.push_back(pntCentroid); //Add 1st Point to list of Track

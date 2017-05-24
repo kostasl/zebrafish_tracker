@@ -59,9 +59,9 @@ namespace cvb
 
       if(img->roi)
       {
-	img_width = img->roi->width;
-	img_height = img->roi->height;
-	img_offset = (img->nChannels * img->roi->xOffset) + (img->roi->yOffset * stepDst);
+        img_width = img->roi->width;
+        img_height = img->roi->height;
+        img_offset = (img->nChannels * img->roi->xOffset) + (img->roi->yOffset * stepDst);
       }
 
       unsigned char *imgData = (unsigned char *)img->imageData + img_offset;
@@ -71,12 +71,12 @@ namespace cvb
 
       for (CvChainCodes::const_iterator it=contour->chainCode.begin(); it!=contour->chainCode.end(); ++it)
       {
-	imgData[img->nChannels*x+img->widthStep*y+0] = (unsigned char)(color.val[0]); // Blue
-	imgData[img->nChannels*x+img->widthStep*y+1] = (unsigned char)(color.val[1]); // Green
-	imgData[img->nChannels*x+img->widthStep*y+2] = (unsigned char)(color.val[2]); // Red
+        imgData[img->nChannels*x+img->widthStep*y+0] = (unsigned char)(color.val[0]); // Blue
+        imgData[img->nChannels*x+img->widthStep*y+1] = (unsigned char)(color.val[1]); // Green
+        imgData[img->nChannels*x+img->widthStep*y+2] = (unsigned char)(color.val[2]); // Red
 
-	x += cvChainCodeMoves[*it][0];
-	y += cvChainCodeMoves[*it][1];
+        x += cvChainCodeMoves[*it][0];
+        y += cvChainCodeMoves[*it][1];
       }
     }
     __CV_END__;

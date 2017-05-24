@@ -377,6 +377,7 @@ unsigned int nLarva         =  0;
 
     bPaused =true; //Start Paused
 
+    std::string frameNumberString;
 
     //?Replicate FG Mask to method specific
     fgMask.copyTo(fgMaskMOG2);
@@ -402,7 +403,7 @@ unsigned int nLarva         =  0;
     //For Morphological Filter
     ////cv::Size sz = cv::Size(3,3);
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
-    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(2,2),cv::Point(-1,-1));
+    cv::Mat kernelClose = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(4,4),cv::Point(-1,-1));
 
 
     //create the capture object
@@ -426,10 +427,11 @@ unsigned int nLarva         =  0;
             }
             else
             {
-                std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
+               std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
                std::cout << nFrame << " frames of Video processed. Move on to next timelapse video? " <<std::endl;
-               continue;
-               //break;
+                ::saveImage(frameNumberString,gstroutDirCSV,frame);
+               //continue;
+               break;
            }
         }
         //Add frames from Last video
@@ -458,7 +460,7 @@ unsigned int nLarva         =  0;
         //erode to get rid to food marks
         cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),2);
         //Do Close : erode(dilate())
-        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
+        cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),4);
         //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),4);
         //Apply Open Operation dilate(erode())
         cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),2);
@@ -470,7 +472,7 @@ unsigned int nLarva         =  0;
         cv::rectangle(frame, cv::Point(10, 2), cv::Point(100,20),
                   cv::Scalar(255,255,255), -1);
         ss << nFrame;
-        std::string frameNumberString = ss.str();
+        frameNumberString = ss.str();
         cv::putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
@@ -524,7 +526,7 @@ unsigned int nLarva         =  0;
 
             //ROI with TRACKs Fails
             const int inactiveFrameCount = 1000; //Number of frames inactive until track is deleted
-            const int thActive = 60;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
+            const int thActive = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 
             //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
             //thDistance = 22 //Distance from Blob to track
@@ -532,7 +534,7 @@ unsigned int nLarva         =  0;
             cvb::cvUpdateTracks(blobs,tracks,vRoi, thDistance, inactiveFrameCount,thActive);
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
-            //cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID,&trackFnt);
+            cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
         }
 
 
@@ -714,6 +716,9 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
     ///// Finding the blobs ////////
      int cnt = 0;
+     uint minBlobArea = 0;
+     uint maxBlobArea = 0;
+
 
      IplImage fgMaskImg;
 ///  REGION OF INTEREST - UPDATE - SET
@@ -737,10 +742,12 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     cvb::cvLabel( &fgMaskImg, labelImg, blobs );
 
     cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
-    cvb::cvBlobAreaMeanVar(blobs,dMeanBlobArea,dVarBlobArea);
-    double dsigma = 3.0*std::sqrt(dVarBlobArea);
+
+    cvb::cvBlobAreaStat(blobs,dMeanBlobArea,dVarBlobArea,minBlobArea,maxBlobArea);
+    double dsigma = 2.0*std::sqrt(dVarBlobArea);
     //                  (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
-    //cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),2500.0)); //Remove Small Blobs
+    //Remove Fishq
+    cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),maxBlobArea/2.0)); //Remove Small Blobs
 
     //Debug Show Mean Size Var
     //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;

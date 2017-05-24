@@ -57,6 +57,8 @@ namespace cvb
   //Added Area Profile Filter
   void cvFilterByArea(CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
   {
+    int tCount = 0; //Count Large Blobs - These could be targeted and labeled
+
     CvBlobs::iterator it=blobs.begin();
     while(it!=blobs.end())
     {
@@ -64,7 +66,13 @@ namespace cvb
       //Get Height Weight Ratio / If shape x5 too narrow or too thin then not a larva
       float fWHRatio = (float)(blob->maxy-blob->miny)/(float)(blob->maxx-blob->minx);
 
-      if ((blob->area<minArea) || (blob->area > maxArea) || fWHRatio > 5 || fWHRatio < 0.2 )
+      if ((blob->area > maxArea)) //Found the Fish
+      {
+         blob->colour = CV_RGB(0, 255., 0.);
+      }
+
+      //Delete Tiny Specs
+      if ((blob->area < minArea)  ) //|| fWHRatio > 5 || fWHRatio < 0.2
       {
         cvReleaseBlob(blob);
 
@@ -102,23 +110,35 @@ namespace cvb
   }
 
 
-  double cvBlobAreaMeanVar(CvBlobs &blobs, double& meanArea, double& dvarArea)
+  double cvBlobAreaStat(CvBlobs &blobs, double& meanArea, double& dvarArea,uint& dmaxArea,uint& dminArea)
   {
     double nSum     = 0.0;
     double nSumSq   = 0.0;
     double n        = 0.0;
+
+    dminArea       = 0.0;
+    dmaxArea       = 0.0;
 
     CvBlobs::iterator it=blobs.begin();
     while(it!=blobs.end())
     {
       CvBlob *blob=(*it).second;
 
-      //Do not count pixel spec/tiny areas in Mean
-      if (blob->area > 4)
+    if (n < 1.0) //init min value
+        dminArea = blob->area;
+
+      if (blob->area > 1)
       {
+          if (blob->area < dminArea )
+              dminArea = blob->area;
+          if (blob->area > dmaxArea)
+              dmaxArea = blob->area;
+
           nSum      += blob->area;
           nSumSq    += blob->area*blob->area;
           n++;
+
+
       }
       ++it; //Next Blob
     }
@@ -254,27 +274,27 @@ namespace cvb
     {
       if (mode&CV_BLOB_RENDER_TO_LOG)
       {
-	std::clog << "Blob " << blob->label << std::endl;
-	std::clog << " - Bounding box: (" << blob->minx << ", " << blob->miny << ") - (" << blob->maxx << ", " << blob->maxy << ")" << std::endl;
-	std::clog << " - Bounding box area: " << (1 + blob->maxx - blob->minx) * (1 + blob->maxy - blob->miny) << std::endl;
-	std::clog << " - Area: " << blob->area << std::endl;
-	std::clog << " - Centroid: (" << blob->centroid.x << ", " << blob->centroid.y << ")" << std::endl;
-	std::clog << std::endl;
+        std::clog << "Blob " << blob->label << std::endl;
+        std::clog << " - Bounding box: (" << blob->minx << ", " << blob->miny << ") - (" << blob->maxx << ", " << blob->maxy << ")" << std::endl;
+        std::clog << " - Bounding box area: " << (1 + blob->maxx - blob->minx) * (1 + blob->maxy - blob->miny) << std::endl;
+        std::clog << " - Area: " << blob->area << std::endl;
+        std::clog << " - Centroid: (" << blob->centroid.x << ", " << blob->centroid.y << ")" << std::endl;
+        std::clog << std::endl;
       }
 
       if (mode&CV_BLOB_RENDER_TO_STD)
       {
-	std::cout << "Blob " << blob->label << std::endl;
-	std::cout << " - Bounding box: (" << blob->minx << ", " << blob->miny << ") - (" << blob->maxx << ", " << blob->maxy << ")" << std::endl;
-	std::cout << " - Bounding box area: " << (1 + blob->maxx - blob->minx) * (1 + blob->maxy - blob->miny) << std::endl;
-	std::cout << " - Area: " << blob->area << std::endl;
-	std::cout << " - Centroid: (" << blob->centroid.x << ", " << blob->centroid.y << ")" << std::endl;
-	std::cout << std::endl;
+        std::cout << "Blob " << blob->label << std::endl;
+        std::cout << " - Bounding box: (" << blob->minx << ", " << blob->miny << ") - (" << blob->maxx << ", " << blob->maxy << ")" << std::endl;
+        std::cout << " - Bounding box area: " << (1 + blob->maxx - blob->minx) * (1 + blob->maxy - blob->miny) << std::endl;
+        std::cout << " - Area: " << blob->area << std::endl;
+        std::cout << " - Centroid: (" << blob->centroid.x << ", " << blob->centroid.y << ")" << std::endl;
+        std::cout << std::endl;
       }
 
       if (mode&CV_BLOB_RENDER_BOUNDING_BOX)
         //cvRectangle(imgDest, cvPoint(blob->minx, blob->miny), cvPoint(blob->maxx-1, blob->maxy-1), CV_RGB(255., 0., 0.));
-        cvRenderContourChainCode(&blob->contour,imgDest,CV_RGB(255., 0., 0.));
+        cvRenderContourChainCode(&blob->contour,imgDest,blob->colour );
 
       if (mode&CV_BLOB_RENDER_ANGLE)
       {

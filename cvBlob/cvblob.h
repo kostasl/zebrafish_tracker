@@ -240,7 +240,8 @@ extern "C" {
     unsigned int maxy; ///< y max.
     
     CvPoint2D64f centroid; ///< Centroid.
-    
+    CvScalar colour = CV_RGB(255., 0., 0.); ///> Colourwhen drawing Countour
+
     double m10; ///< Moment 10.
     double m01; ///< Moment 01.
     double m11; ///< Moment 11.
@@ -348,11 +349,11 @@ extern "C" {
     return cvLargestBlob(blobs);
   }
 
-  /// \fn CvLabel cvBlobAreaMeanVar(const CvBlobs &blobs)
+  /// \fn CvLabel cvBlobAreaStat(const CvBlobs &blobs)
   /// \brief Get Mean And Variance Of blob Areas.
   /// \param blobs List of blobs.
-  /// \return meanArea, dvarArea  0 if there are no blobs.
-  double cvBlobAreaMeanVar(CvBlobs &blobs, double& meanArea, double& dvarArea);
+  /// \return meanArea, dvarArea  0, min and Max area if there are no blobs.
+  double cvBlobAreaStat(CvBlobs &blobs, double& meanArea, double& dvarArea,uint& dmaxArea,uint& dminArea);
 
   /// \fn void cvFilterByArea(CvBlobs &blobs, unsigned int minArea, unsigned int maxArea)
   /// \brief Filter blobs by area.
@@ -522,7 +523,7 @@ extern "C" {
     CvID id; ///< Track identification number.
     ltROI* pROI; ///< Pointer To Region of Interest structure to which this track belongs
     CvLabel label; ///< Label assigned to the blob related to this track.
-    CvScalar colour = CvScalar(0,100,0,0);///>Colourwhen drawing Track
+    CvScalar colour = CV_RGB(255., 0., 0.); ///> Colourwhen drawing Countour
 
     unsigned int minx; ///< X min.same as  corresponding blob bounding box
     unsigned int maxx; ///< X max.
