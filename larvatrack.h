@@ -34,9 +34,14 @@ class MainWindow;
 /// \param videoFilename
 /// \param outFileCSV
 /// \param istartFrame
-unsigned int getBGModelVideo(cv::Mat& fgMask,MainWindow& window_main, QString videoFilename,QString outFileCSV,unsigned int istartFrame);
+unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount);
 unsigned int processVideo(cv::Mat& fgMask,MainWindow& window_main, QString videoFilename,QString outFileCSV,unsigned int istartFrame);
-void checkPauseRun(MainWindow& win,int& keyboard,std::string frameNumberString);
+unsigned int trackImageSequencefiles(MainWindow& window_main);
+unsigned int trackVideofiles(MainWindow& window_main);
+
+void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
+bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
+void checkPauseRun(MainWindow& win,int& keyboard,unsigned int nFrame);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
 int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString,double& dMeanBlobArea);
