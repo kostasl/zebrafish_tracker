@@ -82,6 +82,7 @@ int screenx,screeny;
 bool showMask; //True will show the BGSubstracted IMage/Processed Mask
 bool bROIChanged;
 bool bPaused;
+bool bExiting;
 bool bTracking;
 bool bSaveImages = false;
 bool b1stPointSet;
@@ -107,12 +108,14 @@ int main(int argc, char *argv[])
     bPaused = true;
     showMask = false;
     bTracking = false;
+    bExiting    = false;
 
     QApplication app(argc, argv);
     QQmlApplicationEngine engine;
     MainWindow window_main;
 
     window_main.show();
+    //window_main.showFullScreen();
 
     //outfilename.truncate(outfilename.lastIndexOf("."));
     QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
@@ -130,6 +133,7 @@ int main(int argc, char *argv[])
     //create GUI windows
     gstrwinName = "FishFrame";
     cv::namedWindow(gstrwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow(gstrwinName + " FG Mask",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     //set the callback function for any mouse event
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
@@ -158,12 +162,13 @@ int main(int argc, char *argv[])
         //cv::setWindowTitle(strwinName, outfilename.toStdString());
         //cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
         //trackVideofiles(window_main);
-        trackImageSequencefiles(window_main);
+
     }catch(int e)
     {
         std::cerr << "OpenCV not compiled with QT support! can display overlay" <<std::endl;
     }
 
+    trackImageSequencefiles(window_main);
 
     //destroy GUI windows
     cv::destroyAllWindows();
@@ -245,7 +250,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
     ///
     {
         QDirIterator itimgDir(inVideoDirname, QDirIterator::Subdirectories);
-        while (itimgDir.hasNext())
+        while (itimgDir.hasNext() && !bExiting)
         {
           itimgDir.next();
           qDebug()<< itimgDir.fileName() << " - " << itimgDir.fileInfo().suffix();
@@ -259,8 +264,11 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
           ///Display Output
           cv::imshow(gstrwinName, frame);
-          window_main.showCVimg(frame); //Show On QT Window
-          cv::imshow("FG Mask MOG 2 after Morph", fgMask);
+          window_main.showVideoFrame(frame,nFrame); //Show On QT Window
+
+          cv::imshow(gstrwinName + " FG Mask", fgMask);
+
+
 
           //Check For input Control
           keyboard = cv::waitKey( cFrameDelayms );
@@ -272,7 +280,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
     QDirIterator itimgDir(inVideoDirname, QDirIterator::Subdirectories);
     //Show Video list to process
     //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
-    while (itimgDir.hasNext())
+    while (itimgDir.hasNext() && !bExiting)
     {
 
         itimgDir.next();
@@ -322,7 +330,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
         }
 
         //read input data. ESC or 'q' for quitting
-        while( (char)keyboard != 'q' && (char)keyboard != 27 && nFrame <= MOGhistory)
+        while( !bExiting && (char)keyboard != 27 && nFrame <= MOGhistory)
         {
             //read the current frame
             if(!capture.read(frame))
@@ -353,9 +361,9 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
             //cvb::CvBlobs blobs;
             //show the current frame and the fg masks
             cv::imshow(gstrwinName, frame);
-            window_main.showCVimg(frame); //Show On QT Window
+            window_main.showVideoFrame(frame,nFrame); //Show On QT Window
 
-            cv::imshow("FG Mask MOG 2 after Morph", fgMask);
+            cv::imshow(gstrwinName + " FG Mask", fgMask);
             //cv::imshow("FG Mask MOG", fgMaskMOG);
             //cv::imshow("FG Mask GMG ", fgMaskGMG);
 
@@ -620,7 +628,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
     //read input data. ESC or 'q' for quitting
-    while( (char)keyboard != 'q' && (char)keyboard != 27 )
+    while( !bExiting && (char)keyboard != 27 )
     {
         //read the current frame
         if(!capture.read(frame))
@@ -646,11 +654,11 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         processFrame(frame,fgMask,nFrame);
         //show the current frame and the fg masks
         cv::imshow(gstrwinName, frame);
-        window_main.showCVimg(frame); //Show On QT Window
+        window_main.showVideoFrame(frame,nFrame); //Show On QT Window
 
         if (showMask)
         {
-            cv::imshow("FG Mask MOG 2 after Morph", fgMask);
+            cv::imshow(gstrwinName + " FG Mask", fgMask);
             //cv::imshow("FG Mask MOG", fgMaskMOG);
             //cv::imshow("FG Mask GMG ", fgMaskGMG);
         }
@@ -700,7 +708,7 @@ void checkPauseRun(MainWindow& win, int& keyboard,unsigned int nFrame)
     if ((char)keyboard == 't') //Toggle Tracking
         bTracking = !bTracking;
 
-        while (bPaused)
+        while (bPaused && !bExiting)
         {
             int ms = 20;
             struct timespec ts = { ms / 1000, (ms % 1000) * 1000 * 1000 };
@@ -727,7 +735,8 @@ void checkPauseRun(MainWindow& win, int& keyboard,unsigned int nFrame)
                  showMask = !showMask;
 
             if ((char)keyboard == 'q')
-                 break; //Main Loop Will handle this
+                bExiting = true; //Main Loop Will handle this
+                 //break;
 
 
             //if ((char)keyboard == 'c')

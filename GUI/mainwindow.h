@@ -29,6 +29,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     void showCVimg(cv::Mat& img);
+    void showVideoFrame(cv::Mat& img,unsigned int nFrame);
 
     ~MainWindow();
 protected:
