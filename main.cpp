@@ -248,16 +248,15 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
     qDebug() << "Open File Sequence in : " << inVideoDirname;
     /// Obtain BG Model
     ///
-    {
-        QDirIterator itimgDir(inVideoDirname, QDirIterator::Subdirectories);
-        while (itimgDir.hasNext() && !bExiting)
+        QDirIterator itBGimgDir(inVideoDirname, QDirIterator::Subdirectories);
+        while (itBGimgDir.hasNext() && !bExiting)
         {
-          itimgDir.next();
-          qDebug()<< itimgDir.fileName() << " - " << itimgDir.fileInfo().suffix();
+          itBGimgDir.next();
+          qDebug()<< itBGimgDir.fileName();
 
-          if (! (itimgDir.fileInfo().suffix().contains("png") || itimgDir.fileInfo().suffix().contains("tiff")))
+          if (! (itBGimgDir.fileInfo().suffix().contains("png") || itBGimgDir.fileInfo().suffix().contains("tiff")))
                 continue;
-          frame  = cv::imread(itimgDir.filePath().toStdString() , CV_LOAD_IMAGE_UNCHANGED);
+          frame  = cv::imread(itBGimgDir.filePath().toStdString() , CV_LOAD_IMAGE_UNCHANGED);
           nFrame++;
           if (!updateBGFrame(frame,fgMask,nFrame)) //Stop when BG learning says so
           break;
@@ -269,17 +268,20 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           cv::imshow(gstrwinName + " FG Mask", fgMask);
 
 
-
           //Check For input Control
           keyboard = cv::waitKey( cFrameDelayms );
           checkPauseRun(window_main,keyboard,nFrame);
         }
-    }
+
 
     /// Process images with Obtained BG Model - Now Start over images afresh
+    nFrame = 0;
     QDirIterator itimgDir(inVideoDirname, QDirIterator::Subdirectories);
     //Show Video list to process
     //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
+
+    std::cout << "Starting Tracking  processing" << std::endl;
+
     while (itimgDir.hasNext() && !bExiting)
     {
 
@@ -287,7 +289,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
         qDebug() << itimgDir.fileName();
 
-       if (! (itimgDir.fileInfo().suffix().contains(".png") || itimgDir.fileInfo().suffix().contains(".tiff")))
+       if (! (itimgDir.fileInfo().suffix().contains("png") || itimgDir.fileInfo().suffix().contains("tiff")))
            continue;
 
        frame  = cv::imread(itimgDir.filePath().toStdString() , CV_LOAD_IMAGE_UNCHANGED);
@@ -299,11 +301,17 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
        nFrame++;
        strImageNames.append(itimgDir.filePath());
 
-       std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
+      // std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
 
 
-       std::cout << "Press r to run Video processing" << std::endl;
        processFrame(frame,fgMask,nFrame);
+
+       ///Display Output
+       cv::imshow(gstrwinName, frame);
+       window_main.showVideoFrame(frame,nFrame); //Show On QT Window
+       if (showMask)
+        cv::imshow(gstrwinName + " FG Mask", fgMask);
+
 
        window_main.setWindowTitle("Tracking:" + itimgDir.fileName());
        keyboard = cv::waitKey( cFrameDelayms );
@@ -740,8 +748,11 @@ void checkPauseRun(MainWindow& win, int& keyboard,unsigned int nFrame)
 
 
             //if ((char)keyboard == 'c')
-            cv::imshow(gstrwinName, frame);
-            win.showCVimg(frame); //Show On QT Window
+            if (nFrame > 1)
+            {
+              //  cv::imshow(gstrwinName, frame);
+               win.showCVimg(frame); //Show On QT Window
+            }
 
         }
 
