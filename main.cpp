@@ -64,7 +64,7 @@ IplImage  *labelImg;
 IplImage frameImg;
 
 
-ltROI roi( cv::Point(0,0) , cv::Point(1024,768));
+ltROI Circle( cv::Point(0,0) , cv::Point(1024,768));
 ltROIlist vRoi;
 cv::Point ptROI1;
 cv::Point ptROI2;
@@ -94,10 +94,11 @@ double dMeanBlobArea = 300;
 double dVarBlobArea = 50;
 
 //BG History
-const int MOGhistory        = 1200.0;
+const int MOGhistory        = 700.0;
 //Processing Loop delay
 uint cFrameDelayms    = 1;
-double dLearningRate        = 1.0/(MOGhistory);
+float gfVidfps        = 35;
+double dLearningRate        = 2.0/(MOGhistory);
 
 //using namespace std;
 
@@ -262,7 +263,10 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           break;
 
           ///Display Output
-          cv::imshow(gstrwinName, frame);
+          frame.copyTo(frameCpy,fgMask);
+          ///Display Output
+          cv::imshow(gstrwinName,frameCpy);
+
           window_main.showVideoFrame(frame,nFrame); //Show On QT Window
 
           cv::imshow(gstrwinName + " FG Mask", fgMask);
@@ -306,11 +310,13 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
        processFrame(frame,fgMask,nFrame);
 
+       frame.copyTo(frameCpy,fgMask);
        ///Display Output
-       cv::imshow(gstrwinName, frame);
+       cv::imshow(gstrwinName,frameCpy);
        window_main.showVideoFrame(frame,nFrame); //Show On QT Window
+
        if (showMask)
-        cv::imshow(gstrwinName + " FG Mask", fgMask);
+            cv::imshow(gstrwinName + " FG Mask", fgMask);
 
 
        window_main.setWindowTitle("Tracking:" + itimgDir.fileName());
@@ -466,8 +472,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame)
     cv::putText(frame, strFGPxRatio.str(), cv::Point(15, 113),
             cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
-    //Hold A copy of Frame With all txt
-    frame.copyTo(frameCpy);
+
     //DRAW ROI RECT
     //cv::rectangle(frame,roi,cv::Scalar(50,250,50));
     drawROI();
@@ -661,7 +666,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
         processFrame(frame,fgMask,nFrame);
         //show the current frame and the fg masks
-        cv::imshow(gstrwinName, frame);
+        cv::imshow(gstrwinName, frameCpy);
         window_main.showVideoFrame(frame,nFrame); //Show On QT Window
 
         if (showMask)
@@ -673,13 +678,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
         if (bTracking)
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
-       // if (!bTracking)
-            //get the input from the keyboard
-            keyboard = cv::waitKey( cFrameDelayms );
 
-
-
-
+        keyboard = cv::waitKey( cFrameDelayms );
         checkPauseRun(window_main,keyboard,nFrame);
 
 
@@ -881,7 +881,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     //Debug Show Mean Size Var
     //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;
     unsigned int RoiID = 0;
-    for (std::vector<cv::Rect>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
         ltROI iroi = (ltROI)(*it);
         RoiID++;
@@ -954,7 +954,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     return cnt;
 }
 
-int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,cv::Rect& roi)
+int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi)
 {
     int cnt = 0;
     int Vcnt = 1;
@@ -1155,8 +1155,8 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
              {
                 ptROI2.x = x;
                 ptROI2.y = y;
-                cv::Rect newROI(ptROI1,ptROI2);
-                roi = newROI;
+                ltROI newROI(ptROI1,ptROI2);
+                //roi = newROI;
 
                 addROI(newROI);
                 drawROI();
@@ -1211,7 +1211,7 @@ void addROI(ltROI& newRoi)
 
 void deleteROI(cv::Point mousePos)
 {
-    std::vector<cv::Rect>::iterator it = vRoi.begin();
+    std::vector<ltROI>::iterator it = vRoi.begin();
 
     while(it != vRoi.end())
     {
@@ -1221,7 +1221,7 @@ void deleteROI(cv::Point mousePos)
         {
             std::vector<ltROI>::iterator tmp = it;
             vRoi.erase(tmp);
-           std::cout << "Deleted:" << roi->x << " " << roi->y <<std::endl;
+           std::cout << "Deleted:" << roi->x() << " " << roi->y() <<std::endl;
             break;
         }
          ++it;
@@ -1232,21 +1232,22 @@ void deleteROI(cv::Point mousePos)
 
 void drawROI()
 {
-    frameCpy.copyTo(frame); //Restore Original IMage
+    //frameCpy.copyTo(frame); //Restore Original IMage
     for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it) {
 
         ltROI iroi = (ltROI)(*it);
-         cv::rectangle(frame,iroi,cv::Scalar(0,0,250));
+         //cv::rectangle(frame,iroi,cv::Scalar(0,0,250));
+         cv::circle(frame,cv::Point(iroi.x() ,iroi.y()),iroi.radius,cv::Scalar(0,0,250),2);
 
          if (bTracking)
          {
              cv::Point pt1,pt2;
-             pt1.x = iroi.x;
-             pt1.y = iroi.y;
-             pt2.x = pt1.x + iroi.width;
-             pt2.y = pt1.y + iroi.height;
+             pt1.x = iroi.centre.x;
+             pt1.y = iroi.centre.y;
+             pt2.x = pt1.x + iroi.radius;
+             pt2.y = pt1.y; //+ iroi.height;
 
-             cv::circle(frame,pt1 ,3,cv::Scalar(255,0,0),1);
+             cv::circle(frame,pt1,3,cv::Scalar(255,0,0),1);
              cv::circle(frame,pt2,3,cv::Scalar(255,0,0),1);
 
 
