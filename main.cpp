@@ -260,10 +260,10 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           frame  = cv::imread(itBGimgDir.filePath().toStdString() , CV_LOAD_IMAGE_UNCHANGED);
           nFrame++;
           if (!updateBGFrame(frame,fgMask,nFrame)) //Stop when BG learning says so
-          break;
+            break;
 
           ///Display Output
-          frameMasked = cv::Mat::zeros(frameMasked.rows, frameMasked.cols, frameMasked. CV_8U);
+          frameMasked = cv::Mat::zeros(frameMasked.rows, frameMasked.cols, CV_8U);
           frame.copyTo(frameMasked,fgMask);
           ///Display Output
           cv::imshow(gstrwinName,frameMasked);
@@ -311,8 +311,11 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
        processFrame(frame,fgMask,nFrame);
 
-       frameMasked = cv::Mat::zeros(frameMasked.rows, frameMasked.cols, frameMasked. CV_8U);
+       frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U);
        frame.copyTo(frameMasked,fgMask);
+
+       detectZfishFeatures(frameMasked);
+
        ///Display Output
        cv::imshow(gstrwinName,frameMasked);
        window_main.showVideoFrame(frame,nFrame); //Show On QT Window
@@ -1255,4 +1258,54 @@ void drawROI()
 
          }
     }
+}
+
+///
+/// \brief detectZfishFeatures - Used to create geometric representations of main zebrafish Features : Eyes, Body, tail
+/// these are saved as point arrays on which angles and other measurements can be obtained
+/// \param maskedGrayImg
+/// \return
+///
+void detectZfishFeatures(cv::Mat& maskedImg)
+{
+    int thresh = 80;
+    int max_thresh = 255;
+    cv::RNG rng(12345);
+
+    cv::Mat threshold_output,maskedImg_gray;
+    std::vector<std::vector<cv::Point> > contours;
+    std::vector<cv::Vec4i> hierarchy;
+
+    /// Convert image to gray and blur it
+    cv::cvtColor( maskedImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
+    cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
+
+
+    /// Detect edges using Threshold
+   cv::threshold( maskedImg_gray, threshold_output, thresh, max_thresh, cv::THRESH_BINARY );
+
+    /// Find contours
+    cv::findContours( threshold_output, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
+
+    /// Find the convex hull object for each contour
+    std::vector<std::vector<cv::Point> >hull( contours.size() );
+    //hull.resize(contours.size());
+    for( size_t i = 0; i < contours.size(); i++ )
+    {
+        cv::convexHull( cv::Mat(contours[i]), hull[i], false );
+    }
+
+
+
+    /// Draw contours + hull results
+    //Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
+    for( size_t i = 0; i< contours.size(); i++ )
+       {
+         cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+         //drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+         cv::drawContours( maskedImg, hull, (int)i, color, 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
+       }
+
+
+
 }

@@ -34,13 +34,19 @@ class MainWindow;
 /// \param videoFilename
 /// \param outFileCSV
 /// \param istartFrame
-unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount);
 unsigned int processVideo(cv::Mat& fgMask,MainWindow& window_main, QString videoFilename,QString outFileCSV,unsigned int istartFrame);
+unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount);
 unsigned int trackImageSequencefiles(MainWindow& window_main);
 unsigned int trackVideofiles(MainWindow& window_main);
 
 void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
+
+///
+/// \brief detectZfishFeatures - Used to create geometric representations of main zebrafish Features : Eyes, Body, tail
+/// these are saved as point arrays on which angles and other measurements can be obtained
+/// \param maskedGrayImg
+void detectZfishFeatures(cv::Mat& maskedGrayImg);
 void checkPauseRun(MainWindow& win,int& keyboard,unsigned int nFrame);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
