@@ -68,7 +68,7 @@ namespace cvb
 
       if ((blob->area > maxArea)) //Found the Fish
       {
-         blob->colour = CV_RGB(0, 255., 0.);
+         blob->colour = CV_RGB(0, 80, 200.);
       }
 
       //Delete Tiny Specs

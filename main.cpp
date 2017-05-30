@@ -200,7 +200,7 @@ unsigned int trackVideofiles(MainWindow& window_main)
 
     QString invideoname = "*.mpg";
     unsigned int istartFrame = 0;
-    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg)", 0, 0);
+    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
 
     //Show Video list to process
     std::cout << "Video List To process:" <<std::endl;
@@ -255,7 +255,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           itBGimgDir.next();
           qDebug()<< itBGimgDir.fileName();
 
-          if (! (itBGimgDir.fileInfo().suffix().contains("png") || itBGimgDir.fileInfo().suffix().contains("tiff")))
+          if (! (itBGimgDir.fileInfo().suffix().contains("png") || itBGimgDir.fileInfo().suffix().contains("tiff")  || itBGimgDir.fileInfo().suffix().contains("pgm") ))
                 continue;
           frame  = cv::imread(itBGimgDir.filePath().toStdString() , CV_LOAD_IMAGE_UNCHANGED);
           nFrame++;
@@ -294,7 +294,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
         qDebug() << itimgDir.fileName();
 
-       if (! (itimgDir.fileInfo().suffix().contains("png") || itimgDir.fileInfo().suffix().contains("tiff")))
+       if (! (itimgDir.fileInfo().suffix().contains("png") || itimgDir.fileInfo().suffix().contains("tiff")  || itBGimgDir.fileInfo().suffix().contains("pgm")))
            continue;
 
        frame  = cv::imread(itimgDir.filePath().toStdString() , CV_LOAD_IMAGE_UNCHANGED);
@@ -312,6 +312,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
        processFrame(frame,fgMask,nFrame);
 
        frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U);
+
        frame.copyTo(frameMasked,fgMask);
 
        detectZfishFeatures(frameMasked);
@@ -432,7 +433,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame)
     cv::morphologyEx(fgMask,fgMask, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
 
     //Do Close : erode(dilate())
-    cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),3);
+    cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),5);
 
 
     //Put Info TextOn Frame
@@ -1280,9 +1281,8 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     cv::cvtColor( maskedImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
     cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
 
-
     /// Detect edges using Threshold
-   cv::threshold( maskedImg_gray, threshold_output, thresh, max_thresh, cv::THRESH_BINARY );
+    cv::threshold( maskedImg_gray, threshold_output, thresh, max_thresh, cv::THRESH_BINARY );
 
     /// Find contours
     cv::findContours( threshold_output, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
@@ -1296,13 +1296,25 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     }
 
 
+    cv::RotatedRect rectFeatures[contours.size()];
 
     /// Draw contours + hull results
     //Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
     for( size_t i = 0; i< contours.size(); i++ )
        {
-         cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+         cv::Scalar color =  CV_RGB(150,10,10);
          //drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+         if (hull[i].size() > 5 )
+         {
+            rectFeatures[i] = cv::fitEllipse(hull[i]);
+            //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
+            cv::Point2f featurePnts[4];
+            rectFeatures[i].points(featurePnts);
+
+            for( int j = 0; j < 4; j++ )
+                    line( maskedImg, featurePnts[j], featurePnts[(j+1)%4], color, 1, 8 );
+         }
+
          cv::drawContours( maskedImg, hull, (int)i, color, 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
        }
 
