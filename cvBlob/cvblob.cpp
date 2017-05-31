@@ -35,9 +35,9 @@ using namespace std;
 namespace cvb
 {
 
-  CvLabel cvLargestBlob(const CvBlobs &blobs)
+  CvBlob* cvLargestBlob(const CvBlobs &blobs)
   {
-    CvLabel label=0;
+    CvBlob* mBlob=0;
     unsigned int maxArea=0;
 
     for (CvBlobs::const_iterator it=blobs.begin();it!=blobs.end();++it)
@@ -46,12 +46,12 @@ namespace cvb
 
       if (blob->area > maxArea)
       {
-		label=blob->label;
+        mBlob=blob;
 		maxArea=blob->area;
       }
     }
 
-    return label;
+    return mBlob;
   }
 
   //Added Area Profile Filter
@@ -259,16 +259,16 @@ namespace cvb
       unsigned char *imgData = (unsigned char *)imgDest->imageData + imgDest_offset + (blob->miny * stepDst);
 
       for (unsigned int r=blob->miny; r<blob->maxy; r++, labels+=stepLbl, source+=stepSrc, imgData+=stepDst)
-	for (unsigned int c=blob->minx; c<blob->maxx; c++)
-	{
-	  if (labels[c]==blob->label)
-	  {
-	    imgData[imgDest->nChannels*c+0] = (unsigned char)((1.-alpha)*source[imgSource->nChannels*c+0]+alpha*color.val[0]);
-	    imgData[imgDest->nChannels*c+1] = (unsigned char)((1.-alpha)*source[imgSource->nChannels*c+1]+alpha*color.val[1]);
-	    imgData[imgDest->nChannels*c+2] = (unsigned char)((1.-alpha)*source[imgSource->nChannels*c+2]+alpha*color.val[2]);
-	  }
-	}
-    }
+        for (unsigned int c=blob->minx; c<blob->maxx; c++)
+        {
+          if (labels[c]==blob->label)
+          {
+            imgData[imgDest->nChannels*c+0] = (unsigned char)((1.-alpha)*source[imgSource->nChannels*c+0]+alpha*color.val[0]);
+            imgData[imgDest->nChannels*c+1] = (unsigned char)((1.-alpha)*source[imgSource->nChannels*c+1]+alpha*color.val[1]);
+            imgData[imgDest->nChannels*c+2] = (unsigned char)((1.-alpha)*source[imgSource->nChannels*c+2]+alpha*color.val[2]);
+          }
+        }
+       } //if (mode&CV_BLOB_RENDER_COLOR)
 
     if (mode)
     {
@@ -390,7 +390,7 @@ namespace cvb
       }
 
       for (CvBlobs::iterator it=blobs.begin(); it!=blobs.end(); ++it)
-	cvRenderBlob(imgLabel, (*it).second, imgSource, imgDest, mode, pal[(*it).second->label], alpha);
+        cvRenderBlob(imgLabel, (*it).second, imgSource, imgDest, mode, pal[(*it).second->label], alpha);
 
     }
     __CV_END__;

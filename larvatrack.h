@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <sstream>
-
+#include <string>
 #include <QDebug>
 
 #include <QString>
@@ -38,8 +38,9 @@ unsigned int processVideo(cv::Mat& fgMask,MainWindow& window_main, QString video
 unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount);
 unsigned int trackImageSequencefiles(MainWindow& window_main);
 unsigned int trackVideofiles(MainWindow& window_main);
-
-void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
+/// \fn processFrame - Process blob morphology, Extract features tracks
+///
+void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned int nFrame);
 bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 
 ///

@@ -342,9 +342,9 @@ extern "C" {
   /// \param blobs List of blobs.
   /// \return Label of the largest blob or 0 if there are no blobs.
   /// \see cvLabel
-  CvLabel cvLargestBlob(const CvBlobs &blobs);
+  CvBlob* cvLargestBlob(const CvBlobs &blobs);
 
-  inline CvLabel cvGreaterBlob(const CvBlobs &blobs)
+  inline CvBlob* cvGreaterBlob(const CvBlobs &blobs)
   {
     return cvLargestBlob(blobs);
   }
