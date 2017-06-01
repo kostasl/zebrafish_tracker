@@ -59,6 +59,9 @@ int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString fil
 
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback
-
+/**
+* @function thresh_callback
+*/
+void thresh_callback(int, void* );
 
 #endif // LARVATRACK_H
