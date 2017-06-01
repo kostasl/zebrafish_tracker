@@ -59,6 +59,7 @@ cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 //cv::Ptr<cv::bgsegm::BackgroundSubtractorGMG> pGMG; //GMG Background subtractor
 
 cv::Mat kernelOpen;
+cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
 
 
@@ -107,7 +108,7 @@ float gfVidfps        = 150;
 double dLearningRate        = 1.0/(4.0*MOGhistory);
 
 //Segmentation Params
-int g_Segthresh = 1; //Image Threshold for FIsh Features
+int g_Segthresh = 15; //Image Threshold for FIsh Features
 
 //using namespace std;
 
@@ -148,7 +149,7 @@ int main(int argc, char *argv[])
     //set the callback function for any mouse event
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
-    cv::createTrackbar( " Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 10.0, thresh_callback );
+    cv::createTrackbar( " Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
 
     thresh_callback( 0, 0 );
 
@@ -168,8 +169,9 @@ int main(int argc, char *argv[])
 //    pGMG =   cv::bgsegm::createBackgroundSubtractorGMG(MOGhistory,0.3); //GMG approach
 
     ///* Create Morphological Kernel Elements used in processFrame *///
-    kernelOpen  = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
-    kernelClose = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
+    kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
+    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
+    kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
 
 
     //unsigned int hWnd = cvGetWindowHandle(sgstrwinName);
@@ -275,7 +277,10 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           std::string filepath = filename.prepend(inVideoDirname ).toStdString();
           //std::cout << filepath << std::endl;
 
-          frame  = cv::imread(filepath , CV_LOAD_IMAGE_UNCHANGED);
+          frame  = cv::imread(filepath , CV_LOAD_IMAGE_COLOR);
+          //Contrast Brightness
+          frame.convertTo(frame, -1, 1.2, 0); //increase the contrast (double)
+
           nFrame++;
           if (!updateBGFrame(frame,fgMask,nFrame)) //Stop when BG learning says so
             break;
@@ -316,16 +321,16 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
       //std::cout << filepath << std::endl;
 
        frame  = cv::imread(filepath , CV_LOAD_IMAGE_COLOR);
-       //Contrast Brightness
-       frame.convertTo(frame, 3, 3, 10); //increase the contrast (double)
        if (!frame.data)
        {
             std::cerr << "Could not open next Image frame." << std::endl;
             std::exit(EXIT_FAILURE);
        }
-       if (frame.depth() < 3) //Need To increase depth if we are to paint on this frame
-            cv::cvtColor( frame, frame, cv::COLOR_GRAY2RGB);
+       //if (frame.depth() < 3) //Need To increase depth if we are to paint on this frame
+       //     cv::cvtColor( frame, frame, cv::COLOR_GRAY2RGB);
 
+       //Contrast Brightness
+       frame.convertTo(frame, -1, 1.2, 0); //increase the contrast (double)
        nFrame++;
 
       // std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
@@ -544,11 +549,11 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         /// Add Picture frame to Enhance Contrast
         ///Do Slow Forgetting of image - To Enhance Features-Add motion Blur
         //g(x) = alpha * f(x) + beta
-        framefishMasked.convertTo(framefishMasked, -1, 0.65, 0); //decrease contrast (1/3)
+        framefishMasked.convertTo(framefishMasked, -1, 0.40, 0); //decrease contrast (1/3)
 
         /// \TODO optimize this. pic is Gray Scale Originally anyway
         cv::cvtColor( fgMaskFish, fgMaskFish, cv::COLOR_BGR2GRAY );
-        cv::dilate(fgMaskFish,fgMaskFish,kernelOpen, cv::Point(-1,-1),6); //Grow In case of BG errors
+        //cv::dilate(fgMaskFish,fgMaskFish,kernelOpen, cv::Point(-1,-1),4); //
         frame.copyTo(framefishMasked,fgMaskFish );
         detectZfishFeatures(framefishMasked);
 
@@ -1337,15 +1342,16 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     /// Convert image to gray and blur it
     cv::cvtColor( maskedImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
-    //cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
+    cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
 
     /// Detect edges using Threshold
     //cv::threshold( maskedImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY );
-    //Segment Features dilate(erode())
-    maskedImg_gray.convertTo(maskedImg_gray, -1, (double)g_Segthresh/10.0, 0); //increase the contrast (double)
-    cv::adaptiveThreshold( maskedImg_gray, threshold_output, 250,  cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,29,0   );
 
-    //cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
+    //maskedImg_gray.convertTo(maskedImg_gray, -1, (double)g_Segthresh/10.0, 0); //increase the contrast (double) //cv::ADAPTIVE_THRESH_MEAN_C
+    cv::adaptiveThreshold( maskedImg_gray, threshold_output, 250,  cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,g_Segthresh,0   );
+
+    //Segment Features dilate(erode())
+    cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
     //cv::erode(fgMask,fgMask,kernelOpen, cv::Point(-1,-1),2);
 
     cv::imshow("Fish Detect",framefishMasked);
@@ -1409,9 +1415,9 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 void thresh_callback(int, void* )
 {
 
-//    if (g_Segthresh < 1) g_Segthresh = 1;
+    if (g_Segthresh < 4) g_Segthresh = 3;
 
-//    if (g_Segthresh%2 == 0)
-//        g_Segthresh++;
+    if (g_Segthresh%2 == 0)
+        g_Segthresh++;
 
 }
