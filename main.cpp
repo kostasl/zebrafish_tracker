@@ -34,7 +34,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
-//#include <opencv2/bgsegm.hpp>
+#include <opencv2/bgsegm.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 
@@ -164,10 +164,10 @@ int main(int argc, char *argv[])
     /// create Background Subtractor objects
     //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 3
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,5,false);
+    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,6,false);
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
     //pMOG =   cv::gmsegmcreateBackgroundSubtractorMOG(MOGhistory,12,0.05,0.00); //MOG approach
-     pKNN = cv::createBackgroundSubtractorKNN(MOGhistory,400,false);
+     //pKNN = cv::createBackgroundSubtractorKNN(MOGhistory,50,false);
 //    pGMG =   cv::bgsegm::createBackgroundSubtractorGMG(MOGhistory,0.3); //GMG approach
 
     ///* Create Morphological Kernel Elements used in processFrame *///
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 
     //pMOG->~BackgroundSubtractor();
     pMOG2->~BackgroundSubtractor();
-    pKNN->~BackgroundSubtractor();
+    //pKNN->~BackgroundSubtractor();
     //pGMG->~BackgroundSubtractor();
 
     //Empty The Track and blob vectors
@@ -453,9 +453,9 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
     //update the background model
     //OPEN CV 2.4
-    dLearningRate =0.0;
-    //pMOG2->apply(frame, fgMask,dLearningRate);
-    pKNN->apply(frame, fgMask,dLearningRate);
+    dLearningRate = 0.0;
+    pMOG2->apply(frame, fgMask,dLearningRate);
+    //pKNN->apply(frame, fgMask,dLearningRate);
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);
     //pGMG->apply(frame,fgMaskGMG,dLearningRate);
@@ -588,8 +588,8 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& fgMask, unsigned int nFrame)
     }
     dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
-    //pMOG2->apply(frame, fgMask,dLearningRate);
-    pKNN->apply(frame, fgMask,dLearningRate);
+    pMOG2->apply(frame, fgMask,dLearningRate);
+    //pKNN->apply(frame, fgMask,dLearningRate);
 
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);
