@@ -2,7 +2,7 @@
 
 TEMPLATE = app
 
-QT += qml quick widgets gui
+QT += widgets gui #qml quick
 
 
 SOURCES += main.cpp \

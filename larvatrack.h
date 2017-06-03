@@ -9,7 +9,7 @@
 
 #include <QString>
 #include <QApplication>
-#include <QQmlApplicationEngine>
+//#include <QQmlApplicationEngine>
 #include <QDir>
 #include <QFileDialog>
 #include <QTextStream>

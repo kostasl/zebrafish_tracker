@@ -34,7 +34,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
-#include <opencv2/bgsegm.hpp>
+//#include <opencv2/bgsegm.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 
@@ -46,6 +46,7 @@ QString outfilename;
 std::string gstrwinName;
 QString gstroutDirCSV; //The Output Directory
 
+cv::Mat inputframe; //current frame
 cv::Mat frame; //current frame
 cv::Mat frameMasked; //copy of Current frame;
 cv::Mat framefishMasked; //copy of Current frame;
@@ -102,15 +103,15 @@ double dMeanBlobArea = 300;
 double dVarBlobArea = 50;
 
 //BG History
-const int MOGhistory        = 500.0;
+const int MOGhistory        = 150.0;
 //Processing Loop delay
 uint cFrameDelayms    = 1;
 float gfVidfps        = 150;
-double dLearningRate        = 1.0/(4.0*MOGhistory);
+double dLearningRate        = 1.0/(2.0*MOGhistory);
 
 //Segmentation Params
 int g_Segthresh = 15; //Image Threshold for FIsh Features
-
+int g_BGthresh = 3; //BG threshold segmentation
 //using namespace std;
 
 
@@ -123,7 +124,7 @@ int main(int argc, char *argv[])
     bExiting    = false;
 
     QApplication app(argc, argv);
-    QQmlApplicationEngine engine;
+    //QQmlApplicationEngine engine;
     MainWindow window_main;
 
     window_main.show();
@@ -150,7 +151,8 @@ int main(int argc, char *argv[])
     //set the callback function for any mouse event
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
-    cv::createTrackbar( " Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
+    cv::createTrackbar( "Global Threshold:", gstrwinName + " FishOnly", &g_BGthresh, 151.0, thresh_callback );
+    cv::createTrackbar( "Fish Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
 
     thresh_callback( 0, 0 );
 
@@ -164,15 +166,15 @@ int main(int argc, char *argv[])
     /// create Background Subtractor objects
     //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 3
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,6,false);
+    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false);
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
-    //pMOG =   cv::gmsegmcreateBackgroundSubtractorMOG(MOGhistory,12,0.05,0.00); //MOG approach
+    //pMOG =   cv::bgsegm::createBackgroundSubtractorMOG(MOGhistory,12,0.05,0.00); //MOG approach
      //pKNN = cv::createBackgroundSubtractorKNN(MOGhistory,50,false);
 //    pGMG =   cv::bgsegm::createBackgroundSubtractorGMG(MOGhistory,0.3); //GMG approach
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
-    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
+    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
     kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
 
 
@@ -349,7 +351,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
 
        ///Display Output //
-       cv::imshow(gstrwinName + " FishOnly",frameMasked);
+       cv::imshow(gstrwinName + " FishOnly",framefishMasked);
 
        window_main.showVideoFrame(frame,nFrame); //Show On QT Window
 
@@ -416,7 +418,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
             //cvb::CvBlobs blobs;
             //show the current frame and the fg masks
             cv::imshow(gstrwinName, frame);
-            window_main.showVideoFrame(frame,nFrame); //Show On QT Window
+            //window_main.showVideoFrame(frame,nFrame); //Show On QT Window
 
             cv::imshow(gstrwinName + " FG Mask", fgMask);
             //cv::imshow("FG Mask MOG", fgMaskMOG);
@@ -450,10 +452,12 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     double dblRatioPxChanged    = 0.0;
     //For Morphological Filter
     ////cv::Size sz = cv::Size(3,3);
-
+    frame.copyTo(inputframe); //Keep Original Before Painting anything on it
     //update the background model
     //OPEN CV 2.4
     dLearningRate = 0.0;
+//    cv::cvtColor( frame, fgMask, cv::COLOR_BGR2GRAY );
+//    cv::threshold( fgMask, fgMask, g_BGthresh, 255, cv::THRESH_BINARY );
     pMOG2->apply(frame, fgMask,dLearningRate);
     //pKNN->apply(frame, fgMask,dLearningRate);
 
@@ -558,7 +562,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         /// \TODO optimize this. pic is Gray Scale Originally anyway
         cv::cvtColor( fgMaskFish, fgMaskFish, cv::COLOR_BGR2GRAY );
         //cv::dilate(fgMaskFish,fgMaskFish,kernelOpen, cv::Point(-1,-1),4); //
-        frame.copyTo(framefishMasked,fgMaskFish );
+        inputframe.copyTo(framefishMasked,fgMaskFish );
         detectZfishFeatures(framefishMasked);
 
     }
@@ -730,6 +734,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U);
         frame.copyTo(frameMasked,fgMask);
 
+
+
         processFrame(frame,fgMask,frameMasked,nFrame);
         //show the current frame and the fg masks
         cv::imshow(gstrwinName + " FishOnly",frameMasked);
@@ -741,6 +747,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             cv::imshow(gstrwinName + " FG Mask", fgMask);
             cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish);
         }
+
 
         if (bTracking)
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
@@ -974,8 +981,12 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
             {
                 //Render Paramecium
                 //cnt++; //CV_BLOB_RENDER_COLOR
-                if (fishBlob == blob ) //Render Fish to Fish Dedicated IMg destination
-                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &framefishMaskImg, CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID, CV_RGB(255,255,255),1);
+                if (blob == fishBlob) //Render Fish to Fish Dedicated IMg destination
+                {
+                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &framefishMaskImg, CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID, CV_RGB(150,150,150),1);
+                    //Make a mask to Surround the fish - So as to overcome BG Substraction Loses - by redecting countour
+                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),120,CV_RGB(255,255,255),-1);
+                }
 
                     cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX , cv::Scalar(0,200,0),0.4);
 
@@ -1352,16 +1363,16 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
 
     /// Detect edges using Threshold
-     cv::threshold( maskedImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY );
+     //cv::threshold( maskedImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY );
 
     //qDebug() << g_Segthresh;
 
     //maskedImg_gray.convertTo(maskedImg_gray, -1, (double)g_Segthresh/10.0, 0); //increase the contrast (double) //cv::ADAPTIVE_THRESH_MEAN_C
-    //cv::adaptiveThreshold( maskedImg_gray, threshold_output, 250,  cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,g_Segthresh,0   );
+    cv::adaptiveThreshold( maskedImg_gray, threshold_output, 250,  cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,g_Segthresh,0   );
 
     //Segment Features dilate(erode())
-    //cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
-    //cv::erode(fgMask,fgMask,kernelOpen, cv::Point(-1,-1),2);
+    cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),12);
+    cv::erode(threshold_output,threshold_output,kernelOpenfish, cv::Point(-1,-1),16);
 
     cv::imshow("Fish Detect",framefishMasked);
     cv::imshow("Threshold",threshold_output);
@@ -1424,9 +1435,9 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 void thresh_callback(int, void* )
 {
 
-//    if (g_Segthresh < 4) g_Segthresh = 3;
+    if (g_Segthresh < 4) g_Segthresh = 3;
 
-//    if (g_Segthresh%2 == 0)
-//        g_Segthresh++;
+    if (g_Segthresh%2 == 0)
+        g_Segthresh++;
 
 }
