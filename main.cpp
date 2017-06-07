@@ -78,7 +78,11 @@ cv::Point ptROI1;
 cv::Point ptROI2;
 
 //Structures to hold blobs & Tracks
-cvb::CvBlobs blobs;
+cvb::CvBlobs blobs; //All Blobs
+cvb::CvBlobs fishblobs;
+cvb::CvBlobs foodblobs;
+const unsigned int thresh_fishblobarea = 200;
+
 cvb::CvTracks tracks;
 
 //Font for Reporting - Tracking
@@ -923,7 +927,6 @@ int countObjectsviaContours(cv::Mat& srcimg )
 int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea)
 {
 
-
     ///// Finding the blobs ////////
      int cnt = 0;
      uint minBlobArea = 0;
@@ -951,10 +954,20 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
 
     cvb::cvBlobAreaStat(blobs,dMeanBlobArea,dVarBlobArea,minBlobArea,maxBlobArea);
-    double dsigma = 2.0*std::sqrt(dVarBlobArea);
+    double dsigma = 1.0*std::sqrt(dVarBlobArea);
+
+    //Separate Fish
+    //copy blobs and then Filter to separate classes
+
+    //Remove Food / Leave Fish
+    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,(double)thresh_fishblobarea),maxBlobArea,CV_RGB(0,10,120) ); //Remove Small Blobs
+    //Remove Fish
+    foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),maxBlobArea/4.0),CV_RGB(0,200,0)); //Remove Large Blobs
+
+
+
     //                  (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
-    //Remove Fishq
-    cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),maxBlobArea/2.0)); //Remove Small Blobs
+
 
     //Debug Show Mean Size Var
     //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;
@@ -968,9 +981,9 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
         //Count Blobs in ROI
         //Find Fish
 
-        cvb::CvBlob* fishBlob = cvb::cvLargestBlob(blobs);
+        //cvb::CvBlob* fishBlob = cvb::cvLargestBlob(blobs);
 
-        for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
+        for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
         {
             cvb::CvBlob* blob = it->second;
             cv::Point pnt;
@@ -981,15 +994,23 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
             {
                 //Render Paramecium
                 //cnt++; //CV_BLOB_RENDER_COLOR
-                if (blob == fishBlob) //Render Fish to Fish Dedicated IMg destination
-                {
                     cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &framefishMaskImg, CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID, CV_RGB(150,150,150),1);
                     //Make a mask to Surround the fish - So as to overcome BG Substraction Loses - by redecting countour
                     cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),120,CV_RGB(255,255,255),-1);
-                }
+            }
+        }
 
+        //Now Render Food
+        for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
+        {
+            cvb::CvBlob* blob = it->second;
+            cv::Point pnt;
+            pnt.x = blob->centroid.x;
+            pnt.y = blob->centroid.y;
+
+            if (iroi.contains(pnt))
+            {
                     cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX , cv::Scalar(0,200,0),0.4);
-
             }
         }
 
@@ -1391,8 +1412,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     cv::RotatedRect rectFeatures[contours.size()];
 
-    /// Draw contours + hull results
-    //Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
+    /// Draw contours + hull results    //Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
     for( size_t i = 0; i< contours.size(); i++ )
        {
          cv::Scalar colorFeature =  CV_RGB(150,10,10);
@@ -1404,11 +1424,17 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             cv::Point2f featurePnts[4];
             rectFeatures[i].points(featurePnts);
 
-            for( int j = 0; j < 4; j++ )
-                    line( frameMasked, featurePnts[j], featurePnts[(j+1)%4], colorFeature, 1, 8 );
+            //cHECKL 1ST fISH
+            if (rectFeatures[i].boundingRect().contains(cv::Point(fishblobs[0]->centroid.x,fishblobs[0]->centroid.y)))
+            {
+                for( int j = 0; j < 4; j++ )
+                        line( frameMasked, featurePnts[j], featurePnts[(j+1)%4], colorFeature, 1, 8 );
+
+                cv::drawContours( frameMasked, hull, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
+            }
          }
 
-         cv::drawContours( frameMasked, hull, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
+
        }
 
     //Crude Adaptive Threshold based on getting 3 features - 2 eyes + body

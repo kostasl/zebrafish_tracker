@@ -361,7 +361,8 @@ extern "C" {
   /// \param blobs List of blobs.
   /// \param minArea Minimun area.
   /// \param maxArea Maximun area.
-  void cvFilterByArea(CvBlobs &blobs, unsigned int minArea, unsigned int maxArea);
+  /// \param colour - Set blob colouring for blobs that pass the filter
+  CvBlobs cvFilterByArea(CvBlobs &blobs, unsigned int minArea, unsigned int maxArea,CvScalar colour);
 
 
   /// \fn void cvFilterByROI(ltROIlist& vRoi,CvBlobs &blobs)

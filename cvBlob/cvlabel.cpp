@@ -137,61 +137,61 @@ namespace cvb
 
 	      do
 	      {
-		for (unsigned int numAttempts=0; numAttempts<3; numAttempts++)
-		{
-		  bool found = false;
+            for (unsigned int numAttempts=0; numAttempts<3; numAttempts++)
+            {
+              bool found = false;
 
-		  for (unsigned char i=0; i<3; i++)
-		  {
-		    int nx = xx+movesE[direction][i][0];
-		    int ny = yy+movesE[direction][i][1];
-		    if ((nx<imgIn_width)&&(nx>=0)&&(ny<imgIn_height)&&(ny>=0))
-		    {
-		      if (imageIn(nx, ny))
-		      {
-			found = true;
+              for (unsigned char i=0; i<3; i++)
+              {
+                int nx = xx+movesE[direction][i][0];
+                int ny = yy+movesE[direction][i][1];
+                if ((nx<imgIn_width)&&(nx>=0)&&(ny<imgIn_height)&&(ny>=0))
+                {
+                  if (imageIn(nx, ny))
+                  {
+                found = true;
 
-			blob->contour.chainCode.push_back(movesE[direction][i][3]);
+                blob->contour.chainCode.push_back(movesE[direction][i][3]);
 
-			xx=nx;
-			yy=ny;
+                xx=nx;
+                yy=ny;
 
-			direction=movesE[direction][i][2];
-			break;
-		      }
-		      else
-		      {
-			imageOut(nx, ny) = CV_BLOB_MAX_LABEL;
-		      }
-		    }
-		  }
+                direction=movesE[direction][i][2];
+                break;
+                  }
+                  else
+                  {
+                imageOut(nx, ny) = CV_BLOB_MAX_LABEL;
+                  }
+                }
+              }
 
-		  if (!found)
-		    direction=(direction+1)%4;
-		  else
-		  {
-		    if (imageOut(xx, yy) != label)
-		    {
-		      imageOut(xx, yy) = label;
-		      numPixels++;
+              if (!found)
+                direction=(direction+1)%4;
+              else
+              {
+                if (imageOut(xx, yy) != label)
+                {
+                  imageOut(xx, yy) = label;
+                  numPixels++;
 
-		      if (xx<blob->minx) blob->minx = xx;
-		      else if (xx>blob->maxx) blob->maxx = xx;
-		      if (yy<blob->miny) blob->miny = yy;
-		      else if (yy>blob->maxy) blob->maxy = yy;
+                  if (xx<blob->minx) blob->minx = xx;
+                  else if (xx>blob->maxx) blob->maxx = xx;
+                  if (yy<blob->miny) blob->miny = yy;
+                  else if (yy>blob->maxy) blob->maxy = yy;
 
-		      blob->area++;
-		      blob->m10+=xx; blob->m01+=yy;
-		      blob->m11+=xx*yy;
-		      blob->m20+=xx*xx; blob->m02+=yy*yy;
-		    }
+                  blob->area++;
+                  blob->m10+=xx; blob->m01+=yy;
+                  blob->m11+=xx*yy;
+                  blob->m20+=xx*xx; blob->m02+=yy*yy;
+                }
 
-		    break;
-		  }
-		  
-          if (( contourEnd = ((xx==x) && (yy==y) && (direction==1)) ))
-		    break;
-		}
+                break;
+              }
+
+              if (( contourEnd = ((xx==x) && (yy==y) && (direction==1)) ))
+                break;
+            }
 	      }
 	      while (!contourEnd);
 
@@ -226,10 +226,10 @@ namespace cvb
                   lastLabel = l;
                   lastBlob = blob;
                 }
-		blob->area++;
-		blob->m10+=x; blob->m01+=y;
-		blob->m11+=x*y;
-		blob->m20+=x*x; blob->m02+=y*y;
+            blob->area++;
+            blob->m10+=x; blob->m01+=y;
+            blob->m11+=x*y;
+            blob->m20+=x*x; blob->m02+=y*y;
 	      }
 	      else
 	      {
@@ -257,50 +257,50 @@ namespace cvb
 
 	      do
 	      {
-		for (unsigned int numAttempts=0; numAttempts<3; numAttempts++)
-		{
-		  bool found = false;
+            for (unsigned int numAttempts=0; numAttempts<3; numAttempts++)
+            {
+              bool found = false;
 
-		  for (unsigned char i=0; i<3; i++)
-		  {
-		    int nx = xx+movesI[direction][i][0];
-		    int ny = yy+movesI[direction][i][1];
-		    if (imageIn(nx, ny))
-		    {
-		      found = true;
+              for (unsigned char i=0; i<3; i++)
+              {
+                int nx = xx+movesI[direction][i][0];
+                int ny = yy+movesI[direction][i][1];
+                if (imageIn(nx, ny))
+                {
+                  found = true;
 
-		      contour->chainCode.push_back(movesI[direction][i][3]);
+                  contour->chainCode.push_back(movesI[direction][i][3]);
 
-		      xx=nx;
-		      yy=ny;
+                  xx=nx;
+                  yy=ny;
 
-		      direction=movesI[direction][i][2];
-		      break;
-		    }
-		    else
-		    {
-		      imageOut(nx, ny) = CV_BLOB_MAX_LABEL;
-		    }
-		  }
+                  direction=movesI[direction][i][2];
+                  break;
+                }
+                else
+                {
+                  imageOut(nx, ny) = CV_BLOB_MAX_LABEL;
+                }
+              }
 
-		  if (!found)
-		    direction=(direction+1)%4;
-		  else
-		  {
-		    if (!imageOut(xx, yy))
-		    {
-		      imageOut(xx, yy) = l;
-		      numPixels++;
+              if (!found)
+                direction=(direction+1)%4;
+              else
+              {
+                if (!imageOut(xx, yy))
+                {
+                  imageOut(xx, yy) = l;
+                  numPixels++;
 
-		      blob->area++;
-		      blob->m10+=xx; blob->m01+=yy;
-		      blob->m11+=xx*yy;
-		      blob->m20+=xx*xx; blob->m02+=yy*yy;
-		    }
+                  blob->area++;
+                  blob->m10+=xx; blob->m01+=yy;
+                  blob->m11+=xx*yy;
+                  blob->m20+=xx*xx; blob->m02+=yy*yy;
+                }
 
-		    break;
-		  }
-		}
+                break;
+              }
+            }
 	      }
 	      while (!(xx==x && yy==y));
 
@@ -336,7 +336,7 @@ namespace cvb
 
       for (CvBlobs::iterator it=blobs.begin(); it!=blobs.end(); ++it)
       {
-	cvCentroid((*it).second);
+        cvCentroid((*it).second);
 
         (*it).second->u11 = (*it).second->m11 - ((*it).second->m10*(*it).second->m01)/(*it).second->m00;
         (*it).second->u20 = (*it).second->m20 - ((*it).second->m10*(*it).second->m10)/(*it).second->m00;
@@ -359,6 +359,9 @@ namespace cvb
     }
     __CV_END__;
   }
+
+
+
 
   void cvFilterLabels(IplImage *imgIn, IplImage *imgOut, const CvBlobs &blobs)
   {

@@ -54,9 +54,17 @@ namespace cvb
     return mBlob;
   }
 
-  //Added Area Profile Filter
-  void cvFilterByArea(CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
+  ///
+  /// \brief cvFilterByArea - Return List of blobs filtered by area
+  /// \param blobs
+  /// \param minArea
+  /// \param maxArea
+  /// \return cVBlobs that passed the area filters
+  ///
+
+ CvBlobs cvFilterByArea(CvBlobs &blobs,unsigned int minArea, unsigned int maxArea,CvScalar pcolour)
   {
+    CvBlobs vret;
     int tCount = 0; //Count Large Blobs - These could be targeted and labeled
 
     CvBlobs::iterator it=blobs.begin();
@@ -66,23 +74,21 @@ namespace cvb
       //Get Height Weight Ratio / If shape x5 too narrow or too thin then not a larva
       float fWHRatio = (float)(blob->maxy-blob->miny)/(float)(blob->maxx-blob->minx);
 
-      if ((blob->area > maxArea)) //Found the Fish
-      {
-         blob->colour = CV_RGB(0, 80, 200.);
-      }
 
-      //Delete Tiny Specs
-      if ((blob->area < minArea)  ) //|| fWHRatio > 5 || fWHRatio < 0.2
+      //Do not copy blobs Smaller than Delete Tiny Specs
+      if (((blob->area >= minArea) && (blob->area <= maxArea) )  ) //|| fWHRatio > 5 || fWHRatio < 0.2
       {
-        cvReleaseBlob(blob);
-
-        CvBlobs::iterator tmp=it;
-        ++it;
-        blobs.erase(tmp);
+          vret.insert(it);
+          blob->colour = pcolour;
       }
-      else
-        ++it;
+       //Stopped Deleting - And just copy
+       //cvReleaseBlob(blob);
+       //CvBlobs::iterator tmp=it;
+       ++it;
+       //blobs.erase(tmp);
+
     }
+    return vret; //Return Filtered List
   }
 
   //Remove Blobs That Are not in a ROI
@@ -110,6 +116,15 @@ namespace cvb
   }
 
 
+  ///
+  /// \brief cvBlobAreaStat
+  /// \param blobs
+  /// \param meanArea
+  /// \param dvarArea
+  /// \param dmaxArea
+  /// \param dminArea
+  /// \return
+  ///
   double cvBlobAreaStat(CvBlobs &blobs, double& meanArea, double& dvarArea,uint& dmaxArea,uint& dminArea)
   {
     double nSum     = 0.0;
@@ -152,6 +167,11 @@ namespace cvb
     return meanArea;
   }
 
+  ///
+  /// \brief cvFilterByLabel
+  /// \param blobs
+  /// \param label
+  ///
   void cvFilterByLabel(CvBlobs &blobs, CvLabel label)
   {
     CvBlobs::iterator it=blobs.begin();
@@ -160,10 +180,10 @@ namespace cvb
       CvBlob *blob=(*it).second;
       if (blob->label!=label)
       {
-	delete blob;
-	CvBlobs::iterator tmp=it;
-	++it;
-	blobs.erase(tmp);
+        delete blob;
+        CvBlobs::iterator tmp=it;
+        ++it;
+        blobs.erase(tmp);
       }
       else
 	++it;
