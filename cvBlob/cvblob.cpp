@@ -78,7 +78,7 @@ namespace cvb
       //Do not copy blobs Smaller than Delete Tiny Specs
       if (((blob->area >= minArea) && (blob->area <= maxArea) )  ) //|| fWHRatio > 5 || fWHRatio < 0.2
       {
-          vret.insert(it);
+          vret.insert((*it));
           blob->colour = pcolour;
       }
        //Stopped Deleting - And just copy
@@ -131,8 +131,8 @@ namespace cvb
     double nSumSq   = 0.0;
     double n        = 0.0;
 
-    dminArea       = 0.0;
-    dmaxArea       = 0.0;
+    dminArea       = 0;
+    dmaxArea       = 0;
 
     CvBlobs::iterator it=blobs.begin();
     while(it!=blobs.end())

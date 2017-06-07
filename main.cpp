@@ -81,7 +81,7 @@ cv::Point ptROI2;
 cvb::CvBlobs blobs; //All Blobs
 cvb::CvBlobs fishblobs;
 cvb::CvBlobs foodblobs;
-const unsigned int thresh_fishblobarea = 200;
+const unsigned int thresh_fishblobarea = 300;
 
 cvb::CvTracks tracks;
 
@@ -953,14 +953,14 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
     cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
 
-    cvb::cvBlobAreaStat(blobs,dMeanBlobArea,dVarBlobArea,minBlobArea,maxBlobArea);
+    cvb::cvBlobAreaStat(blobs,dMeanBlobArea,dVarBlobArea,maxBlobArea,minBlobArea);
     double dsigma = 1.0*std::sqrt(dVarBlobArea);
 
     //Separate Fish
     //copy blobs and then Filter to separate classes
 
-    //Remove Food / Leave Fish
-    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea-dsigma,(double)thresh_fishblobarea),maxBlobArea,CV_RGB(0,10,120) ); //Remove Small Blobs
+    //Allow only Fish Area Through
+    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea,thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
     //Remove Fish
     foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),maxBlobArea/4.0),CV_RGB(0,200,0)); //Remove Large Blobs
 
@@ -982,7 +982,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
         //Find Fish
 
         //cvb::CvBlob* fishBlob = cvb::cvLargestBlob(blobs);
-
+        //RENDER FISH
         for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
         {
             cvb::CvBlob* blob = it->second;
@@ -996,12 +996,12 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
                 //cnt++; //CV_BLOB_RENDER_COLOR
                     cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &framefishMaskImg, CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID, CV_RGB(150,150,150),1);
                     //Make a mask to Surround the fish - So as to overcome BG Substraction Loses - by redecting countour
-                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),120,CV_RGB(255,255,255),-1);
+                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),160,CV_RGB(255,255,255),-1);
             }
         }
 
         //Now Render Food
-        for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
+        for (cvb::CvBlobs::const_iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
         {
             cvb::CvBlob* blob = it->second;
             cv::Point pnt;
@@ -1010,7 +1010,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
             if (iroi.contains(pnt))
             {
-                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX , cv::Scalar(0,200,0),0.4);
+                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX ,CV_RGB(0,200,0),0.4);
             }
         }
 
@@ -1389,7 +1389,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     //qDebug() << g_Segthresh;
 
     //maskedImg_gray.convertTo(maskedImg_gray, -1, (double)g_Segthresh/10.0, 0); //increase the contrast (double) //cv::ADAPTIVE_THRESH_MEAN_C
-    cv::adaptiveThreshold( maskedImg_gray, threshold_output, 250,  cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,g_Segthresh,0   );
+    cv::adaptiveThreshold( maskedImg_gray, threshold_output, 250,  cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0   );
 
     //Segment Features dilate(erode())
     cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),12);
@@ -1424,34 +1424,23 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             cv::Point2f featurePnts[4];
             rectFeatures[i].points(featurePnts);
 
-            //cHECKL 1ST fISH
-            if (rectFeatures[i].boundingRect().contains(cv::Point(fishblobs[0]->centroid.x,fishblobs[0]->centroid.y)))
+            /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
+            //Iterate FISH list -
+            for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
             {
-                for( int j = 0; j < 4; j++ )
-                        line( frameMasked, featurePnts[j], featurePnts[(j+1)%4], colorFeature, 1, 8 );
+                cvb::CvBlob* blob = it->second;
+                if ( cv::pointPolygonTest(contours[i],cv::Point(blob->centroid.x,blob->centroid.y),false) > 0 )
+                {
+                    for( int j = 0; j < 4; j++ )
+                            line( frameMasked, featurePnts[j], featurePnts[(j+1)%4], colorFeature, 1, 8 );
 
-                cv::drawContours( frameMasked, hull, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
+                    cv::drawContours( frameMasked, hull, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
+                }
             }
          }
 
 
        }
-
-    //Crude Adaptive Threshold based on getting 3 features - 2 eyes + body
-//    if (contours.size() > 3 )
-//    {
-//        thresh--;
-//        qDebug()  << contours.size() << " \theta" << thresh;
-//    }
-//    if (contours.size() < 3 && contours.size() > 0)
-//    {
-//        thresh++;
-//        qDebug()  << contours.size() << " \theta" << thresh;
-//    }
-//    //Limits
-//    thresh = (thresh<1)?1:thresh;
-//    thresh = (thresh>250)?250:thresh;
-//    thresh = (contours.size() == 0)?20:thresh;
 
 }
 
