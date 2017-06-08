@@ -107,7 +107,7 @@ double dMeanBlobArea = 300;
 double dVarBlobArea = 50;
 
 //BG History
-const int MOGhistory        = 150.0;
+const int MOGhistory        = 250.0;
 //Processing Loop delay
 uint cFrameDelayms    = 1;
 float gfVidfps        = 150;
@@ -960,7 +960,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     //copy blobs and then Filter to separate classes
 
     //Allow only Fish Area Through
-    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea,thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
+    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
     //Remove Fish
     foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),maxBlobArea/4.0),CV_RGB(0,200,0)); //Remove Large Blobs
 
@@ -1395,12 +1395,15 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),12);
     cv::erode(threshold_output,threshold_output,kernelOpenfish, cv::Point(-1,-1),16);
 
+    //Remove Speckles
+    cv::filterSpeckles(threshold_output,0,dMeanBlobArea,20 );
+
     cv::imshow("Fish Detect",framefishMasked);
     cv::imshow("Threshold",threshold_output);
 
 
     /// Find contours
-    cv::findContours( threshold_output, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
+    cv::findContours( threshold_output, contours, hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
     /// Find the convex hull object for each contour
     std::vector<std::vector<cv::Point> >hull( contours.size() );
@@ -1425,22 +1428,25 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             rectFeatures[i].points(featurePnts);
 
             /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
+
             //Iterate FISH list -
             for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
             {
                 cvb::CvBlob* blob = it->second;
                 if ( cv::pointPolygonTest(contours[i],cv::Point(blob->centroid.x,blob->centroid.y),false) > 0 )
                 {
+                    //Draw Bounding Rect
                     for( int j = 0; j < 4; j++ )
                             line( frameMasked, featurePnts[j], featurePnts[(j+1)%4], colorFeature, 1, 8 );
 
-                    cv::drawContours( frameMasked, hull, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
+                    cv::drawContours( frameMasked, contours, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
                 }
-            }
-         }
+
+            } //Check Each Blob
+         } //Hull Big Enough
+       } //For each Contour
 
 
-       }
 
 }
 
