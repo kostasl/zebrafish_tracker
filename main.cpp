@@ -111,7 +111,7 @@ const int MOGhistory        = 150.0;
 //Processing Loop delay
 uint cFrameDelayms    = 1;
 float gfVidfps        = 150;
-double dLearningRate        = 1.0/(3.0*MOGhistory);
+double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
 int g_Segthresh = 10; //Image Threshold for FIsh Features
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
-    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
+    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
     kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
 
 
@@ -1402,10 +1402,12 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     //Remove Speckles
     cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
-    maskedImg_gray.copyTo(threshold_output_H,threshold_output); //Copy Fish Only Mask
+    //maskedImg_gray.copyTo(threshold_output_H,threshold_output); //Copy Fish Only Mask
     // Increase  Threshold on FishImage (Fish Only masked) to detect Body Structure
-    cv::threshold( threshold_output_H, threshold_output_H, g_Segthresh*5, max_thresh, cv::THRESH_BINARY ); //High threshold - Used to detect body
-    cv::morphologyEx(threshold_output_H,threshold_output_H, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
+    //cv::threshold( threshold_output_H, threshold_output_H, g_Segthresh*5, max_thresh, cv::THRESH_BINARY ); //High threshold - Used to detect body
+    cv::morphologyEx(threshold_output,threshold_output_H, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
+    cv::erode(threshold_output_H,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),2);
+
    // maskedImg_gray.convertTo(maskedImg_gray,CV_16SC1);
     //threshold_output.convertTo(threshold_output, CV_16SC1);
     //threshold_output = cv::abs(threshold_output);
@@ -1445,57 +1447,67 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     /// Find the convex hull object for each contour
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
+    std::vector<std::vector<cv::Point> >triangle( contours_body.size() );
     //hull.resize(contours.size());
-    for( size_t i = 0; i < contours_body.size(); i++ )
-    {
-        cv::convexHull( cv::Mat(contours_body[i]), hull[i], false );
-    }
+//    for( size_t i = 0; i < contours_body.size(); i++ )
+//    {
+
+//    }
 
     cv::RotatedRect rectFeatures[contours_body.size()];
 
     //assert(contours_full.size() == contours_body.size());
+
     /// Draw contours + hull results    //Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
     for( size_t i = 0; i< contours_body.size(); i++ )
        {
          cv::Scalar colorFeature =  CV_RGB(150,10,10);
          //drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-         if (hull[i].size() > 5 )
-         {
-            rectFeatures[i] = cv::fitEllipse(hull[i]);
-            //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
-            cv::Point2f featurePnts[4];
-            rectFeatures[i].points(featurePnts);
 
             /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
 
-            //Iterate FISH list -
+            //Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
             for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
             {
                 cvb::CvBlob* blob = it->second;
                 cv::Point centroid(blob->centroid.x,blob->centroid.y);
-                if ( cv::pointPolygonTest(contours_body[i],centroid,false) > 0 )
-                {
-                    //Draw Bounding Rect
-                    for( int j = 0; j < 4; j++ )
-                            line( frameMasked, featurePnts[j], featurePnts[(j+1)%4], colorFeature, 1, 8 );
 
-                }
+                // check if the next Fishblob belongs to this contour
+                //if ( std::abs(cv::pointPolygonTest(contours_body[i],centroid,true)) <= 10 )
+                if ( cv::pointPolygonTest(contours_body[i],centroid,false) < 0 )
+                 continue;
+
+                cv::convexHull( cv::Mat(contours_body[i]), hull[i], false );
+                rectFeatures[i] = cv::fitEllipse(hull[i]);
+                cv::minEnclosingTriangle(contours_body[i],triangle[i]);
+                //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
+                cv::Point2f featurePnts[4];
+                rectFeatures[i].points(featurePnts);
+
+
+                ///Fit Spline
                 ///Draw body centre point/Tail Top
                 cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
 
-                cv::Point headPoint;
+
+                cv::Point splinePoint[8];
                 cv::Vec4f centreline;
                 cv::fitLine(contours_body[i],centreline ,CV_DIST_L2,0,1,0.01);
-                //y = y0+m*l
-                int bodyLength = (rectFeatures[i].boundingRect().size().height/2);
-                headPoint.y = centreline[3] + bodyLength*(double)(centreline[1]/centreline[0]);
-                //x = (y-y0)/m +x0
-                headPoint.x = (headPoint.y-centreline[3])/(double)(centreline[1]/centreline[0]) + centreline[2];
-                cv::line(frameMasked,headPoint,cv::Point(centreline[2],centreline[3]),CV_RGB(0,200,20),4);
+                //y = y0+m*l y0=centreline[3]
+                int bodyLength = 50;//(rectFeatures[i].boundingRect().size().height/2);
+                splinePoint[0].y =  centroid.y-bodyLength*(double)(centreline[1]/centreline[0]);
+                //x = (y-y0)/m +x0 // x0=centreline[2]
+                splinePoint[0].x = (splinePoint[0].y-centroid.y)/(double)(centreline[1]/centreline[0]) + centroid.x;
+                //x0,y0 cv::Point(centreline[2],centreline[3]
+                cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,20),4);
+
+                //Draw Fitted Triangle
+                for (int j=0; j<3;j++)
+                    cv::line(frameMasked,triangle[i][j],triangle[i][(j+1)%3] ,CV_RGB(0,100,220),4);
+
 
 
             } //Check Each Blob
-         } //Hull Big Enough
 
         } //For each CoreBody Contour
 
