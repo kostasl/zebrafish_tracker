@@ -107,14 +107,14 @@ double dMeanBlobArea = 300;
 double dVarBlobArea = 50;
 
 //BG History
-const int MOGhistory        = 250.0;
+const int MOGhistory        = 150.0;
 //Processing Loop delay
 uint cFrameDelayms    = 1;
 float gfVidfps        = 150;
-double dLearningRate        = 1.0/(2.0*MOGhistory);
+double dLearningRate        = 1.0/(3.0*MOGhistory);
 
 //Segmentation Params
-int g_Segthresh = 15; //Image Threshold for FIsh Features
+int g_Segthresh = 10; //Image Threshold for FIsh Features
 int g_BGthresh = 3; //BG threshold segmentation
 //using namespace std;
 
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     //set the callback function for any mouse event
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
-    cv::createTrackbar( "Global Threshold:", gstrwinName + " FishOnly", &g_BGthresh, 151.0, thresh_callback );
+    cv::createTrackbar( "Laplace Size:", gstrwinName + " FishOnly", &g_BGthresh, 31.0, thresh_callback );
     cv::createTrackbar( "Fish Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
 
     thresh_callback( 0, 0 );
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
-    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
+    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
     kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
 
 
@@ -1375,8 +1375,12 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     int max_thresh = 255;
     cv::RNG rng(12345);
 
-    cv::Mat threshold_output,maskedImg_gray;
-    std::vector<std::vector<cv::Point> > contours;
+    cv::Mat threshold_output,threshold_output_H,maskedImg_gray;
+
+    cv::Mat grad,grad_x, grad_y;
+    cv::Mat framelapl;
+    std::vector<std::vector<cv::Point> > contours_full;
+    std::vector<std::vector<cv::Point> > contours_body;
     std::vector<cv::Vec4i> hierarchy;
 
     /// Convert image to gray and blur it
@@ -1384,39 +1388,74 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
 
     /// Detect edges using Threshold
-     //cv::threshold( maskedImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY );
+    cv::threshold( maskedImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
+
 
     //qDebug() << g_Segthresh;
 
-    //maskedImg_gray.convertTo(maskedImg_gray, -1, (double)g_Segthresh/10.0, 0); //increase the contrast (double) //cv::ADAPTIVE_THRESH_MEAN_C
-    cv::adaptiveThreshold( maskedImg_gray, threshold_output, 250,  cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0   );
+    ////maskedImg_gray.convertTo(maskedImg_gray, -1, (double)g_Segthresh/10.0, 0); //increase the contrast (double) //cv::ADAPTIVE_THRESH_MEAN_C
+    //cv::adaptiveThreshold( maskedImg_gray, threshold_output, 250,  cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0   );
 
     //Segment Features dilate(erode())
-    cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),12);
-    cv::erode(threshold_output,threshold_output,kernelOpenfish, cv::Point(-1,-1),16);
+    //cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),12);
+    //cv::erode(threshold_output,threshold_output,kernelOpenfish, cv::Point(-1,-1),16);
 
     //Remove Speckles
-    cv::filterSpeckles(threshold_output,0,dMeanBlobArea,20 );
+    cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
+    maskedImg_gray.copyTo(threshold_output_H,threshold_output); //Copy Fish Only Mask
+    // Increase  Threshold on FishImage (Fish Only masked) to detect Body Structure
+    cv::threshold( threshold_output_H, threshold_output_H, g_Segthresh*5, max_thresh, cv::THRESH_BINARY ); //High threshold - Used to detect body
+    cv::morphologyEx(threshold_output_H,threshold_output_H, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
+   // maskedImg_gray.convertTo(maskedImg_gray,CV_16SC1);
+    //threshold_output.convertTo(threshold_output, CV_16SC1);
+    //threshold_output = cv::abs(threshold_output);
+    //threshold_output.convertTo(threshold_output, CV_8UC1);
+
+
+    cv::Laplacian(maskedImg_gray,framelapl,CV_16SC1,g_BGthresh);
+    framelapl.convertTo(framelapl, CV_8UC1);
+
+
+    ///Edge DEtection Using SOBEL
+    //cv::Sobel(maskedImg_gray,grad_x,CV_16SC1,1,0); //,CV_SCHARR
+    //cv::convertScaleAbs(grad_x, grad_x );
+    //cv::Sobel(maskedImg_gray,grad_y,CV_16SC1,0,1); //,CV_SCHARR
+    //cv::convertScaleAbs(grad_y, grad_y );
+
+    /// Total Gradient (approximate)
+     //cv::addWeighted( grad_x, 0.5, grad_y, 0.5, 0, grad );
+
+
+    //cv::adaptiveThreshold( grad, threshold_output, 250,  cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY,g_Segthresh,0   );
+    //cv::threshold( framelapl, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY );
+    //cv::cvtColor( threshold_output, threshold_output, cv::cvarrToMat());
+    //cv::ui
+
+    /// Find contours
+    //cv::findContours( threshold_output, contours,hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    cv::findContours( threshold_output, contours_full,hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    cv::findContours( threshold_output_H, contours_body,hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
 
     cv::imshow("Fish Detect",framefishMasked);
     cv::imshow("Threshold",threshold_output);
-
-
-    /// Find contours
-    cv::findContours( threshold_output, contours, hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    cv::imshow("Threshold H",threshold_output_H);
+    //cv::imshow("Edges Sobel",grad);
+    cv::imshow("Edges Laplace",framelapl);
 
     /// Find the convex hull object for each contour
-    std::vector<std::vector<cv::Point> >hull( contours.size() );
+    std::vector<std::vector<cv::Point> >hull( contours_body.size() );
     //hull.resize(contours.size());
-    for( size_t i = 0; i < contours.size(); i++ )
+    for( size_t i = 0; i < contours_body.size(); i++ )
     {
-        cv::convexHull( cv::Mat(contours[i]), hull[i], false );
+        cv::convexHull( cv::Mat(contours_body[i]), hull[i], false );
     }
 
-    cv::RotatedRect rectFeatures[contours.size()];
+    cv::RotatedRect rectFeatures[contours_body.size()];
 
+    //assert(contours_full.size() == contours_body.size());
     /// Draw contours + hull results    //Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
-    for( size_t i = 0; i< contours.size(); i++ )
+    for( size_t i = 0; i< contours_body.size(); i++ )
        {
          cv::Scalar colorFeature =  CV_RGB(150,10,10);
          //drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
@@ -1433,18 +1472,36 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
             {
                 cvb::CvBlob* blob = it->second;
-                if ( cv::pointPolygonTest(contours[i],cv::Point(blob->centroid.x,blob->centroid.y),false) > 0 )
+                cv::Point centroid(blob->centroid.x,blob->centroid.y);
+                if ( cv::pointPolygonTest(contours_body[i],centroid,false) > 0 )
                 {
                     //Draw Bounding Rect
                     for( int j = 0; j < 4; j++ )
                             line( frameMasked, featurePnts[j], featurePnts[(j+1)%4], colorFeature, 1, 8 );
 
-                    cv::drawContours( frameMasked, contours, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
                 }
+                ///Draw body centre point/Tail Top
+                cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
+
+                cv::Point headPoint;
+                cv::Vec4f centreline;
+                cv::fitLine(contours_body[i],centreline ,CV_DIST_L2,0,1,0.01);
+                //y = y0+m*l
+                int bodyLength = (rectFeatures[i].boundingRect().size().height/2);
+                headPoint.y = centreline[3] + bodyLength*(double)(centreline[1]/centreline[0]);
+                //x = (y-y0)/m +x0
+                headPoint.x = (headPoint.y-centreline[3])/(double)(centreline[1]/centreline[0]) + centreline[2];
+                cv::line(frameMasked,headPoint,cv::Point(centreline[2],centreline[3]),CV_RGB(0,200,20),4);
+
 
             } //Check Each Blob
          } //Hull Big Enough
-       } //For each Contour
+
+        } //For each CoreBody Contour
+
+    //For Each Full Body Contour - Should be the same as body!
+    for( size_t i = 0; i< contours_full.size(); i++ )
+     cv::drawContours( frameMasked, contours_full, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
 
 
 
@@ -1455,6 +1512,9 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 */
 void thresh_callback(int, void* )
 {
+
+    if (g_BGthresh % 2 == 0)
+        g_BGthresh ++;
 
     if (g_Segthresh < 4) g_Segthresh = 3;
 
