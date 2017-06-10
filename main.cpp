@@ -1498,6 +1498,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
                 cvb::CvBlob* blob = it->second;
                 cv::Point centroid(blob->centroid.x,blob->centroid.y);
 
+
                 ///Contour Filters
                 // check if the next Fishblob belongs to this contour
                 //if ( std::abs(cv::pointPolygonTest(contours_body[i],centroid,true)) <= -10 )
@@ -1508,6 +1509,17 @@ void detectZfishFeatures(cv::Mat& maskedImg)
                 if (hierarchy_body[i][2] == -1)  // Need to have child
                     continue;
                 assert(hierarchy_body[hierarchy_body[i][2]][3] == i ); // check that the parent of the child is this contour i
+
+                ///Find Child contour with largest area
+                int idxChild = hierarchy_body[i][2]; //First Child
+                int maxArea = cv::contourArea(contours_body[idxChild]);
+                for (int kk=0; kk< contours_body.size();k++)
+                {
+
+                    if (hierarchy_body[kk][3] == i) //Is this a child of this contour?
+                        if (maxArea < cv::contourArea(contours_body[kk])) //Larger Area?
+                            idxChild = hierarchy_body[i][2]; //Set new Child contour index to largest one
+                }
 
 
                 ///Check if Contour Belongs to fishBlob by Centroid Inclusion -
@@ -1526,13 +1538,26 @@ void detectZfishFeatures(cv::Mat& maskedImg)
                 //cv::Point2f featurePnts[4];
                 //rectFeatures[i].points(featurePnts);
                 //Find Enclosing Triangle of Child contour
-                int idxChild = hierarchy_body[i][2];
                 cv::minEnclosingTriangle(contours_body[idxChild],triangle[i]);
+
+
+                //Check for Fit errors
+                for (int k;k<3;k++)
+                {
+                    if (triangle[i][k].x <= 0 || triangle[i][k].y <= 0)
+                    {
+                        //redo fit on larger countour
+                        cv::minEnclosingTriangle(contours_body[i],triangle[i]);
+                        break;
+                    }
+                }
+                triangle[idxChild] = triangle[i];
+
                 assert(triangle[i][0].x >= 0 && triangle[i][0].y >= 0);
                 assert(triangle[i][1].x >= 0 && triangle[i][1].y >= 0);
                 assert(triangle[i][2].x >= 0 && triangle[i][2].y >= 0);
 
-                triangle[idxChild] = triangle[i];
+
                 //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
 
