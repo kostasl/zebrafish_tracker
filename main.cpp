@@ -115,7 +115,7 @@ double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
 int g_Segthresh = 10; //Image Threshold for FIsh Features
-int g_BGthresh = 3; //BG threshold segmentation
+int g_BGthresh = 4; //BG threshold segmentation
 //using namespace std;
 
 
@@ -711,6 +711,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     }
 
 
+
+
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
     {
@@ -732,8 +734,22 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
                break;
            }
         }
+
+
+
         //Add frames from Last video
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
+
+        //Make Global Roi on 1st frame
+        if (nFrame == 1)
+        {
+            //Add Global Roi
+            ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),cv::Point(0,0));
+            addROI(newROI);
+        }
+
+
+
 
         frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U);
         frame.copyTo(frameMasked,fgMask);
@@ -1375,13 +1391,14 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     int max_thresh = 255;
     cv::RNG rng(12345);
 
-    cv::Mat threshold_output,threshold_output_H,maskedImg_gray;
+    cv::Mat threshold_output,threshold_output_H, threshold_output_COMB, maskedImg_gray,maskedfishImg_gray;
 
     cv::Mat grad,grad_x, grad_y;
     cv::Mat framelapl;
     std::vector<std::vector<cv::Point> > contours_full;
     std::vector<std::vector<cv::Point> > contours_body;
-    std::vector<cv::Vec4i> hierarchy;
+    std::vector<cv::Vec4i> hierarchy_full; //Contour Relationships  [Next, Previous, First_Child, Parent]
+    std::vector<cv::Vec4i> hierarchy_body;
 
     /// Convert image to gray and blur it
     cv::cvtColor( maskedImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
@@ -1406,15 +1423,18 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     // Increase  Threshold on FishImage (Fish Only masked) to detect Body Structure
     //cv::threshold( threshold_output_H, threshold_output_H, g_Segthresh*5, max_thresh, cv::THRESH_BINARY ); //High threshold - Used to detect body
     cv::morphologyEx(threshold_output,threshold_output_H, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
-    cv::erode(threshold_output_H,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),2);
+    cv::erode(threshold_output_H,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),4);
 
+
+    cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
    // maskedImg_gray.convertTo(maskedImg_gray,CV_16SC1);
     //threshold_output.convertTo(threshold_output, CV_16SC1);
     //threshold_output = cv::abs(threshold_output);
     //threshold_output.convertTo(threshold_output, CV_8UC1);
 
-
-    cv::Laplacian(maskedImg_gray,framelapl,CV_16SC1,g_BGthresh);
+    cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),2);
+    maskedImg_gray.copyTo(maskedfishImg_gray,threshold_output); //Mask The Laplacian
+    cv::Laplacian(maskedfishImg_gray,framelapl,CV_16SC1,g_BGthresh);
     framelapl.convertTo(framelapl, CV_8UC1);
 
 
@@ -1435,12 +1455,13 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     /// Find contours
     //cv::findContours( threshold_output, contours,hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-    cv::findContours( threshold_output, contours_full,hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-    cv::findContours( threshold_output_H, contours_body,hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    //cv::findContours( threshold_output, contours_full,hierarchy_full, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
+    cv::findContours( threshold_output_COMB, contours_body,hierarchy_body, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 
     cv::imshow("Fish Detect",framefishMasked);
-    cv::imshow("Threshold",threshold_output);
+    cv::imshow("Threshold COMB",threshold_output_COMB);
     cv::imshow("Threshold H",threshold_output_H);
     //cv::imshow("Edges Sobel",grad);
     cv::imshow("Edges Laplace",framelapl);
@@ -1449,10 +1470,15 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
     std::vector<std::vector<cv::Point> >triangle( contours_body.size() );
     //hull.resize(contours.size());
-//    for( size_t i = 0; i < contours_body.size(); i++ )
+//    for( size_t i = 0; i < contours_full.size(); i++ )
 //    {
+        //Does it belong to Fish?
 
-//    }
+        //Is there an associated Body
+
+  //  }
+
+    //Clear Contours - And Associate
 
     cv::RotatedRect rectFeatures[contours_body.size()];
 
@@ -1472,39 +1498,78 @@ void detectZfishFeatures(cv::Mat& maskedImg)
                 cvb::CvBlob* blob = it->second;
                 cv::Point centroid(blob->centroid.x,blob->centroid.y);
 
+                ///Contour Filters
                 // check if the next Fishblob belongs to this contour
-                //if ( std::abs(cv::pointPolygonTest(contours_body[i],centroid,true)) <= 10 )
-                if ( cv::pointPolygonTest(contours_body[i],centroid,false) < 0 )
-                 continue;
+                //if ( std::abs(cv::pointPolygonTest(contours_body[i],centroid,true)) <= -10 )
+                //Check if this is Parent Contour Before Checking Polygon Test [Next, Previous, First_Child, Parent]
+                /////Only Process Parent Contours
+                if (hierarchy_body[i][3] != -1) // Need to have no parent
+                   continue;
+                if (hierarchy_body[i][2] == -1)  // Need to have child
+                    continue;
+                assert(hierarchy_body[hierarchy_body[i][2]][3] == i ); // check that the parent of the child is this contour i
 
+
+                ///Check if Contour Belongs to fishBlob by Centroid Inclusion -
+                /// Of Approximate Ellipse hull
                 cv::convexHull( cv::Mat(contours_body[i]), hull[i], false );
                 rectFeatures[i] = cv::fitEllipse(hull[i]);
-                cv::minEnclosingTriangle(contours_body[i],triangle[i]);
+
+
+                //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
+                if (!rectFeatures[i].boundingRect().contains(centroid) && cv::pointPolygonTest(contours_body[i],centroid,false) < 0)
+                  continue;
+                 //if (  cv::pointPolygonTest(contours_body[i],centroid,false) < 0 )
+
+                //
+
+                //cv::Point2f featurePnts[4];
+                //rectFeatures[i].points(featurePnts);
+                //Find Enclosing Triangle of Child contour
+                int idxChild = hierarchy_body[i][2];
+                cv::minEnclosingTriangle(contours_body[idxChild],triangle[i]);
+                assert(triangle[i][0].x >= 0 && triangle[i][0].y >= 0);
+                assert(triangle[i][1].x >= 0 && triangle[i][1].y >= 0);
+                assert(triangle[i][2].x >= 0 && triangle[i][2].y >= 0);
+
+                triangle[idxChild] = triangle[i];
                 //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
-                cv::Point2f featurePnts[4];
-                rectFeatures[i].points(featurePnts);
 
 
                 ///Fit Spline
+
+                ///
                 ///Draw body centre point/Tail Top
                 cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
 
 
                 cv::Point splinePoint[8];
                 cv::Vec4f centreline;
-                cv::fitLine(contours_body[i],centreline ,CV_DIST_L2,0,1,0.01);
-                //y = y0+m*l y0=centreline[3]
+                cv::fitLine(contours_body[i],centreline ,CV_DIST_L2,0,10,0.01);
+                //y = y0+m*l y0=centreline[3] centroid.y
+                int y0   = centreline[3];
+                int x0   = centreline[2];
+                double m =  (double)(centreline[1]/centreline[0]);
                 int bodyLength = 50;//(rectFeatures[i].boundingRect().size().height/2);
-                splinePoint[0].y =  centroid.y-bodyLength*(double)(centreline[1]/centreline[0]);
+                splinePoint[0].y =  y0+bodyLength*m;
                 //x = (y-y0)/m +x0 // x0=centreline[2]
-                splinePoint[0].x = (splinePoint[0].y-centroid.y)/(double)(centreline[1]/centreline[0]) + centroid.x;
+                splinePoint[0].x = bodyLength/m + centreline[2];  //(splinePoint[0].y-y0)/m + centreline[2];
                 //x0,y0 cv::Point(centreline[2],centreline[3]
-                cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,20),4);
+                cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,200),2);
+
+                cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(150,150,150), 1, 8,hierarchy_body);
 
                 //Draw Fitted Triangle
                 for (int j=0; j<3;j++)
-                    cv::line(frameMasked,triangle[i][j],triangle[i][(j+1)%3] ,CV_RGB(0,100,220),4);
+                    cv::line(frameMasked,triangle[i][j],triangle[i][(j+1)%3] ,CV_RGB(0,100,220),3);
 
+                //Spline
+                /* polyline approximztion of the contour */
+                std::vector<cv::Point> poly_spline;
+                approxPolyDP(contours_body[i], poly_spline, 4, false);
+                //Draw Fitted Poly
+                for (int j=0; j<(poly_spline.size()-1);j++)
+                    cv::line(frameMasked,poly_spline[j],poly_spline[(j+1)] ,CV_RGB(0,200,20),1);
 
 
             } //Check Each Blob
@@ -1512,8 +1577,8 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         } //For each CoreBody Contour
 
     //For Each Full Body Contour - Should be the same as body!
-    for( size_t i = 0; i< contours_full.size(); i++ )
-     cv::drawContours( frameMasked, contours_full, (int)i, CV_RGB(150,150,150), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point() );
+    //for( size_t i = 0; i< contours_full.size(); i++ )
+     //cv::drawContours( frameMasked, contours_full, (int)i, CV_RGB(150,150,150), 1, 8, hierarchy_body, 0, cv::Point() );
 
 
 
