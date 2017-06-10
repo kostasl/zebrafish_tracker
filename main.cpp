@@ -550,7 +550,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
 
         /// Get Fish Only Image ///
-        framefishMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
+        framefishMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U);
 //      frameImg = frameMasked;
 //      IplImage fgMaskImg =  fgMask;
 //      labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
@@ -1484,127 +1484,155 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     //assert(contours_full.size() == contours_body.size());
 
-    /// Draw contours + hull results    //Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
+
+    ///DEBUG show all contours
     for( size_t i = 0; i< contours_body.size(); i++ )
-       {
+    {
+         cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(0,0,250), 1,8,hierarchy_body);
+    }
+
+    ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
+    for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
+    {
+        bool bContourfound =false;
+        cvb::CvBlob* blob = it->second;
+        cv::Point centroid(blob->centroid.x,blob->centroid.y);
+
+        ///Search Through Contours - Draw contours + hull results
+        for( size_t i = 0; i< contours_body.size(); i++ )
+        {
          cv::Scalar colorFeature =  CV_RGB(150,10,10);
          //drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
 
             /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
 
-            //Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
-            for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
+
+
+            ///Contour Filters
+            // check if the next Fishblob belongs to this contour
+            //if ( std::abs(cv::pointPolygonTest(contours_body[i],centroid,true)) <= -10 )
+            //Check if this is Parent Contour Before Checking Polygon Test [Next, Previous, First_Child, Parent]
+            /////Only Process Parent Contours
+            if (hierarchy_body[i][3] != -1) // Need to have no parent
+               continue;
+            if (hierarchy_body[i][2] == -1)  // Need to have child
+                continue;
+            assert(hierarchy_body[hierarchy_body[i][2]][3] == i ); // check that the parent of the child is this contour i
+
+            ///Find Child contour with largest area
+            int idxChild = hierarchy_body[i][2]; //First Child
+            int maxArea = cv::contourArea(contours_body[idxChild]);
+            for (int kk=0; kk< contours_body.size();kk++)
             {
-                cvb::CvBlob* blob = it->second;
-                cv::Point centroid(blob->centroid.x,blob->centroid.y);
 
-
-                ///Contour Filters
-                // check if the next Fishblob belongs to this contour
-                //if ( std::abs(cv::pointPolygonTest(contours_body[i],centroid,true)) <= -10 )
-                //Check if this is Parent Contour Before Checking Polygon Test [Next, Previous, First_Child, Parent]
-                /////Only Process Parent Contours
-                if (hierarchy_body[i][3] != -1) // Need to have no parent
-                   continue;
-                if (hierarchy_body[i][2] == -1)  // Need to have child
-                    continue;
-                assert(hierarchy_body[hierarchy_body[i][2]][3] == i ); // check that the parent of the child is this contour i
-
-                ///Find Child contour with largest area
-                int idxChild = hierarchy_body[i][2]; //First Child
-                int maxArea = cv::contourArea(contours_body[idxChild]);
-                for (int kk=0; kk< contours_body.size();k++)
-                {
-
-                    if (hierarchy_body[kk][3] == i) //Is this a child of this contour?
-                        if (maxArea < cv::contourArea(contours_body[kk])) //Larger Area?
-                            idxChild = hierarchy_body[i][2]; //Set new Child contour index to largest one
-                }
-
-
-                ///Check if Contour Belongs to fishBlob by Centroid Inclusion -
-                /// Of Approximate Ellipse hull
-                cv::convexHull( cv::Mat(contours_body[i]), hull[i], false );
-                rectFeatures[i] = cv::fitEllipse(hull[i]);
-
-
-                //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
-                if (!rectFeatures[i].boundingRect().contains(centroid) && cv::pointPolygonTest(contours_body[i],centroid,false) < 0)
-                  continue;
-                 //if (  cv::pointPolygonTest(contours_body[i],centroid,false) < 0 )
-
-                //
-
-                //cv::Point2f featurePnts[4];
-                //rectFeatures[i].points(featurePnts);
-                //Find Enclosing Triangle of Child contour
-                cv::minEnclosingTriangle(contours_body[idxChild],triangle[i]);
-
-
-                //Check for Fit errors
-                for (int k;k<3;k++)
-                {
-                    if (triangle[i][k].x <= 0 || triangle[i][k].y <= 0)
+                if (hierarchy_body[kk][3] == i) //Is this a child of this contour?
+                    if (maxArea < cv::contourArea(contours_body[kk])) //Larger Area?
                     {
-                        //redo fit on larger countour
-                        cv::minEnclosingTriangle(contours_body[i],triangle[i]);
-                        break;
+                        idxChild = kk; //Set new Child contour index to largest one
+                        //std::cerr << "Found larger Child Blob" << std::endl;
                     }
+            }
+            if (maxArea < 10)
+            {
+                std::cerr << "Warning fishBody area too small A=" << maxArea << std::endl;
+                continue ; //skip Processing
+            }
+
+
+            ///Check if Contour Belongs to fishBlob by Centroid Inclusion -
+            /// Of Approximate Ellipse hull
+            cv::convexHull( cv::Mat(contours_body[i]), hull[i], false );
+            rectFeatures[i] = cv::fitEllipse(hull[i]);
+
+
+            //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
+            if (!rectFeatures[i].boundingRect().contains(centroid) && cv::pointPolygonTest(contours_body[i],centroid,false) < 0)
+              continue; //Next Fish
+            else
+                bContourfound = true;
+             //if (  cv::pointPolygonTest(contours_body[i],centroid,false) < 0 )
+
+            //
+
+            //Find Enclosing Triangle of Child contour
+            cv::minEnclosingTriangle(contours_body[idxChild],triangle[i]);
+
+
+            //Check for Fit errors
+            for (int k=0;k<3;k++)
+            {
+                if (triangle[i][k].x <= 0 || triangle[i][k].y <= 0)
+                {
+                    //redo fit on larger countour
+                    cv::minEnclosingTriangle(contours_body[i],triangle[i]);
+                    break;
                 }
-                triangle[idxChild] = triangle[i];
+            }
+            triangle[idxChild] = triangle[i];
 
-                assert(triangle[i][0].x >= 0 && triangle[i][0].y >= 0);
-                assert(triangle[i][1].x >= 0 && triangle[i][1].y >= 0);
-                assert(triangle[i][2].x >= 0 && triangle[i][2].y >= 0);
-
-
-                //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
+            //assert(triangle[i][0].x >= 0 && triangle[i][0].y >= -40);
+            //assert(triangle[i][1].x >= 0 && triangle[i][1].y >= -40);
+            //assert(triangle[i][2].x >= 0 && triangle[i][2].y >= -40);
 
 
-                ///Fit Spline
-
-                ///
-                ///Draw body centre point/Tail Top
-                cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
+            //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
 
-                cv::Point splinePoint[8];
-                cv::Vec4f centreline;
-                cv::fitLine(contours_body[i],centreline ,CV_DIST_L2,0,10,0.01);
-                //y = y0+m*l y0=centreline[3] centroid.y
-                int y0   = centreline[3];
-                int x0   = centreline[2];
-                double m =  (double)(centreline[1]/centreline[0]);
-                int bodyLength = 50;//(rectFeatures[i].boundingRect().size().height/2);
-                splinePoint[0].y =  y0+bodyLength*m;
-                //x = (y-y0)/m +x0 // x0=centreline[2]
-                splinePoint[0].x = bodyLength/m + centreline[2];  //(splinePoint[0].y-y0)/m + centreline[2];
-                //x0,y0 cv::Point(centreline[2],centreline[3]
-                cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,200),2);
+            ///Fit Spline
 
-                cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(150,150,150), 1, 8,hierarchy_body);
-
-                //Draw Fitted Triangle
-                for (int j=0; j<3;j++)
-                    cv::line(frameMasked,triangle[i][j],triangle[i][(j+1)%3] ,CV_RGB(0,100,220),3);
-
-                //Spline
-                /* polyline approximztion of the contour */
-                std::vector<cv::Point> poly_spline;
-                approxPolyDP(contours_body[i], poly_spline, 4, false);
-                //Draw Fitted Poly
-                for (int j=0; j<(poly_spline.size()-1);j++)
-                    cv::line(frameMasked,poly_spline[j],poly_spline[(j+1)] ,CV_RGB(0,200,20),1);
+            ///
+            ///Draw body centre point/Tail Top
+            cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
 
 
-            } //Check Each Blob
+            cv::Point splinePoint[8];
+            cv::Vec4f centreline;
+            cv::fitLine(contours_body[i],centreline ,CV_DIST_L2,0,10,0.01);
+            //y = y0+m*l y0=centreline[3] centroid.y
+            int y0   = centreline[3];
+            int x0   = centreline[2];
+            double m =  (double)(centreline[1]/centreline[0]);
+            int bodyLength = 50;//(rectFeatures[i].boundingRect().size().height/2);
+            splinePoint[0].y =  y0+bodyLength*m;
+            //x = (y-y0)/m +x0 // x0=centreline[2]
+            splinePoint[0].x = bodyLength/m + centreline[2];  //(splinePoint[0].y-y0)/m + centreline[2];
+            //x0,y0 cv::Point(centreline[2],centreline[3]
+            cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,200),2);
 
-        } //For each CoreBody Contour
+            cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(150,150,150), 1, 8,hierarchy_body);
 
-    //For Each Full Body Contour - Should be the same as body!
-    //for( size_t i = 0; i< contours_full.size(); i++ )
-     //cv::drawContours( frameMasked, contours_full, (int)i, CV_RGB(150,150,150), 1, 8, hierarchy_body, 0, cv::Point() );
+            //Draw Child Contour
+            cv::drawContours( frameMasked, contours_body, (int)idxChild, CV_RGB(250,50,50), 2,cv::LINE_8,hierarchy_body);
 
+            //Draw Fitted Triangle
+            for (int j=0; j<3;j++)
+                cv::line(frameMasked,triangle[i][j],triangle[i][(j+1)%3] ,CV_RGB(0,100,220),3);
+
+            //Draw Enclose Rectangle
+            cv::Point2f featurePnts[4];
+            rectFeatures[i].points(featurePnts);
+
+            for (int j=0; j<4;j++)
+                cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),1);
+
+
+
+            //Spline
+            /* polyline approximztion of the contour */
+            std::vector<cv::Point> poly_spline;
+            approxPolyDP(contours_body[i], poly_spline, 4, false);
+
+            //Draw Fitted Poly
+            for (int j=0; j<(poly_spline.size()-1);j++)
+                cv::line(frameMasked,poly_spline[j],poly_spline[(j+1)] ,CV_RGB(0,200,20),1);
+
+
+          } //Check Each Contour
+
+        if (!bContourfound)
+            std::cerr << "Fish " << blob->label << " Contour not found!" << std::endl;
+
+        } //For Each FishBlob
 
 
 }
