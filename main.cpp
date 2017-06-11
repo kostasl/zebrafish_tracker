@@ -1687,18 +1687,17 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
 
-            ///Fit Spline
 
-            ///
-            ///Draw body centre point/Tail Top
+
             //Centroid
-            cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
+            //cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
             //Isolate Body from Eyes From Laplaced Image - So contour can trace them
 
-
-
+            /// Segregate Eyes / ///Fit Spline
+            //Draw body centre point/Tail Top
             //Tail Top
             cv::circle(frameMasked,sfish.coreTriangle[2],15,CV_RGB(20,20,180),3);
+            //Guiding /Segregating Lines
             //Contour Eyes on Laplace Image - Segment Eye Mask
             int distToEyes = cv::norm(sfish.coreTriangle[2]-sfish.coreTriangle[1])/2;
             cv::circle(framelapl,sfish.coreTriangle[2],distToEyes,CV_RGB(255,255,255),6,cv::FILLED); //Mask Body
@@ -1709,16 +1708,14 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             cv::findContours(framelapl, contours_laplace,hierarchy_laplace, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 
-
-
+            //Draw Eyes - TODO - Replace This With Fitted Ellipses
             //LeftEye
             cv::circle(frameMasked,sfish.coreTriangle[0],8,CV_RGB(0,250,10),3);
             //RightEye
             cv::circle(frameMasked,sfish.coreTriangle[1],8,CV_RGB(250,0,10),3);
 
-            cv::Point splinePoint[8];
-            cv::Vec4f centreline;
-
+//            cv::Point splinePoint[8];
+//            cv::Vec4f centreline;
 //            cv::fitLine(contours_body[idxblobContour],centreline ,CV_DIST_L2,0,10,0.01);
 //            //y = y0+m*l y0=centreline[3] centroid.y
 //            int y0   = centroid.y;// centreline[3];
