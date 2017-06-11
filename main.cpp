@@ -81,7 +81,7 @@ cv::Point ptROI2;
 cvb::CvBlobs blobs; //All Blobs
 cvb::CvBlobs fishblobs;
 cvb::CvBlobs foodblobs;
-const unsigned int thresh_fishblobarea = 300;
+const unsigned int thresh_fishblobarea = 500;
 
 cvb::CvTracks tracks;
 
@@ -1388,10 +1388,12 @@ void drawROI()
 void detectZfishFeatures(cv::Mat& maskedImg)
 {
 
+
     int max_thresh = 255;
     cv::RNG rng(12345);
 
     cv::Mat threshold_output,threshold_output_H, threshold_output_COMB, maskedImg_gray,maskedfishImg_gray;
+    cv::Mat maskfishFeature,maskedfishFeature;
 
     cv::Mat grad,grad_x, grad_y;
     cv::Mat framelapl;
@@ -1468,7 +1470,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     /// Find the convex hull object for each contour
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
-    std::vector<std::vector<cv::Point> >triangle( contours_body.size() );
+    std::vector<std::vector<cv::Point2f> >triangle( contours_body.size() );
     //hull.resize(contours.size());
 //    for( size_t i = 0; i < contours_full.size(); i++ )
 //    {
@@ -1494,6 +1496,8 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
     {
+        fishModel sfish;
+        maskfishFeature = cv::Mat::zeros(frameMasked.rows, frameMasked.cols,CV_8U); //Empty Canvas This fish's mask
         int idxblobContour;
         bool bContourfound =false;
         cvb::CvBlob* blob = it->second;
@@ -1530,7 +1534,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             bContourfound = true;
 
         } //End For each Contour
-
+        ///Search Again -attach to closest contour
         //In Not found Search Again By distance
         if (!bContourfound)
         {
@@ -1561,6 +1565,17 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             std::cerr << "Fish " << blob->label << " Contour not found!" << std::endl;
             continue; //Next Blob
         }
+        //////////////////
+        ///Make Fish Contour Only IMage
+        /// /////////////////
+        sfish.blobLabel = blob->label;
+        cv::drawContours( maskfishFeature, contours_body, (int)idxblobContour, CV_RGB(255,255,255), cv::FILLED);
+        //maskedfishImg_gray.copyTo(maskedfishFeature,maskfishFeature);
+        cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature,cv::Size(11,11),5,5);
+
+        //cv::drawContours(maskfishFeature,contours_body,(int)idxblobContour,CV_RGB(255,255,255),1,-1,hierarchy_body);
+
+
 
         ///Find Child contour with largest area
         int idxChild = hierarchy_body[idxblobContour][2]; //First Child
@@ -1598,19 +1613,79 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         //Check for Fit errors
         for (int k=0;k<3;k++)
         {
-            if (triangle[idxblobContour][k].x <= 0 || triangle[idxblobContour][k].y <= 0)
+            if (triangle[idxblobContour].size() > 0 )
             {
+                if (triangle[idxblobContour][k].x <= 0 || triangle[idxblobContour][k].y <= 0)
+                {
+                    //redo fit on larger countour
+                    cv::minEnclosingTriangle(contours_body[idxblobContour],triangle[idxblobContour]);
+                    break;
+                }
+            }
+            else
                 //redo fit on larger countour
                 cv::minEnclosingTriangle(contours_body[idxblobContour],triangle[idxblobContour]);
-                break;
-            }
         }
         triangle[idxChild] = triangle[idxblobContour];
 
-            //assert(triangle[i][0].x >= 0 && triangle[i][0].y >= -40);
-            //assert(triangle[i][1].x >= 0 && triangle[i][1].y >= -40);
-            //assert(triangle[i][2].x >= 0 && triangle[i][2].y >= -40);
 
+        //assert(triangle[i][0].x >= 0 && triangle[i][0].y >= -40);
+        //assert(triangle[i][1].x >= 0 && triangle[i][1].y >= -40);
+        //assert(triangle[i][2].x >= 0 && triangle[i][2].y >= -40);
+
+
+        ///Map Keypoint Triangle features
+        double dab = cv::norm(triangle[idxChild][0]-triangle[idxChild][1]);
+        double dac = cv::norm(triangle[idxChild][0]-triangle[idxChild][2]);
+        double dbc = cv::norm(triangle[idxChild][1]-triangle[idxChild][2]);
+        //Find Triangle Width - Set point0 and Point1 to the triangle's base
+        if (dab < dac && dab < dbc)
+        {
+            sfish.coreTriangle.at(0) = triangle[idxChild][0];
+            sfish.coreTriangle.at(1) = triangle[idxChild][1];
+            sfish.coreTriangle.at(2) = triangle[idxChild][2];
+
+//            sfish.coreTriangle[0] =  triangle[idxChild][0];
+//            sfish.coreTriangle[1] =  triangle[idxChild][1];
+//            sfish.coreTriangle[2] =  triangle[idxChild][2];
+
+        }
+        else
+        {
+            if (dac < dab && dac < dbc)
+            {
+//                sfish.coreTriangle[0] =  triangle[idxChild][0];
+//                sfish.coreTriangle[1] =  triangle[idxChild][2];
+//                sfish.coreTriangle[2] =  triangle[idxChild][1];
+
+                sfish.coreTriangle.at(0) = triangle[idxChild][0];
+                sfish.coreTriangle.at(1) = triangle[idxChild][2];
+                sfish.coreTriangle.at(2) = triangle[idxChild][1];
+
+
+            }
+            else
+            { //dbc is the smallest
+
+                sfish.coreTriangle[0] =  triangle[idxChild][1];
+                sfish.coreTriangle[1] =  triangle[idxChild][2];
+                sfish.coreTriangle[2] =  triangle[idxChild][0];
+
+//                sfish.coreTriangle.at(0) = triangle[idxChild][1];
+//                sfish.coreTriangle.assign(1,triangle[idxChild][2]);
+//                sfish.coreTriangle.assign(2,triangle[idxChild][0]);
+
+            }
+        }
+
+        //Position Tail Top To Body Peak
+        cv::Point minLoc;
+        cv::Point maxLoc;
+        double minVal,maxVal;
+        //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
+        cv::minMaxLoc(maskedfishFeature,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
+
+        sfish.coreTriangle[2] = maxLoc;
 
             //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
@@ -1621,20 +1696,27 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             ///Draw body centre point/Tail Top
             cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
 
+            //Tail Top
+            cv::circle(frameMasked,sfish.coreTriangle[2],15,CV_RGB(20,20,180),3);
+            //LeftEye
+            cv::circle(frameMasked,sfish.coreTriangle[0],8,CV_RGB(0,250,10),3);
+            //RightEye
+            cv::circle(frameMasked,sfish.coreTriangle[1],8,CV_RGB(250,0,10),3);
 
             cv::Point splinePoint[8];
             cv::Vec4f centreline;
-            cv::fitLine(contours_body[idxblobContour],centreline ,CV_DIST_L2,0,10,0.01);
-            //y = y0+m*l y0=centreline[3] centroid.y
-            int y0   = centreline[3];
-            int x0   = centreline[2];
-            double m =  (double)(centreline[1]/centreline[0]);
-            int bodyLength = 50;//(rectFeatures[i].boundingRect().size().height/2);
-            splinePoint[0].y =  y0+bodyLength*m;
-            //x = (y-y0)/m +x0 // x0=centreline[2]
-            splinePoint[0].x = bodyLength/m + centreline[2];  //(splinePoint[0].y-y0)/m + centreline[2];
-            //x0,y0 cv::Point(centreline[2],centreline[3]
-            cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,200),2);
+
+//            cv::fitLine(contours_body[idxblobContour],centreline ,CV_DIST_L2,0,10,0.01);
+//            //y = y0+m*l y0=centreline[3] centroid.y
+//            int y0   = centroid.y;// centreline[3];
+//            int x0   = centroid.x;// centreline[2];
+//            double m =  (double)(centreline[1]/centreline[0]);
+//            int bodyLength = 50;//(rectFeatures[i].boundingRect().size().height/2);
+//            splinePoint[0].y =  y0+bodyLength*m;
+//            //x = (y-y0)/m +x0 // x0=centreline[2]
+//            splinePoint[0].x = bodyLength/m + x0;  //(splinePoint[0].y-y0)/m + centreline[2];
+//            //x0,y0 cv::Point(centreline[2],centreline[3]
+//            cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,200),2);
 
             cv::drawContours( frameMasked, contours_body, (int)idxblobContour, CV_RGB(150,150,150), 1, 8,hierarchy_body);
 
@@ -1643,7 +1725,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
             //Draw Fitted Triangle
             for (int j=0; j<3;j++)
-                cv::line(frameMasked,triangle[idxblobContour][j],triangle[idxblobContour][(j+1)%3] ,CV_RGB(0,100,220),3);
+                cv::line(frameMasked,sfish.coreTriangle[j],sfish.coreTriangle[(j+1)%3] ,CV_RGB(0,100,220),3);
 
             //Draw Enclose Rectangle
             cv::Point2f featurePnts[4];

@@ -21,10 +21,36 @@
 
 #include <GUI/mainwindow.h>
 
+/// \file larvatrack.h
+/// \brief OpenCV based zebrafish tracker header file.
+
+
 class MainWindow;
 
-/// \file larvatrack.h
-/// \brief OpenCV based in-vial larva tracker header file.
+
+
+struct fishModel
+{
+
+    cvb::CvLabel blobLabel;
+    std::vector<cv::Point> bodyHull;
+    std::vector<cv::Point> leftEyeHull;
+    std::vector<cv::Point> rightEyeHull;
+    std::vector<cv::Point> coreTriangle;
+
+    cv::Point leftEyePoint;
+    cv::Point rightEyePoint;
+    cv::Point tailTopPoint;
+    cv::Point tailSplinePoints[8];
+
+    fishModel()
+    {
+        coreTriangle.push_back(cv::Point());
+        coreTriangle.push_back(cv::Point());
+        coreTriangle.push_back(cv::Point());
+    }
+
+};
 
 
 
@@ -63,5 +89,8 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse C
 * @function thresh_callback
 */
 void thresh_callback(int, void* );
+
+
+
 
 #endif // LARVATRACK_H
