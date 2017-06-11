@@ -61,6 +61,7 @@ cv::Ptr<cv::BackgroundSubtractorKNN> pKNN; //MOG Background subtractor
 //cv::Ptr<cv::bgsegm::BackgroundSubtractorGMG> pGMG; //GMG Background subtractor
 
 cv::Mat kernelOpen;
+cv::Mat kernelOpenLaplace;
 cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
 
@@ -81,7 +82,7 @@ cv::Point ptROI2;
 cvb::CvBlobs blobs; //All Blobs
 cvb::CvBlobs fishblobs;
 cvb::CvBlobs foodblobs;
-const unsigned int thresh_fishblobarea = 500;
+const unsigned int thresh_fishblobarea = 800;
 
 cvb::CvTracks tracks;
 
@@ -115,7 +116,7 @@ double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
 int g_Segthresh = 10; //Image Threshold for FIsh Features
-int g_BGthresh = 4; //BG threshold segmentation
+int g_BGthresh = 31; //BG threshold segmentation
 //using namespace std;
 
 
@@ -178,6 +179,7 @@ int main(int argc, char *argv[])
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
+    kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
     kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
 
@@ -1397,10 +1399,11 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     cv::Mat grad,grad_x, grad_y;
     cv::Mat framelapl;
-    std::vector<std::vector<cv::Point> > contours_full;
     std::vector<std::vector<cv::Point> > contours_body;
-    std::vector<cv::Vec4i> hierarchy_full; //Contour Relationships  [Next, Previous, First_Child, Parent]
     std::vector<cv::Vec4i> hierarchy_body;
+    std::vector<std::vector<cv::Point> > contours_laplace;
+    std::vector<cv::Vec4i> hierarchy_laplace; //Contour Relationships  [Next, Previous, First_Child, Parent]
+
 
     /// Convert image to gray and blur it
     cv::cvtColor( maskedImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
@@ -1436,9 +1439,10 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),2);
     maskedImg_gray.copyTo(maskedfishImg_gray,threshold_output); //Mask The Laplacian
-    cv::Laplacian(maskedfishImg_gray,framelapl,CV_16SC1,g_BGthresh);
-    framelapl.convertTo(framelapl, CV_8UC1);
-
+    cv::Laplacian(maskedfishImg_gray,framelapl,CV_8UC1,g_BGthresh);
+    //cv::dilate(framelapl,framelapl,kernelOpen,cv::Point(-1,-1),2);
+    //dilate(erode())
+    cv::morphologyEx(framelapl,framelapl, cv::MORPH_CLOSE, kernelOpenLaplace,cv::Point(-1,-1),4);
 
     ///Edge DEtection Using SOBEL
     //cv::Sobel(maskedImg_gray,grad_x,CV_16SC1,1,0); //,CV_SCHARR
@@ -1461,12 +1465,8 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
     cv::findContours( threshold_output_COMB, contours_body,hierarchy_body, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
-
-    cv::imshow("Fish Detect",framefishMasked);
-    cv::imshow("Threshold COMB",threshold_output_COMB);
-    cv::imshow("Threshold H",threshold_output_H);
     //cv::imshow("Edges Sobel",grad);
-    cv::imshow("Edges Laplace",framelapl);
+    //cv::imshow("Edges Laplace",framelapl);
 
     /// Find the convex hull object for each contour
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
@@ -1487,11 +1487,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     //assert(contours_full.size() == contours_body.size());
 
 
-    ///DEBUG show all contours
-    for( size_t i = 0; i< contours_body.size(); i++ )
-    {
-         cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(0,0,250), 1,8,hierarchy_body);
-    }
+
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
@@ -1685,19 +1681,36 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
         cv::minMaxLoc(maskedfishFeature,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
 
-        sfish.coreTriangle[2] = maxLoc;
+       //Set To Fish Body core
+        sfish.coreTriangle[2] = maxLoc; //
 
-            //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
+        //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
 
             ///Fit Spline
 
             ///
             ///Draw body centre point/Tail Top
+            //Centroid
             cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
+            //Isolate Body from Eyes From Laplaced Image - So contour can trace them
+
+
 
             //Tail Top
             cv::circle(frameMasked,sfish.coreTriangle[2],15,CV_RGB(20,20,180),3);
+            //Contour Eyes on Laplace Image - Segment Eye Mask
+            int distToEyes = cv::norm(sfish.coreTriangle[2]-sfish.coreTriangle[1])/2;
+            cv::circle(framelapl,sfish.coreTriangle[2],distToEyes,CV_RGB(255,255,255),6,cv::FILLED); //Mask Body
+            //Mid Eye Position
+            cv::Point midEyePoint = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
+            cv::Point vecMidlEye = sfish.coreTriangle[2]+(midEyePoint-sfish.coreTriangle[2])*2;
+            cv::line(framelapl,sfish.coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //Mask Body
+            cv::findContours(framelapl, contours_laplace,hierarchy_laplace, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+
+
+
             //LeftEye
             cv::circle(frameMasked,sfish.coreTriangle[0],8,CV_RGB(0,250,10),3);
             //RightEye
@@ -1718,6 +1731,8 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 //            //x0,y0 cv::Point(centreline[2],centreline[3]
 //            cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,200),2);
 
+            ////DRAW
+            ///
             cv::drawContours( frameMasked, contours_body, (int)idxblobContour, CV_RGB(150,150,150), 1, 8,hierarchy_body);
 
             //Draw Child Contour
@@ -1748,6 +1763,30 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
         } //For Each FishBlob
 
+
+
+
+    ///DEBUG show all contours
+    for( size_t i = 0; i< contours_body.size(); i++ )
+    {
+         cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(0,0,250), 1,8,hierarchy_body);
+    }
+
+
+
+    ///DEBUG show all contours -Laplace
+    for( size_t i = 0; i< contours_laplace.size(); i++ )
+    {
+         cv::drawContours( framefishMasked, contours_laplace, (int)i, CV_RGB(200,0,0), 1,8,hierarchy_laplace);
+    }
+
+
+    //framelapl.convertTo(framelapl, CV_8UC3);
+    cv::imshow("Edges Laplace",framelapl);
+
+    cv::imshow("Fish Detect",framefishMasked);
+    cv::imshow("Threshold COMB",threshold_output_COMB);
+    cv::imshow("Threshold H",threshold_output_H);
 
 }
 
