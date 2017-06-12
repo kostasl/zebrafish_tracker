@@ -41,6 +41,7 @@ struct fishModel
     cv::Point leftEyePoint;
     cv::Point rightEyePoint;
     cv::Point tailTopPoint;
+    double bearingRads;
     cv::Point tailSplinePoints[8];
 
     fishModel()
@@ -83,14 +84,28 @@ int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
 int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
 
-
 void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback
 /**
 * @function thresh_callback
 */
 void thresh_callback(int, void* );
 
-
+///
+/// \brief findContourClosestToPoint Looks for the inner contour in a 2 level hierarchy that matches the point coords
+/// \param contours
+/// \param hierarchy
+/// \param pt
+/// \param level - The required hierarchy level description of the contour being searched for
+/// \param OUT outhull
+/// \param Out fittedEllipse - pointer to array of Rotated rect fitted ellipsoids
+/// \return Index of *child*/Leaf contour closest to point
+///
+int findContourClosestToPoint(std::vector<std::vector<cv::Point> >& contours,
+                              std::vector<cv::Vec4i>& hierarchy,
+                              cv::Point pt,
+                              int level,
+                              std::vector<std::vector<cv::Point> >& outhulls,
+                              std::vector<cv::RotatedRect>& outfittedEllipse);
 
 
 #endif // LARVATRACK_H
