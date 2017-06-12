@@ -1408,8 +1408,9 @@ int findContourClosestToPoint(std::vector<std::vector<cv::Point> >& contours,
 
 
 //Need to Set equal since we are skipping indeces below
-    outhulls.clear();
-    outfittedEllipse.clear();
+outhulls.clear();
+outfittedEllipse.clear();
+
 outhulls.resize(contours.size());
 outfittedEllipse.resize(contours.size());
 
@@ -1452,18 +1453,31 @@ outfittedEllipse.resize(contours.size());
 
     outfittedEllipse[i] = cv::fitEllipse(outhulls[i]);
 
+    if (!outfittedEllipse[i].boundingRect().contains(pt))
+         continue; //Too far - check Next Fish
+
 
    ///Use approximate Shapes and find closest centre to point
-   mindistToCentroid = 20000;
+   mindistToCentroid = -20000;
    //distToCentroid = cv::norm((cv::Point)outfittedEllipse[i].center - pt);
     //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
-     //if (distToCentroid < mindistToCentroid)
+     //
+     //Note Distance is -ve when point is outside contour
      distToCentroid = cv::pointPolygonTest(outhulls[i],pt,true);
+     if (abs(distToCentroid) < abs(mindistToCentroid) )
      {
-         //Otherwise Keep As blob Contour
-         idxContour = i;
-         mindistToCentroid = distToCentroid;//New Min
-         bContourfound = true;
+         //Replace only if new distance is inside contour and previous one was outside
+         //Or they are both inside
+//         if ((mindistToCentroid < 0 && distToCentroid > 0) ||
+//             (mindistToCentroid < 0 && distToCentroid < 0) ||
+//             (mindistToCentroid > 0 && distToCentroid > 0)  )
+         if(!(mindistToCentroid > 0 && distToCentroid < 0))
+         {
+             //Otherwise Keep As blob Contour
+             idxContour = i;
+             mindistToCentroid = distToCentroid;//New Min
+             bContourfound = true;
+         }
       }
    } //End For each Contour
 
@@ -1475,7 +1489,7 @@ outfittedEllipse.resize(contours.size());
        for( size_t i = 0; i< contours.size(); i++ )
        {
            distToCentroid = cv::pointPolygonTest(contours[i],pt,true);
-           if (distToCentroid < mindistToCentroid)
+           if (abs(distToCentroid) < abs(mindistToCentroid))
            {
 //               //Filter According to desired Level
                if (level == 0) /////Only Process Parent Contours
@@ -1495,18 +1509,23 @@ outfittedEllipse.resize(contours.size());
 //                   if (hierarchy[hierarchy[i][3]][3] != -1)
 //                       continue;
 //               }
-
-               //Otherwise Keep As blob Contour
-               idxContour = i;
-               mindistToCentroid = distToCentroid;//New Min
-               bContourfound = true;
+               if(!(mindistToCentroid > 0 && distToCentroid < 0))
+               {
+                   //Otherwise Keep As blob Contour
+                   idxContour = i;
+                   mindistToCentroid = distToCentroid;//New Min
+                   bContourfound = true;
+               }
            }
        }
-       std::cerr << "Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
+
    }
 
    if (!bContourfound)
+   {
+       std::cerr << "Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
        idxContour = -1;
+   }
 
    return idxContour;
 }
@@ -1868,7 +1887,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
 
             //Update Triangle Position to R Eye
-            sfish.coreTriangle[0] = rectFeatures_lapl[idxLEyeContour].center;
+            //sfish.coreTriangle[0] = rectFeatures_lapl[idxLEyeContour].center;
 
 
             //Identify and Draw Right  Eye
@@ -1878,7 +1897,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
 
             //Update Triangle Position to R Eye
-            sfish.coreTriangle[1] = rectFeatures_lapl[idxREyeContour].center;
+            //sfish.coreTriangle[1] = rectFeatures_lapl[idxREyeContour].center;
 
 
             //Draw Eyes - TODO - Replace This With Fitted Ellipses
@@ -1955,7 +1974,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     cv::imshow("Edges Laplace",framelapl);
 
     cv::imshow("Fish Detect",framefishMasked);
-    //cv::imshow("Threshold COMB",threshold_output_COMB);
+    cv::imshow("Threshold COMB",threshold_output_COMB);
     //cv::imshow("Threshold H",threshold_output_H);
 
 
