@@ -116,7 +116,7 @@ double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
 int g_Segthresh = 10; //Image Threshold for FIsh Features
-int g_BGthresh = 31; //BG threshold segmentation
+int g_BGthresh = 13; //BG threshold segmentation
 //using namespace std;
 
 
@@ -1644,24 +1644,17 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
         sfish.coreTriangle[2] = triangle[idxInnerContour][0];
 
     }
-    else
+    if (dac <= dab && dac <= dbc)
     {
-        if (dac <= dab && dac <= dbc)
-        {
-
-            sfish.coreTriangle[0] = triangle[idxInnerContour][0];
-            sfish.coreTriangle[1] = triangle[idxInnerContour][2];
-            sfish.coreTriangle[2] = triangle[idxInnerContour][1];
-
-
-        }
-        else
-        { //dbc is the smallest
-
-            sfish.coreTriangle[0] =  triangle[idxInnerContour][0];
-            sfish.coreTriangle[1] =  triangle[idxInnerContour][1];
-            sfish.coreTriangle[2] =  triangle[idxInnerContour][2];
-        }
+        sfish.coreTriangle[0] = triangle[idxInnerContour][0];
+        sfish.coreTriangle[1] = triangle[idxInnerContour][2];
+        sfish.coreTriangle[2] = triangle[idxInnerContour][1];
+    }
+    if (dbc <= dab && dbc <= dac )
+    { //dbc is the smallest
+        sfish.coreTriangle[0] =  triangle[idxInnerContour][0];
+        sfish.coreTriangle[1] =  triangle[idxInnerContour][1];
+        sfish.coreTriangle[2] =  triangle[idxInnerContour][2];
     }
 
 
