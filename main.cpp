@@ -82,7 +82,7 @@ cv::Point ptROI2;
 cvb::CvBlobs blobs; //All Blobs
 cvb::CvBlobs fishblobs;
 cvb::CvBlobs foodblobs;
-const unsigned int thresh_fishblobarea = 800;
+const unsigned int thresh_fishblobarea = 1200;
 
 cvb::CvTracks tracks;
 
@@ -1399,8 +1399,8 @@ int findContourClosestToPoint(std::vector<std::vector<cv::Point> >& contours,
                               std::vector<cv::RotatedRect>& outfittedEllipse)
 {
     int idxContour;
-    bool bContourfound;
-    int mindistToCentroid;
+    bool bContourfound = false;
+    int mindistToCentroid=-2000;
     int distToCentroid;
 
     /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
@@ -1410,7 +1410,6 @@ int findContourClosestToPoint(std::vector<std::vector<cv::Point> >& contours,
 //Need to Set equal since we are skipping indeces below
 outhulls.clear();
 outfittedEllipse.clear();
-
 outhulls.resize(contours.size());
 outfittedEllipse.resize(contours.size());
 
@@ -1453,32 +1452,33 @@ outfittedEllipse.resize(contours.size());
 
     outfittedEllipse[i] = cv::fitEllipse(outhulls[i]);
 
-    if (!outfittedEllipse[i].boundingRect().contains(pt))
-         continue; //Too far - check Next Fish
+//    if (!outfittedEllipse[i].boundingRect().contains(pt))
+//         continue; //Too far - check Next Fish
 
 
    ///Use approximate Shapes and find closest centre to point
-   mindistToCentroid = -20000;
-   //distToCentroid = cv::norm((cv::Point)outfittedEllipse[i].center - pt);
-    //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
-     //
-     //Note Distance is -ve when point is outside contour
-     distToCentroid = cv::pointPolygonTest(outhulls[i],pt,true);
-     if (abs(distToCentroid) < abs(mindistToCentroid) )
-     {
-         //Replace only if new distance is inside contour and previous one was outside
-         //Or they are both inside
-//         if ((mindistToCentroid < 0 && distToCentroid > 0) ||
-//             (mindistToCentroid < 0 && distToCentroid < 0) ||
-//             (mindistToCentroid > 0 && distToCentroid > 0)  )
-         if(!(mindistToCentroid > 0 && distToCentroid < 0))
-         {
-             //Otherwise Keep As blob Contour
-             idxContour = i;
-             mindistToCentroid = distToCentroid;//New Min
-             bContourfound = true;
-         }
-      }
+
+//   //distToCentroidA = cv::norm((cv::Point)outfittedEllipse[i].center - pt);
+//    //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
+//     //
+//     //Note Distance is -ve when point is outside contour
+//     distToCentroid = cv::pointPolygonTest(outhulls[i],pt,true);
+//     if (abs(distToCentroid) < abs(mindistToCentroid) )
+//     {
+//         //Replace only if new distance is inside contour and previous one was outside
+//         //Or they are both inside
+////         if ((mindistToCentroid < 0 && distToCentroid > 0) ||
+////             (mindistToCentroid < 0 && distToCentroid < 0) ||
+////             (mindistToCentroid > 0 && distToCentroid > 0)  )
+//         //Replace only if minDistance already found is not inside and new distance is outside or on border
+//         if(!(mindistToCentroid >= 0 && distToCentroid <= 0))
+//         {
+//             //Otherwise Keep As blob Contour
+//             idxContour = i;
+//             mindistToCentroid = distToCentroid;//New Min
+//             bContourfound = true;
+//         }
+//      }
    } //End For each Contour
 
    ///Search Again -attach to closest contour
@@ -1501,14 +1501,14 @@ outfittedEllipse.resize(contours.size());
                  assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
                }
 
-//               if (level == 1) /////Only Process Child Contours
-//               {
-//                   if (hierarchy[i][3] == -1) // Need to have a parent
-//                       continue;
+               if (level == 1) /////Only Process Child Contours
+               {
+                   if (hierarchy[i][3] == -1) // Need to have a parent
+                       continue;
 //                   //Parent should be root
 //                   if (hierarchy[hierarchy[i][3]][3] != -1)
 //                       continue;
-//               }
+               }
                if(!(mindistToCentroid > 0 && distToCentroid < 0))
                {
                    //Otherwise Keep As blob Contour
@@ -1529,6 +1529,167 @@ outfittedEllipse.resize(contours.size());
 
    return idxContour;
 }
+
+
+
+
+
+///
+/// \brief fitfishCoreTriangle Sets a fixed position to represent fish features Guesses tail point
+/// \param sfish
+/// \param contours_body
+/// \param idxInnerContour Pass Index for inner fish body contour (as segregated by morph on thresholded image
+/// \param idxOuterContour Pass index of the outer whole fish contour
+/// \return
+///
+bool fitfishCoreTriangle(fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
+{
+    std::vector<std::vector<cv::Point2f> >triangle; //,triangle_out;
+    bool berrorTriangleFit = false;
+
+    ///Fit triangle structure to Body
+    // Find Enclosing Triangle of Child contour
+    triangle.resize( contours_body.size() );
+    cv::minEnclosingTriangle(contours_body[idxInnerContour],triangle[idxInnerContour]);
+    cv::minEnclosingTriangle(contours_body[idxOuterContour],triangle_out[idxOuterContour]);
+
+
+    //Check for errors during Fit procedure (they seem to occur)
+    if (triangle[idxOuterContour].size() > 0)
+    {
+        //Check All triangle corners
+        for (int k=0;k<3;k++)
+        {
+            //Are coords with bounds?
+            if (triangle[idxOuterContour][k].x <= -10 || triangle[idxOuterContour][k].y <= -10)
+            {
+                berrorTriangleFit = true;
+                break;
+            }
+        }
+    }else
+        berrorTriangleFit = true;
+
+
+//        if (berrorTriangleFit)
+       //redo fit on larger countour - Outside Body this time
+//            triangle[idxblobContour]  = triangle_out[idxblobContour];
+
+
+
+    triangle[idxInnerContour] = triangle[idxOuterContour];
+//        triangle_out[idxChild] = triangle_out[idxblobContour];
+
+
+    //Draw Fitted inside Triangle
+    for (int j=0; j<3;j++)
+        cv::line(frameMasked,triangle[idxInnerContour][j],triangle[idxInnerContour][(j+1)%3] ,CV_RGB(250,250,00),2,cv::LINE_4);
+
+    //Draw Fitted outside Triangle
+    for (int j=0; j<3;j++)
+        cv::line(frameMasked,triangle_out[idxOuterContour][j],triangle_out[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),2,cv::LINE_4);
+
+    //Fix Triangle Positions
+
+    //assert(triangle[i][0].x >= 0 && triangle[i][0].y >= -40);
+    //assert(triangle[i][1].x >= 0 && triangle[i][1].y >= -40);
+    //assert(triangle[i][2].x >= 0 && triangle[i][2].y >= -40);
+
+
+    ///Map Keypoint Triangle features
+    //Obtain Triangle's side lengths / Find base
+    double dab = cv::norm(triangle[idxOuterContour][0]-triangle[idxOuterContour][1]);
+    double dac = cv::norm(triangle[idxOuterContour][0]-triangle[idxOuterContour][2]);
+    double dbc = cv::norm(triangle[idxOuterContour][1]-triangle[idxOuterContour][2]);
+
+    cv::Point ptTail;
+
+
+    if (dab <= dac && dab <= dbc)
+    {
+        ptTail = triangle[idxOuterContour][2];
+
+    }
+    else
+    {
+        if (dac <= dab && dac <= dbc)
+        {
+
+         ptTail  = triangle[idxOuterContour][1];
+
+        }
+        else
+        { //dbc is the smallest
+
+          ptTail =   triangle[idxOuterContour][0];
+        }
+    }
+
+    //Show Tail Point
+    cv::circle(frameMasked,ptTail,5,CV_RGB(0,10,200));
+
+
+    //Find Inner Triangle Apex - Tail/Body Point
+    dab = cv::norm(ptTail-(cv::Point)triangle[idxOuterContour][0]);
+    dac = cv::norm(ptTail-(cv::Point)triangle[idxOuterContour][1]);
+    dbc = cv::norm(ptTail-(cv::Point)triangle[idxOuterContour][2]);
+
+
+    //Find Triangle Width - Set point0 and Point1 to the triangle's base (eyes)
+    if (dab <= dac && dab <= dbc)
+    {
+        sfish.coreTriangle[0] = triangle[idxInnerContour][2];
+        sfish.coreTriangle[1] = triangle[idxInnerContour][1];
+        sfish.coreTriangle[2] = triangle[idxInnerContour][0];
+
+    }
+    else
+    {
+        if (dac <= dab && dac <= dbc)
+        {
+
+            sfish.coreTriangle[0] = triangle[idxInnerContour][0];
+            sfish.coreTriangle[1] = triangle[idxInnerContour][2];
+            sfish.coreTriangle[2] = triangle[idxInnerContour][1];
+
+
+        }
+        else
+        { //dbc is the smallest
+
+            sfish.coreTriangle[0] =  triangle[idxInnerContour][0];
+            sfish.coreTriangle[1] =  triangle[idxInnerContour][1];
+            sfish.coreTriangle[2] =  triangle[idxInnerContour][2];
+        }
+    }
+
+
+    //Find Position of Body Peak - Relocate Triangle side
+    cv::Point minLoc;
+    cv::Point maxLoc;
+    double minVal,maxVal;
+    //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
+    cv::minMaxLoc(maskedfishFeature,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
+
+    sfish.coreTriangle[2] = maxLoc; //Now Place index [0] at apex
+
+    //Set Eye Position
+    //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
+    if (std::atan2(sfish.coreTriangle[1].y,sfish.coreTriangle[1].x) >  std::atan2(sfish.coreTriangle[2].y,sfish.coreTriangle[2].x))
+    {
+        //use as tmp / Switch R-L eye points Over
+        triangle[idxInnerContour][0] = sfish.coreTriangle[1];
+        sfish.coreTriangle[1] = sfish.coreTriangle[0];
+        sfish.coreTriangle[0] = triangle[idxInnerContour][1];
+    }
+
+
+    return true;
+}
+
+
+
+
 
 ///
 /// \brief detectZfishFeatures - Used to create geometric representations of main zebrafish Features : Eyes, Body, tail
@@ -1552,7 +1713,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
      contours_body.reserve(4);
     std::vector<cv::Vec4i> hierarchy_body;
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
-    std::vector<std::vector<cv::Point2f> >triangle;
+    std::vector<std::vector<cv::Point2f> >triangle,triangle_out;
     std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
 
     std::vector<std::vector<cv::Point> > contours_laplace;
@@ -1643,7 +1804,6 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
 
 
-
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
     {
@@ -1653,62 +1813,6 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         bool bContourfound =false;
         cvb::CvBlob* blob = it->second;
         cv::Point centroid(blob->centroid.x,blob->centroid.y);
-
-//         /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
-//        ///Search Through Contours - Draw contours + hull results
-//        for( size_t i = 0; i< contours_body.size(); i++ )
-//        {
-//         cv::Scalar colorFeature =  CV_RGB(150,10,10);
-//         //drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-
-//        ///Contour Filters
-//        //Check if this is Parent Contour Before Checking Polygon Test [Next, Previous, First_Child, Parent]
-//        /////Only Process Parent Contours
-//        if (hierarchy_body[i][3] != -1) // Need to have no parent
-//           continue;
-//        if (hierarchy_body[i][2] == -1)  // Need to have child
-//            continue;
-//        assert(hierarchy_body[hierarchy_body[i][2]][3] == i ); // check that the parent of the child is this contour i
-
-
-//        ///Check if Contour Belongs to fishBlob by Centroid Inclusion -
-//        /// Of Approximate Ellipse hull
-//        cv::convexHull( cv::Mat(contours_body[i]), hull[i], false );
-//        rectFeatures[i] = cv::fitEllipse(hull[i]);
-
-
-//        //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
-//        if (!rectFeatures[i].boundingRect().contains(centroid))
-//                continue; //Too far - check Next Fish
-//        else
-//            idxblobContour = i;
-//            bContourfound = true;
-
-//        } //End For each Contour
-//        ///Search Again -attach to closest contour
-//        //In Not found Search Again By distance
-//        if (!bContourfound)
-//        {
-//            //Find Closest Contour
-//            int mindistToCentroid = 2000;
-//            for( size_t i = 0; i< contours_body.size(); i++ )
-//            {
-//                int distToCentroid = cv::pointPolygonTest(contours_body[i],centroid,true);
-//                if (distToCentroid < mindistToCentroid)
-//                {
-//                    if (hierarchy_body[i][3] != -1) // Need to have no parent
-//                       continue;
-//                    if (hierarchy_body[i][2] == -1)  // Need to have child
-//                        continue;
-
-//                    //Otherwise Keep As blob Contour
-//                    idxblobContour = i;
-//                    mindistToCentroid = distToCentroid;//New Min
-//                    bContourfound = true;
-//                }
-//            }
-//            std::cerr << "Closest Contour :" << idxblobContour << " d:" << mindistToCentroid << std::endl;
-//        }
 
         idxblobContour = findContourClosestToPoint(contours_body,hierarchy_body,centroid,0,hull,rectFeatures);
 
@@ -1759,7 +1863,9 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         ///Fit triangle structure to Body
         // Find Enclosing Triangle of Child contour
         triangle.resize( contours_body.size() );
+        triangle_out.resize( contours_body.size() );
         cv::minEnclosingTriangle(contours_body[idxChild],triangle[idxblobContour]);
+        cv::minEnclosingTriangle(contours_body[idxblobContour],triangle_out[idxblobContour]);
 
         bool berrorTriangleFit = false;
         //Check for errors during Fit procedure (they seem to occur)
@@ -1779,12 +1885,25 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             berrorTriangleFit = true;
 
 
-        if (berrorTriangleFit)
-            //redo fit on larger countour this time
-            cv::minEnclosingTriangle(contours_body[idxblobContour],triangle[idxblobContour]);
+//        if (berrorTriangleFit)
+           //redo fit on larger countour - Outside Body this time
+//            triangle[idxblobContour]  = triangle_out[idxblobContour];
+
 
 
         triangle[idxChild] = triangle[idxblobContour];
+//        triangle_out[idxChild] = triangle_out[idxblobContour];
+
+
+        //Draw Fitted inside Triangle
+        for (int j=0; j<3;j++)
+            cv::line(frameMasked,triangle[idxblobContour][j],triangle[idxblobContour][(j+1)%3] ,CV_RGB(250,250,00),2,cv::LINE_4);
+
+        //Draw Fitted outside Triangle
+        for (int j=0; j<3;j++)
+            cv::line(frameMasked,triangle_out[idxblobContour][j],triangle_out[idxblobContour][(j+1)%3] ,CV_RGB(255,255,00),2,cv::LINE_4);
+
+        //Fix Triangle Positions
 
         //assert(triangle[i][0].x >= 0 && triangle[i][0].y >= -40);
         //assert(triangle[i][1].x >= 0 && triangle[i][1].y >= -40);
@@ -1793,20 +1912,55 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
         ///Map Keypoint Triangle features
         //Obtain Triangle's side lengths / Find base
-        double dab = cv::norm(triangle[idxChild][0]-triangle[idxChild][1]);
-        double dac = cv::norm(triangle[idxChild][0]-triangle[idxChild][2]);
-        double dbc = cv::norm(triangle[idxChild][1]-triangle[idxChild][2]);
-        //Find Triangle Width - Set point0 and Point1 to the triangle's base (eyes)
-        if (dab < dac && dab < dbc)
+        double dab = cv::norm(triangle_out[idxblobContour][0]-triangle_out[idxblobContour][1]);
+        double dac = cv::norm(triangle_out[idxblobContour][0]-triangle_out[idxblobContour][2]);
+        double dbc = cv::norm(triangle_out[idxblobContour][1]-triangle_out[idxblobContour][2]);
+
+        cv::Point ptTail;
+
+
+        if (dab <= dac && dab <= dbc)
         {
-            sfish.coreTriangle.at(0) = triangle[idxChild][0];
-            sfish.coreTriangle.at(1) = triangle[idxChild][1];
-            sfish.coreTriangle.at(2) = triangle[idxChild][2];
+            ptTail = triangle_out[idxblobContour][2];
 
         }
         else
         {
-            if (dac < dab && dac < dbc)
+            if (dac <= dab && dac <= dbc)
+            {
+
+             ptTail  = triangle_out[idxblobContour][1];
+
+            }
+            else
+            { //dbc is the smallest
+
+              ptTail =   triangle_out[idxblobContour][0];
+            }
+        }
+
+        //Show Tail Point
+        cv::circle(frameMasked,ptTail,5,CV_RGB(0,10,200));
+
+
+
+        //Find Inner Triangle Apex - Tail/Body Point
+        dab = cv::norm(ptTail-(cv::Point)triangle[idxblobContour][0]);
+        dac = cv::norm(ptTail-(cv::Point)triangle[idxblobContour][1]);
+        dbc = cv::norm(ptTail-(cv::Point)triangle[idxblobContour][2]);
+
+
+        //Find Triangle Width - Set point0 and Point1 to the triangle's base (eyes)
+        if (dab <= dac && dab <= dbc)
+        {
+            sfish.coreTriangle.at(0) = triangle[idxChild][2];
+            sfish.coreTriangle.at(1) = triangle[idxChild][1];
+            sfish.coreTriangle.at(2) = triangle[idxChild][0];
+
+        }
+        else
+        {
+            if (dac <= dab && dac <= dbc)
             {
 
                 sfish.coreTriangle.at(0) = triangle[idxChild][0];
@@ -1818,30 +1972,61 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             else
             { //dbc is the smallest
 
-                sfish.coreTriangle[0] =  triangle[idxChild][1];
-                sfish.coreTriangle[1] =  triangle[idxChild][2];
-                sfish.coreTriangle[2] =  triangle[idxChild][0];
+                sfish.coreTriangle[0] =  triangle[idxChild][0];
+                sfish.coreTriangle[1] =  triangle[idxChild][1];
+                sfish.coreTriangle[2] =  triangle[idxChild][2];
             }
         }
-        //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
-//        if (std::atan2(sfish.coreTriangle[1].y,sfish.coreTriangle[1].x) >  std::atan2(sfish.coreTriangle[2].y,sfish.coreTriangle[2].x))
-//        {
-//            //use as tmp
-//            triangle[idxChild][0] = sfish.coreTriangle[1];
-//            sfish.coreTriangle[1] = sfish.coreTriangle[2];
-//            sfish.coreTriangle[2] = triangle[idxChild][0];
-//        }
 
 
-        //Position Tail Top To Body Peak
+
+        //Find Position of Body Peak - Relocate Triangle side
         cv::Point minLoc;
         cv::Point maxLoc;
         double minVal,maxVal;
         //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
         cv::minMaxLoc(maskedfishFeature,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
 
-       //Set Triagle apex To Fish Body core
-        sfish.coreTriangle[2] = maxLoc; //
+//       //Find Fitted triangle Side Closest
+//        //Set Triagle apex To Fish Body core
+//        int da = cv::norm((cv::Point)triangle[idxChild][0]-maxLoc);
+//        int db = cv::norm((cv::Point)triangle[idxChild][1]-maxLoc);
+//        int dc = cv::norm((cv::Point)triangle[idxChild][2]-maxLoc);
+//        //Check if expected [0] is indeed closest - other wise fix indexes again
+//        if (dc > da || dc > db)
+//        {
+//            if (da < db)
+//            {
+//              //Move over so 2 is the apex
+//              triangle[idxChild][0] = sfish.coreTriangle[2]; //Save
+//              sfish.coreTriangle[2] = sfish.coreTriangle[0];
+//              sfish.coreTriangle[0] = triangle[idxChild][0];
+//            }
+//            else //db is smaller
+//            {
+//                triangle[idxChild][0] = sfish.coreTriangle[2]; //Save
+//                sfish.coreTriangle[2] = sfish.coreTriangle[1];
+//                sfish.coreTriangle[1] = triangle[idxChild][0];
+//            }
+//        }
+
+            sfish.coreTriangle[2] = maxLoc; //Now Place index [0] at apex
+
+
+
+
+        //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
+        if (std::atan2(sfish.coreTriangle[1].y,sfish.coreTriangle[1].x) >  std::atan2(sfish.coreTriangle[2].y,sfish.coreTriangle[2].x))
+        {
+            //use as tmp / Switch R-L eye points Over
+            triangle[idxChild][0] = sfish.coreTriangle[1];
+            sfish.coreTriangle[1] = sfish.coreTriangle[0];
+            sfish.coreTriangle[0] = triangle[idxChild][1];
+        }
+
+
+
+
 
         //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
@@ -1864,6 +2049,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             cv::Point midEyePoint = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
             cv::Point vecMidlEye = sfish.coreTriangle[2]+(midEyePoint-sfish.coreTriangle[2])*2;
             cv::line(framelapl,sfish.coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //Mask Body
+
             //Save Bearing Angle
             sfish.bearingRads = atan2(vecMidlEye.y,vecMidlEye.x);
             std::stringstream str_angle;
@@ -1929,12 +2115,11 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
             //Draw Fitted Triangle
             for (int j=0; j<3;j++)
-                cv::line(frameMasked,sfish.coreTriangle[j],sfish.coreTriangle[(j+1)%3] ,CV_RGB(0,100,220),3);
+                cv::line(frameMasked,sfish.coreTriangle[j],sfish.coreTriangle[(j+1)%3] ,CV_RGB(0,100,220),1);
 
             //Draw Enclosed Rectangle
             //cv::Point2f featurePnts[4];
             rectFeatures[idxblobContour].points(featurePnts);
-
             for (int j=0; j<4;j++)
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),1);
 
@@ -1960,7 +2145,6 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     {
          cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(0,0,250), 1,8,hierarchy_body);
     }
-
 
 
     ///DEBUG show all contours -Laplace

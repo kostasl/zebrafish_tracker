@@ -38,8 +38,10 @@ struct fishModel
     std::vector<cv::Point> rightEyeHull;
     std::vector<cv::Point> coreTriangle;
 
-    cv::Point leftEyePoint;
+    cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
     cv::Point rightEyePoint;
+    double leftEyeTheta;
+    double righEyeTheta;
     cv::Point tailTopPoint;
     double bearingRads;
     cv::Point tailSplinePoints[8];
