@@ -34,14 +34,14 @@ struct fishModel
 
     cvb::CvLabel blobLabel;
     std::vector<cv::Point> bodyHull;
-    std::vector<cv::Point> leftEyeHull;
-    std::vector<cv::Point> rightEyeHull;
+    cv::RotatedRect leftEyeHull;
+    cv::RotatedRect rightEyeHull;
     std::vector<cv::Point> coreTriangle;
 
     cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
     cv::Point rightEyePoint;
     double leftEyeTheta;
-    double righEyeTheta;
+    double rightEyeTheta;
     cv::Point tailTopPoint;
     double bearingRads;
     cv::Point tailSplinePoints[8];

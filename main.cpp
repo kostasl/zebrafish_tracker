@@ -82,7 +82,7 @@ cv::Point ptROI2;
 cvb::CvBlobs blobs; //All Blobs
 cvb::CvBlobs fishblobs;
 cvb::CvBlobs foodblobs;
-const unsigned int thresh_fishblobarea = 1200;
+const unsigned int thresh_fishblobarea = 600;
 
 cvb::CvTracks tracks;
 
@@ -978,7 +978,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
     //copy blobs and then Filter to separate classes
 
     //Allow only Fish Area Through
-    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
+    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea/2,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
     //Remove Fish
     foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),maxBlobArea/4.0),CV_RGB(0,200,0)); //Remove Large Blobs
 
@@ -1407,79 +1407,74 @@ int findContourClosestToPoint(std::vector<std::vector<cv::Point> >& contours,
    ///Search Through Contours - Draw contours + hull results
 
 
-//Need to Set equal since we are skipping indeces below
-outhulls.clear();
-outfittedEllipse.clear();
-outhulls.resize(contours.size());
-outfittedEllipse.resize(contours.size());
 
-   for( size_t i = 0; i< contours.size(); i++ )
-   {
-    cv::Scalar colorFeature =  CV_RGB(150,10,10);
-    //drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+//   for( size_t i = 0; i< contours.size(); i++ )
+//   {
+//    cv::Scalar colorFeature =  CV_RGB(150,10,10);
+//    //drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
 
-   ///Contour Filters
-   //Check if this is Parent Contour Before Checking Polygon Test
-    //[Next, Previous, First_Child, Parent]
+//   ///Contour Filters
+//   //Check if this is Parent Contour Before Checking Polygon Test
+//    //[Next, Previous, First_Child, Parent]
 
-     //Filter According to desired Level
-     if (level == 0) /////Only Process Parent Contours
-     {
-       if (hierarchy[i][3] != -1) // Need to have no parent
-          continue;
-       if (hierarchy[i][2] == -1)  // Need to have child
-           continue;
-       assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
-     }
-
-//     if (level == 1) /////Only Process Child Contours
+//     //Filter According to desired Level
+//     if (level == 0) /////Only Process Parent Contours
 //     {
-//         if (hierarchy[i][3] == -1) // Need to have a parent
-//             continue;
-
-//         //Parent should be root
-//         if (hierarchy[hierarchy[i][3]][3] != -1)
-//             continue;
-
+//       if (hierarchy[i][3] != -1) // Need to have no parent
+//          continue;
+//       if (hierarchy[i][2] == -1)  // Need to have child
+//           continue;
+//       assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
 //     }
 
-    /// Make Shape Approximations - Hull and Ellipsoids
-    outhulls[i] = std::vector<cv::Point>();
-    cv::convexHull( cv::Mat(contours[i]), outhulls[i], false );
+////     if (level == 1) /////Only Process Child Contours
+////     {
+////         if (hierarchy[i][3] == -1) // Need to have a parent
+////             continue;
 
-    if (outhulls[i].size() <5 )
-        continue ; //Too small hull to be of use/ Next one
+////         //Parent should be root
+////         if (hierarchy[hierarchy[i][3]][3] != -1)
+////             continue;
 
-    outfittedEllipse[i] = cv::fitEllipse(outhulls[i]);
+////     }
 
-//    if (!outfittedEllipse[i].boundingRect().contains(pt))
-//         continue; //Too far - check Next Fish
+////    /// Make Shape Approximations - Hull and Ellipsoids
+////    outhulls[i] = std::vector<cv::Point>();
+////    cv::convexHull( cv::Mat(contours[i]), outhulls[i], false );
+
+////    if (outhulls[i].size() <5 )
+////        continue ; //Too small hull to be of use/ Next one
+
+////    outfittedEllipse[i] = cv::fitEllipse(outhulls[i]);
+
+////    if (!outfittedEllipse[i].boundingRect().contains(pt))
+////         continue; //Too far - check Next Fish
 
 
-   ///Use approximate Shapes and find closest centre to point
+//   ///Use approximate Shapes and find closest centre to point
 
-//   //distToCentroidA = cv::norm((cv::Point)outfittedEllipse[i].center - pt);
-//    //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
-//     //
-//     //Note Distance is -ve when point is outside contour
-//     distToCentroid = cv::pointPolygonTest(outhulls[i],pt,true);
-//     if (abs(distToCentroid) < abs(mindistToCentroid) )
-//     {
-//         //Replace only if new distance is inside contour and previous one was outside
-//         //Or they are both inside
-////         if ((mindistToCentroid < 0 && distToCentroid > 0) ||
-////             (mindistToCentroid < 0 && distToCentroid < 0) ||
-////             (mindistToCentroid > 0 && distToCentroid > 0)  )
-//         //Replace only if minDistance already found is not inside and new distance is outside or on border
-//         if(!(mindistToCentroid >= 0 && distToCentroid <= 0))
-//         {
-//             //Otherwise Keep As blob Contour
-//             idxContour = i;
-//             mindistToCentroid = distToCentroid;//New Min
-//             bContourfound = true;
-//         }
-//      }
-   } //End For each Contour
+////   //distToCentroidA = cv::norm((cv::Point)outfittedEllipse[i].center - pt);
+////    //check both contour and the Fitted Elipse for blob match that contour, as the blob centroid can fall outside contour
+////     //
+////     //Note Distance is -ve when point is outside contour
+////     distToCentroid = cv::pointPolygonTest(outhulls[i],pt,true);
+////     if (abs(distToCentroid) < abs(mindistToCentroid) )
+////     {
+////         //Replace only if new distance is inside contour and previous one was outside
+////         //Or they are both inside
+//////         if ((mindistToCentroid < 0 && distToCentroid > 0) ||
+//////             (mindistToCentroid < 0 && distToCentroid < 0) ||
+//////             (mindistToCentroid > 0 && distToCentroid > 0)  )
+////         //Replace only if minDistance already found is not inside and new distance is outside or on border
+////         if(!(mindistToCentroid >= 0 && distToCentroid <= 0))
+////         {
+////             //Otherwise Keep As blob Contour
+////             idxContour = i;
+////             mindistToCentroid = distToCentroid;//New Min
+////             bContourfound = true;
+////         }
+////      }
+//   } //End For each Contour
 
    ///Search Again -attach to closest contour
    //In Not found Search Again By distance tp Full Contour
@@ -1584,11 +1579,11 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
 
     //Draw Fitted inside Triangle
     for (int j=0; j<3;j++)
-        cv::line(frameMasked,triangle[idxInnerContour][j],triangle[idxInnerContour][(j+1)%3] ,CV_RGB(250,250,00),2,cv::LINE_4);
+        cv::line(frameMasked,triangle[idxInnerContour][j],triangle[idxInnerContour][(j+1)%3] ,CV_RGB(250,250,00),1,cv::LINE_4);
 
     //Draw Fitted outside Triangle
     for (int j=0; j<3;j++)
-        cv::line(frameMasked,triangle[idxOuterContour][j],triangle[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),2,cv::LINE_4);
+        cv::line(frameMasked,triangle[idxOuterContour][j],triangle[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),1,cv::LINE_4);
 
     //Fix Triangle Positions
 
@@ -1658,6 +1653,28 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
     }
 
 
+
+    //Set Eye Position
+    //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
+    cv::Point vecEyeA = sfish.coreTriangle[2] - sfish.coreTriangle[0];
+    cv::Point vecEyeB = sfish.coreTriangle[2] - sfish.coreTriangle[1];
+
+    //Use As Temp Vars
+    sfish.leftEyeTheta = std::atan2(vecEyeA.y,vecEyeA.x);
+    sfish.rightEyeTheta = std::atan2(vecEyeB.y,vecEyeB.x);
+
+    if (sfish.leftEyeTheta > sfish.rightEyeTheta )
+    {
+        //use as tmp / Switch R-L eye points Over
+        cv::Point tmp = sfish.coreTriangle[1];
+        sfish.coreTriangle[1] = sfish.coreTriangle[0];
+        sfish.coreTriangle[0] = tmp;
+
+//        double tmpA = sfish.leftEyeTheta ;
+//        sfish.leftEyeTheta = sfish.rightEyeTheta;
+//        sfish.rightEyeTheta = tmpA;
+    }
+
     //Find Position of Body Peak - Relocate Triangle side
     cv::Point minLoc;
     cv::Point maxLoc;
@@ -1667,15 +1684,6 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
 
     sfish.coreTriangle[2] = maxLoc; //Now Place index [0] at apex
 
-    //Set Eye Position
-    //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
-    if (std::atan2(sfish.coreTriangle[1].y,sfish.coreTriangle[1].x) >  std::atan2(sfish.coreTriangle[2].y,sfish.coreTriangle[2].x))
-    {
-        //use as tmp / Switch R-L eye points Over
-        triangle[idxInnerContour][0] = sfish.coreTriangle[1];
-        sfish.coreTriangle[1] = sfish.coreTriangle[0];
-        sfish.coreTriangle[0] = triangle[idxInnerContour][1];
-    }
 
 
     return true;
@@ -1707,7 +1715,6 @@ void detectZfishFeatures(cv::Mat& maskedImg)
      contours_body.reserve(4);
     std::vector<cv::Vec4i> hierarchy_body;
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
-    std::vector<std::vector<cv::Point2f> >triangle,triangle_out;
     std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
 
     std::vector<std::vector<cv::Point> > contours_laplace;
@@ -1720,7 +1727,6 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     /// Convert image to gray and blur it
     cv::cvtColor( maskedImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
     //cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
-
 
 
     /// Detect edges using Threshold
@@ -1762,47 +1768,15 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     //dilate(erode())
     cv::morphologyEx(framelapl,framelapl, cv::MORPH_CLOSE, kernelOpenLaplace,cv::Point(-1,-1),4);
 
-
-    ///Edge DEtection Using SOBEL
-    //cv::Sobel(maskedImg_gray,grad_x,CV_16SC1,1,0); //,CV_SCHARR
-    //cv::convertScaleAbs(grad_x, grad_x );
-    //cv::Sobel(maskedImg_gray,grad_y,CV_16SC1,0,1); //,CV_SCHARR
-    //cv::convertScaleAbs(grad_y, grad_y );
-
     /// Total Gradient (approximate)
-     //cv::addWeighted( grad_x, 0.5, grad_y, 0.5, 0, grad );
-
-
-    //cv::adaptiveThreshold( grad, threshold_output, 250,  cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY,g_Segthresh,0   );
-    //cv::threshold( framelapl, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY );
-    //cv::cvtColor( threshold_output, threshold_output, cv::cvarrToMat());
-    //cv::ui
+    //cv::addWeighted( grad_x, 0.5, grad_y, 0.5, 0, grad );
 
     /// Find contours
-    //cv::findContours( threshold_output, contours,hierarchy, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-    //cv::findContours( threshold_output, contours_full,hierarchy_full, cv::RETR_TREE,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
     //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
     cv::findContours( threshold_output_COMB, contours_body,hierarchy_body, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
-    //cv::imshow("Edges Sobel",grad);
-    //cv::imshow("Edges Laplace",framelapl);
-
-    /// Find the convex hull object for each contour
-    //hull.resize(contours.size());
-//    for( size_t i = 0; i < contours_full.size(); i++ )
-//    {
-        //Does it belong to Fish?
-
-        //Is there an associated Body
-
-  //  }
-
-    //Clear Contours - And Associate
-
-
-
-    //assert(contours_full.size() == contours_body.size());
-
+    //framelapl.convertTo(framelapl, CV_8UC3);
+    cv::imshow("Edges Laplace Pure",framelapl);
 
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
@@ -1866,59 +1840,106 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         fitfishCoreTriangle(maskfishFeature,maskedfishFeature_blur,sfish,contours_body,idxChild,idxblobContour);
        //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
+        //Draw Fitted Triangle of Fish
+        for (int j=0; j<3;j++)
+            cv::line(frameMasked,sfish.coreTriangle[j],sfish.coreTriangle[(j+1)%3] ,CV_RGB(0,100,255),1);
+
+        //Centroid
+        //cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
+        //Isolate Body from Eyes From Laplaced Image - So contour can trace them
+
+        /// Segregate Eyes / ///Fit Spline
+        //Draw body centre point/Tail Top
+        //Tail Top
+        cv::circle(frameMasked,sfish.coreTriangle[2],15,CV_RGB(20,20,180),3);
+        //Guiding /Segregating Lines
+        //Contour Eyes on Laplace Image - Segment Eye Mask
+        int distToEyes = cv::norm(sfish.coreTriangle[2]-sfish.coreTriangle[1])/2;
+        cv::circle(framelapl,sfish.coreTriangle[2],distToEyes,CV_RGB(255,255,255),6,cv::FILLED); //Mask Body
+        //Mid Eye Position
+        cv::Point midEyePoint = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
+        cv::Point vecMidlEye = sfish.coreTriangle[2]+(midEyePoint-sfish.coreTriangle[2])*2;
+        cv::line(framelapl,sfish.coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //Mask Body
+
+        /// Find Features in Laplace Image
+        //Get Contours - Shound contain at least eyes, core and tail
+        cv::findContours(framelapl, contours_laplace,hierarchy_laplace, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+
+        //Need to Set equal since we are skipping indeces below
+        hull_lapl.clear();
+        rectFeatures_lapl.clear();
+        hull_lapl.resize(contours_laplace.size());
+        rectFeatures_lapl.resize(contours_laplace.size());
+
+        ///Identify the eyes - Find child contour Close to eyes as identified by triangle fit
+        int idxLEyeContour = findContourClosestToPoint(contours_laplace,hierarchy_laplace,sfish.coreTriangle[0],1,hull_lapl,rectFeatures_lapl);
+
+        //Draw Left Eye
+        //cv::drawContours( frameMasked, hull_lapl, (int)idxLEyeContour, CV_RGB(150,250,10), 2, 8,hierarchy_laplace);
+        cv::Point2f featurePnts[4];
+        rectFeatures_lapl[idxLEyeContour].points(featurePnts);
+        for (int j=0; j<4;j++)
+            cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),2);
+
+        //Update Triangle Position to R Eye
+        //sfish.coreTriangle[0] = rectFeatures_lapl[idxLEyeContour].center;
+
+        //Identify and Draw Right - Eye
+        int idxREyeContour = findContourClosestToPoint(contours_laplace,hierarchy_laplace,sfish.coreTriangle[1],1,hull_lapl,rectFeatures_lapl);
+        rectFeatures_lapl[idxREyeContour].points(featurePnts);
+        for (int j=0; j<4;j++)
+            cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
+
+        //Make Shape Approximations
+
+        for( size_t i = 0; i< contours_laplace.size(); i++ )
+        {
+            /// Make Eye Shape Approximations - Hull and Ellipsoids
+            hull_lapl[i] = std::vector<cv::Point>();
+            cv::convexHull( cv::Mat(contours_laplace[i]), hull_lapl[i], false );
+
+            if (hull_lapl[i].size() < 5 )
+                continue;
+
+            rectFeatures_lapl[i] = cv::fitEllipse(hull_lapl[i]);
+        }
+        ////DRAW
+        ///Draw Eyes Hull
+        sfish.leftEyeHull = rectFeatures_lapl[idxLEyeContour];
+        sfish.rightEyeHull = rectFeatures_lapl[idxREyeContour];
+        cv::ellipse(frameMasked,sfish.leftEyeHull,CV_RGB(210,00,0),3,cv::LINE_8);
+        cv::ellipse(frameMasked,sfish.rightEyeHull ,CV_RGB(00,210,0),3,cv::LINE_8);
+
+
+        ///Draw Text - Save Bearing Angle
+        sfish.bearingRads = atan2(vecMidlEye.y,vecMidlEye.x);
+        std::stringstream str_angle;
+        str_angle << std::setprecision(2) << std::fixed << sfish.bearingRads*180.0/M_PI;
+        cv::putText(frameMasked,str_angle.str(),vecMidlEye,cv::FONT_HERSHEY_SIMPLEX, 0.4 , CV_RGB(250,20,20));
+
+
+        std::stringstream str_vergenceAngle;
+        str_vergenceAngle << "V" << std::setprecision(2) << std::fixed << (std::abs(sfish.leftEyeHull.angle)-abs(sfish.rightEyeHull.angle));
+        cv::putText(frameMasked,str_vergenceAngle.str(),cv::Point(sfish.leftEyeHull.center.x+20,sfish.leftEyeHull.center.y+20) ,cv::FONT_HERSHEY_SIMPLEX, 0.5 , CV_RGB(150,200,200));
 
 
 
-            //Centroid
-            //cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
-            //Isolate Body from Eyes From Laplaced Image - So contour can trace them
-
-            /// Segregate Eyes / ///Fit Spline
-            //Draw body centre point/Tail Top
-            //Tail Top
-            cv::circle(frameMasked,sfish.coreTriangle[2],15,CV_RGB(20,20,180),3);
-            //Guiding /Segregating Lines
-            //Contour Eyes on Laplace Image - Segment Eye Mask
-            int distToEyes = cv::norm(sfish.coreTriangle[2]-sfish.coreTriangle[1])/2;
-            cv::circle(framelapl,sfish.coreTriangle[2],distToEyes,CV_RGB(255,255,255),6,cv::FILLED); //Mask Body
-            //Mid Eye Position
-            cv::Point midEyePoint = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
-            cv::Point vecMidlEye = sfish.coreTriangle[2]+(midEyePoint-sfish.coreTriangle[2])*2;
-            cv::line(framelapl,sfish.coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //Mask Body
-
-            //Save Bearing Angle
-            sfish.bearingRads = atan2(vecMidlEye.y,vecMidlEye.x);
-            std::stringstream str_angle;
-            str_angle << std::setprecision(2) << std::fixed << sfish.bearingRads*180.0/M_PI;
-            cv::putText(frameMasked,str_angle.str(),vecMidlEye,cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(250,20,20));
 
 
-            /// Find Features in Laplace Image
-            //Get Contours - Shound contain at least eyes, core and tail
-            cv::findContours(framelapl, contours_laplace,hierarchy_laplace, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
-            ///Identify the eyes - Find child contour Close to eyes as identified by triangle fit
-            int idxLEyeContour = findContourClosestToPoint(contours_laplace,hierarchy_laplace,sfish.coreTriangle[0],1,hull_lapl,rectFeatures_lapl);
-
-            //Draw Left Eye
-            //cv::drawContours( frameMasked, hull_lapl, (int)idxLEyeContour, CV_RGB(150,250,10), 2, 8,hierarchy_laplace);
-            cv::Point2f featurePnts[4];
-            rectFeatures_lapl[idxLEyeContour].points(featurePnts);
-            for (int j=0; j<4;j++)
-                cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),2);
+//            //Spline
+//            /* polyline approximztion of the contour */
+//            std::vector<cv::Point> poly_spline;
+//            approxPolyDP(contours_body[idxblobContour], poly_spline, 4, false);
 
 
-            //Update Triangle Position to R Eye
-            //sfish.coreTriangle[0] = rectFeatures_lapl[idxLEyeContour].center;
+        //R Eye
+        //cv::drawContours( frameMasked, hull_lapl, (int)idxREyeContour, CV_RGB(00,210,0), 1, cv::FILLED,hierarchy_laplace);
+        //Update Triangle Position to R Eye
+        //L Eye
+        //cv::drawContours( frameMasked, hull_lapl, (int)idxLEyeContour, CV_RGB(210,00,0), 1, cv::FILLED,hierarchy_laplace);
 
-
-            //Identify and Draw Right  Eye
-            int idxREyeContour = findContourClosestToPoint(contours_laplace,hierarchy_laplace,sfish.coreTriangle[1],1,hull_lapl,rectFeatures_lapl);
-            rectFeatures_lapl[idxREyeContour].points(featurePnts);
-            for (int j=0; j<4;j++)
-                cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
-
-            //Update Triangle Position to R Eye
             //sfish.coreTriangle[1] = rectFeatures_lapl[idxREyeContour].center;
 
 
@@ -1942,29 +1963,21 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 //            //x0,y0 cv::Point(centreline[2],centreline[3]
 //            cv::line(frameMasked,splinePoint[0],centroid,CV_RGB(0,200,200),2);
 
-            ////DRAW
-            ///
-            cv::drawContours( frameMasked, contours_body, (int)idxblobContour, CV_RGB(150,150,150), 1, 8,hierarchy_body);
 
-            //Draw Child Contour
-            cv::drawContours( frameMasked, contours_body, (int)idxChild, CV_RGB(250,50,50), 2,cv::LINE_8,hierarchy_body);
+            //body Contours
+            //cv::drawContours( frameMasked, contours_body, (int)idxblobContour, CV_RGB(150,150,150), 1, 8,hierarchy_body);
 
-            //Draw Fitted Triangle
-            for (int j=0; j<3;j++)
-                cv::line(frameMasked,sfish.coreTriangle[j],sfish.coreTriangle[(j+1)%3] ,CV_RGB(0,100,220),1);
+            //Draw Child /Inner body Contour
+            //cv::drawContours( frameMasked, contours_body, (int)idxChild, CV_RGB(250,50,50), 1,cv::LINE_8,hierarchy_body);
+
 
             //Draw Enclosed Rectangle
             //cv::Point2f featurePnts[4];
-            rectFeatures[idxblobContour].points(featurePnts);
-            for (int j=0; j<4;j++)
-                cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),1);
+//            rectFeatures[idxblobContour].points(featurePnts);
+//            for (int j=0; j<4;j++)
+//                cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),1);
 
 
-
-//            //Spline
-//            /* polyline approximztion of the contour */
-//            std::vector<cv::Point> poly_spline;
-//            approxPolyDP(contours_body[idxblobContour], poly_spline, 4, false);
 
 //            //Draw Fitted Poly
 //            for (int j=0; j<(poly_spline.size()-1);j++)
@@ -1976,21 +1989,21 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
 
 
-    ///DEBUG show all contours
-    for( size_t i = 0; i< contours_body.size(); i++ )
-    {
-         cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(0,0,250), 1,8,hierarchy_body);
-    }
+//    ///DEBUG show all contours
+//    for( size_t i = 0; i< contours_body.size(); i++ )
+//    {
+//         cv::drawContours( frameMasked, contours_body, (int)i, CV_RGB(0,0,250), 1,8,hierarchy_body);
+//    }
 
 
-    ///DEBUG show all contours -Laplace
-    for( size_t i = 0; i< contours_laplace.size(); i++ )
-    {
-         cv::drawContours( framefishMasked, contours_laplace, (int)i, CV_RGB(200,0,0), 1,8,hierarchy_laplace);
-    }
+//    ///DEBUG show all contours -Laplace
+//    for( size_t i = 0; i< contours_laplace.size(); i++ )
+//    {
+//         cv::drawContours( framefishMasked, contours_laplace, (int)i, CV_RGB(200,0,0), 1,8,hierarchy_laplace);
+//    }
 
 
-    //framelapl.convertTo(framelapl, CV_8UC3);
+
     cv::imshow("Edges Laplace",framelapl);
 
     cv::imshow("Fish Detect",framefishMasked);
