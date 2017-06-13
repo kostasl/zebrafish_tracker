@@ -1536,13 +1536,14 @@ outfittedEllipse.resize(contours.size());
 
 ///
 /// \brief fitfishCoreTriangle Sets a fixed position to represent fish features Guesses tail point
+/// \param maskedfishFeature Image containing a mask of the fish being targeted
 /// \param sfish
 /// \param contours_body
 /// \param idxInnerContour Pass Index for inner fish body contour (as segregated by morph on thresholded image
 /// \param idxOuterContour Pass index of the outer whole fish contour
 /// \return
 ///
-bool fitfishCoreTriangle(fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
+bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     std::vector<std::vector<cv::Point2f> >triangle; //,triangle_out;
     bool berrorTriangleFit = false;
@@ -1551,7 +1552,7 @@ bool fitfishCoreTriangle(fishModel& sfish,std::vector<std::vector<cv::Point> >& 
     // Find Enclosing Triangle of Child contour
     triangle.resize( contours_body.size() );
     cv::minEnclosingTriangle(contours_body[idxInnerContour],triangle[idxInnerContour]);
-    cv::minEnclosingTriangle(contours_body[idxOuterContour],triangle_out[idxOuterContour]);
+    cv::minEnclosingTriangle(contours_body[idxOuterContour],triangle[idxOuterContour]);
 
 
     //Check for errors during Fit procedure (they seem to occur)
@@ -1577,7 +1578,7 @@ bool fitfishCoreTriangle(fishModel& sfish,std::vector<std::vector<cv::Point> >& 
 
 
 
-    triangle[idxInnerContour] = triangle[idxOuterContour];
+    //triangle[idxInnerContour] = triangle[idxOuterContour];
 //        triangle_out[idxChild] = triangle_out[idxblobContour];
 
 
@@ -1587,7 +1588,7 @@ bool fitfishCoreTriangle(fishModel& sfish,std::vector<std::vector<cv::Point> >& 
 
     //Draw Fitted outside Triangle
     for (int j=0; j<3;j++)
-        cv::line(frameMasked,triangle_out[idxOuterContour][j],triangle_out[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),2,cv::LINE_4);
+        cv::line(frameMasked,triangle[idxOuterContour][j],triangle[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),2,cv::LINE_4);
 
     //Fix Triangle Positions
 
@@ -1625,14 +1626,14 @@ bool fitfishCoreTriangle(fishModel& sfish,std::vector<std::vector<cv::Point> >& 
         }
     }
 
-    //Show Tail Point
+    //Show Tail Point on Global Image
     cv::circle(frameMasked,ptTail,5,CV_RGB(0,10,200));
 
 
     //Find Inner Triangle Apex - Tail/Body Point
-    dab = cv::norm(ptTail-(cv::Point)triangle[idxOuterContour][0]);
-    dac = cv::norm(ptTail-(cv::Point)triangle[idxOuterContour][1]);
-    dbc = cv::norm(ptTail-(cv::Point)triangle[idxOuterContour][2]);
+    dab = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][0]);
+    dac = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][1]);
+    dbc = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][2]);
 
 
     //Find Triangle Width - Set point0 and Point1 to the triangle's base (eyes)
@@ -1669,7 +1670,7 @@ bool fitfishCoreTriangle(fishModel& sfish,std::vector<std::vector<cv::Point> >& 
     cv::Point maxLoc;
     double minVal,maxVal;
     //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
-    cv::minMaxLoc(maskedfishFeature,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
+    cv::minMaxLoc(maskedfishImg,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
 
     sfish.coreTriangle[2] = maxLoc; //Now Place index [0] at apex
 
@@ -1705,7 +1706,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     cv::RNG rng(12345);
 
     cv::Mat threshold_output,threshold_output_H, threshold_output_COMB, maskedImg_gray,maskedfishImg_gray;
-    cv::Mat maskfishFeature,maskedfishFeature;
+    cv::Mat maskfishFeature,maskedfishFeature_blur;
 
     cv::Mat grad,grad_x, grad_y;
     cv::Mat framelapl;
@@ -1725,7 +1726,9 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
     /// Convert image to gray and blur it
     cv::cvtColor( maskedImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
-    cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
+    //cv::blur( maskedImg_gray, maskedImg_gray, cv::Size(3,3) );
+
+
 
     /// Detect edges using Threshold
     cv::threshold( maskedImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
@@ -1756,11 +1759,16 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     //threshold_output.convertTo(threshold_output, CV_8UC1);
 
     cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),2);
+    //Make image having masked all fish
     maskedImg_gray.copyTo(maskedfishImg_gray,threshold_output); //Mask The Laplacian
+    //Blur The Image used to detect  broad features
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(11,11),5,5);
+
     cv::Laplacian(maskedfishImg_gray,framelapl,CV_8UC1,g_BGthresh);
     //cv::dilate(framelapl,framelapl,kernelOpen,cv::Point(-1,-1),2);
     //dilate(erode())
     cv::morphologyEx(framelapl,framelapl, cv::MORPH_CLOSE, kernelOpenLaplace,cv::Point(-1,-1),4);
+
 
     ///Edge DEtection Using SOBEL
     //cv::Sobel(maskedImg_gray,grad_x,CV_16SC1,1,0); //,CV_SCHARR
@@ -1830,7 +1838,7 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         sfish.blobLabel = blob->label;
         cv::drawContours( maskfishFeature, contours_body, (int)idxblobContour, CV_RGB(255,255,255), cv::FILLED);
         //maskedfishImg_gray.copyTo(maskedfishFeature,maskfishFeature);
-        cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature,cv::Size(11,11),5,5);
+
 
         //cv::drawContours(maskfishFeature,contours_body,(int)idxblobContour,CV_RGB(255,255,255),1,-1,hierarchy_body);
 
@@ -1861,174 +1869,9 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
 
         ///Fit triangle structure to Body
-        // Find Enclosing Triangle of Child contour
-        triangle.resize( contours_body.size() );
-        triangle_out.resize( contours_body.size() );
-        cv::minEnclosingTriangle(contours_body[idxChild],triangle[idxblobContour]);
-        cv::minEnclosingTriangle(contours_body[idxblobContour],triangle_out[idxblobContour]);
 
-        bool berrorTriangleFit = false;
-        //Check for errors during Fit procedure (they seem to occur)
-        if (triangle[idxblobContour].size() > 0)
-        {
-            //Check All triangle corners
-            for (int k=0;k<3;k++)
-            {
-                //Are coords with bounds?
-                if (triangle[idxblobContour][k].x <= -10 || triangle[idxblobContour][k].y <= -10)
-                {
-                    berrorTriangleFit = true;
-                    break;
-                }
-            }
-        }else
-            berrorTriangleFit = true;
-
-
-//        if (berrorTriangleFit)
-           //redo fit on larger countour - Outside Body this time
-//            triangle[idxblobContour]  = triangle_out[idxblobContour];
-
-
-
-        triangle[idxChild] = triangle[idxblobContour];
-//        triangle_out[idxChild] = triangle_out[idxblobContour];
-
-
-        //Draw Fitted inside Triangle
-        for (int j=0; j<3;j++)
-            cv::line(frameMasked,triangle[idxblobContour][j],triangle[idxblobContour][(j+1)%3] ,CV_RGB(250,250,00),2,cv::LINE_4);
-
-        //Draw Fitted outside Triangle
-        for (int j=0; j<3;j++)
-            cv::line(frameMasked,triangle_out[idxblobContour][j],triangle_out[idxblobContour][(j+1)%3] ,CV_RGB(255,255,00),2,cv::LINE_4);
-
-        //Fix Triangle Positions
-
-        //assert(triangle[i][0].x >= 0 && triangle[i][0].y >= -40);
-        //assert(triangle[i][1].x >= 0 && triangle[i][1].y >= -40);
-        //assert(triangle[i][2].x >= 0 && triangle[i][2].y >= -40);
-
-
-        ///Map Keypoint Triangle features
-        //Obtain Triangle's side lengths / Find base
-        double dab = cv::norm(triangle_out[idxblobContour][0]-triangle_out[idxblobContour][1]);
-        double dac = cv::norm(triangle_out[idxblobContour][0]-triangle_out[idxblobContour][2]);
-        double dbc = cv::norm(triangle_out[idxblobContour][1]-triangle_out[idxblobContour][2]);
-
-        cv::Point ptTail;
-
-
-        if (dab <= dac && dab <= dbc)
-        {
-            ptTail = triangle_out[idxblobContour][2];
-
-        }
-        else
-        {
-            if (dac <= dab && dac <= dbc)
-            {
-
-             ptTail  = triangle_out[idxblobContour][1];
-
-            }
-            else
-            { //dbc is the smallest
-
-              ptTail =   triangle_out[idxblobContour][0];
-            }
-        }
-
-        //Show Tail Point
-        cv::circle(frameMasked,ptTail,5,CV_RGB(0,10,200));
-
-
-
-        //Find Inner Triangle Apex - Tail/Body Point
-        dab = cv::norm(ptTail-(cv::Point)triangle[idxblobContour][0]);
-        dac = cv::norm(ptTail-(cv::Point)triangle[idxblobContour][1]);
-        dbc = cv::norm(ptTail-(cv::Point)triangle[idxblobContour][2]);
-
-
-        //Find Triangle Width - Set point0 and Point1 to the triangle's base (eyes)
-        if (dab <= dac && dab <= dbc)
-        {
-            sfish.coreTriangle.at(0) = triangle[idxChild][2];
-            sfish.coreTriangle.at(1) = triangle[idxChild][1];
-            sfish.coreTriangle.at(2) = triangle[idxChild][0];
-
-        }
-        else
-        {
-            if (dac <= dab && dac <= dbc)
-            {
-
-                sfish.coreTriangle.at(0) = triangle[idxChild][0];
-                sfish.coreTriangle.at(1) = triangle[idxChild][2];
-                sfish.coreTriangle.at(2) = triangle[idxChild][1];
-
-
-            }
-            else
-            { //dbc is the smallest
-
-                sfish.coreTriangle[0] =  triangle[idxChild][0];
-                sfish.coreTriangle[1] =  triangle[idxChild][1];
-                sfish.coreTriangle[2] =  triangle[idxChild][2];
-            }
-        }
-
-
-
-        //Find Position of Body Peak - Relocate Triangle side
-        cv::Point minLoc;
-        cv::Point maxLoc;
-        double minVal,maxVal;
-        //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
-        cv::minMaxLoc(maskedfishFeature,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
-
-//       //Find Fitted triangle Side Closest
-//        //Set Triagle apex To Fish Body core
-//        int da = cv::norm((cv::Point)triangle[idxChild][0]-maxLoc);
-//        int db = cv::norm((cv::Point)triangle[idxChild][1]-maxLoc);
-//        int dc = cv::norm((cv::Point)triangle[idxChild][2]-maxLoc);
-//        //Check if expected [0] is indeed closest - other wise fix indexes again
-//        if (dc > da || dc > db)
-//        {
-//            if (da < db)
-//            {
-//              //Move over so 2 is the apex
-//              triangle[idxChild][0] = sfish.coreTriangle[2]; //Save
-//              sfish.coreTriangle[2] = sfish.coreTriangle[0];
-//              sfish.coreTriangle[0] = triangle[idxChild][0];
-//            }
-//            else //db is smaller
-//            {
-//                triangle[idxChild][0] = sfish.coreTriangle[2]; //Save
-//                sfish.coreTriangle[2] = sfish.coreTriangle[1];
-//                sfish.coreTriangle[1] = triangle[idxChild][0];
-//            }
-//        }
-
-            sfish.coreTriangle[2] = maxLoc; //Now Place index [0] at apex
-
-
-
-
-        //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
-        if (std::atan2(sfish.coreTriangle[1].y,sfish.coreTriangle[1].x) >  std::atan2(sfish.coreTriangle[2].y,sfish.coreTriangle[2].x))
-        {
-            //use as tmp / Switch R-L eye points Over
-            triangle[idxChild][0] = sfish.coreTriangle[1];
-            sfish.coreTriangle[1] = sfish.coreTriangle[0];
-            sfish.coreTriangle[0] = triangle[idxChild][1];
-        }
-
-
-
-
-
-        //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
+        fitfishCoreTriangle(maskfishFeature,maskedfishFeature_blur,sfish,contours_body,idxChild,idxblobContour);
+       //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
 
 

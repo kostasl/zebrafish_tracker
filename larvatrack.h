@@ -110,4 +110,17 @@ int findContourClosestToPoint(std::vector<std::vector<cv::Point> >& contours,
                               std::vector<cv::RotatedRect>& outfittedEllipse);
 
 
+
+///
+/// \brief fitfishCoreTriangle Sets a fixed position to represent fish features Guesses tail point
+/// \param maskedfishFeature Image containing only the identified fish pixels
+/// \param sfish
+/// \param contours_body
+/// \param idxInnerContour Pass Index for inner fish body contour (as segregated by morph on thresholded image
+/// \param idxOuterContour Pass index of the outer whole fish contour
+/// \return
+///
+bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
+
+
 #endif // LARVATRACK_H
