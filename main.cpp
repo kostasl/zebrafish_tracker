@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
-    kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
+    kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
     kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
 
@@ -1747,26 +1747,31 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     //maskedImg_gray.copyTo(threshold_output_H,threshold_output); //Copy Fish Only Mask
     // Increase  Threshold on FishImage (Fish Only masked) to detect Body Structure
     //cv::threshold( threshold_output_H, threshold_output_H, g_Segthresh*5, max_thresh, cv::THRESH_BINARY ); //High threshold - Used to detect body
-    cv::morphologyEx(threshold_output,threshold_output_H, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
-    cv::erode(threshold_output_H,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),4);
+
+    //Obtain Morpholical Oyter/Inner Contour Image
+    //cv::morphologyEx(threshold_output,threshold_output_H, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
+
+    cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),2);
+
+    //cv::erode(threshold_output_H,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),4);
+    //cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
 
 
-    cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
    // maskedImg_gray.convertTo(maskedImg_gray,CV_16SC1);
     //threshold_output.convertTo(threshold_output, CV_16SC1);
     //threshold_output = cv::abs(threshold_output);
     //threshold_output.convertTo(threshold_output, CV_8UC1);
 
-    cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),2);
+    //cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
     //Make image having masked all fish
     maskedImg_gray.copyTo(maskedfishImg_gray,threshold_output); //Mask The Laplacian
     //Blur The Image used to detect  broad features
     cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(11,11),5,5);
 
     cv::Laplacian(maskedfishImg_gray,framelapl,CV_8UC1,g_BGthresh);
-    //cv::dilate(framelapl,framelapl,kernelOpen,cv::Point(-1,-1),2);
+    cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
     //dilate(erode())
-    cv::morphologyEx(framelapl,framelapl, cv::MORPH_CLOSE, kernelOpenLaplace,cv::Point(-1,-1),4);
+    //cv::morphologyEx(framelapl,framelapl, cv::MORPH_CLOSE, kernelOpenLaplace,cv::Point(-1,-1),4);
 
     /// Total Gradient (approximate)
     //cv::addWeighted( grad_x, 0.5, grad_y, 0.5, 0, grad );
@@ -1908,8 +1913,11 @@ void detectZfishFeatures(cv::Mat& maskedImg)
         ///Draw Eyes Hull
         sfish.leftEyeHull = rectFeatures_lapl[idxLEyeContour];
         sfish.rightEyeHull = rectFeatures_lapl[idxREyeContour];
-        cv::ellipse(frameMasked,sfish.leftEyeHull,CV_RGB(210,00,0),3,cv::LINE_8);
+        cv::ellipse(frameMasked,sfish.leftEyeHull,CV_RGB(210,00,0),2,cv::LINE_8);
         cv::ellipse(frameMasked,sfish.rightEyeHull ,CV_RGB(00,210,0),3,cv::LINE_8);
+
+        cv::ellipse(frame,sfish.leftEyeHull,CV_RGB(210,00,0),1,cv::LINE_AA);
+        cv::ellipse(frame,sfish.rightEyeHull ,CV_RGB(00,210,0),2,cv::LINE_AA);
 
 
         ///Draw Text - Save Bearing Angle
@@ -1920,9 +1928,13 @@ void detectZfishFeatures(cv::Mat& maskedImg)
 
 
         std::stringstream str_vergenceAngle;
-        str_vergenceAngle << "V" << std::setprecision(2) << std::fixed << (std::abs(sfish.leftEyeHull.angle)-abs(sfish.rightEyeHull.angle));
+        str_vergenceAngle << "VL" << std::setprecision(2) << std::fixed << (std::abs(sfish.leftEyeHull.angle));
         cv::putText(frameMasked,str_vergenceAngle.str(),cv::Point(sfish.leftEyeHull.center.x+20,sfish.leftEyeHull.center.y+20) ,cv::FONT_HERSHEY_SIMPLEX, 0.5 , CV_RGB(150,200,200));
 
+
+        std::stringstream str_vergenceAngleB;
+        str_vergenceAngleB << "VR" << std::setprecision(2) << std::fixed << (std::abs(sfish.rightEyeHull.angle));
+        cv::putText(frameMasked,str_vergenceAngleB.str(),cv::Point(sfish.rightEyeHull.center.x+20,sfish.rightEyeHull.center.y+20) ,cv::FONT_HERSHEY_SIMPLEX, 0.5 , CV_RGB(150,100,200));
 
 
 
