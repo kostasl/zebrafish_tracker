@@ -33,7 +33,7 @@ struct fishModel
 {
 
     cvb::CvLabel blobLabel;
-    std::vector<cv::Point> bodyHull;
+    std::vector<cv::Point> contour;
     cv::RotatedRect leftEyeHull;
     cv::RotatedRect rightEyeHull;
     std::vector<cv::Point> coreTriangle;
@@ -122,5 +122,14 @@ int findContourClosestToPoint(std::vector<std::vector<cv::Point> >& contours,
 ///
 bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
+
+
+///
+/// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features
+/// This is to recover Background substraction errors
+/// \param frameImg
+/// \param maskFGImg
+///
+void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg);
 
 #endif // LARVATRACK_H
