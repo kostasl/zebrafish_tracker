@@ -79,16 +79,19 @@ cv::Point ptROI1;
 cv::Point ptROI2;
 
 //Structures to hold blobs & Tracks
-cvb::CvBlobs blobs; //All Blobs
+cvb::CvBlobs blobs; //All Blobs - Updated Ids on everyframe done by cvLabel function
 cvb::CvBlobs fishblobs;
 cvb::CvBlobs foodblobs;
-const unsigned int thresh_fishblobarea = 600;
-
 cvb::CvTracks tracks;
+std::vector<fishModel> vfishmodels; //Vector containing live fish models
+
+const unsigned int thresh_fishblobarea = 600;
+const int inactiveFrameCount = 1000; //Number of frames inactive until track is deleted
+const int thActive = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
+const int thDistance = 60; //Threshold for distance between track-to blob assignement
 
 //Font for Reporting - Tracking
 CvFont trackFnt;
-
 
 
 int keyboard; //input from keyboard
@@ -101,7 +104,7 @@ bool bTracking;
 bool bSaveImages = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
-
+bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
 
 //Area Filters
 double dMeanBlobArea = 300;
@@ -150,16 +153,19 @@ int main(int argc, char *argv[])
     gTimer.start();
     //create GUI windows
     gstrwinName = "FishFrame";
+
     cv::namedWindow(gstrwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow(gstrwinName + " FG Mask",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow(gstrwinName + " FishOnly",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     //set the callback function for any mouse event
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
+
     cv::createTrackbar( "Laplace Size:", gstrwinName + " FishOnly", &g_BGthresh, 31.0, thresh_callback );
     cv::createTrackbar( "Fish Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
 
     thresh_callback( 0, 0 );
+
 
 
     //Initialize The Track and blob vectors
@@ -185,17 +191,18 @@ int main(int argc, char *argv[])
 
 
     //unsigned int hWnd = cvGetWindowHandle(sgstrwinName);
-    try{ //If cv is compiled with QT support //Remove otherwise
-        //cv::setWindowTitle(strwinName, outfilename.toStdString());
-        //cv::displayOverlay(strwinName,"Tracking: " + outfilename.toStdString(), 20000 );
-        //trackVideofiles(window_main);
+//    try{ //Check If cv is compiled with QT support //Remove otherwise
+//        cv::setWindowTitle(strwinName, outfilename.toStdString());
 
-    }catch(int e)
-    {
-        std::cerr << "OpenCV not compiled with QT support! can display overlay" <<std::endl;
-    }
+//     //trackVideofiles(window_main);
+
+//    }catch(int e)
+//    {
+//        std::cerr << "OpenCV not compiled with QT support! can display overlay" <<std::endl;
+//    }
 
     //trackImageSequencefiles(window_main);
+
     trackVideofiles(window_main);
     //destroy GUI windows
     cv::destroyAllWindows();
@@ -243,7 +250,7 @@ unsigned int trackVideofiles(MainWindow& window_main)
 
        invideoname = invideonames.at(i);
        std::cout << " Now Processing : "<< invideoname.toStdString() <<std::endl;
-
+       cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
        getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
 
@@ -462,16 +469,12 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     //update the background model
     //OPEN CV 2.4
     dLearningRate = 0.0;
-//    cv::cvtColor( frame, fgMask, cv::COLOR_BGR2GRAY );
-//    cv::threshold( fgMask, fgMask, g_BGthresh, 255, cv::THRESH_BINARY );
     pMOG2->apply(frame, fgMask,dLearningRate);
     //pKNN->apply(frame, fgMask,dLearningRate);
-
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);
     //pGMG->apply(frame,fgMaskGMG,dLearningRate);
     //OPENCV 3
-//        pMOG->operator()(frame, fgMaskMOG2,dLearningRate);
-    //get the frame number and write it on the current frame
+
     //erode to get rid to food marks
     cv::erode(fgMask,fgMask,kernelOpen, cv::Point(-1,-1),1);
     //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),4);
@@ -482,7 +485,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),5);
 
 
-    //Put Info TextOn Frame
+    ///TEXT INFO Put Info TextOn Frame
     //Frame Number
     std::stringstream ss;
     cv::rectangle(frame, cv::Point(10, 2), cv::Point(100,20),
@@ -525,51 +528,39 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
             cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
 
-    //DRAW ROI RECT
+    ///DRAW ROI RECT
     //cv::rectangle(frame,roi,cv::Scalar(50,250,50));
     drawROI();
 
 
     //cvb::CvBlobs blobs;
+    ///DO Tracking
     if (bTracking)
     {
         //Simple Solution was to Use Contours To measure Larvae
         //countObjectsviaContours(fgMaskMOG2); //But not as efficient
 
        // cvb::CvBlobs blobs;
-        nLarva = countObjectsviaBlobs(fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
+        nLarva = processBlobs(fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
 
-        //ROI with TRACKs Fails
-        const int inactiveFrameCount = 1000; //Number of frames inactive until track is deleted
-        const int thActive = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
-
-        //Tracking has Bugs when it involves Setting A ROI. SEG-FAULTS
-        //thDistance = 22 //Distance from Blob to track
-        int thDistance = 60;
+        //Here the Track's blob label is updated to the new matching blob
         cvb::cvUpdateTracks(blobs,tracks,vRoi, thDistance, inactiveFrameCount,thActive);
+        //
         //saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
-        cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
-
         /// Get Fish Only Image ///
-        framefishMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U);
-//      frameImg = frameMasked;
-//      IplImage fgMaskImg =  fgMask;
-//      labelImg=cvCreateImage(cvGetSize(&frameImg), IPL_DEPTH_LABEL, 1);
-//      cvb::cvLabel( &fgMaskImg, labelImg, blobs );
-//      cvb::cvRenderBlob(labelImg, fishBlob, &frameImg, &frameImg,  CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX , cv::Scalar(200,200,200),1);
-//      frame.copyTo(frameMasked,fgMask);
+        framefishMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U); //Reset Canvas
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U); //Forget
-        /// Add Picture frame to Enhance Contrast
-        ///Do Slow Forgetting of image - To Enhance Features-Add motion Blur
-        //g(x) = alpha * f(x) + beta
-        //framefishMasked.convertTo(framefishMasked, -1, 0.40, 0); //decrease contrast (1/3)
 
         /// \TODO optimize this. pic is Gray Scale Originally anyway
         cv::cvtColor( fgMaskFish, fgMaskFish, cv::COLOR_BGR2GRAY );
         //cv::dilate(fgMaskFish,fgMaskFish,kernelOpen, cv::Point(-1,-1),4); //
         inputframe.copyTo(framefishMasked,fgMaskFish );
-        detectZfishFeatures(framefishMasked);
+
+        detectZfishFeatures(framefishMasked); //Creates & Updates Fish Models
+
+        //Show Tracks
+        cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
 
     }
 
@@ -942,7 +933,19 @@ int countObjectsviaContours(cv::Mat& srcimg )
 }
 
 
-int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea)
+///
+/// \brief processBlobs Separates food from fish using an area filter.
+/// It generates a circular mask around the fish so as to allow to process them separatelly
+///It renders the food and fish blobs
+/// \param srcimg
+/// \param blobs
+/// \param tracks
+/// \param outDirCSV
+/// \param frameNumberString
+/// \param dMeanBlobArea
+/// \return
+///
+int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea)
 {
 
     ///// Finding the blobs ////////
@@ -989,6 +992,7 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
 
     //Debug Show Mean Size Var
     //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;
+    ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
     unsigned int RoiID = 0;
     for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
@@ -1012,9 +1016,9 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
             {
                 //Render Paramecium
                 //cnt++; //CV_BLOB_RENDER_COLOR
-                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &framefishMaskImg, CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID, CV_RGB(150,150,150),1);
-                    //Make a mask to Surround the fish - So as to overcome BG Substraction Loses - by redecting countour
-                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),160,CV_RGB(255,255,255),-1);
+                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &framefishMaskImg, CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_CENTROID, CV_RGB(150,150,150),1);
+                    //Make a mask to Surround the fish of an estimated size -  So as to overcome BG Substraction Loses - by redecting countour
+                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),(blob->maxx-blob->minx)+(blob->maxy-blob->miny),CV_RGB(255,255,255),-1);
             }
         }
 
@@ -1032,35 +1036,24 @@ int countObjectsviaBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& trac
             }
         }
 
-
-
-///Deprecated Render Tracks - > There is a Custom Render Tracks in ROI Loop
-//        for (cvb::CvTracks::const_iterator it=tracks.begin(); it!=tracks.end(); ++it)
-//        {
-//            cv::Point pnt;
-//            pnt.x = it->second->centroid.x;
-//            pnt.y = it->second->centroid.y;
-//            //if (iroi.contains(pnt))
-//               // cvRenderTrack(*((*it).second) ,it->first ,  &fgMaskImg, &frameImg, CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt );
-//        }
-
-        //cvSetImageROI(&frameImg, iroi);
-        //cvSetImageROI(&fgMaskImg, iroi);
-        //cvSetImageROI(labelImg,iroi);
         // render blobs in original image
         //cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR);
 
         //Make File Names For Depending on the Vial - Crude but does the  job
-        QString strroiFileN = outDirCSV;
-        QString strroiFilePos = outDirCSV;
-        char buff[150];
-        sprintf(buff,"/V%d_pos_N.csv",RoiID);
-        strroiFileN.append(buff);
-        sprintf(buff,"/V%d_pos.csv",RoiID);
-        strroiFilePos.append(buff);
+        ///Save Blobs
+        if (bSaveBlobsToFile)
+        {
+            QString strroiFileN = outDirCSV;
+            QString strroiFilePos = outDirCSV;
+            char buff[150];
+            sprintf(buff,"/V%d_pos_N.csv",RoiID);
+            strroiFileN.append(buff);
+            sprintf(buff,"/V%d_pos.csv",RoiID);
+            strroiFilePos.append(buff);
 
-        saveTrackedBlobs(blobs,strroiFilePos,frameNumberString,iroi);
-        cnt += saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
+            saveTrackedBlobs(blobs,strroiFilePos,frameNumberString,iroi);
+            cnt += saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
+        }
     } //For Each ROI
 
     //Save to Disk
@@ -1787,7 +1780,9 @@ void detectZfishFeatures(cv::Mat& maskedImg)
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
     {
+        //Get the  fishmodel associated with this blob
         fishModel sfish;
+
         maskfishFeature = cv::Mat::zeros(frameMasked.rows, frameMasked.cols,CV_8U); //Empty Canvas This fish's mask
         int idxblobContour;
         bool bContourfound =false;
@@ -1897,7 +1892,6 @@ void detectZfishFeatures(cv::Mat& maskedImg)
             cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
 
         //Make Shape Approximations
-
         for( size_t i = 0; i< contours_laplace.size(); i++ )
         {
             /// Make Eye Shape Approximations - Hull and Ellipsoids

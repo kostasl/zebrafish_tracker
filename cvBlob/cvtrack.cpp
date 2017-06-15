@@ -266,7 +266,7 @@ namespace cvb
         }
        }
 
-      // Detect new tracks
+      // Detect *NEW* tracks
       for (i=0; i<nBlobs; i++)
       {
         unsigned int c = AB(i);

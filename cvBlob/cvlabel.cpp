@@ -123,7 +123,7 @@ namespace cvb
 	      blob->internalContours.clear();
 	      blobs.insert(CvLabelBlob(label,blob));
 
-              lastLabel = label;
+          lastLabel = label;
 	      lastBlob = blob;
 
 	      blob->contour.startingPoint = cvPoint(x, y);
