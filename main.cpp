@@ -379,7 +379,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
        if (showMask)
        {
             cv::imshow(gstrwinName + " FG Mask", fgMask);
-            cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish);
+            //cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish); //The Circle mask
        }
 
 
@@ -1568,14 +1568,14 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
     cv::minEnclosingTriangle(contours_body[idxOuterContour],triangle[idxOuterContour]);
 
 
-    //Check for errors during Fit procedure (they seem to occur)
-    if (triangle[idxOuterContour].size() > 0)
+    //Check for errors during Fit procedure (they seem to occur on some contours)
+    if (triangle[idxOuterContour].size() > 0 && triangle[idxInnerContour].size() > 0)
     {
         //Check All triangle corners
         for (int k=0;k<3;k++)
         {
-            //Are coords with bounds?
-            if (triangle[idxOuterContour][k].x <= -10 || triangle[idxOuterContour][k].y <= -10)
+            //Are coords within bounds?
+            if (triangle[idxOuterContour][k].x <= -10 || triangle[idxInnerContour][k].x <= -10 || triangle[idxOuterContour][k].y <= -10 || triangle[idxInnerContour][k].y <= -10)
             {
                 berrorTriangleFit = true;
                 break;
@@ -1585,9 +1585,12 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
         berrorTriangleFit = true;
 
 
-//        if (berrorTriangleFit)
-       //redo fit on larger countour - Outside Body this time
-//            triangle[idxblobContour]  = triangle_out[idxblobContour];
+       if (berrorTriangleFit)
+       {
+           qDebug() << "Error during triangular fit - fitfishCoreTriangle";
+           return berrorTriangleFit; //Exit non critical
+       }
+
 
 
 
