@@ -76,7 +76,9 @@ bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 /// \brief detectZfishFeatures - Used to create geometric representations of main zebrafish Features : Eyes, Body, tail
 /// these are saved as point arrays on which angles and other measurements can be obtained
 /// \param maskedGrayImg
-void detectZfishFeatures(cv::Mat& maskedGrayImg);
+/// \param Fish Contours
+/// \param 1 level hierarchy of contours (outer inner)
+void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
 void checkPauseRun(MainWindow& win,int& keyboard,unsigned int nFrame);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
@@ -126,10 +128,10 @@ bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector
 
 ///
 /// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features
-/// This is to recover Background substraction errors
+/// This is to recover Background substraction errors and obtain accurate Fish Masks before Blob Detection
 /// \param frameImg
 /// \param maskFGImg
 ///
-void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg);
+void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vector<cv::Point> >& fishbodycontours ,std::vector<cv::Vec4i>& fishbodyhierarchy);
 
 #endif // LARVATRACK_H

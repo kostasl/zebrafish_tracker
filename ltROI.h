@@ -52,7 +52,7 @@ typedef std::vector<ltROI> ltROIlist;
 void addROI(ltROI& newRoi);
 void deleteROI(cv::Point mousePos);
 /// \fn Draw the Regions on the frame image
-void drawROI();
+void drawROI(cv::Mat& frame);
 
 /// \fn  ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi, cv::Point pnt)
 /// \brief Loop Over ROI
