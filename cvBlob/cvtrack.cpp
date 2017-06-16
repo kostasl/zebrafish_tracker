@@ -315,9 +315,6 @@ namespace cvb
           track->pointStack.push_back(pntCentroid); //Add 1st Point to list of Track
           tracks.insert(CvIDTrack(maxTrackID, track));
 
-          //Make Attached FishModel
-          //fishModel *fish= new fishModel(track);
-          //fishModels.insert
 
         }
       } //END NEW Tracks

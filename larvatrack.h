@@ -36,13 +36,13 @@ class MainWindow;
 /// this list is maintained along with tracks - ie deletion/creation is done via matching to
 /// blobs
 ///
-typedef std::map<cvb::CvLabel,fishModel> fishModels;
+typedef std::map<cvb::CvLabel,fishModel* > fishModels;
 
 /// \var typedef std::pair<CvID, fishModel *> CvIDFishModel pair for insertion into map list of fish
 /// /// \brief Pair (identification number, fishModel).
 /// \see CvID
 /// \see CvTrack
-typedef std::pair<cvb::CvID, fishModel *> CvIDFishModel;
+typedef std::pair<cvb::CvID, fishModel* > CvIDFishModel;
 
 
 
@@ -68,6 +68,14 @@ bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 /// \param Fish Contours
 /// \param 1 level hierarchy of contours (outer inner)
 void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
+
+///
+/// \brief UpdateFishModels Use Tracks  to update persistent fishModels
+/// \param vfishmodels
+/// \param fishtracks
+///
+void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks);
+
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);

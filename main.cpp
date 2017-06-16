@@ -118,7 +118,7 @@ cvb::CvTracks foodtracks;
 cvb::CvTracks tracks; ///All tracks
 
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
-std::vector<fishModel> vfishmodels; //Vector containing live fish models
+fishModels vfishmodels; //Vector containing live fish models
 
 CvFont trackFnt; //Font for Reporting - Tracking
 
@@ -482,8 +482,12 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
 
+
     unsigned int nLarva         =  0;
-    double dblRatioPxChanged    = 0.0;
+    unsigned int nFood          =  0;
+    double dblRatioPxChanged    =  0.0;
+    std::string frameNumberString = std::to_string(nFrame);
+
     //For Morphological Filter
     ////cv::Size sz = cv::Size(3,3);
     frame.copyTo(inputframe); //Keep Original Before Painting anything on it
@@ -504,20 +508,72 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     enhanceFishMask(frame, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
 
 
+    ///DRAW ROI
+    drawROI(frame);
+
+
+    //cvb::CvBlobs blobs;
+    ///DO Tracking
+    if (bTracking)
+    {
+       //Simple Solution was to Use Contours To measure Larvae
+
+       // Filters Blobs between fish and food - save into global vectors
+        processBlobs(fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
+
+        //Here the Track's blob label is updated to the new matching blob
+        // Process Food blobs
+        cvb::cvUpdateTracks(foodblobs,foodtracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
+        nFood = foodtracks.size();
+
+        // Process Fish blobs
+        //ReFilter Let those that belong to fish Contours Detected Earlier
+        fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(10,10,180));
+        cvb::cvUpdateTracks(fishblobs,fishtracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
+        nLarva = fishtracks.size();
+
+        //Update Fish Models From Tracks
+        UpdateFishModels(vfishmodels,fishtracks);
+
+        //Combine Lists
+        tracks.clear();
+        tracks.insert(foodtracks.begin(),foodtracks.end() );
+        tracks.insert(fishtracks.begin(),fishtracks.end());
+
+        //
+        //saveTracks(tracks,trkoutFileCSV,frameNumberString);
+
+        /// Get Fish Only Image ///
+        framefishMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U); //Reset Canvas
+        //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U); //Forget
+
+        /// \TODO optimize this. pic is Gray Scale Originally anyway
+        cv::cvtColor( fgMaskFish, fgMaskFish, cv::COLOR_BGR2GRAY );
+        //cv::dilate(fgMaskFish,fgMaskFish,kernelOpen, cv::Point(-1,-1),4); //
+        inputframe.copyTo(framefishMasked,fgMaskFish );
+
+        detectZfishFeatures(framefishMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+
+        //Show Tracks
+        cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
+
+    }
+
+
+    ///
+
     ///TEXT INFO Put Info TextOn Frame
     //Frame Number
     std::stringstream ss;
     cv::rectangle(frame, cv::Point(10, 2), cv::Point(100,20),
               cv::Scalar(255,255,255), -1);
-    ss << nFrame;
-    std::string frameNumberString = ss.str();
-    cv::putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
+    cv::putText(frame, frameNumberString,  cv::Point(15, 15),
             cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
     //Count on Original Frame
     std::stringstream strCount;
-    strCount << "N:" << (nLarva);
-    cv::rectangle(frame, cv::Point(10, 25), cv::Point(100,45), cv::Scalar(255,255,255), -1);
+    strCount << "Nf:" << (nLarva) << " Nr:" << nFood;
+    cv::rectangle(frame, cv::Point(10, 25), cv::Point(120,45), cv::Scalar(255,255,255), -1);
     cv::putText(frame, strCount.str(), cv::Point(15, 38),
             cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
@@ -546,51 +602,6 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     cv::putText(frame, strFGPxRatio.str(), cv::Point(15, 113),
             cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
-
-    ///DRAW ROI
-    drawROI(frame);
-
-
-    //cvb::CvBlobs blobs;
-    ///DO Tracking
-    if (bTracking)
-    {
-       //Simple Solution was to Use Contours To measure Larvae
-
-       // Filters Blobs between fish and food - save into global vectors
-        nLarva = processBlobs(fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
-
-        //Here the Track's blob label is updated to the new matching blob
-        // Process Food blobs
-        cvb::cvUpdateTracks(foodblobs,foodtracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
-
-        // Process Fish blobs
-        //ReFilter Let those that belong to fish Contours Detected Earlier
-        fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(10,10,180));
-        cvb::cvUpdateTracks(fishblobs,fishtracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
-        //Combine Lists
-        tracks.clear();
-        tracks.insert(foodtracks.begin(),foodtracks.end() );
-        tracks.insert(fishtracks.begin(),fishtracks.end());
-
-        //
-        //saveTracks(tracks,trkoutFileCSV,frameNumberString);
-
-        /// Get Fish Only Image ///
-        framefishMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U); //Reset Canvas
-        //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U); //Forget
-
-        /// \TODO optimize this. pic is Gray Scale Originally anyway
-        cv::cvtColor( fgMaskFish, fgMaskFish, cv::COLOR_BGR2GRAY );
-        //cv::dilate(fgMaskFish,fgMaskFish,kernelOpen, cv::Point(-1,-1),4); //
-        inputframe.copyTo(framefishMasked,fgMaskFish );
-
-        detectZfishFeatures(framefishMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
-
-        //Show Tracks
-        cvb::cvRenderTracks(tracks, &frameImg, &frameImg,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
-
-    }
 
 
 }
@@ -806,6 +817,31 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     std::cout << "Exiting video processing loop." <<std::endl;
 
     return nFrame;
+}
+
+
+void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
+{
+
+
+    for (cvb::CvTracks::const_iterator it = tracks.begin(); it!=tracks.end(); ++it)
+    {
+        cvb::CvTrack* track = it->second;
+
+        fishModels::const_iterator ft =  vfishmodels.find(it->first); //Find model with same Id as the Track - Associated fishModel
+        if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
+        {
+            //Make new fish Model
+
+            //Make Attached FishModel
+            fishModel* fish= new fishModel(track);
+            vfishmodels.insert(CvIDFishModel(track->id,fish));
+
+        }
+
+
+    }
+
 }
 
 
