@@ -68,7 +68,8 @@ bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 /// \param Fish Contours
 /// \param 1 level hierarchy of contours (outer inner)
 void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
-void checkPauseRun(MainWindow& win,int& keyboard,unsigned int nFrame);
+void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
+void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
 int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString,double& dMeanBlobArea);

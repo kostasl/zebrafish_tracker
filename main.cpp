@@ -44,12 +44,12 @@
 
 
 /// Constants ///
-const unsigned int thresh_fishblobarea = 1200; //Min area above which to Filter The fish blobs
-const int inactiveFrameCount        = 1000; //Number of frames inactive until track is deleted
-const int thActive                  = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
+const unsigned int thresh_fishblobarea  = 1500; //Min area above which to Filter The fish blobs
+const int inactiveFrameCount            = 1000; //Number of frames inactive until track is deleted
+const int thActive                      = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 200; //Threshold for distance between track-to blob assignement
-const int thDistanceFood                = 5; //Threshold for distance between track-to blob assignement
-const double dLearningRateNominal   = 0.0001;
+const int thDistanceFood                = 25; //Threshold for distance between track-to blob assignement
+const double dLearningRateNominal       = 0.0005;
 
 /// Vars With Initial Values  -
 //Area Filters
@@ -315,6 +315,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           //frame.convertTo(frame, -1, 1, 0); //increase the contrast (double)
 
           nFrame++;
+          window_main.nFrame = nFrame;
           if (!updateBGFrame(frame,fgMask,nFrame)) //Stop when BG learning says so
             break;
 
@@ -332,12 +333,13 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
           //Check For input Control
           keyboard = cv::waitKey( cFrameDelayms );
-          checkPauseRun(window_main,keyboard,nFrame);
+          checkPauseRun(&window_main,keyboard,nFrame);
         }
 
 
     ///LOOP Tracking Process images with Obtained BG Model - Now Start over images afresh
     nFrame = 0;
+    window_main.nFrame = nFrame;
 
     //Show Video list to process
     //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
@@ -365,6 +367,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
        //Contrast Brightness
        //frame.convertTo(frame, -1, 1.2, 0); //increase the contrast (double)
        nFrame++;
+       window_main.nFrame = nFrame;
 
       // std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
 
@@ -392,7 +395,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
        window_main.setWindowTitle("Tracking:" + filename);
        keyboard = cv::waitKey( cFrameDelayms );
-       checkPauseRun(window_main,keyboard,nFrame);
+       checkPauseRun(&window_main,keyboard,nFrame);
     }
     return nFrame;
 }
@@ -436,7 +439,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
             }
             //Add frames from Last video
             nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
-
+            window_main.nFrame = nFrame;
             /// Call Update BG Model ///
             updateBGFrame(frame,fgMask,nFrame);    //Hold A copy of Frame With all txt
 
@@ -457,7 +460,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
            keyboard = cv::waitKey( cFrameDelayms );
 
 
-           checkPauseRun(window_main,keyboard,nFrame);
+           checkPauseRun(&window_main,keyboard,nFrame);
 
 
         } //main While loop
@@ -559,12 +562,17 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
         //Here the Track's blob label is updated to the new matching blob
         // Process Food blobs
-        cvb::cvUpdateTracks(foodblobs,tracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
+        cvb::cvUpdateTracks(foodblobs,foodtracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
 
         // Process Fish blobs
         //ReFilter Let those that belong to fish Contours Detected Earlier
-        fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(0,10,190));
-        cvb::cvUpdateTracks(fishblobs,tracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
+        fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(10,10,180));
+        cvb::cvUpdateTracks(fishblobs,fishtracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
+        //Combine Lists
+        tracks.clear();
+        tracks.insert(foodtracks.begin(),foodtracks.end() );
+        tracks.insert(fishtracks.begin(),fishtracks.end());
+
         //
         //saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
@@ -786,7 +794,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
         keyboard = cv::waitKey( cFrameDelayms );
-        checkPauseRun(window_main,keyboard,nFrame);
+        checkPauseRun(&window_main,keyboard,nFrame);
 
 
     } //main While loop
@@ -801,20 +809,21 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 }
 
 
-
-
-void checkPauseRun(MainWindow& win, int& keyboard,unsigned int nFrame)
+void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 {
+
     //implemend Pause
     if ((char)keyboard == 'p')
     {
         //frame.copyTo(frameCpy);
         bPaused = true;
+        std::cout << "Paused" << endl;
     }
 
     if ((char)keyboard == 'q')
     {
         bExiting = true;
+        std::cout << "Quit" << endl;
     }
 
     //Make Frame rate faster
@@ -830,6 +839,52 @@ void checkPauseRun(MainWindow& win, int& keyboard,unsigned int nFrame)
     if ((char)keyboard == 't') //Toggle Tracking
         bTracking = !bTracking;
 
+
+    if ((char)keyboard == 's')
+    {
+        std::cout << "Save Image" << endl;
+        bSaveImages = !bSaveImages;
+        std::stringstream frameNumberString; frameNumberString << nFrame;
+
+        ::saveImage(frameNumberString.str(),gstroutDirCSV,frame);
+    }
+
+    if ((char)keyboard == 'r')
+    {
+        std::cout << "Run" << endl;
+        bPaused = false;
+        gTimer.start();
+    }
+
+    //Toggle Show the masked - where blob id really happens
+    if ((char)keyboard == 'm')
+         bshowMask = !bshowMask;
+
+    if ((char)keyboard == 'q')
+        bExiting = true; //Main Loop Will handle this
+         //break;
+
+
+    //if ((char)keyboard == 'c')
+    if (nFrame > 1)
+    {
+      //  cv::imshow(gstrwinName, frame);
+       win->showCVimg(frame); //Show On QT Window
+    }
+
+
+
+    //Toggle Show the masked - where blob id really happens
+    if ((char)keyboard == 'm')
+    {
+             std::cout << "Show Mask" << endl;
+             bshowMask = !bshowMask;
+    }
+}
+
+
+void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
+{
         while (bPaused && !bExiting)
         {
             int ms = 20;
@@ -838,42 +893,9 @@ void checkPauseRun(MainWindow& win, int& keyboard,unsigned int nFrame)
             //Wait Until Key to unpause is pressed
             keyboard = cv::waitKey( 30 );
 
-            if ((char)keyboard == 's')
-            {
-                bSaveImages = !bSaveImages;
-                std::stringstream frameNumberString; frameNumberString << nFrame;
-
-                ::saveImage(frameNumberString.str(),gstroutDirCSV,frame);
-            }
-
-            if ((char)keyboard == 'r')
-            {
-                bPaused = false;
-                gTimer.start();
-            }
-
-            //Toggle Show the masked - where blob id really happens
-            if ((char)keyboard == 'm')
-                 bshowMask = !bshowMask;
-
-            if ((char)keyboard == 'q')
-                bExiting = true; //Main Loop Will handle this
-                 //break;
-
-
-            //if ((char)keyboard == 'c')
-            if (nFrame > 1)
-            {
-              //  cv::imshow(gstrwinName, frame);
-               win.showCVimg(frame); //Show On QT Window
-            }
-
+            keyCommandFlag(win,keyboard,nFrame);
         }
 
-
-    //Toggle Show the masked - where blob id really happens
-    if ((char)keyboard == 'm')
-             bshowMask = !bshowMask;
 }
 
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img)
@@ -1001,7 +1023,7 @@ int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QStri
     //copy blobs and then Filter to separate classes
     //Allow only Fish Area Through
     //                                              (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
-    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea*8,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
+    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea*8,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(10,10,120) ); //Remove Small Blobs
 
     //Food Blobs filter -> Remove large blobs (Fish)
     ///\todo these blob filters could be elaborated to include moment matching/shape distance
@@ -1688,8 +1710,9 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 
         /// Lets try simple area filter - Assume no large object need to be BG substracted
         int area  = cv::contourArea(fishbodycontours[kk]);
-        if (area > (dMeanBlobArea + sqrt(abs(dVarBlobArea)))) //If Contour Is large Enough then Must be fish
+        if (area > std::max(dMeanBlobArea*8,(double)thresh_fishblobarea) ) //If Contour Is large Enough then Must be fish
         {
+
             //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
             // they should still fall within contour - )
             cv::drawContours( maskfishOnly, fishbodycontours, kk, CV_RGB(255,255,255), cv::FILLED);

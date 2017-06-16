@@ -83,7 +83,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
     if (event->type() == QEvent::KeyPress) {
          QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
-         qDebug() << "Ate key press" << keyEvent->key();
+         char key =  keyEvent->text().toStdString().at(0);
+         qDebug() << "Ate key press " << keyEvent->text().toStdString().c_str() << " k: " << key;
+
+         ::keyCommandFlag(this,key,nFrame);
          return true;
      }
 
@@ -127,6 +130,8 @@ void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrolleven
   const qreal maxFactor = 100.0;
   qreal h11 = 1.0, h22 = 0;
 
+  //ui->graphicsView->setFixedSize(ui->graphicsView->size()+steps);
+
 //  if(steps > 0)
 //  {
 //     h11 = (h11 >= maxFactor) ? h11 : (h11 + scaleFactor);
@@ -139,8 +144,8 @@ void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrolleven
 // }
 //    this->ui->graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 //    this->ui->graphicsView->setTransform(QTransform(h11, 0, 0,0, h22, 0, 0,0,1));
-    this->mImage->transform().scale(50,50);
-
+    //this->mImage->transform().scale(50,50);
+    this->mImage->transform().scale(this->mImage->scale()+ steps,this->mImage->scale()+ steps);
 }
 
 

@@ -31,6 +31,7 @@ public:
     void showCVimg(cv::Mat& img);
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
 
+    unsigned int nFrame = 0;
     ~MainWindow();
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
