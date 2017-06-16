@@ -23,6 +23,8 @@
  ///*  Dependencies : opencv3
  ///*
  /// Added: Detection of stopped Larva or loss of features from BG Substraction - via mask correction
+ ///    *Filter blobs and maintain separate lists for each class (food/fish)
+ ///    * track blobs of different class (food/fish) separatelly so tracks do not interfere
  ////////
 
 
@@ -42,10 +44,11 @@
 
 
 /// Constants ///
-const unsigned int thresh_fishblobarea = 600;
+const unsigned int thresh_fishblobarea = 1000; //Min area above which to Filter The fish blobs
 const int inactiveFrameCount        = 1000; //Number of frames inactive until track is deleted
 const int thActive                  = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
-const int thDistance                = 200; //Threshold for distance between track-to blob assignement
+const int thDistanceFish                = 200; //Threshold for distance between track-to blob assignement
+const int thDistanceFood                = 5; //Threshold for distance between track-to blob assignement
 const double dLearningRateNominal   = 0.0001;
 
 /// Vars With Initial Values  -
@@ -110,7 +113,10 @@ cv::Point ptROI2;
 cvb::CvBlobs blobs; //All Blobs - Updated Ids on everyframe done by cvLabel function
 cvb::CvBlobs fishblobs;
 cvb::CvBlobs foodblobs;
-cvb::CvTracks tracks;
+cvb::CvTracks fishtracks;
+cvb::CvTracks foodtracks;
+cvb::CvTracks tracks; ///All tracks
+
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
 std::vector<fishModel> vfishmodels; //Vector containing live fish models
 
@@ -178,7 +184,7 @@ int main(int argc, char *argv[])
 
 
     //Initialize The Track and blob vectors
-    cvb::cvReleaseTracks(tracks);
+    cvb::cvReleaseTracks(tracks); //Releasing All tracks will delete all track Objects
     cvb::cvReleaseBlobs(blobs);
 
 
@@ -489,7 +495,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     //Apply Open Operation dilate(erode())
     cv::morphologyEx(fgMask,fgMask, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
     //Do Close : erode(dilate())
-    cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
+    //cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
 
     //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
     enhanceFishMask(frame, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
@@ -552,7 +558,11 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         nLarva = processBlobs(fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
 
         //Here the Track's blob label is updated to the new matching blob
-        cvb::cvUpdateTracks(blobs,tracks,vRoi, thDistance, inactiveFrameCount,thActive);
+        // Process Food blobs
+        cvb::cvUpdateTracks(foodblobs,tracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
+
+        // Process Fish blobs
+        cvb::cvUpdateTracks(fishblobs,tracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
         //
         //saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
@@ -985,20 +995,15 @@ int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QStri
     cvb::cvBlobAreaStat(blobs,dMeanBlobArea,dVarBlobArea,maxBlobArea,minBlobArea);
     double dsigma = 1.0*std::sqrt(dVarBlobArea);
 
-    //Separate Fish
+    ///Separate Fish from Food Blobs
     //copy blobs and then Filter to separate classes
+    //Allow only Fish Area Through
+    //                                              (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
+    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea*8,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
+    //Food Blobs filter -> Remove large blobs (Fish)
+    ///\todo these blob filters could be elaborated to include moment matching/shape distance
+    foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::max(dMeanBlobArea*8,(double)thresh_fishblobarea),CV_RGB(0,200,0)); //Remove Large Blobs
 
-    ///Allow only Fish Area Through
-    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea/2,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
-
-
-
-    ///Remove Fish
-    foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::max((dMeanBlobArea+dsigma),maxBlobArea/4.0),CV_RGB(0,200,0)); //Remove Large Blobs
-
-
-
-    //                  (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
 
 
     //Debug Show Mean Size Var
@@ -1037,9 +1042,9 @@ int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QStri
             {
                 //Render Paramecium
                 //cnt++; //CV_BLOB_RENDER_COLOR
-                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &framefishMaskImg, CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_CENTROID, CV_RGB(150,150,150),1);
+                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_ANGLE | CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_BOUNDING_BOX, CV_RGB(250,10,10),1);
                     //Make a mask to Surround the fish of an estimated size -  So as to overcome BG Substraction Loses - by redecting countour
-                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),(blob->maxx-blob->minx)+(blob->maxy-blob->miny),CV_RGB(255,255,255),-1);
+                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),((blob->maxx-blob->minx)+(blob->maxy-blob->miny))/2,CV_RGB(255,255,255),-1);
             }
         }
 
@@ -1053,7 +1058,7 @@ int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QStri
 
             if (iroi.contains(pnt))
             {
-                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX ,CV_RGB(0,200,0),0.4);
+                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg,CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX ,CV_RGB(0,10,200),1.0);
             }
         }
 

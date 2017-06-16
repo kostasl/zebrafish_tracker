@@ -12,7 +12,7 @@ fishModel::fishModel()
 fishModel::fishModel(cvb::CvTrack* track):fishModel()
 {
 
-    this->ID track->id;
+    this->ID    = track->id;
     this->track = track; //Copy Pointer
 }
 

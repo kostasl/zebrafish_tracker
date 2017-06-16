@@ -39,7 +39,7 @@ using namespace std;
 
 //Application Specific Includes
 #include "cvblob.h"
-#include <cvBlob/fishmodel.h>
+#include <fishmodel.h>
 
 
 namespace cvb
@@ -316,8 +316,8 @@ namespace cvb
           tracks.insert(CvIDTrack(maxTrackID, track));
 
           //Make Attached FishModel
-          fishModel *fish= new fishModel(track);
-          fishModels.insert
+          //fishModel *fish= new fishModel(track);
+          //fishModels.insert
 
         }
       } //END NEW Tracks

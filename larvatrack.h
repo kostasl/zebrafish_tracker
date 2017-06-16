@@ -20,7 +20,7 @@
 
 #include <cvBlob/cvblob.h>
 #include <ltROI.h> //Defines the ROI types
-#include <cvBlob/fishmodel.h>
+#include <fishmodel.h>
 
 #include <GUI/mainwindow.h>
 
