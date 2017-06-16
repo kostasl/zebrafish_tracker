@@ -364,6 +364,14 @@ extern "C" {
   /// \param colour - Set blob colouring for blobs that pass the filter
   CvBlobs cvFilterByArea(CvBlobs &blobs, unsigned int minArea, unsigned int maxArea,CvScalar colour);
 
+  ///
+  /// \brief cvFilterByContour
+  /// \param blobs
+  /// \param contour
+  /// \param pcolour
+  /// \return
+  ///
+  CvBlobs cvFilterByContour(CvBlobs &blobs,std::vector<std::vector<cv::Point> >&contour,CvScalar pcolour);
 
   /// \fn void cvFilterByROI(ltROIlist& vRoi,CvBlobs &blobs)
   /// \brief Filter blobs by memberhip to Regions of Interest.

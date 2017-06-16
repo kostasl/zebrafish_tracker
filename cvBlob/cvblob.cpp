@@ -29,6 +29,9 @@ using namespace std;
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #endif
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+
 
 #include "cvblob.h"
 
@@ -61,11 +64,10 @@ namespace cvb
   /// \param maxArea
   /// \return cVBlobs that passed the area filters
   ///
-
  CvBlobs cvFilterByArea(CvBlobs &blobs,unsigned int minArea, unsigned int maxArea,CvScalar pcolour)
   {
     CvBlobs vret;
-    int tCount = 0; //Count Large Blobs - These could be targeted and labeled
+    //int tCount = 0; //Count Large Blobs - These could be targeted and labeled
 
     CvBlobs::iterator it=blobs.begin();
     while(it!=blobs.end())
@@ -91,7 +93,11 @@ namespace cvb
     return vret; //Return Filtered List
   }
 
-  //Remove Blobs That Are not in a ROI
+ ///
+ /// \brief cvFilterByROI Remove/Delete Blobs That Are not in a ROI
+ /// \param vRoi
+ /// \param blobs
+ ///
   void cvFilterByROI(ltROIlist& vRoi,CvBlobs &blobs)
   {
     CvBlobs::iterator it=blobs.begin();
@@ -114,6 +120,39 @@ namespace cvb
     ++it;
     }
   }
+
+
+  ///
+  /// \brief cvFilterByContour - Return List of blobs filtered by membershipt to contour
+  /// \param blobs
+  /// \return cVBlobs that passed  filters
+  ///
+ CvBlobs cvFilterByContour(CvBlobs &blobs,std::vector<std::vector<cv::Point> >& contours,CvScalar pcolour)
+{
+     CvBlobs vret;
+     CvBlobs::iterator it=blobs.begin();
+
+     while(it!=blobs.end())
+     {
+      CvBlob *blob=(*it).second;
+
+      //Go through Contours and find if blob is in any of them
+      for (int i=0;i<contours.size();i++)
+      {
+          //If Centroid is not outside contour then add to filtered list
+          if (cv::pointPolygonTest(contours[i],cv::Point(blob->centroid.x,blob->centroid.y),false) !=-1)
+          {
+              vret.insert((*it));
+              blob->colour = pcolour;
+              break; //Found So move to next Blob
+          }
+      }
+
+      ++it; //Next Blob
+     }
+
+     return vret; //Return Filtered List
+}
 
 
   ///

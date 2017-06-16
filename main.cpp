@@ -44,7 +44,7 @@
 
 
 /// Constants ///
-const unsigned int thresh_fishblobarea = 1000; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea = 1200; //Min area above which to Filter The fish blobs
 const int inactiveFrameCount        = 1000; //Number of frames inactive until track is deleted
 const int thActive                  = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 200; //Threshold for distance between track-to blob assignement
@@ -554,7 +554,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     {
        //Simple Solution was to Use Contours To measure Larvae
 
-       // cvb::CvBlobs blobs;
+       // Filters Blobs between fish and food - save into global vectors
         nLarva = processBlobs(fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
 
         //Here the Track's blob label is updated to the new matching blob
@@ -562,6 +562,8 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         cvb::cvUpdateTracks(foodblobs,tracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
 
         // Process Fish blobs
+        //ReFilter Let those that belong to fish Contours Detected Earlier
+        fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(0,10,190));
         cvb::cvUpdateTracks(fishblobs,tracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
         //
         //saveTracks(tracks,trkoutFileCSV,frameNumberString);
@@ -1000,6 +1002,7 @@ int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QStri
     //Allow only Fish Area Through
     //                                              (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
     fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea*8,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(0,10,120) ); //Remove Small Blobs
+
     //Food Blobs filter -> Remove large blobs (Fish)
     ///\todo these blob filters could be elaborated to include moment matching/shape distance
     foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::max(dMeanBlobArea*8,(double)thresh_fishblobarea),CV_RGB(0,200,0)); //Remove Large Blobs
@@ -1040,11 +1043,10 @@ int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QStri
 
             if (iroi.contains(pnt))
             {
-                //Render Paramecium
                 //cnt++; //CV_BLOB_RENDER_COLOR
-                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_ANGLE | CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_BOUNDING_BOX, CV_RGB(250,10,10),1);
+                    cvb::cvRenderBlob(labelImg, blob, &fgMaskImg, &frameImg, CV_BLOB_RENDER_ANGLE | CV_BLOB_RENDER_BOUNDING_BOX, CV_RGB(250,10,10),1);
                     //Make a mask to Surround the fish of an estimated size -  So as to overcome BG Substraction Loses - by redecting countour
-                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),((blob->maxx-blob->minx)+(blob->maxy-blob->miny))/2,CV_RGB(255,255,255),-1);
+                    cv::circle(fgMaskFish,cv::Point(blob->centroid.x,blob->centroid.y),((blob->maxx-blob->minx)+(blob->maxy-blob->miny)),CV_RGB(255,255,255),-1);
             }
         }
 
