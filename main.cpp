@@ -824,7 +824,7 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
 {
 
 
-    for (cvb::CvTracks::const_iterator it = tracks.begin(); it!=tracks.end(); ++it)
+    for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
     {
         cvb::CvTrack* track = it->second;
 
