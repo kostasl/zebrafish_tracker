@@ -22,7 +22,7 @@
  ///*
  ///*  Dependencies : opencv3
  ///*
- /// TODO: Detect stopped Larva - either pupating or stuck
+ /// Added: Detection of stopped Larva or loss of features from BG Substraction - via mask correction
  ////////
 
 
@@ -745,7 +745,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         if (nFrame == 1)
         {
             //Add Global Roi
-            ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),cv::Point(0,0));
+            ltROI newROI(cv::Point(frame.cols/2-10,frame.rows/2-10),cv::Point(0,0));
             addROI(newROI);
         }
 

@@ -23,6 +23,7 @@
 #include <sstream>
 #include <stack>
 #include <list>
+
 using namespace std;
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) || defined(__WINDOWS__) || (defined(__APPLE__) & defined(__MACH__)))
@@ -31,11 +32,15 @@ using namespace std;
     #include <opencv/cv.h>
 #endif
 
-//Trying to Find Mat includes
 #include <opencv/cv.h>   		// open cv general include file
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/imgproc.hpp" //Draw Polyline
+
+
+//Application Specific Includes
 #include "cvblob.h"
+#include <cvBlob/fishmodel.h>
+
 
 namespace cvb
 {
@@ -201,7 +206,7 @@ namespace cvb
     //KL: Note Huge Try Block
     try
     {
-      // Inicialization:
+      // matrix Initialization:
       unsigned int i=0;
       for (CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it, i++)
       {
@@ -309,6 +314,11 @@ namespace cvb
           track->pROI = proi; //Set Pointer to ROI containing the 1st blob
           track->pointStack.push_back(pntCentroid); //Add 1st Point to list of Track
           tracks.insert(CvIDTrack(maxTrackID, track));
+
+          //Make Attached FishModel
+          fishModel *fish= new fishModel(track);
+          fishModels.insert
+
         }
       } //END NEW Tracks
       ////////////////

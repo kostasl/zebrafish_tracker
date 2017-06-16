@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <iomanip> //for setprecision
+#include <limits>
 #include <string>
 #include <QDebug>
 
@@ -18,6 +20,7 @@
 
 #include <cvBlob/cvblob.h>
 #include <ltROI.h> //Defines the ROI types
+#include <cvBlob/fishmodel.h>
 
 #include <GUI/mainwindow.h>
 
@@ -28,32 +31,18 @@
 class MainWindow;
 
 
+///
+/// \brief fishModels list of model structures describing each visible fish
+/// this list is maintained along with tracks - ie deletion/creation is done via matching to
+/// blobs
+///
+typedef std::map<cvb::CvLabel,fishModel> fishModels;
 
-struct fishModel
-{
-
-    cvb::CvLabel blobLabel;
-    std::vector<cv::Point> contour;
-    cv::RotatedRect leftEyeHull;
-    cv::RotatedRect rightEyeHull;
-    std::vector<cv::Point> coreTriangle;
-
-    cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
-    cv::Point rightEyePoint;
-    double leftEyeTheta;
-    double rightEyeTheta;
-    cv::Point tailTopPoint;
-    double bearingRads;
-    cv::Point tailSplinePoints[8];
-
-    fishModel()
-    {
-        coreTriangle.push_back(cv::Point());
-        coreTriangle.push_back(cv::Point());
-        coreTriangle.push_back(cv::Point());
-    }
-
-};
+/// \var typedef std::pair<CvID, fishModel *> CvIDFishModel pair for insertion into map list of fish
+/// /// \brief Pair (identification number, fishModel).
+/// \see CvID
+/// \see CvTrack
+typedef std::pair<cvb::CvID, fishModel *> CvIDFishModel;
 
 
 

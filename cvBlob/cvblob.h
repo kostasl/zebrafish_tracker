@@ -621,11 +621,11 @@ extern "C" {
   void cvRenderTrack(CvTrack& track,CvID trackID, IplImage *imgSource, IplImage *imgDest, unsigned short mode, CvFont *font );
 
   ///\fn getClusterForTrack(unsigned int trackPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, list<CvBlob*> &bb, list<CvTrack*> &tt);
-  /// \brief KL found this prototype in cvtrack.cpp - moved it to header - not sure what it does.
+  /// \brief KL found  in cvtrack.cpp - moved here header - Collects/removes entries from Proximity Matrix on the same row indicating tracks in same cluster.
   void getClusterForTrack(unsigned int trackPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, std::list<CvBlob*> &bb, std::list<CvTrack*> &tt);
 
   ///\fn getClusterForBlob(unsigned int blobPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, std::list<CvBlob*> &bb, std::list<CvTrack*> &tt)
-  /// \brief KL found this prototype in cvtrack.cpp - moved it to header - not sure what it does.
+  /// \brief KL found this prototype in cvtrack.cpp - moved it to header - same as above for cols.
   void getClusterForBlob(unsigned int blobPos, CvID *close, unsigned int nBlobs, unsigned int nTracks, CvBlobs const &blobs, CvTracks const &tracks, std::list<CvBlob*> &bb, std::list<CvTrack*> &tt);
 
   }
