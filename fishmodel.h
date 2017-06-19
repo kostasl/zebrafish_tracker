@@ -4,6 +4,7 @@
 #include <string>
 #include <cvBlob/cvblob.h>
 
+
 class fishModel
 {
 
@@ -15,12 +16,15 @@ public:
   cvb::CvLabel blobLabel;
   cvb::CvID ID; /// Same as the track ID
   std::vector<cv::Point> contour;
-  cv::RotatedRect leftEyeHull;
-  cv::RotatedRect rightEyeHull;
-  std::vector<cv::Point> coreTriangle;
-
   cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
   cv::Point rightEyePoint;
+  cv::RotatedRect leftEyeRect;
+  cv::RotatedRect rightEyeRect;
+  std::vector<cv::Point> rightEyeHull;
+  std::vector<cv::Point> leftEyeHull;
+  std::vector<cv::Point> coreHull; /// core Body shape- no tail
+  std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
+
   double leftEyeTheta;
   double rightEyeTheta;
   cv::Point tailTopPoint;
@@ -28,7 +32,6 @@ public:
   cv::Point tailSplinePoints[8];
 
   cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
-
 
 };
 

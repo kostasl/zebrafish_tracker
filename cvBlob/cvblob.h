@@ -314,9 +314,9 @@ extern "C" {
     {
       for (CvContoursChainCode::iterator jt=blob->internalContours.begin(); jt!=blob->internalContours.end(); ++jt)
       {
-	CvContourChainCode *contour = *jt;
-	if (contour)
-	  delete contour;
+        CvContourChainCode *contour = *jt;
+        if (contour)
+        delete contour;
       }
       blob->internalContours.clear();
 

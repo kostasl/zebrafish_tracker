@@ -38,11 +38,35 @@ class MainWindow;
 ///
 typedef std::map<cvb::CvLabel,fishModel* > fishModels;
 
+
 /// \var typedef std::pair<CvID, fishModel *> CvIDFishModel pair for insertion into map list of fish
 /// /// \brief Pair (identification number, fishModel).
 /// \see CvID
 /// \see CvTrack
 typedef std::pair<cvb::CvID, fishModel* > CvIDFishModel;
+
+
+
+/// \fn inline void cvReleaseFishModes(fishModels &fishes)
+/// \brief Clear Fish LIst
+/// \param fishmodles List
+/// \see
+inline void ReleaseFishModels(fishModels &fishes)
+{
+  for (fishModels::iterator it=fishes.begin(); it!=fishes.end(); ++it)
+  {
+      fishModel* fish = (*it).second;
+
+      if (fish->track)
+      {
+         fish->track->pointStack.clear();
+         delete fish->track;
+      }
+
+      delete fish;
+  }
+  fishes.clear();
+}
 
 
 
@@ -102,11 +126,11 @@ void thresh_callback(int, void* );
 /// \param Out fittedEllipse - pointer to array of Rotated rect fitted ellipsoids
 /// \return Index of *child*/Leaf contour closest to point
 ///
-int findContourClosestToPoint(std::vector<std::vector<cv::Point> >& contours,
+int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
                               std::vector<cv::Vec4i>& hierarchy,
                               cv::Point pt,
                               int level,
-                              std::vector<std::vector<cv::Point> >& outhulls,
+                              std::vector<cv::Point>& matchhull,
                               std::vector<cv::RotatedRect>& outfittedEllipse);
 
 
