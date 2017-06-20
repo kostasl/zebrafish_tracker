@@ -67,6 +67,7 @@ double dLearningRate        = 1.0/(5.0*MOGhistory);
 int g_Segthresh             = 10; //Image Threshold for FIsh Features
 int g_BGthresh              = 13; //BG threshold segmentation
 int gi_ThresholdMatching    = 100; //Minimum Score to accept that a contour has been found
+int gi_CannyThres           = 100;
 //using namespace std;
 
 
@@ -183,6 +184,7 @@ int main(int argc, char *argv[])
     cv::createTrackbar( "Laplace Size:", gstrwinName + " FishOnly", &g_BGthresh, 31.0, thresh_callback );
     cv::createTrackbar( "Fish Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
     cv::createTrackbar( "ShapeMatch Thres:", gstrwinName + " FishOnly", &gi_ThresholdMatching, 20000.0, thresh_callback );
+    cv::createTrackbar( "Canny Thres:", gstrwinName + " FishOnly", &gi_CannyThres, 300, thresh_callback );
 
 
     thresh_callback( 0, 0 );
@@ -1120,15 +1122,6 @@ int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QStri
             pnt.x = blob->centroid.x;
             pnt.y = blob->centroid.y;
 
-            ///Assign to fish Models / New Blob should not have moved far
-            /// from previous point so it should still be contained
-            ///
-
-            for (int i=0;i<vfishmodels.size();i++)
-            {
-
-            }
-
 
             if (iroi.contains(pnt))
             {
@@ -1880,7 +1873,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
     cv::Mat maskfishFeature,maskedfishFeature_blur;
 
     cv::Mat grad,grad_x, grad_y;
-    cv::Mat framelapl;
+    cv::Mat framelapl,frameCanny;
 
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
     std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
@@ -1891,6 +1884,9 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
     std::vector<std::vector<cv::Point> > hull_lapl( contours_laplace.size() );
     std::vector<cv::RotatedRect> rectFeatures_lapl; //Fitted Ellipsoids
 
+
+    std::vector<std::vector<cv::Point> > contours_canny;
+    std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
     /// Convert image to gray and blur it
     cv::cvtColor( maskedImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
@@ -1904,7 +1900,34 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
     cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
 
     //framelapl.convertTo(framelapl, CV_8UC3);
-    cv::imshow("Edges Laplace Pure",framelapl);
+    //cv::imshow("Edges Laplace Pure",framelapl);
+
+    cv::Canny( maskedfishImg_gray, frameCanny, gi_CannyThres/2, gi_CannyThres, 3 );
+
+    cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+
+
+
+    ///Detect Circles
+    std::vector<cv::Vec3f> circles;
+    cv::HoughCircles(maskedfishImg_gray, circles, cv::HOUGH_GRADIENT, 1,
+                     4, // change this value to detect circles with different distances to each other
+                     gi_CannyThres, 50,
+                     3, 20 // change the last two parameters (min_radius & max_radius) to detect larger circles
+                     );
+    //![houghcircles]
+    ///
+    //![draw]
+    for( size_t i = 0; i < circles.size(); i++ )
+    {
+       cv::Vec3i c = circles[i];
+       cv::circle(frameMasked, cv::Point(c[0], c[1]), c[2], cv::Scalar(0,0,255), 3, cv::LINE_AA);
+       cv::circle(frameMasked, cv::Point(c[0], c[1]), 2, cv::Scalar(0,255,0), 3, cv::LINE_AA);
+    }
+    //![draw]
+
+
 
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
@@ -1924,16 +1947,16 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
         cv::Point centroid(track->centroid.x,track->centroid.y);
 
-        ///DEBUG Show Assisting Contours if the exist //
+        ///DEBUG Show Assisting Contours if they exist //
         //Draw Matching Contour
         std::vector<std::vector<cv::Point> > tmpContour;
         tmpContour.push_back( pfish->coreHull);
         tmpContour.push_back( pfish->leftEyeHull);
         tmpContour.push_back( pfish->rightEyeHull);
 
-        cv::drawContours( frame, tmpContour,0, CV_RGB(255,0,200),4, cv::LINE_AA);
-        cv::drawContours( frame, tmpContour,1, CV_RGB(255,0,200),4, cv::LINE_AA);
-        cv::drawContours( frame, tmpContour,2, CV_RGB(255,0,200),4, cv::LINE_AA);
+        cv::drawContours( frame, tmpContour,0, CV_RGB(155,150,120),3, cv::LINE_AA);
+        cv::drawContours( frame, tmpContour,1, CV_RGB(155,150,120),3, cv::LINE_AA);
+        cv::drawContours( frame, tmpContour,2, CV_RGB(155,150,120),3, cv::LINE_AA);
 
         /// Draw templates ///
 
@@ -2026,33 +2049,64 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //Need to Set equal since we are skipping indeces below
         hull_lapl.clear();
         rectFeatures_lapl.clear();
-        hull_lapl.resize(contours_laplace.size());
-        rectFeatures_lapl.resize(contours_laplace.size());
+        hull_lapl.resize(2);
+        rectFeatures_lapl.resize(2);
 
 
         ///Identify the eyes -
         /// Find child contour Close to eyes as identified by triangle fit
-        int idxLEyeContour = findMatchingContour(contours_laplace,hierarchy_laplace,pfish->coreTriangle[0],1,pfish->leftEyeHull,rectFeatures_lapl);
 
+        int idxLEyeContour  = findMatchingContour(contours_laplace,hierarchy_laplace,pfish->coreTriangle[0],1,pfish->leftEyeHull,rectFeatures_lapl);
+        int idxLEyeContourC = -1;
         //Identify and Draw Right - Eye
-        int idxREyeContour = findMatchingContour(contours_laplace,hierarchy_laplace,pfish->coreTriangle[1],1,pfish->rightEyeHull,rectFeatures_lapl);
+        int idxREyeContour  = findMatchingContour(contours_laplace,hierarchy_laplace,pfish->coreTriangle[1],1,pfish->rightEyeHull,rectFeatures_lapl);
+        int idxREyeContourC = -1;
+
+        ///If That Fails Try Canny
+        if (idxLEyeContour ==-1)
+        //idxLEyeContour =-1;
+         idxLEyeContourC = findMatchingContour(contours_canny,hierarchy_canny,pfish->coreTriangle[0],-1,pfish->leftEyeHull,rectFeatures_lapl);
+        ///If That Fails Try Canny
+        //idxREyeContour =-1;
+        if (idxREyeContour ==-1)
+         idxREyeContourC = findMatchingContour(contours_canny,hierarchy_canny,pfish->coreTriangle[1],-1,pfish->rightEyeHull,rectFeatures_lapl);
+
+        /// \todo Can add points from Canny contour contained in circles around eye points, then do convex Hull
 
         //Make Shape Approximations
-        for( size_t i = 0; i< contours_laplace.size(); i++ )
-        {
+        /// \todo make this specific to the target shapes
+        //for( size_t i = 0; i< contours_laplace.size(); i++ )
+        //{
             /// Make Eye Shape Approximations - Hull and Ellipsoids
-            hull_lapl[i] = std::vector<cv::Point>();
-            cv::convexHull( cv::Mat(contours_laplace[i]), hull_lapl[i], false );
+            hull_lapl[0] = std::vector<cv::Point>();
+            hull_lapl[1] = std::vector<cv::Point>();
 
-            if (hull_lapl[i].size() < 5 )
-                continue;
+            if (idxLEyeContour != -1)
+                cv::convexHull( cv::Mat(contours_laplace[idxLEyeContour]), hull_lapl[0], false );
+            else
+                if (idxLEyeContourC != -1)
+                    cv::convexHull( cv::Mat(contours_canny[idxLEyeContourC]), hull_lapl[0], false );
 
-            rectFeatures_lapl[i] = cv::fitEllipse(hull_lapl[i]);
-        }
+
+            if (idxREyeContour != -1)
+                cv::convexHull( cv::Mat(contours_laplace[idxREyeContour]), hull_lapl[1], false );
+            else
+                if (idxREyeContourC != -1)
+                    cv::convexHull( cv::Mat(contours_canny[idxREyeContourC]), hull_lapl[1], false );
+
+
+
+            if (hull_lapl[0].size() > 5 ) //Left Eye
+                rectFeatures_lapl[0] = cv::fitEllipse(hull_lapl[0]);
+
+            if (hull_lapl[1].size() > 5 ) //Right Eye
+                 rectFeatures_lapl[1] = cv::fitEllipse(hull_lapl[1]);
+
+//        }
 
         //Correct Triangle - Left Eye
-        pfish->coreTriangle[0] = (cv::Point)rectFeatures_lapl[idxLEyeContour].center;
-        pfish->coreTriangle[1] = (cv::Point)rectFeatures_lapl[idxREyeContour].center;
+        pfish->coreTriangle[0] = (cv::Point)rectFeatures_lapl[0].center; //left
+        pfish->coreTriangle[1] = (cv::Point)rectFeatures_lapl[1].center; //Right
 
         ////DRAW
 
@@ -2060,8 +2114,8 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         ///  DEBUG
         /// Draw detected Contours
         cv::drawContours( frame, contours_body, (int)idxblobContour, CV_RGB(255,0,0),1, cv::LINE_AA);
-        cv::drawContours( frame, contours_laplace, (int)idxLEyeContour, CV_RGB(0,255,0),1, cv::LINE_AA);
-        cv::drawContours( frame, contours_laplace, (int)idxREyeContour, CV_RGB(0,0,255),1, cv::LINE_AA);
+        cv::drawContours( frame, contours_canny, (int)idxLEyeContourC, CV_RGB(0,255,0),1, cv::LINE_AA);
+        cv::drawContours( frame, contours_canny, (int)idxREyeContourC, CV_RGB(0,0,255),1, cv::LINE_AA);
 
 
 
@@ -2079,15 +2133,15 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         {
             //cv::drawContours( frameMasked, hull_lapl, (int)idxLEyeContour, CV_RGB(150,250,10), 2, 8,hierarchy_laplace);
 
-            rectFeatures_lapl[idxLEyeContour].points(featurePnts);
+            rectFeatures_lapl[0].points(featurePnts);
             ///Draw Left Eye Rectangle
             for (int j=0; j<4;j++)
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
             //if (bEyesDetected) //Save only when On
-                pfish->leftEyeHull = hull_lapl[idxLEyeContour];
+                pfish->leftEyeHull = hull_lapl[0];
 
-            pfish->leftEyeRect = rectFeatures_lapl[idxLEyeContour];
+            pfish->leftEyeRect = rectFeatures_lapl[0];
             cv::ellipse(frameMasked,pfish->leftEyeRect,CV_RGB(210,00,0),2,cv::LINE_8);
             cv::ellipse(frame,pfish->leftEyeRect,CV_RGB(210,00,0),1,cv::LINE_AA);
 
@@ -2096,17 +2150,17 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //sfish.coreTriangle[0] = rectFeatures_lapl[idxLEyeContour].center;
 
 
-        if (idxREyeContour != -1)
+        if (idxREyeContour != -1 || idxREyeContourC != -1)
         {  ///Draw Right Eye Rectangle
-            rectFeatures_lapl[idxREyeContour].points(featurePnts);
+            rectFeatures_lapl[1].points(featurePnts);
             for (int j=0; j<4;j++)
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
 
             //Save Hull Eye description and use it to compare across frames
 //            if (bEyesDetected) //Save only when On
-                pfish->rightEyeHull = hull_lapl[idxREyeContour];
+                pfish->rightEyeHull = hull_lapl[1];
 
-            pfish->rightEyeRect = rectFeatures_lapl[idxREyeContour];
+            pfish->rightEyeRect = rectFeatures_lapl[1];
             ///Draw Eyes Hull - On Both Image Frames
             cv::ellipse(frameMasked,pfish->rightEyeRect ,CV_RGB(00,210,0),3,cv::LINE_8);
             cv::ellipse(frame,pfish->rightEyeRect ,CV_RGB(00,210,0),2,cv::LINE_AA);
@@ -2206,14 +2260,15 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 //    }
 
 
-//    ///DEBUG show all contours -Laplace
-//    for( size_t i = 0; i< contours_laplace.size(); i++ )
-//    {
-//         cv::drawContours( framefishMasked, contours_laplace, (int)i, CV_RGB(200,0,0), 1,8,hierarchy_laplace);
-//    }
+    frameCanny.convertTo(frameCanny, CV_8UC3);
+    ///DEBUG show all contours -Edge
+    for( size_t i = 0; i< contours_canny.size(); i++ )
+    {
+         cv::drawContours( framefishMasked, contours_canny, (int)i, CV_RGB(200,0,60), 1,8,hierarchy_canny);
+    }
 
 
-
+    cv::imshow("Edges Canny",frameCanny);
     cv::imshow("Edges Laplace",framelapl);
 
     cv::imshow("Fish Detect",framefishMasked);
@@ -2239,5 +2294,8 @@ void thresh_callback(int, void* )
 
     if (g_Segthresh%2 == 0)
         g_Segthresh++;
+
+    if (gi_CannyThres <2)
+        gi_CannyThres = 2;
 
 }
