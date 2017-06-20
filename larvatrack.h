@@ -56,12 +56,12 @@ inline void ReleaseFishModels(fishModels &fishes)
   for (fishModels::iterator it=fishes.begin(); it!=fishes.end(); ++it)
   {
       fishModel* fish = (*it).second;
-
-      if (fish->track)
-      {
-         fish->track->pointStack.clear();
-         delete fish->track;
-      }
+        //Let ReleaseTracks Handle This
+//      if (fish->track)
+//      {
+//         fish->track->pointStack.clear();
+//         delete fish->track;
+//      }
 
       delete fish;
   }

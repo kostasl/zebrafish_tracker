@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 
     cv::createTrackbar( "Laplace Size:", gstrwinName + " FishOnly", &g_BGthresh, 31.0, thresh_callback );
     cv::createTrackbar( "Fish Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
-    cv::createTrackbar( "ShapeMatch Thres:", gstrwinName + " FishOnly", &gi_ThresholdMatching, 200.0, thresh_callback );
+    cv::createTrackbar( "ShapeMatch Thres:", gstrwinName + " FishOnly", &gi_ThresholdMatching, 20000.0, thresh_callback );
 
 
     thresh_callback( 0, 0 );
@@ -938,6 +938,15 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
              std::cout << "Save Eye Feature on next frame" << endl;
              bEyesDetected = true;
     }
+
+
+    if ((char)keyboard == 'r')
+    {
+             std::cout << "Reset/Delete All Fish Models-" << endl;
+             ReleaseFishModels(vfishmodels);
+    }
+
+
 }
 
 
@@ -1571,7 +1580,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
                sLength = cv::arcLength(contours[i],true);
 
                //Add Difference in Area to Score
-               matchContourDistance += abs(tArea - sArea);
+               matchContourDistance += (abs(tArea - sArea));
                qDebug() << "AreaDist:" << abs(tArea - sArea);
 
                matchContourDistance += abs(tLength - sLength);
@@ -1790,18 +1799,28 @@ void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vect
 {
 
 int max_thresh = 255;
-cv::Mat maskfishOnly,frameImg_gray;
+cv::Mat maskfishOnly,frameImg_gray,threshold_output_H;
 /// Convert image to gray and blur it
 cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
 
-/// Detect edges using Threshold
+/// Detect edges using Threshold , A High And  low
 cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
 
 //Remove Speckles // Should leave fish INtact
 cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
 
-//Make Hollow Mask
-cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),2);
+/////////////////
+//make Inner Fish MAsk
+//cv::threshold( frameImg_gray, threshold_output_H, 4.0*g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
+//cv::erode(threshold_output,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),1);
+//Substract Inner from Outer
+//cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
+///////////////////
+
+
+//Make Hollow Mask Directly
+cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),4);
+
 
 /// Find contours on Masked Image Showing Fish Outline
 //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
@@ -1853,7 +1872,7 @@ if (bshowMask)
 void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
-
+    bool berrorTriangleFit = true;
     int max_thresh = 255;
     cv::RNG rng(12345);
 
@@ -1891,23 +1910,39 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
     {
-        //Get the  fishmodel associated with this blob
-        cvb::CvID trackId = it->first;
-        fishModel* pfish = vfishmodels.find(trackId)->second;
-
-
-        maskfishFeature = cv::Mat::zeros(frameMasked.rows, frameMasked.cols,CV_8U); //Empty Canvas This fish's mask
         int idxblobContour;
         bool bContourfound =false;
+
+        //Get the  fishmodel associated with this Track
+        cvb::CvID trackId = it->first;
         cvb::CvTrack* track = it->second;
+
+        fishModel* pfish = vfishmodels.find(trackId)->second;
+        assert(pfish->track == track); //Must point to the same track
+
+        maskfishFeature = cv::Mat::zeros(frameMasked.rows, frameMasked.cols,CV_8U); //Empty Canvas This fish's mask
+
         cv::Point centroid(track->centroid.x,track->centroid.y);
+
+        ///DEBUG Show Assisting Contours if the exist //
+        //Draw Matching Contour
+        std::vector<std::vector<cv::Point> > tmpContour;
+        tmpContour.push_back( pfish->coreHull);
+        tmpContour.push_back( pfish->leftEyeHull);
+        tmpContour.push_back( pfish->rightEyeHull);
+
+        cv::drawContours( frame, tmpContour,0, CV_RGB(255,0,200),4, cv::LINE_AA);
+        cv::drawContours( frame, tmpContour,1, CV_RGB(255,0,200),4, cv::LINE_AA);
+        cv::drawContours( frame, tmpContour,2, CV_RGB(255,0,200),4, cv::LINE_AA);
+
+        /// Draw templates ///
 
         idxblobContour = findMatchingContour(contours_body,hierarchy_body,centroid,0,pfish->coreHull,rectFeatures);
 
         if (idxblobContour == -1)
         {
             bContourfound = false;
-            std::cerr << "Fish " << track->id << " Contour not found!" << std::endl;
+            std::cerr << "Fish body " << track->id << " Contour not found!" << std::endl;
             continue; //Next Blob
         }else
         bContourfound = true;
@@ -1949,22 +1984,22 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             std::cerr << "Warning fishBody area too small A=" << maxArea << std::endl;
             continue ; //skip Processing
         }else //Save As FishBody Hull contour - this is used to match next shape
-            if (bEyesDetected) //Save Feature as Template
-                pfish->coreHull = contours_body[idxChild];
+             //Save Feature as Template for next frame
+                pfish->coreHull = contours_body[idxblobContour];
 
 
 
         ///Fit triangle structure to Body
         //Use Mask drawn from contour of fish to isolate fish's features
-        fitfishCoreTriangle(maskfishFeature,maskedfishFeature_blur,*pfish,contours_body,idxChild,idxblobContour);
+        berrorTriangleFit = fitfishCoreTriangle(maskfishFeature,maskedfishFeature_blur,*pfish,contours_body,idxChild,idxblobContour);
        //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
         //Set Tracking point to be the buoyancy cyst - body point (tracked as brightest spot)
         track->centroid.x = pfish->coreTriangle[2].x; track->centroid.y = pfish->coreTriangle[2].y;
 
-        //Draw Fitted Triangle of Fish
-        for (int j=0; j<3;j++)
-            cv::line(frameMasked,pfish->coreTriangle[j],pfish->coreTriangle[(j+1)%3] ,CV_RGB(0,100,255),1);
+
+
+
 
         //Centroid
         //cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
@@ -2015,8 +2050,12 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             rectFeatures_lapl[i] = cv::fitEllipse(hull_lapl[i]);
         }
 
+        //Correct Triangle - Left Eye
+        pfish->coreTriangle[0] = (cv::Point)rectFeatures_lapl[idxLEyeContour].center;
+        pfish->coreTriangle[1] = (cv::Point)rectFeatures_lapl[idxREyeContour].center;
 
         ////DRAW
+
 
         ///  DEBUG
         /// Draw detected Contours
@@ -2025,7 +2064,15 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         cv::drawContours( frame, contours_laplace, (int)idxREyeContour, CV_RGB(0,0,255),1, cv::LINE_AA);
 
 
+
         ///RESULTS
+        //Draw Fitted/Corrected Triangle of Fish
+        for (int j=0; j<3;j++)
+            cv::line(frameMasked,pfish->coreTriangle[j],pfish->coreTriangle[(j+1)%3] ,CV_RGB(0,100,255),1);
+
+
+
+        ///
         cv::Point2f featurePnts[4];
         //Draw Left Eye
         if (idxLEyeContour != -1)
@@ -2033,6 +2080,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             //cv::drawContours( frameMasked, hull_lapl, (int)idxLEyeContour, CV_RGB(150,250,10), 2, 8,hierarchy_laplace);
 
             rectFeatures_lapl[idxLEyeContour].points(featurePnts);
+            ///Draw Left Eye Rectangle
             for (int j=0; j<4;j++)
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
@@ -2049,7 +2097,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
 
         if (idxREyeContour != -1)
-        {
+        {  ///Draw Right Eye Rectangle
             rectFeatures_lapl[idxREyeContour].points(featurePnts);
             for (int j=0; j<4;j++)
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
@@ -2066,7 +2114,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         }
 
 
-        bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
+
 
         ///Draw Text - Save Bearing Angle
         pfish->bearingRads = atan2(vecMidlEye.y,vecMidlEye.x);
@@ -2145,9 +2193,10 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
 
 
-        } //For Each FishBlob
+        } ///For Each FishBlob
 
 
+        bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
 
 
 //    ///DEBUG show all contours
