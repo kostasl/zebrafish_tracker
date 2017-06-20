@@ -2084,7 +2084,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             for (int j=0; j<4;j++)
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
-            if (bEyesDetected) //Save only when On
+            //if (bEyesDetected) //Save only when On
                 pfish->leftEyeHull = hull_lapl[idxLEyeContour];
 
             pfish->leftEyeRect = rectFeatures_lapl[idxLEyeContour];
@@ -2103,7 +2103,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
 
             //Save Hull Eye description and use it to compare across frames
-            if (bEyesDetected) //Save only when On
+//            if (bEyesDetected) //Save only when On
                 pfish->rightEyeHull = hull_lapl[idxREyeContour];
 
             pfish->rightEyeRect = rectFeatures_lapl[idxREyeContour];
