@@ -64,8 +64,9 @@ float gfVidfps              = 150;
 double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
-int g_Segthresh = 10; //Image Threshold for FIsh Features
-int g_BGthresh = 13; //BG threshold segmentation
+int g_Segthresh             = 10; //Image Threshold for FIsh Features
+int g_BGthresh              = 13; //BG threshold segmentation
+int gi_ThresholdMatching    = 100; //Minimum Score to accept that a contour has been found
 //using namespace std;
 
 
@@ -135,6 +136,7 @@ bool bSaveImages = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
 bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
+bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 
 
 
@@ -172,12 +174,16 @@ int main(int argc, char *argv[])
     cv::namedWindow(gstrwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow(gstrwinName + " FG Mask",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow(gstrwinName + " FishOnly",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("MOG2 Mask",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+
     //set the callback function for any mouse event
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
 
     cv::createTrackbar( "Laplace Size:", gstrwinName + " FishOnly", &g_BGthresh, 31.0, thresh_callback );
     cv::createTrackbar( "Fish Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
+    cv::createTrackbar( "ShapeMatch Thres:", gstrwinName + " FishOnly", &gi_ThresholdMatching, 200.0, thresh_callback );
+
 
     thresh_callback( 0, 0 );
 
@@ -322,8 +328,10 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           /// Display Output //
           frameMasked = cv::Mat::zeros(frameMasked.rows, frameMasked.cols, CV_8U);
           frame.copyTo(frameMasked,fgMask);
+
           ///Display Output
           cv::imshow(gstrwinName,frameMasked);
+          cv::displayOverlay(gstrwinName,"Press 'e' when features Have been detected" , 10000 );
 
           window_main.showVideoFrame(frame,nFrame); //Show On QT Window
 
@@ -486,7 +494,8 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     unsigned int nLarva         =  0;
     unsigned int nFood          =  0;
     double dblRatioPxChanged    =  0.0;
-    std::string frameNumberString = std::to_string(nFrame);
+
+    std::string frameNumberString = to_string(nFrame);
 
     //For Morphological Filter
     ////cv::Size sz = cv::Size(3,3);
@@ -921,6 +930,13 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     {
              std::cout << "Show Mask" << endl;
              bshowMask = !bshowMask;
+    }
+
+    ///Flip Save Feature On - This Will last only for a single frame
+    if ((char)keyboard == 'e')
+    {
+             std::cout << "Save Eye Feature on next frame" << endl;
+             bEyesDetected = true;
     }
 }
 
@@ -1488,6 +1504,14 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
     int mindistToCentroid    = -10000;
     int distToCentroid       = -10000;
     int matchContourDistance = 10000;
+
+    int tArea = 0;
+    int sArea = 0;
+
+    int tLength = 0;
+    int sLength = 0;
+
+
     double dHudist = 0.0; //Shape Distance Hu moments distance measure from OpenCV
 
     /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
@@ -1537,6 +1561,22 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
                // Now Check That distance is not too far otherwise reject shape
                //if (matchContourDistance > 1.0)
                //    continue; //Next Shape/Contour
+               qDebug() << "HuDist:" << dHudist*10.0;
+             //Check Area
+
+               tArea = cv::contourArea(matchhull);
+               sArea = cv::contourArea(contours[i]);
+
+               tLength = cv::arcLength(matchhull,true);
+               sLength = cv::arcLength(contours[i],true);
+
+               //Add Difference in Area to Score
+               matchContourDistance += abs(tArea - sArea);
+               qDebug() << "AreaDist:" << abs(tArea - sArea);
+
+               matchContourDistance += abs(tLength - sLength);
+               qDebug() << "LengthDist:" << abs(tLength - sLength);
+
           }
 
 
@@ -1548,11 +1588,16 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
                    //Otherwise Keep As blob Contour
                    idxContour = i;
                    mindistToCentroid = matchContourDistance;//New Min
-                   qDebug() << "Min HDist:" << dHudist << " Sp:" << distToCentroid;
-                   bContourfound = true;
+
+                   qDebug() << "-----MinTD:"<< matchContourDistance << "<- HDist:" << dHudist << " Sp:" << distToCentroid << "AreaDist:" << abs(tArea - sArea) << "LengthDist:" << abs(tLength - sLength);
+
+                   //Reject match 0 in case contour is not actually there
+                   if (matchContourDistance < gi_ThresholdMatching)
+                        bContourfound = true;
                }
            }
        }
+
 
    if (!bContourfound)
    {
@@ -1904,7 +1949,8 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             std::cerr << "Warning fishBody area too small A=" << maxArea << std::endl;
             continue ; //skip Processing
         }else //Save As FishBody Hull contour - this is used to match next shape
-            pfish->coreHull = contours_body[idxChild];
+            if (bEyesDetected) //Save Feature as Template
+                pfish->coreHull = contours_body[idxChild];
 
 
 
@@ -1990,7 +2036,9 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             for (int j=0; j<4;j++)
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
-            pfish->leftEyeHull = hull_lapl[idxLEyeContour];
+            if (bEyesDetected) //Save only when On
+                pfish->leftEyeHull = hull_lapl[idxLEyeContour];
+
             pfish->leftEyeRect = rectFeatures_lapl[idxLEyeContour];
             cv::ellipse(frameMasked,pfish->leftEyeRect,CV_RGB(210,00,0),2,cv::LINE_8);
             cv::ellipse(frame,pfish->leftEyeRect,CV_RGB(210,00,0),1,cv::LINE_AA);
@@ -2007,7 +2055,9 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
 
             //Save Hull Eye description and use it to compare across frames
-            pfish->rightEyeHull = hull_lapl[idxREyeContour];
+            if (bEyesDetected) //Save only when On
+                pfish->rightEyeHull = hull_lapl[idxREyeContour];
+
             pfish->rightEyeRect = rectFeatures_lapl[idxREyeContour];
             ///Draw Eyes Hull - On Both Image Frames
             cv::ellipse(frameMasked,pfish->rightEyeRect ,CV_RGB(00,210,0),3,cv::LINE_8);
@@ -2015,6 +2065,8 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
         }
 
+
+        bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
 
         ///Draw Text - Save Bearing Angle
         pfish->bearingRads = atan2(vecMidlEye.y,vecMidlEye.x);

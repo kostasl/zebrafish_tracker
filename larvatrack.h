@@ -156,4 +156,15 @@ bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector
 ///
 void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vector<cv::Point> >& fishbodycontours ,std::vector<cv::Vec4i>& fishbodyhierarchy);
 
+
+
+/// Auxiliriary Functions
+
+template < typename T > std::string to_string( const T& n )
+   {
+       std::ostringstream stm ;
+       stm << n ;
+       return stm.str() ;
+   }
+
 #endif // LARVATRACK_H
