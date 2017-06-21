@@ -2048,7 +2048,6 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
 
 
-
         //Need to Set equal since we are skipping indeces below
         hull_lapl.clear();
         rectFeatures_lapl.clear();
@@ -2117,7 +2116,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         /// - \brief With the more accurate positioning of the eye centres now we can obtain
         /// Obtain Accurate FEature Contours for Eyes- Body + Head /////
         ///Make Marked/Labeled Image Using Approx Eye Location
-        markerEyesImg = cv::Mat::ones(maskedImg.rows,maskedImg.cols,CV_32SC1)+100;
+        markerEyesImg = cv::Mat::ones(maskedImg.rows,maskedImg.cols,CV_32SC1)+70;
         cv::drawContours( markerEyesImg, contours_body, (int)idxblobContour, CV_RGB(0,0,0), cv::FILLED);
         //threshold_output.copyTo(markerEyesImg,threshold_output); //Only copy Fish mask - DO not Affect BG Pix Value Set to 1
         markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
@@ -2126,8 +2125,11 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //markerEyesImg.setTo(0, markerEyesImg == 255); //Set fish to 0 such that it becomes the Uknown Region -
 
         //Now Draw Labels on it To Mark L-R Eyes, Head And body region
+
+        cv::Point ptHead       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*0.8;
+        cv::circle(markerEyesImg,ptHead            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        cv::circle(markerEyesImg,midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(markerEyesImg,pfish->coreTriangle[0],2,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Left Eye
-        cv::circle(markerEyesImg,midEyePoint            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(markerEyesImg,pfish->coreTriangle[1],2,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Right Eye
         cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body Eye
 
