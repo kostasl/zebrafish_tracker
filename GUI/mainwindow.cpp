@@ -73,6 +73,7 @@ void MainWindow::showCVimg(cv::Mat& img)
 
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+    char key;
     if (event->type() == QEvent::GraphicsSceneWheel) {
         handleWheelOnGraphicsScene(dynamic_cast<QGraphicsSceneWheelEvent*> (event));
 
@@ -83,7 +84,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
     if (event->type() == QEvent::KeyPress) {
          QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
-         char key =  keyEvent->text().toStdString().at(0);
+         std::string strkey = keyEvent->text().toStdString();
+         if (strkey.length() > 0)
+            key =  strkey.at(0);
+
          qDebug() << "Ate key press " << keyEvent->text().toStdString().c_str() << " k: " << key;
 
          ::keyCommandFlag(this,key,nFrame);
@@ -92,9 +96,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
     if (event->type() == QEvent::Resize) {
          QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
-         qDebug(" Resized (New Size) - Width: %d Height: %d",
-                resizeEvent->size().width(),
-                resizeEvent->size().height());
+         //qDebug(" Resized (New Size) - Width: %d Height: %d",
+                //resizeEvent->size().width(),
+                //resizeEvent->size().height());
 
 
 
