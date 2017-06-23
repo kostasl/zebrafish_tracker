@@ -395,7 +395,8 @@ namespace cvb
                }
 
             }
-          }
+          } //End Of Search For Blob
+          track->label = 0; //Reset Label Before Reassigning
           //cout << endl;
           //KL: SKip If not found - Think this Matching is what updates the state of the tracks
           if  (track != NULL && blob != NULL )

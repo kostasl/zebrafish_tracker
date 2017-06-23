@@ -44,7 +44,7 @@
 
 
 /// Constants ///
-const unsigned int thresh_fishblobarea  = 1500; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 1000; //Min area above which to Filter The fish blobs
 const int inactiveFrameCount            = 1000; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 200; //Threshold for distance between track-to blob assignement
@@ -65,6 +65,7 @@ double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
 int g_Segthresh             = 10; //Image Threshold for FIsh Features
+int g_SegInnerthreshMult    = 5; //Image Threshold for FIsh Features
 int g_BGthresh              = 13; //BG threshold segmentation
 int gi_ThresholdMatching    = 100; //Minimum Score to accept that a contour has been found
 int gi_CannyThres           = 100;
@@ -224,9 +225,9 @@ int main(int argc, char *argv[])
 //        std::cerr << "OpenCV not compiled with QT support! can display overlay" <<std::endl;
 //    }
 
-    //trackImageSequencefiles(window_main);
+    trackImageSequencefiles(window_main);
 
-    trackVideofiles(window_main);
+    //trackVideofiles(window_main);
     //destroy GUI windows
     cv::destroyAllWindows();
     cv::waitKey(0);                                          // Wait for a keystroke in the window
@@ -305,7 +306,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
     qDebug() << "Open File Sequence in : " << inVideoDirname;
 
-    ///* Obtain BG Model LOOP//////////////
+        ///* Obtain BG Model LOOP//////////////
         //QDirIterator itBGimgDir(inVideoDirname, QDirIterator::Subdirectories);
         QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
         QStringList imgFiles = QDir(inVideoDirname).entryList(fileFilters,QDir::Files,QDir::Name);
@@ -322,6 +323,9 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           //Contrast Brightness
           //frame.convertTo(frame, -1, 1, 0); //increase the contrast (double)
 
+
+
+
           nFrame++;
           window_main.nFrame = nFrame;
           if (!updateBGFrame(frame,fgMask,nFrame)) //Stop when BG learning says so
@@ -336,25 +340,20 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           cv::displayOverlay(gstrwinName,"Press 'e' when features Have been detected" , 10000 );
 
           window_main.showVideoFrame(frame,nFrame); //Show On QT Window
-
           cv::imshow(gstrwinName + " FG Mask", fgMask);
-
-
-
           //Check For input Control
           keyboard = cv::waitKey( cFrameDelayms );
           checkPauseRun(&window_main,keyboard,nFrame);
         }
 
 
-    ///LOOP Tracking Process images with Obtained BG Model - Now Start over images afresh
+    ///\brief LOOP Tracking Process images with Obtained BG Model - Now Start over images afresh
     nFrame = 0;
     window_main.nFrame = nFrame;
 
     //Show Video list to process
     //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
     std::cout << "Starting Tracking  processing" << std::endl;
-
 
     itfile.toFront();
     while (itfile.hasNext() && !bExiting)
@@ -379,21 +378,25 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
        nFrame++;
        window_main.nFrame = nFrame;
 
+              //Make Global Roi on 1st frame
+       if (nFrame == 1)
+       {
+           //Add Global Roi
+           ltROI newROI(cv::Point(frame.cols/2-10,frame.rows/2-10),cv::Point(0,0));
+           addROI(newROI);
+       }
+
       // std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
 
        /// Frame The Fish ///
        frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U);
-       //frameMasked.convertTo(frameMasked, -1, 0.3, 0); //increase the contrast (double)
        frame.copyTo(frameMasked,fgMask);
 
-       cv::imshow(gstrwinName,frameMasked);
 
        processFrame(frame,fgMask,frameMasked,nFrame);
+       cv::imshow(gstrwinName + " FishOnly",frameMasked);
 
-
-       ///Display Output //
-       cv::imshow(gstrwinName + " FishOnly",framefishMasked);
-
+       /// Display Output //
        window_main.showVideoFrame(frame,nFrame); //Show On QT Window
 
        if (bshowMask)
@@ -847,6 +850,8 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
         cvb::CvTrack* track = it->second;
 
         fishModels::const_iterator ft =  vfishmodels.find(it->first); //Find model with same Id as the Track - Associated fishModel
+        fishModel* pfish = NULL;
+
         if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
         {
             //Make new fish Model
@@ -856,10 +861,30 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
             vfishmodels.insert(CvIDFishModel(track->id,fish));
 
         }
+        else
+        { //Existing Fish Needs to Point to this track
+          pfish = ft->second; //Set Pointer to Existing Fish
+
+            //Must point to the same track - OtherWise Replace Fish Model
+            if(pfish->track != track)
+            {
+                delete pfish;
+                //Make Attached FishModel
+                fishModel* fish= new fishModel(track);
+                vfishmodels.erase(track->id); //Replace
+                vfishmodels.insert(CvIDFishModel(track->id,fish));
+
+            }
+
+        }
+
     }
 
 
-}
+
+
+
+} //End Of Update FishModels
 
 
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
@@ -1803,16 +1828,16 @@ cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THR
 cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
 
 /////////////////
-//make Inner Fish MAsk
-//cv::threshold( frameImg_gray, threshold_output_H, 4.0*g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
-//cv::erode(threshold_output,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),1);
+//make Inner Fish MAsk /More Accurate Way
+//cv::threshold( frameImg_gray, threshold_output_H, g_SegInnerthreshMult * g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
+cv::erode(threshold_output,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),g_SegInnerthreshMult);
 //Substract Inner from Outer
-//cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
+cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
 ///////////////////
 
 
-//Make Hollow Mask Directly
-cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),4);
+//Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
+//cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),4);
 
 
 /// Find contours on Masked Image Showing Fish Outline
@@ -1884,7 +1909,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
     std::vector<cv::Vec4i> hierarchy_laplace; //Contour Relationships  [Next, Previous, First_Child, Parent]
     std::vector<std::vector<cv::Point> > fishfeatureContours( contours_laplace.size() );
     std::vector<cv::RotatedRect> rectfishFeatures; //Fitted Ellipsoids
-
+    cv::Point2f featurePnts[4];
 
     std::vector<std::vector<cv::Point> > contours_canny;
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
@@ -1918,7 +1943,9 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         cvb::CvTrack* track = it->second;
 
         fishModel* pfish = vfishmodels.find(trackId)->second;
-        assert(pfish->track == track); //Must point to the same track
+        //Trackeer is Reusing Track Ids Need to Fix this
+        if (pfish->track != track); //Must point to the same track
+            std::cerr << "Model does not match track pointer" << std::endl;
 
         maskfishFeature = cv::Mat::zeros(frameMasked.rows, frameMasked.cols,CV_8U); //Empty Canvas This fish's mask
 
@@ -2008,9 +2035,37 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //Contour Eyes on Laplace Image - Segment Eye Mask
         int distToEyes = cv::norm(pfish->coreTriangle[2]-pfish->coreTriangle[1])/2;
         cv::circle(framelapl,pfish->coreTriangle[2],distToEyes,CV_RGB(255,255,255),6,cv::FILLED); //Mask Body
+
         //Mid Eye Position
+        /// \todo could use Blob Angle to assist and prevent errors on this
+
         cv::Point midEyePoint = pfish->coreTriangle[0]-(pfish->coreTriangle[0] - pfish->coreTriangle[1])/2;
+
+        //Fix Distance Of MidEye To Blob Angle
+        if (pfish->blobLabel)
+        {
+            cvb::CvBlobs::const_iterator fbt = blobs.find(pfish->blobLabel);
+            assert(fbt != blobs.end());
+
+            cvb::CvBlob* fishblob = fbt->second;
+            double angle = cvAngle(fishblob);
+            cv::Point fishblobClineA,fishblobClineB;
+            double lengthLine = distToEyes*4;
+            fishblobClineA.x =fishblob->centroid.x-lengthLine*cos(angle);
+            fishblobClineA.y =fishblob->centroid.y-lengthLine*sin(angle);
+            fishblobClineB.x =fishblob->centroid.x+lengthLine*cos(angle);
+            fishblobClineB.y =fishblob->centroid.y+lengthLine*sin(angle);
+
+            cv::line(framelapl,fishblobClineA ,fishblobClineB,CV_RGB(255,255,255),1,cv::LINE_4);
+
+            ///Check If MidLine Between Eyes is in expected position
+            ///
+        }
+
         cv::Point vecMidlEye = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*2;
+
+
+
         cv::line(framelapl,pfish->coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //Mask Body
 
         /// Find Features in Laplace Image
@@ -2064,8 +2119,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             fishfeatureContours[1] = contours_laplace[idxREyeContour];
         else
             if (idxREyeContourC != -1)
-                fishfeatureContours[1] = contours_canny[idxREyeContour];
-
+                fishfeatureContours[1] = contours_canny[idxREyeContourC];
 
         if (fishfeatureContours[0].size() > 3 ) //Left Eye
             rectfishFeatures[0] = cv::minAreaRect(fishfeatureContours[0]); //cv::fitEllipse(fishfeatureContours[0]);
@@ -2090,12 +2144,23 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
 
         //Now Draw Labels on it To Mark L-R Eyes, Head And body region
-        cv::Point ptHead       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*0.8;
-        cv::circle(markerEyesImg,ptHead            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        cv::Point ptNeck       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*0.6;
+        cv::Point ptMouth       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*1.2;
+        cv::circle(markerEyesImg,ptMouth            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(markerEyesImg,midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
-        cv::circle(markerEyesImg,pfish->coreTriangle[0],2,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Left Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[1],2,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Right Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body Eye
+
+        rectfishFeatures[0].points(featurePnts);
+        cv::circle(markerEyesImg,pfish->coreTriangle[0],3,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
+        //cv::Point eyePt[4];
+        //eyePt[0].x = 0.5*rectfishFeatures[0].size.height *sin(rectfishFeatures[0].angle*M_PI); //0.3*(featurePnts[0]-pfish->coreTriangle[0])+pfish->coreTriangle[0];
+        //eyePt[0].y = 0.5*rectfishFeatures[0].size.height*cos(rectfishFeatures[0].angle*M_PI); //0.3*(featurePnts[0]-pfish->coreTriangle[0])+pfish->coreTriangle[0];
+        //cv::circle(markerEyesImg,pfish->coreTriangle[0]+eyePt[0],2,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
+
+
+        cv::circle(markerEyesImg,pfish->coreTriangle[1],3,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
+
+        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
         ///END OF  WATERSHED Marking  ///
 
 
@@ -2115,7 +2180,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
 
         ///
-        cv::Point2f featurePnts[4];
+
         //Draw Left Eye
         if (idxLEyeContour != -1)
         {
