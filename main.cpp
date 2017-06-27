@@ -225,9 +225,9 @@ int main(int argc, char *argv[])
 //        std::cerr << "OpenCV not compiled with QT support! can display overlay" <<std::endl;
 //    }
 
-    trackImageSequencefiles(window_main);
+    //trackImageSequencefiles(window_main);
 
-    //trackVideofiles(window_main);
+    trackVideofiles(window_main);
     //destroy GUI windows
     cv::destroyAllWindows();
     cv::waitKey(0);                                          // Wait for a keystroke in the window
@@ -2180,20 +2180,39 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
         //Do Contour on Segmented image
 
-        cv::findContours(markerEyesImg, contours_watershed,hierarchy_watershed, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+        pfish->rightEyeHull.clear();
+        pfish->leftEyeHull.clear();
+        cv::findContours(markerEyesImg, contours_watershed,hierarchy_watershed, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
         int idxLEyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->coreTriangle[0],-1,pfish->leftEyeHull,rectfishFeatures);
         int idxREyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->coreTriangle[1],-1,pfish->rightEyeHull,rectfishFeatures);
 
+
+        if (idxLEyeContourW!=-1)
+        {
+            cv::convexHull( cv::Mat(contours_watershed[idxLEyeContourW]), pfish->leftEyeHull, false );
+            if (pfish->leftEyeHull.size() > 5)
+                pfish->leftEyeRect = cv::fitEllipse(pfish->leftEyeHull);
+        }
+
+        if (idxREyeContourW!=-1)
+        {
+             cv::convexHull( cv::Mat(contours_watershed[idxREyeContourW]), pfish->rightEyeHull, false );
+             if (pfish->rightEyeHull.size() > 5)
+                pfish->rightEyeRect = cv::fitEllipse(pfish->rightEyeHull);
+        }
         ///
+
 
         ///RESULTS
         ////DRAW
         ///  DEBUG
         /// Draw detected Contours
-        //cv::drawContours( maskedImg, contours_body, (int)idxblobContour, CV_RGB(255,0,0),1, cv::LINE_AA);
-        cv::drawContours( maskedImg, contours_watershed, (int)idxLEyeContourW, CV_RGB(255,0,0),2, cv::LINE_AA);
-        cv::drawContours( maskedImg, contours_watershed, (int)idxREyeContourW, CV_RGB(0,255,0),2, cv::LINE_AA);
+        cv::drawContours( maskedImg, contours_body, (int)idxblobContour, CV_RGB(255,0,0),1, cv::LINE_AA);
+        //cv::drawContours( maskedImg, contours_watershed, (int)idxLEyeContourW, CV_RGB(255,0,0),1, cv::LINE_AA);
+        //cv::drawContours( maskedImg, contours_watershed, (int)idxREyeContourW, CV_RGB(0,255,0),1, cv::LINE_AA);
 
+        cv::ellipse(maskedImg,pfish->leftEyeRect,CV_RGB(255,0,0),1,cv::LINE_8);
+        cv::ellipse(maskedImg,pfish->rightEyeRect,CV_RGB(0,255,0),1,cv::LINE_8);
 
         cv::circle(frameMasked,ptMouth            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(frameMasked,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
@@ -2203,15 +2222,9 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         cv::circle(frameMasked,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
 
 
-
         //Draw Fitted/Corrected Triangle of Fish
         for (int j=0; j<3;j++)
             cv::line(frameMasked,pfish->coreTriangle[j],pfish->coreTriangle[(j+1)%3] ,CV_RGB(0,100,255),1);
-
-
-
-
-
 
         ///
 
