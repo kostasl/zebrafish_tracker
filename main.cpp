@@ -44,12 +44,12 @@
 
 
 /// Constants ///
-const unsigned int thresh_fishblobarea  = 1000; //Min area above which to Filter The fish blobs
-const int inactiveFrameCount            = 1000; //Number of frames inactive until track is deleted
+const unsigned int thresh_fishblobarea  = 250; //Min area above which to Filter The fish blobs
+const int inactiveFrameCount            = 30000; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
-const int thDistanceFish                = 200; //Threshold for distance between track-to blob assignement
-const int thDistanceFood                = 25; //Threshold for distance between track-to blob assignement
-const double dLearningRateNominal       = 0.0005;
+const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
+const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
+const double dLearningRateNominal       = 0.0002;
 
 /// Vars With Initial Values  -
 //Area Filters
@@ -57,10 +57,10 @@ double dMeanBlobArea        = 100; //Initial Value that will get updated
 double dVarBlobArea         = 20;
 
 //BG History
-const int MOGhistory        = 150.0;
+float gfVidfps              = 300;
+const int MOGhistory        = gfVidfps*3;
 //Processing Loop delay
 uint cFrameDelayms          = 1;
-float gfVidfps              = 150;
 double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
     kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
-    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
+    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
     kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
 
 
@@ -389,7 +389,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
       // std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
 
        /// Frame The Fish ///
-       frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U);
+       frameMasked = cv::Mat::zeros(frame.rows, frame.cols,frame.type());
        frame.copyTo(frameMasked,fgMask);
 
 
@@ -1830,14 +1830,14 @@ cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
 /////////////////
 //make Inner Fish MAsk /More Accurate Way
 //cv::threshold( frameImg_gray, threshold_output_H, g_SegInnerthreshMult * g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
-cv::erode(threshold_output,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),g_SegInnerthreshMult);
+//cv::erode(threshold_output,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),g_SegInnerthreshMult);
 //Substract Inner from Outer
-cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
+//cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
 ///////////////////
 
 
 //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-//cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),4);
+cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),3);
 
 
 /// Find contours on Masked Image Showing Fish Outline
@@ -2032,7 +2032,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         /// Segregate Eyes / ///Fit Spline
         //Draw body centre point/Tail Top
         //Tail Top
-        cv::circle(frameMasked,pfish->coreTriangle[2],15,CV_RGB(20,20,180),3);
+        cv::circle(frameMasked,pfish->coreTriangle[2],5,CV_RGB(20,20,180),1);
 
 
         //Guiding /Segregating Lines
@@ -2150,13 +2150,13 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
         //Now Draw Labels on it To Mark L-R Eyes, Head And body region
         cv::Point ptNeck       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*0.7;
-        cv::Point ptMouth       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*1.2;
+        cv::Point ptMouth       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*1.02;
         cv::circle(markerEyesImg,ptMouth            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(markerEyesImg,midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
-        cv::circle(markerEyesImg,pfish->coreTriangle[0],3,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[1],3,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
+        cv::circle(markerEyesImg,pfish->coreTriangle[0],1,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
+        cv::circle(markerEyesImg,pfish->coreTriangle[1],1,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
+        cv::circle(markerEyesImg,pfish->coreTriangle[2],1,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
 
 //        for( size_t i = 0; i< contours_canny.size(); i++ )
 //        {
