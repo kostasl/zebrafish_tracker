@@ -157,6 +157,20 @@ bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector
 void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vector<cv::Point> >& fishbodycontours ,std::vector<cv::Vec4i>& fishbodyhierarchy);
 
 
+///
+/// \brief findIndexClosesttoPoint - Naive Nearest neighbour finder
+/// \param vPointChain array of points
+/// \param pt reference point
+/// \return index in array of closest point
+///
+int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt);
+
+/// \brief Find point Furthest Along closed outline contour
+/// Assume points belong to closed contour - find max distance between points
+/// traversing clock and anticlockwise
+int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy);
+
+
 
 /// Auxiliriary Functions
 

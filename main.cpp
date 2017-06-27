@@ -1635,40 +1635,88 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
    return idxContour;
 }
 
+///
+/// \brief findIndexClosesttoPoint - Naive Nearest neighbour finder
+/// \param vPointChain array of points
+/// \param pt reference point
+/// \return index in array of closest point
+///
+int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt)
+{
+  int idx;
+  unsigned int minDist  = 0;
+  unsigned int dist     = 0;
+
+  minDist = 1000000;
+  for (int i=0; i < vPointChain.size();i++)
+  {
+    dist = cv::norm(vPointChain[i]-pt);
+    if (dist < minDist )
+    {
+        idx = i;
+        minDist = dist;
+    }
+  }
+
+  return idx;
+}
+
 /// \brief Find point Furthest Along closed outline contour
-/// Assume points belong to closed contour - find max distance between points
-/// traversing clock and anticlockwise
+/// Find point furtherst using shortest paths to each point around a closed contour/outline/spline
 int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy)
 {
     int antiVertex = idx;
     int maxminD = 0;
-    cv::Point ptsrc = vPointChain[idx];
-    int dPointL[vPointChain.size()]; //Accumulated distance from starting point on Chain Going AntiClockwise
-    int dPointR[vPointChain.size()]; //Accumulated distance from starting point on Chain Going Clockwise
-
+    //cv::Point ptsrc = vPointChain[idx];
     int n = vPointChain.size();
+    int dPathL[n]; //Accumulated distance from starting point on Chain Going AntiClockwise
+    int dPathR[n]; //Accumulated distance from starting point on Chain Going Clockwise
+
+
     //Find Antipoint/mirror Points on Chain - where the difference between accumulated distance is minimum
-    for (int i=0;i<n;i++)
+    dPathL[idx] = 0;
+    dPathR[idx] = 0;
+
+    int k = idx; //k is index Going In reverse, i going fwd
+    int ringIdx;
+    int ringBIdx;
+    int lastIndexR = k;
+    int lastValL = dPathL[idx];
+    int lastValR = dPathR[idx];
+
+    for (int i=1;i<n;i++)
     {
-        int ringIdx = (i+idx)%(n);
+
+        k--;
+
+        ringIdx  = (i+idx)%(n);
+        ringBIdx = (k);
+
         //Calculate Leftward And Rightward point Distances - Store in vector
-        dPointL[ringIdx] += cv::norm(vPointChain[ringIdx]-vPointChain[(ringIdx+1)%(n)]);
-        dPointR[ringIdx] += cv::norm(vPointChain[n-ringIdx]-vPointChain[n-(ringIdx+1)%(n)]);
+        dPathL[ringIdx]      = lastValL;
+        dPathR[ringBIdx]     = lastValR;
 
+        dPathL[ringIdx]   += cv::norm(vPointChain[ringIdx]-vPointChain[(ringIdx+1)%(n)]);
+        dPathR[ringBIdx]  += cv::norm(vPointChain[ringBIdx]-vPointChain[(lastIndexR)%(n)]);
 
-
+        lastValL = dPathL[ringIdx];
+        lastValR = dPathR[ringBIdx];
+        lastIndexR = k;
+        if (k==0)
+            k = n; // Do ring Wrap Around
     }
 
     for (int i=0;i<n;i++)
     {
         int ringIdx = (i+idx)%(n);
-        int DistLR = std::min(dPointL[ringIdx],dPointR[ringIdx]);
+        //Compare distance to same point from both paths CW CCW and take the shortest one
+        int DistLR = std::min(dPathL[ringIdx],dPathR[ringIdx]);
 
         if (DistLR > maxminD)
         {
             maxminD = DistLR;
             //store Index
-            antiVertex = i;
+            antiVertex = ringIdx;
         }
     }
 
@@ -2099,6 +2147,13 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //Set Tracking point to be the buoyancy cyst - body point (tracked as brightest spot)
         track->centroid.x = pfish->coreTriangle[2].x; track->centroid.y = pfish->coreTriangle[2].y;
 
+        //DEfine Head And Tail COntour POints
+        int idxHeadPoint = findIndexClosesttoPoint(contours_body[idxblobContour],pfish->mouthPoint );
+        int idxTailPoint = maxChainDistance(contours_body[idxblobContour],idxHeadPoint,0);
+
+        pfish->tailTopPoint = contours_body[idxblobContour][idxTailPoint]; //Redefine Tail Point Using Contour
+        pfish->mouthPoint   = contours_body[idxblobContour][idxHeadPoint]; //Redefine mouthPoint Based on Contour
+
 
         //Centroid
         //cv::circle(frameMasked,centroid,10,CV_RGB(0,10,200));
@@ -2313,12 +2368,15 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         cv::ellipse(maskedImg,pfish->leftEyeRect,CV_RGB(255,0,0),1,cv::LINE_8);
         cv::ellipse(maskedImg,pfish->rightEyeRect,CV_RGB(0,255,0),1,cv::LINE_8);
 
-        cv::circle(frameMasked,ptMouth            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        cv::circle(framefishMasked,pfish->tailTopPoint,2,CV_RGB(200,250,10),2,cv::FILLED); //Label/Mark Tail On Contour
+        cv::circle(framefishMasked,pfish->mouthPoint ,3,CV_RGB(200,200,150),2,cv::FILLED); //Label/Mark Headegion
+
         cv::circle(frameMasked,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(frameMasked,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(frameMasked,pfish->coreTriangle[0],3,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
         cv::circle(frameMasked,pfish->coreTriangle[1],3,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
         cv::circle(frameMasked,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
+
 
 
         //Draw Fitted/Corrected Triangle of Fish
