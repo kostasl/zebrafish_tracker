@@ -16,8 +16,6 @@ public:
   cvb::CvLabel blobLabel;
   cvb::CvID ID; /// Same as the track ID
   std::vector<cv::Point> contour;
-  cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
-  cv::Point rightEyePoint;
   cv::RotatedRect leftEyeRect;
   cv::RotatedRect rightEyeRect;
   std::vector<cv::Point> rightEyeHull;
@@ -27,9 +25,14 @@ public:
 
   double leftEyeTheta;
   double rightEyeTheta;
-  cv::Point tailTopPoint;
   double bearingRads;
   cv::Point tailSplinePoints[8];
+  cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
+  cv::Point rightEyePoint;
+  cv::Point mouthPoint;
+  cv::Point midEyePoint;
+  cv::Point tailTopPoint;
+
 
   cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
 

@@ -57,7 +57,7 @@ double dMeanBlobArea        = 100; //Initial Value that will get updated
 double dVarBlobArea         = 20;
 
 //BG History
-float gfVidfps              = 300;
+float gfVidfps              = 150;
 const int MOGhistory        = gfVidfps*3;
 //Processing Loop delay
 uint cFrameDelayms          = 1;
@@ -1635,8 +1635,80 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
    return idxContour;
 }
 
+/// \brief Find point Furthest Along closed outline contour
+/// Assume points belong to closed contour - find max distance between points
+/// traversing clock and anticlockwise
+int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy)
+{
+    int antiVertex = idx;
+    int maxminD = 0;
+    cv::Point ptsrc = vPointChain[idx];
+    int dPointL[vPointChain.size()]; //Accumulated distance from starting point on Chain Going AntiClockwise
+    int dPointR[vPointChain.size()]; //Accumulated distance from starting point on Chain Going Clockwise
+
+    int n = vPointChain.size();
+    //Find Antipoint/mirror Points on Chain - where the difference between accumulated distance is minimum
+    for (int i=0;i<n;i++)
+    {
+        int ringIdx = (i+idx)%(n);
+        //Calculate Leftward And Rightward point Distances - Store in vector
+        dPointL[ringIdx] += cv::norm(vPointChain[ringIdx]-vPointChain[(ringIdx+1)%(n)]);
+        dPointR[ringIdx] += cv::norm(vPointChain[n-ringIdx]-vPointChain[n-(ringIdx+1)%(n)]);
 
 
+
+    }
+
+    for (int i=0;i<n;i++)
+    {
+        int ringIdx = (i+idx)%(n);
+        int DistLR = std::min(dPointL[ringIdx],dPointR[ringIdx]);
+
+        if (DistLR > maxminD)
+        {
+            maxminD = DistLR;
+            //store Index
+            antiVertex = i;
+        }
+    }
+
+return antiVertex;
+}
+
+///
+bool fitfishCoreSpine(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
+{
+
+    //find two most distal points in contour - Ie Head and Tail tip
+    //accumulate distance and find maximum
+    //Start From Guess Of Head and Tail
+    unsigned int accDistance,maxDistance;
+    std::pair<cv::Point,cv::Point> distalPoints;
+
+    maxDistance = 0;
+    for (int i=0;i<sfish.contour.size();i++)
+    {
+        accDistance = 0;
+        cv::Point ptsrc = sfish.contour[i];
+        cv::Point ptlast = ptsrc;
+
+        for (int j=i+1;j<sfish.contour.size();j++)
+        {
+            accDistance += cv::norm(ptlast - sfish.contour[j]);
+            if (accDistance > maxDistance)
+            {
+                maxDistance = accDistance;
+                distalPoints.first = ptsrc;
+                distalPoints.second = sfish.contour[j];
+
+            }
+
+
+
+        }
+    }
+
+}
 
 
 ///
@@ -1775,9 +1847,9 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
     cv::Point vecEyeA = sfish.coreTriangle[2] - sfish.coreTriangle[0];
     cv::Point vecEyeB = sfish.coreTriangle[2] - sfish.coreTriangle[1];
 
-    //Use As Temp Vars
-    sfish.leftEyeTheta = std::atan2(vecEyeA.y,vecEyeA.x);
-    sfish.rightEyeTheta = std::atan2(vecEyeB.y,vecEyeB.x);
+    //Use As Temp Vars - Gives -Pi  0 +Pi - Convert to 0 2Pi
+    sfish.leftEyeTheta = std::atan2(vecEyeA.y,vecEyeA.x)+M_PI;
+    sfish.rightEyeTheta = std::atan2(vecEyeB.y,vecEyeB.x)+M_PI;
 
     if (sfish.leftEyeTheta > sfish.rightEyeTheta )
     {
@@ -1798,8 +1870,11 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
     //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
     cv::minMaxLoc(maskedfishImg,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
 
+    sfish.tailTopPoint    = ptTail;
+    //if (maxLoc) is contained in triangle?
     sfish.coreTriangle[2] = maxLoc; //Now Place index [0] at apex
-
+    sfish.midEyePoint       = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
+    sfish.mouthPoint        = sfish.coreTriangle[2]+(sfish.midEyePoint-sfish.coreTriangle[2])*1.2;
 
 
     return true;
@@ -2043,9 +2118,8 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //Mid Eye Position
         /// \todo could use Blob Angle to assist and prevent errors on this
 
-        cv::Point midEyePoint = pfish->coreTriangle[0]-(pfish->coreTriangle[0] - pfish->coreTriangle[1])/2;
 
-        //Fix Distance Of MidEye To Blob Angle
+        //Fix Angle Distance Of MidEye To Blob Angle
         if (pfish->blobLabel)
         {
             cvb::CvBlobs::const_iterator fbt = blobs.find(pfish->blobLabel);
@@ -2059,16 +2133,17 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             fishblobClineA.y =fishblob->centroid.y-lengthLine*sin(angle);
             fishblobClineB.x =fishblob->centroid.x+lengthLine*cos(angle);
             fishblobClineB.y =fishblob->centroid.y+lengthLine*sin(angle);
-
+            //Draw blob MidLine
             cv::line(framelapl,fishblobClineA ,fishblobClineB,CV_RGB(255,255,255),1,cv::LINE_4);
 
-            ///Check If MidLine Between Eyes is in expected position
+            ///\todo Check If MidLine Between Eyes is in expected position
             ///
         }
 
-        cv::Point vecMidlEye = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*2;
+        //cv::Point midEyePoint = pfish->coreTriangle[0]-(pfish->coreTriangle[0] - pfish->coreTriangle[1])/2;
+        //pfish->midEyePoint = pfish->coreTriangle[2] + (pfish->mouthPoint - pfish->coreTriangle[2]  )*0.80;
 
-
+        cv::Point vecMidlEye = pfish->coreTriangle[2]+(pfish->midEyePoint-pfish->coreTriangle[2])*2;
 
         cv::line(framelapl,pfish->coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //Mask Body
 
@@ -2149,14 +2224,16 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
 
         //Now Draw Labels on it To Mark L-R Eyes, Head And body region
-        cv::Point ptNeck       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*0.7;
-        cv::Point ptMouth       = pfish->coreTriangle[2]+(midEyePoint-pfish->coreTriangle[2])*1.02;
-        cv::circle(markerEyesImg,ptMouth            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->midEyePoint-pfish->coreTriangle[2])*0.4;
+        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->midEyePoint-pfish->coreTriangle[2])*0.6;
+        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
-        cv::circle(markerEyesImg,midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
-        cv::circle(markerEyesImg,pfish->coreTriangle[0],1,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[1],1,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[2],1,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
+        cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+
+        cv::circle(markerEyesImg,pfish->coreTriangle[0],2,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
+        cv::circle(markerEyesImg,pfish->coreTriangle[1],2,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
+        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
 
 //        for( size_t i = 0; i< contours_canny.size(); i++ )
 //        {
@@ -2201,6 +2278,28 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
                 pfish->rightEyeRect = cv::fitEllipse(pfish->rightEyeHull);
         }
         ///
+        //Detect Vergence Angle
+        //Draw Eye Beams
+        double angle = pfish->rightEyeRect.angle*(M_PI/180.0) ;
+        cv::Point ptRightEyeBeam,ptLeftEyeBeam;
+        double lengthLine = 24;
+        ptRightEyeBeam.x = pfish->rightEyeRect.center.x+lengthLine*sin(angle);
+        ptRightEyeBeam.y = pfish->rightEyeRect.center.y+lengthLine*cos(angle);
+
+        angle = pfish->leftEyeRect.angle*(M_PI/180.0) ;
+        ptLeftEyeBeam.x = pfish->leftEyeRect.center.x+lengthLine*sin(angle);
+        ptLeftEyeBeam.y = pfish->leftEyeRect.center.y+lengthLine*cos(angle);
+
+        cv::line(frameMasked,pfish->rightEyeRect.center ,ptRightEyeBeam,CV_RGB(15,255,15),1,cv::LINE_4);
+
+        cv::line(frameMasked,pfish->leftEyeRect.center ,ptRightEyeBeam,CV_RGB(255,15,15),1,cv::LINE_4);
+
+
+
+
+
+
+
 
 
         ///RESULTS
@@ -2216,7 +2315,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
         cv::circle(frameMasked,ptMouth            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(frameMasked,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
-        cv::circle(frameMasked,midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        cv::circle(frameMasked,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(frameMasked,pfish->coreTriangle[0],3,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
         cv::circle(frameMasked,pfish->coreTriangle[1],3,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
         cv::circle(frameMasked,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
@@ -2229,11 +2328,12 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         ///
 
         //Draw Left Eye
-        if (idxLEyeContour != -1)
+        if (idxLEyeContour != -1 || idxLEyeContourW != -1)
         {
             //cv::drawContours( frameMasked, hull_lapl, (int)idxLEyeContour, CV_RGB(150,250,10), 2, 8,hierarchy_laplace);
 
-            rectfishFeatures[0].points(featurePnts);
+            //rectfishFeatures[0].points(featurePnts);
+            pfish->leftEyeRect.points(featurePnts);
             ///Draw Left Eye Rectangle
             for (int j=0; j<4;j++) //Rectangle Eye
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),2);
@@ -2241,7 +2341,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             //if (bEyesDetected) //Save only when On
                 pfish->leftEyeHull = fishfeatureContours[0];
 
-            pfish->leftEyeRect = rectfishFeatures[0];
+            //pfish->leftEyeRect = rectfishFeatures[0];
             //cv::ellipse(frameMasked,pfish->leftEyeRect,CV_RGB(210,00,0),2,cv::LINE_8);
             cv::ellipse(frame,pfish->leftEyeRect,CV_RGB(210,00,0),1,cv::LINE_AA);
 
@@ -2250,17 +2350,19 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //sfish.coreTriangle[0] = rectFeatures_lapl[idxLEyeContour].center;
 
 
-        if (idxREyeContour != -1 || idxREyeContourC != -1)
+        if (idxREyeContour != -1 || idxREyeContourC != -1 || idxREyeContourW != -1)
         {  ///Draw Right Eye Rectangle
-            rectfishFeatures[1].points(featurePnts);
+            //rectfishFeatures[1].points(featurePnts);
+
+            pfish->rightEyeRect.points(featurePnts);
             for (int j=0; j<4;j++) //Rectangle Eye
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(00,210,0),1);
 
             //Save Hull Eye description and use it to compare across frames
 //            if (bEyesDetected) //Save only when On
-                pfish->rightEyeHull = fishfeatureContours[1];
+                //pfish->rightEyeHull = fishfeatureContours[1];
 
-            pfish->rightEyeRect = rectfishFeatures[1];
+            //pfish->rightEyeRect = rectfishFeatures[1];
             ///Draw Eyes Hull - On Both Image Frames
             //cv::ellipse(frameMasked,pfish->rightEyeRect ,CV_RGB(00,210,0),3,cv::LINE_8);
             cv::ellipse(frame,pfish->rightEyeRect ,CV_RGB(00,210,0),2,cv::LINE_AA);
