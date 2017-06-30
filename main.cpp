@@ -1577,7 +1577,9 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
           //Measure Space Mod -Penalize Outside contour Hits - Convert Outside Contour Distances to X times further +ve (penalize)
           //Make Distance alway positive
           //matchContourDistance = (distToCentroid<0)?abs(distToCentroid)*20:distToCentroid;
-           qDebug() << "-c" << i << " D:" <<  distToCentroid;
+          // qDebug() << "-c" << i << " D:" <<  distToCentroid;
+
+
           ///Match Shape -
           /// \warning  If initial Shape Is not eye like this may be stuck into rejecting shapes
           // If A shape is provided
@@ -1924,7 +1926,7 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
 
     sfish.tailTopPoint    = ptTail;
     //if (maxLoc) is contained in triangle?
-    sfish.coreTriangle[2] = maxLoc; //Now Place index [0] at apex
+    sfish.coreTriangle[2]   = maxLoc; //Now Place index [0] at apex
     sfish.midEyePoint       = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
     sfish.mouthPoint        = sfish.coreTriangle[2]+(sfish.midEyePoint-sfish.coreTriangle[2])*1.2;
 
@@ -1970,7 +1972,7 @@ cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
 
 
 //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),2);
+cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),4);
 
 
 /// Find contours on Masked Image Showing Fish Outline
@@ -2072,7 +2074,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
     //Make/Reset Label Img for WaterShed
     markerEyesImg = cv::Mat::ones(maskedImg.rows,maskedImg.cols,CV_32SC1)+70;
-    tmpMarker     = cv::Mat::zeros(maskedImg.rows,maskedImg.cols,CV_32SC1);
+    tmpMarker     = cv::Mat::zeros(maskedImg.rows,maskedImg.cols,CV_32SC1)+70;
     //
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
@@ -2089,8 +2091,12 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
         fishModel* pfish = vfishmodels.find(trackId)->second;
         //Trackeer is Reusing Track Ids Need to Fix this
-        if (pfish->track != track); //Must point to the same track
+        if (pfish->track != track) //Must point to the same track
+        {
             std::cerr << "Model does not match track pointer" << std::endl;
+            continue;
+        }
+
 
         maskfishFeature = cv::Mat::zeros(frameMasked.rows, frameMasked.cols,CV_8U); //Empty Canvas This fish's mask
 
@@ -2158,7 +2164,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
 
         ///Fit triangle structure to Body
-        //Use Mask drawn from contour of fish to isolate fish's features
+        //Use Mask drawn from contour of fish to isolate fish's features - In Outline Thresholded Image
         berrorTriangleFit = fitfishCoreTriangle(maskfishFeature,maskedfishFeature_blur,*pfish,contours_body,idxChild,idxblobContour);
        //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
@@ -2203,17 +2209,19 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //DEfine Head And Tail COntour POints / Use Prior Location Of MouthPoint as indicator
         if (idxblobContour !=-1 && !berrorTriangleFit)
         {
-            //Use Blob Angle to detect where mouthpoint is
+
+//Nice try but issues remain!            //Use Blob Angle to detect where mouthpoint is
             if (cv::norm(pfish->mouthPoint-fishblobClineA) < cv::norm(pfish->mouthPoint-fishblobClineB))
                 idxHeadPoint = findIndexClosesttoPoint(contours_body[idxblobContour],fishblobClineA); // pfish->mouthPoint
             else
                 idxHeadPoint = findIndexClosesttoPoint(contours_body[idxblobContour],fishblobClineB); // pfish->mouthPoint
 
+//            idxHeadPoint = findIndexClosesttoPoint(contours_body[idxblobContour],pfish->mouthPoint); // pfish->mouthPoint
             idxTailPoint = maxChainDistance(contours_body[idxblobContour],idxHeadPoint,0);
 
             pfish->tailTopPoint = contours_body[idxblobContour][idxTailPoint]; //Redefine Tail Point Using Contour
-            pfish->mouthPoint   = contours_body[idxblobContour][idxHeadPoint]; //Redefine mouthPoint Based on Contour
-
+            //pfish->mouthPoint   = contours_body[idxblobContour][idxHeadPoint]; //Redefine mouthPoint Based on Contour
+            //pfish->midEyePoint = pfish->coreTriangle[2] + (pfish->mouthPoint - pfish->coreTriangle[2]  )*0.80;
         }
 
 
@@ -2232,10 +2240,10 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //Mid Eye Position
 
         //cv::Point midEyePoint = pfish->coreTriangle[0]-(pfish->coreTriangle[0] - pfish->coreTriangle[1])/2;
-        //pfish->midEyePoint = pfish->coreTriangle[2] + (pfish->mouthPoint - pfish->coreTriangle[2]  )*0.80;
+
         ///Draw On Laplance Img
         cv::Point vecMidlEye = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*2;
-        cv::line(framelapl,pfish->coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //Mask Body
+        cv::line(framelapl,pfish->coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //// Draw Eye Separator
 
         /// Find Features in Modified Laplace Image
         //Get Contours - Shound contain at least eyes, core and tail
@@ -2249,10 +2257,6 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         //Identify and Draw Right - Eye
         idxREyeContour  = findMatchingContour(contours_laplace,hierarchy_laplace,pfish->coreTriangle[1],1,pfish->rightEyeHull,rectfishFeatures);
         int idxREyeContourC = -1; //Initialize
-
-        cv::drawContours( framefishMasked, contours_laplace, idxREyeContour, CV_RGB(255,20,10), 2,8,hierarchy_laplace);
-        cv::drawContours( framefishMasked, contours_laplace, idxLEyeContour, CV_RGB(15,200,10), 2,8,hierarchy_laplace);
-
 
 
 
@@ -2310,8 +2314,8 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 //        }
 
         //Correct Triangle - Left Eye
-        pfish->coreTriangle[0] = (cv::Point)rectfishFeatures[0].center; //left
-        pfish->coreTriangle[1] = (cv::Point)rectfishFeatures[1].center; //Right
+        pfish->leftEyePoint = (cv::Point)rectfishFeatures[0].center; //left
+        pfish->rightEyePoint = (cv::Point)rectfishFeatures[1].center; //Right
 
 
 
@@ -2320,20 +2324,22 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         /// - \brief With the more accurate positioning of the eye centres now we can obtain
         /// Obtain Accurate FEature Contours for Eyes- Body + Head /////
         ///Make Marked/Labeled Image Using Approx Eye Location
+        //This is labelled as uknown Territory with 0
         cv::drawContours( markerEyesImg, contours_body, (int)idxblobContour, CV_RGB(0,0,0), cv::FILLED);
         //markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
 
 
         //Now Draw Labels on it To Mark L-R Eyes, Head And body region
-        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->midEyePoint-pfish->coreTriangle[2])*0.4;
-        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->midEyePoint-pfish->coreTriangle[2])*0.6;
-        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.4;
+        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.6;
+        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
         cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
 
-        cv::circle(markerEyesImg,pfish->coreTriangle[0],std::min((int)rectfishFeatures[0].size.width/3,1) ,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[1],std::min((int)rectfishFeatures[0].size.width/3,1) ,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
+        //Can use std::max((int)rectfishFeatures[1].size.width/4,1)
+        cv::circle(markerEyesImg,pfish->leftEyePoint,2 ,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
+        cv::circle(markerEyesImg,pfish->rightEyePoint,2 ,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
         cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
 
 //        for( size_t i = 0; i< contours_canny.size(); i++ )
@@ -2355,8 +2361,8 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
         //Do Contour on Segmented image
 
-        pfish->rightEyeHull.clear();
-        pfish->leftEyeHull.clear();
+        //pfish->rightEyeHull.clear();
+        //pfish->leftEyeHull.clear();
         cv::findContours(markerEyesImg, contours_watershed,hierarchy_watershed, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
         int idxLEyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->coreTriangle[0],-1,pfish->leftEyeHull,rectfishFeatures);
         int idxREyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->coreTriangle[1],-1,pfish->rightEyeHull,rectfishFeatures);
@@ -2387,7 +2393,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         ////DRAW
         ///  DEBUG
         /// Draw detected Contours
-        cv::drawContours( maskedImg, contours_body, (int)idxblobContour, CV_RGB(255,0,0),1, cv::LINE_AA);
+        //cv::drawContours( maskedImg, contours_body, (int)idxblobContour, CV_RGB(255,0,0),1, cv::LINE_AA);
         //cv::drawContours( maskedImg, contours_watershed, (int)idxLEyeContourW, CV_RGB(255,0,0),1, cv::LINE_AA);
         //cv::drawContours( maskedImg, contours_watershed, (int)idxREyeContourW, CV_RGB(0,255,0),1, cv::LINE_AA);
 
@@ -2399,8 +2405,8 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
 
         cv::circle(frameMasked,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
         cv::circle(frameMasked,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
-        cv::circle(frameMasked,pfish->coreTriangle[0],3,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
-        cv::circle(frameMasked,pfish->coreTriangle[1],3,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
+        cv::circle(frameMasked,pfish->leftEyePoint,2,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
+        cv::circle(frameMasked,pfish->rightEyePoint,2,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
         cv::circle(frameMasked,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
 
 
@@ -2412,8 +2418,6 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
         ///
         ///Process Eye Rects ///
         ///
-
-
 
         cv::Point ptRightEyeBeam,ptLeftEyeBeam;
         double lengthLine = 50;
@@ -2437,11 +2441,12 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
                 cv::line(frameMasked,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
             //if (bEyesDetected) //Save only when On
-                pfish->leftEyeHull = fishfeatureContours[0];
+                //pfish->leftEyeHull = fishfeatureContours[0];
 
             //pfish->leftEyeRect = rectfishFeatures[0];
             //cv::ellipse(frameMasked,pfish->leftEyeRect,CV_RGB(210,00,0),2,cv::LINE_8);
             cv::ellipse(frame,pfish->leftEyeRect,CV_RGB(210,00,0),1,cv::LINE_AA);
+            cv::drawContours( frameMasked, contours_watershed, (int)idxLEyeContourW, CV_RGB(255,0,0),1, cv::LINE_AA);
 
         }
         //Update Triangle Position to R Eye
@@ -2473,6 +2478,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
             ///Draw Eyes Hull - On Both Image Frames
             //cv::ellipse(frameMasked,pfish->rightEyeRect ,CV_RGB(00,210,0),3,cv::LINE_8);
             cv::ellipse(frame,pfish->rightEyeRect ,CV_RGB(00,210,0),2,cv::LINE_AA);
+            cv::drawContours( frameMasked, contours_watershed, (int)idxREyeContourW, CV_RGB(0,255,0),1, cv::LINE_AA);
 
         }
 
@@ -2520,6 +2526,9 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
              cv::drawContours( framefishMasked, contours_laplace, (int)i, CV_RGB(120,120,110), 1,8,hierarchy_laplace);
         }
 
+        cv::drawContours( framefishMasked, contours_laplace, idxREyeContour, CV_RGB(255,20,10), 2,8,hierarchy_laplace);
+        cv::drawContours( framefishMasked, contours_laplace, idxLEyeContour, CV_RGB(15,200,10), 2,8,hierarchy_laplace);
+
 
 
     //Draw On Canny Img
@@ -2531,6 +2540,7 @@ void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >
     }
 
 
+    tmpMarker.convertTo(tmpMarker, CV_8UC3);
     cv::imshow("Watershed Markers",tmpMarker);
 
     markerEyesImg.convertTo(markerEyesImg, CV_8UC3);
