@@ -88,10 +88,11 @@ bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 ///
 /// \brief detectZfishFeatures - Used to create geometric representations of main zebrafish Features : Eyes, Body, tail
 /// these are saved as point arrays on which angles and other measurements can be obtained
-/// \param maskedGrayImg
-/// \param Fish Contours
+/// \param fullImg - Raw Img captured
+/// \param Mask with Fish oNly FG
+/// \param main inner and extrernal fish Contours for each fish
 /// \param 1 level hierarchy of contours (outer inner)
-void detectZfishFeatures(cv::Mat& maskedImg,std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
+void detectZfishFeatures(cv::Mat& fullImg,cv::Mat& maskfishFGImg,std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
 
 ///
 /// \brief UpdateFishModels Use Tracks  to update persistent fishModels
@@ -104,7 +105,7 @@ void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
-int processBlobs(cv::Mat& srcimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString,double& dMeanBlobArea);
+int processBlobs(cv::Mat& fullsrcimg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outFileCSV,std::string& frameNumberString,double& dMeanBlobArea);
 
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);

@@ -39,6 +39,13 @@ void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
     showCVimg(img);
 }
 
+void MainWindow::saveScreenShot(QString stroutDirCSV)
+{
+    std::stringstream frameNumberString; frameNumberString << nFrame;
+    ::saveImage(frameNumberString.str(),stroutDirCSV,*this->mpLastCVImg);
+
+}
+
 void MainWindow::showCVimg(cv::Mat& img)
 {
     QImage qimg = QtOpencvCore::img2qimg(img);
@@ -66,6 +73,8 @@ void MainWindow::showCVimg(cv::Mat& img)
 
     this->ui->graphicsView->fitInView(mImage, Qt::KeepAspectRatio);
     this->ui->graphicsView->show();
+
+    this->mpLastCVImg = &img; //Save Pointer to frame
     //mImage
 
 }

@@ -30,9 +30,10 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     void showCVimg(cv::Mat& img);
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
-
+    void saveScreenShot(QString stroutDirCSV);
     unsigned int nFrame = 0;
     ~MainWindow();
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
     void handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent);
@@ -49,6 +50,8 @@ private:
     * Image to be displayed in  this scene.
     */
     QGraphicsPixmapItem*                            mImage;
+
+    cv::Mat*                                        mpLastCVImg;
 
 
 };
