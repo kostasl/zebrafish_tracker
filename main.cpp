@@ -176,9 +176,11 @@ int main(int argc, char *argv[])
 
 
     cv::namedWindow(gstrwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow(gstrwinName + " FG Mask",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow(gstrwinName + " FishOnly",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow("MOG2 Mask",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    //cv::namedWindow(gstrwinName + " FishOnly",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("Debug A",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("Debug B",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("Debug C",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
 
     frameDebugA = cv::Mat::zeros(640, 480, CV_8U);
     frameDebugB = cv::Mat::zeros(640, 480, CV_8U);
@@ -189,10 +191,10 @@ int main(int argc, char *argv[])
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
 
-    cv::createTrackbar( "Laplace Size:", gstrwinName + " FishOnly", &g_BGthresh, 31.0, thresh_callback );
-    cv::createTrackbar( "Fish Threshold:", gstrwinName + " FishOnly", &g_Segthresh, 151.0, thresh_callback );
-    cv::createTrackbar( "ShapeMatch Thres:", gstrwinName + " FishOnly", &gi_ThresholdMatching, 20000.0, thresh_callback );
-    cv::createTrackbar( "Canny Thres:", gstrwinName + " FishOnly", &gi_CannyThres, 300, thresh_callback );
+    cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
+    cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
+    cv::createTrackbar( "ShapeMatch Thres:","Debug D", &gi_ThresholdMatching, 20000.0, thresh_callback );
+    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 300, thresh_callback );
 
 
     thresh_callback( 0, 0 );
@@ -1994,7 +1996,7 @@ cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
 
 
 //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
+cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),3);
 
 /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
 //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
@@ -2091,7 +2093,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(11,11),5,5);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
 
     cv::Laplacian(maskedfishFeature_blur,framelapl,CV_8UC1,g_BGthresh);
     //cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
@@ -2251,17 +2253,18 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         /// NOTE: This needs to precede any contour finding on Laplacian Image -
         /// //Isolate Body from Eyes From Laplaced Image - So contour can trace them
 
-        //Guiding /Segregating Lines
-        //Contour Eyes on Laplace Image - Segment Eye Mask
 
-        cv::circle(framelapl,pfish->coreTriangle[2],distToEyes,CV_RGB(255,255,255),6,cv::FILLED); //Mask Body
+
+        ///Draw On Laplance Img //Guiding /Segregating Lines
+        ///Contour Eyes on Laplace Image - Segment Eye Mask
+        cv::circle(framelapl,pfish->coreTriangle[2],distToEyes,CV_RGB(255,255,255),2,cv::FILLED); //Mask Body
         //Mid Eye Position
 
         //cv::Point midEyePoint = pfish->coreTriangle[0]-(pfish->coreTriangle[0] - pfish->coreTriangle[1])/2;
 
-        ///Draw On Laplance Img
+
         cv::Point vecMidlEye = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*2;
-        cv::line(framelapl,pfish->coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::FILLED); //// Draw Eye Separator
+        cv::line(framelapl,pfish->coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::LINE_8); //// Draw Eye Separator
 
         /// Find Features in Modified Laplace Image
         //Get Contours - Shound contain at least eyes, core and tail
@@ -2349,16 +2352,16 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
         //Now Draw Labels on it To Mark L-R Eyes, Head And body region
         cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.4;
-        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.7;
+        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.5;
         //cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
-        //cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
-        cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
-        cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::FILLED); //Label/Mark Head Region
+        //cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
+        //cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
+        cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
 
         //Can use std::max((int)rectfishFeatures[1].size.width/4,1)
-        cv::circle(markerEyesImg,pfish->leftEyePoint,2 ,CV_RGB(255,255,255),1,cv::FILLED); //Label/Mark Centre of  Left Eye
-        cv::circle(markerEyesImg,pfish->rightEyePoint,2 ,CV_RGB(100,100,100),1,cv::FILLED); //Label/Mark Centre Right Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::FILLED); //Label/Mark Body
+        cv::circle(markerEyesImg,pfish->leftEyePoint,1 ,CV_RGB(255,255,255),1,cv::LINE_AA); //Label/Mark Centre of  Left Eye
+        cv::circle(markerEyesImg,pfish->rightEyePoint,1 ,CV_RGB(100,100,100),1,cv::LINE_AA); //Label/Mark Centre Right Eye
+        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),2,cv::LINE_AA); //Label/Mark Body
 
 //        for( size_t i = 0; i< contours_canny.size(); i++ )
 //        {
@@ -2432,7 +2435,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         cv::drawContours( frameDebugA, tmpContour,1, CV_RGB(155,150,120),2, cv::LINE_AA);
         cv::drawContours( frameDebugA, tmpContour,2, CV_RGB(155,150,120),2, cv::LINE_AA);
 
-        maskedfishImg_gray.copyTo(frameDebugB);
+        maskedfishImg_gray.convertTo(frameDebugB,CV_8UC3);
         cv::circle(frameDebugB,pfish->tailTopPoint,2,CV_RGB(200,250,10),2,cv::LINE_AA); //Label/Mark Tail On Contour
         cv::circle(frameDebugB,pfish->mouthPoint ,3,CV_RGB(200,200,150),2,cv::LINE_AA); //Label/Mark Headegion
 
@@ -2554,7 +2557,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 //    }
 
 // //    ///DEBUG show all contours on Laplace
-        fullImg.copyTo(frameDebugC);
+        fullImg.convertTo(frameDebugC,CV_8UC3);
         for( size_t i = 0; i< contours_watershed.size(); i++ )
         {
              cv::drawContours( frameDebugC, contours_watershed, (int)i, CV_RGB(0,120,250), 1,8,hierarchy_watershed);
