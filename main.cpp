@@ -2632,7 +2632,7 @@ double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point ptEyeCenter,std::ve
 ///Sample Across Rotate Line of fixed length/ find orientation of maximum
 
 const int eyeLength     = 5; //Ellipse Length of Eye
-const double angleStep  = CV_PI/60.0;
+const double angleStep  = CV_2PI/60.0;
 int maxIntensity        = 0;
 double bestAngle        = 0.0; //In rad
 double currentAngle     = 0.0;
@@ -2640,7 +2640,7 @@ double currentAngle     = 0.0;
 
 std::vector<cv::Point> vEyeEllipse;
 
-while (currentAngle <= CV_PI) //Full Circle Sample
+while (currentAngle <= CV_2PI) //Full Circle Sample
 {
 
     int lineIntensity = 0;
@@ -2651,7 +2651,7 @@ while (currentAngle <= CV_PI) //Full Circle Sample
     cv::Point pt2; pt2.x = ptEyeCenter.x + eyeLength*cos(currentAngle); pt2.y = ptEyeCenter.y + eyeLength*sin(currentAngle);
 
     //cv::LineIterator it(frameFish_gray, pt1, pt2, 8); //Sample Line
-    makeEllipse(ptEyeCenter,currentAngle,7,4,vEyeEllipse);
+    makeEllipse(ptEyeCenter,currentAngle,4,3,vEyeEllipse);
 
 //        // alternative way of iterating through the line
 //        for(int i = 0; i < it.count; i++, ++it)
@@ -2686,7 +2686,7 @@ void makeEllipse(cv::Point ptcenter,double angle,int a, int b, std::vector<cv::P
     const double angleStep  = CV_2PI/20.0;
     double currentAngle     = 0.0;
     voutEllipse.clear();
-    while (currentAngle <= CV_PI) //Full Circle Sample
+    while (currentAngle <= CV_2PI) //Full Circle Sample
     {
 
         cv::Point pt;
