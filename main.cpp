@@ -2065,7 +2065,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     cv::Mat markerEyesImg, tmpMarker,imgwatershedShow; //Do watershed for all labels
 
     cv::Mat grad,grad_x, grad_y;
-    cv::Mat framelapl,frameCanny;
+    cv::Mat framelapl,framelapl_buffer, frameCanny;
 
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
     std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
@@ -2093,9 +2093,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),1,1);
 
-    cv::Laplacian(maskedfishFeature_blur,framelapl,CV_8UC1,g_BGthresh);
+    cv::Laplacian(maskedfishFeature_blur,framelapl_buffer,CV_8UC1,g_BGthresh);
     //cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
     //cv::findContours(, contours_laplace_clear,hierarchy_laplace_clear, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
@@ -2114,10 +2114,11 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     fullImg_colour.copyTo(frameDebugC);
     fullImg_colour.copyTo(frameDebugD);
 
+    framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
     {
-
+        framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
         int idxblobContour;
         bool bContourfound =false;
 
@@ -2346,8 +2347,22 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         pfish->coreTriangle[0]  = pfish->leftEyePoint;
         pfish->coreTriangle[1]  = pfish->rightEyePoint;
 
+        std::vector<cv::Point> vEyeContour;
+        findEyeOrientation(maskedfishImg_gray,pfish->leftEyePoint,vEyeContour);
+        int np = vEyeContour.size();
+        //Draw Best Fit
+        ///Draw Left Eye Rectangle
+        for (int j=0; j<np;j++) //Rectangle Eye
+            cv::line(frameDebugC,vEyeContour[j],vEyeContour[(j+1)%np] ,CV_RGB(255,180,0),1,cv::LINE_8);
 
-        findEyeOrientation(maskedfishImg_gray,*pfish);
+        //Right Eye
+        vEyeContour.clear();
+        findEyeOrientation(maskedfishImg_gray,pfish->rightEyePoint,vEyeContour);
+        np = vEyeContour.size();
+        //Draw Best Fit
+        ///Draw Left Eye Rectangle
+        for (int j=0; j<np;j++) //Rectangle Eye
+            cv::line(frameDebugC,vEyeContour[j],vEyeContour[(j+1)%(np)] ,CV_RGB(0,180,250),1,cv::LINE_8);
 
         ////// Draw WaterShed Labels ////
         /// - \brief With the more accurate positioning of the eye centres now we can obtain
@@ -2607,55 +2622,87 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     rectfishFeatures.clear();
 }
 
-/// Find Eye Orientation by fitting line of maximum intensity
-///
-void findEyeOrientation(cv::Mat& frameFish_gray, fishModel& sfish)
+/// Find Eye Orientation by finding the angle of a fixed lentgh line that gives
+///  maximum intensity
+/// \param ptOutA, B two points defining the best  line fit
+/// \return Best Ange In rads
+double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point ptEyeCenter,std::vector<cv::Point>& outvEyeContour)
 {
 
 ///Sample Across Rotate Line of fixed length/ find orientation of maximum
 
-const int eyeLength = 4; //Ellipse Length of Eye
-const double angleStep = CV_PI/60.0;
-int maxIntensity = 0;
-double bestAngle = sfish.leftEyeAngle(); //In rad
-double currentAngle = 0.0;
+const int eyeLength     = 5; //Ellipse Length of Eye
+const double angleStep  = CV_PI/60.0;
+int maxIntensity        = 0;
+double bestAngle        = 0.0; //In rad
+double currentAngle     = 0.0;
 
-cv::Point EyeF,EyeB;
+
+std::vector<cv::Point> vEyeEllipse;
 
 while (currentAngle <= CV_PI) //Full Circle Sample
 {
-    currentAngle += angleStep;
+
     int lineIntensity = 0;
+    vEyeEllipse.clear();
 
     //Sample Across Line / Use Line Iterator / Define Start End Points Passing from Eye Centre
-    cv::Point pt1; pt1.x = sfish.leftEyePoint.x - eyeLength*cos(currentAngle); pt1.y = sfish.leftEyePoint.y - eyeLength*sin(currentAngle);
-    cv::Point pt2; pt2.x = sfish.leftEyePoint.x + eyeLength*cos(currentAngle); pt2.y = sfish.leftEyePoint.y + eyeLength*sin(currentAngle);
+    cv::Point pt1; pt1.x = ptEyeCenter.x - eyeLength*cos(currentAngle); pt1.y = ptEyeCenter.y - eyeLength*sin(currentAngle);
+    cv::Point pt2; pt2.x = ptEyeCenter.x + eyeLength*cos(currentAngle); pt2.y = ptEyeCenter.y + eyeLength*sin(currentAngle);
 
-    cv::LineIterator it(frameFish_gray, pt1, pt2, 8); //Sample Line
+    //cv::LineIterator it(frameFish_gray, pt1, pt2, 8); //Sample Line
+    makeEllipse(ptEyeCenter,currentAngle,7,4,vEyeEllipse);
 
+//        // alternative way of iterating through the line
+//        for(int i = 0; i < it.count; i++, ++it)
+//        {
+//            uchar val = frameFish_gray.at<uchar>(it.pos());
+//            lineIntensity += val;
+//            //CV_Assert(buf[i] == val);
+//        }
 
-
-        // alternative way of iterating through the line
-        for(int i = 0; i < it.count; i++, ++it)
-        {
-            uchar val = frameFish_gray.at<uchar>(it.pos());
+       //Iterate Through Ellipse points and sample Intensity
+      for(int i = 0; i < vEyeEllipse.size(); i++)
+      {
+            uchar val = frameFish_gray.at<uchar>(vEyeEllipse[i]);
             lineIntensity += val;
-            //CV_Assert(buf[i] == val);
-        }
-        if (lineIntensity > maxIntensity)
+      }
+        if (lineIntensity >= maxIntensity)
         {
             maxIntensity = lineIntensity;
             bestAngle    = currentAngle;
-            EyeF = pt1;
-            EyeB = pt2;
+            outvEyeContour = vEyeEllipse;
         }
+
+        currentAngle += angleStep;
 }
 
 
-    //Draw Best Line
-    cv::line(frameDebugC,EyeF,EyeB,CV_RGB(255,0,0),1,cv::LINE_8);
+    return bestAngle;
+}
+
+void makeEllipse(cv::Point ptcenter,double angle,int a, int b, std::vector<cv::Point>& voutEllipse)
+{
+    const double angleStep  = CV_2PI/20.0;
+    double currentAngle     = 0.0;
+    voutEllipse.clear();
+    while (currentAngle <= CV_PI) //Full Circle Sample
+    {
+
+        cv::Point pt;
+        pt.x = ptcenter.x + a*sin(currentAngle+angle);
+        pt.y = ptcenter.y + b*cos(currentAngle+angle);
+        voutEllipse.push_back(pt);
+
+        currentAngle += angleStep;
+
+        ///DEBUG
+        //cv::circle(frameDebugB,pt,1,CV_RGB(10,10,200),1,cv::LINE_8);
+    }
+
 
 }
+
 
 /**
 * @function thresh_callback
@@ -2675,3 +2722,4 @@ void thresh_callback(int, void* )
         gi_CannyThres = 2;
 
 }
+

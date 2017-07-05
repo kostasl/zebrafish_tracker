@@ -172,13 +172,15 @@ int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt);
 int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy);
 
 
-///
-/// \brief findEyeOrientation - Finds the line of maximum sum pixel intensity centered at the L - R Eyepositions
-/// \param frameFish_gray //Image Source from where the eye pixels are read
-/// \param sfish - Fish Model Having the EyePosition Set
-///
-void findEyeOrientation(cv::Mat& frameFish_gray, fishModel& sfish);
 
+/// Find Eye Orientation by finding the angle of a fixed lentgh line that gives
+///  maximum intensity
+/// \param ptOutA, B two points defining the best  line fit
+/// \return Best Ange In rads
+double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point ptEyeCenter,std::vector<cv::Point>& outvEyeContour);
+
+
+void makeEllipse(cv::Point ptcenter,double angle,int a, int b, std::vector<cv::Point>& voutEllipse);
 /// Auxiliriary Functions
 
 template < typename T > std::string to_string( const T& n )
