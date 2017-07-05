@@ -172,6 +172,12 @@ int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt);
 int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy);
 
 
+///
+/// \brief findEyeOrientation - Finds the line of maximum sum pixel intensity centered at the L - R Eyepositions
+/// \param frameFish_gray //Image Source from where the eye pixels are read
+/// \param sfish - Fish Model Having the EyePosition Set
+///
+void findEyeOrientation(cv::Mat& frameFish_gray, fishModel& sfish);
 
 /// Auxiliriary Functions
 
@@ -183,3 +189,4 @@ template < typename T > std::string to_string( const T& n )
    }
 
 #endif // LARVATRACK_H
+

@@ -64,11 +64,11 @@ uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
-int g_Segthresh             = 4; //Image Threshold for FIsh Features
+int g_Segthresh             = 7; //Image Threshold for FIsh Features
 int g_SegInnerthreshMult    = 3; //Image Threshold for FIsh Features
 int g_BGthresh              = 13; //BG threshold segmentation
 int gi_ThresholdMatching    = 100; /// Minimum Score to accept that a contour has been found
-bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
+bool gOptimizeShapeMatching = true; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 100;
 //using namespace std;
 
@@ -1940,11 +1940,11 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
     if (!berrorTriangleFit)
     {
         for (int j=0; j<3;j++)
-           cv::line(frameDebugB,triangle[idxInnerContour][j],triangle[idxInnerContour][(j+1)%3] ,CV_RGB(250,250,00),1,cv::LINE_4);
+           cv::line(frameDebugB,triangle[idxInnerContour][j],triangle[idxInnerContour][(j+1)%3] ,CV_RGB(250,250,00),1,cv::LINE_8);
 
         //Draw Fitted outside Triangle
         for (int j=0; j<3;j++)
-            cv::line(frameDebugB,triangle[idxOuterContour][j],triangle[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),1,cv::LINE_4);
+            cv::line(frameDebugB,triangle[idxOuterContour][j],triangle[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),1,cv::LINE_8);
     }
 
     //Show Triangle Tail Point on Global Image
@@ -2107,6 +2107,12 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     markerEyesImg = cv::Mat::ones(fullImg.rows,fullImg.cols,CV_32SC1)+70;
     tmpMarker     = cv::Mat::zeros(fullImg.rows,fullImg.cols,CV_32SC1)+70;
     //
+    cv::Mat fullImg_colour;
+    fullImg.convertTo(fullImg_colour,CV_8UC3);
+    fullImg_colour.copyTo(frameDebugA);
+    fullImg_colour.copyTo(frameDebugB);
+    fullImg_colour.copyTo(frameDebugC);
+    fullImg_colour.copyTo(frameDebugD);
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
@@ -2242,7 +2248,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
             idxTailPoint = maxChainDistance(contours_body[idxblobContour],idxHeadPoint,0);
 
             pfish->tailTopPoint = contours_body[idxblobContour][idxTailPoint]; //Redefine Tail Point Using Contour
-            //pfish->mouthPoint   = contours_body[idxblobContour][idxHeadPoint]; //Redefine mouthPoint Based on Contour
+            pfish->mouthPoint   = contours_body[idxblobContour][idxHeadPoint]; //Redefine mouthPoint Based on Contour
             pfish->midEyePoint = pfish->coreTriangle[2] + (pfish->leftEyePoint - pfish->rightEyePoint)/2;
         }
 
@@ -2341,6 +2347,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         pfish->coreTriangle[1]  = pfish->rightEyePoint;
 
 
+        findEyeOrientation(maskedfishImg_gray,*pfish);
 
         ////// Draw WaterShed Labels ////
         /// - \brief With the more accurate positioning of the eye centres now we can obtain
@@ -2351,12 +2358,12 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         //markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
 
         //Now Draw Labels on it To Mark L-R Eyes, Head And body region
-        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.4;
+        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.3;
         cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.5;
-        //cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
+        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
         //cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-        //cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-        cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
+        cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),2,cv::LINE_AA); //Label/Mark Head Region
+        //cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
 
         //Can use std::max((int)rectfishFeatures[1].size.width/4,1)
         cv::circle(markerEyesImg,pfish->leftEyePoint,1 ,CV_RGB(255,255,255),1,cv::LINE_AA); //Label/Mark Centre of  Left Eye
@@ -2377,8 +2384,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         markerEyesImg.copyTo(tmpMarker,maskfishFeature );
         //maskedImg.copyTo(imgwatershedShow,maskfishFeature);
 
-        cv::Mat fullImg_colour;
-        fullImg.convertTo(fullImg_colour,CV_8UC3);
         cv::watershed(fullImg_colour,markerEyesImg); ///Watershed SEGMENTATION
 
         //Do Contour on Segmented image
@@ -2430,20 +2435,21 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         tmpContour.push_back( pfish->leftEyeHull);
         tmpContour.push_back( pfish->rightEyeHull);
 
-        fullImg_colour.copyTo(frameDebugA);
+
         cv::drawContours( frameDebugA, tmpContour,0, CV_RGB(155,150,120),2, cv::LINE_AA);
         cv::drawContours( frameDebugA, tmpContour,1, CV_RGB(155,150,120),2, cv::LINE_AA);
         cv::drawContours( frameDebugA, tmpContour,2, CV_RGB(155,150,120),2, cv::LINE_AA);
 
-        maskedfishImg_gray.convertTo(frameDebugB,CV_8UC3);
-        cv::circle(frameDebugB,pfish->tailTopPoint,2,CV_RGB(200,250,10),2,cv::LINE_AA); //Label/Mark Tail On Contour
-        cv::circle(frameDebugB,pfish->mouthPoint ,3,CV_RGB(200,200,150),2,cv::LINE_AA); //Label/Mark Headegion
+        //maskedfishImg_gray.convertTo(frameDebugB,CV_8UC3);
+
+        cv::circle(frameDebugB,pfish->tailTopPoint,1,CV_RGB(200,250,10),2,cv::LINE_AA); //Label/Mark Tail On Contour
+        cv::circle(frameDebugB,pfish->mouthPoint ,1,CV_RGB(200,200,150),2,cv::LINE_AA); //Label/Mark Headegion
 
         cv::circle(frameDebugB,ptNeck            ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
         cv::circle(frameDebugB,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-        cv::circle(frameDebugB,pfish->leftEyePoint,2,CV_RGB(255,255,255),2,cv::LINE_AA); //Label/Mark Centre of  Left Eye
-        cv::circle(frameDebugB,pfish->rightEyePoint,2,CV_RGB(100,100,100),2,cv::LINE_AA); //Label/Mark Centre Right Eye
-        cv::circle(frameDebugB,pfish->coreTriangle[2],2,CV_RGB(50,50,50),3,cv::LINE_AA); //Label/Mark Body
+        cv::circle(frameDebugB,pfish->leftEyePoint,1,CV_RGB(255,255,255),1,cv::LINE_AA); //Label/Mark Centre of  Left Eye
+        cv::circle(frameDebugB,pfish->rightEyePoint,1,CV_RGB(100,100,100),1,cv::LINE_AA); //Label/Mark Centre Right Eye
+        cv::circle(frameDebugB,pfish->coreTriangle[2],1,CV_RGB(50,50,50),2,cv::LINE_AA); //Label/Mark Body
 
 
 
@@ -2557,17 +2563,17 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 //    }
 
 // //    ///DEBUG show all contours on Laplace
-        fullImg.convertTo(frameDebugC,CV_8UC3);
+
         for( size_t i = 0; i< contours_watershed.size(); i++ )
         {
-             cv::drawContours( frameDebugC, contours_watershed, (int)i, CV_RGB(0,120,250), 1,8,hierarchy_watershed);
+             cv::drawContours( frameDebugD, contours_watershed, (int)i, CV_RGB(0,120,250), 1,8,hierarchy_watershed);
         }
 
         cv::drawContours( frameDebugC, contours_watershed, (int)idxLEyeContourW, CV_RGB(220,250,0), 1,8,hierarchy_watershed);
         cv::drawContours( frameDebugC, contours_watershed, (int)idxREyeContourW, CV_RGB(220,0,0), 1,8,hierarchy_watershed);
 
-        cv::drawContours( frameDebugC, contours_laplace, idxREyeContour, CV_RGB(255,20,10), 2,8,hierarchy_laplace);
-        cv::drawContours( frameDebugC, contours_laplace, idxLEyeContour, CV_RGB(15,200,10), 2,8,hierarchy_laplace);
+        cv::drawContours( frameDebugC, contours_laplace, idxREyeContour, CV_RGB(255,20,10), 1,8,hierarchy_laplace);
+        cv::drawContours( frameDebugC, contours_laplace, idxLEyeContour, CV_RGB(15,200,10), 1,8,hierarchy_laplace);
 
 
 
@@ -2599,6 +2605,56 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     //Free Mem
     rectFeatures.clear();
     rectfishFeatures.clear();
+}
+
+/// Find Eye Orientation by fitting line of maximum intensity
+///
+void findEyeOrientation(cv::Mat& frameFish_gray, fishModel& sfish)
+{
+
+///Sample Across Rotate Line of fixed length/ find orientation of maximum
+
+const int eyeLength = 4; //Ellipse Length of Eye
+const double angleStep = CV_PI/60.0;
+int maxIntensity = 0;
+double bestAngle = sfish.leftEyeAngle(); //In rad
+double currentAngle = 0.0;
+
+cv::Point EyeF,EyeB;
+
+while (currentAngle <= CV_PI) //Full Circle Sample
+{
+    currentAngle += angleStep;
+    int lineIntensity = 0;
+
+    //Sample Across Line / Use Line Iterator / Define Start End Points Passing from Eye Centre
+    cv::Point pt1; pt1.x = sfish.leftEyePoint.x - eyeLength*cos(currentAngle); pt1.y = sfish.leftEyePoint.y - eyeLength*sin(currentAngle);
+    cv::Point pt2; pt2.x = sfish.leftEyePoint.x + eyeLength*cos(currentAngle); pt2.y = sfish.leftEyePoint.y + eyeLength*sin(currentAngle);
+
+    cv::LineIterator it(frameFish_gray, pt1, pt2, 8); //Sample Line
+
+
+
+        // alternative way of iterating through the line
+        for(int i = 0; i < it.count; i++, ++it)
+        {
+            uchar val = frameFish_gray.at<uchar>(it.pos());
+            lineIntensity += val;
+            //CV_Assert(buf[i] == val);
+        }
+        if (lineIntensity > maxIntensity)
+        {
+            maxIntensity = lineIntensity;
+            bestAngle    = currentAngle;
+            EyeF = pt1;
+            EyeB = pt2;
+        }
+}
+
+
+    //Draw Best Line
+    cv::line(frameDebugC,EyeF,EyeB,CV_RGB(255,0,0),1,cv::LINE_8);
+
 }
 
 /**
