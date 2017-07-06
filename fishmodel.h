@@ -16,6 +16,8 @@ public:
   float leftEyeAngle();
   float rightEyeAngle();
   float vergenceAngle();
+  void resetSpine();
+
   cvb::CvLabel blobLabel;
   cvb::CvID ID; /// Same as the track ID
   std::vector<cv::Point> contour;
@@ -34,16 +36,17 @@ public:
   double leftEyeTheta;
   double rightEyeTheta;
   double bearingRads;
-  cv::Point tailSplinePoints[8];
+  std::vector<cv::Point> spline;
   cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
   cv::Point rightEyePoint;
   cv::Point mouthPoint;
   cv::Point midEyePoint;
   cv::Point tailTopPoint;
 
-
   cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
 
+private:
+  int c_spinePoints = 8;
 };
 
 #endif // FISHMODEL_H

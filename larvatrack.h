@@ -147,7 +147,15 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 ///
 bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
-
+///
+/// \brief fitfishCoreSpine
+/// \param sfish
+/// \param contours_body
+/// \param idxInnerContour
+/// \param idxOuterContour
+/// \return
+///
+bool fitfishCoreSpine(fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
 ///
 /// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features
@@ -177,10 +185,10 @@ int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy);
 ///  maximum intensity
 /// \param ptOutA, B two points defining the best  line fit
 /// \return Best Ange In rads
-double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point ptEyeCenter,std::vector<cv::Point>& outvEyeContour);
+double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point2f& ptEyeCenter,std::vector<cv::Point>& outvEyeContour);
 
 
-void makeEllipse(cv::Point ptcenter,double angle,int a, int b, std::vector<cv::Point>& voutEllipse);
+void makeEllipse(cv::Point2f ptcenter,double angle,double a, double b, std::vector<cv::Point>& voutEllipse);
 /// Auxiliriary Functions
 
 template < typename T > std::string to_string( const T& n )

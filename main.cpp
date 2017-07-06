@@ -1747,38 +1747,85 @@ return antiVertex;
 }
 
 ///
-bool fitfishCoreSpine(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
+bool fitfishCoreSpine(fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
 
-    //find two most distal points in contour - Ie Head and Tail tip
-    //accumulate distance and find maximum
-    //Start From Guess Of Head and Tail
-    unsigned int accDistance,maxDistance;
-    std::pair<cv::Point,cv::Point> distalPoints;
+    ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
-    maxDistance = 0;
-    for (int i=0;i<sfish.contour.size();i++)
+    //Run Until Convergence Error is below threshold - Or Change is too small
+
+    ///Compute Error terms for all data points/obtain local quadratic approx of fsd
+    //For each contour Point
+    std::vector<cv::Point> contour = contours_body[idxOuterContour];
+    std::vector<cv::Point> spline = sfish.spline;
+
+    //Measure squared Distance error to closest Curve(spline) Point
+        //Add to total error
+    std::vector<double> dfitPtError(spline.size()); //Per Spine Point Fit Error
+    std::vector<double> dfitPtError_last(spline.size()); //Last Iteration Fit Error per spine point
+    std::vector<double> dDifffitPtError(spline.size()); //Aproximate Error Change per spine point between iteration
+    std::vector<cv::Point> dfitPtErrorVector(spline.size()); //Aproximate Error Gradient vector (Used for Corrections)
+    double dfitPtError_total = 0.0;
+    double dfitPtError_total_last = 0.0;
+    double dDifffitPtError_total = 1000.0;
+
+
+    //Init Vectors
+    std::fill(dDifffitPtError.begin(), dDifffitPtError.end(), 0); //Difference in Spine Errors
+    //std::fill(dfitPtError_last.begin(), dfitPtError_last.end(), 0); //Last Spine Error Vector
+
+ while (dDifffitPtError_total > 100.0) //While Error Change Above Threshold
+ {
+     dfitPtError_total_last = dfitPtError_total;
+     dfitPtError_total = 0.0; //Reset
+     dfitPtError_last = dfitPtError;
+
+     std::fill(dfitPtError.begin(), dfitPtError.end(), 0);
+     std::fill(dfitPtErrorVector.begin(), dfitPtErrorVector.end(), cv::Point(0,0));
+
+
+    for (int i=0;i<contour.size();i++) //For Each Data point
     {
-        accDistance = 0;
-        cv::Point ptsrc = sfish.contour[i];
-        cv::Point ptlast = ptsrc;
+        int idxNear = 0;
+        cv::Point ptsrc = contour[i];
+        cv::Point ptNear = spline[idxNear];
+        double dist = pow(ptsrc.x-ptNear.x,2) + pow(ptsrc.y-ptNear.y,2);
+        double mindist = dist;
 
-        for (int j=i+1;j<sfish.contour.size();j++)
+        ///Find Closest Curve POint to contour point
+        for (int j=1; j<spline.size();j++)
         {
-            accDistance += cv::norm(ptlast - sfish.contour[j]);
-            if (accDistance > maxDistance)
+            //cv::Point vecSrcToSpline = ptsrc-spline[j];
+            //dist = pow(vecSrcToSpline.x,2)+pow(vecSrcToSpline.y,2); //Squared euclidian distance error
+            dist = pow(ptsrc.x-spline[j].x,2) + pow(ptsrc.y-spline[j].y,2);
+            if (dist < mindist)
             {
-                maxDistance = accDistance;
-                distalPoints.first = ptsrc;
-                distalPoints.second = sfish.contour[j];
-
+                idxNear = j;
+                ptNear = spline[idxNear];
+                mindist = dist;
             }
 
-
-
         }
+        ///Measure Error
+        //Add to error for that spine point
+        dfitPtError[idxNear]        +=mindist;
+        dfitPtError_total           +=mindist;
+        dfitPtErrorVector[idxNear]  += ptsrc-spline[idxNear];
+    }    //Total Spine Fitness Has been measured
+    dDifffitPtError_total = abs(dfitPtError_total -  dfitPtError_total_last);
+
+    //Update Spline Positions by  Approx Error Gradient
+    for (int j=0; j<spline.size();j++)
+    {
+        dDifffitPtError[j]  = (dfitPtError_last[j]-dfitPtError[j])/dfitPtError_total;
+        //dfitPtErrorVector[j]= dfitPtErrorVector[j]/dfitPtError_total;
+        spline[j] += dfitPtErrorVector[j]*dDifffitPtError[j]; //Weighted Update
+
     }
 
+} //While Error Change Is larger Than
+
+sfish.spline = spline;
 }
 
 
@@ -2270,8 +2317,21 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         //cv::Point midEyePoint = pfish->coreTriangle[0]-(pfish->coreTriangle[0] - pfish->coreTriangle[1])/2;
 
 
+
         cv::Point vecMidlEye = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*2;
+        pfish->bearingRads = atan2(vecMidlEye.y,vecMidlEye.x);
         cv::line(framelapl,pfish->coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::LINE_8); //// Draw Eye Separator
+
+        ///Fit Spine Model
+        fitfishCoreSpine(*pfish,contours_body,idxChild,idxblobContour);
+        ///Draw Spine
+        for (int j=0; j<7;j++) //Rectangle Eye
+        {
+            cv::line(frameDebugC,pfish->spline[j],pfish->spline[(j+1)] ,CV_RGB(255,180,40),2,cv::LINE_8);
+            cv::circle(frameDebugC,pfish->spline[j],2,CV_RGB(150,150,150),1);
+        }
+
+
 
         /// Find Features in Modified Laplace Image
         //Get Contours - Shound contain at least eyes, core and tail
@@ -2348,7 +2408,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         pfish->coreTriangle[1]  = pfish->rightEyePoint;
 
         std::vector<cv::Point> vEyeContour;
-        findEyeOrientation(maskedfishImg_gray,pfish->leftEyePoint,vEyeContour);
+        cv::Point2f ptLEyeCenter = pfish->leftEyePoint;
+        findEyeOrientation(maskedfishImg_gray,ptLEyeCenter,vEyeContour);
+        pfish->leftEyePoint = ptLEyeCenter;
         int np = vEyeContour.size();
         //Draw Best Fit
         ///Draw Left Eye Rectangle
@@ -2357,7 +2419,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
         //Right Eye
         vEyeContour.clear();
-        findEyeOrientation(maskedfishImg_gray,pfish->rightEyePoint,vEyeContour);
+        cv::Point2f ptREyeCenter = pfish->rightEyePoint;
+        findEyeOrientation(maskedfishImg_gray,ptREyeCenter,vEyeContour);
+        pfish->rightEyePoint = ptREyeCenter;
         np = vEyeContour.size();
         //Draw Best Fit
         ///Draw Left Eye Rectangle
@@ -2544,7 +2608,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 
         ///Draw Text - Save Bearing Angle
-        pfish->bearingRads = atan2(vecMidlEye.y,vecMidlEye.x);
+
         std::stringstream str_angle;
         str_angle << "B:" << std::setprecision(2) << std::fixed << pfish->bearingRads*180.0/M_PI;
         cv::putText(frameDebugA,str_angle.str(),vecMidlEye,cv::FONT_HERSHEY_SIMPLEX, 0.4 , CV_RGB(250,20,20));
@@ -2626,73 +2690,87 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 ///  maximum intensity
 /// \param ptOutA, B two points defining the best  line fit
 /// \return Best Ange In rads
-double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point ptEyeCenter,std::vector<cv::Point>& outvEyeContour)
+double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point2f& ptEyeCenter,std::vector<cv::Point>& outvEyeContour)
 {
 
 ///Sample Across Rotate Line of fixed length/ find orientation of maximum
 
-const int eyeLength     = 5; //Ellipse Length of Eye
-const double angleStep  = CV_2PI/60.0;
-int maxIntensity        = 0;
-double bestAngle        = 0.0; //In rad
-double currentAngle     = 0.0;
+
+const double angleStep      = CV_2PI/33.0;
+int maxIntensity            = 0;
+int maxDensity            = 0;
+double bestAngle            = 0.0; //In rad
+cv::Point2f ptbestCenter    = ptEyeCenter;
+double currentAngle         = 0.0;
 
 
 std::vector<cv::Point> vEyeEllipse;
 
 while (currentAngle <= CV_2PI) //Full Circle Sample
 {
-
-    int lineIntensity = 0;
-    vEyeEllipse.clear();
-
-    //Sample Across Line / Use Line Iterator / Define Start End Points Passing from Eye Centre
-    cv::Point pt1; pt1.x = ptEyeCenter.x - eyeLength*cos(currentAngle); pt1.y = ptEyeCenter.y - eyeLength*sin(currentAngle);
-    cv::Point pt2; pt2.x = ptEyeCenter.x + eyeLength*cos(currentAngle); pt2.y = ptEyeCenter.y + eyeLength*sin(currentAngle);
-
     //cv::LineIterator it(frameFish_gray, pt1, pt2, 8); //Sample Line
-    makeEllipse(ptEyeCenter,currentAngle,4,3,vEyeEllipse);
+    double r = 3.0;
 
-//        // alternative way of iterating through the line
-//        for(int i = 0; i < it.count; i++, ++it)
-//        {
-//            uchar val = frameFish_gray.at<uchar>(it.pos());
-//            lineIntensity += val;
-//            //CV_Assert(buf[i] == val);
-//        }
-
-       //Iterate Through Ellipse points and sample Intensity
-      for(int i = 0; i < vEyeEllipse.size(); i++)
-      {
-            uchar val = frameFish_gray.at<uchar>(vEyeEllipse[i]);
-            lineIntensity += val;
-      }
-        if (lineIntensity >= maxIntensity)
+    for (int m=0;m<15;m++) //Search For Ellipse Size
+        for (int k=0;k<1;k++)
         {
-            maxIntensity = lineIntensity;
-            bestAngle    = currentAngle;
-            outvEyeContour = vEyeEllipse;
-        }
+            double a = 3.0+0.2*(double)m;
+            double b = a*4.0/3.0;
+            //Compare ellipses scanning region 6x6
+            for (int i=-1;i <=1;i++)
+                for (int j=-1; j<=1;j++)
+                {
+                    int lineIntensity = 0;
+                    vEyeEllipse.clear(); //Delete last Ellipse and start over
+                    cv::Point2f ptCTrial = ptEyeCenter;
+                    ptCTrial.x += i; ptCTrial.y += j;
 
-        currentAngle += angleStep;
+                    makeEllipse(ptCTrial,currentAngle,a,b,vEyeEllipse);
+
+                    //Iterate Through Ellipse points and sample Intensity
+                    for(int i = 0; i < vEyeEllipse.size(); i++)
+                    {
+                        uchar val = frameFish_gray.at<uchar>(vEyeEllipse[i]);
+                        lineIntensity += val;
+                    }
+                    double density = lineIntensity/vEyeEllipse.size();
+                    if (density >= maxDensity)
+                        {
+                            maxIntensity    = lineIntensity;
+                            maxDensity      = density;
+                            bestAngle       = currentAngle;
+                            ptbestCenter    = ptEyeCenter;
+                            outvEyeContour  = vEyeEllipse;
+                        }
+
+                        currentAngle += angleStep;
+                }//Position Search
+
+        } //Dimension Search
 }
 
-
+    ptEyeCenter = ptbestCenter;
     return bestAngle;
 }
 
-void makeEllipse(cv::Point ptcenter,double angle,int a, int b, std::vector<cv::Point>& voutEllipse)
+
+void makeEllipse(cv::Point2f ptcenter,double angle,double a, double b, std::vector<cv::Point>& voutEllipse)
 {
-    const double angleStep  = CV_2PI/20.0;
+    const double angleStep  = CV_2PI/6.0;
     double currentAngle     = 0.0;
     voutEllipse.clear();
     while (currentAngle <= CV_2PI) //Full Circle Sample
     {
 
-        cv::Point pt;
+        cv::Point2f pt;
         pt.x = ptcenter.x + a*sin(currentAngle+angle);
         pt.y = ptcenter.y + b*cos(currentAngle+angle);
         voutEllipse.push_back(pt);
+
+//        pt.x = ptcenter.x + (a/2.0)*sin(currentAngle+angle);
+//        pt.y = ptcenter.y + (b/2.0)*cos(currentAngle+angle);
+//        voutEllipse.push_back(pt);
+
 
         currentAngle += angleStep;
 
