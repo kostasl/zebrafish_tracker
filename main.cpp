@@ -1774,7 +1774,7 @@ bool fitfishCoreSpine(fishModel& sfish,std::vector<std::vector<cv::Point> >& con
     std::fill(dDifffitPtError.begin(), dDifffitPtError.end(), 0); //Difference in Spine Errors
     //std::fill(dfitPtError_last.begin(), dfitPtError_last.end(), 0); //Last Spine Error Vector
 
- while (dDifffitPtError_total > 100.0) //While Error Change Above Threshold
+ //while (dDifffitPtError_total > 100.0) //While Error Change Above Threshold
  {
      dfitPtError_total_last = dfitPtError_total;
      dfitPtError_total = 0.0; //Reset
