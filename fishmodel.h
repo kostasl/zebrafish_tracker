@@ -36,7 +36,7 @@ public:
   double leftEyeTheta;
   double rightEyeTheta;
   double bearingRads;
-  std::vector<cv::Point> spline;
+  std::vector<cv::Point2f> spline;
   cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
   cv::Point rightEyePoint;
   cv::Point mouthPoint;
@@ -46,7 +46,7 @@ public:
   cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
 
 private:
-  int c_spinePoints = 8;
+  int c_spinePoints;
 };
 
 #endif // FISHMODEL_H

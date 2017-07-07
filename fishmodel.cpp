@@ -3,6 +3,7 @@
 fishModel::fishModel()
 {
 
+        c_spinePoints = 8;
         coreTriangle.push_back(cv::Point());
         coreTriangle.push_back(cv::Point());
         coreTriangle.push_back(cv::Point());
