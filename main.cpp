@@ -1746,119 +1746,6 @@ int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy)
 return antiVertex;
 }
 
-///
-bool fitfishCoreSpine(fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
-{
-
-    cv::Scalar TRACKER_COLOURMAP[] ={CV_RGB(150,150,150),
-                                     CV_RGB(200,100,100),
-                                     CV_RGB(150,200,50),
-                                     CV_RGB(50,250,00),
-                                     CV_RGB(150,150,00),
-                                     CV_RGB(250,250,00),
-                                     CV_RGB(200,200,80),
-                                     CV_RGB(20,200,180)};
-
-
-
-    ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
-
-    //Run Until Convergence Error is below threshold - Or Change is too small
-
-    ///Compute Error terms for all data points/obtain local quadratic approx of fsd
-    //For each contour Point
-    std::vector<cv::Point> contour = contours_body[idxOuterContour];
-    std::vector<cv::Point2f> spline = sfish.spline;
-
-    //Measure squared Distance error to closest Curve(spline) Point
-        //Add to total error
-    double dfitPtError[contour.size()][spline.size()]; //Per Spine Point Fit Error
-    double dfitPtError_last[contour.size()][spline.size()]; //Last Iteration Fit Error per spine point
-    double dfitPtError_change[contour.size()][spline.size()]; //Aproximate Error Change per spine point between iteration
-    std::vector< std::vector<cv::Point2f> > dfitPtErrorVector(contour.size(),std::vector<cv::Point2f>(spline.size()) ); //Aproximate Error Gradient vector (Used for Corrections)
-    double dfitPtError_total = 0.0;
-    double dfitPtError_total_last = 0.0;
-    double dDifffitPtError_total = 1000.0;
-
-
-    //Init Vectors
-    //std::fill(dDifffitPtError.begin(), dDifffitPtError.end(), 0); //Difference in Spine Errors
-    //std::fill(dfitPtError_last.begin(), dfitPtError_last.end(), 0); //Last Spine Error Vector
-    memset(dfitPtError,0.0,contour.size()*spline.size()*sizeof(double));
-
-
- while (dDifffitPtError_total > 100.0) //While Error Change Above Threshold
- {
-     dfitPtError_total_last = dfitPtError_total;
-     dfitPtError_total = 0.0; //Reset
-     //dfitPtError_last = dfitPtError;
-
-     //std::fill(dfitPtError.begin(), dfitPtError.end(), 0);
-     //std::fill(dfitPtErrorVector.begin(), dfitPtErrorVector.end(), cv::Point(0,0));
-
-
-    for (int i=0;i<contour.size();i++) //For Each Data point
-    {
-        int idxNear = 0;
-        cv::Point2f ptsrc = contour[i];
-        cv::Point2f ptNear = spline[idxNear];
-        double dist = pow(ptsrc.x-ptNear.x,2) + pow(ptsrc.y-ptNear.y,2);
-        double mindist = dist;
-
-        ///Find Closest Curve POint to contour point
-        for (int j=1; j<spline.size();j++)
-        {
-
-            //cv::Point vecSrcToSpline = ptsrc-spline[j];
-            //dist = pow(vecSrcToSpline.x,2)+pow(vecSrcToSpline.y,2); //Squared euclidian distance error
-            dist = pow(ptsrc.x-spline[j].x,2) + pow(ptsrc.y-spline[j].y,2);
-            if (dist < mindist)
-            {
-                idxNear = j;
-                ptNear = spline[idxNear];
-                mindist = dist;
-            }
-
-        }
-        ///Measure Error
-        //Add to error for that spine point
-        dfitPtError_last[i][idxNear]   = dfitPtError[i][idxNear]; //Save in matrix of contour / Spine association
-        dfitPtError[i][idxNear]        = mindist; //Save in matrix of contour / Spine association
-        dfitPtError_change[i][idxNear] = dfitPtError_last[i][idxNear]-dfitPtError[i][idxNear];
-        dfitPtErrorVector[i][idxNear]  = ptsrc-spline[idxNear];
-        dfitPtError_total              +=mindist;
-
-    }    //Total Spine Fitness Has been measured
-    dDifffitPtError_total = abs(dfitPtError_total -  dfitPtError_total_last);
-
-    //Update Spline Positions by  Approx Error Gradient
-    for (int i=0; i<contour.size();i++)
-        for (int j=0; j<spline.size();j++)
-    {
-
-        if (abs(dfitPtError_change[i][j]) > 0.0)
-        {
-            //dfitPtErrorVector[j]= dfitPtErrorVector[j]/dfitPtError_total;
-            spline[j].x += ((double)dfitPtErrorVector[i][j].x)*dfitPtError_change[i][j]/dfitPtError_total; //Weighted Update
-            spline[j].y += ((double)dfitPtErrorVector[i][j].y)*dfitPtError_change[i][j]/dfitPtError_total; //Weighted Update
-            qDebug() << "sj"<< j << " ex:" << ((double)dfitPtErrorVector[i][j].x)*dfitPtError_change[i][j]/dfitPtError_total << " ey:" << ((double)dfitPtErrorVector[i][j].y)*dfitPtError_change[i][j]/dfitPtError_total;
-            assert(!(isnan(spline[j].y) || isnan(spline[j].x)));
-        }
-    }
-
-    for (int j=0; j<8;j++) //Rectangle Eye
-    {
-        cv::circle(frameDebugC,spline[j],2,TRACKER_COLOURMAP[j],1);
-    }
-    cv::imshow("Debug C",frameDebugC);
-
-
-    qDebug() << "D err:" << dDifffitPtError_total;
-    cv::waitKey(2000);
-} //While Error Change Is larger Than
-
-sfish.spline = spline;
-}
 
 
 ///
@@ -2292,7 +2179,8 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
             cvb::CvBlob* fishblob = fbt->second;
             double angle = cvAngle(fishblob);
-
+            pfish->bearingRads = angle;//atan2(vecMidlEye.y,vecMidlEye.x);
+            pfish->resetSpine();
             double lengthLine = distToEyes*4;
             fishblobClineA.x =fishblob->centroid.x-lengthLine*cos(angle);
             fishblobClineA.y =fishblob->centroid.y-lengthLine*sin(angle);
@@ -2351,7 +2239,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 
         cv::Point vecMidlEye = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*2;
-        pfish->bearingRads = atan2(vecMidlEye.y,vecMidlEye.x);
+
         cv::line(framelapl,pfish->coreTriangle[2],vecMidlEye,CV_RGB(255,255,255),2,cv::LINE_8); //// Draw Eye Separator
 
         ///Fit Spine Model
@@ -2359,7 +2247,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         ///Draw Spine
         for (int j=0; j<7;j++) //Rectangle Eye
         {
-            cv::line(frameDebugC,pfish->spline[j],pfish->spline[(j+1)] ,CV_RGB(255,180,40),2,cv::LINE_8);
+            cv::line(frameDebugC,pfish->spline[j],pfish->spline[(j+1)] ,CV_RGB(255,180,40),1,cv::LINE_8);
             cv::circle(frameDebugC,pfish->spline[j],2,CV_RGB(150,150,150),1);
         }
 
