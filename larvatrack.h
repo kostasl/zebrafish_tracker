@@ -148,15 +148,6 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 ///
 bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
-///
-/// \brief fitfishCoreSpine
-/// \param sfish
-/// \param contours_body
-/// \param idxInnerContour
-/// \param idxOuterContour
-/// \return
-///
-bool fitfishCoreSpine(fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
 ///
 /// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features

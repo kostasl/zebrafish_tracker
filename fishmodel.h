@@ -4,6 +4,15 @@
 #include <string>
 #include <cvBlob/cvblob.h>
 
+/// \brief defines points along our custom linear spline that is fitted along the fish contour
+typedef struct
+{
+    float x;
+    float y;
+    float angle;// In Rads
+} splineKnotf;
+
+typedef std::vector<splineKnotf> t_fishspline;
 
 class fishModel
 {
@@ -17,7 +26,15 @@ public:
   float rightEyeAngle();
   float vergenceAngle();
   void resetSpine();
-  void getSpline(std::vector<cv::Point2f>& outspline);
+  void calcSpline(t_fishspline& outspline);
+  void getSplineParams(t_fishspline& inspline,std::vector<double>& outparams);
+  void setSplineParams(t_fishspline& inspline,std::vector<double>& inparams);
+
+  cv::Point2f getPointAlongSpline(float z,t_fishspline& pspline);
+
+
+  double distancePointToSpline(cv::Point2f ptsrc,t_fishspline& outspline);
+  double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam);
   double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
   cvb::CvLabel blobLabel;
@@ -47,11 +64,14 @@ public:
 
   cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
 
+  t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
+
+   static const int c_spinePoints  = 8;
+   static const int c_spineSegL    = 5;
 private:
-  static int c_spinePoints  = 8;
-  static int c_spineSegL    = 5;
-  std::vector<cv::Point2f> spline; ///X-Y Coordinates of Fitted spline to contour
-  std::vector<double> splineTheta; ///Angles of fitted Spine Points
+
+
+  //std::vector<double> splineTheta; ///Angles of fitted Spine Points
 };
 
 #endif // FISHMODEL_H
