@@ -67,7 +67,7 @@ public:
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
    static const int c_spinePoints  = 8;
-   static const int c_spineSegL    = 5;
+   static const int c_spineSegL    = 10;
 private:
 
 

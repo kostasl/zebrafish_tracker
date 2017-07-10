@@ -2247,7 +2247,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         pfish->fitSpineToContour(contours_body,idxChild,idxblobContour);
 
         ///Draw Spine
-        for (int j=0; j<pfish->c_spinePoints;j++) //Rectangle Eye
+        for (int j=0; j<pfish->c_spinePoints-1;j++) //Rectangle Eye
         {
             cv::line(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),cv::Point(pfish->spline[j+1].x,pfish->spline[j+1].y) ,CV_RGB(255,180,40),1,cv::LINE_8);
             cv::circle(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),2,CV_RGB(150,150,150),1);
