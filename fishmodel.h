@@ -47,7 +47,7 @@ public:
 
 
   double distancePointToSpline(cv::Point2f ptsrc,t_fishspline& outspline);
-  double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam);
+  double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
   double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
   cvb::CvLabel blobLabel;
@@ -79,8 +79,8 @@ public:
 
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-   static const int c_spinePoints   = 2;
-   static const int c_spineSegL     = 80;
+   static const int c_spinePoints   = 10;
+   static const int c_spineSegL     = 8;
    static const int c_spineParamCnt = c_spinePoints+1;
 private:
 

@@ -1672,7 +1672,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
        std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
        idxContour = -1;
    }else
-       qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
+      // qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
 
 
    return idxContour;
@@ -2133,7 +2133,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
         //Find a contour that best matches the Body
         idxblobContour = findMatchingContour(contours_body,hierarchy_body,centroid,0,pfish->coreHull,rectFeatures);
-        if (idxblobContour == -1)
+        if (idxblobContour < 0)
         {
             bContourfound = false;
             std::cerr << "Fish body " << track->id << " Contour not found!" << std::endl;
