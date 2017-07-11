@@ -14,12 +14,13 @@ fishModel::fishModel()
 
 }
 
-fishModel::fishModel(cvb::CvTrack* track):fishModel()
+fishModel::fishModel(cvb::CvTrack* track,cvb::CvBlob* blob):fishModel()
 {
 
-    this->ID    = track->id;
+    this->ID        = track->id;
     this->blobLabel = track->label;
-    this->track = track; //Copy Pointer
+    this->track     = track; //Copy Pointer
+    this->bearingRads = cvb::cvAngle(blob);
     this->coreTriangle[2].x = track->centroid.x;
     this->coreTriangle[2].y = track->centroid.y;
     this->resetSpine();
@@ -65,6 +66,7 @@ void fishModel::resetSpine()
 
         splineKnotf sp;
         sp.angle    = this->bearingRads;
+        assert(!isnan(sp.angle));
         if (i==0)
         {
             sp.x =  this->coreTriangle[2].x;
@@ -72,8 +74,8 @@ void fishModel::resetSpine()
         }
         else
         {
-            sp.x        = spline[i-1].x - c_spineSegL*cos(sp.angle);
-            sp.y        = spline[i-1].y - c_spineSegL*sin(sp.angle);
+            sp.x        = spline[i-1].x - ((double)c_spineSegL)*cos(sp.angle);
+            sp.y        = spline[i-1].y - ((double)c_spineSegL)*sin(sp.angle);
         }
 
         spline.push_back(sp); //Add Knot to spline
@@ -92,8 +94,9 @@ void fishModel::calcSpline(t_fishspline& outspline)
     for (int i=1;i<c_spinePoints;i++)
     {
 
-       outspline[i].x = outspline[i-1].x - c_spineSegL*cos(outspline[i-1].angle);
-       outspline[i].y = outspline[i-1].y - c_spineSegL*sin(outspline[i-1].angle);
+       outspline[i].x = outspline[i-1].x - ((double)c_spineSegL)*cos(outspline[i-1].angle);
+       outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*sin(outspline[i-1].angle);
+       assert(!isnan(outspline[i].y) && !isnan(outspline[i].x));
     }
 
 }
@@ -106,22 +109,24 @@ void fishModel::calcSpline(t_fishspline& outspline)
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam)
 {
     const static int cntParam = outspline.size()+1;
-    const double dAngleStep = CV_PI/16.0;
+    const double dAngleStep = 0.0;//CV_PI/320.0;
     double ret = 0.0;
     outspline = inspline;
 
     //If idxparam = 0 or 1 then we are varying initial Spline Point
     if (idxparam == 0) //x0, y0 params
     {
-        outspline[0].x +=1.0;
-        ret = 1.0;
+        ret = 0.01;
+        outspline[0].x += ret;
+
     }else if (idxparam == 1)
     {
-        outspline[0].y +=1.0;
-        ret = 1.0;
+        ret = 0.01;
+        outspline[0].y += ret;
+
     }else
     { // Param INdex is > 1 so it refers to angles starting from 0 idx knot
-         ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
+         ret = dAngleStep;//*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
          outspline[idxparam-2].angle += dAngleStep;// Angle variation for this theta
     }
 
@@ -213,9 +218,10 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
     int idxNear = 0;
     cv::Point2f ptFoot = cv::Point2f(pspline[idxNear].x,pspline[idxNear].y);
-    double distX = pow(ptsrc.x-ptFoot.x,2);
-    double distY = pow(ptsrc.y-ptFoot.y,2);
-    double mindist = sqrt(distX + distY);
+    //double distX = pow(ptsrc.x-ptFoot.x,2);
+    //double distY = pow(ptsrc.y-ptFoot.y,2);
+    double mindist;// = sqrt(distX + distY);
+    mindist= cv::norm(ptsrc-ptFoot);
     double dist = mindist;
 
     float fScanC = 0.0;
@@ -225,9 +231,10 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
     while (fScanC < spineLength)
     {
         cv::Point2f  ptTest = getPointAlongSpline(fScanC,pspline);
-        distX = pow(ptsrc.x-ptTest.x,2);
-        distY = pow(ptsrc.y-ptTest.y,2);
-        dist = sqrt(distX + distY);
+        //distX = pow(ptsrc.x-ptTest.x,2);
+        //distY = pow(ptsrc.y-ptTest.y,2);
+        //dist = sqrt(distX + distY);
+        dist= cv::norm(ptsrc-ptTest);
         //Check if distance minimized -
         if (dist < mindist)
         {
@@ -251,16 +258,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 ///
 double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
-    const int cntParam = spline.size()+1;
-    cv::Scalar TRACKER_COLOURMAP[] ={CV_RGB(150,150,150),
-                                     CV_RGB(200,100,100),
-                                     CV_RGB(150,200,50),
-                                     CV_RGB(50,250,00),
-                                     CV_RGB(150,150,00),
-                                     CV_RGB(250,250,00),
-                                     CV_RGB(200,200,80),
-                                     CV_RGB(20,200,180)};
-
+    const int cntParam = this->c_spinePoints+1;
 
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
@@ -284,6 +282,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
     double dGradf[cntParam];//Vector of Grad F per param
     double dResiduals[contour.size()];//Vector of \nabla d for error functions
     memset(dJacobian,0.0,contour.size()*(tmpspline.size()+1)*sizeof(double));
+    memset(dResiduals,0.0,contour.size()*(tmpspline.size()+1)*sizeof(double));
     memset(dGradf,0.0,tmpspline.size()*sizeof(double));
 
 
@@ -302,8 +301,9 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
             for (int k=0;k<cntParam; k++) //Add Variation dx to each param and calc derivative
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
                 double dq = getdeltaSpline(tmpspline,dsSpline,k); //Return param variation
-                double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // residual of variation spline
-                dJacobian[i][k]     = (ds-dResiduals[i])/dq;
+                double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
+                if (dq > 0.0)
+                    dJacobian[i][k]     = (ds-dResiduals[i])/dq;
                 dGradf[k]          += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
             }
         } //Loop Through Data Points
@@ -314,7 +314,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.05*dGradf[i];
+            cparams[i] -= 0.001*dGradf[i];
         }
         ///Modify Spline - ie move closer
         setSplineParams(tmpspline,cparams);

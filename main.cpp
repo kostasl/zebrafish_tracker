@@ -876,10 +876,17 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
 
         if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
         {
-            //Make new fish Model
+
 
             //Make Attached FishModel
-            fishModel* fish= new fishModel(track);
+
+            cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
+            assert(fbt != blobs.end());
+            cvb::CvBlob* fishblob = fbt->second;
+            //Make new fish Model
+            fishModel* fish= new fishModel(track,fishblob);
+
+
             vfishmodels.insert(CvIDFishModel(track->id,fish));
 
         }
@@ -892,9 +899,14 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
             {
                 delete pfish;
                 //Make Attached FishModel
-                fishModel* fish= new fishModel(track);
                 vfishmodels.erase(track->id); //Replace
+                cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
+                assert(fbt != blobs.end());
+
+                cvb::CvBlob* fishblob = fbt->second;
+                fishModel* fish= new fishModel(track,fishblob);
                 vfishmodels.insert(CvIDFishModel(track->id,fish));
+
 
             }
 
@@ -955,6 +967,19 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         gTimer.start();
     }
 
+    if ((char)keyboard == 'R')
+    {
+             std::cout << "Reset Spines for All Fish Models-" << endl;
+             for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+             {
+                 fishModel* fish = (*it).second;
+                   //Let ReleaseTracks Handle This
+                  fish->resetSpine();
+             }
+             //ReleaseFishModels(vfishmodels);
+    }
+
+
     //Toggle Show the masked - where blob id really happens
     if ((char)keyboard == 'm')
          bshowMask = !bshowMask;
@@ -988,11 +1013,6 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     }
 
 
-    if ((char)keyboard == 'r')
-    {
-             std::cout << "Reset/Delete All Fish Models-" << endl;
-             ReleaseFishModels(vfishmodels);
-    }
 
 
 }
@@ -1900,6 +1920,10 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
     sfish.midEyePoint       = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
     sfish.mouthPoint        = sfish.coreTriangle[2]+(sfish.midEyePoint-sfish.coreTriangle[2])*1.2;
 
+    ///Temporarly Reposition
+    //sfish.spline[0].x       = sfish.coreTriangle[2].x;
+    //sfish.spline[0].y       = sfish.coreTriangle[2].y;
+    //sfish.calcSpline(sfish.spline);
 
     /////DEbug Output
     ///Draw Fitted inside Triangle
@@ -2180,7 +2204,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
             cvb::CvBlob* fishblob = fbt->second;
             double angle = cvAngle(fishblob);
             pfish->bearingRads = angle;//atan2(vecMidlEye.y,vecMidlEye.x);
-            pfish->resetSpine();
+            //pfish->resetSpine();
             double lengthLine = distToEyes*4;
             fishblobClineA.x =fishblob->centroid.x-lengthLine*cos(angle);
             fishblobClineA.y =fishblob->centroid.y-lengthLine*sin(angle);
@@ -2252,8 +2276,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
             cv::line(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),cv::Point(pfish->spline[j+1].x,pfish->spline[j+1].y) ,CV_RGB(255,180,40),1,cv::LINE_8);
             cv::circle(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),2,CV_RGB(150,150,150),1);
         }
-
-
 
         /// Find Features in Modified Laplace Image
         //Get Contours - Shound contain at least eyes, core and tail
