@@ -301,7 +301,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
         dfitPtError_total_last  = dfitPtError_total;
         dfitPtError_total = 0.0; //Reset
 
-        for (int i=0;i<contour.size();i++) //For Each Data point make a row in Jacobian
+        for (int i=0;i<contour.size();i+=3) //For Each Data point make a row in Jacobian
         {
             dResiduals[i] = distancePointToSpline((cv::Point2f)contour[i],tmpspline);
 
@@ -336,6 +336,9 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
 
         dDifffitPtError_total = dfitPtError_total - dfitPtError_total_last; //Total Residual /Error Measure Change
+
+        //if (dfitPtError_total > 1000)
+            //this->resetSpine(); //Start over
 
     }
     qDebug() << cntpass << " EChange:" << dDifffitPtError_total;
