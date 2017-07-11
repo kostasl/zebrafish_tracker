@@ -2,8 +2,9 @@
 #define FISHMODEL_H
 
 #include <string>
-#include <cvBlob/cvblob.h>
 
+#include <cvBlob/cvblob.h>
+#include <QDebug>
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
 {
@@ -78,8 +79,9 @@ public:
 
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-   static const int c_spinePoints  = 4;
-   static const int c_spineSegL    = 20;
+   static const int c_spinePoints   = 2;
+   static const int c_spineSegL     = 80;
+   static const int c_spineParamCnt = c_spinePoints+1;
 private:
 
 

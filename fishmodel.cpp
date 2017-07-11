@@ -109,24 +109,31 @@ void fishModel::calcSpline(t_fishspline& outspline)
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam)
 {
     const static int cntParam = outspline.size()+1;
-    const double dAngleStep = 0.0;//CV_PI/320.0;
+    const double dAngleStep = CV_PI/30.0;
     double ret = 0.0;
     outspline = inspline;
 
     //If idxparam = 0 or 1 then we are varying initial Spline Point
     if (idxparam == 0) //x0, y0 params
     {
-        ret = 0.01;
+        ret = 0.05;
         outspline[0].x += ret;
 
     }else if (idxparam == 1)
     {
-        ret = 0.01;
+        ret = 0.05;
         outspline[0].y += ret;
 
-    }else
+    }else if (idxparam == 2) //Rotate whole spine
+    {
+        ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
+        outspline[0].angle += dAngleStep;// Angle variation for this theta
+        //for (int i=1;i<c_spinePoints;i++)
+        //    outspline[i].angle += dAngleStep;// Angle variation for this theta
+    }
+    else
     { // Param INdex is > 1 so it refers to angles starting from 0 idx knot
-         ret = dAngleStep;//*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
+         ret = 0.0;//*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
          outspline[idxparam-2].angle += dAngleStep;// Angle variation for this theta
     }
 
@@ -148,13 +155,14 @@ return ret; //Return Distance In Q space
 void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outparams)
 {
     outparams.clear();
+    outparams.reserve(c_spineParamCnt);
     //Add x0 - yo
-    outparams.push_back(inspline[0].x);
-    outparams.push_back(inspline[0].y);
+    outparams[0] = inspline[0].x;
+    outparams[1] = inspline[0].y;
 
     for (int i=0;i<(c_spinePoints-1);i++)
     {
-        outparams.push_back(inspline[i].angle );
+        outparams[i+2] = inspline[i].angle;
     }
 
 }
@@ -163,15 +171,14 @@ void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outp
 /// \brief Modifies a Spline according to Cspace params
 void fishModel::setSplineParams(t_fishspline& inspline,std::vector<double>& inparams)
 {
-    for (int i=0;i<(c_spinePoints-1);i++)
+    for (int i=0;i<(c_spineParamCnt);i++)
     {
         if (i==0)
             inspline[0].x = inparams[0];
-        else
-            if (i==1)
-                inspline[0].y = inparams[1];
-            else
-                inspline[i-2].angle = inparams[i]; //Param 3 is actually 1st spine knot's angle
+        if (i==1)
+            inspline[0].y = inparams[1];
+        if (i>1)
+            inspline[i-2].angle = inparams[i]; //Param 3 is actually 1st spine knot's angle
     }
 
     //Readjust xi,yi (In variational terms calc x_i = f(q1,q2,q3..), y_i = f(q1,q2,q3..)
@@ -258,7 +265,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 ///
 double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
-    const int cntParam = this->c_spinePoints+1;
+    const int cntParam = this->c_spineParamCnt;
 
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
@@ -279,11 +286,11 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
 
     double dJacobian[contour.size()][cntParam];//Vector of \nabla d for error functions
+    memset(dJacobian,0.0,contour.size()*(cntParam)*sizeof(double));
     double dGradf[cntParam];//Vector of Grad F per param
+    memset(dGradf,0.0,cntParam*sizeof(double));
     double dResiduals[contour.size()];//Vector of \nabla d for error functions
-    memset(dJacobian,0.0,contour.size()*(tmpspline.size()+1)*sizeof(double));
-    memset(dResiduals,0.0,contour.size()*(tmpspline.size()+1)*sizeof(double));
-    memset(dGradf,0.0,tmpspline.size()*sizeof(double));
+    memset(dResiduals,0.0,contour.size()*sizeof(double));
 
 
     //while (dDifffitPtError_total > 100.0)
@@ -303,9 +310,11 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
                 double dq = getdeltaSpline(tmpspline,dsSpline,k); //Return param variation
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
                 if (dq > 0.0)
-                    dJacobian[i][k]     = (ds-dResiduals[i])/dq;
-                dGradf[k]          += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
+                    dJacobian[i][k] = (ds-dResiduals[i])/dq;
+                dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
+
             }
+
         } //Loop Through Data Points
 
         std::vector<double> cparams;
@@ -314,7 +323,8 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.001*dGradf[i];
+            cparams[i] -= 0.005*dGradf[i];
+            qDebug() << "lamda GradF_"<< k << "-:" << 0.005*dGradf[i];;
         }
         ///Modify Spline - ie move closer
         setSplineParams(tmpspline,cparams);

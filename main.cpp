@@ -64,9 +64,9 @@ uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
-int g_Segthresh             = 17; //Image Threshold for FIsh Features
+int g_Segthresh             = 15; //Image Threshold for FIsh Features
 int g_SegInnerthreshMult    = 3; //Image Threshold for FIsh Features
-int g_BGthresh              = 13; //BG threshold segmentation
+int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 100; /// Minimum Score to accept that a contour has been found
 bool gOptimizeShapeMatching = true; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 100;
