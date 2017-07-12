@@ -66,7 +66,7 @@ void fishModel::resetSpine()
 
         splineKnotf sp;
         sp.angle    = this->bearingRads;
-        assert(!isnan(sp.angle));
+        assert(!std::isnan(sp.angle));
         if (i==0)
         {
             sp.x =  this->coreTriangle[2].x;
@@ -96,7 +96,7 @@ void fishModel::calcSpline(t_fishspline& outspline)
 
        outspline[i].x = outspline[i-1].x - ((double)c_spineSegL)*cos(outspline[i-1].angle);
        outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*sin(outspline[i-1].angle);
-       assert(!isnan(outspline[i].y) && !isnan(outspline[i].x));
+       assert(!std::isnan(outspline[i].y) && !std::isnan(outspline[i].x));
     }
 
 }

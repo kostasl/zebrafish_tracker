@@ -44,7 +44,7 @@
 
 
 /// Constants ///
-const unsigned int thresh_fishblobarea  = 250; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 450; //Min area above which to Filter The fish blobs
 const int inactiveFrameCount            = 30000; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
@@ -68,7 +68,7 @@ int g_Segthresh             = 15; //Image Threshold for FIsh Features
 int g_SegInnerthreshMult    = 3; //Image Threshold for FIsh Features
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 100; /// Minimum Score to accept that a contour has been found
-bool gOptimizeShapeMatching = true; ///Set to false To disable matchShapes in FindMatching Contour
+bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 100;
 //using namespace std;
 
@@ -865,6 +865,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 ///
 void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
 {
+    fishModel* pfish = NULL;
 
      //Look through Tracks find they have a fish model attached and create if missing
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
@@ -872,14 +873,11 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
         cvb::CvTrack* track = it->second;
 
         fishModels::const_iterator ft =  vfishmodels.find(it->first); //Find model with same Id as the Track - Associated fishModel
-        fishModel* pfish = NULL;
+
 
         if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
         {
-
-
             //Make Attached FishModel
-
             cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
             assert(fbt != blobs.end());
             cvb::CvBlob* fishblob = fbt->second;
@@ -890,8 +888,8 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
             vfishmodels.insert(CvIDFishModel(track->id,fish));
 
         }
-        else
-        { //Existing Fish Needs to Point to this track
+        else ///Some Fish Has that Track ID
+        { //Check if pointer is the same Not just the track ID (IDs are re used)
           pfish = ft->second; //Set Pointer to Existing Fish
 
             //Must point to the same track - OtherWise Replace Fish Model
@@ -911,6 +909,30 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
             }
 
         }
+
+
+
+    }
+
+    //Look Through
+    ///Go through Each FishModel And Delete the ones whose tracks are gone
+
+    fishModels::const_iterator ft = vfishmodels.begin();
+    while(ft != vfishmodels.end())
+    {
+        pfish = ft->second;
+
+        cvb::CvTracks::const_iterator it = fishtracks.find(pfish->ID);
+
+       if (it == fishtracks.end()) //Track No Longer Exists / Delete model
+        {
+            fishModels::const_iterator tmp = ft;
+            vfishmodels.erase(tmp);
+           std::cout << "Deleted fishmodel: " << pfish->ID << std::endl;
+           delete(pfish);
+           break;
+        }
+         ++ft;
 
     }
 
@@ -970,13 +992,13 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'R')
     {
              std::cout << "Reset Spines for All Fish Models-" << endl;
-             for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
-             {
-                 fishModel* fish = (*it).second;
-                   //Let ReleaseTracks Handle This
-                  fish->resetSpine();
-             }
-             //ReleaseFishModels(vfishmodels);
+//             for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+//             {
+//                 fishModel* fish = (*it).second;
+//                   //Let ReleaseTracks Handle This
+//                  fish->resetSpine();
+//             }
+             ReleaseFishModels(vfishmodels);
     }
 
 
@@ -1584,7 +1606,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
    ///Find Contour with Min Distance in shape and space -attach to closest contour
    //In Not found Search Again By distance tp Full Contour
        //Find Closest Contour
-       for( size_t i = 0; i< contours.size(); i++ )
+       for( int i = 0; i< (int)contours.size(); i++ )
        {
 
           //Filter According to desired Level
@@ -1671,9 +1693,10 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
    {
        std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
        idxContour = -1;
-   }else
-      // qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
+   }
+      //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
 
+   assert(idxContour < (int)contours.size());
 
    return idxContour;
 }
@@ -2088,7 +2111,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     cv::Laplacian(maskedfishFeature_blur,framelapl_buffer,CV_8UC1,g_BGthresh);
     //cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
     cv::findContours(framelapl_buffer, contours_laplace_clear,hierarchy_laplace_clear, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-
+    cv::imshow("Laplacian Clear",framelapl_buffer);
     //cv::Canny( maskedfishImg_gray, frameCanny, gi_CannyThres/2, gi_CannyThres, 3 );
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
