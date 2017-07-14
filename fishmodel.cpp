@@ -109,7 +109,7 @@ void fishModel::calcSpline(t_fishspline& outspline)
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn)
 {
     const static int cntParam = outspline.size()+1;
-    const double dAngleStep = sgn*CV_PI/30.0;
+    const double dAngleStep = sgn*CV_PI/16.0;
     double ret = 0.0;
     outspline = inspline;
 
@@ -124,14 +124,7 @@ double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,
         ret = sgn*0.05;
         outspline[0].y += ret;
 
-    }else if (idxparam == 2) //Rotate whole spine
-    {
-        ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
-        outspline[0].angle += dAngleStep;// Angle variation for this theta
-        //for (int i=1;i<c_spinePoints;i++)
-        //    outspline[i].angle += dAngleStep;// Angle variation for this theta
-    }
-    else
+    }else
     { // Param INdex is > 1 so it refers to angles starting from 0 idx knot
          //ret = 0.0;//*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
          ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
@@ -294,14 +287,14 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
     memset(dResiduals,0.0,contour.size()*sizeof(double));
 
     int cntpass = 0;
-    while (cntpass < 20 && abs(dDifffitPtError_total) > 5)
+    while (cntpass < 50 && abs(dDifffitPtError_total) > 0.2)
     {
         cntpass++;
 
         dfitPtError_total_last  = dfitPtError_total;
         dfitPtError_total = 0.0; //Reset
 
-        for (int i=0;i<contour.size();i+=3) //For Each Data point make a row in Jacobian
+        for (int i=0;i<contour.size();i+=1) //For Each Data point make a row in Jacobian
         {
             dResiduals[i] = distancePointToSpline((cv::Point2f)contour[i],tmpspline);
 
@@ -309,13 +302,14 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
             for (int k=0;k<cntParam; k++) //Add Variation dx to each param and calc derivative
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
-                double dq = getdeltaSpline(tmpspline,dsSpline,k,+0.5); //Return param variation
+                double dq = getdeltaSpline(tmpspline,dsSpline,k,+0.75); //Return param variation
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
-                //dq = getdeltaSpline(tmpspline,dsSpline,k,+0.5) - dq; //add dx
+                //dsSpline.clear();
+                //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
                 //ds += distancePointToSpline((cv::Point2f)contour[i],dsSpline); // Add df dsSpline residual of variation spline
 
-                if (dq > 0.0)
-                    dJacobian[i][k] = (ds-dResiduals[i])/dq;
+                //if (dq > 0.0)
+                dJacobian[i][k] = (ds-dResiduals[i])/(dq);
                 dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
 
             }
@@ -328,7 +322,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.003*dGradf[i];
+            cparams[i] -= 0.005*dGradf[i];
             //qDebug() << "lamda GradF_"<< i << "-:" << 0.003*dGradf[i];
         }
         ///Modify Spline - ie move closer
@@ -339,11 +333,14 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
         //if (dfitPtError_total > 1000)
             //this->resetSpine(); //Start over
+        qDebug() << "ID:" <<  this->ID << cntpass << " EChange:" << dDifffitPtError_total;
 
     }
-    qDebug() << cntpass << " EChange:" << dDifffitPtError_total;
+
 
     this->spline = tmpspline;
+
+    return dDifffitPtError_total;
 //    ///DEBUG
 //    for (int j=0; j<8;j++) //Rectangle Eye
 //    {

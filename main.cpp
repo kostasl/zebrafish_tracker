@@ -25,6 +25,8 @@
  /// Added: Detection of stopped Larva or loss of features from BG Substraction - via mask correction
  ///    *Filter blobs and maintain separate lists for each class (food/fish)
  ///    * track blobs of different class (food/fish) separatelly so tracks do not interfere
+ ///    *Issues:
+ ///        *Multiple models for same blob
  ////////
 
 
@@ -44,7 +46,8 @@
 
 
 /// Constants ///
-const unsigned int thresh_fishblobarea  = 450; //Min area above which to Filter The fish blobs
+
+
 const int inactiveFrameCount            = 30000; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
@@ -53,8 +56,10 @@ const double dLearningRateNominal       = 0.0002;
 
 /// Vars With Initial Values  -
 //Area Filters
-double dMeanBlobArea        = 100; //Initial Value that will get updated
-double dVarBlobArea         = 20;
+double dMeanBlobArea                    = 100; //Initial Value that will get updated
+double dVarBlobArea                     = 20;
+const unsigned int gc_fishLength        = 110; //px Length Of Fish
+const unsigned int thresh_fishblobarea  = 850; //Min area above which to Filter The fish blobs
 
 //BG History
 float gfVidfps              = 150;
@@ -562,7 +567,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
         //Combine Lists into Tracks before rendering
         tracks.clear();
-        tracks.insert(foodtracks.begin(),foodtracks.end() );
+        //tracks.insert(foodtracks.begin(),foodtracks.end() );
         tracks.insert(fishtracks.begin(),fishtracks.end());
 
         //
@@ -873,7 +878,8 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
         cvb::CvTrack* track = it->second;
 
         fishModels::const_iterator ft =  vfishmodels.find(it->first); //Find model with same Id as the Track - Associated fishModel
-
+        if (track->inactive)
+            continue;
 
         if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
         {
@@ -926,12 +932,21 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
 
        if (it == fishtracks.end()) //Track No Longer Exists / Delete model
         {
-            fishModels::const_iterator tmp = ft;
-            vfishmodels.erase(tmp);
+           fishModels::const_iterator tmp = ft;
+           vfishmodels.erase(tmp);
            std::cout << "Deleted fishmodel: " << pfish->ID << std::endl;
            delete(pfish);
            break;
-        }
+        }else //Track Is inactive Delete Model
+           if (pfish->track->inactive)
+           {
+               std::cout << "Deleted fishmodel: " << pfish->ID << " Track was Inactive t:" << pfish->track->inactive << std::endl;
+               fishModels::const_iterator tmp = ft;
+               vfishmodels.erase(tmp);
+               delete(pfish);
+               break;
+           }
+
          ++ft;
 
     }
@@ -1185,7 +1200,7 @@ int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb:
     //copy blobs and then Filter to separate classes
     //Allow only Fish Area Through
     //                                              (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
-    fishblobs = cvb::cvFilterByArea(blobs,std::max(dMeanBlobArea*8,(double)thresh_fishblobarea),maxBlobArea+dsigma,CV_RGB(10,10,120) ); //Remove Small Blobs
+    fishblobs = cvb::cvFilterByArea(blobs,std::max((uint)dMeanBlobArea*8,(uint)thresh_fishblobarea),std::max((uint)(maxBlobArea+dsigma),(uint)gc_fishLength*50),CV_RGB(10,10,120) ); //Remove Small Blobs
 
     //Food Blobs filter -> Remove large blobs (Fish)
     ///\todo these blob filters could be elaborated to include moment matching/shape distance
@@ -1570,7 +1585,7 @@ void drawROI(cv::Mat& frame)
 }
 
 ///
-/// \brief findContourClosestToPoint Looks for the inner contour in a 2 level hierarchy that matches the point coords
+/// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
 /// \param contours source array in which to search
 /// \param hierarchy
 /// \param pt - Position around which we are searching
@@ -1935,11 +1950,13 @@ bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishMod
     cv::Point maxLoc;
     double minVal,maxVal;
     //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
-    cv::minMaxLoc(maskedfishImg,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
+
 
     sfish.tailTopPoint    = ptTail;
     //if (maxLoc) is contained in triangle?
-    sfish.coreTriangle[2]   = maxLoc; //Now Place index [0] at apex
+    /// \note Problem - Eyes can sometimes be brighter than cyst
+    //cv::minMaxLoc(maskedfishImg,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
+    //sfish.coreTriangle[2]   = maxLoc; //Now Place index [0] at apex
     sfish.midEyePoint       = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
     sfish.mouthPoint        = sfish.coreTriangle[2]+(sfish.midEyePoint-sfish.coreTriangle[2])*1.2;
 
@@ -2110,7 +2127,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     cv::Laplacian(maskedfishFeature_blur,framelapl_buffer,CV_8UC1,g_BGthresh);
     //cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
-    cv::findContours(framelapl_buffer, contours_laplace_clear,hierarchy_laplace_clear, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    cv::findContours(framelapl_buffer, contours_laplace_clear,hierarchy_laplace_clear, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_L1, cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
     cv::imshow("Laplacian Clear",framelapl_buffer);
     //cv::Canny( maskedfishImg_gray, frameCanny, gi_CannyThres/2, gi_CannyThres, 3 );
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
@@ -2139,8 +2156,12 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         cvb::CvID trackId = it->first;
         cvb::CvTrack* track = it->second;
 
+        fishModels::const_iterator tfm =  vfishmodels.find(trackId);
 
-        fishModel* pfish = vfishmodels.find(trackId)->second;
+        if (tfm == vfishmodels.end())
+            continue; //Ignore this track - its inactive - Model DEleted
+        fishModel* pfish = tfm->second;
+
         //Trackeer is Reusing Track Ids Need to Fix this
         if (pfish->track != track) //Must point to the same track
         {
@@ -2209,7 +2230,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
        //cv::rectangle(maskedImg, rectFeatures[i].boundingRect(), CV_RGB(255., 0., 0.));
 
         //Set Tracking point to be the buoyancy cyst - body point (tracked as brightest spot)
-        track->centroid.x = pfish->coreTriangle[2].x; track->centroid.y = pfish->coreTriangle[2].y;
+        //track->centroid.x = pfish->coreTriangle[2].x; track->centroid.y = pfish->coreTriangle[2].y;
 
 
 
@@ -2301,7 +2322,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         //Identify and Draw Right - Eye
         idxREyeContour  = findMatchingContour(contours_laplace,hierarchy_laplace,pfish->coreTriangle[1],1,pfish->rightEyeHull,rectfishFeatures);
         int idxREyeContourC = -1; //Initialize
-        idxLBodyContour = findMatchingContour(contours_laplace_clear,hierarchy_laplace_clear,pfish->coreTriangle[2],1,pfish->coreHull,rectfishFeatures);
+        idxLBodyContour = findMatchingContour(contours_laplace_clear,hierarchy_laplace_clear,pfish->track->centroid,1,pfish->coreHull,rectfishFeatures);
         if (idxLBodyContour > -1)
         {
             pfish->coreHull = contours_laplace_clear[idxLBodyContour];
@@ -2310,13 +2331,16 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
             cv::drawContours( frameDebugC, contours_laplace_clear, idxLBodyContour,CV_RGB(225,225,0), 1,8,hierarchy_laplace_clear);
         }
 
-
         ///Draw Spine
         for (int j=0; j<pfish->c_spinePoints-1;j++) //Rectangle Eye
         {
             cv::line(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),cv::Point(pfish->spline[j+1].x,pfish->spline[j+1].y) ,CV_RGB(255,180,40),1,cv::LINE_8);
             cv::circle(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),2,CV_RGB(150,150,150),1);
         }
+        cv::Point pttxt = cv::Point(pfish->spline[(pfish->c_spinePoints-1)].x+10,pfish->spline[(pfish->c_spinePoints-1)].y+10);
+        std::stringstream str_spline;
+        str_spline << pfish->ID;
+        cv::putText(frameDebugC,str_spline.str(), pttxt,cv::FONT_HERSHEY_SIMPLEX, 0.6 , CV_RGB(250,250,20));
         ///FIT SPINE Model///
 
 
