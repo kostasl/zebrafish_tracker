@@ -333,10 +333,11 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
         //if (dfitPtError_total > 1000)
             //this->resetSpine(); //Start over
-        qDebug() << "ID:" <<  this->ID << cntpass << " EChange:" << dDifffitPtError_total;
+
 
     }
 
+    qDebug() << "ID:" <<  this->ID << cntpass << " EChange:" << dDifffitPtError_total;
 
     this->spline = tmpspline;
 

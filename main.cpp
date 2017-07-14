@@ -2026,11 +2026,11 @@ cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
 
 
 //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),3);
+cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
 
 /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
 //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
-cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 maskfishOnly = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 
@@ -2087,7 +2087,8 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     bool berrorTriangleFit = true;
     int max_thresh = 255;
     int idxREyeContour,idxLEyeContour,idxLBodyContour;
-    int idxREyeContourW, idxLEyeContourW;
+    int idxREyeContourW = -1;
+    int idxLEyeContourW = -1;
     cv::RNG rng(12345);
 
     cv::Mat maskedImg_gray,maskedfishImg_gray;
@@ -2214,11 +2215,11 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
                 }
             }
         }
-        if (maxArea < 10)
+        if (maxArea < thresh_fishblobarea/3.0)
         {
             std::cerr << "Warning fishBody area too small A=" << maxArea << std::endl;
             continue ; //skip Processing
-        }else //Save As FishBody Hull contour - this is used to match next shape
+        }//else //Save As FishBody Hull contour - this is used to match next shape
              //Save Feature as Template for next frame
                 //pfish->coreHull = contours_body[idxblobContour];
 
@@ -2322,25 +2323,29 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         //Identify and Draw Right - Eye
         idxREyeContour  = findMatchingContour(contours_laplace,hierarchy_laplace,pfish->coreTriangle[1],1,pfish->rightEyeHull,rectfishFeatures);
         int idxREyeContourC = -1; //Initialize
-        idxLBodyContour = findMatchingContour(contours_laplace_clear,hierarchy_laplace_clear,pfish->track->centroid,1,pfish->coreHull,rectfishFeatures);
-        if (idxLBodyContour > -1)
+        idxLBodyContour = findMatchingContour(contours_laplace_clear,hierarchy_laplace_clear,centroid,1,pfish->coreHull,rectfishFeatures);
+        if (idxChild > -1)
         {
-            pfish->coreHull = contours_laplace_clear[idxLBodyContour];
-            /// Fit Spine Model ////
-            pfish->fitSpineToContour(contours_laplace_clear,idxChild,idxLBodyContour);
-            cv::drawContours( frameDebugC, contours_laplace_clear, idxLBodyContour,CV_RGB(225,225,0), 1,8,hierarchy_laplace_clear);
+            pfish->coreHull = contours_body[idxblobContour];
+            /// Fit Spline Model ////
+            pfish->fitSpineToContour(contours_body,idxChild,idxChild);
+            cv::drawContours( frameDebugC, contours_body, idxChild,CV_RGB(255,200,80), 1,8,hierarchy_body);
         }
 
-        ///Draw Spine
-        for (int j=0; j<pfish->c_spinePoints-1;j++) //Rectangle Eye
+        /////  Draw Spline /////////////
+        cv::Scalar colour = CV_RGB(255,0,0);
+        for (int j=0; j<pfish->c_spinePoints;j++) //Rectangle Eye
         {
-            cv::line(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),cv::Point(pfish->spline[j+1].x,pfish->spline[j+1].y) ,CV_RGB(255,180,40),1,cv::LINE_8);
-            cv::circle(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),2,CV_RGB(150,150,150),1);
+            if (j < pfish->c_spinePoints-1)
+                cv::line(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),cv::Point(pfish->spline[j+1].x,pfish->spline[j+1].y) ,CV_RGB(255,0,0),1,cv::LINE_8);
+            cv::circle(frameDebugC,cv::Point(pfish->spline[j].x,pfish->spline[j].y),2,colour,2);
+            colour = CV_RGB(155,150,150);
         }
         cv::Point pttxt = cv::Point(pfish->spline[(pfish->c_spinePoints-1)].x+10,pfish->spline[(pfish->c_spinePoints-1)].y+10);
         std::stringstream str_spline;
         str_spline << pfish->ID;
         cv::putText(frameDebugC,str_spline.str(), pttxt,cv::FONT_HERSHEY_SIMPLEX, 0.6 , CV_RGB(250,250,20));
+
         ///FIT SPINE Model///
 
 
@@ -2461,9 +2466,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
         //pfish->rightEyeHull.clear();
         //pfish->leftEyeHull.clear();
-        cv::findContours(markerEyesImg, contours_watershed,hierarchy_watershed, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-        idxLEyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->leftEyePoint,-1,pfish->leftEyeHull,rectfishFeatures);
-        idxREyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->rightEyePoint,-1,pfish->rightEyeHull,rectfishFeatures);
+        //cv::findContours(markerEyesImg, contours_watershed,hierarchy_watershed, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+        //idxLEyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->leftEyePoint,-1,pfish->leftEyeHull,rectfishFeatures);
+        //idxREyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->rightEyePoint,-1,pfish->rightEyeHull,rectfishFeatures);
 
 
         if (idxLEyeContourW!=-1)
