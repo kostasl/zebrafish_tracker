@@ -14,7 +14,8 @@ SOURCES += main.cpp \
     cvBlob/cvaux.cpp \
     GUI/QtOpencvCore.cpp \
     GUI/mainwindow.cpp \
-    fishmodel.cpp
+    fishmodel.cpp \
+    CSS/CurveCSS.cpp
     #GUI/TrackerScene.cpp
 
 RESOURCES += qml.qrc
@@ -67,7 +68,9 @@ HEADERS += \
     GUI/QtOpencvCore.hpp \
     #GUI/TrackerScene.hpp \
     GUI/mainwindow.h \
-    fishmodel.h
+    fishmodel.h \
+    CSS/CurveCSS.h \
+    CSS/std.h
 
 
 FORMS += \
