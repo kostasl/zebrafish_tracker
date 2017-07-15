@@ -44,6 +44,7 @@
 
 #include <GUI/mainwindow.h>
 
+#include <CSS/CurveCSS.h> ///Curve Smoothing and Matching
 
 /// Constants ///
 
@@ -69,7 +70,7 @@ uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
-int g_Segthresh             = 15; //Image Threshold for FIsh Features
+int g_Segthresh             = 10; //Image Threshold for FIsh Features
 int g_SegInnerthreshMult    = 3; //Image Threshold for FIsh Features
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 100; /// Minimum Score to accept that a contour has been found
@@ -933,7 +934,7 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
        if (it == fishtracks.end()) //Track No Longer Exists / Delete model
         {
            fishModels::const_iterator tmp = ft;
-           vfishmodels.erase(tmp);
+           vfishmodels.erase(pfish->ID);
            std::cout << "Deleted fishmodel: " << pfish->ID << std::endl;
            delete(pfish);
            break;
@@ -942,7 +943,7 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
            {
                std::cout << "Deleted fishmodel: " << pfish->ID << " Track was Inactive t:" << pfish->track->inactive << std::endl;
                fishModels::const_iterator tmp = ft;
-               vfishmodels.erase(tmp);
+               vfishmodels.erase(pfish->ID);
                delete(pfish);
                break;
            }
@@ -2032,11 +2033,16 @@ cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, ker
 //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
+
 maskfishOnly = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
+
+
+std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
 
 ///Draw Only the largest contours that should belong to fish
 /// \todo Other Match Shapes Could be used here
 /// \todo Use WaterShed - Let MOG mask Be FG label and then watershed
+
 for (int kk=0; kk< fishbodycontours.size();kk++)
 {
 
@@ -2054,21 +2060,58 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
         if (area > std::max(dMeanBlobArea*8,(double)thresh_fishblobarea) ) //If Contour Is large Enough then Must be fish
         {
 
+
+            ///// SMOOTH COntours /////
+            /// \brief curve
+
+            std::vector<cv::Point> curve = fishbodycontours[kk];
+
+            double sigma = 3.0;
+            int M = round((10.0*sigma+1.0) / 2.0) * 2 - 1;
+            assert(M % 2 == 1); //M is an odd number
+
+            //create kernels
+            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
+
+            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
+            PolyLineSplit(curve,curvex,curvey);
+
+            std::vector<double> X,XX,Y,YY;
+            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
+            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
+
+
+            ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
+
+
+            PolyLineMerge(curve,resampledcurveX,resampledcurveY);
+            ///////////// END SMOOTHING
+
+            fishbodyContour_smooth.push_back(curve);
+
+            /////COMBINE - DRAW CONTOURS
             //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
             // they should still fall within contour - )
-            cv::drawContours( maskfishOnly, fishbodycontours, kk, CV_RGB(255,255,255), cv::FILLED);
+            cv::drawContours( maskfishOnly, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED);
+
+            fishbodycontours[kk] = curve;
         }
 
 }
 
 
+
+
+
 //Add the masks so as to enhance fish features
 cv::bitwise_or(maskfishOnly,maskFGImg,maskFGImg);
 
+//maskfishOnly.copyTo(maskFGImg);
+
 threshold_output.copyTo(frameDebugD);
 
-if (bshowMask)
-    cv::imshow("Fish Enhance Mask",maskfishOnly);
+//if (bshowMask)
+    cv::imshow("Processed Mask",maskfishOnly);
     cv::imshow("MOG2 Mask",maskFGImg);
     cv::imshow("Hollow Fish Mask",threshold_output_COMB);
 }

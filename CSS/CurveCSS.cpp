@@ -93,7 +93,7 @@ void getdXcurve(vector<double> x,
 				vector<double> g, 
 				vector<double> dg, 
 				vector<double> d2g,
-				bool isOpen = false) 
+                bool isOpen)
 {	
 	gx.resize(x.size()); 
 	dx.resize(x.size()); 

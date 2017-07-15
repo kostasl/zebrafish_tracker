@@ -6,6 +6,10 @@
  *
  */
 
+using namespace std;
+using namespace cv;
+
+
 #pragma mark Curves Utilities
 template<typename T, typename V>
 void PolyLineSplit(const vector<Point_<T> >& pl,vector<V>& contourx, vector<V>& contoury) {
@@ -159,3 +163,7 @@ void GetCurveSegmentsWithCSSImage(vector<Point_<T> >& curve, vector<int>& intere
 double MatchTwoSegments(const vector<Point2d>& a, const vector<Point2d>& b);
 double MatchCurvesSmithWaterman(const vector<vector<Point2d> >& a, const vector<vector<Point2d> >& b, vector<Point>& traceback); 
 double AdaptedMatchCurvesSmithWaterman(const vector<vector<Point2d> >& a, const vector<vector<Point2d> >& b, vector<Point>& traceback);
+void getGaussianDerivs(double sigma, int M, vector<double>& gaussian, vector<double>& dg, vector<double>& d2g);
+///* 0th, 1st and 2nd derivatives of whole smoothed curve */
+void getdXcurve(vector<double> x, double sigma, vector<double>& gx, vector<double>& dx, vector<double>& d2x, vector<double> g, 	vector<double> dg, vector<double> d2g,bool isOpen = false);
+
