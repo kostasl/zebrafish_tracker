@@ -59,8 +59,8 @@ const double dLearningRateNominal       = 0.0002;
 //Area Filters
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
-const unsigned int gc_fishLength        = 110; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 250; //Min area above which to Filter The fish blobs
+const unsigned int gc_fishLength        = 100; //px Length Of Fish
+const unsigned int thresh_fishblobarea  = 120; //Min area above which to Filter The fish blobs
 
 //BG History
 float gfVidfps              = 300;
@@ -2075,7 +2075,7 @@ for (int kk=0; kk< fgMaskcontours.size();kk++)
             cv::Point centroid; centroid.x = moments.m10/moments.m00; centroid.y = moments.m01/moments.m00;
 
             std::vector<cv::RotatedRect> rectFeatures;
-            idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,0,fgMaskcontours[kk],rectFeatures);
+            idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
             if (idxFishContour > -1)
                 curve = fishbodycontours[idxFishContour];
             else
@@ -2115,7 +2115,7 @@ for (int kk=0; kk< fgMaskcontours.size();kk++)
             /////COMBINE - DRAW CONTOURS
             //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
             // they should still fall within contour - )
-            cv::drawContours( maskFGImg, fishbodycontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
+            cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
             cv::drawContours( maskfishOnly, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
 
             //fishbodycontours[kk].clear();
