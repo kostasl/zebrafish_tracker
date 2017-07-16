@@ -140,6 +140,8 @@ namespace cvb
       for (int i=0;i<contours.size();i++)
       {
           //If Centroid is not outside contour then add to filtered list
+          if (contours[i].size() < 2)
+              continue;
           if (cv::pointPolygonTest(contours[i],cv::Point(blob->centroid.x,blob->centroid.y),false) !=-1)
           {
               vret.insert((*it));
