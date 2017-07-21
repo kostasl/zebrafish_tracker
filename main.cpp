@@ -116,8 +116,9 @@ cv::Mat kernelClose;
 
 ltROI Circle( cv::Point(0,0) , cv::Point(1024,768));
 ltROIlist vRoi;
-cv::Point ptROI1;
-cv::Point ptROI2;
+cv::Point ptROI1 = cv::Point(320,240);
+cv::Point ptROI2 = cv::Point(1,131);
+
 
 //Structures to hold blobs & Tracks
 //Blobs as identified by BG Substractions
@@ -396,7 +397,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
        if (nFrame == 1)
        {
            //Add Global Roi
-           ltROI newROI(cv::Point(frame.cols/2-10,frame.rows/2-10),cv::Point(0,0));
+           ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
            addROI(newROI);
        }
 
@@ -817,8 +818,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         //Make Global Roi on 1st frame
         if (nFrame == 1)
         {
-            //Add Global Roi
-            ltROI newROI(cv::Point(frame.cols/2-10,frame.rows/2-10),cv::Point(0,0));
+            //Add Global Roi - Center - Radius
+            ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
             addROI(newROI);
         }
 
@@ -1191,7 +1192,7 @@ int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb:
     //copy blobs and then Filter to separate classes
     //Allow only Fish Area Through
     //                                              (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
-    fishblobs = cvb::cvFilterByArea(blobs,std::max((uint)dMeanBlobArea*8,(uint)thresh_fishblobarea),std::max((uint)(maxBlobArea+dsigma),(uint)thresh_fishblobarea),CV_RGB(10,10,220) ); //Remove Small Blobs
+    fishblobs = cvb::cvFilterByArea(blobs,std::min((uint)dMeanBlobArea*8,(uint)thresh_fishblobarea),std::max((uint)(maxBlobArea+dsigma),(uint)thresh_fishblobarea),CV_RGB(10,10,220) ); //Remove Small Blobs
 
     //Food Blobs filter -> Remove large blobs (Fish)
     ///\todo these blob filters could be elaborated to include moment matching/shape distance
@@ -2079,7 +2080,10 @@ for (int kk=0; kk< fgMaskcontours.size();kk++)
             if (idxFishContour > -1)
                 curve = fishbodycontours[idxFishContour];
             else
-                curve = fgMaskcontours[kk];
+            {
+                //curve = fgMaskcontours[kk];
+                continue;// Could Not Find Full Body Contour - Carry on
+            }
 
         }
         else
@@ -2119,7 +2123,9 @@ for (int kk=0; kk< fgMaskcontours.size();kk++)
             cv::drawContours( maskfishOnly, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
 
             //fishbodycontours[kk].clear();
-            fishbodycontours[kk] = curve;
+            //fishbodycontours[kk] = curve;
+            if (idxFishContour > -1)
+                 fishbodycontours[idxFishContour] = curve; //Replace Contour
 
 }
 
