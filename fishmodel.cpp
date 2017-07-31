@@ -260,7 +260,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-
+    const int gMaxFitIterations = 50;
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
@@ -278,6 +278,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
     double dfitPtError_total_last = 0.0;
     double dDifffitPtError_total = 1000.0;
 
+    double dTemp = 1.0; //Anealling Temperature
 
     double dJacobian[contour.size()][cntParam];//Vector of \nabla d for error functions
     memset(dJacobian,0.0,contour.size()*(cntParam)*sizeof(double));
@@ -287,10 +288,13 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
     memset(dResiduals,0.0,contour.size()*sizeof(double));
 
     int cntpass = 0;
-    while (cntpass < 50 && abs(dDifffitPtError_total) > 0.2)
+    while (cntpass < gMaxFitIterations && abs(dDifffitPtError_total) > 0.2)
     {
         cntpass++;
-
+        ///For Annealing
+        dTemp = (double)cntpass/gMaxFitIterations;
+        //Prob Of Acceptance P = exp(-(sn-s)/T) >= drand
+        ///
         dfitPtError_total_last  = dfitPtError_total;
         dfitPtError_total = 0.0; //Reset
 

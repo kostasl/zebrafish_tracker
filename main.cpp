@@ -70,14 +70,13 @@ uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(5.0*MOGhistory);
 
 //Segmentation Params
-int g_Segthresh             = 13; //Image Threshold for FIsh Features
+int g_Segthresh             = 27; //Image Threshold for FIsh Features
 int g_SegInnerthreshMult    = 3; //Image Threshold for FIsh Features
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 100; /// Minimum Score to accept that a contour has been found
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 100;
 //using namespace std;
-
 
 
 ///Global Variables
@@ -2166,7 +2165,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     cv::Mat maskedImg_gray,maskedfishImg_gray;
     cv::Mat maskfishFeature,maskedfishFeature_blur;
-    cv::Mat markerEyesImg, tmpMarker,imgwatershedShow; //Do watershed for all labels
+
 
     cv::Mat grad,grad_x, grad_y;
     cv::Mat framelapl,framelapl_buffer, frameCanny;
@@ -2206,10 +2205,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     //cv::Canny( maskedfishImg_gray, frameCanny, gi_CannyThres/2, gi_CannyThres, 3 );
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
-
-    //Make/Reset Label Img for WaterShed
-    markerEyesImg = cv::Mat::ones(fullImg.rows,fullImg.cols,CV_32SC1)+70;
-    tmpMarker     = cv::Mat::zeros(fullImg.rows,fullImg.cols,CV_32SC1)+70;
     //
     cv::Mat fullImg_colour;
     fullImg.convertTo(fullImg_colour,CV_8UC3);
@@ -2397,14 +2392,21 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         idxREyeContour  = findMatchingContour(contours_laplace,hierarchy_laplace,pfish->coreTriangle[1],1,pfish->rightEyeHull,rectfishFeatures);
         int idxREyeContourC = -1; //Initialize
         idxLBodyContour = findMatchingContour(contours_laplace_clear,hierarchy_laplace_clear,centroid,1,pfish->coreHull,rectfishFeatures);
-        ///FIT Body Contour
-        if (idxblobContour > -1)
+        ///Fit Laplace Tail Contour
+        if (idxLBodyContour > -1)
         {
-            pfish->coreHull = contours_body[idxblobContour];
+            pfish->coreHull = contours_laplace_clear[idxLBodyContour];
             /// Fit Spline Model ////
-            pfish->fitSpineToContour(contours_body,idxChild,idxblobContour);
-            cv::drawContours( frameDebugC, contours_body, idxblobContour,CV_RGB(255,200,80), 1,8,hierarchy_body);
-        }
+            pfish->fitSpineToContour(contours_laplace_clear,idxChild,idxLBodyContour);
+            cv::drawContours( frameDebugC, contours_laplace_clear, idxLBodyContour,CV_RGB(255,00,0), 1,8,hierarchy_laplace_clear);
+        }else ///If laplace not here FIT Body Contour
+            if (idxblobContour > -1)
+            {
+                pfish->coreHull = contours_body[idxblobContour];
+                /// Fit Spline Model ////
+                pfish->fitSpineToContour(contours_body,idxChild,idxblobContour);
+                cv::drawContours( frameDebugC, contours_body, idxblobContour,CV_RGB(255,200,80), 1,8,hierarchy_body);
+            }
 
         /////  Draw Spline /////////////
         cv::Scalar colour = CV_RGB(255,0,0);
@@ -2499,43 +2501,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         for (int j=0; j<np;j++) //Rectangle Eye
             cv::line(frameDebugC,vEyeContour[j],vEyeContour[(j+1)%(np)] ,CV_RGB(0,180,250),1,cv::LINE_8);
 
-        ////// Draw WaterShed Labels ////
-        /// - \brief With the more accurate positioning of the eye centres now we can obtain
-        /// Obtain Accurate FEature Contours for Eyes- Body + Head /////
-        ///Make Marked/Labeled Image Using Approx Eye Location
-        //This is labelled as uknown Territory with 0
-        cv::drawContours( markerEyesImg, contours_body, (int)idxblobContour, CV_RGB(0,0,0), cv::FILLED);
-        //markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
-
-        //Now Draw Labels on it To Mark L-R Eyes, Head And body region
-        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.3;
-        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.5;
-        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
-        //cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-        cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),2,cv::LINE_AA); //Label/Mark Head Region
-        //cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-
-        //Can use std::max((int)rectfishFeatures[1].size.width/4,1)
-        cv::circle(markerEyesImg,pfish->leftEyePoint,1 ,CV_RGB(255,255,255),1,cv::LINE_AA); //Label/Mark Centre of  Left Eye
-        cv::circle(markerEyesImg,pfish->rightEyePoint,1 ,CV_RGB(100,100,100),1,cv::LINE_AA); //Label/Mark Centre Right Eye
-        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),2,cv::LINE_AA); //Label/Mark Body
-
-//        for( size_t i = 0; i< contours_canny.size(); i++ )
-//        {
-//             cv::drawContours( maskedImg, contours_canny, (int)i, CV_RGB(120,120,120), 1,8,hierarchy_canny);
-//        }
-
-
-        ///END OF  WATERSHED Marking  ///
-
-
-        /// WATERSHED Contour Detection ///
-        //markerEyesImg is Input/Ouptu so need to Save Before Marker img is modified in order to debug
-        markerEyesImg.copyTo(tmpMarker,maskfishFeature );
-        //maskedImg.copyTo(imgwatershedShow,maskfishFeature);
-
-        cv::watershed(fullImg_colour,markerEyesImg); ///Watershed SEGMENTATION
-
         //Do Contour on Segmented image
 
         //pfish->rightEyeHull.clear();
@@ -2594,6 +2559,10 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
         cv::circle(frameDebugB,pfish->tailTopPoint,1,CV_RGB(200,250,10),2,cv::LINE_AA); //Label/Mark Tail On Contour
         cv::circle(frameDebugB,pfish->mouthPoint ,1,CV_RGB(200,200,150),2,cv::LINE_AA); //Label/Mark Headegion
+
+        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.3;
+        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.5;
+
 
         cv::circle(frameDebugB,ptNeck            ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
         cv::circle(frameDebugB,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
@@ -2738,11 +2707,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     }
 
 
-    tmpMarker.convertTo(tmpMarker, CV_8UC3);
-    cv::imshow("Watershed Markers",tmpMarker);
-
-    markerEyesImg.convertTo(markerEyesImg, CV_8UC3);
-    cv::imshow("Watershed Markers Modified",markerEyesImg);
 
     cv::imshow("Edges Laplace",framelapl);
 
@@ -2874,3 +2838,60 @@ void thresh_callback(int, void* )
 
 }
 
+
+void watershedMethod()
+{
+
+    cv::Mat markerEyesImg, tmpMarker,imgwatershedShow; //Do watershed for all labels
+
+    ////////?WATERSHED ///
+        ////WaterShed Canvas
+        //Make/Reset Label Img for WaterShed
+        //markerEyesImg = cv::Mat::ones(fullImg.rows,fullImg.cols,CV_32SC1)+70;
+        //tmpMarker     = cv::Mat::zeros(fullImg.rows,fullImg.cols,CV_32SC1)+70;
+
+//        ////// Draw WaterShed Labels //////
+//        /// - \brief With the more accurate positioning of the eye centres now we can obtain
+//        /// Obtain Accurate FEature Contours for Eyes- Body + Head /////
+//        ///Make Marked/Labeled Image Using Approx Eye Location
+//        //This is labelled as uknown Territory with 0
+//        cv::drawContours( markerEyesImg, contours_body, (int)idxblobContour, CV_RGB(0,0,0), cv::FILLED);
+//        //markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
+
+//        //Now Draw Labels on it To Mark L-R Eyes, Head And body region
+//        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
+//        //cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
+//        cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),2,cv::LINE_AA); //Label/Mark Head Region
+//        //cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
+
+//        //Can use std::max((int)rectfishFeatures[1].size.width/4,1)
+//        cv::circle(markerEyesImg,pfish->leftEyePoint,1 ,CV_RGB(255,255,255),1,cv::LINE_AA); //Label/Mark Centre of  Left Eye
+//        cv::circle(markerEyesImg,pfish->rightEyePoint,1 ,CV_RGB(100,100,100),1,cv::LINE_AA); //Label/Mark Centre Right Eye
+//        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),2,cv::LINE_AA); //Label/Mark Body
+
+////        for( size_t i = 0; i< contours_canny.size(); i++ )
+////        {
+////             cv::drawContours( maskedImg, contours_canny, (int)i, CV_RGB(120,120,120), 1,8,hierarchy_canny);
+////        }
+
+
+//        ///END OF  WATERSHED Marking  ///
+
+
+        /// WATERSHED Contour Detection ///
+        //markerEyesImg is Input/Ouptu so need to Save Before Marker img is modified in order to debug
+
+//        ///Watershed SEGMENTATION
+//        markerEyesImg.copyTo(tmpMarker,maskfishFeature );
+//        cv::watershed(fullImg_colour,markerEyesImg);
+//        ////////////////////////////
+//////////////END OF WATERSHED /////////////
+
+
+//    tmpMarker.convertTo(tmpMarker, CV_8UC3);
+//    cv::imshow("Watershed Markers",tmpMarker);
+
+//    markerEyesImg.convertTo(markerEyesImg, CV_8UC3);
+//    cv::imshow("Watershed Markers Modified",markerEyesImg);
+
+}
