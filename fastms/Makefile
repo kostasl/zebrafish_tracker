@@ -58,6 +58,7 @@ ARGS_GXX:=
 ARGS_GXX += -Wall
 ARGS_GXX += -O3
 ARGS_GXX += -m64
+ARGS_GXX += -D_FORCE_INLINES 
 ARGS_GXX += -fPIC
 ifeq ($(USE_OPENMP), 1)
 	ARGS_GXX += -fopenmp

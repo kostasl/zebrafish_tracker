@@ -15,7 +15,20 @@ SOURCES += main.cpp \
     GUI/QtOpencvCore.cpp \
     GUI/mainwindow.cpp \
     fishmodel.cpp \
-    CSS/CurveCSS.cpp
+    CSS/CurveCSS.cpp \
+    fastms/src/examples/example_batchprocessing.cpp \
+    fastms/src/examples/example_gui.cpp \
+    fastms/src/examples/main.cpp \
+    fastms/src/libfastms/solver/solver.cpp \
+    fastms/src/libfastms/solver/solver_base.cpp \
+    fastms/src/libfastms/solver/solver_host.cpp \
+    fastms/src/libfastms/util/has_cuda.cpp \
+    fastms/src/libfastms/util/image_mat.cpp \
+    fastms/src/mex/fastms_mex.cpp \
+    GUI/TrackerScene.cpp \
+    SinhaSIFT/MySIFT.cpp \
+    SinhaSIFT/SIFT.cpp \
+    SinhaSIFT/stdafx.cpp
     #GUI/TrackerScene.cpp
 
 RESOURCES += qml.qrc
@@ -73,7 +86,33 @@ HEADERS += \
     GUI/mainwindow.h \
     fishmodel.h \
     CSS/CurveCSS.h \
-    CSS/std.h
+    CSS/std.h \
+    fastms/src/examples/example_batchprocessing.h \
+    fastms/src/examples/example_gui.h \
+    fastms/src/examples/param.h \
+    fastms/src/examples/util.h \
+    fastms/src/libfastms/solver/solver.h \
+    fastms/src/libfastms/solver/solver_base.h \
+    fastms/src/libfastms/solver/solver_common_operators.h \
+    fastms/src/libfastms/solver/solver_device.h \
+    fastms/src/libfastms/solver/solver_host.h \
+    fastms/src/libfastms/util/has_cuda.h \
+    fastms/src/libfastms/util/image.h \
+    fastms/src/libfastms/util/image_access.h \
+    fastms/src/libfastms/util/image_access_convert.h \
+    fastms/src/libfastms/util/image_mat.h \
+    fastms/src/libfastms/util/mem.h \
+    fastms/src/libfastms/util/real.h \
+    fastms/src/libfastms/util/sum.h \
+    fastms/src/libfastms/util/timer.h \
+    fastms/src/libfastms/util/types_equal.h \
+    fastms/src/mex/mex_util.h \
+    GUI/TrackerScene.hpp \
+    SinhaSIFT/Descriptor.h \
+    SinhaSIFT/KeyPoint.h \
+    SinhaSIFT/SIFT.h \
+    SinhaSIFT/stdafx.h \
+    SinhaSIFT/targetver.h
 
 
 FORMS += \
