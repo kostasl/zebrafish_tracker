@@ -260,7 +260,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations = 50;
+    const int gMaxFitIterations = 5;
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 

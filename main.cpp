@@ -38,6 +38,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
+#include "opencv2/core/utility.hpp"
 //#include <opencv2/bgsegm.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
@@ -53,7 +54,7 @@ const int inactiveFrameCount            = 30000; //Number of frames inactive unt
 const int thActive                      = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
-const double dLearningRateNominal       = 0.0002;
+const double dLearningRateNominal       = 0.000;
 
 /// Vars With Initial Values  -
 //Area Filters
@@ -73,9 +74,13 @@ double dLearningRate        = 1.0/(5.0*MOGhistory);
 int g_Segthresh             = 27; //Image Threshold for FIsh Features
 int g_SegInnerthreshMult    = 3; //Image Threshold for FIsh Features
 int g_BGthresh              = 10; //BG threshold segmentation
-int gi_ThresholdMatching    = 100; /// Minimum Score to accept that a contour has been found
+int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 100;
+int gi_CannyThresSmall      = 3; //Aperture size should be odd between 3 and 7 in function Canny
+int gi_VotesAThres = 1; //Votes thres for Hough Transform
+int gi_VotesPThres = 1; //Votes thres for Hough Transform
+int gi_VotesSThres = 1; //Votes thres for Hough Transform
 //using namespace std;
 
 
@@ -102,6 +107,11 @@ cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
 cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 //cv::Ptr<cv::BackgroundSubtractorKNN> pKNN; //MOG Background subtractor
 //cv::Ptr<cv::bgsegm::BackgroundSubtractorGMG> pGMG; //GMG Background subtractor
+
+//Fish Detection
+Ptr<GeneralizedHough> pGHT;
+Ptr<GeneralizedHoughBallard> pGHTBallard;
+Ptr<GeneralizedHoughGuil> pGHTGuil;
 
 //Morphological Kernels
 cv::Mat kernelOpen;
@@ -197,15 +207,6 @@ int main(int argc, char *argv[])
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
 
-    cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
-    cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
-    cv::createTrackbar( "ShapeMatch Thres:","Debug D", &gi_ThresholdMatching, 20000.0, thresh_callback );
-    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 300, thresh_callback );
-
-
-    thresh_callback( 0, 0 );
-
-
 
     //Initialize The Track and blob vectors
     cvb::cvReleaseTracks(tracks); //Releasing All tracks will delete all track Objects
@@ -217,6 +218,63 @@ int main(int argc, char *argv[])
     //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 3
     pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false);
+    pMOG2->setNMixtures(150);
+    pMOG2->setBackgroundRatio(0.99);
+
+    double dmog2TG = pMOG2->getVarThresholdGen();
+    //pMOG2->setVarThresholdGen(1.0);
+    double dmog2VT = pMOG2->getVarThreshold();
+    pMOG2->setVarThreshold(3.0);
+
+    /// Setup Hough Tranform Algorithm ///
+    //pGHT = createGeneralizedHoughGuil();
+
+
+    //pGHTBallard = createGeneralizedHoughBallard();
+    pGHTGuil    = createGeneralizedHoughGuil();
+    pGHT = pGHTGuil;
+
+    cv::Mat fishbodyimg = imread("/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbodyg_tmp.pgm",CV_LOAD_IMAGE_GRAYSCALE);
+    if (fishbodyimg.empty())
+    {   std::cerr << "Failed to load Template img.";
+        exit(1);
+    }
+    //cv::Rect roi(0,0,3,33);
+    //cv::Rect roi(232,248,15,37); //For Large Image template
+    //cv::Mat fishtempl(fishbodyimg,roi);
+    //Set Template
+    pGHT->setTemplate(fishbodyimg,cv::Point(11,16));
+
+    gi_VotesSThres = pGHTGuil->getScaleThresh();
+    gi_VotesAThres = pGHTGuil->getAngleThresh();
+    gi_VotesPThres = pGHTGuil->getPosThresh();
+    //gi_ThresholdMatching =  pGHTBallard->getVotesThreshold();
+
+    pGHT->setMaxBufferSize(1000);
+    //pGHT->setLevels(360);
+
+    //lower Votes Thres
+
+    /// Hough Transform //
+
+
+
+    ///Make TrackBars ///
+    cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
+    cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
+    cv::createTrackbar( "Vote Threshold:", "Debug D", &gi_ThresholdMatching, 120.0, thresh_callback );
+    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 300, thresh_callback );
+    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 7, thresh_callback );
+    cv::createTrackbar( "GHT Scale Thres:","Debug D", &gi_VotesSThres, gi_VotesSThres*2.0, thresh_callback );
+    cv::createTrackbar( "GHT Angle Thres:","Debug D", &gi_VotesAThres, gi_VotesAThres*2.0, thresh_callback );
+    cv::createTrackbar( "GHT Pos Thres:","Debug D", &gi_VotesPThres, gi_VotesPThres*2.0, thresh_callback );
+
+    thresh_callback( 0, 0 );
+    ///////////////
+
+    double mog2CThres = pMOG2->getComplexityReductionThreshold(); ///This parameter defines the number of samples needed to accept to prove the component exists. CT=0.05 is a default value for all the samples. By setting CT=0 you get an algorithm very similar to the standard Stauffer&Grimson algorithm.
+    //pMOG2->setComplexityReductionThreshold(0.0);
+
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
     //pMOG =   cv::bgsegm::createBackgroundSubtractorMOG(MOGhistory,12,0.05,0.00); //MOG approach
      //pKNN = cv::createBackgroundSubtractorKNN(MOGhistory,50,false);
@@ -523,7 +581,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     //update the background model
     //OPEN CV 2.4
     // dLearningRate is now Nominal value
-    pMOG2->apply(frame, fgMask,dLearningRate);
+    pMOG2->apply(frame, fgMask,dLearningRateNominal);
 //    cv::erode(fgMask,fgMask,kernelOpen, cv::Point(-1,-1),1);
     //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),4);
 
@@ -541,7 +599,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     drawROI(frame);
 
 
-    lplframe = frame; //Convert to legacy format
+    lplframe = frameMasked; //Convert to legacy format
 
     //cvb::CvBlobs blobs;
     ///DO Tracking
@@ -2201,8 +2259,8 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     cv::Laplacian(maskedfishFeature_blur,framelapl_buffer,CV_8UC1,g_BGthresh);
     //cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
     cv::findContours(framelapl_buffer, contours_laplace_clear,hierarchy_laplace_clear, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_L1, cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-    cv::imshow("Laplacian Clear",framelapl_buffer);
-    //cv::Canny( maskedfishImg_gray, frameCanny, gi_CannyThres/2, gi_CannyThres, 3 );
+    //cv::imshow("Laplacian Clear",framelapl_buffer);
+    cv::Canny( maskedImg_gray, frameCanny, gi_CannyThresSmall,gi_CannyThres  );
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
     //
@@ -2214,6 +2272,34 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     fullImg_colour.copyTo(frameDebugD);
 
     framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
+
+    std::vector<Vec4f> position; //an array of (x,y,1,0) tuples
+    std::vector<Vec3i> votes; //an array of (x,y,1,0) tuples
+    pGHT->detect(maskedImg_gray,position,votes);
+
+    std::cerr << position.size() << std::endl;
+
+    for (size_t i = 0; i < position.size(); ++i)
+       {
+           Point2f pos(position[i][0], position[i][1]);
+           float scale = position[i][2];
+           float angle = position[i][3];
+
+           RotatedRect rect;
+           rect.center = pos;
+           rect.size = Size2f(35.0 * scale, 20.0 * scale);
+           rect.angle = angle;
+
+           Point2f pts[4];
+           rect.points(pts);
+
+           line(frameDebugC, pts[0], pts[1], Scalar(0, 60, 255), 3);
+           line(frameDebugC, pts[1], pts[2], Scalar(0, 60, 255), 3);
+           line(frameDebugC, pts[2], pts[3], Scalar(0, 60, 255), 3);
+           line(frameDebugC, pts[3], pts[0], Scalar(0, 60, 255), 3);
+   }
+
+
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
     {
@@ -2501,37 +2587,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
         for (int j=0; j<np;j++) //Rectangle Eye
             cv::line(frameDebugC,vEyeContour[j],vEyeContour[(j+1)%(np)] ,CV_RGB(0,180,250),1,cv::LINE_8);
 
-        //Do Contour on Segmented image
-
-        //pfish->rightEyeHull.clear();
-        //pfish->leftEyeHull.clear();
-        //cv::findContours(markerEyesImg, contours_watershed,hierarchy_watershed, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-        //idxLEyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->leftEyePoint,-1,pfish->leftEyeHull,rectfishFeatures);
-        //idxREyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->rightEyePoint,-1,pfish->rightEyeHull,rectfishFeatures);
-
-
-        if (idxLEyeContourW!=-1)
-        {
-            cv::convexHull( cv::Mat(contours_watershed[idxLEyeContourW]), pfish->leftEyeHull, false );
-            if (pfish->leftEyeHull.size() > 5)
-                pfish->leftEyeRect = cv::fitEllipse(pfish->leftEyeHull);
-            else
-                pfish->leftEyeRect = cv::minAreaRect(pfish->leftEyeHull);
-        }
-
-        if (idxREyeContourW!=-1)
-        {
-             cv::convexHull( cv::Mat(contours_watershed[idxREyeContourW]), pfish->rightEyeHull, false );
-             if (pfish->rightEyeHull.size() > 5)
-                pfish->rightEyeRect = cv::fitEllipse(pfish->rightEyeHull);
-             else
-                 pfish->rightEyeRect = cv::minAreaRect(pfish->rightEyeHull);
-
-        }
-
-
-
-
+        ///WaterShed Was Here///
 
 
         ///RESULTS
@@ -2683,23 +2739,21 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 // //    ///DEBUG show all contours on Laplace
 
-        for( size_t i = 0; i< contours_watershed.size(); i++ )
-        {
-             cv::drawContours( frameDebugD, contours_watershed, (int)i, CV_RGB(0,120,250), 1,8,hierarchy_watershed);
-        }
+//        for( size_t i = 0; i< contours_watershed.size(); i++ )
+//        {
+//             cv::drawContours( frameDebugD, contours_watershed, (int)i, CV_RGB(0,120,250), 1,8,hierarchy_watershed);
+//        }
 
-        cv::drawContours( frameDebugC, contours_watershed, (int)idxLEyeContourW, CV_RGB(220,250,0), 1,8,hierarchy_watershed);
-        cv::drawContours( frameDebugC, contours_watershed, (int)idxREyeContourW, CV_RGB(220,0,0), 1,8,hierarchy_watershed);
+        //cv::drawContours( frameDebugC, contours_watershed, (int)idxLEyeContourW, CV_RGB(220,250,0), 1,8,hierarchy_watershed);
+        //cv::drawContours( frameDebugC, contours_watershed, (int)idxREyeContourW, CV_RGB(220,0,0), 1,8,hierarchy_watershed);
 
-        cv::drawContours( frameDebugC, contours_laplace, idxREyeContour, CV_RGB(60,20,200), 1,8,hierarchy_laplace);
-        cv::drawContours( frameDebugC, contours_laplace, idxLEyeContour, CV_RGB(15,60,210), 1,8,hierarchy_laplace);
-
-
+        //cv::drawContours( frameDebugC, contours_laplace, idxREyeContour, CV_RGB(60,20,200), 1,8,hierarchy_laplace);
+        //cv::drawContours( frameDebugC, contours_laplace, idxLEyeContour, CV_RGB(15,60,210), 1,8,hierarchy_laplace);
 
 
 
     //Draw On Canny Img
-    //frameCanny.convertTo(frameCanny, CV_8UC3);
+    frameCanny.convertTo(frameCanny, CV_8UC3);
     ///DEBUG show all contours -Edge
     for( size_t i = 0; i< contours_canny.size(); i++ )
     {
@@ -2708,7 +2762,8 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 
 
-    cv::imshow("Edges Laplace",framelapl);
+    cv::imshow("Edges Canny",frameCanny);
+    //cv::imshow("Edges Laplace",framelapl);
 
     cv::imshow("Debug A",frameDebugA);
     cv::imshow("Debug B",frameDebugB);
@@ -2735,7 +2790,7 @@ double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point2f& ptEyeCenter,std:
 
 const double angleStep      = CV_2PI/33.0;
 int maxIntensity            = 0;
-int maxDensity            = 0;
+int maxDensity              = 0;
 double bestAngle            = 0.0; //In rad
 cv::Point2f ptbestCenter    = ptEyeCenter;
 double currentAngle         = 0.0;
@@ -2836,62 +2891,102 @@ void thresh_callback(int, void* )
     if (gi_CannyThres <2)
         gi_CannyThres = 2;
 
+  //  Aperture size should be odd between 3 and 7 in function Canny
+    if (gi_CannyThresSmall % 2 == 0)
+        gi_CannyThresSmall ++;
+    if (gi_CannyThresSmall <3)
+        gi_CannyThresSmall =3;
+    if (gi_CannyThresSmall >7)
+        gi_CannyThresSmall =7;
+
+
+
+    if (!pGHT.empty())
+    {
+        pGHT->setCannyHighThresh(gi_CannyThres);
+        pGHT->setCannyLowThresh(gi_CannyThresSmall);
+
+        pGHTGuil->setScaleThresh(gi_VotesSThres);
+        pGHTGuil->setAngleThresh(gi_VotesAThres);
+        pGHTGuil->setPosThresh(gi_VotesPThres);
+
+        //Ptr<GeneralizedHoughBallard> ballard = static_cast<Ptr<GeneralizedHoughBallard>> pGHT;
+        //if (gi_ThresholdMatching>0)
+        //    pGHTBallard->setVotesThreshold(gi_ThresholdMatching);
+
+    }
+
+
 }
 
 
-void watershedMethod()
+void watershedFeatureMethod()
 {
+//    //        ////// Draw WATERSHED Labels ////
+//    //        /// - \brief With the more accurate positioning of the eye centres now we can obtain
+//    //        /// Obtain Accurate FEature Contours for Eyes- Body + Head /////
+//    //        ///Make Marked/Labeled Image Using Approx Eye Location
+//    //        //This is labelled as uknown Territory with 0
+//    //        cv::drawContours( markerEyesImg, contours_body, (int)idxblobContour, CV_RGB(0,0,0), cv::FILLED);
+//    //        //markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
 
-    cv::Mat markerEyesImg, tmpMarker,imgwatershedShow; //Do watershed for all labels
+//    //        //Now Draw Labels on it To Mark L-R Eyes, Head And body region
+//    //        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.3;
+//    //        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.5;
+//    //        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
+//    //        //cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
+//    //        cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),2,cv::LINE_AA); //Label/Mark Head Region
+//    //        //cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
 
-    ////////?WATERSHED ///
-        ////WaterShed Canvas
-        //Make/Reset Label Img for WaterShed
-        //markerEyesImg = cv::Mat::ones(fullImg.rows,fullImg.cols,CV_32SC1)+70;
-        //tmpMarker     = cv::Mat::zeros(fullImg.rows,fullImg.cols,CV_32SC1)+70;
+//    //        //Can use std::max((int)rectfishFeatures[1].size.width/4,1)
+//    //        cv::circle(markerEyesImg,pfish->leftEyePoint,1 ,CV_RGB(255,255,255),1,cv::LINE_AA); //Label/Mark Centre of  Left Eye
+//    //        cv::circle(markerEyesImg,pfish->rightEyePoint,1 ,CV_RGB(100,100,100),1,cv::LINE_AA); //Label/Mark Centre Right Eye
+//    //        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),2,cv::LINE_AA); //Label/Mark Body
 
-//        ////// Draw WaterShed Labels //////
-//        /// - \brief With the more accurate positioning of the eye centres now we can obtain
-//        /// Obtain Accurate FEature Contours for Eyes- Body + Head /////
-//        ///Make Marked/Labeled Image Using Approx Eye Location
-//        //This is labelled as uknown Territory with 0
-//        cv::drawContours( markerEyesImg, contours_body, (int)idxblobContour, CV_RGB(0,0,0), cv::FILLED);
-//        //markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
-
-//        //Now Draw Labels on it To Mark L-R Eyes, Head And body region
-//        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
-//        //cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-//        cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),2,cv::LINE_AA); //Label/Mark Head Region
-//        //cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-
-//        //Can use std::max((int)rectfishFeatures[1].size.width/4,1)
-//        cv::circle(markerEyesImg,pfish->leftEyePoint,1 ,CV_RGB(255,255,255),1,cv::LINE_AA); //Label/Mark Centre of  Left Eye
-//        cv::circle(markerEyesImg,pfish->rightEyePoint,1 ,CV_RGB(100,100,100),1,cv::LINE_AA); //Label/Mark Centre Right Eye
-//        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),2,cv::LINE_AA); //Label/Mark Body
-
-////        for( size_t i = 0; i< contours_canny.size(); i++ )
-////        {
-////             cv::drawContours( maskedImg, contours_canny, (int)i, CV_RGB(120,120,120), 1,8,hierarchy_canny);
-////        }
+//    ////        for( size_t i = 0; i< contours_canny.size(); i++ )
+//    ////        {
+//    ////             cv::drawContours( maskedImg, contours_canny, (int)i, CV_RGB(120,120,120), 1,8,hierarchy_canny);
+//    ////        }
 
 
-//        ///END OF  WATERSHED Marking  ///
+//    //        ///END OF  WATERSHED Marking  ///
 
 
-        /// WATERSHED Contour Detection ///
-        //markerEyesImg is Input/Ouptu so need to Save Before Marker img is modified in order to debug
+//            /// WATERSHED Contour Detection ///
+//            //markerEyesImg is Input/Ouptu so need to Save Before Marker img is modified in order to debug
+//            markerEyesImg.copyTo(tmpMarker,maskfishFeature );
+//            //maskedImg.copyTo(imgwatershedShow,maskfishFeature);
 
-//        ///Watershed SEGMENTATION
-//        markerEyesImg.copyTo(tmpMarker,maskfishFeature );
-//        cv::watershed(fullImg_colour,markerEyesImg);
-//        ////////////////////////////
-//////////////END OF WATERSHED /////////////
+//            cv::watershed(fullImg_colour,markerEyesImg); ///Watershed SEGMENTATION
+
+//            //Do Contour on Segmented image
+
+//            //pfish->rightEyeHull.clear();
+//            //pfish->leftEyeHull.clear();
+//            //cv::findContours(markerEyesImg, contours_watershed,hierarchy_watershed, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+//            //idxLEyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->leftEyePoint,-1,pfish->leftEyeHull,rectfishFeatures);
+//            //idxREyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->rightEyePoint,-1,pfish->rightEyeHull,rectfishFeatures);
 
 
-//    tmpMarker.convertTo(tmpMarker, CV_8UC3);
-//    cv::imshow("Watershed Markers",tmpMarker);
+//            if (idxLEyeContourW!=-1)
+//            {
+//                cv::convexHull( cv::Mat(contours_watershed[idxLEyeContourW]), pfish->leftEyeHull, false );
+//                if (pfish->leftEyeHull.size() > 5)
+//                    pfish->leftEyeRect = cv::fitEllipse(pfish->leftEyeHull);
+//                else
+//                    pfish->leftEyeRect = cv::minAreaRect(pfish->leftEyeHull);
+//            }
 
-//    markerEyesImg.convertTo(markerEyesImg, CV_8UC3);
-//    cv::imshow("Watershed Markers Modified",markerEyesImg);
+//            if (idxREyeContourW!=-1)
+//            {
+//                 cv::convexHull( cv::Mat(contours_watershed[idxREyeContourW]), pfish->rightEyeHull, false );
+//                 if (pfish->rightEyeHull.size() > 5)
+//                    pfish->rightEyeRect = cv::fitEllipse(pfish->rightEyeHull);
+//                 else
+//                     pfish->rightEyeRect = cv::minAreaRect(pfish->rightEyeHull);
+
+//            }
+
 
 }
+

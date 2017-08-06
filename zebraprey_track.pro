@@ -16,23 +16,12 @@ SOURCES += main.cpp \
     GUI/mainwindow.cpp \
     fishmodel.cpp \
     CSS/CurveCSS.cpp \
-    fastms/src/examples/example_batchprocessing.cpp \
-    fastms/src/examples/example_gui.cpp \
-    fastms/src/examples/main.cpp \
-    fastms/src/libfastms/solver/solver.cpp \
-    fastms/src/libfastms/solver/solver_base.cpp \
-    fastms/src/libfastms/solver/solver_host.cpp \
-    fastms/src/libfastms/util/has_cuda.cpp \
-    fastms/src/libfastms/util/image_mat.cpp \
-    fastms/src/mex/fastms_mex.cpp \
     GUI/TrackerScene.cpp \
-    SinhaSIFT/MySIFT.cpp \
-    SinhaSIFT/SIFT.cpp \
-    SinhaSIFT/stdafx.cpp
     #GUI/TrackerScene.cpp
 
 RESOURCES += qml.qrc
-INCLUDEPATH += /usr/include/opencv
+#INCLUDEPATH += /usr/include/opencv
+INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.1.0/include
 #INCLUDEPATH += /usr/include/cvblob
 #INCLUDEPATH += ~/opencv/
 
@@ -54,7 +43,8 @@ QML_IMPORT_PATH =
 ##Assume Libs are copied with the package into
 QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
 QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.8/gcc_64/lib/
-QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/opencv/build/lib/
+#QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/opencv/build/lib/
+QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.1.0/build
 QMAKE_LFLAGS_RPATH=
 ###Using command : cp `ldd larvatrack | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` /libs
 
@@ -62,7 +52,7 @@ QMAKE_LFLAGS_RPATH=
 include(deployment.pri)
 
 
-LIBS+=-L/home/kostasl/Qt/5.8/gcc_64/lib/ #Compilation At office DEsktop
+##LIBS+=-L/home/kostasl/Qt/5.8/gcc_64/lib/ #Compilation At office DEsktop
 
 #unix: LIBS += -L$$PWD/../cvblob/build-cvBlobLib-Desktop-Release/ -lcvBlobLib
 #INCLUDEPATH += $$PWD/../cvblob/cvBlob
@@ -87,32 +77,7 @@ HEADERS += \
     fishmodel.h \
     CSS/CurveCSS.h \
     CSS/std.h \
-    fastms/src/examples/example_batchprocessing.h \
-    fastms/src/examples/example_gui.h \
-    fastms/src/examples/param.h \
-    fastms/src/examples/util.h \
-    fastms/src/libfastms/solver/solver.h \
-    fastms/src/libfastms/solver/solver_base.h \
-    fastms/src/libfastms/solver/solver_common_operators.h \
-    fastms/src/libfastms/solver/solver_device.h \
-    fastms/src/libfastms/solver/solver_host.h \
-    fastms/src/libfastms/util/has_cuda.h \
-    fastms/src/libfastms/util/image.h \
-    fastms/src/libfastms/util/image_access.h \
-    fastms/src/libfastms/util/image_access_convert.h \
-    fastms/src/libfastms/util/image_mat.h \
-    fastms/src/libfastms/util/mem.h \
-    fastms/src/libfastms/util/real.h \
-    fastms/src/libfastms/util/sum.h \
-    fastms/src/libfastms/util/timer.h \
-    fastms/src/libfastms/util/types_equal.h \
-    fastms/src/mex/mex_util.h \
-    GUI/TrackerScene.hpp \
-    SinhaSIFT/Descriptor.h \
-    SinhaSIFT/KeyPoint.h \
-    SinhaSIFT/SIFT.h \
-    SinhaSIFT/stdafx.h \
-    SinhaSIFT/targetver.h
+    GUI/TrackerScene.hpp
 
 
 FORMS += \
