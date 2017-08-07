@@ -107,7 +107,7 @@ void getEdgePoints(cv::Mat& imgEdgeIn,std::vector<cv::Point2f>& vedgepoint)
 int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& vellipses)
 {
     const int minEllipseMajor = 4;
-    const int thresMinVotes = 160;
+    const int thresMinVotes = 6;
     int accLength = imgIn.cols+imgIn.rows;
     cv::Mat img_blur,img_edge;
     cv::GaussianBlur(imgIn,img_blur,cv::Size(1,1),1,1);
@@ -123,18 +123,21 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
 
     //Iterate Edge Image and extract edge points
     getEdgePoints(img_edge,vedgePoints);
-
+    memset(accumulator,0,sizeof(int)*(accLength)); //Reset Accumulator MAtrix
 
     ///Loop through All Edge points (3)
     for (std::vector<cv::Point2f>::iterator it1 = vedgePoints.begin();it1 != vedgePoints.end(); ++it1 )
     {
         cv::Point2f ptxy1 = *it1;
         cv::Point2f ptxy2;
-        memset(accumulator,0,sizeof(int)*(accLength)); //Reset Accumulator MAtrix
+
 
         ///(4)
         for (std::vector<cv::Point2f>::iterator it2 = vedgePoints.begin();it2 != vedgePoints.end(); ++it2 )
         {
+
+
+
             ptxy2 = *it2;
             double d = cv::norm(ptxy1-ptxy2);
             if (d < minEllipseMajor)
@@ -194,7 +197,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
 
         ///Step 12 - Remove the points from the image Before Restarting
 
-
+        ///Step 13 - Clear Accumulator
+        memset(accumulator,0,sizeof(int)*(accLength)); //Reset Accumulator MAtrix
         } //Loop through each 2nd point in pair
 
 
