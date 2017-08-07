@@ -85,6 +85,7 @@ void getEdgePoints(cv::Mat& imgEdgeIn,std::vector<cv::Point2f>& vedgepoint)
    const float pxThres = 1.0;
 
    vedgepoint.clear();
+   /*
   for (int y = 0; y < imgEdgeIn.rows; ++y)
   {
       const float* row_ptr = imgEdgeIn.ptr<float>(y);
@@ -92,15 +93,21 @@ void getEdgePoints(cv::Mat& imgEdgeIn,std::vector<cv::Point2f>& vedgepoint)
       {
           float value = row_ptr[x];
           if ( value >  pxThres)
-              vedgepoint.push_back(cv::Point(x,y));
+
       }
   }
+  */
+  for(int i=0; i<imgEdgeIn.rows; i++)
+      for(int j=0; j<imgEdgeIn.cols; j++)
+           if ( imgEdgeIn.at<uchar>(i,j) >  pxThres)
+               vedgepoint.push_back(cv::Point(i,j));
+
 }
 
 int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& vellipses)
 {
     const int minEllipseMajor = 4;
-    const int thresMinVotes = 8;
+    const int thresMinVotes = 160;
     int accLength = imgIn.cols+imgIn.rows;
     cv::Mat img_blur,img_edge;
     cv::GaussianBlur(imgIn,img_blur,cv::Size(1,1),1,1);
@@ -148,7 +155,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
                 double d = cv::norm(ptxy0-ptxy3);
                 double dd = d*d;
 
-                if (d > a) //Candidate 3rd point of minor axis distance needs to be less than alpha away
+                if (d > a || d ==0) //Candidate 3rd point of minor axis distance needs to be less than alpha away
                     continue;
 
                 //Calculate Minor Axis
@@ -164,7 +171,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
                 double bb = aa*dd*(1.0-coscostau)/(aa - dd * coscostau + 0.00001); //(5)
                 int b = round(sqrt(bb));
                 ///Step 8
-                accumulator[b]++; //increment accumulator for this minor Axis
+                if (b > 0)
+                    accumulator[b]++; //increment accumulator for this minor Axis
 
             ///Step 9 Loop Until All Pixels 3rd are computed for this pair of pixes
             }
@@ -177,13 +185,14 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
             if (dvotesMax > thresMinVotes) //Found ellipse
             {
                 ///Step 11 Output Ellipse Parameters
-                cv::RotatedRect ellipse(ptxy0,ptxy1,ptxy2);
+                //cv::RotatedRect ellipse(ptxy0,ptxy1,ptxy2);
+                cv::RotatedRect ellipse(ptxy0,cv::Size2f(idx,2*a),alpha);
                 vellipses.push_back(ellipse);
-                cv::ellipse(imgIn,ellipse,CV_RGB(250,50,50),1);
+                cv::ellipse(imgIn,ellipse,CV_RGB(250,50,50),1,cv::LINE_8);
 
             }
 
-
+        ///Step 12 - Remove the points from the image Before Restarting
 
 
         } //Loop through each 2nd point in pair
