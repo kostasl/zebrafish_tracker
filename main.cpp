@@ -118,6 +118,7 @@ cv::Mat kernelOpen;
 cv::Mat kernelOpenLaplace;
 cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
+cv::Mat fishbodyimg_template;// OUr Fish Image Template
 
 //Global Shortcut of Type conversion to legacy IplImage
 //IplImage framefishMaskImg;
@@ -158,6 +159,18 @@ bool bMouseLButtonDown;
 bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 
+string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
+
+static Mat loadImage(const string& name)
+{
+    Mat image = imread(name, IMREAD_GRAYSCALE);
+    if (image.empty())
+    {
+        cerr << "Can't load image - " << name << endl;
+        exit(-1);
+    }
+    return image;
+}
 
 
 int main(int argc, char *argv[])
@@ -234,16 +247,13 @@ int main(int argc, char *argv[])
     pGHTGuil    = createGeneralizedHoughGuil();
     pGHT = pGHTGuil;
 
-    cv::Mat fishbodyimg = imread("/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbodyg_tmp.pgm",CV_LOAD_IMAGE_GRAYSCALE);
-    if (fishbodyimg.empty())
-    {   std::cerr << "Failed to load Template img.";
-        exit(1);
-    }
+     fishbodyimg_template = loadImage(strTemplateImg);
+
     //cv::Rect roi(0,0,3,33);
     //cv::Rect roi(232,248,15,37); //For Large Image template
     //cv::Mat fishtempl(fishbodyimg,roi);
     //Set Template
-    pGHT->setTemplate(fishbodyimg,cv::Point(11,16));
+    pGHT->setTemplate(fishbodyimg_template);
 
     gi_VotesSThres = pGHTGuil->getScaleThresh();
     gi_VotesAThres = pGHTGuil->getAngleThresh();
@@ -2263,7 +2273,78 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     cv::Canny( maskedImg_gray, frameCanny, gi_CannyThresSmall,gi_CannyThres  );
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
-    //
+
+
+    //std::vector<Vec4f> position; //an array of (x,y,1,0) tuples
+    //std::vector<Vec3i> votes; //an array of (x,y,1,0) tuples
+    //pGHT->detect(maskedImg_gray,position,votes);
+//    std::cerr << position.size() << std::endl;
+
+//    for (size_t i = 0; i < position.size(); ++i)
+//       {
+//           Point2f pos(position[i][0], position[i][1]);
+//           float scale = position[i][2];
+//           float angle = position[i][3];
+
+//           RotatedRect rect;
+//           rect.center = pos;
+//           rect.size = Size2f(35.0 * scale, 20.0 * scale);
+//           rect.angle = angle;
+
+//           Point2f pts[4];
+//           rect.points(pts);
+
+//           line(frameDebugC, pts[0], pts[1], Scalar(0, 60, 255), 3);
+//           line(frameDebugC, pts[1], pts[2], Scalar(0, 60, 255), 3);
+//           line(frameDebugC, pts[2], pts[3], Scalar(0, 60, 255), 3);
+//           line(frameDebugC, pts[3], pts[0], Scalar(0, 60, 255), 3);
+//   }
+
+////////////USE TEMPLATE MATCHINg /////////////
+
+    ////No Try Template Matching  Across Angles//
+    cv::Mat outMatchConv,templ_rot;
+//    cv::Mat image;
+//    fullImg;
+    double minVal, maxVal;
+    double gminVal = 0.0;
+    double gmaxVal = 0.0;
+    cv::Point gptmaxLoc;
+    cv::Mat Mrot;
+    int Angle,bestAngle;
+    //Try Template Across Angles and find Best Match
+    for (Angle=0;Angle<360;Angle+=15)
+    {
+        Mrot = cv::getRotationMatrix2D(cv::Point(fishbodyimg_template.cols/2,fishbodyimg_template.rows/2),Angle,1.0);
+        cv::warpAffine(fishbodyimg_template,templ_rot,Mrot,cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows));
+
+        cv::matchTemplate(maskedImg_gray,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
+
+        cv::Point ptmaxLoc,ptminLoc;
+        cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
+
+        if (gmaxVal < maxVal)
+        {
+            gmaxVal     = maxVal;
+            gptmaxLoc   = ptmaxLoc;
+            bestAngle = Angle;
+        }
+    } //Loop THrough Angles
+
+
+    //Set to Global Max Point
+    cv::Point top_left = gptmaxLoc;
+    cv::Point bottom_right(top_left.x + fishbodyimg_template.cols , top_left.y + fishbodyimg_template.rows);
+
+    cv::rectangle(fullImg,top_left,bottom_right,CV_RGB(200,200,0),1,LINE_8);
+    stringstream strLbl;
+    strLbl << "A: " << bestAngle;
+    cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.7,CV_RGB(250,250,0),1);
+
+///////////////////
+
+
+    ////// Make Debug Frames ///
     cv::Mat fullImg_colour;
     fullImg.convertTo(fullImg_colour,CV_8UC3);
     fullImg_colour.copyTo(frameDebugA);
@@ -2273,31 +2354,10 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
 
-    std::vector<Vec4f> position; //an array of (x,y,1,0) tuples
-    std::vector<Vec3i> votes; //an array of (x,y,1,0) tuples
-    pGHT->detect(maskedImg_gray,position,votes);
+    /////
 
-    std::cerr << position.size() << std::endl;
+    ///Detect Eyes Using Hough Circle
 
-    for (size_t i = 0; i < position.size(); ++i)
-       {
-           Point2f pos(position[i][0], position[i][1]);
-           float scale = position[i][2];
-           float angle = position[i][3];
-
-           RotatedRect rect;
-           rect.center = pos;
-           rect.size = Size2f(35.0 * scale, 20.0 * scale);
-           rect.angle = angle;
-
-           Point2f pts[4];
-           rect.points(pts);
-
-           line(frameDebugC, pts[0], pts[1], Scalar(0, 60, 255), 3);
-           line(frameDebugC, pts[1], pts[2], Scalar(0, 60, 255), 3);
-           line(frameDebugC, pts[2], pts[3], Scalar(0, 60, 255), 3);
-           line(frameDebugC, pts[3], pts[0], Scalar(0, 60, 255), 3);
-   }
 
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
