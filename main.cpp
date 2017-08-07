@@ -31,6 +31,7 @@
 
 
 #include <larvatrack.h>
+#include <ellipse_detect.h>
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
@@ -2335,6 +2336,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     //Set to Global Max Point
     cv::Point top_left = gptmaxLoc;
     cv::Point bottom_right(top_left.x + fishbodyimg_template.cols , top_left.y + fishbodyimg_template.rows);
+    cv::Rect fishHeadBound(top_left,bottom_right);
 
     cv::rectangle(fullImg,top_left,bottom_right,CV_RGB(200,200,0),1,LINE_8);
     stringstream strLbl;
@@ -2356,9 +2358,15 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     /////
 
+
     ///Detect Eyes Using Hough Circle
+     cv::Mat imgTmp, imgFishHead;
+     maskedImg_gray.copyTo(imgTmp);
+     imgFishHead = imgTmp(fishHeadBound);
 
-
+     vector<cv::RotatedRect> vell;
+     detectEllipses(imgFishHead,imgTmp,vell);
+    ///
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)

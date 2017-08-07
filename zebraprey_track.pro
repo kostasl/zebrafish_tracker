@@ -18,6 +18,7 @@ SOURCES += main.cpp \
     CSS/CurveCSS.cpp \
     GUI/TrackerScene.cpp \
     #GUI/TrackerScene.cpp
+    ellipse_detect.cpp
 
 RESOURCES += qml.qrc
 #INCLUDEPATH += /usr/include/opencv
@@ -77,7 +78,8 @@ HEADERS += \
     fishmodel.h \
     CSS/CurveCSS.h \
     CSS/std.h \
-    GUI/TrackerScene.hpp
+    GUI/TrackerScene.hpp \
+    ellipse_detect.h
 
 
 FORMS += \
