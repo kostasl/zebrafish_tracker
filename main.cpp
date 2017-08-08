@@ -77,8 +77,8 @@ int g_SegInnerthreshMult    = 3; //Image Threshold for FIsh Features
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
-int gi_CannyThres           = 100;
-int gi_CannyThresSmall      = 3; //Aperture size should be odd between 3 and 7 in function Canny
+int gi_CannyThres           = 150;
+int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
 int gi_maxEllipseMajor = 10; // thres for Hough Transform
 int gi_minEllipseMajor = 1; //thres for Hough Transform
 int gi_VotesEllipseThres = 4; //Votes thres for Hough Transform
@@ -276,8 +276,8 @@ int main(int argc, char *argv[])
     cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
     cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
     cv::createTrackbar( "Vote Threshold:", "Debug D", &gi_ThresholdMatching, 120.0, thresh_callback );
-    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 300, thresh_callback );
-    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 7, thresh_callback );
+    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
+    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
     cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 20.0, thresh_callback );
     cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,10, thresh_callback );
     cv::createTrackbar( "Ellipse Votes:","Debug D", &gi_VotesEllipseThres, 30, thresh_callback );

@@ -121,7 +121,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
     const int minEllipseMajor   = gi_minEllipseMajor;
     const int maxEllipseMajor   = gi_maxEllipseMajor;
     const int thresMinVotes     = gi_VotesEllipseThres;
-    const int minMinorEllipse   = 2;
+    const int minMinorEllipse   = 1;
     int accLength = imgIn.cols+imgIn.rows;
     double HighestVotes = 0;
     cv::Mat img_blur,img_edge,img_colour;
