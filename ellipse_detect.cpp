@@ -106,15 +106,21 @@ void getEdgePoints(cv::Mat& imgEdgeIn,std::vector<cv::Point2f>& vedgepoint)
 
 int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& vellipses)
 {
-    const int minEllipseMajor = 4;
-    const int thresMinVotes = 6;
+
+
+    const int minEllipseMajor = 2;
+    const int maxEllipseMajor = 8;
+    const int thresMinVotes = 9;
     int accLength = imgIn.cols+imgIn.rows;
+    double HighestVotes = 0;
     cv::Mat img_blur,img_edge;
     cv::GaussianBlur(imgIn,img_blur,cv::Size(1,1),1,1);
     cv::Canny( img_blur, img_edge, gi_CannyThresSmall,gi_CannyThres  );
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
     //Debug
     cv::imshow("Fish Edges ",img_edge);
+
+
 
     std::vector<cv::Point2f> vedgePoints;
 
@@ -140,7 +146,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
 
             ptxy2 = *it2;
             double d = cv::norm(ptxy1-ptxy2);
-            if (d < minEllipseMajor)
+            if (d < minEllipseMajor || d > maxEllipseMajor)
                 continue;
 
             //Use Eqns 1-4 and calculate Ellipse params
@@ -189,11 +195,17 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
             {
                 ///Step 11 Output Ellipse Parameters
                 //cv::RotatedRect ellipse(ptxy0,ptxy1,ptxy2);
-                cv::RotatedRect ellipse(ptxy0,cv::Size2f(idx,2*a),alpha);
+                cv::RotatedRect ellipse(ptxy0,cv::Size2f(idx,2*a),alpha*(180/M_PI));
                 vellipses.push_back(ellipse);
                 cv::ellipse(imgIn,ellipse,CV_RGB(250,50,50),1,cv::LINE_8);
 
             }
+            if (HighestVotes < dvotesMax)
+            {
+                HighestVotes = dvotesMax;
+                std::cout << "mxVot:" << HighestVotes << std::endl;
+            }
+
 
         ///Step 12 - Remove the points from the image Before Restarting
 
