@@ -212,6 +212,7 @@ int main(int argc, char *argv[])
     cv::namedWindow("Debug B",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug C",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("Ellipse fit",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
 
     frameDebugA = cv::Mat::zeros(640, 480, CV_8U);
     frameDebugB = cv::Mat::zeros(640, 480, CV_8U);

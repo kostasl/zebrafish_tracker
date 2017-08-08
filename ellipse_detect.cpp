@@ -260,7 +260,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
         //
             //ptxy1.x = 0; ptxy1.y = 0;
             //ptxy2.x = 0; ptxy2.y = 0;
-            //it2->x = 0; it2->y = 0; //Delete Point
+          //  it2->x = 0; it2->y = 0; //Delete Point
 
 
         ///Step 13 - Clear Accumulator
