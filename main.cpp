@@ -79,9 +79,10 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 100;
 int gi_CannyThresSmall      = 3; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_VotesAThres = 1; //Votes thres for Hough Transform
-int gi_VotesPThres = 1; //Votes thres for Hough Transform
-int gi_VotesSThres = 1; //Votes thres for Hough Transform
+int gi_maxEllipseMajor = 10; // thres for Hough Transform
+int gi_minEllipseMajor = 1; //thres for Hough Transform
+int gi_VotesEllipseThres = 4; //Votes thres for Hough Transform
+
 //using namespace std;
 
 
@@ -254,11 +255,11 @@ int main(int argc, char *argv[])
     //cv::Rect roi(232,248,15,37); //For Large Image template
     //cv::Mat fishtempl(fishbodyimg,roi);
     //Set Template
-    pGHT->setTemplate(fishbodyimg_template);
+    //pGHT->setTemplate(fishbodyimg_template);
 
-    gi_VotesSThres = pGHTGuil->getScaleThresh();
-    gi_VotesAThres = pGHTGuil->getAngleThresh();
-    gi_VotesPThres = pGHTGuil->getPosThresh();
+    //gi_VotesSThres = pGHTGuil->getScaleThresh();
+    //gi_VotesAThres = pGHTGuil->getAngleThresh();
+   // gi_VotesPThres = pGHTGuil->getPosThresh();
     //gi_ThresholdMatching =  pGHTBallard->getVotesThreshold();
 
     pGHT->setMaxBufferSize(1000);
@@ -276,9 +277,9 @@ int main(int argc, char *argv[])
     cv::createTrackbar( "Vote Threshold:", "Debug D", &gi_ThresholdMatching, 120.0, thresh_callback );
     cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 300, thresh_callback );
     cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 7, thresh_callback );
-    cv::createTrackbar( "GHT Scale Thres:","Debug D", &gi_VotesSThres, gi_VotesSThres*2.0, thresh_callback );
-    cv::createTrackbar( "GHT Angle Thres:","Debug D", &gi_VotesAThres, gi_VotesAThres*2.0, thresh_callback );
-    cv::createTrackbar( "GHT Pos Thres:","Debug D", &gi_VotesPThres, gi_VotesPThres*2.0, thresh_callback );
+    cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 20.0, thresh_callback );
+    cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,10, thresh_callback );
+    cv::createTrackbar( "Ellipse Votes:","Debug D", &gi_VotesEllipseThres, 30, thresh_callback );
 
     thresh_callback( 0, 0 );
     ///////////////
@@ -2969,20 +2970,20 @@ void thresh_callback(int, void* )
 
 
 
-    if (!pGHT.empty())
-    {
-        pGHT->setCannyHighThresh(gi_CannyThres);
-        pGHT->setCannyLowThresh(gi_CannyThresSmall);
+//    if (!pGHT.empty())
+//    {
+//        pGHT->setCannyHighThresh(gi_CannyThres);
+//        pGHT->setCannyLowThresh(gi_CannyThresSmall);
 
-        pGHTGuil->setScaleThresh(gi_VotesSThres);
-        pGHTGuil->setAngleThresh(gi_VotesAThres);
-        pGHTGuil->setPosThresh(gi_VotesPThres);
+//        pGHTGuil->setScaleThresh(gi_VotesSThres);
+//        pGHTGuil->setAngleThresh(gi_VotesAThres);
+//        pGHTGuil->setPosThresh(gi_VotesPThres);
 
-        //Ptr<GeneralizedHoughBallard> ballard = static_cast<Ptr<GeneralizedHoughBallard>> pGHT;
-        //if (gi_ThresholdMatching>0)
-        //    pGHTBallard->setVotesThreshold(gi_ThresholdMatching);
+//        //Ptr<GeneralizedHoughBallard> ballard = static_cast<Ptr<GeneralizedHoughBallard>> pGHT;
+//        //if (gi_ThresholdMatching>0)
+//        //    pGHTBallard->setVotesThreshold(gi_ThresholdMatching);
 
-    }
+//    }
 
 
 }
