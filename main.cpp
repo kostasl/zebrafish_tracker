@@ -79,9 +79,9 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor = 10; // thres for Hough Transform
-int gi_minEllipseMajor = 1; //thres for Hough Transform
-int gi_VotesEllipseThres = 4; //Votes thres for Hough Transform
+int gi_maxEllipseMajor = 8; // thres for Hough Transform
+int gi_minEllipseMajor = 3; //thres for Hough Transform
+int gi_VotesEllipseThres = 9; //Votes thres for Hough Transform
 
 //using namespace std;
 
@@ -2366,7 +2366,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     //Set to Global Max Point
     cv::Point top_left = gptmaxLoc;
-    cv::Point bottom_right(top_left.x + fishbodyimg_template.cols , top_left.y + fishbodyimg_template.rows);
+    cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
     cv::Rect fishHeadBound(top_left,bottom_right);
 
     cv::rectangle(fullImg,top_left,bottom_right,CV_RGB(200,200,0),1,LINE_8);

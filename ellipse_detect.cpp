@@ -222,10 +222,12 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
                 double coscostau = costau*costau;  //eqn (6)
 // b = sqrt( (aSq * thirdPtDistsSq(K) .* sinTauSq) ./ (aSq - thirdPtDistsSq(K) .* cosTau.^2 + eps) );
                 double bb = aa*dd*(1.0-coscostau)/(aa - dd * coscostau + 0.00001); //(5)
-                int b = round(sqrt(bb));
+                int b = (int)(sqrt(bb));
                 ///Step 8
-                if (b > 0)
-                {
+                if (b > 1)
+                {   //Make A Band Of width 2
+                    //accumulator[b-1]++; //increment accumulator for this minor Axis
+                    //accumulator[b+1]++; //increment accumulator for this minor Axis
                     accumulator[b]++; //increment accumulator for this minor Axis
                     //Add Point to tracked List
                     it3->minorAxisLength = b;
@@ -265,9 +267,9 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
                 {
                     tEllipsoidEdge* pEdge = &(*(*itd)); //Pickout Stored Iterator Pointers to Main list
                     //If this edge Is on The winning Ellipse's Minor Axis - Then Its been Used /Remove
-                    if (pEdge->minorAxisLength == idx)
+                    if (pEdge->minorAxisLength == idx  ) //Delete The bin || pEdge->minorAxisLength == idx-1 || pEdge->minorAxisLength == idx-1
                     {
-                        imgDebug.at<uchar>(pEdge->ptEdge) = 5; //Debug
+                        imgDebug.at<uchar>(pEdge->ptEdge) = 200; //Debug - Show Used
 
                         pEdge->ptEdge.x = 0;
                         pEdge->ptEdge.y = 0;
@@ -283,8 +285,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
 
 
             }else {//Mark As Dull Pair
-                imgDebug.at<uchar>(ptxy1) = 75;
-                imgDebug.at<uchar>(ptxy2) = 75;
+                imgDebug.at<uchar>(ptxy1) = 55;
+                imgDebug.at<uchar>(ptxy2) = 55;
             }
 
 
