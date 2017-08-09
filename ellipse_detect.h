@@ -13,7 +13,7 @@ typedef struct tDetectedEllipsoid{
     tDetectedEllipsoid(cv::RotatedRect r):rectEllipse(r){}
 
     cv::RotatedRect rectEllipse;
-    int firscore;
+    int fitscore;
 } tDetectedEllipsoid;
 
 typedef std::vector<tDetectedEllipsoid> tEllipsoids;

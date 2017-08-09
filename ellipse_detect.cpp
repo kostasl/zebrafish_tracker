@@ -105,6 +105,32 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
 
 }
 
+int deleteUsedEdges( )
+{
+
+//    ///Step 12 - Remove the points from the image Before Restarting
+//    for (std::vector<tEllipsoidEdges::iterator>::iterator itd = vedgePoints_trial.begin(); itd !=vedgePoints_trial.end(); )
+//    {
+//        tEllipsoidEdge* pEdge = &(*(*itd)); //Pickout Stored Iterator Pointers to Main list
+//        //If this edge Is on The winning Ellipse's Minor Axis - Then Its been Used /Remove
+//        if (pEdge->minorAxisLength == idx)
+//        {
+//            imgDebug.at<uchar>(pEdge->ptEdge) = 5; //Debug
+
+//            pEdge->ptEdge.x = 0;
+//            pEdge->ptEdge.y = 0;
+//            itd = vedgePoints_trial.erase(itd);
+//        }else {
+//            ++itd;
+//        }
+//    } //Loop Through Used Points
+//    //Invalidate Pair of Points
+//    ptxy1.x = 0; ptxy1.y = 0;
+//    ptxy2.x = 0; ptxy2.y = 0;
+
+}
+
+
 int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
 {
 
@@ -115,7 +141,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
     int accLength = imgIn.cols+imgIn.rows;
     double HighestVotes = 0;
     cv::Mat img_blur,img_edge,img_colour;
-    cv::GaussianBlur(imgIn,img_blur,cv::Size(1,1),1,1);
+
+    cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),1,1);
     cv::Canny( img_blur, img_edge, gi_CannyThresSmall,gi_CannyThres  );
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
     //Debug
@@ -128,7 +155,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
     //Empty List
     vellipses.clear();
     tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
-    tEllipsoidEdges vedgePoints_trial; //Containts edge points of specific ellipsoid trial
+    std::vector<tEllipsoidEdges::iterator> vedgePoints_trial; //Containts edge points of specific ellipsoid trial
 
 
     int accumulator[accLength];
@@ -147,8 +174,6 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
             continue ; //point has been deleted
         cv::Point2f ptxy2;
 
-
-
         ///(4)
         for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 )
         {
@@ -157,7 +182,6 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
 
             if (ptxy2.x == 0 && ptxy2.y == 0)
                 continue ; //point has been deleted
-
 
             double d = cv::norm(ptxy2-ptxy1);
             if (d < minEllipseMajor || d > maxEllipseMajor)
@@ -171,7 +195,9 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
 
             double alpha = atan2(ptxy2.y - ptxy1.y,ptxy2.x - ptxy1.x);//atan [(y 2 – y 1 )/(x 2 – x 1 )] //--(4) α the orientation of the ellipse
 
+
             ///Step (6) - 3rd Pixel;
+            vedgePoints_trial.clear();
             for (tEllipsoidEdges::iterator it3 = vedgePoints_all.begin();it3 != vedgePoints_all.end(); ++it3 )
             {
 
@@ -202,7 +228,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
                 {
                     accumulator[b]++; //increment accumulator for this minor Axis
                     //Add Point to tracked List
-                    //vedgePoints_trial
+                    it3->minorAxisLength = b;
+                    vedgePoints_trial.push_back(it3); //Store Pointer To Point
                 }
 
             ///Step 9 Loop Until All Pixels 3rd are computed for this pair of pixes
@@ -225,7 +252,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
 
                 cv::circle(img_colour,ptxy0,1,CV_RGB(0,0,255),1);
                 img_colour.at<cv::Vec3b>(ptxy1)[1] = 255; img_colour.at<cv::Vec3b>(ptxy1)[2] = 255;
-                img_colour.at<cv::Vec3b>(ptxy0)[1] = 255; img_colour.at<cv::Vec3b>(ptxy0)[2] = 255;
+                img_colour.at<cv::Vec3b>(ptxy2)[1] = 255; img_colour.at<cv::Vec3b>(ptxy2)[2] = 255;
                 //cv::circle(img_colour,ptxy1,1,CV_RGB(0,255,255),1);
                 //cv::circle(img_colour,ptxy2,1,CV_RGB(0,255,255),1);
                 //Debug Mark As Good Pair
@@ -233,10 +260,31 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
                 imgDebug.at<uchar>(ptxy2) = 255;
 
 
-            }else
-            {//Mark As Dull Pair
-                imgDebug.at<uchar>(ptxy1) = 25;
-                imgDebug.at<uchar>(ptxy2) = 25;
+                ///Step 12 - Remove the points from the image Before Restarting
+                for (std::vector<tEllipsoidEdges::iterator>::iterator itd = vedgePoints_trial.begin(); itd !=vedgePoints_trial.end(); )
+                {
+                    tEllipsoidEdge* pEdge = &(*(*itd)); //Pickout Stored Iterator Pointers to Main list
+                    //If this edge Is on The winning Ellipse's Minor Axis - Then Its been Used /Remove
+                    if (pEdge->minorAxisLength == idx)
+                    {
+                        imgDebug.at<uchar>(pEdge->ptEdge) = 5; //Debug
+
+                        pEdge->ptEdge.x = 0;
+                        pEdge->ptEdge.y = 0;
+                        itd = vedgePoints_trial.erase(itd);
+                    }else {
+                        ++itd;
+                    }
+                } //Loop Through Used Points
+                //Invalidate Pair of Points
+                ptxy1.x = 0; ptxy1.y = 0;
+                ptxy2.x = 0; ptxy2.y = 0;
+
+
+
+            }else {//Mark As Dull Pair
+                imgDebug.at<uchar>(ptxy1) = 75;
+                imgDebug.at<uchar>(ptxy2) = 75;
             }
 
 
@@ -247,12 +295,9 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
             }
 
 
-        ///Step 12 - Remove the points from the image Before Restarting
 
         //it2 = vedgePoints.erase(it2);
         //
-            //ptxy1.x = 0; ptxy1.y = 0;
-            //ptxy2.x = 0; ptxy2.y = 0;
           //  it2->x = 0; it2->y = 0; //Delete Point
 
 
@@ -267,8 +312,9 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
     } //Loop through all  point as 1st point pair (Prob: pairs can be repeated)
 
 
+
     ///Debug//
-    cv::imshow("Debug D",imgDebug);
+    cv::imshow("Debug EllipseFit",imgDebug);
 
     cv::imshow("Ellipse fit",img_colour);
     std::cout << "Done"  << std::endl;

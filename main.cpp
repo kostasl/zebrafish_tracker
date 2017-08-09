@@ -188,7 +188,8 @@ Mat loadFromQrc(QString qrc, int flag = IMREAD_COLOR)
         std::vector<uchar> buf(sz);
         file.read((char*)buf.data(), sz);
         m = imdecode(buf, flag);
-    }
+    }else
+        std::cerr << " Could not load template file " << qrc.toStdString();
 
     //double toc = (double(getTickCount()) - tic) * 1000.0 / getTickFrequency();
     //qDebug() << "OpenCV loading time: " << toc;
@@ -272,7 +273,13 @@ int main(int argc, char *argv[])
     pGHTGuil    = createGeneralizedHoughGuil();
     pGHT = pGHTGuil;
 
-    fishbodyimg_template = loadFromQrc(":/img/fishbodyb_tmp.png",IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+    fishbodyimg_template = loadFromQrc(":/img/fishbodyb_tmp.pgm",IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+
+    if (fishbodyimg_template.empty())
+    {
+        std::cerr << "Could not load template" << std::endl;
+        exit(-1);
+    }
 
     //cv::Rect roi(0,0,3,33);
     //cv::Rect roi(232,248,15,37); //For Large Image template
