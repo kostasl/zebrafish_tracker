@@ -67,6 +67,7 @@ extern int gi_maxEllipseMajor;
 
 cv::Mat imgDebug;
 
+
 inline int getMax(int* darray,int length,double& votes)
 {
     double max=darray[0];
@@ -84,23 +85,12 @@ inline int getMax(int* darray,int length,double& votes)
     return maxIdx;
 }
 
-void getEdgePoints(cv::Mat& imgEdgeIn,std::vector<cv::Point2f>& vedgepoint)
+void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
 {
    const float pxThres = 1.0;
 
    vedgepoint.clear();
-   /*
-  for (int y = 0; y < imgEdgeIn.rows; ++y)
-  {
-      const float* row_ptr = imgEdgeIn.ptr<float>(y);
-      for (int x = 0; x < imgEdgeIn.cols; ++x)
-      {
-          float value = row_ptr[x];
-          if ( value >  pxThres)
 
-      }
-  }
-  */
    imgDebug = cv::Mat::zeros(imgEdgeIn.rows,imgEdgeIn.cols,CV_8UC1);
 
   for(int i=0; i<imgEdgeIn.rows; i++)
@@ -108,14 +98,14 @@ void getEdgePoints(cv::Mat& imgEdgeIn,std::vector<cv::Point2f>& vedgepoint)
       { cv::Point pt(j,i); //x,y
            if ( imgEdgeIn.at<uchar>(pt) >  pxThres)
            {
-               vedgepoint.push_back(pt);
+               vedgepoint.push_back(tEllipsoidEdge(pt));
                imgDebug.at<uchar>(pt) = 125;
            }
       }
 
 }
 
-int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& vellipses)
+int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
 {
 
     const int minEllipseMajor   = gi_minEllipseMajor;
@@ -135,26 +125,24 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
     cv::cvtColor( imgIn,img_colour, cv::COLOR_GRAY2RGB);
 //    imgIn.convertTo(img_colour,CV_8UC3);
 
-    //Test Ellipse drawing
-    cv::RotatedRect ellipse(cv::Point(100,50),cv::Size2f(50,25),(0*M_PI/4.0)*(180.0/M_PI));
-    cv::ellipse(img_colour,ellipse,CV_RGB(50,255,50),1,cv::LINE_8);
-
-
+    //Empty List
     vellipses.clear();
-    std::vector<cv::Point2f> vedgePoints;
+    tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
+    tEllipsoidEdges vedgePoints_trial; //Containts edge points of specific ellipsoid trial
+
 
     int accumulator[accLength];
 
 
     //Iterate Edge Image and extract edge points
-    getEdgePoints(img_edge,vedgePoints);
+    getEdgePoints(img_edge,vedgePoints_all);
     memset(accumulator,0,sizeof(int)*(accLength)); //Reset Accumulator MAtrix
 
     std::cout << "== Start === "  << std::endl;
     ///Loop through All Edge points (3)
-    for (std::vector<cv::Point2f>::iterator it1 = vedgePoints.begin();it1 != vedgePoints.end();++it1)
+    for (tEllipsoidEdges::iterator it1 = vedgePoints_all.begin();it1 != vedgePoints_all.end();++it1)
     {
-        cv::Point2f ptxy1 = *it1;
+        cv::Point2f ptxy1 = (*it1).ptEdge;
         if (ptxy1.x == 0 && ptxy1.y == 0)
             continue ; //point has been deleted
         cv::Point2f ptxy2;
@@ -162,10 +150,10 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
 
 
         ///(4)
-        for (std::vector<cv::Point2f>::iterator it2 = vedgePoints.begin();it2 != vedgePoints.end(); ++it2 )
+        for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 )
         {
 
-            ptxy2 = *it2;
+            ptxy2 = (*it2).ptEdge;
 
             if (ptxy2.x == 0 && ptxy2.y == 0)
                 continue ; //point has been deleted
@@ -184,11 +172,10 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
             double alpha = atan2(ptxy2.y - ptxy1.y,ptxy2.x - ptxy1.x);//atan [(y 2 – y 1 )/(x 2 – x 1 )] //--(4) α the orientation of the ellipse
 
             ///Step (6) - 3rd Pixel;
-            for (std::vector<cv::Point2f>::iterator it3 = vedgePoints.begin();it3 != vedgePoints.end(); ++it3 )
+            for (tEllipsoidEdges::iterator it3 = vedgePoints_all.begin();it3 != vedgePoints_all.end(); ++it3 )
             {
 
-
-                cv::Point2f ptxy3 = *it3;
+                cv::Point2f ptxy3 = (*it3).ptEdge;
                 if (ptxy3.x == 0 && ptxy3.y == 0)
                     continue ; //point has been deleted
 
@@ -212,10 +199,13 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
                 int b = round(sqrt(bb));
                 ///Step 8
                 if (b > 0)
+                {
                     accumulator[b]++; //increment accumulator for this minor Axis
+                    //Add Point to tracked List
+                    //vedgePoints_trial
+                }
 
             ///Step 9 Loop Until All Pixels 3rd are computed for this pair of pixes
-
             }
 
             ///Step 10 //Find Max In accumulator array. The related length is the possible length of minor axis for assumed ellipse.
@@ -229,12 +219,15 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,std::vector<cv::RotatedRect>& 
                 ///Step 11 Output Ellipse Parameters
                 //cv::RotatedRect ellipse(ptxy0,ptxy1,ptxy2);
                 //alpha += M_PI/2.0;
-                cv::RotatedRect ellipse(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI));
+                tDetectedEllipsoid ellipse(cv::RotatedRect(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI)));
                 vellipses.push_back(ellipse);
-                cv::ellipse(img_colour,ellipse,CV_RGB(250,50,50),1,cv::LINE_8);
+                cv::ellipse(img_colour,ellipse.rectEllipse,CV_RGB(250,50,50),1,cv::LINE_8);
+
                 cv::circle(img_colour,ptxy0,1,CV_RGB(0,0,255),1);
-                cv::circle(img_colour,ptxy1,1,CV_RGB(0,255,255),1);
-                cv::circle(img_colour,ptxy2,1,CV_RGB(0,255,255),1);
+                img_colour.at<cv::Vec3b>(ptxy1)[1] = 255; img_colour.at<cv::Vec3b>(ptxy1)[2] = 255;
+                img_colour.at<cv::Vec3b>(ptxy0)[1] = 255; img_colour.at<cv::Vec3b>(ptxy0)[2] = 255;
+                //cv::circle(img_colour,ptxy1,1,CV_RGB(0,255,255),1);
+                //cv::circle(img_colour,ptxy2,1,CV_RGB(0,255,255),1);
                 //Debug Mark As Good Pair
                 imgDebug.at<uchar>(ptxy1) = 255;
                 imgDebug.at<uchar>(ptxy2) = 255;

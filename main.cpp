@@ -161,7 +161,9 @@ bool bMouseLButtonDown;
 bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 
-string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
+/// \todo Make this path relative or embed resource
+//string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
+string strTemplateImg = "/home/kostasl/workspace/zebraprey_track/img/fishbodyb_tmp.pgm";
 
 static Mat loadImage(const string& name)
 {
@@ -174,6 +176,25 @@ static Mat loadImage(const string& name)
     return image;
 }
 
+Mat loadFromQrc(QString qrc, int flag = IMREAD_COLOR)
+{
+    //double tic = double(getTickCount());
+
+    QFile file(qrc);
+    Mat m;
+    if(file.open(QIODevice::ReadOnly))
+    {
+        qint64 sz = file.size();
+        std::vector<uchar> buf(sz);
+        file.read((char*)buf.data(), sz);
+        m = imdecode(buf, flag);
+    }
+
+    //double toc = (double(getTickCount()) - tic) * 1000.0 / getTickFrequency();
+    //qDebug() << "OpenCV loading time: " << toc;
+
+    return m;
+}
 
 int main(int argc, char *argv[])
 {
@@ -200,6 +221,7 @@ int main(int argc, char *argv[])
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
     //Init Font
     cvInitFont(&trackFnt, CV_FONT_HERSHEY_DUPLEX, 0.4, 0.4, 0, 1);
+
 
 
     gTimer.start();
@@ -250,7 +272,7 @@ int main(int argc, char *argv[])
     pGHTGuil    = createGeneralizedHoughGuil();
     pGHT = pGHTGuil;
 
-     fishbodyimg_template = loadImage(strTemplateImg);
+    fishbodyimg_template = loadFromQrc(":/img/fishbodyb_tmp.png",IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
 
     //cv::Rect roi(0,0,3,33);
     //cv::Rect roi(232,248,15,37); //For Large Image template
@@ -2366,7 +2388,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
      maskedImg_gray.copyTo(imgTmp);
      imgFishHead = imgTmp(fishHeadBound);
 
-     vector<cv::RotatedRect> vell;
+     tEllipsoids vell;
      detectEllipses(imgFishHead,imgTmp,vell);
     ///
 

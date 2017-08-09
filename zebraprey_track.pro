@@ -84,3 +84,6 @@ HEADERS += \
 
 FORMS += \
     GUI/mainwindow.ui
+
+DISTFILES += \
+    img/fishbodyb_tmp.pgm
