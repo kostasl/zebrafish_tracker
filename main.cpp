@@ -2366,10 +2366,21 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     //Set to Global Max Point
     cv::Point top_left = gptmaxLoc;
-    cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
-    cv::Rect fishHeadBound(top_left,bottom_right);
+    cv::Point centre = cv::Point(top_left.x+fishbodyimg_template.rows/2,top_left.y+fishbodyimg_template.cols/2);
+    cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),Angle);
+    cv::Point2f boundBoxPnts[4];
+    fishHeadBox.points(boundBoxPnts);
 
-    cv::rectangle(fullImg,top_left,bottom_right,CV_RGB(200,200,0),1,LINE_8);
+
+
+    cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
+    cv::Rect fishHeadBound = fishHeadBox.boundingRect();
+
+
+    //cv::rectangle(fullImg,top_left,bottom_right,CV_RGB(200,200,0),1,LINE_8);
+    for (int j=0; j<4;j++) //Rectangle Eye
+        cv::line(fullImg,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
+
     stringstream strLbl;
     strLbl << "A: " << bestAngle;
     cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.7,CV_RGB(250,250,0),1);
