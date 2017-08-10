@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
     kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
-    kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(5,5),cv::Point(-1,-1));
+    kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
 
 
     //unsigned int hWnd = cvGetWindowHandle(sgstrwinName);
@@ -2101,9 +2101,9 @@ std::vector<cv::Vec4i> fgMaskhierarchy;
 
 /////get rid of noise/food marks
 ////Apply Open Operation dilate(erode())
-//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
+cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
 ////jOIN bLOB Do Close : erode(dilate())
-//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),1);
+cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),3);
 
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
@@ -2117,7 +2117,7 @@ g_Segthresh = cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_t
 //ADAPTIVE_THRESH_MEAN_C
 
 //Remove Speckles // Should leave fish INtact
-//cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
+cv::filterSpeckles(maskFGImg,0,25,5 );
 
 /////////////////Make Hollow Mask
 //make Inner Fish MAsk /More Accurate Way
@@ -2333,20 +2333,20 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     int ifishtemplateAngle,bestAngle;
 
     ///Detect Head Feature //
-
+    std::cout << "Match template on #fish:" << vfishmodels.size() << std::endl;
     for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
     {
           fishModel* fish = (*it).second;
           cv::Point centroid = cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
-          cv::Point pBound1 = cv::Point(max(0,min(fishbodyimg_template.cols,centroid.x-80)), max(0,min(fishbodyimg_template.rows,centroid.y-80)));
-          cv::Point pBound2 = cv::Point(max(0,min(fishbodyimg_template.cols,centroid.x+80)), max(0,min(fishbodyimg_template.rows,centroid.y-80)));
+          cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-80)), max(0,min(maskedImg_gray.rows,centroid.y-80)));
+          cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+80)), max(0,min(maskedImg_gray.rows,centroid.y+80)));
 
           cv::Rect rectFish(pBound1,pBound2);
 
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
           //Try Template Across Angles and find Best Match
-          for (ifishtemplateAngle=0;ifishtemplateAngle<360;ifishtemplateAngle+=5)
+          for (ifishtemplateAngle=0;ifishtemplateAngle<360;ifishtemplateAngle+=15)
           {
 
               Mrot = cv::getRotationMatrix2D(rotCentre,360.0-ifishtemplateAngle,1.0);
@@ -2360,39 +2360,55 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               if (gmaxVal < maxVal)
               {
                   gmaxVal     = maxVal;
-                  gptmaxLoc   = ptmaxLoc;
+                  gptmaxLoc   = pBound1+ptmaxLoc;
                   bestAngle = ifishtemplateAngle;
               }
           } //Loop THrough Angles
 
 
 
+          //Set to Global Max Point
+          cv::Point top_left = gptmaxLoc;
+          //cv::Point centre = cv::Point(top_left.x+fishbodyimg_template.rows/2,top_left.y+fishbodyimg_template.cols/2);
+          cv::Point centre = top_left + rotCentre;
+          cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngle);
+          cv::Point2f boundBoxPnts[4];
+          fishHeadBox.points(boundBoxPnts);
+          //cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
+          cv::Rect fishHeadBound = fishHeadBox.boundingRect();
+
+
+          //cv::rectangle(fullImg,top_left,bottom_right,CV_RGB(200,200,0),1,LINE_8);
+          for (int j=0; j<4;j++) //Rectangle Eye
+              cv::line(fullImg,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
+
+
+
+          stringstream strLbl;
+          strLbl << "A: " << bestAngle;
+          cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.7,CV_RGB(250,250,0),1);
+
+
+
+          ///Detect Eyes Using Hough Circle
+           tEllipsoids vell;
+           cv::Mat imgTmp, imgFishHead;
+           maskedImg_gray.copyTo(imgTmp);
+           //Check Bounds Within Image
+           cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
+           if (gmaxVal > 0.7 && //Looks Like a fish
+               imgBounds.contains(fishHeadBound.br()) &&
+                   imgBounds.contains(fishHeadBound.tl()))
+           {
+              imgFishHead = imgTmp(fishHeadBound);
+              detectEllipses(imgFishHead,imgTmp,vell);
+           }
+          ///
+
     } //For eAch Fish Model
 
 
 
-
-    //Set to Global Max Point
-    cv::Point top_left = gptmaxLoc;
-    //cv::Point centre = cv::Point(top_left.x+fishbodyimg_template.rows/2,top_left.y+fishbodyimg_template.cols/2);
-    cv::Point centre = top_left + rotCentre;
-    cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngle);
-    cv::Point2f boundBoxPnts[4];
-    fishHeadBox.points(boundBoxPnts);
-
-
-
-    //cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
-    cv::Rect fishHeadBound = fishHeadBox.boundingRect();
-
-
-    //cv::rectangle(fullImg,top_left,bottom_right,CV_RGB(200,200,0),1,LINE_8);
-    for (int j=0; j<4;j++) //Rectangle Eye
-        cv::line(fullImg,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
-
-    stringstream strLbl;
-    strLbl << "A: " << bestAngle;
-    cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.7,CV_RGB(250,250,0),1);
 
 ///////////////////
 
@@ -2409,20 +2425,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     /////
 
-    ///Detect Eyes Using Hough Circle
-     tEllipsoids vell;
-     cv::Mat imgTmp, imgFishHead;
-     maskedImg_gray.copyTo(imgTmp);
-     //Check Bounds Within Image
-     cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
-     if (gmaxVal > 0.7 && //Looks Like a fish
-         imgBounds.contains(fishHeadBound.br()) &&
-             imgBounds.contains(fishHeadBound.tl()))
-     {
-        imgFishHead = imgTmp(fishHeadBound);
-        detectEllipses(imgFishHead,imgTmp,vell);
-     }
-    ///
+
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
