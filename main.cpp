@@ -163,7 +163,7 @@ bool bEyesDetected = false; ///Flip True to save eye shape feature for future de
 
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
-string strTemplateImg = "/home/kostasl/workspace/zebraprey_track/img/fishbodyb_tmp.pgm";
+string strTemplateImg = ":/img/fishbody_tmp.pgm"; ///Load From Resource
 
 static Mat loadImage(const string& name)
 {
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
     pGHTGuil    = createGeneralizedHoughGuil();
     pGHT = pGHTGuil;
 
-    fishbodyimg_template = loadFromQrc(":/img/fishbodyb_tmp.pgm",IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+    fishbodyimg_template = loadFromQrc(QString(strTemplateImg.c_str()),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
 
     if (fishbodyimg_template.empty())
     {
@@ -2342,12 +2342,14 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     double gminVal = 0.0;
     double gmaxVal = 0.0;
     cv::Point gptmaxLoc;
+    cv::Point rotCentre = cv::Point(fishbodyimg_template.cols/2,fishbodyimg_template.rows/2);
     cv::Mat Mrot;
     int Angle,bestAngle;
     //Try Template Across Angles and find Best Match
     for (Angle=0;Angle<360;Angle+=15)
     {
-        Mrot = cv::getRotationMatrix2D(cv::Point(fishbodyimg_template.cols/2,fishbodyimg_template.rows/2),Angle,1.0);
+
+        Mrot = cv::getRotationMatrix2D(rotCentre,Angle,1.0);
         cv::warpAffine(fishbodyimg_template,templ_rot,Mrot,cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows));
 
         cv::matchTemplate(maskedImg_gray,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
@@ -2366,14 +2368,15 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     //Set to Global Max Point
     cv::Point top_left = gptmaxLoc;
-    cv::Point centre = cv::Point(top_left.x+fishbodyimg_template.rows/2,top_left.y+fishbodyimg_template.cols/2);
-    cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),Angle);
+    //cv::Point centre = cv::Point(top_left.x+fishbodyimg_template.rows/2,top_left.y+fishbodyimg_template.cols/2);
+    cv::Point centre = top_left + rotCentre;
+    cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngle-90);
     cv::Point2f boundBoxPnts[4];
     fishHeadBox.points(boundBoxPnts);
 
 
 
-    cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
+    //cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
     cv::Rect fishHeadBound = fishHeadBox.boundingRect();
 
 
@@ -2402,12 +2405,15 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 
     ///Detect Eyes Using Hough Circle
+     tEllipsoids vell;
      cv::Mat imgTmp, imgFishHead;
      maskedImg_gray.copyTo(imgTmp);
-     imgFishHead = imgTmp(fishHeadBound);
-
-     tEllipsoids vell;
-     detectEllipses(imgFishHead,imgTmp,vell);
+     //Check Roi
+     if ( ltGetFirstROIContainingPoint(vRoi,fishHeadBound.br()) != 0 && ltGetFirstROIContainingPoint(vRoi,fishHeadBound.tl()) != 0 )
+     {
+        imgFishHead = imgTmp(fishHeadBound);
+        detectEllipses(imgFishHead,imgTmp,vell);
+     }
     ///
 
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
