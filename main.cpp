@@ -69,7 +69,7 @@ float gfVidfps              = 300;
 const int MOGhistory        = gfVidfps*2;
 //Processing Loop delay
 uint cFrameDelayms          = 1;
-double dLearningRate        = 1.0/(5.0*MOGhistory);
+double dLearningRate        = 1.0/(0.5*MOGhistory);
 
 //Segmentation Params
 int g_Segthresh             = 27; //Image Threshold for FIsh Features
@@ -323,10 +323,10 @@ int main(int argc, char *argv[])
 //    pGMG =   cv::bgsegm::createBackgroundSubtractorGMG(MOGhistory,0.3); //GMG approach
 
     ///* Create Morphological Kernel Elements used in processFrame *///
-    kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
-    kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
-    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
-    kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
+    kernelOpen      = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
+    kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
+    kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
+    kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
 
 
     //unsigned int hWnd = cvGetWindowHandle(sgstrwinName);
@@ -936,7 +936,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         if (bTracking)
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
-        keyboard = cv::waitKey( cFrameDelayms );
+        keyboard = cv::waitKey( 1 );
         checkPauseRun(&window_main,keyboard,nFrame);
 
 
@@ -2099,13 +2099,15 @@ cv::Mat maskfishOnly,frameImg_gray, frameImg_blur,threshold_output,threshold_out
 std::vector<std::vector<cv::Point> > fgMaskcontours;
 std::vector<cv::Vec4i> fgMaskhierarchy;
 
+cv::imshow("MOG2 Mask Raw",maskFGImg);
+
 /////get rid of noise/food marks
 ////Apply Open Operation dilate(erode())
 cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
 ////jOIN bLOB Do Close : erode(dilate())
-cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),3);
+cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
 
-//cv::imshow("MOG2 Mask Raw",maskFGImg);
+
 
 ///// Convert image to gray and blur it
 cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
@@ -2117,7 +2119,7 @@ g_Segthresh = cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_t
 //ADAPTIVE_THRESH_MEAN_C
 
 //Remove Speckles // Should leave fish INtact
-cv::filterSpeckles(maskFGImg,0,25,5 );
+cv::filterSpeckles(maskFGImg,0,3,2 );
 
 /////////////////Make Hollow Mask
 //make Inner Fish MAsk /More Accurate Way
@@ -2157,16 +2159,16 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
         /// Can use many methods here such as match shapes / Hashing etc.
 
         //Find Parent Contour
-        //if (fishbodyhierarchy[kk][3] != -1) // Need to have no parent
-        //   continue;
-        //if (fishbodyhierarchy[kk][2] == -1)  // Need to have child
-        //    continue;
+        if (fishbodyhierarchy[kk][3] != -1) // Need to have no parent
+           continue;
+        if (fishbodyhierarchy[kk][2] == -1)  // Need to have child
+            continue;
 
         /// Lets try simple area filter - Assume no large object need to be BG substracted
         int area  = cv::contourArea(fishbodycontours[kk]);
 
-        ///Check Area and then  Find the thresholded Fish Contour
-        if (area > std::max(dMeanBlobArea*8,(double)thresh_fishblobarea) ) //If Contour Is large Enough then Must be fish
+        ///Check Area and then  Find the thresholded Fish Contour std::max(dMeanBlobArea*8,(double)thresh_fishblobarea)
+        if (area >  thresh_fishblobarea) //If Contour Is large Enough then Must be fish
         {
             cv::Moments moments =  cv::moments(fishbodycontours[kk]);
             cv::Point centroid; centroid.x = moments.m10/moments.m00; centroid.y = moments.m01/moments.m00;
@@ -2209,8 +2211,8 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 
             //fishbodycontours[kk].clear();
             //fishbodycontours[kk] = curve;
-            if (idxFishContour > -1)
-                 fishbodycontours[kk] = curve; //Replace Contour with Smooth Version
+            //if (idxFishContour > -1)
+            fishbodycontours[kk] = curve; //Replace Contour with Smooth Version
 
 }
 
