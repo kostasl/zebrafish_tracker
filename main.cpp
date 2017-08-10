@@ -323,8 +323,8 @@ int main(int argc, char *argv[])
 //    pGMG =   cv::bgsegm::createBackgroundSubtractorGMG(MOGhistory,0.3); //GMG approach
 
     ///* Create Morphological Kernel Elements used in processFrame *///
-    kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
-    kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
+    kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
+    kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
     kernelClose     = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(5,5),cv::Point(-1,-1));
 
@@ -1014,7 +1014,7 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
     //Look Through
     ///Go through Each FishModel And Delete the ones whose tracks are gone
 
-    fishModels::const_iterator ft = vfishmodels.begin();
+    fishModels::iterator ft = vfishmodels.begin();
     while(ft != vfishmodels.end())
     {
         pfish = ft->second;
@@ -1023,20 +1023,19 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
 
        if (it == fishtracks.end()) //Track No Longer Exists / Delete model
         {
-           fishModels::const_iterator tmp = ft;
-           vfishmodels.erase(pfish->ID);
+           ft = vfishmodels.erase(ft);
            std::cout << "Deleted fishmodel: " << pfish->ID << std::endl;
            delete(pfish);
            break;
-        }else //Track Is inactive Delete Model
+        }else{ //Track Is inactive Delete Model
            if (pfish->track->inactive)
            {
                std::cout << "Deleted fishmodel: " << pfish->ID << " Track was Inactive t:" << pfish->track->inactive << std::endl;
-               fishModels::const_iterator tmp = ft;
-               vfishmodels.erase(pfish->ID);
+               ft = vfishmodels.erase(ft);
                delete(pfish);
                break;
            }
+        }
 
          ++ft;
 
@@ -2094,32 +2093,31 @@ void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vect
 {
 
 
-
 int max_thresh = 255;
 cv::Mat maskfishOnly,frameImg_gray, frameImg_blur,threshold_output,threshold_output_H,threshold_output_COMB;
 
 std::vector<std::vector<cv::Point> > fgMaskcontours;
 std::vector<cv::Vec4i> fgMaskhierarchy;
 
-///get rid of noise/food marks
-//Apply Open Operation dilate(erode())
-cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
-//jOIN bLOB Do Close : erode(dilate())
-cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),3);
+/////get rid of noise/food marks
+////Apply Open Operation dilate(erode())
+//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
+////jOIN bLOB Do Close : erode(dilate())
+//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),1);
 
-cv::imshow("MOG2 Mask Raw",maskFGImg);
+//cv::imshow("MOG2 Mask Raw",maskFGImg);
 
-/// Convert image to gray and blur it
+///// Convert image to gray and blur it
 cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
-cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(5,5),0);
+cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 
 /// Detect edges using Threshold , A High And  low
-g_Segthresh = cv::threshold( frameImg_blur, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+g_Segthresh = cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 //cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
 //ADAPTIVE_THRESH_MEAN_C
 
 //Remove Speckles // Should leave fish INtact
-cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
+//cv::filterSpeckles(threshold_output,0,3.0*dMeanBlobArea,20 );
 
 /////////////////Make Hollow Mask
 //make Inner Fish MAsk /More Accurate Way
@@ -2136,11 +2134,10 @@ cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, ker
 /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
 /// //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
 //First Find What BG Model Considers to be FG
-cv::findContours( maskFGImg, fgMaskcontours,fgMaskhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+//cv::findContours( maskFGImg, fgMaskcontours,fgMaskhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 //Then Use ThresholdImage TO Trace More detailed Contours
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-
 
 
 maskfishOnly = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
@@ -2153,7 +2150,7 @@ std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
 /// \todo Use WaterShed - Let MOG mask Be FG label and then watershed
 int idxFishContour = -1;
 std::vector<cv::Point> curve; // THe Fish Contour to use for new Mask
-for (int kk=0; kk< fgMaskcontours.size();kk++)
+for (int kk=0; kk< fishbodycontours.size();kk++)
 {
 
         ///Filter for what looks like a fish //
@@ -2166,24 +2163,18 @@ for (int kk=0; kk< fgMaskcontours.size();kk++)
         //    continue;
 
         /// Lets try simple area filter - Assume no large object need to be BG substracted
-        int area  = cv::contourArea(fgMaskcontours[kk]);
+        int area  = cv::contourArea(fishbodycontours[kk]);
 
         ///Check Area and then  Find the thresholded Fish Contour
         if (area > std::max(dMeanBlobArea*8,(double)thresh_fishblobarea) ) //If Contour Is large Enough then Must be fish
         {
-            cv::Moments moments =  cv::moments(fgMaskcontours[kk]);
+            cv::Moments moments =  cv::moments(fishbodycontours[kk]);
             cv::Point centroid; centroid.x = moments.m10/moments.m00; centroid.y = moments.m01/moments.m00;
 
             std::vector<cv::RotatedRect> rectFeatures;
-            idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
-            if (idxFishContour > -1)
-                curve = fishbodycontours[idxFishContour];
-            else
-            {
-                //curve = fgMaskcontours[kk];
-                continue;// Could Not Find Full Body Contour - Carry on
-            }
-
+            //Add Blob To candidate Region of interest Mask
+            //idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
+            curve = fishbodycontours[kk];
         }
         else
         {
@@ -2204,27 +2195,22 @@ for (int kk=0; kk< fgMaskcontours.size();kk++)
             std::vector<double> X,XX,Y,YY;
             getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
             getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
-
             //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
             //PolyLineMerge(curve,smoothx,smoothy);
-
             PolyLineMerge(curve,smoothx,smoothy);
-            ///////////// END SMOOTHING
-
             fishbodyContour_smooth.push_back(curve);
-
-            /// \todo Add Filter To Detect FishShape Score
+            ///////////// END SMOOTHING
 
             /////COMBINE - DRAW CONTOURS
             //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
             // they should still fall within contour - )
-            cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
+            //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
             cv::drawContours( maskfishOnly, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
 
             //fishbodycontours[kk].clear();
             //fishbodycontours[kk] = curve;
             if (idxFishContour > -1)
-                 fishbodycontours[idxFishContour] = curve; //Replace Contour
+                 fishbodycontours[kk] = curve; //Replace Contour with Smooth Version
 
 }
 
@@ -2232,7 +2218,7 @@ for (int kk=0; kk< fgMaskcontours.size();kk++)
 
 
 
-//Add the masks so as to enhance fish features
+//Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
 cv::bitwise_or(maskfishOnly,maskFGImg,maskFGImg);
 
 //maskfishOnly.copyTo(maskFGImg);
@@ -2345,26 +2331,45 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     cv::Point rotCentre = cv::Point(fishbodyimg_template.cols/2,fishbodyimg_template.rows/2);
     cv::Mat Mrot;
     int ifishtemplateAngle,bestAngle;
-    //Try Template Across Angles and find Best Match
-    for (ifishtemplateAngle=0;ifishtemplateAngle<360;ifishtemplateAngle+=5)
+
+    ///Detect Head Feature //
+
+    for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
     {
+          fishModel* fish = (*it).second;
+          cv::Point centroid = cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
+          cv::Point pBound1 = cv::Point(max(0,min(fishbodyimg_template.cols,centroid.x-80)), max(0,min(fishbodyimg_template.rows,centroid.y-80)));
+          cv::Point pBound2 = cv::Point(max(0,min(fishbodyimg_template.cols,centroid.x+80)), max(0,min(fishbodyimg_template.rows,centroid.y-80)));
 
-        Mrot = cv::getRotationMatrix2D(rotCentre,360.0-ifishtemplateAngle,1.0);
-        cv::warpAffine(fishbodyimg_template,templ_rot,Mrot,cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows));
+          cv::Rect rectFish(pBound1,pBound2);
 
-        cv::matchTemplate(maskedImg_gray,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
+          cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
-        cv::Point ptmaxLoc,ptminLoc;
-        cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
-        //Value < 0.7 is non Fish,
+          //Try Template Across Angles and find Best Match
+          for (ifishtemplateAngle=0;ifishtemplateAngle<360;ifishtemplateAngle+=5)
+          {
 
-        if (gmaxVal < maxVal)
-        {
-            gmaxVal     = maxVal;
-            gptmaxLoc   = ptmaxLoc;
-            bestAngle = ifishtemplateAngle;
-        }
-    } //Loop THrough Angles
+              Mrot = cv::getRotationMatrix2D(rotCentre,360.0-ifishtemplateAngle,1.0);
+              cv::warpAffine(fishbodyimg_template,templ_rot,Mrot,cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows));
+
+              cv::matchTemplate(fishRegion,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
+
+              cv::Point ptmaxLoc,ptminLoc;
+              cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
+              //Value < 0.7 is non Fish,
+              if (gmaxVal < maxVal)
+              {
+                  gmaxVal     = maxVal;
+                  gptmaxLoc   = ptmaxLoc;
+                  bestAngle = ifishtemplateAngle;
+              }
+          } //Loop THrough Angles
+
+
+
+    } //For eAch Fish Model
+
+
 
 
     //Set to Global Max Point
