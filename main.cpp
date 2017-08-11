@@ -286,8 +286,7 @@ int main(int argc, char *argv[])
     }
 
     //Make Variations And store in template Cache
-    cv::Mat imgTemplateOut;
-    makeTemplateCache(fishbodyimg_template,imgTemplateOut, 30);
+    makeTemplateCache(fishbodyimg_template,gFishTemplateCache, 15);
 
     //cv::Rect roi(0,0,3,33);
     //cv::Rect roi(232,248,15,37); //For Large Image template
@@ -2329,21 +2328,24 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 //   }
 
 ////////////USE TEMPLATE MATCHINg /////////////
-
-    ////No Try Template Matching  Across Angles//
-    cv::Mat outMatchConv,templ_rot;
-//    cv::Mat image;
-//    fullImg;
     double minVal, maxVal;
     double gminVal = 0.0;
     double gmaxVal = 0.0;
     cv::Point gptmaxLoc;
-    cv::Point rotCentre = cv::Point(fishbodyimg_template.cols/2,fishbodyimg_template.rows/2);
+
+
+//    ////No Try Template Matching  Across Angles//
+//    cv::Mat outMatchConv,templ_rot;
+////    cv::Mat image;
+////    fullImg;
+
+    cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
+    cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
     cv::Mat Mrot;
     int ifishtemplateAngle,bestAngle;
 
-    ///Detect Head Feature //
-    std::cout << "Match template on #fish:" << vfishmodels.size() << std::endl;
+//    ///Detect Head Feature //
+//    std::cout << "Match template on #fish:" << vfishmodels.size() << std::endl;
     for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
     {
           fishModel* fish = (*it).second;
@@ -2355,26 +2357,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
-          //Try Template Across Angles and find Best Match
-          for (ifishtemplateAngle=0;ifishtemplateAngle<360;ifishtemplateAngle+=15)
-          {
 
-              Mrot = cv::getRotationMatrix2D(rotCentre,360.0-ifishtemplateAngle,1.0);
-              cv::warpAffine(fishbodyimg_template,templ_rot,Mrot,cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows));
-
-              cv::matchTemplate(fishRegion,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
-
-              cv::Point ptmaxLoc,ptminLoc;
-              cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
-              //Value < 0.7 is non Fish,
-              if (gmaxVal < maxVal)
-              {
-                  gmaxVal     = maxVal;
-                  gptmaxLoc   = pBound1+ptmaxLoc;
-                  bestAngle = ifishtemplateAngle;
-              }
-          } //Loop THrough Angles
-
+          int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc);
+          int bestAngle = AngleIdx*30;
 
 
           //Set to Global Max Point
