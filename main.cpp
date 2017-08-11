@@ -32,6 +32,8 @@
 
 #include <larvatrack.h>
 #include <ellipse_detect.h>
+#include <template_detect.h>
+
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
@@ -121,6 +123,8 @@ cv::Mat kernelOpenLaplace;
 cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
 cv::Mat fishbodyimg_template;// OUr Fish Image Template
+cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
+
 
 //Global Shortcut of Type conversion to legacy IplImage
 //IplImage framefishMaskImg;
@@ -280,6 +284,10 @@ int main(int argc, char *argv[])
         std::cerr << "Could not load template" << std::endl;
         exit(-1);
     }
+
+    //Make Variations And store in template Cache
+    cv::Mat imgTemplateOut;
+    makeTemplateCache(fishbodyimg_template,imgTemplateOut, 30);
 
     //cv::Rect roi(0,0,3,33);
     //cv::Rect roi(232,248,15,37); //For Large Image template
