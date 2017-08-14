@@ -2368,10 +2368,10 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           //Locate Eyes In A box
           double lengthLine = 10;
           cv::Point EyeMidPoint;
-          EyeMidPoint.x =centre.x+lengthLine*cos(bestAngle*180.0/M_PI);
-          EyeMidPoint.y =centre.y-lengthLine*sin(bestAngle*180.0/M_PI);
+          EyeMidPoint.x =centre.x-lengthLine*cos(bestAngle*180.0/M_PI);
+          EyeMidPoint.y =centre.y+lengthLine*sin(bestAngle*180.0/M_PI);
 
-          cv::RotatedRect fishEyeBox(EyeMidPoint, cv::Size(fishbodyimg_template.cols/2,10),bestAngle);
+          cv::RotatedRect fishEyeBox(EyeMidPoint, cv::Size(fishbodyimg_template.cols/2,fishbodyimg_template.cols/2),bestAngle);
           cv::Rect fishHeadBound = fishEyeBox.boundingRect();
 
 
