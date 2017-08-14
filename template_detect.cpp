@@ -67,6 +67,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
   cv::Mat outMatchConv; //Convolution Result
   //iAngles = imgtempl.cols/templRegion.width;
   //Slide over each little template icon
+  assert(!imgGreyIn.empty());
 
   cv::Point ptbottomRight = cv::Point(templSz.width,templSz.height);
   cv::Rect templRegion(cv::Point(0,0),ptbottomRight);
@@ -74,7 +75,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
   for (int i=0; i<imgtempl.cols;i+=templRegion.width)
   {
     //Obtain next Template At Angle
-    cv::Mat templ_rot(imgGreyIn,templRegion);
+    cv::Mat templ_rot(imgtempl,templRegion);
     //Convolution
     cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
     //Find Min Max Location
