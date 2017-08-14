@@ -62,14 +62,14 @@ const double dLearningRateNominal       = 0.000;
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 120; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 220; //Min area above which to Filter The fish blobs
 
 //BG History
 float gfVidfps              = 300;
 const int MOGhistory        = gfVidfps*2;
 //Processing Loop delay
 uint cFrameDelayms          = 1;
-double dLearningRate        = 1.0/(0.5*MOGhistory);
+double dLearningRate        = 1.0/(2*MOGhistory);
 
 ///Segmentation Params
 int g_Segthresh             = 37; //Image Threshold for FIsh Features
@@ -84,7 +84,7 @@ int gi_minEllipseMajor = 3; //thres for Hough Transform
 int gi_VotesEllipseThres = 9; //Votes thres for Hough Transform
 
 ///Fish Features Detection Params
-const int gFishTemplateAngleSteps   = 15;
+const int gFishTemplateAngleSteps   = 5;
 const double gMatchShapeThreshold   = 0.9;
 //using namespace std;
 
@@ -2355,16 +2355,24 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           //cv::Point centre = cv::Point(top_left.x+fishbodyimg_template.rows/2,top_left.y+fishbodyimg_template.cols/2);
           cv::Point centre = top_left + rotCentre;
           cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngle);
+
           cv::Point2f boundBoxPnts[4];
           fishHeadBox.points(boundBoxPnts);
           //cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
-          cv::Rect fishHeadBound = fishHeadBox.boundingRect();
 
 
-          //cv::rectangle(fullImg,top_left,bottom_right,CV_RGB(200,200,0),1,LINE_8);
+          //Draw Rotated Frame around Detected Body
           for (int j=0; j<4;j++) //Rectangle Eye
               cv::line(frameDebugC,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
+          //Locate Eyes In A box
+          double lengthLine = 10;
+          cv::Point EyeMidPoint;
+          EyeMidPoint.x =centre.x+lengthLine*cos(bestAngle*180.0/M_PI);
+          EyeMidPoint.y =centre.y-lengthLine*sin(bestAngle*180.0/M_PI);
+
+          cv::RotatedRect fishEyeBox(EyeMidPoint, cv::Size(fishbodyimg_template.cols/2,10),bestAngle);
+          cv::Rect fishHeadBound = fishEyeBox.boundingRect();
 
 
           stringstream strLbl;
