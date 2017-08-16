@@ -9,12 +9,33 @@
 #include <opencv2/video/background_segm.hpp>
 
 
+
+///\note Consistency between pts and RotRect is not checked
 typedef struct tDetectedEllipsoid{
-    tDetectedEllipsoid(cv::RotatedRect r):rectEllipse(r){}
+    //cv::RotatedRect(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI))
+    tDetectedEllipsoid(cv::Point pt0,cv::Point pt1,cv::Point pt2,int score,cv::RotatedRect r):rectEllipse(r){
+
+
+        ptAxisMj1 = pt1; //Major Axis Point 1;
+        ptAxisMj2 = pt2; //Major Axis Point 2;
+        fitscore = score;
+    }
+
+    //Operator for Priority Ordering
+//    bool operator<(const tDetectedEllipsoid& b) {
+//      return this->fitscore < b.fitscore; //Max Heap
+//    }
 
     cv::RotatedRect rectEllipse;
     int fitscore;
+    cv::Point  ptAxisMj1;
+    cv::Point  ptAxisMj2;
+
 } tDetectedEllipsoid;
+
+
+//Operator for Priority Ordering
+bool operator<(const tDetectedEllipsoid& a,const tDetectedEllipsoid& b);
 
 typedef std::vector<tDetectedEllipsoid> tEllipsoids;
 

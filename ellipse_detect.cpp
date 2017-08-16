@@ -64,7 +64,7 @@ extern int gi_CannyThres;
 extern int gi_VotesEllipseThres;
 extern int gi_minEllipseMajor;
 extern int gi_maxEllipseMajor;
-
+extern int g_BGthresh;
 cv::Mat imgDebug;
 
 
@@ -105,6 +105,22 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
 
 }
 
+void drawEllipse(cv::Mat imgOut,tDetectedEllipsoid ellipse)
+{
+
+    cv::ellipse(imgOut,ellipse.rectEllipse,CV_RGB(250,50,50),1,cv::LINE_8);
+    cv::circle(imgOut,ellipse.rectEllipse.center,1,CV_RGB(0,0,255),1);
+    imgOut.at<cv::Vec3b>(ellipse.ptAxisMj1)[1] = 255; imgOut.at<cv::Vec3b>(ellipse.ptAxisMj1)[2] = 255;
+    imgOut.at<cv::Vec3b>(ellipse.ptAxisMj2)[1] = 255; imgOut.at<cv::Vec3b>(ellipse.ptAxisMj2)[2] = 255;
+    //cv::circle(img_colour,ptxy1,1,CV_RGB(0,255,255),1);
+    //cv::circle(img_colour,ptxy2,1,CV_RGB(0,255,255),1);
+    //Debug Mark As Good Pair
+    imgDebug.at<uchar>(ellipse.ptAxisMj1) = 255;
+    imgDebug.at<uchar>(ellipse.ptAxisMj2) = 255;
+
+
+}
+
 int deleteUsedEdges( )
 {
 
@@ -131,6 +147,12 @@ int deleteUsedEdges( )
 }
 
 
+//Operator for Priority Ordering
+bool operator<(const tDetectedEllipsoid& a,const tDetectedEllipsoid& b) {
+  return a.fitscore < b.fitscore; //Max Heap
+}
+
+
 int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
 {
 
@@ -140,22 +162,36 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
     const int minMinorEllipse   = 1;
     int accLength = imgIn.cols+imgIn.rows;
     double HighestVotes = 0;
-    cv::Mat img_blur,img_edge,img_colour;
 
-    cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),1,1);
-    cv::Canny( img_blur, img_edge, gi_CannyThresSmall,gi_CannyThres  );
-    //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    std::priority_queue<tDetectedEllipsoid> qEllipsoids;
+
+    std::vector<std::vector<cv::Point> > contours_canny;
+    std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
+
+
+    cv::Mat img_blur,img_edge,img_colour,img_contour;
+
+    //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
+    //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
+    cv::Canny( imgIn, img_edge, gi_CannyThresSmall,gi_CannyThres  );
+    cv::findContours(img_edge, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
     //Debug
     cv::imshow("Fish Edges ",img_edge);
 
     //Make Debug Img
     cv::cvtColor( imgIn,img_colour, cv::COLOR_GRAY2RGB);
-//    imgIn.convertTo(img_colour,CV_8UC3);
+    cv::cvtColor( imgIn,img_contour, cv::COLOR_GRAY2RGB);
+
+    for( size_t i = 0; i< contours_canny.size(); i++ )
+        cv::drawContours( img_contour, contours_canny, i, CV_RGB(10,205,10),1);
+    cv::imshow("Fish CONTOUR ",img_contour);
 
     //Empty List
     vellipses.clear();
     tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
     std::vector<tEllipsoidEdges::iterator> vedgePoints_trial; //Containts edge points of specific ellipsoid trial
+    vedgePoints_all.reserve(img_edge.cols*img_edge.rows/2);
+    vedgePoints_trial.reserve(10);
 
 
     int accumulator[accLength];
@@ -205,7 +241,9 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
                 if (ptxy3.x == 0 && ptxy3.y == 0)
                     continue ; //point has been deleted
 
-                double d = cv::norm(ptxy0-ptxy3);
+                double d = round(cv::norm(ptxy0-ptxy3));
+                //Measure Distance From Centre of Eyes (Located at centre of img frame)
+                double dCntrScore = imgIn.cols/2 - round(cv::norm(ptxy0-cv::Point2f(imgIn.cols/2,imgIn.rows/2)));
                 double dd = d*d;
 
                 if (d >= a || d < minMinorEllipse) //Candidate 3rd point of minor axis distance needs to be less than alpha away
@@ -222,13 +260,14 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
                 double coscostau = costau*costau;  //eqn (6)
 // b = sqrt( (aSq * thirdPtDistsSq(K) .* sinTauSq) ./ (aSq - thirdPtDistsSq(K) .* cosTau.^2 + eps) );
                 double bb = aa*dd*(1.0-coscostau)/(aa - dd * coscostau + 0.00001); //(5)
-                int b = (int)(sqrt(bb));
+                int b = std::round((sqrt(bb)));
                 ///Step 8
                 if (b > 1)
                 {   //Make A Band Of width 2
-                    //accumulator[b-1]++; //increment accumulator for this minor Axis
+                    //accumulator[b-1]+= imgIn<uchar>.at(ptxy3) ; //increment accumulator for this minor Axis
                     //accumulator[b+1]++; //increment accumulator for this minor Axis
-                    accumulator[b]++; //increment accumulator for this minor Axis
+                    accumulator[b]++; //increment accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    accumulator[b]+=dCntrScore; //Add Points for being close to Eye centre
                     //Add Point to tracked List
                     it3->minorAxisLength = b;
                     vedgePoints_trial.push_back(it3); //Store Pointer To Point
@@ -248,19 +287,10 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
                 ///Step 11 Output Ellipse Parameters
                 //cv::RotatedRect ellipse(ptxy0,ptxy1,ptxy2);
                 //alpha += M_PI/2.0;
-                tDetectedEllipsoid ellipse(cv::RotatedRect(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI)));
+                cv::RotatedRect r(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI));
+                tDetectedEllipsoid ellipse(ptxy0,ptxy1,ptxy2,dvotesMax,r);
                 vellipses.push_back(ellipse);
-                cv::ellipse(img_colour,ellipse.rectEllipse,CV_RGB(250,50,50),1,cv::LINE_8);
-
-                cv::circle(img_colour,ptxy0,1,CV_RGB(0,0,255),1);
-                img_colour.at<cv::Vec3b>(ptxy1)[1] = 255; img_colour.at<cv::Vec3b>(ptxy1)[2] = 255;
-                img_colour.at<cv::Vec3b>(ptxy2)[1] = 255; img_colour.at<cv::Vec3b>(ptxy2)[2] = 255;
-                //cv::circle(img_colour,ptxy1,1,CV_RGB(0,255,255),1);
-                //cv::circle(img_colour,ptxy2,1,CV_RGB(0,255,255),1);
-                //Debug Mark As Good Pair
-                imgDebug.at<uchar>(ptxy1) = 255;
-                imgDebug.at<uchar>(ptxy2) = 255;
-
+                qEllipsoids.push(ellipse); //Automatically Sorted
 
                 ///Step 12 - Remove the points from the image Before Restarting
                 for (std::vector<tEllipsoidEdges::iterator>::iterator itd = vedgePoints_trial.begin(); itd !=vedgePoints_trial.end(); )
@@ -312,6 +342,16 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
         //it1 = vedgePoints.erase(it1);
         //it1->x = 0; it1->y = 0; //Delete Point
     } //Loop through all  point as 1st point pair (Prob: pairs can be repeated)
+
+    ///Draw Best 2 Ellipses
+    tDetectedEllipsoid dEll = qEllipsoids.top();
+    drawEllipse(img_colour,dEll);
+    qEllipsoids.pop();
+
+
+    dEll = qEllipsoids.top();
+    drawEllipse(img_colour,dEll);
+    qEllipsoids.pop();
 
 
 

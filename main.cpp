@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
     cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
     cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 20.0, thresh_callback );
     cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,10, thresh_callback );
-    cv::createTrackbar( "Ellipse Votes:","Debug D", &gi_VotesEllipseThres, 30, thresh_callback );
+    cv::createTrackbar( "Ellipse Votes:","Debug D", &gi_VotesEllipseThres, 800, thresh_callback );
 
     thresh_callback( 0, 0 );
     ///////////////
@@ -2374,7 +2374,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           EyeMidPoint.y =centre.y-lengthLine*cos((bestAngleinDeg)*(M_PI/180.0)); //y=0 is the top left corner
 
           cv:circle(frameDebugC,EyeMidPoint,1,CV_RGB(55,30,255),1);
-          cv::RotatedRect fishEyeBox(EyeMidPoint, cv::Size(fishbodyimg_template.cols/2,fishbodyimg_template.cols/2),bestAngleinDeg);
+          cv::RotatedRect fishEyeBox(EyeMidPoint, cv::Size(fishbodyimg_template.cols/2+2,fishbodyimg_template.cols/2+2),bestAngleinDeg);
           cv::Rect fishHeadBound = fishEyeBox.boundingRect();// fishHeadBox.boundingRect();
 
 
