@@ -153,7 +153,7 @@ bool operator<(const tDetectedEllipsoid& a,const tDetectedEllipsoid& b) {
 }
 
 
-int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
+int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses,cv::Point2f ptEye1,cv::Point2f ptEye2)
 {
 
     const int minEllipseMajor   = gi_minEllipseMajor;
@@ -243,7 +243,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses)
 
                 double d = round(cv::norm(ptxy0-ptxy3));
                 //Measure Distance From Centre of Eyes (Located at centre of img frame)
-                double dCntrScore = imgIn.cols/2 - round(cv::norm(ptxy0-cv::Point2f(imgIn.cols/2,imgIn.rows/2)));
+                double dCntrScore = imgIn.cols/2 - round(min(cv::norm(ptxy0-ptEye1),cv::norm(ptxy0-ptEye2)));
                 double dd = d*d;
 
                 if (d >= a || d < minMinorEllipse) //Candidate 3rd point of minor axis distance needs to be less than alpha away

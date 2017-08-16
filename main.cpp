@@ -2368,13 +2368,21 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
           //Locate Eyes In A box
           double lengthLine = 10;
-          cv::Point EyeMidPoint;
+          cv::Point2f ptEyeMid;
+          cv::Point2f ptLEyeMid,ptREyeMid;
           //Convert From Degrees and adjust to y Axis at 0 degrees (Ie flip of x,y)
-          EyeMidPoint.x =centre.x+lengthLine*sin((bestAngleinDeg)*(M_PI/180.0));
-          EyeMidPoint.y =centre.y-lengthLine*cos((bestAngleinDeg)*(M_PI/180.0)); //y=0 is the top left corner
+          ptEyeMid.x =centre.x+lengthLine*sin((bestAngleinDeg)*(M_PI/180.0));
+          ptEyeMid.y =centre.y-lengthLine*cos((bestAngleinDeg)*(M_PI/180.0)); //y=0 is the top left corner
 
-          cv:circle(frameDebugC,EyeMidPoint,1,CV_RGB(55,30,255),1);
-          cv::RotatedRect fishEyeBox(EyeMidPoint, cv::Size(fishbodyimg_template.cols/2+2,fishbodyimg_template.cols/2+2),bestAngleinDeg);
+          ptLEyeMid.x =centre.x+lengthLine*sin((bestAngleinDeg-5)*(M_PI/180.0));
+          ptLEyeMid.y =centre.y-lengthLine*cos((bestAngleinDeg-5)*(M_PI/180.0)); //y=0 is the top left corner
+          ptREyeMid.x =centre.x+lengthLine*sin((bestAngleinDeg+5)*(M_PI/180.0));
+          ptREyeMid.y =centre.y-lengthLine*cos((bestAngleinDeg+5)*(M_PI/180.0)); //y=0 is the top left corner
+
+
+
+          cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(55,30,255),1);
+          cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols/2+2,fishbodyimg_template.cols/2+2),bestAngleinDeg);
           cv::Rect fishHeadBound = fishEyeBox.boundingRect();// fishHeadBox.boundingRect();
 
 
@@ -2393,7 +2401,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
                    imgBounds.contains(fishHeadBound.tl()))
            {
               imgFishHead = imgTmp(fishHeadBound);
-              detectEllipses(imgFishHead,imgTmp,vell);
+              detectEllipses(imgFishHead,imgTmp,vell,ptLEyeMid,ptREyeMid);
            }
           ///
 
