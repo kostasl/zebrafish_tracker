@@ -2367,7 +2367,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               cv::line(frameDebugC,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
           //Locate Eyes In A box
-          double lengthLine = 10;
+          double lengthLine = 8;
           cv::Point2f ptEyeMid;
 
           //Convert From Degrees and adjust to y Axis at 0 degrees (Ie flip of x,y)
