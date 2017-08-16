@@ -2347,14 +2347,15 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 
           int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc);
-          int bestAngle = AngleIdx*gFishTemplateAngleSteps;
+          //0 Degrees Is along the Y Axis Looking Upwards
+          int bestAngleinDeg = AngleIdx*gFishTemplateAngleSteps;
 
 
           //Set to Global Max Point
           cv::Point top_left = pBound1+gptmaxLoc;
           //cv::Point centre = cv::Point(top_left.x+fishbodyimg_template.rows/2,top_left.y+fishbodyimg_template.cols/2);
           cv::Point centre = top_left + rotCentre;
-          cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngle);
+          cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
 
           cv::Point2f boundBoxPnts[4];
           fishHeadBox.points(boundBoxPnts);
@@ -2368,15 +2369,17 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           //Locate Eyes In A box
           double lengthLine = 10;
           cv::Point EyeMidPoint;
-          EyeMidPoint.x =centre.x-lengthLine*cos(bestAngle*180.0/M_PI);
-          EyeMidPoint.y =centre.y+lengthLine*sin(bestAngle*180.0/M_PI);
+          //Convert From Degrees and adjust to y Axis at 0 degrees (Ie flip of x,y)
+          EyeMidPoint.x =centre.x+lengthLine*sin((bestAngleinDeg)*(M_PI/180.0));
+          EyeMidPoint.y =centre.y-lengthLine*cos((bestAngleinDeg)*(M_PI/180.0)); //y=0 is the top left corner
 
-          cv::RotatedRect fishEyeBox(EyeMidPoint, cv::Size(fishbodyimg_template.cols/2,fishbodyimg_template.cols/2),bestAngle);
-          cv::Rect fishHeadBound = fishEyeBox.boundingRect();
+          cv:circle(frameDebugC,EyeMidPoint,1,CV_RGB(55,30,255),1);
+          cv::RotatedRect fishEyeBox(EyeMidPoint, cv::Size(fishbodyimg_template.cols/2,fishbodyimg_template.cols/2),bestAngleinDeg);
+          cv::Rect fishHeadBound = fishEyeBox.boundingRect();// fishHeadBox.boundingRect();
 
 
           stringstream strLbl;
-          strLbl << "A: " << bestAngle;
+          strLbl << "A: " << bestAngleinDeg;
           cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.7,CV_RGB(250,250,0),1);
 
           ///Detect Eyes Using Hough Circle
