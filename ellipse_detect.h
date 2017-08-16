@@ -49,7 +49,7 @@ typedef struct tEllipsoidEdge {
 typedef std::vector<tEllipsoidEdge> tEllipsoidEdges;
 
 //int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses);
-int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses,cv::Point2f ptEye1,cv::Point2f ptEye2);
+int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses);
 void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint);
 
 #endif // ELLIPSE_DETECT

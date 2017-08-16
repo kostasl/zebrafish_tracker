@@ -66,7 +66,7 @@ extern int gi_minEllipseMajor;
 extern int gi_maxEllipseMajor;
 extern int g_BGthresh;
 cv::Mat imgDebug;
-
+extern cv::Mat frameDebugC;
 
 inline int getMax(int* darray,int length,double& votes)
 {
@@ -153,7 +153,7 @@ bool operator<(const tDetectedEllipsoid& a,const tDetectedEllipsoid& b) {
 }
 
 
-int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses,cv::Point2f ptEye1,cv::Point2f ptEye2)
+int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses)
 {
 
     const int minEllipseMajor   = gi_minEllipseMajor;
@@ -167,6 +167,15 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses,cv::Poi
 
     std::vector<std::vector<cv::Point> > contours_canny;
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
+
+    cv::Point2f ptLEyeMid,ptREyeMid;
+    cv::Point2f ptcentre(imgIn.cols/2,imgIn.rows/2);
+    int lengthLine = 4;
+    ptLEyeMid.x =ptcentre.x+lengthLine*sin((angleDeg+90)*(M_PI/180.0));
+    ptLEyeMid.y =ptcentre.y-lengthLine*cos((angleDeg+90)*(M_PI/180.0)); //y=0 is the top left corner
+    ptREyeMid.x =ptcentre.x+lengthLine*sin((angleDeg-90)*(M_PI/180.0));
+    ptREyeMid.y =ptcentre.y-lengthLine*cos((angleDeg-90)*(M_PI/180.0)); //y=0 is the top left corner
+
 
 
     cv::Mat img_blur,img_edge,img_colour,img_contour;
@@ -243,7 +252,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses,cv::Poi
 
                 double d = round(cv::norm(ptxy0-ptxy3));
                 //Measure Distance From Centre of Eyes (Located at centre of img frame)
-                double dCntrScore = imgIn.cols/2 - round(min(cv::norm(ptxy0-ptEye1),cv::norm(ptxy0-ptEye2)));
+                double dCntrScore = imgIn.cols/2 - round(std::min(cv::norm(ptxy0-ptLEyeMid),cv::norm(ptxy0-ptREyeMid)));
                 double dd = d*d;
 
                 if (d >= a || d < minMinorEllipse) //Candidate 3rd point of minor axis distance needs to be less than alpha away
@@ -344,15 +353,24 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses,cv::Poi
     } //Loop through all  point as 1st point pair (Prob: pairs can be repeated)
 
     ///Draw Best 2 Ellipses
-    tDetectedEllipsoid dEll = qEllipsoids.top();
-    drawEllipse(img_colour,dEll);
-    qEllipsoids.pop();
+
+    if (qEllipsoids.size() > 0)
+    {
+        tDetectedEllipsoid dEll = qEllipsoids.top();
+        drawEllipse(img_colour,dEll);
+        qEllipsoids.pop();
+    }
+
+    if (qEllipsoids.size() > 0)
+    {
+        tDetectedEllipsoid dEll = qEllipsoids.top();
+        drawEllipse(img_colour,dEll);
+        qEllipsoids.pop();
+    }
 
 
-    dEll = qEllipsoids.top();
-    drawEllipse(img_colour,dEll);
-    qEllipsoids.pop();
-
+    cv::circle(img_colour,ptLEyeMid,1,CV_RGB(255,0,0),1);
+    cv::circle(img_colour,ptREyeMid,1,CV_RGB(0,250,0),1);
 
 
     ///Debug//
