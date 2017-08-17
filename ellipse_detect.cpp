@@ -45,6 +45,7 @@
 ///Summary : Algorithm Checks a candidate ellipse with major axis between to pair of test points,
 ///  then estimates minor axis by testing all 3rd points and uses a voting procedure to check for possible minor axis and ellipse
 #include <ellipse_detect.h>
+#include <larvatrack.h>
 #include <iostream>
 #include <vector>
 #include <sstream>
@@ -177,22 +178,39 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
     ptREyeMid.y =ptcentre.y-lengthLine*cos((angleDeg-90)*(M_PI/180.0)); //y=0 is the top left corner
 
 
-
     cv::Mat img_blur,img_edge,img_colour,img_contour;
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
     cv::Canny( imgIn, img_edge, gi_CannyThresSmall,gi_CannyThres  );
     cv::findContours(img_edge, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-    //Debug
+    std::vector<cv::Point> vt;
+     std::vector<cv::RotatedRect> ve;
+    int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,0,vt,ve);
+    int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,0,vt,ve);
+
+
+            //Debug
     cv::imshow("Fish Edges ",img_edge);
 
     //Make Debug Img
     cv::cvtColor( imgIn,img_colour, cv::COLOR_GRAY2RGB);
     cv::cvtColor( imgIn,img_contour, cv::COLOR_GRAY2RGB);
 
-    for( size_t i = 0; i< contours_canny.size(); i++ )
-        cv::drawContours( img_contour, contours_canny, i, CV_RGB(10,205,10),1);
+    //for( size_t i = 0; i< contours_canny.size(); i++ )
+    if (iLEye != -1)
+        cv::drawContours( img_contour, contours_canny, iLEye, CV_RGB(10,205,10),1);
+    if (iREye != -1)
+        cv::drawContours( img_contour, contours_canny, iREye, CV_RGB(10,05,210),1);
+
+
+    //cv::circle(img_colour,ptLEyeMid,1,CV_RGB(255,0,0),1);
+    //cv::circle(img_colour,ptREyeMid,1,CV_RGB(0,250,0),1);
+    img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 255;img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;
+    img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0;img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 250;
+
+
+
     cv::imshow("Fish CONTOUR ",img_contour);
 
     //Empty List
@@ -219,6 +237,16 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
             continue ; //point has been deleted
         cv::Point2f ptxy2;
 
+
+        ptLEyeMid.x =ptcentre.x+lengthLine*sin((angleDeg+90)*(M_PI/180.0));
+        ptLEyeMid.y =ptcentre.y-lengthLine*cos((angleDeg+90)*(M_PI/180.0)); //y=0 is the top left corner
+        ptREyeMid.x =ptcentre.x+lengthLine*sin((angleDeg-90)*(M_PI/180.0));
+        ptREyeMid.y =ptcentre.y-lengthLine*cos((angleDeg-90)*(M_PI/180.0)); //y=0 is the top left corner
+
+
+
+
+
         ///(4)
         for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 )
         {
@@ -240,6 +268,10 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
 
             double alpha = atan2(ptxy2.y - ptxy1.y,ptxy2.x - ptxy1.x);//atan [(y 2 – y 1 )/(x 2 – x 1 )] //--(4) α the orientation of the ellipse
 
+            double dCntrLScore = round(cv::norm(ptxy0-ptLEyeMid));
+            double dCntrRScore = round(cv::norm(ptxy0-ptREyeMid));
+            double dCntrScore = std::min(dCntrLScore,dCntrRScore);
+
 
             ///Step (6) - 3rd Pixel;
             vedgePoints_trial.clear();
@@ -252,7 +284,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
 
                 double d = round(cv::norm(ptxy0-ptxy3));
                 //Measure Distance From Centre of Eyes (Located at centre of img frame)
-                double dCntrScore = imgIn.cols/2 - round(std::min(cv::norm(ptxy0-ptLEyeMid),cv::norm(ptxy0-ptREyeMid)));
+
                 double dd = d*d;
 
                 if (d >= a || d < minMinorEllipse) //Candidate 3rd point of minor axis distance needs to be less than alpha away
@@ -276,7 +308,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
                     //accumulator[b-1]+= imgIn<uchar>.at(ptxy3) ; //increment accumulator for this minor Axis
                     //accumulator[b+1]++; //increment accumulator for this minor Axis
                     accumulator[b]++; //increment accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    accumulator[b]+=dCntrScore; //Add Points for being close to Eye centre
+                    accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
                     //Add Point to tracked List
                     it3->minorAxisLength = b;
                     vedgePoints_trial.push_back(it3); //Store Pointer To Point
@@ -321,6 +353,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
                 ptxy1.x = 0; ptxy1.y = 0;
                 ptxy2.x = 0; ptxy2.y = 0;
 
+                if (r.boundingRect().contains(ptLEyeMid) )
+                   ptLEyeMid.x = 0; ptLEyeMid.y = 0;
+
+                if (r.boundingRect().contains(ptREyeMid) )
+                   ptLEyeMid.x = 0; ptLEyeMid.y = 0;
 
 
             }else {//Mark As Dull Pair
@@ -367,10 +404,6 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
         drawEllipse(img_colour,dEll);
         qEllipsoids.pop();
     }
-
-
-    cv::circle(img_colour,ptLEyeMid,1,CV_RGB(255,0,0),1);
-    cv::circle(img_colour,ptREyeMid,1,CV_RGB(0,250,0),1);
 
 
     ///Debug//
