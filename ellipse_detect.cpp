@@ -337,11 +337,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
                 double coscostau = costau*costau;  //eqn (6)
 // b = sqrt( (aSq * thirdPtDistsSq(K) .* sinTauSq) ./ (aSq - thirdPtDistsSq(K) .* cosTau.^2 + eps) );
                 double bb = aa*dd*(1.0-coscostau)/(aa - dd * coscostau + 0.00001); //(5)
-                int b = (int)((sqrt(bb)));
+                int b = std::round((sqrt(bb)));
                 ///Step 8
                 if (b > 1)
                 {   //Make A Band Of width 2
-                    //accumulator[b-1]+= imgIn<uchar>.at(ptxy3) ; //increment accumulator for this minor Axis
+                    accumulator[b+1]++; //imgIn<uchar>.at(ptxy3) ; //increment accumulator for this minor Axis
                     //accumulator[b+1]++; //increment accumulator for this minor Axis
                     accumulator[b]++; //increment accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
                     //accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
