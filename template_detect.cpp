@@ -3,6 +3,9 @@
 
 const double gFishTemplateMatchThreshold = 0.7;
 
+
+
+
 ///
 /// \brief makeTemplateCache Creates a rotational replicate of the template across angles of size
 /// stores them in consecutive blocks. Saves time from having to rotate the template EveryTime

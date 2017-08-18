@@ -87,14 +87,14 @@ inline int getMax(int* darray,int length,double& votes)
     return maxIdx;
 }
 
+/// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
 void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
 {
-   const float pxThres = 1.0;
-
+   const float pxThres = 1.0; //threshold is non-zero
    vedgepoint.clear();
 
-   imgDebug = cv::Mat::zeros(imgEdgeIn.rows,imgEdgeIn.cols,CV_8UC1);
 
+//Split Image In Two
   for(int i=0; i<imgEdgeIn.rows; i++)
       for(int j=0; j<imgEdgeIn.cols; j++)
       { cv::Point pt(j,i); //x,y
@@ -106,6 +106,22 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
       }
 
 }
+
+
+/// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
+void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint)
+{
+   vedgepoint.clear();
+
+//Split Image In Two
+  for(int i=0; i<contour.size(); i++)
+      {
+               vedgepoint.push_back(tEllipsoidEdge(contour[i]));
+               imgDebug.at<uchar>(contour[i]) = 155;
+       }
+
+}
+
 
 void drawEllipse(cv::Mat imgOut,tDetectedEllipsoid ellipse)
 {
@@ -163,6 +179,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
     const int thresMinVotes     = gi_VotesEllipseThres;
     const int minMinorEllipse   = 1;
     int accLength = imgIn.cols+imgIn.rows;
+    int accumulator[accLength]; //The Score Holding (Histogram ) Array - Each index is a Minor Axis Length
     double HighestVotes = 0;
 
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;
@@ -172,11 +189,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
 
     cv::Point2f ptLEyeMid,ptREyeMid;
     cv::Point2f ptcentre(imgIn.cols/2,imgIn.rows/2);
-    int lengthLine = 4;
+    int lengthLine = 2;
     ptLEyeMid.x =ptcentre.x-lengthLine;
-    ptLEyeMid.y =ptcentre.y-lengthLine; //y=0 is the top left corner
-    ptREyeMid.x =ptcentre.x+lengthLine;
-    ptREyeMid.y =ptcentre.y-lengthLine; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
+    ptLEyeMid.y = 9; //y=0 is the top left corner
+    ptREyeMid = ptLEyeMid; //ptcentre.x+lengthLine;
+    //ptREyeMid = 9; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
 
 
     std::random_device rd; // obtain a random number from hardware
@@ -189,13 +206,26 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
     cv::Canny( imgIn, img_edge, gi_CannyThresSmall,gi_CannyThres  );
     cv::findContours(img_edge, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+
+    //Empty List
+    vellipses.clear();
+    tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
+    std::vector<tEllipsoidEdges::iterator> vedgePoints_trial; //Containts edge points of specific ellipsoid trial
+    vedgePoints_all.reserve(img_edge.cols*img_edge.rows/2);
+    vedgePoints_trial.reserve(10);
+
+
+
     std::vector<cv::Point> vt;
-     std::vector<cv::RotatedRect> ve;
+    std::vector<cv::RotatedRect> ve;
     int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,0,vt,ve);
     int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,0,vt,ve);
 
 
+
     //Debug
+    imgDebug = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
     cv::imshow("Fish Edges ",img_edge);
 
     //Make Debug Img
@@ -206,7 +236,15 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
     if (iLEye != -1)
         cv::drawContours( img_contour, contours_canny, iLEye, CV_RGB(10,205,10),1);
     if (iREye != -1)
+    {
         cv::drawContours( img_contour, contours_canny, iREye, CV_RGB(10,05,210),1);
+        getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
+    }
+    else//Get All Edge Points Manually
+    {
+       //Iterate Edge Image and extract edge points
+        getEdgePoints(img_edge,vedgePoints_all);
+    }
 
 
     //cv::circle(img_colour,ptLEyeMid,1,CV_RGB(255,0,0),1);
@@ -218,19 +256,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
 
     cv::imshow("Fish CONTOUR ",img_contour);
 
-    //Empty List
-    vellipses.clear();
-    tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
-    std::vector<tEllipsoidEdges::iterator> vedgePoints_trial; //Containts edge points of specific ellipsoid trial
-    vedgePoints_all.reserve(img_edge.cols*img_edge.rows/2);
-    vedgePoints_trial.reserve(10);
 
 
-    int accumulator[accLength];
-
-
-    //Iterate Edge Image and extract edge points
-    getEdgePoints(img_edge,vedgePoints_all);
     memset(accumulator,0,sizeof(int)*(accLength)); //Reset Accumulator MAtrix
 
     std::cout << "== Start === "  << std::endl;
@@ -242,25 +269,25 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
             continue ; //point has been deleted
         cv::Point2f ptxy2;
 
-
-        ptLEyeMid.x =ptcentre.x+lengthLine*sin((angleDeg+90)*(M_PI/180.0));
-        ptLEyeMid.y =ptcentre.y-lengthLine*cos((angleDeg+90)*(M_PI/180.0)); //y=0 is the top left corner
-        ptREyeMid.x =ptcentre.x+lengthLine*sin((angleDeg-90)*(M_PI/180.0));
-        ptREyeMid.y =ptcentre.y-lengthLine*cos((angleDeg-90)*(M_PI/180.0)); //y=0 is the top left corner
-
+        ptLEyeMid.x =ptcentre.x-lengthLine;
+        ptLEyeMid.y = 9; //y=0 is the top left corner
+        ptREyeMid = ptLEyeMid; //ptcentre.x+lengthLine;
 
         ///(4)
-        //for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 )
-        //Copy List Of Edges over and Randomize
-        tEllipsoidEdges vedgePoints_pair = vedgePoints_all;
 
-        std::uniform_int_distribution<> distr(1, vedgePoints_pair.size()-1); // define the range
-        while (vedgePoints_pair.size() > 0)
+/// Random Pair Formation //
+//        //Copy List Of Edges over and Randomize
+//        tEllipsoidEdges vedgePoints_pair = vedgePoints_all;
+//        std::uniform_int_distribution<> distr(1, vedgePoints_pair.size()-1); // define the range
+//        while (vedgePoints_pair.size() > 0)
+//        tEllipsoidEdges::iterator it2 = vedgePoints_pair.begin();
+//        it2 += distr(eng);
+//        it2 = vedgePoints_pair.erase(it2);
+////End of Random Pair //
+        for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 )
         {
-            tEllipsoidEdges::iterator it2 = vedgePoints_pair.begin();
-            it2 += distr(eng);
             ptxy2 = (*it2).ptEdge;
-            it2 = vedgePoints_pair.erase(it2);
+
             if (ptxy2.x == 0 && ptxy2.y == 0)
                 continue ; //point has been deleted
 
@@ -317,7 +344,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
                     //accumulator[b-1]+= imgIn<uchar>.at(ptxy3) ; //increment accumulator for this minor Axis
                     //accumulator[b+1]++; //increment accumulator for this minor Axis
                     accumulator[b]++; //increment accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
+                    //accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
                     //Add Point to tracked List
                     it3->minorAxisLength = b;
                     vedgePoints_trial.push_back(it3); //Store Pointer To Point

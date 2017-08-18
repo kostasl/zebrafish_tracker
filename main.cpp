@@ -2376,7 +2376,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
           cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(55,30,255),1);
 
-          cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols/2+2,fishbodyimg_template.cols/2+2),bestAngleinDeg);
+          cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols/2+3,fishbodyimg_template.cols/2+3),bestAngleinDeg);
           cv::Rect fishHeadBound = fishEyeBox.boundingRect();// fishHeadBox.boundingRect();
 
 
@@ -2390,6 +2390,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
            maskedImg_gray.copyTo(imgTmp);
            //Threshold The Match Check Bounds Within Image
            cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
+
            if (gmaxVal > gMatchShapeThreshold && //Looks Like a fish
                imgBounds.contains(fishHeadBound.br()) &&
                    imgBounds.contains(fishHeadBound.tl()))
@@ -2401,6 +2402,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               cv::Mat Mrot = cv::getRotationMatrix2D(cv::Point(imgFishHead.cols/2,imgFishHead.rows/2),bestAngleinDeg,1.0); //Rotate Upwards
               //Make Rotation Transformation
               cv::warpAffine(imgFishHead,imgFishHead,Mrot,imgFishHead.size());
+              //Cut To Half Width Half of it
+              cv::RotatedRect lhbound(cv::Point(0,0),cv::Point(fishHeadBound.width/2,0),cv::Point(fishHeadBound.width/2,fishHeadBound.height-1));
+              imgFishHead = imgFishHead(lhbound.boundingRect());
 
               detectEllipses(imgFishHead,imgTmp, bestAngleinDeg,vell);
            }
