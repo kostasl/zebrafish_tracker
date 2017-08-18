@@ -52,6 +52,7 @@
 #include <iomanip> //for setprecision
 #include <limits>
 #include <string>
+#include <random>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -172,10 +173,14 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
     cv::Point2f ptLEyeMid,ptREyeMid;
     cv::Point2f ptcentre(imgIn.cols/2,imgIn.rows/2);
     int lengthLine = 4;
-    ptLEyeMid.x =ptcentre.x+lengthLine*sin((angleDeg+90)*(M_PI/180.0));
-    ptLEyeMid.y =ptcentre.y-lengthLine*cos((angleDeg+90)*(M_PI/180.0)); //y=0 is the top left corner
-    ptREyeMid.x =ptcentre.x+lengthLine*sin((angleDeg-90)*(M_PI/180.0));
-    ptREyeMid.y =ptcentre.y-lengthLine*cos((angleDeg-90)*(M_PI/180.0)); //y=0 is the top left corner
+    ptLEyeMid.x =ptcentre.x-lengthLine;
+    ptLEyeMid.y =ptcentre.y-lengthLine; //y=0 is the top left corner
+    ptREyeMid.x =ptcentre.x+lengthLine;
+    ptREyeMid.y =ptcentre.y-lengthLine; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
+
+
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 eng(rd()); // seed the generator
 
 
     cv::Mat img_blur,img_edge,img_colour,img_contour;
@@ -190,7 +195,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
     int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,0,vt,ve);
 
 
-            //Debug
+    //Debug
     cv::imshow("Fish Edges ",img_edge);
 
     //Make Debug Img
@@ -206,8 +211,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
 
     //cv::circle(img_colour,ptLEyeMid,1,CV_RGB(255,0,0),1);
     //cv::circle(img_colour,ptREyeMid,1,CV_RGB(0,250,0),1);
-    img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 255;img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;
-    img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0;img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 250;
+    img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 255; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;
+    img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 250;
 
 
 
@@ -244,15 +249,18 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
         ptREyeMid.y =ptcentre.y-lengthLine*cos((angleDeg-90)*(M_PI/180.0)); //y=0 is the top left corner
 
 
-
-
-
         ///(4)
-        for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 )
+        //for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 )
+        //Copy List Of Edges over and Randomize
+        tEllipsoidEdges vedgePoints_pair = vedgePoints_all;
+
+        std::uniform_int_distribution<> distr(1, vedgePoints_pair.size()-1); // define the range
+        while (vedgePoints_pair.size() > 0)
         {
-
+            tEllipsoidEdges::iterator it2 = vedgePoints_pair.begin();
+            it2 += distr(eng);
             ptxy2 = (*it2).ptEdge;
-
+            it2 = vedgePoints_pair.erase(it2);
             if (ptxy2.x == 0 && ptxy2.y == 0)
                 continue ; //point has been deleted
 
@@ -279,6 +287,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vell
             {
 
                 cv::Point2f ptxy3 = (*it3).ptEdge;
+
                 if (ptxy3.x == 0 && ptxy3.y == 0)
                     continue ; //point has been deleted
 

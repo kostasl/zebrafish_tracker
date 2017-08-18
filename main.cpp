@@ -85,7 +85,7 @@ int gi_VotesEllipseThres = 9; //Votes thres for Hough Transform
 
 ///Fish Features Detection Params
 const int gFishTemplateAngleSteps   = 5;
-const double gMatchShapeThreshold   = 0.9;
+const double gMatchShapeThreshold   = 0.86;
 //using namespace std;
 
 
@@ -2395,6 +2395,13 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
                    imgBounds.contains(fishHeadBound.tl()))
            {
               imgFishHead = imgTmp(fishHeadBound);
+
+
+              //Make Rotation MAtrix
+              cv::Mat Mrot = cv::getRotationMatrix2D(cv::Point(imgFishHead.cols/2,imgFishHead.rows/2),bestAngleinDeg,1.0); //Rotate Upwards
+              //Make Rotation Transformation
+              cv::warpAffine(imgFishHead,imgFishHead,Mrot,imgFishHead.size());
+
               detectEllipses(imgFishHead,imgTmp, bestAngleinDeg,vell);
            }
           ///
