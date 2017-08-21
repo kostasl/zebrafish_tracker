@@ -27,6 +27,9 @@
  ///    * track blobs of different class (food/fish) separatelly so tracks do not interfere
  ///    *Issues:
  ///        *Multiple models for same blob
+ ///    *Template Matching to spot fish across angles
+ ///    *Ellipsoid fitting on edge points
+ ///
  ////////
 
 
@@ -331,7 +334,7 @@ int main(int argc, char *argv[])
 //    pGMG =   cv::bgsegm::createBackgroundSubtractorGMG(MOGhistory,0.3); //GMG approach
 
     ///* Create Morphological Kernel Elements used in processFrame *///
-    kernelOpen      = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
+    kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
     kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
     kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
@@ -2386,7 +2389,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
           ///Detect Eyes Using Hough Circle
            tEllipsoids vell;
-           cv::Mat imgTmp, imgFishHead;
+           cv::Mat imgTmp, imgFishHead,imgFishHeadEdge;
            maskedImg_gray.copyTo(imgTmp);
            //Threshold The Match Check Bounds Within Image
            cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
@@ -2395,18 +2398,20 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
                imgBounds.contains(fishHeadBound.br()) &&
                    imgBounds.contains(fishHeadBound.tl()))
            {
-              imgFishHead = imgTmp(fishHeadBound);
+              imgTmp(fishHeadBound).copyTo(imgFishHead);
+              frameCanny(fishHeadBound).copyTo(imgFishHeadEdge);
 
 
               //Make Rotation MAtrix
               cv::Mat Mrot = cv::getRotationMatrix2D(cv::Point(imgFishHead.cols/2,imgFishHead.rows/2),bestAngleinDeg,1.0); //Rotate Upwards
               //Make Rotation Transformation
               cv::warpAffine(imgFishHead,imgFishHead,Mrot,imgFishHead.size());
-              //Cut To Half Width Half of it
-              cv::RotatedRect lhbound(cv::Point(0,0),cv::Point(fishHeadBound.width/2,0),cv::Point(fishHeadBound.width/2,fishHeadBound.height-1));
-              imgFishHead = imgFishHead(lhbound.boundingRect());
-
-              detectEllipses(imgFishHead,imgTmp, bestAngleinDeg,vell);
+              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,imgFishHeadEdge.size());
+              //Cut Window To Half Width
+              //cv::RotatedRect lhbound(cv::Point(0,0),cv::Point(fishHeadBound.width/2,0),cv::Point(fishHeadBound.width/2,fishHeadBound.height-1));
+              //imgFishHead       = imgFishHead(lhbound.boundingRect());
+              //imgFishHeadEdge   = imgFishHeadEdge(lhbound.boundingRect());
+              detectEllipses(imgFishHead,imgFishHeadEdge,imgTmp, bestAngleinDeg,vell);
            }
           ///
 
