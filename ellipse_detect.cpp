@@ -178,7 +178,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     assert(imgIn.cols == imgEdge.cols && imgIn.rows == imgEdge.rows);
     const int minEllipseMajor   = gi_minEllipseMajor;
     const int maxEllipseMajor   = gi_maxEllipseMajor;
-    const int thresMinVotes     = gi_VotesEllipseThres;
+    int thresMinVotes     = gi_VotesEllipseThres;
     const int minMinorEllipse   = 1;
     int accLength = imgIn.cols+imgIn.rows;
     int accumulator[accLength]; //The Score Holding (Histogram ) Array - Each index is a Minor Axis Length
@@ -454,11 +454,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
                 imgDebug.at<uchar>(ptxy2) = 55;
             }
 
-
+            //Find Max Votes - Used to Re-adjust Threshold
             if (HighestVotes < dvotesMax)
             {
                 HighestVotes = dvotesMax;
-                std::cout << "mxVot:" << HighestVotes << std::endl;
+                 std::cout << "mxVot:" << HighestVotes << std::endl;
             }
 
 
@@ -478,6 +478,9 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         //it1->x = 0; it1->y = 0; //Delete Point
     } //Loop through all  point as 1st point pair (Prob: pairs can be repeated)
 
+
+    gi_VotesEllipseThres = thresMinVotes = 0.90*HighestVotes;//Adapt Threshold To Best Score
+    std::cout << "ThresVot:" << gi_VotesEllipseThres << std::endl;
     ///Draw Best 2 Ellipses
 
     if (qEllipsoids.size() > 0)
