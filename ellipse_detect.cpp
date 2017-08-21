@@ -203,6 +203,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
 
     cv::Mat img_colour,img_contour,imgIn_thres;
+    //Debug
+    imgDebug = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
@@ -210,7 +212,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,13,1 ); // Log Threshold Image + cv::THRESH_OTSU
 
     cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),5);
-
+    cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
 
     cv::findContours(imgIn_thres, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
@@ -242,24 +244,23 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     {
         cv::drawContours( img_contour, contours_canny, iLEye, CV_RGB(10,205,10),1);
         cv::drawContours( imgEdge, contours_canny, iLEye, CV_RGB(255,255,255),1);
-        getEdgePoints(contours_canny.at(iLEye),vedgePoints_all);
+        //getEdgePoints(contours_canny.at(iLEye),vedgePoints_all);
     }
 
     if (iREye != -1)
     {
         cv::drawContours( img_contour, contours_canny, iREye, CV_RGB(10,05,210),1);
         cv::drawContours( imgEdge, contours_canny, iREye, CV_RGB(255,255,255),1);
-        getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
+        //getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
     }
     else {
 
         cv::Canny( imgIn_thres, imgEdge, gi_CannyThresSmall,gi_CannyThres  );
-        getEdgePoints(imgEdge,vedgePoints_all);
     }
 
+    getEdgePoints(imgEdge,vedgePoints_all);
 
-    //Debug
-    imgDebug = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
+    //DEBUG //
     cv::imshow("Fish Edges ",imgEdge);
     cv::imshow("Fish Threshold ",imgIn_thres);
 
@@ -367,9 +368,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
                     //accumulator[b+1]++; //increment accumulator for this minor Axis
                     //accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
 
-                    accumulator[b]+=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    accumulator[b-1]+=1; //Add points to smaller ellipsoids so as to smooth out close edge point issues
-
+                    accumulator[b-1]+=5;
+                    accumulator[b] +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    accumulator[b+1]+=5; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    //accumulator[b-1]+=10; //Add points to smaller ellipsoids so as to smooth out close edge point issues
+                    //accumulator[b+1]+=10;
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head
 //                    double ellArea = M_PI*b*a;
 //                    int iellArea = 0;
@@ -424,7 +427,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
                 {
                     tEllipsoidEdge* pEdge = &(*(*itd)); //Pickout Stored Iterator Pointers to Main list
                     //If this edge Is on The winning Ellipse's Minor Axis - Then Its been Used /Remove
-                    if (pEdge->minorAxisLength == idx  ) //Delete The bin || pEdge->minorAxisLength == idx-1 || pEdge->minorAxisLength == idx-1
+                    if (abs(pEdge->minorAxisLength - idx) < 2  ) //Delete The bin || pEdge->minorAxisLength == idx-1 || pEdge->minorAxisLength == idx-1
                     {
                         imgDebug.at<uchar>(pEdge->ptEdge) = 200; //Debug - Show Used
 
