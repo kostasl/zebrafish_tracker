@@ -82,8 +82,8 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor = 8; // thres for Hough Transform
-int gi_minEllipseMajor = 3; //thres for Hough Transform
+int gi_maxEllipseMajor = 11; // thres for Hough Transform
+int gi_minEllipseMajor = 7; //thres for Hough Transform
 int gi_VotesEllipseThres = 9; //Votes thres for Hough Transform
 
 ///Fish Features Detection Params

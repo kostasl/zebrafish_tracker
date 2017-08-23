@@ -280,9 +280,9 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                     //accumulator[b+1]++; //increment accumulator for this minor Axis
                     //accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
 
-                    accumulator[b-1]+=10;
+                    accumulator[b-1]+=5;
                     accumulator[b]  +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    accumulator[b+1]+=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    accumulator[b+1]+=5; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
                     //accumulator[b-1]+=10; //Add points to smaller ellipsoids so as to smooth out close edge point issues
                     //accumulator[b+1]+=10;
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head
@@ -403,8 +403,6 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 {
     assert(imgIn.cols == imgEdge.cols && imgIn.rows == imgEdge.rows);
 
-
-
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;
 
     std::vector<std::vector<cv::Point> > contours_canny;
@@ -462,8 +460,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         //getEdgePoints(contours_canny.at(iLEye),vedgePoints_all);
     }
     else {
-
+        //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge, gi_CannyThresSmall,gi_CannyThres  );
+        //Cover Right Eye
+        cv::Rect r(ptcentre.x,ptcentre.y,imgEdge.cols/2-1,imgEdge.rows/2-1);
+        cv::rectangle(imgEdge,r,CV_RGB(0,0,0),-1,CV_FILLED);
     }
 
     getEdgePoints(imgEdge,vedgePoints_all);
@@ -473,10 +474,10 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     {
         tDetectedEllipsoid dEll = qEllipsoids.top();
         drawEllipse(img_colour,dEll);
-        qEllipsoids.pop();
-        qEllipsoids.pop();
-        qEllipsoids.pop();
-        qEllipsoids.pop();
+        if (qEllipsoids.size() > 0)  qEllipsoids.pop();
+        if (qEllipsoids.size() > 0) qEllipsoids.pop();
+        if (qEllipsoids.size() > 0) qEllipsoids.pop();
+        if (qEllipsoids.size() > 0) qEllipsoids.pop();
     }
 
 
@@ -490,8 +491,12 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         //getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
     }
     else {
-
+        //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge, gi_CannyThresSmall,gi_CannyThres  );
+        //Cover LEFT Eye Edges
+        cv::Rect r(0,0,imgEdge.cols/2,imgEdge.rows/2);
+        cv::rectangle(imgEdge,r,CV_RGB(0,0,0),-1,CV_FILLED);
+
     }
     vedgePoints_all.clear();
     getEdgePoints(imgEdge,vedgePoints_all);
@@ -501,7 +506,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     {
         tDetectedEllipsoid dEll = qEllipsoids.top();
         drawEllipse(img_colour,dEll);
-        qEllipsoids.pop();
+        if (qEllipsoids.size() > 0)  qEllipsoids.pop();
+        if (qEllipsoids.size() > 0) qEllipsoids.pop();
+        if (qEllipsoids.size() > 0) qEllipsoids.pop();
+        if (qEllipsoids.size() > 0) qEllipsoids.pop();
+
     }
 
 
