@@ -281,7 +281,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                     //accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
 
                     accumulator[b-1]+=10;
-                    accumulator[b] +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    accumulator[b]  +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
                     accumulator[b+1]+=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
                     //accumulator[b-1]+=10; //Add points to smaller ellipsoids so as to smooth out close edge point issues
                     //accumulator[b+1]+=10;
@@ -350,8 +350,8 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                         ++itd;
                     }
                 } //Loop Through Used Points
-                //Invalidate Pair of Points
-                ptxy1.x = 0; ptxy1.y = 0;
+
+                //Invalidate  2nd Point of pair before moving to the next
                 ptxy2.x = 0; ptxy2.y = 0;
 
 //                if (r.boundingRect().contains(ptLEyeMid) )
@@ -387,6 +387,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
         } //Loop through each 2nd point in pair
 
 //        cv::waitKey(1);
+        ptxy1.x = 0; ptxy1.y = 0; //Invalidate pt1
         //it1 = vedgePoints.erase(it1);
         //it1->x = 0; it1->y = 0; //Delete Point
     } //Loop through all  point as 1st point pair (Prob: pairs can be repeated)
@@ -412,7 +413,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     cv::Point2f ptLEyeMid,ptREyeMid;
     cv::Point2f ptcentre(imgIn.cols/2,imgIn.rows/2);
     int lengthLine = 4;
-    ptLEyeMid.x =ptcentre.x-lengthLine;
+    ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y; //y=0 is the top left corner
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
@@ -438,8 +439,6 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
 
     vedgePoints_all.reserve(imgEdge.cols*imgEdge.rows/2);
-
-
 
 
     std::vector<cv::Point> vt;
@@ -470,6 +469,16 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     getEdgePoints(imgEdge,vedgePoints_all);
     detectEllipse(vedgePoints_all,qEllipsoids);
 
+    if (qEllipsoids.size() > 0)
+    {
+        tDetectedEllipsoid dEll = qEllipsoids.top();
+        drawEllipse(img_colour,dEll);
+        qEllipsoids.pop();
+        qEllipsoids.pop();
+        qEllipsoids.pop();
+        qEllipsoids.pop();
+    }
+
 
     //Reset And Redraw - Now Right Eye
     imgEdge.copyTo(imgEdge_dbg);
@@ -484,12 +493,21 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
         cv::Canny( imgIn_thres, imgEdge, gi_CannyThresSmall,gi_CannyThres  );
     }
-
+    vedgePoints_all.clear();
     getEdgePoints(imgEdge,vedgePoints_all);
     detectEllipse(vedgePoints_all,qEllipsoids);
 
+    if (qEllipsoids.size() > 0)
+    {
+        tDetectedEllipsoid dEll = qEllipsoids.top();
+        drawEllipse(img_colour,dEll);
+        qEllipsoids.pop();
+    }
+
+
+
     //DEBUG //
-    imgEdge.copyTo(imgEdge_dbg);
+    cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
     cv::imshow("Fish Edges ",imgEdge_dbg);
     cv::imshow("Fish Threshold ",imgIn_thres);
 
@@ -508,19 +526,6 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
     ///Draw Best 2 Ellipses
 
-    if (qEllipsoids.size() > 0)
-    {
-        tDetectedEllipsoid dEll = qEllipsoids.top();
-        drawEllipse(img_colour,dEll);
-        qEllipsoids.pop();
-    }
-
-    if (qEllipsoids.size() > 0)
-    {
-        tDetectedEllipsoid dEll = qEllipsoids.top();
-        drawEllipse(img_colour,dEll);
-        qEllipsoids.pop();
-    }
 
 
     ///Debug//
