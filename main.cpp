@@ -88,7 +88,7 @@ int gi_VotesEllipseThres = 9; //Votes thres for Hough Transform
 
 ///Fish Features Detection Params
 const int gFishTemplateAngleSteps   = 5;
-const double gMatchShapeThreshold   = 0.86;
+const double gMatchShapeThreshold   = 0.80;
 //using namespace std;
 
 
