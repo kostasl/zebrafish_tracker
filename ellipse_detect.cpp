@@ -424,7 +424,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
 
-    cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,13,1 ); // Log Threshold Image + cv::THRESH_OTSU
+    cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-3,1 ); // Log Threshold Image + cv::THRESH_OTSU
 
     cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),5);
     cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
@@ -463,8 +463,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge, gi_CannyThresSmall,gi_CannyThres  );
         //Cover Right Eye
-        cv::Rect r(ptcentre.x,ptcentre.y,imgEdge.cols/2-1,imgEdge.rows/2-1);
-        cv::rectangle(imgEdge,r,CV_RGB(0,0,0),-1,CV_FILLED);
+        cv::Rect r(ptcentre.x,ptcentre.y,imgEdge.cols/2-1,imgEdge.rows);
+        cv::rectangle(imgEdge,r,cv::Scalar(0),-1);
     }
 
     getEdgePoints(imgEdge,vedgePoints_all);
@@ -494,8 +494,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge, gi_CannyThresSmall,gi_CannyThres  );
         //Cover LEFT Eye Edges
-        cv::Rect r(0,0,imgEdge.cols/2,imgEdge.rows/2);
-        cv::rectangle(imgEdge,r,CV_RGB(0,0,0),-1,CV_FILLED);
+        cv::Rect r(0,0,imgEdge.cols/2,imgEdge.rows);
+        cv::rectangle(imgEdge,r,cv::Scalar(0),-1);
 
     }
     vedgePoints_all.clear();
@@ -518,6 +518,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     //DEBUG //
     cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
     cv::imshow("Fish Edges ",imgEdge_dbg);
+    cv::imshow("Fish Edges h",imgEdge);
     cv::imshow("Fish Threshold ",imgIn_thres);
 
 
