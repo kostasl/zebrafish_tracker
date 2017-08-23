@@ -424,10 +424,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
 
-    cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-3,1 ); // Log Threshold Image + cv::THRESH_OTSU
+    cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
-    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),5);
     cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
+    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
+    cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),3);
 
     cv::findContours(imgIn_thres, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
