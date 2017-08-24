@@ -226,8 +226,8 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
             if (ptxy2.x == 0 && ptxy2.y == 0)
                 continue ; //point has been deleted
-            if (ptxy2.x == 1 && ptxy2.y == 1)
-                continue ; //point has been deleted
+            //if (ptxy2.x == 1 && ptxy2.y == 1)
+//                continue ; //point has been deleted
 
 
             double d = cv::norm(ptxy2-ptxy1);
@@ -284,9 +284,9 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                     //accumulator[b+1]++; //increment accumulator for this minor Axis
                     //accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
 
-                    accumulator[b-1]+=5;
+                    accumulator[b-1]+=1;
                     accumulator[b]  +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    accumulator[b+1]+=5; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    accumulator[b+1]+=1; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
                     //accumulator[b-1]+=10; //Add points to smaller ellipsoids so as to smooth out close edge point issues
                     //accumulator[b+1]+=10;
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head
@@ -343,7 +343,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                 {
                     tEllipsoidEdge* pEdge = &(*(*itd)); //Pickout Stored Iterator Pointers to Main list
                     //If this edge Is on The winning Ellipse's Minor Axis - Then Its been Used /Remove
-                    if (abs(pEdge->minorAxisLength - idx) < 2  ) //Delete The bin || pEdge->minorAxisLength == idx-1 || pEdge->minorAxisLength == idx-1
+                    if (abs(pEdge->minorAxisLength - idx) == 0  ) //Delete The bin || pEdge->minorAxisLength == idx-1 || pEdge->minorAxisLength == idx-1
                     {
                         imgDebug.at<uchar>(pEdge->ptEdge) = 200; //Debug - Show Used
 
@@ -430,7 +430,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     //Get Pixel Value Between Eyes
     int thresEyeSeg = imgIn.at<uchar>(ptcentre) + imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
     thresEyeSeg     += (int)imgIn.at<uchar>(imgIn.rows-3,ptcentre.x) + (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x);
-    thresEyeSeg     = thresEyeSeg/6;
+    thresEyeSeg     = thresEyeSeg/6+10;
     //Report
     std::cout << (int)imgIn.at<uchar>(ptcentre) << "+" << (int)imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) << "+" <<(int) imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) << "+" << (int)imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
     std::cout << "+" << (int)imgIn.at<uchar>(imgIn.rows-2,ptcentre.x) << "+" <<  (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x) << " avg:" <<  thresEyeSeg << std::endl;
@@ -439,8 +439,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
     cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
-    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),3);
-    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
+    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
+    //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),3);
 
     cv::findContours(imgIn_thres, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
@@ -462,7 +462,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,2,vt,ve);
     int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,2,vt,ve);
 
-
+    cv::RotatedRect rcLEye,rcREye;
     //Make Debug Img
     cv::cvtColor( imgIn,img_colour, cv::COLOR_GRAY2RGB);
     cv::cvtColor( imgIn,img_contour, cv::COLOR_GRAY2RGB);
@@ -474,7 +474,9 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     {
         imgEdge_local = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
         cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
+
         vEyes.push_back(vLEyeHull);
+        rcLEye =  cv::fitEllipse(vLEyeHull);
         cv::drawContours( img_contour, vEyes, 0, CV_RGB(10,205,10),1);
         cv::drawContours( imgEdge_local, vEyes, 0, CV_RGB(255,255,255),1);
         //getEdgePoints(contours_canny.at(iLEye),vedgePoints_all);
@@ -492,10 +494,20 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     getEdgePoints(imgEdge_local,vedgePoints_all);
     detectEllipse(vedgePoints_all,qEllipsoids);
 
+
     if (qEllipsoids.size() > 0)
     {
         tDetectedEllipsoid dEll = qEllipsoids.top();
         drawEllipse(img_colour,dEll);
+
+
+        cv::Point2f featurePnts[4];
+        rcLEye.points(featurePnts);
+        ///Draw Left Eye Rectangle
+        for (int j=0; j<4;j++) //Rectangle Eye
+               cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(10,10,130),1);
+
+
         if (qEllipsoids.size() > 0)  qEllipsoids.pop();
         if (qEllipsoids.size() > 0) qEllipsoids.pop();
         if (qEllipsoids.size() > 0) qEllipsoids.pop();
@@ -510,6 +522,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         imgEdge_local = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
         cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
         vEyes.push_back(vREyeHull);
+        rcREye =  cv::fitEllipse(vREyeHull);
         cv::drawContours( img_contour, vEyes, vEyes.size()-1, CV_RGB(10,05,210),1);
         cv::drawContours( imgEdge_local, vEyes,vEyes.size()-1, CV_RGB(255,255,255),1);
         //getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
@@ -528,10 +541,18 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     getEdgePoints(imgEdge_local,vedgePoints_all);
     detectEllipse(vedgePoints_all,qEllipsoids);
 
+
     if (qEllipsoids.size() > 0)
     {
         tDetectedEllipsoid dEll = qEllipsoids.top();
         drawEllipse(img_colour,dEll);
+
+        cv::Point2f featurePnts[4];
+        rcREye.points(featurePnts);
+        ///Draw Left Eye Rectangle
+        for (int j=0; j<4;j++) //Rectangle Eye
+               cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(130,10,10),1);
+
         if (qEllipsoids.size() > 0)  qEllipsoids.pop();
         if (qEllipsoids.size() > 0) qEllipsoids.pop();
         if (qEllipsoids.size() > 0) qEllipsoids.pop();
