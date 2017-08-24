@@ -184,6 +184,9 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
     double HighestVotes = 0;
     double Highest2dVotes = 0;
 
+    if (accLength < 3)
+        return 0;
+
     std::vector<tEllipsoidEdges::iterator> vedgePoints_trial; //Containts edge points of specific ellipsoid trial
     vedgePoints_trial.reserve(10);
 
@@ -210,6 +213,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
         //Copy List Of Edges over and Randomize
         tEllipsoidEdges vedgePoints_pair = vedgePoints_all;
         std::uniform_int_distribution<> distr(1, vedgePoints_pair.size()-1); // define the range
+
         while (vedgePoints_pair.size() > 0)
         {
             tEllipsoidEdges::iterator it2 = vedgePoints_pair.begin();
@@ -417,18 +421,27 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     ptREyeMid.y = ptcentre.y; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
 
 
-    cv::Mat img_colour,img_contour,imgIn_thres,imgEdge_dbg;
+    cv::Mat img_colour,img_contour,imgIn_thres,imgEdge_local,imgEdge_dbg;
     //Debug
     imgDebug = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
+    //Get Pixel Value Between Eyes
+    int thresEyeSeg = imgIn.at<uchar>(ptcentre) + imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
+    thresEyeSeg     += (int)imgIn.at<uchar>(imgIn.rows-3,ptcentre.x) + (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x);
+    thresEyeSeg     = thresEyeSeg/6;
+    //Report
+    std::cout << (int)imgIn.at<uchar>(ptcentre) << "+" << (int)imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) << "+" <<(int) imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) << "+" << (int)imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
+    std::cout << "+" << (int)imgIn.at<uchar>(imgIn.rows-2,ptcentre.x) << "+" <<  (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x) << " avg:" <<  thresEyeSeg << std::endl;
 
-    cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgIn, imgIn_thres,thresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
     cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
-    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
-    cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),3);
+    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),3);
+    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
+    //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),3);
 
     cv::findContours(imgIn_thres, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
@@ -442,9 +455,12 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
     std::vector<cv::Point> vt;
     std::vector<cv::RotatedRect> ve;
+    std::vector<std::vector<cv::Point>> vEyes;
+    std::vector<cv::Point> vLEyeHull; //Left Eye
+    std::vector<cv::Point> vREyeHull; //Left Eye
     //Find Parent Contour
-    int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,0,vt,ve);
-    int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,0,vt,ve);
+    int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,2,vt,ve);
+    int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,2,vt,ve);
 
 
     //Make Debug Img
@@ -453,22 +469,27 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
     //for( size_t i = 0; i< contours_canny.size(); i++ )
     vedgePoints_all.clear();
-    imgEdge = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
+
     if (iLEye != -1)
     {
-        cv::drawContours( img_contour, contours_canny, iLEye, CV_RGB(10,205,10),1);
-        cv::drawContours( imgEdge, contours_canny, iLEye, CV_RGB(255,255,255),1);
+        imgEdge_local = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
+        cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
+        vEyes.push_back(vLEyeHull);
+        cv::drawContours( img_contour, vEyes, 0, CV_RGB(10,205,10),1);
+        cv::drawContours( imgEdge_local, vEyes, 0, CV_RGB(255,255,255),1);
         //getEdgePoints(contours_canny.at(iLEye),vedgePoints_all);
     }
     else {
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
-        cv::Canny( imgIn_thres, imgEdge, gi_CannyThresSmall,gi_CannyThres  );
+        cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         //Cover Right Eye
         cv::Rect r(ptcentre.x,ptcentre.y,imgEdge.cols/2-1,imgEdge.rows);
-        cv::rectangle(imgEdge,r,cv::Scalar(0),-1);
+        //imgEdge.copyTo(imgEdge_local);
+        cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
+
     }
 
-    getEdgePoints(imgEdge,vedgePoints_all);
+    getEdgePoints(imgEdge_local,vedgePoints_all);
     detectEllipse(vedgePoints_all,qEllipsoids);
 
     if (qEllipsoids.size() > 0)
@@ -480,27 +501,31 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         if (qEllipsoids.size() > 0) qEllipsoids.pop();
         if (qEllipsoids.size() > 0) qEllipsoids.pop();
     }
-
+   imgEdge_local.copyTo(imgEdge_dbg);
+   ///End oF LEft Eye Trace //
 
     //Reset And Redraw - Now Right Eye
-    imgEdge.copyTo(imgEdge_dbg);
-    imgEdge = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
     if (iREye != -1)
     {
-        cv::drawContours( img_contour, contours_canny, iREye, CV_RGB(10,05,210),1);
-        cv::drawContours( imgEdge, contours_canny, iREye, CV_RGB(255,255,255),1);
+        imgEdge_local = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
+        cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
+        vEyes.push_back(vREyeHull);
+        cv::drawContours( img_contour, vEyes, vEyes.size()-1, CV_RGB(10,05,210),1);
+        cv::drawContours( imgEdge_local, vEyes,vEyes.size()-1, CV_RGB(255,255,255),1);
         //getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
     }
     else {
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
-        cv::Canny( imgIn_thres, imgEdge, gi_CannyThresSmall,gi_CannyThres  );
+        cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         //Cover LEFT Eye Edges
         cv::Rect r(0,0,imgEdge.cols/2,imgEdge.rows);
-        cv::rectangle(imgEdge,r,cv::Scalar(0),-1);
+        //imgEdge.copyTo(imgEdge_local);
+        cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
+
 
     }
     vedgePoints_all.clear();
-    getEdgePoints(imgEdge,vedgePoints_all);
+    getEdgePoints(imgEdge_local,vedgePoints_all);
     detectEllipse(vedgePoints_all,qEllipsoids);
 
     if (qEllipsoids.size() > 0)
@@ -517,7 +542,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
 
     //DEBUG //
-    cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
+    //cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
     cv::imshow("Fish Edges ",imgEdge_dbg);
     cv::imshow("Fish Edges h",imgEdge);
     cv::imshow("Fish Threshold ",imgIn_thres);

@@ -1744,6 +1744,16 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 //                       continue;
           }
 
+          if (level == 2) ////Needs to be top Level Contour
+          {
+              if (hierarchy[i][3] != -1) // No Parent Contour
+                  continue;
+//                   //Parent should be root
+//                   if (hierarchy[hierarchy[i][3]][3] != -1)
+//                       continue;
+          }
+
+
 
           //It returns positive (inside), negative (outside), or zero (on an edge)
           //Invert Sign and then Rank From Smallest to largest distance
