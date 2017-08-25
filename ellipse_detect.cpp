@@ -408,13 +408,13 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
 }
 
-int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses)
+int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses)
 {
-    assert(imgIn.cols == imgEdge.cols && imgIn.rows == imgEdge.rows);
+    assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
 
-
+    cv::Mat imgIn;
     //Upsamples an image and then blurs it.
-    cv::pyrUp(imgIn, imgIn, cv::Size(imgIn.cols*2,imgIn.rows*2));
+    cv::pyrUp(pimgIn, imgIn, cv::Size(imgIn.cols*3,imgIn.rows*3));
     show_histogram("HeadHist",imgIn);
 
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;
@@ -424,7 +424,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
     cv::Point2f ptLEyeMid,ptREyeMid;
     cv::Point2f ptcentre(imgIn.cols/2,imgIn.rows/2);
-    int lengthLine = 9;
+    int lengthLine = 13;
     ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y; //y=0 is the top left corner
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
@@ -449,8 +449,8 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
-    //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
-    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
+    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),1);
+    //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),3);
 
     cv::findContours(imgIn_thres, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
@@ -628,6 +628,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 }
 
 
+
 void show_histogram(std::string const& name, cv::Mat1b const& image)
 {
     // Set histogram bins count
@@ -637,31 +638,56 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
     float lranges[] = {0, 256};
     const float* ranges[] = {lranges};
     // create matrix for histogram
-    cv::Mat hist,hist_smooth;
+    cv::Mat hist,hist_smooth,hist_grad;
     int channels[] = {0};
 
     // create matrix for histogram visualization
     int const hist_height = 256;
-    cv::Mat3b hist_image = cv::Mat3b::zeros(hist_height, bins);
+    cv::Mat3b hist_image = cv::Mat3b::zeros(hist_height*2, bins);
 
     cv::calcHist(&image, 1, channels, cv::Mat(), hist, 1, histSize, ranges, true, false);
 
-    double max_val=0;
-    //minMaxLoc(hist, 0, &max_val);
-    max_val = 156;
+    double max_val      = 0;
+    double max_val_grad = 0;
+
+    max_val = 150;
 
     cv::blur(hist,hist_smooth,cv::Size(1,41));
 
+    hist_grad = cv::Mat::zeros(hist.rows,hist.cols,hist.type());
+
+    //cv::Sobel( hist_smooth, hist_grad, CV_8UC1, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT );
+    //cv::convertScaleAbs( hist_grad, hist_grad );
 
     // visualize each bin
+    //Compute Changes / Grad
+    for(int b = bins-1; b >1; b--) {
+        float const binVal = hist_smooth.at<float>(b);
+        hist_grad.at<float>(b) = hist_smooth.at<float>(b) - hist_smooth.at<float>(b+1);
+    }
+
+    cv::blur(hist_grad,hist_grad,cv::Size(1,41));
+
+    cv::minMaxLoc(hist_grad, 0, &max_val_grad);
+
     for(int b = 0; b < bins; b++) {
         float const binVal = hist_smooth.at<float>(b);
         int   const height = cvRound(binVal*hist_height/max_val);
         cv::line
             ( hist_image
-            , cv::Point(b, hist_height-height), cv::Point(b, hist_height)
+            , cv::Point(b, 2*hist_height-height), cv::Point(b, 2*hist_height)
+            , cv::Scalar::all(165)
+            );
+
+        //Grad Print
+        float const sbinVal = hist_grad.at<float>(b);
+        int  const sheight = cvRound(sbinVal*hist_height/max_val_grad);
+        cv::line
+            ( hist_image
+            , cv::Point(b, hist_height-sheight-10), cv::Point(b, hist_height)
             , cv::Scalar::all(255)
             );
+
     }
     cv::imshow(name, hist_image);
 }
