@@ -4,6 +4,7 @@ TEMPLATE = app
 
 QT += widgets gui #qml quick
 
+CONFIG += c++11
 
 SOURCES += main.cpp \
     cvBlob/cvtrack.cpp \

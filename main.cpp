@@ -1034,7 +1034,8 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
 
        if (it == fishtracks.end()) //Track No Longer Exists / Delete model
         {
-           ft = vfishmodels.erase(ft);
+           //ft = vfishmodels.erase(ft); //Only Works On some Compilers
+           vfishmodels.erase(ft++);
            std::cout << "Deleted fishmodel: " << pfish->ID << std::endl;
            delete(pfish);
            break;
@@ -1042,17 +1043,16 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
            if (pfish->track->inactive)
            {
                std::cout << "Deleted fishmodel: " << pfish->ID << " Track was Inactive t:" << pfish->track->inactive << std::endl;
-               ft = vfishmodels.erase(ft);
+               //ft = vfishmodels.erase(ft);
+               vfishmodels.erase(ft++);
                delete(pfish);
                break;
            }
         }
-
-         ++ft;
+        //Can Only Be reached if above cases eval. false
+         ++ft; //Increment Iterator
 
     }
-
-
 
 
 
