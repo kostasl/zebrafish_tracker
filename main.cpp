@@ -82,12 +82,14 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor = 11; // thres for Hough Transform
-int gi_minEllipseMajor = 7; //thres for Hough Transform
-int gi_VotesEllipseThres = 9; //Votes thres for Hough Transform
+int gi_maxEllipseMajor      = 11; // thres for Hough Transform
+int gi_minEllipseMajor      = 7; //thres for Hough Transform
+int gi_VotesEllipseThres    = 9; //Votes thres for Hough Transform
+int gthresEyeSeg            = 45;
 
 ///Fish Features Detection Params
-const int gFishTemplateAngleSteps   = 5;
+int gFishTemplateAngleSteps     = 2;
+int gEyeTemplateAngleSteps      = 5;
 const double gMatchShapeThreshold   = 0.80;
 //using namespace std;
 
@@ -128,6 +130,7 @@ cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
 cv::Mat fishbodyimg_template;// OUr Fish Image Template
 cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
+cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
 
 
 //Global Shortcut of Type conversion to legacy IplImage
@@ -244,6 +247,7 @@ int main(int argc, char *argv[])
     cv::namedWindow("Debug C",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Ellipse fit",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("HeadHist",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
 
     frameDebugA = cv::Mat::zeros(640, 480, CV_8U);
     frameDebugB = cv::Mat::zeros(640, 480, CV_8U);
@@ -253,6 +257,7 @@ int main(int argc, char *argv[])
     //set the callback function for any mouse event
     cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
+    cv::setMouseCallback("HeadHist", CallBackHistFunc, NULL);
 
 
     //Initialize The Track and blob vectors
@@ -291,6 +296,17 @@ int main(int argc, char *argv[])
 
     //Make Variations And store in template Cache
     makeTemplateCache(fishbodyimg_template,gFishTemplateCache, gFishTemplateAngleSteps);
+    cv::imshow("Fish Template",gFishTemplateCache);
+
+    ///Make The Eye Cache
+//    cv::Size szEye(15,10);
+//    cv::Mat disc = cv::Mat::zeros(szEye,CV_8UC1); //cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(10,15));
+//    cv::ellipse(disc,cv::RotatedRect(cv::Point(szEye.width/2,szEye.height/2),szEye,0),CV_RGB(255,255,255),-1);
+//    makeTemplateCache(disc,gEyeTemplateCache, gEyeTemplateAngleSteps);
+
+
+
+
 
     //cv::Rect roi(0,0,3,33);
     //cv::Rect roi(232,248,15,37); //For Large Image template
@@ -1626,6 +1642,22 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      }
 }
 
+
+//Mouse Call Back Function
+void CallBackHistFunc(int event, int x, int y, int flags, void* userdata)
+{
+
+    if  ( event == cv::EVENT_LBUTTONUP )
+     {
+            cv::Point mousepnt;
+            mousepnt.x = x;
+            mousepnt.y = y;
+
+            gthresEyeSeg = x;
+            std::cout << "Eye Threshold Set to:" << gthresEyeSeg << std::endl;
+    }
+}
+
 void addROI(ltROI& newRoi)
 {
     //std::vector<cv::Rect>::iterator it= vRoi.end();
@@ -2120,7 +2152,7 @@ cv::Mat maskfishOnly,frameImg_gray, frameImg_blur,threshold_output,threshold_out
 std::vector<std::vector<cv::Point> > fgMaskcontours;
 std::vector<cv::Vec4i> fgMaskhierarchy;
 
-cv::imshow("MOG2 Mask Raw",maskFGImg);
+//cv::imshow("MOG2 Mask Raw",maskFGImg);
 
 /////get rid of noise/food marks
 ////Apply Open Operation dilate(erode())
@@ -2248,10 +2280,12 @@ cv::bitwise_or(maskfishOnly,maskFGImg,maskFGImg);
 
 //threshold_output.copyTo(frameDebugD);
 
-//if (bshowMask)
+if (bshowMask)
+{
     cv::imshow("Threshold Out",threshold_output);
     cv::imshow("MOG2 Mask Processed",maskFGImg);
     cv::imshow("Hollow Fish Mask",threshold_output_COMB);
+}
 }
 
 
@@ -2357,7 +2391,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
           cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
-
 
           int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc);
           //0 Degrees Is along the Y Axis Looking Upwards
@@ -2900,7 +2933,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 
 
-    cv::imshow("Edges Canny",frameCanny);
+    //cv::imshow("Edges Canny",frameCanny);
     //cv::imshow("Edges Laplace",framelapl);
 
     cv::imshow("Debug A",frameDebugA);

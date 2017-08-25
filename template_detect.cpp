@@ -48,7 +48,7 @@ void makeTemplateCache(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleSt
         ifishtemplateAngle += iAngleStepDeg;
     }
 
-    cv::imshow("ImgTemplate",imgTemplateOut);
+
 
 }
 

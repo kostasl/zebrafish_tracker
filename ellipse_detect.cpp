@@ -45,6 +45,7 @@
 ///Summary : Algorithm Checks a candidate ellipse with major axis between to pair of test points,
 ///  then estimates minor axis by testing all 3rd points and uses a voting procedure to check for possible minor axis and ellipse
 #include <ellipse_detect.h>
+#include <template_detect.h>
 #include <larvatrack.h>
 #include <iostream>
 #include <vector>
@@ -67,11 +68,15 @@ extern int gi_VotesEllipseThres;
 extern int gi_minEllipseMajor;
 extern int gi_maxEllipseMajor;
 extern int g_BGthresh;
+extern int gEyeTemplateAngleSteps;
+
 cv::Mat imgDebug;
 
-extern cv::Mat kernelOpen;
+extern cv::Mat kernelOpenfish;
 extern cv::Mat frameDebugC;
+extern cv::Mat gEyeTemplateCache;
 
+extern int gthresEyeSeg;
 inline int getMax(int* darray,int length,double& votes)
 {
     double max=darray[0];
@@ -375,7 +380,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
             {
                 Highest2dVotes  = HighestVotes;
                 HighestVotes = dvotesMax;
-                 std::cout << "mxVot:" << HighestVotes << std::endl;
+                 //std::cout << "mxVot:" << HighestVotes << std::endl;
             }
 
 
@@ -407,6 +412,11 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 {
     assert(imgIn.cols == imgEdge.cols && imgIn.rows == imgEdge.rows);
 
+
+    //Upsamples an image and then blurs it.
+    cv::pyrUp(imgIn, imgIn, cv::Size(imgIn.cols*2,imgIn.rows*2));
+    show_histogram("HeadHist",imgIn);
+
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;
 
     std::vector<std::vector<cv::Point> > contours_canny;
@@ -414,7 +424,7 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
     cv::Point2f ptLEyeMid,ptREyeMid;
     cv::Point2f ptcentre(imgIn.cols/2,imgIn.rows/2);
-    int lengthLine = 4;
+    int lengthLine = 9;
     ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y; //y=0 is the top left corner
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
@@ -435,12 +445,12 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     std::cout << (int)imgIn.at<uchar>(ptcentre) << "+" << (int)imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) << "+" <<(int) imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) << "+" << (int)imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
     std::cout << "+" << (int)imgIn.at<uchar>(imgIn.rows-2,ptcentre.x) << "+" <<  (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x) << " avg:" <<  thresEyeSeg << std::endl;
 
-    cv::threshold(imgIn, imgIn_thres,thresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgIn, imgIn_thres,gthresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
-    cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
-    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
-    //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
+    //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
+    //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
+    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),3);
 
     cv::findContours(imgIn_thres, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
@@ -474,11 +484,15 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     {
         imgEdge_local = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
         cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
-
-        vEyes.push_back(vLEyeHull);
-        rcLEye =  cv::fitEllipse(vLEyeHull);
-        cv::drawContours( img_contour, vEyes, 0, CV_RGB(10,205,10),1);
-        cv::drawContours( imgEdge_local, vEyes, 0, CV_RGB(255,255,255),1);
+        if (vLEyeHull.size() > 4)
+        {
+            vEyes.push_back(vLEyeHull);
+            rcLEye =  cv::fitEllipse(vLEyeHull);
+            tDetectedEllipsoid dEll(rcLEye,100);
+            qEllipsoids.push(dEll);
+            cv::drawContours( img_contour, vEyes, 0, CV_RGB(10,205,10),1);
+            cv::drawContours( imgEdge_local, vEyes, 0, CV_RGB(255,255,255),1);
+        }
         //getEdgePoints(contours_canny.at(iLEye),vedgePoints_all);
     }
     else {
@@ -488,12 +502,10 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         cv::Rect r(ptcentre.x,ptcentre.y,imgEdge.cols/2-1,imgEdge.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
+        getEdgePoints(imgEdge_local,vedgePoints_all);
+        detectEllipse(vedgePoints_all,qEllipsoids);
 
     }
-
-    getEdgePoints(imgEdge_local,vedgePoints_all);
-    detectEllipse(vedgePoints_all,qEllipsoids);
-
 
     if (qEllipsoids.size() > 0)
     {
@@ -506,7 +518,6 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
         ///Draw Left Eye Rectangle
         for (int j=0; j<4;j++) //Rectangle Eye
                cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(10,10,130),1);
-
 
         if (qEllipsoids.size() > 0)  qEllipsoids.pop();
         if (qEllipsoids.size() > 0) qEllipsoids.pop();
@@ -521,25 +532,29 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     {
         imgEdge_local = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
         cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
-        vEyes.push_back(vREyeHull);
-        rcREye =  cv::fitEllipse(vREyeHull);
-        cv::drawContours( img_contour, vEyes, vEyes.size()-1, CV_RGB(10,05,210),1);
-        cv::drawContours( imgEdge_local, vEyes,vEyes.size()-1, CV_RGB(255,255,255),1);
+
+        if (vREyeHull.size() > 4)
+        {
+            vEyes.push_back(vREyeHull);
+            rcREye =  cv::fitEllipse(vREyeHull);
+            tDetectedEllipsoid dEll(rcREye,100);
+            qEllipsoids.push(dEll);
+            cv::drawContours( img_contour, vEyes, vEyes.size()-1, CV_RGB(10,05,210),1);
+            cv::drawContours( imgEdge_local, vEyes,vEyes.size()-1, CV_RGB(255,255,255),1);
+        }
         //getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
     }
-    else {
+    else { ///Backup PLan
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         //Cover LEFT Eye Edges
         cv::Rect r(0,0,imgEdge.cols/2,imgEdge.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
-
-
+        vedgePoints_all.clear();
+        getEdgePoints(imgEdge_local,vedgePoints_all);
+        detectEllipse(vedgePoints_all,qEllipsoids);
     }
-    vedgePoints_all.clear();
-    getEdgePoints(imgEdge_local,vedgePoints_all);
-    detectEllipse(vedgePoints_all,qEllipsoids);
 
 
     if (qEllipsoids.size() > 0)
@@ -560,7 +575,26 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 
     }
 
+////Use Templates
+///
 
+//    double gmaxVal = 0.0;
+//    cv::Point gptmaxLoc;
+//    cv::Size szTempIcon(15,15);
+//    int AngleIdx = templatefindFishInImage(imgIn,gEyeTemplateCache,szTempIcon, gmaxVal, gptmaxLoc);
+//    //0 Degrees Is along the Y Axis Looking Upwards
+//    int bestAngleinDeg = AngleIdx*gEyeTemplateAngleSteps;
+//    ///Draw Bounding Box Of Eye Found From Template
+//    cv::Point2f boundBoxPnts[4];
+//    cv::Point2f pteyecentre = (cv::Point2f)gptmaxLoc + ptcentre;
+//    cv::RotatedRect fishEyeBox(pteyecentre, cv::Size(10,15),bestAngleinDeg);
+//    fishEyeBox.points(boundBoxPnts);
+
+//    //Draw Rotated Frame around Detected Body
+//    for (int j=0; j<4;j++) //Rectangle Eye
+//        cv::line(img_colour,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(00,50,255),2);
+
+/////////// END OF TEMPLATE ///
 
     //DEBUG //
     //cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
@@ -592,3 +626,43 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
     std::cout << "Done"  << std::endl;
 
 }
+
+
+void show_histogram(std::string const& name, cv::Mat1b const& image)
+{
+    // Set histogram bins count
+    int bins = 256;
+    int histSize[] = {bins};
+    // Set ranges for histogram bins
+    float lranges[] = {0, 256};
+    const float* ranges[] = {lranges};
+    // create matrix for histogram
+    cv::Mat hist,hist_smooth;
+    int channels[] = {0};
+
+    // create matrix for histogram visualization
+    int const hist_height = 256;
+    cv::Mat3b hist_image = cv::Mat3b::zeros(hist_height, bins);
+
+    cv::calcHist(&image, 1, channels, cv::Mat(), hist, 1, histSize, ranges, true, false);
+
+    double max_val=0;
+    //minMaxLoc(hist, 0, &max_val);
+    max_val = 156;
+
+    cv::blur(hist,hist_smooth,cv::Size(1,41));
+
+
+    // visualize each bin
+    for(int b = 0; b < bins; b++) {
+        float const binVal = hist_smooth.at<float>(b);
+        int   const height = cvRound(binVal*hist_height/max_val);
+        cv::line
+            ( hist_image
+            , cv::Point(b, hist_height-height), cv::Point(b, hist_height)
+            , cv::Scalar::all(255)
+            );
+    }
+    cv::imshow(name, hist_image);
+}
+

@@ -113,6 +113,7 @@ int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumbe
 int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback
+void CallBackHistFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback For the Histogram Window
 /**
 * @function thresh_callback
 */

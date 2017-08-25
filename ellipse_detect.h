@@ -21,6 +21,11 @@ typedef struct tDetectedEllipsoid{
         fitscore = score;
     }
 
+    tDetectedEllipsoid(cv::RotatedRect r,int score):rectEllipse(r){
+
+        fitscore = score;
+    }
+
     //Operator for Priority Ordering
 //    bool operator<(const tDetectedEllipsoid& b) {
 //      return this->fitscore < b.fitscore; //Max Heap
@@ -55,5 +60,6 @@ int detectEllipses(cv::Mat& imgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,t
 void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint);
 void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);
 
+void show_histogram(std::string const& name, cv::Mat1b const& image);
 #endif // ELLIPSE_DETECT
 
