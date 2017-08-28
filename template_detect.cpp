@@ -1,8 +1,7 @@
 
 #include <template_detect.h>
 
-const double gFishTemplateMatchThreshold = 0.85;
-
+extern double gMatchShapeThreshold;
 
 
 
@@ -59,10 +58,11 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \param templRegion Rect of template img Size to look for within the larger template Cache
 ///
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
-int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int startRow = 0)
+int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow)
 {
   int matchIdx;
   int idx = 0; //Current Angle Index Being tested in the loop
+  int idRow = 0;
   double minVal, maxVal;
   double maxGVal = 0.0;
   cv::Point ptmaxLoc,ptminLoc;
@@ -75,8 +75,9 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
   cv::Point ptbottomRight = cv::Point(templSz.width,templSz.height);
   cv::Rect templRegion(cv::Point(0,0),ptbottomRight);
   //Run Through All rotated Templates - optional starting row for optimization
-  for (int j=imgtempl.rows*startRow; j<imgtempl.rows;j+=templRegion.height)
+  for (int j=templSz.height*startRow; j<imgtempl.rows;j+=templRegion.height)
   {
+      templRegion.y    = j;
       for (int i=0; i<imgtempl.cols;i+=templRegion.width)
       {
         //Obtain next Template At Angle
@@ -98,21 +99,29 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
         idx++;
       } //Loop Through Columns
    ///Check If Matching Exceeeds threshold
-   if (maxGVal > gFishTemplateMatchThreshold)
+   if (maxGVal > gMatchShapeThreshold)
    {
        //Save Results To Output
        matchScore    = maxGVal;
        locations_tl  = ptGmaxLoc;
-       break; //Done Searching Stop Going Through loop
+       startRow = idRow;
+       //Stop Search
+       return matchIdx; //Done Searching Stop Going Through loop
+
+       //break;
     }else { //Nothing Found YEt-- Proceed To Next Template variation
        matchIdx = 0;
        matchScore = 0.0;
        locations_tl = cv::Point(0,0);
    }
 
-   templRegion.y +=templSz.height;
+   idRow++;
+   idx              = 0;
+   templRegion.x    = 0; //Start from 1st col again
+
+
  } //Loop Through Rows
 
-
+  startRow = 0;//Start From Top Of All Templates On Next Search
   return matchIdx;
 }

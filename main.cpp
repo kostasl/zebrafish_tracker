@@ -87,10 +87,12 @@ int gi_minEllipseMajor      = 7; //thres for Hough Transform
 int gi_VotesEllipseThres    = 9; //Votes thres for Hough Transform
 int gthresEyeSeg            = 45;
 
+
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-const double gMatchShapeThreshold   = 0.87;
+double gMatchShapeThreshold   = 0.83;
+int iLastKnownGoodTemplateRow = 0;
 //using namespace std;
 
 
@@ -2426,7 +2428,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
-          int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc,0);
+          int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc,iLastKnownGoodTemplateRow);
           //0 Degrees Is along the Y Axis Looking Upwards
           int bestAngleinDeg = AngleIdx*gFishTemplateAngleSteps;
 
@@ -2471,7 +2473,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
            //Threshold The Match Check Bounds Within Image
            cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
 
-           if (gmaxVal > gMatchShapeThreshold && //Looks Like a fish
+           if ( //Looks Like a fish is found Check Bounds // gmaxVal > gMatchShapeThreshold &&
                imgBounds.contains(fishHeadBound.br()) &&
                    imgBounds.contains(fishHeadBound.tl()))
            {
