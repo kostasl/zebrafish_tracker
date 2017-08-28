@@ -91,7 +91,7 @@ int gthresEyeSeg            = 45;
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gMatchShapeThreshold   = 0.80;
+double gMatchShapeThreshold   = 0.83;
 int iLastKnownGoodTemplateRow = 0;
 //using namespace std;
 

@@ -413,7 +413,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
 
     cv::Mat imgIn;
-    //Upsamples an image and then blurs it.
+    //Upsamples an image which causes blur/interpolation it.
     cv::pyrUp(pimgIn, imgIn, cv::Size(imgIn.cols*3,imgIn.rows*3));
     show_histogram("HeadHist",imgIn);
 
@@ -438,12 +438,12 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
     //Get Pixel Value Between Eyes
-    int thresEyeSeg = imgIn.at<uchar>(ptcentre) + imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
-    thresEyeSeg     += (int)imgIn.at<uchar>(imgIn.rows-3,ptcentre.x) + (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x);
-    thresEyeSeg     = thresEyeSeg/6+10;
-    //Report
-    std::cout << (int)imgIn.at<uchar>(ptcentre) << "+" << (int)imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) << "+" <<(int) imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) << "+" << (int)imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
-    std::cout << "+" << (int)imgIn.at<uchar>(imgIn.rows-2,ptcentre.x) << "+" <<  (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x) << " avg:" <<  thresEyeSeg << std::endl;
+    //int thresEyeSeg = imgIn.at<uchar>(ptcentre) + imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
+    //thresEyeSeg     += (int)imgIn.at<uchar>(imgIn.rows-3,ptcentre.x) + (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x);
+    //thresEyeSeg     = thresEyeSeg/6+10;
+    // Debug Report
+    //std::cout << (int)imgIn.at<uchar>(ptcentre) << "+" << (int)imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) << "+" <<(int) imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) << "+" << (int)imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
+    //std::cout << "+" << (int)imgIn.at<uchar>(imgIn.rows-2,ptcentre.x) << "+" <<  (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x) << " avg:" <<  thresEyeSeg << std::endl;
 
     cv::threshold(imgIn, imgIn_thres,gthresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
