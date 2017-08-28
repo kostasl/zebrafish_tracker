@@ -90,7 +90,7 @@ int gthresEyeSeg            = 45;
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-const double gMatchShapeThreshold   = 0.80;
+const double gMatchShapeThreshold   = 0.87;
 //using namespace std;
 
 
@@ -174,7 +174,7 @@ bool bEyesDetected = false; ///Flip True to save eye shape feature for future de
 
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
-string strTemplateImg = ":/img/fishbody_tmp.pgm"; ///Load From Resource
+string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
 
 static Mat loadImage(const string& name)
 {
@@ -269,6 +269,7 @@ int main(int argc, char *argv[])
     /// create Background Subtractor objects
     //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 3
+
     pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false);
     pMOG2->setNMixtures(150);
     pMOG2->setBackgroundRatio(0.99);
@@ -278,25 +279,58 @@ int main(int argc, char *argv[])
     double dmog2VT = pMOG2->getVarThreshold();
     pMOG2->setVarThreshold(3.0);
 
-    /// Setup Hough Tranform Algorithm ///
-    //pGHT = createGeneralizedHoughGuil();
-
-
-    //pGHTBallard = createGeneralizedHoughBallard();
-    //pGHTGuil    = createGeneralizedHoughGuil();
-    //pGHT = pGHTGuil;
-
-    fishbodyimg_template = loadFromQrc(QString(strTemplateImg.c_str()),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
-
+    ///////////////////////////////////////
+    /// Setup Fish Body Template Cache //
+    int nTempl  = 3;
+    int idxTempl = 1;
+    fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
     if (fishbodyimg_template.empty())
     {
         std::cerr << "Could not load template" << std::endl;
         exit(-1);
     }
 
+
     //Make Variations And store in template Cache
-    makeTemplateCache(fishbodyimg_template,gFishTemplateCache, gFishTemplateAngleSteps);
+    cv::Mat fishTemplateVar,mtCacheRow;
+    makeTemplateVar(fishbodyimg_template,fishTemplateVar, gFishTemplateAngleSteps);
+
+    //Make Empty Template Canvas Using Dimensions Of 1st Template Var
+    ///\note assumes all Templates are the same size
+    gFishTemplateCache = cv::Mat::zeros(fishTemplateVar.rows*nTempl,fishTemplateVar.cols,CV_8UC1);
+    mtCacheRow = gFishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl-1),fishTemplateVar.cols,fishTemplateVar.rows));
+    fishTemplateVar.copyTo(mtCacheRow);
+
+    //Make 2nd Templ
+    idxTempl++;
+    fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+    if (fishbodyimg_template.empty())
+    {
+        std::cerr << "Could not load template" << std::endl;
+        exit(-1);
+    }
+
+    //Make Variations And store in template Cache - on Next Row
+    makeTemplateVar(fishbodyimg_template,fishTemplateVar, gFishTemplateAngleSteps);
+    mtCacheRow = gFishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl-1),fishTemplateVar.cols,fishTemplateVar.rows));
+    fishTemplateVar.copyTo(mtCacheRow);
+
+
+    //Make 3rd Templ
+    idxTempl++;
+    fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+    if (fishbodyimg_template.empty())
+    {
+        std::cerr << "Could not load template" << std::endl;
+        exit(-1);
+    }
+    //Make Variations And store in template Cache - on Next Row
+    makeTemplateVar(fishbodyimg_template,fishTemplateVar, gFishTemplateAngleSteps);
+    mtCacheRow = gFishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl-1),fishTemplateVar.cols,fishTemplateVar.rows));
+    fishTemplateVar.copyTo(mtCacheRow);
+
     cv::imshow("Fish Template",gFishTemplateCache);
+    /// END OF FISH TEMPLATES ///
 
     ///Make The Eye Cache
 //    cv::Size szEye(15,10);
@@ -2392,7 +2426,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
-          int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc);
+          int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc,0);
           //0 Degrees Is along the Y Axis Looking Upwards
           int bestAngleinDeg = AngleIdx*gFishTemplateAngleSteps;
 

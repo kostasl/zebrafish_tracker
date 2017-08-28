@@ -1,7 +1,7 @@
 
 #include <template_detect.h>
 
-const double gFishTemplateMatchThreshold = 0.7;
+const double gFishTemplateMatchThreshold = 0.85;
 
 
 
@@ -14,7 +14,7 @@ const double gFishTemplateMatchThreshold = 0.7;
 /// \param imgTemplateOut
 /// \param iAngleStepDeg (minimum 1 degree)
 ///
-void makeTemplateCache(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStepDeg)
+void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStepDeg)
 {
     int iAngleIncrements = 360.0/iAngleStepDeg;
     int ifishtemplateAngle = 0;
@@ -59,7 +59,7 @@ void makeTemplateCache(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleSt
 /// \param templRegion Rect of template img Size to look for within the larger template Cache
 ///
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
-int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl)
+int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int startRow = 0)
 {
   int matchIdx;
   int idx = 0; //Current Angle Index Being tested in the loop
@@ -74,37 +74,45 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
   cv::Point ptbottomRight = cv::Point(templSz.width,templSz.height);
   cv::Rect templRegion(cv::Point(0,0),ptbottomRight);
-  //Run Through All rotated Templates
-  for (int i=0; i<imgtempl.cols;i+=templRegion.width)
+  //Run Through All rotated Templates - optional starting row for optimization
+  for (int j=imgtempl.rows*startRow; j<imgtempl.rows;j+=templRegion.height)
   {
-    //Obtain next Template At Angle
-    cv::Mat templ_rot(imgtempl,templRegion);
-    //Convolution
-    cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
-    //Find Min Max Location
-    cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
-    //Assume Value < 0.7 is non Fish,
-    if (maxGVal < maxVal)
-    {
-        maxGVal     = maxVal;
-        ptGmaxLoc   = ptmaxLoc; //The calling Function needts reposition maxLoc To the global Frame
-        matchIdx   = idx;
-    }
+      for (int i=0; i<imgtempl.cols;i+=templRegion.width)
+      {
+        //Obtain next Template At Angle
+        cv::Mat templ_rot(imgtempl,templRegion);
+        //Convolution
+        cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
+        //Find Min Max Location
+        cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
+        //Assume Value < 0.7 is non Fish,
+        if (maxGVal < maxVal)
+        {
+            maxGVal     = maxVal;
+            ptGmaxLoc   = ptmaxLoc; //The calling Function needts reposition maxLoc To the global Frame
+            matchIdx   = idx;
+        }
 
-    //Shift Region To Next Block
-    templRegion.x +=templSz.width;
-    idx++;
-  }
+        //Shift Region To Next Block
+        templRegion.x +=templSz.width;
+        idx++;
+      } //Loop Through Columns
+   ///Check If Matching Exceeeds threshold
    if (maxGVal > gFishTemplateMatchThreshold)
    {
        //Save Results To Output
        matchScore    = maxGVal;
        locations_tl  = ptGmaxLoc;
-    }else {
+       break; //Done Searching Stop Going Through loop
+    }else { //Nothing Found YEt-- Proceed To Next Template variation
        matchIdx = 0;
        matchScore = 0.0;
        locations_tl = cv::Point(0,0);
    }
+
+   templRegion.y +=templSz.height;
+ } //Loop Through Rows
+
 
   return matchIdx;
 }

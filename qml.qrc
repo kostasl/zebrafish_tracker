@@ -3,7 +3,8 @@
         <file>main.qml</file>
         <file>GUI/MainGUI.qml</file>
         <file>GUI/MainGUIForm.ui.qml</file>
-        <file>img/fishbody_tmp.pgm</file>
         <file>img/fishbody_tmp2.pgm</file>
+        <file>img/fishbody_tmp3.pgm</file>
+        <file>img/fishbody_tmp1.pgm</file>
     </qresource>
 </RCC>
