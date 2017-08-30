@@ -628,7 +628,11 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
 }
 
 
-
+///
+/// \brief calculates and show_histogram and its 1st derivative calculated from Right to left
+/// \param name of window to show hist.
+/// \param image - source image on which to obtain histogram
+///
 void show_histogram(std::string const& name, cv::Mat1b const& image)
 {
     // Set histogram bins count

@@ -285,51 +285,26 @@ int main(int argc, char *argv[])
     /// Setup Fish Body Template Cache //
     int nTempl  = 3;
     int idxTempl = 1;
-    fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
-    if (fishbodyimg_template.empty())
+    for (idxTempl=1; idxTempl<=nTempl;idxTempl++)
     {
-        std::cerr << "Could not load template" << std::endl;
-        exit(-1);
+        fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+        if (fishbodyimg_template.empty())
+        {
+            std::cerr << "Could not load template" << std::endl;
+            exit(-1);
+        }
+        //Make Variations And store in template Cache
+        cv::Mat fishTemplateVar,mtCacheRow;
+        makeTemplateVar(fishbodyimg_template,fishTemplateVar, gFishTemplateAngleSteps);
+
+        ///1st Round Make Empty Template Canvas Using Dimensions Of 1st Template Var
+        ///\note assumes all Templates are the same size
+        if (idxTempl == 1)
+            gFishTemplateCache = cv::Mat::zeros(fishTemplateVar.rows*nTempl,fishTemplateVar.cols,CV_8UC1);
+
+        mtCacheRow = gFishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl-1),fishTemplateVar.cols,fishTemplateVar.rows));
+        fishTemplateVar.copyTo(mtCacheRow);
     }
-
-
-    //Make Variations And store in template Cache
-    cv::Mat fishTemplateVar,mtCacheRow;
-    makeTemplateVar(fishbodyimg_template,fishTemplateVar, gFishTemplateAngleSteps);
-
-    //Make Empty Template Canvas Using Dimensions Of 1st Template Var
-    ///\note assumes all Templates are the same size
-    gFishTemplateCache = cv::Mat::zeros(fishTemplateVar.rows*nTempl,fishTemplateVar.cols,CV_8UC1);
-    mtCacheRow = gFishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl-1),fishTemplateVar.cols,fishTemplateVar.rows));
-    fishTemplateVar.copyTo(mtCacheRow);
-
-    //Make 2nd Templ
-    idxTempl++;
-    fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
-    if (fishbodyimg_template.empty())
-    {
-        std::cerr << "Could not load template" << std::endl;
-        exit(-1);
-    }
-
-    //Make Variations And store in template Cache - on Next Row
-    makeTemplateVar(fishbodyimg_template,fishTemplateVar, gFishTemplateAngleSteps);
-    mtCacheRow = gFishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl-1),fishTemplateVar.cols,fishTemplateVar.rows));
-    fishTemplateVar.copyTo(mtCacheRow);
-
-
-    //Make 3rd Templ
-    idxTempl++;
-    fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
-    if (fishbodyimg_template.empty())
-    {
-        std::cerr << "Could not load template" << std::endl;
-        exit(-1);
-    }
-    //Make Variations And store in template Cache - on Next Row
-    makeTemplateVar(fishbodyimg_template,fishTemplateVar, gFishTemplateAngleSteps);
-    mtCacheRow = gFishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl-1),fishTemplateVar.cols,fishTemplateVar.rows));
-    fishTemplateVar.copyTo(mtCacheRow);
 
     cv::imshow("Fish Template",gFishTemplateCache);
     /// END OF FISH TEMPLATES ///
