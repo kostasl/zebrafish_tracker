@@ -182,8 +182,17 @@ double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point2f& ptEyeCenter,std:
 
 
 void makeEllipse(cv::Point2f ptcenter,double angle,double a, double b, std::vector<cv::Point>& voutEllipse);
-/// Auxiliriary Functions
 
+///
+/// \brief addTemplateToCache Expands the Cache with all the fish body image templates by one row
+///        Assumes all template images have the same size
+/// \param imgTempl
+/// \param idxTempl
+/// \return idxTempl
+///
+int addTemplateToCache(cv::Mat& imgTempl,int idxTempl);
+
+/// Auxiliriary Functions
 template < typename T > std::string to_string( const T& n )
    {
        std::ostringstream stm ;

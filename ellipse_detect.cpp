@@ -410,7 +410,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
 int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses)
 {
-    assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
+    //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
 
     cv::Mat imgIn;
     //Upsamples an image which causes blur/interpolation it.
@@ -460,7 +460,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     vellipses.clear();
     tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
 
-    vedgePoints_all.reserve(imgEdge.cols*imgEdge.rows/2);
+    vedgePoints_all.reserve(pimgIn.cols*pimgIn.rows/2);
 
 
     std::vector<cv::Point> vt;
