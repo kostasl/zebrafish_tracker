@@ -2460,11 +2460,15 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               //Make Rotation Transformation
               cv::warpAffine(imgFishAnterior,imgFishAnterior,Mrot,imgFishAnterior.size());
               cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,imgFishHeadEdge.size());
-              //Cut Window To Half Width
+
+              ///Cut Window To Half Width
               //cv::RotatedRect lhbound(cv::Point(0,0),cv::Point(fishHeadBound.width/2,0),cv::Point(fishHeadBound.width/2,fishHeadBound.height-1));
               //imgFishHeadEdge   = imgFishHeadEdge(lhbound.boundingRect());
               //Take Sub Image The size of the template - From Top Left Corner Defined relative to centre of Image
-              imgFishHead           = imgFishAnterior( cv::Rect( cv::Point(fishHeadBound.size().width/2-fishHeadBox.size.width/2,fishHeadBound.size().height/2-fishHeadBox.size.height/2) ,cv::Size(fishHeadBox.size.width,fishHeadBox.size.height/2)));
+              cv::Point pttopLeft =  cv::Point(fishHeadBound.size().width/2-fishHeadBox.size.width/2,fishHeadBound.size().height/2-fishHeadBox.size.height/2);
+              cv::Size  szHeadBound(fishHeadBox.size.width,fishHeadBox.size.height/2);
+              cv::Rect rectFishHeadBound = cv::Rect(pttopLeft ,szHeadBound);
+              imgFishHead           = imgFishAnterior(rectFishHeadBound);
               imgFishAnterior       = imgFishAnterior(cv::Rect(cv::Point(fishHeadBound.size().width/2-fishHeadBox.size.width/2,fishHeadBound.size().height/2-fishHeadBox.size.height/2), fishHeadBox.size));
                 //Isolate the Eye/Head Section Of The Body
 
