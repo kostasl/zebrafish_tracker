@@ -2412,12 +2412,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           cv::Point centre = top_left + rotCentre;
           cv::RotatedRect fishHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
 
+          ///Draw a Red Rotated Frame around Detected Body
           cv::Point2f boundBoxPnts[4];
           fishHeadBox.points(boundBoxPnts);
-          //cv::Point bottom_right(top_left.x + fishbodyimg_template.cols+5 , top_left.y + fishbodyimg_template.rows+5);
-
-
-          //Draw Rotated Frame around Detected Body
           for (int j=0; j<4;j++) //Rectangle Eye
               cv::line(frameDebugC,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
@@ -2435,7 +2432,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           //cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.cols),bestAngleinDeg);
           //cv::Rect fishHeadBound = fishEyeBox.boundingRect();// fishHeadBox.boundingRect();
           //Get Image Region Where were the template Match occured - Expand Needs to be able to fit the template When Rotated Orthonormally
-          cv::Rect fishHeadBound = fishHeadBox.boundingRect();
+          //Custom Bounding Box Needs to allow for RotRect To be rotated Orthonormally
+          int boundDim = 1.7*std::max(fishHeadBox.size.width,fishHeadBox.size.height);
+          cv::Rect fishHeadBound(fishHeadBox.center.x-fishHeadBox.size.width/2,fishHeadBox.center.y-fishHeadBox.size.height/2,boundDim,boundDim);
 
 
           stringstream strLbl;
@@ -2458,7 +2457,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 
               //Make Rotation MAtrix
-              cv::Mat Mrot = cv::getRotationMatrix2D(cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2),bestAngleinDeg,1.0); //Rotate Upwards
+              //cv::Mat Mrot = cv::getRotationMatrix2D(cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2),bestAngleinDeg,1.0); //Rotate Upwards
+              cv::Mat Mrot = cv::getRotationMatrix2D(-fishHeadBox.center,bestAngleinDeg,1.0); //Rotate Upwards
+
               //Make Rotation Transformation
               cv::warpAffine(imgFishAnterior,imgFishAnterior,Mrot,imgFishAnterior.size());
               cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,imgFishHeadEdge.size());
@@ -2467,7 +2468,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               //cv::RotatedRect lhbound(cv::Point(0,0),cv::Point(fishHeadBound.width/2,0),cv::Point(fishHeadBound.width/2,fishHeadBound.height-1));
               //imgFishHeadEdge   = imgFishHeadEdge(lhbound.boundingRect());
               //Take Sub Image The size of the template - From Top Left Corner Defined relative to centre of Image
-              cv::Point pttopLeft =  cv::Point(fishHeadBound.size().width/2-fishHeadBox.size.width/2,fishHeadBound.size().height/2-fishHeadBox.size.height/2);
+              cv::Point pttopLeft =  cv::Point(imgFishAnterior.cols/2-fishHeadBox.size.width/2,imgFishAnterior.rows/2-fishHeadBox.size.height/2);
               cv::Size  szHeadBound(fishHeadBox.size.width,fishHeadBox.size.height/2);
               cv::Rect rectFishHeadBound = cv::Rect(pttopLeft ,szHeadBound);
               imgFishHead           = imgFishAnterior(rectFishHeadBound);
