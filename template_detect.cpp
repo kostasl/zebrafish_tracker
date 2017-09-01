@@ -2,7 +2,8 @@
 #include <template_detect.h>
 
 extern double gMatchShapeThreshold;
-
+extern int gFishTemplateAngleSteps;
+extern int gnumberOfTemplatesInCache;
 
 
 ///
@@ -56,9 +57,11 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \brief templatefindFishInImage Scans input image for templates and returns the best location
 ///  which that exceed a threshold value for a match
 /// \param templRegion Rect of template img Size to look for within the larger template Cache
-///
+/// \param startRow - Optimization So search begins from the most likely Template as of the last one
+/// \param startCol - Optimization So search begins from the most likely Template Angle
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
-int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow)
+///
+int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol)
 {
   int matchIdx;
   int idx = 0; //Current Angle Index Being tested in the loop
@@ -74,11 +77,18 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
   cv::Point ptbottomRight = cv::Point(templSz.width,templSz.height);
   cv::Rect templRegion(cv::Point(0,0),ptbottomRight);
+
+  // Start from Angle Region as set from last search
+  if (startCol > 3)
+      startCol -=3; //Move to Template 3Angle Steps anticlockwise
+
+  templRegion.x = templSz.height*startCol;
   //Run Through All rotated Templates - optional starting row for optimization
   for (int j=templSz.height*startRow; j<imgtempl.rows;j+=templRegion.height)
   {
       templRegion.y    = j;
-      for (int i=0; i<imgtempl.cols;i+=templRegion.width)
+
+      for (int i=templSz.height*startCol; i<imgtempl.cols;i+=templRegion.width)
       {
         //Obtain next Template At Angle
         cv::Mat templ_rot(imgtempl,templRegion);
@@ -124,4 +134,36 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
   startRow = 0;//Start From Top Of All Templates On Next Search
   return matchIdx;
+}
+
+
+///
+///\brief addTemplateToCache
+///\note assumes all Templates are the same size
+///
+int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
+{
+    //Make Variations And store in template Cache
+    cv::Mat fishTemplateVar,mtCacheRow,mtEnlargedCache;
+    makeTemplateVar(imgTempl,fishTemplateVar, gFishTemplateAngleSteps);
+
+    ///Initialize The Cache if this the 1st Template added
+    if (idxTempl == 0)
+        FishTemplateCache = cv::Mat::zeros(fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
+    else{
+        //Copy COntents To Enlarged Cache and replace pointer
+        mtEnlargedCache = cv::Mat::zeros(FishTemplateCache.rows+fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
+        //Get Ref To Old Sized Cache Only
+        mtCacheRow = mtEnlargedCache(cv::Rect(0,0,FishTemplateCache.cols,FishTemplateCache.rows));
+        FishTemplateCache.copyTo(mtCacheRow); //Copy Old Cache into New replacing that part of empty cache
+        mtEnlargedCache.copyTo(FishTemplateCache); //Copy Back So gFishTemplateCache = mtEnlargedCache;
+    }
+     //Fill The Last (New Row) In The Cache
+    mtCacheRow = FishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl),fishTemplateVar.cols,fishTemplateVar.rows));
+    fishTemplateVar.copyTo(mtCacheRow); //Copy To Row In CAche
+    gnumberOfTemplatesInCache++; //Increment Count
+    // DEBUG //
+    cv::imshow("Fish Template",FishTemplateCache);
+
+   return ++idxTempl;
 }

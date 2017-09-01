@@ -91,8 +91,9 @@ int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gMatchShapeThreshold   = 0.83;
-int iLastKnownGoodTemplateRow = 0;
+double gMatchShapeThreshold     = 0.83;
+int iLastKnownGoodTemplateRow   = 0;
+int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
 
 
@@ -285,18 +286,18 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////
     /// Setup Fish Body Template Cache //
 
-    int idxTempl = 1;
+    int idxTempl;
     int nTemplatesToLoad = 3;
-    for (idxTempl=1; idxTempl<=nTemplatesToLoad;idxTempl++)
+    for (idxTempl=0; idxTempl<nTemplatesToLoad;idxTempl++)
     {
-        fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+        fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl+1) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
         if (fishbodyimg_template.empty())
         {
             std::cerr << "Could not load template" << std::endl;
             exit(-1);
         }
 
-        addTemplateToCache(fishbodyimg_template,idxTempl); //Increments Index
+        addTemplateToCache(fishbodyimg_template,gFishTemplateCache,idxTempl); //Increments Index
     }
 
 
@@ -2400,7 +2401,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
-          int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc,iLastKnownGoodTemplateRow);
+          int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, gmaxVal, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
           //0 Degrees Is along the Y Axis Looking Upwards
           int bestAngleinDeg = AngleIdx*gFishTemplateAngleSteps;
 
@@ -2429,10 +2430,11 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           ptEyeMid.y =centre.y-lengthLine*cos((bestAngleinDeg)*(M_PI/180.0)); //y=0 is the top left corner
 
           cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(155,155,15),1);
-
+          //Make A rectangle that surrounds the part of the image that has been template matched
           cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols/2+3,fishbodyimg_template.cols/2+3),bestAngleinDeg);
           //cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.cols),bestAngleinDeg);
           //cv::Rect fishHeadBound = fishEyeBox.boundingRect();// fishHeadBox.boundingRect();
+          //Get Image Region Where were the template Match occured - Expand Needs to be able to fit the template When Rotated Orthonormally
           cv::Rect fishHeadBound = fishHeadBox.boundingRect();
 
 
@@ -2476,8 +2478,8 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
               if (bStoreThisTemplate)
               {
-                  addTemplateToCache(imgFishAnterior,gnumberOfTemplatesInCache);
-                  bStoreThisTemplate =false;
+                  addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
+                  bStoreThisTemplate = false;
               }
            }
           ///
@@ -3183,33 +3185,4 @@ void watershedFeatureMethod()
 //            }
 
 
-}
-///
-///\brief addTemplateToCache
-///\note assumes all Templates are the same size
-///
-int addTemplateToCache(cv::Mat& imgTempl,int idxTempl)
-{
-    //Make Variations And store in template Cache
-    cv::Mat fishTemplateVar,mtCacheRow,mtEnlargedCache;
-    makeTemplateVar(imgTempl,fishTemplateVar, gFishTemplateAngleSteps);
-
-    ///Initialize The Cache if this the 1st Template added
-    if (idxTempl == 1)
-        gFishTemplateCache = cv::Mat::zeros(fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
-    else{
-        //Copy COntents To Enlarged Cache and replace pointer
-        mtEnlargedCache = cv::Mat::zeros(gFishTemplateCache.rows+fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
-        //Get Ref To Old Sized Cache Only
-        mtCacheRow = mtEnlargedCache(cv::Rect(0,0,gFishTemplateCache.cols,gFishTemplateCache.rows));
-        gFishTemplateCache.copyTo(mtCacheRow); //Copy Old Cache into New replacing that part of empty cache
-        mtEnlargedCache.copyTo(gFishTemplateCache); //Copy Back So gFishTemplateCache = mtEnlargedCache;
-    }
-     //Fill The Last (New Row) In The Cache
-    mtCacheRow = gFishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl-1),fishTemplateVar.cols,fishTemplateVar.rows));
-    fishTemplateVar.copyTo(mtCacheRow); //Copy To Row In CAche
-    gnumberOfTemplatesInCache++; //Increment Count
-    // DEBUG //
-    cv::imshow("Fish Template",gFishTemplateCache);
-   return idxTempl;
 }

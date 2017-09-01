@@ -12,7 +12,8 @@
 
 //makeTemplateCache(angleStep)
 void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStepDeg);
-int templatefindFishInImage(cv::Mat& imgGreyIn, cv::Mat& imgtempl, cv::Size templSz, double& matchScore, cv::Point& locations_tl, int& startRow);
+int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol);
+int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl);
 
 //expandTemplateCache(newTemplateImage)
 //templatefindFishInImage()
