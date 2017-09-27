@@ -414,7 +414,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
 
     cv::Mat imgIn;
     //Upsamples an image which causes blur/interpolation it.
-    cv::pyrUp(pimgIn, imgIn, cv::Size(imgIn.cols*3,imgIn.rows*3));
+    cv::pyrUp(pimgIn, imgIn, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
     show_histogram("HeadHist",imgIn);
 
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;

@@ -2381,13 +2381,13 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           strLbl << "A: " << bestAngleinDeg;
           cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.5,CV_RGB(250,250,0),1);
           cv::Point centre = top_left + rotCentre;
-          cv::RotatedRect fishRotHeadBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
+          cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
 
           ///Draw a Red Rotated Frame around Detected Body
           cv::Point2f boundBoxPnts[4];
-          fishRotHeadBox.points(boundBoxPnts);
+          fishRotAnteriorBox.points(boundBoxPnts);
           for (int j=0; j<4;j++) //Rectangle Body
-              cv::line(frameDebugC,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
+              cv::line(fullImg,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
 
           //Locate Eyes In A box
           double lengthLine = 9;
@@ -2407,22 +2407,22 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           //- Expand image so as to be able to fit the template When Rotated Orthonormally
           //Custom Bounding Box Needs to allow for RotRect To be rotated Orthonormally
           //int boundDim = 1.7*std::max(fishRotHeadBox.size.width,fishRotHeadBox.size.height);
-          //cv::Rect fishHeadBound(fishHeadBox.center.x-fishHeadBox.size.width/2,fishHeadBox.center.y-fishHeadBox.size.height/2,boundDim,boundDim);
-          cv::Rect rectfishHeadBound = fishRotHeadBox.boundingRect();
+          //cv::Rect rectfishAnteriorBound(centre.x-fishHeadBox.size.width/2,centre.y-fishHeadBox.size.height/2,boundDim,boundDim);
+          cv::Rect rectfishAnteriorBound = fishRotAnteriorBox.boundingRect();
 
           ///Detect Eyes Using Hough Circle
            tEllipsoids vell;
-           cv::Mat imgTmp, imgFishAnterior,imgFishHead,imgFishHeadEdge,imgFishHeadProcessed;
+           cv::Mat imgTmp, imgFishAnterior,imgFishAnterior_Norm,imgFishHead,imgFishHeadEdge,imgFishHeadProcessed;
            maskedImg_gray.copyTo(imgTmp); //imgTmp Contain full frame Image in Gray
            //Threshold The Match Check Bounds Within Image
            cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
 
            if ( //Looks Like a fish is found Check Bounds // gmaxVal > gMatchShapeThreshold &&
-               imgBounds.contains(rectfishHeadBound.br()) &&
-                   imgBounds.contains(rectfishHeadBound.tl()))
+               imgBounds.contains(rectfishAnteriorBound.br()) &&
+                   imgBounds.contains(rectfishAnteriorBound.tl()))
            {
-              imgTmp(rectfishHeadBound).copyTo(imgFishAnterior);
-              frameCanny(rectfishHeadBound).copyTo(imgFishHeadEdge);
+              imgTmp(rectfishAnteriorBound).copyTo(imgFishAnterior);
+              frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
 
 
               //Make Rotation MAtrix
@@ -2430,22 +2430,25 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               //cv::Mat Mrot = cv::getRotationMatrix2D(-fishRotHeadBox.center,bestAngleinDeg,1.0); //Rotate Upwards
 
               //Make Rotation Transformation
-              cv::warpAffine(imgFishAnterior,imgFishAnterior,Mrot,imgFishAnterior.size());
-              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,imgFishHeadEdge.size());
+              cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,fishbodyimg_template.size());
+              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,fishbodyimg_template.size());
 
               ///Cut Window To Half Width
               //cv::RotatedRect lhbound(cv::Point(0,0),cv::Point(fishHeadBound.width/2,0),cv::Point(fishHeadBound.width/2,fishHeadBound.height-1));
               //imgFishHeadEdge   = imgFishHeadEdge(lhbound.boundingRect());
               //Take Sub Image The size of the template - From Top Left Corner Defined relative to centre of Image
               //Assume Min dim is width and Max dimension is height of rotated box
-              cv::Point pttopLeft =  cv::Point(round(imgFishAnterior.cols/2.0)+1-std::min(fishRotHeadBox.size.width,fishRotHeadBox.size.height)/2.0,round(imgFishAnterior.rows/2.0)+2-std::max(fishRotHeadBox.size.width,fishRotHeadBox.size.height)/2);
-              cv::Size  szHeadBound(fishRotHeadBox.size.width,fishRotHeadBox.size.height/2);
+              //cv::Point pttopLeft =  cv::Point(round(imgFishAnterior_Norm.cols/2.0)-std::min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)/2.0,round(imgFishAnterior_Norm.rows/2.0)-std::max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)/2);
+              cv::Point pttopLeft(0,0);
+              cv::Size  szHeadBound(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)/2);
               cv::Rect rectFishHeadBound = cv::Rect(pttopLeft ,szHeadBound);
-              cv::Rect rectFishTemplateBound(cv::Point(rectfishHeadBound.size().width/2-fishbodyimg_template.cols/2,round(rectfishHeadBound.size().height/2.0)+2-fishbodyimg_template.rows/2), fishRotHeadBox.size);
-              imgFishHead           = imgFishAnterior(rectFishHeadBound);
-              imgFishAnterior       = imgFishAnterior(rectFishTemplateBound);
-                //Isolate the Eye/Head Section Of The Body
+              imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
+              //cv::Rect rectFishTemplateBound(cv::Point(imgFishAnterior_Norm.cols/2-fishbodyimg_template.cols/2,imgFishAnterior_Norm.rows/2.0+2-fishbodyimg_template.rows/2), cv::Size(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height));
+              //imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
+              //Isolate the Eye/Head Section Of The Body
 
+              cv::imshow("IsolatedAnterior",imgFishAnterior_Norm);
+              cv::imshow("IsolatedHead",imgFishHead);
               detectEllipses(imgFishHead,imgFishHeadEdge,imgTmp, bestAngleinDeg,vell,imgFishHeadProcessed);
 
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
