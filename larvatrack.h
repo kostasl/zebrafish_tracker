@@ -83,7 +83,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main);
 unsigned int trackVideofiles(MainWindow& window_main);
 /// \fn processFrame - Process blob morphology, Extract features tracks
 ///
-void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned int nFrame);
+void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned int nFrame,cv::Mat& outframe);
 bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 
 ///

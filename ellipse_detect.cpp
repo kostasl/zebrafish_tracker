@@ -408,7 +408,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
 }
 
-int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses)
+int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses,cv::Mat& outHeadFrameProc)
 {
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
 
@@ -503,7 +503,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
         getEdgePoints(imgEdge_local,vedgePoints_all);
-        detectEllipse(vedgePoints_all,qEllipsoids);
+        detectEllipse(vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
 
     }
 
@@ -575,33 +575,15 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
 
     }
 
-////Use Templates
-///
-
-//    double gmaxVal = 0.0;
-//    cv::Point gptmaxLoc;
-//    cv::Size szTempIcon(15,15);
-//    int AngleIdx = templatefindFishInImage(imgIn,gEyeTemplateCache,szTempIcon, gmaxVal, gptmaxLoc);
-//    //0 Degrees Is along the Y Axis Looking Upwards
-//    int bestAngleinDeg = AngleIdx*gEyeTemplateAngleSteps;
-//    ///Draw Bounding Box Of Eye Found From Template
-//    cv::Point2f boundBoxPnts[4];
-//    cv::Point2f pteyecentre = (cv::Point2f)gptmaxLoc + ptcentre;
-//    cv::RotatedRect fishEyeBox(pteyecentre, cv::Size(10,15),bestAngleinDeg);
-//    fishEyeBox.points(boundBoxPnts);
-
-//    //Draw Rotated Frame around Detected Body
-//    for (int j=0; j<4;j++) //Rectangle Eye
-//        cv::line(img_colour,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(00,50,255),2);
-
 /////////// END OF TEMPLATE ///
 
     //DEBUG //
-    //cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
-    cv::imshow("Fish Edges ",imgEdge_dbg);
-    cv::imshow("Fish Edges h",imgEdge);
-    cv::imshow("Fish Threshold ",imgIn_thres);
-
+   //cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
+   // cv::imshow("Fish Edges ",imgEdge_dbg);
+   // cv::imshow("Fish Edges h",imgEdge);
+   //cv::imshow("Debug EllipseFit",imgDebug);
+   cv::imshow("Fish Threshold ",imgIn_thres);
+   cv::imshow("Fish CONTOUR ",img_contour);
 
     //Get All Edge Points Manually
     //Iterate Edge Image and extract edge points
@@ -612,18 +594,14 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 250;
 
 
-    cv::imshow("Fish CONTOUR ",img_contour);
-//detect ellipse
-
-    ///Draw Best 2 Ellipses
-
+    img_colour.copyTo(outHeadFrameProc);
 
 
     ///Debug//
-    cv::imshow("Debug EllipseFit",imgDebug);
 
-    cv::imshow("Ellipse fit",img_colour);
-    std::cout << "Done"  << std::endl;
+
+    //cv::imshow("Ellipse fit",img_colour);
+    //std::cout << "Done"  << std::endl;
 
 }
 
