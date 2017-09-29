@@ -18,10 +18,14 @@ typedef struct tDetectedEllipsoid{
 
         ptAxisMj1 = pt1; //Major Axis Point 1;
         ptAxisMj2 = pt2; //Major Axis Point 2;
+
         fitscore = score;
     }
 
     tDetectedEllipsoid(cv::RotatedRect r,int score):rectEllipse(r){
+
+        if (abs(r.angle) >= 90)
+            rectEllipse.angle = 180.0-r.angle;
 
         fitscore = score;
         ptAxisMj1.x = r.center.x + r.size.height*sin(-r.angle*M_PI/180.0)/3.0;
