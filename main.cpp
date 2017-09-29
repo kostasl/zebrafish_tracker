@@ -87,6 +87,7 @@ int gi_minEllipseMajor      = 7; //thres for Hough Transform
 int gi_VotesEllipseThres    = 9; //Votes thres for Hough Transform
 int gthresEyeSeg            = 45;
 int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
+const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
@@ -244,13 +245,13 @@ int main(int argc, char *argv[])
     //create GUI windows
 
 
-    cv::namedWindow(gstrwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    //cv::namedWindow(gstrwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     //cv::namedWindow(gstrwinName + " FishOnly",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug A",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug B",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug C",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow("Ellipse fit",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    //cv::namedWindow("Ellipse fit",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("HeadHist",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
 
     frameDebugA = cv::Mat::zeros(640, 480, CV_8U);
@@ -259,7 +260,7 @@ int main(int argc, char *argv[])
     frameDebugD = cv::Mat::zeros(640, 480, CV_8U);
 
     //set the callback function for any mouse event
-    cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
+    //cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
     cv::setMouseCallback("HeadHist", CallBackHistFunc, NULL);
 
@@ -287,7 +288,7 @@ int main(int argc, char *argv[])
     /// Setup Fish Body Template Cache //
 
     int idxTempl;
-    int nTemplatesToLoad = 3;
+
     for (idxTempl=0; idxTempl<nTemplatesToLoad;idxTempl++)
     {
         fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl+1) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
@@ -713,14 +714,14 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
               cv::Scalar(255,255,255), -1);
     cv::putText(outframe, frameNumberString,  cv::Point(15, 15),
-            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
+            cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
 
     //Count on Original Frame
     std::stringstream strCount;
     strCount << "Nf:" << (nLarva) << " Nr:" << nFood;
     cv::rectangle(outframe, cv::Point(10, 25), cv::Point(120,45), cv::Scalar(255,255,255), -1);
     cv::putText(outframe, strCount.str(), cv::Point(15, 38),
-            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
+            cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
 
     char buff[100];
     //Learning Rate
@@ -729,7 +730,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     //strLearningRate << "dL:" << (double)(dLearningRate);
     cv::rectangle(outframe, cv::Point(10, 50), cv::Point(100,70), cv::Scalar(255,255,255), -1);
     cv::putText(outframe, buff, cv::Point(15, 63),
-            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
+            cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
 
     //Time Rate - conv from ms to minutes
 
@@ -737,7 +738,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     //strTimeElapsed << "" <<  << " m";
     cv::rectangle(outframe, cv::Point(10, 75), cv::Point(100,95), cv::Scalar(255,255,255), -1);
     cv::putText(outframe, buff, cv::Point(15, 88),
-            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
+            cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
 
 //    //Count Fg Pixels // Ratio
 //    std::stringstream strFGPxRatio;
@@ -2341,7 +2342,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 ////////////USE TEMPLATE MATCHINg /////////////
     cv::Point gptmaxLoc;
 
-
 //    ////No Try Template Matching  Across Angles//
 //    cv::Mat outMatchConv,templ_rot;
 ////    cv::Mat image;
@@ -2379,7 +2379,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           ///Write Angle
           stringstream strLbl;
           strLbl << "A: " << bestAngleinDeg;
-          cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.5,CV_RGB(250,250,0),1);
+          cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1);
           cv::Point centre = top_left + rotCentre;
           cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
 
@@ -2400,27 +2400,23 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(155,155,15),1);
           //Make A rectangle that surrounds part of the image that has been template matched
           cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols/2+3,fishbodyimg_template.cols/2+3),bestAngleinDeg);
-          //cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.cols),bestAngleinDeg);
-          //cv::Rect fishHeadBound = fishEyeBox.boundingRect();// fishHeadBox.boundingRect();
 
-          //Get Image Region Where the template Match occured
+          // Get Image Region Where the template Match occured
           //- Expand image so as to be able to fit the template When Rotated Orthonormally
           //Custom Bounding Box Needs to allow for RotRect To be rotated Orthonormally
-          //int boundDim = 1.7*std::max(fishRotHeadBox.size.width,fishRotHeadBox.size.height);
-          //cv::Rect rectfishAnteriorBound(centre.x-fishHeadBox.size.width/2,centre.y-fishHeadBox.size.height/2,boundDim,boundDim);
           cv::Rect rectfishAnteriorBound = fishRotAnteriorBox.boundingRect();
           cv::Size szFishAnteriorNorm(min(rectfishAnteriorBound.width,rectfishAnteriorBound.height),max(rectfishAnteriorBound.width,rectfishAnteriorBound.height)); //Size Of Norm Image
           //Rot Centre Relative To Bounding Box Of UnNormed Image
           cv::Point2f ptFishAnteriorRotCentre = (cv::Point2f)fishRotAnteriorBox.center-(cv::Point2f)rectfishAnteriorBound.tl();
 
+          //Define Regions and Sizes for extracting Orthonormal Fish
           //Top Left Corner of templateSized Rect relative to Rectangle Centered in Normed Img
           cv::Size szTemplateImg = fishbodyimg_template.size();
           cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
           cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
-          cv::Point ptTopLeftHead = ptTopLeftTemplate;//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
+          cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
           cv::Rect rectFishHeadBound = cv::Rect(ptTopLeftHead,szHeadImg);
-
 
 
           ///Make Normalized Fish View
@@ -2441,8 +2437,10 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
               //Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
               //cv::circle(imgFishAnterior,ptFishAnteriorRotCentre,1,CV_RGB(250,0,0),1);
-              cv::imshow("IsolatedAnterior1",imgFishAnterior);
-              cv::Mat Mrot = cv::getRotationMatrix2D(cv::Point(szFishAnteriorNorm.width/2,szFishAnteriorNorm.height/2) ,bestAngleinDeg,1.0); //Rotate Upwards
+              cv::imshow("IsolatedAnterior",imgFishAnterior);
+              //cv::Point ptRotCenter = cv::Point(szFishAnteriorNorm.width/2,szFishAnteriorNorm.height/2);
+              cv::Point ptRotCenter = cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2);
+              cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
               //cv::Mat Mrot = cv::getRotationMatrix2D(-fishRotHeadBox.center,bestAngleinDeg,1.0); //Rotate Upwards
 
               ///Make Rotation Transformation
@@ -2452,32 +2450,35 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
               cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
 
-              ///Cut Window To Half Width
-              //cv::RotatedRect lhbound(cv::Point(0,0),cv::Point(fishHeadBound.width/2,0),cv::Point(fishHeadBound.width/2,fishHeadBound.height-1));
-              //imgFishHeadEdge   = imgFishHeadEdge(lhbound.boundingRect());
-              //Take Sub Image The size of the template - From Top Left Corner Defined relative to centre of Image
-              //Assume Min dim is width and Max dimension is height of rotated box
-              //cv::Point pttopLeft =  cv::Point(round(imgFishAnterior_Norm.cols/2.0)-std::min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)/2.0,round(imgFishAnterior_Norm.rows/2.0)-std::max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)/2);
-
-
-
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
-              //cv::Rect rectFishTemplateBound(cv::Point(imgFishAnterior_Norm.cols/2-fishbodyimg_template.cols/2,imgFishAnterior_Norm.rows/2.0+2-fishbodyimg_template.rows/2), cv::Size(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height));
-              imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
-              //Isolate the Eye/Head Section Of The Body
 
+              //cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
+              //cv::imshow("IsolatedHead",imgFishHead);
+              cv::imshow("IsolatedAnteriorNorm",imgFishAnterior_Norm);
 
-              cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
-              cv::imshow("IsolatedAnterior",imgFishAnterior_Norm);
-              cv::imshow("IsolatedHead",imgFishHead);
               detectEllipses(imgFishHead,imgFishHeadEdge,imgTmp, bestAngleinDeg,vell,imgFishHeadProcessed);
 
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
               cv::Rect rpasteregion(fullImg.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               imgFishHeadProcessed.copyTo(fullImg(rpasteregion));
 
+              //Print Eye Angle Info
+
+              tDetectedEllipsoid lEye = vell.at(0);
+              tDetectedEllipsoid rEye = vell.at(1);
+
+              std::stringstream ss;
+              ss.precision(2);
+              ss << "L:" << lEye.rectEllipse.angle;
+              cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-35,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+              ss.str("");
+              ss << "R:"  << rEye.rectEllipse.angle;
+              cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-35,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+
+
               if (bStoreThisTemplate)
-              {
+              {    //Cut Down To Template Size
+                  imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
                   addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
                   bStoreThisTemplate = false;
               }
@@ -2537,10 +2538,10 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     //cv::imshow("Edges Canny",frameCanny);
     //cv::imshow("Edges Laplace",framelapl);
 
-    cv::imshow("Debug A",frameDebugA);
-    cv::imshow("Debug B",frameDebugB);
+    //cv::imshow("Debug A",frameDebugA);
+    //cv::imshow("Debug B",frameDebugB);
     cv::imshow("Debug C",frameDebugC);
-    cv::imshow("Debug D",frameDebugD);
+    //cv::imshow("Debug D",frameDebugD);
 
     //cv::imshow("Threshold H",threshold_output_H);
 

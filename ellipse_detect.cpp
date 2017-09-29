@@ -506,23 +506,27 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         detectEllipse(vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
 
     }
-
+    ///Store And Draw Detected Ellipsoid
     if (qEllipsoids.size() > 0)
     {
+        //Pick Best Match For this Eye from to of Priority List
         tDetectedEllipsoid dEll = qEllipsoids.top();
+        //Draw it
         drawEllipse(img_colour,dEll);
-
+        //Store it To Output Vector
+        vellipses.push_back(dEll);
 
         cv::Point2f featurePnts[4];
         rcLEye.points(featurePnts);
         ///Draw Left Eye Rectangle
         for (int j=0; j<4;j++) //Rectangle Eye
                cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(10,10,130),1);
-
-        if (qEllipsoids.size() > 0)  qEllipsoids.pop();
-        if (qEllipsoids.size() > 0) qEllipsoids.pop();
-        if (qEllipsoids.size() > 0) qEllipsoids.pop();
-        if (qEllipsoids.size() > 0) qEllipsoids.pop();
+        //Empty
+        while (qEllipsoids.size() > 0)
+            qEllipsoids.pop(); //Empty All Other Candidates
+//        if (qEllipsoids.size() > 0) qEllipsoids.pop();
+//        if (qEllipsoids.size() > 0) qEllipsoids.pop();
+//        if (qEllipsoids.size() > 0) qEllipsoids.pop();
     }
    imgEdge_local.copyTo(imgEdge_dbg);
    ///End oF LEft Eye Trace //
@@ -561,6 +565,8 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     {
         tDetectedEllipsoid dEll = qEllipsoids.top();
         drawEllipse(img_colour,dEll);
+        //Store it To Output Vector
+        vellipses.push_back(dEll);
 
         cv::Point2f featurePnts[4];
         rcREye.points(featurePnts);
@@ -568,11 +574,8 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         for (int j=0; j<4;j++) //Rectangle Eye
                cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(130,10,10),1);
 
-        if (qEllipsoids.size() > 0)  qEllipsoids.pop();
-        if (qEllipsoids.size() > 0) qEllipsoids.pop();
-        if (qEllipsoids.size() > 0) qEllipsoids.pop();
-        if (qEllipsoids.size() > 0) qEllipsoids.pop();
-
+        while (qEllipsoids.size() > 0)
+            qEllipsoids.pop(); //Empty All Other Candidates
     }
 
 /////////// END OF TEMPLATE ///
@@ -583,7 +586,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
    // cv::imshow("Fish Edges h",imgEdge);
    //cv::imshow("Debug EllipseFit",imgDebug);
    cv::imshow("Fish Threshold ",imgIn_thres);
-   cv::imshow("Fish CONTOUR ",img_contour);
+   //cv::imshow("Fish CONTOUR ",img_contour);
 
     //Get All Edge Points Manually
     //Iterate Edge Image and extract edge points

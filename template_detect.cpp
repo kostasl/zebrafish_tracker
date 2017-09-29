@@ -114,6 +114,9 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
        //Save Results To Output
        matchScore    = maxGVal;
        locations_tl  = ptGmaxLoc;
+       if (startRow != idRow)
+           std::cout << "Ch. Templ. Row:" << idRow << std::endl;
+
        startRow = idRow;
        //Stop Search
        return matchIdx; //Done Searching Stop Going Through loop
