@@ -85,7 +85,7 @@ int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 
 int gi_maxEllipseMajor      = 11; // thres for Hough Transform
 int gi_minEllipseMajor      = 7; //thres for Hough Transform
 int gi_VotesEllipseThres    = 9; //Votes thres for Hough Transform
-int gthresEyeSeg            = 45;
+int gthresEyeSeg            = 125;
 int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
 const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
@@ -2468,12 +2468,13 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               tDetectedEllipsoid rEye = vell.at(1);
 
               std::stringstream ss;
-              ss.precision(2);
+              ss.precision(3);
               ss << "L:" << lEye.rectEllipse.angle;
-              cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-35,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+              cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               ss.str("");
+              ss.precision(3);
               ss << "R:"  << rEye.rectEllipse.angle;
-              cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-35,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+              cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
 
 
               if (bStoreThisTemplate)

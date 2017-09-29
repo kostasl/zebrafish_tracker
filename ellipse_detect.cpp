@@ -513,6 +513,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         tDetectedEllipsoid dEll = qEllipsoids.top();
         //Draw it
         drawEllipse(img_colour,dEll);
+
         //Store it To Output Vector
         vellipses.push_back(dEll);
 
@@ -521,6 +522,8 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         ///Draw Left Eye Rectangle
         for (int j=0; j<4;j++) //Rectangle Eye
                cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(10,10,130),1);
+        //Draw Line
+        cv::line(img_colour,dEll.ptAxisMj1,dEll.ptAxisMj2,CV_RGB(10,10,130),1);
         //Empty
         while (qEllipsoids.size() > 0)
             qEllipsoids.pop(); //Empty All Other Candidates
@@ -530,6 +533,8 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     }
    imgEdge_local.copyTo(imgEdge_dbg);
    ///End oF LEft Eye Trace //
+    cv::Rect imgBound(cv::Point(0,0),cv::Point(img_colour.cols,img_colour.rows));
+
 
     //Reset And Redraw - Now Right Eye
     if (iREye != -1)
@@ -573,6 +578,9 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         ///Draw Left Eye Rectangle
         for (int j=0; j<4;j++) //Rectangle Eye
                cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(130,10,10),1);
+
+
+        cv::line(img_colour,dEll.ptAxisMj1,dEll.ptAxisMj2 ,CV_RGB(130,10,10),1);
 
         while (qEllipsoids.size() > 0)
             qEllipsoids.pop(); //Empty All Other Candidates

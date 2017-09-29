@@ -24,6 +24,16 @@ typedef struct tDetectedEllipsoid{
     tDetectedEllipsoid(cv::RotatedRect r,int score):rectEllipse(r){
 
         fitscore = score;
+        ptAxisMj1.x = r.center.x + r.size.height*sin(-r.angle*M_PI/180.0)/3.0;
+        ptAxisMj1.y = r.center.y + r.size.height*cos(-r.angle*M_PI/180.0)/3.0;
+
+        ptAxisMj2.x = r.center.x - r.size.height*sin(-r.angle*M_PI/180.0)/3.0;
+        ptAxisMj2.y = r.center.y - r.size.height*cos(-r.angle*M_PI/180.0)/3.0;
+
+        //cv::Point2f ptBoxPts[4];
+        //r.points(ptBoxPts);
+        //ptAxisMj1 = r.center + (ptBoxPts[0]-(cv::Point2f)r.center)+(ptBoxPts[1]-ptBoxPts[0])/2.0;
+        //ptAxisMj2 = r.center + (ptBoxPts[2]-(cv::Point2f)r.center); //+(ptBoxPts[2]-ptBoxPts[3])/2.0;
     }
 
     //Operator for Priority Ordering
