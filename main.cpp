@@ -2409,29 +2409,48 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           //int boundDim = 1.7*std::max(fishRotHeadBox.size.width,fishRotHeadBox.size.height);
           //cv::Rect rectfishAnteriorBound(centre.x-fishHeadBox.size.width/2,centre.y-fishHeadBox.size.height/2,boundDim,boundDim);
           cv::Rect rectfishAnteriorBound = fishRotAnteriorBox.boundingRect();
+          cv::Size szFishAnteriorNorm(min(rectfishAnteriorBound.width,rectfishAnteriorBound.height),max(rectfishAnteriorBound.width,rectfishAnteriorBound.height)); //Size Of Norm Image
+          //Rot Centre Relative To Bounding Box Of UnNormed Image
+          cv::Point2f ptFishAnteriorRotCentre = (cv::Point2f)fishRotAnteriorBox.center-(cv::Point2f)rectfishAnteriorBound.tl();
 
-          ///Detect Eyes Using Hough Circle
+          //Top Left Corner of templateSized Rect relative to Rectangle Centered in Normed Img
+          cv::Size szTemplateImg = fishbodyimg_template.size();
+          cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
+          cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
+          cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
+          cv::Point ptTopLeftHead = ptTopLeftTemplate;//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
+          cv::Rect rectFishHeadBound = cv::Rect(ptTopLeftHead,szHeadImg);
+
+
+
+          ///Make Normalized Fish View
            tEllipsoids vell;
            cv::Mat imgTmp, imgFishAnterior,imgFishAnterior_Norm,imgFishHead,imgFishHeadEdge,imgFishHeadProcessed;
            maskedImg_gray.copyTo(imgTmp); //imgTmp Contain full frame Image in Gray
            //Threshold The Match Check Bounds Within Image
            cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
 
-           if ( //Looks Like a fish is found Check Bounds // gmaxVal > gMatchShapeThreshold &&
+           if ( //Looks Like a fish is found, now Check Bounds // gmaxVal > gMatchShapeThreshold &&
                imgBounds.contains(rectfishAnteriorBound.br()) &&
                    imgBounds.contains(rectfishAnteriorBound.tl()))
            {
               imgTmp(rectfishAnteriorBound).copyTo(imgFishAnterior);
               frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
+              //get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
+              ///\note The centre of the Bounding Box could also do
 
-
-              //Make Rotation MAtrix
-              cv::Mat Mrot = cv::getRotationMatrix2D(cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2),bestAngleinDeg,1.0); //Rotate Upwards
+              //Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
+              //cv::circle(imgFishAnterior,ptFishAnteriorRotCentre,1,CV_RGB(250,0,0),1);
+              cv::imshow("IsolatedAnterior1",imgFishAnterior);
+              cv::Mat Mrot = cv::getRotationMatrix2D(cv::Point(szFishAnteriorNorm.width/2,szFishAnteriorNorm.height/2) ,bestAngleinDeg,1.0); //Rotate Upwards
               //cv::Mat Mrot = cv::getRotationMatrix2D(-fishRotHeadBox.center,bestAngleinDeg,1.0); //Rotate Upwards
 
-              //Make Rotation Transformation
-              cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,fishbodyimg_template.size());
-              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,fishbodyimg_template.size());
+              ///Make Rotation Transformation
+              //Need to fix size of Upright/Normed Image
+
+
+              cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
 
               ///Cut Window To Half Width
               //cv::RotatedRect lhbound(cv::Point(0,0),cv::Point(fishHeadBound.width/2,0),cv::Point(fishHeadBound.width/2,fishHeadBound.height-1));
@@ -2439,14 +2458,16 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               //Take Sub Image The size of the template - From Top Left Corner Defined relative to centre of Image
               //Assume Min dim is width and Max dimension is height of rotated box
               //cv::Point pttopLeft =  cv::Point(round(imgFishAnterior_Norm.cols/2.0)-std::min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)/2.0,round(imgFishAnterior_Norm.rows/2.0)-std::max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)/2);
-              cv::Point pttopLeft(0,0);
-              cv::Size  szHeadBound(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)/2);
-              cv::Rect rectFishHeadBound = cv::Rect(pttopLeft ,szHeadBound);
+
+
+
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
               //cv::Rect rectFishTemplateBound(cv::Point(imgFishAnterior_Norm.cols/2-fishbodyimg_template.cols/2,imgFishAnterior_Norm.rows/2.0+2-fishbodyimg_template.rows/2), cv::Size(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height));
-              //imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
+              imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
               //Isolate the Eye/Head Section Of The Body
 
+
+              cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
               cv::imshow("IsolatedAnterior",imgFishAnterior_Norm);
               cv::imshow("IsolatedHead",imgFishHead);
               detectEllipses(imgFishHead,imgFishHeadEdge,imgTmp, bestAngleinDeg,vell,imgFishHeadProcessed);

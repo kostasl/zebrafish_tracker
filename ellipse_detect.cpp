@@ -426,9 +426,9 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     cv::Point2f ptcentre(imgIn.cols/2,imgIn.rows/2);
     int lengthLine = 13;
     ptLEyeMid.x = ptcentre.x-lengthLine;
-    ptLEyeMid.y = ptcentre.y; //y=0 is the top left corner
+    ptLEyeMid.y = ptcentre.y/2; //y=0 is the top left corner
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
-    ptREyeMid.y = ptcentre.y; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
+    ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
 
 
     cv::Mat img_colour,img_contour,imgIn_thres,imgEdge_local,imgEdge_dbg;
