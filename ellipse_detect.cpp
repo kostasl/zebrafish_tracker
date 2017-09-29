@@ -506,7 +506,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         detectEllipse(vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
 
     }
-    ///Store And Draw Detected Ellipsoid
+    ///Store Left Eye And Draw Detected Ellipsoid
     if (qEllipsoids.size() > 0)
     {
         //Pick Best Match For this Eye from to of Priority List
@@ -542,7 +542,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
             vEyes.push_back(vREyeHull);
             rcREye =  cv::fitEllipse(vREyeHull);
             tDetectedEllipsoid dEll(rcREye,100);
-            qEllipsoids.push(dEll);
+            qEllipsoids.push(dEll); //Index 1 / Right Eye
             cv::drawContours( img_contour, vEyes, vEyes.size()-1, CV_RGB(10,05,210),1);
             cv::drawContours( imgEdge_local, vEyes,vEyes.size()-1, CV_RGB(255,255,255),1);
         }

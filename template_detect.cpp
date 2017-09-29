@@ -65,7 +65,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 {
   int matchIdx;
   int idx = 0; //Current Angle Index Being tested in the loop
-  int idRow = 0;
+  int idRow = startRow;
   double minVal, maxVal;
   double maxGVal = 0.0;
   cv::Point ptmaxLoc,ptminLoc;
@@ -135,6 +135,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
  } //Loop Through Rows
 
+  //Didnt Find Template
   startRow = 0;//Start From Top Of All Templates On Next Search
   return matchIdx;
 }

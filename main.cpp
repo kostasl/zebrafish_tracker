@@ -92,7 +92,7 @@ const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gMatchShapeThreshold     = 0.85;
+double gMatchShapeThreshold     = 0.87;
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -2464,7 +2464,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
               //Print Eye Angle Info
 
-              tDetectedEllipsoid lEye = vell.at(0);
+              tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st So ends at the bottom
               tDetectedEllipsoid rEye = vell.at(1);
 
               std::stringstream ss;
