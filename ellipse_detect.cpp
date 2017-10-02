@@ -626,6 +626,7 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
 {
     // Set histogram bins count
     int bins = 256;
+    int picoffset   =20;
     int histSize[] = {bins};
     // Set ranges for histogram bins
     float lranges[] = {0, 256};
@@ -636,52 +637,84 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
 
     // create matrix for histogram visualization
     int const hist_height = 256;
-    cv::Mat3b hist_image = cv::Mat3b::zeros(hist_height*2, bins);
-
+    cv::Mat3b hist_image = cv::Mat3b::zeros(hist_height*2+picoffset, bins);
+    //Obtain Histogram
     cv::calcHist(&image, 1, channels, cv::Mat(), hist, 1, histSize, ranges, true, false);
 
-    double max_val      = 0;
-    double max_val_grad = 0;
+    double max_val      = 0.0;
+    double max_val_grad = 0.0;
+    double min_val_grad = 0.0;
+    cv::Point   max_idx_grad;
+    cv::Point   min_idx_grad;
 
     max_val = 150;
 
     cv::blur(hist,hist_smooth,cv::Size(1,41));
 
     hist_grad = cv::Mat::zeros(hist.rows,hist.cols,hist.type());
+    //max_idx_grad = new int(hist.dims);
+    //min_idx_grad = new int(hist.dims);
+
 
     //cv::Sobel( hist_smooth, hist_grad, CV_8UC1, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT );
     //cv::convertScaleAbs( hist_grad, hist_grad );
 
-    // visualize each bin
     //Compute Changes / Grad
     for(int b = bins-1; b >1; b--) {
         float const binVal = hist_smooth.at<float>(b);
         hist_grad.at<float>(b) = hist_smooth.at<float>(b) - hist_smooth.at<float>(b+1);
     }
 
+    //Smooth The Histogram Gradient
     cv::blur(hist_grad,hist_grad,cv::Size(1,41));
 
-    cv::minMaxLoc(hist_grad, 0, &max_val_grad);
+    //Locate Max - For normalizing and Min for finding the seg. threshold
+    cv::minMaxLoc(hist_grad, &min_val_grad, &max_val_grad, &min_idx_grad, &max_idx_grad);
 
+    /// Find Eye segmentation Threshold - The distribution has a bimodality-
+    /// Take a point close/above to the 1 -ve point in hist. starting from highest to lowest grey values
+
+    //Plot Histogram
     for(int b = 0; b < bins; b++) {
         float const binVal = hist_smooth.at<float>(b);
         int   const height = cvRound(binVal*hist_height/max_val);
         cv::line
             ( hist_image
-            , cv::Point(b, 2*hist_height-height), cv::Point(b, 2*hist_height)
+            , cv::Point(b, 2*hist_height-height + picoffset ), cv::Point(b, 2*hist_height)
             , cv::Scalar::all(165)
             );
 
-        //Grad Print
+
+        //Plot Hist Gradient
         float const sbinVal = hist_grad.at<float>(b);
         int  const sheight = cvRound(sbinVal*hist_height/max_val_grad);
         cv::line
             ( hist_image
-            , cv::Point(b, hist_height-sheight-10), cv::Point(b, hist_height)
+            , cv::Point(b, hist_height-sheight + picoffset), cv::Point(b, hist_height)
             , cv::Scalar::all(255)
             );
 
+        //Draw Set Points
+        if (min_idx_grad.y == b)
+        {
+           cv::circle(hist_image,cv::Point(b, hist_height-sheight+ picoffset),6,CV_RGB(80,80,80),CV_FILLED);
+           cv::putText(hist_image,"L",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
+        }
+
+        if (max_idx_grad.y == b)
+        {
+           cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),6,CV_RGB(100,100,100),CV_FILLED);
+           cv::putText(hist_image,"S",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
+        }
+
+        if (gthresEyeSeg == b)
+        {
+           cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),8,CV_RGB(150,150,150),CV_FILLED);
+           cv::putText(hist_image,"H",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
+        }
+
     }
+
     cv::imshow(name, hist_image);
 }
 

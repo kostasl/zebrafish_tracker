@@ -92,7 +92,7 @@ const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gMatchShapeThreshold     = 0.87;
+double gMatchShapeThreshold     = 0.83;
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
     thresh_callback( 0, 0 );
     ///////////////
 
-    double mog2CThres = pMOG2->getComplexityReductionThreshold(); ///This parameter defines the number of samples needed to accept to prove the component exists. CT=0.05 is a default value for all the samples. By setting CT=0 you get an algorithm very similar to the standard Stauffer&Grimson algorithm.
+    //double mog2CThres = pMOG2->getComplexityReductionThreshold(); ///This parameter defines the number of samples needed to accept to prove the component exists. CT=0.05 is a default value for all the samples. By setting CT=0 you get an algorithm very similar to the standard Stauffer&Grimson algorithm.
     //pMOG2->setComplexityReductionThreshold(0.0);
 
     //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
@@ -679,13 +679,8 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         //saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
         /// Get Fish Only Image ///
-        //framefishMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3); //Reset Canvas
-        //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8U); //Forget
 
         /// \TODO optimize this. pic is Gray Scale Originally anyway
-        //cv::cvtColor( fgMaskFish, fgMaskFish, cv::COLOR_BGR2GRAY );
-        //cv::dilate(fgMaskFish,fgMaskFish,kernelOpen, cv::Point(-1,-1),4); //
-        //inputframe.copyTo(framefishMasked,fgMaskFish );
 
         detectZfishFeatures(outframe,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
@@ -1843,281 +1838,6 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 }
 
 ///
-/// \brief findIndexClosesttoPoint - Naive Nearest neighbour finder
-/// \param vPointChain array of points
-/// \param pt reference point
-/// \return index in array of closest point
-///
-int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt)
-{
-  int idx;
-  unsigned int minDist  = 0;
-  unsigned int dist     = 0;
-
-  minDist = 1000000;
-  for (int i=0; i < vPointChain.size();i++)
-  {
-    dist = cv::norm(vPointChain[i]-pt);
-    if (dist < minDist )
-    {
-        idx = i;
-        minDist = dist;
-    }
-  }
-
-  return idx;
-}
-
-/// \brief Find point Furthest Along closed outline contour
-/// Find point furtherst using shortest paths to each point around a closed contour/outline/spline
-int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy)
-{
-    int antiVertex = idx;
-    int maxminD = 0;
-    //cv::Point ptsrc = vPointChain[idx];
-    int n = vPointChain.size();
-    int dPathL[n]; //Accumulated distance from starting point on Chain Going AntiClockwise
-    int dPathR[n]; //Accumulated distance from starting point on Chain Going Clockwise
-
-
-    //Find Antipoint/mirror Points on Chain - where the difference between accumulated distance is minimum
-    dPathL[idx] = 0;
-    dPathR[idx] = 0;
-
-    int k = idx; //k is index Going In reverse, i going fwd
-    int ringIdx;
-    int ringBIdx;
-    int lastIndexR = k;
-    int lastValL = dPathL[idx];
-    int lastValR = dPathR[idx];
-
-    for (int i=1;i<n;i++)
-    {
-
-        k--;
-
-        ringIdx  = (i+idx)%(n);
-        ringBIdx = (k);
-
-        //Calculate Leftward And Rightward point Distances - Store in vector
-        dPathL[ringIdx]      = lastValL;
-        dPathR[ringBIdx]     = lastValR;
-
-        dPathL[ringIdx]   += cv::norm(vPointChain[ringIdx]-vPointChain[(ringIdx+1)%(n)]);
-        dPathR[ringBIdx]  += cv::norm(vPointChain[ringBIdx]-vPointChain[(lastIndexR)%(n)]);
-
-        lastValL = dPathL[ringIdx];
-        lastValR = dPathR[ringBIdx];
-        lastIndexR = k;
-        if (k==0)
-            k = n; // Do ring Wrap Around
-    }
-
-    for (int i=0;i<n;i++)
-    {
-        int ringIdx = (i+idx)%(n);
-        //Compare distance to same point from both paths CW CCW and take the shortest one
-        int DistLR = std::min(dPathL[ringIdx],dPathR[ringIdx]);
-
-        if (DistLR > maxminD)
-        {
-            maxminD = DistLR;
-            //store Index
-            antiVertex = ringIdx;
-        }
-    }
-
-return antiVertex;
-}
-
-
-
-///
-/// \brief fitfishCoreTriangle Sets a fixed position to represent fish features Guesses tail point
-/// \param maskedfishFeature Image containing a mask of the fish being targeted
-/// \param sfish
-/// \param contours_body
-/// \param idxInnerContour Pass Index for inner fish body contour (as segregated by morph on thresholded image
-/// \param idxOuterContour Pass index of the outer whole fish contour
-/// \return
-///
-bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
-{
-    std::vector<std::vector<cv::Point2f> >triangle; //,triangle_out;
-    bool berrorTriangleFit = false;
-
-    ///Fit triangle structure to Body
-    // Find Enclosing Triangle of Child contour
-    triangle.resize( contours_body.size() );
-    cv::minEnclosingTriangle(contours_body[idxInnerContour],triangle[idxInnerContour]);
-    cv::minEnclosingTriangle(contours_body[idxOuterContour],triangle[idxOuterContour]);
-
-
-    //Check for errors during Fit procedure (they seem to occur on some contours)
-    if (triangle[idxOuterContour].size() > 0 && triangle[idxInnerContour].size() > 0)
-    {
-        //Check All triangle corners
-        for (int k=0;k<3;k++)
-        {
-            //Are coords within bounds?
-            if (triangle[idxOuterContour][k].x <= -10 || triangle[idxInnerContour][k].x <= -10 || triangle[idxOuterContour][k].y <= -10 || triangle[idxInnerContour][k].y <= -10)
-            {
-                berrorTriangleFit = true;
-                break;
-            }
-        }
-    }else
-        berrorTriangleFit = true;
-
-
-       if (berrorTriangleFit)
-       {
-           qDebug() << "Error during triangular fit - fitfishCoreTriangle";
-           return berrorTriangleFit; //Exit non critical
-       }
-
-
-
-
-    //triangle[idxInnerContour] = triangle[idxOuterContour];
-//        triangle_out[idxChild] = triangle_out[idxblobContour];
-
-
-
-    //Fix Triangle Positions
-
-    //assert(triangle[i][0].x >= 0 && triangle[i][0].y >= -40);
-    //assert(triangle[i][1].x >= 0 && triangle[i][1].y >= -40);
-    //assert(triangle[i][2].x >= 0 && triangle[i][2].y >= -40);
-
-
-    ///Map Keypoint Triangle features
-    //Obtain Triangle's side lengths / Find base
-    double dab = cv::norm(triangle[idxOuterContour][0]-triangle[idxOuterContour][1]);
-    double dac = cv::norm(triangle[idxOuterContour][0]-triangle[idxOuterContour][2]);
-    double dbc = cv::norm(triangle[idxOuterContour][1]-triangle[idxOuterContour][2]);
-
-    cv::Point ptTail;
-
-
-    if (dab <= dac && dab <= dbc)
-    {
-        ptTail = triangle[idxOuterContour][2];
-
-    }
-    else
-    {
-        if (dac <= dab && dac <= dbc)
-        {
-
-         ptTail  = triangle[idxOuterContour][1];
-
-        }
-        else
-        { //dbc is the smallest
-
-          ptTail =   triangle[idxOuterContour][0];
-        }
-    }
-
-
-    //Find Inner Triangle Apex - Tail/Body Point
-    dab = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][0]);
-    dac = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][1]);
-    dbc = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][2]);
-
-
-    //Find Triangle Width - Set point0 and Point1 to the triangle's base (eyes)
-    if (dab <= dac && dab <= dbc)
-    {
-        sfish.coreTriangle[0] = triangle[idxInnerContour][2];
-        sfish.coreTriangle[1] = triangle[idxInnerContour][1];
-        sfish.coreTriangle[2] = triangle[idxInnerContour][0];
-
-    }
-    if (dac <= dab && dac <= dbc)
-    {
-        sfish.coreTriangle[0] = triangle[idxInnerContour][0];
-        sfish.coreTriangle[1] = triangle[idxInnerContour][2];
-        sfish.coreTriangle[2] = triangle[idxInnerContour][1];
-    }
-    if (dbc <= dab && dbc <= dac )
-    { //dbc is the smallest
-        sfish.coreTriangle[0] =  triangle[idxInnerContour][0];
-        sfish.coreTriangle[1] =  triangle[idxInnerContour][1];
-        sfish.coreTriangle[2] =  triangle[idxInnerContour][2];
-    }
-
-
-
-    //Set Eye Position
-    //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
-    cv::Point vecEyeA = sfish.coreTriangle[2] - sfish.coreTriangle[0];
-    cv::Point vecEyeB = sfish.coreTriangle[2] - sfish.coreTriangle[1];
-
-    //Use As Temp Vars - Gives -Pi  0 +Pi - Convert to 0 2Pi
-    sfish.leftEyeTheta = std::atan2(vecEyeA.y,vecEyeA.x)+M_PI;
-    sfish.rightEyeTheta = std::atan2(vecEyeB.y,vecEyeB.x)+M_PI;
-
-    if (sfish.leftEyeTheta > sfish.rightEyeTheta )
-    {
-        //use as tmp / Switch R-L eye points Over
-        cv::Point tmp = sfish.coreTriangle[1];
-        sfish.coreTriangle[1] = sfish.coreTriangle[0];
-        sfish.coreTriangle[0] = tmp;
-
-//        double tmpA = sfish.leftEyeTheta ;
-//        sfish.leftEyeTheta = sfish.rightEyeTheta;
-//        sfish.rightEyeTheta = tmpA;
-    }
-
-    //Find Position of Body Peak - Relocate Triangle side
-    cv::Point minLoc;
-    cv::Point maxLoc;
-    double minVal,maxVal;
-    //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
-
-
-    sfish.tailTopPoint    = ptTail;
-    //if (maxLoc) is contained in triangle?
-    /// \note Problem - Eyes can sometimes be brighter than cyst
-    //cv::minMaxLoc(maskedfishImg,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
-    //sfish.coreTriangle[2]   = maxLoc; //Now Place index [0] at apex
-    sfish.midEyePoint       = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
-    sfish.mouthPoint        = sfish.coreTriangle[2]+(sfish.midEyePoint-sfish.coreTriangle[2])*1.2;
-
-    ///Temporarly Reposition
-    //sfish.spline[0].x       = sfish.coreTriangle[2].x;
-    //sfish.spline[0].y       = sfish.coreTriangle[2].y;
-    //sfish.calcSpline(sfish.spline);
-
-    /////DEbug Output
-    ///Draw Fitted inside Triangle
-    if (!berrorTriangleFit)
-    {
-        for (int j=0; j<3;j++)
-           cv::line(frameDebugB,triangle[idxInnerContour][j],triangle[idxInnerContour][(j+1)%3] ,CV_RGB(250,250,00),1,cv::LINE_8);
-
-        //Draw Fitted outside Triangle
-        for (int j=0; j<3;j++)
-            cv::line(frameDebugB,triangle[idxOuterContour][j],triangle[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),1,cv::LINE_8);
-    }
-
-    //Show Triangle Tail Point on Global Image
-    cv::circle(frameDebugB,ptTail,5,CV_RGB(0,50,200));
-
-
-    //Draw body centre point/Tail Top
-    cv::circle(frameDebugB,sfish.coreTriangle[2],5,CV_RGB(20,20,250),1);
-
-
-
-    return berrorTriangleFit; //No error fit
-} //Fit Fish Core Triangle
-
-
-
-///
 /// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features
 /// This is to recover Background substraction errors -
 /// It then uses the fixed image to Find contours *main Internal and External fish contours* using on Masked Image Showing Fish Outline
@@ -2255,19 +1975,19 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 
 
 
-//Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
-cv::bitwise_or(maskfishOnly,maskFGImg,maskFGImg);
+    //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
+    cv::bitwise_or(maskfishOnly,maskFGImg,maskFGImg);
 
-//maskfishOnly.copyTo(maskFGImg);
+    //maskfishOnly.copyTo(maskFGImg);
 
-//threshold_output.copyTo(frameDebugD);
+    //threshold_output.copyTo(frameDebugD);
 
-if (bshowMask)
-{
-    cv::imshow("Threshold Out",threshold_output);
-    cv::imshow("MOG2 Mask Processed",maskFGImg);
-    cv::imshow("Hollow Fish Mask",threshold_output_COMB);
-}
+    if (bshowMask)
+    {
+        cv::imshow("Threshold Out",threshold_output);
+        cv::imshow("MOG2 Mask Processed",maskFGImg);
+        cv::imshow("Hollow Fish Mask",threshold_output_COMB);
+    }
 }
 
 
@@ -2445,8 +2165,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
               ///Make Rotation Transformation
               //Need to fix size of Upright/Normed Image
-
-
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
               cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
 
@@ -2462,20 +2180,24 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               cv::Rect rpasteregion(fullImg.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               imgFishHeadProcessed.copyTo(fullImg(rpasteregion));
 
-              //Print Eye Angle Info
+              ///Print Eye Angle Info
+               std::stringstream ss;
+               ss.precision(3);
+              if (vell.size() > 0)
+              {
+                  tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
 
-              tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st So ends at the bottom
-              tDetectedEllipsoid rEye = vell.at(1);
+                  ss << "L:" << lEye.rectEllipse.angle;
+                  cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
 
-              std::stringstream ss;
-              ss.precision(3);
-              ss << "L:" << lEye.rectEllipse.angle;
-              cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-              ss.str("");
-              ss.precision(3);
-              ss << "R:"  << rEye.rectEllipse.angle;
-              cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-
+              }
+              ss.str(""); //Empty String
+              if (vell.size() > 1)
+              {
+                  tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
+                  ss << "R:"  << rEye.rectEllipse.angle;
+                  cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+              }
 
               if (bStoreThisTemplate)
               {    //Cut Down To Template Size
@@ -2488,17 +2210,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     } //For eAch Fish Model
 
-
-
-
 ///////////////////
-
-
-
-    /////
-
-
-
     ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
     {
@@ -2552,101 +2264,6 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
     rectfishFeatures.clear();
 }
 
-/// Find Eye Orientation by finding the angle of a fixed lentgh line that gives
-///  maximum intensity
-/// \param ptOutA, B two points defining the best  line fit
-/// \return Best Ange In rads
-double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point2f& ptEyeCenter,std::vector<cv::Point>& outvEyeContour)
-{
-
-///Sample Across Rotate Line of fixed length/ find orientation of maximum
-
-
-const double angleStep      = CV_2PI/33.0;
-int maxIntensity            = 0;
-int maxDensity              = 0;
-double bestAngle            = 0.0; //In rad
-cv::Point2f ptbestCenter    = ptEyeCenter;
-double currentAngle         = 0.0;
-
-
-std::vector<cv::Point> vEyeEllipse;
-
-while (currentAngle <= CV_2PI) //Full Circle Sample
-{
-    //cv::LineIterator it(frameFish_gray, pt1, pt2, 8); //Sample Line
-    double r = 3.0;
-
-    for (int m=0;m<15;m++) //Search For Ellipse Size
-        for (int k=0;k<1;k++)
-        {
-            double a = 3.0+0.2*(double)m;
-            double b = a*4.0/3.0;
-            //Compare ellipses scanning region 6x6
-            for (int i=-1;i <=1;i++)
-                for (int j=-1; j<=1;j++)
-                {
-                    int lineIntensity = 0;
-                    vEyeEllipse.clear(); //Delete last Ellipse and start over
-                    cv::Point2f ptCTrial = ptEyeCenter;
-                    ptCTrial.x += i; ptCTrial.y += j;
-
-                    makeEllipse(ptCTrial,currentAngle,a,b,vEyeEllipse);
-
-                    //Iterate Through Ellipse points and sample Intensity
-                    for(int i = 0; i < vEyeEllipse.size(); i++)
-                    {
-                        uchar val = frameFish_gray.at<uchar>(vEyeEllipse[i]);
-                        lineIntensity += val;
-                    }
-                    double density = lineIntensity/vEyeEllipse.size();
-                    if (density >= maxDensity)
-                        {
-                            maxIntensity    = lineIntensity;
-                            maxDensity      = density;
-                            bestAngle       = currentAngle;
-                            ptbestCenter    = ptEyeCenter;
-                            outvEyeContour  = vEyeEllipse;
-                        }
-
-                        currentAngle += angleStep;
-                }//Position Search
-
-        } //Dimension Search
-}
-
-    ptEyeCenter = ptbestCenter;
-    return bestAngle;
-}
-
-
-void makeEllipse(cv::Point2f ptcenter,double angle,double a, double b, std::vector<cv::Point>& voutEllipse)
-{
-    const double angleStep  = CV_2PI/6.0;
-    double currentAngle     = 0.0;
-    voutEllipse.clear();
-    while (currentAngle <= CV_2PI) //Full Circle Sample
-    {
-
-        cv::Point2f pt;
-        pt.x = ptcenter.x + a*sin(currentAngle+angle);
-        pt.y = ptcenter.y + b*cos(currentAngle+angle);
-        voutEllipse.push_back(pt);
-
-//        pt.x = ptcenter.x + (a/2.0)*sin(currentAngle+angle);
-//        pt.y = ptcenter.y + (b/2.0)*cos(currentAngle+angle);
-//        voutEllipse.push_back(pt);
-
-
-        currentAngle += angleStep;
-
-        ///DEBUG
-        //cv::circle(frameDebugB,pt,1,CV_RGB(10,10,200),1,cv::LINE_8);
-    }
-
-
-}
-
 
 /**
 * @function thresh_callback
@@ -2694,8 +2311,8 @@ void thresh_callback(int, void* )
 }
 
 
-void watershedFeatureMethod()
-{
+//void watershedFeatureMethod()
+//{
 //    //        ////// Draw WATERSHED Labels ////
 //    //        /// - \brief With the more accurate positioning of the eye centres now we can obtain
 //    //        /// Obtain Accurate FEature Contours for Eyes- Body + Head /////
@@ -2758,8 +2375,278 @@ void watershedFeatureMethod()
 //                    pfish->rightEyeRect = cv::fitEllipse(pfish->rightEyeHull);
 //                 else
 //                     pfish->rightEyeRect = cv::minAreaRect(pfish->rightEyeHull);
-
 //            }
+//}
 
 
-}
+
+/////
+///// \brief fitfishCoreTriangle Sets a fixed position to represent fish features Guesses tail point
+///// \param maskedfishFeature Image containing a mask of the fish being targeted
+///// \param sfish
+///// \param contours_body
+///// \param idxInnerContour Pass Index for inner fish body contour (as segregated by morph on thresholded image
+///// \param idxOuterContour Pass index of the outer whole fish contour
+///// \return
+/////
+//bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
+//{
+//    std::vector<std::vector<cv::Point2f> >triangle; //,triangle_out;
+//    bool berrorTriangleFit = false;
+
+//    ///Fit triangle structure to Body
+//    // Find Enclosing Triangle of Child contour
+//    triangle.resize( contours_body.size() );
+//    cv::minEnclosingTriangle(contours_body[idxInnerContour],triangle[idxInnerContour]);
+//    cv::minEnclosingTriangle(contours_body[idxOuterContour],triangle[idxOuterContour]);
+
+
+//    //Check for errors during Fit procedure (they seem to occur on some contours)
+//    if (triangle[idxOuterContour].size() > 0 && triangle[idxInnerContour].size() > 0)
+//    {
+//        //Check All triangle corners
+//        for (int k=0;k<3;k++)
+//        {
+//            //Are coords within bounds?
+//            if (triangle[idxOuterContour][k].x <= -10 || triangle[idxInnerContour][k].x <= -10 || triangle[idxOuterContour][k].y <= -10 || triangle[idxInnerContour][k].y <= -10)
+//            {
+//                berrorTriangleFit = true;
+//                break;
+//            }
+//        }
+//    }else
+//        berrorTriangleFit = true;
+
+
+//       if (berrorTriangleFit)
+//       {
+//           qDebug() << "Error during triangular fit - fitfishCoreTriangle";
+//           return berrorTriangleFit; //Exit non critical
+//       }
+
+
+
+
+//    //triangle[idxInnerContour] = triangle[idxOuterContour];
+////        triangle_out[idxChild] = triangle_out[idxblobContour];
+
+
+//    ///Map Keypoint Triangle features
+//    //Obtain Triangle's side lengths / Find base
+//    double dab = cv::norm(triangle[idxOuterContour][0]-triangle[idxOuterContour][1]);
+//    double dac = cv::norm(triangle[idxOuterContour][0]-triangle[idxOuterContour][2]);
+//    double dbc = cv::norm(triangle[idxOuterContour][1]-triangle[idxOuterContour][2]);
+
+//    cv::Point ptTail;
+
+
+//    if (dab <= dac && dab <= dbc)
+//    {
+//        ptTail = triangle[idxOuterContour][2];
+
+//    }
+//    else
+//    {
+//        if (dac <= dab && dac <= dbc)
+//        {
+
+//         ptTail  = triangle[idxOuterContour][1];
+
+//        }
+//        else
+//        { //dbc is the smallest
+
+//          ptTail =   triangle[idxOuterContour][0];
+//        }
+//    }
+
+
+//    //Find Inner Triangle Apex - Tail/Body Point
+//    dab = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][0]);
+//    dac = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][1]);
+//    dbc = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][2]);
+
+
+//    //Find Triangle Width - Set point0 and Point1 to the triangle's base (eyes)
+//    if (dab <= dac && dab <= dbc)
+//    {
+//        sfish.coreTriangle[0] = triangle[idxInnerContour][2];
+//        sfish.coreTriangle[1] = triangle[idxInnerContour][1];
+//        sfish.coreTriangle[2] = triangle[idxInnerContour][0];
+
+//    }
+//    if (dac <= dab && dac <= dbc)
+//    {
+//        sfish.coreTriangle[0] = triangle[idxInnerContour][0];
+//        sfish.coreTriangle[1] = triangle[idxInnerContour][2];
+//        sfish.coreTriangle[2] = triangle[idxInnerContour][1];
+//    }
+//    if (dbc <= dab && dbc <= dac )
+//    { //dbc is the smallest
+//        sfish.coreTriangle[0] =  triangle[idxInnerContour][0];
+//        sfish.coreTriangle[1] =  triangle[idxInnerContour][1];
+//        sfish.coreTriangle[2] =  triangle[idxInnerContour][2];
+//    }
+
+
+
+//    //Set Eye Position
+//    //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
+//    cv::Point vecEyeA = sfish.coreTriangle[2] - sfish.coreTriangle[0];
+//    cv::Point vecEyeB = sfish.coreTriangle[2] - sfish.coreTriangle[1];
+
+//    //Use As Temp Vars - Gives -Pi  0 +Pi - Convert to 0 2Pi
+//    sfish.leftEyeTheta = std::atan2(vecEyeA.y,vecEyeA.x)+M_PI;
+//    sfish.rightEyeTheta = std::atan2(vecEyeB.y,vecEyeB.x)+M_PI;
+
+//    if (sfish.leftEyeTheta > sfish.rightEyeTheta )
+//    {
+//        //use as tmp / Switch R-L eye points Over
+//        cv::Point tmp = sfish.coreTriangle[1];
+//        sfish.coreTriangle[1] = sfish.coreTriangle[0];
+//        sfish.coreTriangle[0] = tmp;
+
+////        double tmpA = sfish.leftEyeTheta ;
+////        sfish.leftEyeTheta = sfish.rightEyeTheta;
+////        sfish.rightEyeTheta = tmpA;
+//    }
+
+//    //Find Position of Body Peak - Relocate Triangle side
+//    cv::Point minLoc;
+//    cv::Point maxLoc;
+//    double minVal,maxVal;
+//    //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
+
+
+//    sfish.tailTopPoint    = ptTail;
+//    //if (maxLoc) is contained in triangle?
+//    /// \note Problem - Eyes can sometimes be brighter than cyst
+//    //cv::minMaxLoc(maskedfishImg,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
+//    //sfish.coreTriangle[2]   = maxLoc; //Now Place index [0] at apex
+//    sfish.midEyePoint       = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
+//    sfish.mouthPoint        = sfish.coreTriangle[2]+(sfish.midEyePoint-sfish.coreTriangle[2])*1.2;
+
+//    ///Temporarly Reposition
+//    //sfish.spline[0].x       = sfish.coreTriangle[2].x;
+//    //sfish.spline[0].y       = sfish.coreTriangle[2].y;
+//    //sfish.calcSpline(sfish.spline);
+
+//    /////DEbug Output
+//    ///Draw Fitted inside Triangle
+//    if (!berrorTriangleFit)
+//    {
+//        for (int j=0; j<3;j++)
+//           cv::line(frameDebugB,triangle[idxInnerContour][j],triangle[idxInnerContour][(j+1)%3] ,CV_RGB(250,250,00),1,cv::LINE_8);
+
+//        //Draw Fitted outside Triangle
+//        for (int j=0; j<3;j++)
+//            cv::line(frameDebugB,triangle[idxOuterContour][j],triangle[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),1,cv::LINE_8);
+//    }
+
+//    //Show Triangle Tail Point on Global Image
+//    cv::circle(frameDebugB,ptTail,5,CV_RGB(0,50,200));
+
+
+//    //Draw body centre point/Tail Top
+//    cv::circle(frameDebugB,sfish.coreTriangle[2],5,CV_RGB(20,20,250),1);
+
+
+
+//    return berrorTriangleFit; //No error fit
+//} //Fit Fish Core Triangle
+
+
+
+
+
+
+///// \brief Find point Furthest Along closed outline contour
+///// Find point furtherst using shortest paths to each point around a closed contour/outline/spline
+//int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy)
+//{
+//    int antiVertex = idx;
+//    int maxminD = 0;
+//    //cv::Point ptsrc = vPointChain[idx];
+//    int n = vPointChain.size();
+//    int dPathL[n]; //Accumulated distance from starting point on Chain Going AntiClockwise
+//    int dPathR[n]; //Accumulated distance from starting point on Chain Going Clockwise
+
+
+//    //Find Antipoint/mirror Points on Chain - where the difference between accumulated distance is minimum
+//    dPathL[idx] = 0;
+//    dPathR[idx] = 0;
+
+//    int k = idx; //k is index Going In reverse, i going fwd
+//    int ringIdx;
+//    int ringBIdx;
+//    int lastIndexR = k;
+//    int lastValL = dPathL[idx];
+//    int lastValR = dPathR[idx];
+
+//    for (int i=1;i<n;i++)
+//    {
+
+//        k--;
+
+//        ringIdx  = (i+idx)%(n);
+//        ringBIdx = (k);
+
+//        //Calculate Leftward And Rightward point Distances - Store in vector
+//        dPathL[ringIdx]      = lastValL;
+//        dPathR[ringBIdx]     = lastValR;
+
+//        dPathL[ringIdx]   += cv::norm(vPointChain[ringIdx]-vPointChain[(ringIdx+1)%(n)]);
+//        dPathR[ringBIdx]  += cv::norm(vPointChain[ringBIdx]-vPointChain[(lastIndexR)%(n)]);
+
+//        lastValL = dPathL[ringIdx];
+//        lastValR = dPathR[ringBIdx];
+//        lastIndexR = k;
+//        if (k==0)
+//            k = n; // Do ring Wrap Around
+//    }
+
+//    for (int i=0;i<n;i++)
+//    {
+//        int ringIdx = (i+idx)%(n);
+//        //Compare distance to same point from both paths CW CCW and take the shortest one
+//        int DistLR = std::min(dPathL[ringIdx],dPathR[ringIdx]);
+
+//        if (DistLR > maxminD)
+//        {
+//            maxminD = DistLR;
+//            //store Index
+//            antiVertex = ringIdx;
+//        }
+//    }
+
+//return antiVertex;
+//}
+
+
+
+/////
+///// \brief findIndexClosesttoPoint - Naive Nearest neighbour finder
+///// \param vPointChain array of points
+///// \param pt reference point
+///// \return index in array of closest point
+/////
+//int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt)
+//{
+//  int idx;
+//  unsigned int minDist  = 0;
+//  unsigned int dist     = 0;
+
+//  minDist = 1000000;
+//  for (int i=0; i < vPointChain.size();i++)
+//  {
+//    dist = cv::norm(vPointChain[i]-pt);
+//    if (dist < minDist )
+//    {
+//        idx = i;
+//        minDist = dist;
+//    }
+//  }
+
+//  return idx;
+//}
+
