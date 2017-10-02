@@ -704,14 +704,18 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
         if (max_idx_grad.y == b)
         {
            cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),6,CV_RGB(100,100,100),CV_FILLED);
-           cv::putText(hist_image,"S",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
+           cv::putText(hist_image,"H",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
         }
 
         if (gthresEyeSeg == b)
         {
            cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),8,CV_RGB(150,150,150),CV_FILLED);
-           cv::putText(hist_image,"H",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
+           cv::putText(hist_image,"T",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
         }
+
+        //Adaptive Threshold
+        //Find the first low above after the first High mode -
+        //Get the 1st peak above this 1st low - Set it to be the thresh. The adaptive
 
     }
 

@@ -92,7 +92,7 @@ const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gMatchShapeThreshold     = 0.83;
+double gMatchShapeThreshold     = 0.78;
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -2107,7 +2107,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           cv::Point2f boundBoxPnts[4];
           fishRotAnteriorBox.points(boundBoxPnts);
           for (int j=0; j<4;j++) //Rectangle Body
-              cv::line(fullImg,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),2);
+              cv::line(fullImg,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
 
           //Locate Eyes In A box
           double lengthLine = 9;
