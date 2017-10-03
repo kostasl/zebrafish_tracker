@@ -5,6 +5,9 @@
 
 #include <cvBlob/cvblob.h>
 #include <QDebug>
+
+#include "ellipse_detect.h"
+
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
 {
@@ -45,7 +48,6 @@ public:
 
   cv::Point2f getPointAlongSpline(float z,t_fishspline& pspline);
 
-
   double distancePointToSpline(cv::Point2f ptsrc,t_fishspline& outspline);
   double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
   double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
@@ -58,19 +60,23 @@ public:
   /// Height is distance between 0th & 1st  (or 2nd & 3rd) vertices. And width is distance between 1st  & 2nd (or 0th & 3rd) vertices.
   /// Angle is calculated from the horizontal to the first edge of rectangle, counter clockwise.
   ///  Angle varies between -0 to -90 (I am unsure, what is the decisive factor of -0 or -90)
-  cv::RotatedRect leftEyeRect;
-  cv::RotatedRect rightEyeRect;
-  std::vector<cv::Point> rightEyeHull;
-  std::vector<cv::Point> leftEyeHull;
+  //cv::RotatedRect leftEyeRect;
+  //cv::RotatedRect rightEyeRect;
+  //std::vector<cv::Point> rightEyeHull;
+  //std::vector<cv::Point> leftEyeHull;
   std::vector<cv::Point> coreHull; /// core Body shape- no tail
   std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
 
+  double templateScore; //FishLIke Score - How well the detected model fish looks/matches the convolution of a fish template
   double leftEyeTheta;
   double rightEyeTheta;
   double bearingRads;
+  float bearingAngle;
 
-  cv::Point leftEyePoint; /// Rotation Angle against Fish's head Midline
-  cv::Point rightEyePoint;
+
+  tDetectedEllipsoid    leftEye;
+  tDetectedEllipsoid    rightEye;
+
   cv::Point mouthPoint;
   cv::Point midEyePoint;
   cv::Point tailTopPoint;

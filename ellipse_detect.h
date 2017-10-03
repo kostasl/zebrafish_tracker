@@ -12,6 +12,11 @@
 
 ///\note Consistency between pts and RotRect is not checked
 typedef struct tDetectedEllipsoid{
+    tDetectedEllipsoid():rectEllipse()
+    {
+
+    }
+
     //cv::RotatedRect(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI))
     tDetectedEllipsoid(cv::Point pt0,cv::Point pt1,cv::Point pt2,int score,cv::RotatedRect r):rectEllipse(r){
 

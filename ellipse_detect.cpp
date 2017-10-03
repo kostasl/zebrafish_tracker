@@ -666,7 +666,7 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
     }
 
     //Smooth The Histogram Gradient
-    cv::blur(hist_grad,hist_grad,cv::Size(1,41));
+    cv::blur(hist_grad,hist_grad,cv::Size(1,91));
 
     //Locate Max - For normalizing and Min for finding the seg. threshold
     cv::minMaxLoc(hist_grad, &min_val_grad, &max_val_grad, &min_idx_grad, &max_idx_grad);
