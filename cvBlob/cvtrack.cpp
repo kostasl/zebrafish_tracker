@@ -49,7 +49,7 @@ namespace cvb
   double distantBlobTrack(CvBlob const *b, CvTrack const *t)
   {
     double d1;
-    if (b->centroid.x<t->minx)
+    if (b->centroid.x<t->minx) ///KL: Crash Here
     {
       if (b->centroid.y<t->miny)
         d1 = MAX(t->minx - b->centroid.x, t->miny - b->centroid.y);

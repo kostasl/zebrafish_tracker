@@ -1046,7 +1046,7 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
     {
         pfish = ft->second;
 
-        if (pfish->templateScore < maxTemplateScore)
+        if (pfish->templateScore < maxTemplateScore && pfish->templateScore !=0 )
         {
             std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
             ft = vfishmodels.erase(ft);
@@ -2112,12 +2112,14 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           //Set to Global Max Point
           cv::Point top_left = pBound1+gptmaxLoc;
 
-          ///Write Angle
-          stringstream strLbl;
-          strLbl << "A: " << bestAngleinDeg;
-          cv::putText(fullImg,strLbl.str(),top_left,CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1);
+          ///Write Angle / Show Box
           cv::Point centre = top_left + rotCentre;
           cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
+
+          stringstream strLbl;
+          strLbl << "A: " << bestAngleinDeg;
+          cv::putText(fullImg,strLbl.str(),fishRotAnteriorBox.boundingRect().br(),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1);
+
 
           ///Draw a Red Rotated Frame around Detected Body
           cv::Point2f boundBoxPnts[4];
@@ -2179,7 +2181,9 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               //cv::circle(imgFishAnterior,ptFishAnteriorRotCentre,1,CV_RGB(250,0,0),1);
               cv::imshow("IsolatedAnterior",imgFishAnterior);
               //cv::Point ptRotCenter = cv::Point(szFishAnteriorNorm.width/2,szFishAnteriorNorm.height/2);
-              cv::Point ptRotCenter = cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2);
+              //cv::Point ptRotCenter = cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2);
+
+              cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
               cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
               //cv::Mat Mrot = cv::getRotationMatrix2D(-fishRotHeadBox.center,bestAngleinDeg,1.0); //Rotate Upwards
 
