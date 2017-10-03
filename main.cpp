@@ -657,8 +657,14 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         cvb::cvUpdateTracks(fishblobs,fishtracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
         nLarva = fishtracks.size();
 
-        //Update Fish Models From Tracks
-        UpdateFishModels(vfishmodels,fishtracks);
+
+        cv::Mat maskedImg_gray,maskedfishImg_gray;
+        /// Convert image to gray and blur it
+        cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
+        ////Make image having masked all fish
+        //maskedImg_gray.copyTo(maskedfishImg_gray,fgMask); //Mask The Laplacian //Input Already Masked
+        //Update Fish Models Against Image and Tracks
+        UpdateFishModels(maskedImg_gray,vfishmodels,fishtracks);
 
         //Combine Lists into Tracks before rendering
         tracks.clear();
@@ -942,16 +948,24 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 }
 
 ///
-/// \brief UpdateFishModels Create a fish model class attaching a respective fishtrack to it.
+/// \brief UpdateFishModels Create a fish model class attaching a respective fishtrack to it and checking its match against a fish template image.
 ///  This prersistence uses the trackid to identify and make informed tracking of fish features across frames
+/// \param maskedImg_Gray / Full frame image of the scene
 /// \param vfishmodels
 /// \param fishtracks
 ///
-/// \note //The whole of  fishModels is deleted after tracking is finished
+/// \note //The whole of  fishModels is deleted after tracking is finished. Each Model Is Templ. Match score is assigned and then only the best
+/// match/score is kept - Assumes 1 fish Is in the scene
 ///
-void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
+void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,cvb::CvTracks& fishtracks)
 {
+
     fishModel* pfish = NULL;
+
+    cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
+    cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
+
+    cv::Point gptmaxLoc; //point Of Bestr Match
 
      //Look through Tracks find they have a fish model attached and create if missing
     for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
@@ -962,6 +976,27 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
         if (track->inactive)
             continue;
 
+        ///
+        /// Check If Track Centre Point Contains An image that matches a fish template
+        ///
+
+        cv::Point centroid = cv::Point2f(track->centroid.x,track->centroid.y);
+        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-40)), max(0,min(maskedImg_gray.rows,centroid.y-40)));
+        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+40)), max(0,min(maskedImg_gray.rows,centroid.y+40)));
+
+        cv::Rect rectFish(pBound1,pBound2);
+
+        cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
+        cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
+        double maxMatchScore; //
+        int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+
+
+        int bestAngle =AngleIdx*gFishTemplateAngleSteps;
+        cv::Point top_left = pBound1+gptmaxLoc;
+        cv::Point ptbcentre = top_left + rotCentre;
+
+         //Check If Fish Was found)
         if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
         {
             //Make Attached FishModel
@@ -971,6 +1006,9 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
             //Make new fish Model
             fishModel* fish= new fishModel(track,fishblob);
 
+           fish->templateScore  = maxMatchScore;
+           fish->bearingAngle   = bestAngle;
+           fish->ptRotCentre    = ptbcentre;
 
             vfishmodels.insert(CvIDFishModel(track->id,fish));
 
@@ -978,7 +1016,9 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
         else ///Some Fish Has that Track ID
         { //Check if pointer is the same Not just the track ID (IDs are re used)
           pfish = ft->second; //Set Pointer to Existing Fish
-
+          pfish->templateScore  = maxMatchScore;
+          pfish->bearingAngle   = bestAngle;
+          pfish->ptRotCentre    = ptbcentre;
             //Must point to the same track - OtherWise Replace Fish Model
             if(pfish->track != track)
             {
@@ -990,14 +1030,15 @@ void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks)
 
                 cvb::CvBlob* fishblob = fbt->second;
                 fishModel* fish= new fishModel(track,fishblob);
+
+                fish->templateScore  = maxMatchScore;
+                fish->bearingAngle   = bestAngle;
+                fish->ptRotCentre    = ptbcentre;
+
                 vfishmodels.insert(CvIDFishModel(track->id,fish));
-
-
             }
 
         }
-
-
 
     }
 
@@ -2096,21 +2137,21 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
           cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
-          double maxMatchScore; //
-          int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+          //double maxMatchScore; //
+          //int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
            //Check If Fish Was found)
-          fish->templateScore  = maxMatchScore;
-          fish->bearingAngle   = AngleIdx;
-          if (maxMatchScore < gMatchShapeThreshold)
+          //fish->templateScore  = maxMatchScore;
+          //fish->bearingAngle   = AngleIdx;
+          if (fish->templateScore < gMatchShapeThreshold)
               continue; //Skip This Model Fish And Check the next one
 
           //0 Degrees Is along the Y Axis Looking Upwards
-          int bestAngleinDeg = AngleIdx*gFishTemplateAngleSteps;
+          int bestAngleinDeg = fish->bearingAngle;
           //Set to Global Max Point
           cv::Point top_left = pBound1+gptmaxLoc;
 
           ///Write Angle / Show Box
-          cv::Point centre = top_left + rotCentre;
+          cv::Point centre = fish->ptRotCentre; //top_left + rotCentre;
           cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
 
           stringstream strLbl;

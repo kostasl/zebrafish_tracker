@@ -79,6 +79,7 @@ public:
 
   cv::Point mouthPoint;
   cv::Point midEyePoint;
+  cv::Point ptRotCentre; //Template Matching Body Centre
   cv::Point tailTopPoint;
 
   cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish

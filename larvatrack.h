@@ -101,7 +101,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 /// \param vfishmodels
 /// \param fishtracks
 ///
-void UpdateFishModels(fishModels& vfishmodels,cvb::CvTracks& fishtracks);
+void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks);
 
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
