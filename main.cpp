@@ -92,7 +92,7 @@ const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gMatchShapeThreshold     = 0.55;
+double gMatchShapeThreshold     = 0.65;
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -632,7 +632,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
 
     ///DRAW ROI
-    drawROI(frame);
+    drawROI(outframe);
 
 
     lplframe = frameMasked; //Convert to legacy format
@@ -672,7 +672,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
         /// \TODO optimize this. pic is Gray Scale Originally anyway
 
-        detectZfishFeatures(outframe,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+        detectZfishFeatures(frame,outframe,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         //Show Tracks
         cvb::cvRenderTracks(tracks, &lplframe, &lplframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
@@ -2012,14 +2012,14 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 /// \return
 ///
 /// // \todo Optimize by re using fish contours already obtained in enhance fish mask
-void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
+void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
-    bool berrorTriangleFit = true;
-    int max_thresh = 255;
-    int idxREyeContour,idxLEyeContour,idxLBodyContour;
-    int idxREyeContourW = -1;
-    int idxLEyeContourW = -1;
+    //bool berrorTriangleFit = true;
+    //int max_thresh = 255;
+    //int idxREyeContour,idxLEyeContour,idxLBodyContour;
+    //int idxREyeContourW = -1;
+    //int idxLEyeContourW = -1;
     cv::RNG rng(12345);
 
     cv::Mat maskedImg_gray,maskedfishImg_gray;
@@ -2046,7 +2046,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
     ////// Make Debug Frames ///
     cv::Mat fullImg_colour;
-    fullImg.convertTo(fullImg_colour,CV_8UC3);
+    fullImgIn.convertTo(fullImg_colour,CV_8UC3);
     fullImg_colour.copyTo(frameDebugA);
     fullImg_colour.copyTo(frameDebugB);
     fullImg_colour.copyTo(frameDebugC);
@@ -2057,7 +2057,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
 
     /// Convert image to gray and blur it
-    cv::cvtColor( fullImg, maskedImg_gray, cv::COLOR_BGR2GRAY );
+    cv::cvtColor( fullImgIn, maskedImg_gray, cv::COLOR_BGR2GRAY );
 
     //Make image having masked all fish
     maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
@@ -2076,10 +2076,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 ////////////USE TEMPLATE MATCHINg /////////////
     cv::Point gptmaxLoc;
 
-//    ////No Try Template Matching  Across Angles//
-//    cv::Mat outMatchConv,templ_rot;
-////    cv::Mat image;
-////    fullImg;
+    ////No Try Template Matching  Across Angles//
     //Pick The largest dimension and Make A Square
     cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
     cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
@@ -2118,14 +2115,14 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
 
           stringstream strLbl;
           strLbl << "A: " << bestAngleinDeg;
-          cv::putText(fullImg,strLbl.str(),fishRotAnteriorBox.boundingRect().br(),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1);
+          cv::putText(fullImgOut,strLbl.str(),fishRotAnteriorBox.boundingRect().br(),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1);
 
 
           ///Draw a Red Rotated Frame around Detected Body
           cv::Point2f boundBoxPnts[4];
           fishRotAnteriorBox.points(boundBoxPnts);
           for (int j=0; j<4;j++) //Rectangle Body
-              cv::line(fullImg,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
+              cv::line(fullImgOut,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
 
           //Locate Eyes In A box
           double lengthLine = 9;
@@ -2138,7 +2135,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
           fish->midEyePoint = ptEyeMid;
 
           //Display MidEye Point
-          cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(155,155,15),1);
+          //cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(155,155,15),1);
 
           //Make A rectangle that surrounds part of the image that has been template matched
           cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols/2+3,fishbodyimg_template.cols/2+3),bestAngleinDeg);
@@ -2198,11 +2195,14 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
               //cv::imshow("IsolatedHead",imgFishHead);
               cv::imshow("IsolatedAnteriorNorm",imgFishAnterior_Norm);
 
-              detectEllipses(imgFishHead,imgFishHeadEdge,imgTmp, bestAngleinDeg,vell,imgFishHeadProcessed);
+              int ret = detectEllipses(imgFishHead,imgFishHeadEdge,imgTmp, bestAngleinDeg,vell,imgFishHeadProcessed);
+
+              if (ret < 2)
+                show_histogram("HeadHist",imgFishHead);
 
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
-              cv::Rect rpasteregion(fullImg.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
-              imgFishHeadProcessed.copyTo(fullImg(rpasteregion));
+              cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
+              imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
 
               ///Print Eye Angle Info
                std::stringstream ss;
@@ -2212,7 +2212,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
                   tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
                   fish->leftEye           = lEye;
                   ss << "L:" << lEye.rectEllipse.angle;
-                  cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }
 
               ss.str(""); //Empty String
@@ -2221,7 +2221,7 @@ void detectZfishFeatures(cv::Mat& fullImg, cv::Mat& maskfishFGImg, std::vector<s
                   tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
                   fish->rightEye          = rEye;
                   ss << "R:"  << rEye.rectEllipse.angle;
-                  cv::putText(fullImg,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }
 
               if (bStoreThisTemplate)

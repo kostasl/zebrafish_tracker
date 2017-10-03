@@ -90,10 +90,11 @@ bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 /// \brief detectZfishFeatures - Used to create geometric representations of main zebrafish Features : Eyes, Body, tail
 /// these are saved as point arrays on which angles and other measurements can be obtained
 /// \param fullImg - Raw Img captured
+/// \param fullImgOut - The labels and output Produced by the Fnct is written on this canvas
 /// \param Mask with Fish oNly FG
 /// \param main inner and extrernal fish Contours for each fish
 /// \param 1 level hierarchy of contours (outer inner)
-void detectZfishFeatures(cv::Mat& fullImg,cv::Mat& maskfishFGImg,std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
+void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
 
 ///
 /// \brief UpdateFishModels Use Tracks  to update persistent fishModels
