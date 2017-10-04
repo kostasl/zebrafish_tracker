@@ -45,8 +45,10 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include "opencv2/core/utility.hpp"
+
 //#include <opencv2/bgsegm.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/features2d.hpp>
 #include <opencv2/video/background_segm.hpp>
 
 #include <GUI/mainwindow.h>
@@ -1430,6 +1432,78 @@ int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb:
     cvReleaseImage( &labelImg );
 
     return cnt;
+}
+
+
+int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg)
+{
+
+    std::vector<cv::KeyPoint> keypoints;
+    std::vector<cv::KeyPoint> keypoints_in_mask;
+    cv::SimpleBlobDetector::Params params;
+
+    params.filterByCircularity  = false;
+    params.filterByColor        = false;
+    params.filterByConvexity    = false;
+
+    //params.maxThreshold = 16;
+    //params.minThreshold = 8;
+    //params.thresholdStep = 2;
+
+    // Filter by Area.
+    params.filterByArea = true;
+    params.minArea = 100;
+    params.maxArea = 1000;
+
+    /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
+    ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
+    params.filterByInertia      = false;
+    params.maxInertiaRatio      = 0.8;
+
+
+    //params.filterByInertia = true;
+
+    // Set up the detector with default parameters.
+    cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
+
+    detector->detect( gframeBuffer, keypoints,gframeMask); //frameMask
+
+
+    //Mask Is Ignored so Custom Solution Required
+    //for (cv::KeyPoint &kp : keypoints)
+    keypoints_in_mask.clear();
+    for(int i=0;i<keypoints.size();i++)
+    {
+        cv::KeyPoint kp = keypoints[i];
+
+        ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
+        unsigned int RoiID = 0;
+        for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+        {
+            ltROI iroi = (ltROI)(*it);
+            RoiID++;
+            //Keypoint is in ROI so Add To Masked
+            if (iroi.contains(kp.pt))
+                     keypoints_in_mask.push_back(kp);
+
+            //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
+            //if (maskVal > 0)
+             //keypoints_in_mask.push_back(kp);
+    }
+
+
+    // Draw detected blobs as red circles.
+    // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
+    gframeBuffer.copyTo(gframeBuffer,gframeMask); //mask Source Image
+    cv::drawKeypoints( gframeBuffer, keypoints_in_mask, im_with_keypoints, cv::Scalar(0,0,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+
+
+    detector->clear();
+}
+
+int processFoodBlobs(cv::Mat& frame)
+{
+
 }
 
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi)
