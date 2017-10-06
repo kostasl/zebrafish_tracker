@@ -11,6 +11,8 @@
 
 //#include "larvatrack.h" /If included here it causes circular search if fishModel Defs.
 
+extern float gDisplacementThreshold;
+
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
 {
@@ -52,6 +54,10 @@ public:
   fishModel();
   fishModel(cvb::CvTrack* track,cvb::CvBlob* blob);
   fishModel(zftblob blob);
+
+  void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre);
+
+
 
   float leftEyeAngle();
   float rightEyeAngle();
@@ -129,9 +135,9 @@ typedef std::map<cvb::CvLabel,fishModel* > fishModels;
 
 class CompareFishScore {
     public:
-    bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is earlier than t2
+    bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is greater than t2 /Ordering Highest 1st
     {
-       return t1->templateScore < t2->templateScore;
+       return t1->templateScore > t2->templateScore;
     }
 };
 

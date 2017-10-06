@@ -13,6 +13,7 @@ fishModel::fishModel()
         //this->rightEyeHull.clear();
         this->ID    = 0;
         zTrack.id   = this->ID;
+        zTrack.colour = CV_RGB(255,0,0);
 }
 
 fishModel::fishModel(cvb::CvTrack* track,cvb::CvBlob* blob):fishModel()
@@ -273,6 +274,35 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
     return mindist;
 }
+
+
+///
+/// \brief fishModel::Update - Called On Every FrameProcessed To Update Model State
+/// \param fblob
+/// \param templatematchScore
+/// \param Angle
+/// \param bcentre
+///
+
+void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre)
+{
+    this->templateScore  = templatematchScore;
+    this->bearingAngle   = Angle;
+    this->ptRotCentre    = bcentre;
+    this->zfishBlob      = *fblob;
+    this->zTrack.pointStack.push_back(fblob->pt);
+    this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
+    this->zTrack.centroid = fblob->pt;
+    ///Optimization only Render Point If Displaced Enough from Last One
+    if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)
+    {
+        this->zTrack.pointStackRender.push_back((cv::Point)fblob->pt);
+        this->zTrack.active++;
+    }else {
+        this->zTrack.inactive++;
+    }
+}
+
 
 ///
 /// \brief fishModel::fitSpineToContour / Least squares fit of constrained spline model with params x0,yo, and theta_i-n

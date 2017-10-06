@@ -26,6 +26,7 @@ typedef unsigned int zftID;
 /// \see CvPoint2D64f
 /// \see CvTrack
 typedef std::vector<cv::Point2f> zftTrackPoints;
+typedef std::vector<cv::Point> zftRenderedTrackPoints; //Used only For Rendering /Shorted And Integer
 
 
 
@@ -47,6 +48,9 @@ typedef std::vector<cv::Point2f> zftTrackPoints;
 /// \see CvID
 /// \see ltROI
 /// \see pointStack
+/// \note zftTrack Maintains two list of track Points - the detailed floating point one is used for
+/// analysis of movement, while the RenderPoints is optimized for rendering tracks, its integer and only holds
+/// points which are displaced above D>=0.5, making the list shorted and quicker to render.
 struct zftTrack
 {
     zftTrack()
@@ -76,6 +80,7 @@ struct zftTrack
   cv::Rect boundingBox;
   cv::Point2f centroid; ///< Centroid.
   zftTrackPoints pointStack; /// <Holds list of past centroid positions along the track
+  zftRenderedTrackPoints pointStackRender; //List Of Int Points Used for rendering Only
 
   double effectiveDisplacement; ///< Used to indicate a px speed measure so as to estimate possible blob distance from track on next frame.
   unsigned int lifetime; ///< Indicates how much frames the object has been in scene.

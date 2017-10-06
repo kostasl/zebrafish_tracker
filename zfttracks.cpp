@@ -105,9 +105,9 @@ void zftRenderTrack(zftTrack& track, cv::Mat& frameIn, cv::Mat& frameOut, unsign
       //cv::Mat img = cv::Mat::zeros(400, 400, CV_8UC3);
       if (mode&CV_TRACK_RENDER_PATH)
       {
-
-          cv::Point2f *pts = (cv::Point2f*) cv::Mat(track.pointStack).data;
-          int npts = cv::Mat(track.pointStack).rows;
+          //std::vector<cv::Point> plotPts(track.pointStack.begin(), track.pointStack.end());
+          cv::Point *pts = (cv::Point*) cv::Mat(track.pointStackRender).data;
+          int npts = cv::Mat(track.pointStackRender).rows;
           cv::polylines(frameOut, &pts,&npts, 1,
                           false, 			// draw open contour (i.e. joint end to start)
                           track.colour ,// colour RGB ordering (here = green)

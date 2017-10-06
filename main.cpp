@@ -41,7 +41,8 @@
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
-
+//#include <QThread>
+#include <QTime>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -91,6 +92,7 @@ int gi_VotesEllipseThres    = 9; //Votes thres for Hough Transform
 int gthresEyeSeg            = 125;
 int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
 const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
@@ -209,7 +211,7 @@ Mat loadFromQrc(QString qrc, int flag = IMREAD_COLOR)
 int main(int argc, char *argv[])
 {
     bROIChanged = false;
-    bPaused = true;
+    bPaused = false;
     bshowMask = false;
     bTracking = false;
     bExiting    = false;
@@ -392,7 +394,7 @@ unsigned int trackVideofiles(MainWindow& window_main)
 
        getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
 
-       std::cout << "Press r to run Video processing" << std::endl;
+       std::cout << "Press p to pause Video processing" << std::endl;
 
        istartFrame = processVideo(fgMask,window_main,invideoname,outfilename,istartFrame);
 
@@ -455,7 +457,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           window_main.showVideoFrame(frame,nFrame); //Show On QT Window
           cv::imshow(gstrwinName + " FG Mask", fgMask);
           //Check For input Control
-          keyboard = cv::waitKey( cFrameDelayms );
+          //keyboard = cv::waitKey( cFrameDelayms );
           checkPauseRun(&window_main,keyboard,nFrame);
         }
 
@@ -520,7 +522,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
 
 
        window_main.setWindowTitle("Tracking:" + filename);
-       keyboard = cv::waitKey( cFrameDelayms );
+       //keyboard = cv::waitKey( cFrameDelayms );
        checkPauseRun(&window_main,keyboard,nFrame);
     }
     return nFrame;
@@ -587,7 +589,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
 
            // if (!bTracking)
            //get the input from the keyboard
-           keyboard = cv::waitKey( cFrameDelayms );
+           //keyboard = cv::waitKey( cFrameDelayms );
 
 
            checkPauseRun(&window_main,keyboard,nFrame);
@@ -686,7 +688,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         {
             fishModel* pfish = ft->second;
             assert(pfish);
-            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH , &trackFnt );
+            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH , &trackFnt );
         }
 
         ///Keep A Global List of all tracks?
@@ -718,6 +720,8 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
     }
 
+    fishbodycontours.clear();
+    fishbodyhierarchy.clear();
     //Save to Disk
 
 
@@ -867,7 +871,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     cv::Mat frame,frameMasked,outframe;;
     unsigned int nFrame = startFrameCount; //Current Frame Number
 
-    bPaused =true; //Start Paused
+    bPaused =false; //Start Paused
 
     std::string frameNumberString;
 
@@ -956,7 +960,9 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         if (bTracking)
             saveTracks(tracks,trkoutFileCSV,frameNumberString);
 
-        keyboard = cv::waitKey( 1 );
+        //if (nFrame%10)
+       //     keyboard = cv::waitKey( 1 );
+
         checkPauseRun(&window_main,keyboard,nFrame);
 
 
@@ -1033,13 +1039,9 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
              {
                  //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                 bModelFound = true;
+                pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre);
 
-                pfish->templateScore  = maxMatchScore;
-                pfish->bearingAngle   = bestAngle;
-                pfish->ptRotCentre    = ptbcentre;
-                pfish->zfishBlob      = *fishblob;
-                pfish->zTrack.pointStack.push_back(fishblob->pt);
-                pfish->zTrack.centroid = fishblob->pt;
+
                 //Add To Priority Q So we can Rank
                 qfishrank.push(pfish);
              }
@@ -1055,11 +1057,8 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
             //fishModel* fish= new fishModel(track,fishblob);
            fishModel* fish= new fishModel(*fishblob);
 
-           fish->templateScore  = maxMatchScore;
-           fish->bearingAngle   = bestAngle;
-           fish->ptRotCentre    = ptbcentre;
-           fish->zTrack.pointStack.push_back(fishblob->pt);
-           fish->zTrack.centroid    = fishblob->pt;
+           fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre);
+
            vfishmodels.insert(IDFishModel(fish->ID,fish));
            qfishrank.push(fish);
 
@@ -1081,15 +1080,17 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
         maxTemplateScore = pfishBest->templateScore;
     }
 
-    //Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene
+    //Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
     ft = vfishmodels.begin();
-    while(ft != vfishmodels.end())
+    while(ft != vfishmodels.end() && vfishmodels.size() > 1)
     {
         pfish = ft->second;
 
-        if (pfishBest != pfish)
+        if (pfishBest != pfish )
         {
-            assert(pfish->templateScore < maxTemplateScore);
+            //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
+            //OtherWise Delete The model?
+            assert(pfish->templateScore < maxTemplateScore && maxTemplateScore > 0);
 
             std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
             ft = vfishmodels.erase(ft);
@@ -1208,15 +1209,26 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
 void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 {
+
+//    int ms = 1;
+//    struct timespec ts = { ms / 1000, (ms % 1000) * 1000 * 1000 };
+//    nanosleep(&ts, NULL);
+
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 1);
+
         while (bPaused && !bExiting)
         {
-            int ms = 20;
-            struct timespec ts = { ms / 1000, (ms % 1000) * 1000 * 1000 };
-            nanosleep(&ts, NULL);
-            //Wait Until Key to unpause is pressed
-            keyboard = cv::waitKey( 30 );
 
-            keyCommandFlag(win,keyboard,nFrame);
+
+            //Wait Until Key to unpause is pressed
+            //keyboard = cv::waitKey( 30 );
+
+            QTime dieTime= QTime::currentTime().addSecs(1);
+            while (QTime::currentTime() < dieTime)
+                QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+
+
+            //keyCommandFlag(win,keyboard,nFrame);
         }
 
 }
