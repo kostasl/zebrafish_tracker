@@ -7,6 +7,7 @@
 #include <QDebug>
 
 #include "ellipse_detect.h"
+//#include "larvatrack.h" /If included here it causes circular search if fishModel Defs.
 
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
@@ -17,6 +18,10 @@ typedef struct
 } splineKnotf;
 
 typedef std::vector<splineKnotf> t_fishspline;
+
+
+typedef cv::KeyPoint zftblob;
+typedef std::vector<zftblob> zftblobs;
 
 
 const cv::Scalar TRACKER_COLOURMAP[] ={CV_RGB(150,150,150),
@@ -30,6 +35,13 @@ const cv::Scalar TRACKER_COLOURMAP[] ={CV_RGB(150,150,150),
 
 
 
+/// \var typedef std::list<CvPoint2D64f> CvTrackPoints
+/// \brief stores the stacked List of past centroid points that define this track.
+/// \see CvPoint2D64f
+/// \see CvTrack
+typedef std::vector<cv::Point2f> CvTrackPoints;
+
+
 class fishModel
 {
 
@@ -37,6 +49,7 @@ class fishModel
 public:
   fishModel();
   fishModel(cvb::CvTrack* track,cvb::CvBlob* blob);
+  fishModel(zftblob blob);
 
   float leftEyeAngle();
   float rightEyeAngle();
@@ -83,7 +96,8 @@ public:
   cv::Point tailTopPoint;
 
   cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
-
+  CvTrackPoints trackPointStack; /// <Holds list of past centroid positions along the track
+  zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
    static const int c_spinePoints   = 5;
@@ -94,5 +108,60 @@ private:
 
   //std::vector<double> splineTheta; ///Angles of fitted Spine Points
 };
+
+
+
+///Auxiliary
+
+
+///
+/// \brief fishModels list of model structures describing each visible fish
+/// this list is maintained along with tracks - ie deletion/creation is done via matching to
+/// blobs
+///
+typedef std::map<cvb::CvLabel,fishModel* > fishModels;
+
+
+class CompareFishScore {
+    public:
+    bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is earlier than t2
+    {
+       return t1->templateScore < t2->templateScore;
+    }
+};
+
+typedef std::priority_queue<fishModel*,std::vector<fishModel*>,CompareFishScore> qfishModels;
+
+/// \var typedef std::pair<CvID, fishModel *> CvIDFishModel pair for insertion into map list of fish
+/// /// \brief Pair (identification number, fishModel).
+/// \see CvID
+/// \see CvTrack
+typedef std::pair<cvb::CvID, fishModel* > CvIDFishModel;
+
+
+
+
+/// \fn inline void cvReleaseFishModes(fishModels &fishes)
+/// \brief Clear Fish LIst
+/// \param fishmodles List
+/// \see
+inline void ReleaseFishModels(fishModels &fishes)
+{
+  for (fishModels::iterator it=fishes.begin(); it!=fishes.end(); ++it)
+  {
+      fishModel* fish = (*it).second;
+        //Let ReleaseTracks Handle This
+//      if (fish->track)
+//      {
+//         fish->track->pointStack.clear();
+//         delete fish->track;
+//      }
+
+      delete fish;
+  }
+  fishes.clear();
+}
+
+
 
 #endif // FISHMODEL_H

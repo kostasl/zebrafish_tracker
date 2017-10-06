@@ -31,6 +31,7 @@ public:
     void showCVimg(cv::Mat& img);
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
     void saveScreenShot(QString stroutDirCSV);
+    void tickProgress();
     unsigned int nFrame = 0;
     ~MainWindow();
 

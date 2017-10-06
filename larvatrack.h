@@ -21,7 +21,7 @@
 #include <cvBlob/cvblob.h>
 #include <ltROI.h> //Defines the ROI types
 #include <fishmodel.h>
-
+#include <zfttracks.h>
 #include <GUI/mainwindow.h>
 
 /// \file larvatrack.h
@@ -31,43 +31,15 @@
 class MainWindow;
 
 
+typedef cv::KeyPoint zftblob;
+typedef std::vector<zftblob> zftblobs;
 
-///
-/// \brief fishModels list of model structures describing each visible fish
-/// this list is maintained along with tracks - ie deletion/creation is done via matching to
-/// blobs
-///
-typedef std::map<cvb::CvLabel,fishModel* > fishModels;
-
-
-/// \var typedef std::pair<CvID, fishModel *> CvIDFishModel pair for insertion into map list of fish
-/// /// \brief Pair (identification number, fishModel).
-/// \see CvID
-/// \see CvTrack
-typedef std::pair<cvb::CvID, fishModel* > CvIDFishModel;
+//typedef cv::KeyPoint zftblob;
+//typedef std::vector<zftblob> zftblobs;
 
 
 
-/// \fn inline void cvReleaseFishModes(fishModels &fishes)
-/// \brief Clear Fish LIst
-/// \param fishmodles List
-/// \see
-inline void ReleaseFishModels(fishModels &fishes)
-{
-  for (fishModels::iterator it=fishes.begin(); it!=fishes.end(); ++it)
-  {
-      fishModel* fish = (*it).second;
-        //Let ReleaseTracks Handle This
-//      if (fish->track)
-//      {
-//         fish->track->pointStack.clear();
-//         delete fish->track;
-//      }
 
-      delete fish;
-  }
-  fishes.clear();
-}
 
 
 
@@ -102,12 +74,17 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 /// \param fishtracks
 ///
 void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks);
+//Update Version With Blobs
+void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks);
 
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
 bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
 int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea);
+
+/// Updated Blobs Detector- Fish Specific
+int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs);
 
 int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);

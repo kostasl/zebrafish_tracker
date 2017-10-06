@@ -29,6 +29,24 @@ fishModel::fishModel(cvb::CvTrack* track,cvb::CvBlob* blob):fishModel()
     this->resetSpine();
 }
 
+fishModel::fishModel(zftblob blob):fishModel()
+{
+
+    this->ID        = blob.hash() ;
+    this->blobLabel = blob.hash();
+    this->zfishBlob = blob; //Copy Localy
+
+    this->track     = NULL;
+    this->bearingRads = blob.angle*M_PI/180.0;
+    this->coreTriangle[2].x = this->zfishBlob.pt.x;
+    this->coreTriangle[2].y = this->zfishBlob.pt.y;
+
+
+    templateScore           = 0;
+    this->resetSpine();
+
+}
+
 float fishModel::leftEyeAngle()
 {
 

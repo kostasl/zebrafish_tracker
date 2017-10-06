@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //this->ui->graphicsView->setFixedSize(1280,1024);
     //mScene->setSceneRect(this->ui->graphicsView->rect());
 
-    mScene->addText("Hello, fish!")->setPos(100,100);
+    mScene->addText("First, press r to begin processing of of the video's BG model.")->setPos(100,100);
     //Add Empty/New PixMap on Which we will set the images onto
     this->mImage = mScene->addPixmap(QPixmap());
 
@@ -43,6 +43,12 @@ void MainWindow::saveScreenShot(QString stroutDirCSV)
 {
     std::stringstream frameNumberString; frameNumberString << nFrame;
     ::saveImage(frameNumberString.str(),stroutDirCSV,*this->mpLastCVImg);
+
+}
+
+void MainWindow::tickProgress()
+{
+    this->ui->horizontalSlider->setValue(this->ui->horizontalSlider->value()+1);
 
 }
 

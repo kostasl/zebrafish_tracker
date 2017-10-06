@@ -218,6 +218,7 @@ int main(int argc, char *argv[])
     MainWindow window_main;
 
     window_main.show();
+
     //window_main.showFullScreen();
 
     //outfilename.truncate(outfilename.lastIndexOf("."));
@@ -343,7 +344,7 @@ int main(int argc, char *argv[])
     cv::waitKey(0);                                          // Wait for a keystroke in the window
 
     //pMOG->~BackgroundSubtractor();
-    pMOG2->~BackgroundSubtractor();
+    //pMOG2->~BackgroundSubtractor();
     //pKNN->~BackgroundSubtractor();
     //pGMG->~BackgroundSubtractor();
 
@@ -355,7 +356,9 @@ int main(int argc, char *argv[])
 
     std::cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
 
-    app.quit();
+
+    //app.quit();
+    window_main.close();
 
     return app.exec();
 
@@ -531,6 +534,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
         cv::Mat frame;
         unsigned int nFrame         = startFrameCount; //Current Frame Number
 
+        std::cout << "Starting Background Model processing..." << std::endl;
         //create the capture object
         cv::VideoCapture capture(videoFilename.toStdString());
         if(!capture.isOpened())
@@ -563,6 +567,8 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
             //Add frames from Last video
             nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
             window_main.nFrame = nFrame;
+            window_main.tickProgress();
+
             /// Call Update BG Model ///
             updateBGFrame(frame,fgMask,nFrame);
 
@@ -646,17 +652,20 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
        //Simple Solution was to Use Contours To measure Larvae
 
        // Filters Blobs between fish and food - save into global vectors
-        processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
+        //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
+
+        std::vector<cv::KeyPoint> ptFishblobs;
+        processFishBlobs(frame,fgMask, outframe , ptFishblobs);
 
         //Here the Track's blob label is updated to the new matching blob
         // Process Food blobs
-        cvb::cvUpdateTracks(foodblobs,foodtracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
+        //cvb::cvUpdateTracks(foodblobs,foodtracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
         nFood = foodtracks.size();
 
         // Process Fish blobs
         //ReFilter Let those that belong to fish Contours Detected Earlier
-        fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(10,10,180));
-        cvb::cvUpdateTracks(fishblobs,fishtracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
+        //fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(10,10,180));
+        //cvb::cvUpdateTracks(fishblobs,fishtracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
         nLarva = fishtracks.size();
 
 
@@ -666,7 +675,10 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         ////Make image having masked all fish
         //maskedImg_gray.copyTo(maskedfishImg_gray,fgMask); //Mask The Laplacian //Input Already Masked
         //Update Fish Models Against Image and Tracks
-        UpdateFishModels(maskedImg_gray,vfishmodels,fishtracks);
+        //UpdateFishModels(maskedImg_gray,vfishmodels,fishtracks);
+
+
+        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs);
 
         //Combine Lists into Tracks before rendering
         tracks.clear();
@@ -949,20 +961,24 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     return nFrame;
 }
 
-///
-/// \brief UpdateFishModels Create a fish model class attaching a respective fishtrack to it and checking its match against a fish template image.
-///  This prersistence uses the trackid to identify and make informed tracking of fish features across frames
-/// \param maskedImg_Gray / Full frame image of the scene
-/// \param vfishmodels
-/// \param fishtracks
-///
-/// \note //The whole of  fishModels is deleted after tracking is finished. Each Model Is Templ. Match score is assigned and then only the best
-/// match/score is kept - Assumes 1 fish Is in the scene
-///
-void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,cvb::CvTracks& fishtracks)
+
+
+
+//Operator for Priority Ordering
+bool operator<(const fishModel& a, const fishModel& b)
+{
+  return a.templateScore < b.templateScore; //Max Heap
+}
+
+
+void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs)
 {
 
+    qfishModels qfishrank;
+
     fishModel* pfish = NULL;
+
+    fishModels::iterator ft;
 
     cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
     cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
@@ -970,19 +986,17 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,cvb::CvTra
     cv::Point gptmaxLoc; //point Of Bestr Match
 
      //Look through Tracks find they have a fish model attached and create if missing
-    for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
+    for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
     {
-        cvb::CvTrack* track = it->second;
 
-        fishModels::const_iterator ft =  vfishmodels.find(it->first); //Find model with same Id as the Track - Associated fishModel
-        if (track->inactive)
-            continue;
+        zftblob* fishblob = &(*it);
+
 
         ///
         /// Check If Track Centre Point Contains An image that matches a fish template
         ///
 
-        cv::Point centroid = cv::Point2f(track->centroid.x,track->centroid.y);
+        cv::Point centroid = fishblob->pt;
         cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-40)), max(0,min(maskedImg_gray.rows,centroid.y-40)));
         cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+40)), max(0,min(maskedImg_gray.rows,centroid.y+40)));
 
@@ -998,111 +1012,78 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,cvb::CvTra
         cv::Point top_left = pBound1+gptmaxLoc;
         cv::Point ptbcentre = top_left + rotCentre;
 
-         //Check If Fish Was found)
-        if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
+        bool bModelFound = false;
+        //Check Through Models And Find The Closest Fish To This FishBlob
+
+        for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
         {
-            //Make Attached FishModel
-            cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
-            assert(fbt != blobs.end());
-            cvb::CvBlob* fishblob = fbt->second;
+             pfish = ft->second;
+
+             //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
+             if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 && maxMatchScore > gMatchShapeThreshold )
+             {
+                 //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
+                bModelFound = true;
+
+                pfish->templateScore  = maxMatchScore;
+                pfish->bearingAngle   = bestAngle;
+                pfish->ptRotCentre    = ptbcentre;
+                pfish->zfishBlob      = *fishblob;
+                pfish->trackPointStack.push_back(fishblob->pt);
+
+                //Add To Priority Q So we can Rank
+                qfishrank.push(pfish);
+             }
+
+
+        }
+
+       //Check If Fish Was found)
+        if (!bModelFound) //Model Does not exist for track - its a new track
+        {
+
             //Make new fish Model
-            fishModel* fish= new fishModel(track,fishblob);
+            //fishModel* fish= new fishModel(track,fishblob);
+           fishModel* fish= new fishModel(*fishblob);
 
            fish->templateScore  = maxMatchScore;
            fish->bearingAngle   = bestAngle;
            fish->ptRotCentre    = ptbcentre;
+           fish->trackPointStack.push_back(fishblob->pt);
 
-            vfishmodels.insert(CvIDFishModel(track->id,fish));
-
-        }
-        else ///Some Fish Has that Track ID
-        { //Check if pointer is the same Not just the track ID (IDs are re used)
-          pfish = ft->second; //Set Pointer to Existing Fish
-          pfish->templateScore  = maxMatchScore;
-          pfish->bearingAngle   = bestAngle;
-          pfish->ptRotCentre    = ptbcentre;
-            //Must point to the same track - OtherWise Replace Fish Model
-            if(pfish->track != track)
-            {
-                delete pfish;
-                //Make Attached FishModel
-                vfishmodels.erase(track->id); //Replace
-                cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
-                assert(fbt != blobs.end());
-
-                cvb::CvBlob* fishblob = fbt->second;
-                fishModel* fish= new fishModel(track,fishblob);
-
-                fish->templateScore  = maxMatchScore;
-                fish->bearingAngle   = bestAngle;
-                fish->ptRotCentre    = ptbcentre;
-
-                vfishmodels.insert(CvIDFishModel(track->id,fish));
-            }
+           vfishmodels.insert(CvIDFishModel(fishblob->hash(),fish));
+           qfishrank.push(fish);
 
         }
+
 
     }
 
     ///\todo Make A priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
-    double maxTemplateScore = 0; // Save best Templ Score Found Among Fish Models
-    //Look Through
-    ///Go through Each FishModel And Delete the ones whose tracks are gone
-    fishModels::iterator ft = vfishmodels.begin();
-    while(ft != vfishmodels.end())
-    {
-        pfish = ft->second;
+    ///     ///Keep Only the Fish with The Max Template Score - Can Add them to priority Queue And just keep top one
+    fishModel* pfishBest = qfishrank.top();
+    double maxTemplateScore = pfishBest->templateScore;
 
-        cvb::CvTracks::const_iterator it = fishtracks.find(pfish->ID);
-
-       if (it == fishtracks.end()) //Track No Longer Exists / Delete model
-        {
-           //ft = vfishmodels.erase(ft); //Only Works On some Compilers
-           vfishmodels.erase(ft++);
-           std::cout << "Deleted fishmodel: " << pfish->ID << std::endl;
-           delete(pfish);
-           break;
-        }else{ //Track Is inactive Delete Model
-           if (pfish->track->inactive)
-           {
-               std::cout << "Deleted fishmodel: " << pfish->ID << " Track was Inactive t:" << pfish->track->inactive << std::endl;
-               //ft = vfishmodels.erase(ft);
-               vfishmodels.erase(ft++);
-               delete(pfish);
-               break;
-           }
-        }
-
-       //Find Max Template Score Fish
-       if (pfish->templateScore > maxTemplateScore)
-           maxTemplateScore = pfish->templateScore;
-
-       //Can Only Be reached if above cases eval. false
-         ++ft; //Increment Iterator
-
-    }
-
-
-    ///Keep Only the Fish with The Max Template Score - Can Add them to priority Queue And just keep top one
+    //Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene
     ft = vfishmodels.begin();
     while(ft != vfishmodels.end())
     {
         pfish = ft->second;
 
-        if (pfish->templateScore < maxTemplateScore && pfish->templateScore !=0 )
+        if (pfishBest != pfish)
         {
             std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
             ft = vfishmodels.erase(ft);
             delete(pfish);
             continue;
         }
-
-
         ++ft; //Increment Iterator
-    }
+    } //Loop To Delete Other FishModels
 
 
-} //End Of Update FishModels
+
+
+}
 
 
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
@@ -1435,11 +1416,19 @@ int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb:
 }
 
 
-int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg)
+/// Updated Blob Processing
+/// \brief processFishBlobs Finds blobs that belong to fish
+/// \param frame
+/// \param maskimg
+/// \param frameOut //Output Image With FishBlob Rendered
+/// \param ptFishblobs opencv keypoints vector of the Fish
+/// \return
+///
+int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs)
 {
 
     std::vector<cv::KeyPoint> keypoints;
-    std::vector<cv::KeyPoint> keypoints_in_mask;
+    //std::vector<cv::KeyPoint> keypoints_in_ROI;
     cv::SimpleBlobDetector::Params params;
 
     params.filterByCircularity  = false;
@@ -1452,13 +1441,13 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg)
 
     // Filter by Area.
     params.filterByArea = true;
-    params.minArea = 100;
-    params.maxArea = 1000;
+    params.minArea = thresh_fishblobarea;
+    params.maxArea = 2*thresh_fishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
     params.filterByInertia      = false;
-    params.maxInertiaRatio      = 0.8;
+    params.maxInertiaRatio      = 0.5;
 
 
     //params.filterByInertia = true;
@@ -1466,12 +1455,12 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg)
     // Set up the detector with default parameters.
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
-    detector->detect( gframeBuffer, keypoints,gframeMask); //frameMask
+    detector->detect( frame, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
     //for (cv::KeyPoint &kp : keypoints)
-    keypoints_in_mask.clear();
+    ptFishblobs.clear();
     for(int i=0;i<keypoints.size();i++)
     {
         cv::KeyPoint kp = keypoints[i];
@@ -1484,21 +1473,23 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg)
             RoiID++;
             //Keypoint is in ROI so Add To Masked
             if (iroi.contains(kp.pt))
-                     keypoints_in_mask.push_back(kp);
+                     ptFishblobs.push_back(kp);
 
             //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
             //if (maskVal > 0)
              //keypoints_in_mask.push_back(kp);
+        }
     }
 
 
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
-    gframeBuffer.copyTo(gframeBuffer,gframeMask); //mask Source Image
-    cv::drawKeypoints( gframeBuffer, keypoints_in_mask, im_with_keypoints, cv::Scalar(0,0,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+    frame.copyTo(frameOut,maskimg); //mask Source Image
+    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
 
     detector->clear();
+
 }
 
 int processFoodBlobs(cv::Mat& frame)
@@ -2203,7 +2194,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     {
           fishModel* fish = (*it).second;
           //Draw A general Region Where the FIsh Is located, search for template within that region only
-          cv::Point centroid = cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
+          cv::Point centroid = fish->zfishBlob.pt; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
           cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-40)), max(0,min(maskedImg_gray.rows,centroid.y-40)));
           cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+40)), max(0,min(maskedImg_gray.rows,centroid.y+40)));
 
@@ -2790,3 +2781,160 @@ void thresh_callback(int, void* )
 //  return idx;
 //}
 
+
+
+
+/////
+///// \brief UpdateFishModels Create a fish model class attaching a respective fishtrack to it and checking its match against a fish template image.
+/////  This prersistence uses the trackid to identify and make informed tracking of fish features across frames
+///// \param maskedImg_Gray / Full frame image of the scene
+///// \param vfishmodels
+///// \param fishtracks
+/////
+///// \note //The whole of  fishModels is deleted after tracking is finished. Each Model Is Templ. Match score is assigned and then only the best
+///// match/score is kept - Assumes 1 fish Is in the scene
+/////
+//void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,cvb::CvTracks& fishtracks)
+//{
+
+//    fishModel* pfish = NULL;
+
+//    cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
+//    cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
+
+//    cv::Point gptmaxLoc; //point Of Bestr Match
+
+//     //Look through Tracks find they have a fish model attached and create if missing
+//    for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
+//    {
+//        cvb::CvTrack* track = it->second;
+
+//        fishModels::const_iterator ft =  vfishmodels.find(it->first); //Find model with same Id as the Track - Associated fishModel
+//        if (track->inactive)
+//            continue;
+
+//        ///
+//        /// Check If Track Centre Point Contains An image that matches a fish template
+//        ///
+
+//        cv::Point centroid = cv::Point2f(track->centroid.x,track->centroid.y);
+//        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-40)), max(0,min(maskedImg_gray.rows,centroid.y-40)));
+//        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+40)), max(0,min(maskedImg_gray.rows,centroid.y+40)));
+
+//        cv::Rect rectFish(pBound1,pBound2);
+
+//        cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
+//        cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
+//        double maxMatchScore; //
+//        int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+
+
+//        int bestAngle =AngleIdx*gFishTemplateAngleSteps;
+//        cv::Point top_left = pBound1+gptmaxLoc;
+//        cv::Point ptbcentre = top_left + rotCentre;
+
+//         //Check If Fish Was found)
+//        if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
+//        {
+//            //Make Attached FishModel
+//            cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
+//            assert(fbt != blobs.end());
+//            cvb::CvBlob* fishblob = fbt->second;
+//            //Make new fish Model
+//            fishModel* fish= new fishModel(track,fishblob);
+
+//           fish->templateScore  = maxMatchScore;
+//           fish->bearingAngle   = bestAngle;
+//           fish->ptRotCentre    = ptbcentre;
+
+//           vfishmodels.insert(CvIDFishModel(track->id,fish));
+
+//        }
+//        else ///Some Fish Has that Track ID
+//        { //Check if pointer is the same Not just the track ID (IDs are re used)
+//          pfish = ft->second; //Set Pointer to Existing Fish
+//          pfish->templateScore  = maxMatchScore;
+//          pfish->bearingAngle   = bestAngle;
+//          pfish->ptRotCentre    = ptbcentre;
+//            //Must point to the same track - OtherWise Replace Fish Model
+//            if(pfish->track != track)
+//            {
+//                delete pfish;
+//                //Make Attached FishModel
+//                vfishmodels.erase(track->id); //Replace
+//                cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
+//                assert(fbt != blobs.end());
+
+//                cvb::CvBlob* fishblob = fbt->second;
+//                fishModel* fish= new fishModel(track,fishblob);
+
+//                fish->templateScore  = maxMatchScore;
+//                fish->bearingAngle   = bestAngle;
+//                fish->ptRotCentre    = ptbcentre;
+
+//                vfishmodels.insert(CvIDFishModel(track->id,fish));
+//            }
+
+//        }
+
+//    }
+
+//    ///\todo Make A priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
+//    double maxTemplateScore = 0; // Save best Templ Score Found Among Fish Models
+//    //Look Through
+//    ///Go through Each FishModel And Delete the ones whose tracks are gone
+//    fishModels::iterator ft = vfishmodels.begin();
+//    while(ft != vfishmodels.end())
+//    {
+//        pfish = ft->second;
+
+//        cvb::CvTracks::const_iterator it = fishtracks.find(pfish->ID);
+
+//       if (it == fishtracks.end()) //Track No Longer Exists / Delete model
+//        {
+//           //ft = vfishmodels.erase(ft); //Only Works On some Compilers
+//           vfishmodels.erase(ft++);
+//           std::cout << "Deleted fishmodel: " << pfish->ID << std::endl;
+//           delete(pfish);
+//           break;
+//        }else{ //Track Is inactive Delete Model
+//           if (pfish->track->inactive)
+//           {
+//               std::cout << "Deleted fishmodel: " << pfish->ID << " Track was Inactive t:" << pfish->track->inactive << std::endl;
+//               //ft = vfishmodels.erase(ft);
+//               vfishmodels.erase(ft++);
+//               delete(pfish);
+//               break;
+//           }
+//        }
+
+//       //Find Max Template Score Fish
+//       if (pfish->templateScore > maxTemplateScore)
+//           maxTemplateScore = pfish->templateScore;
+
+//       //Can Only Be reached if above cases eval. false
+//         ++ft; //Increment Iterator
+
+//    }
+
+
+//    ///Keep Only the Fish with The Max Template Score - Can Add them to priority Queue And just keep top one
+//    ft = vfishmodels.begin();
+//    while(ft != vfishmodels.end())
+//    {
+//        pfish = ft->second;
+
+//        if (pfish->templateScore < maxTemplateScore && pfish->templateScore !=0 )
+//        {
+//            std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
+//            ft = vfishmodels.erase(ft);
+//            delete(pfish);
+//            continue;
+//        }
+
+
+//        ++ft; //Increment Iterator
+//    }
+
+
+//} //End Of Update FishModels
