@@ -2,33 +2,32 @@
 #define ZFTTRACKS
 
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include "opencv2/core/utility.hpp"
+
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/features2d.hpp>
+
+
+#define CV_TRACK_RENDER_ID            0x0001 ///< Print the ID of each track in the image. \see cvRenderTrack
+#define CV_TRACK_RENDER_BOUNDING_BOX  0x0002 ///< Draw bounding box of each track in the image. \see cvRenderTrack
+#define CV_TRACK_RENDER_TO_LOG        0x0010 ///< Print track info to log out. \see cvRenderTrack
+#define CV_TRACK_RENDER_TO_STD        0x0020 ///< Print track info to log out. \see cvRenderTrack
+#define CV_TRACK_RENDER_PATH          0x0100 ///< Draw polyline of track positions \see cvRenderTrack
+
+
 /// \brief Type of identification numbers.
-typedef unsigned int CvID;
+typedef unsigned int zftID;
 
 
-///// \brief Struct that contain information about one track.
-///// \see CvID
-///// \see CvLabel
-///// \see ltROI
-//struct CvTrack
-//{
-//  CvID id; ///< Track identification number.
-//  ltROI* pROI; ///< Pointer To Region of Interest structure to which this track belongs
-//  CvLabel label; ///< Label assigned to the blob related to this track.
-//  CvScalar colour = CV_RGB(255., 0., 0.); ///> Colourwhen drawing Countour
+/// \var typedef std::vector<cv:Point2f> TrackPoints
+/// \brief stores the stacked List of past centroid points that define this track.
+/// \see CvPoint2D64f
+/// \see CvTrack
+typedef std::vector<cv::Point2f> zftTrackPoints;
 
-//  unsigned int minx; ///< X min.same as  corresponding blob bounding box
-//  unsigned int maxx; ///< X max.
-//  unsigned int miny; ///< Y min.
-//  unsigned int maxy; ///< y max.
 
-//  CvPoint2D64f centroid; ///< Centroid.
-//  CvTrackPoints pointStack; /// <Holds list of past centroid positions along the track
-//  double effectiveDisplacement; ///< Used to indicate a px speed measure so as to estimate possible blob distance from track on next frame.
-//  unsigned int lifetime; ///< Indicates how much frames the object has been in scene.
-//  unsigned int active; ///< Indicates number of frames that has been active from last inactive period.
-//  unsigned int inactive; ///< Indicates number of frames that has been missing.
-//};
 
 ///// \var typedef std::map<CvID, CvTrack *> CvTracks
 ///// \brief List of tracks.
@@ -42,7 +41,50 @@ typedef unsigned int CvID;
 ///// \see CvTrack
 //typedef std::pair<CvID, CvTrack *> CvIDTrack;
 
+//CvFont* defaultFont = NULL;
 
+/// \brief Struct that contain information about one track.
+/// \see CvID
+/// \see ltROI
+/// \see pointStack
+struct zftTrack
+{
+    zftTrack()
+    {
+        //Random colour
+        int c1 =  rand() % 200 + 30;
+        int c2 =  rand() % 200 + 30;
+        int c3 =  rand() % 200 + 30;
+        colour      = CV_RGB(c1,c2,c3);
+        lifetime    = 0;
+        active      = 0;
+        inactive    = 0;
+        effectiveDisplacement = 0.0;
 
+    }
+
+    //Default Constructor
+    zftTrack(zftID ID):zftTrack()
+    {
+        id = ID;
+    }
+
+  zftID id; ///< Track identification number.
+  //ltROI* pROI; ///< Pointer To Region of Interest structure to which this track belongs
+  cv::Scalar colour = CV_RGB(255., 0., 0.); ///> Colourwhen drawing Countour
+
+  cv::Rect boundingBox;
+  cv::Point2f centroid; ///< Centroid.
+  zftTrackPoints pointStack; /// <Holds list of past centroid positions along the track
+
+  double effectiveDisplacement; ///< Used to indicate a px speed measure so as to estimate possible blob distance from track on next frame.
+  unsigned int lifetime; ///< Indicates how much frames the object has been in scene.
+  unsigned int active; ///< Indicates number of frames that has been active from last inactive period.
+  unsigned int inactive; ///< Indicates number of frames that has been missing.
+};
+
+/// \brief Render A zftracker Track
+///
+void zftRenderTrack(zftTrack& track, cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, CvFont *font );
 #endif // ZFTTRACKS
 

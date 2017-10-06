@@ -7,6 +7,8 @@
 #include <QDebug>
 
 #include "ellipse_detect.h"
+#include "zfttracks.h"
+
 //#include "larvatrack.h" /If included here it causes circular search if fishModel Defs.
 
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
@@ -65,8 +67,10 @@ public:
   double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
   double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
-  cvb::CvLabel blobLabel;
-  cvb::CvID ID; /// Same as the track ID
+  zftID ID; /// Uid Of this Fish Instance
+
+  cvb::CvLabel blobLabel; //Legacy BlobLabel
+
   std::vector<cv::Point> contour;
 
   ///\note The lowest point in a rectangle is 0th vertex, and 1st, 2nd, 3rd vertices follow clockwise.
@@ -96,6 +100,7 @@ public:
   cv::Point tailTopPoint;
 
   cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
+  zftTrack zTrack;
   CvTrackPoints trackPointStack; /// <Holds list of past centroid positions along the track
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
@@ -130,13 +135,19 @@ class CompareFishScore {
     }
 };
 
+///
+/// \brief qfishModels used to rank candidate fishModels according to match score
+/// so as to obtain the best match among all candidate fishModels found, and remove the rest.
+///
 typedef std::priority_queue<fishModel*,std::vector<fishModel*>,CompareFishScore> qfishModels;
 
-/// \var typedef std::pair<CvID, fishModel *> CvIDFishModel pair for insertion into map list of fish
-/// /// \brief Pair (identification number, fishModel).
-/// \see CvID
-/// \see CvTrack
-typedef std::pair<cvb::CvID, fishModel* > CvIDFishModel;
+
+
+// /// \var typedef std::pair<CvID, fishModel *> IDFishModel pair for insertion into map list of fish
+// /// /// \brief Pair (identification number, fishModel).
+// /// \see CvID
+// /// \see CvTrack
+typedef std::pair<zftID, fishModel* > IDFishModel;
 
 
 

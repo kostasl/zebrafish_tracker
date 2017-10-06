@@ -522,30 +522,28 @@ namespace cvb
 
         if (mode&CV_TRACK_RENDER_TO_LOG)
         {
-          clog << "Track " << track.id << endl;
+          std::clog << "Track " << track.id << endl;
           if (track.inactive)
-            clog << " - Inactive for " << track.inactive << " frames" << endl;
+            std::clog << " - Inactive for " << track.inactive << " frames" << endl;
           else
-            clog << " - Associated with blob " << track.label << endl;
-          clog << " - Lifetime " <<track.lifetime << endl;
-          clog << " - Active " << track.active << endl;
-          clog << " - Bounding box: (" << track.minx << ", " <<track.miny << ") - (" << track.maxx << ", " << track.maxy << ")" << endl;
-          clog << " - Centroid: (" << track.centroid.x << ", " << track.centroid.y << ")" << endl;
-          clog << endl;
+          std::clog << " - Lifetime " <<track.lifetime << endl;
+          std::clog << " - Active " << track.active << endl;
+          std::clog << " - Bounding box: (" << track.minx << ", " <<track.miny << ") - (" << track.maxx << ", " << track.maxy << ")" << endl;
+          std::clog << " - Centroid: (" << track.centroid.x << ", " << track.centroid.y << ")" << endl;
+          std::clog << std::endl;
         }
 
         if (mode&CV_TRACK_RENDER_TO_STD)
         {
-          cout << "Track " << track.id << endl;
+          std::cout << "Track " << track.id << endl;
           if (track.inactive)
             cout << " - Inactive for " <<track.inactive << " frames" << endl;
           else
-            cout << " - Associated with blobs " << track.label << endl;
-          cout << " - Lifetime " << track.lifetime << endl;
-          cout << " - Active " << track.active << endl;
-          cout << " - Bounding box: (" <<track.minx << ", " << track.miny << ") - (" << track.maxx << ", " <<track.maxy << ")" << endl;
-          cout << " - Centroid: (" << track.centroid.x << ", " << track.centroid.y << ")" << endl;
-          cout << endl;
+          std::cout << " - Lifetime " << track.lifetime << endl;
+          std::cout << " - Active " << track.active << endl;
+          std::cout << " - Bounding box: (" <<track.minx << ", " << track.miny << ") - (" << track.maxx << ", " <<track.maxy << ")" << endl;
+          std::cout << " - Centroid: (" << track.centroid.x << ", " << track.centroid.y << ")" << endl;
+          std::cout << endl;
         }
 
 
@@ -553,7 +551,6 @@ namespace cvb
         //cv::Mat img = cv::Mat::zeros(400, 400, CV_8UC3);
         if (mode&CV_TRACK_RENDER_PATH)
         {
-            std::vector<CvPoint>* pvec = &track.pointStack;
             CvPoint *pts = (CvPoint*) cv::Mat(track.pointStack).data;
             int npts = cv::Mat(track.pointStack).rows;
             cvPolyLine(imgDest, &pts,&npts, 1,

@@ -11,7 +11,8 @@ fishModel::fishModel()
         this->mouthPoint.y = 0;
         //this->leftEyeHull.clear();
         //this->rightEyeHull.clear();
-
+        this->ID    = 0;
+        zTrack.id   = this->ID;
 }
 
 fishModel::fishModel(cvb::CvTrack* track,cvb::CvBlob* blob):fishModel()
@@ -34,8 +35,9 @@ fishModel::fishModel(zftblob blob):fishModel()
 
     this->ID        = blob.hash() ;
     this->blobLabel = blob.hash();
-    this->zfishBlob = blob; //Copy Localy
+    zTrack.id       = this->ID;
 
+    this->zfishBlob = blob; //Copy Localy
     this->track     = NULL;
     this->bearingRads = blob.angle*M_PI/180.0;
     this->coreTriangle[2].x = this->zfishBlob.pt.x;

@@ -36,6 +36,7 @@
 #include <larvatrack.h>
 #include <ellipse_detect.h>
 #include <template_detect.h>
+#include <zfttracks.h>
 
 #include <QDirIterator>
 #include <QDir>
@@ -341,7 +342,7 @@ int main(int argc, char *argv[])
     trackVideofiles(window_main);
     //destroy GUI windows
     cv::destroyAllWindows();
-    cv::waitKey(0);                                          // Wait for a keystroke in the window
+    //cv::waitKey(0);                                          // Wait for a keystroke in the window
 
     //pMOG->~BackgroundSubtractor();
     //pMOG2->~BackgroundSubtractor();
@@ -679,11 +680,20 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
 
         UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs);
+        //If A fish Is Detected Then Draw Its tracks
+        fishModels::iterator ft = vfishmodels.begin();
+        if (ft != vfishmodels.end())
+        {
+            fishModel* pfish = ft->second;
+            assert(pfish);
+            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH , &trackFnt );
+        }
 
+        ///Keep A Global List of all tracks?
         //Combine Lists into Tracks before rendering
-        tracks.clear();
+//        tracks.clear();
         //tracks.insert(foodtracks.begin(),foodtracks.end() );
-        tracks.insert(fishtracks.begin(),fishtracks.end());
+  //      tracks.insert(fishtracks.begin(),fishtracks.end());
 
         //
         //saveTracks(tracks,trkoutFileCSV,frameNumberString);
@@ -695,7 +705,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         detectZfishFeatures(frame,outframe,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         //Show Tracks
-        cvb::cvRenderTracks(tracks, &lplframe, &lplframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
+        //cvb::cvRenderTracks(tracks, &lplframe, &lplframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
 
 
         if (bSaveImages)
@@ -1014,7 +1024,6 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
         bool bModelFound = false;
         //Check Through Models And Find The Closest Fish To This FishBlob
-
         for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
         {
              pfish = ft->second;
@@ -1029,8 +1038,8 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
                 pfish->bearingAngle   = bestAngle;
                 pfish->ptRotCentre    = ptbcentre;
                 pfish->zfishBlob      = *fishblob;
-                pfish->trackPointStack.push_back(fishblob->pt);
-
+                pfish->zTrack.pointStack.push_back(fishblob->pt);
+                pfish->zTrack.centroid = fishblob->pt;
                 //Add To Priority Q So we can Rank
                 qfishrank.push(pfish);
              }
@@ -1049,20 +1058,28 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
            fish->templateScore  = maxMatchScore;
            fish->bearingAngle   = bestAngle;
            fish->ptRotCentre    = ptbcentre;
-           fish->trackPointStack.push_back(fishblob->pt);
-
-           vfishmodels.insert(CvIDFishModel(fishblob->hash(),fish));
+           fish->zTrack.pointStack.push_back(fishblob->pt);
+           fish->zTrack.centroid    = fishblob->pt;
+           vfishmodels.insert(IDFishModel(fish->ID,fish));
            qfishrank.push(fish);
+
+           std::cout << "New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << std::endl;
 
         }
 
 
     }
 
-    ///\todo Make A priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
+    ///\brief Make A priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
     ///     ///Keep Only the Fish with The Max Template Score - Can Add them to priority Queue And just keep top one
-    fishModel* pfishBest = qfishrank.top();
-    double maxTemplateScore = pfishBest->templateScore;
+
+    fishModel* pfishBest = 0;
+    double maxTemplateScore = 0.0;
+    if (qfishrank.size() > 0)
+    {
+        pfishBest = qfishrank.top();
+        maxTemplateScore = pfishBest->templateScore;
+    }
 
     //Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene
     ft = vfishmodels.begin();
@@ -1072,6 +1089,8 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
         if (pfishBest != pfish)
         {
+            assert(pfish->templateScore < maxTemplateScore);
+
             std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
             ft = vfishmodels.erase(ft);
             delete(pfish);
@@ -2185,7 +2204,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     ////No Try Template Matching  Across Angles//
     //Pick The largest dimension and Make A Square
     cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
-    cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
+   // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
     cv::Mat Mrot;
 
 //    ///Detect Head Feature //
@@ -2847,7 +2866,7 @@ void thresh_callback(int, void* )
 //           fish->bearingAngle   = bestAngle;
 //           fish->ptRotCentre    = ptbcentre;
 
-//           vfishmodels.insert(CvIDFishModel(track->id,fish));
+//           vfishmodels.insert(IDFishModel(track->id,fish));
 
 //        }
 //        else ///Some Fish Has that Track ID
@@ -2872,7 +2891,7 @@ void thresh_callback(int, void* )
 //                fish->bearingAngle   = bestAngle;
 //                fish->ptRotCentre    = ptbcentre;
 
-//                vfishmodels.insert(CvIDFishModel(track->id,fish));
+//                vfishmodels.insert(IDFishModel(track->id,fish));
 //            }
 
 //        }
