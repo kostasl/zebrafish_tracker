@@ -24,6 +24,12 @@
 #include <zfttracks.h>
 #include <GUI/mainwindow.h>
 
+/// For Mem Usage //
+#include <unistd.h>
+#include <ios>
+#include <fstream>
+
+
 /// \file larvatrack.h
 /// \brief OpenCV based zebrafish tracker header file.
 
@@ -177,6 +183,13 @@ template < typename T > std::string to_string( const T& n )
        stm << n ;
        return stm.str() ;
    }
+
+///
+/// \brief process_mem_usage Attempts a read of MemUsage
+/// \param vm_usage
+/// \param resident_set
+///
+void process_mem_usage(double& vm_usage, double& resident_set);
 
 #endif // LARVATRACK_H
 

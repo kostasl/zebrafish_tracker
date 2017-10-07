@@ -455,7 +455,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
           //cv::displayOverlay(gstrwinName,"Press 'e' when features Have been detected" , 10000 );
 
           window_main.showVideoFrame(frame,nFrame); //Show On QT Window
-          cv::imshow(gstrwinName + " FG Mask", fgMask);
+          //cv::imshow(gstrwinName + " FG Mask", fgMask);
           //Check For input Control
           //keyboard = cv::waitKey( cFrameDelayms );
           checkPauseRun(&window_main,keyboard,nFrame);
@@ -639,14 +639,14 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
     outframe.copyTo(frameMasked,fgMask); //Use Enhanced Mask
     //show the current frame and the fg masks
-    cv::imshow(gstrwinName + " FishOnly",frameMasked);
+    //cv::imshow(gstrwinName + " FishOnly",frameMasked);
 
 
     ///DRAW ROI
     drawROI(outframe);
 
 
-    lplframe = frameMasked; //Convert to legacy format
+    //lplframe = frameMasked; //Convert to legacy format
 
     //cvb::CvBlobs blobs;
     ///DO Tracking
@@ -718,12 +718,11 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
         }
 
-    }
+    } //If Tracking
 
     fishbodycontours.clear();
     fishbodyhierarchy.clear();
     //Save to Disk
-
 
     ///
 
@@ -731,33 +730,48 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     //Frame Number
     std::stringstream ss;
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
-              cv::Scalar(255,255,255), -1);
+               CV_RGB(10,10,10), -1);
     cv::putText(outframe, frameNumberString,  cv::Point(15, 15),
-            cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
+            cv::FONT_HERSHEY_SIMPLEX, 0.4 ,  CV_RGB(250,250,0));
 
     //Count on Original Frame
     std::stringstream strCount;
     strCount << "Nf:" << (nLarva) << " Nr:" << nFood;
-    cv::rectangle(outframe, cv::Point(10, 25), cv::Point(120,45), cv::Scalar(255,255,255), -1);
+    cv::rectangle(outframe, cv::Point(10, 25), cv::Point(80,45),  CV_RGB(10,10,10), -1);
     cv::putText(outframe, strCount.str(), cv::Point(15, 38),
-            cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
+            cv::FONT_HERSHEY_SIMPLEX, 0.4 ,  CV_RGB(250,250,0));
+
 
     char buff[100];
-    //Learning Rate
-    //std::stringstream strLearningRate;
-    std::sprintf(buff,"dL: %0.4f",dLearningRate);
+    static double vm, rss;
+
+    //Report Time
+    std::sprintf(buff,"t: %0.2f",gTimer.elapsed()/(1000.0*60.0) );
     //strLearningRate << "dL:" << (double)(dLearningRate);
-    cv::rectangle(outframe, cv::Point(10, 50), cv::Point(100,70), cv::Scalar(255,255,255), -1);
+    cv::rectangle(outframe, cv::Point(10, 50), cv::Point(50,70), cv::Scalar(10,10,10), -1);
     cv::putText(outframe, buff, cv::Point(15, 63),
-            cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
+            cv::FONT_HERSHEY_SIMPLEX, 0.4 , CV_RGB(250,250,0));
 
     //Time Rate - conv from ms to minutes
+    ///Memory Usage
+    if (nFrame%30)
+    {
+        //THats In KiB units /So 1Million is A Gigabyte
+        process_mem_usage(vm, rss);
+        //std::cout << "VM: " << vm/1024.0 << "; RSS: " << rss/1024.0 << endl;
 
-    std::sprintf(buff,"t: %0.2f",gTimer.elapsed()/(1000.0*60.0) );
+    }
+    std::sprintf(buff,"Vm: %0.2f;Rss:%0.2f",vm/1024.0,rss/1024.0);
+    cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
+    cv::putText(outframe, buff, cv::Point(10, 500),
+            cv::FONT_HERSHEY_SIMPLEX, 0.4 , CV_RGB(10,250,0));
+
+
+
     //strTimeElapsed << "" <<  << " m";
-    cv::rectangle(outframe, cv::Point(10, 75), cv::Point(100,95), cv::Scalar(255,255,255), -1);
-    cv::putText(outframe, buff, cv::Point(15, 88),
-            cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
+//    cv::rectangle(outframe, cv::Point(10, 75), cv::Point(100,95), cv::Scalar(255,255,255), -1);
+//    cv::putText(outframe, buff, cv::Point(15, 88),
+//            cv::FONT_HERSHEY_SIMPLEX, 0.35 , cv::Scalar(0,0,0));
 
 //    //Count Fg Pixels // Ratio
 //    std::stringstream strFGPxRatio;
@@ -913,23 +927,30 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
     {
-        //read the current frame
-        if(!capture.read(frame))
+        try
         {
-            if (nFrame == startFrameCount)
+            //read the current frame
+            if(!capture.read(frame))
             {
-                std::cerr << "Unable to read first frame." << std::endl;
-                nFrame = 0; //Signals To caller that video could not be loaded.
-                exit(EXIT_FAILURE);
+                if (nFrame == startFrameCount)
+                {
+                    std::cerr << "Unable to read first frame." << std::endl;
+                    nFrame = 0; //Signals To caller that video could not be loaded.
+                    exit(EXIT_FAILURE);
+                }
+                else
+                {
+                   std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
+                   std::cout << nFrame << " frames of Video processed. Move on to next timelapse video? " <<std::endl;
+                    ::saveImage(frameNumberString,gstroutDirCSV,frameMasked);
+                   //continue;
+                   break;
+               }
             }
-            else
-            {
-               std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
-               std::cout << nFrame << " frames of Video processed. Move on to next timelapse video? " <<std::endl;
-                ::saveImage(frameNumberString,gstroutDirCSV,frameMasked);
-               //continue;
-               break;
-           }
+        }catch(const std::exception &e)
+        {
+            std::cerr << "Error reading frame " << nFrame << "skipping." << std::endl;
+            continue;
         }
 
 
@@ -1090,7 +1111,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
         {
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
             //OtherWise Delete The model?
-            assert(pfish->templateScore < maxTemplateScore && maxTemplateScore > 0);
+            assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
 
             std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
             ft = vfishmodels.erase(ft);
@@ -2311,13 +2332,19 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               //get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
               ///\note The centre of the Bounding Box could also do
 
-              //Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
-              //cv::circle(imgFishAnterior,ptFishAnteriorRotCentre,1,CV_RGB(250,0,0),1);
-              cv::imshow("IsolatedAnterior",imgFishAnterior);
+
+
+
               //cv::Point ptRotCenter = cv::Point(szFishAnteriorNorm.width/2,szFishAnteriorNorm.height/2);
               //cv::Point ptRotCenter = cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2);
-
+              ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
               cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
+              //Draw  Rotation Centre of Transformation to Norm
+              cv::circle(imgFishAnterior,ptRotCenter,4,CV_RGB(100,140,140),2);
+              cv::imshow("IsolatedAnterior",imgFishAnterior);
+             // ptRotCenter.x = ptRotCenter.x*cos(bestAngleinDeg*M_PI/180.0);
+             // ptRotCenter.y = ptRotCenter.y*sin(bestAngleinDeg*M_PI/180.0);
+
               cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
               //cv::Mat Mrot = cv::getRotationMatrix2D(-fishRotHeadBox.center,bestAngleinDeg,1.0); //Rotate Upwards
 
@@ -2325,8 +2352,11 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               //Need to fix size of Upright/Normed Image
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
               cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
+              //Draw Normalized Rotation Centre
+              cv::circle(imgFishAnterior_Norm,ptRotCenter,4,CV_RGB(250,0,0),2);
 
-              imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
+              //imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
+              imgFishHead           = imgFishAnterior_Norm;
 
               //cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
               //cv::imshow("IsolatedHead",imgFishHead);
@@ -2969,3 +2999,51 @@ void thresh_callback(int, void* )
 
 
 //} //End Of Update FishModels
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+///
+///
+/// process_mem_usage(double &, double &) - takes two doubles by reference,
+/// attempts to read the system-dependent data for a process' virtual memory
+/// size and resident set size, and return the results in KB.
+///
+/// On failure, returns 0.0, 0.0
+
+void process_mem_usage(double& vm_usage, double& resident_set)
+{
+   using std::ios_base;
+   using std::ifstream;
+   using std::string;
+
+   vm_usage     = 0.0;
+   resident_set = 0.0;
+
+   // 'file' stat seems to give the most reliable results
+   //
+   ifstream stat_stream("/proc/self/stat",ios_base::in);
+
+   // dummy vars for leading entries in stat that we don't care about
+   //
+   string pid, comm, state, ppid, pgrp, session, tty_nr;
+   string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+   string utime, stime, cutime, cstime, priority, nice;
+   string O, itrealvalue, starttime;
+
+   // the two fields we want
+   //
+   unsigned long vsize;
+   long rss;
+
+   stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
+               >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+               >> utime >> stime >> cutime >> cstime >> priority >> nice
+               >> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
+
+   stat_stream.close();
+
+   long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+   vm_usage     = vsize / 1024.0;
+   resident_set = rss * page_size_kb;
+}

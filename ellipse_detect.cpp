@@ -408,14 +408,24 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
 }
 
+///
+/// \brief detectEllipses - Used oN Head Isolated Image
+/// \param pimgIn
+/// \param imgEdge
+/// \param imgOut
+/// \param angleDeg
+/// \param vellipses
+/// \param outHeadFrameProc
+/// \return
+///
 int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses,cv::Mat& outHeadFrameProc)
 {
     int ret = 0;//Return Value Is the Count Of Ellipses Detected (Eyes)
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
 
-    cv::Mat imgIn;
+    cv::Mat imgUpsampled_gray;
     //Upsamples an image which causes blur/interpolation it.
-    cv::pyrUp(pimgIn, imgIn, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
+    cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
 
 
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;
@@ -424,17 +434,21 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
     cv::Point2f ptLEyeMid,ptREyeMid;
-    cv::Point2f ptcentre(imgIn.cols/2,imgIn.rows/2);
+    cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/2);
     int lengthLine = 13;
     ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y/2; //y=0 is the top left corner
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
 
-
-    cv::Mat img_colour,img_contour,imgIn_thres,imgEdge_local,imgEdge_dbg;
+    ///Note: SOme Allocation Bug Is Hit here;
+    cv::Mat img_colour;
+    cv::Mat img_contour;
+    cv::Mat imgIn_thres;
+    cv::Mat imgEdge_local;
+    cv::Mat imgEdge_dbg;
     //Debug
-    imgDebug = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
+    imgDebug = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
@@ -446,7 +460,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     //std::cout << (int)imgIn.at<uchar>(ptcentre) << "+" << (int)imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) << "+" <<(int) imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) << "+" << (int)imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
     //std::cout << "+" << (int)imgIn.at<uchar>(imgIn.rows-2,ptcentre.x) << "+" <<  (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x) << " avg:" <<  thresEyeSeg << std::endl;
 
-    cv::threshold(imgIn, imgIn_thres,gthresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgUpsampled_gray, imgIn_thres,gthresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
@@ -475,15 +489,15 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
 
     cv::RotatedRect rcLEye,rcREye;
     //Make Debug Img
-    cv::cvtColor( imgIn,img_colour, cv::COLOR_GRAY2RGB);
-    cv::cvtColor( imgIn,img_contour, cv::COLOR_GRAY2RGB);
+    cv::cvtColor( imgUpsampled_gray,img_colour, cv::COLOR_GRAY2RGB);
+    cv::cvtColor( imgUpsampled_gray,img_contour, cv::COLOR_GRAY2RGB);
 
     //for( size_t i = 0; i< contours_canny.size(); i++ )
     vedgePoints_all.clear();
 
     if (iLEye != -1)
     {
-        imgEdge_local = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
+        imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
         cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
         if (vLEyeHull.size() > 4)
         {
@@ -539,7 +553,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     //RIGHT EYE - Reset And Redraw - Now Right Eye
     if (iREye != -1)
     {
-        imgEdge_local = cv::Mat::zeros(imgIn.rows,imgIn.cols,CV_8UC1);
+        imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
         cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
 
         if (vREyeHull.size() > 4)
