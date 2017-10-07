@@ -763,7 +763,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     }
     std::sprintf(buff,"Vm: %0.2f;Rss:%0.2f",vm/1024.0,rss/1024.0);
     cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
-    cv::putText(outframe, buff, cv::Point(10, 500),
+    cv::putText(outframe, buff, cv::Point(10, 505),
             cv::FONT_HERSHEY_SIMPLEX, 0.4 , CV_RGB(10,250,0));
 
 
