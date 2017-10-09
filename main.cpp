@@ -2083,6 +2083,7 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
             // they should still fall within contour - )
             //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
             cv::drawContours( outFishMask, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
+            cv::drawContours( outFoodMask, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(0,0,0), cv::FILLED); //Draw New One
 
 
             //fishbodycontours[kk].clear();
@@ -2097,7 +2098,7 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 
     //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
     //cv::bitwise_or(outFishMask,maskFGImg,maskFGImg);
-    cv::bitwise_xor(outFishMask,outFoodMask,outFoodMask);
+    //cv::bitwise_xor(outFishMask,outFoodMask,outFoodMask);
     //maskfishOnly.copyTo(maskFGImg);
 
     //threshold_output.copyTo(frameDebugD);
