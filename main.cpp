@@ -93,6 +93,7 @@ int gthresEyeSeg            = 125;
 int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
 const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
+int gFishBoundBoxSize        = 40; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
@@ -640,10 +641,12 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
 
     //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
-    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
-
+//    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
+    cv::Mat fgFishMask;
+    cv::Mat fgFoodMask;
+    enhanceMask(outframe,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
     frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
-    outframe.copyTo(frameMasked,fgMask); //Use Enhanced Mask
+    outframe.copyTo(frameMasked,fgFishMask); //Use Enhanced Mask
     //show the current frame and the fg masks
     //cv::imshow(gstrwinName + " FishOnly",frameMasked);
 
@@ -664,16 +667,8 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
 
         std::vector<cv::KeyPoint> ptFishblobs;
-        processFishBlobs(frame,fgMask, outframe , ptFishblobs);
+        processFishBlobs(frame,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
-
-
-
-        // Process Fish blobs
-        //ReFilter Let those that belong to fish Contours Detected Earlier
-        //fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(10,10,180));
-        //cvb::cvUpdateTracks(fishblobs,fishtracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
-
 
 
         cv::Mat maskedImg_gray,maskedfishImg_gray;
@@ -699,14 +694,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         //Combine Lists into Tracks before rendering
 //        tracks.clear();
         //tracks.insert(foodtracks.begin(),foodtracks.end() );
-  //      tracks.insert(fishtracks.begin(),fishtracks.end());
-
-        //
         //saveTracks(tracks,trkoutFileCSV,frameNumberString);
-
-        /// Get Fish Only Image ///
-
-        /// \TODO optimize this. pic is Gray Scale Originally anyway
 
         detectZfishFeatures(frame,outframe,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
@@ -716,7 +704,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         ///////  Process Food Blobs ////
         // Process Food blobs
         std::vector<cv::KeyPoint> ptFoodblobs;
-        nFood = processFoodBlobs(frame,fgMask, outframe , ptFoodblobs);
+        nFood = processFoodBlobs(frame,fgFoodMask, outframe , ptFoodblobs);
 
 
 
@@ -1197,11 +1185,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     }
 
 
-    //Toggle Show the masked - where blob id really happens
-    if ((char)keyboard == 'm')
-         bshowMask = !bshowMask;
-
-    if ((char)keyboard == 'q')
+      if ((char)keyboard == 'q')
         bExiting = true; //Main Loop Will handle this
          //break;
 
@@ -1519,7 +1503,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Set up the detector with default parameters.
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
-    detector->detect( frame, keypoints); //frameMask
+    detector->detect( maskimg, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
@@ -1549,7 +1533,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
     //frame.copyTo(frameOut,maskimg); //mask Source Image
-    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(200,20,20), cv::DrawMatchesFlags::DEFAULT );
 
 
     detector->clear();
@@ -1586,11 +1570,11 @@ int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Filter by Area.
     params.filterByArea = true;
     params.minArea = 2;
-    params.maxArea = 20;
+    params.maxArea = 40;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
-    params.filterByInertia      = true;
+    params.filterByInertia      = false;
     params.maxInertiaRatio      = 1.0;
     params.minInertiaRatio      = 0.6;
 
@@ -1600,7 +1584,8 @@ int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Set up the detector with default parameters.
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
-    detector->detect( frame, keypoints); //frameMask
+    //\todo - Memory Crash Here
+    detector->detect( maskimg, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
@@ -2105,16 +2090,21 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 /// It then uses the fixed image to Find contours *main Internal and External fish contours* using on Masked Image Showing Fish Outline
 /// \param frameImg - Raw Input camera input in Mat - colour or gray -
 /// \param maskFGImg - Modified Enhanced FG Mask Image
-///
-void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vector<cv::Point> >& fishbodycontours, std::vector<cv::Vec4i>& fishbodyhierarchy)
+/// \param outFishMask - Mask Enhanced for Fish Blob Detection
+/// \param outFoodMaskMask Enhanced for Fish Blob Detection
+void enhanceMask(cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& fishbodycontours, std::vector<cv::Vec4i>& fishbodyhierarchy)
 {
 
-
 int max_thresh = 255;
-cv::Mat maskfishOnly,frameImg_gray, frameImg_blur,threshold_output,threshold_output_H,threshold_output_COMB;
+cv::Mat frameImg_gray;
+cv::Mat frameImg_blur;
+cv::Mat threshold_output;
+//cv::Mat threshold_output_H;
+cv::Mat threshold_output_COMB;
 
-std::vector<std::vector<cv::Point> > fgMaskcontours;
-std::vector<cv::Vec4i> fgMaskhierarchy;
+//std::vector<std::vector<cv::Point> > fgMaskcontours;
+//std::vector<cv::Vec4i> fgMaskhierarchy;
+
 
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
@@ -2159,8 +2149,8 @@ cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, ker
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 
-maskfishOnly = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
-
+outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
+threshold_output_COMB.copyTo(outFoodMask);
 
 std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
 
@@ -2188,16 +2178,18 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
         if (area >  thresh_fishblobarea) //If Contour Is large Enough then Must be fish
         {
             cv::Moments moments =  cv::moments(fishbodycontours[kk]);
-            cv::Point centroid; centroid.x = moments.m10/moments.m00; centroid.y = moments.m01/moments.m00;
+            cv::Point centroid;
+            centroid.x = moments.m10/moments.m00;
+            centroid.y = moments.m01/moments.m00;
 
-            std::vector<cv::RotatedRect> rectFeatures;
+            //std::vector<cv::RotatedRect> rectFeatures;
             //Add Blob To candidate Region of interest Mask
             //idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
             curve = fishbodycontours[kk];
         }
         else
         {
-            continue; //Next Contour
+            continue; //Skip Smoothing Code - and go to Next Contour
         }
 
             ///// SMOOTH COntours /////
@@ -2224,21 +2216,22 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
             //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
             // they should still fall within contour - )
             //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
-            cv::drawContours( maskfishOnly, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
+            cv::drawContours( outFishMask, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
+
 
             //fishbodycontours[kk].clear();
             //fishbodycontours[kk] = curve;
             //if (idxFishContour > -1)
             fishbodycontours[kk] = curve; //Replace Contour with Smooth Version
 
-}
+} //For Each Fish Contour
 
 
-
-
+//Delete the fish from the Food Mask
+cv::bitwise_xor(outFishMask,outFoodMask,outFoodMask);
 
     //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
-    cv::bitwise_or(maskfishOnly,maskFGImg,maskFGImg);
+    //cv::bitwise_or(outFishMask,maskFGImg,maskFGImg);
 
     //maskfishOnly.copyTo(maskFGImg);
 
@@ -2247,14 +2240,15 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
     if (bshowMask)
     {
         cv::imshow("Threshold Out",threshold_output);
-        cv::imshow("MOG2 Mask Processed",maskFGImg);
-        cv::imshow("Hollow Fish Mask",threshold_output_COMB);
+        cv::imshow("Fish Mask",outFishMask);
+        cv::imshow("Food Mask",outFoodMask);
     }
 
     threshold_output.release();
-    threshold_output_H.release();
+
     threshold_output_COMB.release();
-    maskfishOnly.release();
+   // maskfishOnly.release();
+    //threshold_output_H.release();
 }
 
 
@@ -2342,8 +2336,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
           fishModel* fish = (*it).second;
           //Draw A general Region Where the FIsh Is located, search for template within that region only
           cv::Point centroid = fish->zfishBlob.pt; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
-          cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-40)), max(0,min(maskedImg_gray.rows,centroid.y-40)));
-          cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+40)), max(0,min(maskedImg_gray.rows,centroid.y+40)));
+          cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centroid.y-gFishBoundBoxSize)));
+          cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centroid.y+gFishBoundBoxSize)));
 
           cv::Rect rectFish(pBound1,pBound2);
 
@@ -2396,7 +2390,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
           // Get Image Region Where the template Match occured
           //- Expand image so as to be able to fit the template When Rotated Orthonormally
           //Custom Bounding Box Needs to allow for RotRect To be rotated Orthonormally
-          cv::Rect rectfishAnteriorBound = fishRotAnteriorBox.boundingRect();
+          cv::Rect rectfishAnteriorBound = rectFish; //Use A square // fishRotAnteriorBox.boundingRect();
           cv::Size szFishAnteriorNorm(min(rectfishAnteriorBound.width,rectfishAnteriorBound.height),max(rectfishAnteriorBound.width,rectfishAnteriorBound.height)); //Size Of Norm Image
           //Rot Centre Relative To Bounding Box Of UnNormed Image
           cv::Point2f ptFishAnteriorRotCentre = (cv::Point2f)fishRotAnteriorBox.center-(cv::Point2f)rectfishAnteriorBound.tl();
@@ -2404,7 +2398,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
           //Define Regions and Sizes for extracting Orthonormal Fish
           //Top Left Corner of templateSized Rect relative to Rectangle Centered in Normed Img
           cv::Size szTemplateImg = fishbodyimg_template.size();
-          cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
+          //cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
+          cv::Point ptTopLeftTemplate(rectfishAnteriorBound.width/2-szTemplateImg.width/2,rectfishAnteriorBound.height/2-szTemplateImg.height/2);
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
           cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
           cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
@@ -2450,8 +2445,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               //Draw Normalized Rotation Centre
               cv::circle(imgFishAnterior_Norm,ptRotCenter,4,CV_RGB(250,0,0),2);
 
-              //imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
-              imgFishHead           = imgFishAnterior_Norm;
+              imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
+              //imgFishHead           = imgFishAnterior_Norm;
 
               //cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
               //cv::imshow("IsolatedHead",imgFishHead);

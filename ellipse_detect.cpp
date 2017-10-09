@@ -636,6 +636,8 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     //imgDebug.deallocate();
 
     imgEdge_local.deallocate();
+    img_colour.deallocate();
+    img_contour.deallocate();
 
 return ret;
 }

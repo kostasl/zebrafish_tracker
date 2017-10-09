@@ -141,8 +141,8 @@ bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector
 /// \param frameImg
 /// \param maskFGImg
 ///
-void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vector<cv::Point> >& fishbodycontours ,std::vector<cv::Vec4i>& fishbodyhierarchy);
-
+//void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vector<cv::Point> >& fishbodycontours ,std::vector<cv::Vec4i>& fishbodyhierarchy);
+void enhanceMask(cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& fishbodycontours, std::vector<cv::Vec4i>& fishbodyhierarchy);
 
 ///
 /// \brief findIndexClosesttoPoint - Naive Nearest neighbour finder
