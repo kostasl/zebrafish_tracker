@@ -145,9 +145,9 @@ cv::Point ptROI2 = cv::Point(1,131);
 
 //Structures to hold blobs & Tracks
 //Blobs as identified by BG Substractions
-cvb::CvBlobs blobs; //All Blobs - Updated Ids on everyframe done by cvLabel function
-cvb::CvBlobs fishblobs;
-cvb::CvBlobs foodblobs;
+//cvb::CvBlobs blobs; //All Blobs - Updated Ids on everyframe done by cvLabel function
+//cvb::CvBlobs fishblobs;
+//cvb::CvBlobs foodblobs;
 cvb::CvTracks fishtracks;
 cvb::CvTracks foodtracks;
 cvb::CvTracks tracks; ///All tracks
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 
     //Initialize The Track and blob vectors
     cvb::cvReleaseTracks(tracks); //Releasing All tracks will delete all track Objects
-    cvb::cvReleaseBlobs(blobs);
+    //cvb::cvReleaseBlobs(blobs);
     ReleaseFishModels(vfishmodels);
 
 
@@ -354,12 +354,12 @@ int main(int argc, char *argv[])
 
     //Empty The Track and blob vectors
     cvb::cvReleaseTracks(tracks);
-    cvb::cvReleaseBlobs(blobs);
+    //cvb::cvReleaseBlobs(blobs);
 
 
 
     std::cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
-
+///Clean Up //
     frameDebugA.deallocate();
     frameDebugB.deallocate();
     frameDebugC.deallocate();
@@ -1328,140 +1328,6 @@ int countObjectsviaContours(cv::Mat& srcimg )
 }
 
 
-///
-/// \brief processBlobs Separates food from fish using an area filter.
-/// It generates a circular mask around the fish so as to allow to process them separatelly
-///It renders the food and fish blobs
-/// \param srcimg //Legacy format pointer IplImage* to source image
-/// \param blobs
-/// \param tracks
-/// \param outDirCSV
-/// \param frameNumberString
-/// \param dMeanBlobArea
-/// \return
-///
-int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea)
-{
-
-    IplImage  *labelImg;
-
-
-    ///// Finding the blobs ////////
-     int cnt = 0;
-     uint minBlobArea = 0;
-     uint maxBlobArea = 0;
-
-
-     IplImage lplfgMaskImg;
-///  REGION OF INTEREST - UPDATE - SET
-     //*destframeImg        =  srcfullimg; //Convert The Global frame to lplImage
-     //cv::Mat fgMaskSurroundFish = cv::Mat::zeros(srcfullimg.rows, srcfullimg.cols,CV_8UC3); //Empty Canvas For Just Fish Blob
-     //framefishMaskImg   = (IplImage)fgMaskSurroundFish
-     lplfgMaskImg       =  maskimg;
-
-    if (bROIChanged || ptROI2.x != 0)
-    {
-        //Set fLAG sO FROM now on Region of interest is used and cannot be changed.
-        bROIChanged = true;
-    }
-
-
-   //std::cout << "Roi Sz:" << vRoi.size() <<std::endl;
-    labelImg=cvCreateImage(cvGetSize(srcframeImg), IPL_DEPTH_LABEL, 1);
-    cvb::cvLabel( &lplfgMaskImg, labelImg, blobs );
-
-    cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
-
-    cvb::cvBlobAreaStat(blobs,dMeanBlobArea,dVarBlobArea,maxBlobArea,minBlobArea);
-    double dsigma = 1.0*std::sqrt(dVarBlobArea);
-
-    ///Separate Fish from Food Blobs
-    //copy blobs and then Filter to separate classes
-    //Allow only Fish Area Through
-    //                                              (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
-    fishblobs = cvb::cvFilterByArea(blobs,std::min((uint)dMeanBlobArea*8,(uint)thresh_fishblobarea),std::max((uint)(maxBlobArea+dsigma),(uint)thresh_fishblobarea),CV_RGB(10,10,220) ); //Remove Small Blobs
-
-    //Food Blobs filter -> Remove large blobs (Fish)
-    ///\todo these blob filters could be elaborated to include moment matching/shape distance
-    foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::min(dMeanBlobArea*3,(double)thresh_fishblobarea/10.0),CV_RGB(0,200,0)); //Remove Large Blobs
-
-
-
-    //Debug Show Mean Size Var
-    //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;
-    ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
-    unsigned int RoiID = 0;
-    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
-    {
-        ltROI iroi = (ltROI)(*it);
-        RoiID++;
-
-        //Custom Filtering the blobs for Rendering
-        //Count Blobs in ROI
-        //Find Fish
-
-        //cvb::CvBlob* fishBlob = cvb::cvLargestBlob(blobs);
-        //RENDER FISH
-        for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
-        {
-            cvb::CvBlob* blob = it->second;
-            cv::Point pnt;
-            pnt.x = blob->centroid.x;
-            pnt.y = blob->centroid.y;
-
-
-            if (iroi.contains(pnt))
-            {
-                //cnt++; //CV_BLOB_RENDER_COLOR
-                    cvb::cvRenderBlob(labelImg, blob, &lplfgMaskImg, srcframeImg, CV_BLOB_RENDER_ANGLE | CV_BLOB_RENDER_BOUNDING_BOX, CV_RGB(250,10,10),1);
-                    //Make a mask to Surround the fish of an estimated size -  So as to overcome BG Substraction Loses - by redecting countour
-                    //cv::circle(fgMaskSurroundFish,cv::Point(blob->centroid.x,blob->centroid.y),((blob->maxx-blob->minx)+(blob->maxy-blob->miny)),CV_RGB(255,255,255),-1);
-            }
-        }
-
-        //Now Render Food
-        for (cvb::CvBlobs::const_iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
-        {
-            cvb::CvBlob* blob = it->second;
-            cv::Point pnt;
-            pnt.x = blob->centroid.x;
-            pnt.y = blob->centroid.y;
-
-            if (iroi.contains(pnt))
-            {
-                    cvb::cvRenderBlob(labelImg, blob, &lplfgMaskImg, srcframeImg,CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX ,CV_RGB(200,200,0),1.0);
-            }
-        }
-
-        // render blobs in original image
-        //cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR);
-
-        //Make File Names For Depending on the Vial - Crude but does the  job
-        ///Save Blobs
-        if (bSaveBlobsToFile)
-        {
-            QString strroiFileN = outDirCSV;
-            QString strroiFilePos = outDirCSV;
-            char buff[150];
-            sprintf(buff,"/V%d_pos_N.csv",RoiID);
-            strroiFileN.append(buff);
-            sprintf(buff,"/V%d_pos.csv",RoiID);
-            strroiFilePos.append(buff);
-
-            saveTrackedBlobs(blobs,strroiFilePos,frameNumberString,iroi);
-            cnt += saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
-        }
-    } //For Each ROI
-
-
-
-
-    // *always* remember freeing unused IplImages
-    cvReleaseImage( &labelImg );
-
-    return cnt;
-}
-
 
 /// Updated Blob Processing
 /// \brief processFishBlobs Finds blobs that belong to fish
@@ -1489,7 +1355,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Filter by Area.
     params.filterByArea = true;
     params.minArea = thresh_fishblobarea;
-    params.maxArea = 2*thresh_fishblobarea;
+    params.maxArea = 10*thresh_fishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
@@ -1576,7 +1442,7 @@ int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
     params.filterByInertia      = false;
     params.maxInertiaRatio      = 1.0;
-    params.minInertiaRatio      = 0.6;
+    params.minInertiaRatio      = 0.7;
 
 
     //params.filterByInertia = true;
@@ -2194,7 +2060,7 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 
             ///// SMOOTH COntours /////
             double sigma = 1.0;
-            int M = round((3.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+            int M = round((1.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
             assert(M % 2 == 1); //M is an odd number
 
             //create kernels
@@ -2227,12 +2093,11 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 } //For Each Fish Contour
 
 
-//Delete the fish from the Food Mask
-cv::bitwise_xor(outFishMask,outFoodMask,outFoodMask);
+
 
     //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
     //cv::bitwise_or(outFishMask,maskFGImg,maskFGImg);
-
+    cv::bitwise_xor(outFishMask,outFoodMask,outFoodMask);
     //maskfishOnly.copyTo(maskFGImg);
 
     //threshold_output.copyTo(frameDebugD);
@@ -2241,7 +2106,7 @@ cv::bitwise_xor(outFishMask,outFoodMask,outFoodMask);
     {
         cv::imshow("Threshold Out",threshold_output);
         cv::imshow("Fish Mask",outFishMask);
-        cv::imshow("Food Mask",outFoodMask);
+        cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
     }
 
     threshold_output.release();
@@ -2302,7 +2167,6 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
 
 
-
     /// Convert image to gray and blur it
     cv::cvtColor( fullImgIn, maskedImg_gray, cv::COLOR_BGR2GRAY );
 
@@ -2334,22 +2198,25 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
     {
           fishModel* fish = (*it).second;
+
+          //fish->bearingAngle   = AngleIdx;
+          if (fish->templateScore < gMatchShapeThreshold)
+              continue; //Skip This Model Fish And Check the next one
+
+
           //Draw A general Region Where the FIsh Is located, search for template within that region only
-          cv::Point centroid = fish->zfishBlob.pt; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
+          cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
           cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centroid.y-gFishBoundBoxSize)));
           cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centroid.y+gFishBoundBoxSize)));
 
           cv::Rect rectFish(pBound1,pBound2);
 
-          cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
+          cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
           //double maxMatchScore; //
           //int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
            //Check If Fish Was found)
           //fish->templateScore  = maxMatchScore;
-          //fish->bearingAngle   = AngleIdx;
-          if (fish->templateScore < gMatchShapeThreshold)
-              continue; //Skip This Model Fish And Check the next one
 
           //0 Degrees Is along the Y Axis Looking Upwards
           int bestAngleinDeg = fish->bearingAngle;
@@ -2402,8 +2269,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
           cv::Point ptTopLeftTemplate(rectfishAnteriorBound.width/2-szTemplateImg.width/2,rectfishAnteriorBound.height/2-szTemplateImg.height/2);
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
           cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
-          cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
-          cv::Rect rectFishHeadBound = cv::Rect(ptTopLeftHead,szHeadImg);
+//          cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
+          cv::Rect rectFishHeadBound = cv::Rect(ptTopLeftTemplate,szHeadImg);
 
 
           ///Make Normalized Fish View
@@ -3137,3 +3004,140 @@ void process_mem_usage(double& vm_usage, double& resident_set)
    vm_usage     = vsize / 1024.0;
    resident_set = rss * page_size_kb;
 }
+
+
+
+
+/////
+///// \brief processBlobs Separates food from fish using an area filter.
+///// It generates a circular mask around the fish so as to allow to process them separatelly
+/////It renders the food and fish blobs
+///// \param srcimg //Legacy format pointer IplImage* to source image
+///// \param blobs
+///// \param tracks
+///// \param outDirCSV
+///// \param frameNumberString
+///// \param dMeanBlobArea
+///// \return
+/////
+//int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea)
+//{
+
+//    IplImage  *labelImg;
+
+
+//    ///// Finding the blobs ////////
+//     int cnt = 0;
+//     uint minBlobArea = 0;
+//     uint maxBlobArea = 0;
+
+
+//     IplImage lplfgMaskImg;
+/////  REGION OF INTEREST - UPDATE - SET
+//     //*destframeImg        =  srcfullimg; //Convert The Global frame to lplImage
+//     //cv::Mat fgMaskSurroundFish = cv::Mat::zeros(srcfullimg.rows, srcfullimg.cols,CV_8UC3); //Empty Canvas For Just Fish Blob
+//     //framefishMaskImg   = (IplImage)fgMaskSurroundFish
+//     lplfgMaskImg       =  maskimg;
+
+//    if (bROIChanged || ptROI2.x != 0)
+//    {
+//        //Set fLAG sO FROM now on Region of interest is used and cannot be changed.
+//        bROIChanged = true;
+//    }
+
+
+//   //std::cout << "Roi Sz:" << vRoi.size() <<std::endl;
+//    labelImg=cvCreateImage(cvGetSize(srcframeImg), IPL_DEPTH_LABEL, 1);
+//    cvb::cvLabel( &lplfgMaskImg, labelImg, blobs );
+
+//    cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
+
+//    cvb::cvBlobAreaStat(blobs,dMeanBlobArea,dVarBlobArea,maxBlobArea,minBlobArea);
+//    double dsigma = 1.0*std::sqrt(dVarBlobArea);
+
+//    ///Separate Fish from Food Blobs
+//    //copy blobs and then Filter to separate classes
+//    //Allow only Fish Area Through
+//    //                                              (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
+//    fishblobs = cvb::cvFilterByArea(blobs,std::min((uint)dMeanBlobArea*8,(uint)thresh_fishblobarea),std::max((uint)(maxBlobArea+dsigma),(uint)thresh_fishblobarea),CV_RGB(10,10,220) ); //Remove Small Blobs
+
+//    //Food Blobs filter -> Remove large blobs (Fish)
+//    ///\todo these blob filters could be elaborated to include moment matching/shape distance
+//    foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::min(dMeanBlobArea*3,(double)thresh_fishblobarea/10.0),CV_RGB(0,200,0)); //Remove Large Blobs
+
+
+
+//    //Debug Show Mean Size Var
+//    //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;
+//    ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
+//    unsigned int RoiID = 0;
+//    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+//    {
+//        ltROI iroi = (ltROI)(*it);
+//        RoiID++;
+
+//        //Custom Filtering the blobs for Rendering
+//        //Count Blobs in ROI
+//        //Find Fish
+
+//        //cvb::CvBlob* fishBlob = cvb::cvLargestBlob(blobs);
+//        //RENDER FISH
+//        for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
+//        {
+//            cvb::CvBlob* blob = it->second;
+//            cv::Point pnt;
+//            pnt.x = blob->centroid.x;
+//            pnt.y = blob->centroid.y;
+
+
+//            if (iroi.contains(pnt))
+//            {
+//                //cnt++; //CV_BLOB_RENDER_COLOR
+//                    cvb::cvRenderBlob(labelImg, blob, &lplfgMaskImg, srcframeImg, CV_BLOB_RENDER_ANGLE | CV_BLOB_RENDER_BOUNDING_BOX, CV_RGB(250,10,10),1);
+//                    //Make a mask to Surround the fish of an estimated size -  So as to overcome BG Substraction Loses - by redecting countour
+//                    //cv::circle(fgMaskSurroundFish,cv::Point(blob->centroid.x,blob->centroid.y),((blob->maxx-blob->minx)+(blob->maxy-blob->miny)),CV_RGB(255,255,255),-1);
+//            }
+//        }
+
+//        //Now Render Food
+//        for (cvb::CvBlobs::const_iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
+//        {
+//            cvb::CvBlob* blob = it->second;
+//            cv::Point pnt;
+//            pnt.x = blob->centroid.x;
+//            pnt.y = blob->centroid.y;
+
+//            if (iroi.contains(pnt))
+//            {
+//                    cvb::cvRenderBlob(labelImg, blob, &lplfgMaskImg, srcframeImg,CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX ,CV_RGB(200,200,0),1.0);
+//            }
+//        }
+
+//        // render blobs in original image
+//        //cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR);
+
+//        //Make File Names For Depending on the Vial - Crude but does the  job
+//        ///Save Blobs
+//        if (bSaveBlobsToFile)
+//        {
+//            QString strroiFileN = outDirCSV;
+//            QString strroiFilePos = outDirCSV;
+//            char buff[150];
+//            sprintf(buff,"/V%d_pos_N.csv",RoiID);
+//            strroiFileN.append(buff);
+//            sprintf(buff,"/V%d_pos.csv",RoiID);
+//            strroiFilePos.append(buff);
+
+//            saveTrackedBlobs(blobs,strroiFilePos,frameNumberString,iroi);
+//            cnt += saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
+//        }
+//    } //For Each ROI
+
+
+
+
+//    // *always* remember freeing unused IplImages
+//    cvReleaseImage( &labelImg );
+
+//    return cnt;
+//}
