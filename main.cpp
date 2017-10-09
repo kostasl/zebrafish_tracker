@@ -2083,7 +2083,7 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
             // they should still fall within contour - )
             //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
             cv::drawContours( outFishMask, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
-            cv::drawContours( outFoodMask, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(0,0,0), cv::FILLED); //Draw New One
+            ttcv::drawContours( outFoodMask, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(0,0,0), cv::FILLED); //Draw New One
 
 
             //fishbodycontours[kk].clear();
@@ -2148,6 +2148,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     std::vector<std::vector<cv::Point> > contours_laplace;
     contours_laplace.reserve(contours_body.size());
     std::vector<cv::Vec4i> hierarchy_laplace; //Contour Relationships  [Next, Previous, First_Child, Parent]
+    /// Memory Crash on vector Init
     std::vector<std::vector<cv::Point> > contours_laplace_clear; //For contours without markers
     std::vector<cv::Vec4i> hierarchy_laplace_clear; //Contour Relationships  [Next, Previous, First_Child, Parent]
     std::vector<std::vector<cv::Point> > fishfeatureContours( contours_laplace.size() );
