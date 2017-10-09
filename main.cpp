@@ -359,9 +359,15 @@ int main(int argc, char *argv[])
 
     std::cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
 
+    frameDebugA.deallocate();
+    frameDebugB.deallocate();
+    frameDebugC.deallocate();
+    frameDebugD.deallocate();
 
     //app.quit();
     window_main.close();
+
+
 
     return app.exec();
 
@@ -659,17 +665,15 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
         std::vector<cv::KeyPoint> ptFishblobs;
         processFishBlobs(frame,fgMask, outframe , ptFishblobs);
+        nLarva = ptFishblobs.size();
 
-        //Here the Track's blob label is updated to the new matching blob
-        // Process Food blobs
-        //cvb::cvUpdateTracks(foodblobs,foodtracks,vRoi, thDistanceFood, inactiveFrameCount,thActive);
-        nFood = foodtracks.size();
+
 
         // Process Fish blobs
         //ReFilter Let those that belong to fish Contours Detected Earlier
         //fishblobs = cvb::cvFilterByContour(fishblobs,fishbodycontours,CV_RGB(10,10,180));
         //cvb::cvUpdateTracks(fishblobs,fishtracks,vRoi, thDistanceFish, inactiveFrameCount,thActive);
-        nLarva = fishtracks.size();
+
 
 
         cv::Mat maskedImg_gray,maskedfishImg_gray;
@@ -708,6 +712,13 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
         //Show Tracks
         //cvb::cvRenderTracks(tracks, &lplframe, &lplframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
+
+        ///////  Process Food Blobs ////
+        // Process Food blobs
+        std::vector<cv::KeyPoint> ptFoodblobs;
+        nFood = processFoodBlobs(frame,fgMask, outframe , ptFoodblobs);
+
+
 
 
         if (bSaveImages)
@@ -761,7 +772,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         //std::cout << "VM: " << vm/1024.0 << "; RSS: " << rss/1024.0 << endl;
 
     }
-    std::sprintf(buff,"Vm: %0.2f;Rss:%0.2f",vm/1024.0,rss/1024.0);
+    std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
     cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
     cv::putText(outframe, buff, cv::Point(10, 505),
             cv::FONT_HERSHEY_SIMPLEX, 0.4 , CV_RGB(10,250,0));
@@ -1498,8 +1509,9 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
-    params.filterByInertia      = false;
-    params.maxInertiaRatio      = 0.5;
+    params.filterByInertia      = true;
+    params.maxInertiaRatio      = 0.8;
+    params.minInertiaRatio      = 0.01;
 
 
     //params.filterByInertia = true;
@@ -1536,7 +1548,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
-    frame.copyTo(frameOut,maskimg); //mask Source Image
+    //frame.copyTo(frameOut,maskimg); //mask Source Image
     cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
 
@@ -1544,8 +1556,86 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
 }
 
-int processFoodBlobs(cv::Mat& frame)
+
+/// Updated Blob Processing
+/// \brief processFoodBlobs Finds blobs that belong to rotifers
+/// \param frame
+/// \param maskimg
+/// \param frameOut //Output Image With FishBlob Rendered
+/// \param ptFoodblobs opencv keypoints vector of the Fish
+/// \return
+///
+int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
 {
+
+    std::vector<cv::KeyPoint> keypoints;
+    //std::vector<cv::KeyPoint> keypoints_in_ROI;
+    cv::SimpleBlobDetector::Params params;
+
+    params.filterByCircularity  = false; //a circle has a circularity of 1, circularity of a square is 0.785, and so on.
+    params.minCircularity       = 0.8;
+    params.maxCircularity       = 1.0;
+
+    params.filterByColor        = false;
+    params.filterByConvexity    = false;
+
+    //params.maxThreshold = 16;
+    //params.minThreshold = 8;
+    //params.thresholdStep = 2;
+
+    // Filter by Area.
+    params.filterByArea = true;
+    params.minArea = 2;
+    params.maxArea = 20;
+
+    /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
+    ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
+    params.filterByInertia      = true;
+    params.maxInertiaRatio      = 1.0;
+    params.minInertiaRatio      = 0.6;
+
+
+    //params.filterByInertia = true;
+
+    // Set up the detector with default parameters.
+    cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
+
+    detector->detect( frame, keypoints); //frameMask
+
+
+    //Mask Is Ignored so Custom Solution Required
+    //for (cv::KeyPoint &kp : keypoints)
+    ptFoodblobs.clear();
+    for(int i=0;i<keypoints.size();i++)
+    {
+        cv::KeyPoint kp = keypoints[i];
+
+        ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
+        unsigned int RoiID = 0;
+        for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+        {
+            ltROI iroi = (ltROI)(*it);
+            RoiID++;
+            //Keypoint is in ROI so Add To Masked
+            if (iroi.contains(kp.pt))
+                     ptFoodblobs.push_back(kp);
+
+            //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
+            //if (maskVal > 0)
+             //keypoints_in_mask.push_back(kp);
+        }
+    }
+
+
+    // Draw detected blobs as red circles.
+    // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
+    //frame.copyTo(frameOut,maskimg); //mask Source Image
+    cv::drawKeypoints( frameOut, ptFoodblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+
+
+    detector->clear();
+
+    return ptFoodblobs.size();
 
 }
 
@@ -2160,6 +2250,11 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
         cv::imshow("MOG2 Mask Processed",maskFGImg);
         cv::imshow("Hollow Fish Mask",threshold_output_COMB);
     }
+
+    threshold_output.release();
+    threshold_output_H.release();
+    threshold_output_COMB.release();
+    maskfishOnly.release();
 }
 
 

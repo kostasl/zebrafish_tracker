@@ -70,7 +70,7 @@ extern int gi_maxEllipseMajor;
 extern int g_BGthresh;
 extern int gEyeTemplateAngleSteps;
 
-cv::Mat imgDebug;
+//cv::Mat imgDebug;
 
 extern cv::Mat kernelOpenfish;
 extern cv::Mat frameDebugC;
@@ -108,7 +108,7 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
            if ( imgEdgeIn.at<uchar>(pt) >  pxThres)
            {
                vedgepoint.push_back(tEllipsoidEdge(pt));
-               imgDebug.at<uchar>(pt) = 125;
+               //imgDebug.at<uchar>(pt) = 125;
            }
       }
 
@@ -124,7 +124,7 @@ void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint)
   for(int i=0; i<contour.size(); i++)
       {
                vedgepoint.push_back(tEllipsoidEdge(contour[i]));
-               imgDebug.at<uchar>(contour[i]) = 155;
+               //imgDebug.at<uchar>(contour[i]) = 155;
        }
 
 }
@@ -140,8 +140,8 @@ void drawEllipse(cv::Mat imgOut,tDetectedEllipsoid ellipse)
     //cv::circle(img_colour,ptxy1,1,CV_RGB(0,255,255),1);
     //cv::circle(img_colour,ptxy2,1,CV_RGB(0,255,255),1);
     //Debug Mark As Good Pair
-    imgDebug.at<uchar>(ellipse.ptAxisMj1) = 255;
-    imgDebug.at<uchar>(ellipse.ptAxisMj2) = 255;
+    //imgDebug.at<uchar>(ellipse.ptAxisMj1) = 255;
+    //imgDebug.at<uchar>(ellipse.ptAxisMj2) = 255;
 
 
 }
@@ -284,16 +284,11 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                 int b = std::round((sqrt(bb)));
                 ///Step 8
                 if (b > 1)
-                {   //Make A Band Of width 2
-                    //accumulator[b+1]++; //imgIn<uchar>.at(ptxy3) ; //increment accumulator for this minor Axis
-                    //accumulator[b+1]++; //increment accumulator for this minor Axis
-                    //accumulator[b]-= dCntrScore/4; //Add Points for being close to Eye centre
-
+                {
+                    //Make A "weighted" Band Of width 3
                     accumulator[b-1]+=1;
                     accumulator[b]  +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
                     accumulator[b+1]+=1; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    //accumulator[b-1]+=10; //Add points to smaller ellipsoids so as to smooth out close edge point issues
-                    //accumulator[b+1]+=10;
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head
 //                    double ellArea = M_PI*b*a;
 //                    int iellArea = 0;
@@ -350,7 +345,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                     //If this edge Is on The winning Ellipse's Minor Axis - Then Its been Used /Remove
                     if (abs(pEdge->minorAxisLength - idx) == 0  ) //Delete The bin || pEdge->minorAxisLength == idx-1 || pEdge->minorAxisLength == idx-1
                     {
-                        imgDebug.at<uchar>(pEdge->ptEdge) = 200; //Debug - Show Used
+                        //imgDebug.at<uchar>(pEdge->ptEdge) = 200; //Debug - Show Used
 
                         pEdge->ptEdge.x = 0;
                         pEdge->ptEdge.y = 0;
@@ -371,8 +366,8 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
 
             }else {//Mark As Dull Pair
-                imgDebug.at<uchar>(ptxy1) = 55;
-                imgDebug.at<uchar>(ptxy2) = 55;
+                //imgDebug.at<uchar>(ptxy1) = 55;
+                //imgDebug.at<uchar>(ptxy2) = 55;
             }
 
             //Find Max Votes - Used to Re-adjust Threshold
@@ -448,7 +443,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     cv::Mat imgEdge_local;
     cv::Mat imgEdge_dbg;
     //Debug
-    imgDebug = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+    //imgDebug = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
@@ -637,6 +632,10 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
     //std::cout << "Done"  << std::endl;
 
 
+    //imgDebug.release();
+    //imgDebug.deallocate();
+
+    imgEdge_local.deallocate();
 
 return ret;
 }
@@ -745,5 +744,9 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
     }
 
     cv::imshow(name, hist_image);
+
+    hist_image.deallocate();
+    hist_grad.deallocate();
 }
+
 
