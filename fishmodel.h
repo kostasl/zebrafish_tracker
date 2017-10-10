@@ -28,7 +28,7 @@ typedef cv::KeyPoint zftblob;
 typedef std::vector<zftblob> zftblobs;
 
 
-const cv::Scalar TRACKER_COLOURMAP[] ={CV_RGB(150,150,150),
+const cv::Scalar TRACKER_COLOURMAP[] ={CV_RGB(255,0,0),
                                  CV_RGB(200,100,100),
                                  CV_RGB(150,200,50),
                                  CV_RGB(50,250,00),
@@ -111,8 +111,8 @@ public:
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-   static const int c_spinePoints   = 5;
-   static const int c_spineSegL     = 12;
+   static const int c_spinePoints   = 4;
+   static const int c_spineSegL     = 20;
    static const int c_spineParamCnt = c_spinePoints+1;
 private:
 
