@@ -94,12 +94,12 @@ void fishModel::resetSpine()
     {
 
         splineKnotf sp;
-        sp.angle    = this->bearingRads;
+        sp.angle    = (180- this->bearingAngle)*CV_PI/180.0;
         assert(!std::isnan(sp.angle));
         if (i==0)
         {
-            sp.x =  this->coreTriangle[2].x;
-            sp.y =  this->coreTriangle[2].y;
+            sp.x =  this->zfishBlob.pt.x;
+            sp.y =  this->zfishBlob.pt.y;
         }
         else
         {
@@ -109,6 +109,15 @@ void fishModel::resetSpine()
 
         spline.push_back(sp); //Add Knot to spline
     }
+
+
+
+    //    ///DEBUG
+        for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
+        {
+            cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
+        }
+        cv::waitKey(10);
 
 }
 ///
@@ -138,7 +147,7 @@ void fishModel::calcSpline(t_fishspline& outspline)
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn)
 {
     const static int cntParam = outspline.size()+1;
-    const double dAngleStep = sgn*CV_PI/24.0;
+    const double dAngleStep = sgn*CV_PI/16.0;
     double ret = 0.0;
     outspline = inspline;
 
@@ -323,7 +332,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations = 10;
+    const int gMaxFitIterations = 1;
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
@@ -368,9 +377,10 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
             dfitPtError_total       +=dResiduals[i];
 
-            for (int k=2;k<cntParam; k++) //Add Variation dx to each param and calc derivative
+
+            for (int k=0;k<cntParam; k++) //Add Variation dx to each param and calc derivative
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
-                double dq = getdeltaSpline(tmpspline,dsSpline,k,+1.05); //Return param variation
+                double dq = getdeltaSpline(tmpspline,dsSpline,k,-0.0075); //Return param variation
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
                 //dsSpline.clear();
                 //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
@@ -420,7 +430,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
     return dDifffitPtError_total;
    // qDebug() << "D err:" << dDifffitPtError_total;
-    //cv::waitKey(100);
+    cv::waitKey(1);
 }
 
 
