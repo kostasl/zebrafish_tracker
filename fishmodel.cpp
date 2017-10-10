@@ -94,7 +94,7 @@ void fishModel::resetSpine()
     {
 
         splineKnotf sp;
-        sp.angle    = (180- this->bearingAngle)*CV_PI/180.0;
+        sp.angle    = (this->bearingAngle-180)*CV_PI/180.0;
         assert(!std::isnan(sp.angle));
         if (i==0)
         {
@@ -378,7 +378,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
             dfitPtError_total       +=dResiduals[i];
 
 
-            for (int k=0;k<cntParam; k++) //Add Variation dx to each param and calc derivative
+            for (int k=2;k<cntParam; k++) //Add Variation dx to each param and calc derivative
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
                 double dq = getdeltaSpline(tmpspline,dsSpline,k,-0.0075); //Return param variation
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
