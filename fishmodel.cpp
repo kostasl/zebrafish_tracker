@@ -380,7 +380,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
             for (int k=2;k<cntParam; k++) //Add Variation dx to each param and calc derivative
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
-                double dq = getdeltaSpline(tmpspline,dsSpline,k,-0.0075); //Return param variation
+                double dq = getdeltaSpline(tmpspline,dsSpline,k,+0.25); //Return param variation
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
                 //dsSpline.clear();
                 //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
