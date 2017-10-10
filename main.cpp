@@ -91,9 +91,9 @@ int gi_minEllipseMajor      = 7; //thres for Hough Transform
 int gi_VotesEllipseThres    = 9; //Votes thres for Hough Transform
 int gthresEyeSeg            = 125;
 int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
-const int nTemplatesToLoad = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-int gFishBoundBoxSize        = 40; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
+int gFishBoundBoxSize        = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
@@ -399,7 +399,7 @@ unsigned int trackVideofiles(MainWindow& window_main)
        std::cout << " Now Processing : "<< invideoname.toStdString() <<std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
-       getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
+       //getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
 
        std::cout << "Press p to pause Video processing" << std::endl;
 
@@ -635,20 +635,8 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     //OPEN CV 2.4
     // dLearningRate is now Nominal value
     frame.copyTo(outframe); //Make Replicate On which we draw output
-    pMOG2->apply(outframe, fgMask,dLearningRateNominal);
-//    cv::erode(fgMask,fgMask,kernelOpen, cv::Point(-1,-1),1);
-    //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),4);
-
-
-    //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
-//    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
-    cv::Mat fgFishMask;
-    cv::Mat fgFoodMask;
-    enhanceMask(outframe,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
-    frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
-    outframe.copyTo(frameMasked,fgFishMask); //Use Enhanced Mask
-    //show the current frame and the fg masks
-    //cv::imshow(gstrwinName + " FishOnly",frameMasked);
+    //No Need For MOG!
+    //pMOG2->apply(outframe, fgMask,dLearningRateNominal);
 
 
     ///DRAW ROI
@@ -661,13 +649,25 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     ///DO Tracking
     if (bTracking)
     {
-       //Simple Solution was to Use Contours To measure Larvae
+       //Simple Solution was to Use Contours To measure LUarvae
+
+        //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
+    //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
+        cv::Mat fgFishMask,fgFishImgMasked;
+        cv::Mat fgFoodMask,fgFoodImgMasked;
+        enhanceMask(frame,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+        //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
+        outframe.copyTo(fgFishImgMasked,fgFishMask); //Use Enhanced Mask
+        //outframe.copyTo(fgFoodImgMasked,fgFoodMask); //Use Enhanced Mask
+        //show the current frame and the fg masks
+        //cv::imshow(gstrwinName + " FishOnly",frameMasked);
+
+
 
        // Filters Blobs between fish and food - save into global vectors
         //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
-
         std::vector<cv::KeyPoint> ptFishblobs;
-        processFishBlobs(frame,fgFishMask, outframe , ptFishblobs);
+        processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
 
 
@@ -704,7 +704,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         ///////  Process Food Blobs ////
         // Process Food blobs
         std::vector<cv::KeyPoint> ptFoodblobs;
-        nFood = processFoodBlobs(frame,fgFoodMask, outframe , ptFoodblobs);
+        nFood = processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
 
 
 
@@ -1175,13 +1175,13 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'R')
     {
              std::cout << "Reset Spines for All Fish Models-" << endl;
-//             for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
-//             {
-//                 fishModel* fish = (*it).second;
-//                   //Let ReleaseTracks Handle This
-//                  fish->resetSpine();
-//             }
-             ReleaseFishModels(vfishmodels);
+             for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+             {
+                 fishModel* fish = (*it).second;
+                   //Let ReleaseTracks Handle This
+                  fish->resetSpine();
+             }
+             //ReleaseFishModels(vfishmodels);
     }
 
 
@@ -1369,7 +1369,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Set up the detector with default parameters.
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
-    detector->detect( maskimg, keypoints); //frameMask
+    detector->detect( frame, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
@@ -1451,7 +1451,7 @@ int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
     //\todo - Memory Crash Here
-    detector->detect( maskimg, keypoints); //frameMask
+    detector->detect( frame, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
@@ -1958,7 +1958,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 /// \param maskFGImg - Modified Enhanced FG Mask Image
 /// \param outFishMask - Mask Enhanced for Fish Blob Detection
 /// \param outFoodMaskMask Enhanced for Fish Blob Detection
-void enhanceMask(cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& fishbodycontours, std::vector<cv::Vec4i>& fishbodyhierarchy)
+void enhanceMask(cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
 {
 
 int max_thresh = 255;
@@ -1972,11 +1972,12 @@ cv::Mat threshold_output_COMB;
 //std::vector<cv::Vec4i> fgMaskhierarchy;
 
 
+
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
 /////get rid of noise/food marks
 ////Apply Open Operation dilate(erode())
-cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
+//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
 ////jOIN bLOB Do Close : erode(dilate())
 cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
 
@@ -2011,6 +2012,10 @@ cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, ker
 //First Find What BG Model Considers to be FG
 //cv::findContours( maskFGImg, fgMaskcontours,fgMaskhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
+outfishbodycontours.clear();
+std::vector<std::vector<cv::Point> > fishbodycontours;
+std::vector<cv::Vec4i> fishbodyhierarchy;
+
 //Then Use ThresholdImage TO Trace More detailed Contours
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
@@ -2018,7 +2023,7 @@ cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv:
 outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 threshold_output_COMB.copyTo(outFoodMask);
 
-std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
+//std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
 
 ///Draw Only the largest contours that should belong to fish
 /// \todo Other Match Shapes Could be used here
@@ -2027,6 +2032,7 @@ int idxFishContour = -1;
 std::vector<cv::Point> curve; // THe Fish Contour to use for new Mask
 for (int kk=0; kk< fishbodycontours.size();kk++)
 {
+    curve.clear();
 
         ///Filter for what looks like a fish //
         /// Can use many methods here such as match shapes / Hashing etc.
@@ -2047,49 +2053,52 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
             cv::Point centroid;
             centroid.x = moments.m10/moments.m00;
             centroid.y = moments.m01/moments.m00;
+            //If Contained In ROI
+            for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+            {
+                ltROI iroi = (ltROI)(*it);
+                //Keypoint is in ROI so Add To Masked
+                if (iroi.contains(centroid))
+                {
+                     curve = fishbodycontours[kk];
 
+                     outfishbodyhierarchy.push_back(fishbodyhierarchy[kk]); //Save Hierarchy Too
+                }
+            }
             //std::vector<cv::RotatedRect> rectFeatures;
             //Add Blob To candidate Region of interest Mask
             //idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
-            curve = fishbodycontours[kk];
         }
-        else
+
+        if (curve.size() >0)
         {
-            continue; //Skip Smoothing Code - and go to Next Contour
-        }
+//             ///// SMOOTH COntours /////
+//            double sigma = 1.0;
+//            int M = round((1.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+//            assert(M % 2 == 1); //M is an odd number
 
-            ///// SMOOTH COntours /////
-            double sigma = 1.0;
-            int M = round((1.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
-            assert(M % 2 == 1); //M is an odd number
+//            //create kernels
+//            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
 
-            //create kernels
-            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
+//            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
+//            PolyLineSplit(curve,curvex,curvey);
 
-            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
-            PolyLineSplit(curve,curvex,curvey);
+//            std::vector<double> X,XX,Y,YY;
+//            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
+//            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
+//            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
+//            PolyLineMerge(curve,smoothx,smoothy);
+//            ///////////// END SMOOTHING
 
-            std::vector<double> X,XX,Y,YY;
-            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
-            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
-            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
-            //PolyLineMerge(curve,smoothx,smoothy);
-            PolyLineMerge(curve,smoothx,smoothy);
-            fishbodyContour_smooth.push_back(curve);
-            ///////////// END SMOOTHING
-
+            outfishbodycontours.push_back(curve);
             /////COMBINE - DRAW CONTOURS
             //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
             // they should still fall within contour - )
             //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
-            cv::drawContours( outFishMask, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
-            ttcv::drawContours( outFoodMask, fishbodyContour_smooth, (int)fishbodyContour_smooth.size()-1, CV_RGB(0,0,0), cv::FILLED); //Draw New One
+            cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
+            cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),3); //Draw New One
+      }
 
-
-            //fishbodycontours[kk].clear();
-            //fishbodycontours[kk] = curve;
-            //if (idxFishContour > -1)
-            fishbodycontours[kk] = curve; //Replace Contour with Smooth Version
 
 } //For Each Fish Contour
 
@@ -2141,7 +2150,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
     cv::Mat grad,grad_x, grad_y;
     cv::Mat framelapl,framelapl_buffer, frameCanny;
-
+    // Memory Crash
     std::vector<std::vector<cv::Point> >hull( contours_body.size() );
     std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
 
@@ -2356,8 +2365,15 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
                   addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
                   bStoreThisTemplate = false;
               }
-           }
+
+              if (contours_body.size() > 0)
+                fish->fitSpineToContour(contours_body,0,0);
+
+           } //If Fish Img Bound Is With Picture Frame
           ///
+
+
+
 
     } //For eAch Fish Model
 

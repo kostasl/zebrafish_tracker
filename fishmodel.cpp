@@ -1,5 +1,8 @@
 #include "fishmodel.h"
 #include "ellipse_detect.h"
+
+extern cv::Mat frameDebugC;
+
 fishModel::fishModel()
 {
         templateScore = 0;
@@ -100,8 +103,8 @@ void fishModel::resetSpine()
         }
         else
         {
-            sp.x        = spline[i-1].x - ((double)c_spineSegL)*cos(sp.angle);
-            sp.y        = spline[i-1].y - ((double)c_spineSegL)*sin(sp.angle);
+            sp.x        = spline[i-1].x + ((double)c_spineSegL)*sin(sp.angle); //0 Degrees Is vertical Axis Looking Up
+            sp.y        = spline[i-1].y - ((double)c_spineSegL)*cos(sp.angle);
         }
 
         spline.push_back(sp); //Add Knot to spline
@@ -120,8 +123,8 @@ void fishModel::calcSpline(t_fishspline& outspline)
     for (int i=1;i<c_spinePoints;i++)
     {
 
-       outspline[i].x = outspline[i-1].x - ((double)c_spineSegL)*cos(outspline[i-1].angle);
-       outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*sin(outspline[i-1].angle);
+       outspline[i].x = outspline[i-1].x + ((double)c_spineSegL)*sin(outspline[i-1].angle);
+       outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*cos(outspline[i-1].angle);
        assert(!std::isnan(outspline[i].y) && !std::isnan(outspline[i].x));
     }
 
@@ -135,7 +138,7 @@ void fishModel::calcSpline(t_fishspline& outspline)
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn)
 {
     const static int cntParam = outspline.size()+1;
-    const double dAngleStep = sgn*CV_PI/16.0;
+    const double dAngleStep = sgn*CV_PI/24.0;
     double ret = 0.0;
     outspline = inspline;
 
@@ -223,8 +226,8 @@ cv::Point2f fishModel::getPointAlongSpline(float z,t_fishspline& pspline)
 
     ///Now construct point using Length along curve and return
     cv::Point2f ptC;
-    ptC.x = pspline[idx].x - segLen*cos(pspline[idx].angle);
-    ptC.y = pspline[idx].y - segLen*sin(pspline[idx].angle);
+    ptC.x = pspline[idx].x + segLen*sin(pspline[idx].angle);
+    ptC.y = pspline[idx].y - segLen*cos(pspline[idx].angle);
 
     return ptC;
 }
@@ -301,6 +304,11 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     }else {
         this->zTrack.inactive++;
     }
+
+    this->spline[0].x       = fblob->pt.x;
+    this->spline[0].y       = fblob->pt.y;
+    this->spline[0].angle   = (180-Angle)*M_PI/180.0;
+
 }
 
 
@@ -315,11 +323,12 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations = 5;
+    const int gMaxFitIterations = 10;
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
     //Run Until Convergence Error is below threshold - Or Change is too small
+
 
     ///Compute Error terms for all data points/obtain local quadratic approx of fsd
     //For each contour Point
@@ -359,9 +368,9 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
             dfitPtError_total       +=dResiduals[i];
 
-            for (int k=0;k<cntParam; k++) //Add Variation dx to each param and calc derivative
+            for (int k=2;k<cntParam; k++) //Add Variation dx to each param and calc derivative
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
-                double dq = getdeltaSpline(tmpspline,dsSpline,k,+0.75); //Return param variation
+                double dq = getdeltaSpline(tmpspline,dsSpline,k,+1.05); //Return param variation
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
                 //dsSpline.clear();
                 //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
@@ -394,24 +403,25 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
             //this->resetSpine(); //Start over
 
 
-    }
+    }//While Error Change Is larger Than
 
     qDebug() << "ID:" <<  this->ID << cntpass << " EChange:" << dDifffitPtError_total;
 
     this->spline = tmpspline;
 
-    return dDifffitPtError_total;
+
 //    ///DEBUG
-//    for (int j=0; j<8;j++) //Rectangle Eye
-//    {
-//        cv::circle(frameDebugC,spline[j],2,TRACKER_COLOURMAP[j],1);
-//    }
+    for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
+    {
+        cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
+    }
+    cv::drawContours(frameDebugC,contours_body,idxOuterContour,CV_RGB(200,20,20),1);
 //    cv::imshow("Debug C",frameDebugC);
 
-
+    return dDifffitPtError_total;
    // qDebug() << "D err:" << dDifffitPtError_total;
     //cv::waitKey(100);
-} //While Error Change Is larger Than
+}
 
 
 
