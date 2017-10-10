@@ -147,7 +147,7 @@ void fishModel::calcSpline(t_fishspline& outspline)
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn)
 {
     const static int cntParam = outspline.size()+1;
-    const double dAngleStep = sgn*CV_PI/16.0;
+    const double dAngleStep = sgn*CV_PI/24.0;
     double ret = 0.0;
     outspline = inspline;
 
@@ -332,7 +332,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations = 20;
+    const int gMaxFitIterations = 30;
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
@@ -361,7 +361,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
     memset(dResiduals,0.0,contour.size()*sizeof(double));
 
     int cntpass = 0;
-    while (cntpass < gMaxFitIterations && abs(dDifffitPtError_total) > 0.2)
+    while (cntpass < gMaxFitIterations && abs(dDifffitPtError_total) > 0.1)
     {
         cntpass++;
         ///For Annealing
@@ -380,7 +380,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
 
             for (int k=2;k<cntParam; k++) //Add Variation dx to each param and calc derivative
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
-                double dq = getdeltaSpline(tmpspline,dsSpline,k,+0.35); //Return param variation
+                double dq = getdeltaSpline(tmpspline,dsSpline,k,+0.12); //Return param variation
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
                 //dsSpline.clear();
                 //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
