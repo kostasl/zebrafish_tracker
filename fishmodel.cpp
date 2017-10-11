@@ -329,7 +329,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 /// \param idxOuterContour
 /// \return fitness error score
 ///
-double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
+double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
     const int gMaxFitIterations = 30;
@@ -357,12 +357,22 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
     memset(dJacobian,0.0,contour.size()*(cntParam)*sizeof(double));
     double dGradf[cntParam];//Vector of Grad F per param
     memset(dGradf,0.0,cntParam*sizeof(double));
+
+    double dGradi[cntParam];//Vector of Grad Intensity per SPine POint param
+    memset(dGradi,0.0,cntParam*sizeof(double));
+
     double dResiduals[contour.size()];//Vector of \nabla d for error functions
+
     memset(dResiduals,0.0,contour.size()*sizeof(double));
 
     int cntpass = 0;
+    //Do A number of Passes Before  Convergence
     while (cntpass < gMaxFitIterations && abs(dDifffitPtError_total) > 0.1)
     {
+
+        memset(dGradi,0.0,cntParam*sizeof(double));
+        memset(dGradf,0.0,cntParam*sizeof(double));
+
         cntpass++;
         ///For Annealing
         dTemp = (double)cntpass/gMaxFitIterations;
@@ -371,6 +381,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
         dfitPtError_total_last  = dfitPtError_total;
         dfitPtError_total = 0.0; //Reset
 
+        //For Each Contour Point
         for (int i=0;i<contour.size();i+=1) //For Each Data point make a row in Jacobian
         {
             dResiduals[i] = distancePointToSpline((cv::Point2f)contour[i],tmpspline);
@@ -378,7 +389,7 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
             dfitPtError_total       +=dResiduals[i];
 
 
-            for (int k=2;k<cntParam; k++) //Add Variation dx to each param and calc derivative
+            for (int k=2;k < cntParam; k++) //Add Variation dx to each param and calc derivative
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
                 double dq = getdeltaSpline(tmpspline,dsSpline,k,+0.12); //Return param variation
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
@@ -389,7 +400,11 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
                 //if (dq > 0.0)
                 dJacobian[i][k] = (ds-dResiduals[i])/(dq);
                 dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
-
+                //Add Gradient Of Intensity - GradNow - GradVs
+                float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k].x,tmpspline[k].y));
+                float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k].x,dsSpline[k].y));
+                double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k].x,tmpspline[k].y)-cv::Point(dsSpline[k].x,dsSpline[k].y)));
+                dGradi[k]           -= (pxi0 - pxi1)/dsi;
             }
 
         } //Loop Through Data Points
@@ -400,8 +415,9 @@ double fishModel::fitSpineToContour(std::vector<std::vector<cv::Point> >& contou
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.005*dGradf[i];
-            //qDebug() << "lamda GradF_"<< i << "-:" << 0.003*dGradf[i];
+            cparams[i] -= 0.005*dGradf[i]-dGradi[i];
+            qDebug() << "lamda GradF_"<< i << "-:" << 0.005*dGradf[i] << " GradI:" << dGradi[i];
+
         }
         ///Modify Spline - ie move closer
         setSplineParams(tmpspline,cparams);

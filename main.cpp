@@ -2175,7 +2175,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     fullImg_colour.copyTo(frameDebugC);
     fullImg_colour.copyTo(frameDebugD);
 
-    framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
+    //framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
 
 
     /// Convert image to gray and blur it
@@ -2187,9 +2187,10 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     //Blur The Image used to detect  broad features
     cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),1,1);
 
-    cv::Laplacian(maskedfishFeature_blur,framelapl_buffer,CV_8UC1,g_BGthresh);
+    //cv::Laplacian(maskedfishFeature_blur,framelapl_buffer,CV_8UC1,g_BGthresh);
     //cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
-    cv::findContours(framelapl_buffer, contours_laplace_clear,hierarchy_laplace_clear, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_L1, cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    ///Memory Crash Here Too - remove
+    //cv::findContours(framelapl_buffer, contours_laplace_clear,hierarchy_laplace_clear, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_L1, cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
     //cv::imshow("Laplacian Clear",framelapl_buffer);
     cv::Canny( maskedImg_gray, frameCanny, gi_CannyThresSmall,gi_CannyThres  );
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
@@ -2367,7 +2368,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               }
 
               if (contours_body.size() > 0)
-                fish->fitSpineToContour(contours_body,0,0);
+                fish->fitSpineToContour(maskedImg_gray,contours_body,0,0);
 
            } //If Fish Img Bound Is With Picture Frame
           ///

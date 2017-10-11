@@ -71,7 +71,8 @@ public:
 
   double distancePointToSpline(cv::Point2f ptsrc,t_fishspline& outspline);
   double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
-  double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
+  //double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
+  double fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
 
   zftID ID; /// Uid Of this Fish Instance
 
@@ -111,9 +112,9 @@ public:
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-   static const int c_spinePoints   = 4;
-   static const int c_spineSegL     = 20;
-   static const int c_spineParamCnt = c_spinePoints+1;
+   static const int c_spinePoints   = 3;
+   static const int c_spineSegL     = 30;
+   static const int c_spineParamCnt = c_spinePoints+2;
 private:
 
 
