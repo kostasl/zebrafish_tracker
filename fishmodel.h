@@ -112,8 +112,8 @@ public:
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-   static const int c_spinePoints   = 3;
-   static const int c_spineSegL     = 30;
+   static const int c_spinePoints   = 4;
+   static const int c_spineSegL     = 23;
    static const int c_spineParamCnt = c_spinePoints+2;
 private:
 
@@ -138,7 +138,7 @@ class CompareFishScore {
     public:
     bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is greater than t2 /Ordering Highest 1st
     {
-       return t1->templateScore > t2->templateScore;
+       return t1->templateScore < t2->templateScore;
     }
 };
 

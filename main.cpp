@@ -1003,7 +1003,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 //Operator for Priority Ordering
 bool operator<(const fishModel& a, const fishModel& b)
 {
-  return a.templateScore < b.templateScore; //Max Heap
+  return a.templateScore > b.templateScore; //Max Heap
 }
 
 
