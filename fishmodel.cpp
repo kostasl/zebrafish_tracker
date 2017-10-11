@@ -146,7 +146,7 @@ void fishModel::calcSpline(t_fishspline& outspline)
 /// \return distance of variation in Config space
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn)
 {
-    const double dAngleStep = sgn*CV_PI/16.0;
+    const double dAngleStep = sgn*CV_PI/36.0;
     double ret = 0.0;
     outspline = inspline;
 
@@ -403,12 +403,14 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
                 //if (dq > 0.0)
                 dJacobian[i][k] = (ds-dResiduals[i])/(dq);
+                //Got towards smaller Distance
                 dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
                 //Add Gradient Of Intensity - GradNow - GradVs - Spine Point Struct indexes Range from 0 To SpinePointCount
                 float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y));
                 float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k-2].x,dsSpline[k-2].y));
                 double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
-                dGradi[k]           += (pxi0 - pxi1)/dsi;
+                //Go Towards Higher INtensity Pixels
+                dGradi[k]           += (pxi1 - pxi0)/dq;
             }
 
         } //Loop Through Data Points
@@ -419,8 +421,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.01*dGradf[i]; //-0.001*dGradi[i];
-            qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.001*dGradi[i];
+            cparams[i] -= 0.01*dGradf[i] + 0.0005*dGradi[i];
+            qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.0005*dGradi[i];
 
         }
         ///Modify Spline - ie move closer
