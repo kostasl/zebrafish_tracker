@@ -146,8 +146,7 @@ void fishModel::calcSpline(t_fishspline& outspline)
 /// \return distance of variation in Config space
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn)
 {
-    const static int cntParam = outspline.size()+1;
-    const double dAngleStep = sgn*CV_PI/24.0;
+    const double dAngleStep = sgn*CV_PI/16.0;
     double ret = 0.0;
     outspline = inspline;
 
@@ -284,6 +283,8 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
         fScanC += dCStep; //Move Along Curve
     }
 
+    //Show Foot Points
+    cv::circle(frameDebugC,ptFoot,1,CV_RGB(10,10,255),1);
     return mindist;
 }
 
@@ -332,7 +333,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations = 30;
+    const int gMaxFitIterations = 1;
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
@@ -389,10 +390,13 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
             dfitPtError_total       +=dResiduals[i];
 
 
-            for (int k=2;k < cntParam; k++) //Add Variation dx to each param and calc derivative
+            //Add Variation dx to each param and calc derivative
+            //Start from param idx 2 thus skipping the 1st point(root ) position and only do angle variations
+            for (int k=2;k < cntParam; k++)
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
-                double dq = getdeltaSpline(tmpspline,dsSpline,k,+0.12); //Return param variation
-                double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline); // dsSpline residual of variation spline
+                double dq = getdeltaSpline(tmpspline,dsSpline,k,+1.0); //Return param variation
+                // dsSpline residual of variation spline
+                double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline);
                 //dsSpline.clear();
                 //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
                 //ds += distancePointToSpline((cv::Point2f)contour[i],dsSpline); // Add df dsSpline residual of variation spline
@@ -400,11 +404,11 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
                 //if (dq > 0.0)
                 dJacobian[i][k] = (ds-dResiduals[i])/(dq);
                 dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
-                //Add Gradient Of Intensity - GradNow - GradVs
-                float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k].x,tmpspline[k].y));
-                float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k].x,dsSpline[k].y));
-                double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k].x,tmpspline[k].y)-cv::Point(dsSpline[k].x,dsSpline[k].y)));
-                dGradi[k]           -= (pxi0 - pxi1)/dsi;
+                //Add Gradient Of Intensity - GradNow - GradVs - Spine Point Struct indexes Range from 0 To SpinePointCount
+                float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y));
+                float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k-2].x,dsSpline[k-2].y));
+                double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
+                dGradi[k]           += (pxi0 - pxi1)/dsi;
             }
 
         } //Loop Through Data Points
@@ -415,8 +419,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.005*dGradf[i]-dGradi[i];
-            qDebug() << "lamda GradF_"<< i << "-:" << 0.005*dGradf[i] << " GradI:" << dGradi[i];
+            cparams[i] -= 0.01*dGradf[i]; //-0.001*dGradi[i];
+            qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.001*dGradi[i];
 
         }
         ///Modify Spline - ie move closer
