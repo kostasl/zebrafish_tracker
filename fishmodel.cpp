@@ -334,7 +334,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations = 50;
+    const int gMaxFitIterations = 30;
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
@@ -349,7 +349,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     //Measure squared Distance error to closest Curve(spline) Point
         //Add to total error
-    double dfitPtError_total = 0.0;
+    double dfitPtError_total = 10000.0;
     double dfitPtError_total_last = 0.0;
     double dDifffitPtError_total = 1000.0;
 
@@ -370,8 +370,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     int cntpass     = 0;
     int cntStuck    = 0;
     double dVarScale    = 1.0;
-    //Do A number of Passes Before  Convergence
-    while (cntpass < gMaxFitIterations && cntStuck < 5)
+    //Do A number of Passes Before  Convergence //&& (dfitPtError_total/contour.size() > 8)
+    while (cntpass < gMaxFitIterations && (cntStuck < 5) )
     {
         if (std::abs(dDifffitPtError_total) < 0.01) //Time Out Convergece Count
         {
@@ -380,8 +380,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         }
         else
         {
-            cntStuck=0;
-            dVarScale = 1.0;
+            cntStuck    = 0;
+            dVarScale   = 1.0;
         }
 
         //Reset Grad INfo - Start Pass From Last Point
@@ -394,7 +394,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         //Prob Of Acceptance P = exp(-(sn-s)/T) >= drand
         ///
         dfitPtError_total_last  = dfitPtError_total;
-        dfitPtError_total = 0.0; //Reset
+        dfitPtError_total       = 0.0; //Reset
 
         //For Each Contour Point
         for (uint i=0;i<contour.size();i+=1) //For Each Data point make a row in Jacobian
@@ -439,7 +439,6 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 #ifdef _ZTFDEBUG_
             qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.001*dGradi[i];
 #endif
-
         }
         ///Modify Spline - ie move closer
         setSplineParams(tmpspline,cparams);
@@ -464,6 +463,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     else //Update Spine Model
         this->spline = tmpspline;
 
+    qDebug() << "Converged in: " << cntpass;
 
 ///  DEBUG ///
     for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
