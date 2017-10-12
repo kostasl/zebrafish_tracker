@@ -76,6 +76,7 @@ public:
   double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
   //double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
   double fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
+  void drawSpine(cv::Mat& outFrame);
 
   zftID ID; /// Uid Of this Fish Instance
 
@@ -141,7 +142,7 @@ class CompareFishScore {
     public:
     bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is greater than t2 /Ordering Highest 1st
     {
-       return t1->templateScore < t2->templateScore;
+       return t1->templateScore > t2->templateScore;
     }
 };
 

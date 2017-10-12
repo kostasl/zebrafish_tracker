@@ -282,9 +282,10 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
         fScanC += dCStep; //Move Along Curve
     }
-
+#ifdef _ZTFDEBUG_
     //Show Foot Points
     cv::circle(frameDebugC,ptFoot,1,CV_RGB(10,10,255),1);
+#endif
     return mindist;
 }
 
@@ -370,7 +371,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     int cntStuck    = 0;
     double dVarScale    = 1.0;
     //Do A number of Passes Before  Convergence
-    while (cntpass < gMaxFitIterations && cntStuck < 10)
+    while (cntpass < gMaxFitIterations && cntStuck < 5)
     {
         if (std::abs(dDifffitPtError_total) < 0.00001) //Time Out Convergece Count
         {
@@ -435,7 +436,9 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         for (int i=0;i<cntParam;i++)
         {
             cparams[i] -= 0.01*dGradf[i] + 0.001*dGradi[i];
+#ifdef _ZTFDEBUG_
             qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.001*dGradi[i];
+#endif
 
         }
         ///Modify Spline - ie move closer
@@ -450,9 +453,16 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     }//While Error Change Is larger Than
 
+#ifdef _ZTFDEBUG_
     qDebug() << "ID:" <<  this->ID << cntpass << " EChange:" << dDifffitPtError_total;
+#endif
 
-    this->spline = tmpspline;
+    //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
+    //Best To reset Spine and Start Over Next Time
+    if (dfitPtError_total/contour.size() > 10)
+        this->resetSpine(); //No Solution Found So Reset
+    else //Update Spine Model
+        this->spline = tmpspline;
 
 
 ///  DEBUG ///
@@ -471,6 +481,17 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
    // qDebug() << "D err:" << dDifffitPtError_total;
 }
 
+
+void fishModel::drawSpine(cv::Mat& outFrame)
+{
+    for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
+    {
+        cv::circle(outFrame,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
+        if (j<(c_spinePoints-1))
+            cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),cv::Point(spline[j+1].x,spline[j+1].y),TRACKER_COLOURMAP[0],1);
+    }
+
+}
 
 
 

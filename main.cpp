@@ -2368,7 +2368,10 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               }
 
               if (contours_body.size() > 0)
+              {
                 fish->fitSpineToContour(maskedImg_gray,contours_body,0,0);
+                fish->drawSpine(fullImgOut);
+              }
 
            } //If Fish Img Bound Is With Picture Frame
           ///
