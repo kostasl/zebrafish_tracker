@@ -373,7 +373,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     //Do A number of Passes Before  Convergence
     while (cntpass < gMaxFitIterations && cntStuck < 5)
     {
-        if (std::abs(dDifffitPtError_total) < 0.00001) //Time Out Convergece Count
+        if (std::abs(dDifffitPtError_total) < 0.01) //Time Out Convergece Count
         {
             cntStuck++;
             dVarScale = dVarScale*1.2;
