@@ -458,7 +458,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
     //Best To reset Spine and Start Over Next Time
-    if (dfitPtError_total/contour.size() > 10)
+    if (dfitPtError_total/contour.size() > 5)
         this->resetSpine(); //No Solution Found So Reset
     else //Update Spine Model
         this->spline = tmpspline;
