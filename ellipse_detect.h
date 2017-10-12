@@ -7,7 +7,7 @@
 //#include <opencv2/bgsegm.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
-
+#include <queue>
 
 
 ///\note Consistency between pts and RotRect is not checked

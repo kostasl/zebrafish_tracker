@@ -333,7 +333,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations = 30;
+    const int gMaxFitIterations = 50;
 
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
@@ -366,10 +366,23 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     memset(dResiduals,0.0,contour.size()*sizeof(double));
 
-    int cntpass = 0;
+    int cntpass     = 0;
+    int cntStuck    = 0;
+    double dVarScale    = 1.0;
     //Do A number of Passes Before  Convergence
-    while (cntpass < gMaxFitIterations && abs(dDifffitPtError_total) > 0.1)
+    while (cntpass < gMaxFitIterations && cntStuck < 10)
     {
+        if (std::abs(dDifffitPtError_total) < 0.00001) //Time Out Convergece Count
+        {
+            cntStuck++;
+            dVarScale = dVarScale*1.2;
+        }
+        else
+        {
+            cntStuck=0;
+            dVarScale = 1.0;
+        }
+
         //Reset Grad INfo - Start Pass From Last Point
         memset(dGradi,0.0,cntParam*sizeof(double));
         memset(dGradf,0.0,cntParam*sizeof(double));
@@ -394,7 +407,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
             //Start from param idx 2 thus skipping the 1st point(root ) position and only do angle variations
             for (int k=2;k < cntParam; k++)
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
-                double dq = getdeltaSpline(tmpspline,dsSpline,k,+1.0); //Return param variation
+                double dq = getdeltaSpline(tmpspline,dsSpline,k,dVarScale); //Return param variation
                 // dsSpline residual of variation spline
                 double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline);
                 //dsSpline.clear();
@@ -421,8 +434,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.01*dGradf[i] + 0.0005*dGradi[i];
-            qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.0005*dGradi[i];
+            cparams[i] -= 0.01*dGradf[i] + 0.001*dGradi[i];
+            qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.001*dGradi[i];
 
         }
         ///Modify Spline - ie move closer
@@ -442,7 +455,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     this->spline = tmpspline;
 
 
-//    ///DEBUG
+///  DEBUG ///
     for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
     {
         cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
@@ -450,9 +463,12 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     cv::drawContours(frameDebugC,contours_body,idxOuterContour,CV_RGB(200,20,20),1);
 //    cv::imshow("Debug C",frameDebugC);
 
+    //QCoreApplication::processEvents(QEventLoop::AllEvents, 1);
+    cv::waitKey(1);
+////    End Debug ///
+
     return dDifffitPtError_total;
    // qDebug() << "D err:" << dDifffitPtError_total;
-    //cv::waitKey(1);
 }
 
 

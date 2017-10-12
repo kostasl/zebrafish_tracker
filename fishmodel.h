@@ -5,9 +5,12 @@
 
 #include <cvBlob/cvblob.h>
 #include <QDebug>
+//#include <QApplication>
+
 
 #include "ellipse_detect.h"
 #include "zfttracks.h"
+
 
 //#include "larvatrack.h" /If included here it causes circular search if fishModel Defs.
 
