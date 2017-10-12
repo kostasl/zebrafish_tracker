@@ -486,7 +486,7 @@ void fishModel::drawSpine(cv::Mat& outFrame)
 {
     for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
     {
-        cv::circle(outFrame,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
+        cv::circle(outFrame,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],2);
         if (j<(c_spinePoints-1))
             cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),cv::Point(spline[j+1].x,spline[j+1].y),TRACKER_COLOURMAP[0],1);
     }

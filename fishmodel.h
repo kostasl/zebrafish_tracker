@@ -31,7 +31,9 @@ typedef cv::KeyPoint zftblob;
 typedef std::vector<zftblob> zftblobs;
 
 
-const cv::Scalar TRACKER_COLOURMAP[] ={CV_RGB(255,0,0),
+const cv::Scalar TRACKER_COLOURMAP[] ={
+                                CV_RGB(250,250,0), //Yellow
+                                CV_RGB(255,0,0),
                                  CV_RGB(200,100,100),
                                  CV_RGB(150,200,50),
                                  CV_RGB(50,250,00),
