@@ -1977,7 +1977,7 @@ cv::Mat threshold_output_COMB;
 
 /////get rid of noise/food marks
 ////Apply Open Operation dilate(erode())
-//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
+cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
 ////jOIN bLOB Do Close : erode(dilate())
 cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
 
@@ -2072,23 +2072,23 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 
         if (curve.size() >0)
         {
-//             ///// SMOOTH COntours /////
-//            double sigma = 1.0;
-//            int M = round((1.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
-//            assert(M % 2 == 1); //M is an odd number
+             ///// SMOOTH COntours /////
+            double sigma = 2.0;
+            int M = round((13.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+            assert(M % 2 == 1); //M is an odd number
 
-//            //create kernels
-//            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
+            //create kernels
+            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
 
-//            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
-//            PolyLineSplit(curve,curvex,curvey);
+            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
+            PolyLineSplit(curve,curvex,curvey);
 
-//            std::vector<double> X,XX,Y,YY;
-//            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
-//            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
-//            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
-//            PolyLineMerge(curve,smoothx,smoothy);
-//            ///////////// END SMOOTHING
+            std::vector<double> X,XX,Y,YY;
+            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
+            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
+            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
+            PolyLineMerge(curve,smoothx,smoothy);
+            ///////////// END SMOOTHING
 
             outfishbodycontours.push_back(curve);
             /////COMBINE - DRAW CONTOURS

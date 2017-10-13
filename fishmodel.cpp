@@ -387,7 +387,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         }
 
         //Check For Ealy Convergence And Stop Early
-        if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() <= 8) //Time Out Convergece Count
+        if (std::abs(dDifffitPtError_total) < 0.06 && dfitPtError_total/contour.size() <= 8) //Time Out Convergece Count
         {
             cntSolved++;
             //dVarScale = dVarScale*0.93;
@@ -454,8 +454,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
-        {
-            cparams[i] -= 0.01*dGradf[i] - 0.005*dGradi[i];
+        {   //Go Down Distance to Contour And Up Intensity Gradient
+            cparams[i] -= 0.01*dGradf[i] - 0.01*dGradi[i];
 #ifdef _ZTFDEBUG_
             qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.005*dGradi[i];
 #endif
