@@ -58,7 +58,7 @@ typedef std::vector<zftblob> zftblobs;
 unsigned int processVideo(cv::Mat& fgMask,MainWindow& window_main, QString videoFilename,QString outFileCSV,unsigned int istartFrame);
 unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount);
 unsigned int trackImageSequencefiles(MainWindow& window_main);
-unsigned int trackVideofiles(MainWindow& window_main);
+unsigned int trackVideofiles(MainWindow& window_main,QString outputFile);
 /// \fn processFrame - Process blob morphology, Extract features tracks
 ///
 void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned int nFrame,cv::Mat& outframe);
@@ -78,10 +78,9 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 /// \brief UpdateFishModels Use Tracks  to update persistent fishModels
 /// \param vfishmodels
 /// \param fishtracks
-///
-void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks);
-//Update Version With Blobs
-void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks);
+void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks); /// Deprecated
+///Updated Version With Blobs
+void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks,unsigned int nFrame);
 
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
@@ -93,7 +92,8 @@ int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb:
 int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs);
 int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs);
 
-int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
+//int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
+int saveTracks(fishModels& vfish,QString filename,std::string frameNumber);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
 int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
 
@@ -177,6 +177,17 @@ void makeEllipse(cv::Point2f ptcenter,double angle,double a, double b, std::vect
 ///
 int addTemplateToCache(cv::Mat& imgTempl,int idxTempl);
 
+
+///
+/// \brief process_mem_usage Attempts a read of MemUsage
+/// \param vm_usage
+/// \param resident_set
+///
+void process_mem_usage(double& vm_usage, double& resident_set);
+
+//////  Stream Output Operators ////
+
+
 /// Auxiliriary Functions
 template < typename T > std::string to_string( const T& n )
    {
@@ -185,12 +196,15 @@ template < typename T > std::string to_string( const T& n )
        return stm.str() ;
    }
 
-///
-/// \brief process_mem_usage Attempts a read of MemUsage
-/// \param vm_usage
-/// \param resident_set
-///
-void process_mem_usage(double& vm_usage, double& resident_set);
+
+
+
+
+
+
+
+
+
 
 #endif // LARVATRACK_H
 

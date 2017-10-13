@@ -19,6 +19,8 @@ fishModel::fishModel()
         zTrack.colour = CV_RGB(255,0,0);
 }
 
+
+///deprecated tracks And Blobs Here - To be removed
 fishModel::fishModel(cvb::CvTrack* track,cvb::CvBlob* blob):fishModel()
 {
 
@@ -298,8 +300,9 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 /// \param bcentre
 ///
 
-void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre)
+void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame)
 {
+    nCurrentFrame = nFrame; //Set Last Update To Current Frame
     this->templateScore  = templatematchScore;
     this->bearingAngle   = Angle;
     this->ptRotCentre    = bcentre;
@@ -527,6 +530,86 @@ void fishModel::drawSpine(cv::Mat& outFrame)
     cv::circle(outFrame,cv::Point(spline[c_spinePoints-1].x,spline[c_spinePoints-1].y),2,TRACKER_COLOURMAP[c_spinePoints-1],1);
 
 }
+
+
+
+///
+/// \brief operator << //Overloaded Stream Operator // Output Current State Of The Track
+/// \param out
+/// \param h
+/// \return
+///
+std::ostream& operator<<(std::ostream& out, const zftTrack& h)
+{
+
+    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
+
+    zftTrackPoint ptt = h.pointStack.back();
+    out << ptt.x << "\t" << ptt.y;
+
+    return out;
+}
+
+///
+/// \brief operator << //Overloaded Stream Operator // Output Current State Of The Track
+/// \param out
+/// \param h
+/// \return
+///
+QTextStream& operator<<(QTextStream& out, const zftTrack& h)
+{
+
+    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
+
+    zftTrackPoint ptt = h.pointStack.back();
+    out << ptt.x << "\t" << ptt.y;
+
+    return out;
+}
+
+
+
+///
+/// \brief operator << //Overloaded Stream Operator
+/// Output fishModel State to Log File
+/// \param out
+/// \param h
+/// \return
+///
+std::ostream& operator<<(std::ostream& out, const fishModel& h)
+{
+
+    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
+
+
+    out << h.nCurrentFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack;
+
+    return out;
+}
+
+
+///
+/// \brief operator << //Overloaded Stream Operator
+/// Output fishModel State to Log File
+/// \param out
+/// \param h
+/// \return
+///
+QTextStream& operator<<(QTextStream& out, const fishModel& h)
+{
+
+    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
+    out.setRealNumberNotation(QTextStream::RealNumberNotation::FixedNotation );
+    out.setRealNumberPrecision(2);
+    out << h.nCurrentFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
+
+    return out;
+}
+
+
+
+
+
 
 
 

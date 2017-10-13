@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
 
     //trackImageSequencefiles(window_main);
 
-    trackVideofiles(window_main);
+    trackVideofiles(window_main,outfilename);
     //destroy GUI windows
     cv::destroyAllWindows();
     //cv::waitKey(0);                                          // Wait for a keystroke in the window
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
 
 
 
-unsigned int trackVideofiles(MainWindow& window_main)
+unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
 {
     cv::Mat fgMask;
     QString invideoname = "*.mpg";
@@ -403,7 +403,7 @@ unsigned int trackVideofiles(MainWindow& window_main)
 
        std::cout << "Press p to pause Video processing" << std::endl;
 
-       istartFrame = processVideo(fgMask,window_main,invideoname,outfilename,istartFrame);
+       istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame);
 
        window_main.setWindowTitle("Tracking:" + invideoname);
 
@@ -680,7 +680,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         //UpdateFishModels(maskedImg_gray,vfishmodels,fishtracks);
 
 
-        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs);
+        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame);
         //If A fish Is Detected Then Draw Its tracks
         fishModels::iterator ft = vfishmodels.begin();
         if (ft != vfishmodels.end())
@@ -694,7 +694,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         //Combine Lists into Tracks before rendering
 //        tracks.clear();
         //tracks.insert(foodtracks.begin(),foodtracks.end() );
-        //saveTracks(tracks,trkoutFileCSV,frameNumberString);
+        //saveTracks(vfishmodels,trkoutFileCSV,frameNumberString);
 
         detectZfishFeatures(frame,outframe,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
@@ -978,7 +978,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
         if (bTracking)
-            saveTracks(tracks,trkoutFileCSV,frameNumberString);
+            saveTracks(vfishmodels,trkoutFileCSV,frameNumberString);
 
         //if (nFrame%10)
        //     keyboard = cv::waitKey( 1 );
@@ -1007,7 +1007,7 @@ bool operator<(const fishModel& a, const fishModel& b)
 }
 
 
-void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs)
+void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame)
 {
 
     qfishModels qfishrank;
@@ -1059,7 +1059,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
              {
                  //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                 bModelFound = true;
-                pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre);
+                pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
 
 
                 //Add To Priority Q So we can Rank
@@ -1077,7 +1077,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
             //fishModel* fish= new fishModel(track,fishblob);
            fishModel* fish= new fishModel(*fishblob);
 
-           fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre);
+           fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
            qfishrank.push(fish);
@@ -1616,7 +1616,9 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
 }
 
 
-int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
+
+
+int saveTracks(fishModels& vfish,QString filename,std::string frameNumber)
 {
     bool bNewFileFlag = true;
     int cnt;
@@ -1638,31 +1640,26 @@ int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
             bNewFileFlag = false;
 
 
-
         if(data.open(QFile::WriteOnly |QFile::Append))
         {
 
             QTextStream output(&data);
             if (bNewFileFlag)
-                 output << "frameN,TrackID,TrackBlobLabel,Centroid_X,Centroid_Y,Lifetime,Active,Inactive\n";
+                 output << "frameN,fishID,AngleDeg,Centroid_X,Centroid_Y,EyeLDeg,EyeRDeg\n";
 
             //Save Tracks In ROI
-            for (cvb::CvTracks::const_iterator it=tracks.begin(); it!=tracks.end(); ++it)
+            for (fishModels::iterator it=vfish.begin(); it!=vfish.end(); ++it)
             {
                 cnt++;
-                cvb::CvTrack* cvT = it->second;
-                //cvb::CvLabel cvL = it->first;
+                fishModel* pfish = it->second;
+                cvb::CvLabel cvL = it->first;
 
-                cv::Point pnt;
-                pnt.x = cvT->centroid.x;
-                pnt.y = cvT->centroid.y;
-
-                if (iroi.contains(pnt))
+                if (iroi.contains(pfish->ptRotCentre))
                     //Printing the position information +
                     //+ lifetime; ///< Indicates how much frames the object has been in scene.
                     //+active; ///< Indicates number of frames that has been active from last inactive period.
                     //+ inactive; ///< Indicates number of frames that has been missing.
-                    output << frameNumber.c_str()  << "," << cvT->id  << "," << cvT->label  << "," << cvT->centroid.x << "," << cvT->centroid.y << "," << cvT->lifetime  << "," << cvT->active  << "," << cvT->inactive <<"\n";
+                    output << (*pfish) << "\n";
               }
             }
         data.close();
@@ -1670,6 +1667,8 @@ int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber)
    } //Loop ROI
      return cnt;
 }
+
+
 //Mouse Call Back Function
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
@@ -2347,7 +2346,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               {
                   tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
                   fish->leftEye           = lEye;
-                  ss << "L:" << lEye.rectEllipse.angle;
+                  fish->leftEyeTheta      = lEye.rectEllipse.angle;
+                  ss << "L:" << fish->leftEyeTheta;
                   cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }
 
@@ -2356,10 +2356,11 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               {
                   tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
                   fish->rightEye          = rEye;
-                  ss << "R:"  << rEye.rectEllipse.angle;
+                  fish->rightEyeTheta     = rEye.rectEllipse.angle;
+                  ss << "R:"  << fish->rightEyeTheta;
                   cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }
-
+              ///Store Template Options
               if (bStoreThisTemplate)
               {    //Cut Down To Template Size
                   imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
@@ -2367,6 +2368,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
                   bStoreThisTemplate = false;
               }
 
+
+              ///Do Spine Fitting And Drawing
               if (contours_body.size() > 0)
               {
                 fish->fitSpineToContour(maskedImg_gray,contours_body,0,0);
@@ -2480,504 +2483,6 @@ void thresh_callback(int, void* )
 
 
 }
-
-
-//void watershedFeatureMethod()
-//{
-//    //        ////// Draw WATERSHED Labels ////
-//    //        /// - \brief With the more accurate positioning of the eye centres now we can obtain
-//    //        /// Obtain Accurate FEature Contours for Eyes- Body + Head /////
-//    //        ///Make Marked/Labeled Image Using Approx Eye Location
-//    //        //This is labelled as uknown Territory with 0
-//    //        cv::drawContours( markerEyesImg, contours_body, (int)idxblobContour, CV_RGB(0,0,0), cv::FILLED);
-//    //        //markerEyesImg.convertTo(markerEyesImg, CV_32SC1); //CopyTo Changes it To Src Image type?
-
-//    //        //Now Draw Labels on it To Mark L-R Eyes, Head And body region
-//    //        cv::Point ptNeck       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.3;
-//    //        cv::Point ptHead       = pfish->coreTriangle[2]+(pfish->mouthPoint-pfish->coreTriangle[2])*0.5;
-//    //        cv::circle(markerEyesImg,pfish->mouthPoint            ,1,CV_RGB(70,70,70),1,cv::FILLED); //Label/Mark Outside Region
-//    //        //cv::circle(markerEyesImg,pfish->midEyePoint       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-//    //        cv::circle(markerEyesImg,ptNeck            ,1,CV_RGB(150,150,150),2,cv::LINE_AA); //Label/Mark Head Region
-//    //        //cv::circle(markerEyesImg,ptHead       ,1,CV_RGB(150,150,150),1,cv::LINE_AA); //Label/Mark Head Region
-
-//    //        //Can use std::max((int)rectfishFeatures[1].size.width/4,1)
-//    //        cv::circle(markerEyesImg,pfish->leftEyePoint,1 ,CV_RGB(255,255,255),1,cv::LINE_AA); //Label/Mark Centre of  Left Eye
-//    //        cv::circle(markerEyesImg,pfish->rightEyePoint,1 ,CV_RGB(100,100,100),1,cv::LINE_AA); //Label/Mark Centre Right Eye
-//    //        cv::circle(markerEyesImg,pfish->coreTriangle[2],2,CV_RGB(50,50,50),2,cv::LINE_AA); //Label/Mark Body
-
-//    ////        for( size_t i = 0; i< contours_canny.size(); i++ )
-//    ////        {
-//    ////             cv::drawContours( maskedImg, contours_canny, (int)i, CV_RGB(120,120,120), 1,8,hierarchy_canny);
-//    ////        }
-
-
-//    //        ///END OF  WATERSHED Marking  ///
-
-
-//            /// WATERSHED Contour Detection ///
-//            //markerEyesImg is Input/Ouptu so need to Save Before Marker img is modified in order to debug
-//            markerEyesImg.copyTo(tmpMarker,maskfishFeature );
-//            //maskedImg.copyTo(imgwatershedShow,maskfishFeature);
-
-//            cv::watershed(fullImg_colour,markerEyesImg); ///Watershed SEGMENTATION
-
-//            //Do Contour on Segmented image
-
-//            //pfish->rightEyeHull.clear();
-//            //pfish->leftEyeHull.clear();
-//            //cv::findContours(markerEyesImg, contours_watershed,hierarchy_watershed, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-//            //idxLEyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->leftEyePoint,-1,pfish->leftEyeHull,rectfishFeatures);
-//            //idxREyeContourW = findMatchingContour(contours_watershed,hierarchy_watershed,pfish->rightEyePoint,-1,pfish->rightEyeHull,rectfishFeatures);
-
-
-//            if (idxLEyeContourW!=-1)
-//            {
-//                cv::convexHull( cv::Mat(contours_watershed[idxLEyeContourW]), pfish->leftEyeHull, false );
-//                if (pfish->leftEyeHull.size() > 5)
-//                    pfish->leftEyeRect = cv::fitEllipse(pfish->leftEyeHull);
-//                else
-//                    pfish->leftEyeRect = cv::minAreaRect(pfish->leftEyeHull);
-//            }
-
-//            if (idxREyeContourW!=-1)
-//            {
-//                 cv::convexHull( cv::Mat(contours_watershed[idxREyeContourW]), pfish->rightEyeHull, false );
-//                 if (pfish->rightEyeHull.size() > 5)
-//                    pfish->rightEyeRect = cv::fitEllipse(pfish->rightEyeHull);
-//                 else
-//                     pfish->rightEyeRect = cv::minAreaRect(pfish->rightEyeHull);
-//            }
-//}
-
-
-
-/////
-///// \brief fitfishCoreTriangle Sets a fixed position to represent fish features Guesses tail point
-///// \param maskedfishFeature Image containing a mask of the fish being targeted
-///// \param sfish
-///// \param contours_body
-///// \param idxInnerContour Pass Index for inner fish body contour (as segregated by morph on thresholded image
-///// \param idxOuterContour Pass index of the outer whole fish contour
-///// \return
-/////
-//bool fitfishCoreTriangle(cv::Mat& maskfishFeature,cv::Mat& maskedfishImg,fishModel& sfish,std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
-//{
-//    std::vector<std::vector<cv::Point2f> >triangle; //,triangle_out;
-//    bool berrorTriangleFit = false;
-
-//    ///Fit triangle structure to Body
-//    // Find Enclosing Triangle of Child contour
-//    triangle.resize( contours_body.size() );
-//    cv::minEnclosingTriangle(contours_body[idxInnerContour],triangle[idxInnerContour]);
-//    cv::minEnclosingTriangle(contours_body[idxOuterContour],triangle[idxOuterContour]);
-
-
-//    //Check for errors during Fit procedure (they seem to occur on some contours)
-//    if (triangle[idxOuterContour].size() > 0 && triangle[idxInnerContour].size() > 0)
-//    {
-//        //Check All triangle corners
-//        for (int k=0;k<3;k++)
-//        {
-//            //Are coords within bounds?
-//            if (triangle[idxOuterContour][k].x <= -10 || triangle[idxInnerContour][k].x <= -10 || triangle[idxOuterContour][k].y <= -10 || triangle[idxInnerContour][k].y <= -10)
-//            {
-//                berrorTriangleFit = true;
-//                break;
-//            }
-//        }
-//    }else
-//        berrorTriangleFit = true;
-
-
-//       if (berrorTriangleFit)
-//       {
-//           qDebug() << "Error during triangular fit - fitfishCoreTriangle";
-//           return berrorTriangleFit; //Exit non critical
-//       }
-
-
-
-
-//    //triangle[idxInnerContour] = triangle[idxOuterContour];
-////        triangle_out[idxChild] = triangle_out[idxblobContour];
-
-
-//    ///Map Keypoint Triangle features
-//    //Obtain Triangle's side lengths / Find base
-//    double dab = cv::norm(triangle[idxOuterContour][0]-triangle[idxOuterContour][1]);
-//    double dac = cv::norm(triangle[idxOuterContour][0]-triangle[idxOuterContour][2]);
-//    double dbc = cv::norm(triangle[idxOuterContour][1]-triangle[idxOuterContour][2]);
-
-//    cv::Point ptTail;
-
-
-//    if (dab <= dac && dab <= dbc)
-//    {
-//        ptTail = triangle[idxOuterContour][2];
-
-//    }
-//    else
-//    {
-//        if (dac <= dab && dac <= dbc)
-//        {
-
-//         ptTail  = triangle[idxOuterContour][1];
-
-//        }
-//        else
-//        { //dbc is the smallest
-
-//          ptTail =   triangle[idxOuterContour][0];
-//        }
-//    }
-
-
-//    //Find Inner Triangle Apex - Tail/Body Point
-//    dab = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][0]);
-//    dac = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][1]);
-//    dbc = cv::norm(ptTail-(cv::Point)triangle[idxInnerContour][2]);
-
-
-//    //Find Triangle Width - Set point0 and Point1 to the triangle's base (eyes)
-//    if (dab <= dac && dab <= dbc)
-//    {
-//        sfish.coreTriangle[0] = triangle[idxInnerContour][2];
-//        sfish.coreTriangle[1] = triangle[idxInnerContour][1];
-//        sfish.coreTriangle[2] = triangle[idxInnerContour][0];
-
-//    }
-//    if (dac <= dab && dac <= dbc)
-//    {
-//        sfish.coreTriangle[0] = triangle[idxInnerContour][0];
-//        sfish.coreTriangle[1] = triangle[idxInnerContour][2];
-//        sfish.coreTriangle[2] = triangle[idxInnerContour][1];
-//    }
-//    if (dbc <= dab && dbc <= dac )
-//    { //dbc is the smallest
-//        sfish.coreTriangle[0] =  triangle[idxInnerContour][0];
-//        sfish.coreTriangle[1] =  triangle[idxInnerContour][1];
-//        sfish.coreTriangle[2] =  triangle[idxInnerContour][2];
-//    }
-
-
-
-//    //Set Eye Position
-//    //Select Left Right Eye - Set Consistently that point coreTriangle[1] is to the left of [2]
-//    cv::Point vecEyeA = sfish.coreTriangle[2] - sfish.coreTriangle[0];
-//    cv::Point vecEyeB = sfish.coreTriangle[2] - sfish.coreTriangle[1];
-
-//    //Use As Temp Vars - Gives -Pi  0 +Pi - Convert to 0 2Pi
-//    sfish.leftEyeTheta = std::atan2(vecEyeA.y,vecEyeA.x)+M_PI;
-//    sfish.rightEyeTheta = std::atan2(vecEyeB.y,vecEyeB.x)+M_PI;
-
-//    if (sfish.leftEyeTheta > sfish.rightEyeTheta )
-//    {
-//        //use as tmp / Switch R-L eye points Over
-//        cv::Point tmp = sfish.coreTriangle[1];
-//        sfish.coreTriangle[1] = sfish.coreTriangle[0];
-//        sfish.coreTriangle[0] = tmp;
-
-////        double tmpA = sfish.leftEyeTheta ;
-////        sfish.leftEyeTheta = sfish.rightEyeTheta;
-////        sfish.rightEyeTheta = tmpA;
-//    }
-
-//    //Find Position of Body Peak - Relocate Triangle side
-//    cv::Point minLoc;
-//    cv::Point maxLoc;
-//    double minVal,maxVal;
-//    //minMaxLoc(InputArray src, double* minVal, double* maxVal=0, Point* minLoc=0, Point* maxLoc=0, InputArray mask=noArray())
-
-
-//    sfish.tailTopPoint    = ptTail;
-//    //if (maxLoc) is contained in triangle?
-//    /// \note Problem - Eyes can sometimes be brighter than cyst
-//    //cv::minMaxLoc(maskedfishImg,&minVal,&maxVal,&minLoc,&maxLoc,maskfishFeature );
-//    //sfish.coreTriangle[2]   = maxLoc; //Now Place index [0] at apex
-//    sfish.midEyePoint       = sfish.coreTriangle[0]-(sfish.coreTriangle[0] - sfish.coreTriangle[1])/2;
-//    sfish.mouthPoint        = sfish.coreTriangle[2]+(sfish.midEyePoint-sfish.coreTriangle[2])*1.2;
-
-//    ///Temporarly Reposition
-//    //sfish.spline[0].x       = sfish.coreTriangle[2].x;
-//    //sfish.spline[0].y       = sfish.coreTriangle[2].y;
-//    //sfish.calcSpline(sfish.spline);
-
-//    /////DEbug Output
-//    ///Draw Fitted inside Triangle
-//    if (!berrorTriangleFit)
-//    {
-//        for (int j=0; j<3;j++)
-//           cv::line(frameDebugB,triangle[idxInnerContour][j],triangle[idxInnerContour][(j+1)%3] ,CV_RGB(250,250,00),1,cv::LINE_8);
-
-//        //Draw Fitted outside Triangle
-//        for (int j=0; j<3;j++)
-//            cv::line(frameDebugB,triangle[idxOuterContour][j],triangle[idxOuterContour][(j+1)%3] ,CV_RGB(255,255,00),1,cv::LINE_8);
-//    }
-
-//    //Show Triangle Tail Point on Global Image
-//    cv::circle(frameDebugB,ptTail,5,CV_RGB(0,50,200));
-
-
-//    //Draw body centre point/Tail Top
-//    cv::circle(frameDebugB,sfish.coreTriangle[2],5,CV_RGB(20,20,250),1);
-
-
-
-//    return berrorTriangleFit; //No error fit
-//} //Fit Fish Core Triangle
-
-
-
-
-
-
-///// \brief Find point Furthest Along closed outline contour
-///// Find point furtherst using shortest paths to each point around a closed contour/outline/spline
-//int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy)
-//{
-//    int antiVertex = idx;
-//    int maxminD = 0;
-//    //cv::Point ptsrc = vPointChain[idx];
-//    int n = vPointChain.size();
-//    int dPathL[n]; //Accumulated distance from starting point on Chain Going AntiClockwise
-//    int dPathR[n]; //Accumulated distance from starting point on Chain Going Clockwise
-
-
-//    //Find Antipoint/mirror Points on Chain - where the difference between accumulated distance is minimum
-//    dPathL[idx] = 0;
-//    dPathR[idx] = 0;
-
-//    int k = idx; //k is index Going In reverse, i going fwd
-//    int ringIdx;
-//    int ringBIdx;
-//    int lastIndexR = k;
-//    int lastValL = dPathL[idx];
-//    int lastValR = dPathR[idx];
-
-//    for (int i=1;i<n;i++)
-//    {
-
-//        k--;
-
-//        ringIdx  = (i+idx)%(n);
-//        ringBIdx = (k);
-
-//        //Calculate Leftward And Rightward point Distances - Store in vector
-//        dPathL[ringIdx]      = lastValL;
-//        dPathR[ringBIdx]     = lastValR;
-
-//        dPathL[ringIdx]   += cv::norm(vPointChain[ringIdx]-vPointChain[(ringIdx+1)%(n)]);
-//        dPathR[ringBIdx]  += cv::norm(vPointChain[ringBIdx]-vPointChain[(lastIndexR)%(n)]);
-
-//        lastValL = dPathL[ringIdx];
-//        lastValR = dPathR[ringBIdx];
-//        lastIndexR = k;
-//        if (k==0)
-//            k = n; // Do ring Wrap Around
-//    }
-
-//    for (int i=0;i<n;i++)
-//    {
-//        int ringIdx = (i+idx)%(n);
-//        //Compare distance to same point from both paths CW CCW and take the shortest one
-//        int DistLR = std::min(dPathL[ringIdx],dPathR[ringIdx]);
-
-//        if (DistLR > maxminD)
-//        {
-//            maxminD = DistLR;
-//            //store Index
-//            antiVertex = ringIdx;
-//        }
-//    }
-
-//return antiVertex;
-//}
-
-
-
-/////
-///// \brief findIndexClosesttoPoint - Naive Nearest neighbour finder
-///// \param vPointChain array of points
-///// \param pt reference point
-///// \return index in array of closest point
-/////
-//int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt)
-//{
-//  int idx;
-//  unsigned int minDist  = 0;
-//  unsigned int dist     = 0;
-
-//  minDist = 1000000;
-//  for (int i=0; i < vPointChain.size();i++)
-//  {
-//    dist = cv::norm(vPointChain[i]-pt);
-//    if (dist < minDist )
-//    {
-//        idx = i;
-//        minDist = dist;
-//    }
-//  }
-
-//  return idx;
-//}
-
-
-
-
-/////
-///// \brief UpdateFishModels Create a fish model class attaching a respective fishtrack to it and checking its match against a fish template image.
-/////  This prersistence uses the trackid to identify and make informed tracking of fish features across frames
-///// \param maskedImg_Gray / Full frame image of the scene
-///// \param vfishmodels
-///// \param fishtracks
-/////
-///// \note //The whole of  fishModels is deleted after tracking is finished. Each Model Is Templ. Match score is assigned and then only the best
-///// match/score is kept - Assumes 1 fish Is in the scene
-/////
-//void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,cvb::CvTracks& fishtracks)
-//{
-
-//    fishModel* pfish = NULL;
-
-//    cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
-//    cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
-
-//    cv::Point gptmaxLoc; //point Of Bestr Match
-
-//     //Look through Tracks find they have a fish model attached and create if missing
-//    for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
-//    {
-//        cvb::CvTrack* track = it->second;
-
-//        fishModels::const_iterator ft =  vfishmodels.find(it->first); //Find model with same Id as the Track - Associated fishModel
-//        if (track->inactive)
-//            continue;
-
-//        ///
-//        /// Check If Track Centre Point Contains An image that matches a fish template
-//        ///
-
-//        cv::Point centroid = cv::Point2f(track->centroid.x,track->centroid.y);
-//        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-40)), max(0,min(maskedImg_gray.rows,centroid.y-40)));
-//        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+40)), max(0,min(maskedImg_gray.rows,centroid.y+40)));
-
-//        cv::Rect rectFish(pBound1,pBound2);
-
-//        cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
-//        cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
-//        double maxMatchScore; //
-//        int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
-
-
-//        int bestAngle =AngleIdx*gFishTemplateAngleSteps;
-//        cv::Point top_left = pBound1+gptmaxLoc;
-//        cv::Point ptbcentre = top_left + rotCentre;
-
-//         //Check If Fish Was found)
-//        if (ft == vfishmodels.end()) //Model Does not exist for track - its a new track
-//        {
-//            //Make Attached FishModel
-//            cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
-//            assert(fbt != blobs.end());
-//            cvb::CvBlob* fishblob = fbt->second;
-//            //Make new fish Model
-//            fishModel* fish= new fishModel(track,fishblob);
-
-//           fish->templateScore  = maxMatchScore;
-//           fish->bearingAngle   = bestAngle;
-//           fish->ptRotCentre    = ptbcentre;
-
-//           vfishmodels.insert(IDFishModel(track->id,fish));
-
-//        }
-//        else ///Some Fish Has that Track ID
-//        { //Check if pointer is the same Not just the track ID (IDs are re used)
-//          pfish = ft->second; //Set Pointer to Existing Fish
-//          pfish->templateScore  = maxMatchScore;
-//          pfish->bearingAngle   = bestAngle;
-//          pfish->ptRotCentre    = ptbcentre;
-//            //Must point to the same track - OtherWise Replace Fish Model
-//            if(pfish->track != track)
-//            {
-//                delete pfish;
-//                //Make Attached FishModel
-//                vfishmodels.erase(track->id); //Replace
-//                cvb::CvBlobs::const_iterator fbt = blobs.find(track->label);
-//                assert(fbt != blobs.end());
-
-//                cvb::CvBlob* fishblob = fbt->second;
-//                fishModel* fish= new fishModel(track,fishblob);
-
-//                fish->templateScore  = maxMatchScore;
-//                fish->bearingAngle   = bestAngle;
-//                fish->ptRotCentre    = ptbcentre;
-
-//                vfishmodels.insert(IDFishModel(track->id,fish));
-//            }
-
-//        }
-
-//    }
-
-//    ///\todo Make A priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
-//    double maxTemplateScore = 0; // Save best Templ Score Found Among Fish Models
-//    //Look Through
-//    ///Go through Each FishModel And Delete the ones whose tracks are gone
-//    fishModels::iterator ft = vfishmodels.begin();
-//    while(ft != vfishmodels.end())
-//    {
-//        pfish = ft->second;
-
-//        cvb::CvTracks::const_iterator it = fishtracks.find(pfish->ID);
-
-//       if (it == fishtracks.end()) //Track No Longer Exists / Delete model
-//        {
-//           //ft = vfishmodels.erase(ft); //Only Works On some Compilers
-//           vfishmodels.erase(ft++);
-//           std::cout << "Deleted fishmodel: " << pfish->ID << std::endl;
-//           delete(pfish);
-//           break;
-//        }else{ //Track Is inactive Delete Model
-//           if (pfish->track->inactive)
-//           {
-//               std::cout << "Deleted fishmodel: " << pfish->ID << " Track was Inactive t:" << pfish->track->inactive << std::endl;
-//               //ft = vfishmodels.erase(ft);
-//               vfishmodels.erase(ft++);
-//               delete(pfish);
-//               break;
-//           }
-//        }
-
-//       //Find Max Template Score Fish
-//       if (pfish->templateScore > maxTemplateScore)
-//           maxTemplateScore = pfish->templateScore;
-
-//       //Can Only Be reached if above cases eval. false
-//         ++ft; //Increment Iterator
-
-//    }
-
-
-//    ///Keep Only the Fish with The Max Template Score - Can Add them to priority Queue And just keep top one
-//    ft = vfishmodels.begin();
-//    while(ft != vfishmodels.end())
-//    {
-//        pfish = ft->second;
-
-//        if (pfish->templateScore < maxTemplateScore && pfish->templateScore !=0 )
-//        {
-//            std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
-//            ft = vfishmodels.erase(ft);
-//            delete(pfish);
-//            continue;
-//        }
-
-
-//        ++ft; //Increment Iterator
-//    }
-
-
-//} //End Of Update FishModels
 
 
 

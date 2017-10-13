@@ -61,10 +61,11 @@ public:
   fishModel(cvb::CvTrack* track,cvb::CvBlob* blob);
   fishModel(zftblob blob);
 
-  void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre);
-
-
-
+  void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame);
+  ///\note The lowest point in a rectangle is 0th vertex, and 1st, 2nd, 3rd vertices follow clockwise.
+  /// Height is distance between 0th & 1st  (or 2nd & 3rd) vertices. And width is distance between 1st  & 2nd (or 0th & 3rd) vertices.
+  /// Angle is calculated from the horizontal to the first edge of rectangle, counter clockwise.
+  ///  Angle varies between -0 to -90 (I am unsure, what is the decisive factor of -0 or -90)
   float leftEyeAngle();
   float rightEyeAngle();
   float vergenceAngle();
@@ -80,24 +81,19 @@ public:
   //double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
   double fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
   void drawSpine(cv::Mat& outFrame);
+  friend std::ostream& operator<<(std::ostream& out, const fishModel& h);
+  friend QTextStream& operator<<(QTextStream& out, const fishModel& h);
 
   zftID ID; /// Uid Of this Fish Instance
 
   cvb::CvLabel blobLabel; //Legacy BlobLabel
 
   std::vector<cv::Point> contour;
-
-  ///\note The lowest point in a rectangle is 0th vertex, and 1st, 2nd, 3rd vertices follow clockwise.
-  /// Height is distance between 0th & 1st  (or 2nd & 3rd) vertices. And width is distance between 1st  & 2nd (or 0th & 3rd) vertices.
-  /// Angle is calculated from the horizontal to the first edge of rectangle, counter clockwise.
-  ///  Angle varies between -0 to -90 (I am unsure, what is the decisive factor of -0 or -90)
-  //cv::RotatedRect leftEyeRect;
-  //cv::RotatedRect rightEyeRect;
-  //std::vector<cv::Point> rightEyeHull;
-  //std::vector<cv::Point> leftEyeHull;
   std::vector<cv::Point> coreHull; /// core Body shape- no tail
   std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
 
+
+  unsigned int nCurrentFrame; ///<-Holds the frame Number of the last State Update
   double templateScore; //FishLIke Score - How well the detected model fish looks/matches the convolution of a fish template
   double leftEyeTheta;
   double rightEyeTheta;
@@ -128,6 +124,17 @@ private:
   //std::vector<double> splineTheta; ///Angles of fitted Spine Points
 };
 
+
+///
+/// \brief operator << //Overloaded Stream Operator // Output Current State Of The Track
+/// \param out
+/// \param h
+/// \return
+///
+std::ostream& operator<<(std::ostream& out, const zftTrack& h);
+QTextStream& operator<<(QTextStream& out, const zftTrack& h);
+std::ostream& operator<<(std::ostream& out, const fishModel& h);
+QTextStream& operator<<(QTextStream& out, const fishModel& h);
 
 
 ///Auxiliary

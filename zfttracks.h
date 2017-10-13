@@ -25,8 +25,9 @@ typedef unsigned int zftID;
 /// \brief stores the stacked List of past centroid points that define this track.
 /// \see CvPoint2D64f
 /// \see CvTrack
-typedef std::vector<cv::Point2f> zftTrackPoints;
-typedef std::vector<cv::Point> zftRenderedTrackPoints; //Used only For Rendering /Shorted And Integer
+typedef cv::Point2f zftTrackPoint;
+typedef std::vector<zftTrackPoint> zftTrackPoints;
+typedef std::vector<cv::Point> zftRenderedTrackPoints; //Used only For Rendering on image /Shorter vector And Integer based
 
 
 
@@ -43,6 +44,8 @@ typedef std::vector<cv::Point> zftRenderedTrackPoints; //Used only For Rendering
 //typedef std::pair<CvID, CvTrack *> CvIDTrack;
 
 //CvFont* defaultFont = NULL;
+
+
 
 /// \brief Struct that contain information about one track.
 /// \see CvID
@@ -86,7 +89,12 @@ struct zftTrack
   unsigned int lifetime; ///< Indicates how much frames the object has been in scene.
   unsigned int active; ///< Indicates number of frames that has been active from last inactive period.
   unsigned int inactive; ///< Indicates number of frames that has been missing.
+
+
+
 };
+
+
 
 /// \brief Render A zftracker Track
 ///

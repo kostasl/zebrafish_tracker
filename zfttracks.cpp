@@ -57,10 +57,7 @@ void zftRenderTrack(zftTrack& track, cv::Mat& frameIn, cv::Mat& frameOut, unsign
     //frameIn.copyTo(frameOut);
 
     //InitFont(font, CV_FONT_HERSHEY_DUPLEX, 0.5, 0.5, 0, 1);
-    CV_FUNCNAME("cvRenderTrack");
-    __CV_BEGIN__;
-
-      if (mode&CV_TRACK_RENDER_ID)
+     if (mode&CV_TRACK_RENDER_ID)
         if (!track.inactive)
         {
           std::stringstream buffer;
@@ -114,7 +111,10 @@ void zftRenderTrack(zftTrack& track, cv::Mat& frameIn, cv::Mat& frameOut, unsign
                           1, 		        // line thickness
                           CV_AA, 0);
       }
-__CV_END__;
 }
+
+
+
+
 
 
