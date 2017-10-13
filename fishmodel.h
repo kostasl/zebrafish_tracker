@@ -40,7 +40,8 @@ const cv::Scalar TRACKER_COLOURMAP[] ={
                                  CV_RGB(150,150,00),
                                  CV_RGB(250,250,00),
                                  CV_RGB(200,200,80),
-                                 CV_RGB(20,200,180)};
+                                 CV_RGB(20,200,180),
+                                 CV_RGB(200,20,180)};
 
 
 
@@ -118,8 +119,8 @@ public:
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-   static const int c_spinePoints   = 4;
-   static const int c_spineSegL     = 23;
+   static const int c_spinePoints   = 3;
+   static const int c_spineSegL     = 20;
    static const int c_spineParamCnt = c_spinePoints+2;
 private:
 

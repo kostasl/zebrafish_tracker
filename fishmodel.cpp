@@ -191,7 +191,7 @@ void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outp
     outparams[0] = inspline[0].x;
     outparams[1] = inspline[0].y;
 
-    for (int i=0;i<(c_spinePoints-1);i++)
+    for (int i=0;i<(c_spinePoints);i++)
     {
         outparams[i+2] = inspline[i].angle;
     }
@@ -282,10 +282,10 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
         fScanC += dCStep; //Move Along Curve
     }
-#ifdef _ZTFDEBUG_
+//#ifdef _ZTFDEBUG_
     //Show Foot Points
     cv::circle(frameDebugC,ptFoot,1,CV_RGB(10,10,255),1);
-#endif
+//#endif
     return mindist;
 }
 
@@ -369,11 +369,13 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     int cntpass     = 0;
     int cntStuck    = 0;
+    int cntSolved   = 0;
     double dVarScale    = 1.0;
     //Do A number of Passes Before  Convergence //&& (dfitPtError_total/contour.size() > 8)
-    while (cntpass < gMaxFitIterations && (cntStuck < 5) )
+    while (cntpass < gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
     {
-        if (std::abs(dDifffitPtError_total) < 0.01) //Time Out Convergece Count
+        //Converged But Error Is still Large per Countour Point Then Jolt
+        if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > 10) //Time Out Convergece Count
         {
             cntStuck++;
             dVarScale = dVarScale*1.2;
@@ -383,6 +385,19 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
             cntStuck    = 0;
             dVarScale   = 1.0;
         }
+
+        //Check For Ealy Convergence And Stop Early
+        if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() <= 8) //Time Out Convergece Count
+        {
+            cntSolved++;
+            //dVarScale = dVarScale*0.93;
+        }
+        else
+        {
+            cntSolved   = 0;
+            dVarScale   = 1.0;
+        }
+
 
         //Reset Grad INfo - Start Pass From Last Point
         memset(dGradi,0.0,cntParam*sizeof(double));
@@ -435,9 +450,9 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.01*dGradf[i] + 0.001*dGradi[i];
+            cparams[i] -= 0.01*dGradf[i] + 0.005*dGradi[i];
 #ifdef _ZTFDEBUG_
-            qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.001*dGradi[i];
+            qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.005*dGradi[i];
 #endif
         }
         ///Modify Spline - ie move closer
@@ -458,12 +473,18 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
     //Best To reset Spine and Start Over Next Time
-    if (dfitPtError_total/contour.size() > 5)
+    if (dfitPtError_total/contour.size() > 10)
+    {
         this->resetSpine(); //No Solution Found So Reset
+         qDebug() << "Reset Spine after n:" << cntpass;
+    }
     else //Update Spine Model
+    {
         this->spline = tmpspline;
+        qDebug() << "Converged in n: " << cntpass;
+    }
 
-    qDebug() << "Converged in: " << cntpass;
+
 
 ///  DEBUG ///
     for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
@@ -489,7 +510,16 @@ void fishModel::drawSpine(cv::Mat& outFrame)
         cv::circle(outFrame,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],2);
         if (j<(c_spinePoints-1))
             cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),cv::Point(spline[j+1].x,spline[j+1].y),TRACKER_COLOURMAP[0],1);
+        else
+        { //Draw Terminal (hidden) point - which is not a spine knot
+            cv::Point ptTerm;
+            ptTerm.x = spline[j].x + ((double)c_spineSegL)*sin(spline[j].angle);
+            ptTerm.y = spline[j].y - ((double)c_spineSegL)*cos(spline[j].angle);
+
+            cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),ptTerm,TRACKER_COLOURMAP[0],1);
+        }
     }
+    cv::circle(outFrame,cv::Point(spline[c_spinePoints-1].x,spline[c_spinePoints-1].y),2,TRACKER_COLOURMAP[c_spinePoints-1],1);
 
 }
 
