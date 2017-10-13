@@ -2074,7 +2074,7 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
         {
              ///// SMOOTH COntours /////
             double sigma = 2.0;
-            int M = round((13.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+            int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
             assert(M % 2 == 1); //M is an odd number
 
             //create kernels
