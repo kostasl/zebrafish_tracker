@@ -378,7 +378,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > 10) //Time Out Convergece Count
         {
             cntStuck++;
-            dVarScale = dVarScale*1.2;
+            dVarScale = dVarScale*1.12;
         }
         else
         {
@@ -411,6 +411,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         dfitPtError_total_last  = dfitPtError_total;
         dfitPtError_total       = 0.0; //Reset
 
+        double dq,ds; //Variation In Space And Score Variation
         //For Each Contour Point
         for (uint i=0;i<contour.size();i+=1) //For Each Data point make a row in Jacobian
         {
@@ -418,14 +419,13 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
             dfitPtError_total       +=dResiduals[i];
 
-
             //Add Variation dx to each param and calc derivative
             //Start from param idx 2 thus skipping the 1st point(root ) position and only do angle variations
             for (int k=2;k < cntParam; k++)
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
-                double dq = getdeltaSpline(tmpspline,dsSpline,k,dVarScale); //Return param variation
+                dq = getdeltaSpline(tmpspline,dsSpline,k,dVarScale); //Return param variation
                 // dsSpline residual of variation spline
-                double ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline);
+                ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline);
                 //dsSpline.clear();
                 //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
                 //ds += distancePointToSpline((cv::Point2f)contour[i],dsSpline); // Add df dsSpline residual of variation spline
@@ -434,15 +434,20 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
                 dJacobian[i][k] = (ds-dResiduals[i])/(dq);
                 //Got towards smaller Distance
                 dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
-                //Add Gradient Of Intensity - GradNow - GradVs - Spine Point Struct indexes Range from 0 To SpinePointCount
-                float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y));
-                float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k-2].x,dsSpline[k-2].y));
-                double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
-                //Go Towards Higher INtensity Pixels
-                dGradi[k]           += (pxi1 - pxi0)/dq;
             }
 
-        } //Loop Through Data Points
+        }//Loop Through All Contour (Data points)
+
+        ///Add Gradient Of Intensity - GradNow - GradVs - Spine Point Struct indexes Range from 0 To SpinePointCount
+        for (int k=2;k < cntParam; k++)
+        {
+
+            float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y));
+            float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k-2].x,dsSpline[k-2].y));
+            double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
+            //Go Towards Higher INtensity Pixels
+            dGradi[k]           += (pxi1 - pxi0)/dq;
+        }
 
         std::vector<double> cparams;
         getSplineParams(tmpspline,cparams);
@@ -450,7 +455,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
         {
-            cparams[i] -= 0.01*dGradf[i] + 0.005*dGradi[i];
+            cparams[i] -= 0.01*dGradf[i] - 0.005*dGradi[i];
 #ifdef _ZTFDEBUG_
             qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.005*dGradi[i];
 #endif

@@ -119,8 +119,8 @@ public:
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-   static const int c_spinePoints   = 3;
-   static const int c_spineSegL     = 20;
+   static const int c_spinePoints   = 4;
+   static const int c_spineSegL     = 17;
    static const int c_spineParamCnt = c_spinePoints+2;
 private:
 
