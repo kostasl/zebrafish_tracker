@@ -1962,6 +1962,9 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 /// \param maskFGImg - Modified Enhanced FG Mask Image
 /// \param outFishMask - Mask Enhanced for Fish Blob Detection
 /// \param outFoodMaskMask Enhanced for Fish Blob Detection
+/// \todo Cross Check Fish Contour With Model Position
+/// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
+///
 void enhanceMask(cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
 {
 
