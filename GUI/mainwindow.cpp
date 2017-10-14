@@ -270,7 +270,7 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 
 
 
-}
+}//Mouse Move Event
 
 
 ///
@@ -291,7 +291,6 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     }
     else
     {
-
         bSceneMouseLButtonDown = true;
         qDebug() << "Mouse Down";
 
