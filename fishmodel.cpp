@@ -489,7 +489,9 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     else //Update Spine Model
     {
         this->spline = tmpspline;
+#ifdef _ZTFDEBUG_
         qDebug() << "Converged in n: " << cntpass;
+#endif
     }
 
 

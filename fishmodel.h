@@ -103,6 +103,7 @@ public:
 
   tDetectedEllipsoid    leftEye;
   tDetectedEllipsoid    rightEye;
+  cv::RotatedRect       bodyRotBound;
 
   cv::Point mouthPoint;
   cv::Point midEyePoint;

@@ -93,7 +93,8 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs);
 
 //int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
-int saveTracks(fishModels& vfish,QString filename,std::string frameNumber);
+//int saveTracks(fishModels& vfish,QString filename,std::string frameNumber);
+int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,std::string frameNumber);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
 int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
 

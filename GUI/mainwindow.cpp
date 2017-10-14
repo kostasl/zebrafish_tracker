@@ -3,6 +3,13 @@
 
 #include "QtOpencvCore.hpp"
 
+extern fishModels vfishmodels; //Vector containing live fish models
+extern bool bPaused;
+extern bool bStoreThisTemplate;
+extern bool bDraggingTemplateCentre;
+
+bool bSceneMouseLButtonDown;
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -54,18 +61,22 @@ void MainWindow::tickProgress()
 
 void MainWindow::showCVimg(cv::Mat& img)
 {
-    QImage qimg = QtOpencvCore::img2qimg(img);
+    frameScene = img;
+    qimg = QtOpencvCore::img2qimg(img);
 
     // convert the opencv image to a QPixmap (to show in a QLabel)
     QPixmap pixMap = QPixmap::fromImage(qimg);
+
+    //Removed Scaling
     // scale pixMap image to fit into the QLabel
-    pixMap = pixMap.scaled(this->ui->graphicsView->size(), Qt::KeepAspectRatio);
+    //pixMap = pixMap.scaled(this->ui->graphicsView->size(), Qt::KeepAspectRatio);
 
 
     //this->mImage->setPixmap(pixMap);
 
     //this->ui->graphicsView->setSceneRect(this->frameGeometry()); // set the scene's bounding rect to rect of mainwindow
-    /// A Scene contains graphic objects, but rendering them requires a View. The Scenes size can be larger than the View's
+    /// A Scene contains graphic objects, but rendering them requires a View.
+    ///  The Scenes size can be larger than the View's
     this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
     this->mScene->setSceneRect(this->ui->graphicsView->geometry());
     QRect bound = this->ui->graphicsView->geometry();
@@ -77,7 +88,7 @@ void MainWindow::showCVimg(cv::Mat& img)
     this->mImage->setPos(bound.topLeft().x() ,bound.topLeft().y());
 
 
-    this->ui->graphicsView->fitInView(mImage, Qt::KeepAspectRatio);
+    //this->ui->graphicsView->fitInView(mImage, Qt::KeepAspectRatio);
     this->ui->graphicsView->show();
 
     this->mpLastCVImg = &img; //Save Pointer to frame
@@ -131,6 +142,42 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
          //this->ui->graphicsView->setSceneRect(this->frameGeometry()); // set the scene's bounding rect to rect of mainwindow
         return true;
     }
+
+    if (event->type() == QEvent::GraphicsSceneDragMove) {
+        dragMoveEvent(dynamic_cast<QGraphicsSceneDragDropEvent*> (event));
+        return true;
+    }
+
+    //Detect Drag During Pause
+    if (event->type() == QEvent::GraphicsSceneMouseMove) {
+        mouseMoveEvent(dynamic_cast<QGraphicsSceneMouseEvent*> (event));
+        return true;
+    }
+
+    if (event->type() == QEvent::GraphicsSceneMouseDoubleClick)
+    {
+        bPaused = true;
+        qDebug()  << "Paused";
+        return true;
+
+    }
+
+    if (event->type() == QEvent::GraphicsSceneMousePress)
+    {
+        mousePressEvent(dynamic_cast<QGraphicsSceneMouseEvent*> (event));
+        return true;
+    }
+
+    if (event->type() == QEvent::GraphicsSceneMouseRelease)
+    {
+        mouseReleaseEvent(dynamic_cast<QGraphicsSceneMouseEvent*> (event));
+
+        qDebug() << "Mouse Up";
+        return true;
+    }
+
+
+
     return false;
 }
 
@@ -164,8 +211,125 @@ void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrolleven
 //    this->ui->graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 //    this->ui->graphicsView->setTransform(QTransform(h11, 0, 0,0, h22, 0, 0,0,1));
     //this->mImage->transform().scale(50,50);
-    this->mImage->transform().scale(this->mImage->scale()+ steps,this->mImage->scale()+ steps);
+
+
+
+  //this->mImage->transform().scale(this->mImage->scale()+ steps,this->mImage->scale()+ steps);
 }
+
+
+
+void MainWindow::dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent )
+{
+
+    qDebug() << "Drag Event : " <<  mouseEvent->pos().y();
+}
+
+void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
+{
+
+    //qDebug() << "Mouse Mv";
+    if (bSceneMouseLButtonDown ) //bDraggingTemplateCentre
+    {
+         //qDebug() << "Dragging";
+
+
+        QPointF ptSceneclick = mouseEvent->scenePos();// this->ui->graphicsView->mapToScene( mouseEvent->pos().x(),mouseEvent->pos().y() );
+        // get the item that was clicked on
+        QGraphicsItem* item = mScene->itemAt( ptSceneclick, this->ui->graphicsView->transform() );
+        if (!item)
+            return;
+        // get the scene pos in the item's local coordinate space
+        QPointF ptImg = item->mapFromScene(ptSceneclick);
+
+        cv::Point ptMouse(ptImg.x(),ptImg.y());
+        for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+        {
+
+            fishModel* fish = (*it).second;
+            if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
+            {
+                bDraggingTemplateCentre = true;
+
+                qDebug() << "Drag to  pos x: " << ptMouse.x << " y:" << ptMouse.y;
+                fish->bodyRotBound.center = ptMouse;
+                fish->ptRotCentre         = ptMouse;
+                ///Draw a Red Rotated Frame around Detected Body
+                cv::Point2f boundBoxPnts[4];
+                fish->bodyRotBound.points(boundBoxPnts);
+                 for (int j=0; j<4;j++) //Rectangle Body
+                   cv::line(frameScene,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(00,00,255),1,cv::LINE_8);
+
+                //showCVimg(frameScene);
+
+            }
+        }//For eAch Fishs
+
+} //Check For Mouse Down And Mouse Moving - Dragging
+
+
+
+
+}
+
+
+///
+/// \brief MainWindow::mousePressEvent
+/// Two Cases - Either A Move the Fish Bounding Window Initiates
+/// Or It Terminates a previous one - Saving The new template
+/// \param mouseEvent
+///
+
+void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
+{
+    //Already Dragging - Terminate And Save Template
+    if (bDraggingTemplateCentre)
+    {
+        bStoreThisTemplate = true;
+        bDraggingTemplateCentre = false;
+        bSceneMouseLButtonDown = false;
+    }
+    else
+    {
+
+        bSceneMouseLButtonDown = true;
+        qDebug() << "Mouse Down";
+
+        QPointF ptSceneclick = mouseEvent->scenePos();// this->ui->graphicsView->mapToScene( mouseEvent->pos().x(),mouseEvent->pos().y() );
+        // get the item that was clicked on
+        QGraphicsItem* item = mScene->itemAt( ptSceneclick, this->ui->graphicsView->transform() );
+        if (!item)
+            return;
+        // get the scene pos in the item's local coordinate space
+        QPointF ptImg = item->mapFromScene(ptSceneclick);
+
+        cv::Point ptMouse(ptImg.x(),ptImg.y());
+        for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+        {
+
+            fishModel* fish = (*it).second;
+            if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
+            {
+                bDraggingTemplateCentre = true;
+                qDebug() << "Got Fish at position x: " << ptMouse.x << " y:" << ptMouse.y;
+
+            }
+        }
+
+    }//Else Start Dragging Bounding Box Of Fish
+
+
+
+
+}
+
+void MainWindow::mouseReleaseEvent( QGraphicsSceneMouseEvent * mouseEvent )
+{
+    //bSceneMouseLButtonDown = false;
+    bDraggingTemplateCentre = false;
+    qDebug() << "Mouse Up";
+}
+
 
 
 MainWindow::~MainWindow()

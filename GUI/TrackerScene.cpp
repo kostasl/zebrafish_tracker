@@ -32,6 +32,7 @@
  *****************************************************************************/
 
 #include "TrackerScene.hpp"
+extern bool bMouseLButtonDown;
 
 TrackerScene::TrackerScene(QObject *parent) : QGraphicsScene(parent)
 {
@@ -41,6 +42,8 @@ TrackerScene::TrackerScene(QObject *parent) : QGraphicsScene(parent)
     //    this->mLandmarkContainer = NULL;
     //this->mLandmarkContainer = new LandmarkContainer(this);
 }
+
+
 
 TrackerScene::~TrackerScene()
 {

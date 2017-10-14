@@ -79,8 +79,8 @@ uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
 ///Segmentation Params
-int g_Segthresh             = 37; //Image Threshold for FIsh Features
-int g_SegInnerthreshMult    = 3; //Image Threshold for FIsh Features
+int g_Segthresh             = 35; //Image Threshold to segment the FIsh/ Body and Tail
+int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
@@ -89,7 +89,7 @@ int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 
 int gi_maxEllipseMajor      = 11; // thres for Hough Transform
 int gi_minEllipseMajor      = 7; //thres for Hough Transform
 int gi_VotesEllipseThres    = 9; //Votes thres for Hough Transform
-int gthresEyeSeg            = 125;
+int gthresEyeSeg            = 105; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
 const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
@@ -155,7 +155,14 @@ cvb::CvTracks tracks; ///All tracks
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
 fishModels vfishmodels; //Vector containing live fish models
 
-CvFont trackFnt; //Font for Reporting - Tracking
+
+// Other fonts:
+//   CV_FONT_HERSHEY_SIMPLEX, CV_FONT_HERSHEY_PLAIN,
+//   CV_FONT_HERSHEY_DUPLEX, CV_FONT_HERSHEY_COMPLEX,
+//   CV_FONT_HERSHEY_TRIPLEX, CV_FONT_HERSHEY_COMPLEX_SMALL,
+//   CV_FONT_HERSHEY_SCRIPT_SIMPLEX, CV_FONT_HERSHEY_SCRIPT_COMPLEX
+int trackFnt = cv::FONT_HERSHEY_COMPLEX_SMALL;  //Font for Reporting - Tracking
+float trackFntScale = 0.7;
 
 // Global Control Vars ///
 
@@ -172,6 +179,7 @@ bool bMouseLButtonDown;
 bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 bool bStoreThisTemplate = false;
+bool bDraggingTemplateCentre = false;
 
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -233,10 +241,6 @@ int main(int argc, char *argv[])
 
     // get the applications dir pah and expose it to QML
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
-    //Init Font
-    cvInitFont(&trackFnt, CV_FONT_HERSHEY_DUPLEX, 0.4, 0.4, 0, 1);
-
-
 
     gTimer.start();
     //create GUI windows
@@ -687,7 +691,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         {
             fishModel* pfish = ft->second;
             assert(pfish);
-            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH , &trackFnt );
+            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH , trackFnt );
         }
 
         ///Keep A Global List of all tracks?
@@ -697,9 +701,6 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         //saveTracks(vfishmodels,trkoutFileCSV,frameNumberString);
 
         detectZfishFeatures(frame,outframe,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
-
-        //Show Tracks
-        //cvb::cvRenderTracks(tracks, &lplframe, &lplframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_PATH,&trackFnt);
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -711,8 +712,8 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
         if (bSaveImages)
         {
-            saveImage(to_string(nFrame),gstroutDirCSV,frame);
-            cv::putText(frameDebugA, "Save ON", cv::Point(15, 600),
+            saveImage(to_string(nFrame),gstroutDirCSV,outframe);
+            cv::putText(frameDebugC, "Save ON", cv::Point(15, 600),
                     cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
         }
@@ -731,14 +732,14 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
                CV_RGB(10,10,10), -1);
     cv::putText(outframe, frameNumberString,  cv::Point(15, 15),
-            cv::FONT_HERSHEY_SIMPLEX, 0.4 ,  CV_RGB(250,250,0));
+            trackFnt, trackFntScale ,  CV_RGB(250,250,0));
 
     //Count on Original Frame
     std::stringstream strCount;
     strCount << "Nf:" << (nLarva) << " Nr:" << nFood;
     cv::rectangle(outframe, cv::Point(10, 25), cv::Point(80,45),  CV_RGB(10,10,10), -1);
     cv::putText(outframe, strCount.str(), cv::Point(15, 38),
-            cv::FONT_HERSHEY_SIMPLEX, 0.4 ,  CV_RGB(250,250,0));
+           trackFnt, trackFntScale ,  CV_RGB(250,250,0));
 
 
     char buff[100];
@@ -749,7 +750,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     //strLearningRate << "dL:" << (double)(dLearningRate);
     cv::rectangle(outframe, cv::Point(10, 50), cv::Point(50,70), cv::Scalar(10,10,10), -1);
     cv::putText(outframe, buff, cv::Point(15, 63),
-            cv::FONT_HERSHEY_SIMPLEX, 0.4 , CV_RGB(250,250,0));
+            trackFnt, trackFntScale , CV_RGB(250,250,0));
 
     //Time Rate - conv from ms to minutes
     ///Memory Usage
@@ -763,26 +764,11 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
     cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
     cv::putText(outframe, buff, cv::Point(10, 505),
-            cv::FONT_HERSHEY_SIMPLEX, 0.4 , CV_RGB(10,250,0));
+            trackFnt,trackFntScale , CV_RGB(10,250,0));
+
+} //End Of Process Frame
 
 
-
-    //strTimeElapsed << "" <<  << " m";
-//    cv::rectangle(outframe, cv::Point(10, 75), cv::Point(100,95), cv::Scalar(255,255,255), -1);
-//    cv::putText(outframe, buff, cv::Point(15, 88),
-//            cv::FONT_HERSHEY_SIMPLEX, 0.35 , cv::Scalar(0,0,0));
-
-//    //Count Fg Pixels // Ratio
-//    std::stringstream strFGPxRatio;
-//    dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
-//    strFGPxRatio << "Dpx:" <<  dblRatioPxChanged;
-//    cv::rectangle(frame, cv::Point(10, 100), cv::Point(100,120), cv::Scalar(255,255,255), -1);
-//    cv::putText(frame, strFGPxRatio.str(), cv::Point(15, 113),
-//            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
-
-
-}
 ///
 /// \brief updateBGFrame Update BG model for a fixed number of frames
 /// \param frame
@@ -978,7 +964,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
         if (bTracking)
-            saveTracks(vfishmodels,trkoutFileCSV,frameNumberString);
+            saveTracks(vfishmodels,trkoutFileCSV,videoFilename,frameNumberString);
 
         //if (nFrame%10)
        //     keyboard = cv::waitKey( 1 );
@@ -1059,7 +1045,10 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
              {
                  //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                 bModelFound = true;
-                pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
+                ///Update Model State
+                /// But not While Uses Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
+                if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
+                    pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
 
 
                 //Add To Priority Q So we can Rank
@@ -1110,7 +1099,8 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
         {
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
             //OtherWise Delete The model?
-            assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
+            //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
+            //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
 
             std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
             ft = vfishmodels.erase(ft);
@@ -1618,7 +1608,7 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
 
 
 
-int saveTracks(fishModels& vfish,QString filename,std::string frameNumber)
+int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,std::string frameNumber)
 {
     bool bNewFileFlag = true;
     int cnt;
@@ -1630,12 +1620,19 @@ int saveTracks(fishModels& vfish,QString filename,std::string frameNumber)
         cnt = 1;
         Vcnt++;
         ltROI iroi = (ltROI)(*it);
-        QString strroiFile = filename.left(filename.lastIndexOf("/"));
-        char buff[50];
-        sprintf(buff,"/V%d_pos_tracks.csv",Vcnt);
-        strroiFile.append(buff);
+        //Make ROI dependent File Name
+        QFileInfo fiVid(filenameVid);
+        QFileInfo fiOut(filenameCSV);
+        QString fileVidCoreName = fiVid.completeBaseName();
+        QString dirOutPath = fiOut.absolutePath() + "/"; //filenameCSV.left(filenameCSV.lastIndexOf("/")); //Get Output Directory
 
-        QFile data(strroiFile);
+
+        char buff[50];
+        sprintf(buff,"_tracks_%d.csv",Vcnt);
+        dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
+        dirOutPath.append(buff); //Append extension track and ROI number
+
+        QFile data(dirOutPath);
         if (data.exists())
             bNewFileFlag = false;
 
@@ -1672,11 +1669,15 @@ int saveTracks(fishModels& vfish,QString filename,std::string frameNumber)
 //Mouse Call Back Function
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
+
+    cv::Point ptMouse(x,y);
+
      if  ( event == cv::EVENT_LBUTTONDOWN )
      {
         bMouseLButtonDown = true;
          //ROI is locked once tracking begins
-        if (bPaused && !bROIChanged) //CHANGE ROI Only when Paused and ONCE
+        ///CHANGE ROI Only when Paused and ONCE
+        if (bPaused && !bROIChanged)
         { //Change 1st Point if not set or If 2nd one has been set
              if ( b1stPointSet == false)
              {
@@ -1698,6 +1699,9 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
                 b1stPointSet = false; //Rotate To 1st Point Again
              }
         }
+
+
+
 
 
         std::cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" <<std::endl;
@@ -1724,9 +1728,10 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      {
          std::cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" <<std::endl;
      }
+
+
      else if ( event == cv::EVENT_MOUSEMOVE )
      {
-         //std::cout << "Mouse move over the window - position (" << x << ", " << y << ")" <<std::endl;
 
      }
 }
@@ -2072,7 +2077,7 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
         if (curve.size() >0)
         {
              ///// SMOOTH COntours /////
-            double sigma = 2.0;
+            double sigma = 1.0;
             int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
             assert(M % 2 == 1); //M is an odd number
 
@@ -2195,10 +2200,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 
-////////////USE TEMPLATE MATCHINg /////////////
-    cv::Point gptmaxLoc;
-
-    ////No Try Template Matching  Across Angles//
+    ////Template Matching Is already Done On Fish Blob/Object
     //Pick The largest dimension and Make A Square
     cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
    // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
@@ -2216,9 +2218,10 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
 
           //Draw A general Region Where the FIsh Is located, search for template within that region only
-          cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
-          cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centroid.y-gFishBoundBoxSize)));
-          cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centroid.y+gFishBoundBoxSize)));
+          cv::Point centre = fish->ptRotCentre; //top_left + rotCentre;
+          //cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
+          cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centre.x-gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centre.y-gFishBoundBoxSize)));
+          cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centre.x+gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centre.y+gFishBoundBoxSize)));
 
           cv::Rect rectFish(pBound1,pBound2);
 
@@ -2232,11 +2235,13 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
           //0 Degrees Is along the Y Axis Looking Upwards
           int bestAngleinDeg = fish->bearingAngle;
           //Set to Global Max Point
-          cv::Point top_left = pBound1+gptmaxLoc;
+         // cv::Point top_left = pBound1+gptmaxLoc;
 
           ///Write Angle / Show Box
-          cv::Point centre = fish->ptRotCentre; //top_left + rotCentre;
+
           cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
+          /// Save Anterior Bound
+          fish->bodyRotBound = fishRotAnteriorBox;
 
           stringstream strLbl;
           strLbl << "A: " << bestAngleinDeg;
@@ -2269,7 +2274,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
           //- Expand image so as to be able to fit the template When Rotated Orthonormally
           //Custom Bounding Box Needs to allow for RotRect To be rotated Orthonormally
           cv::Rect rectfishAnteriorBound = rectFish; //Use A square // fishRotAnteriorBox.boundingRect();
-          cv::Size szFishAnteriorNorm(min(rectfishAnteriorBound.width,rectfishAnteriorBound.height),max(rectfishAnteriorBound.width,rectfishAnteriorBound.height)); //Size Of Norm Image
+          cv::Size szFishAnteriorNorm(min(rectfishAnteriorBound.width,rectfishAnteriorBound.height)+4,max(rectfishAnteriorBound.width,rectfishAnteriorBound.height)+4); //Size Of Norm Image
           //Rot Centre Relative To Bounding Box Of UnNormed Image
           cv::Point2f ptFishAnteriorRotCentre = (cv::Point2f)fishRotAnteriorBox.center-(cv::Point2f)rectfishAnteriorBound.tl();
 
@@ -2307,9 +2312,6 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               //cv::Point ptRotCenter = cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2);
               ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
               cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
-              //Draw  Rotation Centre of Transformation to Norm
-              cv::circle(imgFishAnterior,ptRotCenter,4,CV_RGB(100,140,140),2);
-              cv::imshow("IsolatedAnterior",imgFishAnterior);
              // ptRotCenter.x = ptRotCenter.x*cos(bestAngleinDeg*M_PI/180.0);
              // ptRotCenter.y = ptRotCenter.y*sin(bestAngleinDeg*M_PI/180.0);
 
@@ -2320,9 +2322,24 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               //Need to fix size of Upright/Normed Image
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
               cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
-              //Draw Normalized Rotation Centre
-              cv::circle(imgFishAnterior_Norm,ptRotCenter,4,CV_RGB(250,0,0),2);
 
+
+
+              ///Store Template Options
+              if (bStoreThisTemplate)
+              {    //Cut Down To Template Size
+                  imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
+                  addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
+                  bStoreThisTemplate = false;
+              }
+
+              /// Draw Centers for Reference and cleaner Masks
+              //Draw  Rotation Centre of Transformation to Norm
+              cv::circle(imgFishAnterior,ptRotCenter,3,CV_RGB(100,140,140),1);
+              cv::imshow("IsolatedAnterior",imgFishAnterior);
+
+              //Draw Normalized Rotation Centre
+              cv::circle(imgFishAnterior_Norm,ptRotCenter,4,CV_RGB(0,0,0),-1);
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
               //imgFishHead           = imgFishAnterior_Norm;
 
@@ -2359,13 +2376,6 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
                   fish->rightEyeTheta     = rEye.rectEllipse.angle;
                   ss << "R:"  << fish->rightEyeTheta;
                   cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-              }
-              ///Store Template Options
-              if (bStoreThisTemplate)
-              {    //Cut Down To Template Size
-                  imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
-                  addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
-                  bStoreThisTemplate = false;
               }
 
 
@@ -2534,137 +2544,3 @@ void process_mem_usage(double& vm_usage, double& resident_set)
 
 
 
-
-/////
-///// \brief processBlobs Separates food from fish using an area filter.
-///// It generates a circular mask around the fish so as to allow to process them separatelly
-/////It renders the food and fish blobs
-///// \param srcimg //Legacy format pointer IplImage* to source image
-///// \param blobs
-///// \param tracks
-///// \param outDirCSV
-///// \param frameNumberString
-///// \param dMeanBlobArea
-///// \return
-/////
-//int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea)
-//{
-
-//    IplImage  *labelImg;
-
-
-//    ///// Finding the blobs ////////
-//     int cnt = 0;
-//     uint minBlobArea = 0;
-//     uint maxBlobArea = 0;
-
-
-//     IplImage lplfgMaskImg;
-/////  REGION OF INTEREST - UPDATE - SET
-//     //*destframeImg        =  srcfullimg; //Convert The Global frame to lplImage
-//     //cv::Mat fgMaskSurroundFish = cv::Mat::zeros(srcfullimg.rows, srcfullimg.cols,CV_8UC3); //Empty Canvas For Just Fish Blob
-//     //framefishMaskImg   = (IplImage)fgMaskSurroundFish
-//     lplfgMaskImg       =  maskimg;
-
-//    if (bROIChanged || ptROI2.x != 0)
-//    {
-//        //Set fLAG sO FROM now on Region of interest is used and cannot be changed.
-//        bROIChanged = true;
-//    }
-
-
-//   //std::cout << "Roi Sz:" << vRoi.size() <<std::endl;
-//    labelImg=cvCreateImage(cvGetSize(srcframeImg), IPL_DEPTH_LABEL, 1);
-//    cvb::cvLabel( &lplfgMaskImg, labelImg, blobs );
-
-//    cvb::cvFilterByROI(vRoi,blobs); //Remove Blobs Outside ROIs
-
-//    cvb::cvBlobAreaStat(blobs,dMeanBlobArea,dVarBlobArea,maxBlobArea,minBlobArea);
-//    double dsigma = 1.0*std::sqrt(dVarBlobArea);
-
-//    ///Separate Fish from Food Blobs
-//    //copy blobs and then Filter to separate classes
-//    //Allow only Fish Area Through
-//    //                                              (CvBlobs &blobs,unsigned int minArea, unsigned int maxArea)
-//    fishblobs = cvb::cvFilterByArea(blobs,std::min((uint)dMeanBlobArea*8,(uint)thresh_fishblobarea),std::max((uint)(maxBlobArea+dsigma),(uint)thresh_fishblobarea),CV_RGB(10,10,220) ); //Remove Small Blobs
-
-//    //Food Blobs filter -> Remove large blobs (Fish)
-//    ///\todo these blob filters could be elaborated to include moment matching/shape distance
-//    foodblobs = cvb::cvFilterByArea(blobs,std::max(minBlobArea-dsigma,4.0),(unsigned int)std::min(dMeanBlobArea*3,(double)thresh_fishblobarea/10.0),CV_RGB(0,200,0)); //Remove Large Blobs
-
-
-
-//    //Debug Show Mean Size Var
-//    //std::cout << dMeanBlobArea <<  " " << dMeanBlobArea+3*sqrt(dVarBlobArea) <<std::endl;
-//    ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
-//    unsigned int RoiID = 0;
-//    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
-//    {
-//        ltROI iroi = (ltROI)(*it);
-//        RoiID++;
-
-//        //Custom Filtering the blobs for Rendering
-//        //Count Blobs in ROI
-//        //Find Fish
-
-//        //cvb::CvBlob* fishBlob = cvb::cvLargestBlob(blobs);
-//        //RENDER FISH
-//        for (cvb::CvBlobs::const_iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
-//        {
-//            cvb::CvBlob* blob = it->second;
-//            cv::Point pnt;
-//            pnt.x = blob->centroid.x;
-//            pnt.y = blob->centroid.y;
-
-
-//            if (iroi.contains(pnt))
-//            {
-//                //cnt++; //CV_BLOB_RENDER_COLOR
-//                    cvb::cvRenderBlob(labelImg, blob, &lplfgMaskImg, srcframeImg, CV_BLOB_RENDER_ANGLE | CV_BLOB_RENDER_BOUNDING_BOX, CV_RGB(250,10,10),1);
-//                    //Make a mask to Surround the fish of an estimated size -  So as to overcome BG Substraction Loses - by redecting countour
-//                    //cv::circle(fgMaskSurroundFish,cv::Point(blob->centroid.x,blob->centroid.y),((blob->maxx-blob->minx)+(blob->maxy-blob->miny)),CV_RGB(255,255,255),-1);
-//            }
-//        }
-
-//        //Now Render Food
-//        for (cvb::CvBlobs::const_iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
-//        {
-//            cvb::CvBlob* blob = it->second;
-//            cv::Point pnt;
-//            pnt.x = blob->centroid.x;
-//            pnt.y = blob->centroid.y;
-
-//            if (iroi.contains(pnt))
-//            {
-//                    cvb::cvRenderBlob(labelImg, blob, &lplfgMaskImg, srcframeImg,CV_BLOB_RENDER_COLOR | CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX ,CV_RGB(200,200,0),1.0);
-//            }
-//        }
-
-//        // render blobs in original image
-//        //cvb::cvRenderBlobs( labelImg, blobs, &fgMaskImg, &frameImg,CV_BLOB_RENDER_CENTROID|CV_BLOB_RENDER_BOUNDING_BOX | CV_BLOB_RENDER_COLOR);
-
-//        //Make File Names For Depending on the Vial - Crude but does the  job
-//        ///Save Blobs
-//        if (bSaveBlobsToFile)
-//        {
-//            QString strroiFileN = outDirCSV;
-//            QString strroiFilePos = outDirCSV;
-//            char buff[150];
-//            sprintf(buff,"/V%d_pos_N.csv",RoiID);
-//            strroiFileN.append(buff);
-//            sprintf(buff,"/V%d_pos.csv",RoiID);
-//            strroiFilePos.append(buff);
-
-//            saveTrackedBlobs(blobs,strroiFilePos,frameNumberString,iroi);
-//            cnt += saveTrackedBlobsTotals(blobs,tracks,strroiFileN,frameNumberString,iroi);
-//        }
-//    } //For Each ROI
-
-
-
-
-//    // *always* remember freeing unused IplImages
-//    cvReleaseImage( &labelImg );
-
-//    return cnt;
-//}

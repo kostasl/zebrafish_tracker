@@ -45,24 +45,17 @@
 
 
 
-// Other fonts:
-//   CV_FONT_HERSHEY_SIMPLEX, CV_FONT_HERSHEY_PLAIN,
-//   CV_FONT_HERSHEY_DUPLEX, CV_FONT_HERSHEY_COMPLEX,
-//   CV_FONT_HERSHEY_TRIPLEX, CV_FONT_HERSHEY_COMPLEX_SMALL,
-//   CV_FONT_HERSHEY_SCRIPT_SIMPLEX, CV_FONT_HERSHEY_SCRIPT_COMPLEX
 
-void zftRenderTrack(zftTrack& track, cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, CvFont *font )
+
+void zftRenderTrack(zftTrack& track, cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface )
 {
 
-    //frameIn.copyTo(frameOut);
-
-    //InitFont(font, CV_FONT_HERSHEY_DUPLEX, 0.5, 0.5, 0, 1);
      if (mode&CV_TRACK_RENDER_ID)
         if (!track.inactive)
         {
           std::stringstream buffer;
           buffer << track.id;
-          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.centroid),cv::FONT_HERSHEY_PLAIN,0.7, CV_RGB(0.,255.,0.));
+          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.centroid),fontface,0.7, CV_RGB(0.,255.,0.));
         }
 
       if (mode&CV_TRACK_RENDER_BOUNDING_BOX)

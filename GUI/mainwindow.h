@@ -38,7 +38,13 @@ public:
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
     void handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent);
+    void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    void dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent );
 
+    QImage qimg; //SCene Image Updated in ShowCV Image
+    cv::Mat frameScene; //CvMat Last Frame Drawn
 private:
     Ui::MainWindow      *ui;
 
