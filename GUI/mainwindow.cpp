@@ -229,7 +229,7 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 {
 
     //qDebug() << "Mouse Mv";
-    if (bSceneMouseLButtonDown ) //bDraggingTemplateCentre
+    if (bDraggingTemplateCentre ) //bDraggingTemplateCentre
     {
          //qDebug() << "Dragging";
 
@@ -249,7 +249,7 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
             fishModel* fish = (*it).second;
             if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
             {
-                bDraggingTemplateCentre = true;
+                //bDraggingTemplateCentre = true; //Still True /Terminates Upon Click
 
                 qDebug() << "Drag to  pos x: " << ptMouse.x << " y:" << ptMouse.y;
                 fish->bodyRotBound.center = ptMouse;
@@ -287,17 +287,16 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     {
         bStoreThisTemplate = true;
         bDraggingTemplateCentre = false;
-        bSceneMouseLButtonDown = false;
+        //bSceneMouseLButtonDown = false; //Act as Button Released With This Press
+        qDebug() << "Store New Template position";
     }
     else
     {
-        bPaused = true;
+        //bPaused = true;
         bSceneMouseLButtonDown = true;
         qDebug() << "Mouse Down";
 
     }
-
-
 
 
 }
@@ -305,7 +304,7 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
 void MainWindow::mouseReleaseEvent( QGraphicsSceneMouseEvent * mouseEvent )
 {
     bSceneMouseLButtonDown = false;
-    bDraggingTemplateCentre = false;
+    //bDraggingTemplateCentre = false;
     qDebug() << "Mouse Up";
 }
 
