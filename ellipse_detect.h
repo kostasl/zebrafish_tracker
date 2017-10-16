@@ -18,8 +18,8 @@ typedef struct tDetectedEllipsoid{
     }
 
     //cv::RotatedRect(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI))
-    tDetectedEllipsoid(cv::Point pt0,cv::Point pt1,cv::Point pt2,int score,cv::RotatedRect r):rectEllipse(r){
-
+    tDetectedEllipsoid(cv::Point pt0,cv::Point pt1,cv::Point pt2,int score,cv::RotatedRect r):rectEllipse(r)
+    {
 
         ptAxisMj1 = pt1; //Major Axis Point 1;
         ptAxisMj2 = pt2; //Major Axis Point 2;

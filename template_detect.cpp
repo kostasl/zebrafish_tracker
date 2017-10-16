@@ -180,3 +180,17 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
 
    return ++idxTempl;
 }
+
+///
+/// \brief deleteLastTemplateRow
+/// \param FishTemplateCache
+/// \param idxTempl - Row To Remove
+/// \return
+///
+int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
+{
+
+    cv::Rect rectblankcv(0,imgTempl.rows*(idxTempl),FishTemplateCache.cols,imgTempl.rows*(idxTempl+1));
+    cv::rectangle(FishTemplateCache,rectblankcv,CV_RGB(0,0,0),CV_FILLED);
+
+}

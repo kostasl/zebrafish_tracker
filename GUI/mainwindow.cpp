@@ -156,8 +156,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
     if (event->type() == QEvent::GraphicsSceneMouseDoubleClick)
     {
-        bPaused = true;
-        qDebug()  << "Paused";
+        mouseDblClickEvent(dynamic_cast<QGraphicsSceneMouseEvent*> (event));
+
         return true;
 
     }
@@ -291,31 +291,11 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     }
     else
     {
+        bPaused = true;
         bSceneMouseLButtonDown = true;
         qDebug() << "Mouse Down";
 
-        QPointF ptSceneclick = mouseEvent->scenePos();// this->ui->graphicsView->mapToScene( mouseEvent->pos().x(),mouseEvent->pos().y() );
-        // get the item that was clicked on
-        QGraphicsItem* item = mScene->itemAt( ptSceneclick, this->ui->graphicsView->transform() );
-        if (!item)
-            return;
-        // get the scene pos in the item's local coordinate space
-        QPointF ptImg = item->mapFromScene(ptSceneclick);
-
-        cv::Point ptMouse(ptImg.x(),ptImg.y());
-        for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
-        {
-
-            fishModel* fish = (*it).second;
-            if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
-            {
-                bDraggingTemplateCentre = true;
-                qDebug() << "Got Fish at position x: " << ptMouse.x << " y:" << ptMouse.y;
-
-            }
-        }
-
-    }//Else Start Dragging Bounding Box Of Fish
+    }
 
 
 
@@ -324,9 +304,40 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
 
 void MainWindow::mouseReleaseEvent( QGraphicsSceneMouseEvent * mouseEvent )
 {
-    //bSceneMouseLButtonDown = false;
+    bSceneMouseLButtonDown = false;
     bDraggingTemplateCentre = false;
     qDebug() << "Mouse Up";
+}
+
+///
+/// \brief MainWindow::mouseDblClickEvent Start Dragging Bounding Box Of Fish
+/// \param mouseEvent
+///
+void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
+{
+
+    QPointF ptSceneclick = mouseEvent->scenePos();// this->ui->graphicsView->mapToScene( mouseEvent->pos().x(),mouseEvent->pos().y() );
+    // get the item that was clicked on
+    QGraphicsItem* item = mScene->itemAt( ptSceneclick, this->ui->graphicsView->transform() );
+    if (!item)
+        return;
+    // get the scene pos in the item's local coordinate space
+    QPointF ptImg = item->mapFromScene(ptSceneclick);
+
+    cv::Point ptMouse(ptImg.x(),ptImg.y());
+    for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+    {
+
+        fishModel* fish = (*it).second;
+        if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
+        {
+            bDraggingTemplateCentre = true;
+            qDebug() << "Start Dragging Fish Bound from position x: " << ptMouse.x << " y:" << ptMouse.y;
+
+        }
+    }
+
+
 }
 
 

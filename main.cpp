@@ -128,7 +128,7 @@ cv::Mat kernelOpen;
 cv::Mat kernelOpenLaplace;
 cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
-cv::Mat fishbodyimg_template;// OUr Fish Image Template
+cv::Mat gLastfishimg_template;// OUr Fish Image Template
 cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
 cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
 
@@ -292,14 +292,14 @@ int main(int argc, char *argv[])
 
     for (idxTempl=0; idxTempl<nTemplatesToLoad;idxTempl++)
     {
-        fishbodyimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl+1) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
-        if (fishbodyimg_template.empty())
+        gLastfishimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl+1) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+        if (gLastfishimg_template.empty())
         {
             std::cerr << "Could not load template" << std::endl;
             exit(-1);
         }
 
-        addTemplateToCache(fishbodyimg_template,gFishTemplateCache,idxTempl); //Increments Index
+        addTemplateToCache(gLastfishimg_template,gFishTemplateCache,idxTempl); //Increments Index
     }
 
 
@@ -427,7 +427,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
     cv::Mat frame,frameMasked,fgMask,outframe;
     QString inVideoDirname = QFileDialog::getExistingDirectory(&window_main,"Select folder with video images to track", gstroutDirCSV);
 
-    unsigned int istartFrame = 0;
+    //unsigned int istartFrame = 0;
     unsigned int nFrame = 0;
 
     QStringList strImageNames; //Save Passed Files Here
@@ -559,7 +559,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
         }
 
         //read input data. ESC or 'q' for quitting
-        while( !bExiting && (char)keyboard != 27 && nFrame <= MOGhistory)
+        while( !bExiting && (char)keyboard != 27 && nFrame <= (uint) MOGhistory)
         {
             //read the current frame
             if(!capture.read(frame))
@@ -1002,7 +1002,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
     fishModels::iterator ft;
 
-    cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
+    cv::Size szTempIcon(std::max(gLastfishimg_template.cols,gLastfishimg_template.rows),std::max(gLastfishimg_template.cols,gLastfishimg_template.rows));
     cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
 
     cv::Point gptmaxLoc; //point Of Bestr Match
@@ -1208,6 +1208,13 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     {
              std::cout << "Store next Image as Template" << std::endl;
              bStoreThisTemplate = !bStoreThisTemplate;
+    }
+
+    if ((char)keyboard == 'D')
+    {
+        bStoreThisTemplate = false;
+        std::cout << "Delete Last Template Image idx:" << gnumberOfTemplatesInCache-1 << std::endl;
+        deleteTemplateRow(gLastfishimg_template,gFishTemplateCache,gnumberOfTemplatesInCache-1);
     }
 
 }
@@ -2205,7 +2212,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
     ////Template Matching Is already Done On Fish Blob/Object
     //Pick The largest dimension and Make A Square
-    cv::Size szTempIcon(std::max(fishbodyimg_template.cols,fishbodyimg_template.rows),std::max(fishbodyimg_template.cols,fishbodyimg_template.rows));
+    cv::Size szTempIcon(std::max(gLastfishimg_template.cols,gLastfishimg_template.rows),std::max(gLastfishimg_template.cols,gLastfishimg_template.rows));
    // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
     cv::Mat Mrot;
 
@@ -2242,7 +2249,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
           ///Write Angle / Show Box
 
-          cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(fishbodyimg_template.cols,fishbodyimg_template.rows),bestAngleinDeg);
+          cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gLastfishimg_template.cols,gLastfishimg_template.rows),bestAngleinDeg);
           /// Save Anterior Bound
           fish->bodyRotBound = fishRotAnteriorBox;
 
@@ -2271,7 +2278,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
           //cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(155,155,15),1);
 
           //Make A rectangle that surrounds part of the image that has been template matched
-          cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(fishbodyimg_template.cols/2+3,fishbodyimg_template.cols/2+3),bestAngleinDeg);
+          cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(gLastfishimg_template.cols/2+3,gLastfishimg_template.cols/2+3),bestAngleinDeg);
 
           // Get Image Region Where the template Match occured
           //- Expand image so as to be able to fit the template When Rotated Orthonormally
@@ -2283,7 +2290,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
           //Define Regions and Sizes for extracting Orthonormal Fish
           //Top Left Corner of templateSized Rect relative to Rectangle Centered in Normed Img
-          cv::Size szTemplateImg = fishbodyimg_template.size();
+          cv::Size szTemplateImg = gLastfishimg_template.size();
           //cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
           cv::Point ptTopLeftTemplate(rectfishAnteriorBound.width/2-szTemplateImg.width/2,rectfishAnteriorBound.height/2-szTemplateImg.height/2);
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);

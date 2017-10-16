@@ -39,6 +39,7 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event);
     void handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent);
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    void mouseDblClickEvent(QGraphicsSceneMouseEvent * mouseEvent );
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent );
