@@ -1782,6 +1782,111 @@ void drawROI(cv::Mat& frame)
     }
 }
 
+
+///
+/// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
+/// \param contours source array in which to search
+/// \param hierarchy
+/// \param pt - Position around which we are searching
+/// \param level - The required hierarchy level description of the contour being searched for
+/// \return Index of *child*/Leaf contour closest to point
+///
+int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
+                              std::vector<cv::Vec4i>& hierarchy,
+                              cv::Point pt,
+                              int level)
+{
+    int idxContour           = -1;
+    bool bContourfound       = false;
+    int mindistToCentroid    = +10000; //Start Far
+    int distToCentroid       = +10000;
+    int matchContourDistance = 10000;
+
+
+    /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
+   ///Search Through Contours - Draw contours + hull results
+
+   ///Find Contour with Min Distance in shape and space -attach to closest contour
+   //In Not found Search Again By distance tp Full Contour
+       //Find Closest Contour
+       for( int i = 0; i< (int)contours.size(); i++ )
+       {
+
+          //Filter According to desired Level
+          if (level == 0) /////Only Process Parent Contours
+          {
+            if (hierarchy[i][3] != -1) // Need to have no parent
+               continue;
+            if (hierarchy[i][2] == -1)  // Need to have child
+                continue;
+            assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
+          }
+
+          if (level == 1) /////Only Process Child Contours
+          {
+              if (hierarchy[i][3] == -1) // Need to have a parent
+                  continue;
+//                   //Parent should be root
+//                   if (hierarchy[hierarchy[i][3]][3] != -1)
+//                       continue;
+          }
+
+          if (level == 2) ////Needs to be top Level Contour
+          {
+              if (hierarchy[i][3] != -1) // No Parent Contour
+                  continue;
+//                   //Parent should be root
+//                   if (hierarchy[hierarchy[i][3]][3] != -1)
+//                       continue;
+          }
+
+
+
+          //It returns positive (inside), negative (outside), or zero (on an edge)
+          //Invert Sign and then Rank From Smallest to largest distance
+          if (contours[i].size() > 0)
+            matchContourDistance = distToCentroid = -cv::pointPolygonTest(contours[i],pt,true);
+
+          //Measure Space Mod -Penalize Outside contour Hits - Convert Outside Contour Distances to X times further +ve (penalize)
+          //Make Distance alway positive
+          //matchContourDistance = (distToCentroid<0)?abs(distToCentroid)*20:distToCentroid;
+          // qDebug() << "-c" << i << " D:" <<  distToCentroid;
+
+
+
+          //Only Update if Spatial Distance is smaller but also moving from outside to inside of the shape
+          //-ve is outside - 0 on border -
+          //if(mindistToCentroid <= 0 && distToCentroid >= 0))
+          {
+               if (matchContourDistance < mindistToCentroid)
+               {
+                   //Otherwise Keep As blob Contour
+                   idxContour = i;
+                   mindistToCentroid = matchContourDistance;//New Min
+
+                   //qDebug() << "-----MinTD:"<< matchContourDistance << "<- HDist:" << dHudist << " Sp:" << distToCentroid << "AreaDist:" << abs(tArea - sArea) << "LengthDist:" << abs(tLength - sLength);
+
+                   //Reject match 0 in case contour is not actually there
+                   //if (matchContourDistance < gi_ThresholdMatching)
+                        bContourfound = true;
+               }
+           }
+       }
+
+
+   if (!bContourfound)
+   {
+       std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
+       idxContour = -1;
+   }
+      //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
+
+   assert(idxContour < (int)contours.size());
+
+   return idxContour;
+}
+
+
 ///
 /// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
 /// \param contours source array in which to search
@@ -2006,9 +2111,9 @@ threshold_output_COMB.copyTo(outFoodMask);
 ///Draw Only the largest contours that should belong to fish
 /// \todo Other Match Shapes Could be used here
 /// \todo Use WaterShed - Let MOG mask Be FG label and then watershed
-int idxFishContour = -1;
+//int idxFishContour = -1;
 std::vector<cv::Point> curve; // THe Fish Contour to use for new Mask
-for (int kk=0; kk< fishbodycontours.size();kk++)
+for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 {
     curve.clear();
 
@@ -2022,7 +2127,7 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
             continue;
 
         /// Lets try simple area filter - Assume no large object need to be BG substracted
-        int area  = cv::contourArea(fishbodycontours[kk]);
+        uint area  = cv::contourArea(fishbodycontours[kk]);
 
         ///Check Area and then  Find the thresholded Fish Contour std::max(dMeanBlobArea*8,(double)thresh_fishblobarea)
         if (area >  thresh_fishblobarea) //If Contour Is large Enough then Must be fish
@@ -2073,8 +2178,10 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
             //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
             // they should still fall within contour - )
             //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
-            cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED); //Draw New One
-            cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),3); //Draw New One
+            //Draw New One
+            cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
+            //Erase Fish From Food Mask
+            cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),3);
       }
 
 
@@ -2379,7 +2486,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               /// SPINE Fitting And Drawing
               if (contours_body.size() > 0)
               {
-                fish->fitSpineToContour(maskedImg_gray,contours_body,0,0);
+                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,0);
+                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 fish->drawSpine(fullImgOut);
               }
 

@@ -122,7 +122,11 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
                               std::vector<cv::Point>& matchhull,
                               std::vector<cv::RotatedRect>& outfittedEllipse);
 
-
+///Simpler One Using Only distance from Point
+int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
+                              std::vector<cv::Vec4i>& hierarchy,
+                              cv::Point pt,
+                              int level);
 
 ///
 /// \brief fitfishCoreTriangle Sets a fixed position to represent fish features Guesses tail point
