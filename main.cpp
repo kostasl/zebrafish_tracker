@@ -180,6 +180,7 @@ bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 bool bStoreThisTemplate = false;
 bool bDraggingTemplateCentre = false;
+bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
 
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -2114,34 +2115,36 @@ for (int kk=0; kk< fishbodycontours.size();kk++)
 void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
-    //bool berrorTriangleFit = true;
-    //int max_thresh = 255;
-    //int idxREyeContour,idxLEyeContour,idxLBodyContour;
-    //int idxREyeContourW = -1;
-    //int idxLEyeContourW = -1;
-    cv::RNG rng(12345);
+
+//////No Longer Used Vars
+    //        cv::RNG rng(12345);
+    //    cv::Mat maskfishFeature,framelapl,framelapl_buffer;
+//    cv::Mat frameCanny;
+    //    cv::Mat grad,grad_x, grad_y;
+    //    std::vector<std::vector<cv::Point> >hull( contours_body.size() );
+    //std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
+    //std::vector<cv::Vec4i> hierarchy_laplace; //Contour Relationships  [Next, Previous, First_Child, Parent]
+    /// Memory Crash on vector Init
+    //std::vector<std::vector<cv::Point> > contours_laplace_clear; //For contours without markers
+    //std::vector<cv::Vec4i> hierarchy_laplace_clear; //Contour Relationships  [Next, Previous, First_Child, Parent]
+    //std::vector<std::vector<cv::Point> > fishfeatureContours( contours_laplace.size() );
+
+/////////////////
 
     cv::Mat maskedImg_gray,maskedfishImg_gray;
-    cv::Mat maskfishFeature,maskedfishFeature_blur;
+    cv::Mat maskedfishFeature_blur;
 
 
-    cv::Mat grad,grad_x, grad_y;
-    cv::Mat framelapl,framelapl_buffer, frameCanny;
+
     // Memory Crash
-    std::vector<std::vector<cv::Point> >hull( contours_body.size() );
+
     std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
 
     std::vector<std::vector<cv::Point> > contours_laplace;
     contours_laplace.reserve(contours_body.size());
-    std::vector<cv::Vec4i> hierarchy_laplace; //Contour Relationships  [Next, Previous, First_Child, Parent]
-    /// Memory Crash on vector Init
-    std::vector<std::vector<cv::Point> > contours_laplace_clear; //For contours without markers
-    std::vector<cv::Vec4i> hierarchy_laplace_clear; //Contour Relationships  [Next, Previous, First_Child, Parent]
-    std::vector<std::vector<cv::Point> > fishfeatureContours( contours_laplace.size() );
     std::vector<cv::RotatedRect> rectfishFeatures; //Fitted Ellipsoids
 
     std::vector<std::vector<cv::Point> > contours_canny;
-    std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
 
     ////// Make Debug Frames ///
@@ -2167,13 +2170,9 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     //Blur The Image used to detect  broad features
     cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),1,1);
 
-    //cv::Laplacian(maskedfishFeature_blur,framelapl_buffer,CV_8UC1,g_BGthresh);
-    //cv::erode(framelapl,framelapl,kernelOpenLaplace,cv::Point(-1,-1),1);
-    ///Memory Crash Here Too - remove
-    //cv::findContours(framelapl_buffer, contours_laplace_clear,hierarchy_laplace_clear, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_L1, cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-    //cv::imshow("Laplacian Clear",framelapl_buffer);
-    cv::Canny( maskedImg_gray, frameCanny, gi_CannyThresSmall,gi_CannyThres  );
-    //cv::findContours(frameCanny, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_NONE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+//    if (bUseEllipseEdgeFittingMethod)
+//        cv::Canny( maskedImg_gray, frameCanny, gi_CannyThresSmall,gi_CannyThres  );
 
 
     ////Template Matching Is already Done On Fish Blob/Object
@@ -2277,7 +2276,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
                    imgBounds.contains(rectfishAnteriorBound.tl()))
            {
               imgTmp(rectfishAnteriorBound).copyTo(imgFishAnterior);
-              frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
+//              if (bUseEllipseEdgeFittingMethod)
+//                frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
               //get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
               ///\note The centre of the Bounding Box could also do
 
@@ -2297,11 +2297,14 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               ///Make Rotation Transformation
               //Need to fix size of Upright/Normed Image
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
-              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
+
+//if (bUseEllipseEdgeFittingMethod)
+//              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
 
 
 
-              ///Store Template Options
+
+              /// Store Norm Image as Template - If Flag Is set
               if (bStoreThisTemplate)
               {    //Cut Down To Template Size
                   imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
@@ -2323,7 +2326,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               //cv::imshow("IsolatedHead",imgFishHead);
               //cv::imshow("IsolatedAnteriorNorm",imgFishAnterior_Norm);
 
-              int ret = detectEllipses(imgFishHead,imgFishHeadEdge,imgTmp, bestAngleinDeg,vell,imgFishHeadProcessed);
+              int ret = detectEllipses(imgFishHead,vell,imgFishHeadProcessed);
 
               if (ret < 2)
                 show_histogram("HeadHist",imgFishHead);
@@ -2332,7 +2335,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
 
-            ///Set Detected Eyes Back to Fish Features - Print Out Values
+            /// Set Detected Eyes Back to Fish Features
+            ///  Print Out Values
             std::stringstream ss;
             ss.precision(3);
             if (vell.size() > 0)
@@ -2372,7 +2376,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
             }
 
 
-              ///Do Spine Fitting And Drawing
+              /// SPINE Fitting And Drawing
               if (contours_body.size() > 0)
               {
                 fish->fitSpineToContour(maskedImg_gray,contours_body,0,0);
@@ -2416,13 +2420,15 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
 
     //Draw On Canny Img
-    frameCanny.convertTo(frameCanny, CV_8UC3);
+
+#ifdef _ZTFDEBUG
     ///DEBUG show all contours -Edge
+     frameCanny.convertTo(frameCanny, CV_8UC3);
     for( size_t i = 0; i< contours_canny.size(); i++ )
     {
-         //cv::drawContours( frameDebugC, contours_canny, (int)i, CV_RGB(200,0,60), 1,8,hierarchy_canny);
+         cv::drawContours( frameDebugC, contours_canny, (int)i, CV_RGB(200,0,60), 1,8,hierarchy_canny);
     }
-
+#endif
 
 
     //cv::imshow("Edges Canny",frameCanny);

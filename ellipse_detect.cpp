@@ -413,7 +413,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 /// \param outHeadFrameProc
 /// \return
 ///
-int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses,cv::Mat& outHeadFrameProc)
+int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameProc)
 {
     int ret = 0;//Return Value Is the Count Of Ellipses Detected (Eyes)
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
@@ -509,7 +509,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         //Cover Right Eye
-        cv::Rect r(ptcentre.x,ptcentre.y,imgEdge.cols/2-1,imgEdge.rows);
+        cv::Rect r(ptcentre.x,ptcentre.y,imgEdge_local.cols/2-1,imgEdge_local.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
         getEdgePoints(imgEdge_local,vedgePoints_all);
@@ -566,7 +566,7 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         //Cover LEFT Eye Edges
-        cv::Rect r(0,0,imgEdge.cols/2,imgEdge.rows);
+        cv::Rect r(0,0,imgEdge_local.cols/2,imgEdge_local.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
         vedgePoints_all.clear();
@@ -603,7 +603,10 @@ int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,
 /////////// END OF TEMPLATE ///
 
     //Check If Area Of Detected Eyes Is very Different
-    if (rEll.rectEllipse.boundingRect().area() - lEll.rectEllipse.boundingRect().area() > 20)
+    uint area1 = lEll.rectEllipse.boundingRect().area();
+    uint area2 = rEll.rectEllipse.boundingRect().area();
+
+    if (area1 - area2 > (std::max(area2,area1)/2))
         ret = 0; //SOme Detection Error - Ask To Change Threshold
 
    ///Debug//
