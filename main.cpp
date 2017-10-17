@@ -2486,7 +2486,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               /// SPINE Fitting And Drawing
               if (contours_body.size() > 0)
               {
-                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,0);
+                  //Look for Top Level Contour
+                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                 fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 fish->drawSpine(fullImgOut);
               }
