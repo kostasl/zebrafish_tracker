@@ -413,7 +413,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
        //getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
 
        std::cout << "Press p to pause Video processing" << std::endl;
-
+       istartFrame = 0;
        istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame);
 
        window_main.setWindowTitle("Tracking:" + invideoname);
