@@ -27,14 +27,20 @@
         </property>
         <item>
          <widget class="QGraphicsView" name="graphicsView">
+          <property name="minimumSize">
+           <size>
+            <width>640</width>
+            <height>480</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
-            <width>16777215</width>
-            <height>16777215</height>
+            <width>1980</width>
+            <height>1024</height>
            </size>
           </property>
           <property name="toolTip">
-           <string>Fish Petri Dish Image</string>
+           <string>Tracking Video Frame - p for pausing</string>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
@@ -49,8 +55,8 @@
            <rectf>
             <x>100.000000000000000</x>
             <y>100.000000000000000</y>
-            <width>1800.000000000000000</width>
-            <height>1200.000000000000000</height>
+            <width>640.000000000000000</width>
+            <height>480.000000000000000</height>
            </rectf>
           </property>
           <property name="dragMode">
@@ -80,7 +86,7 @@
      <x>0</x>
      <y>0</y>
      <width>1009</width>
-     <height>22</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

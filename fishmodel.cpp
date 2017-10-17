@@ -284,10 +284,10 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
         fScanC += dCStep; //Move Along Curve
     }
-//#ifdef _ZTFDEBUG_
+#ifdef _ZTFDEBUG_
     //Show Foot Points
     cv::circle(frameDebugC,ptFoot,1,CV_RGB(10,10,255),1);
-//#endif
+#endif
     return mindist;
 }
 

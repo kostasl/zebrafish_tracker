@@ -140,7 +140,7 @@ cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across 
 ltROI Circle( cv::Point(0,0) , cv::Point(1024,768));
 ltROIlist vRoi;
 cv::Point ptROI1 = cv::Point(320,240);
-cv::Point ptROI2 = cv::Point(1,131);
+cv::Point ptROI2 = cv::Point(1,134);
 
 
 //Structures to hold blobs & Tracks
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
     bROIChanged = false;
     bPaused = false;
     bshowMask = false;
-    bTracking = false;
+    bTracking = true; //Start By Tracking by default
     bExiting    = false;
 
     QApplication app(argc, argv);
@@ -248,18 +248,23 @@ int main(int argc, char *argv[])
 
     //cv::namedWindow(gstrwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     //cv::namedWindow(gstrwinName + " FishOnly",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow("Debug A",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow("Debug B",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug C",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+
     //cv::namedWindow("Ellipse fit",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("HeadHist",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+
+#ifdef    _ZTFDEBUG_
+    cv::namedWindow("Debug A",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("Debug B",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+
 
     frameDebugA = cv::Mat::zeros(640, 480, CV_8U);
     frameDebugB = cv::Mat::zeros(640, 480, CV_8U);
-    frameDebugC = cv::Mat::zeros(640, 480, CV_8U);
     frameDebugD = cv::Mat::zeros(640, 480, CV_8U);
+#endif
 
+    frameDebugC = cv::Mat::zeros(640, 480, CV_8U);
     //set the callback function for any mouse event
     //cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
@@ -306,14 +311,14 @@ int main(int argc, char *argv[])
     /// END OF FISH TEMPLATES ///
 
     ///Make TrackBars ///
-    cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
+//    cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
     cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
-    cv::createTrackbar( "Vote Threshold:", "Debug D", &gi_ThresholdMatching, 120.0, thresh_callback );
-    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
-    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
+    cv::createTrackbar( "Eye Threshold:", "Debug D", &gthresEyeSeg, 200.0, thresh_callback );
+//    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
+//    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
     cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 20.0, thresh_callback );
     cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,10, thresh_callback );
-    cv::createTrackbar( "Ellipse Votes:","Debug D", &gi_VotesEllipseThres, 800, thresh_callback );
+    //cv::createTrackbar( "Ellipse Votes:","Debug D", &gi_VotesEllipseThres, 800, thresh_callback );
 
     thresh_callback( 0, 0 );
     ///////////////
@@ -364,6 +369,7 @@ int main(int argc, char *argv[])
 
     std::cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
 ///Clean Up //
+
     frameDebugA.deallocate();
     frameDebugB.deallocate();
     frameDebugC.deallocate();
@@ -943,12 +949,15 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         //Add frames from Last video
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
 
-        //Make Global Roi on 1st frame
+        //Make Global Roi on 1st frame if it doesn't prexist
         if (nFrame == 1)
         {
+            if (vRoi.size() == 0)
+            {
             //Add Global Roi - Center - Radius
-            ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
-            addROI(newROI);
+                ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
+                addROI(newROI);
+            }
         }
 
 
@@ -1278,52 +1287,6 @@ bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img)
 
     return true;
 }
-
-
-///Don't need this / fish Contours already exist from enhance Fish Mask
-int countObjectsviaContours(cv::Mat& srcimg )
-{
-     cv::Mat imgTraced;
-     srcimg.copyTo(imgTraced);
-     std::vector< std::vector <cv::Point> > contours; // Vector for storing contour
-     std::vector< cv::Vec4i > hierarchy;
-
-     cv::findContours( imgTraced, contours, hierarchy,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
-     for( unsigned int i = 0; i< contours.size(); i=hierarchy[i][0] ) // iterate through each contour.
-     {
-          cv::Rect r= cv::boundingRect(contours[i]);
-          cv::rectangle(imgTraced,r, cv::Scalar(255,0,0),1,8,0);
-          cv::rectangle(frameDebugA,r, cv::Scalar(255,0,0),1,8,0);
-     }
-
-     //Write text For Count on Original Frame
-     std::stringstream strCount;
-     strCount << "N:" << ((int)contours.size());
-
-     cv::rectangle(frameDebugA, cv::Point(540, 2), cv::Point(690,20), cv::Scalar(255,255,255), -1);
-     cv::putText(frameDebugA, strCount.str(), cv::Point(545, 15),
-             cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
-    std::cout << " Larvae  "<< strCount.str() << std::endl;
-    //imshow("Contoured Image",frame);
-
-
-    // To get rid of the smaller object and the outer rectangle created
-      //because of the additional mask image we enforce a lower limit on area
-      //to remove noise and an upper limit to remove the outer border.
-
- /* if (contourArea(contours_poly[i])>(mask.rows*mask.cols/10000) && contourArea(contours_poly[i])<mask.rows*mask.cols*0.9){
-      boundRect[i] = boundingRect( Mat(contours_poly[i]) );
-      minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
-      circle(drawing,center[i], (int)radius[i], Scalar(255,255,255), 2, 8, 0);
-      rectangle(drawing,boundRect[i], Scalar(255,255,255),2,8,0);
-      num_object++;
-}
-      */
-
-    return contours.size();
-}
-
 
 
 /// Updated Blob Processing
@@ -1728,7 +1691,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
         if (bPaused && !bROIChanged)
         {
             deleteROI(mousepnt);
-            drawROI(frameDebugA);
+            drawROI(frameDebugC);
         }
      }
      else if  ( event == cv::EVENT_MBUTTONDOWN )
@@ -1765,8 +1728,8 @@ void addROI(ltROI& newRoi)
     //vRoi.insert(it,newRoi);
     vRoi.push_back(newRoi);
     //Draw the 2 points
-    cv::circle(frameDebugA,ptROI1,3,cv::Scalar(255,0,0),1);
-    cv::circle(frameDebugA,ptROI2,3,cv::Scalar(255,0,0),1);
+    cv::circle(frameDebugC,ptROI1,3,cv::Scalar(255,0,0),1);
+    cv::circle(frameDebugC,ptROI2,3,cv::Scalar(255,0,0),1);
 
    std::cout << "Added, total:" << vRoi.size() <<std::endl;
 
@@ -2184,10 +2147,13 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     ////// Make Debug Frames ///
     cv::Mat fullImg_colour;
     fullImgIn.convertTo(fullImg_colour,CV_8UC3);
+#ifdef _ZTFDEBUG
     fullImg_colour.copyTo(frameDebugA);
     fullImg_colour.copyTo(frameDebugB);
-    fullImg_colour.copyTo(frameDebugC);
     fullImg_colour.copyTo(frameDebugD);
+#endif _ZTFDEBUG
+    fullImg_colour.copyTo(frameDebugC);
+
 
     //framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
 
@@ -2346,7 +2312,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               /// Draw Centers for Reference and cleaner Masks
               //Draw  Rotation Centre of Transformation to Norm
               cv::circle(imgFishAnterior,ptRotCenter,3,CV_RGB(100,140,140),1);
-              cv::imshow("IsolatedAnterior",imgFishAnterior);
+              //cv::imshow("IsolatedAnterior",imgFishAnterior);
 
               //Draw Normalized Rotation Centre
               cv::circle(imgFishAnterior_Norm,ptRotCenter,4,CV_RGB(0,0,0),-1);
@@ -2355,7 +2321,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
               //cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
               //cv::imshow("IsolatedHead",imgFishHead);
-              cv::imshow("IsolatedAnteriorNorm",imgFishAnterior_Norm);
+              //cv::imshow("IsolatedAnteriorNorm",imgFishAnterior_Norm);
 
               int ret = detectEllipses(imgFishHead,imgFishHeadEdge,imgTmp, bestAngleinDeg,vell,imgFishHeadProcessed);
 
@@ -2366,27 +2332,44 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
 
-              ///Print Eye Angle Info
-               std::stringstream ss;
-               ss.precision(3);
-              if (vell.size() > 0)
-              {
-                  tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
-                  fish->leftEye           = lEye;
-                  fish->leftEyeTheta      = lEye.rectEllipse.angle;
-                  ss << "L:" << fish->leftEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-              }
+            ///Set Detected Eyes Back to Fish Features - Print Out Values
+            std::stringstream ss;
+            ss.precision(3);
+            if (vell.size() > 0)
+            {
+                tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
+                fish->leftEye           = lEye;
+                fish->leftEyeTheta      = lEye.rectEllipse.angle;
+                ss << "L:" << fish->leftEyeTheta;
+                cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+            }else
+            { //Set To Not detected
+                fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+                fish->leftEyeTheta  = -1000;
+            }
 
-              ss.str(""); //Empty String
-              if (vell.size() > 1)
-              {
-                  tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
-                  fish->rightEye          = rEye;
-                  fish->rightEyeTheta     = rEye.rectEllipse.angle;
-                  ss << "R:"  << fish->rightEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-              }
+
+            ss.str(""); //Empty String
+            if (vell.size() > 1)
+            {
+              tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
+              fish->rightEye          = rEye;
+              fish->rightEyeTheta     = rEye.rectEllipse.angle;
+              ss << "R:"  << fish->rightEyeTheta;
+              cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+            }else
+            { //Set To Not detected
+                fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+                fish->rightEyeTheta  = -1000;
+            }
+
+            ///If Both Eyes Detected Then Print Vergence Angle
+            if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
+            {
+                ss.str(""); //Empty String
+                ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta;
+                cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+            }
 
 
               ///Do Spine Fitting And Drawing
