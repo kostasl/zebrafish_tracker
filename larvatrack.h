@@ -84,7 +84,7 @@ void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fisht
 
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
-bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img);
+bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
 int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea);
 
@@ -94,7 +94,7 @@ int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
 //int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
 //int saveTracks(fishModels& vfish,QString filename,std::string frameNumber);
-int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,std::string frameNumber);
+int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,QString frameNumber);
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
 int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
 

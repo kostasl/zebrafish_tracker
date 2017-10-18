@@ -15,13 +15,14 @@
 //#include "larvatrack.h" /If included here it causes circular search if fishModel Defs.
 
 extern float gDisplacementThreshold;
+extern int gFishTailSpineSegmentLength;
 
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
 {
     float x;
-    float y;
-    float angle;// In Rads
+    float y; ///Position of Joint In Global Coordinates
+    float angleRad;/// In Rads
 } splineKnotf;
 
 typedef std::vector<splineKnotf> t_fishspline;
@@ -95,10 +96,10 @@ public:
 
   unsigned int nCurrentFrame; ///<-Holds the frame Number of the last State Update
   double templateScore; //FishLIke Score - How well the detected model fish looks/matches the convolution of a fish template
-  double leftEyeTheta;
-  double rightEyeTheta;
-  double bearingRads;
-  float bearingAngle;
+  double leftEyeTheta; /// Theta is In Degrees
+  double rightEyeTheta;/// Theta is In Degrees
+  double bearingRads; /// Rads
+  float bearingAngle; /// Theta is In Degrees
 
 
   tDetectedEllipsoid    leftEye;
@@ -110,15 +111,18 @@ public:
   cv::Point ptRotCentre; //Template Matching Body Centre
   cv::Point tailTopPoint;
 
-  cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
+  //cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
+  //CvTrackPoints trackPointStack; /// <Holds list of past centroid positions along the track
+
   zftTrack zTrack;
-  CvTrackPoints trackPointStack; /// <Holds list of past centroid positions along the track
+
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-   static const int c_spinePoints   = 4;
-   static const int c_spineSegL     = 17;
-   static const int c_spineParamCnt = c_spinePoints+2;
+  int c_spineSegL;
+  static const int c_spinePoints   = 4;
+
+  static const int c_spineParamCnt = c_spinePoints+2;
 private:
 
 

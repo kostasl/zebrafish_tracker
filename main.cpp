@@ -94,11 +94,12 @@ int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
 const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize        = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
+int gFishTailSpineSegmentLength = 17;
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gMatchShapeThreshold     = 0.65;
+double gMatchShapeThreshold     = 0.90;
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -319,7 +320,7 @@ int main(int argc, char *argv[])
 //    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
     cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 20.0, thresh_callback );
     cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,10, thresh_callback );
-    //cv::createTrackbar( "Ellipse Votes:","Debug D", &gi_VotesEllipseThres, 800, thresh_callback );
+    cv::createTrackbar( "Spine Segment Size","Debug D", &gFishTailSpineSegmentLength, 50, thresh_callback );
 
     thresh_callback( 0, 0 );
     ///////////////
@@ -412,11 +413,12 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
 
        //getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
 
+       window_main.setWindowTitle("Tracking:" + invideoname);
        std::cout << "Press p to pause Video processing" << std::endl;
        istartFrame = 0;
        istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame);
 
-       window_main.setWindowTitle("Tracking:" + invideoname);
+
 
         if (istartFrame == 0)
         {
@@ -637,7 +639,8 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     unsigned int nFood          =  0;
     double dblRatioPxChanged    =  0.0;
 
-    std::string frameNumberString = to_string(nFrame);
+    QString frameNumberString;
+    frameNumberString.fromStdString(to_string(nFrame));
 
     //For Morphological Filter
     ////cv::Size sz = cv::Size(3,3);
@@ -717,13 +720,6 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
 
 
 
-        if (bSaveImages)
-        {
-            saveImage(to_string(nFrame),gstroutDirCSV,outframe);
-            cv::putText(frameDebugC, "Save ON", cv::Point(15, 600),
-                    cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
-        }
 
     } //If Tracking
 
@@ -738,7 +734,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     std::stringstream ss;
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
                CV_RGB(10,10,10), -1);
-    cv::putText(outframe, frameNumberString,  cv::Point(15, 15),
+    cv::putText(outframe, frameNumberString.toStdString(),  cv::Point(15, 15),
             trackFnt, trackFntScale ,  CV_RGB(250,250,0));
 
     //Count on Original Frame
@@ -765,7 +761,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     {
         //THats In KiB units /So 1Million is A Gigabyte
         process_mem_usage(vm, rss);
-        //std::cout << "VM: " << vm/1024.0 << "; RSS: " << rss/1024.0 << endl;
+        std::clog << "VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
 
     }
     std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
@@ -874,13 +870,14 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 {
 
     //Speed that stationary objects are removed
-    cv::Mat frame,frameMasked,outframe;;
+    cv::Mat frame,frameMasked,outframe;
     unsigned int nFrame = startFrameCount; //Current Frame Number
 
     bPaused =false; //Start Paused
 
-    std::string frameNumberString;
 
+    QString frameNumberString;
+    frameNumberString.fromStdString(to_string(nFrame));
     //?Replicate FG Mask to method specific
     //fgMask.copyTo(fgMaskMOG2);
     //fgMask.copyTo(fgMaskMOG);
@@ -919,6 +916,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
     {
+        frameNumberString.fromStdString(to_string(nFrame));
         try
         {
             //read the current frame
@@ -933,8 +931,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
                 else
                 {
                    std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
-                   std::cout << nFrame << " frames of Video processed. Move on to next timelapse video? " <<std::endl;
-                    ::saveImage(frameNumberString,gstroutDirCSV,frameMasked);
+                   std::cout << nFrame << " frames of Video processed. Moving to next video." <<std::endl;
+                    ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
                    //continue;
                    break;
                }
@@ -975,6 +973,15 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
         if (bTracking)
             saveTracks(vfishmodels,trkoutFileCSV,videoFilename,frameNumberString);
+
+
+        if (bSaveImages)
+        {
+            ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+            cv::putText(frameDebugC, "Save ON", cv::Point(15, 20),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.8 , cv::Scalar(250,250,0));
+
+        }
 
         //if (nFrame%10)
        //     keyboard = cv::waitKey( 1 );
@@ -1256,19 +1263,23 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 
 }
 
-bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img)
+bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,cv::Mat& img)
 {
 
+    //Make ROI dependent File Name
+    QFileInfo fiVid(filenameVid);
+    QString fileVidCoreName = fiVid.completeBaseName();
+
     //Save Output BG Masks
-    QString imageToSave =   QString::fromStdString( std::string("output_MOG_") + frameNumberString + std::string(".png"));
-    //QString dirToSave = qApp->applicationDirPath();
+    //QString imageToSave =   QString::fromStdString( std::string("output_MOG_") + frameNumberString + std::string(".png"));
 
     dirToSave.append("/pics/");
+    QString imageToSave =  fileVidCoreName + "_" + frameNumberString + ".png";
     imageToSave.prepend(dirToSave);
 
     if (!QDir(dirToSave).exists())
     {
-        std::cerr << "Make directory " << dirToSave.toStdString() << std::endl;
+        std::clog << "Make directory " << dirToSave.toStdString() << std::endl;
         QDir().mkpath(dirToSave);
     }
 
@@ -1276,7 +1287,7 @@ bool saveImage(std::string frameNumberString,QString dirToSave,cv::Mat& img)
     if(!saved) {
         cv::putText(img,"Failed to Save " + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(250,250,250));
         cv::putText(img,"Failed to Save" + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
-       std::cerr << "Unable to save " << imageToSave.toStdString() << std::endl;
+        std::cerr << "Unable to save " << imageToSave.toStdString() << std::endl;
         return false;
     }
     else
@@ -1579,7 +1590,7 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
 
 
 
-int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,std::string frameNumber)
+int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,QString frameNumber)
 {
     bool bNewFileFlag = true;
     int cnt;
@@ -1613,7 +1624,7 @@ int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,std::st
 
             QTextStream output(&data);
             if (bNewFileFlag)
-                 output << "frameN,fishID,AngleDeg,Centroid_X,Centroid_Y,EyeLDeg,EyeRDeg\n";
+                 output << "frameN \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t DThetaSpine_1 \t DThetaSpine_2 \t DThetaSpine_3 \n";
 
             //Save Tracks In ROI
             for (fishModels::iterator it=vfish.begin(); it!=vfish.end(); ++it)
@@ -1628,9 +1639,12 @@ int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,std::st
                     //+active; ///< Indicates number of frames that has been active from last inactive period.
                     //+ inactive; ///< Indicates number of frames that has been missing.
                     output << (*pfish) << "\n";
-              }
+
+                pfish->zTrack.pointStack.clear(); //Empty Memory Once Logged
+             }//For eAch Fish
             }
         data.close();
+
 
    } //Loop ROI
      return cnt;
@@ -2583,6 +2597,11 @@ void thresh_callback(int, void* )
         gi_CannyThresSmall =7;
 
 
+    for (fishModels::iterator ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+    {
+         fishModel* pfish = ft->second;
+         pfish->c_spineSegL           = gFishTailSpineSegmentLength;
+    }
 
 //    if (!pGHT.empty())
 //    {
@@ -2598,6 +2617,9 @@ void thresh_callback(int, void* )
 //        //    pGHTBallard->setVotesThreshold(gi_ThresholdMatching);
 
 //    }
+
+
+
 
 
 }

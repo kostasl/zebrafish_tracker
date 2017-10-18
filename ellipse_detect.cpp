@@ -603,10 +603,10 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 /////////// END OF TEMPLATE ///
 
     //Check If Area Of Detected Eyes Is very Different
-    uint area1 = lEll.rectEllipse.boundingRect().area();
-    uint area2 = rEll.rectEllipse.boundingRect().area();
+    int area1 = (int)lEll.rectEllipse.boundingRect().area();
+    int area2 = (int)rEll.rectEllipse.boundingRect().area();
 
-    if (area1 - area2 > (std::max(area2,area1)/2))
+    if (std::abs(area1 - area2) > (std::max(area2,area1)/2))
         ret = 0; //SOme Detection Error - Ask To Change Threshold
 
    ///Debug//

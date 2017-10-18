@@ -2,6 +2,7 @@
 #include "ellipse_detect.h"
 
 extern cv::Mat frameDebugC;
+extern int gFishTailSpineSegmentLength;
 
 fishModel::fishModel()
 {
@@ -17,6 +18,8 @@ fishModel::fishModel()
         this->ID    = 0;
         zTrack.id   = this->ID;
         zTrack.colour = CV_RGB(255,0,0);
+
+        c_spineSegL           = gFishTailSpineSegmentLength;
 }
 
 
@@ -27,7 +30,7 @@ fishModel::fishModel(cvb::CvTrack* track,cvb::CvBlob* blob):fishModel()
 
     this->ID        = track->id;
     this->blobLabel = track->label;
-    this->track     = track; //Copy Pointer
+    //this->track     = track; //Copy Pointer
     this->bearingRads = cvb::cvAngle(blob);
     this->coreTriangle[2].x = track->centroid.x;
     this->coreTriangle[2].y = track->centroid.y;
@@ -44,7 +47,7 @@ fishModel::fishModel(zftblob blob):fishModel()
     zTrack.id       = this->ID;
 
     this->zfishBlob = blob; //Copy Localy
-    this->track     = NULL;
+    //this->track     = NULL;
     this->bearingRads = blob.angle*M_PI/180.0;
     this->coreTriangle[2].x = this->zfishBlob.pt.x;
     this->coreTriangle[2].y = this->zfishBlob.pt.y;
@@ -96,8 +99,8 @@ void fishModel::resetSpine()
     {
 
         splineKnotf sp;
-        sp.angle    = (this->bearingAngle-180)*CV_PI/180.0;
-        assert(!std::isnan(sp.angle));
+        sp.angleRad    = (this->bearingAngle-180)*CV_PI/180.0;
+        assert(!std::isnan(sp.angleRad));
         if (i==0)
         {
             sp.x =  this->zfishBlob.pt.x;
@@ -105,8 +108,8 @@ void fishModel::resetSpine()
         }
         else
         {
-            sp.x        = spline[i-1].x + ((double)c_spineSegL)*sin(sp.angle); //0 Degrees Is vertical Axis Looking Up
-            sp.y        = spline[i-1].y - ((double)c_spineSegL)*cos(sp.angle);
+            sp.x        = spline[i-1].x + ((double)c_spineSegL)*sin(sp.angleRad); //0 Degrees Is vertical Axis Looking Up
+            sp.y        = spline[i-1].y - ((double)c_spineSegL)*cos(sp.angleRad);
         }
 
         spline.push_back(sp); //Add Knot to spline
@@ -134,8 +137,8 @@ void fishModel::calcSpline(t_fishspline& outspline)
     for (int i=1;i<c_spinePoints;i++)
     {
 
-       outspline[i].x = outspline[i-1].x + ((double)c_spineSegL)*sin(outspline[i-1].angle);
-       outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*cos(outspline[i-1].angle);
+       outspline[i].x = outspline[i-1].x + ((double)c_spineSegL)*sin(outspline[i-1].angleRad);
+       outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*cos(outspline[i-1].angleRad);
        assert(!std::isnan(outspline[i].y) && !std::isnan(outspline[i].x));
     }
 
@@ -167,7 +170,7 @@ double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,
     { // Param INdex is > 1 so it refers to angles starting from 0 idx knot
          //ret = 0.0;//*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
          ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
-         outspline[idxparam-2].angle += dAngleStep;// Angle variation for this theta
+         outspline[idxparam-2].angleRad += dAngleStep;// Angle variation for this theta
     }
 
 
@@ -195,7 +198,7 @@ void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outp
 
     for (int i=0;i<(c_spinePoints);i++)
     {
-        outparams[i+2] = inspline[i].angle;
+        outparams[i+2] = inspline[i].angleRad;
     }
 
 }
@@ -211,7 +214,7 @@ void fishModel::setSplineParams(t_fishspline& inspline,std::vector<double>& inpa
         if (i==1)
             inspline[0].y = inparams[1];
         if (i>1)
-            inspline[i-2].angle = inparams[i]; //Param 3 is actually 1st spine knot's angle
+            inspline[i-2].angleRad = inparams[i]; //Param 3 is actually 1st spine knot's angle
     }
 
     //Readjust xi,yi (In variational terms calc x_i = f(q1,q2,q3..), y_i = f(q1,q2,q3..)
@@ -236,8 +239,8 @@ cv::Point2f fishModel::getPointAlongSpline(float z,t_fishspline& pspline)
 
     ///Now construct point using Length along curve and return
     cv::Point2f ptC;
-    ptC.x = pspline[idx].x + segLen*sin(pspline[idx].angle);
-    ptC.y = pspline[idx].y - segLen*cos(pspline[idx].angle);
+    ptC.x = pspline[idx].x + segLen*sin(pspline[idx].angleRad);
+    ptC.y = pspline[idx].y - segLen*cos(pspline[idx].angleRad);
 
     return ptC;
 }
@@ -321,7 +324,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 
     this->spline[0].x       = fblob->pt.x;
     this->spline[0].y       = fblob->pt.y;
-    this->spline[0].angle   = (Angle-180.0)*M_PI/180.0;
+    this->spline[0].angleRad   = (Angle-180.0)*M_PI/180.0;
 
 }
 
@@ -523,8 +526,8 @@ void fishModel::drawSpine(cv::Mat& outFrame)
         else
         { //Draw Terminal (hidden) point - which is not a spine knot
             cv::Point ptTerm;
-            ptTerm.x = spline[j].x + ((double)c_spineSegL)*sin(spline[j].angle);
-            ptTerm.y = spline[j].y - ((double)c_spineSegL)*cos(spline[j].angle);
+            ptTerm.x = spline[j].x + ((double)c_spineSegL)*sin(spline[j].angleRad);
+            ptTerm.y = spline[j].y - ((double)c_spineSegL)*cos(spline[j].angleRad);
 
             cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),ptTerm,TRACKER_COLOURMAP[0],1);
         }
@@ -599,11 +602,23 @@ std::ostream& operator<<(std::ostream& out, const fishModel& h)
 ///
 QTextStream& operator<<(QTextStream& out, const fishModel& h)
 {
+    const double Rad2Deg = (180.0/CV_PI);
 
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
     out.setRealNumberNotation(QTextStream::RealNumberNotation::FixedNotation );
     out.setRealNumberPrecision(2);
     out << h.nCurrentFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
+
+    //Set Global 1st Spine Direction (Helps to detect Errors)
+    out << "\t" << Rad2Deg* h.spline[0].angleRad;
+    //Output Spine Point Angular Deviations from the previous spine/tail Segment in Degrees
+    for (int i=1;i<h.c_spinePoints;i++)
+    {
+
+       out << "\t" << Rad2Deg*( h.spline[i-1].angleRad - h.spline[i].angleRad);
+
+    }
+
 
     return out;
 }
