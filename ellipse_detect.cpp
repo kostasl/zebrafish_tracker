@@ -468,9 +468,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 
     //Empty List
     vellipses.clear();
-    tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
 
-    vedgePoints_all.reserve(pimgIn.cols*pimgIn.rows/2);
 
     tDetectedEllipsoid lEll,rEll;
     std::vector<cv::Point> vt;
@@ -488,7 +486,6 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     cv::cvtColor( imgUpsampled_gray,img_contour, cv::COLOR_GRAY2RGB);
 
     //for( size_t i = 0; i< contours_canny.size(); i++ )
-    vedgePoints_all.clear();
 
     if (iLEye != -1)
     {
@@ -506,6 +503,9 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
         //getEdgePoints(contours_canny.at(iLEye),vedgePoints_all);
     }
     else {
+        tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
+        vedgePoints_all.clear();
+
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         //Cover Right Eye
@@ -563,6 +563,10 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
         //getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
     }
     else { ///Backup PLan
+
+        tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
+        vedgePoints_all.clear();
+
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         //Cover LEFT Eye Edges
