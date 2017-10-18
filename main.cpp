@@ -641,7 +641,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
     double dblRatioPxChanged    =  0.0;
 
     QString frameNumberString;
-    frameNumberString.fromStdString(to_string(nFrame));
+    frameNumberString = QString::number(nFrame);
 
     //For Morphological Filter
     ////cv::Size sz = cv::Size(3,3);
@@ -757,13 +757,15 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
             trackFnt, trackFntScale , CV_RGB(250,250,0));
 
     //Time Rate - conv from ms to minutes
-    ///Memory Usage
-    if (nFrame%30)
+    ///Report Status  + Memory Usage
+    if ((nFrame%300) == 0 || nFrame == 1)
     {
+        std::clog << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0 << std::endl;
         //THats In KiB units /So 1Million is A Gigabyte
-        process_mem_usage(vm, rss);
-        std::clog << "VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
+        std::clog << "#Fish " << nLarva << " #Food Blobs:" << nFood << std::endl;
 
+        process_mem_usage(vm, rss);
+        std::clog << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
     }
     std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
     cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
