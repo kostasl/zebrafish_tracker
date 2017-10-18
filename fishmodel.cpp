@@ -23,34 +23,39 @@ fishModel::fishModel()
 }
 
 
-///deprecated tracks And Blobs Here - To be removed
-fishModel::fishModel(cvb::CvTrack* track,cvb::CvBlob* blob):fishModel()
-{
+/////deprecated tracks And Blobs Here - To be removed
+//fishModel::fishModel(cvb::CvTrack* track,cvb::CvBlob* blob):fishModel()
+//{
 
 
-    this->ID        = track->id;
-    this->blobLabel = track->label;
-    //this->track     = track; //Copy Pointer
-    this->bearingRads = cvb::cvAngle(blob);
-    this->coreTriangle[2].x = track->centroid.x;
-    this->coreTriangle[2].y = track->centroid.y;
+//    this->ID        = track->id;
+//    this->blobLabel = track->label;
+//    //this->track     = track; //Copy Pointer
+//    this->bearingRads = cvb::cvAngle(blob);
+//    this->coreTriangle[2].x = track->centroid.x;
+//    this->coreTriangle[2].y = track->centroid.y;
 
-    templateScore           = 0;
-    this->resetSpine();
-}
+//    templateScore           = 0;
+//    this->resetSpine();
+//}
 
-fishModel::fishModel(zftblob blob):fishModel()
+fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter):fishModel()
 {
 
     this->ID        = blob.hash() ;
     this->blobLabel = blob.hash();
+
     zTrack.id       = this->ID;
+
 
     this->zfishBlob = blob; //Copy Localy
     //this->track     = NULL;
-    this->bearingRads = blob.angle*M_PI/180.0;
-    this->coreTriangle[2].x = this->zfishBlob.pt.x;
-    this->coreTriangle[2].y = this->zfishBlob.pt.y;
+    this->bearingRads = bestTemplateOrientation*CV_PI/180.0;
+    this->bearingAngle = bestTemplateOrientation;
+    this->ptRotCentre    = ptTemplateCenter;
+    zTrack.centroid = ptTemplateCenter;
+   // this->coreTriangle[2].x = this->zfishBlob.pt.x;
+    //this->coreTriangle[2].y = this->zfishBlob.pt.y;
 
 
     templateScore           = 0;
@@ -99,8 +104,10 @@ void fishModel::resetSpine()
     {
 
         splineKnotf sp;
-        sp.angleRad    = (this->bearingAngle-180)*CV_PI/180.0;
-        assert(!std::isnan(sp.angleRad));
+        //1st Spine Is in Opposite Direction of Movement and We align 0 degrees to be upwards (vertical axis)
+        sp.angleRad    = (this->bearingRads)+CV_PI; //CV_PI/2
+        assert(!std::isnan(sp.angleRad && std::abs(sp.angleRad) <= 2*CV_PI));
+
         if (i==0)
         {
             sp.x =  this->zfishBlob.pt.x;
@@ -140,6 +147,7 @@ void fishModel::calcSpline(t_fishspline& outspline)
        outspline[i].x = outspline[i-1].x + ((double)c_spineSegL)*sin(outspline[i-1].angleRad);
        outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*cos(outspline[i-1].angleRad);
        assert(!std::isnan(outspline[i].y) && !std::isnan(outspline[i].x));
+       assert(!std::isnan(outspline[i].angleRad));
     }
 
 }
@@ -166,13 +174,11 @@ double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,
         ret = sgn*0.05;
         outspline[0].y -= ret;
 
-    }else
-    { // Param INdex is > 1 so it refers to angles starting from 0 idx knot
-         //ret = 0.0;//*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
-         ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
-         outspline[idxparam-2].angleRad += dAngleStep;// Angle variation for this theta
+    }else //Index > 1 is spine Angles
+    {
+        outspline[idxparam-2].angleRad += dAngleStep;// Angle variation for this theta
+        ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
     }
-
 
     //Readjust xi,yi (In variational terms calc x_i = f(q1,q2,q3..), y_i = f(q1,q2,q3..)
     calcSpline(outspline);
@@ -192,14 +198,24 @@ void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outp
 {
     outparams.clear();
     outparams.reserve(c_spineParamCnt);
-    //Add x0 - yo
-    outparams[0] = inspline[0].x;
-    outparams[1] = inspline[0].y;
 
+    //Add x0 - yo
+    //outparams[0] = inspline[0].x;
+    //outparams[1] = inspline[0].y;
+    outparams.push_back(inspline[0].x);
+    outparams.push_back(inspline[0].y);
     for (int i=0;i<(c_spinePoints);i++)
     {
-        outparams[i+2] = inspline[i].angleRad;
+        outparams.push_back(inspline[i].angleRad);
+        //outparams[i+2] = inspline[i].angleRad;
+
     }
+    //outparams[0] = inspline[0].x;
+    //outparams[1] = inspline[0].y;
+    //for (int i=0;i<(c_spinePoints);i++)
+//        outparams[i+2] = inspline[i].angleRad;
+
+
 
 }
 
@@ -308,11 +324,12 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     nCurrentFrame = nFrame; //Set Last Update To Current Frame
     this->templateScore  = templatematchScore;
     this->bearingAngle   = Angle;
+    this->bearingRads   =  Angle*CV_PI/180.0;
     this->ptRotCentre    = bcentre;
     this->zfishBlob      = *fblob;
     this->zTrack.pointStack.push_back(fblob->pt);
     this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
-    this->zTrack.centroid = fblob->pt;
+    this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)
     {
@@ -324,7 +341,9 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 
     this->spline[0].x       = fblob->pt.x;
     this->spline[0].y       = fblob->pt.y;
-    this->spline[0].angleRad   = (Angle-180.0)*M_PI/180.0;
+    this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
+
+    assert(!std::isnan(this->bearingRads));
 
 }
 
@@ -340,8 +359,8 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations = 30;
-
+    const int gMaxFitIterations         = 30;
+    const int c_fitErrorPerContourPoint = 10; //Parameter Found By Experience for current size fish
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
     //Run Until Convergence Error is below threshold - Or Change is too small
@@ -429,6 +448,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
             //Start from param idx 2 thus skipping the 1st point(root ) position and only do angle variations
             for (int k=2;k < cntParam; k++)
             {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
+
                 dq = getdeltaSpline(tmpspline,dsSpline,k,dVarScale); //Return param variation
                 // dsSpline residual of variation spline
                 ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline);
@@ -437,9 +457,13 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
                 //ds += distancePointToSpline((cv::Point2f)contour[i],dsSpline); // Add df dsSpline residual of variation spline
 
                 //if (dq > 0.0)
-                dJacobian[i][k] = (ds-dResiduals[i])/(dq);
-                //Got towards smaller Distance
-                dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
+                {
+                    dJacobian[i][k] = (ds-dResiduals[i])/(dq);
+                    //Got towards smaller Distance
+                    dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
+                }
+
+
             }
 
         }//Loop Through All Contour (Data points)
@@ -455,8 +479,9 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
             dGradi[k]           += (pxi1 - pxi0)/dq;
         }
 
-        std::vector<double> cparams;
+        std::vector<double> cparams(c_spineParamCnt);
         getSplineParams(tmpspline,cparams);
+        assert(cparams.size() == c_spineParamCnt);
 
         ///modify CSpace Params with gradient descent
         for (int i=0;i<cntParam;i++)
@@ -484,7 +509,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
     //Best To reset Spine and Start Over Next Time
-    if (dfitPtError_total/contour.size() > 10)
+    /// \todo Make this parameter threshold formal
+    if (dfitPtError_total/contour.size() > c_fitErrorPerContourPoint)
     {
         this->resetSpine(); //No Solution Found So Reset
          qDebug() << "Reset Spine after n:" << cntpass;
@@ -508,7 +534,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 //    cv::imshow("Debug C",frameDebugC);
 
     //QCoreApplication::processEvents(QEventLoop::AllEvents, 1);
-    cv::waitKey(1);
+    //cv::waitKey(1);
 ////    End Debug ///
 
     return dDifffitPtError_total;

@@ -1084,7 +1084,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
             //Make new fish Model
             //fishModel* fish= new fishModel(track,fishblob);
-           fishModel* fish= new fishModel(*fishblob);
+           fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
 
            fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
 

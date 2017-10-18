@@ -59,8 +59,8 @@ class fishModel
 
 public:
   fishModel();
-  fishModel(cvb::CvTrack* track,cvb::CvBlob* blob);
-  fishModel(zftblob blob);
+  //fishModel(cvb::CvTrack* track,cvb::CvBlob* blob);
+  fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter);
 
   void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame);
   ///\note The lowest point in a rectangle is 0th vertex, and 1st, 2nd, 3rd vertices follow clockwise.
