@@ -30,7 +30,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     void showCVimg(cv::Mat& img);
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
-    void saveScreenShot(QString stroutDirCSV);
+    //void saveScreenShot(QString stroutDirCSV);
+    void saveScreenShot(QString stroutDirCSV,QString vidFilename);
     void tickProgress();
     unsigned int nFrame = 0;
     ~MainWindow();

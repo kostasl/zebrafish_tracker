@@ -109,7 +109,7 @@ int iLastKnownGoodTemplateCol   = 0;
 QElapsedTimer gTimer;
 QString outfilename;
 std::string gstrwinName = "FishFrame";
-QString gstroutDirCSV; //The Output Directory
+QString gstroutDirCSV,gstrvidFilename; //The Output Directory
 
 //Global Matrices Used to show debug images
 cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
@@ -408,6 +408,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
     {
 
        invideoname = invideonames.at(i);
+       gstrvidFilename = invideoname; //Global
        std::cout << " Now Processing : "<< invideoname.toStdString() <<std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
@@ -1168,7 +1169,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     {
         std::cout << "Save Image" << endl;
         bSaveImages = !bSaveImages;
-        win->saveScreenShot(gstroutDirCSV);
+        win->saveScreenShot(gstroutDirCSV,gstrvidFilename);
 
     }
 

@@ -46,10 +46,12 @@ void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
     showCVimg(img);
 }
 
-void MainWindow::saveScreenShot(QString stroutDirCSV)
+void MainWindow::saveScreenShot(QString stroutDirCSV,QString vidFilename)
 {
-    std::stringstream frameNumberString; frameNumberString << nFrame;
-    ::saveImage(frameNumberString.str(),stroutDirCSV,*this->mpLastCVImg);
+    //std::stringstream frameNumberString; frameNumberString << nFrame;
+    QString frameNumberString = QString::number(nFrame);
+
+    ::saveImage(frameNumberString,stroutDirCSV,vidFilename,*this->mpLastCVImg);
 
 }
 
