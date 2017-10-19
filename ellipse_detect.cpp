@@ -436,10 +436,10 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
 
-    ///Note: SOme Allocation Bug Is Hit here;
+    ///Note Memory Crash: SOme Allocation Bug Is Hit here;
     cv::Mat img_colour;
     cv::Mat img_contour;
-    cv::Mat imgIn_thres;
+    cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
     cv::Mat imgEdge_local;
     cv::Mat imgEdge_dbg;
     //Debug
