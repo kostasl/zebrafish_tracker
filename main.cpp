@@ -79,7 +79,7 @@ uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
 ///Segmentation Params
-int g_Segthresh             = 35; //Image Threshold to segment the FIsh/ Body and Tail
+int g_Segthresh             = 30; //Image Threshold to segment the FIsh/ Body and Tail
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -95,7 +95,7 @@ const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - 
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize        = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength = 17;
-int gMaxFitIterations     = 10; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
+int gMaxFitIterations     = 15; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
