@@ -3,7 +3,7 @@
 
 extern cv::Mat frameDebugC;
 extern int gFishTailSpineSegmentLength;
-
+extern int gMaxFitIterations;
 fishModel::fishModel()
 {
         templateScore = 0;
@@ -359,7 +359,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     const int cntParam = this->c_spineParamCnt;
-    const int gMaxFitIterations         = 30;
+
     const int c_fitErrorPerContourPoint = 10; //Parameter Found By Experience for current size fish
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 

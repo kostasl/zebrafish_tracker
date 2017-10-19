@@ -95,11 +95,12 @@ const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - 
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize        = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength = 17;
+int gMaxFitIterations     = 10; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gMatchShapeThreshold     = 0.90;
+double gTemplateMatchThreshold  = 0.90;
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -1078,8 +1079,8 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
         }
 
-       //Check If Fish Was found)
-        if (!bModelFound) //Model Does not exist for track - its a new track
+       //If the Blob Has no Model fish, and the template Match says it looks like a fish - then create new model
+        if (!bModelFound && maxMatchScore >= gTemplateMatchThreshold ) //Model Does not exist for track - its a new track
         {
 
             //Make new fish Model
@@ -1268,6 +1269,8 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 
 bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,cv::Mat& img)
 {
+    cv::Mat image_to_write;
+    cv::cvtColor(img,image_to_write, cv::COLOR_RGB2BGR); //BGR For imWrite
 
     //Make ROI dependent File Name
     QFileInfo fiVid(filenameVid);
@@ -1286,7 +1289,7 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
         QDir().mkpath(dirToSave);
     }
 
-    bool saved = cv::imwrite(imageToSave.toStdString(), img);
+    bool saved = cv::imwrite(imageToSave.toStdString(), image_to_write);
     if(!saved) {
         cv::putText(img,"Failed to Save " + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(250,250,250));
         cv::putText(img,"Failed to Save" + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
@@ -1300,6 +1303,7 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
 
     //cv::imshow("Saved Frame", img);
 
+    image_to_write.deallocate();
     return true;
 }
 
