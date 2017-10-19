@@ -100,7 +100,7 @@ int gMaxFitIterations     = 15; //Constant For Max Iteration to Fit Tail Spine t
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.90;
+double gTemplateMatchThreshold  = 0.87;
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -891,19 +891,6 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     //Make Variation of FileNames for other Output
 
     QString trkoutFileCSV = outFileCSV;
-    trkoutFileCSV.truncate(trkoutFileCSV.lastIndexOf("."));
-    trkoutFileCSV.append("_tracks.csv");
-    QString vialcountFileCSV = outFileCSV;
-    vialcountFileCSV.truncate(vialcountFileCSV.lastIndexOf("."));
-    vialcountFileCSV.append("_N.csv");
-
-    //REPORT
-   std::cout << "Tracking data saved to :" << vialcountFileCSV.toStdString()  <<std::endl;
-   std::cout << "\t " << outFileCSV.toStdString() <<std::endl;
-   std::cout << "\t " << trkoutFileCSV.toStdString()  <<std::endl;
-
-
-
 
     //create the capture object
     cv::VideoCapture capture(videoFilename.toStdString());
@@ -915,6 +902,9 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     }
 
 
+    //Open OutputFile
+    QFile outdatafile;
+    openDataFile(trkoutFileCSV,videoFilename,outdatafile);
 
 
     //read input data. ESC or 'q' for quitting
@@ -976,7 +966,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
         if (bTracking)
-            saveTracks(vfishmodels,trkoutFileCSV,videoFilename,frameNumberString);
+            saveTracks(vfishmodels,outdatafile,frameNumberString);
+            //saveTracks(vfishmodels,trkoutFileCSV,videoFilename,frameNumberString);
 
 
         if (bSaveImages)
@@ -1000,6 +991,9 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
     std::cout << "Exiting video processing loop." <<std::endl;
+
+    //Close File
+    closeDataFile(outdatafile);
 
     return nFrame;
 }
@@ -1596,10 +1590,49 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
 
 
 
-
-int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,QString frameNumber)
+bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 {
-    bool bNewFileFlag = true;
+    const int Vcnt = 1;
+    //Make ROI dependent File Name
+    QFileInfo fiVid(filenameVid);
+    QFileInfo fiOut(filepathCSV);
+    QString fileVidCoreName = fiVid.completeBaseName();
+    QString dirOutPath = fiOut.absolutePath() + "/"; //filenameCSV.left(filenameCSV.lastIndexOf("/")); //Get Output Directory
+
+    char buff[50];
+    sprintf(buff,"_tracks_%d.csv",Vcnt);
+    dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
+    dirOutPath.append(buff); //Append extension track and ROI number
+
+    data.setFileName(dirOutPath);
+
+    if (!data.exists()) //Write HEader
+    {
+         QTextStream output(&data);
+         output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t DThetaSpine_1 \t DThetaSpine_2 \t DThetaSpine_3 \n";
+    }
+
+    if (!data.open(QFile::WriteOnly |QFile::Append))
+    {
+        std::cerr << "Could not open output file : " << std::endl;
+        return false;
+    }else
+        std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
+
+
+
+    return true;
+}
+
+void closeDataFile(QFile& data)
+{
+    data.close();
+    std::clog << "Closed Output File " << data.fileName().toStdString() << std::endl;
+}
+
+
+int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
+{
     int cnt;
     int Vcnt = 0;
 
@@ -1610,51 +1643,28 @@ int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,QString
         Vcnt++;
         ltROI iroi = (ltROI)(*it);
         //Make ROI dependent File Name
-        QFileInfo fiVid(filenameVid);
-        QFileInfo fiOut(filenameCSV);
-        QString fileVidCoreName = fiVid.completeBaseName();
-        QString dirOutPath = fiOut.absolutePath() + "/"; //filenameCSV.left(filenameCSV.lastIndexOf("/")); //Get Output Directory
 
+        QTextStream output(&data);
 
-        char buff[50];
-        sprintf(buff,"_tracks_%d.csv",Vcnt);
-        dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
-        dirOutPath.append(buff); //Append extension track and ROI number
-
-        QFile data(dirOutPath);
-        if (data.exists())
-            bNewFileFlag = false;
-
-
-        if(data.open(QFile::WriteOnly |QFile::Append))
+        //Save Tracks In ROI
+        for (fishModels::iterator it=vfish.begin(); it!=vfish.end(); ++it)
         {
+            cnt++;
+            fishModel* pfish = it->second;
+            cvb::CvLabel cvL = it->first;
 
-            QTextStream output(&data);
-            if (bNewFileFlag)
-                 output << "frameN \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t DThetaSpine_1 \t DThetaSpine_2 \t DThetaSpine_3 \n";
+            if (iroi.contains(pfish->ptRotCentre))
+                //Printing the position information +
+                //+ lifetime; ///< Indicates how much frames the object has been in scene.
+                //+active; ///< Indicates number of frames that has been active from last inactive period.
+                //+ inactive; ///< Indicates number of frames that has been missing.
+                output << frameNumber << "\t" << Vcnt  << "\t" << (*pfish) << "\n";
 
-            //Save Tracks In ROI
-            for (fishModels::iterator it=vfish.begin(); it!=vfish.end(); ++it)
-            {
-                cnt++;
-                fishModel* pfish = it->second;
-                cvb::CvLabel cvL = it->first;
-
-                if (iroi.contains(pfish->ptRotCentre))
-                    //Printing the position information +
-                    //+ lifetime; ///< Indicates how much frames the object has been in scene.
-                    //+active; ///< Indicates number of frames that has been active from last inactive period.
-                    //+ inactive; ///< Indicates number of frames that has been missing.
-                    output << (*pfish) << "\n";
-
-                pfish->zTrack.pointStack.clear(); //Empty Memory Once Logged
-             }//For eAch Fish
-            }
-        data.close();
-
-
+            pfish->zTrack.pointStack.clear(); //Empty Memory Once Logged
+         }//For eAch Fish
    } //Loop ROI
-     return cnt;
+
+ return cnt;
 }
 
 

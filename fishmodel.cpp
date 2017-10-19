@@ -633,7 +633,7 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
     out.setRealNumberNotation(QTextStream::RealNumberNotation::FixedNotation );
     out.setRealNumberPrecision(2);
-    out << h.nCurrentFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
+    out << h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
 
     //Set Global 1st Spine Direction (Helps to detect Errors)
     out << "\t" << Rad2Deg* h.spline[0].angleRad;
