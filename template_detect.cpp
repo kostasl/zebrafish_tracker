@@ -1,7 +1,7 @@
 
 #include <template_detect.h>
 
-extern double gMatchShapeThreshold;
+extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
 extern int gnumberOfTemplatesInCache;
 
@@ -125,7 +125,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
 
   ///Check If Matching Exceeeds threshold - If Not Fail And Start From Top Row On next Iteration
-  if (maxGVal > gMatchShapeThreshold)
+  if (maxGVal > gTemplateMatchThreshold)
   {
       //Save Results To Output
       matchScore    = maxGVal;

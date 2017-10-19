@@ -1062,7 +1062,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
              pfish = ft->second;
 
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
-             if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 && maxMatchScore > gMatchShapeThreshold )
+             if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 && maxMatchScore > gTemplateMatchThreshold )
              {
                  //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                 bModelFound = true;
@@ -2316,7 +2316,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
           fishModel* fish = (*it).second;
 
           //fish->bearingAngle   = AngleIdx;
-          if (fish->templateScore < gMatchShapeThreshold)
+          if (fish->templateScore < gTemplateMatchThreshold)
               continue; //Skip This Model Fish And Check the next one
 
 
@@ -2399,7 +2399,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
            //Threshold The Match Check Bounds Within Image
            cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
 
-           if ( //Looks Like a fish is found, now Check Bounds // gmaxVal > gMatchShapeThreshold &&
+           if ( //Looks Like a fish is found, now Check Bounds // gmaxVal > gTemplateMatchThreshold &&
                imgBounds.contains(rectfishAnteriorBound.br()) &&
                    imgBounds.contains(rectfishAnteriorBound.tl()))
            {
