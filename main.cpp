@@ -287,9 +287,9 @@ int main(int argc, char *argv[])
     pMOG2->setNMixtures(150);
     pMOG2->setBackgroundRatio(0.99);
 
-    double dmog2TG = pMOG2->getVarThresholdGen();
+    //double dmog2TG = pMOG2->getVarThresholdGen();
     //pMOG2->setVarThresholdGen(1.0);
-    double dmog2VT = pMOG2->getVarThreshold();
+    //double dmog2VT = pMOG2->getVarThreshold();
     pMOG2->setVarThreshold(3.0);
 
     ///////////////////////////////////////
@@ -880,7 +880,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
     QString frameNumberString;
-    frameNumberString.fromStdString(to_string(nFrame));
+    frameNumberString = QString::number(nFrame);
     //?Replicate FG Mask to method specific
     //fgMask.copyTo(fgMaskMOG2);
     //fgMask.copyTo(fgMaskMOG);
@@ -919,7 +919,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
     {
-        frameNumberString.fromStdString(to_string(nFrame));
+        frameNumberString = QString::number(nFrame);
         try
         {
             //read the current frame

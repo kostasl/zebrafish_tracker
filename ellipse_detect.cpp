@@ -417,8 +417,16 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 {
     int ret = 0;//Return Value Is the Count Of Ellipses Detected (Eyes)
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
+    ///Keep Image processing Arrays Static to avoid memory Alloc On Each Run
+    static cv::Mat imgUpsampled_gray;
+    ///Note Memory Crash: SOme Allocation Bug Is Hit here;
+    static cv::Mat img_colour;
+    static cv::Mat img_contour;
+    static cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
+    static cv::Mat imgEdge_local;
 
-    cv::Mat imgUpsampled_gray;
+    //cv::Mat imgEdge_dbg;
+
     //Upsamples an image which causes blur/interpolation it.
     cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
 
@@ -436,12 +444,6 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
 
-    ///Note Memory Crash: SOme Allocation Bug Is Hit here;
-    cv::Mat img_colour;
-    cv::Mat img_contour;
-    cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
-    cv::Mat imgEdge_local;
-    cv::Mat imgEdge_dbg;
     //Debug
     //imgDebug = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
 
@@ -514,6 +516,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
         getEdgePoints(imgEdge_local,vedgePoints_all);
         detectEllipse(vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
+        //imgEdge_local.copyTo(imgEdge_dbg);
 
     }
 
@@ -540,9 +543,10 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
         while (qEllipsoids.size() > 0)
             qEllipsoids.pop(); //Empty All Other Candidates
     }
-   imgEdge_local.copyTo(imgEdge_dbg);
+
+
    ///End oF LEft Eye Trace //
-    cv::Rect imgBound(cv::Point(0,0),cv::Point(img_colour.cols,img_colour.rows));
+
 
 
     //RIGHT EYE - Reset And Redraw - Now Right Eye
@@ -642,9 +646,11 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     //imgDebug.release();
     //imgDebug.deallocate();
 
-    imgEdge_local.deallocate();
-    img_colour.deallocate();
-    img_contour.deallocate();
+    //imgEdge_local.deallocate();
+    //img_colour.deallocate();
+    //img_contour.deallocate();
+    //imgIn_thres.deallocate();
+    //imgEdge_dbg.deallocate();
 
 return ret;
 }
