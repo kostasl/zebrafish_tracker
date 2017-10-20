@@ -2542,7 +2542,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
               cv::Point2d pttgt = cv::Point2d(fish->spline[1].x,fish->spline[1].y)- cv::Point2d(fish->spline[0].x,fish->spline[0].y);
               std::vector<cv::Point2i> gioSpline;
-              fish->GioGet_tailSpine(maskedImg_gray,fish->ptRotCentre,pttgt,17,gioSpline);
+              fish->GioGet_tailSpine(maskedImg_gray,fish->ptRotCentre,pttgt,15,gioSpline);
 
               for (int j=0; j<gioSpline.size();j++)
               {

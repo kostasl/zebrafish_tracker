@@ -570,19 +570,23 @@ void fishModel::GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tg
     cv::Mat ones(src.rows,src.cols,CV_32F,cv::Scalar(1));
 
     src.convertTo(draw_inv,CV_32F,1./255);
-    draw_inv=ones-draw_inv;
+    //draw_inv=ones-draw_inv;
 
 
 
     cv::GaussianBlur(draw_inv,draw_inv,cv::Size(5,5),5,5);
-    cv::filter2D(draw_inv,imgLaplacian,CV_32F,kernel);
-    cv::threshold(imgLaplacian, mask,0.1,1,cv::THRESH_BINARY);
-    mask.convertTo(mask,CV_8U);
-
-    src.copyTo(draw_inv,mask);
+    //cv::filter2D(draw_inv,imgLaplacian,CV_32F,kernel);
+    //cv::threshold(imgLaplacian, mask,0,1,cv::THRESH_BINARY);
 
 
-    cv::imshow("GioTailTrace",draw_inv);
+    //mask.convertTo(mask,CV_8U);
+
+    //src.copyTo(draw_inv,mask);
+
+    //cv::Laplacian(draw_inv,imgLaplacian,1,3,1,0);
+    //cv::imshow("GioTailTrace",draw_inv);
+    //cv::imshow("LaplacianTrace",imgLaplacian);
+
 
     for(k=1;k<AP_N;k++){
         std::vector<cv::Point2d> ellipse_pts;
