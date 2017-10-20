@@ -553,6 +553,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 ///
 void fishModel::GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tgt_start, int step_size, std::vector<cv::Point2i>& anchor_pts){
     const size_t AP_N= this->c_spinePoints;
+    const int c_tailscanAngle = 30;
     std::vector<cv::Point2i> tmp_pts(AP_N);
     cv::Point2i tgt;
     anchor_pts.resize(AP_N);
@@ -604,7 +605,7 @@ void fishModel::GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tg
             else angle=-90;
         }
 
-        cv::ellipse2Poly(tmp_pts[k-1], cv::Size(step_size,step_size), 0, angle-20, angle+20, 1, ellipse_pts);
+        cv::ellipse2Poly(tmp_pts[k-1], cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
 
         int index;
         loc_add=0;
