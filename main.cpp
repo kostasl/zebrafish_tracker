@@ -2540,6 +2540,22 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
                 fish->drawSpine(fullImgOut);
               }
 
+              cv::Point2d pttgt = cv::Point2d(fish->spline[1].x,fish->spline[1].y)- cv::Point2d(fish->spline[0].x,fish->spline[0].y);
+              std::vector<cv::Point2i> gioSpline;
+              fish->GioGet_tailSpine(maskedImg_gray,fish->ptRotCentre,pttgt,17,gioSpline);
+
+              for (int j=0; j<gioSpline.size();j++)
+              {
+                  cv::circle(fullImgOut,gioSpline[j],2,TRACKER_COLOURMAP[j],2);
+                  if (j<(gioSpline.size()-1))
+                      cv::line(fullImgOut,gioSpline[j],gioSpline[j+1],TRACKER_COLOURMAP[0],1);
+              }
+
+
+
+
+
+
            } //If Fish Img Bound Is With Picture Frame
           ///
 

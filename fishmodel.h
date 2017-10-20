@@ -81,6 +81,9 @@ public:
   double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
   //double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
   double fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
+  void GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tgt_start, int step_size, std::vector<cv::Point2i>& anchor_pts);
+
+
   void drawSpine(cv::Mat& outFrame);
   friend std::ostream& operator<<(std::ostream& out, const fishModel& h);
   friend QTextStream& operator<<(QTextStream& out, const fishModel& h);

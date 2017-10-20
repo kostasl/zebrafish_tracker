@@ -542,6 +542,87 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 }
 
 
+
+///
+/// \brief fishModel::GioGet_tailSpine Giovanni's tail
+/// \param src
+/// \param start
+/// \param tgt_start Is a vector from point Start towards the initial guess of tail direction
+/// \param step_size Segment Lenght between  Spine anchor points
+/// \param anchor_pts // The Spine
+///
+void fishModel::GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tgt_start, int step_size, std::vector<cv::Point2i>& anchor_pts){
+    const size_t AP_N= this->c_spinePoints;
+    std::vector<cv::Point2i> tmp_pts(AP_N);
+    cv::Point2i tgt;
+    anchor_pts.resize(AP_N);
+    anchor_pts[0]   = start;
+    tmp_pts[0]      = start;
+    unsigned int k=0;
+    double loc,loc_add, val=0;
+    int angle;
+
+    cv::Mat draw, imgLaplacian,mask, draw_inv;
+    const cv::Mat kernel = (cv::Mat_<float>(3,3) << 1,  1, 1,
+                        1, -8, 1,
+                        1,  1, 1);
+
+    cv::Mat ones(src.rows,src.cols,CV_32F,cv::Scalar(1));
+
+    src.convertTo(draw_inv,CV_32F,1./255);
+    draw_inv=ones-draw_inv;
+
+
+
+    cv::GaussianBlur(draw_inv,draw_inv,cv::Size(5,5),5,5);
+    cv::filter2D(draw_inv,imgLaplacian,CV_32F,kernel);
+    cv::threshold(imgLaplacian, mask,0.1,1,cv::THRESH_BINARY);
+    mask.convertTo(mask,CV_8U);
+
+    src.copyTo(draw_inv,mask);
+
+
+    cv::imshow("GioTailTrace",draw_inv);
+
+    for(k=1;k<AP_N;k++){
+        std::vector<cv::Point2d> ellipse_pts;
+        if(k==1)
+            tgt=tgt_start;
+        else
+            tgt=tmp_pts[k-1]-tmp_pts[k-2];
+
+        if(tgt.x>0 ){
+            angle=floor(std::atan((double)tgt.y/tgt.x)/CV_PI*180.0);
+        } else if(tgt.x<0) {
+            angle=180.0+floor(std::atan((double)tgt.y/tgt.x)/CV_PI*180.0);
+        } else if(tgt.x==0){
+            if(tgt.y>0) angle=90;
+            else angle=-90;
+        }
+
+        cv::ellipse2Poly(tmp_pts[k-1], cv::Size(step_size,step_size), 0, angle-20, angle+20, 1, ellipse_pts);
+
+        int index;
+        loc_add=0;
+        index=0;
+        //Search for Maximum Intensity
+        for(index=0;index<(int)ellipse_pts.size();++index){
+            loc=draw_inv.at<float>(ellipse_pts[index].y,ellipse_pts[index].x);
+            if(loc>loc_add){
+                tmp_pts[k]=ellipse_pts[index];
+                loc_add=loc;
+            }
+        }
+        //out<<tgt<<' '<<angle<<' '<<tmp_pts[k]<<' '<<loc<<' '<<index<<' '<<ellipse_pts.size()<<endl;
+
+        anchor_pts[k]=tmp_pts[k];
+    }
+
+}
+
+
+
+
 void fishModel::drawSpine(cv::Mat& outFrame)
 {
     for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
