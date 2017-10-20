@@ -100,7 +100,7 @@ int gMaxFitIterations     = 15; //Constant For Max Iteration to Fit Tail Spine t
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.87;
+double gTemplateMatchThreshold  = 0.89;
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -1056,7 +1056,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
              pfish = ft->second;
 
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
-             if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 && maxMatchScore > gTemplateMatchThreshold )
+             if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 && maxMatchScore >= gTemplateMatchThreshold )
              {
                  //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                 bModelFound = true;
@@ -1423,7 +1423,14 @@ int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Set up the detector with default parameters.
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
-    //\todo - Memory Crash Here
+    //\todo - Memory Crash Here - double free corruption
+    // ======= Backtrace: =========
+    //lib/x86_64-linux-gnu/libc.so.6(+0x777e5)[0x7ffff29bc7e5]
+    //lib/x86_64-linux-gnu/libc.so.6(+0x8037a)[0x7ffff29c537a]
+    //lib/x86_64-linux-gnu/libc.so.6(cfree+0x4c)[0x7ffff29c953c]
+    //usr/local/lib/libopencv_features2d.so.3.1(_ZNK2cv22SimpleBlobDetectorImpl9findBlobsERKNS_11_InputArrayES3_RSt6vectorINS0_6CenterESaIS5_EE+0x68d)[0x7ffff77a1c4d]
+    //usr/local/lib/libopencv_features2d.so.3.1(_ZN2cv22SimpleBlobDetectorImpl6detectERKNS_11_InputArrayERSt6vectorINS_8KeyPointESaIS5_EES3_+0x607)[0x7ffff77a0537]
+
     detector->detect( frame, keypoints); //frameMask
 
 
@@ -1593,6 +1600,7 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
 bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 {
     const int Vcnt = 1;
+    bool newFile = false;
     //Make ROI dependent File Name
     QFileInfo fiVid(filenameVid);
     QFileInfo fiOut(filepathCSV);
@@ -1607,17 +1615,25 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
     data.setFileName(dirOutPath);
 
     if (!data.exists()) //Write HEader
-    {
-         QTextStream output(&data);
-         output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t DThetaSpine_1 \t DThetaSpine_2 \t DThetaSpine_3 \n";
+    {   newFile = true;
+
     }
 
     if (!data.open(QFile::WriteOnly |QFile::Append))
     {
+
         std::cerr << "Could not open output file : " << std::endl;
         return false;
     }else
+    {
         std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
+
+        ///Write Header
+        QTextStream output(&data);
+        output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t DThetaSpine_1 \t DThetaSpine_2 \t DThetaSpine_3 \n";
+        //output.flush();
+
+    }
 
 
 
