@@ -183,6 +183,7 @@ bool bEyesDetected = false; ///Flip True to save eye shape feature for future de
 bool bStoreThisTemplate = false;
 bool bDraggingTemplateCentre = false;
 bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+bool bFitSpineToTail = false; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -902,7 +903,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     }
 
 
-    //Open OutputFile
+    // Open OutputFile
     QFile outdatafile;
     openDataFile(trkoutFileCSV,videoFilename,outdatafile);
 
@@ -2531,7 +2532,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
 
               /// SPINE Fitting And Drawing
-              if (contours_body.size() > 0)
+              if (contours_body.size() > 0 && bFitSpineToTail)
               {
                   //Look for Top Level Contour
                 int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
