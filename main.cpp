@@ -94,7 +94,7 @@ int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
 const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize        = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength = 17;
+int gFishTailSpineSegmentLength = 15;
 int gMaxFitIterations     = 15; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 
 ///Fish Features Detection Params
@@ -2323,7 +2323,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
     maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),1,1);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),1,1);
 
 
 //    if (bUseEllipseEdgeFittingMethod)
@@ -2542,7 +2542,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
 
 
               //Can Use maskedfishFeature_blur
-              fish->fitSpineToIntensity(maskedImg_gray);
+              fish->fitSpineToIntensity(maskedfishFeature_blur);
               fish->drawSpine(fullImgOut);
 //              for (int j=0; j<fish->spline.size();j++)
 //              {

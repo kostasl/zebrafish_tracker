@@ -561,7 +561,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 /// \param step_size Segment Lenght between  Spine anchor points
 /// \param anchor_pts // The Spine
 ///
-void fishModel::fitSpineToIntensity(cv::Mat &imgframeIn){
+void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
     const size_t AP_N= this->c_spinePoints;
     const int step_size = this->c_spineSegL;
 
@@ -572,14 +572,14 @@ void fishModel::fitSpineToIntensity(cv::Mat &imgframeIn){
 
     int angle; //In Deg of Where The spline point is looking towards - Used by Ellipse Arc Drawing
 
-    cv::Mat frameimg_Blur;
+    //cv::Mat frameimg_Blur;
 
 
     //imgframeIn.convertTo(frameimg_Blur,CV_32F,1./255);
     //draw_inv=ones-draw_inv;
 
-    cv::GaussianBlur(imgframeIn,frameimg_Blur,cv::Size(5,5),5,5);
-    cv::imshow("IntensitTailFit",frameimg_Blur);
+    //cv::GaussianBlur(imgframeIn,frameimg_Blur,cv::Size(5,5),5,5);
+    //cv::imshow("IntensitTailFit",frameimg_Blur);
 
     std::vector<cv::Point> ellipse_pts; //Holds the Drawn Arc Points around the last spine Point
 

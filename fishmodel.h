@@ -129,8 +129,7 @@ public:
   static const int c_spineParamCnt = c_spinePoints+2;
 private:
 
-
-  //std::vector<double> splineTheta; ///Angles of fitted Spine Points
+  //std::vect mmor<double> splineTheta; ///Angles of fitted Spine Points
 };
 
 
