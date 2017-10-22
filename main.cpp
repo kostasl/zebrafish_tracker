@@ -200,25 +200,24 @@ static Mat loadImage(const string& name)
     return image;
 }
 
-Mat loadFromQrc(QString qrc, int flag = IMREAD_COLOR)
+void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 {
     //double tic = double(getTickCount());
 
     QFile file(qrc);
-    Mat m;
+
     if(file.open(QIODevice::ReadOnly))
     {
         qint64 sz = file.size();
         std::vector<uchar> buf(sz);
         file.read((char*)buf.data(), sz);
-        m = imdecode(buf, flag);
+        imRes = imdecode(buf, flag);
     }else
         std::cerr << " Could not load template file " << qrc.toStdString();
 
     //double toc = (double(getTickCount()) - tic) * 1000.0 / getTickFrequency();
     //qDebug() << "OpenCV loading time: " << toc;
 
-    return m;
 }
 
 int main(int argc, char *argv[])
@@ -301,7 +300,7 @@ int main(int argc, char *argv[])
 
     for (idxTempl=0; idxTempl<nTemplatesToLoad;idxTempl++)
     {
-        gLastfishimg_template = loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl+1) + std::string(".pgm")),IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
+        loadFromQrc(QString::fromStdString(strTemplateImg + to_string(idxTempl+1) + std::string(".pgm")),gLastfishimg_template,IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
         if (gLastfishimg_template.empty())
         {
             std::cerr << "Could not load template" << std::endl;
@@ -359,7 +358,7 @@ int main(int argc, char *argv[])
     //destroy GUI windows
     cv::destroyAllWindows();
     //cv::waitKey(0);                                          // Wait for a keystroke in the window
-
+   //pMOG2->getBackgroundImage();
     //pMOG->~BackgroundSubtractor();
     //pMOG2->~BackgroundSubtractor();
     //pKNN->~BackgroundSubtractor();
@@ -379,9 +378,16 @@ int main(int argc, char *argv[])
     frameDebugC.deallocate();
     frameDebugD.deallocate();
 
+
+    ///* Create Morphological Kernel Elements used in processFrame *///
+    kernelOpen.deallocate();
+    kernelOpenLaplace.deallocate();
+    kernelOpenfish.deallocate();
+    kernelClose.deallocate();
+
+
     //app.quit();
     window_main.close();
-
 
 
     return app.exec();
@@ -1243,7 +1249,7 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 //    struct timespec ts = { ms / 1000, (ms % 1000) * 1000 * 1000 };
 //    nanosleep(&ts, NULL);
 
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 1);
+    QCoreApplication::processEvents(QEventLoop::AllEvents);
 
         while (bPaused && !bExiting)
         {
@@ -1252,12 +1258,16 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
             //Wait Until Key to unpause is pressed
             //keyboard = cv::waitKey( 30 );
 
-            QTime dieTime= QTime::currentTime().addSecs(1);
-            while (QTime::currentTime() < dieTime)
-                QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+            //QTime dieTime= QTime::currentTime().addSecs(1);
+            //while (QTime::currentTime() < dieTime)
+              //  keyCommandFlag(win,keyboard,nFrame);
+
+                QCoreApplication::processEvents(QEventLoop::AllEvents);
+                cv::waitKey(100);
 
 
-            //keyCommandFlag(win,keyboard,nFrame);
+
+
         }
 
 }
@@ -2484,7 +2494,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadProcessed);
 
               if (ret < 2)
-                show_histogram("HeadHist",imgFishHead);
+                  std::clog << "Eye Detection Error - Check Threshold;" << std::endl;
+              //  show_histogram("HeadHist",imgFishHead);
 
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );

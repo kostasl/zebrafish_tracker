@@ -91,4 +91,5 @@ FORMS += \
     GUI/mainwindow.ui
 
 DISTFILES += \
-    img/fishbodyb_tmp.pgm
+    img/fishbodyb_tmp.pgm \
+    zebraprey_track.supp

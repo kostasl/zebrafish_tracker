@@ -321,6 +321,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
 ///
 /// \brief fishModel::Update - Called On Every FrameProcessed To Update Model State
+/// The track point is set to the blob position and not the template centre
 /// \param fblob
 /// \param templatematchScore
 /// \param Angle
@@ -652,9 +653,13 @@ std::ostream& operator<<(std::ostream& out, const zftTrack& h)
 {
 
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
-
-    zftTrackPoint ptt = h.pointStack.back();
-    out << ptt.x << "\t" << ptt.y;
+    if (h.pointStack.size() > 0)
+    {
+        zftTrackPoint ptt = h.pointStack.back();
+        out << ptt.x << "\t" << ptt.y;
+    }
+    else
+        out << 0 << "\t" << 0;
 
     return out;
 }
@@ -669,9 +674,12 @@ QTextStream& operator<<(QTextStream& out, const zftTrack& h)
 {
 
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
-
+if (h.pointStack.size() > 0)
+{
     zftTrackPoint ptt = h.pointStack.back();
     out << ptt.x << "\t" << ptt.y;
+}else
+    out << 0 << "\t" << 0;
 
     return out;
 }

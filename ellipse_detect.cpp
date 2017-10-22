@@ -432,7 +432,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 
 
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;
-
+//Memory crash here
     std::vector<std::vector<cv::Point> > contours_canny;
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
@@ -638,7 +638,6 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 
 
 
-
     //cv::imshow("Ellipse fit",img_colour);
     //std::cout << "Done"  << std::endl;
 
@@ -651,6 +650,9 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     //img_contour.deallocate();
     //imgIn_thres.deallocate();
     //imgEdge_dbg.deallocate();
+
+    contours_canny.clear();
+    contours_canny.~vector();
 
 return ret;
 }
@@ -675,7 +677,7 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
     int channels[] = {0};
 
     // create matrix for histogram visualization
-    int const hist_height = 256;
+    const int  hist_height = 256;
     cv::Mat3b hist_image = cv::Mat3b::zeros(hist_height*2+picoffset, bins);
     //Obtain Histogram
     cv::calcHist(&image, 1, channels, cv::Mat(), hist, 1, histSize, ranges, true, false);
@@ -762,6 +764,7 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
 
     hist_image.deallocate();
     hist_grad.deallocate();
+
 }
 
 

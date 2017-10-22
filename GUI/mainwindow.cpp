@@ -101,7 +101,7 @@ void MainWindow::showCVimg(cv::Mat& img)
 
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-    char key;
+    char key = 0;
     if (event->type() == QEvent::GraphicsSceneWheel) {
         handleWheelOnGraphicsScene(dynamic_cast<QGraphicsSceneWheelEvent*> (event));
 
