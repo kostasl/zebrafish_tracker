@@ -432,7 +432,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 
 
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;
-
+    //Memory Crash Here
     std::vector<std::vector<cv::Point> > contours_canny;
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
@@ -444,8 +444,16 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
 
-    //Debug
-    //imgDebug = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+    /// Get Pixel Values of Points Between Eyes - Calculate Eye Seg. Threshold - Sampling from Relevant Points //
+    /// Add a Manual Entry to Adjust Via the slider Control - gthresEyeSeg
+    const int voffset = 5;
+    int iThresEyeSeg = (imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset) +
+                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-1) +
+                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-2) +
+                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-3) +
+                    imgUpsampled_gray.at<uchar>(ptcentre.x-4, ptcentre.y-voffset-2)+ //Lateral
+                    imgUpsampled_gray.at<uchar>(ptcentre.x+4, ptcentre.y-voffset-2) +
+                    gthresEyeSeg)/7;
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
@@ -457,7 +465,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     //std::cout << (int)imgIn.at<uchar>(ptcentre) << "+" << (int)imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) << "+" <<(int) imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) << "+" << (int)imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
     //std::cout << "+" << (int)imgIn.at<uchar>(imgIn.rows-2,ptcentre.x) << "+" <<  (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x) << " avg:" <<  thresEyeSeg << std::endl;
 
-    cv::threshold(imgUpsampled_gray, imgIn_thres,gthresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
@@ -653,7 +661,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     //imgEdge_dbg.deallocate();
 
 return ret;
-}
+
+} //End of DetectEllipses
 
 
 ///
