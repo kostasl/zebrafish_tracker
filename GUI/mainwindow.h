@@ -29,6 +29,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     void showCVimg(cv::Mat& img);
+    void showInsetimg(cv::Mat& img); //Used to Show Small IMage Next to main scene
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
     //void saveScreenShot(QString stroutDirCSV);
     void saveScreenShot(QString stroutDirCSV,QString vidFilename);
@@ -46,6 +47,7 @@ protected:
     void dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent );
 
     QImage qimg; //SCene Image Updated in ShowCV Image
+    QImage qimgHead; //SCene Image Updated in ShowCV Image
     cv::Mat frameScene; //CvMat Last Frame Drawn
 private:
     Ui::MainWindow      *ui;
@@ -54,11 +56,13 @@ private:
      * @brief Scene Object for displaying image on Form
      */
     QGraphicsScene      *mScene;
+    QGraphicsScene*     mInsetScene;
 
     /**
     * Image to be displayed in  this scene.
     */
     QGraphicsPixmapItem*                            mImage;
+    QGraphicsPixmapItem*                            mImageInset;
 
     cv::Mat*                                        mpLastCVImg;
 

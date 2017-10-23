@@ -62,6 +62,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 
+extern MainWindow window_main;
+
 extern int gi_CannyThresSmall;
 extern int gi_CannyThres;
 extern int gi_VotesEllipseThres;
@@ -669,8 +671,11 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
    // cv::imshow("Fish Edges ",imgEdge_dbg);
    // cv::imshow("Fish Edges h",imgEdge);
    //cv::imshow("Debug EllipseFit",imgDebug);
-   cv::imshow("Fish Threshold ",imgIn_thres);
+   //cv::imshow("Fish Threshold ",imgIn_thres);
    //cv::imshow("Fish CONTOUR ",img_contour);
+
+
+
 
    // Show Eye Anchor Points
     img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 255; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;

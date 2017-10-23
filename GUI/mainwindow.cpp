@@ -18,14 +18,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
+    this->mInsetScene = new QGraphicsScene(this->ui->graphicsViewHead);
 
     this->ui->graphicsView->setScene(this->mScene);
     //this->ui->graphicsView->setFixedSize(1280,1024);
     //mScene->setSceneRect(this->ui->graphicsView->rect());
 
-    mScene->addText("First, press r to begin processing of of the video's BG model.")->setPos(100,100);
+    mScene->addText("Zebrafish Tracker Scene")->setPos(100,100);
     //Add Empty/New PixMap on Which we will set the images onto
-    this->mImage = mScene->addPixmap(QPixmap());
+    this->mImage         = mScene->addPixmap(QPixmap());
+    this->mImageInset    = mInsetScene->addPixmap(QPixmap());
 
     this->ui->graphicsView->setSceneRect(this->frameGeometry()); // set the scene's bounding rect to rect of mainwindow
 
@@ -61,6 +63,23 @@ void MainWindow::tickProgress()
 
 }
 
+void MainWindow::showInsetimg(cv::Mat& img)
+{
+
+    qimgHead = QtOpencvCore::img2qimg(img);
+    // convert the opencv image to a QPixmap (to show in a QLabel)
+    QPixmap pixMap = QPixmap::fromImage(qimgHead);
+    QRect bound = this->ui->graphicsViewHead->geometry();
+    this->mInsetScene->setSceneRect(bound);
+    this->mInsetScene->addPixmap(pixMap);
+
+    this->mImageInset->setPixmap(pixMap);
+    this->mImageInset->setPos(bound.topLeft().x() ,bound.topLeft().y());
+
+    this->ui->graphicsViewHead->show();
+
+}
+
 void MainWindow::showCVimg(cv::Mat& img)
 {
     frameScene = img;
@@ -72,16 +91,15 @@ void MainWindow::showCVimg(cv::Mat& img)
     //Removed Scaling
     // scale pixMap image to fit into the QLabel
     //pixMap = pixMap.scaled(this->ui->graphicsView->size(), Qt::KeepAspectRatio);
-
-
     //this->mImage->setPixmap(pixMap);
-
     //this->ui->graphicsView->setSceneRect(this->frameGeometry()); // set the scene's bounding rect to rect of mainwindow
+
     /// A Scene contains graphic objects, but rendering them requires a View.
     ///  The Scenes size can be larger than the View's
     this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
-    this->mScene->setSceneRect(this->ui->graphicsView->geometry());
     QRect bound = this->ui->graphicsView->geometry();
+    this->mScene->setSceneRect(bound);
+
     //this->ui->graphicsView->setFixedSize(qimg.width(),qimg.height());
 
     mImage->setPixmap(pixMap);

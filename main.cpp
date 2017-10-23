@@ -73,7 +73,7 @@ const unsigned int thresh_fishblobarea  = 220; //Min area above which to Filter 
 
 //BG History
 float gfVidfps              = 300;
-const int MOGhistory        = gfVidfps*2;
+const int MOGhistory        = 10;//gfVidfps*2;
 //Processing Loop delay
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
@@ -107,6 +107,7 @@ int iLastKnownGoodTemplateCol   = 0;
 
 
 ///Global Variables
+
 QElapsedTimer gTimer;
 QString outfilename;
 std::string gstrwinName = "FishFrame";
@@ -230,6 +231,7 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv);
     //QQmlApplicationEngine engine;
+
     MainWindow window_main;
 
     window_main.show();
@@ -420,6 +422,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
        std::cout << " Now Processing : "<< invideoname.toStdString() <<std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
+       // Removed As MOG Is not Used Currently - Remember to Enable usage in enhanceMask if needed//
        //getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
 
        window_main.setWindowTitle("Tracking:" + invideoname);
@@ -442,7 +445,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
 unsigned int trackImageSequencefiles(MainWindow& window_main)
 {
 
-    cv::Mat frame,frameMasked,fgMask,outframe;
+    cv::Mat frame,frameMasked,fgMask,outframe,outframeHead;
+
     QString inVideoDirname = QFileDialog::getExistingDirectory(&window_main,"Select folder with video images to track", gstroutDirCSV);
 
     //unsigned int istartFrame = 0;
@@ -537,7 +541,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
        frame.copyTo(frameMasked,fgMask);
 
 
-       processFrame(frame,fgMask,frameMasked,nFrame,outframe);
+       processFrame(frame,fgMask,nFrame,outframe,outframeHead);
        cv::imshow(gstrwinName + " FishOnly",frameMasked);
 
        /// Display Output //
@@ -638,7 +642,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
 } ///trackImageSequencefile
 
 
-void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned int nFrame,cv::Mat& outframe)
+void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
 {
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
@@ -719,15 +723,12 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask,cv::Mat& frameMasked, unsigned 
         //tracks.insert(foodtracks.begin(),foodtracks.end() );
         //saveTracks(vfishmodels,trkoutFileCSV,frameNumberString);
 
-        detectZfishFeatures(frame,outframe,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+        detectZfishFeatures(frame,outframe,fgMask,frameHead,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
         std::vector<cv::KeyPoint> ptFoodblobs;
         nFood = processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
-
-
-
 
 
     } //If Tracking
@@ -881,7 +882,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 {
 
     //Speed that stationary objects are removed
-    cv::Mat frame,frameMasked,outframe;
+    cv::Mat frame,frameMasked,outframe,outframeHead;
     unsigned int nFrame = startFrameCount; //Current Frame Number
 
     bPaused =false; //Start Paused
@@ -961,9 +962,10 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         }
 
 
-        processFrame(frame,fgMask,frameMasked,nFrame,outframe);
+        processFrame(frame,fgMask,nFrame,outframe,outframeHead);
 
         window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
+        window_main.showInsetimg(outframeHead);
 
         if (bshowMask)
         {
@@ -1248,8 +1250,9 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 //    int ms = 1;
 //    struct timespec ts = { ms / 1000, (ms % 1000) * 1000 * 1000 };
 //    nanosleep(&ts, NULL);
-
-    QCoreApplication::processEvents(QEventLoop::AllEvents);
+    ///Memory Crash Here ///
+        QCoreApplication::processEvents(QEventLoop::AllEvents);
+        cv::waitKey(1);
 
         while (bPaused && !bExiting)
         {
@@ -2116,12 +2119,15 @@ cv::Mat threshold_output_COMB;
 
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
+///////////////// MOG Mask Is not Used Currently //
 /////get rid of noise/food marks
 ////Apply Open Operation dilate(erode())
-cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
-////jOIN bLOB Do Close : erode(dilate())
-cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
-
+//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
+//////jOIN bLOB Do Close : erode(dilate())
+//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
+/////Remove Speckles // Should leave fish INtact
+//cv::filterSpeckles(maskFGImg,0,3,2 );
+/////////// MOG Mask Is not Used Currently //
 
 
 ///// Convert image to gray and blur it
@@ -2132,9 +2138,6 @@ cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 g_Segthresh = cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 //cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
 //ADAPTIVE_THRESH_MEAN_C
-
-//Remove Speckles // Should leave fish INtact
-cv::filterSpeckles(maskFGImg,0,3,2 );
 
 /////////////////Make Hollow Mask
 //make Inner Fish MAsk /More Accurate Way
@@ -2277,7 +2280,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 /// \return
 ///
 /// // \todo Optimize by re using fish contours already obtained in enhance fish mask
-void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
+void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
 
@@ -2500,6 +2503,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfi
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
+
+              headImgOut = imgFishHeadProcessed; //Return As INdividual Image Too
 
             /// Set Detected Eyes Back to Fish Features
             ///  Print Out Values
