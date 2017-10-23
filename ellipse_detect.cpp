@@ -404,6 +404,46 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 }
 
 ///
+/// \brief getEyeSegThreshold Samples the N most intense Pixels in an arc below the estimated position of the eyes given the
+/// upsampled head image
+/// \param pimgIn //Upsampled Grey Scale HEad Image
+/// \param ptcenter //Center Of Head Image around which to estimate Eye Position
+/// \param ellipseSample_pts //Holds the Drawn Arc Points around the last spine Point
+/// \return Grey threshold for Eye Segmentation
+///
+int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts)
+{
+        const int isampleN = 7;
+        const int voffset = 8;
+
+        int iThresEyeSeg = 0;
+
+
+        //std::vector<cv::Point> ellipse_pts;
+        std::priority_queue<int,std::vector<int>> eyeSegMaxHeap;
+
+
+        //Construct Elliptical Circle around last Spine Point - of Radius step_size
+        cv::ellipse2Poly(ptcenter, cv::Size(voffset*2,voffset), 0, 210,330 , 1, ellipseSample_pts);
+        for (int i=0;i<ellipseSample_pts.size();i++)
+        {
+            //iThresEyeSeg += imgUpsampled_gray.at<uchar>(ellipse_pts[i]);
+            eyeSegMaxHeap.push(pimgIn.at<uchar>(ellipseSample_pts[i]));
+        }
+
+        for (int i=0;i<isampleN;i++)
+        {//Withdraw To N values
+            iThresEyeSeg  += eyeSegMaxHeap.top();
+            eyeSegMaxHeap.pop();
+        }
+
+        //Add the Manual Entry And Divide to Get Mean Value
+        iThresEyeSeg = (iThresEyeSeg+gthresEyeSeg)/(isampleN+1);
+
+    return iThresEyeSeg;
+}
+
+///
 /// \brief detectEllipses - Used oN Head Isolated Image
 /// \param pimgIn
 /// \param imgEdge
@@ -415,6 +455,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 ///
 int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameProc)
 {
+
     int ret = 0;//Return Value Is the Count Of Ellipses Detected (Eyes)
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
     ///Keep Image processing Arrays Static to avoid memory Alloc On Each Run
@@ -427,14 +468,11 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 
     //cv::Mat imgEdge_dbg;
 
-    //Upsamples an image which causes blur/interpolation it.
-    cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
-
 
     std::priority_queue<tDetectedEllipsoid> qEllipsoids;
-//Memory crash here
     std::vector<std::vector<cv::Point> > contours_canny;
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
+    std::vector<cv::Point> vEyeSegSamplePoints;
 
     cv::Point2f ptLEyeMid,ptREyeMid;
 
@@ -445,43 +483,16 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
 
-    /// Get Pixel Values of Points Between Eyes - Calculate Eye Seg. Threshold - Sampling from Relevant Points //
-    /// Add a Manual Entry to Adjust Via the slider Control - gthresEyeSeg
-    const int voffset = 8;
-    int iThresEyeSeg = 0;
-//    (imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset) +
-//                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-1) +
-//                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-2) +
-//                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-3) +
-//                    imgUpsampled_gray.at<uchar>(ptcentre.x-4, ptcentre.y-voffset-2) + //Lateral
-//                    imgUpsampled_gray.at<uchar>(ptcentre.x+4, ptcentre.y-voffset-2) +
-//                    imgUpsampled_gray.at<uchar>(ptcentre.x-3, ptcentre.y-voffset-2) + //Lateral
-//                    imgUpsampled_gray.at<uchar>(ptcentre.x+3, ptcentre.y-voffset-2) +
-//                    gthresEyeSeg)/9;
+    //Upsamples an image which causes blur/interpolation it.
+    cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
 
 
     /// Make Arc from Which to get Sample Points For Eye Segmentation
-    std::vector<cv::Point> ellipse_pts; //Holds the Drawn Arc Points around the last spine Point
-    //Construct Elliptical Circle around last Spine Point - of Radius step_size
-    cv::ellipse2Poly(ptcentre, cv::Size(voffset*2,voffset), 0, 210,330 , 1, ellipse_pts);
-    for (int i=0;i<ellipse_pts.size();i++)
-    {
-        iThresEyeSeg += imgUpsampled_gray.at<uchar>(ellipse_pts[i]);
-        //imgUpsampled_gray.at<uchar>(ellipse_pts[i]) = 255;
-    }
-    iThresEyeSeg = (iThresEyeSeg+gthresEyeSeg)/(ellipse_pts.size()+1);
-
-
+    int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints);
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
-    //Get Pixel Value Between Eyes
-    //int thresEyeSeg = imgIn.at<uchar>(ptcentre) + imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) + imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
-    //thresEyeSeg     += (int)imgIn.at<uchar>(imgIn.rows-3,ptcentre.x) + (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x);
-    //thresEyeSeg     = thresEyeSeg/6+10;
-    // Debug Report
-    //std::cout << (int)imgIn.at<uchar>(ptcentre) << "+" << (int)imgIn.at<uchar>(ptcentre.y-1,ptcentre.x) << "+" <<(int) imgIn.at<uchar>(ptcentre.y+1,ptcentre.x) << "+" << (int)imgIn.at<uchar>(ptcentre.y+2,ptcentre.x);
-    //std::cout << "+" << (int)imgIn.at<uchar>(imgIn.rows-2,ptcentre.x) << "+" <<  (int)imgIn.at<uchar>(imgIn.rows-1,ptcentre.x) << " avg:" <<  thresEyeSeg << std::endl;
+
 
     cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
@@ -653,7 +664,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 
 ///////// End of Checks //////////
 
-   ///Debug//
+   /// Debug //
    //cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
    // cv::imshow("Fish Edges ",imgEdge_dbg);
    // cv::imshow("Fish Edges h",imgEdge);
@@ -661,21 +672,15 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
    cv::imshow("Fish Threshold ",imgIn_thres);
    //cv::imshow("Fish CONTOUR ",img_contour);
 
-    //Get All Edge Points Manually
-    //Iterate Edge Image and extract edge points
-
-    //cv::circle(img_colour,ptLEyeMid,1,CV_RGB(255,0,0),1);
-    //cv::circle(img_colour,ptREyeMid,1,CV_RGB(0,250,0),1);
+   // Show Eye Anchor Points
     img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 255; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;
     img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 250;
-
-
-    //Show Lateral Sample points
-    for (int i=0;i<ellipse_pts.size();i++)
+    // Show Eye Segmentation Arc Sample points
+    for (int i=0;i<vEyeSegSamplePoints.size();i++)
     {
-        img_colour.at<cv::Vec3b>(ellipse_pts[i])[0] = 220;
-        img_colour.at<cv::Vec3b>(ellipse_pts[i])[1] = 220;
-        img_colour.at<cv::Vec3b>(ellipse_pts[i])[2] = 50;
+        img_colour.at<cv::Vec3b>(vEyeSegSamplePoints[i])[0] = 220;
+        img_colour.at<cv::Vec3b>(vEyeSegSamplePoints[i])[1] = 220;
+        img_colour.at<cv::Vec3b>(vEyeSegSamplePoints[i])[2] = 50;
     }
 
 

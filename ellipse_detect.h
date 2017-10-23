@@ -79,19 +79,14 @@ typedef std::vector<tEllipsoidEdge> tEllipsoidEdges;
 //int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses);
 int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetectedEllipsoid>& qEllipsoids);
 ///
-/// \brief detectEllipses
-/// \param pimgIn
-/// \param imgEdge
-/// \param imgOut
-/// \param angleDeg
-/// \param vellipses
-/// \param outHeadFrameProc Return a close Up of the head with the detected shapes drawn on
-/// \return
-///
-//int detectEllipses(cv::Mat& pimgIn,cv::Mat imgEdge,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses,cv::Mat& outHeadFrameProc);
+/// \brief detectEllipses Search For Ellipsoids around the position of the eyes in the fish head isolated image
 int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameProc);
+// Uses Sampling around an arc below the eyes to determine Appropriate Eye Segmentation theshold (Max N values are used)
+int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts);
 void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint);
 void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);
+
+
 
 void show_histogram(std::string const& name, cv::Mat1b const& image);
 #endif // ELLIPSE_DETECT
