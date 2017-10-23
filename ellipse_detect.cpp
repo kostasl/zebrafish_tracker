@@ -446,14 +446,16 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 
     /// Get Pixel Values of Points Between Eyes - Calculate Eye Seg. Threshold - Sampling from Relevant Points //
     /// Add a Manual Entry to Adjust Via the slider Control - gthresEyeSeg
-    const int voffset = 5;
+    const int voffset = 8;
     int iThresEyeSeg = (imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset) +
                     imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-1) +
                     imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-2) +
                     imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-3) +
-                    imgUpsampled_gray.at<uchar>(ptcentre.x-4, ptcentre.y-voffset-2)+ //Lateral
+                    imgUpsampled_gray.at<uchar>(ptcentre.x-4, ptcentre.y-voffset-2) + //Lateral
                     imgUpsampled_gray.at<uchar>(ptcentre.x+4, ptcentre.y-voffset-2) +
-                    gthresEyeSeg)/7;
+                    imgUpsampled_gray.at<uchar>(ptcentre.x-2, ptcentre.y-voffset-2) + //Lateral
+                    imgUpsampled_gray.at<uchar>(ptcentre.x+2, ptcentre.y-voffset-2) +
+                    gthresEyeSeg)/9;
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
@@ -641,6 +643,11 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 255; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;
     img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 250;
 
+    //Show Lateral Sample points
+    img_colour.at<cv::Vec3b>(ptcentre.x-4, ptcentre.y-voffset-2)[0] = 20; img_colour.at<cv::Vec3b>(ptcentre.x-4, ptcentre.y-voffset-2)[2] = 255;
+    img_colour.at<cv::Vec3b>(ptcentre.x+4, ptcentre.y-voffset-2)[0] = 20; img_colour.at<cv::Vec3b>(ptcentre.x+4, ptcentre.y-voffset-2)[2] = 255;
+
+
     img_colour.copyTo(outHeadFrameProc);
 
 
@@ -660,7 +667,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     //imgEdge_dbg.deallocate();
 
     contours_canny.clear();
-    contours_canny.~vector();
+    contours_canny.shrink_to_fit();
 
 return ret;
 

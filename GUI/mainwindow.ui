@@ -14,71 +14,109 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_3">
-    <item row="0" column="0">
-     <layout class="QGridLayout" name="gridLayout">
-      <property name="sizeConstraint">
-       <enum>QLayout::SetNoConstraint</enum>
-      </property>
-      <item row="0" column="0">
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <property name="sizeConstraint">
-         <enum>QLayout::SetNoConstraint</enum>
-        </property>
-        <item>
-         <widget class="QGraphicsView" name="graphicsView">
-          <property name="minimumSize">
-           <size>
-            <width>640</width>
-            <height>480</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>1980</width>
-            <height>1024</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Tracking Video Frame - p for pausing</string>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <property name="horizontalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOn</enum>
-          </property>
-          <property name="sizeAdjustPolicy">
-           <enum>QAbstractScrollArea::AdjustToContents</enum>
-          </property>
-          <property name="sceneRect">
-           <rectf>
-            <x>100.000000000000000</x>
-            <y>100.000000000000000</y>
-            <width>640.000000000000000</width>
-            <height>480.000000000000000</height>
-           </rectf>
-          </property>
-          <property name="dragMode">
-           <enum>QGraphicsView::ScrollHandDrag</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QListView" name="listView"/>
-        </item>
-       </layout>
-      </item>
-      <item row="1" column="0">
-       <widget class="QSlider" name="horizontalSlider">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-   </layout>
+   <widget class="QDial" name="EyeSegThreshold">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>100</y>
+      <width>50</width>
+      <height>61</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="graphicsView">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>640</width>
+      <height>645</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>640</width>
+      <height>480</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>1980</width>
+      <height>1024</height>
+     </size>
+    </property>
+    <property name="toolTip">
+     <string>Tracking Video Frame - p for pausing</string>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <property name="horizontalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOn</enum>
+    </property>
+    <property name="sizeAdjustPolicy">
+     <enum>QAbstractScrollArea::AdjustToContents</enum>
+    </property>
+    <property name="sceneRect">
+     <rectf>
+      <x>100.000000000000000</x>
+      <y>100.000000000000000</y>
+      <width>640.000000000000000</width>
+      <height>480.000000000000000</height>
+     </rectf>
+    </property>
+    <property name="dragMode">
+     <enum>QGraphicsView::ScrollHandDrag</enum>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="graphicsViewHead">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>0</y>
+      <width>91</width>
+      <height>91</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QListView" name="listView">
+    <property name="geometry">
+     <rect>
+      <x>730</x>
+      <y>0</y>
+      <width>157</width>
+      <height>645</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QGroupBox" name="">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>16</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetNoConstraint</enum>
+     </property>
+    </layout>
+   </widget>
+   <widget class="QSlider" name="horizontalSlider">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>650</y>
+      <width>621</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -86,23 +124,60 @@
      <x>0</x>
      <y>0</y>
      <width>1009</width>
-     <height>27</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionopen_video_file"/>
    </widget>
    <widget class="QMenu" name="menuTrack">
     <property name="title">
      <string>Track</string>
     </property>
+    <addaction name="separator"/>
+    <addaction name="actionPaus_tracking_p"/>
+    <addaction name="actionStart_tracking"/>
+    <addaction name="actionRest_Spine"/>
+    <addaction name="actionAdd_fish_to_Template"/>
+    <addaction name="actionRemove_last_Template_D"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTrack"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionopen_video_file">
+   <property name="text">
+    <string>add video file</string>
+   </property>
+  </action>
+  <action name="actionPaus_tracking_p">
+   <property name="text">
+    <string>Pause tracking -p</string>
+   </property>
+  </action>
+  <action name="actionStart_tracking">
+   <property name="text">
+    <string>Start tracking - r</string>
+   </property>
+  </action>
+  <action name="actionRest_Spine">
+   <property name="text">
+    <string>Reset Spine - R</string>
+   </property>
+  </action>
+  <action name="actionAdd_fish_to_Template">
+   <property name="text">
+    <string>Add fish to Template - T</string>
+   </property>
+  </action>
+  <action name="actionRemove_last_Template_D">
+   <property name="text">
+    <string>Remove last Template - D</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
