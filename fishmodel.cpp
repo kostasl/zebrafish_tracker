@@ -135,8 +135,8 @@ void fishModel::resetSpine()
 //            cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
 //        }
 
-        drawSpine(frameDebugC);
-        cv::waitKey(1000);
+       // drawSpine(frameDebugC);
+       // cv::waitKey(300);
 
 }
 

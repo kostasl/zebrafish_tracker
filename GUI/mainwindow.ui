@@ -30,7 +30,7 @@
       <x>0</x>
       <y>0</y>
       <width>640</width>
-      <height>645</height>
+      <height>580</height>
      </rect>
     </property>
     <property name="minimumSize">
@@ -89,7 +89,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QGroupBox" name="">
+   <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -107,9 +107,9 @@
    <widget class="QSlider" name="horizontalSlider">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>650</y>
-      <width>621</width>
+      <x>0</x>
+      <y>590</y>
+      <width>640</width>
       <height>16</height>
      </rect>
     </property>

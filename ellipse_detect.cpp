@@ -437,7 +437,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
     cv::Point2f ptLEyeMid,ptREyeMid;
-    cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/2);
+
+    cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/2+5);
     int lengthLine = 13;
     ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y/2; //y=0 is the top left corner
@@ -447,15 +448,30 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     /// Get Pixel Values of Points Between Eyes - Calculate Eye Seg. Threshold - Sampling from Relevant Points //
     /// Add a Manual Entry to Adjust Via the slider Control - gthresEyeSeg
     const int voffset = 8;
-    int iThresEyeSeg = (imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset) +
-                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-1) +
-                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-2) +
-                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-3) +
-                    imgUpsampled_gray.at<uchar>(ptcentre.x-4, ptcentre.y-voffset-2) + //Lateral
-                    imgUpsampled_gray.at<uchar>(ptcentre.x+4, ptcentre.y-voffset-2) +
-                    imgUpsampled_gray.at<uchar>(ptcentre.x-2, ptcentre.y-voffset-2) + //Lateral
-                    imgUpsampled_gray.at<uchar>(ptcentre.x+2, ptcentre.y-voffset-2) +
-                    gthresEyeSeg)/9;
+    int iThresEyeSeg = 0;
+//    (imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset) +
+//                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-1) +
+//                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-2) +
+//                    imgUpsampled_gray.at<uchar>(ptcentre.x, ptcentre.y-voffset-3) +
+//                    imgUpsampled_gray.at<uchar>(ptcentre.x-4, ptcentre.y-voffset-2) + //Lateral
+//                    imgUpsampled_gray.at<uchar>(ptcentre.x+4, ptcentre.y-voffset-2) +
+//                    imgUpsampled_gray.at<uchar>(ptcentre.x-3, ptcentre.y-voffset-2) + //Lateral
+//                    imgUpsampled_gray.at<uchar>(ptcentre.x+3, ptcentre.y-voffset-2) +
+//                    gthresEyeSeg)/9;
+
+
+    /// Make Arc from Which to get Sample Points For Eye Segmentation
+    std::vector<cv::Point> ellipse_pts; //Holds the Drawn Arc Points around the last spine Point
+    //Construct Elliptical Circle around last Spine Point - of Radius step_size
+    cv::ellipse2Poly(ptcentre, cv::Size(voffset*2,voffset), 0, 210,330 , 1, ellipse_pts);
+    for (int i=0;i<ellipse_pts.size();i++)
+    {
+        iThresEyeSeg += imgUpsampled_gray.at<uchar>(ellipse_pts[i]);
+        //imgUpsampled_gray.at<uchar>(ellipse_pts[i]) = 255;
+    }
+    iThresEyeSeg = (iThresEyeSeg+gthresEyeSeg)/(ellipse_pts.size()+1);
+
+
 
     //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
@@ -620,12 +636,22 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
 
 /////////// END OF TEMPLATE ///
 
-    //Check If Area Of Detected Eyes Is very Different
+    //// Evaluate Detection - Use  Limit Checks on Eye Characteristics ////
     int area1 = (int)lEll.rectEllipse.boundingRect().area();
     int area2 = (int)rEll.rectEllipse.boundingRect().area();
 
+    int mjAxis1 = std::max(lEll.rectEllipse.boundingRect().width, lEll.rectEllipse.boundingRect().height);
+    int mjAxis2 = std::max(rEll.rectEllipse.boundingRect().width, rEll.rectEllipse.boundingRect().height);
+
     if (std::abs(area1 - area2) > (std::max(area2,area1)/2))
         ret = 0; //SOme Detection Error - Ask To Change Threshold
+    if (mjAxis1 < gi_minEllipseMajor || mjAxis2 < gi_minEllipseMajor)
+        ret = 0; //SOme Detection Error - Ask To Change Threshold
+
+    if (mjAxis1 > gi_maxEllipseMajor || mjAxis2 > gi_maxEllipseMajor)
+        ret = 0; //SOme Detection Error - Ask To Change Threshold
+
+///////// End of Checks //////////
 
    ///Debug//
    //cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
@@ -643,9 +669,16 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 255; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;
     img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 250;
 
+
     //Show Lateral Sample points
-    img_colour.at<cv::Vec3b>(ptcentre.x-4, ptcentre.y-voffset-2)[0] = 20; img_colour.at<cv::Vec3b>(ptcentre.x-4, ptcentre.y-voffset-2)[2] = 255;
-    img_colour.at<cv::Vec3b>(ptcentre.x+4, ptcentre.y-voffset-2)[0] = 20; img_colour.at<cv::Vec3b>(ptcentre.x+4, ptcentre.y-voffset-2)[2] = 255;
+    for (int i=0;i<ellipse_pts.size();i++)
+    {
+        img_colour.at<cv::Vec3b>(ellipse_pts[i])[0] = 220;
+        img_colour.at<cv::Vec3b>(ellipse_pts[i])[1] = 220;
+        img_colour.at<cv::Vec3b>(ellipse_pts[i])[2] = 50;
+    }
+
+
 
 
     img_colour.copyTo(outHeadFrameProc);
