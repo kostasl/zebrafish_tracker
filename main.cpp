@@ -723,7 +723,7 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& o
         //tracks.insert(foodtracks.begin(),foodtracks.end() );
         //saveTracks(vfishmodels,trkoutFileCSV,frameNumberString);
 
-        detectZfishFeatures(frame,outframe,fgMask,frameHead,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+        detectZfishFeatures(frame,outframe,frameHead,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -2503,8 +2503,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
-
-              headImgOut = imgFishHeadProcessed; //Return As INdividual Image Too
+              imgFishHeadProcessed.copyTo(headImgOut); //Return As INdividual Image Too
 
             /// Set Detected Eyes Back to Fish Features
             ///  Print Out Values
