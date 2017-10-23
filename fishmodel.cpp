@@ -105,17 +105,22 @@ void fishModel::resetSpine()
 
         splineKnotf sp;
         //1st Spine Is in Opposite Direction of Movement and We align 0 degrees to be upwards (vertical axis)
-        sp.angleRad    = (this->bearingRads)+CV_PI; //CV_PI/2
+        if (this->bearingRads > CV_PI)
+            sp.angleRad    = (this->bearingRads)-CV_PI-CV_PI/2.0; //CV_PI/2 //Spine Looks In Opposite Direcyion
+        else
+            sp.angleRad    = (this->bearingRads)+CV_PI+CV_PI/2.0; //CV_PI/2 //Spine Looks In Opposite Direcyion
+
         assert(!std::isnan(sp.angleRad && std::abs(sp.angleRad) <= 2*CV_PI));
 
         if (i==0)
         {
-            sp.x =  this->zfishBlob.pt.x;
-            sp.y =  this->zfishBlob.pt.y;
+            sp.x =  this->ptRotCentre.x;
+            sp.y =  this->ptRotCentre.y;
         }
         else
         {
-            sp.x        = spline[i-1].x + ((double)c_spineSegL)*sin(sp.angleRad); //0 Degrees Is vertical Axis Looking Up
+            //0 Degrees Is vertical Axis Looking Up
+            sp.x        = spline[i-1].x + ((double)c_spineSegL)*sin(sp.angleRad);
             sp.y        = spline[i-1].y - ((double)c_spineSegL)*cos(sp.angleRad);
         }
 
@@ -124,14 +129,17 @@ void fishModel::resetSpine()
 
 
 
-    //    ///DEBUG
-        for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
-        {
-            cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
-        }
-        cv::waitKey(10);
+//    //    ///DEBUG
+//        for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
+//        {
+//            cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
+//        }
+
+        drawSpine(frameDebugC);
+        cv::waitKey(1000);
 
 }
+
 ///
 /// \brief fishModel::getSpine Recalculates Point positions using Stored Knot Params (Angles)
 /// /Calculates Spine Positions assumes initial point x0 y0 stored at 0 index of vector
@@ -313,6 +321,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
 ///
 /// \brief fishModel::Update - Called On Every FrameProcessed To Update Model State
+/// The track point is set to the blob position and not the template centre
 /// \param fblob
 /// \param templatematchScore
 /// \param Angle
@@ -338,10 +347,10 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     }else {
         this->zTrack.inactive++;
     }
-
-    this->spline[0].x       = fblob->pt.x;
-    this->spline[0].y       = fblob->pt.y;
-    this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
+    //Set Spine Source to Rotation Centre
+    this->spline[0].x       = bcentre.x;
+    this->spline[0].y       = bcentre.y;
+    //this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
 
     assert(!std::isnan(this->bearingRads));
 
@@ -544,83 +553,67 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
 
 ///
-/// \brief fishModel::GioGet_tailSpine Giovanni's tail
+/// \brief fishModel::fitSpineToIntensity implements  Giovanni's tail fitting method : starting from initial point on the fish body and an initial direction for the tail it searches for the
+///   highest intensity within a angle range -c_tailscanAngle +c_tailscanAngle degrees on a largely blurred scene image , through each spine point incrementally.
+///  It pretty fast compared to the fitContour Variational method
 /// \param src
 /// \param start
 /// \param tgt_start Is a vector from point Start towards the initial guess of tail direction
 /// \param step_size Segment Lenght between  Spine anchor points
 /// \param anchor_pts // The Spine
 ///
-void fishModel::GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tgt_start, int step_size, std::vector<cv::Point2i>& anchor_pts){
+void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
     const size_t AP_N= this->c_spinePoints;
-    const int c_tailscanAngle = 30;
-    std::vector<cv::Point2i> tmp_pts(AP_N);
-    cv::Point2i tgt;
-    anchor_pts.resize(AP_N);
-    anchor_pts[0]   = start;
-    tmp_pts[0]      = start;
-    unsigned int k=0;
-    double loc,loc_add, val=0;
-    int angle;
+    const int step_size = this->c_spineSegL;
 
-    cv::Mat draw, imgLaplacian,mask, draw_inv;
-    const cv::Mat kernel = (cv::Mat_<float>(3,3) << 1,  1, 1,
-                        1, -8, 1,
-                        1,  1, 1);
+    const int c_tailscanAngle = 23;
 
-    cv::Mat ones(src.rows,src.cols,CV_32F,cv::Scalar(1));
 
-    src.convertTo(draw_inv,CV_32F,1./255);
+    uint loc,pxValMax;
+
+    int angle; //In Deg of Where The spline point is looking towards - Used by Ellipse Arc Drawing
+
+    //cv::Mat frameimg_Blur;
+
+
+    //imgframeIn.convertTo(frameimg_Blur,CV_32F,1./255);
     //draw_inv=ones-draw_inv;
 
+    //cv::GaussianBlur(imgframeIn,frameimg_Blur,cv::Size(5,5),5,5);
+    //cv::imshow("IntensitTailFit",frameimg_Blur);
+
+    std::vector<cv::Point> ellipse_pts; //Holds the Drawn Arc Points around the last spine Point
+
+    for(unsigned int k=1;k<AP_N;k++){ //Loop Through Spine Points
+        ellipse_pts.clear();
 
 
-    cv::GaussianBlur(draw_inv,draw_inv,cv::Size(5,5),5,5);
-    //cv::filter2D(draw_inv,imgLaplacian,CV_32F,kernel);
-    //cv::threshold(imgLaplacian, mask,0,1,cv::THRESH_BINARY);
+        //Get Angl
+        //angle = (atan2(tgt.y,tgt.x) +_CV_PI)/CV_PI*180.0; //Find towards Next Point Angle In Degrees
+        angle = spline[k-1].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing
 
+        //Construct Elliptical Circle around last Spine Point - of Radius step_size
+        cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
 
-    //mask.convertTo(mask,CV_8U);
+        ///sSearch for Maximum Intensity on Source Image Along the Arc
+        pxValMax=0;
+        for(int idx=0;idx<(int)ellipse_pts.size();++idx){
+            //Obtain Value From Image at Point on Arc
+            loc=frameimg_Blur.at<uchar>(ellipse_pts[idx].y,ellipse_pts[idx].x);
 
-    //src.copyTo(draw_inv,mask);
-
-    //cv::Laplacian(draw_inv,imgLaplacian,1,3,1,0);
-    //cv::imshow("GioTailTrace",draw_inv);
-    //cv::imshow("LaplacianTrace",imgLaplacian);
-
-
-    for(k=1;k<AP_N;k++){
-        std::vector<cv::Point2d> ellipse_pts;
-        if(k==1)
-            tgt=tgt_start;
-        else
-            tgt=tmp_pts[k-1]-tmp_pts[k-2];
-
-        if(tgt.x>0 ){
-            angle=floor(std::atan((double)tgt.y/tgt.x)/CV_PI*180.0);
-        } else if(tgt.x<0) {
-            angle=180.0+floor(std::atan((double)tgt.y/tgt.x)/CV_PI*180.0);
-        } else if(tgt.x==0){
-            if(tgt.y>0) angle=90;
-            else angle=-90;
-        }
-
-        cv::ellipse2Poly(tmp_pts[k-1], cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
-
-        int index;
-        loc_add=0;
-        index=0;
-        //Search for Maximum Intensity
-        for(index=0;index<(int)ellipse_pts.size();++index){
-            loc=draw_inv.at<float>(ellipse_pts[index].y,ellipse_pts[index].x);
-            if(loc>loc_add){
-                tmp_pts[k]=ellipse_pts[index];
-                loc_add=loc;
+            //If New Maximum Found THen Update Spline Point to point to this and Update Previous Spline Point's angle
+            if(loc>pxValMax){
+                spline[k].x     = ellipse_pts[idx].x;
+                spline[k].y     = ellipse_pts[idx].y;
+                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x); //ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+                spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
+                pxValMax=loc; //Save as New Maximum Point
             }
         }
+
         //out<<tgt<<' '<<angle<<' '<<tmp_pts[k]<<' '<<loc<<' '<<index<<' '<<ellipse_pts.size()<<endl;
 
-        anchor_pts[k]=tmp_pts[k];
+        //anchor_pts[k]=tmp_pts[k];
     }
 
 }
@@ -630,19 +623,19 @@ void fishModel::GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tg
 
 void fishModel::drawSpine(cv::Mat& outFrame)
 {
-    for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
+    for (int j=0; j<c_spinePoints-1;j++) //Rectangle Eye
     {
         cv::circle(outFrame,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],2);
-        if (j<(c_spinePoints-1))
+        //if (j<(c_spinePoints-1))
             cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),cv::Point(spline[j+1].x,spline[j+1].y),TRACKER_COLOURMAP[0],1);
-        else
-        { //Draw Terminal (hidden) point - which is not a spine knot
-            cv::Point ptTerm;
-            ptTerm.x = spline[j].x + ((double)c_spineSegL)*sin(spline[j].angleRad);
-            ptTerm.y = spline[j].y - ((double)c_spineSegL)*cos(spline[j].angleRad);
+//        else
+//        { //Draw Terminal (hidden) point - which is not a spine knot
+//            cv::Point ptTerm;
+//            ptTerm.x = spline[j].x + ((double)c_spineSegL)*sin(spline[j].angleRad);
+//            ptTerm.y = spline[j].y - ((double)c_spineSegL)*cos(spline[j].angleRad);
 
-            cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),ptTerm,TRACKER_COLOURMAP[0],1);
-        }
+//            cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),ptTerm,TRACKER_COLOURMAP[0],1);
+//        }
     }
     cv::circle(outFrame,cv::Point(spline[c_spinePoints-1].x,spline[c_spinePoints-1].y),2,TRACKER_COLOURMAP[c_spinePoints-1],1);
 
@@ -660,9 +653,13 @@ std::ostream& operator<<(std::ostream& out, const zftTrack& h)
 {
 
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
-
-    zftTrackPoint ptt = h.pointStack.back();
-    out << ptt.x << "\t" << ptt.y;
+    if (h.pointStack.size() > 0)
+    {
+        zftTrackPoint ptt = h.pointStack.back();
+        out << ptt.x << "\t" << ptt.y;
+    }
+    else
+        out << 0 << "\t" << 0;
 
     return out;
 }
@@ -677,9 +674,12 @@ QTextStream& operator<<(QTextStream& out, const zftTrack& h)
 {
 
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
-
+if (h.pointStack.size() > 0)
+{
     zftTrackPoint ptt = h.pointStack.back();
     out << ptt.x << "\t" << ptt.y;
+}else
+    out << 0 << "\t" << 0;
 
     return out;
 }

@@ -81,6 +81,7 @@ public:
   double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
   //double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
   double fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
+  void fitSpineToIntensity(cv::Mat &imgframeIn); //Uses Image Intensity Local Max to fit spline
   void GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tgt_start, int step_size, std::vector<cv::Point2i>& anchor_pts);
 
 
@@ -123,13 +124,12 @@ public:
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
   int c_spineSegL;
-  static const int c_spinePoints   = 5;
+  static const int c_spinePoints   = 6;
 
   static const int c_spineParamCnt = c_spinePoints+2;
 private:
 
-
-  //std::vector<double> splineTheta; ///Angles of fitted Spine Points
+  //std::vect mmor<double> splineTheta; ///Angles of fitted Spine Points
 };
 
 
