@@ -1281,7 +1281,7 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 //    nanosleep(&ts, NULL);
     ///Memory Crash Here ///
         QCoreApplication::processEvents(QEventLoop::AllEvents);
-        cv::waitKey(1);
+       // cv::waitKey(1);
 
         while (bPaused && !bExiting)
         {
@@ -1296,8 +1296,6 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 
                 QCoreApplication::processEvents(QEventLoop::AllEvents);
                 cv::waitKey(100);
-
-
 
 
         }

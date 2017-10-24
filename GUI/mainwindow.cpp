@@ -89,7 +89,7 @@ void MainWindow::showInsetimg(cv::Mat& img)
     this->mImageInset->setPixmap(pixMap);
     this->mImageInset->setPos(bound.topLeft().x() ,bound.topLeft().y());
 
-    this->ui->graphicsViewHead->show();
+   // this->ui->graphicsViewHead->show();
 
 }
 
@@ -133,7 +133,7 @@ void MainWindow::showCVimg(cv::Mat& img)
 
 
     //this->ui->graphicsView->fitInView(mImage, Qt::KeepAspectRatio);
-    this->ui->graphicsView->show();
+    //this->ui->graphicsView->show();
 
     this->mpLastCVImg = &img; //Save Pointer to frame
     //mImage
@@ -166,13 +166,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
     if (event->type() == QEvent::Resize) {
          QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
-         //qDebug(" Resized (New Size) - Width: %d Height: %d",
-                //resizeEvent->size().width(),
-                //resizeEvent->size().height());
+         //qDebug(" Resized (New Size) - Width: %d Height: %d",                resizeEvent->size().width(),                resizeEvent->size().height());
 
 
 
-          ui->graphicsView->setFixedSize(resizeEvent->size()*0.9);
+          //ui->graphicsView->setFixedSize(resizeEvent->size()*0.9);
 
          //QRectF bounds = mScene->itemsBoundingRect();
          //bounds.setWidth(bounds.width()*0.9);         // to tighten-up margins

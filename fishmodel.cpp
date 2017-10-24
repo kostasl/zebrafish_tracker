@@ -105,10 +105,10 @@ void fishModel::resetSpine()
 
         splineKnotf sp;
         //1st Spine Is in Opposite Direction of Movement and We align 0 degrees to be upwards (vertical axis)
-        if (this->bearingRads > CV_PI)
+        //if (this->bearingRads > CV_PI)
             sp.angleRad    = (this->bearingRads)-CV_PI-CV_PI/2.0; //CV_PI/2 //Spine Looks In Opposite Direcyion
-        else
-            sp.angleRad    = (this->bearingRads)+CV_PI+CV_PI/2.0; //CV_PI/2 //Spine Looks In Opposite Direcyion
+        //else
+//            sp.angleRad    = (this->bearingRads)+CV_PI/2.0; //CV_PI/2 //Spine Looks In Opposite Direcyion
 
         assert(!std::isnan(sp.angleRad && std::abs(sp.angleRad) <= 2*CV_PI));
 
