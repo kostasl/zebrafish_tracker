@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include "QtOpencvCore.hpp"
+#include <QStringListModel>
 
 extern fishModels vfishmodels; //Vector containing live fish models
 extern bool bPaused;
@@ -21,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->mInsetScene = new QGraphicsScene(this->ui->graphicsViewHead);
 
     this->ui->graphicsView->setScene(this->mScene);
+    this->ui->graphicsViewHead->setScene(this->mInsetScene);
     //this->ui->graphicsView->setFixedSize(1280,1024);
     //mScene->setSceneRect(this->ui->graphicsView->rect());
 
@@ -29,14 +31,25 @@ MainWindow::MainWindow(QWidget *parent) :
     this->mImage         = mScene->addPixmap(QPixmap());
     this->mImageInset    = mInsetScene->addPixmap(QPixmap());
 
-    this->ui->graphicsView->setSceneRect(this->frameGeometry()); // set the scene's bounding rect to rect of mainwindow
-
+    this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
     this->ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     this->ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    this->ui->graphicsViewHead->setSceneRect(this->ui->graphicsViewHead->geometry()); // set the scene's bounding rect to rect of mainwindow
+    this->ui->graphicsViewHead->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->ui->graphicsViewHead->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
 
     this->ui->horizontalSlider->setRange(0,10000);
     this->mScene->installEventFilter(this);
     this->installEventFilter(this); //To Capture Resize
+
+    // Log Events on List View //
+    mModelMessageList = new QStringListModel(this);
+    // Populate our model
+    mModelMessageList->setStringList(mMessageList);
+    // Glue model and view together
+    this->ui->listView->setModel(mModelMessageList);
 
 
 }
@@ -77,6 +90,17 @@ void MainWindow::showInsetimg(cv::Mat& img)
     this->mImageInset->setPos(bound.topLeft().x() ,bound.topLeft().y());
 
     this->ui->graphicsViewHead->show();
+
+}
+
+void MainWindow::LogEvent(QString strMessage)
+{
+
+
+    mMessageList.append(strMessage);
+    this->ui->listView->show();
+    mModelMessageList->setStringList(mMessageList);
+
 
 }
 

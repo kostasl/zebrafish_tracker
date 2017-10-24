@@ -61,7 +61,9 @@ unsigned int trackImageSequencefiles(MainWindow& window_main);
 unsigned int trackVideofiles(MainWindow& window_main,QString outputFile);
 /// \fn processFrame - Process blob morphology, Extract features tracks
 ///
-void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHead);
+//void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHead);
+void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead);
+void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,cv::Mat& outframe);
 bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 
 ///
@@ -73,7 +75,6 @@ bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 /// \param Mask with Fish oNly FG
 /// \param main inner and extrernal fish Contours for each fish
 /// \param 1 level hierarchy of contours (outer inner)
-//void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
 void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
 ///
 /// \brief UpdateFishModels Use Tracks  to update persistent fishModels
@@ -93,22 +94,12 @@ int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb:
 int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs);
 int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs);
 
-//int saveTracks(cvb::CvTracks& tracks,QString filename,std::string frameNumber);
-//int saveTracks(fishModels& vfish,QString filename,std::string frameNumber);
-//int saveTracks(fishModels& vfish,QString filenameCSV,QString filenameVid,QString frameNumber);
 int saveTracks(fishModels& vfish,QFile& data,QString frameNumber);
 bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data);
 void closeDataFile(QFile& data);
 
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
 int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
-
-void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback
-void CallBackHistFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback For the Histogram Window
-/**
-* @function thresh_callback
-*/
-void thresh_callback(int, void* );
 
 ///
 /// \brief findContourClosestToPoint Looks for the inner contour in a 2 level hierarchy that matches the point coords
@@ -208,6 +199,13 @@ template < typename T > std::string to_string( const T& n )
 
 
 
+
+///
+/// \brief opencv event Callback functions
+///
+void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback
+void CallBackHistFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback For the Histogram Window
+void thresh_callback(int, void* );
 
 
 

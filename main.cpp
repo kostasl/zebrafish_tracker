@@ -541,7 +541,7 @@ unsigned int trackImageSequencefiles(MainWindow& window_main)
        frame.copyTo(frameMasked,fgMask);
 
 
-       processFrame(frame,fgMask,nFrame,outframe,outframeHead);
+       processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
        cv::imshow(gstrwinName + " FishOnly",frameMasked);
 
        /// Display Output //
@@ -642,7 +642,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
 } ///trackImageSequencefile
 
 
-void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
+void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
 {
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
@@ -738,10 +738,31 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& o
     //Save to Disk
 
     ///
+    drawFrameText(window_main,nFrame,nLarva,nFood,outframe);
 
-    ///TEXT INFO Put Info TextOn Frame
+
+
+} //End Of Process Frame
+
+///
+/// \brief drawFrameText  ///TEXT INFO Put Info TextOn Frame
+/// \param inFrame
+/// \param frameNumberString
+/// \param nLarva
+/// \param nFood
+/// \param outFrame
+///
+void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,cv::Mat& outframe)
+{
+
     //Frame Number
     std::stringstream ss;
+
+    QString frameNumberString;
+    frameNumberString = QString::number(nFrame);
+    char buff[100];
+    static double vm, rss;
+
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
                CV_RGB(10,10,10), -1);
     cv::putText(outframe, frameNumberString.toStdString(),  cv::Point(15, 15),
@@ -755,9 +776,6 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& o
            trackFnt, trackFntScale ,  CV_RGB(250,250,0));
 
 
-    char buff[100];
-    static double vm, rss;
-
     //Report Time
     std::sprintf(buff,"t: %0.2f",gTimer.elapsed()/(1000.0*60.0) );
     //strLearningRate << "dL:" << (double)(dLearningRate);
@@ -769,19 +787,30 @@ void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& o
     ///Report Status  + Memory Usage
     if ((nFrame%300) == 0 || nFrame == 1)
     {
+        //Report Progress
+        ss.str("");
         std::clog << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0 << std::endl;
         //THats In KiB units /So 1Million is A Gigabyte
         std::clog << "#Fish " << nLarva << " #Food Blobs:" << nFood << std::endl;
 
+        ss << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0;
+        window_main.LogEvent(QString::fromStdString(ss.str()));
+
+        //Show Memory Consumption
+        ss.str("");
         process_mem_usage(vm, rss);
         std::clog << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
+        ss  << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
+        window_main.LogEvent(QString::fromStdString(ss.str()));
+
     }
+    ///Show Memory On Image Frame
     std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
     cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
     cv::putText(outframe, buff, cv::Point(10, 505),
             trackFnt,trackFntScale , CV_RGB(10,250,0));
+}
 
-} //End Of Process Frame
 
 
 ///
@@ -962,7 +991,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         }
 
 
-        processFrame(frame,fgMask,nFrame,outframe,outframeHead);
+        processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
 
         window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
         window_main.showInsetimg(outframeHead);

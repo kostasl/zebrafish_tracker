@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1009</width>
-    <height>758</height>
+    <width>742</width>
+    <height>846</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,8 +17,8 @@
    <widget class="QDial" name="EyeSegThreshold">
     <property name="geometry">
      <rect>
-      <x>650</x>
-      <y>100</y>
+      <x>660</x>
+      <y>140</y>
       <width>50</width>
       <height>61</height>
      </rect>
@@ -82,10 +82,10 @@
    <widget class="QListView" name="listView">
     <property name="geometry">
      <rect>
-      <x>730</x>
-      <y>0</y>
-      <width>157</width>
-      <height>645</height>
+      <x>0</x>
+      <y>610</y>
+      <width>641</width>
+      <height>161</height>
      </rect>
     </property>
    </widget>
@@ -123,8 +123,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1009</width>
-     <height>22</height>
+     <width>742</width>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -132,6 +132,8 @@
      <string>File</string>
     </property>
     <addaction name="actionopen_video_file"/>
+    <addaction name="actionSave_frame"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuTrack">
     <property name="title">
@@ -143,6 +145,7 @@
     <addaction name="actionRest_Spine"/>
     <addaction name="actionAdd_fish_to_Template"/>
     <addaction name="actionRemove_last_Template_D"/>
+    <addaction name="actionShow_Eye_Plot"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTrack"/>
@@ -150,7 +153,7 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionopen_video_file">
    <property name="text">
-    <string>add video file</string>
+    <string>Add video file</string>
    </property>
   </action>
   <action name="actionPaus_tracking_p">
@@ -176,6 +179,21 @@
   <action name="actionRemove_last_Template_D">
    <property name="text">
     <string>Remove last Template - D</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionSave_frame">
+   <property name="text">
+    <string>Save frame</string>
+   </property>
+  </action>
+  <action name="actionShow_Eye_Plot">
+   <property name="text">
+    <string>Show Eye Plot</string>
    </property>
   </action>
  </widget>

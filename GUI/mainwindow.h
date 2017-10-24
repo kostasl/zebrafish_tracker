@@ -9,6 +9,7 @@
 #include <QPixmap>
 #include <QEvent>
 #include <QKeyEvent>
+#include <QStringListModel>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
@@ -31,9 +32,10 @@ public:
     void showCVimg(cv::Mat& img);
     void showInsetimg(cv::Mat& img); //Used to Show Small IMage Next to main scene
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
-    //void saveScreenShot(QString stroutDirCSV);
+
     void saveScreenShot(QString stroutDirCSV,QString vidFilename);
     void tickProgress();
+    void LogEvent(QString strMessage);
     unsigned int nFrame = 0;
     ~MainWindow();
 
@@ -46,6 +48,8 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent );
 
+    QStringListModel*                      mModelMessageList;
+    QStringList                           mMessageList;
     QImage qimg; //SCene Image Updated in ShowCV Image
     QImage qimgHead; //SCene Image Updated in ShowCV Image
     cv::Mat frameScene; //CvMat Last Frame Drawn
@@ -65,6 +69,9 @@ private:
     QGraphicsPixmapItem*                            mImageInset;
 
     cv::Mat*                                        mpLastCVImg;
+
+    ///
+
 
 
 };
