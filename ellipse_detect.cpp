@@ -694,21 +694,6 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameP
     img_colour.copyTo(outHeadFrameProc);
 
 
-
-
-    //cv::imshow("Ellipse fit",img_colour);
-    //std::cout << "Done"  << std::endl;
-
-
-    //imgDebug.release();
-    //imgDebug.deallocate();
-
-    //imgEdge_local.deallocate();
-    //img_colour.deallocate();
-    //img_contour.deallocate();
-    //imgIn_thres.deallocate();
-    //imgEdge_dbg.deallocate();
-
     contours_canny.clear();
     contours_canny.shrink_to_fit();
 

@@ -100,7 +100,7 @@ int gMaxFitIterations     = 15; //Constant For Max Iteration to Fit Tail Spine t
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.89;
+double gTemplateMatchThreshold  = 0.93; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -733,8 +733,8 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
 
     } //If Tracking
 
-    fishbodycontours.clear();
-    fishbodyhierarchy.clear();
+    //fishbodycontours.clear();
+    //fishbodyhierarchy.clear();
     //Save to Disk
 
     ///
@@ -1473,7 +1473,7 @@ int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     //usr/local/lib/libopencv_features2d.so.3.1(_ZNK2cv22SimpleBlobDetectorImpl9findBlobsERKNS_11_InputArrayES3_RSt6vectorINS0_6CenterESaIS5_EE+0x68d)[0x7ffff77a1c4d]
     //usr/local/lib/libopencv_features2d.so.3.1(_ZN2cv22SimpleBlobDetectorImpl6detectERKNS_11_InputArrayERSt6vectorINS_8KeyPointESaIS5_EES3_+0x607)[0x7ffff77a0537]
 
-    detector->detect( frame, keypoints); //frameMask
+    detector->detect( maskimg, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
@@ -2525,7 +2525,10 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadProcessed);
 
               if (ret < 2)
+              {
                   std::clog << "Eye Detection Error - Check Threshold;" << std::endl;
+                  return; //Stop Here
+              }
               //  show_histogram("HeadHist",imgFishHead);
 
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
@@ -2587,16 +2590,6 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
               //Can Use maskedfishFeature_blur
               fish->fitSpineToIntensity(maskedfishFeature_blur);
               fish->drawSpine(fullImgOut);
-//              for (int j=0; j<fish->spline.size();j++)
-//              {
-//                  cv::circle(fullImgOut,gioSpline[j],2,TRACKER_COLOURMAP[j],2);
-//                  if (j<(gioSpline.size()-1))
-//                      cv::line(fullImgOut,gioSpline[j],gioSpline[j+1],TRACKER_COLOURMAP[0],1);
-//              }
-
-
-
-
 
 
            } //If Fish Img Bound Is With Picture Frame
