@@ -992,7 +992,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
         processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
-
+        cv::imshow("FishFrame",frame);
         window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
         window_main.showInsetimg(outframeHead);
 
@@ -1383,7 +1383,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Set up the detector with default parameters.
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
-    detector->detect( frame, keypoints); //frameMask
+    detector->detect( maskimg, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required

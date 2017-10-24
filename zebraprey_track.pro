@@ -1,4 +1,5 @@
 #Good to have compiled opencv with qt support so the window can autoresize.
+##Suggestion Is though that for Qt5 do not Compile With With_QT=ON, as this will link to Qt4
 
 TEMPLATE = app
 
@@ -25,7 +26,8 @@ SOURCES += main.cpp \
 
 RESOURCES += qml.qrc
 #INCLUDEPATH += /usr/include/opencv
-INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.1.0/include
+#INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.1.0/include
+INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.0/include
 #INCLUDEPATH += /usr/include/cvblob
 #INCLUDEPATH += ~/opencv/
 
@@ -37,7 +39,7 @@ INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.1.0/include
 ##Figure out VERSION : pkg-config --modversion opencv
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
 
-
+LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
 LIBS += `pkg-config opencv --libs`
 #LIBS += -L/usr/local/lib -lcvblob
 #LIBS += -L/home/kostasl/workspace -lcvblob
@@ -46,9 +48,10 @@ QML_IMPORT_PATH =
 ##
 ##Assume Libs are copied with the package into
 QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
-QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.8/gcc_64/lib/
+QMAKE_LFLAGS += -Wl,--rpath=/opt/Qt/5.9/5.9/gcc_64/lib/
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/opencv/build/lib/
-QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.1.0/build
+#QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.1.0/build
+QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.0/build-Dbg
 QMAKE_LFLAGS_RPATH=
 ###Using command : cp `ldd larvatrack | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` /libs
 
