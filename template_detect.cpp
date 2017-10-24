@@ -63,6 +63,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 ///
 int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol)
 {
+  const int iIdxAngleMargin = 5; //Offset Of Angle To begin Before LastKnownGood Angle
   int matchIdx;
   int idx = 0; //Current Angle Index Being tested in the loop
 
@@ -83,8 +84,8 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
   cv::Rect templRegion(cv::Point(0,0),ptbottomRight);
 
   // Start from Angle Region as set from last search
-  if (startCol > 3)
-      startCol -=3; //Move to Template 3Angle Steps anticlockwise
+  if (startCol > iIdxAngleMargin)
+      startCol -=iIdxAngleMargin; //Move to Template 3Angle Steps anticlockwise
 
   templRegion.x = templSz.height*startCol;
   ///Run Through All rotated Templates - optional starting row for optimization

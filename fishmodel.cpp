@@ -352,6 +352,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->spline[0].y       = bcentre.y;
     //this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
 
+
     assert(!std::isnan(this->bearingRads));
 
 }

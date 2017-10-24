@@ -714,16 +714,14 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
         {
             fishModel* pfish = ft->second;
             assert(pfish);
-            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH , trackFnt );
+            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, trackFnt );
         }
 
-        ///Keep A Global List of all tracks?
-        //Combine Lists into Tracks before rendering
-//        tracks.clear();
-        //tracks.insert(foodtracks.begin(),foodtracks.end() );
-        //saveTracks(vfishmodels,trkoutFileCSV,frameNumberString);
+        ///\todo Keep A Global List of all tracks?
 
-        detectZfishFeatures(frame,outframe,frameHead,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+        /// Isolate Head, Get Eye models, and Get and draw Spine model
+        if (nLarva > 0)
+            detectZfishFeatures(frame,outframe,frameHead,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -844,9 +842,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& fgMask, unsigned int nFrame)
     //pGMG->apply(frame,fgMaskGMG,dLearningRate);
 
 
-
-        //OPENCV 3 MORPHOLOGICAL
-    //get the frame number and write it on the current frame
+     //OPENCV 3 MORPHOLOGICAL
     //erode to get rid to food marks
     //cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),3);
     //Do Close : erode(dilate())
@@ -856,47 +852,6 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& fgMask, unsigned int nFrame)
     //cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),2);
 
 
-//    //Put Info TextOn Frame
-//    //Frame Number
-//    std::stringstream ss;
-//    cv::rectangle(frame, cv::Point(10, 2), cv::Point(100,20),
-//              cv::Scalar(255,255,255), -1);
-//    ss << nFrame;
-//    std::string frameNumberString = ss.str();
-//    cv::putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
-//            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
-//    //Count on Original Frame
-//    std::stringstream strCount;
-//    strCount << "N:" << (nLarva);
-//    cv::rectangle(frame, cv::Point(10, 25), cv::Point(100,45), cv::Scalar(255,255,255), -1);
-//    cv::putText(frame, strCount.str(), cv::Point(15, 38),
-//            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
-//    char buff[100];
-//    //Learning Rate
-//    //std::stringstream strLearningRate;
-//    std::sprintf(buff,"dL: %0.4f",dLearningRate);
-//    //strLearningRate << "dL:" << (double)(dLearningRate);
-//    cv::rectangle(frame, cv::Point(10, 50), cv::Point(100,70), cv::Scalar(255,255,255), -1);
-//    cv::putText(frame, buff, cv::Point(15, 63),
-//            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
-
-//    //Time Rate - conv from ms to minutes //TODO: Replace With actual framerate
-//    std::sprintf(buff,"t: %0.2fs",nFrame/55.0 );
-//    //strTimeElapsed << "" <<  << " m";
-//    cv::rectangle(frame, cv::Point(10, 75), cv::Point(100,95), cv::Scalar(255,255,255), -1);
-//    cv::putText(frame, buff, cv::Point(15, 88),
-//            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
-
-//    //Count Fg Pixels // Ratio
-//    std::stringstream strFGPxRatio;
-//    dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
-//    strFGPxRatio << "Dpx:" <<  dblRatioPxChanged;
-//    cv::rectangle(frame, cv::Point(10, 100), cv::Point(100,120), cv::Scalar(255,255,255), -1);
-//    cv::putText(frame, strFGPxRatio.str(), cv::Point(15, 113),
-//            cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 
     return ret; //If False then tell calling function to stop updating
 }
@@ -1070,14 +1025,15 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
         ///
         /// Check If Track Centre Point Contains An image that matches a fish template
         ///
-
         cv::Point centroid = fishblob->pt;
         cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-40)), max(0,min(maskedImg_gray.rows,centroid.y-40)));
         cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+40)), max(0,min(maskedImg_gray.rows,centroid.y+40)));
 
+        // Look for Fish Template Within The Blob Region //
         cv::Rect rectFish(pBound1,pBound2);
-
+        // Debug //
         cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
+
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
         int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
@@ -1092,19 +1048,27 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
         for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
         {
              pfish = ft->second;
-
+             ///Does this Blob Belong To A Known Fish Model?
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
-             if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 && maxMatchScore >= gTemplateMatchThreshold )
+             if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 )
              {
-                 //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
-                bModelFound = true;
-                ///Update Model State
-                /// But not While Uses Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
-                if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
-                    pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
-
-
-                //Add To Priority Q So we can Rank
+                 //If Yes then assign the fish with the overlapping blob the template Match Score
+                 pfish->templateScore = maxMatchScore;
+                 if ( maxMatchScore >= gTemplateMatchThreshold)
+                 {
+                     //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
+                    bModelFound = true;
+                    ///Update Model State
+                    // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
+                    if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
+                        pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
+                    else
+                    { //Rotate Template Box - Since this cannot be done Manually
+                        pfish->bearingAngle   = bestAngle;
+                        pfish->bearingRads   =  bestAngle*CV_PI/180.0;
+                    }
+                 }
+                //Add To Priority Q So we can Rank - Only If Blob Ovelaps ?
                 qfishrank.push(pfish);
              }
 
@@ -1114,7 +1078,6 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
        //If the Blob Has no Model fish, and the template Match says it looks like a fish - then create new model
         if (!bModelFound && maxMatchScore >= gTemplateMatchThreshold ) //Model Does not exist for track - its a new track
         {
-
             //Make new fish Model
             //fishModel* fish= new fishModel(track,fishblob);
            fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
@@ -1122,29 +1085,28 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
            fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
-           qfishrank.push(fish);
-
-           std::cout << "New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << std::endl;
-
+           qfishrank.push(fish); //Add To Priority Queue
+           std::clog << "New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << std::endl;
         }
-
+//        //Report No Fish
+//        if (!bModelFound && maxMatchScore < gTemplateMatchThreshold )
+//            std::clog << nFrame << "# No Fish Found" << std::endl;
 
     }
 
-    ///\brief Make A priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
-    ///     ///Keep Only the Fish with The Max Template Score - Can Add them to priority Queue And just keep top one
-
+    ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
     fishModel* pfishBest = 0;
     double maxTemplateScore = 0.0;
     if (qfishrank.size() > 0)
     {
-        pfishBest = qfishrank.top();
+        pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
+        //qfishrank.pop();//Remove From Priority Queue Rank
         maxTemplateScore = pfishBest->templateScore;
     }
 
-    //Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
+    ///Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
     ft = vfishmodels.begin();
-    while(ft != vfishmodels.end() && vfishmodels.size() > 1)
+    while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
     {
         pfish = ft->second;
 
@@ -1166,7 +1128,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
 
 
-}
+} //UpdateFishModels //
 
 
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
@@ -2334,13 +2296,13 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
 
     // Memory Crash
 
-    std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
+    //std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
 
-    std::vector<std::vector<cv::Point> > contours_laplace;
-    contours_laplace.reserve(contours_body.size());
-    std::vector<cv::RotatedRect> rectfishFeatures; //Fitted Ellipsoids
+    //std::vector<std::vector<cv::Point> > contours_laplace;
+    //contours_laplace.reserve(contours_body.size());
+    //std::vector<cv::RotatedRect> rectfishFeatures; //Fitted Ellipsoids
 
-    std::vector<std::vector<cv::Point> > contours_canny;
+    //std::vector<std::vector<cv::Point> > contours_canny;
 
 
     ////// Make Debug Frames ///
@@ -2404,12 +2366,14 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
           //fish->templateScore  = maxMatchScore;
 
           //0 Degrees Is along the Y Axis Looking Upwards
-          int bestAngleinDeg = fish->bearingAngle;
+
           //Set to Global Max Point
          // cv::Point top_left = pBound1+gptmaxLoc;
 
-          ///Write Angle / Show Box
+          ////////// Write Angle / Show Box ////////
+          /// \brief fishRotAnteriorBox
 
+          int bestAngleinDeg = fish->bearingAngle;
           cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gLastfishimg_template.cols,gLastfishimg_template.rows),bestAngleinDeg);
           /// Save Anterior Bound
           fish->bodyRotBound = fishRotAnteriorBox;
@@ -2424,6 +2388,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
           fishRotAnteriorBox.points(boundBoxPnts);
           for (int j=0; j<4;j++) //Rectangle Body
               cv::line(fullImgOut,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
+
+          ///////////////////////////////////
 
           //Locate Eyes In A box
           double lengthLine = 9;
@@ -2527,7 +2493,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
               if (ret < 2)
               {
                   std::clog << "Eye Detection Error - Check Threshold;" << std::endl;
-                  return; //Stop Here
+                  return; //Stop Here - Produced Stable Runs
               }
               //  show_histogram("HeadHist",imgFishHead);
 
@@ -2577,13 +2543,13 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
             }
 
 
-              /// SPINE Fitting And Drawing
+              /// SPINE Fitting And Drawing ///
               if (contours_body.size() > 0 && bFitSpineToTail)
               {
                   //Look for Top Level Contour
                 int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                 fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
-                fish->drawSpine(fullImgOut);
+
               }
 
 
@@ -2591,7 +2557,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
               fish->fitSpineToIntensity(maskedfishFeature_blur);
               fish->drawSpine(fullImgOut);
 
-
+              /// Fit Spine ////
            } //If Fish Img Bound Is With Picture Frame
           ///
 
@@ -2600,31 +2566,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
 
     } //For eAch Fish Model
 
-///////////////////
-    ///Iterate FISH list - Check If Contour belongs to any fish Otherwise ignore
-    for (cvb::CvTracks::const_iterator it = fishtracks.begin(); it!=fishtracks.end(); ++it)
-    {
-        //Get the  fishmodel associated with this Track
-        cvb::CvID trackId = it->first;
-        cvb::CvTrack* track = it->second;
 
-     } ///  Track Loop ends here - For Each FishBlob
-      ///
         bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
-
-
-//     DEBUG show all contours on Laplace
-
-//        for( size_t i = 0; i< contours_watershed.size(); i++ )
-//        {
-//             cv::drawContours( frameDebugD, contours_watershed, (int)i, CV_RGB(0,120,250), 1,8,hierarchy_watershed);
-//        }
-
-        //cv::drawContours( frameDebugC, contours_watershed, (int)idxLEyeContourW, CV_RGB(220,250,0), 1,8,hierarchy_watershed);
-        //cv::drawContours( frameDebugC, contours_watershed, (int)idxREyeContourW, CV_RGB(220,0,0), 1,8,hierarchy_watershed);
-
-        //cv::drawContours( frameDebugC, contours_laplace, idxREyeContour, CV_RGB(60,20,200), 1,8,hierarchy_laplace);
-        //cv::drawContours( frameDebugC, contours_laplace, idxLEyeContour, CV_RGB(15,60,210), 1,8,hierarchy_laplace);
 
 
 
@@ -2645,15 +2588,9 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
 
     //cv::imshow("Debug A",frameDebugA);
     //cv::imshow("Debug B",frameDebugB);
-    cv::imshow("Debug C",frameDebugC);
+    //cv::imshow("Debug C",frameDebugC);
     //cv::imshow("Debug D",frameDebugD);
 
-    //cv::imshow("Threshold H",threshold_output_H);
-
-
-    //Free Mem
-    rectFeatures.clear();
-    rectfishFeatures.clear();
 }
 
 
