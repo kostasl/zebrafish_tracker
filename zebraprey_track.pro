@@ -39,7 +39,7 @@ INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.0/include
 ##Figure out VERSION : pkg-config --modversion opencv
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
 
-LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
+LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build/lib
 LIBS += `pkg-config opencv --libs`
 #LIBS += -L/usr/local/lib -lcvblob
 #LIBS += -L/home/kostasl/workspace -lcvblob
@@ -51,7 +51,7 @@ QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
 QMAKE_LFLAGS += -Wl,--rpath=/opt/Qt/5.9/5.9/gcc_64/lib/
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/opencv/build/lib/
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.1.0/build
-QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.0/build-Dbg
+QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.0/build
 QMAKE_LFLAGS_RPATH=
 ###Using command : cp `ldd larvatrack | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` /libs
 
