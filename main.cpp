@@ -1000,7 +1000,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
     {
         pfish = ft->second;
 
-        if (pfishBest->ID != pfish->ID )
+        if (pfishBest != pfish )
         {
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
             //OtherWise Delete The model?
