@@ -568,7 +568,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
     const size_t AP_N= this->c_spinePoints;
     const int step_size = this->c_spineSegL;
 
-    const int c_tailscanAngle = 13;
+    const int c_tailscanAngle = 10;
 
 
     uint loc,pxValMax;
@@ -607,6 +607,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
             if(loc>pxValMax){
                 spline[k].x     = ellipse_pts[idx].x;
                 spline[k].y     = ellipse_pts[idx].y;
+                ///Remember to add the 90 deg shift
                 spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; //ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
                 spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
                 pxValMax=loc; //Save as New Maximum Point
