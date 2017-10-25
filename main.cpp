@@ -1007,7 +1007,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
             //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
 
-            std::cout << nFrame << "#Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore " when Best is :"<< maxTemplateScore << std::endl;
+            std::cout << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
             ft = vfishmodels.erase(ft);
             delete(pfish);
             continue;
