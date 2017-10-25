@@ -69,7 +69,7 @@ const double dLearningRateNominal       = 0.000;
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 550; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 500; //Min area above which to Filter The fish blobs
 
 //BG History
 float gfVidfps              = 298;
@@ -976,7 +976,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
            qfishrank.push(fish); //Add To Priority Queue
-           std::clog << "New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << std::endl;
+           std::clog << nFrame << "# New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << std::endl;
         }
 //        //Report No Fish
         if (!bModelFound && maxMatchScore < gTemplateMatchThreshold )
@@ -1000,14 +1000,14 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
     {
         pfish = ft->second;
 
-        if (pfishBest != pfish )
+        if (pfishBest->ID != pfish->ID )
         {
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
             //OtherWise Delete The model?
             //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
 
-            std::cout << "Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << std::endl;
+            std::cout << nFrame << "#Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore " when Best is :"<< maxTemplateScore << std::endl;
             ft = vfishmodels.erase(ft);
             delete(pfish);
             continue;
