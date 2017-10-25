@@ -592,7 +592,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
 
         //Get Angl
         //angle = (atan2(tgt.y,tgt.x) +_CV_PI)/CV_PI*180.0; //Find towards Next Point Angle In Degrees
-        angle = spline[k-1].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing
+        angle = spline[k-1].angleRad/CV_PI*180.0-90.0; //Get Angle In Degrees for Arc Drawing
         //angle = spline[k].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing Around THe point this Spine Was looking At initially
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
@@ -607,7 +607,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
             if(loc>pxValMax){
                 spline[k].x     = ellipse_pts[idx].x;
                 spline[k].y     = ellipse_pts[idx].y;
-                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x); //ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; //ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
                 spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
                 pxValMax=loc; //Save as New Maximum Point
             }
