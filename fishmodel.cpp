@@ -106,7 +106,7 @@ void fishModel::resetSpine()
         splineKnotf sp;
         //1st Spine Is in Opposite Direction of Movement and We align 0 degrees to be upwards (vertical axis)
         //if (this->bearingRads > CV_PI)
-            sp.angleRad    = (this->bearingRads)-CV_PI-CV_PI/2.0; //CV_PI/2 //Spine Looks In Opposite Direcyion
+            sp.angleRad    = (this->bearingRads)-CV_PI; // -CV_PI/2.0 //Spine Looks In Opposite Direcyion
         //else
 //            sp.angleRad    = (this->bearingRads)+CV_PI/2.0; //CV_PI/2 //Spine Looks In Opposite Direcyion
 
@@ -375,7 +375,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     //Run Until Convergence Error is below threshold - Or Change is too small
 
-
+    assert(contours_body.size() >= idxOuterContour);
     ///Compute Error terms for all data points/obtain local quadratic approx of fsd
     //For each contour Point
     std::vector<cv::Point> contour = contours_body[idxOuterContour];
@@ -478,16 +478,17 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
         }//Loop Through All Contour (Data points)
 
-        ///Add Gradient Of Intensity - GradNow - GradVs - Spine Point Struct indexes Range from 0 To SpinePointCount
-        for (int k=2;k < cntParam; k++)
-        {
+        //Now Using Intensity Specific Algorithm
+//        ///Add Gradient Of Intensity - GradNow - GradVs - Spine Point Struct indexes Range from 0 To SpinePointCount
+//        for (int k=2;k < cntParam; k++)
+//        {
 
-            float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y));
-            float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k-2].x,dsSpline[k-2].y));
-            double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
-            //Go Towards Higher INtensity Pixels
-            dGradi[k]           += (pxi1 - pxi0)/dq;
-        }
+//            float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y));
+//            float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k-2].x,dsSpline[k-2].y));
+//            double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
+//            //Go Towards Higher INtensity Pixels
+//            dGradi[k]           += (pxi1 - pxi0)/dq;
+//        }
 
         std::vector<double> cparams(c_spineParamCnt);
         getSplineParams(tmpspline,cparams);
@@ -567,7 +568,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
     const size_t AP_N= this->c_spinePoints;
     const int step_size = this->c_spineSegL;
 
-    const int c_tailscanAngle = 23;
+    const int c_tailscanAngle = 13;
 
 
     uint loc,pxValMax;
@@ -592,7 +593,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
         //Get Angl
         //angle = (atan2(tgt.y,tgt.x) +_CV_PI)/CV_PI*180.0; //Find towards Next Point Angle In Degrees
         angle = spline[k-1].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing
-
+        //angle = spline[k].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing Around THe point this Spine Was looking At initially
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
 

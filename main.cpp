@@ -69,7 +69,7 @@ const double dLearningRateNominal       = 0.000;
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 200; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 550; //Min area above which to Filter The fish blobs
 
 //BG History
 float gfVidfps              = 298;
@@ -95,12 +95,12 @@ const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - 
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize        = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength = 15;
-int gMaxFitIterations     = 15; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
+int gMaxFitIterations     = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.93; //If not higher than 0.9 The fish body can be matched at extremeties
+double gTemplateMatchThreshold  = 0.915; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -184,7 +184,7 @@ bool bEyesDetected = false; ///Flip True to save eye shape feature for future de
 bool bStoreThisTemplate = false;
 bool bDraggingTemplateCentre = false;
 bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
-bool bFitSpineToTail = false; // Runs The Contour And Tail Fitting Spine Optimization Algorith
+bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -982,7 +982,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
         if (!bModelFound && maxMatchScore < gTemplateMatchThreshold )
             std::clog << nFrame << "# Tscore:" << maxMatchScore << " No Fish Found " << std::endl;
 
-    }
+    } //For Each Fish Blob
 
     ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
     fishModel* pfishBest = 0;
@@ -1220,14 +1220,15 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
     // Filter by Area.
     params.filterByArea = true;
-    params.minArea = thresh_fishblobarea;
-    params.maxArea = 10*thresh_fishblobarea;
+    params.minArea = thresh_fishblobarea/2;
+    params.maxArea = 3*thresh_fishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
+    /// WARNING Enabling filterByInertia Causes A Crash - (in Close.s-> thread)
     params.filterByInertia      = false;
-    params.maxInertiaRatio      = 0.8;
-    params.minInertiaRatio      = 0.01;
+    params.maxInertiaRatio      = 0.6;
+    params.minInertiaRatio      = 0.1;
 
 
     //params.filterByInertia = true;
@@ -2205,7 +2206,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
     maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),1,1);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),2,2);
 
 
 //    if (bUseEllipseEdgeFittingMethod)
@@ -2270,6 +2271,18 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
 
           ///////////////////////////////////
 
+
+          /// SPINE Fitting And Drawing ///
+          if (contours_body.size() > 0 && bFitSpineToTail)
+          {
+              //Look for Top Level Contour
+            int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+            fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+            fish->fitSpineToIntensity(maskedfishFeature_blur);
+            fish->drawSpine(fullImgOut);
+          }
+         /// END OF Fit Spine ////
+
           //Locate Eyes In A box
           double lengthLine = 9;
           cv::Point2f ptEyeMid;
@@ -2323,8 +2336,6 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
               ///\note The centre of the Bounding Box could also do
 
 
-
-
               //cv::Point ptRotCenter = cv::Point(szFishAnteriorNorm.width/2,szFishAnteriorNorm.height/2);
               //cv::Point ptRotCenter = cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2);
               ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
@@ -2341,8 +2352,6 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
 
 //if (bUseEllipseEdgeFittingMethod)
 //              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
-
-
 
 
               /// Store Norm Image as Template - If Flag Is set
@@ -2372,7 +2381,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
               if (ret < 2)
               {
                   std::clog << "Eye Detection Error - Check Threshold;" << std::endl;
-                  return; //Stop Here - Produced Stable Runs
+                  //return; //Stop Here - Produced Stable Runs
               }
               //  show_histogram("HeadHist",imgFishHead);
 
@@ -2422,21 +2431,6 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
             }
 
 
-              /// SPINE Fitting And Drawing ///
-              if (contours_body.size() > 0 && bFitSpineToTail)
-              {
-                  //Look for Top Level Contour
-                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
-
-              }
-
-
-              //Can Use maskedfishFeature_blur
-              fish->fitSpineToIntensity(maskedfishFeature_blur);
-              fish->drawSpine(fullImgOut);
-
-              /// Fit Spine ////
            } //If Fish Img Bound Is With Picture Frame
           ///
 
