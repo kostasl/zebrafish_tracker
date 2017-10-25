@@ -139,7 +139,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
       }
    }else { //Nothing Found YEt-- Proceed To Next Template variation
       matchIdx = 0;
-      matchScore = 0.0;
+      matchScore = maxGVal;
       locations_tl = cv::Point(0,0);
       //Didnt Find Template
       startRow = 0;//Start From Top Of All Templates On Next Search

@@ -69,17 +69,17 @@ const double dLearningRateNominal       = 0.000;
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 220; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 200; //Min area above which to Filter The fish blobs
 
 //BG History
-float gfVidfps              = 300;
+float gfVidfps              = 298;
 const int MOGhistory        = 10;//gfVidfps*2;
 //Processing Loop delay
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
 ///Segmentation Params
-int g_Segthresh             = 30; //Image Threshold to segment the FIsh/ Body and Tail
+int g_Segthresh             = 43; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -431,7 +431,6 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
        istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame);
 
 
-
         if (istartFrame == 0)
         {
             std::cerr << "Could not load last video - Exiting loop." <<std::endl;
@@ -441,125 +440,6 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
     return istartFrame;
 }
 
-
-unsigned int trackImageSequencefiles(MainWindow& window_main)
-{
-
-    cv::Mat frame,frameMasked,fgMask,outframe,outframeHead;
-
-    QString inVideoDirname = QFileDialog::getExistingDirectory(&window_main,"Select folder with video images to track", gstroutDirCSV);
-
-    //unsigned int istartFrame = 0;
-    unsigned int nFrame = 0;
-
-    QStringList strImageNames; //Save Passed Files Here
-
-    qDebug() << "Open File Sequence in : " << inVideoDirname;
-
-        ///* Obtain BG Model LOOP//////////////
-        //QDirIterator itBGimgDir(inVideoDirname, QDirIterator::Subdirectories);
-        QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
-        QStringList imgFiles = QDir(inVideoDirname).entryList(fileFilters,QDir::Files,QDir::Name);
-        inVideoDirname.append('/');
-        QListIterator<QString> itfile (imgFiles);
-        while (itfile.hasNext() && !bExiting)
-        {
-          QString filename = itfile.next();
-          qDebug() << filename;
-          std::string filepath = filename.prepend(inVideoDirname ).toStdString();
-          //std::cout << filepath << std::endl;
-
-          frame  = cv::imread(filepath , CV_LOAD_IMAGE_COLOR);
-          //Contrast Brightness
-          //frame.convertTo(frame, -1, 1, 0); //increase the contrast (double)
-
-
-          nFrame++;
-          window_main.nFrame = nFrame;
-          if (!updateBGFrame(frame,fgMask,nFrame)) //Stop when BG learning says so
-            break;
-
-          /// Display Output //
-          frameMasked = cv::Mat::zeros(frameMasked.rows, frameMasked.cols, CV_8U);
-          frame.copyTo(frameMasked,fgMask);
-
-          ///Display Output
-          cv::imshow(gstrwinName,frameMasked);
-          //cv::displayOverlay(gstrwinName,"Press 'e' when features Have been detected" , 10000 );
-
-          window_main.showVideoFrame(frame,nFrame); //Show On QT Window
-          //cv::imshow(gstrwinName + " FG Mask", fgMask);
-          //Check For input Control
-          //keyboard = cv::waitKey( cFrameDelayms );
-          checkPauseRun(&window_main,keyboard,nFrame);
-        }
-
-
-    ///\brief LOOP Tracking Process images with Obtained BG Model - Now Start over images afresh
-    nFrame = 0;
-    window_main.nFrame = nFrame;
-
-    //Show Video list to process
-    //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
-    std::cout << "Starting Tracking  processing" << std::endl;
-
-    itfile.toFront();
-    while (itfile.hasNext() && !bExiting)
-    {
-      QString filename = itfile.next();
-      qDebug() << filename;
-      std::string filepath = filename.prepend(inVideoDirname).toStdString();
-
-      //std::cout << filepath << std::endl;
-
-       frame  = cv::imread(filepath , CV_LOAD_IMAGE_COLOR);
-       if (!frame.data)
-       {
-            std::cerr << "Could not open next Image frame." << std::endl;
-            std::exit(EXIT_FAILURE);
-       }
-       //if (frame.depth() < 3) //Need To increase depth if we are to paint on this frame
-       //     cv::cvtColor( frame, frame, cv::COLOR_GRAY2RGB);
-
-       //Contrast Brightness
-       //frame.convertTo(frame, -1, 1.2, 0); //increase the contrast (double)
-       nFrame++;
-       window_main.nFrame = nFrame;
-
-              //Make Global Roi on 1st frame
-       if (nFrame == 1)
-       {
-           //Add Global Roi
-           ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
-           addROI(newROI);
-       }
-
-      // std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
-
-       /// Frame The Fish ///
-       frameMasked = cv::Mat::zeros(frame.rows, frame.cols,frame.type());
-       frame.copyTo(frameMasked,fgMask);
-
-
-       processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
-       cv::imshow(gstrwinName + " FishOnly",frameMasked);
-
-       /// Display Output //
-       window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
-
-       if (bshowMask)
-       {
-            cv::imshow(gstrwinName + " FG Mask", fgMask);
-            //cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish); //The Circle mask
-       }
-
-
-       window_main.setWindowTitle("Tracking:" + filename);
-       //keyboard = cv::waitKey( cFrameDelayms );
-       checkPauseRun(&window_main,keyboard,nFrame);
-    }
-    return nFrame;
-}///trackImageSequencefiles
 
 ///*
 ///Create FG Model Image - Since target objects can be/will be are moving from the 1st frame, we need a statistical model
@@ -696,7 +576,7 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
         std::vector<cv::KeyPoint> ptFishblobs;
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
-
+        fgFishMask.copyTo(frameDebugD);
 
         cv::Mat maskedImg_gray,maskedfishImg_gray;
         /// Convert image to gray and blur it
@@ -872,6 +752,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     bPaused =false; //Start Paused
 
 
+
     QString frameNumberString;
     frameNumberString = QString::number(nFrame);
     //?Replicate FG Mask to method specific
@@ -942,9 +823,19 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             //Add Global Roi - Center - Radius
                 ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
                 addROI(newROI);
+
+                //Check If FG Mask Has Been Created - And Make A new One
+                if (fgMask.cols == 0)
+                {
+                    fgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+                    // Add Roi To Mask Otherwise Make On Based oN ROI
+                    cv::circle(fgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
+                }
+
+
+
             }
         }
-
 
         processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
 
@@ -956,6 +847,11 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             cv::imshow(gstrwinName + " FG Mask", fgMask);
             //cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish);
         }
+        // Show Debug Screens //
+        //cv::imshow("Debug A",frameDebugA);
+        //cv::imshow("Debug B",frameDebugB);
+        //cv::imshow("Debug C",frameDebugC);
+        cv::imshow("Debug D",frameDebugD);
 
 
         if (bTracking)
@@ -971,8 +867,6 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
         }
 
-        //if (nFrame%10)
-       //     keyboard = cv::waitKey( 1 );
 
         checkPauseRun(&window_main,keyboard,nFrame);
 
@@ -1015,13 +909,10 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
     cv::Point gptmaxLoc; //point Of Bestr Match
 
-     //Look through Tracks find they have a fish model attached and create if missing
+     // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
     for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
     {
-
         zftblob* fishblob = &(*it);
-
-
         ///
         /// Check If Track Centre Point Contains An image that matches a fish template
         ///
@@ -1037,7 +928,6 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
         int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
-
 
         int bestAngle =AngleIdx*gFishTemplateAngleSteps;
         cv::Point top_left = pBound1+gptmaxLoc;
@@ -1089,8 +979,8 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
            std::clog << "New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << std::endl;
         }
 //        //Report No Fish
-//        if (!bModelFound && maxMatchScore < gTemplateMatchThreshold )
-//            std::clog << nFrame << "# No Fish Found" << std::endl;
+        if (!bModelFound && maxMatchScore < gTemplateMatchThreshold )
+            std::clog << nFrame << "# Tscore:" << maxMatchScore << " No Fish Found " << std::endl;
 
     }
 
@@ -1335,7 +1225,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
-    params.filterByInertia      = true;
+    params.filterByInertia      = false;
     params.maxInertiaRatio      = 0.8;
     params.minInertiaRatio      = 0.01;
 
@@ -1428,13 +1318,8 @@ int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
     //\todo - Memory Crash Here - double free corruption
-    // ======= Backtrace: =========
-    //lib/x86_64-linux-gnu/libc.so.6(+0x777e5)[0x7ffff29bc7e5]
-    //lib/x86_64-linux-gnu/libc.so.6(+0x8037a)[0x7ffff29c537a]
-    //lib/x86_64-linux-gnu/libc.so.6(cfree+0x4c)[0x7ffff29c953c]
-    //usr/local/lib/libopencv_features2d.so.3.1(_ZNK2cv22SimpleBlobDetectorImpl9findBlobsERKNS_11_InputArrayES3_RSt6vectorINS0_6CenterESaIS5_EE+0x68d)[0x7ffff77a1c4d]
-    //usr/local/lib/libopencv_features2d.so.3.1(_ZN2cv22SimpleBlobDetectorImpl6detectERKNS_11_InputArrayERSt6vectorINS_8KeyPointESaIS5_EES3_+0x607)[0x7ffff77a0537]
 
+    assert(maskimg.depth() == CV_8U);
     detector->detect( maskimg, keypoints); //frameMask
 
 
@@ -2097,15 +1982,8 @@ void enhanceMask(cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::
 
 int max_thresh = 255;
 cv::Mat frameImg_gray;
-cv::Mat frameImg_blur;
 cv::Mat threshold_output;
-//cv::Mat threshold_output_H;
 cv::Mat threshold_output_COMB;
-
-//std::vector<std::vector<cv::Point> > fgMaskcontours;
-//std::vector<cv::Vec4i> fgMaskhierarchy;
-
-
 
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
@@ -2120,12 +1998,18 @@ cv::Mat threshold_output_COMB;
 /////////// MOG Mask Is not Used Currently //
 
 
-///// Convert image to gray and blur it
+///// Convert image to gray, Mask and blur it
 cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
-cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
+// MASK FG ROI Region //
+//frameImg_gray.copyTo(frameImg_gray,maskFGImg);
+cv::bitwise_and(frameImg_gray,maskFGImg,frameImg_gray);
+
+//cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 
 /// Detect edges using Threshold , A High And  low
-g_Segthresh = cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+cv::threshold( frameImg_gray, outFishMask, g_Segthresh*2, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+
 //cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
 //ADAPTIVE_THRESH_MEAN_C
 
@@ -2152,9 +2036,10 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 
 //Then Use ThresholdImage TO Trace More detailed Contours
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+threshold_output_COMB.copyTo(frameDebugB);
 
 
-outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
+//outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 threshold_output_COMB.copyTo(outFoodMask);
 
 //std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
@@ -2232,10 +2117,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             //Draw New One
             cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
             //Erase Fish From Food Mask
-            cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),3);
+            cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),4);
       }
-
-
 } //For Each Fish Contour
 
 
@@ -2255,8 +2138,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
     }
 
+    // Release Should is done automatically anyway
     threshold_output.release();
-
     threshold_output_COMB.release();
    // maskfishOnly.release();
     //threshold_output_H.release();
@@ -2308,11 +2191,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
     ////// Make Debug Frames ///
     cv::Mat fullImg_colour;
     fullImgIn.convertTo(fullImg_colour,CV_8UC3);
-#ifdef _ZTFDEBUG
-    fullImg_colour.copyTo(frameDebugA);
-    fullImg_colour.copyTo(frameDebugB);
-    fullImg_colour.copyTo(frameDebugD);
-#endif _ZTFDEBUG
+
     fullImg_colour.copyTo(frameDebugC);
 
 
@@ -2586,12 +2465,8 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
     //cv::imshow("Edges Canny",frameCanny);
     //cv::imshow("Edges Laplace",framelapl);
 
-    //cv::imshow("Debug A",frameDebugA);
-    //cv::imshow("Debug B",frameDebugB);
-    //cv::imshow("Debug C",frameDebugC);
-    //cv::imshow("Debug D",frameDebugD);
 
-}
+} //DetectZFeatures
 
 
 /**
@@ -2694,6 +2569,129 @@ void process_mem_usage(double& vm_usage, double& resident_set)
    vm_usage     = vsize / 1024.0;
    resident_set = rss * page_size_kb;
 }
+
+
+///////////////////// For Image Sequence /////////////
+
+
+//unsigned int trackImageSequencefiles(MainWindow& window_main)
+//{
+
+//    cv::Mat frame,frameMasked,fgMask,outframe,outframeHead;
+
+//    QString inVideoDirname = QFileDialog::getExistingDirectory(&window_main,"Select folder with video images to track", gstroutDirCSV);
+
+//    //unsigned int istartFrame = 0;
+//    unsigned int nFrame = 0;
+
+//    QStringList strImageNames; //Save Passed Files Here
+
+//    qDebug() << "Open File Sequence in : " << inVideoDirname;
+
+//        ///* Obtain BG Model LOOP//////////////
+//        //QDirIterator itBGimgDir(inVideoDirname, QDirIterator::Subdirectories);
+//        QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
+//        QStringList imgFiles = QDir(inVideoDirname).entryList(fileFilters,QDir::Files,QDir::Name);
+//        inVideoDirname.append('/');
+//        QListIterator<QString> itfile (imgFiles);
+//        while (itfile.hasNext() && !bExiting)
+//        {
+//          QString filename = itfile.next();
+//          qDebug() << filename;
+//          std::string filepath = filename.prepend(inVideoDirname ).toStdString();
+//          //std::cout << filepath << std::endl;
+
+//          frame  = cv::imread(filepath , CV_LOAD_IMAGE_COLOR);
+//          //Contrast Brightness
+//          //frame.convertTo(frame, -1, 1, 0); //increase the contrast (double)
+
+
+//          nFrame++;
+//          window_main.nFrame = nFrame;
+//          if (!updateBGFrame(frame,fgMask,nFrame)) //Stop when BG learning says so
+//            break;
+
+//          /// Display Output //
+//          frameMasked = cv::Mat::zeros(frameMasked.rows, frameMasked.cols, CV_8U);
+//          frame.copyTo(frameMasked,fgMask);
+
+//          ///Display Output
+//          cv::imshow(gstrwinName,frameMasked);
+//          //cv::displayOverlay(gstrwinName,"Press 'e' when features Have been detected" , 10000 );
+
+//          window_main.showVideoFrame(frame,nFrame); //Show On QT Window
+//          //cv::imshow(gstrwinName + " FG Mask", fgMask);
+//          //Check For input Control
+//          //keyboard = cv::waitKey( cFrameDelayms );
+//          checkPauseRun(&window_main,keyboard,nFrame);
+//        }
+
+
+//    ///\brief LOOP Tracking Process images with Obtained BG Model - Now Start over images afresh
+//    nFrame = 0;
+//    window_main.nFrame = nFrame;
+
+//    //Show Video list to process
+//    //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
+//    std::cout << "Starting Tracking  processing" << std::endl;
+
+//    itfile.toFront();
+//    while (itfile.hasNext() && !bExiting)
+//    {
+//      QString filename = itfile.next();
+//      qDebug() << filename;
+//      std::string filepath = filename.prepend(inVideoDirname).toStdString();
+
+//      //std::cout << filepath << std::endl;
+
+//       frame  = cv::imread(filepath , CV_LOAD_IMAGE_COLOR);
+//       if (!frame.data)
+//       {
+//            std::cerr << "Could not open next Image frame." << std::endl;
+//            std::exit(EXIT_FAILURE);
+//       }
+//       //if (frame.depth() < 3) //Need To increase depth if we are to paint on this frame
+//       //     cv::cvtColor( frame, frame, cv::COLOR_GRAY2RGB);
+
+//       //Contrast Brightness
+//       //frame.convertTo(frame, -1, 1.2, 0); //increase the contrast (double)
+//       nFrame++;
+//       window_main.nFrame = nFrame;
+
+//              //Make Global Roi on 1st frame
+//       if (nFrame == 1)
+//       {
+//           //Add Global Roi
+//           ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
+//           addROI(newROI);
+//       }
+
+//      // std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
+
+//       /// Frame The Fish ///
+//       frameMasked = cv::Mat::zeros(frame.rows, frame.cols,frame.type());
+//       frame.copyTo(frameMasked,fgMask);
+
+
+//       processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
+//       cv::imshow(gstrwinName + " FishOnly",frameMasked);
+
+//       /// Display Output //
+//       window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
+
+//       if (bshowMask)
+//       {
+//            cv::imshow(gstrwinName + " FG Mask", fgMask);
+//            //cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish); //The Circle mask
+//       }
+
+
+//       window_main.setWindowTitle("Tracking:" + filename);
+//       //keyboard = cv::waitKey( cFrameDelayms );
+//       checkPauseRun(&window_main,keyboard,nFrame);
+//    }
+//    return nFrame;
+//}///trackImageSequencefiles
 
 
 
