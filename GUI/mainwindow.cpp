@@ -3,6 +3,7 @@
 
 #include "QtOpencvCore.hpp"
 #include <QStringListModel>
+#include <qlineedit.h>
 
 extern fishModels vfishmodels; //Vector containing live fish models
 extern bool bPaused;
@@ -40,8 +41,9 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->graphicsViewHead->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 
-    this->ui->horizontalSlider->setRange(0,10000);
+    this->ui->horizontalSlider->setRange(0,50000);
     this->mScene->installEventFilter(this);
+
     this->installEventFilter(this); //To Capture Resize
 
     // Log Events on List View //
@@ -52,6 +54,12 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->listView->setModel(mModelMessageList);
 
 
+    //this->ui->txtboxFrameNumber->setInputMask("9999999"); //Just Numbers 0-9
+    this->ui->txtboxFrameNumber->setReadOnly(false);
+    this->ui->txtboxFrameNumber->setMaxLength(5);
+    //this->ui->txtboxFrameNumber->setEchoMode(EchoMode::);
+    //this->ui->txtboxFrameNumber->installEventFilter(this); //To Capture Text Change
+      this->ui->spinBoxFrame->installEventFilter(this);
 }
 
 void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
@@ -73,7 +81,8 @@ void MainWindow::saveScreenShot(QString stroutDirCSV,QString vidFilename)
 void MainWindow::tickProgress()
 {
     this->ui->horizontalSlider->setValue(this->ui->horizontalSlider->value()+1);
-
+    this->ui->txtboxFrameNumber->setText(QString::number(nFrame));
+     this->ui->txtboxFrameNumber->setReadOnly(false);
 }
 
 void MainWindow::showInsetimg(cv::Mat& img)
@@ -140,7 +149,20 @@ void MainWindow::showCVimg(cv::Mat& img)
 
 }
 
+void MainWindow::textEdited(QString strFrame)
+{
+    qDebug() << "Txt Edited to:" << strFrame;
+}
 
+void MainWindow::echoChanged(int i)
+{
+    qDebug() << "Echo bx" ;
+}
+
+void MainWindow::changeEvent(QEvent *e)
+{
+    qDebug() << "Change E" << e->type() ;
+}
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     char key = 0;
@@ -158,9 +180,35 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
          if (strkey.length() > 0)
             key =  strkey.at(0);
 
-         qDebug() << "Ate key press " << keyEvent->text().toStdString().c_str() << " k: " << key;
+         qDebug() << "Ate key press " << keyEvent->text().toStdString().c_str() << " k: " << key << " from " << obj->objectName();
+        ///Catch Frame Number Edit Enter Press
+         if (obj == ui->spinBoxFrame && (event->type() == QEvent::KeyPress) )
+         {
+             QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
-         ::keyCommandFlag(this,key,nFrame);
+             //Check If Enter Pressed - Then Change Start Frame Number
+             if(Qt::Key_Enter == keyEvent->key() || keyEvent->key() == Qt::Key_Return )
+             {
+                 qDebug() << "Enter pressed";
+
+                 event->accept();
+             }else
+             {
+                //ui->txtboxFrameNumber->setText();
+                 //ui->txtboxFrameNumber->keyPressEvent(keyEvent);
+                 int iposCur = ui->spinBoxFrame->text().length()-1;
+                 QString strUpdated = ui->spinBoxFrame->text().append( QString::number( keyEvent->key() ) );
+                 //ui->spinBoxFrame->setValue(strUpdated.toInt());
+                 event->ignore();
+             }
+
+
+
+             //If Keypress Not from TxtFrameBox
+         }else //Propagate KeyPress to Prog Flow Control
+         {
+             ::keyCommandFlag(this,key,nFrame);
+         }
          return true;
      }
 

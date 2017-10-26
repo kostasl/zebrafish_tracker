@@ -39,6 +39,10 @@ public:
     unsigned int nFrame = 0;
     ~MainWindow();
 
+public slots:
+    void echoChanged(int);
+    void changeEvent(QEvent *e);
+    void textEdited(const QString);
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
     void handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent);

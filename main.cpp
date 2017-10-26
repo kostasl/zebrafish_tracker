@@ -79,7 +79,7 @@ uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
 ///Segmentation Params
-int g_Segthresh             = 43; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 26; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -427,7 +427,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
 
        window_main.setWindowTitle("Tracking:" + invideoname);
        std::cout << "Press p to pause Video processing" << std::endl;
-       istartFrame = 0;
+       istartFrame = 100;
        istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame);
 
 
@@ -747,7 +747,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
     //Speed that stationary objects are removed
     cv::Mat frame,frameMasked,outframe,outframeHead;
-    unsigned int nFrame = startFrameCount; //Current Frame Number
+    unsigned int nFrame = 0;
 
     bPaused =false; //Start Paused
 
@@ -813,7 +813,10 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
         //Add frames from Last video
-        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
+        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+
+        window_main.nFrame = nFrame;
+        window_main.tickProgress();
 
         //Make Global Roi on 1st frame if it doesn't prexist
         if (nFrame == 1)
@@ -837,10 +840,14 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             }
         }
 
-        processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
+        if (nFrame >= startFrameCount)
+        {
+            processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
 
-        window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
-        window_main.showInsetimg(outframeHead);
+            window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
+            window_main.showInsetimg(outframeHead);
+            cv::imshow("Debug D",frameDebugD);
+        }
 
         if (bshowMask)
         {
@@ -851,7 +858,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         //cv::imshow("Debug A",frameDebugA);
         //cv::imshow("Debug B",frameDebugB);
         //cv::imshow("Debug C",frameDebugC);
-        cv::imshow("Debug D",frameDebugD);
+
 
 
         if (bTracking)
