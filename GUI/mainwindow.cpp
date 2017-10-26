@@ -196,10 +196,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
              {
                 //ui->txtboxFrameNumber->setText();
                  //ui->txtboxFrameNumber->keyPressEvent(keyEvent);
-                 int iposCur = ui->spinBoxFrame->text().length()-1;
-                 QString strUpdated = ui->spinBoxFrame->text().append( QString::number( keyEvent->key() ) );
+                 //int iposCur = ui->spinBoxFrame->text().length()-1;
+                 //QString strUpdated = ui->spinBoxFrame->text().append( QString::number( keyEvent->key() ) );
                  //ui->spinBoxFrame->setValue(strUpdated.toInt());
-                 event->ignore();
+                 spinBoxFrame->keyPressEvent(keyEvent);
+                 event->accept();
              }
 
 
