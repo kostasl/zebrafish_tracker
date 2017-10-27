@@ -185,7 +185,7 @@ bool bStoreThisTemplate = false;
 bool bDraggingTemplateCentre = false;
 bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
 bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
-
+bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource

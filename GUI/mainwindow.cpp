@@ -9,7 +9,7 @@ extern fishModels vfishmodels; //Vector containing live fish models
 extern bool bPaused;
 extern bool bStoreThisTemplate;
 extern bool bDraggingTemplateCentre;
-
+extern bool bStartFrameChanged;
 bool bSceneMouseLButtonDown;
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -83,6 +83,8 @@ void MainWindow::tickProgress()
     this->ui->horizontalSlider->setValue(this->ui->horizontalSlider->value()+1);
     this->ui->txtboxFrameNumber->setText(QString::number(nFrame));
      this->ui->txtboxFrameNumber->setReadOnly(false);
+
+    ui->spinBoxFrame->setValue(nFrame);
 }
 
 void MainWindow::showInsetimg(cv::Mat& img)
@@ -189,18 +191,18 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
              //Check If Enter Pressed - Then Change Start Frame Number
              if(Qt::Key_Enter == keyEvent->key() || keyEvent->key() == Qt::Key_Return )
              {
-                 qDebug() << "Enter pressed";
+                 qDebug() << "Enter pressed - Seek New Frame";
+                 nFrame = ui->spinBoxFrame->value();
+                 this->ui->horizontalSlider->setValue( ui->spinBoxFrame->value());
 
+                 bStartFrameChanged = true;
                  event->accept();
+
+                 return true;// We VE handled the event
              }else
              {
-                //ui->txtboxFrameNumber->setText();
-                 //ui->txtboxFrameNumber->keyPressEvent(keyEvent);
-                 //int iposCur = ui->spinBoxFrame->text().length()-1;
-                 //QString strUpdated = ui->spinBoxFrame->text().append( QString::number( keyEvent->key() ) );
-                 //ui->spinBoxFrame->setValue(strUpdated.toInt());
-                 spinBoxFrame->keyPressEvent(keyEvent);
-                 event->accept();
+                 return false; //Pass THe event To its intented Receipient
+
              }
 
 

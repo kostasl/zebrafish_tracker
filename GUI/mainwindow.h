@@ -37,6 +37,7 @@ public:
     void tickProgress();
     void LogEvent(QString strMessage);
     unsigned int nFrame = 0;
+
     ~MainWindow();
 
 public slots:
