@@ -2382,8 +2382,9 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               cv::circle(imgFishAnterior,ptRotCenter,3,CV_RGB(100,140,140),1);
               //cv::imshow("IsolatedAnterior",imgFishAnterior);
 
-              //Draw Normalized Rotation Centre
-              cv::circle(imgFishAnterior_Norm,ptRotCenter,4,CV_RGB(0,0,0),-1);
+              //Draw Isolation Mask Of Eyes Around RotationCentre
+              cv::Point ptMask(ptRotCenter.x,ptRotCenter.y+4);
+              cv::circle(imgFishAnterior_Norm,ptMask,4,CV_RGB(0,0,0),-1);
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
               //imgFishHead           = imgFishAnterior_Norm;
 
