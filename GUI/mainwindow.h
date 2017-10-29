@@ -35,8 +35,10 @@ public:
 
     void saveScreenShot(QString stroutDirCSV,QString vidFilename);
     void tickProgress();
+    void setTotalFrames(uint FrameCount);
     void LogEvent(QString strMessage);
     unsigned int nFrame = 0;
+    unsigned int nTotalFrameCount = 0;
 
     ~MainWindow();
 

@@ -601,7 +601,7 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
 
         /// Isolate Head, Get Eye models, and Get and draw Spine model
         if (nLarva > 0)
-            detectZfishFeatures(frame,outframe,frameHead,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+            detectZfishFeatures(window_main,frame,outframe,frameHead,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -665,7 +665,7 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
     ///Report Status  + Memory Usage
     if ((nFrame%300) == 0 || nFrame == 1)
     {
-        //Report Progress
+        //Report
         ss.str("");
         std::clog << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0 << std::endl;
         //THats In KiB units /So 1Million is A Gigabyte
@@ -775,6 +775,15 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     }
 
 
+    gfVidfps  = capture.get(CAP_PROP_FPS);
+    uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
+    window_main.setTotalFrames(totFrames);
+
+    QString strMsg(" Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
+    window_main.LogEvent(strMsg);
+    qDebug() << strMsg;
+
+
     // Open OutputFile
     QFile outdatafile;
     openDataFile(trkoutFileCSV,videoFilename,outdatafile);
@@ -812,9 +821,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
 
-        //Add frames from Last video
+        //Get Current Frame Number Add frames from Last video
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
-
         window_main.nFrame = nFrame;
         window_main.tickProgress();
 
@@ -2161,7 +2169,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 /// \return
 ///
 /// // \todo Optimize by re using fish contours already obtained in enhance fish mask
-void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
+void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
 
@@ -2385,9 +2393,12 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
 
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadProcessed);
 
+              std::stringstream ss;
               if (ret < 2)
               {
-                  std::clog << "Eye Detection Error - Check Threshold;" << std::endl;
+                  ss << ". Eye Detection Error - Check Threshold;";
+                  std::clog << ss.str() << std::endl;
+                  window_main.LogEvent(QString::fromStdString(ss.str()));
                   //return; //Stop Here - Produced Stable Runs
               }
               //  show_histogram("HeadHist",imgFishHead);
@@ -2399,7 +2410,7 @@ void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImg
 
             /// Set Detected Eyes Back to Fish Features
             ///  Print Out Values
-            std::stringstream ss;
+            ss.str(""); //Empty String
             ss.precision(3);
             if (vell.size() > 0)
             {

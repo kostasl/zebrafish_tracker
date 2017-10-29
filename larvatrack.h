@@ -75,7 +75,7 @@ bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 /// \param Mask with Fish oNly FG
 /// \param main inner and extrernal fish Contours for each fish
 /// \param 1 level hierarchy of contours (outer inner)
-void detectZfishFeatures(cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
+void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
 ///
 /// \brief UpdateFishModels Use Tracks  to update persistent fishModels
 /// \param vfishmodels

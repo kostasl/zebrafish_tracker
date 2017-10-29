@@ -78,6 +78,12 @@ void MainWindow::saveScreenShot(QString stroutDirCSV,QString vidFilename)
 
 }
 
+void MainWindow::setTotalFrames(uint FrameCount)
+{
+    this->ui->horizontalSlider->setMaximum(FrameCount);
+    this->nTotalFrameCount = FrameCount;
+}
+
 void MainWindow::tickProgress()
 {
     this->ui->horizontalSlider->setValue(this->ui->horizontalSlider->value()+1);
@@ -104,11 +110,12 @@ void MainWindow::showInsetimg(cv::Mat& img)
 
 }
 
+
+//Write To Message List Below Tracker
 void MainWindow::LogEvent(QString strMessage)
 {
 
-
-    mMessageList.append(strMessage);
+    mMessageList.append(QString::number(nFrame) + "." + strMessage);
     this->ui->listView->show();
     mModelMessageList->setStringList(mMessageList);
 
