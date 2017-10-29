@@ -94,7 +94,7 @@ int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
 const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize        = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength = 13;
+int gFishTailSpineSegmentLength = 14;
 int gMaxFitIterations     = 2; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 
 ///Fish Features Detection Params
