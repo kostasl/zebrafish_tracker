@@ -2,8 +2,14 @@
 #include "ellipse_detect.h"
 
 extern cv::Mat frameDebugC;
+extern cv::Size gszTemplateImg;
+
+extern double gTemplateMatchThreshold;
 extern int gFishTailSpineSegmentLength;
 extern int gMaxFitIterations;
+extern int gFitTailIntensityScanAngleDeg;
+
+
 fishModel::fishModel()
 {
         templateScore = 0;
@@ -347,6 +353,15 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     }else {
         this->zTrack.inactive++;
     }
+
+    ///Update Template Box Bound
+    //int bestAngleinDeg = fish->bearingAngle;
+    cv::RotatedRect fishRotAnteriorBox(bcentre,gszTemplateImg ,Angle);
+    /// Save Anterior Bound
+    this->bodyRotBound = fishRotAnteriorBox;
+
+
+
     //Set Spine Source to Rotation Centre
     this->spline[0].x       = bcentre.x;
     this->spline[0].y       = bcentre.y;
@@ -553,6 +568,33 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 }
 
 
+void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
+{
+
+    int bestAngleinDeg = this->bearingAngle;
+    //cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gLastfishimg_template.cols,gLastfishimg_template.rows),bestAngleinDeg);
+
+
+//    stringstream strLbl;
+//    strLbl << "A: " << bestAngleinDeg;
+    QString strlbl("A: " + QString::number(bestAngleinDeg));
+
+    cv::Scalar colour;
+    if (this->templateScore >= gTemplateMatchThreshold)
+        colour = CV_RGB(250,250,0);
+    else
+        colour = CV_RGB(30,30,250);
+
+    cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br(),CV_FONT_NORMAL,0.4,colour,1);
+
+
+    ///Draw a Red Rotated Frame around Detected Body
+    cv::Point2f boundBoxPnts[4];
+    this->bodyRotBound.points(boundBoxPnts);
+    for (int j=0; j<4;j++) //Rectangle Body
+        cv::line(outframe,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
+
+}
 
 ///
 /// \brief fishModel::fitSpineToIntensity implements  Giovanni's tail fitting method : starting from initial point on the fish body and an initial direction for the tail it searches for the
@@ -568,7 +610,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
     const size_t AP_N= this->c_spinePoints;
     const int step_size = this->c_spineSegL;
 
-    const int c_tailscanAngle = 20;
+    const int c_tailscanAngle = gFitTailIntensityScanAngleDeg;
 
 
     uint loc,pxValMax;

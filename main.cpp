@@ -87,15 +87,17 @@ bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in F
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
 int gi_maxEllipseMajor      = 25; // thres for Hough Transform
-int gi_minEllipseMajor      = 11; //thres for Hough Transform
-int gi_VotesEllipseThres    = 9; //Votes thres for Hough Transform
-int gthresEyeSeg            = 135; //Threshold For Eye Segmentation In Isolated Head IMage
-int gnumberOfTemplatesInCache  = 0; //INcreases As new Are Added
+int gi_minEllipseMajor          = 11; //thres for Hough Transform
+int gi_VotesEllipseThres        = 9; //Votes thres for Hough Transform
+int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isolated Head IMage
+int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
-float gDisplacementThreshold = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-int gFishBoundBoxSize        = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength = 14;
-int gMaxFitIterations     = 2; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
+float gDisplacementThreshold    = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
+int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
+int gFishTailSpineSegmentLength     = 14;
+int gFishTailSpineSegmentCount      = 6;
+int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
+int gFitTailIntensityScanAngleDeg   = 5;
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
@@ -115,6 +117,7 @@ QString gstroutDirCSV,gstrvidFilename; //The Output Directory
 
 //Global Matrices Used to show debug images
 cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
+cv::Size gszTemplateImg;
 
 //cv::Ptr<cv::BackgroundSubtractor> pMOG; //MOG Background subtractor
 cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
@@ -311,7 +314,8 @@ int main(int argc, char *argv[])
 
         addTemplateToCache(gLastfishimg_template,gFishTemplateCache,idxTempl); //Increments Index
     }
-
+    gszTemplateImg.width = gLastfishimg_template.size().width; //Save TO Global Size Variable
+    gszTemplateImg.height = gLastfishimg_template.size().height; //Save TO Global Size Variable
 
     /// END OF FISH TEMPLATES ///
 
@@ -587,7 +591,7 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
         //UpdateFishModels(maskedImg_gray,vfishmodels,fishtracks);
 
 
-        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame);
+        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
         //If A fish Is Detected Then Draw Its tracks
         fishModels::iterator ft = vfishmodels.begin();
         if (ft != vfishmodels.end())
@@ -833,7 +837,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             if (vRoi.size() == 0)
             {
             //Add Global Roi - Center - Radius
-                ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
+                ltROI newROI(cv::Point(frame.cols/3,frame.rows/3),ptROI2);
                 addROI(newROI);
 
                 //Check If FG Mask Has Been Created - And Make A new One
@@ -911,8 +915,7 @@ bool operator<(const fishModel& a, const fishModel& b)
 }
 
 
-void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame)
-{
+void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
 
     qfishModels qfishrank;
 
@@ -973,7 +976,13 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
                         pfish->bearingAngle   = bestAngle;
                         pfish->bearingRads   =  bestAngle*CV_PI/180.0;
                     }
+
+
                  }
+
+                 ////////// Write Angle / Show Box ////////
+                 //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
+                 pfish->drawBodyTemplateBounds(frameOut);
                 //Add To Priority Q So we can Rank - Only If Blob Ovelaps ?
                 qfishrank.push(pfish);
              }
@@ -1529,14 +1538,19 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
     {
 
         std::cerr << "Could not open output file : " << std::endl;
+
         return false;
-    }else
-    {
+    }else {
+
         std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
 
         ///Write Header
         QTextStream output(&data);
-        output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t DThetaSpine_1 \t DThetaSpine_2 \t DThetaSpine_3 \n";
+        output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0";
+        for (int i=1;i<=gFishTailSpineSegmentCount;i++)
+            output <<  "DThetaSpine_" << i << "\t";
+
+        output << "\n";
         //output.flush();
 
     }
@@ -2256,34 +2270,30 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
 
           cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
           cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
-          //double maxMatchScore; //
-          //int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
-           //Check If Fish Was found)
-          //fish->templateScore  = maxMatchScore;
 
           //0 Degrees Is along the Y Axis Looking Upwards
 
-          //Set to Global Max Point
-         // cv::Point top_left = pBound1+gptmaxLoc;
-
-          ////////// Write Angle / Show Box ////////
-          /// \brief fishRotAnteriorBox
-
+          ///Update Template Box Bound
           int bestAngleinDeg = fish->bearingAngle;
           cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gLastfishimg_template.cols,gLastfishimg_template.rows),bestAngleinDeg);
           /// Save Anterior Bound
           fish->bodyRotBound = fishRotAnteriorBox;
 
-          stringstream strLbl;
-          strLbl << "A: " << bestAngleinDeg;
-          cv::putText(fullImgOut,strLbl.str(),fishRotAnteriorBox.boundingRect().br(),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1);
+          ////////// Write Angle / Show Box ////////
+//          /// \brief fishRotAnteriorBox
+//          fish->drawBodyTemplateBounds(fullImgOut);
 
 
-          ///Draw a Red Rotated Frame around Detected Body
-          cv::Point2f boundBoxPnts[4];
-          fishRotAnteriorBox.points(boundBoxPnts);
-          for (int j=0; j<4;j++) //Rectangle Body
-              cv::line(fullImgOut,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
+//          stringstream strLbl;
+//          strLbl << "A: " << bestAngleinDeg;
+//          cv::putText(fullImgOut,strLbl.str(),fishRotAnteriorBox.boundingRect().br(),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1);
+
+
+//          ///Draw a Red Rotated Frame around Detected Body
+//          cv::Point2f boundBoxPnts[4];
+//          fishRotAnteriorBox.points(boundBoxPnts);
+//          for (int j=0; j<4;j++) //Rectangle Body
+//              cv::line(fullImgOut,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
 
           ///////////////////////////////////
 
@@ -2513,6 +2523,8 @@ void thresh_callback(int, void* )
     {
          fishModel* pfish = ft->second;
          pfish->c_spineSegL           = gFishTailSpineSegmentLength;
+
+
     }
 
 //    if (!pGHT.empty())

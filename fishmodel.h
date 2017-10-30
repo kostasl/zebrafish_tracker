@@ -16,6 +16,7 @@
 
 extern float gDisplacementThreshold;
 extern int gFishTailSpineSegmentLength;
+extern int gFishTailSpineSegmentCount;
 
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
@@ -86,6 +87,7 @@ public:
 
 
   void drawSpine(cv::Mat& outFrame);
+  void drawBodyTemplateBounds(cv::Mat& outframe);
   friend std::ostream& operator<<(std::ostream& out, const fishModel& h);
   friend QTextStream& operator<<(QTextStream& out, const fishModel& h);
 
@@ -124,9 +126,8 @@ public:
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
   int c_spineSegL;
-  static const int c_spinePoints   = 6;
-
-  static const int c_spineParamCnt = c_spinePoints+2;
+  const int c_spinePoints   = gFishTailSpineSegmentCount;
+  const int c_spineParamCnt = c_spinePoints+2;
 private:
 
   //std::vect mmor<double> splineTheta; ///Angles of fitted Spine Points
