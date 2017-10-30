@@ -96,7 +96,7 @@ float gDisplacementThreshold    = 0.5; //Distance That Fish Is displaced so as t
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 14;
 int gFishTailSpineSegmentCount      = 6;
-int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
+int gMaxFitIterations               = 5; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 int gFitTailIntensityScanAngleDeg   = 10;
 
 ///Fish Features Detection Params
