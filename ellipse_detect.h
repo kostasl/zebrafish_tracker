@@ -80,7 +80,7 @@ typedef std::vector<tEllipsoidEdge> tEllipsoidEdges;
 int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetectedEllipsoid>& qEllipsoids);
 ///
 /// \brief detectEllipses Search For Ellipsoids around the position of the eyes in the fish head isolated image
-int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameProc);
+int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameMonitor,cv::Mat& outHeadFrameProc);
 // Uses Sampling around an arc below the eyes to determine Appropriate Eye Segmentation theshold (Max N values are used)
 int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts);
 void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint);

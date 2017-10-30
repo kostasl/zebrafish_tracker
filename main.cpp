@@ -323,8 +323,8 @@ int main(int argc, char *argv[])
 //    cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
     cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
     cv::createTrackbar( "Eye Threshold:", "Debug D", &gthresEyeSeg, 200.0, thresh_callback );
-//    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
-//    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
+    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
+    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
     cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 35.0, thresh_callback );
     cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,10, thresh_callback );
     cv::createTrackbar( "Spine Segment Size","Debug D", &gFishTailSpineSegmentLength, 50, thresh_callback );
@@ -2404,8 +2404,8 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               //cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
               //cv::imshow("IsolatedHead",imgFishHead);
               //cv::imshow("IsolatedAnteriorNorm",imgFishAnterior_Norm);
-
-              int ret = detectEllipses(imgFishHead,vell,imgFishHeadProcessed);
+              cv::Mat imgFishHeadSeg;
+              int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
 
               std::stringstream ss;
               if (ret < 2)
@@ -2420,7 +2420,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
-              imgFishHeadProcessed.copyTo(headImgOut); //Return As INdividual Image Too
+              imgFishHeadProcessed.copyTo(imgFishHeadSeg); //Return As INdividual Image Too
 
             /// Set Detected Eyes Back to Fish Features
             ///  Print Out Values
