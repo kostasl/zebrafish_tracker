@@ -115,7 +115,8 @@ void MainWindow::showInsetimg(cv::Mat& img)
 void MainWindow::LogEvent(QString strMessage)
 {
 
-    mMessageList.append(QString::number(nFrame) + "." + strMessage);
+    //\note THe frame Number seemed to be advanced by 1, in the log file
+    mMessageList.append(QString::number(nFrame-1) + "." + strMessage);
     this->ui->listView->show();
     mModelMessageList->setStringList(mMessageList);
 
