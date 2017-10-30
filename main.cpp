@@ -836,8 +836,10 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         {
             if (vRoi.size() == 0)
             {
+                ptROI2.x = frame.cols/2;
+                ptROI2.y = gszTemplateImg.height/2;
             //Add Global Roi - Center - Radius
-                ltROI newROI(cv::Point(frame.cols/3,frame.rows/3),ptROI2);
+                ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
                 addROI(newROI);
 
                 //Check If FG Mask Has Been Created - And Make A new One
@@ -1546,7 +1548,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 
         ///Write Header
         QTextStream output(&data);
-        output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0";
+        output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t ";
         for (int i=1;i<=gFishTailSpineSegmentCount;i++)
             output <<  "DThetaSpine_" << i << "\t";
 
