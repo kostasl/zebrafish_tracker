@@ -592,7 +592,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     cv::Point2f boundBoxPnts[4];
     this->bodyRotBound.points(boundBoxPnts);
     for (int j=0; j<4;j++) //Rectangle Body
-        cv::line(outframe,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
+        cv::line(outframe,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,colour,1);
 
 }
 
