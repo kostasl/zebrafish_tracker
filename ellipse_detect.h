@@ -14,7 +14,7 @@
 typedef struct tDetectedEllipsoid{
     tDetectedEllipsoid():rectEllipse()
     {
-
+        fitscore = 0;
     }
 
     //cv::RotatedRect(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI))
