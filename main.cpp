@@ -97,7 +97,7 @@ int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box Whe
 int gFishTailSpineSegmentLength     = 14;
 int gFishTailSpineSegmentCount      = 6;
 int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 5;
+int gFitTailIntensityScanAngleDeg   = 10;
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
@@ -2420,7 +2420,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
-              imgFishHeadProcessed.copyTo(imgFishHeadSeg); //Return As INdividual Image Too
+              imgFishHeadSeg.copyTo(headImgOut); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
 
             /// Set Detected Eyes Back to Fish Features
             ///  Print Out Values
