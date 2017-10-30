@@ -1549,7 +1549,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
         ///Write Header
         QTextStream output(&data);
         output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t ";
-        for (int i=1;i<=gFishTailSpineSegmentCount;i++)
+        for (int i=1;i<gFishTailSpineSegmentCount;i++)
             output <<  "DThetaSpine_" << i << "\t";
 
         output << "\n";
