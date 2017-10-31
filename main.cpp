@@ -78,7 +78,7 @@ const int MOGhistory        = 10;//gfVidfps*2;
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
-const int nTemplatesToLoad  = 9; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+const int nTemplatesToLoad  = 10; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 ///Segmentation Params
 int g_Segthresh             = 26; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
@@ -2211,7 +2211,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
 
     cv::Mat maskedImg_gray,maskedfishImg_gray;
     cv::Mat maskedfishFeature_blur;
-
+    cv::Mat imgFishHeadSeg; //Thresholded / Or Edge Image Used In Detect Ellipses
 
 
     // Memory Crash
@@ -2413,7 +2413,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               //cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
               //cv::imshow("IsolatedHead",imgFishHead);
               //cv::imshow("IsolatedAnteriorNorm",imgFishAnterior_Norm);
-              cv::Mat imgFishHeadSeg;
+
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
 
 
@@ -2432,7 +2432,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               //  show_histogram("HeadHist",imgFishHead);
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
               imgFishHeadSeg.copyTo(headImgOut); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
-
+              //imgFishHeadSeg.release(); //Decrement Ref Counter
 
 
                   /// Set Detected Eyes Back to Fish Features
