@@ -97,8 +97,8 @@ float gDisplacementThreshold    = 0.5; //Distance That Fish Is displaced so as t
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 14;
 int gFishTailSpineSegmentCount      = 6;
-int gMaxFitIterations               = 5; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 10;
+int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
+int gFitTailIntensityScanAngleDeg   = 15;
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
@@ -603,7 +603,7 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
 
         /// Isolate Head, Get Eye models, and Get and draw Spine model
         if (nLarva > 0)
-            detectZfishFeatures(window_main,frame,outframe,frameHead,fgMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+            detectZfishFeatures(window_main,frame,outframe,frameHead,fgFishMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -2037,15 +2037,21 @@ cv::Mat threshold_output_COMB;
 
 ///// Convert image to gray, Mask and blur it
 cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
-// MASK FG ROI Region //
-//frameImg_gray.copyTo(frameImg_gray,maskFGImg);
-cv::bitwise_and(frameImg_gray,maskFGImg,frameImg_gray);
+
 
 //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 
-/// Detect edges using Threshold , A High And  low
+/// Detect edges using Threshold , A High And  low /
+/// Trick, threshold Before Marking ROI - So as to Obtain Fish Features Outside Roi When Fish is incomplete Within The ROI
+cv::threshold( frameImg_gray, outFishMask, g_Segthresh*1.5, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+
+// Detect Food at Lower Thresh //
 cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-cv::threshold( frameImg_gray, outFishMask, g_Segthresh*2, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+
+
+/// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
+//frameImg_gray.copyTo(frameImg_gray,maskFGImg);
+cv::bitwise_and(frameImg_gray,maskFGImg,frameImg_gray);
 
 //cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
 //ADAPTIVE_THRESH_MEAN_C
@@ -2128,23 +2134,23 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
         if (curve.size() > 10)
         {
-//             ///// SMOOTH COntours /////
-//            double sigma = 1.0;
-//            int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
-//            assert(M % 2 == 1); //M is an odd number
+             ///// SMOOTH COntours /////
+            double sigma = 1.0;
+            int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+            assert(M % 2 == 1); //M is an odd number
 
-//            //create kernels
-//            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
+            //create kernels
+            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
 
-//            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
-//            PolyLineSplit(curve,curvex,curvey);
+            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
+            PolyLineSplit(curve,curvex,curvey);
 
-//            std::vector<double> X,XX,Y,YY;
-//            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
-//            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
-//            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
-//            PolyLineMerge(curve,smoothx,smoothy);
-//            ///////////// END SMOOTHING
+            std::vector<double> X,XX,Y,YY;
+            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
+            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
+            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
+            PolyLineMerge(curve,smoothx,smoothy);
+            ///////////// END SMOOTHING
 
             outfishbodycontours.push_back(curve);
             /////COMBINE - DRAW CONTOURS
