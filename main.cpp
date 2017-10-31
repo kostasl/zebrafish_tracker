@@ -78,6 +78,8 @@ const int MOGhistory        = 10;//gfVidfps*2;
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
+const int nTemplatesToLoad  = 8; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+
 ///Segmentation Params
 int g_Segthresh             = 26; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
@@ -91,7 +93,6 @@ int gi_minEllipseMajor          = 16; ///thres for Eye Ellipse Detection methods
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
-const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 float gDisplacementThreshold    = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 14;
@@ -766,6 +767,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
     QString trkoutFileCSV = outFileCSV;
 
+
+
     //create the capture object
     cv::VideoCapture capture(videoFilename.toStdString());
     if(!capture.isOpened())
@@ -781,6 +784,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     window_main.setTotalFrames(totFrames);
 
     window_main.LogEvent(videoFilename);
+    window_main.stroutDirCSV = gstroutDirCSV;
+    window_main.vidFilename = videoFilename;
     QString strMsg(" Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
     window_main.LogEvent(strMsg);
     qDebug() << strMsg;
@@ -2121,7 +2126,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             //idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
         }
 
-        if (curve.size() >0)
+        if (curve.size() > 10)
         {
              ///// SMOOTH COntours /////
             double sigma = 1.0;
@@ -2347,15 +2352,18 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
 
           ///Make Normalized Fish View
            tEllipsoids vell;
+           vell.clear();
+
            cv::Mat imgTmp, imgFishAnterior,imgFishAnterior_Norm,imgFishHead,imgFishHeadEdge,imgFishHeadProcessed;
            maskedImg_gray.copyTo(imgTmp); //imgTmp Contain full frame Image in Gray
            //Threshold The Match Check Bounds Within Image
            cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
 
-           if ( //Looks Like a fish is found, now Check Bounds // gmaxVal > gTemplateMatchThreshold &&
+           if (!( //Looks Like a fish is found, now Check Bounds // gmaxVal > gTemplateMatchThreshold &&
                imgBounds.contains(rectfishAnteriorBound.br()) &&
-                   imgBounds.contains(rectfishAnteriorBound.tl()))
-           {
+                   imgBounds.contains(rectfishAnteriorBound.tl())))
+               continue; //This Fish Is out Of Bounds /
+
               imgTmp(rectfishAnteriorBound).copyTo(imgFishAnterior);
 //              if (bUseEllipseEdgeFittingMethod)
 //                frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
@@ -2408,19 +2416,25 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               cv::Mat imgFishHeadSeg;
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
 
-              ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
-              cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
 
               std::stringstream ss;
               if (ret < 2)
               {
                   ss << " Eye Detection Error - Check Threshold;";
-                  std::clog << ss.str() << std::endl;
                   window_main.LogEvent(QString::fromStdString(ss.str()));
+                  std::clog << ss.str() << std::endl;
+
                   //return; //Stop Here - Produced Stable Runs
               }
-              else
-              {
+
+              ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
+              cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
+              //  show_histogram("HeadHist",imgFishHead);
+              imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
+              imgFishHeadSeg.copyTo(headImgOut); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
+
+
+
                   /// Set Detected Eyes Back to Fish Features
                   ///  Print Out Values
                   ss.str(""); //Empty String
@@ -2461,17 +2475,8 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
                       cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
                   }
 
-                  //  show_histogram("HeadHist",imgFishHead);
-                  imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
-                  imgFishHeadSeg.copyTo(headImgOut); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
 
-             } //Eye Detection Ret > 0
-
-
-
-           } //If Fish Img Bound Is With Picture Frame
-          ///
-
+              //Eye Detection Ret > 0
 
 
 

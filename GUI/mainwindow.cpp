@@ -82,17 +82,18 @@ void MainWindow::saveScreenShot()
 void MainWindow::saveTemplateImage(cv::Mat& imgTempl)
 {
     //std::stringstream frameNumberString; frameNumberString << nFrame;
+    QString dirToSave = stroutDirCSV;
     QString frameNumberString = "Templ_" + QString::number(nFrame);
 
     //Make ROI dependent File Name
-    QFileInfo fiVid(stroutDirCSV);
+    QFileInfo fiVid(vidFilename);
     QString fileVidCoreName = "templ_"+ fiVid.completeBaseName();
 
-    stroutDirCSV.append("/templates/");
+    dirToSave.append("/templates/");
     QString imageToSave =  fileVidCoreName + "_" + frameNumberString + ".pgm";
-    imageToSave.prepend(stroutDirCSV);
+    imageToSave.prepend(dirToSave);
 
-    if (!QDir(stroutDirCSV).exists())
+    if (!QDir(dirToSave).exists())
     {
         std::clog << "Make directory " << dirToSave.toStdString() << std::endl;
         QDir().mkpath(dirToSave);

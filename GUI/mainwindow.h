@@ -41,6 +41,11 @@ public:
     unsigned int nFrame = 0;
     unsigned int nTotalFrameCount = 0;
 
+
+    QString stroutDirCSV;
+    QString vidFilename;
+
+
     ~MainWindow();
 
 public slots:
@@ -55,9 +60,6 @@ protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent );
-
-    QString stroutDirCSV;
-    QString vidFilename;
 
     QStringListModel*                      mModelMessageList;
     QStringList                           mMessageList;
