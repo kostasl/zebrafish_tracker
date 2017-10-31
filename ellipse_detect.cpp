@@ -210,7 +210,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
     /// Begin Ellipsoid Detection ///
     memset(accumulator,0,sizeof(int)*(accLength)); //Reset Accumulator MAtrix
-    std::cout << "== Start === "  << std::endl;
+    //std::clog << "== Start === "  << std::endl;
     ///Loop through All Edge points (3)
     for (tEllipsoidEdges::iterator it1 = vedgePoints_all.begin();it1 != vedgePoints_all.end();++it1)
     {
@@ -556,8 +556,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     }
 
     //Check if Std Ellipse Finding Worked / Otherwise Try Method 2
-    int mjAxis1 = std::max(lEll.rectEllipse.boundingRect().width, lEll.rectEllipse.boundingRect().height);
-    if (mjAxis1 < gi_minEllipseMajor || lEll.fitscore < 10)
+    int mjAxis1 = std::max(lEll.rectEllipse.size.width, lEll.rectEllipse.size.height);
+    if (mjAxis1 < gi_minEllipseMajor || mjAxis1 > gi_maxEllipseMajor || lEll.fitscore < 10)
     {
         //Empty
         while (qEllipsoids.size() > 0)
@@ -635,7 +635,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     }
 
     //Check
-    int mjAxis2 = std::max(rEll.rectEllipse.boundingRect().width, rEll.rectEllipse.boundingRect().height);
+    int mjAxis2 = std::max(rEll.rectEllipse.size.width, rEll.rectEllipse.size.height);
     ///Check If 1st Method Failed And Run Backup Method If 1st Failed
     if (mjAxis2 < gi_minEllipseMajor || mjAxis2 > gi_maxEllipseMajor || rEll.fitscore < 10)
     {
@@ -674,6 +674,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         cv::Point2f featurePnts[4];
         rEll.rectEllipse.points(featurePnts);
 
+
         ///Draw Left Eye Rectangle
         for (int j=0; j<4;j++) //Rectangle Eye
                cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(130,10,10),1);
@@ -687,11 +688,11 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     /// L And R Eyes Detection is Done- Check Results //
 
     // Evaluate Detection - Use  Limit Checks on Eye Characteristics ////
-    int area1 = (int)lEll.rectEllipse.boundingRect().area();
-    int area2 = (int)rEll.rectEllipse.boundingRect().area();
+    int area1 = (int)lEll.rectEllipse.size.width*lEll.rectEllipse.size.height;
+    int area2 = (int)rEll.rectEllipse.size.width*rEll.rectEllipse.size.height;
 
     ///Check L Eye Again
-    mjAxis1 = std::max(lEll.rectEllipse.boundingRect().width, lEll.rectEllipse.boundingRect().height);
+    mjAxis1 = std::max(lEll.rectEllipse.size.width, lEll.rectEllipse.size.height);
     if (mjAxis1 < gi_minEllipseMajor || mjAxis1 > gi_maxEllipseMajor || lEll.fitscore < 10)
     {
         ret = 0; //SOme Detection Error - Ask To Change Threshold
@@ -699,7 +700,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     }
 
     /// Check R Eye Again //
-    mjAxis2 = std::max(rEll.rectEllipse.boundingRect().width, rEll.rectEllipse.boundingRect().height);
+    mjAxis2 = std::max(rEll.rectEllipse.size.width, rEll.rectEllipse.size.height);
     if (mjAxis2 < gi_minEllipseMajor || mjAxis2 > gi_maxEllipseMajor || rEll.fitscore < 10)
     {
         ret = 0;
@@ -740,9 +741,9 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     img_colour.copyTo(outHeadFrameProc);
 
-
-    contours_canny.clear();
-    contours_canny.shrink_to_fit();
+    // Memory Crash Here //
+    //contours_canny.clear();
+    //contours_canny.shrink_to_fit();
 
 return ret;
 

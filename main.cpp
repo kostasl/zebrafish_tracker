@@ -78,7 +78,7 @@ const int MOGhistory        = 10;//gfVidfps*2;
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
-const int nTemplatesToLoad  = 8; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+const int nTemplatesToLoad  = 9; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 ///Segmentation Params
 int g_Segthresh             = 26; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
@@ -2128,23 +2128,23 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
         if (curve.size() > 10)
         {
-             ///// SMOOTH COntours /////
-            double sigma = 1.0;
-            int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
-            assert(M % 2 == 1); //M is an odd number
+//             ///// SMOOTH COntours /////
+//            double sigma = 1.0;
+//            int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+//            assert(M % 2 == 1); //M is an odd number
 
-            //create kernels
-            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
+//            //create kernels
+//            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
 
-            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
-            PolyLineSplit(curve,curvex,curvey);
+//            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
+//            PolyLineSplit(curve,curvex,curvey);
 
-            std::vector<double> X,XX,Y,YY;
-            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
-            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
-            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
-            PolyLineMerge(curve,smoothx,smoothy);
-            ///////////// END SMOOTHING
+//            std::vector<double> X,XX,Y,YY;
+//            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
+//            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
+//            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
+//            PolyLineMerge(curve,smoothx,smoothy);
+//            ///////////// END SMOOTHING
 
             outfishbodycontours.push_back(curve);
             /////COMBINE - DRAW CONTOURS
@@ -2242,7 +2242,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
     maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),2,2);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
 
 
 //    if (bUseEllipseEdgeFittingMethod)

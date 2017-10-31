@@ -99,4 +99,5 @@ FORMS += \
 
 DISTFILES += \
     img/fishbodyb_tmp.pgm \
-    zebraprey_track.supp
+    zebraprey_track.supp \
+    img/fishbody_tmp9.pgm
