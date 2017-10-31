@@ -921,7 +921,14 @@ bool operator<(const fishModel& a, const fishModel& b)
   return a.templateScore > b.templateScore; //Max Heap
 }
 
-
+///
+/// \brief UpdateFishModels
+/// \param maskedImg_gray
+/// \param vfishmodels
+/// \param fishblobs
+/// \param nFrame
+/// \param frameOut
+///\todo - Add TimeOut Period Before Deleting Model
 void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
 
     qfishModels qfishrank;
