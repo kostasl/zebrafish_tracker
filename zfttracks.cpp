@@ -47,7 +47,7 @@
 
 
 
-void zftRenderTrack(zftTrack& track, cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface )
+void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface )
 {
 
      if (mode&CV_TRACK_RENDER_ID)

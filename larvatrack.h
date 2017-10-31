@@ -62,7 +62,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile);
 /// \fn processFrame - Process blob morphology, Extract features tracks
 ///
 //void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHead);
-void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead);
+void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead);
 void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,cv::Mat& outframe);
 bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 
@@ -75,14 +75,14 @@ bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 /// \param Mask with Fish oNly FG
 /// \param main inner and extrernal fish Contours for each fish
 /// \param 1 level hierarchy of contours (outer inner)
-void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
+void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
 ///
 /// \brief UpdateFishModels Use Tracks  to update persistent fishModels
 /// \param vfishmodels
 /// \param fishtracks
 void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks); /// Deprecated
 ///Updated Version With Blobs
-void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks,unsigned int nFrame,cv::Mat& frameOut);
+void UpdateFishModels(const cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks,unsigned int nFrame,cv::Mat& frameOut);
 
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
@@ -143,7 +143,7 @@ bool fitfishCoreTriangle(cv::Mat& maskedfishFeature,fishModel& sfish,std::vector
 /// \param maskFGImg
 ///
 //void enhanceFishMask(cv::Mat& frameImg, cv::Mat& maskFGImg,std::vector<std::vector<cv::Point> >& fishbodycontours ,std::vector<cv::Vec4i>& fishbodyhierarchy);
-void enhanceMask(cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& fishbodycontours, std::vector<cv::Vec4i>& fishbodyhierarchy);
+void enhanceMask(const cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& fishbodycontours, std::vector<cv::Vec4i>& fishbodyhierarchy);
 
 ///
 /// \brief findIndexClosesttoPoint - Naive Nearest neighbour finder

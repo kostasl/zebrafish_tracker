@@ -524,11 +524,14 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
 } ///trackImageSequencefile
 
 
-void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
+void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
 {
+    cv::Mat frame_gray,fgFishMask,fgFishImgMasked;
+    cv::Mat fgFoodMask;
+
+
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
-    IplImage lplframe;
 
     unsigned int nLarva         =  0;
     unsigned int nFood          =  0;
@@ -559,14 +562,14 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
     if (bTracking)
     {
        //Simple Solution was to Use Contours To measure LUarvae
-
+        //cvtColo frame_grey
         //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
     //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
-        cv::Mat fgFishMask,fgFishImgMasked;
-        cv::Mat fgFoodMask,fgFoodImgMasked;
-        enhanceMask(frame,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+        cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
+        enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
-        outframe.copyTo(fgFishImgMasked,fgFishMask); //Use Enhanced Mask
+        frame_gray.copyTo(fgFishImgMasked,fgFishMask); //Use Enhanced Mask
+
         //outframe.copyTo(fgFoodImgMasked,fgFoodMask); //Use Enhanced Mask
         //show the current frame and the fg masks
         //cv::imshow(gstrwinName + " FishOnly",frameMasked);
@@ -580,7 +583,7 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
         nLarva = ptFishblobs.size();
         fgFishMask.copyTo(frameDebugD);
 
-        cv::Mat maskedImg_gray,maskedfishImg_gray;
+        cv::Mat maskedImg_gray;
         /// Convert image to gray and blur it
         cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
         ////Make image having masked all fish
@@ -589,7 +592,7 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
         //UpdateFishModels(maskedImg_gray,vfishmodels,fishtracks);
 
 
-        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
+        UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
         //If A fish Is Detected Then Draw Its tracks
         fishModels::iterator ft = vfishmodels.begin();
         if (ft != vfishmodels.end())
@@ -603,7 +606,7 @@ void processFrame(MainWindow& window_main, cv::Mat& frame,cv::Mat& fgMask, unsig
 
         /// Isolate Head, Get Eye models, and Get and draw Spine model
         if (nLarva > 0)
-            detectZfishFeatures(window_main,frame,outframe,frameHead,fgFishMask,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+            detectZfishFeatures(window_main, frame,outframe,frameHead,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -748,7 +751,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 {
 
     //Speed that stationary objects are removed
-    cv::Mat frame,frameMasked,outframe,outframeHead;
+    cv::Mat frame,outframe,outframeHead;
     unsigned int nFrame = 0;
 
     bPaused =false; //Start Paused
@@ -919,7 +922,7 @@ bool operator<(const fishModel& a, const fishModel& b)
 }
 
 
-void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
+void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
 
     qfishModels qfishrank;
 
@@ -945,8 +948,11 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
 
         // Look for Fish Template Within The Blob Region //
         cv::Rect rectFish(pBound1,pBound2);
+
         // Debug //
+#ifdef _ZTFDEBUG_
         cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
+#endif
 
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
@@ -1006,6 +1012,7 @@ void UpdateFishModels(cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
            qfishrank.push(fish); //Add To Priority Queue
            std::clog << nFrame << "# New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << std::endl;
+
         }
 //        //Report No Fish
         if (!bModelFound && maxMatchScore < gTemplateMatchThreshold )
@@ -2014,7 +2021,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 /// \todo Cross Check Fish Contour With Model Position
 /// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
 ///
-void enhanceMask(cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
+void enhanceMask(const cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
 {
 
 int max_thresh = 255;
@@ -2035,9 +2042,10 @@ cv::Mat threshold_output_COMB;
 /////////// MOG Mask Is not Used Currently //
 
 
-///// Convert image to gray, Mask and blur it
-cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
 
+///// Convert image to gray, Mask and
+//cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
+frameImg.copyTo(frameImg_gray); //Its Grey Anyway
 
 //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 
@@ -2079,7 +2087,7 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 
 //Then Use ThresholdImage TO Trace More detailed Contours
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-threshold_output_COMB.copyTo(frameDebugB);
+//threshold_output_COMB.copyTo(frameDebugB);
 
 
 //outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
@@ -2196,7 +2204,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 /// \return
 ///
 /// // \todo Optimize by re using fish contours already obtained in enhance fish mask
-void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
+void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskedfishImg_gray, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
 
@@ -2215,7 +2223,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
 
 /////////////////
 
-    cv::Mat maskedImg_gray,maskedfishImg_gray;
+    cv::Mat maskedImg_gray;
     cv::Mat maskedfishFeature_blur;
     // Memory Crash When Clearing Stack Here //
     cv::Mat imgFishHeadSeg; //Thresholded / Or Edge Image Used In Detect Ellipses
@@ -2246,7 +2254,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
     cv::cvtColor( fullImgIn, maskedImg_gray, cv::COLOR_BGR2GRAY );
 
     //Make image having masked all fish
-    maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
+    //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
     cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),1,1);

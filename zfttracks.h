@@ -98,6 +98,6 @@ struct zftTrack
 
 /// \brief Render A zftracker Track
 ///
-void zftRenderTrack(zftTrack& track, cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface );
+void zftRenderTrack(zftTrack& track,const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface );
 #endif // ZFTTRACKS
 
