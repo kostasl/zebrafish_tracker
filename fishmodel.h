@@ -60,6 +60,7 @@ class fishModel
 
 public:
   fishModel();
+  ~fishModel();
   //fishModel(cvb::CvTrack* track,cvb::CvBlob* blob);
   fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter);
 

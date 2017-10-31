@@ -33,7 +33,8 @@ public:
     void showInsetimg(cv::Mat& img); //Used to Show Small IMage Next to main scene
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
 
-    void saveScreenShot(QString stroutDirCSV,QString vidFilename);
+    void saveScreenShot();
+    void saveTemplateImage(cv::Mat& templ);
     void tickProgress();
     void setTotalFrames(uint FrameCount);
     void LogEvent(QString strMessage);
@@ -54,6 +55,9 @@ protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent );
+
+    QString stroutDirCSV;
+    QString vidFilename;
 
     QStringListModel*                      mModelMessageList;
     QStringList                           mMessageList;

@@ -69,6 +69,15 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 
 }
 
+fishModel::~fishModel()
+{
+    //Clear The Vectors Contained
+    this->zTrack.pointStack.clear();
+    this->zTrack.pointStack.shrink_to_fit();
+    this->zTrack.pointStackRender.clear();
+    this->zTrack.pointStackRender.shrink_to_fit();
+}
+
 float fishModel::leftEyeAngle()
 {
 

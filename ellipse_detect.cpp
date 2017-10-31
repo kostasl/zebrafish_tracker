@@ -71,7 +71,7 @@ extern int gi_minEllipseMajor;
 extern int gi_maxEllipseMajor;
 extern int g_BGthresh;
 extern int gEyeTemplateAngleSteps;
-
+extern int giHeadIsolationMaskVOffset; //V Distance When Drawing Arc In getEyeSegThreshold
 //cv::Mat imgDebug;
 
 extern cv::Mat kernelOpenfish;
@@ -179,11 +179,18 @@ bool operator<(const tDetectedEllipsoid& a,const tDetectedEllipsoid& b) {
   return a.fitscore < b.fitscore; //Max Heap
 }
 
+///
+/// \brief detectEllipse Implements the Efficient ellipse Detection Algorithm -
+/// \param vedgePoints_all
+/// \param qEllipsoids
+/// \notes The min Votes Threszhold is not fixed but continuously adapted to be just below the highest, see  gi_VotesEllipseThres
+/// \return
+///
 int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetectedEllipsoid>& qEllipsoids)
 {
     const int minEllipseMajor   = gi_minEllipseMajor;
     const int maxEllipseMajor   = gi_maxEllipseMajor;
-    const int minMinorEllipse   = 1;
+    const int minMinorEllipse   = gi_minEllipseMajor/2-2;
     int thresMinVotes     = gi_VotesEllipseThres;
 
     const int accLength = vedgePoints_all.size();
@@ -335,7 +342,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                 ///Step 11 Output Ellipse Parameters
                 //cv::RotatedRect ellipse(ptxy0,ptxy1,ptxy2);
                 //alpha += M_PI/2.0;
-                cv::RotatedRect r(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180/M_PI));
+                cv::RotatedRect r(ptxy0,cv::Size2f(2*a,2*idx), alpha*(180.0/M_PI));
                 tDetectedEllipsoid ellipse(ptxy0,ptxy1,ptxy2,dvotesMax,r);
                 //vellipses.push_back(ellipse);
                 qEllipsoids.push(ellipse); //Automatically Sorted
@@ -400,7 +407,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
 
     gi_VotesEllipseThres = thresMinVotes = 0.95*Highest2dVotes;//Adapt Threshold To Best Score
-    std::cout << "ThresVot:" << gi_VotesEllipseThres << std::endl;
+//    std::clog << "ThresVot:" << gi_VotesEllipseThres << std::endl;
 
 
 }
@@ -415,8 +422,8 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 ///
 int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts)
 {
-        const int isampleN = 7;
-        const int voffset = 6;
+        const int isampleN = 5;
+        const int voffset = giHeadIsolationMaskVOffset+1;
 
         int iThresEyeSeg = 0;
 
@@ -516,7 +523,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     tDetectedEllipsoid lEll,rEll;
     std::vector<cv::Point> vt;
     std::vector<cv::RotatedRect> ve;
-    std::vector<std::vector<cv::Point>> vEyes;
+    //std::vector<std::vector<cv::Point>> vEyes;
     std::vector<cv::Point> vLEyeHull; //Left Eye
     std::vector<cv::Point> vREyeHull; //Left Eye
     //Find Parent Contour
@@ -526,7 +533,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::RotatedRect rcLEye,rcREye;
     //Make Debug Img
     cv::cvtColor( imgUpsampled_gray,img_colour, cv::COLOR_GRAY2RGB);
-    cv::cvtColor( imgUpsampled_gray,img_contour, cv::COLOR_GRAY2RGB);
+    //cv::cvtColor( imgUpsampled_gray,img_contour, cv::COLOR_GRAY2RGB);
 
     //for( size_t i = 0; i< contours_canny.size(); i++ )
 
@@ -536,7 +543,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
         if (vLEyeHull.size() > 4)
         {
-            vEyes.push_back(vLEyeHull);
+            //vEyes.push_back(vLEyeHull);
             rcLEye =  cv::fitEllipse(vLEyeHull);
             tDetectedEllipsoid dEll(rcLEye,100);
             lEll.fitscore       = dEll.fitscore;
@@ -552,6 +559,11 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     int mjAxis1 = std::max(lEll.rectEllipse.boundingRect().width, lEll.rectEllipse.boundingRect().height);
     if (mjAxis1 < gi_minEllipseMajor || lEll.fitscore < 10)
     {
+        //Empty
+        while (qEllipsoids.size() > 0)
+            qEllipsoids.pop(); //Empty All Other Candidates
+
+
         tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
         vedgePoints_all.clear();
 
@@ -565,7 +577,10 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         getEdgePoints(imgEdge_local,vedgePoints_all);
         detectEllipse(vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
         //imgEdge_local.copyTo(imgEdge_dbg);
-        qDebug() << " L Eye Backup Ellipse Detection used";
+        if (qEllipsoids.size() >0 )
+            qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
+        else
+            qDebug() << " L Eye Backup Ellipse Failed";
 
     }
 
@@ -594,32 +609,30 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
             qEllipsoids.pop(); //Empty All Other Candidates
     }
 
-
-
    ///// End oF LEft Eye Trace ///
 
 
 
-    //RIGHT EYE - Reset And Redraw - Now Right Eye
-    if (iREye != -1)
-    {
-        imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
-        cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
+//    //RIGHT EYE - Reset And Redraw - Now Right Eye
+//    if (iREye != -1)
+//    {
+//        imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+//        cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
 
-        if (vREyeHull.size() > 4)
-        {
-            vEyes.push_back(vREyeHull);
-            rcREye =  cv::fitEllipse(vREyeHull);
-            tDetectedEllipsoid dEll(rcREye,100);
-            rEll.fitscore       = dEll.fitscore;
-            rEll.rectEllipse    = dEll.rectEllipse;
+//        if (vREyeHull.size() > 4)
+//        {
+//            //vEyes.push_back(vREyeHull);
+//            rcREye =  cv::fitEllipse(vREyeHull);
+//            tDetectedEllipsoid dEll(rcREye,100);
+//            rEll.fitscore       = dEll.fitscore;
+//            rEll.rectEllipse    = dEll.rectEllipse;
 
-            qEllipsoids.push(dEll); //Index 1 / Right Eye
-            //cv::drawContours( img_contour, vEyes, vEyes.size()-1, CV_RGB(10,05,210),1);
-            //cv::drawContours( imgEdge_local, vEyes,vEyes.size()-1, CV_RGB(255,255,255),1);
-        }
-        //getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
-    }
+//            qEllipsoids.push(dEll); //Index 1 / Right Eye
+//            //cv::drawContours( img_contour, vEyes, vEyes.size()-1, CV_RGB(10,05,210),1);
+//            //cv::drawContours( imgEdge_local, vEyes,vEyes.size()-1, CV_RGB(255,255,255),1);
+//        }
+//        //getEdgePoints(contours_canny.at(iREye),vedgePoints_all);
+//    }
 
     //Check
     int mjAxis2 = std::max(rEll.rectEllipse.boundingRect().width, rEll.rectEllipse.boundingRect().height);
@@ -628,21 +641,27 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     ///Check If 1st Method Failed And Run Backup PLan
     if (mjAxis2 < gi_minEllipseMajor || mjAxis2 > gi_maxEllipseMajor || rEll.fitscore < 10)
     {
+        //Empty
+        while (qEllipsoids.size() > 0)
+            qEllipsoids.pop(); //Empty All Other Candidates
 
         tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
         vedgePoints_all.clear();
 
-        //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
+        //If Contour Finding Fails Then Take Raw Edge points and *MASK* L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         imgEdge_local.copyTo(outHeadFrameMonitor);
         //Cover LEFT Eye Edges
         cv::Rect r(0,0,imgEdge_local.cols/2,imgEdge_local.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
-        vedgePoints_all.clear();
+
         getEdgePoints(imgEdge_local,vedgePoints_all);
         detectEllipse(vedgePoints_all,qEllipsoids);
-        qDebug() << " R Eye Backup Ellipse Detection";
+        if (qEllipsoids.size() >0 )
+            qDebug() << " R Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
+        else
+            qDebug() << " R Eye Backup Ellipse Failed";
     }
 
     //Check If Found and Draw R Eye
@@ -680,15 +699,24 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     ///Check L Eye Again
     mjAxis1 = std::max(lEll.rectEllipse.boundingRect().width, lEll.rectEllipse.boundingRect().height);
     if (mjAxis1 < gi_minEllipseMajor || mjAxis1 > gi_maxEllipseMajor || lEll.fitscore < 10)
+    {
         ret = 0; //SOme Detection Error - Ask To Change Threshold
+        qDebug() << "L eye bound error  MjAxis:" << mjAxis1;
+    }
 
     /// Check R Eye Again //
     mjAxis2 = std::max(rEll.rectEllipse.boundingRect().width, rEll.rectEllipse.boundingRect().height);
     if (mjAxis2 < gi_minEllipseMajor || mjAxis2 > gi_maxEllipseMajor || rEll.fitscore < 10)
+    {
         ret = 0;
+        qDebug() << "R eye bound error MjAxis :" << mjAxis1;
+    }
 
     if (std::abs(area1 - area2) > (std::max(area2,area1)/2))
+    {
         ret = 0; //SOme Detection Error - Ask To Change Threshold
+        qDebug() << "R-L eye Areas Diff too large " << std::abs(area1 - area2);
+    }
 
 
 ///////// End of Checks //////////

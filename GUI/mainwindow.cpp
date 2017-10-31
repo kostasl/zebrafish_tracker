@@ -69,12 +69,37 @@ void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
     showCVimg(img);
 }
 
-void MainWindow::saveScreenShot(QString stroutDirCSV,QString vidFilename)
+void MainWindow::saveScreenShot()
 {
     //std::stringstream frameNumberString; frameNumberString << nFrame;
     QString frameNumberString = QString::number(nFrame);
 
     ::saveImage(frameNumberString,stroutDirCSV,vidFilename,*this->mpLastCVImg);
+
+}
+
+//Saves Selected Template Images From Running Video To Special templates Subfolder for future Re-Use
+void MainWindow::saveTemplateImage(cv::Mat& imgTempl)
+{
+    //std::stringstream frameNumberString; frameNumberString << nFrame;
+    QString frameNumberString = "Templ_" + QString::number(nFrame);
+
+    //Make ROI dependent File Name
+    QFileInfo fiVid(stroutDirCSV);
+    QString fileVidCoreName = "templ_"+ fiVid.completeBaseName();
+
+    stroutDirCSV.append("/templates/");
+    QString imageToSave =  fileVidCoreName + "_" + frameNumberString + ".pgm";
+    imageToSave.prepend(stroutDirCSV);
+
+    if (!QDir(stroutDirCSV).exists())
+    {
+        std::clog << "Make directory " << dirToSave.toStdString() << std::endl;
+        QDir().mkpath(dirToSave);
+    }
+
+    bool saved = cv::imwrite(imageToSave.toStdString(), imgTempl);
+
 
 }
 

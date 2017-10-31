@@ -86,9 +86,9 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor      = 25; // thres for Hough Transform
-int gi_minEllipseMajor          = 11; //thres for Hough Transform
-int gi_VotesEllipseThres        = 9; //Votes thres for Hough Transform
+int gi_maxEllipseMajor      = 25; /// thres  for Eye Ellipse Detection methods
+int gi_minEllipseMajor          = 16; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 const int nTemplatesToLoad      = 5; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
@@ -98,6 +98,7 @@ int gFishTailSpineSegmentLength     = 14;
 int gFishTailSpineSegmentCount      = 6;
 int gMaxFitIterations               = 5; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 int gFitTailIntensityScanAngleDeg   = 10;
+int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
@@ -146,17 +147,13 @@ cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across 
 ltROI Circle( cv::Point(0,0) , cv::Point(1024,768));
 ltROIlist vRoi;
 cv::Point ptROI1 = cv::Point(320,240);
-cv::Point ptROI2 = cv::Point(1,134);
+cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
 
 
 //Structures to hold blobs & Tracks
-//Blobs as identified by BG Substractions
-//cvb::CvBlobs blobs; //All Blobs - Updated Ids on everyframe done by cvLabel function
-//cvb::CvBlobs fishblobs;
-//cvb::CvBlobs foodblobs;
-cvb::CvTracks fishtracks;
-cvb::CvTracks foodtracks;
-cvb::CvTracks tracks; ///All tracks
+//cvb::CvTracks fishtracks;
+//cvb::CvTracks foodtracks;
+//cvb::CvTracks tracks; ///All tracks
 
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
 fishModels vfishmodels; //Vector containing live fish models
@@ -280,7 +277,7 @@ int main(int argc, char *argv[])
 
 
     //Initialize The Track and blob vectors
-    cvb::cvReleaseTracks(tracks); //Releasing All tracks will delete all track Objects
+    //cvb::cvReleaseTracks(tracks); //Releasing All tracks will delete all track Objects
     //cvb::cvReleaseBlobs(blobs);
     ReleaseFishModels(vfishmodels);
 
@@ -326,7 +323,7 @@ int main(int argc, char *argv[])
     cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
     cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
     cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 35.0, thresh_callback );
-    cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,10, thresh_callback );
+    cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,30, thresh_callback );
     cv::createTrackbar( "Spine Segment Size","Debug D", &gFishTailSpineSegmentLength, 50, thresh_callback );
 
     thresh_callback( 0, 0 );
@@ -371,7 +368,7 @@ int main(int argc, char *argv[])
     //pGMG->~BackgroundSubtractor();
 
     //Empty The Track and blob vectors
-    cvb::cvReleaseTracks(tracks);
+    //cvb::cvReleaseTracks(tracks);
     //cvb::cvReleaseBlobs(blobs);
 
 
@@ -837,7 +834,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             if (vRoi.size() == 0)
             {
                 ptROI2.x = frame.cols/2;
-                ptROI2.y = gszTemplateImg.height/2;
+                ptROI2.y = gszTemplateImg.height/3;
             //Add Global Roi - Center - Radius
                 ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
                 addROI(newROI);
@@ -1083,7 +1080,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     {
         std::cout << "Save Image" << endl;
         bSaveImages = !bSaveImages;
-        win->saveScreenShot(gstroutDirCSV,gstrvidFilename);
+        win->saveScreenShot();
 
     }
 
@@ -1598,7 +1595,9 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
                 //+ inactive; ///< Indicates number of frames that has been missing.
                 output << frameNumber << "\t" << Vcnt  << "\t" << (*pfish) << "\n";
 
-            pfish->zTrack.pointStack.clear(); //Empty Memory Once Logged
+            //Empty Memory Once Logged
+            pfish->zTrack.pointStack.clear();
+            pfish->zTrack.pointStack.shrink_to_fit(); //Requires this Call of C++ otherwise It Doesnt clear
          }//For eAch Fish
    } //Loop ROI
 
@@ -2387,6 +2386,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               {    //Cut Down To Template Size
                   imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
                   addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
+                  window_main.saveTemplateImage(imgFishAnterior);
                   bStoreThisTemplate = false;
               }
 
@@ -2395,9 +2395,10 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               cv::circle(imgFishAnterior,ptRotCenter,3,CV_RGB(100,140,140),1);
               //cv::imshow("IsolatedAnterior",imgFishAnterior);
 
-              //Draw Isolation Mask Of Eyes Around RotationCentre
+              ///Draw * Isolation Mask *  Of Eyes Around RotationCentre
               cv::Point ptMask(ptRotCenter.x,ptRotCenter.y+4);
-              cv::circle(imgFishAnterior_Norm,ptMask,4,CV_RGB(0,0,0),-1);
+              cv::circle(imgFishAnterior_Norm,ptMask,giHeadIsolationMaskVOffset,CV_RGB(0,0,0),-1);
+              cv::line(imgFishAnterior_Norm,ptMask,cv::Point(imgFishAnterior_Norm.cols/2,0),CV_RGB(0,0,0),1);//Split Eyes
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
               //imgFishHead           = imgFishAnterior_Norm;
 
@@ -2407,60 +2408,65 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               cv::Mat imgFishHeadSeg;
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
 
+              ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
+              cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
+
               std::stringstream ss;
               if (ret < 2)
               {
-                  ss << ". Eye Detection Error - Check Threshold;";
+                  ss << " Eye Detection Error - Check Threshold;";
                   std::clog << ss.str() << std::endl;
                   window_main.LogEvent(QString::fromStdString(ss.str()));
                   //return; //Stop Here - Produced Stable Runs
               }
-              //  show_histogram("HeadHist",imgFishHead);
-
-              //Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
-              cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
-              imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
-              imgFishHeadSeg.copyTo(headImgOut); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
-
-            /// Set Detected Eyes Back to Fish Features
-            ///  Print Out Values
-            ss.str(""); //Empty String
-            ss.precision(3);
-            if (vell.size() > 0)
-            {
-                tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
-                fish->leftEye           = lEye;
-                fish->leftEyeTheta      = lEye.rectEllipse.angle;
-                ss << "L:" << fish->leftEyeTheta;
-                cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-            }else
-            { //Set To Not detected
-                fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-                fish->leftEyeTheta  = -1000;
-            }
+              else
+              {
+                  /// Set Detected Eyes Back to Fish Features
+                  ///  Print Out Values
+                  ss.str(""); //Empty String
+                  ss.precision(3);
+                  if (vell.size() > 0)
+                  {
+                      tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
+                      fish->leftEye           = lEye;
+                      fish->leftEyeTheta      = lEye.rectEllipse.angle;
+                      ss << "L:" << fish->leftEyeTheta;
+                      cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  }else
+                  { //Set To Not detected
+                      fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+                      fish->leftEyeTheta  = 0;
+                  }
 
 
-            ss.str(""); //Empty String
-            if (vell.size() > 1)
-            {
-              tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
-              fish->rightEye          = rEye;
-              fish->rightEyeTheta     = rEye.rectEllipse.angle;
-              ss << "R:"  << fish->rightEyeTheta;
-              cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-            }else
-            { //Set To Not detected
-                fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-                fish->rightEyeTheta  = -1000;
-            }
+                  ss.str(""); //Empty String
+                  if (vell.size() > 1)
+                  {
+                    tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
+                    fish->rightEye          = rEye;
+                    fish->rightEyeTheta     = rEye.rectEllipse.angle;
+                    ss << "R:"  << fish->rightEyeTheta;
+                    cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  }else
+                  { //Set To Not detected
+                      fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+                      fish->rightEyeTheta  = 0;
+                  }
 
-            ///If Both Eyes Detected Then Print Vergence Angle
-            if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
-            {
-                ss.str(""); //Empty String
-                ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta;
-                cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-            }
+                  ///If Both Eyes Detected Then Print Vergence Angle
+                  if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
+                  {
+                      ss.str(""); //Empty String
+                      ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta;
+                      cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  }
+
+                  //  show_histogram("HeadHist",imgFishHead);
+                  imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
+                  imgFishHeadSeg.copyTo(headImgOut); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
+
+             } //Eye Detection Ret > 0
+
 
 
            } //If Fish Img Bound Is With Picture Frame
