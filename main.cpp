@@ -2211,8 +2211,9 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
 
     cv::Mat maskedImg_gray,maskedfishImg_gray;
     cv::Mat maskedfishFeature_blur;
+    // Memory Crash When Clearing Stack Here //
     cv::Mat imgFishHeadSeg; //Thresholded / Or Edge Image Used In Detect Ellipses
-
+    cv::Mat Mrot;
 
     // Memory Crash
 
@@ -2242,7 +2243,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
     maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),1,1);
 
 
 //    if (bUseEllipseEdgeFittingMethod)
@@ -2253,7 +2254,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
     //Pick The largest dimension and Make A Square
     cv::Size szTempIcon(std::max(gLastfishimg_template.cols,gLastfishimg_template.rows),std::max(gLastfishimg_template.cols,gLastfishimg_template.rows));
    // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
-    cv::Mat Mrot;
+
 
 //    ///Detect Head Feature //
 //    std::cout << "Match template on #fish:" << vfishmodels.size() << std::endl;
@@ -2262,8 +2263,6 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
           fishModel* fish = (*it).second;
 
           //fish->bearingAngle   = AngleIdx;
-          if (fish->templateScore < gTemplateMatchThreshold)
-              continue; //Skip This Model Fish And Check the next one
 
 
           //Draw A general Region Where the FIsh Is located, search for template within that region only
@@ -2304,16 +2303,8 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
           ///////////////////////////////////
 
 
-          /// SPINE Fitting And Drawing ///
-          if (contours_body.size() > 0 && bFitSpineToTail)
-          {
-              //Look for Top Level Contour
-            int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-            fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
-            fish->fitSpineToIntensity(maskedfishFeature_blur);
-            fish->drawSpine(fullImgOut);
-          }
-         /// END OF Fit Spine ////
+
+
 
           //Locate Eyes In A box
           double lengthLine = 9;
@@ -2378,7 +2369,7 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
              // ptRotCenter.x = ptRotCenter.x*cos(bestAngleinDeg*M_PI/180.0);
              // ptRotCenter.y = ptRotCenter.y*sin(bestAngleinDeg*M_PI/180.0);
 
-              cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
+              Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
               //cv::Mat Mrot = cv::getRotationMatrix2D(-fishRotHeadBox.center,bestAngleinDeg,1.0); //Rotate Upwards
 
               ///Make Rotation Transformation
@@ -2398,7 +2389,14 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
                   bStoreThisTemplate = false;
               }
 
-              /// Draw Centers for Reference and cleaner Masks
+
+              //Allow For Sub Optimal Matches To be processed Up to Here //
+              //if (fish->templateScore < gTemplateMatchThreshold)
+              //    continue; //Skip This Model Fish And Check the next one
+
+
+
+              /// Prepare Norm Head Pic for Eye Detection Draw Centers for Reference and cleaner Masks
               //Draw  Rotation Centre of Transformation to Norm
               cv::circle(imgFishAnterior,ptRotCenter,3,CV_RGB(100,140,140),1);
               //cv::imshow("IsolatedAnterior",imgFishAnterior);
@@ -2410,13 +2408,10 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
               //imgFishHead           = imgFishAnterior_Norm;
 
-              //cv::imshow("IsolatedAnteriorTempl",imgFishAnterior);
-              //cv::imshow("IsolatedHead",imgFishHead);
-              //cv::imshow("IsolatedAnteriorNorm",imgFishAnterior_Norm);
-
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
 
 
+              /// Report Results to Output Frame //
               std::stringstream ss;
               if (ret < 2)
               {
@@ -2435,50 +2430,62 @@ void detectZfishFeatures(MainWindow& window_main,cv::Mat& fullImgIn,cv::Mat& ful
               //imgFishHeadSeg.release(); //Decrement Ref Counter
 
 
-                  /// Set Detected Eyes Back to Fish Features
-                  ///  Print Out Values
+              /// Set Detected Eyes Back to Fish Features
+              ///  Print Out Values
+              ss.str(""); //Empty String
+              ss.precision(3);
+              if (vell.size() > 0)
+              {
+                  tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
+                  fish->leftEye           = lEye;
+                  fish->leftEyeTheta      = lEye.rectEllipse.angle;
+                  ss << "L:" << fish->leftEyeTheta;
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+              }else
+              { //Set To Not detected
+                  fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+                  fish->leftEyeTheta  = 0;
+              }
+
+
+              ss.str(""); //Empty String
+              if (vell.size() > 1)
+              {
+                tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
+                fish->rightEye          = rEye;
+                fish->rightEyeTheta     = rEye.rectEllipse.angle;
+                ss << "R:"  << fish->rightEyeTheta;
+                cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+              }else
+              { //Set To Not detected
+                  fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+                  fish->rightEyeTheta  = 0;
+              }
+
+              ///If Both Eyes Detected Then Print Vergence Angle
+              if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
+              {
                   ss.str(""); //Empty String
-                  ss.precision(3);
-                  if (vell.size() > 0)
-                  {
-                      tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
-                      fish->leftEye           = lEye;
-                      fish->leftEyeTheta      = lEye.rectEllipse.angle;
-                      ss << "L:" << fish->leftEyeTheta;
-                      cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-                  }else
-                  { //Set To Not detected
-                      fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-                      fish->leftEyeTheta  = 0;
-                  }
+                  ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta;
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+              }
 
 
-                  ss.str(""); //Empty String
-                  if (vell.size() > 1)
-                  {
-                    tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
-                    fish->rightEye          = rEye;
-                    fish->rightEyeTheta     = rEye.rectEllipse.angle;
-                    ss << "R:"  << fish->rightEyeTheta;
-                    cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-                  }else
-                  { //Set To Not detected
-                      fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-                      fish->rightEyeTheta  = 0;
-                  }
 
-                  ///If Both Eyes Detected Then Print Vergence Angle
-                  if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
-                  {
-                      ss.str(""); //Empty String
-                      ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta;
-                      cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-                  }
+              /// SPINE Fitting And Drawing ///
+              if (contours_body.size() > 0 && bFitSpineToTail)
+              {
+                  //Look for Top Level Contour
+                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                fish->fitSpineToIntensity(maskedfishFeature_blur);
+                fish->drawSpine(fullImgOut);
+              }
+             /// END OF Fit Spine ////
+
 
 
               //Eye Detection Ret > 0
-
-
 
     } //For eAch Fish Model
 

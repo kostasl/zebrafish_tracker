@@ -507,7 +507,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
-    imgIn_thres.copyTo( outHeadFrameMonitor);
+    outHeadFrameMonitor = imgIn_thres.clone();
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
     //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),1);
     cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
@@ -569,7 +569,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
-        imgEdge_local.copyTo(outHeadFrameMonitor);
+        outHeadFrameMonitor = imgEdge_local.clone();
         //Cover Right Eye
         cv::Rect r(ptcentre.x,ptcentre.y,imgEdge_local.cols/2-1,imgEdge_local.rows);
         //imgEdge.copyTo(imgEdge_local);
@@ -648,7 +648,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
         //If Contour Finding Fails Then Take Raw Edge points and *MASK* L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
-        imgEdge_local.copyTo(outHeadFrameMonitor);
+        outHeadFrameMonitor = imgEdge_local.clone();
         //Cover LEFT Eye Edges
         cv::Rect r(0,0,imgEdge_local.cols/2,imgEdge_local.rows);
         //imgEdge.copyTo(imgEdge_local);
@@ -739,8 +739,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     }
 
 
+    //outHeadFrameProc = img_colour.clone(); //Make A deep Copy - Avoids Seg Faults with C
     img_colour.copyTo(outHeadFrameProc);
-
     // Memory Crash Here //
     //contours_canny.clear();
     //contours_canny.shrink_to_fit();
