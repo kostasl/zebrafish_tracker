@@ -1326,7 +1326,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 /// \param ptFoodblobs opencv keypoints vector of the Fish
 /// \return
 ///
-int processFoodBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
+int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
 {
 
     std::vector<cv::KeyPoint> keypoints;
@@ -2094,11 +2094,13 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 
 //Then Use ThresholdImage TO Trace More detailed Contours
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+//cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE  , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 //threshold_output_COMB.copyTo(frameDebugB);
 
 
 //outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
-threshold_output_COMB.copyTo(outFoodMask);
+//threshold_output_COMB.copyTo(outFoodMask);
+outFoodMask = threshold_output_COMB.clone();
 
 //std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
 
