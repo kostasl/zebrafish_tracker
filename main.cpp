@@ -81,7 +81,7 @@ double dLearningRate        = 1.0/(2*MOGhistory);
 const int nTemplatesToLoad  = 10; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 ///Segmentation Params
-int g_Segthresh             = 26; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 21; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -95,10 +95,10 @@ int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isola
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 14;
+int gFishTailSpineSegmentLength     = 13;
 int gFishTailSpineSegmentCount      = 6;
 int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 15;
+int gFitTailIntensityScanAngleDeg   = 18;
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
@@ -620,7 +620,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         /// Isolate Head, Get Eye models, and Get and draw Spine model
         if (nLarva > 0)
             //An Image Of the Full Fish Is best In this Case
-            detectZfishFeatures(window_main, fgFishImgMasked,outframe,frameHead,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+            detectZfishFeatures(window_main, frame_gray,outframe,frameHead,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -2092,7 +2092,7 @@ cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THR
 
 /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
 //frameImg_gray.copyTo(frameImg_gray,maskFGImg);
-cv::bitwise_and(frameImg_gray,maskFGImg,frameImg_gray);
+
 
 //cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
 //ADAPTIVE_THRESH_MEAN_C
@@ -2127,7 +2127,7 @@ cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv:
 //outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 //threshold_output_COMB.copyTo(outFoodMask);
 outFoodMask = threshold_output_COMB.clone();
-
+cv::bitwise_and(outFoodMask,maskFGImg,outFoodMask); //Remove Regions OUtside ROI
 //std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
 
 ///Draw Only the largest contours that should belong to fish
@@ -2297,7 +2297,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),1,1);
+    cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),1,1);
 
 
 //    if (bUseEllipseEdgeFittingMethod)
