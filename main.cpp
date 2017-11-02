@@ -393,8 +393,21 @@ int main(int argc, char *argv[])
     //app.quit();
     window_main.close();
 
+    //Catch Any Mem Alloc Error
+    try{
+        app.exec();
+    }catch (const std::bad_alloc &)
+    {
+        app.quit();
+        qDebug() << "Memory Allocation Error!";
+        std::clog << "Memory Allocation Error!";
+        std::cerr << "Memory Allocation Error! - Exiting";
 
-    return app.exec();
+        return 0;
+    }
+
+
+    return 1;
 
 }
 
@@ -606,7 +619,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
         /// Isolate Head, Get Eye models, and Get and draw Spine model
         if (nLarva > 0)
-            detectZfishFeatures(window_main, frame,outframe,frameHead,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+            //An Image Of the Full Fish Is best In this Case
+            detectZfishFeatures(window_main, fgFishImgMasked,outframe,frameHead,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -1175,7 +1189,17 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 //    struct timespec ts = { ms / 1000, (ms % 1000) * 1000 * 1000 };
 //    nanosleep(&ts, NULL);
     ///Memory Crash Here ///
+    ///
+    try
+    {
         QCoreApplication::processEvents(QEventLoop::AllEvents);
+    }catch(...)
+    {
+        std::cerr << "Event Processing Exception!" << std::endl;
+        qDebug() << "Event Processing Exception!";
+        win->LogEvent(QString("Event Processing Exception!"));
+
+    }
        // cv::waitKey(1);
 
         while (bPaused && !bExiting)
@@ -2169,6 +2193,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             PolyLineMerge(curve,smoothx,smoothy);
             ///////////// END SMOOTHING
 
+            ///\todo Make Contour Fish Like - Extend Tail ///
+
+
             outfishbodycontours.push_back(curve);
             /////COMBINE - DRAW CONTOURS
             //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
@@ -2260,8 +2287,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
     /// Convert image to gray and blur it
-    cv::cvtColor( fullImgIn, maskedImg_gray, cv::COLOR_BGR2GRAY );
-
+    if (fullImgIn.depth() != CV_8U)
+        cv::cvtColor( fullImgIn, maskedImg_gray, cv::COLOR_BGR2GRAY );
+    else
+        fullImgIn.copyTo(maskedImg_gray);
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
