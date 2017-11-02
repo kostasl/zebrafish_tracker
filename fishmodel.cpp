@@ -652,7 +652,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
         pxValMax=0;
         for(int idx=0;idx<(int)ellipse_pts.size();++idx){
             //Obtain Value From Image at Point on Arc
-            loc=frameimg_Blur.at<uchar>(max(frameimg_Blur.rows,min(0,ellipse_pts[idx].y)),max(frameimg_Blur.cols,min(0,ellipse_pts[idx].x)));
+            loc=frameimg_Blur.at<uchar>(std::max(frameimg_Blur.rows,std::min(0,ellipse_pts[idx].y)),std::max(frameimg_Blur.cols,std::min(0,ellipse_pts[idx].x)));
 
             //If New Maximum Found THen Update Spline Point to point to this and Update Previous Spline Point's angle
             if(loc>pxValMax){
