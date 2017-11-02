@@ -1354,6 +1354,8 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
 {
 
     std::vector<cv::KeyPoint> keypoints;
+
+
     //std::vector<cv::KeyPoint> keypoints_in_ROI;
     cv::SimpleBlobDetector::Params params;
 
@@ -2310,7 +2312,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 //    ///Detect Head Feature //
 //    std::cout << "Match template on #fish:" << vfishmodels.size() << std::endl;
-    for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+    for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); it++)
     {
           fishModel* fish = (*it).second;
 
@@ -2335,26 +2337,6 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
           cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gLastfishimg_template.cols,gLastfishimg_template.rows),bestAngleinDeg);
           /// Save Anterior Bound
           fish->bodyRotBound = fishRotAnteriorBox;
-
-          ////////// Write Angle / Show Box ////////
-//          /// \brief fishRotAnteriorBox
-//          fish->drawBodyTemplateBounds(fullImgOut);
-
-
-//          stringstream strLbl;
-//          strLbl << "A: " << bestAngleinDeg;
-//          cv::putText(fullImgOut,strLbl.str(),fishRotAnteriorBox.boundingRect().br(),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1);
-
-
-//          ///Draw a Red Rotated Frame around Detected Body
-//          cv::Point2f boundBoxPnts[4];
-//          fishRotAnteriorBox.points(boundBoxPnts);
-//          for (int j=0; j<4;j++) //Rectangle Body
-//              cv::line(fullImgOut,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(210,00,0),1);
-
-          ///////////////////////////////////
-
-
 
 
 

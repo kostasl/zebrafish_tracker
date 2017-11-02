@@ -29,8 +29,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     mScene->addText("Zebrafish Tracker Scene")->setPos(100,100);
     //Add Empty/New PixMap on Which we will set the images onto
-    this->mImage         = mScene->addPixmap(QPixmap());
-    this->mImageInset    = mInsetScene->addPixmap(QPixmap());
+    QPixmap pxMapEmpty1(this->ui->graphicsView->geometry().width(),this->ui->graphicsView->geometry().height());
+    QPixmap pxMapEmpty2(this->ui->graphicsViewHead->geometry().width(),this->ui->graphicsViewHead->geometry().height());
+    this->mImage         = mScene->addPixmap(pxMapEmpty1);
+    this->mImageInset    = mInsetScene->addPixmap(pxMapEmpty2);
 
     this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
     this->ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
