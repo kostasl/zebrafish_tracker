@@ -98,7 +98,7 @@ int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box Whe
 int gFishTailSpineSegmentLength     = 13;
 int gFishTailSpineSegmentCount      = 6;
 int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 18;
+int gFitTailIntensityScanAngleDeg   = 30;
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
@@ -2297,8 +2297,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
     //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),1,1);
-
+    cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
+    //cv::imshow("BlurSpine",maskedfishFeature_blur);
 
 //    if (bUseEllipseEdgeFittingMethod)
 //        cv::Canny( maskedImg_gray, frameCanny, gi_CannyThresSmall,gi_CannyThres  );
@@ -2511,7 +2511,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   //Look for Top Level Contour
                 int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                //fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 fish->fitSpineToIntensity(maskedfishFeature_blur);
                 fish->drawSpine(fullImgOut);
               }
