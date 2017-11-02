@@ -50,8 +50,8 @@ LIBS += `pkg-config opencv --libs`
 ##
 ##Assume Libs are copied with the package into
 QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
-QMAKE_LFLAGS += -Wl,--rpath=/opt/Qt/5.9/5.9/gcc_64/lib/
-#QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.9.2/gcc_64/lib/
+#QMAKE_LFLAGS += -Wl,--rpath=/opt/Qt/5.9/5.9/gcc_64/lib/
+QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.9.2/gcc_64/lib/
 
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/opencv/build/lib/
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.0/build-Dbg
