@@ -98,7 +98,7 @@ int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box Whe
 int gFishTailSpineSegmentLength     = 13;
 int gFishTailSpineSegmentCount      = 6;
 int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 30;
+int gFitTailIntensityScanAngleDeg   = 25;
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
@@ -185,7 +185,7 @@ bool bEyesDetected = false; ///Flip True to save eye shape feature for future de
 bool bStoreThisTemplate = false;
 bool bDraggingTemplateCentre = false;
 bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
-bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
+bool bFitSpineToTail = false; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -2298,7 +2298,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
     //Blur The Image used to detect  broad features
     cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
-    //cv::imshow("BlurSpine",maskedfishFeature_blur);
+    //
 
 //    if (bUseEllipseEdgeFittingMethod)
 //        cv::Canny( maskedImg_gray, frameCanny, gi_CannyThresSmall,gi_CannyThres  );
