@@ -185,7 +185,7 @@ bool bEyesDetected = false; ///Flip True to save eye shape feature for future de
 bool bStoreThisTemplate = false;
 bool bDraggingTemplateCentre = false;
 bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
-bool bFitSpineToTail = false; // Runs The Contour And Tail Fitting Spine Optimization Algorith
+bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -625,7 +625,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         ///////  Process Food Blobs ////
         // Process Food blobs
         std::vector<cv::KeyPoint> ptFoodblobs;
-        nFood = processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+        //nFood = processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
 
 
     } //If Tracking
@@ -2312,12 +2312,15 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 //    ///Detect Head Feature //
 //    std::cout << "Match template on #fish:" << vfishmodels.size() << std::endl;
-    for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); it++)
+    for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+    //for (int z=0;z<vfishmodels.size();z++) //  fishModel* fish = vfishmodels[z];
     {
+
           fishModel* fish = (*it).second;
 
           //fish->bearingAngle   = AngleIdx;
-
+            if (fish == 0)
+                continue;
 
           //Draw A general Region Where the FIsh Is located, search for template within that region only
           cv::Point centre = fish->ptRotCentre; //top_left + rotCentre;
@@ -2460,7 +2463,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               //  show_histogram("HeadHist",imgFishHead);
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
-              imgFishHeadSeg.copyTo(headImgOut); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
+
+              headImgOut = imgFishHeadSeg.clone(); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
+              //imgFishHeadSeg.copy
               //imgFishHeadSeg.release(); //Decrement Ref Counter
 
 
@@ -2510,7 +2515,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               if (contours_body.size() > 0 && bFitSpineToTail)
               {
                   //Look for Top Level Contour
-                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                //int idxFish = findMa+tchingContour(contours_body,hierarchy_body,centre,2);
                 //fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 fish->fitSpineToIntensity(maskedfishFeature_blur);
                 fish->drawSpine(fullImgOut);

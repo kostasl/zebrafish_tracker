@@ -449,7 +449,9 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
         //Add the Manual Entry And Divide to Get Mean Value
         iThresEyeSeg = (iThresEyeSeg+gthresEyeSeg)/(isampleN+1);
 
-    return iThresEyeSeg;
+
+
+    return std::min(std::max(3,iThresEyeSeg),255);
 }
 
 ///
@@ -469,12 +471,12 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     int ret = 0;//Return Value Is the Count Of Ellipses Detected (Eyes)
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
     ///Keep Image processing Arrays Static to avoid memory Alloc On Each Run
-    static cv::Mat imgUpsampled_gray;
+    cv::Mat imgUpsampled_gray;
     ///Note Memory Crash: SOme Allocation Bug Is Hit here;
-    static cv::Mat img_colour;
-    static cv::Mat img_contour;
-    static cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
-    static cv::Mat imgEdge_local;
+    cv::Mat img_colour;
+    cv::Mat img_contour;
+    cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
+    cv::Mat imgEdge_local;
 
     //cv::Mat imgEdge_dbg;
 
@@ -504,10 +506,13 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
 
 
+
     cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
     outHeadFrameMonitor = imgIn_thres.clone();
+    //imgIn_thres.copyTo(outHeadFrameMonitor);
+
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
     //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),1);
     cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);

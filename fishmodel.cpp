@@ -650,25 +650,26 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
 
         //Get Angl
         //angle = (atan2(tgt.y,tgt.x) +_CV_PI)/CV_PI*180.0; //Find towards Next Point Angle In Degrees
-        angle = spline[k-1].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing
+
+        angle = spline[k-1].angleRad/CV_PI*180.0+90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
         //angle = spline[k].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing Around THe point this Spine Was looking At initially
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
 
         ///sSearch for Maximum Intensity on Source Image Along the Arc
         pxValMax=0;
-        for(int idx=0;idx<(int)ellipse_pts.size();++idx){
+        for(int idx=0;idx<(int)ellipse_pts.size();idx++){
             //Obtain Value From Image at Point on Arc
-            int x = std::min(frameimg_Blur.cols,std::max(0,ellipse_pts[idx].x));
-            int y = std::min(frameimg_Blur.rows,std::max(0,ellipse_pts[idx].y));
-            loc=frameimg_Blur.at<uchar>(x,y);
+            int x = std::min(frameimg_Blur.cols,std::max(1,ellipse_pts[idx].x));
+            int y = std::min(frameimg_Blur.rows,std::max(1,ellipse_pts[idx].y));
+            loc=frameimg_Blur.at<uchar>(cv::Point(x,y));
 
             //If New Maximum Found THen Update Spline Point to point to this and Update Previous Spline Point's angle
             if(loc>pxValMax){
                 spline[k].x     = ellipse_pts[idx].x;
                 spline[k].y     = ellipse_pts[idx].y;
-                ///Remember 0 is Vertical Axis
-                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x); // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+                ///Get Arc tan and Translate back to 0 being the Vertical Axis
+                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)-CV_PI; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
                 spline[k].angleRad = spline[k-1].angleRad;
                 //Constrain Large Deviations
 //                if (std::abs(spline[k].angleRad - spline[k-1].angleRad) > CV_PI)
