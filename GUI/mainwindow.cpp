@@ -124,6 +124,9 @@ void MainWindow::tickProgress()
 void MainWindow::showInsetimg(cv::Mat& img)
 {
 
+    if (img.cols == 0 || img.rows == 0)
+        return;
+
     qimgHead = QtOpencvCore::img2qimg(img);
     // convert the opencv image to a QPixmap (to show in a QLabel)
     QPixmap pixMap = QPixmap::fromImage(qimgHead);

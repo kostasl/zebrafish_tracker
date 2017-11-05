@@ -880,7 +880,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
 
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
-            //window_main.showInsetimg(outframeHead);
+            window_main.showInsetimg(outframeHead);
             cv::imshow("Debug D",frameDebugD);
         }
 
