@@ -642,7 +642,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
     //cv::imshow("IntensitTailFit",frameimg_Blur);
 
     std::vector<cv::Point> ellipse_pts; //Holds the Drawn Arc Points around the last spine Point
-    cv::imshow("BlurSpine",frameimg_Blur);
+    //cv::imshow("BlurSpine",frameimg_Blur);
 
     for(unsigned int k=1;k<AP_N;k++){ //Loop Through Spine Points
         ellipse_pts.clear();
