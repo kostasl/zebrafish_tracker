@@ -25,8 +25,8 @@ SOURCES += main.cpp \
 RESOURCES += qml.qrc
 #INCLUDEPATH += /usr/include/opencv
 #INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.2.0/include
-#INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.0/include
-INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.1/include
+INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.0/include
+#INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.1/include
 #INCLUDEPATH += /usr/include/cvblob
 #INCLUDEPATH += ~/opencv/
 
@@ -39,23 +39,22 @@ INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.1/include
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
 
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.2.0/build/lib
-#LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
-#LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
-LIBS += -L /home/kostasl/OpenCV/opencv-3.3.1/build/lib
+LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
+#LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib -lopencv_dnn -lopencv_ml -lopencv_objdetect -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_viz -lopencv_core
+#LIBS += -L /home/kostasl/OpenCV/opencv-3.3.1/build/lib
 LIBS += `pkg-config opencv --libs`
-#LIBS += -L/usr/local/lib -lcvblob
-#LIBS += -L/home/kostasl/workspace -lcvblob
+
 # Additional import path used to resolve QML modules in Qt Creator's code model
 ##QML_IMPORT_PATH =
 ##
 ##Assume Libs are copied with the package into
 QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
-#QMAKE_LFLAGS += -Wl,--rpath=/opt/Qt/5.9/5.9/gcc_64/lib/
-QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.9.2/gcc_64/lib/
+QMAKE_LFLAGS += -Wl,--rpath=/opt/Qt/5.9/5.9/gcc_64/lib/
+#QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.9.2/gcc_64/lib/
 
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/opencv/build/lib/
-#QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.0/build-Dbg
-QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.1/build
+QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.0/build-Dbg
+#QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.1/build
 
 QMAKE_LFLAGS_RPATH=
 ###Using command : cp `ldd larvatrack | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` /libs

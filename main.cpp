@@ -767,7 +767,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     //Speed that stationary objects are removed
     cv::Mat frame,outframe,outframeHead;
     unsigned int nFrame = 0;
-
+    outframeHead = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1);
     bPaused =false; //Start Paused
 
 
@@ -810,7 +810,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
     // Open OutputFile
     QFile outdatafile;
-    openDataFile(trkoutFileCSV,videoFilename,outdatafile);
+    if (!openDataFile(trkoutFileCSV,videoFilename,outdatafile))
+        return 0;
 
 
     //read input data. ESC or 'q' for quitting
@@ -879,7 +880,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
 
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
-            window_main.showInsetimg(outframeHead);
+            //window_main.showInsetimg(outframeHead);
             cv::imshow("Debug D",frameDebugD);
         }
 
@@ -2078,8 +2079,8 @@ cv::Mat threshold_output_COMB;
 
 ///// Convert image to gray, Mask and
 //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
-frameImg.copyTo(frameImg_gray); //Its Grey Anyway
-
+//frameImg.copyTo(frameImg_gray); //Its Grey Anyway
+frameImg_gray = frameImg.clone();
 //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 
 /// Detect edges using Threshold , A High And  low /
@@ -2242,7 +2243,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 /// \return
 ///
 /// // \todo Optimize by re using fish contours already obtained in enhance fish mask
-void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskedfishImg_gray, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
+void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& imgFishHeadSeg, cv::Mat& maskedfishImg_gray, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
 
@@ -2264,7 +2265,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     cv::Mat maskedImg_gray;
     cv::Mat maskedfishFeature_blur;
     // Memory Crash When Clearing Stack Here //
-    cv::Mat imgFishHeadSeg; //Thresholded / Or Edge Image Used In Detect Ellipses
+    //cv::Mat imgFishHeadSeg; //Thresholded / Or Edge Image Used In Detect Ellipses
     cv::Mat Mrot;
 
     // Memory Crash
@@ -2464,7 +2465,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //  show_histogram("HeadHist",imgFishHead);
               imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
 
-              headImgOut = imgFishHeadSeg.clone(); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
+              //headImgOut = imgFishHeadSeg.clone(); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
               //imgFishHeadSeg.copy
               //imgFishHeadSeg.release(); //Decrement Ref Counter
 

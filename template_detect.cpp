@@ -202,4 +202,5 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     // DEBUG //
     cv::imshow("Fish Template",FishTemplateCache);
 
+    return 1;
 }

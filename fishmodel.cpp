@@ -791,6 +791,8 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
     out << h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
 
     //Set Global 1st Spine Direction (Helps to detect Errors)
+    assert(h.spline.size() > 0);
+
     out << "\t" << Rad2Deg* h.spline[0].angleRad;
     //Output Spine Point Angular Deviations from the previous spine/tail Segment in Degrees
     for (int i=1;i<h.c_spinePoints;i++)

@@ -433,10 +433,15 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
 
 
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
-        cv::ellipse2Poly(ptcenter, cv::Size(voffset*2,voffset), 0, 200,330 , 1, ellipseSample_pts);
+        cv::ellipse2Poly(ptcenter, cv::Size(voffset*2,voffset), 0, 205,325 , 1, ellipseSample_pts);
         for (int i=0;i<ellipseSample_pts.size();i++)
         {
             //iThresEyeSeg += imgUpsampled_gray.at<uchar>(ellipse_pts[i]);
+            ellipseSample_pts[i].x = std::max(1,std::min(pimgIn.cols,ellipseSample_pts[i].x));
+            ellipseSample_pts[i].y = std::max(1,std::min(pimgIn.rows,ellipseSample_pts[i].y));
+
+            assert(ellipseSample_pts[i].x >= 0 && ellipseSample_pts[i].x < pimgIn.cols);
+            assert(ellipseSample_pts[i].y >= 0 && ellipseSample_pts[i].y < pimgIn.rows);
             eyeSegMaxHeap.push(pimgIn.at<uchar>(ellipseSample_pts[i]));
         }
 
@@ -488,15 +493,17 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     cv::Point2f ptLEyeMid,ptREyeMid;
 
-    cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/2+7);
+
+    //Upsamples an image which causes blur/interpolation it.
+    cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
+
     int lengthLine = 13;
+    cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/2+7);
+
     ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y/2; //y=0 is the top left corner
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
-
-    //Upsamples an image which causes blur/interpolation it.
-    cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
 
 
     /// Make Arc from Which to get Sample Points For Eye Segmentation
