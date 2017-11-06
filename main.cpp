@@ -89,8 +89,8 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor      = 25; /// thres  for Eye Ellipse Detection methods
-int gi_minEllipseMajor          = 16; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+int gi_maxEllipseMajor      = 24; /// thres  for Eye Ellipse Detection methods
+int gi_minEllipseMajor          = 14; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
@@ -2524,7 +2524,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   //Look for Top Level Contour
                 int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-                //fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 //fish->resetSpine();
                 fish->fitSpineToIntensity(maskedfishFeature_blur);
                 fish->drawSpine(fullImgOut);
