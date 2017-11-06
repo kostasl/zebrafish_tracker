@@ -101,7 +101,7 @@ const int gFishTailSpineSegmentCount  = 6;
 
 const int gcFishContourSize               = 35;
 int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 10;
+int gFitTailIntensityScanAngleDeg   = 15;
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
