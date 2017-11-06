@@ -63,7 +63,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 ///
 int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol)
 {
-  const int iIdxAngleMargin = 5; //Offset Of Angle To begin Before LastKnownGood Angle
+  const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
   int matchIdx;
   int idx = 0; //Current Angle Index Being tested in the loop
 
@@ -126,7 +126,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
 
   ///Check If Matching Exceeeds threshold - If Not Fail And Start From Top Row On next Iteration
-  if (maxGVal > gTemplateMatchThreshold)
+  if (maxGVal >= gTemplateMatchThreshold)
   {
       //Save Results To Output
       matchScore    = maxGVal;
@@ -134,7 +134,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
       if (startRow != ibestMatchRow) //Store Best Row Match
       {
-          std::cout << "Ch. Templ. Row:" << ibestMatchRow << std::endl;
+          std::clog << "Ch. Templ. Row:" << ibestMatchRow << std::endl;
           startRow = ibestMatchRow;
       }
    }else { //Nothing Found YEt-- Proceed To Next Template variation

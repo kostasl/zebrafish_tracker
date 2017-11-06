@@ -95,10 +95,10 @@ int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isola
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 13;
+int gFishTailSpineSegmentLength     = 14;
 int gFishTailSpineSegmentCount      = 6;
 int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 25;
+int gFitTailIntensityScanAngleDeg   = 10;
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
@@ -254,10 +254,14 @@ int main(int argc, char *argv[])
 
     //cv::namedWindow(gstrwinName,CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     //cv::namedWindow(gstrwinName + " FishOnly",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow("Debug C",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    //cv::namedWindow("Debug C",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
 
     //cv::namedWindow("Ellipse fit",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow("HeadHist",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    /// Histogram Window With Manual Threshold Setting for Eye Seg ///
+    //cv::namedWindow("HeadHist",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+    //cv::setMouseCallback("HeadHist", CallBackHistFunc, NULL);
+    ////
+
     cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
 
 #ifdef    _ZTFDEBUG_
@@ -274,7 +278,7 @@ int main(int argc, char *argv[])
     //set the callback function for any mouse event
     //cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
-    cv::setMouseCallback("HeadHist", CallBackHistFunc, NULL);
+
 
 
     //Initialize The Track and blob vectors
@@ -448,7 +452,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
 
         if (istartFrame == 0)
         {
-            std::cerr << "Could not load last video - Exiting loop." <<std::endl;
+            std::cerr << "Could not process last video - Exiting loop." <<std::endl;
             break;
         }
     }
@@ -767,7 +771,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     //Speed that stationary objects are removed
     cv::Mat frame,outframe,outframeHead;
     unsigned int nFrame = 0;
-    outframeHead = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1);
+    outframeHead = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
     bPaused =false; //Start Paused
 
 
@@ -2079,8 +2083,8 @@ cv::Mat threshold_output_COMB;
 
 ///// Convert image to gray, Mask and
 //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
-//frameImg.copyTo(frameImg_gray); //Its Grey Anyway
-frameImg_gray = frameImg.clone();
+frameImg.copyTo(frameImg_gray); //Its Grey Anyway
+//frameImg_gray = frameImg.clone();
 //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 
 /// Detect edges using Threshold , A High And  low /
@@ -2516,8 +2520,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               if (contours_body.size() > 0 && bFitSpineToTail)
               {
                   //Look for Top Level Contour
-                //int idxFish = findMa+tchingContour(contours_body,hierarchy_body,centre,2);
-                //fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                //fish->resetSpine();
                 fish->fitSpineToIntensity(maskedfishFeature_blur);
                 fish->drawSpine(fullImgOut);
               }

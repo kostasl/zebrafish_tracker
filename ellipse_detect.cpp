@@ -582,10 +582,12 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         outHeadFrameMonitor = imgEdge_local.clone();
-        //Cover Right Eye
-        cv::Rect r(ptcentre.x,ptcentre.y,imgEdge_local.cols/2-1,imgEdge_local.rows);
+        //COVER Right Eye
+        cv::Rect r(imgEdge_local.cols/2,0,imgEdge_local.cols,imgEdge_local.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
+        //cv::imshow("REyeCover",imgEdge_local);
+
         getEdgePoints(imgEdge_local,vedgePoints_all);
         detectEllipse(vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
         //imgEdge_local.copyTo(imgEdge_dbg);
@@ -665,6 +667,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         cv::Rect r(0,0,imgEdge_local.cols/2,imgEdge_local.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
+        //cv::imshow("LEyeCover",imgEdge_local);
 
         getEdgePoints(imgEdge_local,vedgePoints_all);
         detectEllipse(vedgePoints_all,qEllipsoids);

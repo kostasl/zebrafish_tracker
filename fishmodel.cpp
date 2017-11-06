@@ -124,7 +124,7 @@ void fishModel::resetSpine()
         if (this->bearingRads < 0)
             this->bearingRads += 2.0*CV_PI;
 
-            sp.angleRad    = (this->bearingRads)-CV_PI -CV_PI/2.0; //  //Spine Looks In Opposite Direction
+            sp.angleRad    = (this->bearingRads)-CV_PI; //  //Spine Looks In Opposite Direction
 
             if (sp.angleRad < 0)
                 sp.angleRad += 2.0*CV_PI;
@@ -419,7 +419,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     double dDifffitPtError_total = 1000.0;
 
     double dTemp = 1.0; //Anealling Temperature
-
+    /// \todo Optimize - Make Fish Contour Size Fixed - Then Allocate this as a buffer on the heap and reuse
     double dJacobian[contour.size()][cntParam];//Vector of \nabla d for error functions
     memset(dJacobian,0.0,contour.size()*(cntParam)*sizeof(double));
     double dGradf[cntParam];//Vector of Grad F per param
@@ -567,16 +567,15 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
 
 ///  DEBUG ///
+#ifdef _ZTFDEBUG_
     for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
     {
         cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
     }
     cv::drawContours(frameDebugC,contours_body,idxOuterContour,CV_RGB(200,20,20),1);
-//    cv::imshow("Debug C",frameDebugC);
 
-    //QCoreApplication::processEvents(QEventLoop::AllEvents, 1);
-    //cv::waitKey(1);
-////    End Debug ///
+#endif
+///    End Debug ///
 
     return dDifffitPtError_total;
    // qDebug() << "D err:" << dDifffitPtError_total;
@@ -651,7 +650,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
         //Get Angl
         //angle = (atan2(tgt.y,tgt.x) +_CV_PI)/CV_PI*180.0; //Find towards Next Point Angle In Degrees
 
-        angle = spline[k-1].angleRad/CV_PI*180.0+90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
+        angle = spline[k-1].angleRad/CV_PI*180.0-90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
         //angle = spline[k].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing Around THe point this Spine Was looking At initially
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
