@@ -672,8 +672,8 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
                 spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
                 //spline[k].angleRad = spline[k-1].angleRad;
                 //Constrain Large Deviations
-//                if (std::abs(spline[k].angleRad - spline[k-1].angleRad) > CV_PI)
-//                    spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
+                if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI)
+                    spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
 
 
                 pxValMax=loc; //Save as New Maximum Point
