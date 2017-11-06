@@ -80,6 +80,7 @@ double dLearningRate        = 1.0/(2*MOGhistory);
 
 const int nTemplatesToLoad  = 10; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
+
 ///Segmentation Params
 int g_Segthresh             = 21; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
@@ -96,7 +97,9 @@ int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 0.5; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 14;
-int gFishTailSpineSegmentCount      = 6;
+const int gFishTailSpineSegmentCount  = 6;
+
+const int gcFishContourSize               = 35;
 int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 int gFitTailIntensityScanAngleDeg   = 10;
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
@@ -2183,7 +2186,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         if (curve.size() > 10)
         {
              ///// SMOOTH COntours /////
-            double sigma = 1.0;
+            double sigma = 3.0;
             int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
             assert(M % 2 == 1); //M is an odd number
 
@@ -2196,8 +2199,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             std::vector<double> X,XX,Y,YY;
             getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
             getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
-            //ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, 30,false);
-            PolyLineMerge(curve,smoothx,smoothy);
+            ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
+            PolyLineMerge(curve,resampledcurveX,resampledcurveY);
             ///////////// END SMOOTHING
 
             ///\todo Make Contour Fish Like - Extend Tail ///
@@ -2521,7 +2524,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   //Look for Top Level Contour
                 int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                //fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 //fish->resetSpine();
                 fish->fitSpineToIntensity(maskedfishFeature_blur);
                 fish->drawSpine(fullImgOut);

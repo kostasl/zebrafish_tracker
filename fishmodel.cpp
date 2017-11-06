@@ -8,7 +8,7 @@ extern double gTemplateMatchThreshold;
 extern int gFishTailSpineSegmentLength;
 extern int gMaxFitIterations;
 extern int gFitTailIntensityScanAngleDeg;
-
+extern const int gcFishContourSize; //Fixed number of fish Contour Points
 
 fishModel::fishModel()
 {
@@ -398,14 +398,15 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 ///
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
-    const int cntParam = this->c_spineParamCnt;
+    static const int cntParam = 6;//this->c_spineParamCnt;
+    static const int gcFishContourSize = 35;
 
-    const int c_fitErrorPerContourPoint = 10; //Parameter Found By Experience for current size fish
+    const int c_fitErrorPerContourPoint = 18; //Parameter Found By Experience for current size fish
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
     //Run Until Convergence Error is below threshold - Or Change is too small
 
-    assert(contours_body.size() >= idxOuterContour);
+    assert(contours_body.size() >= idxOuterContour && contours_body[idxOuterContour].size() == gcFishContourSize);
     ///Compute Error terms for all data points/obtain local quadratic approx of fsd
     //For each contour Point
     std::vector<cv::Point> contour = contours_body[idxOuterContour];
@@ -420,17 +421,17 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     double dTemp = 1.0; //Anealling Temperature
     /// \todo Optimize - Make Fish Contour Size Fixed - Then Allocate this as a buffer on the heap and reuse
-    double dJacobian[contour.size()][cntParam];//Vector of \nabla d for error functions
-    memset(dJacobian,0.0,contour.size()*(cntParam)*sizeof(double));
-    double dGradf[cntParam];//Vector of Grad F per param
+    static double dJacobian[gcFishContourSize][cntParam];//Vector of \nabla d for error functions
+    memset(dJacobian,0.0,gcFishContourSize*(cntParam)*sizeof(double));
+
+    static double dGradf[cntParam];//Vector of Grad F per param
     memset(dGradf,0.0,cntParam*sizeof(double));
 
-    double dGradi[cntParam];//Vector of Grad Intensity per SPine POint param
+    static double dGradi[cntParam];//Vector of Grad Intensity per SPine POint param
     memset(dGradi,0.0,cntParam*sizeof(double));
 
-    double dResiduals[contour.size()];//Vector of \nabla d for error functions
-
-    memset(dResiduals,0.0,contour.size()*sizeof(double));
+    static double dResiduals[gcFishContourSize];//Vector of \nabla d for error functions
+    memset(dResiduals,0.0,gcFishContourSize*sizeof(double));
 
     int cntpass     = 0;
     int cntStuck    = 0;
@@ -478,7 +479,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
         double dq,ds; //Variation In Space And Score Variation
         //For Each Contour Point
-        for (uint i=0;i<contour.size();i+=1) //For Each Data point make a row in Jacobian
+        for (uint i=0;i<gcFishContourSize;i+=1) //For Each Data point make a row in Jacobian
         {
             dResiduals[i] = distancePointToSpline((cv::Point2f)contour[i],tmpspline);
 
@@ -668,7 +669,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
                 spline[k].x     = ellipse_pts[idx].x;
                 spline[k].y     = ellipse_pts[idx].y;
                 ///Get Arc tan and Translate back to 0 being the Vertical Axis
-                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)-CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
                 //spline[k].angleRad = spline[k-1].angleRad;
                 //Constrain Large Deviations
 //                if (std::abs(spline[k].angleRad - spline[k-1].angleRad) > CV_PI)

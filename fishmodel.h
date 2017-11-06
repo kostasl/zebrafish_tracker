@@ -16,7 +16,7 @@
 
 extern float gDisplacementThreshold;
 extern int gFishTailSpineSegmentLength;
-extern int gFishTailSpineSegmentCount;
+extern const int gFishTailSpineSegmentCount;
 
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
