@@ -58,7 +58,7 @@
 #include <CSS/CurveCSS.h> ///Curve Smoothing and Matching
 
 /// Constants ///
-const int inactiveFrameCount            = 30000; //Number of frames inactive until track is deleted
+const int gcMaxFishModelInactiveFrames  = 10; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
@@ -78,7 +78,7 @@ const int MOGhistory        = 10;//gfVidfps*2;
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
-const int nTemplatesToLoad  = 10; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+const int nTemplatesToLoad  = 11; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 
 ///Segmentation Params
@@ -101,7 +101,7 @@ const int gFishTailSpineSegmentCount  = 6;
 
 const int gcFishContourSize               = 35;
 int gMaxFitIterations               = 3; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 15;
+int gFitTailIntensityScanAngleDeg   = 20;
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
 
     trackVideofiles(window_main,outfilename);
     //destroy GUI windows
-    cv::destroyAllWindows();
+
     //cv::waitKey(0);                                          // Wait for a keystroke in the window
    //pMOG2->getBackgroundImage();
     //pMOG->~BackgroundSubtractor();
@@ -384,24 +384,30 @@ int main(int argc, char *argv[])
     std::cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
 ///Clean Up //
 
-    frameDebugA.deallocate();
-    frameDebugB.deallocate();
-    frameDebugC.deallocate();
-    frameDebugD.deallocate();
+    frameDebugA.release();
+    frameDebugB.release();
+    frameDebugC.release();
+    frameDebugD.release();
 
 
     ///* Create Morphological Kernel Elements used in processFrame *///
-    kernelOpen.deallocate();
-    kernelOpenLaplace.deallocate();
-    kernelOpenfish.deallocate();
-    kernelClose.deallocate();
+    kernelClose.release();
+    kernelOpenfish.release();
+    kernelOpenLaplace.release();
+    kernelOpen.release();
+    gLastfishimg_template.release();
+    gEyeTemplateCache.release();
+    gFishTemplateCache.release();
 
 
     //app.quit();
     window_main.close();
+    cv::destroyAllWindows();
+
 
     //Catch Any Mem Alloc Error
     try{
+        app.quit();
         app.exec();
     }catch (const std::bad_alloc &)
     {
@@ -586,6 +592,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
     //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
         cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
+
+        int RefCount = frame_gray.u ? (frame_gray.u->refcount) : 0;
+
+        //qDebug() <<  "Start Fgrey #ref:" << RefCount;
+
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
         frame_gray.copyTo(fgFishImgMasked,fgFishMask); //Use Enhanced Mask
@@ -601,7 +612,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         std::vector<cv::KeyPoint> ptFishblobs;
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
-        fgFishMask.copyTo(frameDebugD);
+        frameDebugD = fgFishMask.clone(); //Stop Leaks
 
         cv::Mat maskedImg_gray;
         /// Convert image to gray and blur it
@@ -643,6 +654,15 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
     ///
     drawFrameText(window_main,nFrame,nLarva,nFood,outframe);
+
+    fgFishImgMasked.release();
+    fgFishMask.release();
+    fgFishImgMasked.release();
+
+    int RefCount = frame_gray.u ? (frame_gray.u->refcount) : 0;
+    //qDebug() << "END Fgrey #ref:" << RefCount;
+    frame_gray.release();
+
 
 
 
@@ -702,12 +722,24 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
 
         //Show Memory Consumption
         ss.str("");
+        ss.precision(4);
         process_mem_usage(vm, rss);
         std::clog << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
         ss  << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
         window_main.LogEvent(QString::fromStdString(ss.str()));
 
+    }//Report on Next Frame
+    if ((nFrame%301) == 0 || nFrame == 2)
+    {
+        process_mem_usage(vm, rss);
+        std::clog << "Delta Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
+        //Show Memory Consumption
+        ss.str("");
+        ss.precision(4);
+        ss  << "D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
+        window_main.LogEvent(QString::fromStdString(ss.str()));
     }
+
     ///Show Memory On Image Frame
     std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
     cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
@@ -1057,6 +1089,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
         //qfishrank.pop();//Remove From Priority Queue Rank
         maxTemplateScore = pfishBest->templateScore;
+        pfishBest->inactiveFrames   = 0; //Reset Counter
     }
 
     ///Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
@@ -1071,15 +1104,19 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //OtherWise Delete The model?
             //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
-
-            std::cout << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
-            ft = vfishmodels.erase(ft);
-            delete(pfish);
-            continue;
+            if (pfish->inactiveFrames > gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
+            {
+                std::cout << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
+                ft = vfishmodels.erase(ft);
+                delete(pfish);
+                continue;
+            }else
+            {
+                pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+            }
         }
         ++ft; //Increment Iterator
     } //Loop To Delete Other FishModels
-
 
 
 
@@ -2275,41 +2312,30 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     //cv::Mat imgFishHeadSeg; //Thresholded / Or Edge Image Used In Detect Ellipses
     cv::Mat Mrot;
 
-    // Memory Crash
-
-    //std::vector<cv::RotatedRect> rectFeatures; //Fitted Ellipsoids Array
-
-    //std::vector<std::vector<cv::Point> > contours_laplace;
-    //contours_laplace.reserve(contours_body.size());
-    //std::vector<cv::RotatedRect> rectfishFeatures; //Fitted Ellipsoids
-
-    //std::vector<std::vector<cv::Point> > contours_canny;
+    //For Head Img//
+    cv::Mat  imgFishAnterior,imgFishAnterior_Norm,imgFishHead,imgFishHeadProcessed; //imgTmp imgFishHeadEdge
 
 
-    ////// Make Debug Frames ///
     cv::Mat fullImg_colour;
     fullImgIn.convertTo(fullImg_colour,CV_8UC3);
 
-    fullImg_colour.copyTo(frameDebugC);
-
-
-    //framelapl_buffer.copyTo(framelapl); //Clear Copy On each Iteration
-
+    //fullImg_colour.copyTo(frameDebugC);
 
     /// Convert image to gray and blur it
     if (fullImgIn.depth() != CV_8U)
+    {
         cv::cvtColor( fullImgIn, maskedImg_gray, cv::COLOR_BGR2GRAY );
+
+    }
     else
-        fullImgIn.copyTo(maskedImg_gray);
+        maskedImg_gray = fullImgIn; //Tautology
+
+
+    cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
+
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
-    //Blur The Image used to detect  broad features
-    cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
-    //
-
-//    if (bUseEllipseEdgeFittingMethod)
-//        cv::Canny( maskedImg_gray, frameCanny, gi_CannyThresSmall,gi_CannyThres  );
 
 
     ////Template Matching Is already Done On Fish Blob/Object
@@ -2390,17 +2416,17 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
            tEllipsoids vell;
            vell.clear();
 
-           cv::Mat imgTmp, imgFishAnterior,imgFishAnterior_Norm,imgFishHead,imgFishHeadEdge,imgFishHeadProcessed;
-           maskedImg_gray.copyTo(imgTmp); //imgTmp Contain full frame Image in Gray
+
+           //maskedImg_gray.copyTo(imgTmp); //imgTmp Contain full frame Image in Gray
            //Threshold The Match Check Bounds Within Image
-           cv::Rect imgBounds(0,0,imgTmp.cols,imgTmp.rows);
+           cv::Rect imgBounds(0,0,maskedImg_gray.cols,maskedImg_gray.rows);
 
            if (!( //Looks Like a fish is found, now Check Bounds // gmaxVal > gTemplateMatchThreshold &&
                imgBounds.contains(rectfishAnteriorBound.br()) &&
                    imgBounds.contains(rectfishAnteriorBound.tl())))
                continue; //This Fish Is out Of Bounds /
 
-              imgTmp(rectfishAnteriorBound).copyTo(imgFishAnterior);
+              maskedImg_gray(rectfishAnteriorBound).copyTo(imgFishAnterior);
 //              if (bUseEllipseEdgeFittingMethod)
 //                frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
               //get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
@@ -2451,8 +2477,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               cv::circle(imgFishAnterior_Norm,ptMask,giHeadIsolationMaskVOffset,CV_RGB(0,0,0),-1);
               cv::line(imgFishAnterior_Norm,ptMask,cv::Point(imgFishAnterior_Norm.cols/2,0),CV_RGB(0,0,0),1);//Split Eyes
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
-              //imgFishHead           = imgFishAnterior_Norm;
 
+              //imgFishHeadSeg Is an OutParam with The Segmentation Image used
+              //imgFishHeadProcessed is an OutParam with the UpSampled Head with Features Drawn on it
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
 
 

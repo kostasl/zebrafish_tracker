@@ -12,6 +12,7 @@ extern const int gcFishContourSize; //Fixed number of fish Contour Points
 
 fishModel::fishModel()
 {
+        inactiveFrames = 0;
         templateScore = 0;
         coreTriangle.push_back(cv::Point());
         coreTriangle.push_back(cv::Point());
@@ -48,6 +49,7 @@ fishModel::fishModel()
 fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter):fishModel()
 {
 
+    inactiveFrames  = 0;
     this->ID        = blob.hash() ;
     this->blobLabel = blob.hash();
 

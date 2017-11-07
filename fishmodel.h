@@ -107,7 +107,7 @@ public:
   double rightEyeTheta;/// Theta is In Degrees
   double bearingRads; /// Rads
   float bearingAngle; /// Theta is In Degrees
-
+  int inactiveFrames; //Count Of Number Of Frames That this model Has not Been Matched To Any Fish
 
   tDetectedEllipsoid    leftEye;
   tDetectedEllipsoid    rightEye;

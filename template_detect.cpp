@@ -157,6 +157,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 ///
 int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 {
+
     //Make Variations And store in template Cache
     cv::Mat fishTemplateVar,mtCacheRow,mtEnlargedCache;
     makeTemplateVar(imgTempl,fishTemplateVar, gFishTemplateAngleSteps);
@@ -178,7 +179,8 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
     fishTemplateVar.copyTo(mtCacheRow); //Copy To Row In CAche
     gnumberOfTemplatesInCache++; //Increment Count
     // DEBUG //
-    cv::imshow("Fish Template",FishTemplateCache);
+    cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows) ));
+    cv::imshow("Templ",imgTempl);
 
    return ++idxTempl;
 }
@@ -200,7 +202,7 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     gnumberOfTemplatesInCache--;
 
     // DEBUG //
-    cv::imshow("Fish Template",FishTemplateCache);
+    cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows)));
 
     return 1;
 }

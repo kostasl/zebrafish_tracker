@@ -479,7 +479,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::Mat imgUpsampled_gray;
     ///Note Memory Crash: SOme Allocation Bug Is Hit here;
     cv::Mat img_colour;
-    cv::Mat img_contour;
+    //cv::Mat img_contour;
     cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
     cv::Mat imgEdge_local;
 
