@@ -477,7 +477,6 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
     ///Keep Image processing Arrays Static to avoid memory Alloc On Each Run
     cv::Mat imgUpsampled_gray;
-    ///Note Memory Crash: SOme Allocation Bug Is Hit here;
     cv::Mat img_colour;
     //cv::Mat img_contour;
     cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
@@ -551,7 +550,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     if (iLEye != -1) //If Contour Is found
     {
-        imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+        //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
         cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
         if (vLEyeHull.size() > 4)
         {
@@ -630,7 +629,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     /// - RIGHT EYE - Reset And Redraw - ////
     if (iREye != -1)
     {
-        imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+        //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
         cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
 
         if (vREyeHull.size() > 4)

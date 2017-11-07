@@ -76,7 +76,7 @@ void MainWindow::saveScreenShot()
     //std::stringstream frameNumberString; frameNumberString << nFrame;
     QString frameNumberString = QString::number(nFrame);
 
-    ::saveImage(frameNumberString,stroutDirCSV,vidFilename,*this->mpLastCVImg);
+    ::saveImage(frameNumberString,stroutDirCSV,vidFilename,this->frameScene);
 
 }
 
@@ -156,8 +156,10 @@ void MainWindow::LogEvent(QString strMessage)
 
 void MainWindow::showCVimg(cv::Mat& img)
 {
-    frameScene = img;
-    qimg = QtOpencvCore::img2qimg(img);
+    frameScene.release();
+    //frameScene = img.clone();
+    img.copyTo(frameScene);
+    qimg = QtOpencvCore::img2qimg(frameScene);
 
     // convert the opencv image to a QPixmap (to show in a QLabel)
     QPixmap pixMap = QPixmap::fromImage(qimg);
@@ -185,8 +187,9 @@ void MainWindow::showCVimg(cv::Mat& img)
     //this->ui->graphicsView->fitInView(mImage, Qt::KeepAspectRatio);
     //this->ui->graphicsView->show();
 
-    this->mpLastCVImg = &img; //Save Pointer to frame
+    //this->mpLastCVImg = &img; //Save Pointer to frame
     //mImage
+
 
 }
 

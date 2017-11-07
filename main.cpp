@@ -364,8 +364,22 @@ int main(int argc, char *argv[])
 //    }
 
     //trackImageSequencefiles(window_main);
+    try{
 
-    trackVideofiles(window_main,outfilename);
+        //app.exec();
+        trackVideofiles(window_main,outfilename);
+
+    }catch (const std::bad_alloc &)
+    {
+        app.quit();
+        qDebug() << "Memory Allocation Error!";
+        std::clog << "Memory Allocation Error!";
+        std::cerr << "Memory Allocation Error! - Exiting";
+
+        return 0;
+    }
+
+
     //destroy GUI windows
 
     //cv::waitKey(0);                                          // Wait for a keystroke in the window
@@ -405,21 +419,9 @@ int main(int argc, char *argv[])
     cv::destroyAllWindows();
 
 
+    app.quit();
     //Catch Any Mem Alloc Error
-    try{
-        app.quit();
-        app.exec();
-    }catch (const std::bad_alloc &)
-    {
-        app.quit();
-        qDebug() << "Memory Allocation Error!";
-        std::clog << "Memory Allocation Error!";
-        std::cerr << "Memory Allocation Error! - Exiting";
-
-        return 0;
-    }
-
-
+    std::exit(1);
     return 1;
 
 }
@@ -593,9 +595,6 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
     //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
         cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
 
-        int RefCount = frame_gray.u ? (frame_gray.u->refcount) : 0;
-
-        //qDebug() <<  "Start Fgrey #ref:" << RefCount;
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
@@ -612,8 +611,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         std::vector<cv::KeyPoint> ptFishblobs;
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
-        frameDebugD = fgFishMask.clone(); //Stop Leaks
-
+        //frameDebugD = fgFishMask.clone(); //Stop Leaks
+        fgFishMask.copyTo(frameDebugD);
         cv::Mat maskedImg_gray;
         /// Convert image to gray and blur it
         cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
@@ -655,15 +654,18 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
     ///
     drawFrameText(window_main,nFrame,nLarva,nFood,outframe);
 
+
+
+
     fgFishImgMasked.release();
     fgFishMask.release();
     fgFishImgMasked.release();
 
-    int RefCount = frame_gray.u ? (frame_gray.u->refcount) : 0;
-    //qDebug() << "END Fgrey #ref:" << RefCount;
+   // int RefCount = frame_gray.u ? (frame_gray.u->refcount) : 0; //Its 1 at this point as required
+    //assert(RefCount == 1);
+    //qDebug() << "frame_gray.u->refcount:" << RefCount;
+
     frame_gray.release();
-
-
 
 
 } //End Of Process Frame
@@ -684,7 +686,7 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
 
     QString frameNumberString;
     frameNumberString = QString::number(nFrame);
-    char buff[100];
+    char buff[200];
     static double vm, rss;
 
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
@@ -707,45 +709,45 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
     cv::putText(outframe, buff, cv::Point(15, 63),
             trackFnt, trackFntScale , CV_RGB(250,250,0));
 
-    //Time Rate - conv from ms to minutes
-    ///Report Status  + Memory Usage
-    if ((nFrame%300) == 0 || nFrame == 1)
-    {
-        //Report
-        ss.str("");
-        std::clog << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0 << std::endl;
-        //THats In KiB units /So 1Million is A Gigabyte
-        std::clog << "#Fish " << nLarva << " #Food Blobs:" << nFood << std::endl;
+//Memory Reporting Moved to Main Loop
+//    //Time Rate - conv from ms to minutes
+//    ///Report Status  + Memory Usage
+//    if ((nFrame%300) == 0 || nFrame == 1)
+//    {
+//        //Report
+//        ss.str("");
+//        std::clog << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0 << std::endl;
+//        //THats In KiB units /So 1Million is A Gigabyte
+//        std::clog << "#Fish " << nLarva << " #Food Blobs:" << nFood << std::endl;
 
-        ss << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0;
-        window_main.LogEvent(QString::fromStdString(ss.str()));
+//        ss << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0;
+//        window_main.LogEvent(QString::fromStdString(ss.str()));
 
-        //Show Memory Consumption
-        ss.str("");
-        ss.precision(4);
-        process_mem_usage(vm, rss);
-        std::clog << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
-        ss  << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
-        window_main.LogEvent(QString::fromStdString(ss.str()));
+//        //Show Memory Consumption
+//        ss.str("");
+//        ss.precision(4);
+//        process_mem_usage(vm, rss);
+//        std::clog << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
+//        ss  << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
+//        window_main.LogEvent(QString::fromStdString(ss.str()));
 
-    }//Report on Next Frame
-    if ((nFrame%301) == 0 || nFrame == 2)
-    {
-        process_mem_usage(vm, rss);
-        std::clog << "Delta Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
-        //Show Memory Consumption
-        ss.str("");
-        ss.precision(4);
-        ss  << "D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
-        window_main.LogEvent(QString::fromStdString(ss.str()));
-    }
-
-    ///Show Memory On Image Frame
-    std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
-    cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
-    cv::putText(outframe, buff, cv::Point(10, 505),
-            trackFnt,trackFntScale , CV_RGB(10,250,0));
-}
+//    }//Report on Next Frame
+//    if ((nFrame%301) == 0 || nFrame == 2)
+//    {
+//        process_mem_usage(vm, rss);
+//        std::clog << "Delta Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
+//        //Show Memory Consumption
+//        ss.str("");
+//        ss.precision(4);
+//        ss  << "D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
+//        window_main.LogEvent(QString::fromStdString(ss.str()));
+//    }
+//    ///Show Memory On Image Frame
+//    std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
+//    cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
+//    cv::putText(outframe, buff, cv::Point(10, 505),
+//            trackFnt,trackFntScale , CV_RGB(10,250,0));
+} //DrawFrameText
 
 
 
@@ -856,6 +858,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
     {
+
         frameNumberString = QString::number(nFrame);
         try
         {
@@ -885,7 +888,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
 
-        //Get Current Frame Number Add frames from Last video
+//        //Get Current Frame Number Add frames from Last video
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
         window_main.nFrame = nFrame;
         window_main.tickProgress();
@@ -908,20 +911,40 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
                     // Add Roi To Mask Otherwise Make On Based oN ROI
                     cv::circle(fgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
                 }
-
-
-
             }
-        }
+        } //If On 1st Frame
 
         if (nFrame >= startFrameCount)
         {
+            //Testing Mem Leak Source /
             processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
 
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
+            //window_main.showVideoFrame(frame,nFrame); //Show On QT Window
             window_main.showInsetimg(outframeHead);
             cv::imshow("Debug D",frameDebugD);
         }
+
+        if ((nFrame%300) == 0 || nFrame == 2)
+        {
+            double rss,vm;
+            process_mem_usage(vm, rss);
+            std::clog << "Delta Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
+            //Show Memory Consumption
+
+            std::stringstream ss;
+            ss.precision(4);
+            ss  << "D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
+            window_main.LogEvent(QString::fromStdString(ss.str()));
+        }
+
+        if (bSaveImages)
+        {
+            cv::putText(frameDebugD, "REC", cv::Point(15, 20),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.8 , cv::Scalar(250,250,0));
+            ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+        }
+
 
         if (bshowMask)
         {
@@ -940,13 +963,6 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             //saveTracks(vfishmodels,trkoutFileCSV,videoFilename,frameNumberString);
 
 
-        if (bSaveImages)
-        {
-            ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
-            cv::putText(frameDebugC, "Save ON", cv::Point(15, 20),
-                    cv::FONT_HERSHEY_SIMPLEX, 0.8 , cv::Scalar(250,250,0));
-
-        }
 
 
         checkPauseRun(&window_main,keyboard,nFrame);
@@ -2364,8 +2380,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
           cv::Rect rectFish(pBound1,pBound2);
 
+#ifdef _ZTFDEBUG_
           cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
-          cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
+#endif
+          // cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
           //0 Degrees Is along the Y Axis Looking Upwards
 
@@ -2480,6 +2498,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               //imgFishHeadSeg Is an OutParam with The Segmentation Image used
               //imgFishHeadProcessed is an OutParam with the UpSampled Head with Features Drawn on it
+              //Testing If LEak Is from Here
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
 
 
@@ -2497,7 +2516,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
               //  show_histogram("HeadHist",imgFishHead);
-              imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
+              if (imgFishHeadProcessed.u)
+                imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
 
               //headImgOut = imgFishHeadSeg.clone(); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
               //imgFishHeadSeg.copy
@@ -2578,11 +2598,61 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     {
          cv::drawContours( frameDebugC, contours_canny, (int)i, CV_RGB(200,0,60), 1,8,hierarchy_canny);
     }
+    qDebug() << "maskedfishFeature_blur.u->refcount ==" << maskedfishFeature_blur.u->refcount;
+    qDebug() << "Mrot.u->refcount ==" << Mrot.u->refcount;
+    qDebug() << "imgFishAnterior.u->refcount ==" << imgFishAnterior.u->refcount;
+    qDebug() << "imgFishAnterior_Norm.u->refcount ==" << imgFishAnterior_Norm.u->refcount;
+    qDebug() << "imgFishHead.u->refcount == " << imgFishHead.u->refcount;
+    qDebug() << "maskedImg_gray.u->refcount=" << maskedImg_gray.u->refcount;
+    if (imgFishHeadProcessed.u)
+        qDebug() << "imgFishHeadProcessed.u->refcount ==" << imgFishHeadProcessed.u->refcount;
+
 #endif
 
 
     //cv::imshow("Edges Canny",frameCanny);
     //cv::imshow("Edges Laplace",framelapl);
+
+    /// Clearn Up Check For Leaks //
+    /// Local allocated cv:Mat must have 1 ref at this point
+
+
+
+    //assert(maskedfishFeature_blur.u->refcount == 1);
+
+    maskedfishFeature_blur.release();
+
+
+    //assert(Mrot.u->refcount == 1);
+
+    Mrot.release();
+
+
+    //assert(imgFishAnterior.u->refcount == 1);
+
+    imgFishAnterior.release();
+
+
+
+    //assert(imgFishAnterior_Norm.u->refcount == 1);
+
+
+    imgFishAnterior_Norm.release();
+
+
+    //assert(imgFishHead.u->refcount == 1);
+
+    imgFishHead.release();
+
+
+    //assert(imgFishHeadProcessed.u->refcount == 1);
+    imgFishHeadProcessed.release();
+
+    //assert(maskedImg_gray.u->refcount == 2); //1 Ref Comes From InpuTIMgs
+
+
+    maskedImg_gray.release();
+
 
 
 } //DetectZFeatures
