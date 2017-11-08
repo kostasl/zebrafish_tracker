@@ -56,12 +56,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->listView->setModel(mModelMessageList);
 
 
-    //this->ui->txtboxFrameNumber->setInputMask("9999999"); //Just Numbers 0-9
-    this->ui->txtboxFrameNumber->setReadOnly(false);
-    this->ui->txtboxFrameNumber->setMaxLength(5);
-    //this->ui->txtboxFrameNumber->setEchoMode(EchoMode::);
-    //this->ui->txtboxFrameNumber->installEventFilter(this); //To Capture Text Change
-      this->ui->spinBoxFrame->installEventFilter(this);
+    this->ui->spinBoxFrame->installEventFilter(this);
+    this->ui->horizontalSlider->installEventFilter(this);
 }
 
 void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
@@ -114,32 +110,11 @@ void MainWindow::setTotalFrames(uint FrameCount)
 
 void MainWindow::tickProgress()
 {
-    this->ui->horizontalSlider->setValue(this->ui->horizontalSlider->value()+1);
-    this->ui->txtboxFrameNumber->setText(QString::number(nFrame));
-     this->ui->txtboxFrameNumber->setReadOnly(false);
-
-    ui->spinBoxFrame->setValue(nFrame);
+    //this->ui->horizontalSlider->setValue(this->ui->horizontalSlider->value()+1);
+    this->ui->horizontalSlider->setValue(nFrame);
+    this->ui->spinBoxFrame->setValue(nFrame);
 }
 
-void MainWindow::showInsetimg(cv::Mat& img)
-{
-
-    if (img.cols == 0 || img.rows == 0)
-        return;
-
-    qimgHead = QtOpencvCore::img2qimg(img);
-    // convert the opencv image to a QPixmap (to show in a QLabel)
-    QPixmap pixMap = QPixmap::fromImage(qimgHead);
-    QRect bound = this->ui->graphicsViewHead->geometry();
-    this->mInsetScene->setSceneRect(bound);
-    this->mInsetScene->addPixmap(pixMap);
-
-    this->mImageInset->setPixmap(pixMap);
-    this->mImageInset->setPos(bound.topLeft().x() ,bound.topLeft().y());
-
-   // this->ui->graphicsViewHead->show();
-
-}
 
 
 //Write To Message List Below Tracker
@@ -154,6 +129,24 @@ void MainWindow::LogEvent(QString strMessage)
 
 }
 
+void MainWindow::showInsetimg(cv::Mat& img)
+{
+
+    if (img.cols == 0 || img.rows == 0)
+        return;
+
+    qimgHead = QtOpencvCore::img2qimg(img);
+    // convert the opencv image to a QPixmap (to show in a QLabel)
+    QPixmap pixMap = QPixmap::fromImage(qimgHead);
+    QRect bound = this->ui->graphicsViewHead->geometry();
+    this->mInsetScene->setSceneRect(bound);
+
+    this->mImageInset->setPixmap(pixMap);
+    this->mImageInset->setPos(bound.topLeft().x() ,bound.topLeft().y());
+
+   // this->ui->graphicsViewHead->show();
+
+}
 void MainWindow::showCVimg(cv::Mat& img)
 {
     frameScene.release();
@@ -210,6 +203,12 @@ void MainWindow::changeEvent(QEvent *e)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     char key = 0;
+
+    if (obj->objectName() == "horizontalSlider")
+    {
+        handleSliderChange(event);
+
+    }
     if (event->type() == QEvent::GraphicsSceneWheel) {
         handleWheelOnGraphicsScene(dynamic_cast<QGraphicsSceneWheelEvent*> (event));
 
@@ -217,6 +216,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         event->accept();
         return true;
     }
+
 
     if (event->type() == QEvent::KeyPress) {
          QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
@@ -316,7 +316,25 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     return false;
 }
 
+void MainWindow::handleSliderChange(QEvent* event)
+{
 
+    if (event->type() == QEvent::MouseButtonPress)
+    {
+        bPaused = true;
+    }
+
+    if (event->type() == QEvent::MouseButtonRelease)
+    {
+        bStartFrameChanged = true;
+        bPaused = false;
+        nFrame = this->ui->horizontalSlider->value();
+    }
+    if (event->type() == QEvent::HoverMove)
+    {
+        this->ui->horizontalSlider->setToolTip(QString::number(this->ui->horizontalSlider->value()));
+    }
+}
 
 void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent)
 {

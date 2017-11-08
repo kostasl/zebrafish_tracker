@@ -58,8 +58,8 @@
 #include <CSS/CurveCSS.h> ///Curve Smoothing and Matching
 
 /// Constants ///
-const int gcMaxFishModelInactiveFrames  = 10; //Number of frames inactive until track is deleted
-const int thActive                      = 0;// If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
+const int gcMaxFishModelInactiveFrames  = 30; //Number of frames inactive until track is deleted
+const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
 const double dLearningRateNominal       = 0.000;
@@ -190,6 +190,7 @@ bool bDraggingTemplateCentre = false;
 bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
 bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
+
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -854,6 +855,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     if (!openDataFile(trkoutFileCSV,videoFilename,outdatafile))
         return 0;
 
+    capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
 
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
@@ -889,15 +891,21 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
 //        //Get Current Frame Number Add frames from Last video
+        if (bStartFrameChanged)
+        {
+            capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
+            //bPaused = true;
+            bTracking = false;
+            bStartFrameChanged = false;
+        }
+
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
         window_main.nFrame = nFrame;
         window_main.tickProgress();
 
         //Make Global Roi on 1st frame if it doesn't prexist
-        if (nFrame == 1)
+        if (vRoi.size() == 0)
         {
-            if (vRoi.size() == 0)
-            {
                 ptROI2.x = frame.cols/2;
                 ptROI2.y = gszTemplateImg.height/3;
             //Add Global Roi - Center - Radius
@@ -911,8 +919,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
                     // Add Roi To Mask Otherwise Make On Based oN ROI
                     cv::circle(fgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
                 }
-            }
-        } //If On 1st Frame
+        }
+
 
         if (nFrame >= startFrameCount)
         {
@@ -922,6 +930,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
             //window_main.showVideoFrame(frame,nFrame); //Show On QT Window
             window_main.showInsetimg(outframeHead);
+            //frame.copyTo(frameDebugD);
             cv::imshow("Debug D",frameDebugD);
         }
 
@@ -2347,7 +2356,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
         maskedImg_gray = fullImgIn; //Tautology
 
 
-    cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
+    cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
 
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked

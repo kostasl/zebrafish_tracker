@@ -126,43 +126,12 @@
      <enum>Qt::Horizontal</enum>
     </property>
    </widget>
-   <widget class="QLineEdit" name="txtboxFrameNumber">
-    <property name="geometry">
-     <rect>
-      <x>640</x>
-      <y>530</y>
-      <width>91</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter new frame and press enter&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-    </property>
-    <property name="whatsThis">
-     <string>Frame Number Skip</string>
-    </property>
-    <property name="layoutDirection">
-     <enum>Qt::LeftToRight</enum>
-    </property>
-    <property name="text">
-     <string>0</string>
-    </property>
-    <property name="maxLength">
-     <number>6</number>
-    </property>
-    <property name="placeholderText">
-     <string>0</string>
-    </property>
-    <property name="clearButtonEnabled">
-     <bool>true</bool>
-    </property>
-   </widget>
    <widget class="QSpinBox" name="spinBoxFrame">
     <property name="geometry">
      <rect>
       <x>640</x>
-      <y>570</y>
-      <width>91</width>
+      <y>530</y>
+      <width>101</width>
       <height>26</height>
      </rect>
     </property>

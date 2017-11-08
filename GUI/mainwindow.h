@@ -60,6 +60,7 @@ protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent );
+    void handleSliderChange(QEvent* event);
 
     QStringListModel*                      mModelMessageList;
     QStringList                           mMessageList;
