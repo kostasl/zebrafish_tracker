@@ -897,6 +897,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             //bPaused = true;
             bTracking = false;
             bStartFrameChanged = false;
+            //Since we are jumping Frames - The fish Models Are invalidated / Delete
+            ReleaseFishModels(vfishmodels);
         }
 
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
@@ -1628,7 +1630,7 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
 
 bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 {
-    const int Vcnt = 1;
+    int Vcnt = 1;
     bool newFile = false;
     //Make ROI dependent File Name
     QFileInfo fiVid(filenameVid);
@@ -1642,12 +1644,25 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
     dirOutPath.append(buff); //Append extension track and ROI number
 
     data.setFileName(dirOutPath);
+    //Make Sure New File Is created On Every Run
+    while (!newFile)
+    {
+        if (!data.exists()) //Write HEader
+        {
+            newFile = true;
 
-    if (!data.exists()) //Write HEader
-    {   newFile = true;
+        }else{ //File Exists - Create Name
+        //FilenAme Is Linke AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
+            //Increase Seq Number And Reconstruct Name
+            Vcnt++;
+            sprintf(buff,"_tracks_%d.csv",Vcnt);
+            dirOutPath = fiOut.absolutePath() + "/";
+            dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
+            dirOutPath.append(buff); //Append extension track and ROI number
+            data.setFileName(dirOutPath);
 
+         }
     }
-
     if (!data.open(QFile::WriteOnly |QFile::Append))
     {
 
