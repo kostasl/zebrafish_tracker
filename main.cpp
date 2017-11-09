@@ -75,7 +75,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 500; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 300; //Min area above which to Filter The fish blobs
 
 //BG History
 float gfVidfps              = 298;
