@@ -78,7 +78,7 @@ const int MOGhistory        = 10;//gfVidfps*2;
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
-const int nTemplatesToLoad  = 11; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+const int nTemplatesToLoad  = 15; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 
 ///Segmentation Params
@@ -99,9 +99,9 @@ int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box Whe
 int gFishTailSpineSegmentLength     = 14;
 const int gFishTailSpineSegmentCount  = 6;
 
-const int gcFishContourSize               = 35;
+const int gcFishContourSize         = 35;
 int gMaxFitIterations               = 10; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-int gFitTailIntensityScanAngleDeg   = 6; //Reduced from 20deg as It Picks up on Dirt/Food
+int gFitTailIntensityScanAngleDeg   = 45; //Reduced from 20deg as It Picks up on Dirt/Food
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
