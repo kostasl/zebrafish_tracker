@@ -43,7 +43,11 @@ const cv::Scalar TRACKER_COLOURMAP[] ={
                                  CV_RGB(250,250,00),
                                  CV_RGB(200,200,80),
                                  CV_RGB(20,200,180),
-                                 CV_RGB(200,20,180)};
+                                 CV_RGB(200,20,180),
+                                 CV_RGB(100,120,180),
+                                 CV_RGB(200,20,80),
+                                 CV_RGB(100,100,180),
+                                 CV_RGB(200,00,80)};
 
 
 
