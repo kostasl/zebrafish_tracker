@@ -490,6 +490,13 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
     std::vector<cv::Point> vEyeSegSamplePoints;
 
+
+    tDetectedEllipsoid lEll,rEll;
+    std::vector<cv::Point> vt;
+    std::vector<cv::RotatedRect> ve;
+    std::vector<cv::Point> vLEyeHull; //Left Eye
+    std::vector<cv::Point> vREyeHull; //Left Eye
+
     cv::Point2f ptLEyeMid,ptREyeMid;
 
 
@@ -531,12 +538,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     vellipses.clear();
     vellipses.shrink_to_fit();
 
-    tDetectedEllipsoid lEll,rEll;
-    std::vector<cv::Point> vt;
-    std::vector<cv::RotatedRect> ve;
     //std::vector<std::vector<cv::Point>> vEyes;
-    std::vector<cv::Point> vLEyeHull; //Left Eye
-    std::vector<cv::Point> vREyeHull; //Left Eye
+
     //Find Parent Contour
     int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,2,vt,ve);
     int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,2,vt,ve);

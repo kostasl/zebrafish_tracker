@@ -66,6 +66,10 @@ const int thDistanceFish                = 150; //Threshold for distance between 
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
 const double dLearningRateNominal       = 0.000;
 
+const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+
+
+
 /// Vars With Initial Values  -
 //Area Filters
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
@@ -79,8 +83,6 @@ const int MOGhistory        = 10;//gfVidfps*2;
 //Processing Loop delay
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
-
-const int nTemplatesToLoad  = 16; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 
 ///Segmentation Params
@@ -116,6 +118,13 @@ int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
 
 ///Global Variables
+const double sigma = 3.0;
+const int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+
+ // Gaussian Curve Smoothing Kernels For fish Contour//
+ std::vector<double> gGaussian,dgGaussian,d2gGaussian;
+
+
 
 QElapsedTimer gTimer;
 QString outfilename;
@@ -286,11 +295,11 @@ int main(int argc, char *argv[])
 
 
 
-
-    //Initialize The Track and blob vectors
-    //cvb::cvReleaseTracks(tracks); //Releasing All tracks will delete all track Objects
-    //cvb::cvReleaseBlobs(blobs);
+    //Empty Vector of Fish Models - Initialiaze
     ReleaseFishModels(vfishmodels);
+
+    //create Gaussian Smoothing kernels //
+    getGaussianDerivs(sigma,M,gGaussian,dgGaussian,d2gGaussian);
 
 
     /// create Background Subtractor objects
@@ -609,24 +618,26 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
 
 
-       // Filters Blobs between fish and food - save into global vectors
-        //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
-        std::vector<cv::KeyPoint> ptFishblobs;
-        processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
-        nLarva = ptFishblobs.size();
-        //frameDebugD = fgFishMask.clone(); //Stop Leaks
-        fgFishMask.copyTo(frameDebugD);
         cv::Mat maskedImg_gray;
         /// Convert image to gray and blur it
         cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
+
+       // Filters Blobs between fish and food - save into global vectors
+        //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
+        std::vector<cv::KeyPoint> ptFishblobs;
+        //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
+        processFishBlobs(maskedImg_gray,fgFishMask, outframe , ptFishblobs);
+        nLarva = ptFishblobs.size();
+        //frameDebugD = fgFishMask.clone(); //Stop Leaks
+        fgFishMask.copyTo(frameDebugD);
         ////Make image having masked all fish
         //maskedImg_gray.copyTo(maskedfishImg_gray,fgMask); //Mask The Laplacian //Input Already Masked
 
 
         ///Update Fish Models Against Image and Tracks
         //Can Use Fish Masked - But Templates Dont Include The masking
-        //UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
-        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
+        UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
+        //UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
         //If A fish Is Detected Then Draw Its tracks
         fishModels::iterator ft = vfishmodels.begin();
         if (ft != vfishmodels.end())
@@ -2266,13 +2277,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
         if (curve.size() > 10)
         {
-             ///// SMOOTH COntours /////
-            double sigma = 3.0;
-            int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
             assert(M % 2 == 1); //M is an odd number
 
-            //create kernels // Move these TO Global Storage
-            std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
+            ///// SMOOTH COntours /////
 
             vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
             PolyLineSplit(curve,curvex,curvey);
@@ -2280,8 +2287,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             std::vector<double> X,XX,Y,YY;
             std::vector<double> dXY;
 
-            getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
-            getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
+            getdXcurve(curvex,sigma,smoothx,X,XX,gGaussian,dgGaussian,d2gGaussian,false);
+            getdXcurve(curvey,sigma,smoothy,Y,YY,gGaussian,dgGaussian,d2gGaussian,false);
 
             dXY.resize(X.size());
             /// Find Tail As POint Of Maximum Curvature dXY

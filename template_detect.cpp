@@ -181,6 +181,9 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
     // DEBUG //
     cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows) ));
     cv::imshow("Templ",imgTempl);
+    //  //
+
+    std::clog << "New Template added #" << gnumberOfTemplatesInCache;
 
    return ++idxTempl;
 }
