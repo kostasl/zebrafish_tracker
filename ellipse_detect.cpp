@@ -529,7 +529,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     //Empty List
     vellipses.clear();
-
+    vellipses.shrink_to_fit();
 
     tDetectedEllipsoid lEll,rEll;
     std::vector<cv::Point> vt;

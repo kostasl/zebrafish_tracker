@@ -57,6 +57,8 @@
 
 #include <CSS/CurveCSS.h> ///Curve Smoothing and Matching
 
+#include <config.h>
+
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 30; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
@@ -97,11 +99,11 @@ int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 6;
-const int gFishTailSpineSegmentCount  = 13;
-int gFitTailIntensityScanAngleDeg   = 35; //Reduced from 20deg as It Picks up on Dirt/Food
+const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
+int gFitTailIntensityScanAngleDeg   = 65; //Reduced from 20deg as It Picks up on Dirt/Food
 
-const int gcFishContourSize         = 35;
-int gMaxFitIterations               = 10; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
+const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
+const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
@@ -112,7 +114,6 @@ double gTemplateMatchThreshold  = 0.90; //If not higher than 0.9 The fish body c
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
-
 
 ///Global Variables
 
@@ -620,11 +621,12 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
         ////Make image having masked all fish
         //maskedImg_gray.copyTo(maskedfishImg_gray,fgMask); //Mask The Laplacian //Input Already Masked
-        //Update Fish Models Against Image and Tracks
-        //UpdateFishModels(maskedImg_gray,vfishmodels,fishtracks);
 
 
-        UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
+        ///Update Fish Models Against Image and Tracks
+        //Can Use Fish Masked - But Templates Dont Include The masking
+        //UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
+        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
         //If A fish Is Detected Then Draw Its tracks
         fishModels::iterator ft = vfishmodels.begin();
         if (ft != vfishmodels.end())
@@ -2170,7 +2172,9 @@ frameImg.copyTo(frameImg_gray); //Its Grey Anyway
 
 /// Detect edges using Threshold , A High And  low /
 /// Trick, threshold Before Marking ROI - So as to Obtain Fish Features Outside Roi When Fish is incomplete Within The ROI
-cv::threshold( frameImg_gray, outFishMask, g_Segthresh*1.5, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+//cv::threshold( frameImg_gray, outFishMask, g_Segthresh*1.5, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
+
 
 // Detect Food at Lower Thresh //
 cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
@@ -2210,7 +2214,6 @@ cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv:
 //threshold_output_COMB.copyTo(frameDebugB);
 
 
-//outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 //threshold_output_COMB.copyTo(outFoodMask);
 outFoodMask = threshold_output_COMB.clone();
 cv::bitwise_and(outFoodMask,maskFGImg,outFoodMask); //Remove Regions OUtside ROI
@@ -2268,20 +2271,39 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
             assert(M % 2 == 1); //M is an odd number
 
-            //create kernels
+            //create kernels // Move these TO Global Storage
             std::vector<double> g,dg,d2g; getGaussianDerivs(sigma,M,g,dg,d2g);
 
             vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
             PolyLineSplit(curve,curvex,curvey);
 
             std::vector<double> X,XX,Y,YY;
+            std::vector<double> dXY;
+
             getdXcurve(curvex,sigma,smoothx,X,XX,g,dg,d2g,false);
             getdXcurve(curvey,sigma,smoothy,Y,YY,g,dg,d2g,false);
+
+            dXY.resize(X.size());
+            /// Find Tail As POint Of Maximum Curvature dXY
+            int idxMax = 0;
+            double maxVal=0.0;
+            cv::Point ptTail;
+
+            for (int j=0; j<X.size(); j++) {
+               dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
+               if (dXY[j] > maxVal)
+                   idxMax = j;
+            }
+
+            ptTail = curve[idxMax];
+
             ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
             PolyLineMerge(curve,resampledcurveX,resampledcurveY);
+            curve.push_back(ptTail); //Put Tail Back to Curve In CAse it Got Smoothed Out
             ///////////// END SMOOTHING
 
             ///\todo Make Contour Fish Like - Extend Tail ///
+            //Find Tail Point- As the one with the sharpest Angle
 
 
             outfishbodycontours.push_back(curve);
@@ -2291,8 +2313,12 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
             //Draw New One
             cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
+            cv::circle(outFishMask, ptTail,6,CV_RGB(255,255,255),cv::FILLED);
+
             //Erase Fish From Food Mask
             cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),4);
+
+
       }
 } //For Each Fish Contour
 
@@ -2372,7 +2398,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
         maskedImg_gray = fullImgIn; //Tautology
 
 
-    cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
 
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
@@ -2595,11 +2621,14 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               if (contours_body.size() > 0 && bFitSpineToTail)
               {
                   //Look for Top Level Contour
-                //int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-                //fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                //fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
+
+                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 //fish->resetSpine();
-                fish->fitSpineToIntensity(maskedfishFeature_blur);
+                fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
                 fish->drawSpine(fullImgOut);
+                //cv::imshow("BlurredFish",maskedfishFeature_blur);
               }
              /// END OF Fit Spine ////
 

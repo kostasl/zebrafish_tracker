@@ -1,22 +1,25 @@
 #ifndef FISHMODEL_H
 #define FISHMODEL_H
 
+
+
 #include <string>
 
 #include <cvBlob/cvblob.h>
 #include <QDebug>
 //#include <QApplication>
 
-
+//#include "larvatrack.h" //If included here it causes circular search if fishModel Defs.
+#include "config.h"
 #include "ellipse_detect.h"
 #include "zfttracks.h"
 
 
-//#include "larvatrack.h" /If included here it causes circular search if fishModel Defs.
+
 
 extern float gDisplacementThreshold;
 extern int gFishTailSpineSegmentLength;
-extern const int gFishTailSpineSegmentCount;
+//extern const int gFishTailSpineSegmentCount;
 
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
@@ -87,7 +90,7 @@ public:
   double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
   //double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
   double fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
-  void fitSpineToIntensity(cv::Mat &imgframeIn); //Uses Image Intensity Local Max to fit spline
+  void fitSpineToIntensity(cv::Mat &imgframeIn,int c_tailscanAngle); //Uses Image Intensity Local Max to fit spline
   void GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tgt_start, int step_size, std::vector<cv::Point2i>& anchor_pts);
 
 
@@ -131,8 +134,8 @@ public:
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
   int c_spineSegL;
-  const int c_spinePoints   = gFishTailSpineSegmentCount;
-  const int c_spineParamCnt = c_spinePoints+2;
+  static const int c_spinePoints   = 13; //\todo fix compilation Problems with Including COnfig.h
+  static const int c_spineParamCnt = c_spinePoints+2;
 private:
 
   //std::vect mmor<double> splineTheta; ///Angles of fitted Spine Points

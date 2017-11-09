@@ -91,7 +91,8 @@ HEADERS += \
     GUI/TrackerScene.hpp \
     ellipse_detect.h \
     template_detect.h \
-    zfttracks.h
+    zfttracks.h \
+    config.h
 
 
 FORMS += \

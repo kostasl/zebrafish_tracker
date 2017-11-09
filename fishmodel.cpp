@@ -1,14 +1,16 @@
 #include "fishmodel.h"
 #include "ellipse_detect.h"
+#include "config.h"
 
 extern cv::Mat frameDebugC;
 extern cv::Size gszTemplateImg;
 
+
+//extern int gFishTailSpineSegmentLength;
+//extern int gFitTailIntensityScanAngleDeg;
+//extern const int gcFishContourSize; //Fixed number of fish Contour Points
+const int gMaxFitIterations = ZTF_TAILFITMAXITERATIONS;
 extern double gTemplateMatchThreshold;
-extern int gFishTailSpineSegmentLength;
-extern int gMaxFitIterations;
-extern int gFitTailIntensityScanAngleDeg;
-extern const int gcFishContourSize; //Fixed number of fish Contour Points
 
 fishModel::fishModel()
 {
@@ -126,7 +128,7 @@ void fishModel::resetSpine()
         if (this->bearingRads < 0)
             this->bearingRads += 2.0*CV_PI;
 
-            sp.angleRad    = (this->bearingRads)-CV_PI; //  //Spine Looks In Opposite Direction
+            sp.angleRad    = (this->bearingRads)-CV_PI ; //  //Spine Looks In Opposite Direction
 
             if (sp.angleRad < 0)
                 sp.angleRad += 2.0*CV_PI;
@@ -400,8 +402,8 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 ///
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
-    static const int cntParam = 6;//this->c_spineParamCnt;
-    static const int gcFishContourSize = 35;
+    static const int cntParam = this->c_spineParamCnt;
+    static const int gcFishContourSize = ZTF_FISHCONTOURSIZE+1;//Fixed PLus 1 tail Point
 
     const int c_fitErrorPerContourPoint = 10; //Parameter Found By Experience for current size fish
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
@@ -623,11 +625,11 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
 /// \param step_size Segment Lenght between  Spine anchor points
 /// \param anchor_pts // The Spine
 ///
-void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
+void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
     const size_t AP_N= this->c_spinePoints;
     const int step_size = this->c_spineSegL;
 
-    const int c_tailscanAngle = gFitTailIntensityScanAngleDeg;
+    //const int c_tailscanAngle = gFitTailIntensityScanAngleDeg;
 
 
     uint loc,pxValMax;
