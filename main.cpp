@@ -86,7 +86,7 @@ double dLearningRate        = 1.0/(2*MOGhistory);
 
 
 ///Segmentation Params
-int g_Segthresh             = 21; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 34; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -100,7 +100,7 @@ int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isola
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 6;
+int gFishTailSpineSegmentLength     = 7;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
 int gFitTailIntensityScanAngleDeg   = 65; //Reduced from 20deg as It Picks up on Dirt/Food
 
@@ -626,7 +626,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
         std::vector<cv::KeyPoint> ptFishblobs;
         //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
-        processFishBlobs(maskedImg_gray,fgFishMask, outframe , ptFishblobs);
+        processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
         //frameDebugD = fgFishMask.clone(); //Stop Leaks
         fgFishMask.copyTo(frameDebugD);
@@ -636,8 +636,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
         ///Update Fish Models Against Image and Tracks
         //Can Use Fish Masked - But Templates Dont Include The masking
-        UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
-        //UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
+        //UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
+        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
         //If A fish Is Detected Then Draw Its tracks
         fishModels::iterator ft = vfishmodels.begin();
         if (ft != vfishmodels.end())
@@ -1045,8 +1045,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         /// Check If Track Centre Point Contains An image that matches a fish template
         ///
         cv::Point centroid = fishblob->pt;
-        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-40)), max(0,min(maskedImg_gray.rows,centroid.y-40)));
-        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+40)), max(0,min(maskedImg_gray.rows,centroid.y+40)));
+        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-60)), max(0,min(maskedImg_gray.rows,centroid.y-60)));
+        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+60)), max(0,min(maskedImg_gray.rows,centroid.y+60)));
 
         // Look for Fish Template Within The Blob Region //
         cv::Rect rectFish(pBound1,pBound2);
@@ -2630,8 +2630,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   //Look for Top Level Contour
                 //fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
 
-                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+               // int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+               // fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 //fish->resetSpine();
                 fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
                 fish->drawSpine(fullImgOut);

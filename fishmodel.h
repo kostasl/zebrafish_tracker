@@ -134,7 +134,7 @@ public:
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
   int c_spineSegL;
-  static const int c_spinePoints   = 13; //\todo fix compilation Problems with Including COnfig.h
+  static const int c_spinePoints   = ZTF_TAILSPINECOUNT; //\todo fix compilation Problems with Including COnfig.h
   static const int c_spineParamCnt = c_spinePoints+2;
 private:
 

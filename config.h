@@ -4,7 +4,7 @@
 
 #define ZTF_FISHCONTOURSIZE          20
 #define ZTF_TAILFITMAXITERATIONS     5
-#define ZTF_TAILSPINECOUNT          13
+#define ZTF_TAILSPINECOUNT          10
 
 
 

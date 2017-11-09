@@ -136,6 +136,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
       {
           std::clog << "Ch. Templ. Row:" << ibestMatchRow << std::endl;
           startRow = ibestMatchRow;
+          //cv::imshow("Templ",templ_rot);
       }
    }else { //Nothing Found YEt-- Proceed To Next Template variation
       matchIdx = 0;
