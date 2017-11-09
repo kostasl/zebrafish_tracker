@@ -100,7 +100,7 @@ int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isola
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 7;
+int gFishTailSpineSegmentLength     = 8;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
 int gFitTailIntensityScanAngleDeg   = 65; //Reduced from 20deg as It Picks up on Dirt/Food
 
