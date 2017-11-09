@@ -403,7 +403,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     static const int cntParam = 6;//this->c_spineParamCnt;
     static const int gcFishContourSize = 35;
 
-    const int c_fitErrorPerContourPoint = 18; //Parameter Found By Experience for current size fish
+    const int c_fitErrorPerContourPoint = 10; //Parameter Found By Experience for current size fish
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
     //Run Until Convergence Error is below threshold - Or Change is too small
@@ -674,7 +674,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur){
                 spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
                 //spline[k].angleRad = spline[k-1].angleRad;
                 //Constrain Large Deviations
-                if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI)
+                if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/3.0)
                     spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
 
 

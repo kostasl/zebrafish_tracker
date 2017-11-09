@@ -78,7 +78,7 @@ const int MOGhistory        = 10;//gfVidfps*2;
 uint cFrameDelayms          = 1;
 double dLearningRate        = 1.0/(2*MOGhistory);
 
-const int nTemplatesToLoad  = 15; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+const int nTemplatesToLoad  = 16; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 
 ///Segmentation Params
@@ -96,9 +96,9 @@ int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isola
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 8;
-const int gFishTailSpineSegmentCount  = 12;
-int gFitTailIntensityScanAngleDeg   = 45; //Reduced from 20deg as It Picks up on Dirt/Food
+int gFishTailSpineSegmentLength     = 6;
+const int gFishTailSpineSegmentCount  = 13;
+int gFitTailIntensityScanAngleDeg   = 35; //Reduced from 20deg as It Picks up on Dirt/Food
 
 const int gcFishContourSize         = 35;
 int gMaxFitIterations               = 10; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -2205,7 +2205,7 @@ std::vector<std::vector<cv::Point> > fishbodycontours;
 std::vector<cv::Vec4i> fishbodyhierarchy;
 
 //Then Use ThresholdImage TO Trace More detailed Contours
-cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 //cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE  , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 //threshold_output_COMB.copyTo(frameDebugB);
 
@@ -2595,8 +2595,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               if (contours_body.size() > 0 && bFitSpineToTail)
               {
                   //Look for Top Level Contour
-                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                //int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                //fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                 //fish->resetSpine();
                 fish->fitSpineToIntensity(maskedfishFeature_blur);
                 fish->drawSpine(fullImgOut);
