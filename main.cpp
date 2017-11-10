@@ -2670,8 +2670,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   //Look for Top Level Contour
 
-               // int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-               // fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+               int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+               fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
 
                 //fish->resetSpine();
                 fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
