@@ -669,7 +669,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
             loc=frameimg_Blur.at<uchar>(cv::Point(x,y));
 
             //If New Maximum Found THen Update Spline Point to point to this and Update Previous Spline Point's angle
-            if(loc>pxValMax){
+            if(loc>=pxValMax){ //Gt Or Equal - Othewise Points Get Stuck between frames int the black Bg when loc = 0
                 spline[k].x     = ellipse_pts[idx].x;
                 spline[k].y     = ellipse_pts[idx].y;
                 ///Get Arc tan and Translate back to 0 being the Vertical Axis

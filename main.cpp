@@ -2143,6 +2143,30 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 }
 
 ///
+/// \brief findIndexClosesttoPoint Returns Contour Index Closest To point pt
+/// \param vPointChain
+/// \param pt
+/// \return Index of Vector Point closest to pt
+///
+int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt)
+{
+    double dMindist = 10000.0;
+    int iminIdx = 0;
+    for (int i=0;i<vPointChain.size();i++)
+    {
+        double ddist = cv::norm(vPointChain[i]-pt);
+        if (ddist < dMindist)
+        {
+            iminIdx = i;
+            dMindist = ddist;
+        }
+
+    }
+
+return iminIdx;
+}
+
+///
 /// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features
 /// This is to recover Background substraction errors -
 /// It then uses the fixed image to Find contours *main Internal and External fish contours* using on Masked Image Showing Fish Outline
@@ -2293,25 +2317,41 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             dXY.resize(X.size());
             /// Find Tail As POint Of Maximum Curvature dXY
             int idxMax = 0;
+            int idxMin = 0;
             double maxVal=0.0;
-            cv::Point ptTail;
+            double minVal=10000.0;
+            cv::Point ptTail1,ptTail2;
 
             for (int j=0; j<X.size(); j++) {
                dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
                if (dXY[j] > maxVal)
+               {
                    idxMax = j;
+                   maxVal = dXY[j];
+               }
+               if (dXY[j] < minVal) //Detect Tail
+               {
+                   idxMin = j;
+                   minVal = dXY[j];
+               }
             }
 
-            ptTail = curve[idxMax];
+            ptTail1 = curve[idxMin];
+            ptTail2 = curve[idxMax];
 
             ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
             PolyLineMerge(curve,resampledcurveX,resampledcurveY);
-            curve.push_back(ptTail); //Put Tail Back to Curve In CAse it Got Smoothed Out
+
+
+            //Find Where Tail Point Is In the Resampled (Reduced) Contour
+            int idxTail = findIndexClosesttoPoint(curve,ptTail1);
+            std::vector<cv::Point>::iterator it = curve.begin();
+            it += idxTail;
+            curve.insert(it,ptTail1); //Put Tail Back to Curve In CAse it Got Smoothed Out
             ///////////// END SMOOTHING
 
             ///\todo Make Contour Fish Like - Extend Tail ///
             //Find Tail Point- As the one with the sharpest Angle
-
 
             outfishbodycontours.push_back(curve);
             /////COMBINE - DRAW CONTOURS
@@ -2320,7 +2360,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
             //Draw New One
             cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
-            cv::circle(outFishMask, ptTail,6,CV_RGB(255,255,255),cv::FILLED);
+            cv::circle(outFishMask, ptTail1,8,CV_RGB(255,255,255),cv::FILLED);
+            cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
 
             //Erase Fish From Food Mask
             cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),4);
@@ -2628,13 +2669,16 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               if (contours_body.size() > 0 && bFitSpineToTail)
               {
                   //Look for Top Level Contour
-                //fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
 
                // int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                // fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+
                 //fish->resetSpine();
                 fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
+                //\todo Maybe Add Contour Fiting To Detect Errors
+
                 fish->drawSpine(fullImgOut);
+
                 //cv::imshow("BlurredFish",maskedfishFeature_blur);
               }
              /// END OF Fit Spine ////
