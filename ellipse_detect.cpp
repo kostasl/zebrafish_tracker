@@ -633,6 +633,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     if (iREye != -1)
     {
         //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+        //Crash Can Occur Here When the Fish Is Rushing too fast -
+        // malloc(): memory corruption (fast):
         cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
 
         if (vREyeHull.size() > 4)
