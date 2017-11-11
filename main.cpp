@@ -86,7 +86,7 @@ double dLearningRate        = 1.0/(2*MOGhistory);
 
 
 ///Segmentation Params
-int g_Segthresh             = 34; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 25; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -823,6 +823,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     //Speed that stationary objects are removed
     cv::Mat frame,outframe,outframeHead;
     unsigned int nFrame = 0;
+    unsigned int nErrorFrames = 0;
     outframeHead = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
     bPaused =false; //Start Paused
 
@@ -875,7 +876,12 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     while( !bExiting && (char)keyboard != 27 )
     {
 
+        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+        window_main.nFrame = nFrame;
+        window_main.tickProgress();
+
         frameNumberString = QString::number(nFrame);
+
         try
         {
             //read the current frame
@@ -898,9 +904,14 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             }
         }catch(const std::exception &e)
         {
-            std::cerr << "Error reading frame " << nFrame << "skipping." << std::endl;
-            continue;
+            std::cerr << "Error reading frame " << nFrame << " skipping." << std::endl;
+            nErrorFrames++;
+            if (nErrorFrames > 5) //Avoid Getting Stuck Here
+                break;
+            else
+                continue;
         }
+        nErrorFrames = 0;
 
 
 
@@ -915,9 +926,6 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             ReleaseFishModels(vfishmodels);
         }
 
-        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
-        window_main.nFrame = nFrame;
-        window_main.tickProgress();
 
         //Make Global Roi on 1st frame if it doesn't prexist
         if (vRoi.size() == 0)
