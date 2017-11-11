@@ -75,7 +75,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 300; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 250; //Min area above which to Filter The fish blobs
 
 //BG History
 float gfVidfps              = 298;
@@ -333,6 +333,9 @@ int main(int argc, char *argv[])
     }
     gszTemplateImg.width = gLastfishimg_template.size().width; //Save TO Global Size Variable
     gszTemplateImg.height = gLastfishimg_template.size().height; //Save TO Global Size Variable
+
+
+    loadTemplatesFromDirectory(gstroutDirCSV.append("/templates"));
 
     /// END OF FISH TEMPLATES ///
 
@@ -1147,7 +1150,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     {
         pfish = ft->second;
 
-        if (pfishBest != pfish )
+        if (pfishBest != pfish && pfishBest != 0)
         {
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
             //OtherWise Delete The model?
@@ -1382,7 +1385,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Filter by Area.
     params.filterByArea = true;
     params.minArea = thresh_fishblobarea/2;
-    params.maxArea = 3*thresh_fishblobarea;
+    params.maxArea = 5*thresh_fishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
@@ -1648,6 +1651,47 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
     return 0; //Couldn't find it
 }
 
+int loadTemplatesFromDirectory(QString strDir)
+{
+    QDir dirTempl(strDir);
+    cv::Mat templFrame;
+    int fileCount = 0;
+    if (!dirTempl.exists())
+    {
+        qWarning("Cannot find the a template directory");
+        return 0;
+    }
+
+        QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
+        QStringList imgFiles = QDir(strDir).entryList(fileFilters,QDir::Files,QDir::Name);
+        strDir.append('/');
+        QListIterator<QString> itfile (imgFiles);
+        while (itfile.hasNext() && !bExiting)
+        {
+          QString filename = itfile.next();
+          std::string filepath = filename.prepend(strDir ).toStdString();
+
+          qDebug() << "*Load Template: " << filename;
+          templFrame  = loadImage(filepath);
+          addTemplateToCache(templFrame,gFishTemplateCache,gnumberOfTemplatesInCache);
+          fileCount++;
+        }
+
+
+
+//    QDirIterator it(dirTempl.absolutePath(), QStringList() << "templ_", QDir::Files, QDirIterator::Subdirectories);
+//            while (it.hasNext()) {
+//                QFile f(it.next());
+
+//                //f.open(QIODevice::ReadOnly);
+
+
+//            }
+
+         qDebug() << "Loaded # " << fileCount << "Templates";
+        return fileCount;
+
+}
 
 
 bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)

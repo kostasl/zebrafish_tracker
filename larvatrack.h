@@ -178,7 +178,12 @@ void makeEllipse(cv::Point2f ptcenter,double angle,double a, double b, std::vect
 /// \return idxTempl
 ///
 int addTemplateToCache(cv::Mat& imgTempl,int idxTempl);
-
+///
+/// \brief loadTemplatesFromDirectory
+/// \param strDir
+/// \return
+///
+int loadTemplatesFromDirectory(QString strDir);
 
 ///
 /// \brief process_mem_usage Attempts a read of MemUsage
