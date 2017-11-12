@@ -361,13 +361,13 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->bearingRads   =  Angle*CV_PI/180.0;
     this->ptRotCentre    = bcentre;
     this->zfishBlob      = *fblob;
-    this->zTrack.pointStack.push_back(fblob->pt);
+    this->zTrack.pointStack.push_back(bcentre);
     this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)
     {
-        this->zTrack.pointStackRender.push_back((cv::Point)fblob->pt);
+        this->zTrack.pointStackRender.push_back(bcentre);
         this->zTrack.active++;
     }else {
         this->zTrack.inactive++;

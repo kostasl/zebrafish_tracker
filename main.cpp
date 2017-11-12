@@ -75,7 +75,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 250; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
 
 //BG History
 float gfVidfps              = 298;
@@ -833,7 +833,6 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
     QString frameNumberString;
-    frameNumberString = QString::number(nFrame);
     //?Replicate FG Mask to method specific
     //fgMask.copyTo(fgMaskMOG2);
     //fgMask.copyTo(fgMaskMOG);
@@ -874,14 +873,13 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         return 0;
 
     capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
+    nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+    frameNumberString = QString::number(nFrame);
 
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
     {
 
-        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
-        window_main.nFrame = nFrame;
-        window_main.tickProgress();
 
         frameNumberString = QString::number(nFrame);
 
@@ -928,6 +926,14 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             //Since we are jumping Frames - The fish Models Are invalidated / Delete
             ReleaseFishModels(vfishmodels);
         }
+
+        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+        window_main.nFrame = nFrame;
+        window_main.tickProgress();
+
+
+
+
 
 
         //Make Global Roi on 1st frame if it doesn't prexist
