@@ -206,17 +206,6 @@ bool bStartFrameChanged = false; /// When True, the Video Processing loop stops 
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
 
-static Mat loadImage(const string& name)
-{
-    Mat image = imread(name, IMREAD_GRAYSCALE);
-    if (image.empty())
-    {
-        cerr << "Can't load image - " << name << endl;
-        exit(-1);
-    }
-    return image;
-}
-
 void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 {
     //double tic = double(getTickCount());
@@ -248,17 +237,68 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     //QQmlApplicationEngine engine;
 
+
+    ///Parse Command line Args
+
+    /// Handle Command Line Parameters //
+    const cv::String keys =
+        "{help h usage ? |      | print this help  message   }"
+        "{@outputDir     |<none>| Dir where To save sequence of images }"
+        "{@inVideoFile   |<none>| Behavioural Video file to analyse }"
+        "{startframe f   | 50   | Video Will start by Skipping to this frame    }"
+        ;
+
+    cv::CommandLineParser parser(argc, argv, keys);
+
+    stringstream ssMsg;
+    ssMsg<<"Zebrafish Behavioural Video Tracker"<< std::endl;
+    ssMsg<<"--------------------------"<<std::endl;
+    ssMsg<<"Author : Konstantinos Lagogiannis 2017"<<std::endl;
+    ssMsg<<"./zebraprey_track <outfolder> <inVideoFile> <startframe=1>"<<std::endl;
+    ssMsg<<"(note: folder is automatically generated when absent)"<<std::endl;
+
+    parser.about(ssMsg.str() );
+
+    if (parser.has("help"))
+    {
+        parser.printMessage();
+
+        return 0;
+    }
+
+    /// End Of Parse COmmandLine//
+
+
     MainWindow window_main;
 
     window_main.show();
 
-    //window_main.showFullScreen();
+    QString outfilename;
 
-    //outfilename.truncate(outfilename.lastIndexOf("."));
-    QString outfilename = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
-    //QString outDir = outfilename.left(outfilename.lastIndexOf('/') ).toStdString().c_str();
-    gstroutDirCSV = outfilename.left(outfilename.lastIndexOf("/"));
+    if (parser.has("outputDir"))
+    {
+        gstroutDirCSV  = QString::fromStdString(parser.get<string>("@outputDir"));
+    }
+    else
+    {
+      outfilename  = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
+      gstroutDirCSV = outfilename.left(outfilename.lastIndexOf("/"));
+    }
+
+
     std::cout << "Csv Output Dir is " << gstroutDirCSV.toStdString()  << "\n " <<std::endl;
+
+
+    QStringList inVidFileNames;
+    if (parser.has("inVideoFile"))
+    {
+        inVidFileNames.append( QString::fromStdString(parser.get<string>("@inVideoFile")) );
+    }else
+    {
+        inVidFileNames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
+    }
+
+
 
     // get the applications dir pah and expose it to QML
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
@@ -380,7 +420,8 @@ int main(int argc, char *argv[])
     try{
 
         //app.exec();
-        trackVideofiles(window_main,outfilename);
+        unsigned int uiStartFrame = parser.get<uint>("startframe");
+        trackVideofiles(window_main,outfilename,inVidFileNames,uiStartFrame);
 
     }catch (const std::bad_alloc &)
     {
@@ -441,12 +482,11 @@ int main(int argc, char *argv[])
 
 
 
-unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
+unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame = 0)
 {
     cv::Mat fgMask;
     QString invideoname = "*.mpg";
-    unsigned int istartFrame = 0;
-    QStringList invideonames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
+
 
     //Show Video list to process
     std::cout << "Video List To process:" <<std::endl;

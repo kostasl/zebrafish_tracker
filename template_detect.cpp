@@ -1,11 +1,26 @@
 
 #include <template_detect.h>
+#include <larvatrack.h>
 #include <QDirIterator>
 #include <QDir>
+#include <QDebug>
 
 extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
 extern int gnumberOfTemplatesInCache;
+extern cv::Mat gFishTemplateCache;
+
+
+static cv::Mat loadImage(const std::string& name)
+{
+    cv::Mat image = cv::imread(name, IMREAD_GRAYSCALE);
+    if (image.empty())
+    {
+        std::cerr << "Can't load image - " << name << std::endl;
+        exit(-1);
+    }
+    return image;
+}
 
 
 ///
@@ -230,7 +245,7 @@ int loadTemplatesFromDirectory(QString strDir)
         QStringList imgFiles = QDir(strDir).entryList(fileFilters,QDir::Files,QDir::Name);
         strDir.append('/');
         QListIterator<QString> itfile (imgFiles);
-        while (itfile.hasNext() && !bExiting)
+        while (itfile.hasNext())
         {
           QString filename = itfile.next();
           std::string filepath = filename.prepend(strDir ).toStdString();

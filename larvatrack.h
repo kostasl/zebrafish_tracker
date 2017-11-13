@@ -59,7 +59,9 @@ typedef std::vector<zftblob> zftblobs;
 unsigned int processVideo(cv::Mat& fgMask,MainWindow& window_main, QString videoFilename,QString outFileCSV,unsigned int istartFrame);
 unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount);
 unsigned int trackImageSequencefiles(MainWindow& window_main);
-unsigned int trackVideofiles(MainWindow& window_main,QString outputFile);
+//unsigned int trackVideofiles(MainWindow& window_main,QString outputFile);
+unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame);
+
 /// \fn processFrame - Process blob morphology, Extract features tracks
 ///
 //void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHead);
