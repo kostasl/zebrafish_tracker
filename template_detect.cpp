@@ -1,5 +1,7 @@
 
 #include <template_detect.h>
+#include <QDirIterator>
+#include <QDir>
 
 extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
@@ -209,4 +211,37 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows)));
 
     return 1;
+}
+
+
+
+int loadTemplatesFromDirectory(QString strDir)
+{
+    QDir dirTempl(strDir);
+    cv::Mat templFrame;
+    int fileCount = 0;
+    if (!dirTempl.exists())
+    {
+        qWarning("Cannot find the a template directory");
+        return 0;
+    }
+
+        QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
+        QStringList imgFiles = QDir(strDir).entryList(fileFilters,QDir::Files,QDir::Name);
+        strDir.append('/');
+        QListIterator<QString> itfile (imgFiles);
+        while (itfile.hasNext() && !bExiting)
+        {
+          QString filename = itfile.next();
+          std::string filepath = filename.prepend(strDir ).toStdString();
+
+          qDebug() << "*Load Template: " << filename;
+          templFrame  = loadImage(filepath);
+          addTemplateToCache(templFrame,gFishTemplateCache,gnumberOfTemplatesInCache);
+          fileCount++;
+        }
+
+
+         qDebug() << "Loaded # " << fileCount << "Templates";
+        return fileCount;
 }

@@ -295,8 +295,6 @@ int main(int argc, char *argv[])
 
 
 
-    //Empty Vector of Fish Models - Initialiaze
-    ReleaseFishModels(vfishmodels);
 
     //create Gaussian Smoothing kernels //
     getGaussianDerivs(sigma,M,gGaussian,dgGaussian,d2gGaussian);
@@ -461,6 +459,9 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile)
     //Go through Each Image/Video - Hold Last Frame N , make it the start of the next vid.
     for (int i = 0; i<invideonames.size(); ++i)
     {
+
+       //Empty Vector of Fish Models - Initialiaze
+       ReleaseFishModels(vfishmodels);
 
        invideoname = invideonames.at(i);
        gstrvidFilename = invideoname; //Global
@@ -1655,48 +1656,6 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
     }
 
     return 0; //Couldn't find it
-}
-
-int loadTemplatesFromDirectory(QString strDir)
-{
-    QDir dirTempl(strDir);
-    cv::Mat templFrame;
-    int fileCount = 0;
-    if (!dirTempl.exists())
-    {
-        qWarning("Cannot find the a template directory");
-        return 0;
-    }
-
-        QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
-        QStringList imgFiles = QDir(strDir).entryList(fileFilters,QDir::Files,QDir::Name);
-        strDir.append('/');
-        QListIterator<QString> itfile (imgFiles);
-        while (itfile.hasNext() && !bExiting)
-        {
-          QString filename = itfile.next();
-          std::string filepath = filename.prepend(strDir ).toStdString();
-
-          qDebug() << "*Load Template: " << filename;
-          templFrame  = loadImage(filepath);
-          addTemplateToCache(templFrame,gFishTemplateCache,gnumberOfTemplatesInCache);
-          fileCount++;
-        }
-
-
-
-//    QDirIterator it(dirTempl.absolutePath(), QStringList() << "templ_", QDir::Files, QDirIterator::Subdirectories);
-//            while (it.hasNext()) {
-//                QFile f(it.next());
-
-//                //f.open(QIODevice::ReadOnly);
-
-
-//            }
-
-         qDebug() << "Loaded # " << fileCount << "Templates";
-        return fileCount;
-
 }
 
 
