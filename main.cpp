@@ -112,7 +112,7 @@ int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and T
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.93; //If not higher than 0.9 The fish body can be matched at extremeties
+double gTemplateMatchThreshold  = 0.92; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -2664,7 +2664,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
                   addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
                   //Try This New Template On the Next Search
-                  iLastKnownGoodTemplateRow = gnumberOfTemplatesInCache;
+                  iLastKnownGoodTemplateRow = gnumberOfTemplatesInCache-1;
                   fish->idxTemplateRow = iLastKnownGoodTemplateRow;
                   window_main.saveTemplateImage(imgFishAnterior);
                   ssMsg << "New Template Added, count is now #"<<gnumberOfTemplatesInCache << " NewRowIdx: " << iLastKnownGoodTemplateRow;

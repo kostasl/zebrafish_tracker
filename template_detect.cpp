@@ -246,13 +246,16 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
 ///
 int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 {
-
+    //Draw Black
     cv::Rect rectblankcv(0,imgTempl.rows*(idxTempl),FishTemplateCache.cols,imgTempl.rows*(idxTempl+1));
     cv::rectangle(FishTemplateCache,rectblankcv,CV_RGB(0,0,0),CV_FILLED); //Blank It OUt
 
     //Shrink Template
-    FishTemplateCache  = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl)));
-    gnumberOfTemplatesInCache--;
+    if (idxTempl == (gnumberOfTemplatesInCache-1))
+    {
+        FishTemplateCache  = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl)));
+        gnumberOfTemplatesInCache--;
+    }
 
     // DEBUG //
     cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows)));
