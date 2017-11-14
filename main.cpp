@@ -243,8 +243,8 @@ int main(int argc, char *argv[])
     /// Handle Command Line Parameters //
     const cv::String keys =
         "{help h usage ? |      | print this help  message   }"
-        "{@outputDir     |<none>| Dir where To save sequence of images }"
-        "{@inVideoFile   |<none>| Behavioural Video file to analyse }"
+        "{outputDir     |<none>| Dir where To save sequence of images }"
+        "{inVideoFile   |<none>| Behavioural Video file to analyse }"
         "{startframe f   | 50   | Video Will start by Skipping to this frame    }"
         ;
 
@@ -1148,6 +1148,20 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     }
 
 
+                 }
+                 else
+                 {
+                     //Guess Again Starting Column In Templ (Angle)
+                     //computed orientation of the keypoint (-1 if not applicable); it's in [0,360) degrees and measured relative to image coordinate system, ie in clockwise.
+                     iLastKnownGoodTemplateCol =  (int)(pfish->bearingAngle);
+                     if (iLastKnownGoodTemplateCol < 0)
+                         iLastKnownGoodTemplateCol +=360;
+
+                         iLastKnownGoodTemplateCol = iLastKnownGoodTemplateCol/gFishTemplateAngleSteps;
+
+                         //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
+                         if (pfish->inactiveFrames > 3)
+                             iLastKnownGoodTemplateCol = 0;
                  }
 
                  ////////// Write Angle / Show Box ////////

@@ -1,6 +1,8 @@
 
+
 #include <template_detect.h>
 #include <larvatrack.h>
+#include <random>
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
@@ -104,7 +106,9 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
   if (startCol > iIdxAngleMargin)
       startCol -=iIdxAngleMargin; //Move to Template 3Angle Steps anticlockwise
 
-  templRegion.x = templSz.height*startCol;
+  templRegion.x = std::max(0,std::min(templSz.width*startCol,imgtempl.cols));
+  templRegion.y = std::max(0,std::min(templSz.height*startRow,imgtempl.rows));
+
   ///Run Through All rotated Templates - optional starting row for optimization
   //Run Through Each Row
   for (int j=templSz.height*startRow; j<imgtempl.rows;j+=templRegion.height)
@@ -139,31 +143,44 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
    idx              = 0;
    templRegion.x    = 0; //Start from 1st col again
 
+
+    //Dont scan all Rows Just Check If Found on this One before Proceeding
+
+   ///Check If Matching Exceeeds threshold - If Not Fail And Start From Top Row On next Iteration
+   if (maxGVal >= gTemplateMatchThreshold)
+   {
+       //Save Results To Output
+       matchScore    = maxGVal;
+       locations_tl  = ptGmaxLoc;
+
+       if (startRow != ibestMatchRow) //Store Best Row Match
+       {
+           std::clog << "Ch. Templ. Row:" << ibestMatchRow << std::endl;
+           startRow = ibestMatchRow;
+           //cv::imshow("Templ",templ_rot);
+       }
+
+       break; ///Stop The loop Rows search Here
+    }else { //Nothing Found YEt-- Proceed To Next Template variation
+       matchIdx = 0;
+       matchScore = maxGVal;
+       locations_tl = cv::Point(0,0);
+       //Didnt Find Template
+       //startRow = 0;//Start From Top Of All Templates On Next Search
+
+
+   }
+
+
+
  } //Loop Through Rows - Starting From Last Call Best Match Row
 
 
-  ///Check If Matching Exceeeds threshold - If Not Fail And Start From Top Row On next Iteration
-  if (maxGVal >= gTemplateMatchThreshold)
-  {
-      //Save Results To Output
-      matchScore    = maxGVal;
-      locations_tl  = ptGmaxLoc;
-
-      if (startRow != ibestMatchRow) //Store Best Row Match
-      {
-          std::clog << "Ch. Templ. Row:" << ibestMatchRow << std::endl;
-          startRow = ibestMatchRow;
-          //cv::imshow("Templ",templ_rot);
-      }
-   }else { //Nothing Found YEt-- Proceed To Next Template variation
-      matchIdx = 0;
-      matchScore = maxGVal;
-      locations_tl = cv::Point(0,0);
-      //Didnt Find Template
-      startRow = 0;//Start From Top Of All Templates On Next Search
-
-  }
-
+ if (maxGVal < gTemplateMatchThreshold)
+ {
+     startRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
+     startCol = 0;
+ }
 
   return matchIdx;
 }
