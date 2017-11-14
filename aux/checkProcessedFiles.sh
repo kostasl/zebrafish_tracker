@@ -13,7 +13,13 @@ rm datafileslist.txt
 rm vidfilelist.txt
 find $DATDIR -maxdepth 1 | sed 's,^[^/]*/,,' | sed s/\.[^\_]*$// | sed s/\.[^\_]*$// | sort | uniq > datafileslist.txt
 find $VIDDIR -maxdepth 1 | sed 's,^[^/]*/,,' | sed s/\.[^\.]*$// | sed 's/.*\///' | sort | uniq > vidfilelist.txt
-diff datafileslist.txt vidfilelist.txt --changed-group-format='%>'
+diff --changed-group-format='%>' --unchanged-group-format='' datafileslist.txt vidfilelist.txt > unprocessedfiles.txt
 
-echo "**file listed are the video file names in source video directory for which a datafile is missing.** "
-echo "--------------------"
+echo "There are :"
+wc -l unprocessedfiles.txt
+echo " unprocessed video files in " + $VIDDIR
+echo "Here are the list of video file that have not been tracked/processed yet:"
+echo "--------------------------"
+
+more unprocessedfiles.txt
+
