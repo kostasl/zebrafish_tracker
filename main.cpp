@@ -60,7 +60,7 @@
 #include <config.h>
 
 /// Constants ///
-const int gcMaxFishModelInactiveFrames  = 30; //Number of frames inactive until track is deleted
+const int gcMaxFishModelInactiveFrames  = 100; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
@@ -112,7 +112,7 @@ int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and T
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.90; //If not higher than 0.9 The fish body can be matched at extremeties
+double gTemplateMatchThreshold  = 0.93; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -173,6 +173,7 @@ cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
 fishModels vfishmodels; //Vector containing live fish models
 
+MainWindow* pwindow_main = 0;
 
 // Other fonts:
 //   CV_FONT_HERSHEY_SIMPLEX, CV_FONT_HERSHEY_PLAIN,
@@ -243,9 +244,10 @@ int main(int argc, char *argv[])
     /// Handle Command Line Parameters //
     const cv::String keys =
         "{help h usage ? |      | print this help  message   }"
-        "{outputDir     |<none>| Dir where To save sequence of images }"
-        "{inVideoFile   |<none>| Behavioural Video file to analyse }"
-        "{startframe f   | 50   | Video Will start by Skipping to this frame    }"
+        "{@outputDir     |      | Dir where To save sequence of images }"
+        "{@inVideoFile   |      | Behavioural Video file to analyse }"
+        "{@startframe f  | 1   | Video Will start by Skipping to this frame    }"
+        "{@duration d    | 0     | Number of frames to Track for starting from start frame }"
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -254,7 +256,7 @@ int main(int argc, char *argv[])
     ssMsg<<"Zebrafish Behavioural Video Tracker"<< std::endl;
     ssMsg<<"--------------------------"<<std::endl;
     ssMsg<<"Author : Konstantinos Lagogiannis 2017"<<std::endl;
-    ssMsg<<"./zebraprey_track <outfolder> <inVideoFile> <startframe=1>"<<std::endl;
+    ssMsg<<"./zebraprey_track <outfolder> <inVideoFile> <startframe=1> <duration=inf>"<<std::endl;
     ssMsg<<"(note: folder is automatically generated when absent)"<<std::endl;
 
     parser.about(ssMsg.str() );
@@ -270,14 +272,17 @@ int main(int argc, char *argv[])
 
 
     MainWindow window_main;
-
+    pwindow_main = &window_main;
     window_main.show();
 
     QString outfilename;
 
-    if (parser.has("outputDir"))
+    if (parser.has("@outputDir"))
     {
-        gstroutDirCSV  = QString::fromStdString(parser.get<string>("@outputDir"));
+        string soutFolder   = parser.get<string>("@outputDir");
+        std::clog << "Cmd Line OutDir : " << soutFolder <<std::endl;
+        gstroutDirCSV  = QString::fromStdString(soutFolder);
+
     }
     else
     {
@@ -290,12 +295,12 @@ int main(int argc, char *argv[])
 
 
     QStringList inVidFileNames;
-    if (parser.has("inVideoFile"))
+    if (parser.has("@inVideoFile"))
     {
         inVidFileNames.append( QString::fromStdString(parser.get<string>("@inVideoFile")) );
     }else
     {
-        inVidFileNames =QFileDialog::getOpenFileNames(0, "Select timelapse video to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
+        inVidFileNames =QFileDialog::getOpenFileNames(0, "Select videos to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
     }
 
 
@@ -373,7 +378,8 @@ int main(int argc, char *argv[])
     gszTemplateImg.height = gLastfishimg_template.size().height; //Save TO Global Size Variable
 
 
-    loadTemplatesFromDirectory(gstroutDirCSV.append("/templates"));
+    int ifileCount =loadTemplatesFromDirectory(gstroutDirCSV + QString("/templates/"));
+    pwindow_main->LogEvent(QString::number(ifileCount+nTemplatesToLoad) + QString("# Templates Loaded "));
 
     /// END OF FISH TEMPLATES ///
 
@@ -420,8 +426,8 @@ int main(int argc, char *argv[])
     try{
 
         //app.exec();
-        unsigned int uiStartFrame = parser.get<uint>("startframe");
-        trackVideofiles(window_main,outfilename,inVidFileNames,uiStartFrame);
+        unsigned int uiStartFrame = parser.get<uint>("@startframe");
+        trackVideofiles(window_main,gstroutDirCSV,inVidFileNames,uiStartFrame);
 
     }catch (const std::bad_alloc &)
     {
@@ -485,19 +491,21 @@ int main(int argc, char *argv[])
 unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame = 0)
 {
     cv::Mat fgMask;
-    QString invideoname = "*.mpg";
-
+    QString invideoname = "*.mp4";
 
     //Show Video list to process
-    std::cout << "Video List To process:" <<std::endl;
-    for (int i = 0; i<invideonames.size() && i < 10; ++i)
+    //std::cout << "Video List To process:" <<std::endl;
+    window_main.LogEvent("Video List To process:");
+    for (int i = 0; i<invideonames.size(); ++i)
     {
        invideoname = invideonames.at(i);
-       std::cout << "*" <<  invideoname.toStdString() << std::endl;
+       //std::cout << "*" <<  invideoname.toStdString() << std::endl;
+       window_main.LogEvent(invideoname);
     }
 
+
     //Go through Each Image/Video - Hold Last Frame N , make it the start of the next vid.
-    for (int i = 0; i<invideonames.size(); ++i)
+    for (int i = 0; i<invideonames.size() && !bExiting; ++i)
     {
 
        //Empty Vector of Fish Models - Initialiaze
@@ -899,13 +907,13 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     gfVidfps  = capture.get(CAP_PROP_FPS);
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     window_main.setTotalFrames(totFrames);
-
-    window_main.LogEvent(videoFilename);
+    window_main.nFrame = nFrame;
+    window_main.LogEvent("**Begin Processing: " + videoFilename);
     window_main.stroutDirCSV = gstroutDirCSV;
     window_main.vidFilename = videoFilename;
     QString strMsg(" Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
     window_main.LogEvent(strMsg);
-    qDebug() << strMsg;
+    //qDebug() << strMsg;
 
 
     // Open OutputFile
@@ -1012,7 +1020,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         {
             double rss,vm;
             process_mem_usage(vm, rss);
-            std::clog << "Delta Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
+            //std::clog << "Delta Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
             //Show Memory Consumption
 
             std::stringstream ss;
@@ -1140,31 +1148,37 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     ///Update Model State
                     // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
                     if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
-                        pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
+                    {
+                        pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+                    }
                     else
                     { //Rotate Template Box - Since this cannot be done Manually
                         pfish->bearingAngle   = bestAngle;
                         pfish->bearingRads   =  bestAngle*CV_PI/180.0;
                     }
 
-
                  }
                  else
                  {
                      //Guess Again Starting Column In Templ (Angle)
                      //computed orientation of the keypoint (-1 if not applicable); it's in [0,360) degrees and measured relative to image coordinate system, ie in clockwise.
+
                      iLastKnownGoodTemplateCol =  (int)(pfish->bearingAngle);
                      if (iLastKnownGoodTemplateCol < 0)
                          iLastKnownGoodTemplateCol +=360;
 
+
                          iLastKnownGoodTemplateCol = iLastKnownGoodTemplateCol/gFishTemplateAngleSteps;
+
 
                          //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
                          if (pfish->inactiveFrames > 3)
                              iLastKnownGoodTemplateCol = 0;
+
+                         qDebug() << nFrame << " Guessing next TemplCol:" << iLastKnownGoodTemplateCol;
                  }
 
-                 ////////// Write Angle / Show Box ////////
+                 ////////  Write Angle / Show Box  //////
                  //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
                  pfish->drawBodyTemplateBounds(frameOut);
                 //Add To Priority Q So we can Rank - Only If Blob Ovelaps ?
@@ -1181,11 +1195,13 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //fishModel* fish= new fishModel(track,fishblob);
            fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
 
-           fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame);
+           fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
            qfishrank.push(fish); //Add To Priority Queue
-           std::clog << nFrame << "# New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << std::endl;
+           std::stringstream strmsg; strmsg << "# New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore;
+           //std::clog << nFrame << strmsg.str() << std::endl;
+           pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
 
         }
 //        //Report No Fish
@@ -1333,8 +1349,10 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'D')
     {
         bStoreThisTemplate = false;
-        std::cout << "Delete Last Template Image idx:" << gnumberOfTemplatesInCache-1 << std::endl;
-        deleteTemplateRow(gLastfishimg_template,gFishTemplateCache,gnumberOfTemplatesInCache-1);
+        std::stringstream ss;
+        ss << "Delete Currently Used Template Image idx:" << iLastKnownGoodTemplateRow;
+        pwindow_main->LogEvent(QString::fromStdString(ss.str()));
+        deleteTemplateRow(gLastfishimg_template,gFishTemplateCache,iLastKnownGoodTemplateRow);
     }
 
 }
@@ -1353,8 +1371,8 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
         QCoreApplication::processEvents(QEventLoop::AllEvents);
     }catch(...)
     {
-        std::cerr << "Event Processing Exception!" << std::endl;
-        qDebug() << "Event Processing Exception!";
+        //std::cerr << "Event Processing Exception!" << std::endl;
+        qWarning() << "Event Processing Exception!";
         win->LogEvent(QString("Event Processing Exception!"));
 
     }
@@ -2641,10 +2659,16 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               /// Store Norm Image as Template - If Flag Is set
               if (bStoreThisTemplate)
-              {    //Cut Down To Template Size
+              {   std::stringstream ssMsg;
+                  //Cut Down To Template Size
                   imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
                   addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
+                  //Try This New Template On the Next Search
+                  iLastKnownGoodTemplateRow = gnumberOfTemplatesInCache;
+                  fish->idxTemplateRow = iLastKnownGoodTemplateRow;
                   window_main.saveTemplateImage(imgFishAnterior);
+                  ssMsg << "New Template Added, count is now #"<<gnumberOfTemplatesInCache << " NewRowIdx: " << iLastKnownGoodTemplateRow;
+                  window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
                   bStoreThisTemplate = false;
               }
 
@@ -2678,7 +2702,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   ss << " Eye Detection Error - Check Threshold;";
                   window_main.LogEvent(QString::fromStdString(ss.str()));
-                  std::clog << ss.str() << std::endl;
+                  //std::clog << ss.str() << std::endl;
 
                   //return; //Stop Here - Produced Stable Runs
               }

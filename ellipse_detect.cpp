@@ -131,12 +131,17 @@ void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint)
 
 }
 
-
+/// \todo Check Image Bounds
 void drawEllipse(cv::Mat imgOut,tDetectedEllipsoid ellipse)
 {
 
     cv::ellipse(imgOut,ellipse.rectEllipse,CV_RGB(250,50,50),1,cv::LINE_8);
     cv::circle(imgOut,ellipse.rectEllipse.center,1,CV_RGB(0,0,255),1);
+    assert(ellipse.ptAxisMj1.y <= imgOut.rows && ellipse.ptAxisMj1.y > 0);
+    assert(ellipse.ptAxisMj1.x <= imgOut.cols && ellipse.ptAxisMj1.x > 0);
+    assert(ellipse.ptAxisMj2.y <= imgOut.rows && ellipse.ptAxisMj2.y > 0);
+    assert(ellipse.ptAxisMj2.x <= imgOut.cols && ellipse.ptAxisMj2.x > 0);
+
     imgOut.at<cv::Vec3b>(ellipse.ptAxisMj1)[1] = 255; imgOut.at<cv::Vec3b>(ellipse.ptAxisMj1)[2] = 255;
     imgOut.at<cv::Vec3b>(ellipse.ptAxisMj2)[1] = 255; imgOut.at<cv::Vec3b>(ellipse.ptAxisMj2)[2] = 255;
     //cv::circle(img_colour,ptxy1,1,CV_RGB(0,255,255),1);
@@ -186,6 +191,7 @@ bool operator<(const tDetectedEllipsoid& a,const tDetectedEllipsoid& b) {
 /// \notes The min Votes Threszhold is not fixed but continuously adapted to be just below the highest, see  gi_VotesEllipseThres
 /// \return
 ///
+/// \todo check image bounds
 int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetectedEllipsoid>& qEllipsoids)
 {
     const int minEllipseMajor   = gi_minEllipseMajor;
@@ -510,6 +516,12 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     ptLEyeMid.y = ptcentre.y/2; //y=0 is the top left corner
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
+
+    ptLEyeMid.x = std::max(1,std::min(imgUpsampled_gray.cols,ptLEyeMid.x));
+    ptLEyeMid.y = std::max(1,std::min(imgUpsampled_gray.rows,ptLEyeMid.y));
+
+    ptREyeMid.x = std::max(1,std::min(imgUpsampled_gray.cols,ptREyeMid.x));
+    ptREyeMid.y = std::max(1,std::min(imgUpsampled_gray.rows,ptREyeMid.y));
 
 
     /// Make Arc from Which to get Sample Points For Eye Segmentation

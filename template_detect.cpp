@@ -11,7 +11,7 @@ extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
 extern int gnumberOfTemplatesInCache;
 extern cv::Mat gFishTemplateCache;
-
+extern MainWindow* pwindow_main;
 
 static cv::Mat loadImage(const std::string& name)
 {
@@ -83,8 +83,8 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol)
 {
   const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
-  int matchIdx;
-  int idx = 0; //Current Angle Index Being tested in the loop
+  int matchColIdx;
+  int Colidx = 0; //Current Angle Index Being tested in the loop
 
   //startRow = 0;
   int idRow = startRow;
@@ -106,17 +106,20 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
   if (startCol > iIdxAngleMargin)
       startCol -=iIdxAngleMargin; //Move to Template 3Angle Steps anticlockwise
 
+  //Initialiaze At last known Good Location
   templRegion.x = std::max(0,std::min(templSz.width*startCol,imgtempl.cols));
   templRegion.y = std::max(0,std::min(templSz.height*startRow,imgtempl.rows));
+  Colidx = startCol;
 
   ///Run Through All rotated Templates - optional starting row for optimization
   //Run Through Each Row
   for (int j=templSz.height*startRow; j<imgtempl.rows;j+=templRegion.height)
   {
       templRegion.y    = j;
-       //Run Throught each  Columns (Ie Different Angles of this template
-      for (int i=templSz.width*startCol; i<imgtempl.cols;i+=templRegion.width)
-      {
+       /// Run Throught each  *Columns/Angle* (Ie Different Angles of this template
+      //for (int i=templSz.width*startCol; i<imgtempl.cols;i+=templRegion.width)
+
+      while(templRegion.x < imgtempl.cols ){
         //Obtain next Template At Angle
         cv::Mat templ_rot(imgtempl,templRegion);
         //Convolution
@@ -126,27 +129,27 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
         //Assume Value < 0.7 is non Fish,
         if (maxGVal < maxVal)
         {
-            maxGVal     = maxVal;
-            ptGmaxLoc   = ptmaxLoc; //The calling Function needts reposition maxLoc To the global Frame
-            matchIdx   = idx;
-            ibestMatchRow = idRow;
+            maxGVal         = maxVal;
+            ptGmaxLoc       = ptmaxLoc; //The calling Function needts reposition maxLoc To the global Frame
+            matchColIdx     = Colidx;
+            ibestMatchRow   = idRow;
 
         }
 
         //Shift Region To Next Block
         templRegion.x +=templSz.width;
-        idx++;
+        Colidx++;
       } //Loop Through Columns/Angle
 
 
-   idRow++;
-   idx              = 0;
-   templRegion.x    = 0; //Start from 1st col again
+   idRow++;             //We Start Again From The Next Row
+   Colidx               = 0;
+   templRegion.x        = 0; //ReStart from 1st col
 
 
     //Dont scan all Rows Just Check If Found on this One before Proceeding
 
-   ///Check If Matching Exceeeds threshold - If Not Fail And Start From Top Row On next Iteration
+   ///Check If Matching Exceeeds threshold And Stop Loops - Return Found Column Idx//
    if (maxGVal >= gTemplateMatchThreshold)
    {
        //Save Results To Output
@@ -155,17 +158,21 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
        if (startRow != ibestMatchRow) //Store Best Row Match
        {
-           std::clog << "Ch. Templ. Row:" << ibestMatchRow << std::endl;
+           std::stringstream ss;
+           // Log As Message //
+           ss << "Ch. Templ. Row:" << startRow << " -> "  << ibestMatchRow;
+           pwindow_main->LogEvent(QString::fromStdString(ss.str()));
+
            startRow = ibestMatchRow;
            //cv::imshow("Templ",templ_rot);
        }
 
        break; ///Stop The loop Rows search Here
     }else { //Nothing Found YEt-- Proceed To Next Template variation
-       matchIdx = 0;
-       matchScore = maxGVal;
+       matchColIdx  = 0;
+       matchScore   = maxGVal;
        locations_tl = cv::Point(0,0);
-       //Didnt Find Template
+       //Didnt Find Template /Try Next Row
        //startRow = 0;//Start From Top Of All Templates On Next Search
 
 
@@ -182,7 +189,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
      startCol = 0;
  }
 
-  return matchIdx;
+  return matchColIdx;
 }
 
 
@@ -218,7 +225,8 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
     cv::imshow("Templ",imgTempl);
     //  //
 
-    std::clog << "New Template added #" << gnumberOfTemplatesInCache;
+    std::clog << "New Template added, Templ. Count now:" << gnumberOfTemplatesInCache << std::endl;
+
 
    return ++idxTempl;
 }

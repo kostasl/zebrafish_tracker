@@ -353,7 +353,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 /// \param bcentre
 ///
 
-void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame)
+void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int TemplRow, int TemplCol)
 {
     nCurrentFrame = nFrame; //Set Last Update To Current Frame
     this->templateScore  = templatematchScore;
@@ -379,6 +379,8 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     /// Save Anterior Bound
     this->bodyRotBound = fishRotAnteriorBox;
 
+    this->idxTemplateCol = TemplCol;
+    this->idxTemplateRow = TemplRow;
 
 
     //Set Spine Source to Rotation Centre

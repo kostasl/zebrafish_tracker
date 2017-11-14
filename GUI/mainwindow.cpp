@@ -58,6 +58,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->ui->spinBoxFrame->installEventFilter(this);
     this->ui->horizontalSlider->installEventFilter(this);
+
+    nFrame = 0;
 }
 
 void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
@@ -126,7 +128,7 @@ void MainWindow::LogEvent(QString strMessage)
     this->ui->listView->show();
     mModelMessageList->setStringList(mMessageList);
 
-
+    std::clog << strMessage.toStdString() << std::endl;
 }
 
 void MainWindow::showInsetimg(cv::Mat& img)
