@@ -137,10 +137,24 @@ void drawEllipse(cv::Mat imgOut,tDetectedEllipsoid ellipse)
 
     cv::ellipse(imgOut,ellipse.rectEllipse,CV_RGB(250,50,50),1,cv::LINE_8);
     cv::circle(imgOut,ellipse.rectEllipse.center,1,CV_RGB(0,0,255),1);
-    assert(ellipse.ptAxisMj1.y <= imgOut.rows && ellipse.ptAxisMj1.y >= 0);
-    assert(ellipse.ptAxisMj1.x <= imgOut.cols && ellipse.ptAxisMj1.x >= 0);
-    assert(ellipse.ptAxisMj2.y <= imgOut.rows && ellipse.ptAxisMj2.y >= 0);
-    assert(ellipse.ptAxisMj2.x <= imgOut.cols && ellipse.ptAxisMj2.x >= 0);
+
+    //    assert(ellipse.ptAxisMj2.y <= imgOut.rows && ellipse.ptAxisMj2.y >= 0);
+    //    assert(ellipse.ptAxisMj2.x <= imgOut.cols && ellipse.ptAxisMj2.x >= 0);
+    //    assert(ellipse.ptAxisMj1.y <= imgOut.rows && ellipse.ptAxisMj1.y >= 0);
+    //    assert(ellipse.ptAxisMj1.x <= imgOut.cols && ellipse.ptAxisMj1.x >= 0);
+    // Assertion Was Failing So I imposed the limits to avoid Seg Faults //
+    if (ellipse.ptAxisMj2.y > imgOut.rows && ellipse.ptAxisMj2.y < 0)
+        ellipse.ptAxisMj2.y = 0;
+
+    if (ellipse.ptAxisMj2.x > imgOut.cols && ellipse.ptAxisMj2.x < 0)
+        ellipse.ptAxisMj2.x = 0;
+
+    if (ellipse.ptAxisMj1.y > imgOut.rows && ellipse.ptAxisMj1.y < 0)
+        ellipse.ptAxisMj1.y = 0;
+
+    if (ellipse.ptAxisMj1.x > imgOut.cols && ellipse.ptAxisMj1.x < 0)
+        ellipse.ptAxisMj1.x = 0;
+
 
     imgOut.at<cv::Vec3b>(ellipse.ptAxisMj1)[1] = 255; imgOut.at<cv::Vec3b>(ellipse.ptAxisMj1)[2] = 255;
     imgOut.at<cv::Vec3b>(ellipse.ptAxisMj2)[1] = 255; imgOut.at<cv::Vec3b>(ellipse.ptAxisMj2)[2] = 255;

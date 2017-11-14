@@ -521,7 +521,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
        window_main.setWindowTitle("Tracking:" + invideoname);
        std::cout << "Press p to pause Video processing" << std::endl;
-       istartFrame = 100;
+
        istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame);
 
 
