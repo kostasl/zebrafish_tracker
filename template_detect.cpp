@@ -185,8 +185,15 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
  if (maxGVal < gTemplateMatchThreshold)
  {
+
      startRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
      startCol = 0;
+
+     std::stringstream ss;
+     // Log As Message //
+     ss << "Templ.Low Match-Pick Random Templ. Row:" << ibestMatchRow  << " -> "  << startRow;
+     pwindow_main->LogEvent(QString::fromStdString(ss.str()));
+
  }
 
   return matchColIdx;
