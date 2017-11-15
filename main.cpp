@@ -243,11 +243,12 @@ int main(int argc, char *argv[])
 
     /// Handle Command Line Parameters //
     const cv::String keys =
-        "{help h usage ? |      | print this help  message   }"
-        "{@outputDir     |      | Dir where To save sequence of images }"
-        "{@inVideoFile   |      | Behavioural Video file to analyse }"
-        "{@startframe f  | 1   | Video Will start by Skipping to this frame    }"
-        "{@duration d    | 0     | Number of frames to Track for starting from start frame }"
+        "{help h usage ? |    | print this help  message   }"
+        "{outputdir   o |    | Dir where To save sequence of images }"
+        "{invideofile v |    | Behavioural Video file to analyse }"
+        "{invideolist f  |    | A text file listing full path to video files to process }"
+        "{startframe s  | 1  | Video Will start by Skipping to this frame    }"
+        "{duration d    | 0  | Number of frames to Track for starting from start frame }"
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -277,9 +278,9 @@ int main(int argc, char *argv[])
 
     QString outfilename;
 
-    if (parser.has("@outputDir"))
+    if (parser.has("outputdir"))
     {
-        string soutFolder   = parser.get<string>("@outputDir");
+        string soutFolder   = parser.get<string>("outputdir");
         std::clog << "Cmd Line OutDir : " << soutFolder <<std::endl;
         gstroutDirCSV  = QString::fromStdString(soutFolder);
 
@@ -295,14 +296,35 @@ int main(int argc, char *argv[])
 
 
     QStringList inVidFileNames;
-    if (parser.has("@inVideoFile"))
+    if (parser.has("invideofile"))
     {
-        inVidFileNames.append( QString::fromStdString(parser.get<string>("@inVideoFile")) );
-    }else
-    {
-        inVidFileNames =QFileDialog::getOpenFileNames(0, "Select videos to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
+        inVidFileNames.append( QString::fromStdString(parser.get<string>("invideofile")) );
     }
 
+    if (parser.has("invideolist"))
+    {
+        qDebug() << "Load Video File List " <<  QString::fromStdString(parser.get<string>("invideolist"));
+        QFile fvidfile( QString::fromStdString(parser.get<string>("invideolist")) );
+        if (fvidfile.exists())
+        {
+            fvidfile.open(QFile::ReadOnly);
+            //QTextStream textStream(&fvidfile);
+            while (!fvidfile.atEnd())
+            {
+                QString line = fvidfile.readLine().trimmed();
+                if (line.isNull())
+                    break;
+                else
+                    inVidFileNames.append(line);
+            }
+        }else
+        {
+            qWarning() << fvidfile.fileName() << " does not exist!";
+        }
+    }
+    //If No video Files have been loaded then Give GUI to User
+    if (inVidFileNames.empty())
+            inVidFileNames =QFileDialog::getOpenFileNames(0, "Select videos to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
 
 
     // get the applications dir pah and expose it to QML
@@ -426,7 +448,7 @@ int main(int argc, char *argv[])
     try{
 
         //app.exec();
-        unsigned int uiStartFrame = parser.get<uint>("@startframe");
+        unsigned int uiStartFrame = parser.get<uint>("startframe");
         trackVideofiles(window_main,gstroutDirCSV,inVidFileNames,uiStartFrame);
 
     }catch (const std::bad_alloc &)
@@ -900,7 +922,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     {
         //error in opening the video input
         std::cerr << "Unable to open video file: " << videoFilename.toStdString() << std::endl;
-        std::exit(EXIT_FAILURE);
+        return 0;
+        //std::exit(EXIT_FAILURE);
     }
 
 
