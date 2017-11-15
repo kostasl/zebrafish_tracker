@@ -23,5 +23,13 @@ echo "Here are the list of video file that have not been tracked/processed yet:"
 echo "--------------------------"
 
 grep -f unprocessedfiles.txt vidfilesfullpath.txt > VidFilesToProcess.txt
-more unprocessedfiles.txt
+
+lines=`wc -l VidFilesToProcess.txt | cut -f1 -d' '`
+procsize=30
+num=0
+##Break It Down To Processing Files
+
+for i in `seq 1 $procsize $lines`; do num=$((num + 1)); echo "Writing Split File VidFilesToProcessSplit$num.txt";sed -n "$i,$((i+procsize)) p" VidFilesToProcess.txt > "VidFilesToProcessSplit$num.txt"; done
+
+#more unprocessedfiles.txt
 
