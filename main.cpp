@@ -978,8 +978,12 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         }catch(const std::exception &e)
         {
             std::cerr << "Error reading frame " << nFrame << " skipping." << std::endl;
+
+            if (nFrame < totFrames)
+                capture.set(CV_CAP_PROP_POS_FRAMES,nFrame+1);
+
             nErrorFrames++;
-            if (nErrorFrames > 5) //Avoid Getting Stuck Here
+            if (nErrorFrames > 10) //Avoid Getting Stuck Here
                 break;
             else
                 continue;
