@@ -72,6 +72,7 @@ void MainWindow::createSpinBoxes()
 {
 
     this->ui->spinBoxFrame->installEventFilter(this);
+
     this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setRange(-100,400); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gthresEyeSeg);
@@ -79,7 +80,7 @@ void MainWindow::createSpinBoxes()
 
 
     this->ui->spinBoxFishThres->installEventFilter(this);
-    this->ui->spinBoxFishThres->setRange(15,40);
+    this->ui->spinBoxFishThres->setRange(19,40); //Too low Below 19 App Stalls -- Too many Large Objects Appear
     this->ui->spinBoxFishThres->setValue(g_Segthresh);
 
 
