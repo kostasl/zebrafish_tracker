@@ -55,6 +55,9 @@ public slots:
     void fishvalueChanged(int i);
     void eyevalueChanged(int i);
     void tailSizevalueChanged(int i);
+    void maxEllipseSizevalueChanged(int i);
+    void minEllipseSizevalueChanged(int i);
+
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event);

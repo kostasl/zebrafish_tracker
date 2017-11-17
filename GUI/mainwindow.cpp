@@ -72,6 +72,7 @@ void MainWindow::createSpinBoxes()
 {
 
     this->ui->spinBoxFrame->installEventFilter(this);
+    this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setRange(-100,400); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gthresEyeSeg);
 
@@ -265,31 +266,34 @@ void MainWindow::showCVimg(cv::Mat& img)
 void MainWindow::tailSizevalueChanged(int i)
 {
     qDebug() << "Tails SpinBox gave " << i;
+    LogEvent(QString("Tail Segment Size changed:") + QString::number(i));
     gFishTailSpineSegmentLength = i;
 }
 
 void MainWindow::eyevalueChanged(int i)
 {
     qDebug() << "Eye SpinBox gave " << i;
+    LogEvent(QString("changed Eye Seg Threshold:") + QString::number(i));
     gthresEyeSeg = i;
 }
 
 void MainWindow::fishvalueChanged(int i)
 {
     qDebug() << "fish SpinBox gave " << i;
+    LogEvent(QString("Changed Fish BG Threshold:") + QString::number(i));
     g_Segthresh = i;
 }
 
 void MainWindow::maxEllipseSizevalueChanged(int i)
 {
     gi_maxEllipseMajor = i;
-    LogEvent(QString("Max Ellipse changed to:") + QString::number(i));
+    LogEvent(QString("changed Max Ellipse to:") + QString::number(i));
 }
 
 void MainWindow::minEllipseSizevalueChanged(int i)
 {
     gi_minEllipseMajor = i;
-    LogEvent(QString("Min Ellipse changed to:") + QString::number(i));
+    LogEvent(QString("changed Min Ellipse changed to:") + QString::number(i));
 }
 
 void MainWindow::textEdited(QString strFrame)
@@ -418,20 +422,20 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     }
 
 
-    if (obj == ui->spinBoxEyeThres)
-        gthresEyeSeg =  ui->spinBoxEyeThres->value();
+//    if (obj == ui->spinBoxEyeThres)
+//        gthresEyeSeg =  ui->spinBoxEyeThres->value();
 
-    if (obj == ui->spinBoxFishThres)
-        g_Segthresh = ui->spinBoxFishThres->value();
+//    if (obj == ui->spinBoxFishThres)
+//        g_Segthresh = ui->spinBoxFishThres->value();
 
-    if (obj == ui->spinBoxMaxEllipse)
-         gi_maxEllipseMajor = ui->spinBoxMaxEllipse->value();
+//    if (obj == ui->spinBoxMaxEllipse)
+//         gi_maxEllipseMajor = ui->spinBoxMaxEllipse->value();
 
-    if (obj == ui->spinBoxMinEllipse)
-         gi_minEllipseMajor = ui->spinBoxMinEllipse->value();
+//    if (obj == ui->spinBoxMinEllipse)
+//         gi_minEllipseMajor = ui->spinBoxMinEllipse->value();
 
-    if (obj == ui->spinBoxSpineSegSize)
-        gFishTailSpineSegmentLength = ui->spinBoxSpineSegSize->value();
+//    if (obj == ui->spinBoxSpineSegSize)
+//        gFishTailSpineSegmentLength = ui->spinBoxSpineSegSize->value();
 
     return false;
 }

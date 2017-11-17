@@ -344,9 +344,10 @@ int main(int argc, char *argv[])
     //cv::setMouseCallback("HeadHist", CallBackHistFunc, NULL);
     ////
 
-    cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+
 
 #ifdef    _ZTFDEBUG_
+    cv::namedWindow("Debug D",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug A",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("Debug B",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
 
@@ -1036,7 +1037,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             //window_main.showVideoFrame(frame,nFrame); //Show On QT Window
             window_main.showInsetimg(outframeHead);
             //frame.copyTo(frameDebugD);
-            cv::imshow("Debug D",frameDebugD);
+            //cv::imshow("Debug D",frameDebugD);
         }
 
         if ((nFrame%300) == 0 || nFrame == 2)
@@ -1172,7 +1173,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
                     if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
                     {
-                        pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+                        pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
                     }
                     else
                     { //Rotate Template Box - Since this cannot be done Manually
@@ -1218,7 +1219,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //fishModel* fish= new fishModel(track,fishblob);
            fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
 
-           fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+           fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
            qfishrank.push(fish); //Add To Priority Queue
