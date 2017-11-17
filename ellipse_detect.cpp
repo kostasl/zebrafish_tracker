@@ -442,7 +442,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 ///
 int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts)
 {
-        const int isampleN = 5;
+        const int isampleN = 10;
         const int voffset = giHeadIsolationMaskVOffset+1;
 
         int iThresEyeSeg = 0;

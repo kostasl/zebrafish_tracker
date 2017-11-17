@@ -52,6 +52,10 @@ public slots:
     void echoChanged(int);
     void changeEvent(QEvent *e);
     void textEdited(const QString);
+    void fishvalueChanged(int i);
+    void eyevalueChanged(int i);
+    void tailSizevalueChanged(int i);
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
     void handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent);
@@ -61,8 +65,9 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent );
     void handleSliderChange(QEvent* event);
+    void createSpinBoxes();
 
-    QStringListModel*                      mModelMessageList;
+    QStringListModel*                     mModelMessageList;
     QStringList                           mMessageList;
     QImage qimg; //SCene Image Updated in ShowCV Image
     QImage qimgHead; //SCene Image Updated in ShowCV Image
