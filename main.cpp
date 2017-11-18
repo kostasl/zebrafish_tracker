@@ -37,6 +37,7 @@
 #include <ellipse_detect.h>
 #include <template_detect.h>
 #include <zfttracks.h>
+#include <random>
 
 #include <QDirIterator>
 #include <QDir>
@@ -86,23 +87,23 @@ double dLearningRate        = 1.0/(2*MOGhistory);
 
 
 ///Segmentation Params
-int g_Segthresh             = 25; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 30; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor      = 24; /// thres  for Eye Ellipse Detection methods
-int gi_minEllipseMajor          = 14; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+int gi_maxEllipseMajor      = 22; /// thres  for Eye Ellipse Detection methods
+int gi_minEllipseMajor          = 11; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isolated Head IMage
+int gthresEyeSeg                = 155; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 8;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
-int gFitTailIntensityScanAngleDeg   = 65; //Reduced from 20deg as It Picks up on Dirt/Food
+int gFitTailIntensityScanAngleDeg   = 45; //Reduced from 20deg as It Picks up on Dirt/Food
 
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -112,7 +113,7 @@ int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and T
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 2;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.91; //If not higher than 0.9 The fish body can be matched at extremeties
+double gTemplateMatchThreshold  = 0.92; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -1148,7 +1149,12 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
-        int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+
+        bool findBestMatch = (vfishmodels.size() == 0); //If No Fish Models Exist then Search Through Cache;
+        if (findBestMatch)
+            pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
+
+        int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
 
         int bestAngle =AngleIdx*gFishTemplateAngleSteps;
         cv::Point top_left = pBound1+gptmaxLoc;
@@ -1187,12 +1193,12 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                      //Guess Again Starting Column In Templ (Angle)
                      //computed orientation of the keypoint (-1 if not applicable); it's in [0,360) degrees and measured relative to image coordinate system, ie in clockwise.
 
-                     iLastKnownGoodTemplateCol =  (int)(pfish->bearingAngle);
-                     if (iLastKnownGoodTemplateCol < 0)
-                         iLastKnownGoodTemplateCol +=360;
+//                     iLastKnownGoodTemplateCol =  (int)(pfish->bearingAngle);
+//                     if (iLastKnownGoodTemplateCol < 0)
+//                         iLastKnownGoodTemplateCol +=360;
 
 
-                         iLastKnownGoodTemplateCol = iLastKnownGoodTemplateCol/gFishTemplateAngleSteps;
+//                         iLastKnownGoodTemplateCol = iLastKnownGoodTemplateCol/gFishTemplateAngleSteps;
 
 
                          //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
@@ -1304,7 +1310,15 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
 
     if ((char)keyboard == 't') //Toggle Tracking
+    {
+        if (!bTracking)
+        {
+            iLastKnownGoodTemplateRow = 0; //Reset Row
+            iLastKnownGoodTemplateCol = 0;
+        }
+
         bTracking = !bTracking;
+    }
 
 
     if ((char)keyboard == 's')
@@ -1377,6 +1391,20 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         ss << "Delete Currently Used Template Image idx:" << iLastKnownGoodTemplateRow;
         pwindow_main->LogEvent(QString::fromStdString(ss.str()));
         deleteTemplateRow(gLastfishimg_template,gFishTemplateCache,iLastKnownGoodTemplateRow);
+        iLastKnownGoodTemplateRow = 0;
+    }
+
+    if ((char)keyboard == 'z')
+    {
+        bStoreThisTemplate = false;
+        std::stringstream ss;
+        int iNewTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
+        ss << "Reset Used Template idx:" << iLastKnownGoodTemplateRow << " to " << iNewTemplateRow;
+
+
+        pwindow_main->LogEvent(QString::fromStdString(ss.str()));
+        iLastKnownGoodTemplateRow = iNewTemplateRow;
+        iLastKnownGoodTemplateCol = 0;
     }
 
 }
