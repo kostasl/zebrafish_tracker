@@ -278,12 +278,16 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     {
         //Cut In 2- Halves and rejoin
         cv::Mat mTop    = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl)));
+        cv::imshow("Template Top",mTop);
+
         //Error Here
         cv::Mat mBottom = FishTemplateCache(cv::Rect(0,imgTempl.rows*(idxTempl+1),FishTemplateCache.cols,FishTemplateCache.rows));
+        cv::imshow("Template Bottom",mBottom);
+
         cv::Mat mtShrankCache   = cv::Mat::zeros(FishTemplateCache.rows-imgTempl.rows,FishTemplateCache.cols,CV_8UC1);
 
-        cv::imshow("Template Top",mTop);
-        cv::imshow("Template Bottom",mBottom);
+
+
 
         mTop.copyTo(mtShrankCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl))));
         mBottom.copyTo( mtShrankCache( cv::Rect(0,mTop.rows,FishTemplateCache.cols,imgTempl.rows*( (gnumberOfTemplatesInCache-2)) ) ) );
