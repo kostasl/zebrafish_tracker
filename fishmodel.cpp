@@ -353,7 +353,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 /// \param bcentre
 ///
 
-void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int TemplRow, int TemplCol)
+void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
     nCurrentFrame = nFrame; //Set Last Update To Current Frame
     this->templateScore  = templatematchScore;
@@ -361,6 +361,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->bearingRads   =  Angle*CV_PI/180.0;
     this->ptRotCentre    = bcentre;
     this->zfishBlob      = *fblob;
+    this->c_spineSegL   = SpineSegLength;
     this->zTrack.pointStack.push_back(bcentre);
     this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre

@@ -44,6 +44,7 @@ INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.1/include
 LIBS += -L /home/kostasl/OpenCV/opencv-3.3.1/build/lib
 LIBS += `pkg-config opencv --libs`
 
+QMAKE_CFLAGS_DEBUG += -v -da -Q
 # Additional import path used to resolve QML modules in Qt Creator's code model
 ##QML_IMPORT_PATH =
 ##

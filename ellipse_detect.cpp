@@ -442,7 +442,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 ///
 int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts)
 {
-        const int isampleN = 5;
+        const int isampleN = 10;
         const int voffset = giHeadIsolationMaskVOffset+1;
 
         int iThresEyeSeg = 0;
@@ -619,9 +619,9 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         getEdgePoints(imgEdge_local,vedgePoints_all);
         detectEllipse(vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
         //imgEdge_local.copyTo(imgEdge_dbg);
-        if (qEllipsoids.size() >0 )
-            qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
-        else
+        if (qEllipsoids.size() == 0 )
+        //    qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
+        //else
             qDebug() << " L Eye Backup Ellipse Failed";
 
     }
@@ -701,9 +701,9 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
         getEdgePoints(imgEdge_local,vedgePoints_all);
         detectEllipse(vedgePoints_all,qEllipsoids);
-        if (qEllipsoids.size() >0 )
-            qDebug() << " R Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
-        else
+        if (qEllipsoids.size() == 0 )
+            //qDebug() << " R Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
+        //else
             qDebug() << " R Eye Backup Ellipse Failed";
     }
 

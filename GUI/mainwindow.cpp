@@ -10,6 +10,11 @@ extern bool bPaused;
 extern bool bStoreThisTemplate;
 extern bool bDraggingTemplateCentre;
 extern bool bStartFrameChanged;
+extern int g_Segthresh;
+extern int gthresEyeSeg;
+extern int gi_maxEllipseMajor;
+extern int gi_minEllipseMajor;
+
 bool bSceneMouseLButtonDown;
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -56,10 +61,80 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->listView->setModel(mModelMessageList);
 
 
-    this->ui->spinBoxFrame->installEventFilter(this);
+
     this->ui->horizontalSlider->installEventFilter(this);
 
+    createSpinBoxes();
     nFrame = 0;
+}
+
+void MainWindow::createSpinBoxes()
+{
+
+    this->ui->spinBoxFrame->installEventFilter(this);
+
+    this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
+    this->ui->spinBoxEyeThres->setRange(-100,400); //-Ve Values Allow for lowering Avg Threshold
+    this->ui->spinBoxEyeThres->setValue(gthresEyeSeg);
+
+
+
+    this->ui->spinBoxFishThres->installEventFilter(this);
+    this->ui->spinBoxFishThres->setRange(19,40); //Too low Below 19 App Stalls -- Too many Large Objects Appear
+    this->ui->spinBoxFishThres->setValue(g_Segthresh);
+
+
+
+    this->ui->spinBoxMinEllipse->installEventFilter(this);
+    this->ui->spinBoxMinEllipse->setRange(5,20);
+    this->ui->spinBoxMinEllipse->setValue(gi_minEllipseMajor);
+
+
+    this->ui->spinBoxMaxEllipse->installEventFilter(this);
+    this->ui->spinBoxMaxEllipse->setRange(15,30);
+    this->ui->spinBoxMaxEllipse->setValue(gi_maxEllipseMajor);
+
+
+    this->ui->spinBoxSpineSegSize->installEventFilter(this);
+    this->ui->spinBoxSpineSegSize->setRange(2,20);
+    this->ui->spinBoxSpineSegSize->setValue(gFishTailSpineSegmentLength);
+
+
+    //this->connect(this->ui->spinBoxEyeThres, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this->ui->spinBoxEyeThres, &QSlider::setValue);
+
+//    QObject::connect(this->ui->spinBoxEyeThres,
+//                     static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+//                     this->ui->spinBoxEyeThres,
+//                     static_cast<void (MainWindow::*)(int)>(&MainWindow::valueChanged));
+
+    QObject::connect(this->ui->spinBoxEyeThres,
+                     SIGNAL(valueChanged(int)),
+                     this,
+                     SLOT(eyevalueChanged(int)));
+
+    QObject::connect(this->ui->spinBoxFishThres,
+                     SIGNAL(valueChanged(int)),
+                     this,
+                     SLOT(fishvalueChanged(int)));
+
+    QObject::connect(this->ui->spinBoxSpineSegSize,
+                     SIGNAL(valueChanged(int)),
+                     this,
+                     SLOT(tailSizevalueChanged(int)));
+
+
+    QObject::connect(this->ui->spinBoxMinEllipse,
+                     SIGNAL(valueChanged(int)),
+                     this,
+                     SLOT(minEllipseSizevalueChanged(int)));
+
+
+    QObject::connect(this->ui->spinBoxMaxEllipse,
+                     SIGNAL(valueChanged(int)),
+                     this,
+                     SLOT(maxEllipseSizevalueChanged(int)));
+
+
 }
 
 void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
@@ -188,6 +263,40 @@ void MainWindow::showCVimg(cv::Mat& img)
 
 }
 
+
+void MainWindow::tailSizevalueChanged(int i)
+{
+    qDebug() << "Tails SpinBox gave " << i;
+    LogEvent(QString("Tail Segment Size changed:") + QString::number(i));
+    gFishTailSpineSegmentLength = i;
+}
+
+void MainWindow::eyevalueChanged(int i)
+{
+    qDebug() << "Eye SpinBox gave " << i;
+    LogEvent(QString("changed Eye Seg Threshold:") + QString::number(i));
+    gthresEyeSeg = i;
+}
+
+void MainWindow::fishvalueChanged(int i)
+{
+    qDebug() << "fish SpinBox gave " << i;
+    LogEvent(QString("Changed Fish BG Threshold:") + QString::number(i));
+    g_Segthresh = i;
+}
+
+void MainWindow::maxEllipseSizevalueChanged(int i)
+{
+    gi_maxEllipseMajor = i;
+    LogEvent(QString("changed Max Ellipse to:") + QString::number(i));
+}
+
+void MainWindow::minEllipseSizevalueChanged(int i)
+{
+    gi_minEllipseMajor = i;
+    LogEvent(QString("changed Min Ellipse changed to:") + QString::number(i));
+}
+
 void MainWindow::textEdited(QString strFrame)
 {
     qDebug() << "Txt Edited to:" << strFrame;
@@ -314,6 +423,20 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     }
 
 
+//    if (obj == ui->spinBoxEyeThres)
+//        gthresEyeSeg =  ui->spinBoxEyeThres->value();
+
+//    if (obj == ui->spinBoxFishThres)
+//        g_Segthresh = ui->spinBoxFishThres->value();
+
+//    if (obj == ui->spinBoxMaxEllipse)
+//         gi_maxEllipseMajor = ui->spinBoxMaxEllipse->value();
+
+//    if (obj == ui->spinBoxMinEllipse)
+//         gi_minEllipseMajor = ui->spinBoxMinEllipse->value();
+
+//    if (obj == ui->spinBoxSpineSegSize)
+//        gFishTailSpineSegmentLength = ui->spinBoxSpineSegSize->value();
 
     return false;
 }

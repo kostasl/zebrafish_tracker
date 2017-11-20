@@ -78,13 +78,18 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \param templRegion Rect of template img Size to look for within the larger template Cache
 /// \param startRow - Optimization So search begins from the most likely Template as of the last one
 /// \param startCol - Optimization So search begins from the most likely Template Angle
+/// \param findFirstMatch if true It Looks for 1st template that exceeds threshold - otherwise it looks for best match through all cache
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
 ///
-int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol)
+int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
 {
   const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
   int matchColIdx;
   int Colidx = 0; //Current Angle Index Being tested in the loop
+
+  assert(!imgGreyIn.empty());
+  assert(templSz.height*startRow <= imgtemplCache.rows);
+  assert(templSz.width*startCol <= imgtemplCache.cols);
 
   //startRow = 0;
   int idRow = startRow;
@@ -97,7 +102,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
   cv::Mat outMatchConv; //Convolution Result
   //iAngles = imgtempl.cols/templRegion.width;
   //Slide over each little template icon
-  assert(!imgGreyIn.empty());
+
 
   cv::Point ptbottomRight = cv::Point(templSz.width,templSz.height);
   cv::Rect templRegion(cv::Point(0,0),ptbottomRight);
@@ -106,22 +111,30 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
   if (startCol > iIdxAngleMargin)
       startCol -=iIdxAngleMargin; //Move to Template 3Angle Steps anticlockwise
 
+
+  if (findFirstMatch)
+  {
+      startRow = 0;
+      idRow = 0;
+      startCol = 0;
+  }
+
   //Initialiaze At last known Good Location
-  templRegion.x = std::max(0,std::min(templSz.width*startCol,imgtempl.cols));
-  templRegion.y = std::max(0,std::min(templSz.height*startRow,imgtempl.rows));
+  templRegion.x = std::max(0,std::min(templSz.width*startCol,imgtemplCache.cols));
+  templRegion.y = std::max(0,std::min(templSz.height*startRow,imgtemplCache.rows));
   Colidx = startCol;
 
   ///Run Through All rotated Templates - optional starting row for optimization
   //Run Through Each Row
-  for (int j=templSz.height*startRow; j<imgtempl.rows;j+=templRegion.height)
+  for (int j=templSz.height*startRow; j<imgtemplCache.rows;j+=templRegion.height)
   {
       templRegion.y    = j;
        /// Run Throught each  *Columns/Angle* (Ie Different Angles of this template
       //for (int i=templSz.width*startCol; i<imgtempl.cols;i+=templRegion.width)
 
-      while(templRegion.x < imgtempl.cols ){
+      while(templRegion.x < imgtemplCache.cols ){
         //Obtain next Template At Angle
-        cv::Mat templ_rot(imgtempl,templRegion);
+        cv::Mat templ_rot(imgtemplCache,templRegion);
         //Convolution
         cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
         //Find Min Max Location
@@ -133,6 +146,8 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
             ptGmaxLoc       = ptmaxLoc; //The calling Function needts reposition maxLoc To the global Frame
             matchColIdx     = Colidx;
             ibestMatchRow   = idRow;
+            matchScore      = maxVal; //Save Score Of Best Match
+            locations_tl    = ptGmaxLoc;
 
         }
 
@@ -150,37 +165,41 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
     //Dont scan all Rows Just Check If Found on this One before Proceeding
 
    ///Check If Matching Exceeeds threshold And Stop Loops - Return Found Column Idx//
-   if (maxGVal >= gTemplateMatchThreshold)
+   if (maxGVal >= gTemplateMatchThreshold && !findFirstMatch)
    {
        //Save Results To Output
-       matchScore    = maxGVal;
-       locations_tl  = ptGmaxLoc;
-
-       if (startRow != ibestMatchRow) //Store Best Row Match
-       {
-           std::stringstream ss;
-           // Log As Message //
-           ss << "Ch. Templ. Row:" << startRow << " -> "  << ibestMatchRow;
-           pwindow_main->LogEvent(QString::fromStdString(ss.str()));
-
-           startRow = ibestMatchRow;
-           //cv::imshow("Templ",templ_rot);
-       }
-
+       //matchScore    = maxGVal;
+       //locations_tl  = ptGmaxLoc;
        break; ///Stop The loop Rows search Here
-    }else { //Nothing Found YEt-- Proceed To Next Template variation
-       matchColIdx  = 0;
-       matchScore   = maxGVal;
-       locations_tl = cv::Point(0,0);
-       //Didnt Find Template /Try Next Row
-       //startRow = 0;//Start From Top Of All Templates On Next Search
+
+    }
+
+//   else{ //Nothing Found YEt-- Proceed To Next Template variation
+//       matchColIdx  = 0;
+//       matchScore   = maxGVal;
+//       locations_tl = cv::Point(0,0);
+//       //Didnt Find Template /Try Next Row
+//       //startRow = 0;//Start From Top Of All Templates On Next Search
 
 
-   }
+//   }
 
 
 
  } //Loop Through Rows - Starting From Last Call Best Match Row
+
+
+  if (startRow != ibestMatchRow) //Store Best Row Match
+  {
+      std::stringstream ss;
+      // Log As Message //
+      ss << "Ch. Templ. Row:" << startRow << " -> "  << ibestMatchRow;
+      pwindow_main->LogEvent(QString::fromStdString(ss.str()));
+
+      startRow = ibestMatchRow;
+      //matchColIdx = ibestMatch;
+      //cv::imshow("Templ",templ_rot);
+  }
 
 
  if (maxGVal < gTemplateMatchThreshold)
@@ -191,7 +210,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templS
 
      std::stringstream ss;
      // Log As Message //
-     ss << "Templ.Low Match-Pick Random Templ. Row:" << ibestMatchRow  << " -> "  << startRow;
+     ss << "Found row:" << ibestMatchRow << " but gives Low Match-pick next Randomly ->"  << startRow;
      pwindow_main->LogEvent(QString::fromStdString(ss.str()));
 
  }
@@ -254,6 +273,26 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     if (idxTempl == (gnumberOfTemplatesInCache-1))
     {
         FishTemplateCache  = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl)));
+        gnumberOfTemplatesInCache--;
+    }else
+    {
+        //Cut In 2- Halves and rejoin
+        cv::Mat mTop    = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl)));
+        cv::imshow("Template Top",mTop);
+
+        //Error Here
+        cv::Mat mBottom = FishTemplateCache(cv::Rect(0,imgTempl.rows*(idxTempl+1),FishTemplateCache.cols,FishTemplateCache.rows));
+        cv::imshow("Template Bottom",mBottom);
+
+        cv::Mat mtShrankCache   = cv::Mat::zeros(FishTemplateCache.rows-imgTempl.rows,FishTemplateCache.cols,CV_8UC1);
+
+
+
+
+        mTop.copyTo(mtShrankCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl))));
+        mBottom.copyTo( mtShrankCache( cv::Rect(0,mTop.rows,FishTemplateCache.cols,imgTempl.rows*( (gnumberOfTemplatesInCache-2)) ) ) );
+        mtShrankCache.copyTo(FishTemplateCache);
+        mtShrankCache.deallocate();
         gnumberOfTemplatesInCache--;
     }
 

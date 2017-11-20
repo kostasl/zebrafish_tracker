@@ -71,7 +71,8 @@ public:
   //fishModel(cvb::CvTrack* track,cvb::CvBlob* blob);
   fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter);
 
-  void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int TemplRow, int TemplCol);
+  //void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int TemplRow, int TemplCol);
+  void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol);
   ///\note The lowest point in a rectangle is 0th vertex, and 1st, 2nd, 3rd vertices follow clockwise.
   /// Height is distance between 0th & 1st  (or 2nd & 3rd) vertices. And width is distance between 1st  & 2nd (or 0th & 3rd) vertices.
   /// Angle is calculated from the horizontal to the first edge of rectangle, counter clockwise.
