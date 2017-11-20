@@ -39,25 +39,35 @@
 #include <zfttracks.h>
 #include <random>
 
+///For Stack Trace Debugging
+#include <execinfo.h>
+#include <cxxabi.h>
+#include <signal.h>
+#include <ucontext.h>
+#include <unistd.h>
+
+
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
 //#include <QThread>
 #include <QTime>
 
+//Open CV
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include "opencv2/core/utility.hpp"
-
 //#include <opencv2/bgsegm.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d.hpp>
 #include <opencv2/video/background_segm.hpp>
 
+
 #include <GUI/mainwindow.h>
+///Curve Smoothing and Matching
+#include <CSS/CurveCSS.h>
 
-#include <CSS/CurveCSS.h> ///Curve Smoothing and Matching
-
+// Tracker Constant Defines
 #include <config.h>
 
 /// Constants ///
@@ -208,6 +218,128 @@ bool bStartFrameChanged = false; /// When True, the Video Processing loop stops 
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
 
+
+
+typedef struct _sig_ucontext {
+ unsigned long     uc_flags;
+ struct ucontext   *uc_link;
+ stack_t           uc_stack;
+ struct sigcontext uc_mcontext;
+ sigset_t          uc_sigmask;
+} sig_ucontext_t;
+
+
+/// Seg Fault Error Handler With Demangling //
+void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
+{
+    void *             array[50];
+     void *             caller_address;
+     char **            messages;
+     int                size, i;
+     sig_ucontext_t *   uc;
+
+     uc = (sig_ucontext_t *)ucontext;
+
+     /* Get the address at the time the signal was raised */
+    #if defined(__i386__) // gcc specific
+     caller_address = (void *) uc->uc_mcontext.eip; // EIP: x86 specific
+    #elif defined(__x86_64__) // gcc specific
+     caller_address = (void *) uc->uc_mcontext.rip; // RIP: x86_64 specific
+    #else
+    #error Unsupported architecture. // TODO: Add support for other arch.
+    #endif
+
+
+    std::cerr << "signal " << sig_num
+              << " (" << strsignal(sig_num) << "), address is "
+              << info->si_addr << " from " << caller_address
+              << std::endl << std::endl;
+
+
+
+    size = backtrace(array, 50);
+ /* overwrite sigaction with caller's address */
+    array[1] = caller_address;
+
+    messages = backtrace_symbols(array, size);
+
+    // skip first stack frame (points here)
+    for (int i = 1; i < size && messages != NULL; ++i)
+    {
+        char *mangled_name = 0, *offset_begin = 0, *offset_end = 0;
+
+        // find parantheses and +address offset surrounding mangled name
+        for (char *p = messages[i]; *p; ++p)
+        {
+            if (*p == '(')
+            {
+                mangled_name = p;
+            }
+            else if (*p == '+')
+            {
+                offset_begin = p;
+            }
+            else if (*p == ')')
+            {
+                offset_end = p;
+                break;
+            }
+        }
+
+        // if the line could be processed, attempt to demangle the symbol
+        if (mangled_name && offset_begin && offset_end &&
+            mangled_name < offset_begin)
+        {
+            *mangled_name++ = '\0';
+            *offset_begin++ = '\0';
+            *offset_end++ = '\0';
+
+            int status;
+            char * real_name = abi::__cxa_demangle(mangled_name, 0, 0, &status);
+
+            // if demangling is successful, output the demangled function name
+            if (status == 0)
+            {
+                std::cerr << "[bt]: (" << i << ") " << messages[i] << " : "
+                          << real_name << "+" << offset_begin << offset_end
+                          << std::endl;
+
+            }
+            // otherwise, output the mangled function name
+            else
+            {
+                std::cerr << "[bt]: (" << i << ") " << messages[i] << " : "
+                          << mangled_name << "+" << offset_begin << offset_end
+                          << std::endl;
+            }
+            free(real_name);
+        }
+        // otherwise, print the whole line
+        else
+        {
+            std::cerr << "[bt]: (" << i << ") " << messages[i] << std::endl;
+        }
+    }
+    std::cerr << std::endl;
+
+    free(messages);
+
+    exit(EXIT_FAILURE);
+}
+
+void handler(int sig) {
+  void *array[10];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  exit(1);
+}
+
 void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 {
     //double tic = double(getTickCount());
@@ -228,6 +360,8 @@ void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 
 }
 
+
+
 int main(int argc, char *argv[])
 {
     bROIChanged = false;
@@ -235,6 +369,26 @@ int main(int argc, char *argv[])
     bshowMask = false;
     bTracking = true; //Start By Tracking by default
     bExiting    = false;
+
+
+  //  signal(SIGSEGV, handler);   // install Error/Seg Fault handler
+
+    ///Install Error Hanlder //
+    struct sigaction sigact;
+
+     sigact.sa_sigaction = crit_err_hdlr;
+     sigact.sa_flags = SA_RESTART | SA_SIGINFO;
+
+     if (sigaction(SIGSEGV, &sigact, (struct sigaction *)NULL) != 0)
+     {
+      fprintf(stderr, "error setting signal handler for %d (%s)\n",
+        SIGSEGV, strsignal(SIGSEGV));
+
+      exit(EXIT_FAILURE);
+     }
+
+    /// ERROR HANDLER SIGSEV /////////
+
 
     QApplication app(argc, argv);
     //QQmlApplicationEngine engine;
@@ -1456,8 +1610,8 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,cv::Mat& img)
 {
     cv::Mat image_to_write;
-    cv::cvtColor(img,image_to_write, cv::COLOR_RGB2BGR); //BGR For imWrite
-
+    //cv::cvtColor(img,image_to_write, cv::COLOR_RGB2BGR); //BGR For imWrite
+    img.copyTo(image_to_write);
     //Make ROI dependent File Name
     QFileInfo fiVid(filenameVid);
     QString fileVidCoreName = fiVid.completeBaseName();
