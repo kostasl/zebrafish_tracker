@@ -147,7 +147,7 @@ void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
 void MainWindow::saveScreenShot()
 {
     //std::stringstream frameNumberString; frameNumberString << nFrame;
-    QString frameNumberString = QString::number(nFrame);
+    QString frameNumberString = QString::number(this->nFrame);
 
     ::saveImage(frameNumberString,stroutDirCSV,vidFilename,this->frameScene);
 

@@ -557,6 +557,7 @@ int main(int argc, char *argv[])
 
 
     int ifileCount =loadTemplatesFromDirectory(gstroutDirCSV + QString("/templates/"));
+    pwindow_main->nFrame = 0;
     pwindow_main->LogEvent(QString::number(ifileCount+nTemplatesToLoad) + QString("# Templates Loaded "));
 
     /// END OF FISH TEMPLATES ///
@@ -1483,7 +1484,8 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     {
         std::cout << "Save Image" << endl;
         bSaveImages = !bSaveImages;
-        win->saveScreenShot();
+        if (bSaveImages)
+            win->saveScreenShot();
 
     }
 
