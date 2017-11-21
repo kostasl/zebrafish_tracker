@@ -21,6 +21,7 @@
 #include <cvBlob/cvblob.h>
 #include <ltROI.h> //Defines the ROI types
 #include <fishmodel.h>
+#include <foodmodel.h>
 #include <zfttracks.h>
 #include <GUI/mainwindow.h>
 
@@ -86,6 +87,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks); /// Deprecated
 ///Updated Version With Blobs
 void UpdateFishModels(const cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks,unsigned int nFrame,cv::Mat& frameOut);
+void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,cv::Mat& frameOut);
 
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);

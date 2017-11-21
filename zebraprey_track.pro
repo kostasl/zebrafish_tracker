@@ -20,7 +20,8 @@ SOURCES += main.cpp \
     #GUI/TrackerScene.cpp
     ellipse_detect.cpp \
     template_detect.cpp \
-    zfttracks.cpp
+    zfttracks.cpp \
+    foodmodel.cpp
 
 RESOURCES += qml.qrc
 #INCLUDEPATH += /usr/include/opencv
@@ -94,7 +95,8 @@ HEADERS += \
     ellipse_detect.h \
     template_detect.h \
     zfttracks.h \
-    config.h
+    config.h \
+    foodmodel.h
 
 
 FORMS += \

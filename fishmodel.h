@@ -109,7 +109,7 @@ public:
   std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
 
 
-  unsigned int nCurrentFrame; ///<-Holds the frame Number of the last State Update
+  unsigned int nLastUpdateFrame; ///<-Holds the frame Number of the last State Update
   double templateScore; //FishLIke Score - How well the detected model fish looks/matches the convolution of a fish template
   double leftEyeTheta; /// Theta is In Degrees
   double rightEyeTheta;/// Theta is In Degrees
@@ -165,7 +165,8 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h);
 /// this list is maintained along with tracks - ie deletion/creation is done via matching to
 /// blobs
 ///
-typedef std::map<cvb::CvLabel,fishModel* > fishModels;
+typedef std::map<zftID,fishModel* > fishModels;
+
 
 
 class CompareFishScore {

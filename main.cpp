@@ -37,6 +37,7 @@
 #include <ellipse_detect.h>
 #include <template_detect.h>
 #include <zfttracks.h>
+
 #include <random>
 
 ///For Stack Trace Debugging
@@ -72,6 +73,7 @@
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 100; //Number of frames inactive until track is deleted
+const int gcMaxFoodModelInactiveFrames  = 50; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
@@ -87,6 +89,7 @@ double dMeanBlobArea                    = 100; //Initial Value that will get upd
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
+
 
 //BG History
 float gfVidfps              = 298;
@@ -121,12 +124,16 @@ const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For M
 int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
 ///Fish Features Detection Params
-int gFishTemplateAngleSteps     = 2;
+int gFishTemplateAngleSteps     = 1;
 int gEyeTemplateAngleSteps      = 5;
 double gTemplateMatchThreshold  = 0.92; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
+
+/// Global Counters ///
+uint gi_MaxFoodID       = 0;
+uint gi_MaxFishID       = 0;
 
 ///Global Variables
 const double sigma = 3.0;
@@ -183,6 +190,7 @@ cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
 
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
 fishModels vfishmodels; //Vector containing live fish models
+foodModels vfoodmodels;
 
 MainWindow* pwindow_main = 0;
 
@@ -191,8 +199,8 @@ MainWindow* pwindow_main = 0;
 //   CV_FONT_HERSHEY_DUPLEX, CV_FONT_HERSHEY_COMPLEX,
 //   CV_FONT_HERSHEY_TRIPLEX, CV_FONT_HERSHEY_COMPLEX_SMALL,
 //   CV_FONT_HERSHEY_SCRIPT_SIMPLEX, CV_FONT_HERSHEY_SCRIPT_COMPLEX
-int trackFnt = cv::FONT_HERSHEY_COMPLEX_SMALL;  //Font for Reporting - Tracking
-float trackFntScale = 0.7;
+int trackFnt = CV_FONT_HERSHEY_SIMPLEX;  //Font for Reporting - Tracking
+float trackFntScale = 0.6;
 
 // Global Control Vars ///
 
@@ -203,6 +211,7 @@ bool bROIChanged;
 bool bPaused;
 bool bExiting;
 bool bTracking;
+bool bTrackFood = true;
 bool bSaveImages = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
@@ -239,6 +248,8 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
      sig_ucontext_t *   uc;
 
      uc = (sig_ucontext_t *)ucontext;
+
+     std::cerr << ">>>>  SIG SEG Handler with Demangling was Triggered <<<<<" << std::endl;
 
      /* Get the address at the time the signal was raised */
     #if defined(__i386__) // gcc specific
@@ -331,6 +342,7 @@ void handler(int sig) {
   void *array[10];
   size_t size;
 
+  std::cerr << ">>>> Simple SIG SEG Handler Triggered <<<<<" << std::endl;
   // get void*'s for all entries on the stack
   size = backtrace(array, 10);
 
@@ -371,7 +383,11 @@ int main(int argc, char *argv[])
     bExiting    = false;
 
 
-  //  signal(SIGSEGV, handler);   // install Error/Seg Fault handler
+       // install Error/Seg Fault handler
+    if (signal(SIGSEGV, handler) == SIG_ERR)
+    {
+        std::cerr << "**Error Setting SIGSEV simple hanlder! ::" << strsignal(SIGSEGV) << std::endl;
+    }
 
     ///Install Error Hanlder //
     struct sigaction sigact;
@@ -800,6 +816,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
     cv::Mat frame_gray,fgFishMask,fgFishImgMasked;
     cv::Mat fgFoodMask;
 
+    std::vector<cv::KeyPoint> ptFoodblobs;
+    std::vector<cv::KeyPoint> ptFishblobs;
 
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
@@ -855,7 +873,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
        // Filters Blobs between fish and food - save into global vectors
         //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
-        std::vector<cv::KeyPoint> ptFishblobs;
+
         //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
@@ -875,7 +893,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         {
             fishModel* pfish = ft->second;
             assert(pfish);
-            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, trackFnt );
+            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, trackFnt,trackFntScale );
         }
 
         ///\todo Keep A Global List of all tracks?
@@ -887,8 +905,25 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
         ///////  Process Food Blobs ////
         // Process Food blobs
-        std::vector<cv::KeyPoint> ptFoodblobs;
-        //nFood = processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+
+        if (bTrackFood)
+        {
+
+            nFood = processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+            UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
+
+            //If A fish Is Detected Then Draw Its tracks
+            foodModels::iterator ft = vfoodmodels.begin();
+            while (ft != vfoodmodels.end())
+            {
+                foodModel* pfood = ft->second;
+                assert(pfood);
+                zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX, CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                ++ft;
+            }
+
+
+        }
 
 
     } //If Tracking
@@ -1383,7 +1418,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //Make new fish Model
             //fishModel* fish= new fishModel(track,fishblob);
            fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
-
+           fish->ID = ++gi_MaxFishID;
            fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
@@ -1441,6 +1476,116 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 } //UpdateFishModels //
 
 
+
+///
+/// \brief UpdateFoodModels
+/// \param maskedImg_gray
+/// \param vfoodmodels
+/// \param foodblobs
+/// \param nFrame
+/// \param frameOut
+void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,cv::Mat& frameOut)
+{
+
+    foodModel* pfood = NULL;
+
+    foodModels::iterator ft;
+
+
+    /// Assign Blobs To Food Models //
+     // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
+    for (zfdblobs::iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
+    {
+        zfdblob* foodblob = &(*it);
+        ///
+        /// Check If Track Centre Point Contains An image that matches a fish template
+        ///
+        cv::Point centroid = foodblob->pt;
+        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-5)), max(0,min(maskedImg_gray.rows,centroid.y-5)));
+        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+5)), max(0,min(maskedImg_gray.rows,centroid.y+5)));
+
+        // Look for Fish Template Within The Blob Region //
+        cv::Rect rectFood(pBound1,pBound2);
+        cv::rectangle(frameOut,rectFood,CV_RGB(10,150,150),1);
+        // Debug //
+#ifdef _ZTFDEBUG_
+
+#endif
+
+        //cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
+        double maxMatchScore; //
+
+        bool bModelFound = false;
+        //Check Through Models And Find The Closest Fish To This FishBlob
+        for ( ft  = vfoodmodels.begin(); ft!=vfoodmodels.end(); ++ft)
+        {
+             pfood = ft->second;
+             bool bMatch = false;
+             ///Does this Blob Belong To A Known Food Model?
+             //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
+             //if (pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob) > 0 )
+             if (pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob) > 0 )
+                    bMatch = true;
+             else if (norm(pfood->zTrack.centroid-foodblob->pt) < 5)
+                 bMatch = true;
+             if  (bMatch){
+               //If Yes then assign the fish with the overlapping blob the template Match Score
+               //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
+               bModelFound = true;
+               ///Update Model State
+               // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
+               pfood->updateState(foodblob,0,pfood->zfoodblob.pt,nFrame);
+
+             }
+
+
+
+             } // Loop Through Food Models
+
+
+        ///No Food Model Found - Create A new One //
+         if (!bModelFound) //Model Does not exist for track - its a new track
+         {
+            foodModel* pnfood= new foodModel(*foodblob,++gi_MaxFishID);
+
+            pnfood->updateState(foodblob,0,pnfood->zfoodblob.pt,nFrame);
+
+            vfoodmodels.insert(IDFoodModel(pnfood->ID,pnfood));
+            std::stringstream strmsg; strmsg << "# New foodmodel: " << pnfood->ID;
+            std::clog << nFrame << strmsg.str() << std::endl;
+            //pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
+         }
+        } // Loop Through BLOBS
+
+
+    ///Delete All Inactive Food Models
+    ft = vfoodmodels.begin();
+    while(ft != vfoodmodels.end() ) //&& vfishmodels.size() > 1
+    {
+        pfood = ft->second;
+        if ((nFrame - pfood->nLastUpdateFrame) > gcMaxFoodModelInactiveFrames) //Check If it Timed Out / Then Delete
+        {
+            std::cout << nFrame << "# Deleted fishmodel: " << pfood->ID << std::endl;
+            ft = vfoodmodels.erase(ft);
+            delete(pfood);
+            continue;
+        }else
+        {
+            pfood->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+        }
+
+        ++ft; //Increment Iterator
+    } //Loop To Delete Inactive FoodModels
+
+
+
+
+
+} //UpdateFoodModels //
+
+
+
+
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 {
 
@@ -1477,6 +1622,23 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         }
 
         bTracking = !bTracking;
+    }
+
+    if ((char)keyboard == 'r') //Toggle Tracking
+        bTrackFood!=bTrackFood;
+
+    if ((char)keyboard == '[') //Rotate Template AntiClock Wise
+    {
+        iLastKnownGoodTemplateCol--;
+        iLastKnownGoodTemplateCol = max(0,iLastKnownGoodTemplateCol);
+        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(iLastKnownGoodTemplateCol)  );
+    }
+
+    if ((char)keyboard == ']') //Rotate Template ClockWise
+    {
+        iLastKnownGoodTemplateCol++;
+        iLastKnownGoodTemplateCol = min(360/gFishTemplateAngleSteps , iLastKnownGoodTemplateCol);
+        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(iLastKnownGoodTemplateCol)  );
     }
 
 

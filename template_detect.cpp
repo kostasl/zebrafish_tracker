@@ -266,38 +266,39 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
 int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 {
     //Draw Black
-    cv::Rect rectblankcv(0,imgTempl.rows*(idxTempl),FishTemplateCache.cols,imgTempl.rows*(idxTempl+1));
+    int mxDim = std::max(imgTempl.cols,imgTempl.rows);
+    //\note RECT constructor takes starting point x,y, size_w, size_h)
+    cv::Rect rectblankcv(0,mxDim*(idxTempl),FishTemplateCache.cols,mxDim*(idxTempl+1));
     cv::rectangle(FishTemplateCache,rectblankcv,CV_RGB(0,0,0),CV_FILLED); //Blank It OUt
 
     //Shrink Template
     if (idxTempl == (gnumberOfTemplatesInCache-1))
     {
-        FishTemplateCache  = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl)));
+        FishTemplateCache  = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl)));
         gnumberOfTemplatesInCache--;
     }else
     {
         //Cut In 2- Halves and rejoin
-        cv::Mat mTop    = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl)));
+        cv::Mat mTop;
+        cv::Mat mBottom;
+        FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl))).copyTo(mTop) ;
         cv::imshow("Template Top",mTop);
 
-        //Error Here
-        cv::Mat mBottom = FishTemplateCache(cv::Rect(0,imgTempl.rows*(idxTempl+1),FishTemplateCache.cols,FishTemplateCache.rows));
+        FishTemplateCache(cv::Rect(0,mTop.rows+mxDim,mTop.cols,FishTemplateCache.rows-mTop.rows-mxDim)).copyTo(mBottom);
         cv::imshow("Template Bottom",mBottom);
 
-        cv::Mat mtShrankCache   = cv::Mat::zeros(FishTemplateCache.rows-imgTempl.rows,FishTemplateCache.cols,CV_8UC1);
+        cv::Mat mtShrankCache   = cv::Mat::zeros(FishTemplateCache.rows-mxDim,FishTemplateCache.cols,CV_8UC1);
 
-
-
-
-        mTop.copyTo(mtShrankCache(cv::Rect(0,0,FishTemplateCache.cols,imgTempl.rows*(idxTempl))));
-        mBottom.copyTo( mtShrankCache( cv::Rect(0,mTop.rows,FishTemplateCache.cols,imgTempl.rows*( (gnumberOfTemplatesInCache-2)) ) ) );
+        gnumberOfTemplatesInCache--;
+        mTop.copyTo(mtShrankCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl))));
+        mBottom.copyTo( mtShrankCache( cv::Rect(0,mTop.rows,FishTemplateCache.cols,mtShrankCache.rows-mTop.rows) ));
         mtShrankCache.copyTo(FishTemplateCache);
         mtShrankCache.deallocate();
-        gnumberOfTemplatesInCache--;
+
     }
 
     // DEBUG //
-    cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows)));
+    cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,mxDim,FishTemplateCache.rows)));
 
     return 1;
 }

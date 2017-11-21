@@ -46,17 +46,17 @@
 
 
 
-
-void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface )
+void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface,float fontScale )
 {
 
      if (mode&CV_TRACK_RENDER_ID)
-        if (!track.inactive)
-        {
+     {
+//        if (track.inactive < 200)
+//        {
           std::stringstream buffer;
           buffer << track.id;
-          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.centroid),fontface,0.7, CV_RGB(0.,255.,0.));
-        }
+          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.centroid),fontface,fontScale, CV_RGB(0.,255.,0.));
+     }
 
       if (mode&CV_TRACK_RENDER_BOUNDING_BOX)
         if (track.inactive)

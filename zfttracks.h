@@ -19,6 +19,7 @@
 
 /// \brief Type of identification numbers.
 typedef unsigned int zftID;
+typedef unsigned int zfdID;
 
 
 /// \var typedef std::vector<cv:Point2f> TrackPoints
@@ -98,6 +99,6 @@ struct zftTrack
 
 /// \brief Render A zftracker Track
 ///
-void zftRenderTrack(zftTrack& track,const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface );
+void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface,float fontScale );
 #endif // ZFTTRACKS
 

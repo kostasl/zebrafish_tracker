@@ -500,7 +500,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::Mat img_colour;
     //cv::Mat img_contour;
     cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
-    cv::Mat imgEdge_local;
+
+    cv::Mat imgEdge_local; //Crash Here
 
     //cv::Mat imgEdge_dbg;
 
