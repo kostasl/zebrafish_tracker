@@ -268,7 +268,7 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     //Draw Black
     int mxDim = std::max(imgTempl.cols,imgTempl.rows);
     //\note RECT constructor takes starting point x,y, size_w, size_h)
-    cv::Rect rectblankcv(0,mxDim*(idxTempl),FishTemplateCache.cols,mxDim*(idxTempl+1));
+    cv::Rect rectblankcv(0,mxDim*(idxTempl),FishTemplateCache.cols,mxDim);
     cv::rectangle(FishTemplateCache,rectblankcv,CV_RGB(0,0,0),CV_FILLED); //Blank It OUt
 
     //Shrink Template
@@ -282,10 +282,10 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
         cv::Mat mTop;
         cv::Mat mBottom;
         FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl))).copyTo(mTop) ;
-        cv::imshow("Template Top",mTop);
+        cv::imshow("Template Top",mTop(cv::Rect(0,0,mxDim,mBottom.rows)));
 
         FishTemplateCache(cv::Rect(0,mTop.rows+mxDim,mTop.cols,FishTemplateCache.rows-mTop.rows-mxDim)).copyTo(mBottom);
-        cv::imshow("Template Bottom",mBottom);
+        cv::imshow("Template Bottom",mBottom(cv::Rect(0,0,mxDim,mBottom.rows)));
 
         cv::Mat mtShrankCache   = cv::Mat::zeros(FishTemplateCache.rows-mxDim,FishTemplateCache.cols,CV_8UC1);
 

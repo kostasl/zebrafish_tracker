@@ -356,6 +356,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
     nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
+    this->zTrack.id     = ID;
     this->templateScore  = templatematchScore;
     this->bearingAngle   = Angle;
     this->bearingRads   =  Angle*CV_PI/180.0;

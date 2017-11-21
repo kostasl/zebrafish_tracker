@@ -200,7 +200,7 @@ MainWindow* pwindow_main = 0;
 //   CV_FONT_HERSHEY_TRIPLEX, CV_FONT_HERSHEY_COMPLEX_SMALL,
 //   CV_FONT_HERSHEY_SCRIPT_SIMPLEX, CV_FONT_HERSHEY_SCRIPT_COMPLEX
 int trackFnt = CV_FONT_HERSHEY_SIMPLEX;  //Font for Reporting - Tracking
-float trackFntScale = 0.6;
+float trackFntScale = 0.53;
 
 // Global Control Vars ///
 
@@ -893,7 +893,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         {
             fishModel* pfish = ft->second;
             assert(pfish);
-            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, trackFnt,trackFntScale );
+            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_ID + CV_TRACK_RENDER_PATH, trackFnt,trackFntScale );
         }
 
         ///\todo Keep A Global List of all tracks?
@@ -1419,6 +1419,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //fishModel* fish= new fishModel(track,fishblob);
            fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
            fish->ID = ++gi_MaxFishID;
+
            fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
@@ -1837,8 +1838,8 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
     // Filter by Area.
     params.filterByArea = true;
-    params.minArea = thresh_fishblobarea/2;
-    params.maxArea = 5*thresh_fishblobarea;
+    params.minArea = thresh_fishblobarea/2.0;
+    params.maxArea = 3*thresh_fishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
@@ -1927,7 +1928,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
-    params.filterByInertia      = false;
+    params.filterByInertia      = true;
     params.maxInertiaRatio      = 1.0;
     params.minInertiaRatio      = 0.7;
 
@@ -2377,6 +2378,10 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
     int distToCentroid       = +10000;
     int matchContourDistance = 10000;
 
+    ///Jump Over Strange Error
+    if (hierarchy.size() !=contours.size())
+        return -1;
+
 
     /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
    ///Search Through Contours - Draw contours + hull results
@@ -2647,6 +2652,7 @@ int max_thresh = 255;
 cv::Mat frameImg_gray;
 cv::Mat threshold_output;
 cv::Mat threshold_output_COMB;
+cv::Mat threshold_output_COMB_fish;
 
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
@@ -2688,13 +2694,14 @@ cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THR
 /////////////////Make Hollow Mask
 //make Inner Fish MAsk /More Accurate Way
 //cv::threshold( frameImg_gray, threshold_output_H, g_SegInnerthreshMult * g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
-//cv::erode(threshold_output,threshold_output_H,kernelOpenfish,cv::Point(-1,-1),g_SegInnerthreshMult);
+//cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),g_SegInnerthreshMult);
 //Substract Inner from Outer
 //cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
 ///////////////////
 
 
 //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
+cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
 cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
 
 /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
@@ -2707,7 +2714,8 @@ std::vector<std::vector<cv::Point> > fishbodycontours;
 std::vector<cv::Vec4i> fishbodyhierarchy;
 
 //Then Use ThresholdImage TO Trace More detailed Contours
-cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
+cv::findContours( threshold_output_COMB_fish, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 //cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE  , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 //threshold_output_COMB.copyTo(frameDebugB);
 
@@ -2753,16 +2761,17 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
                 if (iroi.contains(centroid))
                 {
                      curve = fishbodycontours[kk];
-
                      outfishbodyhierarchy.push_back(fishbodyhierarchy[kk]); //Save Hierarchy Too
                 }
             }
+
+//            curve = fishbodycontours[kk];
             //std::vector<cv::RotatedRect> rectFeatures;
             //Add Blob To candidate Region of interest Mask
             //idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
         }
 
-        if (curve.size() > 10)
+        if (curve.size() > 20)
         {
             assert(M % 2 == 1); //M is an odd number
 
@@ -2942,8 +2951,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
           cv::Rect rectFish(pBound1,pBound2);
 
+          cv::rectangle(fullImgOut,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
 #ifdef _ZTFDEBUG_
-          cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
+
 #endif
           // cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
@@ -3139,8 +3149,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   //Look for Top Level Contour
 
+
                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-               fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+               if (idxFish>=0)
+                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
 
                 //fish->resetSpine();
                 fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
