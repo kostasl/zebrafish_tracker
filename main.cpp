@@ -1344,7 +1344,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
 
-        bool findBestMatch = (vfishmodels.size() == 0); //If No Fish Models Exist then Search Through Cache;
+        bool findBestMatch = (vfishmodels.size() > 0); //If No Fish Models Exist then Search Through Cache;
         if (findBestMatch)
             pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
