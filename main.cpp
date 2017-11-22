@@ -1643,7 +1643,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     if ((char)keyboard == 'f') //Toggle Tracking
     {
-        bTrackFood!=bTrackFood;
+        bTrackFood=!bTrackFood;
 
         if (bTrackFood)
             pwindow_main->LogEvent(QString("Track food ON"));
@@ -3178,8 +3178,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //Check If Too Many Eye Detection Failures - Then Switch Template
               if (fish->nFailedEyeDetectionCount > 10)
               {
-                    pwindow_main->LogEvent(QString("Too Many Eye detection Failures - Change Template Randomly"));
+
                     fish->idxTemplateRow = iLastKnownGoodTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
+                    pwindow_main->LogEvent(QString("Too Many Eye detection Failures - Change Template Randomly to :" + QString::number(iLastKnownGoodTemplateRow)));
               }
 
               /// SPINE Fitting And Drawing ///

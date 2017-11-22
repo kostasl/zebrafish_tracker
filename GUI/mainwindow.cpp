@@ -204,6 +204,8 @@ void MainWindow::LogEvent(QString strMessage)
     mModelMessageList->setStringList(mMessageList);
 
     std::clog << strMessage.toStdString() << std::endl;
+
+    this->ui->listView->scrollToBottom();
 }
 
 void MainWindow::showInsetimg(cv::Mat& img)
