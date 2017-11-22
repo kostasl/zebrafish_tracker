@@ -200,7 +200,7 @@ MainWindow* pwindow_main = 0;
 //   CV_FONT_HERSHEY_TRIPLEX, CV_FONT_HERSHEY_COMPLEX_SMALL,
 //   CV_FONT_HERSHEY_SCRIPT_SIMPLEX, CV_FONT_HERSHEY_SCRIPT_COMPLEX
 int trackFnt = CV_FONT_HERSHEY_SIMPLEX;  //Font for Reporting - Tracking
-float trackFntScale = 0.53;
+float trackFntScale = 0.6;
 
 // Global Control Vars ///
 
@@ -1929,7 +1929,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
     params.filterByInertia      = true;
     params.maxInertiaRatio      = 1.0;
-    params.minInertiaRatio      = 0.4;
+    params.minInertiaRatio      = 0.3;
 
 
     //params.filterByInertia = true;
