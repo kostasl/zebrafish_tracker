@@ -73,7 +73,7 @@
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 100; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 50; //Number of frames inactive until track is deleted
+const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
@@ -88,7 +88,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 600; //Min area above which to Filter The fish blobs
 
 
 //BG History
@@ -1258,7 +1258,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
         if (bshowMask)
         {
-            cv::imshow(gstrwinName + " FG Mask", fgMask);
+           // cv::imshow(gstrwinName + " FG Mask", fgMask);
             //cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish);
         }
         // Show Debug Screens //
@@ -1344,7 +1344,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
 
-        bool findBestMatch = (vfishmodels.size() > 0); //If No Fish Models Exist then Search Through Cache;
+        //If blob exists but No Fish Model yet then Search Through Cache to improve matching;
+        bool findBestMatch = (vfishmodels.size() == 0);
         if (findBestMatch)
             pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
@@ -1386,14 +1387,10 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                  {
                      //Guess Again Starting Column In Templ (Angle)
                      //computed orientation of the keypoint (-1 if not applicable); it's in [0,360) degrees and measured relative to image coordinate system, ie in clockwise.
-
 //                     iLastKnownGoodTemplateCol =  (int)(pfish->bearingAngle);
 //                     if (iLastKnownGoodTemplateCol < 0)
 //                         iLastKnownGoodTemplateCol +=360;
-
-
 //                         iLastKnownGoodTemplateCol = iLastKnownGoodTemplateCol/gFishTemplateAngleSteps;
-
 
                          //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
                          if (pfish->inactiveFrames > 3)
@@ -1566,7 +1563,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         pfood = ft->second;
         if ((nFrame - pfood->nLastUpdateFrame) > gcMaxFoodModelInactiveFrames) //Check If it Timed Out / Then Delete
         {
-            std::cout << nFrame << "# Deleted fishmodel: " << pfood->ID << std::endl;
+            std::cout << nFrame << "# Deleted foodmodel: " << pfood->ID << std::endl;
             ft = vfoodmodels.erase(ft);
             delete(pfood);
             continue;
@@ -1839,7 +1836,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Filter by Area.
     params.filterByArea = true;
     params.minArea = thresh_fishblobarea/2.0;
-    params.maxArea = 3*thresh_fishblobarea;
+    params.maxArea = 4*thresh_fishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
@@ -1857,7 +1854,6 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Critical To Provide the Mask Image and not the full frame //
     detector->detect( maskimg, keypoints); //frameMask
 
-
     //Mask Is Ignored so Custom Solution Required
     //for (cv::KeyPoint &kp : keypoints)
     ptFishblobs.clear();
@@ -1865,7 +1861,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     {
         cv::KeyPoint kp = keypoints[i];
 
-        ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
+        ///Go Through Each ROI and Render Blobs -
         unsigned int RoiID = 0;
         for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
         {
@@ -1885,7 +1881,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
     //frame.copyTo(frameOut,maskimg); //mask Source Image
-    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(200,20,20), cv::DrawMatchesFlags::DEFAULT );
+    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DEFAULT );
 
 
     detector->clear();
@@ -2714,8 +2710,8 @@ std::vector<std::vector<cv::Point> > fishbodycontours;
 std::vector<cv::Vec4i> fishbodyhierarchy;
 
 //Then Use ThresholdImage TO Trace More detailed Contours
-cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
-cv::findContours( threshold_output_COMB_fish, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+//cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
+cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 //cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE  , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 //threshold_output_COMB.copyTo(frameDebugB);
 
@@ -2746,6 +2742,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         /// Lets try simple area filter - Assume no large object need to be BG substracted
         uint area  = cv::contourArea(fishbodycontours[kk]);
 
+
+
+
         ///Check Area and then  Find the thresholded Fish Contour std::max(dMeanBlobArea*8,(double)thresh_fishblobarea)
         if (area >  thresh_fishblobarea) //If Contour Is large Enough then Must be fish
         {
@@ -2769,77 +2768,80 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             //std::vector<cv::RotatedRect> rectFeatures;
             //Add Blob To candidate Region of interest Mask
             //idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
+            //std::clog << " cntr area :" << area << std::endl;
         }
 
-        if (curve.size() > 20)
-        {
-            assert(M % 2 == 1); //M is an odd number
+        //Skip Very Small Curves
+        if (curve.size() < gcFishContourSize)
+            continue;
 
-            ///// SMOOTH COntours /////
+        assert(M % 2 == 1); //M is an odd number
 
-            vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
-            PolyLineSplit(curve,curvex,curvey);
+        ///// SMOOTH COntours /////
 
-            std::vector<double> X,XX,Y,YY;
-            std::vector<double> dXY;
+        vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
+        PolyLineSplit(curve,curvex,curvey);
 
-            getdXcurve(curvex,sigma,smoothx,X,XX,gGaussian,dgGaussian,d2gGaussian,false);
-            getdXcurve(curvey,sigma,smoothy,Y,YY,gGaussian,dgGaussian,d2gGaussian,false);
+        std::vector<double> X,XX,Y,YY;
+        std::vector<double> dXY;
 
-            dXY.resize(X.size());
-            /// Find Tail As POint Of Maximum Curvature dXY
-            int idxMax = 0;
-            int idxMin = 0;
-            double maxVal=0.0;
-            double minVal=10000.0;
-            cv::Point ptTail1,ptTail2;
+        getdXcurve(curvex,sigma,smoothx,X,XX,gGaussian,dgGaussian,d2gGaussian,false);
+        getdXcurve(curvey,sigma,smoothy,Y,YY,gGaussian,dgGaussian,d2gGaussian,false);
 
-            for (int j=0; j<X.size(); j++) {
-               dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
-               if (dXY[j] > maxVal)
-               {
-                   idxMax = j;
-                   maxVal = dXY[j];
-               }
-               if (dXY[j] < minVal) //Detect Tail
-               {
-                   idxMin = j;
-                   minVal = dXY[j];
-               }
-            }
+        dXY.resize(X.size());
+        /// Find Tail As POint Of Maximum Curvature dXY
+        int idxMax = 0;
+        int idxMin = 0;
+        double maxVal=0.0;
+        double minVal=10000.0;
+        cv::Point ptTail1,ptTail2;
 
-            ptTail1 = curve[idxMin];
-            ptTail2 = curve[idxMax];
+        for (int j=0; j<X.size(); j++) {
+           dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
+           if (dXY[j] > maxVal)
+           {
+               idxMax = j;
+               maxVal = dXY[j];
+           }
+           if (dXY[j] < minVal) //Detect Tail
+           {
+               idxMin = j;
+               minVal = dXY[j];
+           }
+        }
 
-            ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
-            PolyLineMerge(curve,resampledcurveX,resampledcurveY);
+        ptTail1 = curve[idxMin];
+        ptTail2 = curve[idxMax];
 
-
-            //Find Where Tail Point Is In the Resampled (Reduced) Contour
-            int idxTail = findIndexClosesttoPoint(curve,ptTail1);
-            std::vector<cv::Point>::iterator it = curve.begin();
-            it += idxTail;
-            curve.insert(it,ptTail1); //Put Tail Back to Curve In CAse it Got Smoothed Out
-            ///////////// END SMOOTHING
-
-            ///\todo Make Contour Fish Like - Extend Tail ///
-            //Find Tail Point- As the one with the sharpest Angle
-
-            outfishbodycontours.push_back(curve);
-            /////COMBINE - DRAW CONTOURS
-            //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
-            // they should still fall within contour - )
-            //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
-            //Draw New One
-            cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
-            cv::circle(outFishMask, ptTail1,8,CV_RGB(255,255,255),cv::FILLED);
-            cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
-
-            //Erase Fish From Food Mask
-            cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),4);
+        ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
+        PolyLineMerge(curve,resampledcurveX,resampledcurveY);
 
 
-      }
+        //Find Where Tail Point Is In the Resampled (Reduced) Contour
+        int idxTail = findIndexClosesttoPoint(curve,ptTail1);
+        std::vector<cv::Point>::iterator it = curve.begin();
+        it += idxTail;
+        curve.insert(it,ptTail1); //Put Tail Back to Curve In CAse it Got Smoothed Out
+        ///////////// END SMOOTHING
+
+        ///\todo Make Contour Fish Like - Extend Tail ///
+        //Find Tail Point- As the one with the sharpest Angle
+
+        outfishbodycontours.push_back(curve);
+        /////COMBINE - DRAW CONTOURS
+        //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
+        // they should still fall within contour - )
+        //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
+        //Draw New One
+        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
+        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),3);
+        cv::circle(outFishMask, ptTail1,8,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
+
+        //Erase Fish From Food Mask
+        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),10);
+        //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),4);
+
 } //For Each Fish Contour
 
 
@@ -2951,7 +2953,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
           cv::Rect rectFish(pBound1,pBound2);
 
-          cv::rectangle(fullImgOut,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
+          //cv::rectangle(fullImgOut,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
 #ifdef _ZTFDEBUG_
 
 #endif
