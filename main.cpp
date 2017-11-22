@@ -1906,7 +1906,10 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     //std::vector<cv::KeyPoint> keypoints_in_ROI;
     cv::SimpleBlobDetector::Params params;
 
-    params.filterByCircularity  = false; //a circle has a circularity of 1, circularity of a square is 0.785, and so on.
+    //a circle has a circularity of 1,
+    //circularity of a square is 0.785, and so on.
+
+    params.filterByCircularity  = false;
     params.minCircularity       = 0.8;
     params.maxCircularity       = 1.0;
 
@@ -1926,7 +1929,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
     params.filterByInertia      = true;
     params.maxInertiaRatio      = 1.0;
-    params.minInertiaRatio      = 0.7;
+    params.minInertiaRatio      = 0.4;
 
 
     //params.filterByInertia = true;
