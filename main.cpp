@@ -1622,9 +1622,15 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         bTracking = !bTracking;
     }
 
-    if ((char)keyboard == 'r') //Toggle Tracking
+    if ((char)keyboard == 'f') //Toggle Tracking
+    {
         bTrackFood!=bTrackFood;
 
+        if (bTrackFood)
+            pwindow_main->LogEvent(QString("Track food ON"));
+        else
+            pwindow_main->LogEvent(QString("Track food OFF"));
+    }
     if ((char)keyboard == '[') //Rotate Template AntiClock Wise
     {
         iLastKnownGoodTemplateCol--;
