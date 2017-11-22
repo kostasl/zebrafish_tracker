@@ -14,6 +14,8 @@ extern double gTemplateMatchThreshold;
 
 fishModel::fishModel()
 {
+
+        nFailedEyeDetectionCount = 0;
         inactiveFrames = 0;
         templateScore = 0;
         coreTriangle.push_back(cv::Point());

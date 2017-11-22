@@ -202,6 +202,13 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata); //Mouse C
 void CallBackHistFunc(int event, int x, int y, int flags, void* userdata); //Mouse Callback For the Histogram Window
 void thresh_callback(int, void* );
 
+/// To Empty Priority Queue
+///
+///
+template <class T, class S, class C>
+void clearpq2(std::priority_queue<T, S, C>& q){
+    q=std::priority_queue<T, S, C>();
+}
 
 
 

@@ -121,6 +121,7 @@ public:
   int idxTemplateCol;
   tDetectedEllipsoid    leftEye;
   tDetectedEllipsoid    rightEye;
+  int nFailedEyeDetectionCount;
   cv::RotatedRect       bodyRotBound;
 
   cv::Point mouthPoint;

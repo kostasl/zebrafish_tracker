@@ -74,6 +74,7 @@
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 100; //Number of frames inactive until track is deleted
 const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
+const int gMaxClusterRadiusFoodToBlob   = 10;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
@@ -1484,7 +1485,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 /// \param frameOut
 void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,cv::Mat& frameOut)
 {
-
+    qfoodModels qfoodrank;
     foodModel* pfood = NULL;
 
     foodModels::iterator ft;
@@ -1507,53 +1508,71 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         cv::rectangle(frameOut,rectFood,CV_RGB(10,150,150),1);
         // Debug //
 #ifdef _ZTFDEBUG_
-
+        cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 #endif
 
-        //cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
-        double maxMatchScore; //
 
-        bool bModelFound = false;
         //Check Through Models And Find The Closest Fish To This FishBlob
         for ( ft  = vfoodmodels.begin(); ft!=vfoodmodels.end(); ++ft)
         {
              pfood = ft->second;
              bool bMatch = false;
              ///Does this Blob Belong To A Known Food Model?
-             //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
-             //if (pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob) > 0 )
-             if (pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob) > 0 )
+
+             //Skip This food Model if it Has Already Been Assigned on this Frame
+             if ((nFrame - pfood->nLastUpdateFrame)==0)
+                continue;
+
+             pfood->blobMatchScore = 0;//Reset So We Can Rank this Match
+             //Add points as each condition is met
+             //Is it the same
+             pfood->blobMatchScore += pfood->zfoodblob.size - foodblob->size;
+
+            //Penalize no Overlap
+             float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
+             pfood->blobMatchScore -=10.0*overlap;
+             if (overlap > 0.0)
                     bMatch = true;
-             else if (norm(pfood->zTrack.centroid-foodblob->pt) < 5)
+
+             //Cluster Blobs to one model if within a fixed Radius  That are close
+             int fbdist = norm(pfood->zTrack.centroid-foodblob->pt);
+             pfood->blobMatchScore +=fbdist;
+             if (fbdist < gMaxClusterRadiusFoodToBlob)
                  bMatch = true;
-             if  (bMatch){
-               //If Yes then assign the fish with the overlapping blob the template Match Score
-               //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
-               bModelFound = true;
-               ///Update Model State
-               // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
-               pfood->updateState(foodblob,0,pfood->zfoodblob.pt,nFrame);
+
+
+             if  (bMatch)
+             {
+                 qfoodrank.push(pfood);
 
              }
+               //If Yes then assign the fish with the overlapping blob the template Match Score
+               //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
+         } // Loop Through Food Models
 
 
+        ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
+        foodModel* pfoodBest = 0;
+        if (qfoodrank.size() > 0)
+        {
+            pfoodBest = qfoodrank.top(); //Get Pointer To Best Scoring Fish
+            //qrank.pop();//Remove From Priority Queue Rank
+            pfoodBest->inactiveFrames   = 0; //Reset Counter
+            pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,pfoodBest->blobMatchScore);
 
-             } // Loop Through Food Models
+        }else  ///No Food Model Found - Create A new One //
+        {
+            pfoodBest = new foodModel(*foodblob,++gi_MaxFishID);
 
+            vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
+            std::stringstream strmsg; strmsg << "# New foodmodel: " << pfoodBest->ID;
+           std::clog << nFrame << strmsg.str() << std::endl;
+           pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,500);
+        }
 
-        ///No Food Model Found - Create A new One //
-         if (!bModelFound) //Model Does not exist for track - its a new track
-         {
-            foodModel* pnfood= new foodModel(*foodblob,++gi_MaxFishID);
+        clearpq2(qfoodrank);
 
-            pnfood->updateState(foodblob,0,pnfood->zfoodblob.pt,nFrame);
-
-            vfoodmodels.insert(IDFoodModel(pnfood->ID,pnfood));
-            std::stringstream strmsg; strmsg << "# New foodmodel: " << pnfood->ID;
-            std::clog << nFrame << strmsg.str() << std::endl;
-            //pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
-         }
-        } // Loop Through BLOBS
+    } // Loop Through BLOBS
 
 
     ///Delete All Inactive Food Models
@@ -3118,7 +3137,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               ss.str(""); //Empty String
               ss.precision(3);
               if (vell.size() > 0)
-              {
+              {//Left Eye Detected First
                   tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
                   fish->leftEye           = lEye;
                   fish->leftEyeTheta      = lEye.rectEllipse.angle;
@@ -3128,6 +3147,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               { //Set To Not detected
                   fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
                   fish->leftEyeTheta  = 0;
+                  fish->nFailedEyeDetectionCount++;
               }
 
 
@@ -3143,6 +3163,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               { //Set To Not detected
                   fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
                   fish->rightEyeTheta  = 0;
+                  fish->nFailedEyeDetectionCount++;
               }
 
               ///If Both Eyes Detected Then Print Vergence Angle
@@ -3151,9 +3172,15 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   ss.str(""); //Empty String
                   ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta;
                   cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  fish->nFailedEyeDetectionCount = 0; //Reset Error Count
               }
 
-
+              //Check If Too Many Eye Detection Failures - Then Switch Template
+              if (fish->nFailedEyeDetectionCount > 10)
+              {
+                    pwindow_main->LogEvent(QString("Too Many Eye detection Failures - Change Template Randomly"));
+                    fish->idxTemplateRow = iLastKnownGoodTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
+              }
 
               /// SPINE Fitting And Drawing ///
               if (contours_body.size() > 0 && bFitSpineToTail)

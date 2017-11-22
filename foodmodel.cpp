@@ -16,6 +16,7 @@ foodModel::foodModel()
 {
 lastFoodID++;
 inactiveFrames = 0;
+blobMatchScore = 0;
 this->ID = lastFoodID;
 
 }
@@ -23,6 +24,7 @@ this->ID = lastFoodID;
 foodModel::foodModel(zfdblob blob,zfdID ID)
 {
     inactiveFrames = 0;
+    blobMatchScore = 0;
     this->ID = ID;
 
     zTrack.id   = this->ID;
@@ -32,9 +34,10 @@ foodModel::foodModel(zfdblob blob,zfdID ID)
 }
 
 
-void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame)
+void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore)
 {
 
+    blobMatchScore = matchScore;
     nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
     this->zfoodblob      = *fblob;
     this->zTrack.pointStack.push_back(bcentre);
