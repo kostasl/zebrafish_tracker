@@ -282,10 +282,10 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
         cv::Mat mTop;
         cv::Mat mBottom;
         FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl))).copyTo(mTop) ;
-        cv::imshow("Template Top",mTop(cv::Rect(0,0,mxDim,mTop.rows)));
+        //cv::imshow("Template Top",mTop(cv::Rect(0,0,mxDim,mTop.rows)));
 
         FishTemplateCache(cv::Rect(0,mTop.rows+mxDim,mTop.cols,FishTemplateCache.rows-mTop.rows-mxDim)).copyTo(mBottom);
-        cv::imshow("Template Bottom",mBottom(cv::Rect(0,0,mxDim,mBottom.rows)));
+        //cv::imshow("Template Bottom",mBottom(cv::Rect(0,0,mxDim,mBottom.rows)));
 
         cv::Mat mtShrankCache   = cv::Mat::zeros(FishTemplateCache.rows-mxDim,FishTemplateCache.cols,CV_8UC1);
 
@@ -298,7 +298,7 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     }
 
     // DEBUG //
-    cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,mxDim,FishTemplateCache.rows)));
+    cv::imshow("Updated Fish Template Cache",FishTemplateCache(cv::Rect(0,0,mxDim,FishTemplateCache.rows)));
 
     return 1;
 }
