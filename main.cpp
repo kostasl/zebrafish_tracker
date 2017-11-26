@@ -633,12 +633,17 @@ int main(int argc, char *argv[])
         unsigned int uiStartFrame = parser.get<uint>("startframe");
         trackVideofiles(window_main,gstroutDirCSV,inVidFileNames,uiStartFrame);
 
-    }catch (const std::bad_alloc &)
+    }catch (char *e)
     {
+        //printf("Exception Caught: %s\n",e);
+        qDebug() << ">>> Exception Caught while processing: " << outdatafile.fileName();
+        std::cerr << "Memory Allocation Error :" << e;
+        //std::cerr << "Memory Allocation Error! - Exiting";
+        std::cerr << "Close And Delete Current output file: " << outdatafile.fileName().toStdString() ;
+        closeDataFile(outdatafile);
+        outdatafile.remove();
+
         app.quit();
-        qDebug() << "Memory Allocation Error!";
-        std::clog << "Memory Allocation Error!";
-        std::cerr << "Memory Allocation Error! - Exiting";
 
         return 0;
     }
@@ -1414,10 +1419,10 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                  pfish->drawBodyTemplateBounds(frameOut);
                 //Add To Priority Q So we can Rank - Only If Blob Ovelaps ?
                 qfishrank.push(pfish);
-             }
+             }//if Models Blob Overlaps with this Blob
 
 
-        }
+        } //For Each Fish Model
 
        //If the Blob Has no Model fish, and the template Match says it looks like a fish - then create new model
         if (!bModelFound && maxMatchScore >= gTemplateMatchThreshold ) //Model Does not exist for track - its a new track
@@ -1447,10 +1452,28 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     double maxTemplateScore = 0.0;
     if (qfishrank.size() > 0)
     {
-        pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
-        //qfishrank.pop();//Remove From Priority Queue Rank
-        maxTemplateScore = pfishBest->templateScore;
-        pfishBest->inactiveFrames   = 0; //Reset Counter
+
+        while (pfishBest==0) //If Not In ROI Then Skip
+        {
+            pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
+            ///Check If fish Model Is In ROI //
+            for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+            {
+                ltROI iroi = (ltROI)(*it);
+                if (!iroi.contains(pfishBest->ptRotCentre))
+                {
+                    qfishrank.pop();
+                    pfishBest =0;
+                }
+             }
+       }//Search For Best Model
+       if (pfishBest)
+       {
+            //qfishrank.pop();//Remove From Priority Queue Rank
+            maxTemplateScore = pfishBest->templateScore;
+            pfishBest->inactiveFrames   = 0; //Reset Counter
+       }
+
     }
 
     ///Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
