@@ -216,7 +216,10 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
 
  }
 
-  cv::imshow("MTemplate",templ_rot);
+ if (templ_rot.width > 0 && templ_rot.height > 0)
+         cv::imshow("MTemplate",templ_rot);
+ else
+     std::cerr << "template_detect: templ_rot is empty - matchcol:" << matchColIdx << " Row: " << ibestMatchRow << std::endl;
 
   return matchColIdx;
 }
