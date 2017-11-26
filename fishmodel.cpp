@@ -786,7 +786,7 @@ std::ostream& operator<<(std::ostream& out, const fishModel& h)
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
 
 
-    out << h.nLastUpdateFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack  << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
+    out << h.nLastUpdateFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack  << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta << "\t" <<  h.templateScore ;
 
     return out;
 }
