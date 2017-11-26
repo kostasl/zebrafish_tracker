@@ -453,6 +453,7 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
 
 
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
+        //Crash Here Stack
         cv::ellipse2Poly(ptcenter, cv::Size(voffset*2,voffset), 0, 205,325 , 1, ellipseSample_pts);
         for (int i=0;i<ellipseSample_pts.size();i++)
         {

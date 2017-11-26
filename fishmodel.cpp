@@ -786,7 +786,7 @@ std::ostream& operator<<(std::ostream& out, const fishModel& h)
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
 
 
-    out << h.nLastUpdateFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack;
+    out << h.nLastUpdateFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack  << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
 
     return out;
 }
@@ -819,7 +819,7 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
        out << "\t" << Rad2Deg*( h.spline[i-1].angleRad - h.spline[i].angleRad);
 
     }
-
+     out << "\t" << templateScore;
 
     return out;
 }

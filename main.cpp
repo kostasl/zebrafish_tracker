@@ -252,7 +252,6 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
 
      uc = (sig_ucontext_t *)ucontext;
 
-
      std::cerr << ">>>>  SIG SEG Handler with Demangling was Triggered <<<<<" << std::endl;
      std::cerr << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
      closeDataFile(outdatafile);
@@ -393,10 +392,10 @@ int main(int argc, char *argv[])
 
 
        // install Error/Seg Fault handler
-    if (signal(SIGSEGV, handler) == SIG_ERR)
-    {
-        std::cerr << "**Error Setting SIGSEV simple handler! ::" << strsignal(SIGSEGV) << std::endl;
-    }
+//    if (signal(SIGSEGV, handler) == SIG_ERR)
+//    {
+//        std::cerr << "**Error Setting SIGSEV simple handler! ::" << strsignal(SIGSEGV) << std::endl;
+//    }
 
     ///Install Error Hanlder //
     struct sigaction sigact;
@@ -1425,8 +1424,10 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
         } //For Each Fish Model
 
-       //If the Blob Has no Model fish, and the template Match says it looks like a fish - then create new model
-        if (!bModelFound && maxMatchScore >= gTemplateMatchThreshold ) //Model Does not exist for track - its a new track
+       //If the Blob Has no Model fish, and the template Match is low
+       //then still create new model as this could be a fish we have not seen before - And we are going to get stuck at searching for best model
+       // All the time
+        if (!bModelFound) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
         {
             //Make new fish Model
             //fishModel* fish= new fishModel(track,fishblob);
@@ -1444,7 +1445,10 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         }
 //        //Report No Fish
         if (!bModelFound && maxMatchScore < gTemplateMatchThreshold )
-            std::clog << nFrame << "# Tscore:" << maxMatchScore << " No Fish Found " << std::endl;
+        {
+            std::clog << nFrame << "# Tscore:" << maxMatchScore << " No good match for Fish Found " << std::endl;
+
+        }
 
     } //For Each Fish Blob
 
@@ -2212,7 +2216,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
         for (int i=1;i<gFishTailSpineSegmentCount;i++)
             output <<  "DThetaSpine_" << i << "\t";
 
-        output << "\n";
+        output << "\t templateScore \n";
         //output.flush();
 
     }
@@ -3148,6 +3152,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   ss << " Eye Detection Error - Check Threshold;";
                   window_main.LogEvent(QString::fromStdString(ss.str()));
+                  fish->leftEyeTheta = 180;
+                  fish->rightEyeTheta = 180;
                   //std::clog << ss.str() << std::endl;
 
                   //return; //Stop Here - Produced Stable Runs
@@ -3178,7 +3184,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               }else
               { //Set To Not detected
                   fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-                  fish->leftEyeTheta  = 0;
+                  fish->leftEyeTheta  = 180;
                   fish->nFailedEyeDetectionCount++;
               }
 
@@ -3194,7 +3200,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               }else
               { //Set To Not detected
                   fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-                  fish->rightEyeTheta  = 0;
+                  fish->rightEyeTheta  = 180;
                   fish->nFailedEyeDetectionCount++;
               }
 
