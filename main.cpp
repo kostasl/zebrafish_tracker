@@ -903,11 +903,12 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
         //If A fish Is Detected Then Draw Its tracks
         fishModels::iterator ft = vfishmodels.begin();
-        if (ft != vfishmodels.end())
+        while (ft != vfishmodels.end()) //Render All Fish
         {
             fishModel* pfish = ft->second;
             assert(pfish);
             zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_ID + CV_TRACK_RENDER_PATH, trackFnt,trackFntScale );
+            ++ft;
         }
 
         ///\todo Keep A Global List of all tracks?
@@ -1450,11 +1451,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
     fishModel* pfishBest = 0;
     double maxTemplateScore = 0.0;
-    if (qfishrank.size() > 0)
+    while (pfishBest==0 && qfishrank.size() > 0) //If Not In ROI Then Skip
     {
-
-        while (pfishBest==0) //If Not In ROI Then Skip
-        {
             pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
             ///Check If fish Model Is In ROI //
             for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
@@ -1466,15 +1464,15 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     pfishBest =0;
                 }
              }
-       }//Search For Best Model
-       if (pfishBest)
-       {
-            //qfishrank.pop();//Remove From Priority Queue Rank
-            maxTemplateScore = pfishBest->templateScore;
-            pfishBest->inactiveFrames   = 0; //Reset Counter
-       }
-
+   }//Search For Best Model
+   if (pfishBest)
+   {
+        //qfishrank.pop();//Remove From Priority Queue Rank
+        maxTemplateScore = pfishBest->templateScore;
+        pfishBest->inactiveFrames   = 0; //Reset Counter
     }
+
+
 
     ///Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
     ft = vfishmodels.begin();
@@ -1496,6 +1494,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 continue;
             }else
             {
+
                 pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
             }
         }
@@ -3144,6 +3143,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               /// Report Results to Output Frame //
               std::stringstream ss;
+
               if (ret < 2)
               {
                   ss << " Eye Detection Error - Check Threshold;";
@@ -3197,6 +3197,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   fish->rightEyeTheta  = 0;
                   fish->nFailedEyeDetectionCount++;
               }
+
+
 
               ///If Both Eyes Detected Then Print Vergence Angle
               if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
