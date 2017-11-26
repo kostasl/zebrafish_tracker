@@ -1380,11 +1380,11 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 )
              {
                  //If Yes then assign the fish with the overlapping blob the template Match Score
+                 bModelFound = true;
                  pfish->templateScore = maxMatchScore;
                  if ( maxMatchScore >= gTemplateMatchThreshold)
                  {
                      //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
-                    bModelFound = true;
                     ///Update Model State
                     // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
                     if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
@@ -1400,14 +1400,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                  }
                  else
                  {
-                     //Guess Again Starting Column In Templ (Angle)
-                     //computed orientation of the keypoint (-1 if not applicable); it's in [0,360) degrees and measured relative to image coordinate system, ie in clockwise.
-//                     iLastKnownGoodTemplateCol =  (int)(pfish->bearingAngle);
-//                     if (iLastKnownGoodTemplateCol < 0)
-//                         iLastKnownGoodTemplateCol +=360;
-//                         iLastKnownGoodTemplateCol = iLastKnownGoodTemplateCol/gFishTemplateAngleSteps;
-
-                         //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
+                           //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
                          if (pfish->inactiveFrames > 3)
                              iLastKnownGoodTemplateCol = 0;
 
@@ -1896,7 +1889,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Filter by Area.
     params.filterByArea = true;
     params.minArea = thresh_fishblobarea/2.0;
-    params.maxArea = 4*thresh_fishblobarea;
+    params.maxArea = 6*thresh_fishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
@@ -1941,7 +1934,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
     //frame.copyTo(frameOut,maskimg); //mask Source Image
-    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DEFAULT );
+    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
 
     detector->clear();
