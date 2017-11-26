@@ -41,6 +41,7 @@
 #include <random>
 
 ///For Stack Trace Debugging
+#include <string.h>
 #include <execinfo.h>
 #include <cxxabi.h>
 #include <signal.h>
@@ -146,6 +147,7 @@ const int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
 
 
 QElapsedTimer gTimer;
+QFile outdatafile;
 QString outfilename;
 std::string gstrwinName = "FishFrame";
 QString gstroutDirCSV,gstrvidFilename; //The Output Directory
@@ -239,7 +241,7 @@ typedef struct _sig_ucontext {
 } sig_ucontext_t;
 
 
-/// Seg Fault Error Handler With Demangling //
+/// Seg Fault Error Handler With Demangling - From stackoverflow//
 void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
 {
     void *             array[50];
@@ -250,7 +252,13 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
 
      uc = (sig_ucontext_t *)ucontext;
 
+
      std::cerr << ">>>>  SIG SEG Handler with Demangling was Triggered <<<<<" << std::endl;
+     std::cerr << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
+     closeDataFile(outdatafile);
+     std::cerr << "Delete the output File" << std::endl;
+     outdatafile.remove();
+
 
      /* Get the address at the time the signal was raised */
     #if defined(__i386__) // gcc specific
@@ -262,10 +270,10 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
     #endif
 
 
-    std::cerr << "signal " << sig_num
-              << " (" << strsignal(sig_num) << "), address is "
-              << info->si_addr << " from " << caller_address
-              << std::endl << std::endl;
+    std::cerr << "signal " << sig_num;
+    std::cerr << " (" << strsignal(sig_num) << "), address is ";
+    std::cerr << info->si_addr << " from " << caller_address ;
+    std::cerr << std::endl;
 
 
 
@@ -387,7 +395,7 @@ int main(int argc, char *argv[])
        // install Error/Seg Fault handler
     if (signal(SIGSEGV, handler) == SIG_ERR)
     {
-        std::cerr << "**Error Setting SIGSEV simple hanlder! ::" << strsignal(SIGSEGV) << std::endl;
+        std::cerr << "**Error Setting SIGSEV simple handler! ::" << strsignal(SIGSEGV) << std::endl;
     }
 
     ///Install Error Hanlder //
@@ -1133,9 +1141,10 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
     // Open OutputFile
-    QFile outdatafile;
+
     if (!openDataFile(trkoutFileCSV,videoFilename,outdatafile))
         return 0;
+    outfilename = outdatafile.fileName();
 
     capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
     nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
