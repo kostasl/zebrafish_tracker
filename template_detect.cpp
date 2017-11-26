@@ -92,6 +92,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
   assert(templSz.width*startCol <= imgtemplCache.cols);
 
   //startRow = 0;
+  cv::Mat templ_rot; //The Matched template
   int idRow = startRow;
   int ibestMatchRow  = startRow;
   double minVal;
@@ -134,7 +135,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
 
       while(templRegion.x < imgtemplCache.cols ){
         //Obtain next Template At Angle
-        cv::Mat templ_rot(imgtemplCache,templRegion);
+         templ_rot = imgtemplCache(templRegion);
         //Convolution
         cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
         //Find Min Max Location
@@ -214,6 +215,8 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
      pwindow_main->LogEvent(QString::fromStdString(ss.str()));
 
  }
+
+  cv::imshow("MTemplate",templ_rot);
 
   return matchColIdx;
 }

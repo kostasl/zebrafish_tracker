@@ -1345,17 +1345,17 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         /// Check If Track Centre Point Contains An image that matches a fish template
         ///
         cv::Point centroid = fishblob->pt;
-        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-60)), max(0,min(maskedImg_gray.rows,centroid.y-60)));
-        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+60)), max(0,min(maskedImg_gray.rows,centroid.y+60)));
+        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-55)), max(0,min(maskedImg_gray.rows,centroid.y-55)));
+        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+55)), max(0,min(maskedImg_gray.rows,centroid.y+55)));
 
         // Look for Fish Template Within The Blob Region //
         cv::Rect rectFish(pBound1,pBound2);
 
         // Debug //
 #ifdef _ZTFDEBUG_
-        cv::rectangle(frameDebugC,rectFish,CV_RGB(20,200,150),2);
-#endif
 
+#endif
+        cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1);
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
 
