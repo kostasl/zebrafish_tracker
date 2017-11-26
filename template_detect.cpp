@@ -211,7 +211,13 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
 
      std::stringstream ss;
      // Log As Message //
-     ss << "Found row:" << ibestMatchRow << " but gives Low Match-pick next Randomly ->"  << startRow;
+     if (ibestMatchRow < gnumberOfTemplatesInCache)
+        ss << "Found row:" << ibestMatchRow << " but gives Low Match-pick next Randomly ->"  << startRow;
+     else
+     {
+         ss << "Reached End of Templates row:" << ibestMatchRow << " Start Over on next";
+         startRow = 0;
+     }
      pwindow_main->LogEvent(QString::fromStdString(ss.str()));
 
  }
