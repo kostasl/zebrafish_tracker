@@ -84,7 +84,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
 {
   const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
-  int matchColIdx;
+  int matchColIdx = 0;
   int Colidx = 0; //Current Angle Index Being tested in the loop
 
   assert(!imgGreyIn.empty());
@@ -166,7 +166,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
     //Dont scan all Rows Just Check If Found on this One before Proceeding
 
    ///Check If Matching Exceeeds threshold And Stop Loops - Return Found Column Idx//
-   if (maxGVal >= gTemplateMatchThreshold && !findFirstMatch)
+   if (maxGVal >= gTemplateMatchThreshold && !findFirstMatch && maxGVal > 0.1)
    {
        //Save Results To Output
        //matchScore    = maxGVal;
@@ -216,7 +216,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
 
  }
 
- if (templ_rot.width > 0 && templ_rot.height > 0)
+ if (templ_rot.cols > 0 && templ_rot.rows > 0)
          cv::imshow("MTemplate",templ_rot);
  else
      std::cerr << "template_detect: templ_rot is empty - matchcol:" << matchColIdx << " Row: " << ibestMatchRow << std::endl;
