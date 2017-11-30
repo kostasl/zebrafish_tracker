@@ -11,9 +11,9 @@ echo $DATDIR
 
 rm datafileslist.txt
 rm vidfilelist.txt
-find $DATDIR -maxdepth 3 | sed 's,^[^/]*/,,' | sed s/\.[^\_]*$// | sed s/\.[^\_]*$// | sed 's/.*\///' | sort | uniq > datafileslist.txt
+find $DATDIR -maxdepth 3 -name "*.csv" | sed 's,^[^/]*/,,' | sed s/\.[^\_]*$// | sed s/\.[^\_]*$// | sed 's/.*\///' |sed '/^$/d' | sort | uniq > datafileslist.txt
 find $VIDDIR -maxdepth 3 > vidfilesfullpath.txt
-cat vidfilesfullpath.txt | sed 's,^[^/]*/,,' | sed s/\.[^\.]*$// | sed 's/.*\///' | sort | uniq > vidfilelist.txt
+cat vidfilesfullpath.txt | sed 's,^[^/]*/,,' | sed s/\.[^\.]*$// | sed 's/.*\///' |sed '/^$/d' | sort | uniq > vidfilelist.txt
 diff --changed-group-format='%>' --unchanged-group-format='' datafileslist.txt vidfilelist.txt > unprocessedfiles.txt
 
 echo "There are :"
@@ -25,7 +25,7 @@ echo "--------------------------"
 grep -f unprocessedfiles.txt vidfilesfullpath.txt > VidFilesToProcess.txt
 
 lines=`wc -l VidFilesToProcess.txt | cut -f1 -d' '`
-procsize=50
+procsize=60
 num=0
 ##Break It Down To Processing Files
 
