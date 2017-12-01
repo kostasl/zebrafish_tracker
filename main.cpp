@@ -119,7 +119,7 @@ float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as t
 int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 8;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
-int gFitTailIntensityScanAngleDeg   = 50; //Reduced from 20deg as It Picks up on Dirt/Food
+int gFitTailIntensityScanAngleDeg   = 60; //Reduced from 20deg as It Picks up on Dirt/Food
 
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -249,6 +249,7 @@ void on_sigabrt (int signum)
     void *array[10];
     size_t size;
 
+    std::cerr << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
     std::cerr << ">>>> Simple SIG ABORT Handler Triggered <<<<<" << std::endl;
     // get void*'s for all entries on the stack
     size = backtrace(array, 10);
@@ -257,10 +258,16 @@ void on_sigabrt (int signum)
     fprintf(stderr, "Error: signal %d:\n", signum);
     backtrace_symbols_fd(array, size, STDERR_FILENO);
 
-
+    pwindow_main->LogEvent(QString("ERROR: ABORT SIGNAL RECEIVED AND HANDLED"));
     // Skip  Code Block
     std::cerr << ">>>> Skipping Execution <<<<<" << std::endl;
-    longjmp (env, 1);
+
+    /*
+     * The abort function causes abnormal program termination to occur, unless the signal
+     * SIGABRT is being caught and the signal handler does not return. ...
+     */
+    //longjmp (env, 1);
+
 }
 
 
@@ -275,10 +282,12 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
 
      uc = (sig_ucontext_t *)ucontext;
 
-     std::cerr << ">>>>  SIG SEG Handler with Demangling was Triggered <<<<<" << std::endl;
      std::cerr << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
+     std::cerr << ">>>>  SIG SEG Handler with Demangling was Triggered <<<<<" << std::endl;
+
      closeDataFile(outdatafile);
      std::cerr << "Delete the output File" << std::endl;
+
      outdatafile.remove();
 
 
@@ -422,12 +431,20 @@ int main(int argc, char *argv[])
 //        std::cerr << "**Error Setting SIGSEV simple handler! ::" << strsignal(SIGSEGV) << std::endl;
 //    }
     if (setjmp (env) == 0) {
-      signal(SIGABRT, &handler);
       if (signal(SIGABRT, on_sigabrt) == SIG_ERR)
          {
              std::cerr << "**Error Setting SIGABRT simple handler! ::" << strsignal(SIGABRT) << std::endl;
          }
     }
+
+    if (setjmp (env) == 0) {
+      signal(SIGBUS, &handler);
+      if (signal(SIGBUS, on_sigabrt) == SIG_ERR)
+         {
+             std::cerr << "**Error Setting SIGBUS simple handler! ::" << strsignal(SIGABRT) << std::endl;
+         }
+    }
+
 
     ///Install Error Hanlder //
     struct sigaction sigact;
@@ -2924,7 +2941,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),3);
         cv::circle(outFishMask, ptTail1,8,CV_RGB(255,255,255),cv::FILLED);
-        cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
+        //cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Erase Fish From Food Mask
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),10);
