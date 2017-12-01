@@ -45,6 +45,7 @@
 #include <execinfo.h>
 #include <cxxabi.h>
 #include <signal.h>
+#include <csetjmp>
 #include <ucontext.h>
 #include <unistd.h>
 
@@ -241,6 +242,28 @@ typedef struct _sig_ucontext {
 } sig_ucontext_t;
 
 
+jmp_buf env;
+
+void on_sigabrt (int signum)
+{
+    void *array[10];
+    size_t size;
+
+    std::cerr << ">>>> Simple SIG ABORT Handler Triggered <<<<<" << std::endl;
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
+
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", signum);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+
+
+    // Skip  Code Block
+    std::cerr << ">>>> Skipping Execution <<<<<" << std::endl;
+    longjmp (env, 1);
+}
+
+
 /// Seg Fault Error Handler With Demangling - From stackoverflow//
 void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
 {
@@ -357,6 +380,8 @@ void handler(int sig) {
   // print out all the frames to stderr
   fprintf(stderr, "Error: signal %d:\n", sig);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
+
+
   exit(1);
 }
 
@@ -396,6 +421,13 @@ int main(int argc, char *argv[])
 //    {
 //        std::cerr << "**Error Setting SIGSEV simple handler! ::" << strsignal(SIGSEGV) << std::endl;
 //    }
+    if (setjmp (env) == 0) {
+      signal(SIGABRT, &handler);
+      if (signal(SIGABRT, on_sigabrt) == SIG_ERR)
+         {
+             std::cerr << "**Error Setting SIGABRT simple handler! ::" << strsignal(SIGABRT) << std::endl;
+         }
+    }
 
     ///Install Error Hanlder //
     struct sigaction sigact;
