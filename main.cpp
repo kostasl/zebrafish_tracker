@@ -426,10 +426,11 @@ int main(int argc, char *argv[])
 
 
        // install Error/Seg Fault handler
-//    if (signal(SIGSEGV, handler) == SIG_ERR)
-//    {
-//        std::cerr << "**Error Setting SIGSEV simple handler! ::" << strsignal(SIGSEGV) << std::endl;
-//    }
+    if (signal(SIGSEGV, handler) == SIG_ERR)
+    {
+        std::cerr << "**Error Setting SIGSEV simple handler! ::" << strsignal(SIGSEGV) << std::endl;
+    }
+
     if (setjmp (env) == 0) {
       if (signal(SIGABRT, on_sigabrt) == SIG_ERR)
          {

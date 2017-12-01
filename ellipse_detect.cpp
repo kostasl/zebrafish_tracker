@@ -62,7 +62,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 
-extern MainWindow window_main;
+//extern MainWindow window_main;
+extern MainWindow* pwindow_main;
 
 extern int gi_CannyThresSmall;
 extern int gi_CannyThres;
@@ -549,6 +550,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
 
     cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
     outHeadFrameMonitor = imgIn_thres.clone();
@@ -581,7 +583,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     if (iLEye != -1) //If Contour Is found
     {
-        //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+
         cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
         if (vLEyeHull.size() > 4)
         {
@@ -610,7 +612,16 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         vedgePoints_all.clear();
 
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
-        cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
+        try
+        {
+            imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+            cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
+        }
+        catch (char* e)
+        {
+            pwindow_main->LogEvent("Error detectEllipses  L Eye Canny processing ");
+            std::cerr << e << std::endl;
+        }
         outHeadFrameMonitor = imgEdge_local.clone();
         //COVER Right Eye
         cv::Rect r(imgEdge_local.cols/2,0,imgEdge_local.cols,imgEdge_local.rows);
@@ -693,7 +704,17 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         vedgePoints_all.clear();
 
         //If Contour Finding Fails Then Take Raw Edge points and *MASK* L/R half of image
-        cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
+        try
+        {
+            imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+            cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
+        }
+        catch (char* e)
+        {
+            pwindow_main->LogEvent("Error in R Eye Canny processing ");
+            std::cerr << e << std::endl;
+        }
+
         outHeadFrameMonitor = imgEdge_local.clone();
         //Cover LEFT Eye Edges
         cv::Rect r(0,0,imgEdge_local.cols/2,imgEdge_local.rows);

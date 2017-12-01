@@ -205,7 +205,13 @@ void MainWindow::LogEvent(QString strMessage)
 
     std::clog << strMessage.toStdString() << std::endl;
 
-    this->ui->listView->scrollToBottom();
+    try{
+        this->ui->listView->scrollToBottom();
+    }
+    catch (char* e)
+    {
+        std::cerr << "listView->scrollToBottom(); error: "<< e << std::endl;
+    }
 }
 
 void MainWindow::showInsetimg(cv::Mat& img)
