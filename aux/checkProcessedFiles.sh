@@ -25,7 +25,7 @@ echo "--------------------------"
 grep -f unprocessedfiles.txt vidfilesfullpath.txt > VidFilesToProcess.txt
 
 lines=`wc -l VidFilesToProcess.txt | cut -f1 -d' '`
-procsize=60
+procsize=30
 num=0
 ##Break It Down To Processing Files
 
