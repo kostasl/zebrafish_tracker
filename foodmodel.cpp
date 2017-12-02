@@ -34,6 +34,13 @@ foodModel::foodModel(zfdblob blob,zfdID ID)
 }
 
 
+foodModel::~foodModel()
+{
+    zTrack.pointStack.clear();
+    zTrack.pointStackRender.clear();
+
+}
+
 void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore)
 {
 

@@ -80,6 +80,13 @@ extern cv::Mat frameDebugC;
 extern cv::Mat gEyeTemplateCache;
 
 extern int gthresEyeSeg;
+
+// Static Memory Buffers //
+static cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
+static cv::Mat imgEdge_local; //Crash Here
+static cv::Mat imgUpsampled_gray;
+static cv::Mat img_colour;
+
 inline int getMax(int* darray,int length,double& votes)
 {
     double max=darray[0];
@@ -144,16 +151,16 @@ void drawEllipse(cv::Mat imgOut,tDetectedEllipsoid ellipse)
     //    assert(ellipse.ptAxisMj1.y <= imgOut.rows && ellipse.ptAxisMj1.y >= 0);
     //    assert(ellipse.ptAxisMj1.x <= imgOut.cols && ellipse.ptAxisMj1.x >= 0);
     // Assertion Was Failing So I imposed the limits to avoid Seg Faults //
-    if (ellipse.ptAxisMj2.y > imgOut.rows && ellipse.ptAxisMj2.y < 0)
+    if (ellipse.ptAxisMj2.y > imgOut.rows || ellipse.ptAxisMj2.y < 0)
         ellipse.ptAxisMj2.y = 0;
 
-    if (ellipse.ptAxisMj2.x > imgOut.cols && ellipse.ptAxisMj2.x < 0)
+    if (ellipse.ptAxisMj2.x > imgOut.cols || ellipse.ptAxisMj2.x < 0)
         ellipse.ptAxisMj2.x = 0;
 
-    if (ellipse.ptAxisMj1.y > imgOut.rows && ellipse.ptAxisMj1.y < 0)
+    if (ellipse.ptAxisMj1.y > imgOut.rows || ellipse.ptAxisMj1.y < 0)
         ellipse.ptAxisMj1.y = 0;
 
-    if (ellipse.ptAxisMj1.x > imgOut.cols && ellipse.ptAxisMj1.x < 0)
+    if (ellipse.ptAxisMj1.x > imgOut.cols || ellipse.ptAxisMj1.x < 0)
         ellipse.ptAxisMj1.x = 0;
 
 
@@ -498,13 +505,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     int ret = 0;//Return Value Is the Count Of Ellipses Detected (Eyes)
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
     ///Keep Image processing Arrays Static to avoid memory Alloc On Each Run
-    cv::Mat imgUpsampled_gray;
-    cv::Mat img_colour;
     //cv::Mat img_contour;
-    cv::Mat imgIn_thres; // Crash Here  Frame:55200 RSS: 1100.57MB
-
-    cv::Mat imgEdge_local; //Crash Here
-
+    assert(pimgIn.rows > 0 && pimgIn.cols > 0);
     //cv::Mat imgEdge_dbg;
 
 
@@ -576,6 +578,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     cv::RotatedRect rcLEye,rcREye;
     //Make Debug Img
+
     cv::cvtColor( imgUpsampled_gray,img_colour, cv::COLOR_GRAY2RGB);
     //cv::cvtColor( imgUpsampled_gray,img_contour, cv::COLOR_GRAY2RGB);
 
@@ -614,17 +617,18 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
         try
         {
-            imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+            //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
             cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         }
         catch (char* e)
         {
             pwindow_main->LogEvent("Error detectEllipses  L Eye Canny processing ");
             std::cerr << e << std::endl;
+
         }
         outHeadFrameMonitor = imgEdge_local.clone();
         //COVER Right Eye
-        cv::Rect r(imgEdge_local.cols/2,0,imgEdge_local.cols,imgEdge_local.rows);
+        cv::Rect r(imgIn_thres.cols/2,0,imgIn_thres.cols,imgIn_thres.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
         //cv::imshow("REyeCover",imgEdge_local);
@@ -706,8 +710,9 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         //If Contour Finding Fails Then Take Raw Edge points and *MASK* L/R half of image
         try
         {
-            imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
+            //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
             cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
+
         }
         catch (char* e)
         {
