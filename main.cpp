@@ -92,7 +92,7 @@ double dMeanBlobArea                    = 100; //Initial Value that will get upd
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 600; //Min area above which to Filter The fish blobs
-
+const unsigned int gthres_maxfoodblobarea = 60;
 
 //BG History
 float gfVidfps              = 298;
@@ -249,8 +249,8 @@ void on_sigabrt (int signum)
     void *array[10];
     size_t size;
 
-    std::cerr << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
-    std::cerr << ">>>> Simple SIG ABORT Handler Triggered <<<<<" << std::endl;
+    std::cerr << std::endl << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
+    std::cerr << std::endl << ">>>> Simple SIG ABORT Handler Triggered <<<<<" << std::endl;
     // get void*'s for all entries on the stack
     size = backtrace(array, 10);
 
@@ -266,7 +266,7 @@ void on_sigabrt (int signum)
      * The abort function causes abnormal program termination to occur, unless the signal
      * SIGABRT is being caught and the signal handler does not return. ...
      */
-    //longjmp (env, 1);
+    longjmp (env, 1);
 
 }
 
@@ -777,7 +777,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        // Removed As MOG Is not Used Currently - Remember to Enable usage in enhanceMask if needed//
        //getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
 
-       window_main.setWindowTitle("Tracking:" + invideoname);
+       QFileInfo fiVidFile(invideoname);
+       window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
        std::cout << "Press p to pause Video processing" << std::endl;
 
        istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame);
@@ -2026,7 +2027,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     // Filter by Area.
     params.filterByArea = true;
     params.minArea = 2;
-    params.maxArea = 40;
+    params.maxArea = gthres_maxfoodblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
