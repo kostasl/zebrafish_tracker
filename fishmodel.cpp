@@ -2,6 +2,7 @@
 #include "ellipse_detect.h"
 #include "config.h"
 
+
 extern cv::Mat frameDebugC;
 extern cv::Size gszTemplateImg;
 
@@ -29,7 +30,8 @@ fishModel::fishModel()
         this->ID    = 0;
         zTrack.id   = this->ID;
         zTrack.colour = CV_RGB(255,0,0);
-
+        leftEyeTheta = 180; //In Degrees - A Value that looks wrong to show its not initialized
+        rightEyeTheta = 180; //In Degrees
         c_spineSegL           = gFishTailSpineSegmentLength;
 }
 
@@ -806,6 +808,7 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
     out.setRealNumberNotation(QTextStream::RealNumberNotation::FixedNotation );
     out.setRealNumberPrecision(2);
+    assert(!std::isnan( h.leftEyeTheta ) && !std::isnan( h.rightEyeTheta ) );
     out << h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
 
     //Set Global 1st Spine Direction (Helps to detect Errors)

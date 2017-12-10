@@ -488,6 +488,8 @@ int main(int argc, char *argv[])
     ssMsg<<"Author : Konstantinos Lagogiannis 2017"<<std::endl;
     ssMsg<<"./zebraprey_track <outfolder> <inVideoFile> <startframe=1> <duration=inf>"<<std::endl;
     ssMsg<<"(note: folder is automatically generated when absent)"<<std::endl;
+    ssMsg << "Example: \n  Use checkFilesProcessed.sh script to generate list of videos to processes then execute as : " << std::endl;
+    ssMsg << "./zebrafish_track -f=VidFilesToProcessSplit1.txt -o=/media/kostasl/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/Tracked30-11-17/" << std::endl;
 
     parser.about(ssMsg.str() );
 
@@ -3216,6 +3218,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               /// Set Detected Eyes Back to Fish Features
               ///  Print Out Values
+              /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
               ss.str(""); //Empty String
               ss.precision(3);
               if (vell.size() > 0)
