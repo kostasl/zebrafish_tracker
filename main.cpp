@@ -259,14 +259,15 @@ void on_sigabrt (int signum)
     backtrace_symbols_fd(array, size, STDERR_FILENO);
 
     pwindow_main->LogEvent(QString("ERROR: ABORT SIGNAL RECEIVED AND HANDLED"));
+    std::cerr << ">>>> Stop Execution <<<<<" << std::endl;
     // Skip  Code Block
-    std::cerr << ">>>> Skipping Execution <<<<<" << std::endl;
+    //std::cerr << ">>>> Skipping Execution <<<<<" << std::endl;
 
     /*
      * The abort function causes abnormal program termination to occur, unless the signal
      * SIGABRT is being caught and the signal handler does not return. ...
      */
-    longjmp (env, 1);
+    //longjmp (env, 1);
 
 }
 
@@ -414,7 +415,7 @@ void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 
 }
 
-
+/// MAIN FUNCTION - ENTRY POINT ////
 
 int main(int argc, char *argv[])
 {
@@ -475,8 +476,9 @@ int main(int argc, char *argv[])
         "{help h usage ? |    | print this help  message   }"
         "{outputdir   o |    | Dir where To save sequence of images }"
         "{invideofile v |    | Behavioural Video file to analyse }"
-        "{invideolist f  |    | A text file listing full path to video files to process }"
+        "{invideolist f |    | A text file listing full path to video files to process }"
         "{startframe s  | 1  | Video Will start by Skipping to this frame    }"
+        "{stopframe p   | 0  | Video Will stop at this frame    }"
         "{duration d    | 0  | Number of frames to Track for starting from start frame }"
         ;
 
@@ -486,7 +488,7 @@ int main(int argc, char *argv[])
     ssMsg<<"Zebrafish Behavioural Video Tracker"<< std::endl;
     ssMsg<<"--------------------------"<<std::endl;
     ssMsg<<"Author : Konstantinos Lagogiannis 2017"<<std::endl;
-    ssMsg<<"./zebraprey_track <outfolder> <inVideoFile> <startframe=1> <duration=inf>"<<std::endl;
+    ssMsg<<"./zebraprey_track <outfolder> <inVideoFile> <startframe=1> <stopframe=0> <duration=inf>"<<std::endl;
     ssMsg<<"(note: folder is automatically generated when absent)"<<std::endl;
     ssMsg << "Example: \n  Use checkFilesProcessed.sh script to generate list of videos to processes then execute as : " << std::endl;
     ssMsg << "./zebrafish_track -f=VidFilesToProcessSplit1.txt -o=/media/kostasl/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/Tracked30-11-17/" << std::endl;
@@ -682,7 +684,9 @@ int main(int argc, char *argv[])
 
         //app.exec();
         unsigned int uiStartFrame = parser.get<uint>("startframe");
-        trackVideofiles(window_main,gstroutDirCSV,inVidFileNames,uiStartFrame);
+        unsigned int uiStopFrame = parser.get<uint>("stopframe");
+        std::cout << ">>> Start frame: " << uiStartFrame << " StopFrame: " << uiStopFrame << " <<<<<<<<<"  << std::endl;
+        trackVideofiles(window_main,gstroutDirCSV,inVidFileNames,uiStartFrame,uiStopFrame);
 
     }catch (char *e)
     {
@@ -748,7 +752,7 @@ int main(int argc, char *argv[])
 
 
 
-unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame = 0)
+unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame = 0,unsigned int istopFrame = 0)
 {
     cv::Mat fgMask;
     QString invideoname = "*.mp4";
@@ -783,7 +787,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
        std::cout << "Press p to pause Video processing" << std::endl;
 
-       istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame);
+       istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame,istopFrame);
 
 
         if (istartFrame == 0)
@@ -1150,7 +1154,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& fgMask, unsigned int nFrame)
 // Process Larva video, removing BG, detecting moving larva- Setting the learning rate will change the time required
 // to remove a pupa from the scene -
 //
-unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString videoFilename, QString outFileCSV, unsigned int startFrameCount)
+unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString videoFilename, QString outFileCSV, unsigned int startFrameCount,unsigned int stopFrame=0)
 {
 
     //Speed that stationary objects are removed
@@ -1250,6 +1254,12 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         }
         nErrorFrames = 0;
 
+        if (nFrame == stopFrame && stopFrame > 0)
+        {
+             bPaused = true; //Stop Here
+             std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;
+             pwindow_main->LogEvent(QString(">>Stop Frame Reached - Video Paused<<"));
+        }
 
 
 //        //Get Current Frame Number Add frames from Last video
@@ -1292,7 +1302,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
         if (nFrame >= startFrameCount)
-        {
+            bTracking = true;
+
             //Testing Mem Leak Source /
             processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
 
@@ -1301,7 +1312,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             window_main.showInsetimg(outframeHead);
             //frame.copyTo(frameDebugD);
             //cv::imshow("Debug D",frameDebugD);
-        }
+
 
         if ((nFrame%300) == 0 || nFrame == 2)
         {
