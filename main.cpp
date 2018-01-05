@@ -700,7 +700,8 @@ int main(int argc, char *argv[])
 
         app.quit();
 
-        return 0;
+        std::exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
 
@@ -745,8 +746,8 @@ int main(int argc, char *argv[])
 
     app.quit();
     //Catch Any Mem Alloc Error
-    std::exit(1);
-    return 1;
+    std::exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 
 }
 
@@ -1654,7 +1655,8 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             pfoodBest = new foodModel(*foodblob,++gi_MaxFishID);
 
             vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
-            std::stringstream strmsg; strmsg << "# New foodmodel: " << pfoodBest->ID;
+            std::stringstream strmsg;
+            strmsg << "# New foodmodel: " << pfoodBest->ID;
            std::clog << nFrame << strmsg.str() << std::endl;
            pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,500);
         }
