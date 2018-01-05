@@ -55,7 +55,9 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
 //        {
           std::stringstream buffer;
           buffer << track.id;
-          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.centroid),fontface,fontScale, CV_RGB(0.,255.,0.));
+          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.centroid)+cv::Point(-5,-2),fontface,fontScale, CV_RGB(0,250,0));
+          //cv::putText(frameOut, buffer.str().c_str(), track.boundingBox.tl(),fontface,fontScale, CV_RGB(10.,220.,0.));
+
      }
 
       if (mode&CV_TRACK_RENDER_BOUNDING_BOX)

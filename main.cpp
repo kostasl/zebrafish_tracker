@@ -92,7 +92,7 @@ double dMeanBlobArea                    = 100; //Initial Value that will get upd
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 600; //Min area above which to Filter The fish blobs
-const unsigned int gthres_maxfoodblobarea = 60;
+const unsigned int gthres_maxfoodblobarea = 80;
 
 //BG History
 float gfVidfps              = 298;
@@ -116,7 +116,7 @@ int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detect
 int gthresEyeSeg                = 155; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-int gFishBoundBoxSize           = 20; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
+int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 8;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
 int gFitTailIntensityScanAngleDeg   = 60; //
@@ -964,7 +964,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         {
             fishModel* pfish = ft->second;
             assert(pfish);
-            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_ID + CV_TRACK_RENDER_PATH, trackFnt,trackFntScale );
+            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,trackFntScale+0.2 );
             ++ft;
         }
 
@@ -1415,9 +1415,9 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
         // Debug //
 #ifdef _ZTFDEBUG_
-
-#endif
         cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1);
+#endif
+
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
 
@@ -1673,7 +1673,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         pfood = ft->second;
         if ((nFrame - pfood->nLastUpdateFrame) > gcMaxFoodModelInactiveFrames) //Check If it Timed Out / Then Delete
         {
-            std::cout << nFrame << "# Deleted foodmodel: " << pfood->ID << std::endl;
+            std::clog << nFrame << "# Deleted foodmodel: " << pfood->ID << std::endl;
             ft = vfoodmodels.erase(ft);
             delete(pfood);
             continue;

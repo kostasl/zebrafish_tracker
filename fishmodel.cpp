@@ -612,7 +612,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     else
         colour = CV_RGB(30,30,250);
 
-    cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br(),CV_FONT_NORMAL,0.4,colour,1);
+    cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),CV_FONT_NORMAL,0.4,colour,1);
 
 
     ///Draw a Red Rotated Frame around Detected Body

@@ -357,6 +357,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                  this->ui->horizontalSlider->setValue( ui->spinBoxFrame->value());
 
                  bStartFrameChanged = true;
+                 bPaused = false; //For 1 Frame and it will pause again at new frame
                  event->accept();
 
                  return true;// We VE handled the event
