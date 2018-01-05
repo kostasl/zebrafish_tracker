@@ -1216,10 +1216,37 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     while( !bExiting && (char)keyboard != 27 )
     {
 
+        /// Flow Control Code  - For When Looking at Specific Frame Region ///
+        // 1st Check If user changed Frame - and go to that frame
+        if (bStartFrameChanged)
+        {
+            capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
+            bPaused = true;
+            bTracking = false;
+            bStartFrameChanged = false;
+            //Since we are jumping Frames - The fish Models Are invalidated / Delete
+            ReleaseFishModels(vfishmodels);
+        }
 
-        frameNumberString = QString::number(nFrame);
 
-        try
+        if (nFrame == stopFrame && stopFrame > 0)
+        {
+             bPaused = true; //Stop Here
+             std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;
+             pwindow_main->LogEvent(QString(">>Stop Frame Reached - Video Paused<<"));
+        }
+
+        if (nFrame == startFrameCount)
+        {
+            bTracking = true;
+        }
+
+        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+        window_main.nFrame = nFrame; //Update The Frame Value Stored in Tracker Window
+        window_main.tickProgress();
+        frameNumberString = QString::number(nFrame); //Update Display String Holding FrameNumber
+
+        try //Try To Read The Image of that video Frame
         {
             //read the current frame
             if(!capture.read(frame))
@@ -1254,33 +1281,6 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         }
         nErrorFrames = 0;
 
-        if (nFrame == stopFrame && stopFrame > 0)
-        {
-             bPaused = true; //Stop Here
-             std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;
-             pwindow_main->LogEvent(QString(">>Stop Frame Reached - Video Paused<<"));
-        }
-
-
-//        //Get Current Frame Number Add frames from Last video
-        if (bStartFrameChanged)
-        {
-            capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
-            //bPaused = true;
-            bTracking = false;
-            bStartFrameChanged = false;
-            //Since we are jumping Frames - The fish Models Are invalidated / Delete
-            ReleaseFishModels(vfishmodels);
-        }
-
-        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
-        window_main.nFrame = nFrame;
-        window_main.tickProgress();
-
-
-
-
-
 
         //Make Global Roi on 1st frame if it doesn't prexist
         if (vRoi.size() == 0)
@@ -1301,19 +1301,16 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         }
 
 
-        if (nFrame >= startFrameCount)
-            bTracking = true;
 
-            //Testing Mem Leak Source /
-            processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
+        processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
 
-            window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
-            //window_main.showVideoFrame(frame,nFrame); //Show On QT Window
-            window_main.showInsetimg(outframeHead);
-            //frame.copyTo(frameDebugD);
-            //cv::imshow("Debug D",frameDebugD);
+        window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
+        //window_main.showVideoFrame(frame,nFrame); //Show On QT Window
+        window_main.showInsetimg(outframeHead);
+        //frame.copyTo(frameDebugD);
+        //cv::imshow("Debug D",frameDebugD);
 
-
+        /// Report Memory Usage Periodically//
         if ((nFrame%300) == 0 || nFrame == 2)
         {
             double rss,vm;
@@ -1728,12 +1725,14 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         {
             iLastKnownGoodTemplateRow = 0; //Reset Row
             iLastKnownGoodTemplateCol = 0;
-        }
+            pwindow_main->LogEvent(QString("Tracking ON"));
+        }else
+            pwindow_main->LogEvent(QString("Tracking OFF"));
 
         bTracking = !bTracking;
     }
 
-    if ((char)keyboard == 'f') //Toggle Tracking
+    if ((char)keyboard == 'f') //Toggle FOOD Tracking
     {
         bTrackFood=!bTrackFood;
 
@@ -1742,6 +1741,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         else
             pwindow_main->LogEvent(QString("Track food OFF"));
     }
+
     if ((char)keyboard == '[') //Rotate Template AntiClock Wise
     {
         iLastKnownGoodTemplateCol--;
