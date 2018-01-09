@@ -1,5 +1,8 @@
 plotGroupMotion <- function(filtereddatAllFrames,groupStat,vlarvaID)
 {
+  yTop <- 500
+  ##Note Y plotting is inverted to match video orientation ie. yTop - posY
+  
   message("PLOT Motion Tracks of each Larva noting Hunting Episodes")
   ### INDIVIDUAL TRAJECTORIES - With distinct colour for each larva ####
   for (i in vlarvaID)
@@ -10,17 +13,17 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vlarvaID)
     par(bg="black")
     par(fg="yellow")
     
-    datLarvalAllFramesHunt <- filtereddatAllFrames[filtereddatAllFrames$larvaID == i & filtereddatAllFrames$LEyeAngle >=20 & filtereddatAllFrames$REyeAngle <= -20,]
+    datLarvalAllFramesHunt <- filtereddatAllFrames[filtereddatAllFrames$larvaID == i & filtereddatAllFrames$LEyeAngle >=G_THRESHUNTANGLE & filtereddatAllFrames$REyeAngle <= -G_THRESHUNTANGLE,]
     datLarvalAllFramesAll <- filtereddatAllFrames[filtereddatAllFrames$larvaID == i,]
     vEvent <- unique(datLarvalAllFramesAll$fileIdx)
     #points(datLarvalAllFramesAll$posX,datLarvalAllFramesAll$posY,pch='.',col="white",xlim=c(80,565),ylim=c(0,500),col.axis="red")
-    plot(datLarvalAllFramesAll$posX,datLarvalAllFramesAll$posY,type='p',pch='.',col="white",xlim=c(80,600),ylim=c(0,500),col.axis="red")
-    points(datLarvalAllFramesHunt$posX,datLarvalAllFramesHunt$posY,pch='.',col="red",xlim=c(80,600),ylim=c(0,500),col.axis="red")
+    plot(datLarvalAllFramesAll$posX,yTop-datLarvalAllFramesAll$posY,type='p',pch='.',col="white",xlim=c(80,600),ylim=c(0,yTop),col.axis="red")
+    points(datLarvalAllFramesHunt$posX,yTop-datLarvalAllFramesHunt$posY,pch='.',col="red",xlim=c(80,600),ylim=c(0,yTop),col.axis="red")
      
     for (j in vEvent)
     {
       datEvent <- datLarvalAllFramesAll[datLarvalAllFramesAll$fileIdx==j,]
-      points(datEvent[1]$posX,datEvent[1]$posY,pch=12,col="red",xlim=c(80,600),ylim=c(0,500),col.axis="red")
+      points(datEvent[1]$posX,yTop-datEvent[1]$posY,pch=12,col="red",xlim=c(80,600),ylim=c(0,500),col.axis="red")
       
     }
     
@@ -42,25 +45,38 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vlarvaID)
   
   colMap = colTraj(filtereddatAllFrames$larvaID);
   
-  if (length(filtereddatAllFrames$larvaID) > 1)
+  if (length(filtereddatAllFrames$larvaID) == 0)
   {
-    plot(filtereddatAllFrames$posX,filtereddatAllFrames$posY,type='p',pch='.',lwd=1,col="grey",xlim=c(80,600),ylim=c(0,500),col.axis="red")
-    
-  }else
-  {
-    warning("No Data To plot trajectories");
-    
+    #plot(filtereddatAllFrames$posX,yTop-filtereddatAllFrames$posY,type='p',pch='.',lwd=1,col="grey",xlim=c(80,600),ylim=c(0,500),col.axis="red")
+    #plot.new()
+    warning(paste("No Data To plot trajectories for :",strCond) )
+    message(paste("No Data To plot trajectories for :",strCond) )
   }
+  
+  bFreshPlot = TRUE
   ##Now PLot All Larval Tracks from the Group On the SAME PLOT ##
   for (i in vlarvaID)
   {
     #message(i)
-    datLarvalAllFramesHunt <- filtereddatAllFrames[filtereddatAllFrames$larvaID == i & filtereddatAllFrames$LEyeAngle >=20 & filtereddatAllFrames$REyeAngle <= -20,]
+    datLarvalAllFramesHunt <- filtereddatAllFrames[filtereddatAllFrames$larvaID == i &
+                                                     filtereddatAllFrames$REyeAngle <= -G_THRESHUNTANGLE &
+                                                     filtereddatAllFrames$LEyeAngle >=G_THRESHUNTANGLE &
+                                                     abs(filtereddatAllFrames$LEyeAngle-filtereddatAllFrames$REyeAngle) >= G_THRESHUNTVERGENCEANGLE,]
+
+
     datLarvalAllFramesAll <- filtereddatAllFrames[filtereddatAllFrames$larvaID == i,]
     #points(datLarvalAllFramesAll$posX,datLarvalAllFramesAll$posY,pch='.',col="white",xlim=c(80,565),ylim=c(0,500),col.axis="red")
-    points(datLarvalAllFramesAll$posX,datLarvalAllFramesAll$posY,pch='.',col=colMap[which(vlarvaID == i)],xlim=c(80,600),ylim=c(0,500),col.axis="red")
-    points(datLarvalAllFramesHunt$posX,datLarvalAllFramesHunt$posY,pch=1,lwd=2,col="red",xlim=c(80,600),ylim=c(0,500),col.axis="red")
-  }
+    if (bFreshPlot)
+    {
+      plot(datLarvalAllFramesAll$posX,yTop-datLarvalAllFramesAll$posY,type='p',pch='.',col=colMap[which(vlarvaID == i)],xlim=c(80,600),ylim=c(0,500),col.axis="red")
+      bFreshPlot = FALSE
+    }else
+    {
+      points(datLarvalAllFramesAll$posX,yTop-datLarvalAllFramesAll$posY,pch='.',col=colMap[which(vlarvaID == i)],xlim=c(80,600),ylim=c(0,500),col.axis="red")
+    }
+    
+    points(datLarvalAllFramesHunt$posX,yTop-datLarvalAllFramesHunt$posY,pch=1,lwd=2,col="red",xlim=c(80,600),ylim=c(0,500),col.axis="red")
+  }##For Each Larva
   sampleSize  <- length(vlarvaID) #Number of Larvae Used 
   strtitle = paste(strCond,"Motion",collapse=NULL)
   strsub = paste("#n=", sampleSize, " #F:",groupStat$totalFrames,
@@ -72,6 +88,54 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vlarvaID)
   
   title(strtitle, sub = strsub, cex.main = 1.5,   font.main= 1.5, col.main= "yellow", cex.sub = 1.0, font.sub = 2, col.sub = "red")
   dev.off()
+}
+
+## Box Plots Used to Compare Conditions On Mean Stats - Saves Output As Pdf
+boxplotPerCondition <- function(datStat,datMean,datse,strtitle,strsubt,stroutFileName,plotTop)
+{
+  
+  par(mar = c(5, 6, 4, 5) + 2.5)
+  datN <- unlist(datStat[,"nLarva"],use.names = FALSE)
+  
+  datlbls <-row.names(datStat)
+  ##Add N Numbers to Labels
+  datlbls <- paste(datlbls,"\nn=",datN,sep="")
+  
+  if(missing(plotTop)) 
+  {
+    plotTop <- max(datmean) +
+    unique(datse[datmean== max(datmean)]) * 3
+  }else
+  {
+    plotTop <- 1.1*plotTop ##Increase by 10%
+    
+  }
+  
+  
+  barCenters <- barplot(height = datmean,
+                        names.arg = datlbls,
+                        beside = true, las = 2,
+                        ylim = c(0, plotTop),
+                        cex.names = 0.75, xaxt = "n",
+                        main = strtitle,
+                        sub = strsubt,
+                        ylab = "#",
+                        border = "black", axes = TRUE)
+  
+  # Specify the groupings. We use srt = 45 for a
+  # 45 degree string rotation
+  #text(x = barCenters, y = par("usr")[3] - 0.01, srt = 45,    adj = 1, labels = datlbls, xpd = TRUE)
+  text(x = barCenters+0.2, y = 0, srt = 45,
+       adj = 1.8, labels = datlbls, xpd = TRUE)
+  
+  segments(barCenters, datmean - datse * 2, barCenters,
+           datmean + datse * 2, lwd = 1.5)
+  #title(sub=strsubt)
+#  dev.off()
+  
+  message(strsubt)
+  
+  return(barCenters)
 }
 
 
