@@ -624,8 +624,9 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
 }
 
 ///
-/// \brief fishModel::fitSpineToIntensity implements  Giovanni's tail fitting method : starting from initial point on the fish body and an initial direction for the tail it searches for the
+/// \brief fishModel::fitSpineToIntensity inspired by  Giovanni's tail fitting method : starting from initial point on the fish body and an initial direction for the tail it searches for the
 ///   highest intensity within a angle range -c_tailscanAngle +c_tailscanAngle degrees on a largely blurred scene image , through each spine point incrementally.
+///  \note (15/1/18) Modified such that it updates to centre of Mass of sampled points and not to Highest intensity - as this HInt is noisy and ends up curling around the body frequently
 ///  It pretty fast compared to the fitContour Variational method
 /// \param src
 /// \param start
@@ -640,7 +641,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
     //const int c_tailscanAngle = gFitTailIntensityScanAngleDeg;
 
 
-    uint loc,pxValMax;
+    uint pxValMax;
 
     int angle; //In Deg of Where The spline point is looking towards - Used by Ellipse Arc Drawing
 
@@ -668,29 +669,45 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
 
-        ///sSearch for Maximum Intensity on Source Image Along the Arc
-        pxValMax=0;
+        ///Calculate Moment of inertia Sum m theta along arc
+        pxValMax            = 0;
+        uint iTailArcMoment = 0;
+        uint iPxIntensity   = 0;
+        uint iSumPxIntensity   = 1;
         for(int idx=0;idx<(int)ellipse_pts.size();idx++){
-            //Obtain Value From Image at Point on Arc
+            //Obtain Value From Image at Point on Arc - Boundit in case it goes outside image
             int x = std::min(frameimg_Blur.cols,std::max(1,ellipse_pts[idx].x));
             int y = std::min(frameimg_Blur.rows,std::max(1,ellipse_pts[idx].y));
-            loc=frameimg_Blur.at<uchar>(cv::Point(x,y));
+            iPxIntensity=frameimg_Blur.at<uchar>(cv::Point(x,y));
 
-            //If New Maximum Found THen Update Spline Point to point to this and Update Previous Spline Point's angle
-            if(loc>=pxValMax){ //Gt Or Equal - Othewise Points Get Stuck between frames int the black Bg when loc = 0
-                spline[k].x     = ellipse_pts[idx].x;
-                spline[k].y     = ellipse_pts[idx].y;
-                ///Get Arc tan and Translate back to 0 being the Vertical Axis
-                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
-                //spline[k].angleRad = spline[k-1].angleRad;
-                //Constrain Large Deviations
-                if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/3.0)
-                    spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
+            //Use idx As Angle /Position
+            iTailArcMoment  += idx*iPxIntensity;
+            iSumPxIntensity += iPxIntensity;
 
+//            //If New Maximum Found THen Update Spline Point to point to this and Update Previous Spline Point's angle
+//            if(iPxIntensity>=pxValMax){ //Gt Or Equal - Othewise Points Get Stuck between frames int the black Bg when loc = 0
+//                spline[k].x     = ellipse_pts[idx].x;
+//                spline[k].y     = ellipse_pts[idx].y;
+//                ///Get Arc tan and Translate back to 0 being the Vertical Axis
+//                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+//                //spline[k].angleRad = spline[k-1].angleRad;
+//                //Constrain Large Deviations
+//                if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/3.0)
+//                    spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
+//                pxValMax=iPxIntensity; //Save as New Maximum Point
+//            }
+        } //Loop Through Arc Sample Points
 
-                pxValMax=loc; //Save as New Maximum Point
-            }
-        }
+        //Update Spline to COM (Centre Of Mass) And Set As New Spline Point
+        uint comIdx = iTailArcMoment/iSumPxIntensity;
+        spline[k].x     = ellipse_pts[comIdx].x;
+        spline[k].y     = ellipse_pts[comIdx].y;
+        ///Get Arc tan and Translate back to 0 being the Vertical Axis
+        spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+        //spline[k].angleRad = spline[k-1].angleRad;
+        //Constrain Large Deviations
+        if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/3.0)
+            spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
 
         //out<<tgt<<' '<<angle<<' '<<tmp_pts[k]<<' '<<loc<<' '<<index<<' '<<ellipse_pts.size()<<endl;
 

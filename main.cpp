@@ -3089,8 +3089,6 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
           /// Save Anterior Bound
           fish->bodyRotBound = fishRotAnteriorBox;
 
-
-
           //Locate Eyes In A box
           double lengthLine = 9;
           cv::Point2f ptEyeMid;
@@ -3284,9 +3282,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               }
 
               /// SPINE Fitting And Drawing ///
+              /// \note two methods
               if (contours_body.size() > 0 && bFitSpineToTail)
               {
-                  //Look for Top Level Contour
+              //Look for Top Level Contour
 
 
                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
