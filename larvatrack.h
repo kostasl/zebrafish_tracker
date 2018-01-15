@@ -31,6 +31,13 @@
 #include <fstream>
 
 
+// Tail fitting, Use a complementary method to intensity to fit a spine to contour
+// Useful as it can detect large deviations of tail from fish contour
+#undef _USEFITSPINETOCONTOUR
+//Run Tail Fit at as some interval, so as to check on the correctness of fit and reset if we have to
+#define _USEPERIODICSPINETOCONTOUR_TEST //Periodic Scoring Of Tail
+
+
 
 /// \file larvatrack.h
 /// \brief OpenCV based zebrafish tracker header file.

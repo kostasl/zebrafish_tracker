@@ -1005,7 +1005,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
     //Save to Disk
 
     ///
-    drawFrameText(window_main,nFrame,nLarva,nFood,outframe);
+    drawFrameText(window_main,nFrame,nLarva,vfoodmodels.size(),outframe);
 
 
 
@@ -1586,14 +1586,11 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     for (zfdblobs::iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
     {
         zfdblob* foodblob = &(*it);
-        ///
-        /// Check If Track Centre Point Contains An image that matches a fish template
-        ///
+
         cv::Point centroid = foodblob->pt;
         cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-5)), max(0,min(maskedImg_gray.rows,centroid.y-5)));
         cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+5)), max(0,min(maskedImg_gray.rows,centroid.y+5)));
 
-        // Look for Fish Template Within The Blob Region //
         cv::Rect rectFood(pBound1,pBound2);
         cv::rectangle(frameOut,rectFood,CV_RGB(10,150,150),1);
         // Debug //
@@ -1602,7 +1599,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 #endif
 
 
-        //Check Through Models And Find The Closest Fish To This FishBlob
+        //Check Through Models And Find The Closest Food To This FoodBlob
         for ( ft  = vfoodmodels.begin(); ft!=vfoodmodels.end(); ++ft)
         {
              pfood = ft->second;
@@ -1636,12 +1633,12 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
                  qfoodrank.push(pfood);
 
              }
-               //If Yes then assign the fish with the overlapping blob the template Match Score
-               //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
+               //If Yes then assign the food with the overlapping blob the Match Score
+               //Some existing food Can be associated with this Blob - As it Overlaps from previous frame
          } // Loop Through Food Models
 
 
-        ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
+        ///\brief Check priority Queue Ranking Candidate food with SCore - Keep Top One Only
         foodModel* pfoodBest = 0;
         if (qfoodrank.size() > 0)
         {
@@ -1657,8 +1654,9 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
             std::stringstream strmsg;
             strmsg << "# New foodmodel: " << pfoodBest->ID;
-           std::clog << nFrame << strmsg.str() << std::endl;
-           pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,500);
+            std::clog << nFrame << strmsg.str() << std::endl;
+
+            pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,500);
         }
 
         clearpq2(qfoodrank);
@@ -1684,8 +1682,6 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
         ++ft; //Increment Iterator
     } //Loop To Delete Inactive FoodModels
-
-
 
 
 
@@ -1717,8 +1713,6 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     //Slower
     if ((char)keyboard == '-')
         cFrameDelayms++;
-
-
 
 
     if ((char)keyboard == 't') //Toggle Tracking
@@ -2269,18 +2263,19 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 
         std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
 
-        ///Write Header
+        /// Write Header //
         QTextStream output(&data);
         output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t ";
         for (int i=1;i<gFishTailSpineSegmentCount;i++)
             output <<  "DThetaSpine_" << i << "\t";
 
-        output << "\t templateScore \n";
+        output << "\t templateScore";
+        output << "\t lastTailFitError";
+        output << "\t nFailedEyeDetectionCount";
+        output << "\t RotiferCount \n";
         //output.flush();
 
     }
-
-
 
     return true;
 }
@@ -2319,8 +2314,8 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
                 //+ lifetime; ///< Indicates how much frames the object has been in scene.
                 //+active; ///< Indicates number of frames that has been active from last inactive period.
                 //+ inactive; ///< Indicates number of frames that has been missing.
-                output << frameNumber << "\t" << Vcnt  << "\t" << (*pfish) << "\n";
-
+                output << frameNumber << "\t" << Vcnt  << "\t" << (*pfish);
+                output << "\t" << vfoodmodels.size() << "\n";
             //Empty Memory Once Logged
             pfish->zTrack.pointStack.clear();
             pfish->zTrack.pointStack.shrink_to_fit(); //Requires this Call of C++ otherwise It Doesnt clear
@@ -3287,16 +3282,37 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
               //Look for Top Level Contour
 
-
+               //Fit Spine to Countour MEthod
+#ifdef _USEFITSPINETOCONTOUR
                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                if (idxFish>=0)
                 fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+#endif
 
-                //fish->resetSpine();
-                fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
-                //\todo Maybe Add Contour Fiting To Detect Errors
+               /// Main Method Uses Pixel Intensity //
+               fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
+               fish->drawSpine(fullImgOut);
 
-                fish->drawSpine(fullImgOut);
+               /// Optionally Check For Errors Using Spine to Contour Fitting Periodically//
+#ifdef _USEPERIODICSPINETOCONTOUR_TEST
+               if ( (pwindow_main->nFrame % 200) == 0)
+               {
+                   int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                   if (idxFish>=0)
+                        fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+
+               }
+
+               //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
+               //Best To reset Spine and Start Over Next Time
+               /// \todo Make this parameter threshold formal
+               if (fish->lastTailFitError > fish->c_fitErrorPerContourPoint)
+               {
+                   fish->resetSpine(); //No Solution Found So Reset
+                   pwindow_main->LogEvent("Reset Spine as Error above c_fitErrorPerContourPoint");
+               }
+#endif
+
 
                 //cv::imshow("BlurredFish",maskedfishFeature_blur);
               }

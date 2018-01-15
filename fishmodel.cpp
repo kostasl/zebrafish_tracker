@@ -15,10 +15,12 @@ extern double gTemplateMatchThreshold;
 
 fishModel::fishModel()
 {
+        lastTailFitError            = 0.0;
+        templateScore               = 0.0;
+        nFailedEyeDetectionCount    = 0;
 
-        nFailedEyeDetectionCount = 0;
-        inactiveFrames = 0;
-        templateScore = 0;
+        inactiveFrames              = 0;
+        templateScore               = 0;
         coreTriangle.push_back(cv::Point());
         coreTriangle.push_back(cv::Point());
         coreTriangle.push_back(cv::Point());
@@ -406,6 +408,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 /// \param contours_body
 /// \param idxInnerContour
 /// \param idxOuterContour
+/// \warning uses arbitrary constants for detecting fit error or convergence
 /// \return fitness error score
 ///
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
@@ -413,7 +416,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     static const int cntParam = this->c_spineParamCnt;
     static const int gcFishContourSize = ZTF_FISHCONTOURSIZE+1;//Fixed PLus 1 tail Point
 
-    const int c_fitErrorPerContourPoint = 10; //Parameter Found By Experience for current size fish
+    //Parameter Found By Experience for current size fish
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
     //Run Until Convergence Error is below threshold - Or Change is too small
@@ -446,8 +449,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     memset(dResiduals,0.0,gcFishContourSize*sizeof(double));
 
     int cntpass     = 0;
-    int cntStuck    = 0;
-    int cntSolved   = 0;
+    int cntStuck    = 0; //Number of Cycles solution has converge to an unnacceptable solution
+    int cntSolved   = 0; //Number of Cycles Solution Is acceptable
     double dVarScale    = 1.0;
     //Do A number of Passes Before  Convergence //&& (dfitPtError_total/contour.size() > 8)
     while (cntpass < gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
@@ -561,22 +564,15 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     qDebug() << "ID:" <<  this->ID << cntpass << " EChange:" << dDifffitPtError_total;
 #endif
 
-    //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
-    //Best To reset Spine and Start Over Next Time
-    /// \todo Make this parameter threshold formal
-    if (dfitPtError_total/contour.size() > c_fitErrorPerContourPoint)
-    {
-        this->resetSpine(); //No Solution Found So Reset
-         qDebug() << "Reset Spine after n:" << cntpass;
-    }
-    else //Update Spine Model
-    {
-        this->spline = tmpspline;
+
+
+        this->spline            = tmpspline;
+        this->lastTailFitError = dDifffitPtError_total/c_spinePoints;
+
+
 #ifdef _ZTFDEBUG_
         qDebug() << "Converged in n: " << cntpass;
 #endif
-    }
-
 
 
 ///  DEBUG ///
@@ -840,6 +836,8 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
 
     }
      out << "\t" << h.templateScore;
+     out << "\t" << h.lastTailFitError;
+     out << "\t" << h.nFailedEyeDetectionCount;
 
     return out;
 }

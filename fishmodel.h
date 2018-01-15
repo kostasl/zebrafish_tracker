@@ -108,15 +108,18 @@ public:
   std::vector<cv::Point> coreHull; /// core Body shape- no tail
   std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
 
+  // Detection Scores //
+  double lastTailFitError; ///Holds Error Value Per Spine Point as Measured by Spine Fitting to Contour
+  double templateScore; ///Fishdetection Score - How well the detected model fish looks/matches the convolution of a fish template
+///
 
   unsigned int nLastUpdateFrame; ///<-Holds the frame Number of the last State Update
-  double templateScore; //FishLIke Score - How well the detected model fish looks/matches the convolution of a fish template
+
   double leftEyeTheta; /// Theta is In Degrees
   double rightEyeTheta;/// Theta is In Degrees
   double bearingRads; /// Rads
   float bearingAngle; /// Theta is In Degrees
   int inactiveFrames; //Count Of Number Of Frames That this model Has not Been Matched To Any Fish
-
   int idxTemplateRow; //The Location Of the Matching Template In The Template Cache
   int idxTemplateCol;
   tDetectedEllipsoid    leftEye;
@@ -140,6 +143,9 @@ public:
   int c_spineSegL;
   static const int c_spinePoints   = ZTF_TAILSPINECOUNT; //\todo fix compilation Problems with Including COnfig.h
   static const int c_spineParamCnt = c_spinePoints+2;
+
+  const int c_fitErrorPerContourPoint = 10;
+
 private:
 
   //std::vect mmor<double> splineTheta; ///Angles of fitted Spine Points
