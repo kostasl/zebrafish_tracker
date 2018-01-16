@@ -425,6 +425,12 @@ int main(int argc, char *argv[])
     bTracking = true; //Start By Tracking by default
     bExiting    = false;
 
+    std::ofstream foutLog;//Used for Logging To File
+    // Get the rdbuf of clog.
+    // We will need it to reset the value before exiting.
+    auto old_rdbufclog = std::clog.rdbuf();
+    auto old_rdbufcerr = std::cerr.rdbuf();
+
 
        // install Error/Seg Fault handler
     if (signal(SIGSEGV, handler) == SIG_ERR)
@@ -477,9 +483,10 @@ int main(int argc, char *argv[])
         "{outputdir   o |    | Dir where To save sequence of images }"
         "{invideofile v |    | Behavioural Video file to analyse }"
         "{invideolist f |    | A text file listing full path to video files to process }"
-        "{startframe s  | 1  | Video Will start by Skipping to this frame    }"
-        "{stopframe p   | 0  | Video Will stop at this frame    }"
-        "{duration d    | 0  | Number of frames to Track for starting from start frame }"
+        "{startframe s | 1  | Video Will start by Skipping to this frame    }"
+        "{stopframe p | 0  | Video Will stop at this frame    }"
+        "{duration d | 0  | Number of frames to Track for starting from start frame }"
+         "{logtofile l |    | Filename to save clog stream to }"
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -555,6 +562,21 @@ int main(int argc, char *argv[])
             qWarning() << fvidfile.fileName() << " does not exist!";
         }
     }
+
+    /// Setup Output Log File //
+    if ( parser.has("logtofile") )
+    {
+        qDebug() << "Set Log File To " <<  QString::fromStdString( parser.get<string>("logtofile") );
+
+        foutLog.open(parser.get<string>("logtofile") );
+
+         // Set the rdbuf of clog.
+         std::clog.rdbuf(foutLog.rdbuf());
+         std::cerr.rdbuf(foutLog.rdbuf());
+
+
+    }
+
     //If No video Files have been loaded then Give GUI to User
     if (inVidFileNames.empty())
             inVidFileNames =QFileDialog::getOpenFileNames(0, "Select videos to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
@@ -742,6 +764,11 @@ int main(int argc, char *argv[])
     //app.quit();
     window_main.close();
     cv::destroyAllWindows();
+
+
+    // Reset the rdbuf of clog.
+     std::clog.rdbuf(old_rdbufclog);
+     std::cerr.rdbuf(old_rdbufcerr);
 
 
     app.quit();
@@ -1254,29 +1281,45 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             {
                 if (nFrame == startFrameCount)
                 {
-                    std::cerr << "Unable to read first frame." << std::endl;
+                    std::cerr << nFrame << " [Error]  Unable to read first frame." << std::endl;
                     nFrame = 0; //Signals To caller that video could not be loaded.
+                    //Delete the Track File //
+                    std::cerr << "Problem with Tracking - Delete Data File To Signal its Not tracked" << std::endl;
+                    removeDataFile(outdatafile);
+
                     exit(EXIT_FAILURE);
                 }
                 else
                 {
-                   std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
-                   std::cout << nFrame << " frames of Video processed. Moving to next video." <<std::endl;
+                   std::cerr << nFrame << "*Unable to read next frame." << std::endl;
+                   std::cout << "Reached " << nFrame << " frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
                     ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+
+                   if (nFrame < totFrames-1)
+                   {
+                       std::cerr << nFrame << " [Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked" << std::endl;
+                       removeDataFile(outdatafile);
+                   }
                    //continue;
                    break;
                }
             }
         }catch(const std::exception &e)
         {
-            std::cerr << "Error reading frame " << nFrame << " skipping." << std::endl;
+            std::cerr << "[Error] reading frame " << nFrame << " skipping." << std::endl;
 
             if (nFrame < totFrames)
                 capture.set(CV_CAP_PROP_POS_FRAMES,nFrame+1);
 
             nErrorFrames++;
-            if (nErrorFrames > 10) //Avoid Getting Stuck Here
+            if (nErrorFrames > 20) //Avoid Getting Stuck Here
+            {
+                // Too Many Error / Fail On Tracking
+                std::cerr << "[Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                removeDataFile(outdatafile);
+
                 break;
+            }
             else
                 continue;
         }
@@ -1909,7 +1952,15 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
         cv::putText(img,"Failed to Save " + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(250,250,250));
         cv::putText(img,"Failed to Save" + imageToSave.toStdString(), cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 0.4 , cv::Scalar(0,0,0));
         std::cerr << "Unable to save " << imageToSave.toStdString() << std::endl;
-        return false;
+        pwindow_main->LogEvent(QString("Failed to Save Image File - Retry"));
+        if (!cv::imwrite(imageToSave.toStdString(), image_to_write))
+        {
+            pwindow_main->LogEvent(QString("2nd Failed attempt to Save Image File"));
+            return false;
+        }
+        else
+            std::cout << "Saved image " << imageToSave.toStdString() <<std::endl;
+
     }
     else
     {
@@ -2286,7 +2337,13 @@ void closeDataFile(QFile& data)
     std::clog << "Closed Output File " << data.fileName().toStdString() << std::endl;
 }
 
+void removeDataFile(QFile& data)
+{
 
+   std::clog << "Deleting Output File " << data.fileName().toStdString() << std::endl;
+
+   data.deleteLater();
+}
 
 ///
 /// \brief saveTracks -  record new fish track position - and rotifer count - only if fish is in view
