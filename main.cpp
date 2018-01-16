@@ -2269,7 +2269,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
         for (int i=1;i<gFishTailSpineSegmentCount;i++)
             output <<  "DThetaSpine_" << i << "\t";
 
-        output << "\t templateScore";
+        output << " templateScore";
         output << "\t lastTailFitError";
         output << "\t nFailedEyeDetectionCount";
         output << "\t RotiferCount \n";
@@ -2287,6 +2287,14 @@ void closeDataFile(QFile& data)
 }
 
 
+
+///
+/// \brief saveTracks -  record new fish track position - and rotifer count - only if fish is in view
+/// \param vfish
+/// \param data
+/// \param frameNumber
+/// \return
+///
 int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
 {
     int cnt;
@@ -2310,12 +2318,14 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
             cvb::CvLabel cvL = it->first;
 
             if (iroi.contains(pfish->ptRotCentre))
+            {
                 //Printing the position information +
                 //+ lifetime; ///< Indicates how much frames the object has been in scene.
                 //+active; ///< Indicates number of frames that has been active from last inactive period.
                 //+ inactive; ///< Indicates number of frames that has been missing.
                 output << frameNumber << "\t" << Vcnt  << "\t" << (*pfish);
                 output << "\t" << vfoodmodels.size() << "\n";
+            }
             //Empty Memory Once Logged
             pfish->zTrack.pointStack.clear();
             pfish->zTrack.pointStack.shrink_to_fit(); //Requires this Call of C++ otherwise It Doesnt clear
