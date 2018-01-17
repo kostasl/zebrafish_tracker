@@ -556,6 +556,9 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::GaussianBlur(imgUpsampled_gray,imgUpsampled_gray,cv::Size(3,3),3,3);
 
 
+    //Separate Eyes Mask
+    cv::line(imgUpsampled_gray,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes
+
     // Locate Eye Points //
     double minVal,maxVal;
     cv::Point ptMax,ptMin;
@@ -583,8 +586,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     int irFloodSeed=imgUpsampled_gray.at<uchar>(ptREyeMid)+1;
     //int step = (iuFloodRange - ilFloodRange)/6;
     //Assist by Filling Holes IN Eye Shape - Use Fill
-    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(255),0,cv::Scalar(abs(4*ilFloodRange-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
-    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(255),0,cv::Scalar(abs(4*ilFloodRange-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
+    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(4*ilFloodRange-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
+    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(4*ilFloodRange-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
 
     cv::circle(imgUpsampled_gray,ptREyeMid,4,cv::Scalar(255),1,CV_FILLED);
