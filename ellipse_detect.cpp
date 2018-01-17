@@ -446,15 +446,18 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 /// \param pimgIn //Upsampled Grey Scale HEad Image
 /// \param ptcenter //Center Of Head Image around which to estimate Eye Position
 /// \param ellipseSample_pts //Holds the Drawn Arc Points around the last spine Point
+/// \param minVal - The min Intensity Value Sampled
+/// \param maxVal - The min Intensity Value Sampled
 /// \return Grey threshold for Eye Segmentation
 ///
-int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts)
+int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal)
 {
         const int isampleN = 10;
         const int voffset = giHeadIsolationMaskVOffset+1;
 
         int iThresEyeSeg = 0;
-
+        minVal = 255;
+        maxVal = 0;
 
         //std::vector<cv::Point> ellipse_pts;
         std::priority_queue<int,std::vector<int>> eyeSegMaxHeap;
@@ -471,7 +474,14 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
 
             assert(ellipseSample_pts[i].x >= 0 && ellipseSample_pts[i].x < pimgIn.cols);
             assert(ellipseSample_pts[i].y >= 0 && ellipseSample_pts[i].y < pimgIn.rows);
-            eyeSegMaxHeap.push(pimgIn.at<uchar>(ellipseSample_pts[i]));
+            uchar val = pimgIn.at<uchar>(ellipseSample_pts[i]);
+            eyeSegMaxHeap.push(val);
+
+            if (val < minVal)
+                minVal = val;
+
+            if (val > maxVal)
+                maxVal = val;
         }
 
         for (int i=0;i<isampleN;i++)
@@ -485,11 +495,12 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
 
 
 
+
     return std::min(std::max(3,iThresEyeSeg),255);
 }
 
 ///
-/// \brief detectEllipses - Used oN Head Isolated Image
+/// \brief detectEllipses - Detects Eyes - Used oN Head Isolated Image
 /// \param pimgIn
 /// \param imgEdge
 /// \param imgOut
@@ -542,7 +553,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     ptREyeMid.x = std::max(1,std::min(imgUpsampled_gray.cols,(int)ptREyeMid.x));
     ptREyeMid.y = std::max(1,std::min(imgUpsampled_gray.rows,(int)ptREyeMid.y));
     */
-    cv::GaussianBlur(imgUpsampled_gray,imgUpsampled_gray,cv::Size(5,5),3,3);
+    cv::GaussianBlur(imgUpsampled_gray,imgUpsampled_gray,cv::Size(3,3),3,3);
 
 
     // Locate Eye Points //
@@ -565,13 +576,18 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
 
     /// Make Arc from Which to get Sample Points For Eye Segmentation
-    int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints);
+    int ilFloodRange,iuFloodRange;
+    int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
-
-    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(255));
-    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(255));
+    int ilFloodSeed=pimgIn.at<uchar>(ptLEyeMid)+1;
+    int irFloodSeed=pimgIn.at<uchar>(ptREyeMid)+1;
+    //int step = (iuFloodRange - ilFloodRange)/6;
+    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(255),0,cv::Scalar(abs(ilFloodRange-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
+    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(255),0,cv::Scalar(abs(ilFloodRange-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
 
+    cv::circle(imgUpsampled_gray,ptREyeMid,4,cv::Scalar(255),1,CV_FILLED);
+    cv::circle(imgUpsampled_gray,ptLEyeMid,4,cv::Scalar(255),1,CV_FILLED);
 
 
     cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
@@ -829,8 +845,9 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
 
    // Show Eye Anchor Points
-    img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 255;img_colour.at<cv::Vec3b>(ptLEyeMid)[2] = 10; //Green
-    img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 255;img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 10; //Green
+    img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;img_colour.at<cv::Vec3b>(ptLEyeMid)[2] = 205; //Blue
+    img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 0;img_colour.at<cv::Vec3b>(ptREyeMid)[2] = 205; //Blue
+
     // Show Eye Segmentation Arc Sample points
     for (int i=0;i<vEyeSegSamplePoints.size();i++)
     {

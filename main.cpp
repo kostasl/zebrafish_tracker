@@ -74,8 +74,8 @@
 #include <config.h>
 
 /// Constants ///
-const int gcMaxFishModelInactiveFrames  = 100; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
+const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
+const int gcMaxFoodModelInactiveFrames  = 250; //Number of frames inactive until track is deleted
 const int gMaxClusterRadiusFoodToBlob   = 10;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
@@ -91,7 +91,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 600; //Min area above which to Filter The fish blobs
+const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
 const unsigned int gthres_maxfoodblobarea = 80;
 
 //BG History
@@ -110,8 +110,8 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor      = 22; /// thres  for Eye Ellipse Detection methods
-int gi_minEllipseMajor          = 11; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
+int gi_minEllipseMajor      = 17; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 155; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
@@ -1508,9 +1508,9 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                  }
                  else
                  {
-                           //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
-                         if (pfish->inactiveFrames > 3)
-                             iLastKnownGoodTemplateCol = 0;
+                       //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
+                       if (pfish->inactiveFrames > 3)
+                           iLastKnownGoodTemplateCol = 0;
 
                          qDebug() << nFrame << " Guessing next TemplCol:" << iLastKnownGoodTemplateCol;
                  }
@@ -1539,7 +1539,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
            qfishrank.push(fish); //Add To Priority Queue
-           std::stringstream strmsg; strmsg << "# New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore;
+           std::stringstream strmsg;
+           strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore;
            //std::clog << nFrame << strmsg.str() << std::endl;
            pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
 
@@ -1593,13 +1594,12 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
             if (pfish->inactiveFrames > gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
             {
-                std::cout << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
+                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
                 ft = vfishmodels.erase(ft);
                 delete(pfish);
                 continue;
             }else
             {
-
                 pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
             }
         }
