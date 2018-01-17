@@ -579,11 +579,12 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     int ilFloodRange,iuFloodRange;
     int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
-    int ilFloodSeed=pimgIn.at<uchar>(ptLEyeMid)+1;
-    int irFloodSeed=pimgIn.at<uchar>(ptREyeMid)+1;
+    int ilFloodSeed=imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
+    int irFloodSeed=imgUpsampled_gray.at<uchar>(ptREyeMid)+1;
     //int step = (iuFloodRange - ilFloodRange)/6;
-    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(255),0,cv::Scalar(abs(ilFloodRange-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
-    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(255),0,cv::Scalar(abs(ilFloodRange-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
+    //Assist by Filling Holes IN Eye Shape - Use Flood Fill Before Thresholding
+    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(255),0,cv::Scalar(abs(4*ilFloodRange-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
+    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(255),0,cv::Scalar(abs(4*ilFloodRange-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
 
     cv::circle(imgUpsampled_gray,ptREyeMid,4,cv::Scalar(255),1,CV_FILLED);
