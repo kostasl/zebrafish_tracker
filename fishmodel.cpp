@@ -801,7 +801,17 @@ std::ostream& operator<<(std::ostream& out, const fishModel& h)
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
 
 
-    out << h.nLastUpdateFrame <<"\t"<< h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack  << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta << "\t" <<  h.templateScore ;
+    out << h.nLastUpdateFrame
+        << "\t" << h.ID
+        << "\t" << h.bearingAngle
+        << "\t" << h.zTrack
+        << "\t" << h.leftEyeTheta
+        << "\t" << h.rightEyeTheta
+        << "\t" << h.templateScore
+        << "\t" << h.lastTailFitError
+        << "\t" << h.leftEye.fitscore
+        << "\t" << h.rightEye.fitscore
+        << "\t" << h.nFailedEyeDetectionCount;
 
     return out;
 }
@@ -837,6 +847,8 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
     }
      out << "\t" << h.templateScore;
      out << "\t" << h.lastTailFitError;
+     out << "\t" << h.leftEye.fitscore;
+     out << "\t" << h.rightEye.fitscore;
      out << "\t" << h.nFailedEyeDetectionCount;
 
     return out;

@@ -194,17 +194,15 @@ void MainWindow::tickProgress()
 }
 
 
-
 //Write To Message List Below Tracker
 void MainWindow::LogEvent(QString strMessage)
 {
-
     //\note THe frame Number seemed to be advanced by 1, in the log file
-    mMessageList.append(QString::number(nFrame-1) + "." + strMessage);
+    mMessageList.append(QString::number(gTimer.elapsed()/60000,'g',4) + " " + QString::number(nFrame-1) + "# " + strMessage);
     this->ui->listView->show();
     mModelMessageList->setStringList(mMessageList);
 
-    std::clog << gTimer.elapsed()/60000 << " " << strMessage.toStdString() << std::endl;
+    std::clog << gTimer.elapsed()/60000 << " #" << nFrame-1 << " " << strMessage.toStdString() << std::endl;
 
     try{
         this->ui->listView->scrollToBottom();

@@ -1222,10 +1222,10 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     window_main.setTotalFrames(totFrames);
     window_main.nFrame = nFrame;
-    window_main.LogEvent(QString::number(gTimer.elapsed()/60000.0) + " **Begin Processing: " + videoFilename);
+    window_main.LogEvent(" **Begin Processing: " + videoFilename);
     window_main.stroutDirCSV = gstroutDirCSV;
     window_main.vidFilename = videoFilename;
-    QString strMsg(QString::number(gTimer.elapsed()/60000.0) +  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
+    QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
     window_main.LogEvent(strMsg);
     //qDebug() << strMsg;
 
@@ -2325,6 +2325,8 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 
         output << " templateScore";
         output << "\t lastTailFitError";
+        output << "\t lEyeFitError";
+        output << "\t rEyeFitError";
         output << "\t nFailedEyeDetectionCount";
         output << "\t RotiferCount \n";
         //output.flush();
@@ -3248,8 +3250,6 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //if (fish->templateScore < gTemplateMatchThreshold)
               //    continue; //Skip This Model Fish And Check the next one
 
-
-
               /// Prepare Norm Head Pic for Eye Detection Draw Centers for Reference and cleaner Masks
               //Draw  Rotation Centre of Transformation to Norm
               cv::circle(imgFishAnterior,ptRotCenter,3,CV_RGB(100,140,140),1);
@@ -3257,29 +3257,27 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               ///Draw * Isolation Mask *  Of Eyes Around RotationCentre
               cv::Point ptMask(ptRotCenter.x,ptRotCenter.y+4);
-              cv::circle(imgFishAnterior_Norm,ptMask,giHeadIsolationMaskVOffset,CV_RGB(0,0,0),-1);
+              cv::circle(imgFishAnterior_Norm,ptMask,giHeadIsolationMaskVOffset,CV_RGB(0,0,0),-1); //Mask Body
               cv::line(imgFishAnterior_Norm,ptMask,cv::Point(imgFishAnterior_Norm.cols/2,0),CV_RGB(0,0,0),1);//Split Eyes
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
 
-              //imgFishHeadSeg Is an OutParam with The Segmentation Image used
-              //imgFishHeadProcessed is an OutParam with the UpSampled Head with Features Drawn on it
-              //Testing If LEak Is from Here
+
+
+              /// EYE DETECTION Report Results to Output Frame //
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
-
-
-              /// Report Results to Output Frame //
               std::stringstream ss;
 
-              if (ret < 2)
-              {
-                  ss << " Eye Detection Error - Check Threshold;";
-                  window_main.LogEvent(QString::fromStdString(ss.str()));
-                  fish->leftEyeTheta = 180;
-                  fish->rightEyeTheta = 180;
-                  //std::clog << ss.str() << std::endl;
+            if (ret < 2)
+            {
+                ss << " Eye Detection Error - Check Threshold";
+                window_main.LogEvent(QString::fromStdString(ss.str()));
+                //fish->leftEyeTheta = 180;
+                //fish->rightEyeTheta = 180;
+                //fish->leftEye.fitscore = fish->rightEye.fitscore = 0;
+                fish->nFailedEyeDetectionCount++;
+                //std::clog << ss.str() << std::endl;
+            }
 
-                  //return; //Stop Here - Produced Stable Runs
-              }
 
               ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
               cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
@@ -3306,8 +3304,12 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }else
               { //Set To Not detected
+                  ss << "L Eye Detection Error - Check Threshold";
+                  window_main.LogEvent(QString::fromStdString(ss.str()));
+
                   fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
                   fish->leftEyeTheta  = 180;
+                  fish->leftEye.fitscore = 0;
                   fish->nFailedEyeDetectionCount++;
               }
 
@@ -3322,11 +3324,14 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                 cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }else
               { //Set To Not detected
+                  ss << "R Eye Detection Error - Check Threshold";
+                  window_main.LogEvent(QString::fromStdString(ss.str()));
+
                   fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
                   fish->rightEyeTheta  = 180;
+                  fish->rightEye.fitscore = 0;
                   fish->nFailedEyeDetectionCount++;
               }
-
 
 
               ///If Both Eyes Detected Then Print Vergence Angle
@@ -3337,6 +3342,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
                   fish->nFailedEyeDetectionCount = 0; //Reset Error Count
               }
+
 
               //Check If Too Many Eye Detection Failures - Then Switch Template
               if (fish->nFailedEyeDetectionCount > 10)

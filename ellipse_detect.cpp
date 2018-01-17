@@ -531,7 +531,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     int lengthLine = 13;
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/2+7);
 
-    ptLEyeMid.x = ptcentre.x-lengthLine;
+    /*ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y/2; //y=0 is the top left corner
     ptREyeMid.x = ptcentre.x + lengthLine; //ptcentre.x+lengthLine;
     ptREyeMid.y = ptcentre.y/2; //y=0 is the top left corner *cos((angleDeg-90)*(M_PI/180.0))
@@ -541,12 +541,35 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     ptREyeMid.x = std::max(1,std::min(imgUpsampled_gray.cols,(int)ptREyeMid.x));
     ptREyeMid.y = std::max(1,std::min(imgUpsampled_gray.rows,(int)ptREyeMid.y));
+    */
+    cv::GaussianBlur(imgUpsampled_gray,imgUpsampled_gray,cv::Size(5,5),3,3);
+
+
+    // Locate Eye Points //
+    double minVal,maxVal;
+    cv::Point ptMax,ptMin;
+    ///COVER Right Eye - Find Left EYE //
+    cv::Rect rRightMask(imgUpsampled_gray.cols/2,0,imgUpsampled_gray.cols,imgUpsampled_gray.rows);
+    cv::Mat imgEyeCover = imgUpsampled_gray.clone();
+    cv::rectangle(imgEyeCover,rRightMask,cv::Scalar(0),-1);
+
+    cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax);
+    ptLEyeMid = ptMax;
+
+    ///COVER Left Eye - Find RIGHT EYE //
+    imgEyeCover = imgUpsampled_gray.clone();
+    cv::Rect rLeftMask(0,0,imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
+    cv::rectangle(imgEyeCover,rLeftMask,cv::Scalar(0),-1);
+    cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax); //Find Centre
+    ptREyeMid = ptMax;
 
 
     /// Make Arc from Which to get Sample Points For Eye Segmentation
     int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints);
 
-    //cv::GaussianBlur(imgIn,img_blur,cv::Size(3,3),3,3);
+
+    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(255));
+    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(255));
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
 
 
@@ -730,9 +753,11 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         getEdgePoints(imgEdge_local,vedgePoints_all);
         detectEllipse(vedgePoints_all,qEllipsoids);
         if (qEllipsoids.size() == 0 )
+//            qDebug() << " R Eye Backup Ellipse Failed";
+            pwindow_main->LogEvent("R Eye Backup Ellipse Failed ");
+
             //qDebug() << " R Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
         //else
-            qDebug() << " R Eye Backup Ellipse Failed";
     }
 
     // Check If Found and Draw R Eye //
@@ -769,7 +794,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     if (mjAxis1 < gi_minEllipseMajor || mjAxis1 > gi_maxEllipseMajor || lEll.fitscore < 10)
     {
         ret = 0; //SOme Detection Error - Ask To Change Threshold
-        qDebug() << "L eye bound error  MjAxis:" << mjAxis1;
+        //qDebug() << "L eye bound error  MjAxis:" << mjAxis1;
+        pwindow_main->LogEvent("L eye bound error  MjAxis:" + QString::number(mjAxis1));
     }
 
     /// Check R Eye Again //
@@ -777,13 +803,15 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     if (mjAxis2 < gi_minEllipseMajor || mjAxis2 > gi_maxEllipseMajor || rEll.fitscore < 10)
     {
         ret = 0;
-        qDebug() << "R eye bound error MjAxis :" << mjAxis1;
+        //qDebug() << "R eye bound error MjAxis :" << mjAxis1;
+        pwindow_main->LogEvent("R eye bound error MjAxis :" + QString::number(mjAxis2));
     }
 
     if (std::abs(area1 - area2) > (std::max(area2,area1)/2))
     {
         ret = 0; //SOme Detection Error - Ask To Change Threshold
-        qDebug() << "R-L eye Areas Diff too large " << std::abs(area1 - area2);
+        //qDebug() << "R-L eye Areas Diff too large " << std::abs(area1 - area2);
+        pwindow_main->LogEvent("R-L eye Areas Diff too large " + QString::number(std::abs(area1 - area2)));
     }
 
 
@@ -801,8 +829,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
 
    // Show Eye Anchor Points
-    img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 255; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;
-    img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 250;
+    img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 255;img_colour.at<cv::Vec3b>(ptLEyeMid)[2] = 10; //Green
+    img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 255;img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 10; //Green
     // Show Eye Segmentation Arc Sample points
     for (int i=0;i<vEyeSegSamplePoints.size();i++)
     {
