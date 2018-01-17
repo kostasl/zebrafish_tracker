@@ -14,6 +14,7 @@ extern int g_Segthresh;
 extern int gthresEyeSeg;
 extern int gi_maxEllipseMajor;
 extern int gi_minEllipseMajor;
+extern QElapsedTimer gTimer;
 
 bool bSceneMouseLButtonDown;
 
@@ -203,14 +204,14 @@ void MainWindow::LogEvent(QString strMessage)
     this->ui->listView->show();
     mModelMessageList->setStringList(mMessageList);
 
-    std::clog << strMessage.toStdString() << std::endl;
+    std::clog << gTimer.elapsed()/60000 << " " << strMessage.toStdString() << std::endl;
 
     try{
         this->ui->listView->scrollToBottom();
     }
     catch (char* e)
     {
-        std::cerr << "listView->scrollToBottom(); error: "<< e << std::endl;
+        std::cerr << gTimer.elapsed()/60000 << " [Error] listView->scrollToBottom(); error: "<< e << std::endl;
     }
 }
 

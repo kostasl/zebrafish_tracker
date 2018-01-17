@@ -707,19 +707,18 @@ int main(int argc, char *argv[])
         //app.exec();
         unsigned int uiStartFrame = parser.get<uint>("startframe");
         unsigned int uiStopFrame = parser.get<uint>("stopframe");
-        std::cout << ">>> Start frame: " << uiStartFrame << " StopFrame: " << uiStopFrame << " <<<<<<<<<"  << std::endl;
+        std::clog << gTimer.elapsed()/60000.0 << " >>> Start frame: " << uiStartFrame << " StopFrame: " << uiStopFrame << " <<<<<<<<<"  << std::endl;
         trackVideofiles(window_main,gstroutDirCSV,inVidFileNames,uiStartFrame,uiStopFrame);
 
     }catch (char *e)
     {
         //printf("Exception Caught: %s\n",e);
-        qDebug() << ">>> Exception Caught while processing: " << outdatafile.fileName();
-        std::cerr << "Memory Allocation Error :" << e;
+        qDebug() << "[Error] >>> Exception Caught while processing: " << outdatafile.fileName();
+        std::cerr << "[Error] Memory Allocation Error :" << e;
         //std::cerr << "Memory Allocation Error! - Exiting";
-        std::cerr << "Close And Delete Current output file: " << outdatafile.fileName().toStdString() ;
+        std::cerr << "[Error] Close And Delete Current output file: " << outdatafile.fileName().toStdString() ;
         closeDataFile(outdatafile);
-        outdatafile.remove();
-
+        removeDataFile(outdatafile);
         app.quit();
 
         std::exit(EXIT_FAILURE);
@@ -743,6 +742,7 @@ int main(int argc, char *argv[])
 
 
     std::cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
+    std::clog << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
 ///Clean Up //
 
     frameDebugA.release();
@@ -792,7 +792,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
     {
        invideoname = invideonames.at(i);
        //std::cout << "*" <<  invideoname.toStdString() << std::endl;
-       window_main.LogEvent(invideoname);
+       window_main.LogEvent(invideoname );
     }
 
 
@@ -805,7 +805,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
        invideoname = invideonames.at(i);
        gstrvidFilename = invideoname; //Global
-       std::cout << " Now Processing : "<< invideoname.toStdString() <<std::endl;
+       std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() <<std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
        // Removed As MOG Is not Used Currently - Remember to Enable usage in enhanceMask if needed//
@@ -820,7 +820,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
         if (istartFrame == 0)
         {
-            std::cerr << "Could not process last video - Exiting loop." <<std::endl;
+            std::cerr << gTimer.elapsed()/60000.0 << "Could not process last video - Exiting loop." << std::endl;
             break;
         }
     }
@@ -837,13 +837,13 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
         cv::Mat frame;
         unsigned int nFrame         = startFrameCount; //Current Frame Number
 
-        std::cout << "Starting Background Model processing..." << std::endl;
+        std::clog << gTimer.elapsed()/60000.0 << "Starting Background Model processing..." << std::endl;
         //create the capture object
         cv::VideoCapture capture(videoFilename.toStdString());
         if(!capture.isOpened())
         {
             //error in opening the video input
-            std::cerr << "Unable to open video file: " << videoFilename.toStdString() << std::endl;
+            std::cerr <<  gTimer.elapsed()/60000.0 << "Unable to open video file: " << videoFilename.toStdString() << std::endl;
             std::exit(EXIT_FAILURE);
         }
 
@@ -855,14 +855,14 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
             {
                 if (nFrame == startFrameCount)
                 {
-                    std::cerr << "Unable to read first frame." << std::endl;
+                    std::cerr << gTimer.elapsed()/60000.0 << "Unable to read first frame." << std::endl;
                     nFrame = 0; //Signals To caller that video could not be loaded.
                     exit(EXIT_FAILURE);
                 }
                 else
                 {
-                    std::cerr << "Unable to read next frame. So this video Is done." << std::endl;
-                   std::cout << nFrame << " frames of Video processed. Move on to next timelapse video? " <<std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << " Unable to read next frame. So this video Is done <<<<<<<" << std::endl;
+                   std::clog << gTimer.elapsed()/60000.0 << " " << nFrame << " frames of Video processed. Move on to next " <<std::endl;
                   //  break;
                    continue;
                }
@@ -903,7 +903,7 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
         //delete kernelClose;
 
 
-        std::cout << "Background Processing  loop. Finished" << std::endl;
+        std::clog << gTimer.elapsed()/60000.0 << "Background Processing  loop. Finished" << std::endl;
 
         return nFrame;
 } ///trackImageSequencefile
@@ -1212,7 +1212,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     if(!capture.isOpened())
     {
         //error in opening the video input
-        std::cerr << "Unable to open video file: " << videoFilename.toStdString() << std::endl;
+        std::cerr << gTimer.elapsed()/60000.0 << " [Error] Unable to open video file: " << videoFilename.toStdString() << std::endl;
         return 0;
         //std::exit(EXIT_FAILURE);
     }
@@ -1222,10 +1222,10 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     window_main.setTotalFrames(totFrames);
     window_main.nFrame = nFrame;
-    window_main.LogEvent("**Begin Processing: " + videoFilename);
+    window_main.LogEvent(QString::number(gTimer.elapsed()/60000.0) + " **Begin Processing: " + videoFilename);
     window_main.stroutDirCSV = gstroutDirCSV;
     window_main.vidFilename = videoFilename;
-    QString strMsg(" Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
+    QString strMsg(QString::number(gTimer.elapsed()/60000.0) +  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
     window_main.LogEvent(strMsg);
     //qDebug() << strMsg;
 
@@ -1281,32 +1281,35 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             {
                 if (nFrame == startFrameCount)
                 {
-                    std::cerr << nFrame << " [Error]  Unable to read first frame." << std::endl;
+                    std::cerr << gTimer.elapsed()/60000.0 << " " <<  nFrame << " [Error]  Unable to read first frame." << std::endl;
                     nFrame = 0; //Signals To caller that video could not be loaded.
                     //Delete the Track File //
-                    std::cerr << "Problem with Tracking - Delete Data File To Signal its Not tracked" << std::endl;
+                    std::cerr << gTimer.elapsed()/60000.0 << " [Error] Problem with Tracking - Delete Data File To Signal its Not tracked" << std::endl;
                     removeDataFile(outdatafile);
 
                     exit(EXIT_FAILURE);
                 }
                 else
                 {
-                   std::cerr << nFrame << "*Unable to read next frame." << std::endl;
-                   std::cout << "Reached " << nFrame << " frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << nFrame << "*Unable to read next frame." << std::endl;
+                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << " frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
+                   assert(outframe.cols > 1);
                     ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
 
                    if (nFrame < totFrames-1)
                    {
-                       std::cerr << nFrame << " [Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked" << std::endl;
+                       std::cerr << gTimer.elapsed()/60000.0 << " " << nFrame << " [Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked" << std::endl;
                        removeDataFile(outdatafile);
                    }
+                   else
+                       std::clog << gTimer.elapsed()/60000.0 << " processVideo loop done on frame " << nFrame << std::endl;
                    //continue;
                    break;
                }
             }
         }catch(const std::exception &e)
         {
-            std::cerr << "[Error] reading frame " << nFrame << " skipping." << std::endl;
+            std::cerr << gTimer.elapsed()/60000.0 << "[Error] reading frame " << nFrame << " skipping." << std::endl;
 
             if (nFrame < totFrames)
                 capture.set(CV_CAP_PROP_POS_FRAMES,nFrame+1);
@@ -1315,7 +1318,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             if (nErrorFrames > 20) //Avoid Getting Stuck Here
             {
                 // Too Many Error / Fail On Tracking
-                std::cerr << "[Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                std::cerr << gTimer.elapsed()/60000.0 << "[Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
                 removeDataFile(outdatafile);
 
                 break;
@@ -1354,8 +1357,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         //frame.copyTo(frameDebugD);
         //cv::imshow("Debug D",frameDebugD);
 
-        /// Report Memory Usage Periodically//
-        if ((nFrame%300) == 0 || nFrame == 2)
+        /// Report Memory Usage Periodically - Every realtime Second//
+        if ((nFrame % (uint)gfVidfps) == 0 || nFrame == 2)
         {
             double rss,vm;
             process_mem_usage(vm, rss);
@@ -1364,7 +1367,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
             std::stringstream ss;
             ss.precision(4);
-            ss  << "D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
+            ss  << " [Progress] " << nFrame <<"/" << totFrames << " D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
             window_main.LogEvent(QString::fromStdString(ss.str()));
         }
 
@@ -1404,7 +1407,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
 
-    std::cout << "Exiting video processing loop." <<std::endl;
+    std::clog << gTimer.elapsed()/60000.0 << "[Progress] Exiting video processing loop <<<" <<std::endl;
 
     //Close File
     closeDataFile(outdatafile);
@@ -2334,13 +2337,13 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 void closeDataFile(QFile& data)
 {
     data.close();
-    std::clog << "Closed Output File " << data.fileName().toStdString() << std::endl;
+    std::clog << gTimer.elapsed()/60000 << " Closed Output File " << data.fileName().toStdString() << std::endl;
 }
 
 void removeDataFile(QFile& data)
 {
 
-   std::clog << "Deleting Output File " << data.fileName().toStdString() << std::endl;
+   std::clog << gTimer.elapsed()/60000 << "[Warning] Deleting Output File " << data.fileName().toStdString() << std::endl;
 
    data.deleteLater();
 }
@@ -3338,9 +3341,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //Check If Too Many Eye Detection Failures - Then Switch Template
               if (fish->nFailedEyeDetectionCount > 10)
               {
-
                     fish->idxTemplateRow = iLastKnownGoodTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
-                    pwindow_main->LogEvent(QString("Too Many Eye detection Failures - Change Template Randomly to :" + QString::number(iLastKnownGoodTemplateRow)));
+                    pwindow_main->LogEvent(QString("[warning] Too Many Eye detection Failures - Change Template Randomly to :" + QString::number(iLastKnownGoodTemplateRow)));
               }
 
               /// SPINE Fitting And Drawing ///
