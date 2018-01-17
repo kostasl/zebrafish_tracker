@@ -477,7 +477,7 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
             uchar val = pimgIn.at<uchar>(ellipseSample_pts[i]);
             eyeSegMaxHeap.push(val);
 
-            if (val < minVal)
+            if (val < minVal && val > 0)
                 minVal = val;
 
             if (val > maxVal)
@@ -582,7 +582,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     int ilFloodSeed=imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
     int irFloodSeed=imgUpsampled_gray.at<uchar>(ptREyeMid)+1;
     //int step = (iuFloodRange - ilFloodRange)/6;
-    //Assist by Filling Holes IN Eye Shape - Use Flood Fill Before Thresholding
+    //Assist by Filling Holes IN Eye Shape - Use Fill
     cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(255),0,cv::Scalar(abs(4*ilFloodRange-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
     cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(255),0,cv::Scalar(abs(4*ilFloodRange-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
     //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);

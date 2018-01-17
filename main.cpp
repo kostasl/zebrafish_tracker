@@ -3258,7 +3258,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               ///Draw * Isolation Mask *  Of Eyes Around RotationCentre
               cv::Point ptMask(ptRotCenter.x,ptRotCenter.y+4);
               cv::circle(imgFishAnterior_Norm,ptMask,giHeadIsolationMaskVOffset,CV_RGB(0,0,0),-1); //Mask Body
-              cv::line(imgFishAnterior_Norm,ptMask,cv::Point(imgFishAnterior_Norm.cols/2,0),CV_RGB(0,0,0),1);//Split Eyes
+              cv::line(imgFishAnterior_Norm,ptMask,cv::Point(imgFishAnterior_Norm.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
 
 
