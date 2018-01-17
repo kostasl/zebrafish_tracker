@@ -29,7 +29,7 @@ procsize=40
 num=0
 ##Break It Down To Processing Files
 
-for i in `seq 1 $procsize $lines`; do num=$((num + 1)); echo "Writing Split File VidFilesToProcessSplit$num.txt";sed -n "$i,$((i+procsize)-1) p" VidFilesToProcess.txt > "VidFilesToProcessSplit$num.txt"; done
+for i in `seq 1 $procsize $lines`; do num=$((num + 1)); echo "Writing Split File VidFilesToProcessSplit$num.txt";sed -n "$i,$((i+procsize-1)) p" VidFilesToProcess.txt > "VidFilesToProcessSplit$num.txt"; done
 
 #more unprocessedfiles.txt
 

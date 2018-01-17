@@ -110,7 +110,7 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
+int gi_maxEllipseMajor      = 22; /// thres  for Eye Ellipse Detection methods
 int gi_minEllipseMajor      = 17; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 155; //Threshold For Eye Segmentation In Isolated Head IMage
@@ -1279,6 +1279,9 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             //read the current frame
             if(!capture.read(frame))
             {
+                if (nFrame == (totFrames-1))//save last frame
+                    ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+
                 if (nFrame == startFrameCount)
                 {
                     std::cerr << gTimer.elapsed()/60000.0 << " " <<  nFrame << " [Error]  Unable to read first frame." << std::endl;
@@ -1293,8 +1296,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
                 {
                    std::cerr << gTimer.elapsed()/60000.0 << nFrame << "*Unable to read next frame." << std::endl;
                    std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << " frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
-                   assert(outframe.cols > 1);
-                    ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+                   //assert(outframe.cols > 1);
+
 
                    if (nFrame < totFrames-1)
                    {
