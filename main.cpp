@@ -1284,7 +1284,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
                 if (nFrame == startFrameCount)
                 {
-                    std::cerr << gTimer.elapsed()/60000.0 << " " <<  nFrame << " [Error]  Unable to read first frame." << std::endl;
+                    std::cerr << gTimer.elapsed()/60000.0 << " " <<  nFrame << "# [Error]  Unable to read first frame." << std::endl;
                     nFrame = 0; //Signals To caller that video could not be loaded.
                     //Delete the Track File //
                     std::cerr << gTimer.elapsed()/60000.0 << " [Error] Problem with Tracking - Delete Data File To Signal its Not tracked" << std::endl;
@@ -1294,8 +1294,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
                 }
                 else
                 {
-                   std::cerr << gTimer.elapsed()/60000.0 << nFrame << "*Unable to read next frame." << std::endl;
-                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << " frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << " " << nFrame << "# *Unable to read next frame." << std::endl;
+                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
                    //assert(outframe.cols > 1);
 
 
@@ -3260,8 +3260,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               ///Draw * Isolation Mask *  Of Eyes Around RotationCentre
               cv::Point ptMask(ptRotCenter.x,ptRotCenter.y+4);
-              cv::circle(imgFishAnterior_Norm,ptMask,giHeadIsolationMaskVOffset,CV_RGB(0,0,0),-1); //Mask Body
-              cv::line(imgFishAnterior_Norm,ptMask,cv::Point(imgFishAnterior_Norm.cols/2,0),CV_RGB(0,0,0),1);//Split Eyes
+//              cv::circle(imgFishAnterior_Norm,ptMask,giHeadIsolationMaskVOffset,CV_RGB(0,0,0),-1); //Mask Body
+//              cv::line(imgFishAnterior_Norm,ptMask,cv::Point(imgFishAnterior_Norm.cols/2,0),CV_RGB(0,0,0),1);//Split Eyes
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
 
 

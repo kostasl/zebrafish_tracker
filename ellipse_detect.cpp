@@ -556,45 +556,66 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::GaussianBlur(imgUpsampled_gray,imgUpsampled_gray,cv::Size(3,3),3,3);
 
 
-    //Separate Eyes Mask
-    cv::line(imgUpsampled_gray,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes
-
     // Locate Eye Points //
     double minVal,maxVal;
     cv::Point ptMax,ptMin;
     ///COVER Right Eye - Find Left EYE //
     cv::Rect rRightMask(imgUpsampled_gray.cols/2,0,imgUpsampled_gray.cols,imgUpsampled_gray.rows);
-    cv::Mat imgEyeCover = imgUpsampled_gray.clone();
-    cv::rectangle(imgEyeCover,rRightMask,cv::Scalar(0),-1);
+    cv::Mat imgEyeDiscover = imgUpsampled_gray.clone();
+    // Make Body Mask For bOth //
+    cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3*giHeadIsolationMaskVOffset,CV_RGB(0,250,50),CV_FILLED); //Mask Body
 
+    ///COVER Right Eye - Find Left EYE //
+    cv::Mat imgEyeCover = imgEyeDiscover.clone();
+    cv::rectangle(imgEyeCover,rRightMask,cv::Scalar(0),-1);
+    //Find Eye On Left Side
     cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax);
     ptLEyeMid = ptMax;
 
     ///COVER Left Eye - Find RIGHT EYE //
-    imgEyeCover = imgUpsampled_gray.clone();
+    imgEyeCover = imgEyeDiscover.clone();
     cv::Rect rLeftMask(0,0,imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
     cv::rectangle(imgEyeCover,rLeftMask,cv::Scalar(0),-1);
-    cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax); //Find Centre
+    cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax); //Find Centre of RIght Eye
     ptREyeMid = ptMax;
 
 
     /// Make Arc from Which to get Sample Points For Eye Segmentation
     int ilFloodRange,iuFloodRange;
+    //Fill BG //
+//    cv::floodFill(imgUpsampled_gray, cv::Point(0,0), cv::Scalar(0),0,cv::Scalar(3),cv::Scalar(5));
     int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
     int ilFloodSeed=imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
     int irFloodSeed=imgUpsampled_gray.at<uchar>(ptREyeMid)+1;
-    //int step = (iuFloodRange - ilFloodRange)/6;
+    //int stepL = (ilFloodSeed - ilFloodRange)/gi_minEllipseMajor;
+    //int stepR = (irFloodSeed - ilFloodRange)/gi_minEllipseMajor;
     //Assist by Filling Holes IN Eye Shape - Use Fill
-    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(4*ilFloodRange-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
-    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(4*ilFloodRange-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),cv::FLOODFILL_FIXED_RANGE);
-    //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
+    //cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(2*(ilFloodRange+1)-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),CV_FLOODFILL_FIXED_RANGE);
+    //cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(2*(ilFloodRange+1)-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),CV_FLOODFILL_FIXED_RANGE);
+//    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(ilFloodSeed)/10),cv::Scalar(abs(ilFloodSeed)/10),CV_FLOODFILL_FIXED_RANGE);
+//    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(irFloodSeed)/10),cv::Scalar(abs(irFloodSeed)/10),CV_FLOODFILL_FIXED_RANGE);
 
-    cv::circle(imgUpsampled_gray,ptREyeMid,4,cv::Scalar(255),1,CV_FILLED);
-    cv::circle(imgUpsampled_gray,ptLEyeMid,4,cv::Scalar(255),1,CV_FILLED);
+
+
+    //cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(stepL),cv::Scalar(stepL));
+    //cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(stepR),cv::Scalar(stepR));
+
+    //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
+    //Show Eye Points to User //
+    cv::circle(imgUpsampled_gray,ptREyeMid,2,cv::Scalar(255),1);
+    cv::circle(imgUpsampled_gray,ptLEyeMid,2,cv::Scalar(255),1);
+
+///Show Masks
+    cv::line(imgUpsampled_gray,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,250,50),2);//Split Eyes
+    cv::circle(imgUpsampled_gray,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3*giHeadIsolationMaskVOffset+2,CV_RGB(0,250,50),1); //Mask Body
+
 
 
     cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    //Separate Eyes Mask
+    cv::line(imgIn_thres,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes
+    cv::circle(imgIn_thres,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3*giHeadIsolationMaskVOffset+2,CV_RGB(0,0,0),-1); //Mask Body
 
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
