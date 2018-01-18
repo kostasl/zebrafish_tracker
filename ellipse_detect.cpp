@@ -836,7 +836,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     {
         ret = 0; //SOme Detection Error - Ask To Change Threshold
         //qDebug() << "L eye bound error  MjAxis:" << mjAxis1;
-        pwindow_main->LogEvent("L eye bound error  MjAxis:" + QString::number(mjAxis1) + "is too low");
+        pwindow_main->LogEvent("L eye MjAxis value" + QString::number(mjAxis1) + " is out of bounds   ");
     }
 
     /// Check R Eye Again //
@@ -845,7 +845,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     {
         ret = 0;
         //qDebug() << "R eye bound error MjAxis :" << mjAxis1;
-        pwindow_main->LogEvent("R eye bound error MjAxis :" + QString::number(mjAxis2));
+
+        pwindow_main->LogEvent("R eye MjAxis value" + QString::number(mjAxis2) + " is out of bounds   ");
     }
 
     if (std::abs(area1 - area2) > (std::max(area2,area1)/2))
