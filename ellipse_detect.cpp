@@ -836,7 +836,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     {
         ret = 0; //SOme Detection Error - Ask To Change Threshold
         //qDebug() << "L eye bound error  MjAxis:" << mjAxis1;
-        pwindow_main->LogEvent("L eye bound error  MjAxis:" + QString::number(mjAxis1));
+        pwindow_main->LogEvent("L eye bound error  MjAxis:" + QString::number(mjAxis1) + "is too low");
     }
 
     /// Check R Eye Again //
