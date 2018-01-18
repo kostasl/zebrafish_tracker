@@ -111,13 +111,13 @@ bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in F
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
 int gi_maxEllipseMajor      = 22; /// thres  for Eye Ellipse Detection methods
-int gi_minEllipseMajor      = 17; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+int gi_minEllipseMajor      = 14; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-int gthresEyeSeg                = 155; //Threshold For Eye Segmentation In Isolated Head IMage
+int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 8;
+int gFishTailSpineSegmentLength     = 10;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
 int gFitTailIntensityScanAngleDeg   = 60; //
 
@@ -1411,7 +1411,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
     std::clog << gTimer.elapsed()/60000.0 << "[Progress] Exiting video processing loop <<<" <<std::endl;
-
+    startFrameCount = 1; //Reset This So Next Video Starts from Beginning
+    stopFrame       = 0;//No Stopping on NExt Video
     //Close File
     closeDataFile(outdatafile);
 
@@ -2328,8 +2329,8 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 
         output << " templateScore";
         output << "\t lastTailFitError";
-        output << "\t lEyeFitError";
-        output << "\t rEyeFitError";
+        output << "\t lEyeFitScore";
+        output << "\t rEyeFitScore";
         output << "\t nFailedEyeDetectionCount";
         output << "\t RotiferCount \n";
         //output.flush();

@@ -586,8 +586,8 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 //    cv::floodFill(imgUpsampled_gray, cv::Point(0,0), cv::Scalar(0),0,cv::Scalar(3),cv::Scalar(5));
     int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
-    int ilFloodSeed=imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
-    int irFloodSeed=imgUpsampled_gray.at<uchar>(ptREyeMid)+1;
+    //int ilFloodSeed=imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
+    //int irFloodSeed=imgUpsampled_gray.at<uchar>(ptREyeMid)+1;
     //int stepL = (ilFloodSeed - ilFloodRange)/gi_minEllipseMajor;
     //int stepR = (irFloodSeed - ilFloodRange)/gi_minEllipseMajor;
     //Assist by Filling Holes IN Eye Shape - Use Fill
@@ -601,17 +601,17 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     //cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(stepL),cv::Scalar(stepL));
     //cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(stepR),cv::Scalar(stepR));
 
-    //cv::Laplacian(img_blur,img_edge,CV_8UC1,g_BGthresh);
+
     //Show Eye Points to User //
     cv::circle(imgUpsampled_gray,ptREyeMid,2,cv::Scalar(255),1);
     cv::circle(imgUpsampled_gray,ptLEyeMid,2,cv::Scalar(255),1);
 
-///Show Masks
+    /// Show Masks //
     cv::line(imgUpsampled_gray,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,250,50),2);//Split Eyes
     cv::circle(imgUpsampled_gray,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3*giHeadIsolationMaskVOffset+2,CV_RGB(0,250,50),1); //Mask Body
 
 
-
+    // Do Thresholding Of Masked Image to Obtain Segmented Eyes //
     cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //Separate Eyes Mask
     cv::line(imgIn_thres,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes
