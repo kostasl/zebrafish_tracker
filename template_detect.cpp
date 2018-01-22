@@ -47,11 +47,48 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
     cv::Rect templRegion(cv::Point(0,0),ptbottomRight); //Define A Rect region to snatch SubMatrices
     cv::Point rotCentre = cv::Point(templRegion.width/2,templRegion.height/2);
 
+    //Find Alignment OffSet - Correct Template In Case Its Tilded Already //
+    int iAngleOffset = 0;
+    /// Detect edges using Threshold
+    cv::Mat templ_thres;
+    std::vector<std::vector<cv::Point> > contours;
+    std::vector<cv::Vec4i> hierarchy;
+    //Segment Fish Body Blob
+    int thres = templateIn.at<uchar>(cv::Point(0,0));
+    //cv::threshold( templateIn, templ_thres,thres, 255, cv::THRESH_BINARY );
+    cv::adaptiveThreshold(templateIn, templ_thres,255,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,25,0); //Last Param Is const substracted from mean
+    //ADAPTIVE_THRESH_MEAN_C
+
+    /// Find contours
+    cv::findContours( templ_thres, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
+
+    //Should be one contour
+    if (contours.size() == 1)
+    {
+        cv::RotatedRect rectBody = fitEllipse(contours[0]);
+        iAngleOffset = rectBody.angle; //Make 0 Angle  the vertical image axis
+        if  ((iAngleOffset) > 90) iAngleOffset-=180;
+        if  ((iAngleOffset) < -90) iAngleOffset+=180;
+        std::clog << "[info] makeTemplateVar: correct Template Angle by: " << iAngleOffset << std::endl;
+
+        //Debug Show Shape Centre //
+        cv::circle(templ_thres,rectBody.center,3,100,1);
+
+    }else
+    {
+        std::clog << "[warning] makeTemplateVar: multiple contours detected on template " << std::endl;
+    }
+
+    std::string winname= QString(QString("TemplShape")+QString::number(gnumberOfTemplatesInCache)).toStdString();
+    cv::imshow(winname ,templ_thres);
+
+
+
     //Got through Each Angle
     for (int i=0;i<iAngleIncrements;i++)
     {
         //Make Rotation MAtrix
-        cv::Mat Mrot = cv::getRotationMatrix2D(rotCentre,360.0-ifishtemplateAngle,1.0);
+        cv::Mat Mrot = cv::getRotationMatrix2D(rotCentre,360.0-ifishtemplateAngle+iAngleOffset,1.0);
 
         //Copy to Larger Square
 
