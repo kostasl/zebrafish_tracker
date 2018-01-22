@@ -49,14 +49,16 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 
     //Find Alignment OffSet - Correct Template In Case Its Tilded Already //
     int iAngleOffset = 0;
+    cv::Point ptCentreCorrection(0,0);
     /// Detect edges using Threshold
-    cv::Mat templ_thres;
+    cv::Mat templ_thres,template_blur;
     std::vector<std::vector<cv::Point> > contours;
     std::vector<cv::Vec4i> hierarchy;
+
     //Segment Fish Body Blob
-    int thres = templateIn.at<uchar>(cv::Point(0,0));
     //cv::threshold( templateIn, templ_thres,thres, 255, cv::THRESH_BINARY );
-    cv::adaptiveThreshold(templateIn, templ_thres,255,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,25,0); //Last Param Is const substracted from mean
+    cv::GaussianBlur(templateIn,template_blur,cv::Size(7,7),5,5);
+    cv::adaptiveThreshold(template_blur, templ_thres,255,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,21,0); //Last Param Is const substracted from mean
     //ADAPTIVE_THRESH_MEAN_C
 
     /// Find contours
@@ -66,13 +68,19 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
     if (contours.size() == 1)
     {
         cv::RotatedRect rectBody = fitEllipse(contours[0]);
-        iAngleOffset = rectBody.angle; //Make 0 Angle  the vertical image axis
+        // Make Slight Angle Corrections 0.5 Corrected
+        iAngleOffset = rectBody.angle/2; //Make 0 Angle  the vertical image axis
+
         if  ((iAngleOffset) > 90) iAngleOffset-=180;
         if  ((iAngleOffset) < -90) iAngleOffset+=180;
-        std::clog << "[info] makeTemplateVar: correct Template Angle by: " << iAngleOffset << std::endl;
+
 
         //Debug Show Shape Centre //
         cv::circle(templ_thres,rectBody.center,3,100,1);
+        //Correct For Centre Offset
+
+        ptCentreCorrection.x = tempCentre.x - rectBody.center.x;
+        std::clog << "[info] makeTemplateVar: correct Template DAngle : " << iAngleOffset << " DX:" << ptCentreCorrection.x <<  std::endl;
 
     }else
     {
@@ -95,7 +103,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
         //Get icon SubMatrix from Large Template Mat
         cv::Mat templ_rot = imgTemplateOut(templRegion);
         //ReLocate Template To Centre Of Large Canvas, Before Rotation
-        templateIn.copyTo(templ_rot(cv::Rect(0,0,templateIn.cols,templateIn.rows)+cntrdiff ));
+        templateIn.copyTo(templ_rot(cv::Rect(0,0,templateIn.cols,templateIn.rows)+cntrdiff+ptCentreCorrection ));
         //Make Rotation Transformation
         cv::warpAffine(templ_rot,templ_rot,Mrot,templRegion.size());
 
