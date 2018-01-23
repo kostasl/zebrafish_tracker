@@ -75,13 +75,13 @@
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 50; //Number of frames inactive until track is deleted
+const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
 const int gcMinFoodModelActiveFrames    = 20; //Number of frames inactive until track is deleted
-const int gMaxClusterRadiusFoodToBlob   = 20;
+const int gMaxClusterRadiusFoodToBlob   = 10;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
-const double dLearningRateNominal       = 0.000;
+
 
 const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
@@ -96,11 +96,13 @@ const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter 
 const unsigned int gthres_maxfoodblobarea = 80;
 
 //BG History
-float gfVidfps              = 298;
-const int MOGhistory        = 10;//gfVidfps*2;
+float gfVidfps              = 420;
+const int MOGhistory        = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
+const bool gbUseBGModelling      = true; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
 uint cFrameDelayms          = 1;
-double dLearningRate        = 1.0/(2*MOGhistory);
+const double dLearningRateNominal       = 0.0001;
+double dLearningRate        = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
 
 
 ///Segmentation Params
@@ -227,6 +229,8 @@ bool bDraggingTemplateCentre = false;
 bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
 bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
+bool bRenderToDisplay = true; ///Updates Screen to User When True
+bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -637,7 +641,7 @@ int main(int argc, char *argv[])
     //double dmog2TG = pMOG2->getVarThresholdGen();
     //pMOG2->setVarThresholdGen(1.0);
     //double dmog2VT = pMOG2->getVarThreshold();
-    pMOG2->setVarThreshold(3.0);
+    //pMOG2->setVarThreshold(3.0);
 
     ///////////////////////////////////////
     /// Setup Fish Body Template Cache //
@@ -660,7 +664,7 @@ int main(int argc, char *argv[])
 
 
     int ifileCount =loadTemplatesFromDirectory(gstroutDirCSV + QString("/templates/"));
-    pwindow_main->nFrame = 0;
+    pwindow_main->nFrame = 1;
     pwindow_main->LogEvent(QString::number(ifileCount+nTemplatesToLoad) + QString("# Templates Loaded "));
 
     /// END OF FISH TEMPLATES ///
@@ -690,7 +694,7 @@ int main(int argc, char *argv[])
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
     kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
-    kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
+    kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
 
 
     //unsigned int hWnd = cvGetWindowHandle(sgstrwinName);
@@ -811,11 +815,13 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() <<std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
-       // Removed As MOG Is not Used Currently - Remember to Enable usage in enhanceMask if needed//
-       //getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,istartFrame);
+       // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
+       if (gbUseBGModelling)
+        getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,MOGhistory);
 
        QFileInfo fiVidFile(invideoname);
        window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
+       window_main.nFrame = 0;
        std::cout << "Press p to pause Video processing" << std::endl;
 
        istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame,istopFrame);
@@ -835,30 +841,33 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 ///Create FG Model Image - Since target objects can be/will be are moving from the 1st frame, we need a statistical model
 /// of the BG precalculated
 ///
-unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount)
+unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int MOGhistoryLength)
 {
+
         cv::Mat frame;
+        const int startFrameCount   = 0; //Start Modelling From THe Start
         unsigned int nFrame         = startFrameCount; //Current Frame Number
 
-        std::clog << gTimer.elapsed()/60000.0 << "Starting Background Model processing..." << std::endl;
+        //std::clog << gTimer.elapsed()/60000.0 << " Starting Background Model processing..." << std::endl;
+        pwindow_main->LogEvent(" Starting Background Model processing...");
         //create the capture object
         cv::VideoCapture capture(videoFilename.toStdString());
         if(!capture.isOpened())
         {
             //error in opening the video input
-            std::cerr <<  gTimer.elapsed()/60000.0 << "Unable to open video file: " << videoFilename.toStdString() << std::endl;
+            std::cerr <<  gTimer.elapsed()/60000.0 << " Unable to open video file: " << videoFilename.toStdString() << std::endl;
             std::exit(EXIT_FAILURE);
         }
 
         //read input data. ESC or 'q' for quitting
-        while( !bExiting && (char)keyboard != 27 && nFrame <= (uint) MOGhistory)
+        while( !bExiting && (char)keyboard != 27 && nFrame <= (uint) MOGhistoryLength)
         {
             //read the current frame
             if(!capture.read(frame))
             {
                 if (nFrame == startFrameCount)
                 {
-                    std::cerr << gTimer.elapsed()/60000.0 << "Unable to read first frame." << std::endl;
+                    std::cerr << gTimer.elapsed()/60000.0 <<  " Unable to read first frame." << std::endl;
                     nFrame = 0; //Signals To caller that video could not be loaded.
                     exit(EXIT_FAILURE);
                 }
@@ -906,8 +915,8 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
         //delete kernelClose;
 
 
-        std::clog << gTimer.elapsed()/60000.0 << "Background Processing  loop. Finished" << std::endl;
-
+        //std::clog << gTimer.elapsed()/60000.0 << " Background Processing  loop. Finished" << std::endl;
+        pwindow_main->LogEvent(" Background Processing  loop. Finished");
         return nFrame;
 } ///trackImageSequencefile
 
@@ -937,12 +946,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
     //OPEN CV 2.4
     // dLearningRate is now Nominal value
     frame.copyTo(outframe); //Make Replicate On which we draw output
-    //No Need For MOG!
-    //pMOG2->apply(outframe, fgMask,dLearningRateNominal);
 
 
     ///DRAW ROI
-    drawROI(outframe);
+    if (bRenderToDisplay)
+        drawROI(outframe);
 
 
     //lplframe = frameMasked; //Convert to legacy format
@@ -979,7 +987,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
         //frameDebugD = fgFishMask.clone(); //Stop Leaks
-        fgFishMask.copyTo(frameDebugD);
+        //fgFishMask.copyTo(frameDebugD);
         ////Make image having masked all fish
         //maskedImg_gray.copyTo(maskedfishImg_gray,fgMask); //Mask The Laplacian //Input Already Masked
 
@@ -990,7 +998,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
         //If A fish Is Detected Then Draw Its tracks
         fishModels::iterator ft = vfishmodels.begin();
-        while (ft != vfishmodels.end()) //Render All Fish
+
+        while (ft != vfishmodels.end() && bRenderToDisplay) //Render All Fish
         {
             fishModel* pfish = ft->second;
             assert(pfish);
@@ -1016,7 +1025,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
             //If A fish Is Detected Then Draw Its tracks
             foodModels::iterator ft = vfoodmodels.begin();
-            while (ft != vfoodmodels.end())
+            while (ft != vfoodmodels.end() && bRenderToDisplay)
             {
                 foodModel* pfood = ft->second;
                 assert(pfood);
@@ -1035,7 +1044,9 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
     //Save to Disk
 
     ///
-    drawFrameText(window_main,nFrame,nLarva,vfoodmodels.size(),outframe);
+    /// \brief drawFrameText
+    if (!bRenderToDisplay)
+        drawFrameText(window_main,nFrame,nLarva,vfoodmodels.size(),outframe);
 
 
 
@@ -1358,10 +1369,15 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
         processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
+        if (bRenderToDisplay)
+        {
+            window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
+            window_main.showInsetimg(outframeHead);
+        }
 
-        window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
-        //window_main.showVideoFrame(frame,nFrame); //Show On QT Window
-        window_main.showInsetimg(outframeHead);
+        // Switch Off Render To Display If In Offline Tracking Mode
+        //-Placed Here to Allow 1Frame Short Toggles Of Rendering
+        bRenderToDisplay = !bOffLineTracking;
         //frame.copyTo(frameDebugD);
         //cv::imshow("Debug D",frameDebugD);
 
@@ -1377,6 +1393,11 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             ss.precision(4);
             ss  << " [Progress] " << nFrame <<"/" << totFrames << " D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
             window_main.LogEvent(QString::fromStdString(ss.str()));
+
+            // Render Next Frame To Display
+            if (bOffLineTracking)
+                bRenderToDisplay = true;
+
         }
 
         if (bSaveImages)
@@ -1728,7 +1749,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         // Delete If Inactive For Too Long
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
         if ((pfood->inactiveFrames > gcMaxFoodModelInactiveFrames) ||
-            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > 2)
+            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > 10)
             ) //Check If it Timed Out / Then Delete
         {
             ft = vfoodmodels.erase(ft);
@@ -1844,7 +1865,17 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     }
 
 
-      if ((char)keyboard == 'q')
+    if ((char)keyboard == 'd')
+    {
+      bOffLineTracking = !bOffLineTracking; //Main Loop Will handle this
+      if (bOffLineTracking)
+        pwindow_main->LogEvent(QString(">> Offline Tracking Mode ON <<"));
+      else
+        pwindow_main->LogEvent(QString("<< Offline Tracking Mode OFF >>"));
+    }
+
+
+    if ((char)keyboard == 'q')
         bExiting = true; //Main Loop Will handle this
          //break;
 
@@ -2868,6 +2899,10 @@ cv::Mat threshold_output_COMB_fish;
 /////////// MOG Mask Is not Used Currently //
 
 
+//- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
+pMOG2->apply(frameImg, maskFGImg,dLearningRateNominal);
+
+
 
 ///// Convert image to gray, Mask and
 //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
@@ -2907,9 +2942,6 @@ cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, ker
 
 /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
 /// //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
-//First Find What BG Model Considers to be FG
-//cv::findContours( maskFGImg, fgMaskcontours,fgMaskhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_TC89_KCOS , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-
 outfishbodycontours.clear();
 std::vector<std::vector<cv::Point> > fishbodycontours;
 std::vector<cv::Vec4i> fishbodyhierarchy;
@@ -2917,13 +2949,14 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 //Then Use ThresholdImage TO Trace More detailed Contours
 //cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-//cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE  , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-//threshold_output_COMB.copyTo(frameDebugB);
 
-
+//Make Food Mask OUt Of FG Model /After Removing Noise
+cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1);
+cv::dilate(outFoodMask,outFoodMask,kernelClose,cv::Point(-1,-1),1);
 //threshold_output_COMB.copyTo(outFoodMask);
-outFoodMask = threshold_output_COMB.clone();
-cv::bitwise_and(outFoodMask,maskFGImg,outFoodMask); //Remove Regions OUtside ROI
+//outFoodMask = maskFGImg.clone();
+
+//cv::bitwise_and(outFoodMask,maskFGImg,outFoodMask); //Remove Regions OUtside ROI
 //std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
 
 ///Draw Only the largest contours that should belong to fish
@@ -3044,7 +3077,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Erase Fish From Food Mask
-        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),10);
+        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),15);
         //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),4);
 
 } //For Each Fish Contour
@@ -3147,7 +3180,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
           fishModel* fish = (*it).second;
 
           //fish->bearingAngle   = AngleIdx;
-            if (fish == 0)
+            if (fish == 0 || fish->inactiveFrames > 1)
                 continue;
 
           //Draw A general Region Where the FIsh Is located, search for template within that region only

@@ -846,7 +846,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         ret = 0;
         //qDebug() << "R eye bound error MjAxis :" << mjAxis1;
 
-        pwindow_main->LogEvent("R eye MjAxis value" + QString::number(mjAxis2) + " is out of bounds   ");
+        pwindow_main->LogEvent("R eye MjAxis value: " + QString::number(mjAxis2) + " is out of bounds   ");
     }
 
     if (std::abs(area1 - area2) > (std::max(area2,area1)/2))
