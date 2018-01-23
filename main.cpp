@@ -75,8 +75,9 @@
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 250; //Number of frames inactive until track is deleted
-const int gMaxClusterRadiusFoodToBlob   = 10;
+const int gcMaxFoodModelInactiveFrames  = 50; //Number of frames inactive until track is deleted
+const int gcMinFoodModelActiveFrames    = 20; //Number of frames inactive until track is deleted
+const int gMaxClusterRadiusFoodToBlob   = 20;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
@@ -103,7 +104,7 @@ double dLearningRate        = 1.0/(2*MOGhistory);
 
 
 ///Segmentation Params
-int g_Segthresh             = 30; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 36; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -567,8 +568,10 @@ int main(int argc, char *argv[])
     if ( parser.has("logtofile") )
     {
         qDebug() << "Set Log File To " <<  QString::fromStdString( parser.get<string>("logtofile") );
-
-        foutLog.open(parser.get<string>("logtofile") );
+        QString strLogPath = QString::fromStdString(parser.get<string>("logtofile"));
+        if (!QDir(strLogPath).exists())
+            QDir().mkpath(strLogPath); //Make Path To Logs
+        foutLog.open(strLogPath.toStdString());
 
          // Set the rdbuf of clog.
          std::clog.rdbuf(foutLog.rdbuf());
@@ -1223,10 +1226,12 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     window_main.setTotalFrames(totFrames);
     window_main.nFrame = nFrame;
     window_main.LogEvent(" **Begin Processing: " + videoFilename);
+    std::cout << " **Begin Processing: " << videoFilename.toStdString() << std::endl; //Show Vid Name To StdOUt
     window_main.stroutDirCSV = gstroutDirCSV;
     window_main.vidFilename = videoFilename;
     QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
     window_main.LogEvent(strMsg);
+
     //qDebug() << strMsg;
 
 
@@ -1677,7 +1682,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
              if (fbdist < gMaxClusterRadiusFoodToBlob)
                  bMatch = true;
 
-
+             //Consider only Food Models Within Region Of Blob
              if  (bMatch)
              {
                  qfoodrank.push(pfood);
@@ -1695,6 +1700,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             pfoodBest = qfoodrank.top(); //Get Pointer To Best Scoring Fish
             //qrank.pop();//Remove From Priority Queue Rank
             pfoodBest->inactiveFrames   = 0; //Reset Counter
+            pfoodBest->activeFrames++; //Increase Count Of Consecutive Active Frames
             pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,pfoodBest->blobMatchScore);
 
         }else  ///No Food Model Found - Create A new One //
@@ -1703,7 +1709,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
             vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
             std::stringstream strmsg;
-            strmsg << "# New foodmodel: " << pfoodBest->ID;
+            strmsg << "# New foodmodel: " << pfoodBest->ID << " N:" << vfoodmodels.size();
             std::clog << nFrame << strmsg.str() << std::endl;
 
             pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,500);
@@ -1719,14 +1725,20 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     while(ft != vfoodmodels.end() ) //&& vfishmodels.size() > 1
     {
         pfood = ft->second;
-        if ((nFrame - pfood->nLastUpdateFrame) > gcMaxFoodModelInactiveFrames) //Check If it Timed Out / Then Delete
+        // Delete If Inactive For Too Long
+        //Delete If Not Active for Long Enough between inactive periods / Track Unstable
+        if ((pfood->inactiveFrames > gcMaxFoodModelInactiveFrames) ||
+            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > 2)
+            ) //Check If it Timed Out / Then Delete
         {
-            std::clog << nFrame << "# Deleted foodmodel: " << pfood->ID << std::endl;
             ft = vfoodmodels.erase(ft);
             delete(pfood);
+            std::clog << nFrame << "# Deleted foodmodel: " << pfood->ID << " N:" << vfoodmodels.size() << std::endl;
             continue;
-        }else
+        }
+        else //INcrease Inactive Frame Count For this Food Model
         {
+            pfood->activeFrames = 0; //Reset Count Of Consecutive Active Frames
             pfood->inactiveFrames ++; //Increment Time This Model Has Not Been Active
         }
 

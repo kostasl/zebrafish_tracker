@@ -16,14 +16,16 @@ foodModel::foodModel()
 {
 lastFoodID++;
 inactiveFrames = 0;
+activeFrames = 0;
 blobMatchScore = 0;
 this->ID = lastFoodID;
 
 }
 
-foodModel::foodModel(zfdblob blob,zfdID ID)
+foodModel::foodModel(zfdblob blob,zfdID ID):foodModel()
 {
     inactiveFrames = 0;
+    activeFrames = 0;
     blobMatchScore = 0;
     this->ID = ID;
 

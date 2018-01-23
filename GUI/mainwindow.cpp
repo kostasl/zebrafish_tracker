@@ -316,7 +316,7 @@ void MainWindow::echoChanged(int i)
 
 void MainWindow::changeEvent(QEvent *e)
 {
-    qDebug() << "Change E" << e->type() ;
+    //qDebug() << "Change E" << e->type() ;
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {

@@ -69,7 +69,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
     {
         cv::RotatedRect rectBody = fitEllipse(contours[0]);
         // Make Slight Angle Corrections 0.5 Corrected
-        iAngleOffset = rectBody.angle/2; //Make 0 Angle  the vertical image axis
+        iAngleOffset = rectBody.angle; //Make 0 Angle  the vertical image axis
 
         if  ((iAngleOffset) > 90) iAngleOffset-=180;
         if  ((iAngleOffset) < -90) iAngleOffset+=180;
@@ -80,6 +80,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
         //Correct For Centre Offset
 
         ptCentreCorrection.x = tempCentre.x - rectBody.center.x;
+       // ptCentreCorrection.y //= tempCentre.x - rectBody.center.x;
         std::clog << "[info] makeTemplateVar: correct Template DAngle : " << iAngleOffset << " DX:" << ptCentreCorrection.x <<  std::endl;
 
     }else
@@ -87,8 +88,10 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
         std::clog << "[warning] makeTemplateVar: multiple contours detected on template " << std::endl;
     }
 
-    std::string winname= QString(QString("TemplShape")+QString::number(gnumberOfTemplatesInCache)).toStdString();
-    cv::imshow(winname ,templ_thres);
+
+    // DEBUG //
+    //std::string winname= QString(QString("TemplShape")+QString::number(gnumberOfTemplatesInCache)).toStdString();
+    //cv::imshow(winname ,templ_thres);
 
 
 
@@ -96,7 +99,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
     for (int i=0;i<iAngleIncrements;i++)
     {
         //Make Rotation MAtrix
-        cv::Mat Mrot = cv::getRotationMatrix2D(rotCentre,360.0-ifishtemplateAngle+iAngleOffset,1.0);
+        cv::Mat Mrot = cv::getRotationMatrix2D(rotCentre,360.0-ifishtemplateAngle+iAngleOffset*0.5,1.0);
 
         //Copy to Larger Square
 
