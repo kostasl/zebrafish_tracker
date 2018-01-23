@@ -93,17 +93,17 @@ double dMeanBlobArea                    = 100; //Initial Value that will get upd
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
-const unsigned int gthres_maxfoodblobarea = 80;
+const unsigned int gthres_maxfoodblobarea = 120;
 
 //BG History
-float gfVidfps              = 420;
-const int MOGhistory        = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
-const bool gbUseBGModelling      = true; ///Use BG Modelling TO Segment FG Objects
+float gfVidfps                  = 420;
+const int MOGhistory            = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
+const bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
-uint cFrameDelayms          = 1;
-const double dLearningRateNominal       = 0.0001;
-double dLearningRate        = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+uint cFrameDelayms              = 1;
 
+double dLearningRate            = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+const double dLearningRateNominal       = 0.0001;
 
 ///Segmentation Params
 int g_Segthresh             = 36; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
@@ -635,8 +635,8 @@ int main(int argc, char *argv[])
     //OPENCV 3
 
     pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false);
-    pMOG2->setNMixtures(150);
-    pMOG2->setBackgroundRatio(0.99);
+    pMOG2->setNMixtures(160);
+    pMOG2->setBackgroundRatio(0.98);
 
     //double dmog2TG = pMOG2->getVarThresholdGen();
     //pMOG2->setVarThresholdGen(1.0);
@@ -790,6 +790,7 @@ int main(int argc, char *argv[])
 unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame = 0,unsigned int istopFrame = 0)
 {
     cv::Mat fgMask;
+
     QString invideoname = "*.mp4";
 
     //Show Video list to process
@@ -817,7 +818,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
        if (gbUseBGModelling)
-        getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,MOGhistory);
+            getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,MOGhistory);
 
        QFileInfo fiVidFile(invideoname);
        window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
@@ -845,13 +846,15 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
 {
 
         cv::Mat frame;
-        const int startFrameCount   = 0; //Start Modelling From THe Start
+        const int startFrameCount   = 1; //Start Modelling From THe Start
         unsigned int nFrame         = startFrameCount; //Current Frame Number
+
 
         //std::clog << gTimer.elapsed()/60000.0 << " Starting Background Model processing..." << std::endl;
         pwindow_main->LogEvent(" Starting Background Model processing...");
         //create the capture object
         cv::VideoCapture capture(videoFilename.toStdString());
+
         if(!capture.isOpened())
         {
             //error in opening the video input
@@ -859,8 +862,10 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
             std::exit(EXIT_FAILURE);
         }
 
+        uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT); //Get Length of Video
+        uint uiStopFrame = min(totFrames,MOGhistoryLength);
         //read input data. ESC or 'q' for quitting
-        while( !bExiting && (char)keyboard != 27 && nFrame <= (uint) MOGhistoryLength)
+        while( !bExiting && (char)keyboard != 27 && nFrame < (uint) uiStopFrame)
         {
             //read the current frame
             if(!capture.read(frame))
@@ -873,20 +878,26 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
                 }
                 else
                 {
-                   std::cerr << gTimer.elapsed()/60000.0 << " Unable to read next frame. So this video Is done <<<<<<<" << std::endl;
-                   std::clog << gTimer.elapsed()/60000.0 << " " << nFrame << " frames of Video processed. Move on to next " <<std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << ". Unable to read next frame. So this video Is done <<<<<<<" << std::endl;
+                   std::clog << gTimer.elapsed()/60000.0 << ". " << nFrame << " frames of Video processed. Move on to next " <<std::endl;
                   //  break;
                    continue;
                }
             }
-            //Add frames from Last video
-            nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
-            window_main.nFrame = nFrame;
-            window_main.tickProgress();
+            else
+            {
+                //Add frames from Last video
+                nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
+                window_main.nFrame = nFrame;
+                window_main.tickProgress();
 
-            /// Call Update BG Model ///
-            updateBGFrame(frame,fgMask,nFrame);
+                /// Call Update BG Model ///
+                //if (fgMask.empty())
+                //   fgMask = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC1);
 
+
+                updateBGFrame(frame,fgMask,nFrame);
+            }
             //Hold A copy of Frame With all txt
             //frame.copyTo(frameMasked);
 
@@ -1045,7 +1056,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
     ///
     /// \brief drawFrameText
-    if (!bRenderToDisplay)
+    if (bRenderToDisplay)
         drawFrameText(window_main,nFrame,nLarva,vfoodmodels.size(),outframe);
 
 
@@ -1166,10 +1177,11 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& fgMask, unsigned int nFrame)
         dLearningRate =dLearningRateNominal; //Nominal
         ret = false;
     }
-    dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
-    pMOG2->apply(frame, fgMask,dLearningRate);
+    if (!frame.empty())
+        pMOG2->apply(frame, fgMask,dLearningRate);
     //pKNN->apply(frame, fgMask,dLearningRate);
+    //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);
