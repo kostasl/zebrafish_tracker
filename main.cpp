@@ -97,7 +97,7 @@ const unsigned int gthres_maxfoodblobarea = 120;
 
 //BG History
 float gfVidfps                  = 420;
-const int MOGhistory            = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
+const unsigned int MOGhistory   = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
 const bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
 uint cFrameDelayms              = 1;
@@ -1168,7 +1168,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& fgMask, unsigned int nFrame)
 
     bool ret = true;
     //Speed that stationary objects are removed
-    double dblRatioPxChanged    = 0.0;
+   // double dblRatioPxChanged    = 0.0;
 
     //update the background model
     //OPEN CV 2.4
@@ -1178,6 +1178,9 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& fgMask, unsigned int nFrame)
         ret = false;
     }
 
+    //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
+    //In That case make OpenCV With No CUDA or OPENCL support
+    //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
     if (!frame.empty())
         pMOG2->apply(frame, fgMask,dLearningRate);
     //pKNN->apply(frame, fgMask,dLearningRate);
