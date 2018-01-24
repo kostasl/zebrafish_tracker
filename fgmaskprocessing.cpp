@@ -6,16 +6,16 @@
 ///*
 
 
-/* #include <opencv2\opencv.hpp>
+// #include <opencv2\opencv.hpp>
 #include <opencv2/opencv.hpp>
-using namespace cv;
-// Example Of Mean Image
+
+/*// Example Of Mean Image
 Mat3b getMean(const vector<Mat3b>& images)
 {
     if (images.empty()) return Mat3b();
 
     // Create a 0 initialized image to use as accumulator
-    Mat m(images[0].rows, images[0].cols, CV_64FC3);
+    cv::Mat m(images[0].rows, images[0].cols, CV_64FC3);
     m.setTo(Scalar(0,0,0,0));
 
     // Use a temp image to hold the conversion of each input image to CV_64FC3

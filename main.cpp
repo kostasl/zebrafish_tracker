@@ -811,6 +811,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
        //Empty Vector of Fish Models - Initialiaze
        ReleaseFishModels(vfishmodels);
+       ReleaseFoodModels(vfoodmodels);
+       gi_MaxFoodID = gi_MaxFishID = 1; //Start Ids From The Top For Each Video
 
        invideoname = invideonames.at(i);
        gstrvidFilename = invideoname; //Global
@@ -1367,21 +1369,20 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
         //Make Global Roi on 1st frame if it doesn't prexist
         if (vRoi.size() == 0)
         {
-                ptROI2.x = frame.cols/2;
-                ptROI2.y = gszTemplateImg.height/3;
-            //Add Global Roi - Center - Radius
-                ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
-                addROI(newROI);
+            ptROI2.x = frame.cols/2;
+            ptROI2.y = gszTemplateImg.height/3;
+        //Add Global Roi - Center - Radius
+            ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
+            addROI(newROI);
 
-                //Check If FG Mask Has Been Created - And Make A new One
-                if (fgMask.cols == 0)
-                {
-                    fgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
-                    // Add Roi To Mask Otherwise Make On Based oN ROI
-                    cv::circle(fgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
-                }
+            //Check If FG Mask Has Been Created - And Make A new One
+            if (fgMask.cols == 0)
+            {
+                fgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+                // Add Roi To Mask Otherwise Make On Based oN ROI
+                cv::circle(fgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
+            }
         }
-
 
 
         processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
@@ -1742,7 +1743,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
         }else  ///No Food Model Found - Create A new One //
         {
-            pfoodBest = new foodModel(*foodblob,++gi_MaxFishID);
+            pfoodBest = new foodModel(*foodblob,++gi_MaxFoodID);
 
             vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
             std::stringstream strmsg;

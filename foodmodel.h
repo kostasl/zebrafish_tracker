@@ -47,4 +47,28 @@ class CompareFoodScore {
 };
 
 typedef std::priority_queue<foodModel*,std::vector<foodModel*>,CompareFoodScore> qfoodModels;
+
+
+/// \fn inline void cvReleaseFishModes(fishModels &fishes)
+/// \brief Clear Fish LIst
+/// \param fishmodles List
+/// \see
+inline void ReleaseFoodModels(foodModels &vfood)
+{
+  for (foodModels::iterator it=vfood.begin(); it!=vfood.end(); ++it)
+  {
+      foodModel* pfood = (*it).second;
+        //Let ReleaseTracks Handle This
+//      if (fish->track)
+//      {
+//         fish->track->pointStack.clear();
+//         delete fish->track;
+//      }
+
+      delete pfood;
+  }
+  vfood.clear();
+}
+
+
 #endif // FOODMODEL_H
