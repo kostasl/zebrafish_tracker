@@ -572,10 +572,10 @@ int main(int argc, char *argv[])
     if ( parser.has("logtofile") )
     {
         qDebug() << "Set Log File To " <<  QString::fromStdString( parser.get<string>("logtofile") );
-        QString strLogPath = QString::fromStdString(parser.get<string>("logtofile"));
-        if (!QDir(strLogPath).exists())
-            QDir().mkpath(strLogPath); //Make Path To Logs
-        foutLog.open(strLogPath.toStdString());
+        QFileInfo oLogPath( QString::fromStdString(parser.get<string>("logtofile") ) );
+        if (!oLogPath.absoluteDir().exists())
+            QDir().mkpath(oLogPath.absoluteDir().absolutePath()); //Make Path To Logs
+        foutLog.open(oLogPath.absoluteFilePath().toStdString());
 
          // Set the rdbuf of clog.
          std::clog.rdbuf(foutLog.rdbuf());
@@ -1312,8 +1312,6 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             //read the current frame
             if(!capture.read(frame))
             {
-                if (nFrame == (totFrames-1))//save last frame
-                    ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
 
                 if (nFrame == startFrameCount)
                 {
@@ -1325,27 +1323,30 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
                     exit(EXIT_FAILURE);
                 }
-                else
+                else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
                 {
-                   std::cerr << gTimer.elapsed()/60000.0 << " " << nFrame << "# *Unable to read next frame." << std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << "# *Unable to read next frame." << std::endl;
                    std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
                    //assert(outframe.cols > 1);
 
-
                    if (nFrame < totFrames-1)
                    {
-                       std::cerr << gTimer.elapsed()/60000.0 << " " << nFrame << " [Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked" << std::endl;
-                       removeDataFile(outdatafile);
+                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked" << std::endl;
+                       removeDataFile(outdatafile); //Delete The Output File
                    }
                    else
-                       std::clog << gTimer.elapsed()/60000.0 << " processVideo loop done on frame " << nFrame << std::endl;
+                   {
+                       std::clog << gTimer.elapsed()/60000.0 << " [info] processVideo loop done on frame: " << nFrame << std::endl;
+                         ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+                   }
                    //continue;
                    break;
                }
-            }
+
+            } //Can't Read Next Frame
         }catch(const std::exception &e)
         {
-            std::cerr << gTimer.elapsed()/60000.0 << "[Error] reading frame " << nFrame << " skipping." << std::endl;
+            std::cerr << gTimer.elapsed()/60000.0 << " [Error] reading frame " << nFrame << " skipping." << std::endl;
 
             if (nFrame < totFrames)
                 capture.set(CV_CAP_PROP_POS_FRAMES,nFrame+1);
@@ -1354,7 +1355,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             if (nErrorFrames > 20) //Avoid Getting Stuck Here
             {
                 // Too Many Error / Fail On Tracking
-                std::cerr << gTimer.elapsed()/60000.0 << "[Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                std::cerr << gTimer.elapsed()/60000.0 << " [Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
                 removeDataFile(outdatafile);
 
                 break;
@@ -2971,7 +2972,8 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 //Make Food Mask OUt Of FG Model /After Removing Noise
-cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1);
+cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
+cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),2);
 cv::dilate(outFoodMask,outFoodMask,kernelClose,cv::Point(-1,-1),1);
 //threshold_output_COMB.copyTo(outFoodMask);
 //outFoodMask = maskFGImg.clone();
