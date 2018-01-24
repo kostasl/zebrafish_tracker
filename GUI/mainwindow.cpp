@@ -280,8 +280,11 @@ void MainWindow::tailSizevalueChanged(int i)
 
 void MainWindow::eyevalueChanged(int i)
 {
-    qDebug() << "Eye SpinBox gave " << i;
-    LogEvent(QString("changed Eye Seg Threshold:") + QString::number(i));
+    //qDebug() << "Eye SpinBox gave " << i;
+
+    if (!bSceneMouseLButtonDown)
+        LogEvent(QString("changed Eye Seg Threshold:") + QString::number(i));
+
     gthresEyeSeg = i;
 }
 

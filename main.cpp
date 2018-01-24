@@ -811,10 +811,11 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        //Empty Vector of Fish Models - Initialiaze
        ReleaseFishModels(vfishmodels);
        ReleaseFoodModels(vfoodmodels);
+       gi_MaxFoodID = gi_MaxFishID = 1; //Reset ID Counter
 
        invideoname = invideonames.at(i);
        gstrvidFilename = invideoname; //Global
-       std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() <<std::endl;
+       std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() << " StartFrame: " << istartFrame << std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
@@ -1741,7 +1742,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
         }else  ///No Food Model Found - Create A new One //
         {
-            pfoodBest = new foodModel(*foodblob,++gi_MaxFishID);
+            pfoodBest = new foodModel(*foodblob,++gi_MaxFoodID);
 
             vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
             std::stringstream strmsg;
