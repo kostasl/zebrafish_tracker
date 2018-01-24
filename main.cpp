@@ -836,6 +836,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
             break;
         }
         istartFrame = 1; //Reset So Next Vid Starts From The Beginnning
+        istopFrame = 0; //Rest So No Stopping On Next Video
     }
     return istartFrame;
 }
@@ -1255,7 +1256,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     std::cout << " **Begin Processing: " << videoFilename.toStdString() << std::endl; //Show Vid Name To StdOUt
     window_main.stroutDirCSV = gstroutDirCSV;
     window_main.vidFilename = videoFilename;
-    QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
+    QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames) + " Start:" + QString::number(startFrameCount));
     window_main.LogEvent(strMsg);
 
     //qDebug() << strMsg;
@@ -1453,8 +1454,8 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
     std::clog << gTimer.elapsed()/60000.0 << "[Progress] Exiting video processing loop <<<" <<std::endl;
-    startFrameCount = 1; //Reset This So Next Video Starts from Beginning
-    stopFrame       = 0;//No Stopping on NExt Video
+    //Dont Forget to Reset startFrameCount = 1 So Next Video Starts from Beginning
+    //stopFrame       = 0;//No Stopping on NExt Video
     //Close File
     closeDataFile(outdatafile);
 
