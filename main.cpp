@@ -93,7 +93,7 @@ double dMeanBlobArea                    = 100; //Initial Value that will get upd
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
-const unsigned int gthres_maxfoodblobarea = 120;
+const unsigned int gthres_maxfoodblobarea = 125;
 
 //BG History
 float gfVidfps                  = 420;
@@ -574,7 +574,8 @@ int main(int argc, char *argv[])
         qDebug() << "Set Log File To " <<  QString::fromStdString( parser.get<string>("logtofile") );
         QString strLogPath = QString::fromStdString(parser.get<string>("logtofile"));
         if (!QDir(strLogPath).exists())
-            QDir().mkpath(strLogPath); //Make Path To Logs
+            QDir().mkpath(gstroutDirCSV.append("/logs/")); //Make Path To Logs
+
         foutLog.open(strLogPath.toStdString());
 
          // Set the rdbuf of clog.
