@@ -158,7 +158,7 @@ cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
 cv::Size gszTemplateImg;
 
 //cv::Ptr<cv::BackgroundSubtractor> pMOG; //MOG Background subtractor
-cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
+//cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 //cv::Ptr<cv::BackgroundSubtractorKNN> pKNN; //MOG Background subtractor
 //cv::Ptr<cv::bgsegm::BackgroundSubtractorGMG> pGMG; //GMG Background subtractor
 
@@ -635,9 +635,9 @@ int main(int argc, char *argv[])
     //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 3
 
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false);
-    pMOG2->setNMixtures(160);
-    pMOG2->setBackgroundRatio(0.98);
+    //pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false);
+    //pMOG2->setNMixtures(160);
+    //pMOG2->setBackgroundRatio(0.98);
 
     //double dmog2TG = pMOG2->getVarThresholdGen();
     //pMOG2->setVarThresholdGen(1.0);
@@ -833,7 +833,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        std::cout << "Press p to pause Video processing" << std::endl;
 
 
-        if (processVideo(fgMask,window_main,invideoname,outputFile,istartFrame,istopFrame) == 0)
+        if (processVideo(bgMask,window_main,invideoname,outputFile,istartFrame,istopFrame) == 0)
         {
             std::cerr << gTimer.elapsed()/60000.0 << "Could not process last video - Exiting loop." << std::endl;
             break;
@@ -1074,7 +1074,7 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
 // Process Larva video, removing BG, detecting moving larva- Setting the learning rate will change the time required
 // to remove a pupa from the scene -
 //
-unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString videoFilename, QString outFileCSV, unsigned int startFrameCount,unsigned int stopFrame=0)
+unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString videoFilename, QString outFileCSV, unsigned int startFrameCount,unsigned int stopFrame=0)
 {
 
     //Speed that stationary objects are removed
@@ -1238,16 +1238,16 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             addROI(newROI);
 
             //Check If FG Mask Has Been Created - And Make A new One
-            if (fgMask.cols == 0)
+            if (bgMask.cols == 0)
             {
-                fgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+                bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
                 // Add Roi To Mask Otherwise Make On Based oN ROI
-                cv::circle(fgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
+                cv::circle(bgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
             }
         }
 
-
-        processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
+        //Pass Processed bgMask which Is then passed on to enhanceMask
+        processFrame(window_main,frame,bgMask,nFrame,outframe,outframeHead);
         if (bRenderToDisplay)
         {
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
@@ -2757,14 +2757,14 @@ return iminIdx;
 /// \todo Cross Check Fish Contour With Model Position
 /// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
 ///
-void enhanceMask(const cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
+void enhanceMask(const cv::Mat& frameImg, cv::Mat& bgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
 {
 
 int max_thresh = 255;
 cv::Mat frameImg_gray;
 cv::Mat threshold_output;
 cv::Mat threshold_output_COMB;
-cv::Mat threshold_output_COMB_fish;
+cv::Mat maskFGImg; //The FG Mask - After Removal Of The bgMask Pixels
 
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
@@ -2798,8 +2798,9 @@ cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THR
 
 
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
-if (gbUseBGModelling)
-   // pMOG2->apply(frameImg, maskFGImg,dLearningRateNominal);
+if (gbUseBGModelling && !bgMask.empty()) //We Have a Model In maskFG - So Remove those Stationary Pixels
+    cv::bitwise_xor(threshold_output,bgMask,maskFGImg);
+else
     threshold_output.copyTo(maskFGImg);
 
 /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
@@ -2980,6 +2981,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         cv::imshow("Threshold Out",threshold_output);
         cv::imshow("Fish Mask",outFishMask);
         cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
+        if (!bgMask.empty())
+            cv::imshow("BG Model",bgMask);
     }
 
     // Release Should is done automatically anyway

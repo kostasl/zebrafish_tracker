@@ -68,7 +68,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         cv::Mat bgAcc;
         //std::clog << gTimer.elapsed()/60000.0 << " Starting Background Model processing..." << std::endl;
-        window_main.LogEvent(" Starting Background Model processing:" + videoFilename);
+        window_main.LogEvent(" Starting Stat Pixel from "+ QString::number(MOGhistoryLength)+ " frames Background Model processing:" + videoFilename);
         //create the capture object
         cv::VideoCapture capture(videoFilename.toStdString());
 
@@ -132,7 +132,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
 
                 if (bgAcc.empty()) //Make EMpty Mask
-                    bgAcc = cv::Mat::zeros(frame.rows,frame.cols,CV_32FC(fgMask.channels()));
+                    bgAcc = cv::Mat::zeros(frame.rows,frame.cols,CV_32FC(bgMask.channels()));
 
                 frame.copyTo(frame,bgMask);
                 cv::cvtColor( frame, frame, cv::COLOR_BGR2GRAY);
@@ -166,7 +166,8 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,0);
         cv::threshold(bgAcc,bgMask,uiMaxVal*0.6,255,cv::THRESH_BINARY);
 
-        cv::imshow("BG Model",bgMask);
+        bgMask.convertTo(bgMask,CV_8UC1);
+
 
         //delete capture object
         capture.release();
@@ -215,7 +216,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
     //    pMOG2->apply(frame, fgMask,dLearningRate);
 
     // Detect Food at Lower Thresh //
-    cv::Mat fgMask,fgFishMask,fgFoodMask;
+    cv::Mat bgMask,fgFishMask,fgFoodMask;
 
     ///cv::threshold( frame, threshold_output, g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
@@ -223,13 +224,15 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
     //cv::cvtColor( threshold_output, threshold_output, cv::COLOR_BGR2GRAY);
    // cv::cvtColor( fgMask, fgMask, cv::COLOR_BGR2GRAY);
 
-    enhanceMask(frame,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+    enhanceMask(frame,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
 
     cv::accumulateWeighted(fgFoodMask,bgAcc,0.00001);
     //pKNN->apply(frame, fgMask,dLearningRate);
     //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
-    cv::imshow("FoodMask",fgFoodMask);
-    cv::imshow("Avg Bg Model",bgAcc);
+
+    //DEBUG //
+    //cv::imshow("FoodMask",fgFoodMask);
+    //cv::imshow("Avg Bg Model",bgAcc);
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);
     //pGMG->apply(frame,fgMaskGMG,dLearningRate);
