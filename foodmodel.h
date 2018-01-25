@@ -11,7 +11,7 @@
 #include "zfttracks.h"
 
 extern float gDisplacementThreshold;
-extern uint gi_MaxFoodID       = 0;
+extern uint gi_MaxFoodID;
 
 typedef cv::KeyPoint zfdblob;
 typedef std::vector<zfdblob> zfdblobs;

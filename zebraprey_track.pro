@@ -43,7 +43,8 @@ INCLUDEPATH += /home/klagogia1/OpenCV/opencv-3.3.1/include
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.2.0/build/lib
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib -lopencv_dnn -lopencv_ml -lopencv_objdetect -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_viz -lopencv_core
-LIBS += -L /home/klagogia1/OpenCV/opencv-3.3.1/build/lib
+LIBS += -L /home/klagogia1/OpenCV/opencv-3.3.1/build/lib #Home
+#LIBS += -L /home/kostasl/OpenCV/opencv-3.3.1/build/lib #Office
 LIBS += `pkg-config opencv --libs`
 
 QMAKE_CFLAGS_DEBUG += -v -da -Q
@@ -53,12 +54,13 @@ QMAKE_CFLAGS += -rdynamic
 ##
 ##Assume Libs are copied with the package into
 QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
-QMAKE_LFLAGS += -Wl,--rpath=/opt/Qt/5.9/5.9/gcc_64/lib/
-QMAKE_LFLAGS += -Wl,--rpath=/home/klagogia1/Qt/5.9.2/gcc_64/lib/
+QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.9.2/gcc_64/lib/ ##Office
+QMAKE_LFLAGS += -Wl,--rpath=/home/klagogia1/Qt/5.9.2/gcc_64/lib/ #Home
 
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/opencv/build/lib/
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.0/build-Dbg
-QMAKE_LFLAGS += -Wl,--rpath=/home/klagogia1/OpenCV/opencv-3.3.1/build
+#QMAKE_LFLAGS += -Wl,--rpath=/home/klagogia1/OpenCV/opencv-3.3.1/build #Home
+#QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.1/build #Office
 
 QMAKE_LFLAGS_RPATH=
 ###Using command : cp `ldd larvatrack | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` /libs
@@ -97,7 +99,8 @@ HEADERS += \
     template_detect.h \
     zfttracks.h \
     config.h \
-    foodmodel.h
+    foodmodel.h \
+    fgmaskprocessing.h
 
 
 FORMS += \

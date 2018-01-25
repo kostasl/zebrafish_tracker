@@ -65,7 +65,7 @@ typedef std::vector<zftblob> zftblobs;
 /// \param outFileCSV
 /// \param istartFrame
 unsigned int processVideo(cv::Mat& fgMask,MainWindow& window_main, QString videoFilename,QString outFileCSV,unsigned int istartFrame,unsigned int istopFrame);
-unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount);
+//unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int startFrameCount);
 unsigned int trackImageSequencefiles(MainWindow& window_main);
 //unsigned int trackVideofiles(MainWindow& window_main,QString outputFile);
 unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame,unsigned int istopFrame);
@@ -75,7 +75,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 //void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHead);
 void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead);
 void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,cv::Mat& outframe);
-bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
+//bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 
 ///
 /// \brief detectZfishFeatures - Used to create geometric representations of main zebrafish Features : Eyes, Body, tail

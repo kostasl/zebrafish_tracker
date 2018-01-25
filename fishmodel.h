@@ -19,7 +19,7 @@
 
 extern float gDisplacementThreshold;
 extern int gFishTailSpineSegmentLength;
-extern uint gi_MaxFishID       = 0;
+extern uint gi_MaxFishID;
 
 //extern const int gFishTailSpineSegmentCount;
 

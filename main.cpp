@@ -37,6 +37,7 @@
 #include <ellipse_detect.h>
 #include <template_detect.h>
 #include <zfttracks.h>
+#include <fgmaskprocessing.h>
 
 #include <random>
 
@@ -76,11 +77,11 @@
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
 const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
-const int gcMinFoodModelActiveFrames    = 20; //Number of frames inactive until track is deleted
-const int gMaxClusterRadiusFoodToBlob   = 10;
+const int gcMinFoodModelActiveFrames    = 30; //Number of frames inactive until track is deleted
+const int gMaxClusterRadiusFoodToBlob   = 18;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
-const int thDistanceFood                = 15; //Threshold for distance between track-to blob assignement
+const int thDistanceFood                = 18; //Threshold for distance between track-to blob assignement
 
 
 const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
@@ -93,16 +94,16 @@ double dMeanBlobArea                    = 100; //Initial Value that will get upd
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
-const unsigned int gthres_maxfoodblobarea = 125;
+const unsigned int gthres_maxfoodblobarea = 150;
 
 //BG History
 float gfVidfps                  = 420;
-const unsigned int MOGhistory   = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
-const bool gbUseBGModelling     = false; ///Use BG Modelling TO Segment FG Objects
+const unsigned int MOGhistory   = gfVidfps*6;//Use 3 sec Of Video So rotifers Have Moved  A little
+const bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
-double dLearningRate            = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+double dLearningRate                    = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
 const double dLearningRateNominal       = 0.0001;
 
 ///Segmentation Params
@@ -136,10 +137,6 @@ double gTemplateMatchThreshold  = 0.87; //If not higher than 0.9 The fish body c
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
-
-/// Global Counters ///
-uint gi_MaxFoodID       = 0;
-uint gi_MaxFishID       = 0;
 
 ///Global Variables
 const double sigma = 3.0;
@@ -198,6 +195,9 @@ cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
 fishModels vfishmodels; //Vector containing live fish models
 foodModels vfoodmodels;
+
+uint gi_MaxFishID;
+uint gi_MaxFoodID; //Declared in Model Header Files
 
 MainWindow* pwindow_main = 0;
 
@@ -572,18 +572,11 @@ int main(int argc, char *argv[])
     if ( parser.has("logtofile") )
     {
         qDebug() << "Set Log File To " <<  QString::fromStdString( parser.get<string>("logtofile") );
-<<<<<<< HEAD
-        QString strLogPath = QString::fromStdString(parser.get<string>("logtofile"));
-        if (!QDir(strLogPath).exists())
-            QDir().mkpath(gstroutDirCSV.append("/logs/")); //Make Path To Logs
 
-        foutLog.open(strLogPath.toStdString());
-=======
         QFileInfo oLogPath( QString::fromStdString(parser.get<string>("logtofile") ) );
         if (!oLogPath.absoluteDir().exists())
             QDir().mkpath(oLogPath.absoluteDir().absolutePath()); //Make Path To Logs
         foutLog.open(oLogPath.absoluteFilePath().toStdString());
->>>>>>> 5db3b7fba8393cb75fe9e926cfe2a64a88b7c15e
 
          // Set the rdbuf of clog.
          std::clog.rdbuf(foutLog.rdbuf());
@@ -798,6 +791,7 @@ int main(int argc, char *argv[])
 unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame = 0,unsigned int istopFrame = 0)
 {
     cv::Mat fgMask;
+    cv::Mat bgMask;
 
     QString invideoname = "*.mp4";
 
@@ -816,14 +810,11 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
     for (int i = 0; i<invideonames.size() && !bExiting; ++i)
     {
 
-       //Empty Vector of Fish Models - Initialiaze
+       //Empty Vector of Fish Models - and Reset ID Counter // gi_MaxFoodID = gi_MaxFishID = 1; - Done In Release
        ReleaseFishModels(vfishmodels);
        ReleaseFoodModels(vfoodmodels);
-<<<<<<< HEAD
-       gi_MaxFoodID = gi_MaxFishID = 1; //Start Ids From The Top For Each Video
-=======
-       gi_MaxFoodID = gi_MaxFishID = 1; //Reset ID Counter
->>>>>>> 5db3b7fba8393cb75fe9e926cfe2a64a88b7c15e
+
+
 
        invideoname = invideonames.at(i);
        gstrvidFilename = invideoname; //Global
@@ -832,7 +823,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
        if (gbUseBGModelling)
-            getBGModelFromVideo(fgMask, window_main,invideoname,outfilename,MOGhistory);
+            getBGModelFromVideo(bgMask, window_main,invideoname,outfilename,MOGhistory);
 
        QFileInfo fiVidFile(invideoname);
        window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
@@ -853,96 +844,6 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
     return istartFrame;
 }
 
-
-///*
-///Create FG Model Image - Since target objects can be/will be are moving from the 1st frame, we need a statistical model
-/// of the BG precalculated
-///
-unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int MOGhistoryLength)
-{
-
-        cv::Mat frame;
-        const int startFrameCount   = 1; //Start Modelling From THe Start
-        unsigned int nFrame         = 1; //Current Frame Number
-
-
-        //std::clog << gTimer.elapsed()/60000.0 << " Starting Background Model processing..." << std::endl;
-        pwindow_main->LogEvent(" Starting Background Model processing:" + videoFilename);
-        //create the capture object
-        cv::VideoCapture capture(videoFilename.toStdString());
-
-        if(!capture.isOpened())
-        {
-            //error in opening the video input
-            std::cerr <<  gTimer.elapsed()/60000.0 << " Unable to open video file: " << videoFilename.toStdString() << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-
-        uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT); //Get Length of Video
-        uint uiStopFrame = min(totFrames,MOGhistoryLength);
-        //read input data. ESC or 'q' for quitting
-        while( !bExiting && (char)keyboard != 27 && nFrame < (uint) uiStopFrame)
-        {
-            //read the current frame
-            if(!capture.read(frame))
-            {
-                if (nFrame == startFrameCount)
-                {
-                    std::cerr << gTimer.elapsed()/60000.0 <<  " Unable to read first frame." << std::endl;
-                    nFrame = 0; //Signals To caller that video could not be loaded.
-                    exit(EXIT_FAILURE);
-                }
-                else
-                {
-                   std::cerr << gTimer.elapsed()/60000.0 << ". Unable to read next frame. So this video Is done <<<<<<<" << std::endl;
-                   std::clog << gTimer.elapsed()/60000.0 << ". " << nFrame << " frames of Video processed. Move on to next " <<std::endl;
-                  //  break;
-                   continue;
-               }
-            }
-            else
-            {
-                //Add frames from Last video
-                nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
-                window_main.nFrame = nFrame;
-                window_main.tickProgress();
-
-
-
-                updateBGFrame(frame,fgMask,nFrame);
-            }
-            //Hold A copy of Frame With all txt
-            //frame.copyTo(frameMasked);
-
-            //cvb::CvBlobs blobs;
-            //show the current frame and the fg masks
-            //cv::imshow(gstrwinName, frame);
-            //window_main.showVideoFrame(frame,nFrame); //Show On QT Window
-
-            //cv::imshow(gstrwinName + " FG Mask", fgMask);
-            //cv::imshow("FG Mask MOG", fgMaskMOG);
-            //cv::imshow("FG Mask GMG ", fgMaskGMG);
-
-           // if (!bTracking)
-           //get the input from the keyboard
-           //keyboard = cv::waitKey( cFrameDelayms );
-
-
-           checkPauseRun(&window_main,keyboard,nFrame);
-
-
-        } //main While loop
-        //delete capture object
-        capture.release();
-
-        //delete kernel;
-        //delete kernelClose;
-
-
-        //std::clog << gTimer.elapsed()/60000.0 << " Background Processing  loop. Finished" << std::endl;
-        pwindow_main->LogEvent(" Background Processing  loop. Finished");
-        return nFrame;
-} ///trackImageSequencefile
 
 
 void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
@@ -1166,57 +1067,6 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
 //    cv::putText(outframe, buff, cv::Point(10, 505),
 //            trackFnt,trackFntScale , CV_RGB(10,250,0));
 } //DrawFrameText
-
-
-
-///
-/// \brief updateBGFrame Update BG model for a fixed number of frames
-/// \param frame
-/// \param fgMask
-/// \param nFrame
-/// \return returns false when limit of updates is reached
-///
-bool updateBGFrame(cv::Mat& frame, cv::Mat& fgMask, unsigned int nFrame)
-{
-
-    bool ret = true;
-    //Speed that stationary objects are removed
-   // double dblRatioPxChanged    = 0.0;
-
-    //update the background model
-    //OPEN CV 2.4
-    if (nFrame > MOGhistory)
-    {
-        dLearningRate =dLearningRateNominal; //Nominal
-        ret = false;
-    }
-
-    //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
-    //In That case make OpenCV With No CUDA or OPENCL support
-    //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
-    if (!frame.empty())
-        pMOG2->apply(frame, fgMask,dLearningRate);
-    //pKNN->apply(frame, fgMask,dLearningRate);
-    //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
-
-
-    //pMOG->apply(frame, fgMaskMOG,dLearningRate);
-    //pGMG->apply(frame,fgMaskGMG,dLearningRate);
-
-
-     //OPENCV 3 MORPHOLOGICAL
-    //erode to get rid to food marks
-    //cv::erode(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),3);
-    //Do Close : erode(dilate())
-    //cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
-    //cv::dilate(fgMaskMOG2,fgMaskMOG2,kernel, cv::Point(-1,-1),4);
-    //Apply Open Operation dilate(erode())
-    //cv::morphologyEx(fgMaskMOG2,fgMaskMOG2, cv::MORPH_OPEN, kernel,cv::Point(-1,-1),2);
-
-
-
-    return ret; //If False then tell calling function to stop updating
-}
 
 
 
@@ -1782,8 +1632,9 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             ) //Check If it Timed Out / Then Delete
         {
             ft = vfoodmodels.erase(ft);
+            std::clog << nFrame << "# Delete foodmodel: " << pfood->ID << " N:" << vfoodmodels.size() << std::endl;
             delete(pfood);
-            std::clog << nFrame << "# Deleted foodmodel: " << pfood->ID << " N:" << vfoodmodels.size() << std::endl;
+
             continue;
         }
         else //INcrease Inactive Frame Count For this Food Model
@@ -2948,8 +2799,7 @@ cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THR
 
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
 if (gbUseBGModelling)
-    pMOG2->apply(frameImg, maskFGImg,dLearningRateNominal);
-else
+   // pMOG2->apply(frameImg, maskFGImg,dLearningRateNominal);
     threshold_output.copyTo(maskFGImg);
 
 /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
@@ -2984,7 +2834,7 @@ cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv:
 
 //Make Food Mask OUt Of FG Model /After Removing Noise
 cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
-cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),2);
+cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1);
 cv::dilate(outFoodMask,outFoodMask,kernelClose,cv::Point(-1,-1),1);
 //threshold_output_COMB.copyTo(outFoodMask);
 //outFoodMask = maskFGImg.clone();
