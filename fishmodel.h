@@ -19,6 +19,8 @@
 
 extern float gDisplacementThreshold;
 extern int gFishTailSpineSegmentLength;
+extern uint gi_MaxFishID       = 0;
+
 //extern const int gFishTailSpineSegmentCount;
 
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
@@ -220,6 +222,7 @@ inline void ReleaseFishModels(fishModels &fishes)
       delete fish;
   }
   fishes.clear();
+  gi_MaxFishID = 1; //Reset ID Counter
 }
 
 

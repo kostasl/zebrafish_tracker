@@ -11,7 +11,7 @@
 #include "zfttracks.h"
 
 extern float gDisplacementThreshold;
-
+extern uint gi_MaxFoodID       = 0;
 
 typedef cv::KeyPoint zfdblob;
 typedef std::vector<zfdblob> zfdblobs;
@@ -48,8 +48,7 @@ class CompareFoodScore {
 
 typedef std::priority_queue<foodModel*,std::vector<foodModel*>,CompareFoodScore> qfoodModels;
 
-
-/// \fn inline void cvReleaseFishModes(fishModels &fishes)
+/// \fn inline void cvReleaseFoodModels(fishModels &fishes)
 /// \brief Clear Fish LIst
 /// \param fishmodles List
 /// \see
@@ -68,6 +67,7 @@ inline void ReleaseFoodModels(foodModels &vfood)
       delete pfood;
   }
   vfood.clear();
+  gi_MaxFoodID = 1; //Reset COunter from Where IDs are drawn
 }
 
 

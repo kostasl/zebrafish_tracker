@@ -98,7 +98,7 @@ const unsigned int gthres_maxfoodblobarea = 125;
 //BG History
 float gfVidfps                  = 420;
 const unsigned int MOGhistory   = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
-const bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
+const bool gbUseBGModelling     = false; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
@@ -572,11 +572,18 @@ int main(int argc, char *argv[])
     if ( parser.has("logtofile") )
     {
         qDebug() << "Set Log File To " <<  QString::fromStdString( parser.get<string>("logtofile") );
+<<<<<<< HEAD
         QString strLogPath = QString::fromStdString(parser.get<string>("logtofile"));
         if (!QDir(strLogPath).exists())
             QDir().mkpath(gstroutDirCSV.append("/logs/")); //Make Path To Logs
 
         foutLog.open(strLogPath.toStdString());
+=======
+        QFileInfo oLogPath( QString::fromStdString(parser.get<string>("logtofile") ) );
+        if (!oLogPath.absoluteDir().exists())
+            QDir().mkpath(oLogPath.absoluteDir().absolutePath()); //Make Path To Logs
+        foutLog.open(oLogPath.absoluteFilePath().toStdString());
+>>>>>>> 5db3b7fba8393cb75fe9e926cfe2a64a88b7c15e
 
          // Set the rdbuf of clog.
          std::clog.rdbuf(foutLog.rdbuf());
@@ -812,11 +819,15 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        //Empty Vector of Fish Models - Initialiaze
        ReleaseFishModels(vfishmodels);
        ReleaseFoodModels(vfoodmodels);
+<<<<<<< HEAD
        gi_MaxFoodID = gi_MaxFishID = 1; //Start Ids From The Top For Each Video
+=======
+       gi_MaxFoodID = gi_MaxFishID = 1; //Reset ID Counter
+>>>>>>> 5db3b7fba8393cb75fe9e926cfe2a64a88b7c15e
 
        invideoname = invideonames.at(i);
        gstrvidFilename = invideoname; //Global
-       std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() <<std::endl;
+       std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() << " StartFrame: " << istartFrame << std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
@@ -826,16 +837,18 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        QFileInfo fiVidFile(invideoname);
        window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
        window_main.nFrame = 0;
+       window_main.tickProgress(); //Update Slider
+
        std::cout << "Press p to pause Video processing" << std::endl;
 
-       istartFrame = processVideo(fgMask,window_main,invideoname,outputFile,istartFrame,istopFrame);
 
-
-        if (istartFrame == 0)
+        if (processVideo(fgMask,window_main,invideoname,outputFile,istartFrame,istopFrame) == 0)
         {
             std::cerr << gTimer.elapsed()/60000.0 << "Could not process last video - Exiting loop." << std::endl;
             break;
         }
+        istartFrame = 1; //Reset So Next Vid Starts From The Beginnning
+        istopFrame = 0; //Rest So No Stopping On Next Video
     }
     return istartFrame;
 }
@@ -850,11 +863,11 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
 
         cv::Mat frame;
         const int startFrameCount   = 1; //Start Modelling From THe Start
-        unsigned int nFrame         = startFrameCount; //Current Frame Number
+        unsigned int nFrame         = 1; //Current Frame Number
 
 
         //std::clog << gTimer.elapsed()/60000.0 << " Starting Background Model processing..." << std::endl;
-        pwindow_main->LogEvent(" Starting Background Model processing...");
+        pwindow_main->LogEvent(" Starting Background Model processing:" + videoFilename);
         //create the capture object
         cv::VideoCapture capture(videoFilename.toStdString());
 
@@ -894,9 +907,6 @@ unsigned int getBGModelFromVideo(cv::Mat& fgMask,MainWindow& window_main,QString
                 window_main.nFrame = nFrame;
                 window_main.tickProgress();
 
-                /// Call Update BG Model ///
-                //if (fgMask.empty())
-                //   fgMask = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC1);
 
 
                 updateBGFrame(frame,fgMask,nFrame);
@@ -1258,7 +1268,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
     std::cout << " **Begin Processing: " << videoFilename.toStdString() << std::endl; //Show Vid Name To StdOUt
     window_main.stroutDirCSV = gstroutDirCSV;
     window_main.vidFilename = videoFilename;
-    QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames));
+    QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames) + " Start:" + QString::number(startFrameCount));
     window_main.LogEvent(strMsg);
 
     //qDebug() << strMsg;
@@ -1288,6 +1298,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             bStartFrameChanged = false;
             //Since we are jumping Frames - The fish Models Are invalidated / Delete
             ReleaseFishModels(vfishmodels);
+            ReleaseFoodModels(vfoodmodels);
         }
 
 
@@ -1313,8 +1324,6 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             //read the current frame
             if(!capture.read(frame))
             {
-                if (nFrame == (totFrames-1))//save last frame
-                    ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
 
                 if (nFrame == startFrameCount)
                 {
@@ -1326,27 +1335,30 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
                     exit(EXIT_FAILURE);
                 }
-                else
+                else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
                 {
-                   std::cerr << gTimer.elapsed()/60000.0 << " " << nFrame << "# *Unable to read next frame." << std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << "# *Unable to read next frame." << std::endl;
                    std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
                    //assert(outframe.cols > 1);
 
-
                    if (nFrame < totFrames-1)
                    {
-                       std::cerr << gTimer.elapsed()/60000.0 << " " << nFrame << " [Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked" << std::endl;
-                       removeDataFile(outdatafile);
+                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked" << std::endl;
+                       removeDataFile(outdatafile); //Delete The Output File
                    }
                    else
-                       std::clog << gTimer.elapsed()/60000.0 << " processVideo loop done on frame " << nFrame << std::endl;
+                   {
+                       std::clog << gTimer.elapsed()/60000.0 << " [info] processVideo loop done on frame: " << nFrame << std::endl;
+                         ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+                   }
                    //continue;
                    break;
                }
-            }
+
+            } //Can't Read Next Frame
         }catch(const std::exception &e)
         {
-            std::cerr << gTimer.elapsed()/60000.0 << "[Error] reading frame " << nFrame << " skipping." << std::endl;
+            std::cerr << gTimer.elapsed()/60000.0 << " [Error] reading frame " << nFrame << " skipping." << std::endl;
 
             if (nFrame < totFrames)
                 capture.set(CV_CAP_PROP_POS_FRAMES,nFrame+1);
@@ -1355,7 +1367,7 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
             if (nErrorFrames > 20) //Avoid Getting Stuck Here
             {
                 // Too Many Error / Fail On Tracking
-                std::cerr << gTimer.elapsed()/60000.0 << "[Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                std::cerr << gTimer.elapsed()/60000.0 << " [Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
                 removeDataFile(outdatafile);
 
                 break;
@@ -1454,12 +1466,12 @@ unsigned int processVideo(cv::Mat& fgMask, MainWindow& window_main, QString vide
 
 
     std::clog << gTimer.elapsed()/60000.0 << "[Progress] Exiting video processing loop <<<" <<std::endl;
-    startFrameCount = 1; //Reset This So Next Video Starts from Beginning
-    stopFrame       = 0;//No Stopping on NExt Video
+    //Dont Forget to Reset startFrameCount = 1 So Next Video Starts from Beginning
+    //stopFrame       = 0;//No Stopping on NExt Video
     //Close File
     closeDataFile(outdatafile);
 
-    return nFrame;
+    return nFrame; //Return Number of Last Frame Processed
 }
 
 
@@ -2916,10 +2928,6 @@ cv::Mat threshold_output_COMB_fish;
 /////////// MOG Mask Is not Used Currently //
 
 
-//- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
-pMOG2->apply(frameImg, maskFGImg,dLearningRateNominal);
-
-
 
 ///// Convert image to gray, Mask and
 //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
@@ -2936,6 +2944,13 @@ outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 // Detect Food at Lower Thresh //
 cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
+
+
+//- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
+if (gbUseBGModelling)
+    pMOG2->apply(frameImg, maskFGImg,dLearningRateNominal);
+else
+    threshold_output.copyTo(maskFGImg);
 
 /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
 //frameImg_gray.copyTo(frameImg_gray,maskFGImg);
@@ -2968,7 +2983,8 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 //Make Food Mask OUt Of FG Model /After Removing Noise
-cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1);
+cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
+cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),2);
 cv::dilate(outFoodMask,outFoodMask,kernelClose,cv::Point(-1,-1),1);
 //threshold_output_COMB.copyTo(outFoodMask);
 //outFoodMask = maskFGImg.clone();
