@@ -184,8 +184,8 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
       while(templRegion.x < imgtemplCache.cols ){
         //Obtain next Template At Angle
          templ_rot = imgtemplCache(templRegion);
-        //Convolution
-        cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv,CV_TM_CCOEFF_NORMED);
+        //Convolution  // CV_TM_SQDIFF_NORMED Poor Matching
+        cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv, CV_TM_CCORR_NORMED  );// CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
         //Find Min Max Location
         cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
         //Assume Value < 0.7 is non Fish,
@@ -201,8 +201,16 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
         }
 
         //Shift Region To Next Block
-        templRegion.x +=templSz.width;
-        Colidx++;
+        if (findFirstMatch) //Skip Cols If Just Scanning
+        {
+            templRegion.x +=3*templSz.width;
+            Colidx+=3;
+        }
+        else
+        {
+            templRegion.x +=templSz.width;
+            Colidx++;
+        }
       } //Loop Through Columns/Angle
 
 
