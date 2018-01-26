@@ -5,6 +5,7 @@ echo "Finds Which videos at param dir do not have tracked .csv file in the curre
 
 DATDIR=$1
 VIDDIR=$2
+PARPROC=$3
 
 echo $VIDDIR
 echo $DATDIR
@@ -16,6 +17,7 @@ find $VIDDIR -maxdepth 3 > vidfilesfullpath.txt
 cat vidfilesfullpath.txt | sed 's,^[^/]*/,,' | sed s/\.[^\.]*$// | sed 's/.*\///' |sed '/^$/d' | sort | uniq > vidfilelist.txt
 diff --changed-group-format='%>' --unchanged-group-format='' datafileslist.txt vidfilelist.txt > unprocessedfiles.txt
 
+
 echo "There are :"
 wc -l unprocessedfiles.txt
 echo " unprocessed video files in $VIDDIR" 
@@ -25,7 +27,11 @@ echo "--------------------------"
 grep -f unprocessedfiles.txt vidfilesfullpath.txt > VidFilesToProcess.txt
 
 lines=`wc -l VidFilesToProcess.txt | cut -f1 -d' '`
-procsize=62
+#procsize=$lines
+
+procsize=`echo $lines $PARPROC | awk '{print int($1/$2)}'`
+echo "Splitting for $PARPROC , each $procsize"
+
 num=0
 ##Break It Down To Processing Files
 
