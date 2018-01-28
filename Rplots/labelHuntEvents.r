@@ -21,7 +21,7 @@ labelHuntEvents <- function(datHuntEvent,strVideoFilePath,strTrackerPath)
                full.names = TRUE, recursive = TRUE,
                ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
     
-    message(paste("\n Examining Hunt Event of Larva:",rec$larvaID," Event:",rec$eventID, "Video:",rec$filenames) )
+    message(paste("\n Examining Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames) )
     ##--
     strArgs = paste(" --invideofile=",strVideoFile," --outputdir=",strTrackeroutPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame,sep="")
     message(strArgs)

@@ -19,10 +19,10 @@ histj<- function(x,y,x.breaks,y.breaks){
 
 hbinRL = list();
 idx = 1;
-for (i in vlarvaID)
+for (i in vexpID)
 {
   print(i)  
-  datLarvalAllFrames <- datAllGroupFrames[datAllGroupFrames$larvaID == i & datAllGroupFrames$REyeAngle > -35 & datAllGroupFrames$REyeAngle <  35 & datAllGroupFrames$LEyeAngle > -35 & datAllGroupFrames$LEyeAngle <  35,]
+  datLarvalAllFrames <- datAllGroupFrames[datAllGroupFrames$expID == i & datAllGroupFrames$REyeAngle > -35 & datAllGroupFrames$REyeAngle <  35 & datAllGroupFrames$LEyeAngle > -35 & datAllGroupFrames$LEyeAngle <  35,]
   strScatterplotFileName <- paste("plots/scatter/EyeAngleScatter-Set-",strCond,"-lID_",i,".pdf",collapse=NULL);
   strDensityplotFileName <- paste("plots/densities/EyeAngleDensity-Set-",strCond,"-lID_",i,".pdf",collapse=NULL);
   
@@ -83,7 +83,7 @@ hGroupbinDensity <- Reduce('+', hbinRL)
 strDensityplotFileName <- paste("plots/binDensity/EyeAngleDensity-BINSet-",strCond,".pdf",collapse=NULL,sep="");
 pdf(strDensityplotFileName,width=8,height=8)
 image((-35:35),(-35:35),hGroupbinDensity,axes=TRUE,col=r)
-sampleSize  <- length(vlarvaID) #Number of Larvae Used 
+sampleSize  <- length(vexpID) #Number of Larvae Used 
 title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
 dev.off()
 ###
@@ -102,7 +102,7 @@ dev.off()
 # #   message(paste("**Warning changed kde BWdth to fixed value -> ",bw));
 # #   }
 # image(eGroupDens,col=r)
-# sampleSize  <- length(vlarvaID) #Number of Larvae Used 
+# sampleSize  <- length(vexpID) #Number of Larvae Used 
 # title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
 # dev.off()
 ################################

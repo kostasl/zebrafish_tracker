@@ -12,7 +12,7 @@
 #################
 
 
-calcMotionStat <- function(datAllFrames,vlarvaID)
+calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 {
   message("##Start Trajectory Analysis For Group##")
   lGroupMotion    <- list()
@@ -21,14 +21,14 @@ calcMotionStat <- function(datAllFrames,vlarvaID)
   lTEventSinuosity     <- list()
 
   idx             <- 0
-  nLarva  	      <- length(vlarvaID)
+  nLarva  	      <- length(vexpID)
   nEventsAnalysed <- 0
   nTotalFrames    <- 0
   
-  for (i in vlarvaID)
+  for (i in vexpID)
   {
     idx                 <- idx+1;
-    datLarvaFrames      <- datAllFrames[datAllFrames$larvaID == i,]
+    datLarvaFrames      <- datAllFrames[datAllFrames$expID == i,]
     vEventID            <- unique((datLarvaFrames$eventID))
     ##Reset Variables ##
     nEventsAnalysed        <- 0
@@ -61,6 +61,7 @@ calcMotionStat <- function(datAllFrames,vlarvaID)
       ## Filter Out Tracking Loses Set to poxX,Y=0
 	    datEventFrames       <- datLarvaFrames[datLarvaFrames$eventID == k & datLarvaFrames$posX > 0 & datLarvaFrames$posY > 0,]
 
+	    larvaID = unique((datEventFrames$larvaID))
 	    ##Consider Only if there are at least 100 frames Durations Minimum Duration  / Here MisUsing The Name EpisodeDuration
 	    if  (NROW(datEventFrames$frameN) > 100)
 	    {
@@ -78,13 +79,13 @@ calcMotionStat <- function(datAllFrames,vlarvaID)
 	      
 	      if (any(is.nan(dEventSpeed)))
 	      {
-	        stop(paste("Speed is NaN, larvaID:",i,",eventID",k) )
+	        stop(paste("Speed is NaN, expID:",i,",eventID",k) )
 	      }
 	      ##Check If Some Video Frame Stuck Error Has Occured 
 	      if (sum(dEventSpeed) == 0 && NROW(datEventFrames$frameN) > 2000)
 	      {
-	        warning(paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , larvaID:",i,",eventID",k) )
-	        message((paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , larvaID:",i,",eventID",k) ))
+	        warning(paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) )
+	        message((paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) ))
 	      }
 	        
 	      
@@ -101,7 +102,7 @@ calcMotionStat <- function(datAllFrames,vlarvaID)
 	      
 	      if (any(is.nan(dEventSinuosity)))
 	      {
-	        message(paste("Sinuosity is NaN, larvaID:",i,",eventID",k) )
+	        message(paste("Sinuosity is NaN, expID:",i,",eventID",k) )
 	        
 	      }
 	      stopifnot(any(is.nan(dEventSinuosity))==FALSE)
@@ -175,24 +176,25 @@ calcMotionStat <- function(datAllFrames,vlarvaID)
   
     ## Colllect Larval Totals into Group Data
     ##+ Number of Hunting Events Counted as points where eyevergence events are more than 300 frames apart  ##
-    lGroupMotion[[idx]] = list(larvaID=i,
-                               dataSetID=DataSetID,
-                               totalframes=length(datLarvaFrames$frameN),
-                               totalAnalysedframes=nLarvalAnalysedFrames,
-                               numberOfEvents=nEventsAnalysed,
-                               vDisplacements=vTDisplacement,
-                               totalDisplacement=totalDisplacement,
-                               vSpeed = vTSpeed,
-                               meanSpeed=meanSpeed,
-                               sdSpeed=meanSpeed,
-                               maxSpeed=maxSpeed,
-                               medSpeed=medSpeed,
-                               movementRatio=movementRatio, 
-                               meanSinuosity = meanSinuosity,
-                               sdSinuosity = sdSinuosity,
-                               medSinuosity = medSinuosity,
-                               maxSinuosity =  maxSinuosity,
-                               minSinuosity = minSinuosity
+    lGroupMotion[[idx]] = data.frame(expID=factor(i,levels=vexpID), 
+                                   larvaID=factor(larvaID,levels=seq(1:4)),
+                                   dataSetID=factor(DataSetID,levels=vdatasetID),
+                                   totalframes=length(datLarvaFrames$frameN),
+                                   totalAnalysedframes=nLarvalAnalysedFrames,
+                                   numberOfEvents=nEventsAnalysed,
+                                   vDisplacements=vTDisplacement,
+                                   totalDisplacement=totalDisplacement,
+                                   vSpeed = vTSpeed,
+                                   meanSpeed=meanSpeed,
+                                   sdSpeed=meanSpeed,
+                                   maxSpeed=maxSpeed,
+                                   medSpeed=medSpeed,
+                                   movementRatio=movementRatio, 
+                                   meanSinuosity = meanSinuosity,
+                                   sdSinuosity = sdSinuosity,
+                                   medSinuosity = medSinuosity,
+                                   maxSinuosity =  maxSinuosity,
+                                   minSinuosity = minSinuosity
                                )
 
     
@@ -206,6 +208,8 @@ calcMotionStat <- function(datAllFrames,vlarvaID)
 #  datGroupHunting = as.data.frame(lGroupHunting)
   #vDisplacements = as.vector(do.call(rbind,lapply(datGroupMotion,"[[,","vDisplacements")))
   vDataSetID            <- unlist(datGroupMotion[,"dataSetID"])
+  vexpID          <- unlist(datGroupMotion[,"expID"])
+  vlarvaID          <- unlist(datGroupMotion[,"larvaID"])
   vDisplacements <- as.vector(unlist(datGroupMotion[,"vDisplacements"])) ##Distance Per Event
   vSpeed <- as.vector(unlist(datGroupMotion[,"vSpeed"]))
   vmeanSpeed <- as.vector(unlist(datGroupMotion[,"meanSpeed"])) ##Mean Speed Of Each Larva In Group
@@ -270,11 +274,16 @@ calcMotionStat <- function(datAllFrames,vlarvaID)
     meanMotionRatio = 0;
 
     }
+  ##Exp ID LookUp Table So Ican locate the same larva Across Empty->Live Condition
+  ## 
+  datLT <- data.frame(cbind(larvaID=levels(datGroupMotion$larvaID)[datGroupMotion$larvaID],expID=levels(datGroupMotion$expID)[datGroupMotion$expID],dataSetID=levels(datGroupMotion$dataSetID)[datGroupMotion$dataSetID]))
+  udatLT <- unique(datLT)
   
   
     ###Return Results As List of Variable
     lGroupMotionStats <- list(nLarva=nLarva,
                            vDataSetID          = vDataSetID,
+                           vIDLookupTable                = udatLT,
                             totalFrames   = nAnalysedFrames,
                             totalMotionFrames = nMotionFrames,
                             vEventCounts   = vEventCounts, ##Vectors Containing Means Per Larva In Group

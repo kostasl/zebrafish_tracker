@@ -28,6 +28,9 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   ##RUN IMPORT FUNCTION
   datAllFrames <-importTrackerFilesToFrame(groupsrcdatList)
   datAllFrames$dataSet <- idxDataSet ##Identify DataSet
+  
+  stopifnot(length(datAllFrames[which(is.na(datAllFrames$expID) ),]  ) == 0)
+  
   save(datAllFrames,groupsrcdatList,file=strDataFileName) ##Save With Dataset Idx Identifier
   
   #idxDataSet = idxDataSet + 1

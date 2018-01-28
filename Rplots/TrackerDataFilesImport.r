@@ -60,16 +60,28 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
       procDatFrames = procDatFrames + length(TrackerData[[i]][[j]]$frameN);
       message(paste("Found #Rec:",  length(TrackerData[[i]][[j]]$frameN) ))
       
-      ##Extract Larva ID
+      ##Extract Experiment ID
       brokenname = strsplit(temp[[j]],"_")
-      larvaID =  as.numeric(brokenname[[1]][length(brokenname[[1]])-3]);
+      expID =  as.numeric(brokenname[[1]][length(brokenname[[1]])-3]);
       eventID = as.numeric(brokenname[[1]][length(brokenname[[1]])-2]);
       
+      ##Extract Larva ID - Identifies larva in group across food condition - ie which larva in Empty group is the same one in the fed group
+      #NOTE: Only Available In files names of more Recent Experiments
+      larvaID <- as.integer( gsub("[^0-9]","",brokenname[[1]][length(brokenname[[1]])-4]) )
+      if(!is.numeric(larvaID)  ) ##Check As it Could Be missing
+      {
+        larvaID <- NA
+        warning(paste("No LarvaID In Filename ",temp[[j]] ) )
+      }
+       
       #Filter Out Empty Files - ones with less than 300 frames ( ~1 sec of data )
-      if (!(is.numeric(larvaID) || !is.numeric(eventID) || !is.na(larvaID) || !is.na(eventID)  ) ) 
+      if (!(is.numeric(expID) || !is.numeric(eventID) || !is.na(expID) || !is.na(eventID)  ) ) 
       {
         stop(paste("Could not extract Larva ID and event ID from File Name ",temp[[j]]))
       }
+      
+      stopifnot(!is.na(expID))
+      stopifnot(!is.na(eventID))
       
       ##FILTER Out NA values - Set to 0
       #message(NROW(TrackerData[[i]][[j]][is.na(TrackerData[[i]][[j]]$EyeLDeg),]))
@@ -91,16 +103,18 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
       
       if ( length(TrackerData[[i]][[j]]$frameN) > 1  )
       {       
+        Nn <- length(TrackerData[[i]][[j]]$EyeLDeg)
         datProcessed[[procDatIdx]] = data.frame(LEyeAngle= medianf(TrackerData[[i]][[j]]$EyeLDeg,nFrWidth),
                                                 REyeAngle= medianf(TrackerData[[i]][[j]]$EyeRDeg,nFrWidth),
                                                 posX = TrackerData[[i]][[j]]$Centroid_X,
                                                 posY =TrackerData[[i]][[j]]$Centroid_Y,
                                                 frameN=TrackerData[[i]][[j]]$frameN,
-                                                fileIdx=rep(j,length(TrackerData[[i]][[j]]$EyeLDeg)),
-                                                larvaID=rep(larvaID,length(TrackerData[[i]][[j]]$EyeLDeg)),
-                                                eventID=rep(eventID,length(TrackerData[[i]][[j]]$EyeLDeg)),
-                                                trackID=rep(eventID,length(TrackerData[[i]][[j]]$fishID)),
-                                                group=rep(i,length(TrackerData[[i]][[j]]$EyeLDeg)  )
+                                                fileIdx=rep(j,Nn),
+                                                expID=rep(expID,Nn),
+                                                eventID=rep(eventID,Nn),
+                                                larvaID=rep(larvaID,Nn),
+                                                trackID=rep(eventID,Nn),
+                                                group=rep(i,Nn)
         );
         
         groupDatIdx = groupDatIdx + 1; ##Count Of Files Containing Data
@@ -115,11 +129,12 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 posY = 0,
                                                 frameN=0,
                                                 fileIdx=j,
-                                                larvaID=larvaID,
+                                                expID=expID,
                                                 eventID=eventID,
+                                                larvaID=larvaID,
                                                 trackID=0,
                                                 group=i );
-        message(paste("No Data for Larva",larvaID,"event ",eventID))
+        message(paste("No Data for ΕχpID",expID,"event ",eventID," larva ",larvaID))
         
       }
       

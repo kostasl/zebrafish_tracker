@@ -7,6 +7,7 @@
 #            
 # Consider What the Hunt Ratio Is On a No Show Larva? Currently Set To 0 - 
 #TODO: Add Colour Marker of Hunting On Trajectories
+# ## Pio Eykolo Na diaspasoume to Atomo Para mia prokatalipsi ##
 library(tools)
 library(RColorBrewer);
 library("MASS");
@@ -23,43 +24,47 @@ source("labelHuntEvents.r")
 
 ## Required Variables - Locations 
 # Home Desktop
-#strVideoFilePath <- "/media/extStore/ExpData/zebrafish_preycapturesetup/" #Home Desk ubuntu
-#strVideoFilePath         <- "/media/kostasl/extStore/ExpData/zebrafish_preycapturesetup/AnalysisSet/"
-#strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
-#strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData"
+setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
+strVideoFilePath <- "/media/extStore/ExpData/zebrafish_preycapturesetup/" #Home Desk ubuntu
+strVideoFilePath         <- "/media/kostasl/extStore/ExpData/zebrafish_preycapturesetup/AnalysisSet/"
+strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
+strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData"
 
 ## Office PC
+#setwd("/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/")
 #strVideoFilePath  <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/expDataKostas/AnalysisSetAlpha/" 
 #strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_9_2_GCC_64bit-Release/"
-#strTrackeroutPath <- "/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_UpTo21Dec/"
+#strTrackeroutPath <- "/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_UpTo18Jan/"
 
 ## Laptop
-setwd("~/Dropbox/Calculations/zebrafishtrackerData/")
-strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
-strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
-strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_UpTo21Dec/"
+#setwd("~/Dropbox/Calculations/zebrafishtrackerData/")
+#strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
+#strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
+#strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_UpTo21Dec/"
 
 
-G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
+G_THRESHUNTANGLE         <- 19 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
 
-nFrWidth                 <- 50
+nFrWidth                 <- 50 ## Sliding Window Filter Width
 
-rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')));
+rf <- colorRampPalette(rev(brewer.pal(11,'Dark2')));
 r <- c(rf(30),"#FF0000");
 
 
 strDataSetDirectories <- list("./Tracked12-10-17/", ##Dataset 1
                               "./Tracked26-10-17/",
-                              "./Tracked02-11-17/",##Dataset 3
-                              "./Tracked08-11-17/", #4
-                              "./Tracked-T116-11-17/",#5
-                              "./Tracked30-11-17/",#6
+                              "./Tracked02-11-17/",##MDataset 3 -NOTE: Does not Larva ID on File Name 
+                              "./Tracked08-11-17/", #4 350fps - Missing a condition WTDryFed3Roti - So removed One Set Larva of Data from other conditions to balance the dataset
+                              "./Tracked16-11-17/",#5 400fps - Strict Timer Dataset
+                              "./Tracked30-11-17/",#6 420fps
                               "./Tracked07-12-17/",#7
                               "./Tracked14-12-17/",#8
-                              "./Tracked21-12-17/")##Dataset n
+                              "./Tracked21-12-17/",
+                              "./Tracked11-01-18/",
+                              "./TrackedC18-01-18/")##Dataset n 
 strCondR  <- "*.csv"; 
 
 ### Set Colour Pallette Size from List Of Datasets
@@ -67,15 +72,17 @@ G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
 rDataset <- c(rf(G_DATASETPALLETSIZE),"#FF0000");
 
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
-#lastDataSet = NROW(strDataSetDirectories)
-#firstDataSet = 1
-#source("runimportTrackerDataFiles.r")
+##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
+lastDataSet = NROW(strDataSetDirectories)
+firstDataSet = lastDataSet
+source("runimportTrackerDataFiles.r")
+
 ###### END OF IMPORT TRACKER DATA ############
 
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
 lastDataSet = NROW(strDataSetDirectories)
-firstDataSet = 5
+firstDataSet = lastDataSet
 
 dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
@@ -104,18 +111,15 @@ lMotionStat <- list();
 
 ####################
 #source("TrackerDataFilesImport.r")
-source("HuntingEventAnalysis.r")
-source("TrajectoryAnalysis.r")
-source("labelHuntEvents.r")
-########################################
-##
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis.r")
-#################################
+
+source("TrajectoryAnalysis.r")
+
+source("labelHuntEvents.r")
 
 ### TRAJECTORIES Indicating Hunting  - With distinct colour for each larva ####
 source("plotTrackScatterAndDensities.r")
-
 ##########
 
 strCondTags <- names(groupsrcdatList)
@@ -129,23 +133,29 @@ for (i in strCondTags)
   strCond   <- paste(strCondR,subsetDat[2],collapse=NULL);
 
   ##Take All larva IDs recorded - Regardless of Data Produced - No Tracks Is Also Data
-  #vlarvaID = unique(filtereddatAllFrames$larvaID)
+  #vexpID = unique(filtereddatAllFrames$expID)
   ##Select Larvaof this Group
   
-  datAllGroupFrames <- datAllFrames[datAllFrames$group == i,]
+  datAllGroupFrames <- datAllFrames[which(datAllFrames$group == i),]
   #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
-  vlarvaID = unique(datAllGroupFrames$larvaID)
+  vexpID = unique(datAllGroupFrames$expID)
   idxDataSet <- unique(datAllGroupFrames$dataSet)
   
-  lHuntStat[[i]] = calcHuntStat(datAllGroupFrames,vlarvaID)
-  lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vlarvaID)
+#  lHuntStat[[i]] = calcHuntStat(datAllGroupFrames,vexpID)
+  ##Combine Hunting Events across fish in this Condition In One
+  #datHuntEvent = do.call(rbind,lHuntStat[[i]]$vHuntingEventsList )
   
+  ## Extract Hunting Events From Data
+  datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,dataSetsToProcess)
+  #lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vexpID,dataSetsToProcess)
+  
+  lHuntStat[[i]] <- calcHuntStat2(datHuntEvent)
+  
+  stopifnot(length(lHuntStat[[i]]$vHLarvaEventCount) > 0)
   ##Reconstruct DataSet File List - So As to link fileIdx To Files
   #filelist <- getFileSet("LiveFed/Empty/",strDataSetDirectories[[idxDataSet]])
   #filelist <-  
 
-  ##Combine Hunting Events across fish in this Condition In One
-  datHuntEvent = do.call(rbind,lHuntStat[[i]]$vHuntingEventsList )
   
   if (NROW(datHuntEvent) > 0 )
   {
@@ -161,22 +171,22 @@ for (i in strCondTags)
       
       ##Set File Name
       
-      datHuntEvent[datHuntEvent$dataSet == d,]$filenames <- filelist[ datHuntEvent[datHuntEvent$dataSet == d,]$fileIdx ]
+      datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$filenames <- filelist[ datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$fileIdx ]
     }
   
-    write.csv(datHuntEvent,file=paste("out/HuntEvents",i,".csv",sep="-" ),row.names=FALSE ) 
+    #write.csv(datHuntEvent,file=paste("out/HuntEvents",i,".csv",sep="-" ),row.names=FALSE ) 
     ###Save Hunt Event Data Frame
     strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",i,".RData",sep="-") ##To Which To Save After Loading
     message(paste(" Exporting to:",strDataFileName))
     ##ExPORT 
-    datHuntEvent$GroupID = i
+    datHuntEvent$groupID = i
     save(datHuntEvent,file=strDataFileName) ##Save With Dataset Idx Identifier
     
   }else{
     message("No Hunting Event to write!")
   }
 
-  #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vlarvaID)
+  #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vexpID)
   #######################################################################
   ###  EYE - PLOT Scatter and Eye Densities #####
   strCond = i;
@@ -186,12 +196,17 @@ for (i in strCondTags)
 
 
 
-par(bg="black")
+
 ## Hunt Statistics Summary - Combine Rows ##
 datHuntStat = do.call(rbind,lHuntStat)
 datMotionStat = do.call(rbind,lMotionStat)
 
+
+source("plotHuntStat.r") 
+
+#################   MOTION ######################
 ##Motion Plots  - Path Length ##
+par(bg="white")
 sampleSize = sum(unlist(datMotionStat[,"nLarva"],use.names = FALSE))
 totalFrames = sum(unlist(datMotionStat[,"totalFrames"],use.names = FALSE))
 moveFrames = sum(unlist(datMotionStat[,"totalMotionFrames"],use.names = FALSE))
@@ -207,14 +222,16 @@ strsub = paste("#n=", sampleSize, " #F:",totalFrames,
 strPlotName = "plots/meanPathLengthLarva.pdf"
 vDat <- datMotionStat[,"vPathLengths"]
 vDatSetID <- datMotionStat[,"vDataSetID"]
+vIDTable <- datHuntStat[,"vIDLookupTable"]
+
 datmean <- unlist(datMotionStat[,"meanPathLength"],use.names = FALSE)
 datse <- unlist(datMotionStat[,"sePathLength"],use.names = FALSE)
 strtitle <- "Mean Path Length Per Larva"
 
 ##Fish With No Hunting Events #
-#datHuntStat[,"vLarvaID"]$NE[datHuntStat[,"vHLarvaEventCount"]$NE == 0]
-##*All:unlist(datHuntStat[,"vLarvaID"],,use.names=FALSE)[unlist(datHuntStat[,"vHLarvaEventCount"],use.names=FALSE) == 0]
-pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$larvaID))
+#datHuntStat[,"vexpID"]$NE[datHuntStat[,"vHLarvaEventCount"]$NE == 0]
+##*All:unlist(datHuntStat[,"vexpID"],,use.names=FALSE)[unlist(datHuntStat[,"vHLarvaEventCount"],use.names=FALSE) == 0]
+pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$expID))
 
 ylim <- max(unlist(vDat,use.names=FALSE))
 
@@ -222,14 +239,14 @@ xbarcenters <- boxplotPerCondition(datMotionStat, datmean,datse,strtitle,strsub,
 vpch = c(0:25,32:127)
 for (g in strCondTags)
 {
- idx <- match(g,strCondTags)
- vpt = unlist(vDat[g],use.names=FALSE)
- 
- #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
- points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=vpch[vDatSetID[[g]]],col=rDataset[vDatSetID[[g]]] )
+  idx <- match(g,strCondTags)
+  vpt = unlist(vDat[g],use.names=FALSE)
+  
+  #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
+  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=vpch[vDatSetID[[g]]],col=rDataset[vDatSetID[[g]]] )
 }
 
-
+plotConnectedPointsPairs(vIDTable,vDat,strCondTags)
 dev.off();
 
 #plot(rep(xbarcenters[1],NROW(datMotionStat[[1,"vPathLengths"]]) ),datMotionStat[[1,"vPathLengths"]] )
@@ -242,7 +259,7 @@ datmean <- unlist(datMotionStat[,"meanSpeed"],use.names = FALSE)
 datse <- unlist(datMotionStat[,"seSpeed"],use.names = FALSE)
 strtitle <- "Movement Speed Per Larva"
 
-pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$larvaID))
+pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$expID))
 
 ylim <- max(unlist(vDat,use.names=FALSE))
 xbarcenters <- boxplotPerCondition(datMotionStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
@@ -263,7 +280,7 @@ datmean <- unlist(datMotionStat[,"meanMotionRatio"])
 datse <- unlist(datMotionStat[,"seSpeed"],use.names = FALSE)
 strtitle <- "Movement Ratio Per Larva"
 
-pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$larvaID))
+pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$expID))
 
 ylim <- max(unlist(vDat,use.names=FALSE))
 xbarcenters <- boxplotPerCondition(datMotionStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
@@ -285,7 +302,7 @@ datmean <- unlist(datMotionStat[,"meanSinuosity"])
 datse <- unlist(datMotionStat[,"seSinuosity"],use.names = FALSE)
 strtitle <- "Path Sinuosity Ratio Per Larva"
 
-pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$larvaID))
+pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$expID))
 
 ylim <- max(unlist(vDat,use.names=FALSE))
 xbarcenters <- boxplotPerCondition(datMotionStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
@@ -296,118 +313,7 @@ for (g in strCondTags)
   points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=vDatSetID[[g]],col=rDataset[vDatSetID[[g]]] )
 }
 
-
 dev.off()
-
-################-HUNTING-###################
-## Bar Plot Mean Hunting Events Per Animal #
-## Common Subtitle info            ########
-sampleSize = sum(unlist(datHuntStat[,"nLarva"],use.names = FALSE))
-totalFrames = sum(unlist(datHuntStat[,"totalFrames"],use.names = FALSE))
-#huntFrames = sum(unlist(datMotionStat[,"huntframes"],use.names = FALSE))
-
-FPS = 420;
-strsub = paste("#n=", sampleSize, " #F:",totalFrames,
-               "(",format(totalFrames/FPS/60,digits =3),"min)",
-               " F_H/F:",format(sum(unlist(datHuntStat[,"huntFrames"] ,use.names = FALSE) )/totalFrames,digits =3) ,
-               " #Hunts:",sum(unlist(datHuntStat[,"groupHuntEvents"] ,use.names = FALSE) ),
-               collapse=NULL)
-##### Done Subtitle ##
-
-
-#X11()
-
-strPlotName = "plots/meanHuntingEventsPerLarva.pdf"
-vDat <- datHuntStat[,"vHLarvaEventCount"]
-vDatSetID <- datHuntStat[,"vDataSetID"]
-
-datmean <- unlist(datHuntStat[,"meanHuntingEventsPerLarva"],use.names = FALSE)
-datse <- unlist(datHuntStat[,"seHuntingEventsPerLarva"],use.names = FALSE)
-strtitle <- "Hunting Events Per Larva"
-
-pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$larvaID))
-
-ylim <- max(unlist(vDat,use.names=FALSE))
-xbarcenters <- boxplotPerCondition(datHuntStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
-for (g in strCondTags)
-{
-  idx <- match(g,strCondTags)
-  vpt = unlist(vDat[g],use.names=FALSE)
-  #vDatSetID <- ,-1,vDatSetID[[g]] )
-  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=vDatSetID[[g]],col=rDataset[vDatSetID[[g]]] )
-}
-dev.off()
-#######################################
-######## EPISODE DURATION ############
-#X11()
-
-strPlotName = "plots/meanEpisodeDurationOfGroup.pdf"
-datmean <- unlist(datHuntStat[,"meanEpisodeDuration"],use.names = FALSE) #Of the Group
-#vDat    <- datHuntStat[,"vmeanHLarvaDuration"] # Mean Episode Duration of Each LArva
-vDat    <- datHuntStat[,"vmeanHEpisodeDurationPerLarva"]
-vDatSetID <- datHuntStat[,"vDataSetID"]
-datse   <- unlist(datHuntStat[,"seEpisodeDuration"],use.names = FALSE)
-strtitle <- "Mean Duration of each Hunting Episode"
-
-pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$larvaID))
-
-ylim <- max(unlist(vDat,use.names=FALSE))
-xbarcenters <- boxplotPerCondition(datHuntStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
-for (g in strCondTags)
-{
-  idx <- match(g,strCondTags)
-  vpt = unlist(vDat[g],use.names=FALSE)
-  #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
-  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=vDatSetID[[g]],col=rDataset[vDatSetID[[g]]] )
-}
-dev.off()
-#######################################
-
-######## HUNTING DURATION PER LARVA ############
-#X11()
-strPlotName = "plots/meanHuntDurationPerLarva.pdf"
-datmean <- unlist(datHuntStat[,"meanDuration"],use.names = FALSE)
-datse   <- unlist(datHuntStat[,"seDuration"],use.names = FALSE)
-vDat    <- datHuntStat[,"vHDurationPerLarva"] #Total H Duration Per Larva
-vDatSetID <- datHuntStat[,"vDataSetID"]
-strtitle <- "Duration of Hunting per Larva"
-
-pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$larvaID))
-
-ylim <- max(unlist(vDat,use.names=FALSE))
-xbarcenters <- boxplotPerCondition(datHuntStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
-for (g in strCondTags)
-{
-  idx <- match(g,strCondTags)
-  vpt = unlist(vDat[g],use.names=FALSE)
-  #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
-  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=vDatSetID[[g]],col=rDataset[vDatSetID[[g]]] )
-}
-dev.off()
-#######################################
-############### HUNT RATIOn ###############
-#X11()
-
-strPlotName = "plots/meanHuntRatioPerLarva.pdf"
-datmean <- unlist(datHuntStat[,"meanHuntRatioPerLarva"],use.names = FALSE)
-datse <- unlist(datHuntStat[,"seHuntRatioPerLarva"],use.names = FALSE)
-vDat    <- datHuntStat[,"vLarvaHRatio"]
-vDatSetID <- datHuntStat[,"vDataSetID"]
-strtitle <- "Ratio of Time spent Hunting Over all Frames"
-
-pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$larvaID))
-
-ylim <- max(unlist(vDat,use.names=FALSE))
-xbarcenters <- boxplotPerCondition(datHuntStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
-for (g in strCondTags)
-{
-  idx <- match(g,strCondTags)
-  vpt = unlist(vDat[g],use.names=FALSE)
-  #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
-  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=vDatSetID[[g]],col=rDataset[vDatSetID[[g]]] )
-}
-dev.off()
-#############
 
 
 # #Calculate EyeVergence Index
