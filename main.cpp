@@ -30,6 +30,8 @@
  ///    *Template Matching to spot fish across angles
  ///    *Ellipsoid fitting on edge points
  ///
+ ///  \todo : *Improve detection of tail fit wrong (1st seg Angle Can be opposite to Heading!, maybe decrease contourfit error threshold for reset)
+ ///          *Substract BG Mask from Fish Mask too -Debri Affect Tail Fitting
  ////////
 
 
@@ -88,7 +90,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 
 
 
-/// Vars With Initial Values  -
+/// BLOB DETECTION Filters //
 //Area Filters
 double dMeanBlobArea                    = 100; //Initial Value that will get updated
 double dVarBlobArea                     = 20;
@@ -96,10 +98,10 @@ const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
 const unsigned int gthres_maxfoodblobarea = 150;
 
-//BG History
+/// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 420;
 const unsigned int MOGhistory   = gfVidfps*6;//Use 3 sec Of Video So rotifers Have Moved  A little
-const bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
+bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
@@ -491,7 +493,9 @@ int main(int argc, char *argv[])
         "{startframe s | 1  | Video Will start by Skipping to this frame    }"
         "{stopframe p | 0  | Video Will stop at this frame    }"
         "{duration d | 0  | Number of frames to Track for starting from start frame }"
-         "{logtofile l |    | Filename to save clog stream to }"
+        "{logtofile l |    | Filename to save clog stream to }"
+        "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
+
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -581,9 +585,13 @@ int main(int argc, char *argv[])
          // Set the rdbuf of clog.
          std::clog.rdbuf(foutLog.rdbuf());
          std::cerr.rdbuf(foutLog.rdbuf());
-
-
     }
+
+
+    //Check If We Are BG Modelling / BEst to switch off when Labelling Hunting Events
+    if (parser.has("ModelBG"))
+        gbUseBGModelling = (parser.get<int>("ModelBG") == 1)?true:false;
+
 
     //If No video Files have been loaded then Give GUI to User
     if (inVidFileNames.empty())
