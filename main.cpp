@@ -78,12 +78,12 @@
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
-const int gcMinFoodModelActiveFrames    = 30; //Number of frames inactive until track is deleted
-const int gMaxClusterRadiusFoodToBlob   = 18;
+const int gcMaxFoodModelInactiveFrames  = 250; //Number of frames inactive until track is deleted
+const int gcMinFoodModelActiveFrames    = 50; //Number of frames inactive until track is deleted
+const int gMaxClusterRadiusFoodToBlob   = 5;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
-const int thDistanceFood                = 18; //Threshold for distance between track-to blob assignement
+const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
 
 
 const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
@@ -2029,7 +2029,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
-    params.filterByInertia      = true;
+    params.filterByInertia      = false;
     params.maxInertiaRatio      = 1.0;
     params.minInertiaRatio      = 0.3;
 
