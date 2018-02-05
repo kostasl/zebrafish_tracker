@@ -314,9 +314,10 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
     mtCacheRow = FishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl),fishTemplateVar.cols,fishTemplateVar.rows));
     fishTemplateVar.copyTo(mtCacheRow); //Copy To Row In CAche
     gnumberOfTemplatesInCache++; //Increment Count
+
     // DEBUG //
-    cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows) ));
-    cv::imshow("Templ",imgTempl);
+    //cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows) ));
+    //cv::imshow("Templ",imgTempl);
     //  //
 
     std::clog << "New Template added, Templ. Count now:" << gnumberOfTemplatesInCache << std::endl;

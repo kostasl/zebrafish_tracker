@@ -680,13 +680,13 @@ int main(int argc, char *argv[])
 
     ///Make TrackBars ///
 //    cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
-    cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
-    cv::createTrackbar( "Eye Threshold:", "Debug D", &gthresEyeSeg, 200.0, thresh_callback );
-    cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
-    cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
-    cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 35.0, thresh_callback );
-    cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,30, thresh_callback );
-    cv::createTrackbar( "Spine Segment Size","Debug D", &gFishTailSpineSegmentLength, 50, thresh_callback );
+    //cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
+    //cv::createTrackbar( "Eye Threshold:", "Debug D", &gthresEyeSeg, 200.0, thresh_callback );
+    //cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
+    //cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
+    //cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 35.0, thresh_callback );
+    //cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,30, thresh_callback );
+    //cv::createTrackbar( "Spine Segment Size","Debug D", &gFishTailSpineSegmentLength, 50, thresh_callback );
 
     thresh_callback( 0, 0 );
     ///////////////
