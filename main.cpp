@@ -109,7 +109,7 @@ double dLearningRate                    = 1.0/(5.0*MOGhistory); //Learning Rate 
 const double dLearningRateNominal       = 0.0001;
 
 ///Segmentation Params
-int g_Segthresh             = 36; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 35; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -2031,7 +2031,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
     params.filterByInertia      = false;
     params.maxInertiaRatio      = 1.0;
-    params.minInertiaRatio      = 0.3;
+    params.minInertiaRatio      = 0.1;
 
 
     //params.filterByInertia = true;
