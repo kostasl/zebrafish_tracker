@@ -2338,6 +2338,10 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
         {
             //make Null Fish
             fishModel* pNullfish = new fishModel();
+            pNullfish->ID          = 0;
+            pNullfish->bearingRads = 0.0;
+            pNullfish->resetSpine();
+
             output << frameNumber << "\t" << Vcnt  << "\t" << (*pNullfish);
             output << "\t" << vfoodmodels.size() << "\n";
             delete pNullfish;
