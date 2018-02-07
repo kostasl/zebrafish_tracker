@@ -30,8 +30,9 @@
  ///    *Template Matching to spot fish across angles
  ///    *Ellipsoid fitting on edge points
  ///
- ///  \todo : *Improve detection of tail fit wrong (1st seg Angle Can be opposite to Heading!, maybe decrease contourfit error threshold for reset)
- ///          *Substract BG Mask from Fish Mask too -Debri Affect Tail Fitting
+ ///  \todo : Add Record of Food Count at regular intervals on each video in case
+ ///          no fish is being tracked ROI - This should show the evolution of prey Count in time
+ ///
  ////////
 
 
@@ -76,18 +77,16 @@
 // Tracker Constant Defines
 #include <config.h>
 
-/// Constants ///
-const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 250; //Number of frames inactive until track is deleted
-const int gcMinFoodModelActiveFrames    = 3; //Number of frames inactive until track is deleted
-const int gMaxClusterRadiusFoodToBlob   = 5;
-const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
-const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
-const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
 
+/// VIDEO AND BACKGROUND PROCESSING //
+float gfVidfps                  = 430;
+const unsigned int MOGhistory   = gfVidfps*4;//Use 3 sec Of Video So rotifers Have Moved  A little
+bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
+//Processing Loop delay
+uint cFrameDelayms              = 1;
 
-const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
-
+double dLearningRate                    = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+const double dLearningRateNominal       = 0.0001;
 
 
 /// BLOB DETECTION Filters //
@@ -98,15 +97,20 @@ const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
 const unsigned int gthres_maxfoodblobarea = 150;
 
-/// VIDEO AND BACKGROUND PROCESSING //
-float gfVidfps                  = 420;
-const unsigned int MOGhistory   = gfVidfps*6;//Use 3 sec Of Video So rotifers Have Moved  A little
-bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
-//Processing Loop delay
-uint cFrameDelayms              = 1;
 
-double dLearningRate                    = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
-const double dLearningRateNominal       = 0.0001;
+/// Constants ///
+const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
+const int gcMaxFoodModelInactiveFrames  = 250; //Number of frames inactive until track is deleted
+const int gcMinFoodModelActiveFrames    = 3; //Number of frames inactive until track is deleted
+const int gMaxClusterRadiusFoodToBlob   = 5;
+const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
+const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
+const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
+const int gFoodReportInterval           = (int)gfVidfps;
+
+const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+
+
 
 ///Segmentation Params
 int g_Segthresh             = 35; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
@@ -2327,6 +2331,18 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
             pfish->zTrack.pointStack.clear();
             pfish->zTrack.pointStack.shrink_to_fit(); //Requires this Call of C++ otherwise It Doesnt clear
          }//For eAch Fish
+
+
+         //If there is are no fish Then Add a regular Entry denoting the number of prey
+        if (bTrackFood && vfish.size() == 0 && (frameNumber.toUInt()%gFoodReportInterval == 0 || frameNumber.toUInt()==1))
+        {
+            //make Null Fish
+            fishModel* pNullfish = new fishModel();
+            output << frameNumber << "\t" << Vcnt  << "\t" << (*pNullfish);
+            output << "\t" << vfoodmodels.size() << "\n";
+            delete pNullfish;
+        }
+
    } //Loop ROI
 
  return cnt;
