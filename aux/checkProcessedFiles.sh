@@ -29,7 +29,7 @@ grep -f unprocessedfiles.txt vidfilesfullpath.txt > VidFilesToProcess.txt
 lines=`wc -l VidFilesToProcess.txt | cut -f1 -d' '`
 #procsize=$lines
 
-procsize=`echo $lines $PARPROC | awk '{print int(($1+1)/$2)}'`
+procsize=`echo $lines $PARPROC | awk '{print int(1+($1)/$2)}'`
 echo "Splitting for $PARPROC , each $procsize"
 
 num=0

@@ -75,11 +75,13 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
       }
        
       #Filter Out Empty Files - ones with less than 300 frames ( ~1 sec of data )
-      if (!(is.numeric(expID) || !is.numeric(eventID) || !is.na(expID) || !is.na(eventID)  ) ) 
+      if (!is.numeric(expID) | !is.numeric(eventID) | is.na(expID) | is.na(eventID)  ) 
       {
+        #expID <- j
+        #message(paste("Auto Set To expID:",expID))
         stop(paste("Could not extract Larva ID and event ID from File Name ",temp[[j]]))
       }
-      
+
       stopifnot(!is.na(expID))
       stopifnot(!is.na(eventID))
       
@@ -114,8 +116,11 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 eventID=rep(eventID,Nn),
                                                 larvaID=rep(larvaID,Nn),
                                                 trackID=rep(eventID,Nn),
-                                                group=rep(i,Nn)
-        );
+                                                group=rep(i,Nn),
+                                                PreyCount=meanf(TrackerData[[i]][[j]]$RotiferCount,nFrWidth*8),
+                                                countEyeErrors=TrackerData[[i]][[j]]$nFailedEyeDetectionCount,
+                                                TailFitError=TrackerData[[i]][[j]]$lastTailFitError
+                                                );
         
         groupDatIdx = groupDatIdx + 1; ##Count Of Files Containing Data
         
@@ -133,7 +138,11 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 eventID=eventID,
                                                 larvaID=larvaID,
                                                 trackID=0,
-                                                group=i );
+                                                group=i,
+                                                PreyCount=0,
+                                                countEyeErrors=0,
+                                                TailFitError=0
+                                                );
         message(paste("No Data for ΕχpID",expID,"event ",eventID," larva ",larvaID))
         
       }

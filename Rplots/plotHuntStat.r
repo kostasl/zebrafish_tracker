@@ -2,31 +2,44 @@
 
 
 ## Box Plots Used to Compare Conditions On Mean Stats - Saves Output As Pdf
-boxplotPerCondition <- function(datStat,datMean,datse,strtitle,strsubt,stroutFileName,plotTop)
+boxplotPerCondition <- function(datStat,datMean,datSe,strtitle,strsubt,stroutFileName,plotTop)
 {
   
   par(mar = c(5, 6, 4, 5) + 2.5)
-  datN <- unlist(datStat[,"nLarva"],use.names = FALSE)
-  
-  datlbls <-row.names(datStat)
+
+  datN = vector()
+  if (is.null(dim(datStat))) ##This is probably A List
+  {
+    datlbls <-names(datStat) ##Input is List
+    for (i in seq(1:NROW(datStat)))
+    {
+      datN[i] <-NROW( datStat[[i]][!is.na(datStat[[i]]) ]   )
+    }
+    # datN <- NROW(datStat[[1]])
+  }
+  else ##A Known Data Frame Struct
+  { 
+    datN <- unlist(datStat[,"nLarva"],use.names = FALSE)
+    datlbls <-row.names(datStat) ##Multidim Use Row Names
+  }
   ##Add N Numbers to Labels
   datlbls <- paste(datlbls,"\nn=",datN,sep="")
   
   if(missing(plotTop)) 
   {
-    plotTop <- max(datmean) +
-      unique(datse[datmean== max(datmean)]) * 3
+    plotTop <- max(datMean) +
+      unique(datSe[datMean== max(datMean)]) * 3
   }else
   {
     plotTop <- 1.1*plotTop ##Increase by 10%
     
   }
+  plotBottom <- 2*min(min(datMean),0)
   
-  
-  barCenters <- barplot(height = datmean,
+  barCenters <- barplot(height = datMean,
                         names.arg = datlbls,
                         beside = true, las = 2,
-                        ylim = c(0, plotTop),
+                        ylim = c(plotBottom, plotTop),
                         cex.names = 0.75, xaxt = "n",
                         main = strtitle,
                         sub = strsubt,
@@ -39,8 +52,8 @@ boxplotPerCondition <- function(datStat,datMean,datse,strtitle,strsubt,stroutFil
   text(x = barCenters+0.2, y = 0, srt = 45,
        adj = 1.8, labels = datlbls, xpd = TRUE)
   
-  segments(barCenters, datmean - datse * 2, barCenters,
-           datmean + datse * 2, lwd = 1.5)
+  segments(barCenters, datMean - datSe * 2, barCenters,
+           datMean + datSe * 2, lwd = 1.5)
   #title(sub=strsubt)
   #  dev.off()
   
@@ -52,8 +65,50 @@ boxplotPerCondition <- function(datStat,datMean,datse,strtitle,strsubt,stroutFil
 
 
 
-plotConnectedPointsPairs <- function(vIDTable,vDat,strCondTags)
+plotConnectedPointsPairs <- function(vIDTable,vDat,strCondTags,xbarcenters)
 {
+  for (gIdx in seq(1,NROW(strCondTags),2)  ) ##Iterated Through LF DF And NF Groups
+  {
+    gE <- strCondTags[gIdx] ##Empty Condution
+    gL <- strCondTags[gIdx+1] ##With ROtifers Test Condition 
+    
+    datSetID <- levels(vIDTable[[gE]]$dataSetID)[ vIDTable[[gE]]$dataSetID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID] ]
+
+    idsE <- vIDTable[[gE]]$expID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID ==vIDTable[[gL]]$dataSetID]
+    idsL <- vIDTable[[gL]]$expID[vIDTable[[gL]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID]
+    ptSrc  <- vDat[[gE]][levels(idsE)[idsE]]
+    ptDest <- vDat[[gL]][levels(idsL)[idsL]]
+    
+    ##OPTIONAL: Replace NAs With 0 when Plotting So as to To Show Direction For All points
+    #ptSrc <- replace(ptSrc,is.na(ptSrc),0)
+    #ptDest <- replace(ptDest,is.na(ptDest),0)
+    ##Otherwise Do not Plot NA connecting line
+    
+    ##Plot The Lines Connect Each Empty Tested Larva With Itself In THe Live Fed Conditions 
+    idxSrc  <- match(gE,strCondTags) ##Bar Center Idx for Each Condition E. Fed
+    idxDest <- match(gL ,strCondTags)           
+    
+    for (p in 1:NROW(ptSrc))
+    {
+      pcolour <- rDataset[as.numeric( replace( datSetID[p],is.na(datSetID[p]) ,1 ) ) ]
+      points(xbarcenters[idxSrc],ptSrc[p],pch=as.numeric(datSetID[p]),
+             col=pcolour )
+      points(xbarcenters[idxDest],ptDest[p],pch=as.numeric(datSetID[p]),
+             col=pcolour )
+      
+      ccLine <- rbind(c(xbarcenters[idxSrc],ptSrc[p]),c(xbarcenters[idxDest],ptDest[p] ) ) 
+      
+      lines(ccLine,col=pcolour)
+    }
+
+  } ## Go Through Pairs Of Conditions ##
+}
+
+
+plotPairedChangeHistogram <- function(vIDTable,vDat,strCondTags,uLim,lLim)
+{
+  lChangePairs <- list()
+  idx = 1
   for (gIdx in seq(1,NROW(strCondTags),2)  ) ##Iterated Through LF DF And NF Groups
   {
     gE <- strCondTags[gIdx] ##Empty Condution
@@ -73,16 +128,43 @@ plotConnectedPointsPairs <- function(vIDTable,vDat,strCondTags)
     ##Plot The Lines Connect Each Empty Tested Larva With Itself In THe Live Fed Conditions 
     idxSrc  <- match(gE,strCondTags) ##Bar Center Idx for Each Condition E. Fed
     idxDest <- match(gL ,strCondTags)           
-    for (p in 1:NROW(ptSrc))
-    {
-      ccLine <- rbind(c(xbarcenters[idxSrc],ptSrc[p]),c(xbarcenters[idxDest],ptDest[p] ) ) 
-      lines(ccLine,col=rDataset[as.numeric( replace( datSetID[p],is.na(datSetID[p]) ,1 ) ) ])
-    }
+    
+    ##PLot Histogram Of THis Pair
+    ptDelta <- ptDest-ptSrc
+    ##Saturate Limits 
+    ptDelta[ptDelta > uLim] = uLim
+    ptDelta[ptDelta < lLim] = lLim
+    
+    lChangePairs[[idx]] <- ptDelta
+    idx = idx+1
+    hist(ptDelta,ylim = c(0,NROW(ptDelta)/3),breaks = seq(lLim,uLim,(uLim-lLim)/30),
+                main =paste("                                                \t \t Change ",gE,"-",gL,sep="") )
+    
   } ## Go Through Pairs Of Conditions ##
+  
+  names(lChangePairs) <- c("LE-LL","NE-NL","DE-DL")
+  
+  return (lChangePairs)
 }
-## DF GROUP ##
 
 
+## Show In Which Prey Count Density Most Hunt Events Occurred ##
+plotHuntEventPreyCountHist <- function(strCondTags,dataSetsToProcess)
+{
+  
+  layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+  
+  for (i in strCondTags)
+  {
+    strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
+    message(paste(" Loading Hunt Events: ",strDataFileName))
+    ##ExPORT 
+    load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+    hist(datHuntEvent[,"PreyCount"],main=paste(i," Events #",NROW(datHuntEvent[,"PreyCount"]),sub = ""),
+         breaks=seq(0,85,5),xlab="# Prey",xlim=c(0,70),ylim=c(0,300) )
+  }
+    
+}
 ##par(bg="black")
 
 
@@ -115,8 +197,154 @@ strsub = paste("#n=", sampleSize, " #F:",totalFrames,
 ##### Done Subtitle ##
 
 
+##PLot Distribution Of Hunt Events Among Prey Counts ##
+strPlotName = "plots/HuntEventsVsPreyCount_Hist.pdf"
+pdf(strPlotName,paper = "a4",title="Hunt Vs the Prey Count they Occured under, for each Condition") #col=(as.integer(filtereddatAllFrames$expID))
+#X11()
+plotHuntEventPreyCountHist(strCondTags, dataSetsToProcess)
+dev.off()
+
+########### MEAN Prey Count At Start of Hunt EVENTS ##### 
+#X11()
+strPlotName = "plots/meanInitialPreyCountPerLarva.pdf"
+vDat <- datHuntStat[,"vHInitialPreyCount"]
+vDatSetID <- datHuntStat[,"vDataSetID"]
+vIDTable <- datHuntStat[,"vIDLookupTable"]
+
+
+datmean <- unlist(datHuntStat[,"initPreyCount"],use.names = FALSE)
+datse <- unlist(datHuntStat[,"initsePreyCount"],use.names = FALSE)
+strtitle <- "Mean Initial Prey Count per Experiment"
+
+if (!bonefile)
+  pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+
+
+ylim <- max(unlist(vDat,use.names=FALSE),na.rm=TRUE)
+xbarcenters <- boxplotPerCondition(vDat,datmean,datse,strtitle,strsub,strPlotName,ylim)
+plotConnectedPointsPairs(vIDTable,vDat,strCondTags,xbarcenters)
+if (!bonefile)
+  dev.off()
+
+###Histograme Of Prey Counts ##
+strPlotName = "plots/InitialPreyCountPerLarva_Hist.pdf"
+pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
 #X11()
 
+yl <- c(0,ceiling(max(datHuntStat[,"vHLarvaEventCount"]$LL,datHuntStat[,"vHLarvaEventCount"]$DL,datHuntStat[,"vHLarvaEventCount"]$NL)/10)*10 )
+xl <- c(0,60)
+colourH <- c(rgb(0.01,0.7,0.01,0.2),rgb(0.9,0.01,0.01,0.2),rgb(0.01,0.01,0.9,0.2))
+
+hist(vDat$NL,col=colourH[1],ylim=yl,xlim=xl,breaks=10,
+     main="Number of Prey Vs Hunting Events",
+     xlab = "Number of Prey at start of experiment",
+     ylab = "Number of Hunt Events")
+hist(vDat$LL,col=colourH[2],ylim=yl,xlim=xl,breaks=10,add=T)
+hist(vDat$DL,col=colourH[3],ylim=yl,xlim=xl,breaks=10,add=T)
+box()
+
+
+par(new=TRUE)
+##Add Scatter Of Hunt Events
+plot(datHuntStat[,"vHInitialPreyCount"]$NL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),
+     pch=4,col=1,
+     xlab="",ylab="",ylim=yl,xlim=xl,main="")
+
+points(datHuntStat[,"vHInitialPreyCount"]$LL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),
+       pch=2 ,col=2,type ="p",
+       xlab="",ylab="",ylim=yl,xlim=xl)
+
+points(datHuntStat[,"vHInitialPreyCount"]$DL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),
+       pch=19 ,col=6,type ="p",
+       xlab="",ylab="",ylim=yl,xlim=xl)
+
+legend(50,55,legend=c("NL","LL","DL"),
+       fill=colourH,
+       col = c(1, 2,6),pch = c(4,2,19),
+       bg = "gray90",lty = c(2, -1, 1),
+       merge=TRUE)
+
+dev.off()
+########### END oF Prey Vs Hunt Events Plot ###########
+
+X11()
+datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
+datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL) )
+datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL) )
+
+preyCntRange <- c(10,35)
+datSliceLL <- datHuntVsPreyLL[datHuntVsPreyLL[,1] > preyCntRange[1] & datHuntVsPreyLL[,1] < preyCntRange[2],2 ]
+datSliceNL <- datHuntVsPreyNL[datHuntVsPreyNL[,1] > preyCntRange[1] & datHuntVsPreyNL[,1] < preyCntRange[2],2 ]
+datSliceDL <- datHuntVsPreyDL[datHuntVsPreyDL[,1] > preyCntRange[1] & datHuntVsPreyDL[,1] < preyCntRange[2],2 ]
+
+datmean <- c(mean(datSliceLL),mean(datSliceNL),mean(datSliceDL))
+datse   <-  c(sd(datSliceLL)/sqrt(length(datSliceLL)),sd(datSliceNL)/sqrt(length(datSliceNL)),sd(datSliceDL)/sqrt(length(datSliceDL)) )
+
+barCenters <- barplot(height = datmean,
+        names.arg = c("LL","NL","DL"),
+        beside = true, las = 2,
+        ylim = c(0, 30),
+        cex.names = 0.75, xaxt = "n",
+        main = paste("Hunt Events within Defined PreyCount Range",preyCntRange[1],preyCntRange[2]),
+        sub = strsub,
+        ylab = "#",
+        border = "black", axes = TRUE)
+
+segments(barCenters, datmean - datse * 2, barCenters,
+         datmean + datse * 2, lwd = 1.5)
+#################################### # # # # # # # ######################
+
+
+
+
+########### MEAN Prey Count REDUCTION from Initial During Hunt EVENTS ##### 
+#X11()
+#strPlotName = "plots/meanPreyCountReductionPerLarvaHuntEpisode.pdf"
+#vDat <- datHuntStat[,"vHNablaPreyCount"] #INverse Sign And Denote Reduction
+#vDatSetID <- datHuntStat[,"vDataSetID"]
+#vIDTable <- datHuntStat[,"vIDLookupTable"]
+
+
+#datmean <- unlist(datHuntStat[,"meanNablaPreyCount"],use.names = FALSE)
+#datse <- unlist(datHuntStat[,"seNablaPreyCount"],use.names = FALSE)
+#strtitle <- "Mean Prey Count Reduction from Initial at each Hunt Event Per Larva"
+
+#if (!bonefile)
+#  pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+
+
+#ylim <- max(unlist(vDat,use.names=FALSE),na.rm=TRUE)
+#xbarcenters <- boxplotPerCondition(vDat,datmean,datse,strtitle,strsub,strPlotName,ylim)
+
+#plotConnectedPointsPairs(vIDTable,vDat,strCondTags,xbarcenters)
+
+#if (!bonefile)
+#  dev.off()
+
+###### Histogram ##########
+#strPlotName = "plots/meanDeltaPreyCountPerLarvaHuntEpisode_Hist.pdf"
+#pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+#lDeltas <- plotPairedChangeHistogram(vIDTable,vDat,strCondTags,uLim = 50,lLim = -10)
+#title("Prey Counts Events", sub = strsub, cex.main = 1.2,   font.main= 1.5, col.main= "black", cex.sub = 1.0, font.sub = 2, col.sub = "black")
+#dev.off()
+
+## Plot Mean Change ######
+
+#strPlotName = "plots/meanPreyCountPerLarvaHuntEpisode_PairedChange.pdf"
+#meanDelta <- sapply(lDeltas,mean)
+#seDelta   <-  sapply(lDeltas,sd)/sqrt(sapply(lDeltas,NROW))
+#ylim <- 2*max(unlist(meanDelta,use.names=FALSE))
+#pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+#plot.window(xlim=c(0,100), ylim=c(-10, ylim) )
+#boxplotPerCondition(lDeltas,meanDelta,seDelta,"Mean Change in Hunt Prey Count ",strsub,strPlotName,ylim)
+#dev.off()
+
+####
+
+
+
+########### MEAN HUNTING EVENTS ##### 
+#X11()
 strPlotName = "plots/meanHuntingEventsPerLarva.pdf"
 vDat <- datHuntStat[,"vHLarvaEventCount"]
 vDatSetID <- datHuntStat[,"vDataSetID"]
@@ -127,29 +355,121 @@ datmean <- unlist(datHuntStat[,"meanHuntingEventsPerLarva"],use.names = FALSE)
 datse <- unlist(datHuntStat[,"seHuntingEventsPerLarva"],use.names = FALSE)
 strtitle <- "Hunting Events Per Larva"
 
-if (!onefile)
+if (!bonefile)
   pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
 
 
 ylim <- max(unlist(vDat,use.names=FALSE))
 xbarcenters <- boxplotPerCondition(datHuntStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
-for (g in strCondTags)
-{
-  idx <- match(g,strCondTags)
-  vpt = unlist(vDat[g],use.names=FALSE)
-  #vDatSetID <- ,-1,vDatSetID[[g]] )
-  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=as.numeric(vDatSetID[[g]]),col=rDataset[as.numeric(vDatSetID[[g]])] )
-}
+# for (g in strCondTags)
+# {
+#   idx <- match(g,strCondTags)
+#   vpt = unlist(vDat[g],use.names=FALSE)
+#   #vDatSetID <- ,-1,vDatSetID[[g]] )
+#   points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=as.numeric(vDatSetID[[g]]),col=rDataset[as.numeric(vDatSetID[[g]])] )
+# }
 
-plotConnectedPointsPairs(vIDTable,vDat,strCondTags)
+plotConnectedPointsPairs(vIDTable,vDat,strCondTags,xbarcenters)
 
-#dev.off() ##Close PDF
+if (!bonefile)
+  dev.off()
+
+###### Histogram ##########
+  strPlotName = "plots/meanHuntingEventsPerLarva_ChangeHist.pdf"
+  pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+  lDeltas <- plotPairedChangeHistogram(vIDTable,vDat,strCondTags,uLim = 50,lLim = -10)
+  title("Hunt Events", sub = strsub, cex.main = 1.2,   font.main= 1.5, col.main= "black", cex.sub = 1.0, font.sub = 2, col.sub = "black")
+  dev.off()
+  
+  ## Plot Mean Change ######
+  
+  strPlotName = "plots/meanHuntingEventsPairedChange.pdf"
+  meanDelta <- sapply(lDeltas,mean)
+  seDelta   <-  sapply(lDeltas,sd)/sqrt(sapply(lDeltas,NROW))
+  ylim <- 2*max(unlist(meanDelta,use.names=FALSE))
+  pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+  #plot.window(xlim=c(0,100), ylim=c(-10, ylim) )
+  boxplotPerCondition(lDeltas,meanDelta,seDelta,"Mean Change in Hunt Event Count ",strsub,strPlotName,ylim)
+  dev.off()
+  
+####
+  uLim = 80
+  lLim = 0
+  res = 20
+  strPlotName = "plots/meanHuntingEvents_Hist.pdf"
+  pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+  X11()
+  
+  hist(vDat$LE,ylim = c(0,NROW(vDat$LE)/3),breaks = seq(lLim,uLim,uLim/res), main ="LE Hist")
+  hist(vDat$LL,ylim = c(0,NROW(vDat$LE)/3),breaks = seq(lLim,uLim,uLim/res), main ="LL Hist")
+  hist(vDat$NE,ylim = c(0,NROW(vDat$LE)/3),breaks = seq(lLim,uLim,uLim/res), main ="NE Hist")
+  hist(vDat$NL,ylim = c(0,NROW(vDat$LE)/3),breaks = seq(lLim,uLim,uLim/res), main ="NL Hist")
+  
+  dev.off()
+  
+  #######################################
+  
+#########HUnT EVENTS VS Initial Prey Count Scatter Plot 
+
+  yl <- c(0,65)
+  xl <- c(0,50)
+strPlotName = "plots/NumberOfHuntEventsVsPreyCount.pdf"
+pdf(strPlotName,width=8,height=8,title=strtitle,onefile=TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+
+plot(datHuntStat[,"vHInitialPreyCount"]$LE,as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),
+     pch=1,col=rDataset[as.numeric( datHuntStat[,"vDataSetID"]$LE ) ],
+     xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl,
+     main="LE - Modulation of hunt rate by stimulus")
+
+plot(datHuntStat[,"vHInitialPreyCount"]$LL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),
+     pch=2 ,col=rDataset[as.numeric( datHuntStat[,"vDataSetID"]$LL ) ],type ="p",
+     xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl,
+     main="LL - Modulation of hunt rate by stimulus")
+
+plot(datHuntStat[,"vHInitialPreyCount"]$NE,as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE),
+     pch=3,col=rDataset[as.numeric( datHuntStat[,"vDataSetID"]$NE ) ],
+     xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl,
+     main="NE - Modulation of hunt rate by stimulus")
+
+plot(datHuntStat[,"vHInitialPreyCount"]$NL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),
+     pch=4,col=rDataset[as.numeric( datHuntStat[,"vDataSetID"]$NL ) ],
+     xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl,
+     main="NF Live - Modulation of hunt rate by stimulus")
+
+plot(datHuntStat[,"vHInitialPreyCount"]$DE,as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),
+     pch=5,col=rDataset[as.numeric( datHuntStat[,"vDataSetID"]$DE ) ],
+     xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl,
+     main="DE  - Modulation of hunt rate by stimulus")  
+
+plot(datHuntStat[,"vHInitialPreyCount"]$DL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),
+     pch=6,col=rDataset[as.numeric( datHuntStat[,"vDataSetID"]$DL ) ],
+     xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl,
+     main="DL - Modulation of hunt rate by stimulus")  
+dev.off()
+
+### Compare FED to Non Fed Group ##
+strPlotName = "plots/NumberOfHuntEventsVsPreyCount-FedGroups.pdf"
+pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+plot(datHuntStat[,"vHInitialPreyCount"]$NL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),
+     pch=4,col=1,
+     xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl,main=" Modulation of hunt rate by stimulus")
+
+points(datHuntStat[,"vHInitialPreyCount"]$LL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),
+     pch=2 ,col=2,type ="p",
+     xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl)
+
+points(datHuntStat[,"vHInitialPreyCount"]$DL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),
+       pch=19 ,col=6,type ="p",
+       xlab="Initial Prey Count",ylab="# hunt events",ylim=yl,xlim=xl)
 
 
+legend(0.7, 55, c("NL","LL","DL"), col = c(1, 2,6),
+       text.col = "green4", lty = c(2, -1, 1), pch = c(4,2,19),
+       merge = TRUE, bg = "gray90")  
+dev.off()  
+  
 
 
-
-#######################################
 ######## EPISODE DURATION ############
 #X11()
 
@@ -162,7 +482,7 @@ vDatSetID <- datHuntStat[,"vDataSetID"]
 datse   <- unlist(datHuntStat[,"seEpisodeDuration"],use.names = FALSE)
 strtitle <- "Mean Duration of each Hunting Episode"
 
-if (!onefile)
+if (!bonefile)
   pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$expID))
 
 lDat <- unlist(vDat,use.names=FALSE)
@@ -176,42 +496,90 @@ for (g in strCondTags)
   ##vpt <-replace(vpt,is.na(vpt),0) ##NA Appear Where for exp Where no Hunting Episodes Occured
   
   #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
-  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=as.numeric(vDatSetID[[g]]),col=rDataset[as.numeric(vDatSetID[[g]])] )
+  #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=as.numeric(vDatSetID[[g]]),col=rDataset[as.numeric(vDatSetID[[g]])] )
 }
 
-plotConnectedPointsPairs(vIDTable,vDat,strCondTags)
+plotConnectedPointsPairs(vIDTable,vDat,strCondTags,xbarcenters)
 
-if (!onefile)
+if (!bonefile)
   dev.off()
+
+
+###### Histogram ##########
+  strPlotName = "plots/meanEpisodeDurationOfGroup_Hist.pdf"
+  pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+  lDeltas <- plotPairedChangeHistogram(vIDTable,vDat,strCondTags,uLim = 500,lLim = -610)
+  title("Episode Duration", sub = strsub, cex.main = 1.2,   font.main= 1.5, col.main= "black", cex.sub = 1.0, font.sub = 2, col.sub = "black")
+  dev.off()
+  
+  ## Plot Mean Change ######
+  strPlotName = "plots/meanEpisodeDurationChange.pdf"
+  meanDelta <- sapply(lDeltas,mean, na.rm = TRUE)
+  seDelta   <-  sapply(lDeltas,sd,na.rm = TRUE)/sqrt(sapply(lDeltas[is.na(lDeltas)==FALSE],NROW))
+  ylim <- 4*max(unlist(meanDelta,use.names=FALSE))
+  pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+  #plot.window(xlim=c(0,100), ylim=c(-10, ylim) )
+  boxplotPerCondition(lDeltas,meanDelta,seDelta,"Mean Change in Episode Duration ",strsub,strPlotName,ylim)
+  dev.off()
+  
+
 #######################################
+
+
+
 
 ######## HUNTING DURATION PER LARVA ############
 #X11()
-strPlotName = "plots/meanHuntDurationPerLarva.pdf"
+strPlotName = "plots/meanHuntDurationOfGroup.pdf"
 datmean <- unlist(datHuntStat[,"meanDuration"],use.names = FALSE)
 datse   <- unlist(datHuntStat[,"seDuration"],use.names = FALSE)
 vDat    <- datHuntStat[,"vHDurationPerLarva"] #Total H Duration Per Larva
 vDatSetID <- datHuntStat[,"vDataSetID"]
 strtitle <- "Duration of Hunting per Larva"
 
-if (!onefile)
+if (!bonefile)
   pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$expID))
 
 ylim <- max(unlist(vDat,use.names=FALSE))
 xbarcenters <- boxplotPerCondition(datHuntStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
-for (g in strCondTags)
-{
-  idx <- match(g,strCondTags)
-  vpt = unlist(vDat[g],use.names=FALSE)
-  #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
-  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=as.numeric(vDatSetID[[g]]),col=rDataset[as.numeric(vDatSetID[[g]])] )
-}
+# for (g in strCondTags)
+# {
+#   idx <- match(g,strCondTags)
+#   vpt = unlist(vDat[g],use.names=FALSE)
+#   #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
+#   points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=as.numeric(vDatSetID[[g]]),col=rDataset[as.numeric(vDatSetID[[g]])] )
+# }
 
-plotConnectedPointsPairs(vIDTable,vDat,strCondTags)
+plotConnectedPointsPairs(vIDTable,vDat,strCondTags,xbarcenters)
 
-if (!onefile)
+if (!bonefile)
   dev.off()
+
+
+###### Histogram ##########
+strPlotName = "plots/HuntDuration_Hist.pdf"
+pdf(strPlotName,width=8,height=8,title=strtitle,onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+lDeltas <- plotPairedChangeHistogram(vIDTable,vDat,strCondTags,uLim = 25000,lLim = -10000)
+title("Hunt Duration", sub = strsub, cex.main = 1.2,   font.main= 1.5, col.main= "black", cex.sub = 1.0, font.sub = 2, col.sub = "black")
+dev.off()
+
+strPlotName = "plots/HuntDurationChange.pdf"
+meanDelta <- sapply(lDeltas,mean, na.rm = TRUE)
+seDelta   <-  sapply(lDeltas,sd,na.rm = TRUE)/sqrt(sapply(lDeltas[is.na(lDeltas)==FALSE],NROW))
+ylim <- 4*max(unlist(meanDelta,use.names=FALSE))
+pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+#plot.window(xlim=c(0,100), ylim=c(-10, ylim) )
+boxplotPerCondition(lDeltas,meanDelta,seDelta,"Mean Change in Episode Duration ",strsub,strPlotName,ylim)
+dev.off()
+
+
 #######################################
+
+
+#######################################
+
+
+
 ############### HUNT RATIOn ###############
 #X11()
 
@@ -227,17 +595,38 @@ if (!bonefile)
 
 ylim <- max(unlist(vDat,use.names=FALSE))
 xbarcenters <- boxplotPerCondition(datHuntStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
-for (g in strCondTags)
-{
-  idx <- match(g,strCondTags)
-  vpt = unlist(vDat[g],use.names=FALSE)
-  #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
-  points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=as.numeric(vDatSetID[[g]]),col=rDataset[as.numeric(vDatSetID[[g]])] )
-}
+# for (g in strCondTags)
+# {
+#   idx <- match(g,strCondTags)
+#   vpt = unlist(vDat[g],use.names=FALSE)
+#   #points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=idx,col=r[idx] )
+#   points(rep(xbarcenters[idx],NROW(vpt) ),vpt,pch=as.numeric(vDatSetID[[g]]),col=rDataset[as.numeric(vDatSetID[[g]])] )
+# }
 
-
-plotConnectedPointsPairs(vIDTable,vDat,strCondTags)
+plotConnectedPointsPairs(vIDTable,vDat,strCondTags,xbarcenters)
 
 
 dev.off()
+
+
+###### Histogram ##########
+strPlotName = "plots/HuntRatio_Hist.pdf"
+pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+lDeltas <- plotPairedChangeHistogram(vIDTable,vDat,strCondTags,uLim = 0.3,lLim = -0.3)
+title("Hunt Ratio", sub = strsub, cex.main = 1.2,   font.main= 1.5, col.main= "black", cex.sub = 1.0, font.sub = 2, col.sub = "black")
+dev.off()
+
+## Plot Mean Change ######
+strPlotName = "plots/HuntRatioChange.pdf"
+meanDelta <- sapply(lDeltas,mean, na.rm = TRUE)
+seDelta   <-  sapply(lDeltas,sd,na.rm = TRUE)/sqrt(sapply(lDeltas[is.na(lDeltas)==FALSE],NROW))
+ylim <- 4*max(unlist(meanDelta,use.names=FALSE))
+pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+#plot.window(xlim=c(0,100), ylim=c(-10, ylim) )
+boxplotPerCondition(lDeltas,meanDelta,seDelta,"Mean Change in Episode Duration ",strsub,strPlotName,ylim)
+dev.off()
+
+#######################################
+
+
 ###############################################

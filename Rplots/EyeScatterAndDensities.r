@@ -6,7 +6,7 @@
 #{
 #  error("EyeScatteAndDensities Expects filtereddatAllFrames data frame")
 #}
-
+rfHot <- colorRampPalette(rev(brewer.pal(11,'Spectral')));
 
 histj<- function(x,y,x.breaks,y.breaks){
   c1 = as.numeric(cut(x,breaks=x.breaks));
@@ -82,8 +82,9 @@ for (i in vexpID)
 hGroupbinDensity <- Reduce('+', hbinRL)
 strDensityplotFileName <- paste("plots/binDensity/EyeAngleDensity-BINSet-",strCond,".pdf",collapse=NULL,sep="");
 pdf(strDensityplotFileName,width=8,height=8)
-image((-35:35),(-35:35),hGroupbinDensity,axes=TRUE,col=r)
 sampleSize  <- length(vexpID) #Number of Larvae Used 
+hotMap <- c(rfHot(sampleSize),"#FF0000");
+image((-35:35),(-35:35),hGroupbinDensity,axes=TRUE,col=hotMap)
 title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
 dev.off()
 ###

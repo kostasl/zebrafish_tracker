@@ -23,13 +23,16 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   
   
   ##OutPutFIleName
-  strDataFileName <- paste("setn1_Dataset_",strsplit(d,"/")[[1]][[2]],".RData",sep="") ##To Which To Save After Loading
+  strDataSetIdentifier <- strsplit(d,"/")
+  strDataSetIdentifier <- strDataSetIdentifier[[1]][[ length(strDataSetIdentifier[[1]]) ]]
+  strDataFileName <- paste("setn1_Dataset_", strDataSetIdentifier,".RData",sep="") ##To Which To Save After Loading
   message(paste(" Importing to:",strDataFileName))
   ##RUN IMPORT FUNCTION
   datAllFrames <-importTrackerFilesToFrame(groupsrcdatList)
   datAllFrames$dataSet <- idxDataSet ##Identify DataSet
   
-  stopifnot(length(datAllFrames[which(is.na(datAllFrames$expID) ),]  ) == 0)
+  ##CHeck If Exp Ids not found 
+  stopifnot(NROW(datAllFrames[which(is.na(datAllFrames$expID)), ]) == 0)
   
   save(datAllFrames,groupsrcdatList,file=strDataFileName) ##Save With Dataset Idx Identifier
   
