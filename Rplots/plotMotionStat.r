@@ -44,7 +44,7 @@ for (g in strCondTags)
 }
 
 
-plotConnectedPointsPairs(vIDTable,vDat,strCondTags)
+plotConnectedPointsPairs(vIDTable,vDat,strCondTags,xbarcenters)
 dev.off();
 
 
@@ -111,7 +111,7 @@ strtitle <- "Path Sinuosity Ratio Per Larva"
 
 pdf(strPlotName,width=8,height=8) #col=(as.integer(filtereddatAllFrames$expID))
 
-ylim <- max(unlist(vDat,use.names=FALSE))
+ylim <- 20 #max(unlist(vDat,use.names=FALSE))
 xbarcenters <- boxplotPerCondition(datMotionStat,datmean,datse,strtitle,strsub,strPlotName,ylim)
 for (g in strCondTags)
 {

@@ -38,7 +38,7 @@ for (i in strCondTags)
   datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,dataSetsToProcess)
   lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vexpID,dataSetsToProcess)
   
-  lHuntStat[[i]] <- calcHuntStat2(datHuntEvent)
+  lHuntStat[[i]] <- calcHuntStat3(datHuntEvent)
   
   stopifnot(length(lHuntStat[[i]]$vHLarvaEventCount) > 0)
   ##Reconstruct DataSet File List - So As to link fileIdx To Files

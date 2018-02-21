@@ -63,6 +63,7 @@ strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/Track
 
 G_THRESHUNTANGLE         <- 19 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
 
@@ -101,8 +102,8 @@ rDataset <- c(rf(G_DATASETPALLETSIZE),"#FF00AA");
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
   
-  lastDataSet = NROW(strDataSetDirectories)-3
-  firstDataSet = NROW(strDataSetDirectories)-3
+  lastDataSet = NROW(strDataSetDirectories)-2
+  firstDataSet = NROW(strDataSetDirectories)-2
   source("runimportTrackerDataFiles.r")
 
 ###### END OF IMPORT TRACKER DATA ############
@@ -112,7 +113,10 @@ rDataset <- c(rf(G_DATASETPALLETSIZE),"#FF00AA");
   firstDataSet = NROW(strDataSetDirectories)-10
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
+  ##oad Frames and HuntStats
   source("loadAllDataSets.r")
+
+  ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   source("processLoadedData.r")
 
 

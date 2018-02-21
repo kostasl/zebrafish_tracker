@@ -84,27 +84,28 @@ strDensityplotFileName <- paste("plots/binDensity/EyeAngleDensity-BINSet-",strCo
 pdf(strDensityplotFileName,width=8,height=8)
 sampleSize  <- length(vexpID) #Number of Larvae Used 
 hotMap <- c(rfHot(sampleSize),"#FF0000");
-image((-35:35),(-35:35),hGroupbinDensity,axes=TRUE,col=hotMap)
+image((-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),hGroupbinDensity,axes=TRUE,col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
 title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
 dev.off()
 ###
 
 #### Eye Density Whole Group #####
-# strDensityplotFileName <- paste("plots/densities/EyeAngleDensity-Set-",strCond,".pdf",collapse=NULL);
-# pdf(strDensityplotFileName,width=8,height=8)
-# eGroupDens <- kde2d(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle, n=60, lims=c(range(-35,35),range(-35,35)) )
-# 
-# #bw <- bandwidth.nrd(datLarvalAllFrames$REyeAngle)
-# #   
-# #   bw <- ifelse(is.na(bw),0,bw)
-# #   message(paste("kde BWdth:",bw));
-# #   if (bw==0)
-# #   {    bw <- 1.2
-# #   message(paste("**Warning changed kde BWdth to fixed value -> ",bw));
-# #   }
-# image(eGroupDens,col=r)
-# sampleSize  <- length(vexpID) #Number of Larvae Used 
-# title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
-# dev.off()
+ strDensityplotFileName <- paste("plots/densities/EyeAngleDensity-Set-",strCond,".pdf",collapse=NULL);
+ pdf(strDensityplotFileName,width=8,height=8)
+ eGroupDens <- kde2d(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle, n=60, lims=c(range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA)) )
+ 
+bw <- bandwidth.nrd(datLarvalAllFrames$REyeAngle)
+   
+bw <- ifelse(is.na(bw),0,bw)
+ message(paste("kde BWdth:",bw));
+if (bw==0)
+{    bw <- 1.2
+ message(paste("**Warning changed kde BWdth to fixed value -> ",bw));
+}
+hotMap <- c(rfHot(20),"#FF0000");
+image(eGroupDens,col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
+sampleSize  <- length(vexpID) #Number of Larvae Used 
+title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
+dev.off()
 ################################
 

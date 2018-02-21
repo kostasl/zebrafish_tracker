@@ -52,7 +52,7 @@ loadHuntEvents <- function(strCondTags,dataSetsToProcess)
     strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
     
     load(file=paste(strDataFileName,".RData",sep="" )) ##Loads datHuntEvent
-    lHuntStat[[i]] <- calcHuntStat2(datHuntEvent)
+    lHuntStat[[i]] <- calcHuntStat3(datHuntEvent)
     
   }
   
@@ -101,8 +101,8 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
     larvaID = unique((datLarvaFramesRaw$larvaID))
     
     ##Filter To Keep Only data in range ###
-    datLarvaFrames <- datLarvaFramesRaw[which(datLarvaFramesRaw$REyeAngle > -35 & datLarvaFramesRaw$REyeAngle <  35 &
-                                                datLarvaFramesRaw$LEyeAngle > -35 & datLarvaFramesRaw$LEyeAngle <  35),]
+    datLarvaFrames <- datLarvaFramesRaw[which(datLarvaFramesRaw$REyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$REyeAngle <  G_THRESHCLIPEYEDATA &
+                                                datLarvaFramesRaw$LEyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$LEyeAngle <  G_THRESHCLIPEYEDATA),]
     
     nTotalHuntFrames      <- 0
     nTotalRecordedFrames  <- NROW(datLarvaFrames) ##Will be calculated as diff in frame N for each Event (Each Event FrameN starts from 0 in tracker)
