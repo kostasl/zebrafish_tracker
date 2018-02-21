@@ -31,16 +31,18 @@ datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datH
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL) )
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,100)
-nDat <- nrow(datHuntVsPreyLL)
+preyCntRange <- c(20,40)
+
 datSliceLL <- datHuntVsPreyLL[datHuntVsPreyLL[,1] > preyCntRange[1] & datHuntVsPreyLL[,1] < preyCntRange[2],2 ]
 datSliceNL <- datHuntVsPreyNL[datHuntVsPreyNL[,1] > preyCntRange[1] & datHuntVsPreyNL[,1] < preyCntRange[2],2 ]
 datSliceDL <- datHuntVsPreyDL[datHuntVsPreyDL[,1] > preyCntRange[1] & datHuntVsPreyDL[,1] < preyCntRange[2],2 ]
+nDatLL <- length(datSliceLL)
+nDatNL <- length(datSliceNL)
+nDatDL <- length(datSliceDL)
 
-
-nLL2=as.numeric(datSliceLL[seq(1,nDat,1)])
-nNL2=as.numeric(datSliceNL[seq(1,nDat,1)])
-nDL2=as.numeric(datSliceDL[seq(1,nDat,1)])
+nLL2=as.numeric(datSliceLL[seq(1,nDatLL,1)])
+nNL2=as.numeric(datSliceNL[seq(1,nDatNL,1)])
+nDL2=as.numeric(datSliceDL[seq(1,nDatDL,1)])
 
 dataLL2=list(n=nLL2,NTOT=length(nLL2));
 dataNL2=list(n=nNL2,NTOT=length(nNL2));
@@ -73,13 +75,13 @@ drawDL2=jags.samples(mDL2,steps,thin=thin,variable.names=varnames1)
 
 strPlotName <- paste("plots/stat_HuntEventRateParamPreyRange",preyCntRange[1],preyCntRange[2], ".pdf",sep="-")
 pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
-X11()
+##X11()
 
-hist(drawLL2$q[1,,1],breaks=seq(5,35,length=100),col=colourH[1],xlab="Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
+hist(drawLL2$q[1,,1],breaks=seq(5,35,length=100),col=colourH[1],xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
 hist(drawNL2$q[1,,1],breaks=seq(5,35,length=100),add=T,col=colourH[2])
 hist(drawDL2$q[1,,1],breaks=seq(5,35,length=100),add=T,col=colourH[3])
 
-legend(5,500,legend = c(paste("LL #",length(nLL2)),paste("NL #",length(nNL2)),paste("DL #",length(nDL2))),fill=colourH)
+legend(5,500,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
 
 dev.off()
 #hist(drawLL$qq[1,,1],breaks=seq(0,50,length=100))

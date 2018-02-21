@@ -352,7 +352,7 @@ datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datH
 checkRanges <- list(range(0,20),range(10,30),range(20,40),range(30,100))
 
 
-strPlotName = paste("plots/HunteventsVsPreyCount_RangeSliced.pdf",sep="")
+strPlotName = paste("plots/meanHuntEventsPerGroupVsInitPreyCount_RangeSliced.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Event Counts Within Initial Prey Range ") 
 par(mfrow=c(2,2)) ##MultiPlot Page
 layout(matrix(c(1,2,3,4), 2, 2, byrow = TRUE))
@@ -369,13 +369,15 @@ for (rng in checkRanges)
   datmean <- c(mean(datSliceLL,na.rm = TRUE),mean(datSliceNL,na.rm = TRUE),mean(datSliceDL,na.rm = TRUE))
   datse   <-  c(sd(datSliceLL,na.rm = TRUE)/sqrt(length(datSliceLL)),sd(datSliceNL,na.rm = TRUE)/sqrt(length(datSliceNL)),sd(datSliceDL,na.rm = TRUE)/sqrt(length(datSliceDL)) )
 
+  strLocalsub = paste("" )
+  
   barCenters <- barplot(height = datmean,
         names.arg = c("LL","NL","DL"),
         beside = true, las = 2,
         ylim = c(0, 35),
         cex.names = 0.75, xaxt = "n",
-        main = paste("#Hunts in PreyCount Range",preyCntRange[1],preyCntRange[2]),
-        sub = strsub,
+        main = paste("#Hunts with InitPreyCount ",preyCntRange[1],preyCntRange[2]),
+        sub = strLocalsub,
         ylab = "#",
         border = "black", axes = TRUE)
   
