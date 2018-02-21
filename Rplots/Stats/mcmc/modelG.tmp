@@ -1,0 +1,9 @@
+model { 
+                q ~ dnorm(10,0.001)T(0,400)
+                
+                for(j in 1:NTOT){
+                  n[j] ~ dpois(q)
+                 }
+                 
+
+}

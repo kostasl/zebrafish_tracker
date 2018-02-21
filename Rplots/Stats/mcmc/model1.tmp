@@ -1,0 +1,10 @@
+model { 
+         
+		 
+         	for(j in 1:NTOT){
+		  n[j] ~ dpois(q)
+		 }
+
+                 q ~ dexp(0.1)
+         
+}
