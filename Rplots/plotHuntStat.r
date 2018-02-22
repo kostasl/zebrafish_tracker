@@ -19,7 +19,7 @@ boxplotPerCondition <- function(datStat,datMean,datSe,strtitle,strsubt,stroutFil
   }
   else ##A Known Data Frame Struct
   { 
-    datN <- unlist(datStat[,"nLarva"],use.names = FALSE)
+    datN    <- unlist(datStat[,"nLarva"],use.names = FALSE)
     datlbls <-row.names(datStat) ##Multidim Use Row Names
   }
   ##Add N Numbers to Labels
@@ -166,6 +166,56 @@ plotHuntEventPreyCountHist <- function(strCondTags,dataSetsToProcess)
   }
     
 }
+
+
+
+## Show the mean Hunt Rate of a group's Larva vs Prey Count Density - 
+## Note: NOT INITIAL #Prey count but rather prey count sample on each Hunt event is used here and then this is divided by 
+##' the number of Larvae that did these events in that bin
+plotMeanHuntEventPerLarvaVsPreyCountHist <- function(strCondTags,dataSetsToProcess)
+{
+  
+  layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+  yl <- 25 
+  step <- 10
+  for (g in strCondTags)
+  {
+    strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",g,sep="-") ##To Which To Save After Loading
+    message(paste(" Loading Hunt Events: ",strDataFileName))
+    ##ExPORT 
+    load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+    
+    
+    histHuntFq <- vector()
+    histHuntPrey <- vector()
+    histHuntN  <- vector()
+    
+    nn <- 0
+    for (i in seq(0,100,step))
+    {
+      nn <- nn + 1 
+      datExpIdSlice <- datHuntEvent$expID[round(datHuntEvent$PreyCount) >= i & round(datHuntEvent$PreyCount) < i+step]
+      
+      histHuntPrey[nn]  <- i
+      histHuntFq[nn] <- ifelse(NROW(unique(datExpIdSlice)) > 0,NROW(datExpIdSlice)/NROW(unique(datExpIdSlice)),0) 
+      histHuntN[nn] <- NROW(unique(datExpIdSlice))
+      
+      
+    }
+    #plot(histHuntPrey,histHuntFq,type='l',xlab="#Prey",ylab="#Hunts/#Larva",main=paste(g,"  ") )
+    barCenters <- barplot(histHuntFq,names.arg="",xlab="#Prey",ylab="#Hunts/#Larva",main=paste(g," #",NROW(datHuntEvent)),ylim=c(0,yl) )
+    
+    text(x = barCenters-0.1, y = -0.9, srt = 0,
+         adj = 1.8, labels = paste(histHuntPrey,sep=""), xpd = TRUE)
+    
+    text(x = barCenters+0.7, y = -0.05, srt = 45,
+         adj = 1.8, labels = paste("\nn=",histHuntN,sep=""), xpd = TRUE)
+  }
+}
+
+
+
+
 ##par(bg="black")
 
 colourH <- c(rgb(0.01,0.7,0.01,0.2),rgb(0.9,0.01,0.01,0.2),rgb(0.01,0.01,0.9,0.2))
@@ -205,6 +255,12 @@ strPlotName = "plots/HuntEventsVsPreyCount_Hist.pdf"
 pdf(strPlotName,width=8,height=10,title="Hunt Vs the Prey Count they Occured under, for each Condition") #col=(as.integer(filtereddatAllFrames$expID))
 #X11()
 plotHuntEventPreyCountHist(strCondTags, dataSetsToProcess)
+dev.off()
+
+
+strPlotName = "plots/HuntEventsPerLarvaVsPreyCount_Hist.pdf"
+pdf(strPlotName,width=8,height=10,title="Hunt/Larva Vs the Prey Count they Occured under, for each Condition") #col=(as.integer(filtereddatAllFrames$expID))
+plotMeanHuntEventPerLarvaVsPreyCountHist(strCondTags, dataSetsToProcess)
 dev.off()
 
 ########### MEAN and Distribution of Prey Count At Start of Hunt EVENTS ##### 
@@ -369,7 +425,7 @@ for (rng in checkRanges)
   datmean <- c(mean(datSliceLL,na.rm = TRUE),mean(datSliceNL,na.rm = TRUE),mean(datSliceDL,na.rm = TRUE))
   datse   <-  c(sd(datSliceLL,na.rm = TRUE)/sqrt(length(datSliceLL)),sd(datSliceNL,na.rm = TRUE)/sqrt(length(datSliceNL)),sd(datSliceDL,na.rm = TRUE)/sqrt(length(datSliceDL)) )
 
-  strLocalsub = paste("" )
+  strLocalsub = paste("")
   
   barCenters <- barplot(height = datmean,
         names.arg = c("LL","NL","DL"),
@@ -699,6 +755,9 @@ boxplotPerCondition(lDeltas,meanDelta,seDelta,"Mean Change in Episode Duration "
 dev.off()
 
 #######################################
+
+###Find Hunt Rate Per  Prey Count
+
 
 
 ###############################################
