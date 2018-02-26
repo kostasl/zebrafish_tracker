@@ -82,8 +82,11 @@ for (i in strCondTags)
 
 
 ## Hunt Statistics Summary - Combine Rows ##
-datHuntStat = do.call(rbind,lHuntStat)
-datMotionStat = do.call(rbind,lMotionStat)
+#datHuntStat = do.call(rbind,lHuntStat)#
+#datMotionStat = do.call(rbind,lMotionStat)
+
+datHuntStat <- rbindlist(lapply(lHuntStat,alloc.col))
+datMotionStat <-rbindlistlapply(lMotionStat,alloc.col)
 
 save(datHuntStat, file=paste("out/setn",NROW(dataSetsToProcess),"D",firstDataSet,lastDataSet,"datHuntStat.RData",sep="-"))
 

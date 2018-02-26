@@ -479,7 +479,7 @@ if (!bonefile)
 
 
 ###### Histogram ##########
-strPlotName = "plots/meanDeltaPreyCountPerLarvaHuntEpisode_Hist.pdf"
+strPlotName = "plots/meanReductionOfPreyCountPerLarvaHuntEpisode_Hist.pdf"
 pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
 lDeltas <- plotPairedChangeHistogram(vIDTable,vDat,strCondTags,uLim = 50,lLim = -10)
 title("Prey Counts Events", sub = strsub, cex.main = 1.2,   font.main= 1.5, col.main= "black", cex.sub = 1.0, font.sub = 2, col.sub = "black")

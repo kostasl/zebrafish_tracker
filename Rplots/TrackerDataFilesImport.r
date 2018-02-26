@@ -160,7 +160,9 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
       procDatIdx = procDatIdx+1; ##INcreased Count Of Processed Files    
       
     } ##For Each File In Group ##
-    datAllFrames = do.call(rbind,datProcessed);
+    #datAllFrames = do.call(rbind,datProcessed);
+    datAllFrames <- rbindlist(datProcessed ) 
+    
     #xxList = list(LEyeAngle=unlist(ttEyeAnglesAll[,1]),REyeAngle=unlist(ttEyeAnglesAll[,2]),frameN=unlist(ttEyeAnglesAll[,3]),fileIdx=unlist(ttEyeAnglesAll[,4]))
     message(paste("Non empty Data files Count :",  groupDatIdx, " total Frames :",procDatFrames));
     

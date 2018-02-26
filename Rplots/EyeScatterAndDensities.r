@@ -22,7 +22,7 @@ idx = 1;
 for (i in vexpID)
 {
   print(i)  
-  datLarvalAllFrames <- datAllGroupFrames[datAllGroupFrames$expID == i & datAllGroupFrames$REyeAngle > -35 & datAllGroupFrames$REyeAngle <  35 & datAllGroupFrames$LEyeAngle > -35 & datAllGroupFrames$LEyeAngle <  35,]
+  datLarvalAllFrames <- datAllGroupFrames[datAllGroupFrames$expID == i & datAllGroupFrames$REyeAngle > -G_THRESHCLIPEYEDATA & datAllGroupFrames$REyeAngle <  G_THRESHCLIPEYEDATA & datAllGroupFrames$LEyeAngle > -G_THRESHCLIPEYEDATA & datAllGroupFrames$LEyeAngle <  G_THRESHCLIPEYEDATA,]
   strScatterplotFileName <- paste("plots/scatter/EyeAngleScatter-Set-",strCond,"-lID_",i,".pdf",collapse=NULL);
   strDensityplotFileName <- paste("plots/densities/EyeAngleDensity-Set-",strCond,"-lID_",i,".pdf",collapse=NULL);
   
@@ -34,10 +34,10 @@ for (i in vexpID)
   title(paste(strCond,"R-L Eye Density lID=",i," #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
   dev.off();
   
-  hR <- hist(datLarvalAllFrames$REyeAngle, breaks=seq(-35,35,length=60), plot=F)
-  hL <- hist(datLarvalAllFrames$LEyeAngle, breaks=seq(-35,35,length=60), plot=F)
+  hR <- hist(datLarvalAllFrames$REyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA,length=60), plot=F)
+  hL <- hist(datLarvalAllFrames$LEyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA,length=60), plot=F)
   ##Do Binarized Histogram Add Each LArva In the group To A list of matrices
-  hbinRL[[idx]] <- histj(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,(-35:35),(-35:35))
+  hbinRL[[idx]] <- histj(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA))
   
   
   # ## DO Eye Density Plot for all events from This Larva ##  

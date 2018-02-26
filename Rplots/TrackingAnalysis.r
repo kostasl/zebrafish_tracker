@@ -11,6 +11,7 @@
 library(tools)
 library(RColorBrewer);
 library("MASS");
+library(data.table) ##Required for rBindList
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
@@ -32,11 +33,11 @@ source("labelHuntEvents.r")
 
 ## Required Variables - Locations 
 # Home Desktop
-#setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
-#strVideoFilePath  <- "/media/extStore/ExpData/zebrapreyCap/AnalysisSet/"
-#strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
-#strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData"
-#strTrackInputPath <- "./" ##Same As Working Dir
+setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
+strVideoFilePath  <- "/media/extStore/ExpData/zebrapreyCap/AnalysisSet/"
+strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
+strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData"
+strTrackInputPath <- "/media/extStore/ExpData/zebrapreyCap/TrackASetRepeat/" ##Same As Working Dir
 
 ##Emily ##
 #setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
@@ -85,7 +86,8 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                               "/Tracked25-01-18/",
                               "/Tracked01-02-18/",
                               "/Tracked08-02-18/",
-                              "/Tracked15-02-18/"##Dataset n 
+                              "/Tracked15-02-18/",
+                              "/Tracked22-02-18/"##Dataset n 
                               ),sep="/")
 ##Add Source Directory
 
@@ -102,15 +104,15 @@ rDataset <- c(rf(G_DATASETPALLETSIZE),"#FF00AA");
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
   
-  lastDataSet = NROW(strDataSetDirectories)-2
-  firstDataSet = NROW(strDataSetDirectories)-2
+  lastDataSet = NROW(strDataSetDirectories)-11
+  firstDataSet = NROW(strDataSetDirectories)
   source("runimportTrackerDataFiles.r")
 
 ###### END OF IMPORT TRACKER DATA ############
 
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
-  firstDataSet = NROW(strDataSetDirectories)-10
+  firstDataSet = NROW(strDataSetDirectories)-11
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   ##oad Frames and HuntStats
@@ -147,7 +149,8 @@ for (i in strCondTags)
 source("plotHuntStat.r") 
 
 
-
+###
+  source
 
 #### LABEL MANUALLY THE HUNT EVENTS WITH THE HELP OF THE TRACKER ###
 gc <- "DL"

@@ -56,7 +56,8 @@ loadHuntEvents <- function(strCondTags,dataSetsToProcess)
     
   }
   
-  datHuntStat = do.call(rbind,lHuntStat)
+  #datHuntStat = do.call(rbind,lHuntStat)
+  datHuntStat <- rbindlist(lapply(lHuntStat,alloc.col))
   
   return(datHuntStat)
   
@@ -294,8 +295,8 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
   } ### For Each Larva In Group ###
   ##### Note That vHuntStartFrames is invalid beyond this point #
   
-  datHuntingEvents = do.call(rbind,lHuntingEvents)
-  
+  #datHuntingEvents = do.call(rbind,lHuntingEvents)
+  datHuntingEvents <- rbindlist(lapply(lHuntingEvents,alloc.col))
   
   #stopifnot(any(is.nan(datHuntingEvents) ) ==FALSE )
   #  datGroupHunting = as.data.frame(lGroupHunting)
