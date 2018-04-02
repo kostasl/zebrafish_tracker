@@ -992,7 +992,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
     if (bRenderToDisplay)
         drawFrameText(window_main,nFrame,nLarva,vfoodmodels.size(),outframe);
 
-
+    if (bshowMask && bTracking)
+        cv::imshow("Isolated Fish",fgFishImgMasked);
 
 
     fgFishImgMasked.release();
@@ -2798,7 +2799,7 @@ return iminIdx;
 /// \param outFoodMask Enhanced for Food Blob Detection
 /// \todo Cross Check Fish Contour With Model Position
 /// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
-///
+/// Note: Should Use MOG Mask for Blob Detect, But . But thresholded IMg For Countour FInding
 void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
 {
 
@@ -2833,15 +2834,20 @@ frameImg.copyTo(frameImg_gray); //Its Grey Anyway
 outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 
 
-// Detect Food at Lower Thresh //
-cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
+cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
 if (gbUseBGModelling && !fgMask.empty()) //We Have a Model In maskBG - So Remove those Stationary Pixels
-    cv::bitwise_and(threshold_output,fgMask,maskFGImg);
+{
+    cv::bitwise_or(threshold_output,fgMask,maskFGImg); //Combine
+    //fgMask.copyTo(maskFGImg);
+}
 else
+{
+    // Use thresh Only to Detect FG Fish Mask Detect
     threshold_output.copyTo(maskFGImg);
+}
 
 /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
 //frameImg_gray.copyTo(frameImg_gray,maskFGImg);
@@ -2860,8 +2866,8 @@ else
 
 
 //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-cv::dilate(maskFGImg,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
-cv::morphologyEx(maskFGImg,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
+cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
+cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
 
 /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
 /// //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
@@ -3023,6 +3029,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
         if (!fgMask.empty())
             cv::imshow("BG Model",fgMask);
+
+
     }
 
     // Release Should is done automatically anyway
