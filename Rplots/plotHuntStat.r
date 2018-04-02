@@ -152,8 +152,7 @@ plotPairedChangeHistogram <- function(vIDTable,vDat,strCondTags,uLim,lLim)
 ## Note: NOT INITIAL #Prey count but rather prey count sample
 plotHuntEventPreyCountHist <- function(strCondTags,dataSetsToProcess)
 {
-  
-  layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+    layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
   
   for (i in strCondTags)
   {
@@ -161,7 +160,7 @@ plotHuntEventPreyCountHist <- function(strCondTags,dataSetsToProcess)
     message(paste(" Loading Hunt Events: ",strDataFileName))
     ##ExPORT 
     load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-    hist(datHuntEvent[,"PreyCount"],main=paste(i," Events #",NROW(datHuntEvent[,"PreyCount"]),sub = ""),
+    hist(unlist(datHuntEvent[,"PreyCount"],use.names = FALSE),main=paste(i," Events #",NROW(datHuntEvent[,"PreyCount"]),sub = ""),
          breaks=seq(0,85,5),xlab="# Prey",xlim=c(0,70),ylim=c(0,300) )
   }
     
@@ -176,7 +175,7 @@ plotMeanHuntEventPerLarvaVsPreyCountHist <- function(strCondTags,dataSetsToProce
 {
   
   layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
-  yl <- 25 
+  yl <- 35 
   step <- 10
   for (g in strCondTags)
   {
@@ -187,23 +186,35 @@ plotMeanHuntEventPerLarvaVsPreyCountHist <- function(strCondTags,dataSetsToProce
     
     
     histHuntFq <- vector()
+    histHuntFqSE <- vector()
     histHuntPrey <- vector()
     histHuntN  <- vector()
     
     nn <- 0
-    for (i in seq(0,100,step))
+    for (i in seq(0,70,step))
     {
       nn <- nn + 1 
       datExpIdSlice <- datHuntEvent$expID[round(datHuntEvent$PreyCount) >= i & round(datHuntEvent$PreyCount) < i+step]
+      datHuntEventSlice <- datHuntEvent[round(datHuntEvent$PreyCount) >= i & round(datHuntEvent$PreyCount) < i+step,]
+      
+      ##Summarize Number of Hunt Events Per Larvae 
+      tblHuntEventCount <- table(datHuntEventSlice$expID)
       
       histHuntPrey[nn]  <- i
-      histHuntFq[nn] <- ifelse(NROW(unique(datExpIdSlice)) > 0,NROW(datExpIdSlice)/NROW(unique(datExpIdSlice)),0) 
+      #histHuntFq[nn] <- ifelse(NROW(unique(datExpIdSlice)) > 0,NROW(datExpIdSlice)/NROW(unique(datExpIdSlice)),0) 
+      ##There is 1 Event 
+      histHuntFq[nn] <- mean(tblHuntEventCount[tblHuntEventCount > 0],na.rm = TRUE)
+      histHuntFqSE[nn] <- sd(tblHuntEventCount[tblHuntEventCount > 0],na.rm = TRUE)/sqrt(length(datHuntEventSlice))
       histHuntN[nn] <- NROW(unique(datExpIdSlice))
       
       
     }
     #plot(histHuntPrey,histHuntFq,type='l',xlab="#Prey",ylab="#Hunts/#Larva",main=paste(g,"  ") )
     barCenters <- barplot(histHuntFq,names.arg="",xlab="#Prey",ylab="#Hunts/#Larva",main=paste(g," #",NROW(datHuntEvent)),ylim=c(0,yl) )
+    
+    
+    segments(barCenters, histHuntFq - histHuntFqSE * 2, barCenters,
+             histHuntFq + histHuntFqSE * 2, lwd = 1.5)
     
     text(x = barCenters-0.1, y = -0.9, srt = 0,
          adj = 1.8, labels = paste(histHuntPrey,sep=""), xpd = TRUE)
@@ -212,6 +223,62 @@ plotMeanHuntEventPerLarvaVsPreyCountHist <- function(strCondTags,dataSetsToProce
          adj = 1.8, labels = paste("\nn=",histHuntN,sep=""), xpd = TRUE)
   }
 }
+
+
+
+## Show the mean Hunt INTERVALS of a group's Larva vs Prey Count Density - 
+## Note: NOT INITIAL #Prey count but rather prey count sample on each Hunt event is used here and then this is divided by 
+##' the number of Larvae that did these events in that bin
+plotMeanHuntIntervalPerLarvaVsPreyCountHist <- function(strCondTags,dataSetsToProcess)
+{
+  
+  layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+  yl <- 10000/G_APPROXFPS
+  step <- 10
+  for (g in strCondTags)
+  {
+    strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",g,sep="-") ##To Which To Save After Loading
+    message(paste(" Loading Hunt Events: ",strDataFileName))
+    ##ExPORT 
+    load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+    
+    
+    histHuntInterval    <- vector()
+    histHuntIntervalSE  <- vector()
+    histHuntPrey        <- vector()
+    histHuntN           <- vector()
+    
+    nn <- 0
+    for (i in seq(0,70,step))
+    {
+      nn <- nn + 1 
+      datHuntEventSlice <- datHuntEvent[round(datHuntEvent$PreyCount) >= i & round(datHuntEvent$PreyCount) < i+step,]
+      #datExpIdSlice <- datHuntEvent$expID[round(datHuntEvent$PreyCount) >= i & round(datHuntEvent$PreyCount) < i+step]
+      
+      histHuntPrey[nn]  <- i
+      #histHuntFq[nn] <- ifelse(NROW(unique(datExpIdSlice)) > 0,NROW(datExpIdSlice)/NROW(unique(datExpIdSlice)),0)
+      ##Get Mean Hunt Intervals 
+      tblMeanHuntIntervals   <- tapply(datHuntEventSlice$nextHuntFrame-datHuntEventSlice$endFrame, datHuntEventSlice$expID,mean,na.rm=TRUE)
+      histHuntInterval[nn]   <- mean(tblMeanHuntIntervals,na.rm=TRUE)/G_APPROXFPS ##Normalize to Seconds
+      histHuntIntervalSE[nn] <- (sd(tblMeanHuntIntervals,na.rm=TRUE)/(sqrt(NROW(datHuntEventSlice))) ) / G_APPROXFPS ##Normalize to Seconds
+      histHuntN[nn]          <- NROW(unique(datHuntEventSlice$expID)) ##Number of Larvae this belongs to 
+
+    }
+    #yl <- max(histHuntInterval,na.rm=TRUE)
+    #plot(histHuntPrey,histHuntFq,type='l',xlab="#Prey",ylab="#Hunts/#Larva",main=paste(g,"  ") )
+    barCenters <- barplot(histHuntInterval,names.arg="",xlab="#Prey",ylab="#Mean Hunts Interval (sec)",main=paste(g," #",NROW(datHuntEvent)),ylim=c(0,yl) )
+    
+    segments(barCenters, histHuntInterval - histHuntIntervalSE * 2, barCenters,
+             histHuntInterval + histHuntIntervalSE * 2, lwd = 1.5)
+    
+    text(x = barCenters-0.1, y = -0.9, srt = 0,
+         adj = 1.8, labels = paste(histHuntPrey,sep=""), xpd = TRUE)
+    
+    text(x = barCenters+0.5, y = -0.04, srt = 45,
+         adj = 1.8, labels = paste("\nn=",histHuntN,sep=""), xpd = TRUE) ##Number of Larvae Involved
+  }
+}
+
 
 
 
@@ -225,7 +292,19 @@ colourH <- c(rgb(0.01,0.7,0.01,0.2),rgb(0.9,0.01,0.01,0.2),rgb(0.01,0.01,0.9,0.2
 ## Common Subtitle info            ########
 sampleSize = sum(unlist(datHuntStat[,"nLarva"],use.names = FALSE))
 totalFrames = sum(unlist(datHuntStat[,"totalFrames"],use.names = FALSE))
+
+FPS = 420;
+strsub = paste("#n=", sampleSize, " #F:",totalFrames,
+               "(",format(totalFrames/FPS/60,digits =3),"min)",
+               " F_H/F:",format(sum(unlist(datHuntStat[,"totalHuntFrames"] ,use.names = FALSE) )/totalFrames,digits =3) ,
+               " #Hunts:",sum(unlist(datHuntStat[,"groupHuntEvents"] ,use.names = FALSE) ),
+               collapse=NULL)
+
+
+
 strPlotName = paste("plots/HuntStat_N",sampleSize,".pdf",sep="")
+
+
 
 ## PDF OUTPUT ##
 bonefile = FALSE
@@ -239,13 +318,6 @@ if (bonefile)
 
 
 #huntFrames = sum(unlist(datMotionStat[,"huntframes"],use.names = FALSE))
-
-FPS = 420;
-strsub = paste("#n=", sampleSize, " #F:",totalFrames,
-               "(",format(totalFrames/FPS/60,digits =3),"min)",
-               " F_H/F:",format(sum(unlist(datHuntStat[,"totalHuntFrames"] ,use.names = FALSE) )/totalFrames,digits =3) ,
-               " #Hunts:",sum(unlist(datHuntStat[,"groupHuntEvents"] ,use.names = FALSE) ),
-               collapse=NULL)
 ##### Done Subtitle ##
 
 
@@ -263,11 +335,18 @@ pdf(strPlotName,width=8,height=10,title="Hunt/Larva Vs the Prey Count they Occur
 plotMeanHuntEventPerLarvaVsPreyCountHist(strCondTags, dataSetsToProcess)
 dev.off()
 
+### Interval Per Prey Count - Examine if there is a lag between hunt episodes that goes up
+## in LL, so as to explain the diminished hunting rates with Increasing prey numbers 
+strPlotName = "plots/HuntEventIntervalsPerLarvaVsPreyCount_Hist.pdf"
+pdf(strPlotName,width=8,height=10,title="Time between Hunt Episodes of the Same event Vs the Prey Count they Occured under, for each Condition") #col=(as.integer(filtereddatAllFrames$expID))
+plotMeanHuntIntervalPerLarvaVsPreyCountHist(strCondTags, dataSetsToProcess)
+dev.off()
+
 ########### MEAN and Distribution of Prey Count At Start of Hunt EVENTS ##### 
 strPlotName = "plots/meanInitialPreyCountPerCond.pdf"
 vDat <- datHuntStat[,"vHInitialPreyCount"]
 vDatSetID <- datHuntStat[,"vDataSetID"]
-vIDTable <- datHuntStat[,"vIDLookupTable"]
+vIDTable <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
 
 
 datmean <- unlist(datHuntStat[,"initPreyCount"],use.names = FALSE)
@@ -275,8 +354,8 @@ datse <- unlist(datHuntStat[,"initsePreyCount"],use.names = FALSE)
 strtitle <- "Mean Initial Prey Count per Experiment"
 
 
-yl <- c(0,sampleSize/5)
-xl <- c(0,max(vDat$LL,vDat$NL,vDat$DL)+10)
+yl <- c(0,sampleSize/5) ##Remove The 3830 from DL Hack
+xl <- c(0,max(vDat$LL,vDat$NL,vDat$DL[!is.na(vDat$DL)])+10)
 
 
 if (!bonefile)
@@ -291,42 +370,46 @@ dev.off()
 
 ##Do Initial Prey  Histogram for All Groups
 strPlotName = "plots/meanInitialPreyCountPerCond_Hist.pdf"
-pdf(strPlotName,width=8,height=8,title="Init Prey Per Experiment Cond Histograms") #col=(as.integer(filtereddatAllFrames$expID))
+vDat <- datHuntStat[,"vHInitialPreyCount"]
+pdf(strPlotName,width=8,height=8,title="Initial Prey Count Per Experiment Histograms") #col=(as.integer(filtereddatAllFrames$expID))
 
 par(mfrow=c(3,2)) ##MultiPlot Page
 layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
 
-hist(vDat$LE,col=colourH[1],ylim=yl,xlim=xl,breaks=seq(0,70,10),
+yl <- c(0,ceiling(max(datHuntStat[,"vHLarvaEventCount"]$LL,datHuntStat[,"vHLarvaEventCount"]$DL,datHuntStat[,"vHLarvaEventCount"]$NL)/2)+5 )
+xl <- c(0,70)
+binSize <- 3
+br <- seq(0,75,binSize)
+
+hist(vDat$LE,col=colourH[1],ylim=yl,xlim=xl,breaks=br,
      main="LE",
      xlab = "Number of Prey at start of experiment",
      ylab = "# Experiments")
-hist(vDat$LL,col=colourH[1],ylim=yl,xlim=xl,breaks=seq(0,70,10),
+hist(vDat$LL,col=colourH[1],ylim=yl,xlim=xl,breaks=br,
      main="LL",
      xlab = "Number of Prey at start of experiment",
      ylab = "# Experiments")
 
-hist(vDat$NE,col=colourH[2],ylim=yl,xlim=xl,breaks=seq(0,70,10),
+hist(vDat$NE,col=colourH[2],ylim=yl,xlim=xl,breaks=br,
      main="NE",
      xlab = "Number of Prey at start of experiment",
      ylab = "# Experiments")
-hist(vDat$NL,col=colourH[2],ylim=yl,xlim=xl,breaks=seq(0,70,10),
+hist(vDat$NL,col=colourH[2],ylim=yl,xlim=xl,breaks=br,
      main="NL",
      xlab = "Number of Prey at start of experiment",
      ylab = "# Experiments")
 
-hist(vDat$DE,col=colourH[3],ylim=yl,xlim=xl,breaks=seq(0,70,10),
+hist(vDat$DE,col=colourH[3],ylim=yl,xlim=xl,breaks=br,
      main="DE",
      xlab = "Number of Prey at start of experiment",
      ylab = "# Experiments")
-hist(vDat$DL,col=colourH[3],ylim=yl,xlim=xl,breaks=seq(0,70,10),
+hist(vDat$DL,col=colourH[3],ylim=yl,xlim=xl,breaks=br,
      main="DL",
      xlab = "Number of Prey at start of experiment",
      ylab = "# Experiments")
 
 dev.off()
 ###### # # # # # ## ## # ##  # # ## #  ## # # # 
-
-
 
 
 #####  Scattter OF Hunt Events Vs Initial  Prey Counts ### ##
@@ -338,20 +421,20 @@ yl <- c(0,ceiling(max(datHuntStat[,"vHLarvaEventCount"]$LL,datHuntStat[,"vHLarva
 xl <- c(0,60)
 
 
-hist(vDat$NL,col=colourH[1],ylim=yl,xlim=xl,breaks=10,
+hist(vDat$LL,col=colourH[1],ylim=yl,xlim=xl,breaks=10,
      main="Number of Prey Vs Hunting Events",
      xlab = "Number of Prey at start of experiment",
      ylab = "Number of Hunt Events")
-hist(vDat$LL,col=colourH[2],ylim=yl,xlim=xl,breaks=10,add=T)
+hist(vDat$NL,col=colourH[2],ylim=yl,xlim=xl,breaks=10,add=T)
 hist(vDat$DL,col=colourH[3],ylim=yl,xlim=xl,breaks=10,add=T)
 box()
 par(new=TRUE)
 ##Add Scatter Of Hunt Events
-plot(datHuntStat[,"vHInitialPreyCount"]$NL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),
+plot(datHuntStat[,"vHInitialPreyCount"]$LL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),
      pch=4,col=1,
      xlab="",ylab="",ylim=yl,xlim=xl,main="")
 
-points(datHuntStat[,"vHInitialPreyCount"]$LL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),
+points(datHuntStat[,"vHInitialPreyCount"]$NL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),
        pch=2 ,col=2,type ="p",
        xlab="",ylab="",ylim=yl,xlim=xl)
 
@@ -359,14 +442,170 @@ points(datHuntStat[,"vHInitialPreyCount"]$DL,as.numeric(datHuntStat[,"vHLarvaEve
        pch=19 ,col=6,type ="p",
        xlab="",ylab="",ylim=yl,xlim=xl)
 
-legend(50,55,legend=c("NL","LL","DL"),
+legend(50,55,legend=c("LL","NL","DL"),
        fill=colourH,
        col = c(1, 2,6),pch = c(4,2,19),
        bg = "gray90",lty = c(2, -1, 1),
        merge=TRUE)
 
 dev.off()
+##########  # ## # # # # 
 
+##### Number Of Events Recorded/Seen Vs Prey ###
+
+
+#####  Scattter OF Hunt Events Vs Initial  Prey Counts ### ##
+strPlotName = "plots/EventsCountInFedTestVsInitPreyCount_scatter.pdf"
+pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
+
+
+yl <- c(0,ceiling(max(datHuntStat[,"vHLarvaEventCount"]$LL,datHuntStat[,"vHLarvaEventCount"]$DL,datHuntStat[,"vHLarvaEventCount"]$NL)/10)*10 )
+xl <- c(0,60)
+
+
+hist(vDat$LL,col=colourH[1],ylim=yl,xlim=xl,breaks=10,
+     main="Number of Prey Vs Hunting Events",
+     xlab = "Number of Prey at start of experiment",
+     ylab = "Number of  Recorded Events")
+hist(vDat$NL,col=colourH[2],ylim=yl,xlim=xl,breaks=10,add=T)
+hist(vDat$DL,col=colourH[3],ylim=yl,xlim=xl,breaks=10,add=T)
+box()
+par(new=TRUE)
+##Add Scatter Of Hunt Events
+plot(datHuntStat[,"vHInitialPreyCount"]$LL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),
+     pch=4,col=1,
+     xlab="",ylab="",ylim=yl,xlim=xl,main="")
+
+points(datHuntStat[,"vHInitialPreyCount"]$NL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),
+       pch=2 ,col=2,type ="p",
+       xlab="",ylab="",ylim=yl,xlim=xl)
+
+points(datHuntStat[,"vHInitialPreyCount"]$DL,as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),
+       pch=19 ,col=6,type ="p",
+       xlab="",ylab="",ylim=yl,xlim=xl)
+
+legend(50,55,legend=c("LL","NL","DL"),
+       fill=colourH,
+       col = c(1, 2,6),pch = c(4,2,19),
+       bg = "gray90",lty = c(2, -1, 1),
+       merge=TRUE)
+
+dev.off()
+##########  # ## # # # # 
+
+
+
+
+
+########### MEAN and Distribution of FINAL PREY COUNT - On Last Hunt EVENTS ##### 
+strPlotName = "plots/meanFinalPreyCountPerCond_Hist.pdf"
+vDat <- datHuntStat[,"vHPreyReductionPerLarva"]
+vDatSetID <- datHuntStat[,"vDataSetID"]
+vIDTable <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
+
+
+datmean <- unlist(datHuntStat[,"meanPreyReductionPerLarva"],use.names = FALSE)
+datse <- unlist(datHuntStat[,"sePreyReductionPerLarva"],use.names = FALSE)
+strtitle <- "Mean Final Prey Count per Experiment"
+
+
+pdf(strPlotName,width=8,height=8,title="Number of Prey at End of Experiment Histogram") 
+yl <- c(0,ceiling(max(datHuntStat[,"vHLarvaEventCount"]$LL,datHuntStat[,"vHLarvaEventCount"]$DL,datHuntStat[,"vHLarvaEventCount"]$NL)/2) )
+xl <- c(0,70)
+binSize <- 3
+br <- seq(0,75,binSize)
+
+par(mfrow=c(3,2)) ##MultiPlot Page
+layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+
+hist(vDat$LE,col=colourH[1],ylim=yl,xlim=xl,breaks=br,
+     main="LE",
+     xlab = "Number of Prey at End of experiment",
+     ylab = "# Experiments")
+hist(vDat$LL,col=colourH[1],ylim=yl,xlim=xl,breaks=br,
+     main="LL",
+     xlab = "Number of Prey at End of experiment",
+     ylab = "# Experiments")
+
+hist(vDat$NE,col=colourH[2],ylim=yl,xlim=xl,breaks=br,
+     main="NE",
+     xlab = "Number of Prey at End of experiment",
+     ylab = "# Experiments")
+hist(vDat$NL,col=colourH[2],ylim=yl,xlim=xl,breaks=br,
+     main="NL",
+     xlab = "Number of Prey at End of experiment",
+     ylab = "# Experiments")
+
+hist(vDat$DE,col=colourH[3],ylim=yl,xlim=xl,breaks=br,
+     main="DE",
+     xlab = "Number of Prey at End of experiment",
+     ylab = "# Experiments")
+hist(vDat$DL,col=colourH[3],ylim=yl,xlim=xl,breaks=br,
+     main="DL",
+     xlab = "Number of Prey at End of experiment",
+     ylab = "# Experiments")
+
+dev.off()
+
+### Change In Prey Count Plot ###
+strPlotName = "plots/meanPreyCountChangePerCond_Hist.pdf"
+vDatF <- datHuntStat[,"vHPreyReductionPerLarva"]
+vDatI <- datHuntStat[,"vHInitialPreyCount"]
+vDatSetID <- datHuntStat[,"vDataSetID"]
+vIDTable <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
+
+
+pdf(strPlotName,width=8,height=8,title="Number of Prey at End of Experiment Histogram") 
+yl <- c(0,ceiling(max(datHuntStat[,"vHLarvaEventCount"]$LL,datHuntStat[,"vHLarvaEventCount"]$DL,datHuntStat[,"vHLarvaEventCount"]$NL)/1.8) )
+xl <- c(-30,30)
+binSize <- 3
+br <- seq(-40,40,binSize)
+#br <- br[br != 0]
+
+par(mfrow=c(3,2)) ##MultiPlot Page
+layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+
+blnc <- vDatI$LE-vDatF$LE
+hist(blnc,col=colourH[1],ylim=yl,xlim=xl,breaks=br,
+     main=paste("LE ",NROW(blnc[blnc<= -binSize])," vs ",NROW(blnc[blnc>= +binSize]),sep=""),
+     xlab = "Reduction in Prey by End of experiment",
+     ylab = "# Experiments")
+
+blnc <- round(vDatI$LL-vDatF$LL)
+hist(blnc,col=colourH[1],ylim=yl,xlim=xl,breaks=br,
+     main=paste("LL ",NROW(blnc[blnc<= -binSize])," vs ",NROW(blnc[blnc>= +binSize]),sep=""),
+     xlab = "Reduction in Prey by End of experiment",
+     ylab = "# Experiments")
+
+blnc <- round(vDatI$NE-vDatF$NE)
+hist(blnc,col=colourH[2],ylim=yl,xlim=xl,breaks=br,
+     main=paste("NE ",NROW(blnc[blnc<= -binSize])," vs ",NROW(blnc[blnc>= +binSize]),sep=""),
+     xlab = "Reduction in Prey by End of experiment",
+     ylab = "# Experiments")
+
+blnc <- round(vDatI$NL-vDatF$NL)
+hist(blnc,col=colourH[2],ylim=yl,xlim=xl,breaks=br,
+     main=paste("NL ",NROW(blnc[blnc<= -binSize])," vs ",NROW(blnc[blnc>= +binSize]),sep=""),
+     xlab = "Reduction in Prey by End of experiment",
+     ylab = "# Experiments")
+
+blnc <- round(vDatI$DE-vDatF$DE)
+xx <- hist(blnc,col=colourH[3],ylim=yl,xlim=xl,breaks=br,
+     main=paste("DE ",NROW(blnc[blnc<= -binSize])," vs ",NROW(blnc[blnc>= +binSize]),sep=""),
+     xlab = "Reduction in Prey by End of experiment",
+     ylab = "# Experiments")
+
+blnc <- round(vDatI$DL-vDatF$DL)
+hist(blnc,col=colourH[3],ylim=yl,xlim=xl,breaks=br,
+     main=paste("DL ",NROW(blnc[blnc<= -binSize])," vs ",NROW(blnc[blnc>= +binSize]),sep=""),
+     xlab = "Reduction in Prey by End of experiment",
+     ylab = "# Experiments")
+
+dev.off()
+
+
+#############
+###
 ### Compare FED to Non Fed Group ##
 # strPlotName = "plots/NumberOfHuntEventsVsPreyCount-FedGroups.pdf"
 # pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
@@ -455,12 +694,39 @@ dev.off()
 
 ########### MEAN Prey Count REDUCTION from Initial During Hunt EVENTS ##### 
 
-strPlotName = "plots/meanPreyCountReductionPerLarvaHuntEpisode.pdf"
-vDat <- datHuntStat[,"vHNablaPreyCount"] #INverse Sign And Denote Reduction
+## Reduction Per Experiment/Larva # 
+# ** \Note THat Currently it reports mean final prey count  ###
+strPlotName = "plots/meanPreyCountReductionPerLarva.pdf"
+vDat <- datHuntStat[,"vHPreyReductionPerLarva"] #INverse Sign And Denote Reduction
+#vDat$DL <- vDat$DL[!is.na(vDat$DL)]
 vDatSetID <- datHuntStat[,"vDataSetID"]
 vIDTable <- datHuntStat[,"vIDLookupTable"]
 
+###This Prey Count Reduction. Shows a little *increase* for NL, DL but not for LL 
+datmean <- unlist(datHuntStat[,"meanPreyReductionPerLarva"],use.names = FALSE)
+datse <- unlist(datHuntStat[,"sePreyReductionPerLarva"],use.names = FALSE)
+strtitle <- "Mean Prey Count Reduction from Initial For each Larva"
 
+if (!bonefile)
+  pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
+
+ylim <- max(unlist(vDat,use.names=FALSE),na.rm=TRUE)
+xbarcenters <- boxplotPerCondition(vDat,datmean,datse,strtitle,strsub,strPlotName,ylim)
+plotConnectedPointsPairs(vIDTable,vDat,strCondTags,xbarcenters)
+
+if (!bonefile)
+  dev.off()
+
+
+##
+strPlotName = "plots/meanPreyCountReductionPerLarvaHuntEpisode.pdf"
+vDat <- datHuntStat[,"vHNablaPreyCount"] #INverse Sign And Denote Reduction
+#vDat$DL <- vDat$DL[!is.na(vDat$DL)]
+vDatSetID <- datHuntStat[,"vDataSetID"]
+vIDTable <- datHuntStat[,"vIDLookupTable"]
+#vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
+
+###This Prey Count Reduction. Shows a little *increase* for NL, DL but not for LL 
 datmean <- unlist(datHuntStat[,"meanNablaPreyCount"],use.names = FALSE)
 datse <- unlist(datHuntStat[,"seNablaPreyCount"],use.names = FALSE)
 strtitle <- "Mean Prey Count Reduction from Initial at each Hunt Event Per Larva"
@@ -506,6 +772,8 @@ vDat <- datHuntStat[,"vHLarvaEventCount"]
 vDatSetID <- datHuntStat[,"vDataSetID"]
 vIDTable <- datHuntStat[,"vIDLookupTable"]
 
+#vDat$DL <- vDat$DL[!is.na(vDat$DL)] 
+#vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
 
 datmean <- unlist(datHuntStat[,"meanHuntingEventsPerLarva"],use.names = FALSE)
 datse <- unlist(datHuntStat[,"seHuntingEventsPerLarva"],use.names = FALSE)
@@ -544,7 +812,7 @@ if (!bonefile)
   uLim = max(vDat$LL,vDat$DL,vDat$NL)+10
   lLim = min(vDat$LL,vDat$DL,vDat$NL)
   res = 20
-  strPlotName = "plots/meanHuntingEvents_Hist.pdf"
+  strPlotName = "plots/HuntingEventsCount_Hist.pdf"
   pdf(strPlotName,width=8,height=8,title=strtitle) #col=(as.integer(filtereddatAllFrames$expID))
   layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
   

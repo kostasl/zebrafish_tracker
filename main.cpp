@@ -80,13 +80,13 @@
 
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
-const unsigned int MOGhistory   = gfVidfps*4;//Use 3 sec Of Video So rotifers Have Moved  A little
+const unsigned int MOGhistory   = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
 bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
 double dLearningRate                    = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
-const double dLearningRateNominal       = 0.0001;
+double dLearningRateNominal       = 0.00001;
 
 
 /// BLOB DETECTION Filters //
@@ -95,6 +95,7 @@ double dMeanBlobArea                    = 100; //Initial Value that will get upd
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
+const unsigned int thresh_maxfishblobarea = 1850; //Min area above which to Filter The fish blobs
 const unsigned int gthres_maxfoodblobarea = 150;
 
 
@@ -164,7 +165,7 @@ cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
 cv::Size gszTemplateImg;
 
 //cv::Ptr<cv::BackgroundSubtractor> pMOG; //MOG Background subtractor
-//cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
+cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 //cv::Ptr<cv::BackgroundSubtractorKNN> pKNN; //MOG Background subtractor
 //cv::Ptr<cv::bgsegm::BackgroundSubtractorGMG> pGMG; //GMG Background subtractor
 
@@ -647,7 +648,7 @@ int main(int argc, char *argv[])
     //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 3
 
-    //pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory,16,false);
+    pMOG2 =  cv::createBackgroundSubtractorMOG2();
     //pMOG2->setNMixtures(160);
     //pMOG2->setBackgroundRatio(0.98);
 
@@ -769,6 +770,7 @@ int main(int argc, char *argv[])
     frameDebugB.release();
     frameDebugC.release();
     frameDebugD.release();
+
 
 
     ///* Create Morphological Kernel Elements used in processFrame *///
@@ -902,8 +904,13 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
     //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
         cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
 
+        // Update BG Substraction Model
+        cv::Mat bgMask;
+        pMOG2->apply(frame_gray,bgMask,dLearningRateNominal);
 
-        enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+        //cv::bitwise_not ( fgMask, bgMask );
+
+        enhanceMask(frame_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
         frame_gray.copyTo(fgFishImgMasked,fgFishMask); //Use Enhanced Mask
 
@@ -1593,6 +1600,10 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
              pfood->blobMatchScore +=fbdist;
              if (fbdist < gMaxClusterRadiusFoodToBlob)
                  bMatch = true;
+             //Rank Up if this food model has been around for a while, instead of newly created one
+             if (pfood->activeFrames > gcMinFoodModelActiveFrames )
+                 pfood->blobMatchScore += pfood->activeFrames/gcMinFoodModelActiveFrames;
+
 
              //Consider only Food Models Within Region Of Blob
              if  (bMatch)
@@ -1612,7 +1623,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             pfoodBest = qfoodrank.top(); //Get Pointer To Best Scoring Fish
             //qrank.pop();//Remove From Priority Queue Rank
             pfoodBest->inactiveFrames   = 0; //Reset Counter
-            pfoodBest->activeFrames++; //Increase Count Of Consecutive Active Frames
+            pfoodBest->activeFrames = pfoodBest->activeFrames+1; //Increase Count Of Consecutive Active Frames
             pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,pfoodBest->blobMatchScore);
 
         }else  ///No Food Model Found - Create A new One //
@@ -1640,7 +1651,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         // Delete If Inactive For Too Long
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
         if ((pfood->inactiveFrames > gcMaxFoodModelInactiveFrames) ||
-            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > 10)
+            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames)
             ) //Check If it Timed Out / Then Delete
         {
             ft = vfoodmodels.erase(ft);
@@ -1650,9 +1661,12 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             continue;
         }
         else //INcrease Inactive Frame Count For this Food Model
-        {
-            pfood->activeFrames = 0; //Reset Count Of Consecutive Active Frames
-            pfood->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+        {//If this Model Has not Been Used Here
+            if (pfood->nLastUpdateFrame-nFrame > 1)
+            {
+                pfood->activeFrames = 0; //Reset Count Of Consecutive Active Frames
+                pfood->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+            }
         }
 
         ++ft; //Increment Iterator
@@ -1942,7 +1956,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Filter by Area.
     params.filterByArea = true;
     params.minArea = thresh_fishblobarea/2.0;
-    params.maxArea = 6*thresh_fishblobarea;
+    params.maxArea = thresh_maxfishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
@@ -2779,20 +2793,20 @@ return iminIdx;
 /// This is to recover Background substraction errors -
 /// It then uses the fixed image to Find contours *main Internal and External fish contours* using on Masked Image Showing Fish Outline
 /// \param frameImg - Raw Input camera input in Mat - colour or gray -
-/// \param maskFGImg - Modified Enhanced FG Mask Image
+/// \param fgMask - Modified Enhanced FG Mask Image
 /// \param outFishMask - Mask Enhanced for Fish Blob Detection
-/// \param outFoodMaskMask Enhanced for Fish Blob Detection
+/// \param outFoodMask Enhanced for Food Blob Detection
 /// \todo Cross Check Fish Contour With Model Position
 /// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
 ///
-void enhanceMask(const cv::Mat& frameImg, cv::Mat& bgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
+void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
 {
 
 int max_thresh = 255;
 cv::Mat frameImg_gray;
 cv::Mat threshold_output;
 cv::Mat threshold_output_COMB;
-cv::Mat maskFGImg; //The FG Mask - After Removal Of The bgMask Pixels
+cv::Mat maskFGImg; //The FG Mask - After Combining Threshold Detection
 
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
@@ -2805,7 +2819,6 @@ cv::Mat maskFGImg; //The FG Mask - After Removal Of The bgMask Pixels
 /////Remove Speckles // Should leave fish INtact
 //cv::filterSpeckles(maskFGImg,0,3,2 );
 /////////// MOG Mask Is not Used Currently //
-
 
 
 ///// Convert image to gray, Mask and
@@ -2824,10 +2837,9 @@ outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
 
-
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
-if (gbUseBGModelling && !bgMask.empty()) //We Have a Model In maskFG - So Remove those Stationary Pixels
-    cv::bitwise_xor(threshold_output,bgMask,maskFGImg);
+if (gbUseBGModelling && !fgMask.empty()) //We Have a Model In maskBG - So Remove those Stationary Pixels
+    cv::bitwise_and(threshold_output,fgMask,maskFGImg);
 else
     threshold_output.copyTo(maskFGImg);
 
@@ -2848,8 +2860,8 @@ else
 
 
 //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
-cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
+cv::dilate(maskFGImg,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
+cv::morphologyEx(maskFGImg,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
 
 /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
 /// //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
@@ -2896,7 +2908,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
 
         ///Check Area and then  Find the thresholded Fish Contour std::max(dMeanBlobArea*8,(double)thresh_fishblobarea)
-        if (area >  thresh_fishblobarea) //If Contour Is large Enough then Must be fish
+        if (area >  thresh_fishblobarea && area <= thresh_maxfishblobarea) //If Contour Is large Enough then Must be fish
         {
             cv::Moments moments =  cv::moments(fishbodycontours[kk]);
             cv::Point centroid;
@@ -3009,8 +3021,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         cv::imshow("Threshold Out",threshold_output);
         cv::imshow("Fish Mask",outFishMask);
         cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
-        if (!bgMask.empty())
-            cv::imshow("BG Model",bgMask);
+        if (!fgMask.empty())
+            cv::imshow("BG Model",fgMask);
     }
 
     // Release Should is done automatically anyway

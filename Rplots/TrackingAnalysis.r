@@ -11,22 +11,14 @@
 library(tools)
 library(RColorBrewer);
 library("MASS");
-library(data.table) ##Required for rBindList
+#library(data.table) ##Required for rBindList
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
 ####################
 
 
-####################
-#source("TrackerDataFilesImport.r")
-### Hunting Episode Analysis ####
-source("HuntingEventAnalysis.r")
 
-source("TrajectoryAnalysis.r")
-
-source("labelHuntEvents.r")
-########
 
 ## GLOBAL VARS ###
 
@@ -36,8 +28,9 @@ source("labelHuntEvents.r")
 setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
 strVideoFilePath  <- "/media/extStore/ExpData/zebrapreyCap/AnalysisSet/"
 strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
-strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData"
+strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
 strTrackInputPath <- "/media/extStore/ExpData/zebrapreyCap/TrackASetRepeat/" ##Same As Working Dir
+strDatDir        <- "./dat/TrackedSessionA" ##Where Are the Imported RData Stored
 
 ##Emily ##
 #setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
@@ -51,22 +44,39 @@ strTrackInputPath <- "/media/extStore/ExpData/zebrapreyCap/TrackASetRepeat/" ##S
 setwd("/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/")
 strVideoFilePath  <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/expDataKostas/AnalysisSetAlpha/" 
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_9_2_GCC_64bit-Release/"
-strTrackeroutPath <- "/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_UpTo01Feb/"
+strTrackeroutPath <- "/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
 strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from 
 
 
-## Laptop
-#setwd("~/Dropbox/Calculations/zebrafishtrackerData/")
-#strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
-#strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
-#strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_UpTo21Dec/" ##Where to stre the Tracker output csv files when labelling events
-#strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
 
+## Laptop
+setwd("~/Dropbox/Calculations/zebrafishtrackerData/")
+strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
+strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
+strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_UpTo21Dec/" ##Where to stre the Tracker output csv files when labelling events
+strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
+
+
+####################
+#source("TrackerDataFilesImport.r")
+### Hunting Episode Analysis ####
+source("HuntingEventAnalysis.r")
+
+source("TrajectoryAnalysis.r")
+
+source("labelHuntEvents.r")
+########
+
+
+DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
+DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
+G_APPROXFPS              <- 420
 G_THRESHUNTANGLE         <- 19 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
+PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 
 nFrWidth                 <- 50 ## Sliding Window Filter Width
 
@@ -91,6 +101,15 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                               ),sep="/")
 ##Add Source Directory
 
+
+## These Were For Emily ###
+#strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/" 
+#strDataSetDirectories <- paste(strTrackInputPath, list(
+#  "/TrackedEmA/",##Dataset n-1 
+#  "/TrackedEmB/"##Dataset n 
+#),sep="/")
+
+
 strCondR  <- "*.csv"; 
 
 #display.brewer.all() to see avaulable options
@@ -104,9 +123,9 @@ rDataset <- c(rf(G_DATASETPALLETSIZE),"#FF00AA");
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
   
-  lastDataSet = NROW(strDataSetDirectories)-11
-  firstDataSet = NROW(strDataSetDirectories)
-  source("runimportTrackerDataFiles.r")
+  #lastDataSet = NROW(strDataSetDirectories)
+  #firstDataSet = NROW(strDataSetDirectories)-11
+  #source("runimportTrackerDataFiles.r")
 
 ###### END OF IMPORT TRACKER DATA ############
 
@@ -118,7 +137,10 @@ rDataset <- c(rf(G_DATASETPALLETSIZE),"#FF00AA");
   ##oad Frames and HuntStats
   source("loadAllDataSets.r")
 
+  ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
+  groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
+  dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   source("processLoadedData.r")
 
 
@@ -150,18 +172,40 @@ source("plotHuntStat.r")
 
 
 ###
-  source
+  source("plotMotionStat.r")
 
 #### LABEL MANUALLY THE HUNT EVENTS WITH THE HELP OF THE TRACKER ###
-gc <- "DL"
+gc <- "LL"
+firstDataSet = NROW(strDataSetDirectories)-11
+lastDataSet = NROW(strDataSetDirectories)
+dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
+
 strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
 message(paste(" Loading Hunt Events: ",strDataFileName))
 ##ExPORT 
 load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-labelHuntEvents(datHuntEvent,strVideoFilePath,strTrackerPath )
+datHuntEvent <- labelHuntEvents(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackeroutPath )
+##Saving is done in labelHuntEvent on Every loop - But repeated here
 save(datHuntEvent,file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+message(paste("Saved Updated :",strDataFileName,".RData",sep="") )
 ##########################
 
 
+######## CALC Stat On Hunt Events ######
+## Re-process Hunt Stat On Modified Events
+lHuntStat <- list()
+groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
+strCondTags <- names(groupsrcdatList)
+for (i in strCondTags)
+{
+  message(paste("#### ProcessGroup ",i," ###############"))
+  strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
+  message(paste(" Loading Hunt Events: ",strDataFileName))
+  ##ExPORT 
+  load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+  
+  lHuntStat[[i]] <- calcHuntStat3(datHuntEvent)
+}
 
-
+datHuntStat = do.call(rbind,lHuntStat)#
+################

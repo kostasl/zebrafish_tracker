@@ -56,8 +56,8 @@ loadHuntEvents <- function(strCondTags,dataSetsToProcess)
     
   }
   
-  #datHuntStat = do.call(rbind,lHuntStat)
-  datHuntStat <- rbindlist(lapply(lHuntStat,alloc.col))
+  datHuntStat = do.call(rbind,lHuntStat)
+  #datHuntStat <- rbindlist(lapply(lHuntStat,alloc.col))
   
   return(datHuntStat)
   
@@ -111,11 +111,13 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
     nHuntingEventsForLarva <- 0;
     meanHuntDuration <- sdHuntDuration  <- medHuntDuration <- maxHuntDuration<-minHuntDuration <- 0
     
-    lHuntingDuration <-list() ##Empty List Of Event Durations
-
+    lHuntingDuration  <- list() ##Empty List Of Event Durations
+    lHuntingIntervals <- list() ##Empty List Of Numbr of Frames Between Hunting Episodes Within An Event
+    
     ##Note Hunt Frames Can Come From Separate Events ##
     ## So we need to loop over them ##
-    nInitialPrey = NA ##Count THe Total Prey Count On 1st Event
+    nInitialPrey <- NA ##Count THe Total Prey Count On 1st Event
+    nFinalPrey  <- NA
     for (k in vEventID)
     {
       
@@ -135,8 +137,12 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
         nTotalHuntFrames <- nTotalHuntFrames + NROW(datHuntFrames$frameN)
         
         ##On 1st Event Save THe Initial mean Prey Count
-        if (k==1 && NROW(datEventFrames) > 0)
-          nInitialPrey <- mean(datEventFrames$PreyCount)
+        if (k==1 & NROW(datEventFrames) > 0)
+          nInitialPrey <- mean(datEventFrames$PreyCount[1:min(NROW(datEventFrames),PREY_COUNT_FRAMEWINDOW)])
+        
+        ##Count Prey On Final Event
+        if ( (k == max(vEventID)) & NROW(datEventFrames) > 0)
+          nFinalPrey <- mean(datEventFrames$PreyCount[max(1,NROW(datEventFrames)-PREY_COUNT_FRAMEWINDOW):NROW(datEventFrames)])
         
         ##Add to Total Number of frames - Using Actual Frame Number of steps Instead of simpler NRow(datLarvaFrames) 
         ##(ideally these should match tho) but tracker can loose object for a few frames and skip
@@ -149,11 +155,12 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
         
         #Find Start Hunt Event the point leading a big gap in frameN, ie reverse diff s[(1+1):10] - s[(1):9]
         ##ShifHuntDelteFrames
-        vsHuntDeltaFrames     <- (1:(NROW(datHuntFrames$frameN)+2))
-        vHuntStartFrames      <- list()
-        vHuntEndFrames        <- list()
-        lHuntingDuration[[k]] <- 0
-        minHuntDuration       <- 0
+        vsHuntDeltaFrames      <- (1:(NROW(datHuntFrames$frameN)+2))
+        vHuntStartFrames       <- list()
+        vHuntEndFrames         <- list()
+        lHuntingDuration[[k]]  <- 0
+        lHuntingIntervals[[k]] <- 0
+        minHuntDuration        <- 0
         
         
         # Debug #
@@ -164,15 +171,12 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
         {
           ##Add (Imaginary) Edge Frame  Numbers  (preceding hunting and after last hunting Frame)
           vsHuntDeltaFrames[1] <- datHuntFrames$frameN[1]-G_MINGAPBETWEENEPISODES
-          
-          
           vsHuntDeltaFrames[NROW(vsHuntDeltaFrames)] <- datHuntFrames$frameN[NROW(datHuntFrames$frameN)]+G_MINGAPBETWEENEPISODES
           ##Copy into Shifted right (lagged) Position
           vsHuntDeltaFrames[2:(NROW(datHuntFrames$frameN)+1)] <- datHuntFrames$frameN
           ##Do Rev Diff - ie Nabla taking s_n = x_n-x_{n-1} # Detect Start Events as +ve diff
           vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] <- datHuntFrames$frameN - vsHuntDeltaFrames[1:(NROW(datHuntFrames$frameN))]
           ##\TODO:  Perhaps Throw away Hunts That Began Before Recording Started or End After It Ends - remove Edge Points ##
-          
           ##Find Hunt Event STARTs ## Needs A gap of At least #MINGAP Between Events To Be a new Episode
           ##attempting to Remove delay introduced by filtering 
           vHuntStartFrames <- datHuntFrames$frameN[vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] >= G_MINGAPBETWEENEPISODES ]-as.integer(nFrWidth/3) ##Note Ignores hunting event at the very beginning of recording frames for event  (<300 frames away from start)
@@ -194,38 +198,56 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
           }
           if (length(unique(datHuntFrames$fileIdx) ) > 1)
           {
-          
             stop(paste("Duplicate Track File for same Event - check CSVs for expID:",i," event",k," DatasetId:",DataSetID,  " fileIds:",unlist(unique(datHuntFrames$fileIdx) ) )  )
-    
           }
           
           lHuntingDuration[[k]]   <- vHuntEndFrames - vHuntStartFrames
-          message(paste(" Event Hunt Duration is  ",sum(lHuntingDuration[[k]])," in ",length(vHuntStartFrames)," episodes for expID:",i," eventID:",k))
-          
-  
+
+          ##Check If More than Hunt Episode occurred in this Event - And Calculate Interval Between them
+          meanInterval         <- NA
+          shiftHuntStartFrames <- NA
+          if (length(vHuntStartFrames) > 1  )
+          {
+            ##Calc diff between end of event to next event start : Shift start frame vector to right and shrink End Frames vector from end- 
+            shiftHuntStartFrames   <- vHuntStartFrames[2:NROW(vHuntStartFrames)]
+            shiftHuntEndFrames     <- vHuntEndFrames[1:NROW(vHuntEndFrames)-1] 
+            lHuntingIntervals[[k]] <- shiftHuntStartFrames-shiftHuntEndFrames
+            meanInterval           <- mean(lHuntingIntervals[[k]])
+            shiftHuntStartFrames  <-  c(shiftHuntStartFrames,NA) ##Add NA On End Which We use for indicating Next Hunt Frame When there is no Event
+          }else
+            lHuntingIntervals[[k]] <- NA
+
+          message(paste(" Event Hunt Duration :",sum(lHuntingDuration[[k]]), " in ",length(vHuntStartFrames)," t interval between: ", meanInterval, " episodes for expID:",i," eventID:",k))
+            
           idxHuntRec = idxHuntRec + 1;
           
-          lHuntingEvents[[idxHuntRec]] <- data.frame(expID      = factor(i,levels=vexpID),
-                                                     eventID    = k,
-                                                     dataSetID  = factor(DataSetID,levels=vdatasetID),
-                                                     larvaID    = factor(larvaID,levels=seq(1:4)) , ##Identifies Larva Between Empty And Live Test Conditions
-                                                     groupID    = groupID,
-                                                     fileIdx    = unique(datHuntFrames$fileIdx),
-                                                     startFrame = unlist(vHuntStartFrames),
-                                                     endFrame   = unlist(vHuntEndFrames),
-                                                     nExpFrames = nTotalRecordedFrames,
-                                                     InitPreyCount =  nInitialPrey, ##Mean Prey Count Across Hunt Frames
-                                                     PreyCount =  mean(datHuntFrames$PreyCount), ##Mean Prey Count Across Hunt Frames
-                                                     huntScore  = 0,
+          lHuntingEvents[[idxHuntRec]] <- data.frame(expID               = factor(i,levels=vexpID),
+                                                     eventID             = k,
+                                                     dataSetID           = factor(DataSetID,levels=vdatasetID),
+                                                     larvaID             = factor(larvaID,levels=seq(1:4)) , ##Identifies Larva Between Empty And Live Test Conditions
+                                                     groupID             = groupID,
+                                                     fileIdx             = unique(datHuntFrames$fileIdx),
+                                                     startFrame          = unlist(vHuntStartFrames),
+                                                     endFrame            = unlist(vHuntEndFrames),
+                                                     nextHuntFrame       = unlist(shiftHuntStartFrames), ## Indicates when next Event Starts / Last Hunt Episode will have an NA as next frame
+                                                     nExpFrames          = nTotalRecordedFrames,
+                                                     InitPreyCount      = nInitialPrey, ##Mean Prey Count Across Hunt PREY_COUNT_FRAMEWINDOW Frames of 1st Event
+                                                     FinalPreyCount     = c(rep(NA,length(vHuntEndFrames)-1),nFinalPrey), ##Mean Prey COunt On Last Event's PREY_COUNT_FRAMEWINDOW frames-Add only To Last Record
+                                                     PreyCount          =  mean(datHuntFrames$PreyCount), ##Mean Prey Count Across Hunt Frames
+                                                     huntScore          = 0,
                                                      stringsAsFactors = FALSE) ##0 To Be used for Manual Labelling Of Hunting Success
           
           if( lHuntingDuration[[k]] < 0) 
+          {
             stop(paste("Negative Hunt Duration detected expID:",i," eventID:",k," Possible Duplicate tracker file" ) ) ##Catch Error / Can be caused by Duplicate Tracked Video - Check )
+          }
           
           minHuntDuration  <- min(lHuntingDuration[[k]])
           
           nHuntingEventsForLarva  <- nHuntingEventsForLarva + length(vHuntStartFrames) ##increment Event Count
-        }else{
+        }###(NROW(datHuntFrames$frameN) > G_MINEPISODEDURATION)
+        else
+        {
           ##Hunting Episode Insufficient ##	
           # vsHuntDeltaFrames[1:(NROW(datHuntFrames$frameN)+1)] <- 0  ##Copy into Shifted Position
           warning(paste("Ignoring low Hunt Frame Number",NROW(datHuntFrames$frameN)," of Larva:",i,"event",k) )
@@ -236,10 +258,8 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
           minHuntDuration       <-0
           lHuntingDuration[[k]] <- 0 ##Otherwise Unused Event IDs end up NULL
         }
-        
-        
+
         #### ERROR Handlers /  DEbug ###
-        
         if (is.na(minHuntDuration)) 
         {  
           message(paste("Warning - Min Episode Duration is  ",minHuntDuration," for expID:",i," eventID:",k))
@@ -281,8 +301,10 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
                                                  fileIdx    = 0,
                                                  startFrame = 0,
                                                  endFrame   = 0,
+                                                 nextHuntFrame = 0,
                                                  nExpFrames = nTotalRecordedFrames,
                                                  InitPreyCount = nInitialPrey,
+                                                 FinalPreyCount = nFinalPrey,
                                                  PreyCount  = nmeanPreyCount,
                                                  huntScore  = 0,
                                                  stringsAsFactors = FALSE) ##0 To Be used for Manual Labelling Of Hunting Success
@@ -295,8 +317,8 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
   } ### For Each Larva In Group ###
   ##### Note That vHuntStartFrames is invalid beyond this point #
   
-  #datHuntingEvents = do.call(rbind,lHuntingEvents)
-  datHuntingEvents <- rbindlist(lapply(lHuntingEvents,alloc.col))
+  datHuntingEvents = do.call(rbind,lHuntingEvents)
+  #datHuntingEvents <- rbindlist(lapply(lHuntingEvents,alloc.col))
   
   #stopifnot(any(is.nan(datHuntingEvents) ) ==FALSE )
   #  datGroupHunting = as.data.frame(lGroupHunting)
@@ -350,9 +372,12 @@ calcHuntStat2 <- function(datHuntEvent)
   ##Min Should Return Smallest Episode Length - ie collects from where episodes did happen to get the shortest one
   tblMinEpisodeDurationPerLarva   <- tapply(datHuntEventNonZeroEpi$endFrame-datHuntEventNonZeroEpi$startFrame, datHuntEventNonZeroEpi$expID,min,na.rm=TRUE)
   tblMaxEpisodeDurationPerLarva   <- tapply(datHuntEventNonZeroEpi$endFrame-datHuntEventNonZeroEpi$startFrame, datHuntEventNonZeroEpi$expID,max,na.rm=TRUE)
+  
   #mean(datHuntEvent$endFrame-datHuntEvent$startFrame)
   #tblMeanEpisodeDurationPerLarva  <- tapply(datHuntEvent$endFrame-datHuntEvent$startFrame, datHuntEvent$expID,mean)
   #tblMeanEpisodeDurationPerLarva  <- replace(tblMeanEpisodeDurationPerLarva,is.na(tblMeanEpisodeDurationPerLarva),0) ##Replace NA with 0 -Duration
+  
+  
   
   ### Hunt Ratio /Need to total Frames For That - if no hunt record then also no TotalRec Frames here!
   ##Total Recorded Duration Per Larva - This value is repeated at each hunt event of a larva and so taking the mean would 
@@ -370,6 +395,8 @@ calcHuntStat2 <- function(datHuntEvent)
   tblAvailableInitialPreyCountPerLarva <- replace(tblAvailableInitialPreyCountPerLarva,is.nan(tblAvailableInitialPreyCountPerLarva),NA)
   
   stopifnot( NROW(tblAvailablePreyCountPerLarva[ is.nan(tblAvailablePreyCountPerLarva) ]) == 0 )
+  
+  
   ##Calc Sum Of Hunt Ratios of each Episode, to obtain Hunt Ratio of experiment
   tblHuntRatioPerLarva   <- tapply( (datHuntEvent$endFrame-datHuntEvent$startFrame)/datHuntEvent$nExpFrames, datHuntEvent$expID,sum,na.rm=TRUE) 
   
@@ -478,6 +505,16 @@ calcHuntStat3 <- function(datHuntEvent)
   #tblMeanEpisodeDurationPerLarva  <- tapply(datHuntEvent$endFrame-datHuntEvent$startFrame, datHuntEvent$expID,mean)
   #tblMeanEpisodeDurationPerLarva  <- replace(tblMeanEpisodeDurationPerLarva,is.na(tblMeanEpisodeDurationPerLarva),0) ##Replace NA with 0 -Duration
   
+  
+  ###--- Hunt Intervals ---#####
+  nIntervalSamples <- length(datHuntEventNonZeroEpi[!is.na(datHuntEventNonZeroEpi$nextHuntFrame),])
+  tblMeanEpisodeIntervalPerLarva  <- tapply(datHuntEventNonZeroEpi$nextHuntFrame-datHuntEventNonZeroEpi$endFrame, datHuntEventNonZeroEpi$expID,mean,na.rm=TRUE)
+  tblMedianEpisodeIntervalPerLarva<- tapply(datHuntEventNonZeroEpi$nextHuntFrame-datHuntEventNonZeroEpi$endFrame, datHuntEventNonZeroEpi$expID,median,na.rm=TRUE)
+  tblMinEpisodeIntervalPerLarva   <- tapply(datHuntEventNonZeroEpi$nextHuntFrame-datHuntEventNonZeroEpi$endFrame, datHuntEventNonZeroEpi$expID,min,na.rm=TRUE)
+  tblMaxEpisodeIntervalPerLarva   <- tapply(datHuntEventNonZeroEpi$nextHuntFrame-datHuntEventNonZeroEpi$endFrame, datHuntEventNonZeroEpi$expID,max,na.rm=TRUE)
+  
+  #### #### ## # # # # 
+  
   ### Hunt Ratio /Need to total Frames For That - if no hunt record then also no TotalRec Frames here!
   ##Total Recorded Duration Per Larva - This value is repeated at each hunt event of a larva and so taking the mean would 
   # give the individual value - Missing ExpID mean no Data 
@@ -494,6 +531,11 @@ calcHuntStat3 <- function(datHuntEvent)
   tblAvailableInitialPreyCountPerLarva <- replace(tblAvailableInitialPreyCountPerLarva,is.nan(tblAvailableInitialPreyCountPerLarva),NA)
   
   stopifnot( NROW(tblPreyCountReductionPerLarvaHunt[ is.nan(tblPreyCountReductionPerLarvaHunt) ]) == 0 )
+  
+  # Prey Reduction Per Experiment
+  tblPreyCountReductionPerLarva <-  tapply(datHuntEvent$FinalPreyCount, datHuntEvent$expID,sum, na.rm=TRUE)   
+  #tblPreyCountReductionPerLarva <- replace(tblPreyCountReductionPerLarva,is.nan(tblPreyCountReductionPerLarva),NA)
+  
   ##Calc Sum Of Hunt Ratios of each Episode, to obtain Hunt Ratio of experiment
   tblHuntRatioPerLarva   <- tapply( (datHuntEvent$endFrame-datHuntEvent$startFrame)/datHuntEvent$nExpFrames, datHuntEvent$expID,sum,na.rm=TRUE) 
   
@@ -515,7 +557,10 @@ calcHuntStat3 <- function(datHuntEvent)
   lGroupHuntStats <- list(nLarva                        = nLarva,
                           vHNablaPreyCount              = tblPreyCountReductionPerLarvaHunt, ##Mean Prey Reduction
                           vHInitialPreyCount            = tblAvailableInitialPreyCountPerLarva,
+                          vHPreyReductionPerLarva       = tblPreyCountReductionPerLarva,
                           nPreyCountSamples             = nPreyCountSamples, ##COunt of Samples Used to Calc Mean
+                          meanPreyReductionPerLarva     = mean(tblPreyCountReductionPerLarva,na.rm=TRUE),
+                          sePreyReductionPerLarva       = sd(tblPreyCountReductionPerLarva,na.rm=TRUE)/sqrt(nLarva),
                           meanNablaPreyCount            = mean(tblPreyCountReductionPerLarvaHunt,na.rm=TRUE),
                           sdNablaPreyCount              = sd(tblPreyCountReductionPerLarvaHunt,na.rm=TRUE),
                           seNablaPreyCount              = sd(tblPreyCountReductionPerLarvaHunt,na.rm=TRUE)/sqrt(nPreyCountSamples),
@@ -548,10 +593,15 @@ calcHuntStat3 <- function(datHuntEvent)
                           medDuration                   = median(tblHuntDurationPerLarva),
                           meanEpisodeDuration           = mean(tblMeanEpisodeDurationPerLarva,na.rm=TRUE),
                           sdEpisodeDuration             = sd(tblMeanEpisodeDurationPerLarva,na.rm=TRUE), ##Std Dev Of Means
-                          seEpisodeDuration             = sd(tblMeanEpisodeDurationPerLarva,na.rm=TRUE)/sqrt(nLarva), ##Std Err Of Means Of Episode Means
+                          seEpisodeDuration             = sd(tblMeanEpisodeDurationPerLarva,na.rm=TRUE)/sqrt(nIntervalSamples), ##Std Err Of Means Of Episode Means
                           medEpisodeDuration            = median(tblMedianEpisodeDurationPerLarva,na.rm=TRUE), #Median OF Medians
                           maxEpisodeDuration            = max(tblMaxEpisodeDurationPerLarva,na.rm=TRUE),
                           minEpisodeDuration            = min(tblMinEpisodeDurationPerLarva,na.rm=TRUE),
+                          vmeanHuntInterval             = tblMeanEpisodeIntervalPerLarva,
+                          meanHuntInterval              = mean(tblMeanEpisodeIntervalPerLarva,na.rm=TRUE),
+                          seHuntInterval                = sd(tblMeanEpisodeIntervalPerLarva,na.rm=TRUE)/sqrt(nIntervalSamples), ##Consider that is should be Mean of Hunt Events so use tblHunt counts
+                          minHuntInterval               = min(tblMinEpisodeIntervalPerLarva,na.rm=TRUE),
+                          maxHuntInterval               = max(tblMaxEpisodeIntervalPerLarva,na.rm=TRUE),
                           groupHuntRatio                = sum(tblHuntDurationPerLarva)/sum(tblRecDurationPerLarva), ###Need Actual Frame Numbers Here
                           meanHuntRatioOfGroup          = mean(tblHuntDurationPerLarva/tblRecDurationPerLarva),
                           stdHuntRatioOfGroup           = sd(tblHuntDurationPerLarva/tblRecDurationPerLarva),

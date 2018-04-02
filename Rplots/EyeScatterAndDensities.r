@@ -6,6 +6,7 @@
 #{
 #  error("EyeScatteAndDensities Expects filtereddatAllFrames data frame")
 #}
+# [[Hello Palette]]
 rfHot <- colorRampPalette(rev(brewer.pal(11,'Spectral')));
 
 histj<- function(x,y,x.breaks,y.breaks){
@@ -92,8 +93,7 @@ dev.off()
 #### Eye Density Whole Group #####
  strDensityplotFileName <- paste("plots/densities/EyeAngleDensity-Set-",strCond,".pdf",collapse=NULL);
  pdf(strDensityplotFileName,width=8,height=8)
- eGroupDens <- kde2d(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle, n=60, lims=c(range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA)) )
- 
+
 bw <- bandwidth.nrd(datLarvalAllFrames$REyeAngle)
    
 bw <- ifelse(is.na(bw),0,bw)
@@ -102,6 +102,9 @@ if (bw==0)
 {    bw <- 1.2
  message(paste("**Warning changed kde BWdth to fixed value -> ",bw));
 }
+ eGroupDens <- kde2d(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,h=bw, n=60, 
+                     lims=c(range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA)) ) 
+ 
 hotMap <- c(rfHot(20),"#FF0000");
 image(eGroupDens,col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
 sampleSize  <- length(vexpID) #Number of Larvae Used 

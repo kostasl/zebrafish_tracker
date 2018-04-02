@@ -15,6 +15,9 @@ extern cv::Mat kernelOpen;
 extern double dLearningRate; //Learning Rate During Initial BG Modelling done over MOGhistory frames
 extern double dLearningRateNominal;
 
+extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
+
+
 extern ltROIlist vRoi;
 extern cv::Point ptROI1;
 extern cv::Point ptROI2; //This Default Value Is later Modified
@@ -162,9 +165,10 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         //Remove Low Values
         double uiMaxVal,uiMinVal;
+
         //Find Max Value,this should belong to stationary objects, and Use it as a relative measure to detect BG Objects
         cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,0);
-        cv::threshold(bgAcc,bgMask,uiMaxVal*0.6,255,cv::THRESH_BINARY);
+        cv::threshold(bgAcc,bgMask,uiMaxVal*0.8,255,cv::THRESH_BINARY);
 
         bgMask.convertTo(bgMask,CV_8UC1);
 
@@ -226,7 +230,10 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
 
     enhanceMask(frame,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
 
+    pMOG2->apply(frame,bgMask,dLearningRate);
     cv::accumulateWeighted(fgFoodMask,bgAcc,0.00001);
+
+
     //pKNN->apply(frame, fgMask,dLearningRate);
     //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
