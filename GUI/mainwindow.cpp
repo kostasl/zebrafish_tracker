@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+    ptDrag = 0;
 
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
     this->mInsetScene = new QGraphicsScene(this->ui->graphicsViewHead);
@@ -241,7 +241,15 @@ void MainWindow::showCVimg(cv::Mat& img)
     frameScene.release();
     //frameScene = img.clone();
     img.copyTo(frameScene);
+
+    /// Draw / Overlay Info From This Window //
+    if (ptDrag)
+        cv::circle(frameScene,*ptDrag,5,cv::Scalar(200,200,0),2);
+
+    /////
+
     qimg = QtOpencvCore::img2qimg(frameScene);
+
 
     // convert the opencv image to a QPixmap (to show in a QLabel)
     QPixmap pixMap = QPixmap::fromImage(qimg);
@@ -522,6 +530,7 @@ void MainWindow::dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent )
 void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 {
 
+    setCursor(Qt::ArrowCursor);
 
     QPointF ptSceneclick = mouseEvent->scenePos();
     QGraphicsItem* item = mScene->itemAt( ptSceneclick, this->ui->graphicsView->transform() );
@@ -556,7 +565,6 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
                    cv::line(frameScene,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(00,00,255),1,cv::LINE_8);
 
                 //showCVimg(frameScene);
-
             }
         }//For eAch Fishs
 
@@ -568,7 +576,26 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
         ptDrag->x = ptMouse.x;
         ptDrag->y = ptMouse.y;
     }
+    else
+        ptDrag = 0;
 
+
+    //Check If Around ROI Points
+    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    {
+        ltROI* iroi = &(*it);
+        for (std::vector<cv::Point>::iterator it = iroi->vPoints.begin() ; it != iroi->vPoints.end(); ++it)
+        {
+            //4 pixels Around the ROI Point / Get Moving Cursor
+            if (cv::norm(*it-ptMouse) < 4)
+            {
+                    // HighLight Point //
+//                    cv::circle(frameScene,*it,5,cv::Scalar(100,200,0),2);
+                    ptDrag = &(*it);
+                    setCursor(Qt::CrossCursor);
+            }
+        }
+    }
 
 
 
@@ -617,9 +644,9 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
 
-        ltROI iroi = (ltROI)(*it);
+        ltROI* iroi = &(*it);
 
-        for (std::vector<cv::Point>::iterator it = iroi.vPoints.begin() ; it != iroi.vPoints.end(); ++it)
+        for (std::vector<cv::Point>::iterator it = iroi->vPoints.begin() ; it != iroi->vPoints.end(); ++it)
         {
             //cv::Point  ptR = *it;
 
@@ -635,15 +662,11 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
 
                         ptDrag->x = ptMouse.x;
                         ptDrag->y = ptMouse.y;
-                        ptDrag->x = ptDrag->x - 100;
                         bDraggingRoiPoint = true;
-
                     }
             }
 
         }
-
-
     }
 
 
@@ -656,6 +679,7 @@ void MainWindow::mouseReleaseEvent( QGraphicsSceneMouseEvent * mouseEvent )
     bDraggingRoiPoint = false;
 
     setCursor(Qt::ArrowCursor);
+    ptDrag = 0; //Empty the Dragged Point Pointer
 
     //bDraggingTemplateCentre = false;
     qDebug() << "Mouse Up";

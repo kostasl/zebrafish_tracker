@@ -191,9 +191,14 @@ cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across 
 
 //ltROI tRoi( cv::Point(0,0) , cv::Point(1024,768));
 ltROIlist vRoi;
+//
+//cv::Point ptROI1 = cv::Point(320,240);
+//cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
+cv::Point ptROI1 = cv::Point(18,182);
+cv::Point ptROI2 = cv::Point(634,182);
+cv::Point ptROI3 = cv::Point(18,341);
+cv::Point ptROI4 = cv::Point(635,344);
 
-cv::Point ptROI1 = cv::Point(320,240);
-cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
 
 
 //Structures to hold blobs & Tracks
@@ -480,19 +485,15 @@ int main(int argc, char *argv[])
     //cv::setMouseCallback(gstrwinName, CallBackFunc, NULL);
 
 
-
+    /// Init Polygon ROI ///
     ///Make A Rectangular Roi Default //
-    cv::Point pt1(10,100);
-    cv::Point pt2(600,100);
-    cv::Point pt3(600,500);
-    cv::Point pt4(10,500);
     std::vector<cv::Point> vPolygon;
-    vPolygon.push_back(pt1); vPolygon.push_back(pt2); vPolygon.push_back(pt3); vPolygon.push_back(pt4);
+    vPolygon.push_back(ptROI1); vPolygon.push_back(ptROI2); vPolygon.push_back(ptROI3); vPolygon.push_back(ptROI4);
     ltROI rectRoi(vPolygon);
     vRoi.push_back(rectRoi);
-    ///
+    /// Init ROI //
 
-    //create Gaussian Smoothing kernels //
+    /// create Gaussian Smoothing kernels for Contour //
     getGaussianDerivs(sigma,M,gGaussian,dgGaussian,d2gGaussian);
 
 
@@ -2840,8 +2841,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
            }
         }
 
-        ptTail1 = curve[idxMin];
-        ptTail2 = curve[idxMax];
+        ptTail1 = curve[idxMin]; //Most Likely Tail Point
+        ptTail2 = curve[idxMax]; //This Could Be Head
 
         ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
         PolyLineMerge(curve,resampledcurveX,resampledcurveY);
@@ -2864,9 +2865,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
         //Draw New One
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
-        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),3);
+        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),2);
         cv::circle(outFishMask, ptTail1,8,CV_RGB(255,255,255),cv::FILLED);
-        //cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Erase Fish From Food Mask
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),15);
