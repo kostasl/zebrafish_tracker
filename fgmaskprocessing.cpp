@@ -168,7 +168,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         //Find Max Value,this should belong to stationary objects, and Use it as a relative measure to detect BG Objects
         cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,0);
-        cv::threshold(bgAcc,bgMask,uiMaxVal*0.8,255,cv::THRESH_BINARY); //All; Above 80% of Max are Stationary
+        cv::threshold(bgAcc,bgMask,uiMaxVal*0.3,255,cv::THRESH_BINARY); //All; Above 30% of Max are Stationary
 
         bgMask.convertTo(bgMask,CV_8UC1);
 
@@ -176,6 +176,8 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         //delete capture object
         capture.release();
 
+
+        cv::imshow("Accumulated BG Mask",bgMask);
         //delete kernel;
         //delete kernelClose;
 
@@ -230,7 +232,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
 
     enhanceMask(frame,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
 
-    pMOG2->apply(frame,bgMask,dLearningRate); //Let the Model Learn
+    pMOG2->apply(frame,fgFishMask,dLearningRate); //Let the Model Learn , Dont Interact With The Accumulated Mask
     cv::accumulateWeighted(fgFoodMask,bgAcc,0.00001); //Also Learn A pic of the stable features
 
 

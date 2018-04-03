@@ -6,17 +6,21 @@
  //// The lib sources have been included to the source and slightly modified in update tracks to fix a bug.
  ////
  ///* User:
- ///* Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
- ///* The green box defines the region over which the larvae are counted-tracked and recorded to file.
- ///* Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
- ///* Press p to pause Image. once paused:
- ///*  s to save snapshots in CSV outdir pics subfolder.
- ///*  2 Left Clicks to define the 2 points of region-of interest for tracking.
- ///*  m to show the masked image of the larva against BG.
- ///*  t Start Tracking
- ///*  q Exit Quit application
+ ///    * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
+ ///    * The green box defines the region over which the larvae are counted-tracked and recorded to file.
+ ///    * Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
+ ///    * Press p to pause Image. once paused:
+ ///    * s to save snapshots in CSV outdir pics subfolder.
+ ///    * 2 Left Clicks to define the 2 points of region-of interest for tracking.
+ ///    * m to show the masked image of the larva against BG.
+ ///    * t Start Tracking
+ ///    * p to Pause
+ ///    * r to UnPause/Run
+ ///    * D to delete currently used template from cache
+ ///    * T to save current tracked region as new template
+ ///    * q Exit Quit application
  ///*
- ///* NOTE: ChFanging ROI hits SEG. FAULTs in update tracks of the library. So I made setting of ROI only once.
+ ///* \note  Changing ROI hits SEG. FAULTs in update tracks of the library. So I made setting of ROI only once.
  ///* The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
  ///* So I reverted to not tracking - as the code does not work well - I am recording blobs For now
  ///*
@@ -30,8 +34,10 @@
  ///    *Template Matching to spot fish across angles
  ///    *Ellipsoid fitting on edge points
  ///
- ///  \todo : Add Record of Food Count at regular intervals on each video in case
+ ///  Added Record of Food Count at regular intervals on each video in case
  ///          no fish is being tracked ROI - This should show the evolution of prey Count in time
+ ///
+ ///
  ///
  ////////
 
@@ -42,16 +48,11 @@
 #include <zfttracks.h>
 #include <fgmaskprocessing.h>
 
+#include <errorhandlers.h> // My Custom Mem Fault Handling Functions and Debug
+
 #include <random>
 
-///For Stack Trace Debugging
 #include <string.h>
-#include <execinfo.h>
-#include <cxxabi.h>
-#include <signal.h>
-#include <csetjmp>
-#include <ucontext.h>
-#include <unistd.h>
 
 
 #include <QDirIterator>
@@ -80,8 +81,8 @@
 
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
-const unsigned int MOGhistory   = gfVidfps*3;//Use 3 sec Of Video So rotifers Have Moved  A little
-bool gbUseBGModelling     = true; ///Use BG Modelling TO Segment FG Objects
+const unsigned int MOGhistory   = gfVidfps*1;//Use 3 sec Of Video So rotifers Have Moved  A little
+bool gbUseBGModelling           = false; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
@@ -188,8 +189,9 @@ cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across 
 //IplImage framefishMaskImg;
 
 
-ltROI Circle( cv::Point(0,0) , cv::Point(1024,768));
+//ltROI tRoi( cv::Point(0,0) , cv::Point(1024,768));
 ltROIlist vRoi;
+
 cv::Point ptROI1 = cv::Point(320,240);
 cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
 
@@ -244,169 +246,6 @@ bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed 
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
 
 
-
-typedef struct _sig_ucontext {
- unsigned long     uc_flags;
- struct ucontext   *uc_link;
- stack_t           uc_stack;
- struct sigcontext uc_mcontext;
- sigset_t          uc_sigmask;
-} sig_ucontext_t;
-
-
-jmp_buf env;
-
-void on_sigabrt (int signum)
-{
-    void *array[10];
-    size_t size;
-
-    std::cerr << std::endl << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
-    std::cerr << std::endl << ">>>> Simple SIG ABORT Handler Triggered <<<<<" << std::endl;
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", signum);
-    backtrace_symbols_fd(array, size, STDERR_FILENO);
-
-    pwindow_main->LogEvent(QString("ERROR: ABORT SIGNAL RECEIVED AND HANDLED"));
-    std::cerr << ">>>> Stop Execution <<<<<" << std::endl;
-    // Skip  Code Block
-    //std::cerr << ">>>> Skipping Execution <<<<<" << std::endl;
-
-    /*
-     * The abort function causes abnormal program termination to occur, unless the signal
-     * SIGABRT is being caught and the signal handler does not return. ...
-     */
-    //longjmp (env, 1);
-
-}
-
-
-/// Seg Fault Error Handler With Demangling - From stackoverflow//
-void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
-{
-    void *             array[50];
-     void *             caller_address;
-     char **            messages;
-     int                size, i;
-     sig_ucontext_t *   uc;
-
-     uc = (sig_ucontext_t *)ucontext;
-
-     std::cerr << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
-     std::cerr << ">>>>  SIG SEG Handler with Demangling was Triggered <<<<<" << std::endl;
-
-     closeDataFile(outdatafile);
-     std::cerr << "Delete the output File" << std::endl;
-
-     outdatafile.remove();
-
-
-     /* Get the address at the time the signal was raised */
-    #if defined(__i386__) // gcc specific
-     caller_address = (void *) uc->uc_mcontext.eip; // EIP: x86 specific
-    #elif defined(__x86_64__) // gcc specific
-     caller_address = (void *) uc->uc_mcontext.rip; // RIP: x86_64 specific
-    #else
-    #error Unsupported architecture. // TODO: Add support for other arch.
-    #endif
-
-
-    std::cerr << "signal " << sig_num;
-    std::cerr << " (" << strsignal(sig_num) << "), address is ";
-    std::cerr << info->si_addr << " from " << caller_address ;
-    std::cerr << std::endl;
-
-
-
-    size = backtrace(array, 50);
- /* overwrite sigaction with caller's address */
-    array[1] = caller_address;
-
-    messages = backtrace_symbols(array, size);
-
-    // skip first stack frame (points here)
-    for (int i = 1; i < size && messages != NULL; ++i)
-    {
-        char *mangled_name = 0, *offset_begin = 0, *offset_end = 0;
-
-        // find parantheses and +address offset surrounding mangled name
-        for (char *p = messages[i]; *p; ++p)
-        {
-            if (*p == '(')
-            {
-                mangled_name = p;
-            }
-            else if (*p == '+')
-            {
-                offset_begin = p;
-            }
-            else if (*p == ')')
-            {
-                offset_end = p;
-                break;
-            }
-        }
-
-        // if the line could be processed, attempt to demangle the symbol
-        if (mangled_name && offset_begin && offset_end &&
-            mangled_name < offset_begin)
-        {
-            *mangled_name++ = '\0';
-            *offset_begin++ = '\0';
-            *offset_end++ = '\0';
-
-            int status;
-            char * real_name = abi::__cxa_demangle(mangled_name, 0, 0, &status);
-
-            // if demangling is successful, output the demangled function name
-            if (status == 0)
-            {
-                std::cerr << "[bt]: (" << i << ") " << messages[i] << " : "
-                          << real_name << "+" << offset_begin << offset_end
-                          << std::endl;
-
-            }
-            // otherwise, output the mangled function name
-            else
-            {
-                std::cerr << "[bt]: (" << i << ") " << messages[i] << " : "
-                          << mangled_name << "+" << offset_begin << offset_end
-                          << std::endl;
-            }
-            free(real_name);
-        }
-        // otherwise, print the whole line
-        else
-        {
-            std::cerr << "[bt]: (" << i << ") " << messages[i] << std::endl;
-        }
-    }
-    std::cerr << std::endl;
-
-    free(messages);
-
-    exit(EXIT_FAILURE);
-}
-
-void handler(int sig) {
-  void *array[10];
-  size_t size;
-
-  std::cerr << ">>>> Simple SIG SEG Handler Triggered <<<<<" << std::endl;
-  // get void*'s for all entries on the stack
-  size = backtrace(array, 10);
-
-  // print out all the frames to stderr
-  fprintf(stderr, "Error: signal %d:\n", sig);
-  backtrace_symbols_fd(array, size, STDERR_FILENO);
-
-
-  exit(1);
-}
-
 void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 {
     //double tic = double(getTickCount());
@@ -428,6 +267,9 @@ void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 }
 
 /// MAIN FUNCTION - ENTRY POINT ////
+
+jmp_buf env; //For Memory Exception Handling
+
 
 int main(int argc, char *argv[])
 {
@@ -639,6 +481,16 @@ int main(int argc, char *argv[])
 
 
 
+    ///Make A Rectangular Roi Default //
+    cv::Point pt1(10,100);
+    cv::Point pt2(600,100);
+    cv::Point pt3(600,500);
+    cv::Point pt4(10,500);
+    std::vector<cv::Point> vPolygon;
+    vPolygon.push_back(pt1); vPolygon.push_back(pt2); vPolygon.push_back(pt3); vPolygon.push_back(pt4);
+    ltROI rectRoi(vPolygon);
+    vRoi.push_back(rectRoi);
+    ///
 
     //create Gaussian Smoothing kernels //
     getGaussianDerivs(sigma,M,gGaussian,dgGaussian,d2gGaussian);
@@ -837,7 +689,10 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
        if (gbUseBGModelling)
+       {
             getBGModelFromVideo(bgMask, window_main,invideoname,outfilename,MOGhistory);
+            cv::bitwise_not ( bgMask, bgMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
+       }
 
        QFileInfo fiVidFile(invideoname);
        window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
@@ -845,6 +700,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        window_main.tickProgress(); //Update Slider
 
        std::cout << "Press p to pause Video processing" << std::endl;
+
+
 
 
         if (processVideo(bgMask,window_main,invideoname,outputFile,istartFrame,istopFrame) == 0)
@@ -860,7 +717,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
 
 
-void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
+void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
 {
     cv::Mat frame_gray,fgFishMask,fgFishImgMasked;
     cv::Mat fgFoodMask;
@@ -889,7 +746,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
 
     ///DRAW ROI
     if (bRenderToDisplay)
-        drawROI(outframe);
+        drawAllROI(outframe);
 
 
     //lplframe = frameMasked; //Convert to legacy format
@@ -905,14 +762,15 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, 
         cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
 
         // Update BG Substraction Model
-        cv::Mat bgMask;
-        pMOG2->apply(frame_gray,bgMask,dLearningRateNominal);
+        cv::Mat fgMask;
+        pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
 
-        //cv::bitwise_not ( fgMask, bgMask );
+        //Remove Stationary Learned Pixels From Mask
+        cv::bitwise_and(bgMask,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
 
-        enhanceMask(frame_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+        enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
-        frame_gray.copyTo(fgFishImgMasked,fgFishMask); //Use Enhanced Mask
+        frame_gray.copyTo(fgFishImgMasked); //Use Enhanced Mask
 
         //outframe.copyTo(fgFoodImgMasked,fgFoodMask); //Use Enhanced Mask
         //show the current frame and the fg masks
@@ -2423,7 +2281,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
         if (bPaused && !bROIChanged)
         {
             deleteROI(mousepnt);
-            drawROI(frameDebugC);
+            drawAllROI(frameDebugC);
         }
      }
      else if  ( event == cv::EVENT_MBUTTONDOWN )
@@ -2488,26 +2346,26 @@ void deleteROI(cv::Point mousePos)
 
 }
 
-void drawROI(cv::Mat& frame)
+void drawAllROI(cv::Mat& frame)
 {
     //frameCpy.copyTo(frame); //Restore Original IMage
-    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it) {
+    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    {
 
         ltROI iroi = (ltROI)(*it);
          //cv::rectangle(frame,iroi,cv::Scalar(0,0,250));
-         cv::circle(frame,cv::Point(iroi.x() ,iroi.y()),iroi.radius,cv::Scalar(0,0,250),2);
+        iroi.draw(frame);
 
+        //Mark a centre to show that Tracking is ON / this ROI is being Tracked/Recorded
          if (bTracking)
          {
-             cv::Point pt1,pt2;
+             cv::Point pt1;
              pt1.x = iroi.centre.x;
              pt1.y = iroi.centre.y;
-             pt2.x = pt1.x + iroi.radius;
-             pt2.y = pt1.y; //+ iroi.height;
-
+             //pt2.x = pt1.x + iroi.radius;
+             //pt2.y = pt1.y; //+ iroi.height;
              cv::circle(frame,pt1,3,cv::Scalar(255,0,0),1);
-             cv::circle(frame,pt2,3,cv::Scalar(255,0,0),1);
-
+             //cv::circle(frame,pt2,3,cv::Scalar(255,0,0),1);
 
          }
     }
@@ -2840,7 +2698,10 @@ cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THR
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
 if (gbUseBGModelling && !fgMask.empty()) //We Have a Model In maskBG - So Remove those Stationary Pixels
 {
-    cv::bitwise_or(threshold_output,fgMask,maskFGImg); //Combine
+    cv::Mat fgMask_dilate; //Expand The MOG Mask And Intersect with Threshold
+    cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1);
+    //cv::dilate(fgMask,fgMask_dilate,kernelOpenfish,cv::Point(-1,-1),2);
+    cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
     //fgMask.copyTo(maskFGImg);
 }
 else
@@ -2866,8 +2727,8 @@ else
 
 
 //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
-cv::morphologyEx(threshold_output,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
+//cv::dilate(maskFGImg,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
+cv::morphologyEx(maskFGImg,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
 
 /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
 /// //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
@@ -2880,9 +2741,10 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 //Make Food Mask OUt Of FG Model /After Removing Noise
-cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
+//cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
 cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1);
-cv::dilate(outFoodMask,outFoodMask,kernelClose,cv::Point(-1,-1),1);
+//cv::dilate(outFoodMask,outFoodMask,kernelClose,cv::Point(-1,-1),1);
+
 //threshold_output_COMB.copyTo(outFoodMask);
 //outFoodMask = maskFGImg.clone();
 

@@ -16,7 +16,12 @@ extern int gi_maxEllipseMajor;
 extern int gi_minEllipseMajor;
 extern QElapsedTimer gTimer;
 
+extern ltROIlist vRoi;
+
 bool bSceneMouseLButtonDown;
+bool bDraggingRoiPoint;
+
+cv::Point* ptDrag;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -517,24 +522,25 @@ void MainWindow::dragMoveEvent(QGraphicsSceneDragDropEvent* mouseEvent )
 void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 {
 
+
+    QPointF ptSceneclick = mouseEvent->scenePos();
+    QGraphicsItem* item = mScene->itemAt( ptSceneclick, this->ui->graphicsView->transform() );
+    if (!item)
+        return;
+
+    // get the scene pos in the item's local coordinate space
+    QPointF ptImg = item->mapFromScene(ptSceneclick);
+    cv::Point ptMouse(ptImg.x(),ptImg.y());
+
     //qDebug() << "Mouse Mv";
     if (bDraggingTemplateCentre ) //bDraggingTemplateCentre
     {
          //qDebug() << "Dragging";
-
-
-        QPointF ptSceneclick = mouseEvent->scenePos();// this->ui->graphicsView->mapToScene( mouseEvent->pos().x(),mouseEvent->pos().y() );
+        // this->ui->graphicsView->mapToScene( mouseEvent->pos().x(),mouseEvent->pos().y() );
         // get the item that was clicked on
-        QGraphicsItem* item = mScene->itemAt( ptSceneclick, this->ui->graphicsView->transform() );
-        if (!item)
-            return;
-        // get the scene pos in the item's local coordinate space
-        QPointF ptImg = item->mapFromScene(ptSceneclick);
 
-        cv::Point ptMouse(ptImg.x(),ptImg.y());
         for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
         {
-
             fishModel* fish = (*it).second;
             if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
             {
@@ -554,7 +560,16 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
             }
         }//For eAch Fishs
 
-} //Check For Mouse Down And Mouse Moving - Dragging
+    } //Check For Mouse Down And Mouse Moving - Dragging
+
+
+    if (bDraggingRoiPoint)
+    {   //Update Point
+        ptDrag->x = ptMouse.x;
+        ptDrag->y = ptMouse.y;
+    }
+
+
 
 
 
@@ -571,6 +586,16 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 
 void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
 {
+
+    QPointF ptSceneclick = mouseEvent->scenePos();
+    QGraphicsItem* item = mScene->itemAt( ptSceneclick, this->ui->graphicsView->transform() );
+    if (!item)
+        return;
+
+    // get the scene pos in the item's local coordinate space
+    QPointF ptImg = item->mapFromScene(ptSceneclick);
+    cv::Point ptMouse(ptImg.x(),ptImg.y());
+
     //Already Dragging - Terminate And Save Template
     if (bDraggingTemplateCentre)
     {
@@ -588,11 +613,50 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     }
 
 
+    //Check If Around ROI Points
+    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    {
+
+        ltROI iroi = (ltROI)(*it);
+
+        for (std::vector<cv::Point>::iterator it = iroi.vPoints.begin() ; it != iroi.vPoints.end(); ++it)
+        {
+            //cv::Point  ptR = *it;
+
+            //4 pixels Around the ROI Point / Get Moving Cursor
+            if (cv::norm(*it-ptMouse) < 4)
+            {
+                    //setCursor(Qt::PointingHandCursor);
+                    setCursor(Qt::CrossCursor);
+                    //If Button Down , THen Move Point
+                    if (bSceneMouseLButtonDown)
+                    {
+                        ptDrag = &(*it); //*Returns Ref, and then AddressOf Operator gives Pointer
+
+                        ptDrag->x = ptMouse.x;
+                        ptDrag->y = ptMouse.y;
+                        ptDrag->x = ptDrag->x - 100;
+                        bDraggingRoiPoint = true;
+
+                    }
+            }
+
+        }
+
+
+    }
+
+
+
 }
 
 void MainWindow::mouseReleaseEvent( QGraphicsSceneMouseEvent * mouseEvent )
 {
     bSceneMouseLButtonDown = false;
+    bDraggingRoiPoint = false;
+
+    setCursor(Qt::ArrowCursor);
+
     //bDraggingTemplateCentre = false;
     qDebug() << "Mouse Up";
 }

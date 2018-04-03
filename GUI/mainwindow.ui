@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>784</width>
-    <height>846</height>
+    <height>795</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,7 +36,13 @@
      </size>
     </property>
     <property name="toolTip">
-     <string>Tracking Video Frame - p for pausing</string>
+     <string/>
+    </property>
+    <property name="toolTipDuration">
+     <number>1</number>
+    </property>
+    <property name="statusTip">
+     <string>Press p to Pause, r to Run, t to Track</string>
     </property>
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
@@ -56,7 +62,7 @@
      </rectf>
     </property>
     <property name="dragMode">
-     <enum>QGraphicsView::ScrollHandDrag</enum>
+     <enum>QGraphicsView::NoDrag</enum>
     </property>
    </widget>
    <widget class="QGraphicsView" name="graphicsViewHead">
@@ -307,7 +313,7 @@
      <x>0</x>
      <y>0</y>
      <width>784</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

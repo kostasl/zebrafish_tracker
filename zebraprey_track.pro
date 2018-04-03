@@ -22,7 +22,8 @@ SOURCES += main.cpp \
     template_detect.cpp \
     zfttracks.cpp \
     foodmodel.cpp \
-    fgmaskprocessing.cpp
+    fgmaskprocessing.cpp \
+    errorhandlers.cpp
 
 RESOURCES += qml.qrc
 #INCLUDEPATH += /usr/include/opencv
@@ -101,7 +102,8 @@ HEADERS += \
     zfttracks.h \
     config.h \
     foodmodel.h \
-    fgmaskprocessing.h
+    fgmaskprocessing.h \
+    errorhandlers.h
 
 
 FORMS += \
