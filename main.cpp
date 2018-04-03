@@ -194,9 +194,10 @@ ltROIlist vRoi;
 //
 //cv::Point ptROI1 = cv::Point(320,240);
 //cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
-cv::Point ptROI1 = cv::Point(18,182);
-cv::Point ptROI2 = cv::Point(634,182);
-cv::Point ptROI3 = cv::Point(18,341);
+
+cv::Point ptROI1 = cv::Point(634,182);
+cv::Point ptROI2 = cv::Point(18,341);
+cv::Point ptROI3 = cv::Point(18,182);
 cv::Point ptROI4 = cv::Point(635,344);
 
 
@@ -2821,38 +2822,91 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
         dXY.resize(X.size());
         /// Find Tail As POint Of Maximum Curvature dXY
-        int idxMax = 0;
-        int idxMin = 0;
+        int idxMin2 = 0;
+        int idxMin  = 0;
         double maxVal=0.0;
         double minVal=10000.0;
-        cv::Point ptTail1,ptTail2;
+        cv::Point ptSharp,ptSharp2,ptHead,ptTail;
 
         for (int j=0; j<X.size(); j++) {
            dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
-           if (dXY[j] > maxVal)
-           {
-               idxMax = j;
+           //if (dXY[j] > maxVal)
+           //{
+//               idxMax = j;
                maxVal = dXY[j];
-           }
+  //         }
+
            if (dXY[j] < minVal) //Detect Tail
            {
+               idxMin2 = idxMin;//Save As 2nd Smallest
                idxMin = j;
                minVal = dXY[j];
            }
         }
 
-        ptTail1 = curve[idxMin]; //Most Likely Tail Point
-        ptTail2 = curve[idxMax]; //This Could Be Head
+        ptSharp = curve[idxMin]; //Most Likely Tail Point
+        ptSharp2 = curve[idxMin2]; //This Could Be Head
 
         ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
         PolyLineMerge(curve,resampledcurveX,resampledcurveY);
 
 
         //Find Where Tail Point Is In the Resampled (Reduced) Contour
-        int idxTail = findIndexClosesttoPoint(curve,ptTail1);
+        int idxTail = findIndexClosesttoPoint(curve,ptSharp);
+
+        //Put Tail Back to Curve In CAse it Got Smoothed Out
         std::vector<cv::Point>::iterator it = curve.begin();
         it += idxTail;
-        curve.insert(it,ptTail1); //Put Tail Back to Curve In CAse it Got Smoothed Out
+        curve.insert(it,ptSharp);
+
+        /// Find Head-Tail Point As Point Of Maximum Arc Lenght //
+        //1st Approach is the noddy Way, n!
+        int maxLen = 0;
+        int lenA,lenB; //Arc Lenght ClockWise, And AntiClockWise
+        int idxA,idxB,idxT;
+        for (int j=0; j<curve.size(); j++)
+        {
+            for (int k=j+3; k<curve.size(); k++)
+            {
+                vector<cv::Point>::const_iterator first = curve.begin() + j;
+                vector<cv::Point>::const_iterator last = curve.begin() + k;
+                vector<cv::Point>::const_iterator end = curve.end();
+                vector<cv::Point> vArc(first, last); //Copy Points Over And Test For arc Length
+                vector<cv::Point> vArcRev(last, end); //Copy Points Over And Test For arc Length
+
+                 lenA = cv::arcLength(vArc,false);
+                 lenB = cv::arcLength(vArcRev,false); //Count Remaining Arc
+
+                if (lenA > lenB) //This Should Continuously Rise /
+                 {
+                    idxT = k;
+                    break; //Crossed Over Mid Arc / So Distal point Found
+                 }
+
+            }//Search Across Points Ahead Of Starting Point
+
+            //Is this the Longest Arc Found So Far? Save it , and Test new Starting Point
+            if (lenA > maxLen)
+            {
+                maxLen = lenA;
+                idxA = j; //Save the Curve Point Pair
+                idxB = idxT;
+            }
+
+        }
+        //Check Which curve point is closes to the TailInflection Candidate - Mark As Tail
+        if (norm(curve[idxTail]-curve[idxA]) < norm(curve[idxTail]-curve[idxB]))
+        {
+            ptTail = curve[idxA];
+            ptHead = curve[idxB];
+        }else
+        {
+            ptTail = curve[idxB];
+            ptHead = curve[idxA];
+        }
+
+
+
         ///////////// END SMOOTHING
 
         ///\todo Make Contour Fish Like - Extend Tail ///
@@ -2866,8 +2920,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //Draw New One
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),2);
-        cv::circle(outFishMask, ptTail1,8,CV_RGB(255,255,255),cv::FILLED);
-        cv::circle(outFishMask, ptTail2,4,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, ptTail,8,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, ptHead,8,CV_RGB(255,255,255),1);
 
         //Erase Fish From Food Mask
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),15);
