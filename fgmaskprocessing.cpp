@@ -177,7 +177,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         capture.release();
 
 
-        cv::imshow("Accumulated BG Mask",bgMask);
+        //cv::imshow("Accumulated BG Mask",bgMask);
         //delete kernel;
         //delete kernelClose;
 

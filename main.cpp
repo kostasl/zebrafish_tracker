@@ -122,8 +122,8 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-int gi_maxEllipseMajor      = 22; /// thres  for Eye Ellipse Detection methods
-int gi_minEllipseMajor      = 14; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
+int gi_minEllipseMajor      = 12; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isolated Head IMage
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
@@ -184,6 +184,7 @@ cv::Mat gLastfishimg_template;// OUr Fish Image Template
 cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
 cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
 
+cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
 
 //Global Shortcut of Type conversion to legacy IplImage
 //IplImage framefishMaskImg;
@@ -768,11 +769,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
 
         //Remove Stationary Learned Pixels From Mask
-        cv::bitwise_and(bgMask,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
+        //cv::bitwise_and(bgMask,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
-        frame_gray.copyTo(fgFishImgMasked); //Use Enhanced Mask
+        frame_gray.copyTo(fgFishImgMasked); //fgFishMask //Use Enhanced Mask
 
         //outframe.copyTo(fgFoodImgMasked,fgFoodMask); //Use Enhanced Mask
         //show the current frame and the fg masks
@@ -1241,17 +1242,19 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         ///
         /// Check If Track Centre Point Contains An image that matches a fish template
         ///
-        cv::Point centroid = fishblob->pt;
-        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-55)), max(0,min(maskedImg_gray.rows,centroid.y-55)));
-        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+55)), max(0,min(maskedImg_gray.rows,centroid.y+55)));
+        //cv::Point centroid = fishblob->pt;
+         //Locate Centroid Region at a point between blob Centroid And Detect HeadPoint on Curve
+        cv::Point centroid = ((cv::Point)fishblob->pt-gptHead)/4+gptHead;
+        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-20)), max(0,min(maskedImg_gray.rows,centroid.y-20)));
+        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+20)), max(0,min(maskedImg_gray.rows,centroid.y+20)));
 
         // Look for Fish Template Within The Blob Region //
         cv::Rect rectFish(pBound1,pBound2);
 
         // Debug //
-#ifdef _ZTFDEBUG_
+//#ifdef _ZTFDEBUG_
         cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1);
-#endif
+//#endif
 
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
         double maxMatchScore; //
@@ -1862,7 +1865,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
     //frame.copyTo(frameOut,maskimg); //mask Source Image
-    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS ); //cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS
 
 
     detector->clear();
@@ -2826,7 +2829,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         int idxMin  = 0;
         double maxVal=0.0;
         double minVal=10000.0;
-        cv::Point ptSharp,ptSharp2,ptHead,ptTail;
+        cv::Point ptSharp,ptSharp2,ptHead,ptHead2,ptTail;
 
         for (int j=0; j<X.size(); j++) {
            dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
@@ -2864,9 +2867,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         int maxLen = 0;
         int lenA,lenB; //Arc Lenght ClockWise, And AntiClockWise
         int idxA,idxB,idxT;
-        for (int j=0; j<curve.size(); j++)
+        for (uint j=0; j<curve.size(); j++)
         {
-            for (int k=j+3; k<curve.size(); k++)
+            for (uint k=j+3; k<curve.size(); k++)
             {
                 vector<cv::Point>::const_iterator first = curve.begin() + j;
                 vector<cv::Point>::const_iterator last = curve.begin() + k;
@@ -2877,7 +2880,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
                  lenA = cv::arcLength(vArc,false);
                  lenB = cv::arcLength(vArcRev,false); //Count Remaining Arc
 
-                if (lenA > lenB) //This Should Continuously Rise /
+                if (lenA >= lenB) //This Should Continuously Rise /
                  {
                     idxT = k;
                     break; //Crossed Over Mid Arc / So Distal point Found
@@ -2899,13 +2902,16 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         {
             ptTail = curve[idxA];
             ptHead = curve[idxB];
+            ptHead2 = curve[idxB-1];
         }else
         {
             ptTail = curve[idxB];
             ptHead = curve[idxA];
+            ptHead2 = curve[idxA-1];
         }
 
-
+        /// \todo move this to some object prop, use ArcLength for fish Size Estimates
+        gptHead = ptHead; //Hack To Get position For Template
 
         ///////////// END SMOOTHING
 
@@ -2919,9 +2925,10 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
         //Draw New One
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
-        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),2);
-        cv::circle(outFishMask, ptTail,8,CV_RGB(255,255,255),cv::FILLED);
-        cv::circle(outFishMask, ptHead,8,CV_RGB(255,255,255),1);
+        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),8); //Draw Thick Outline To Cover for Contour Losses
+        cv::circle(outFishMask, ptTail,16,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, ptHead,4,CV_RGB(255,255,255),cv::FILLED);
+         cv::circle(outFishMask, ptHead2,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Erase Fish From Food Mask
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),15);
