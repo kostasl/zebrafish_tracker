@@ -279,7 +279,8 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
  }
 
  if (templ_rot.cols > 0 && templ_rot.rows > 0)
-         cv::imshow("MTemplate",templ_rot);
+         //cv::imshow("MTemplate",templ_rot);
+        pwindow_main->showInsetTemplateimg(templ_rot); //Show The template Image Used
  else
      std::cerr << "template_detect: templ_rot is empty - matchcol:" << matchColIdx << " Row: " << ibestMatchRow << std::endl;
 

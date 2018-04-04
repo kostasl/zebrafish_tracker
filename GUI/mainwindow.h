@@ -31,6 +31,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     void showCVimg(cv::Mat& img);
     void showInsetimg(cv::Mat& img); //Used to Show Small IMage Next to main scene
+    void showInsetTemplateimg(cv::Mat& img); //For Showing The template Image
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
 
     void saveScreenShot();
@@ -86,12 +87,14 @@ private:
      */
     QGraphicsScene      *mScene;
     QGraphicsScene*     mInsetScene;
+    QGraphicsScene*     mInsetTemplateScene;
 
     /**
     * Image to be displayed in  this scene.
     */
     QGraphicsPixmapItem*                            mImage;
     QGraphicsPixmapItem*                            mImageInset;
+    QGraphicsPixmapItem*                            mImageTemplateInset;
 
     cv::Mat*                                        mpLastCVImg;
 

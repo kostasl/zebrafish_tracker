@@ -33,9 +33,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
     this->mInsetScene = new QGraphicsScene(this->ui->graphicsViewHead);
+    this->mInsetTemplateScene = new QGraphicsScene(this->ui->graphicsViewTemplate);
 
     this->ui->graphicsView->setScene(this->mScene);
     this->ui->graphicsViewHead->setScene(this->mInsetScene);
+    this->ui->graphicsViewTemplate->setScene(this->mInsetTemplateScene);
+
     //this->ui->graphicsView->setFixedSize(1280,1024);
     //mScene->setSceneRect(this->ui->graphicsView->rect());
 
@@ -43,8 +46,10 @@ MainWindow::MainWindow(QWidget *parent) :
     //Add Empty/New PixMap on Which we will set the images onto
     QPixmap pxMapEmpty1(this->ui->graphicsView->geometry().width(),this->ui->graphicsView->geometry().height());
     QPixmap pxMapEmpty2(this->ui->graphicsViewHead->geometry().width(),this->ui->graphicsViewHead->geometry().height());
-    this->mImage         = mScene->addPixmap(pxMapEmpty1);
-    this->mImageInset    = mInsetScene->addPixmap(pxMapEmpty2);
+    QPixmap pxMapEmpty3(this->ui->graphicsViewTemplate->geometry().width(),this->ui->graphicsViewTemplate->geometry().height());
+    this->mImage                 = mScene->addPixmap(pxMapEmpty1);
+    this->mImageInset            = mInsetScene->addPixmap(pxMapEmpty2);
+    this->mImageTemplateInset    = mInsetTemplateScene->addPixmap(pxMapEmpty3);
 
     this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
     this->ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -53,6 +58,11 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->graphicsViewHead->setSceneRect(this->ui->graphicsViewHead->geometry()); // set the scene's bounding rect to rect of mainwindow
     this->ui->graphicsViewHead->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->ui->graphicsViewHead->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+
+    this->ui->graphicsViewTemplate->setSceneRect(this->ui->graphicsViewTemplate->geometry()); // set the scene's bounding rect to rect of mainwindow
+    this->ui->graphicsViewTemplate->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->ui->graphicsViewTemplate->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 
     this->ui->horizontalSlider->setRange(0,50000);
@@ -238,6 +248,24 @@ void MainWindow::showInsetimg(cv::Mat& img)
    // this->ui->graphicsViewHead->show();
 
 }
+
+void MainWindow::showInsetTemplateimg(cv::Mat& img)
+{
+
+    if (img.cols == 0 || img.rows == 0)
+        return;
+
+    qimgHead = QtOpencvCore::img2qimg(img);
+    // convert the opencv image to a QPixmap (to show in a QLabel)
+    QPixmap pixMap = QPixmap::fromImage(qimgHead);
+    QRect bound = this->ui->graphicsViewTemplate->geometry();
+    this->mInsetTemplateScene->setSceneRect(bound);
+
+    this->mImageTemplateInset->setPixmap(pixMap);
+    this->mImageTemplateInset->setPos(bound.topLeft().x() ,bound.topLeft().y());
+
+}
+
 void MainWindow::showCVimg(cv::Mat& img)
 {
     frameScene.release();

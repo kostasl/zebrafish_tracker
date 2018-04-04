@@ -353,6 +353,25 @@
      </property>
     </widget>
    </widget>
+   <widget class="QGraphicsView" name="graphicsViewTemplate">
+    <property name="geometry">
+     <rect>
+      <x>700</x>
+      <y>0</y>
+      <width>51</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="whatsThis">
+     <string comment="Ψαροκεφαλι">Tracking of head Features</string>
+    </property>
+    <property name="verticalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOff</enum>
+    </property>
+    <property name="horizontalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOff</enum>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

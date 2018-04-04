@@ -141,7 +141,7 @@ int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and T
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 1;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.9; //If not higher than 0.9 The fish body can be matched at extremeties
+double gTemplateMatchThreshold  = 0.78; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -535,26 +535,6 @@ int main(int argc, char *argv[])
 
     /// END OF FISH TEMPLATES ///
 
-    ///Make TrackBars ///
-//    cv::createTrackbar( "Laplace Size:",  "Debug D", &g_BGthresh, 31.0, thresh_callback );
-    //cv::createTrackbar( "Fish Threshold:", "Debug D", &g_Segthresh, 151.0, thresh_callback );
-    //cv::createTrackbar( "Eye Threshold:", "Debug D", &gthresEyeSeg, 200.0, thresh_callback );
-    //cv::createTrackbar( "Canny Thres:", "Debug D", &gi_CannyThres, 350, thresh_callback );
-    //cv::createTrackbar( "Canny Thres Small:", "Debug D", &gi_CannyThresSmall, 100, thresh_callback );
-    //cv::createTrackbar( "Max Ellipse","Debug D", &gi_maxEllipseMajor, 35.0, thresh_callback );
-    //cv::createTrackbar( "Min Ellipse","Debug D", &gi_minEllipseMajor,30, thresh_callback );
-    //cv::createTrackbar( "Spine Segment Size","Debug D", &gFishTailSpineSegmentLength, 50, thresh_callback );
-
-    thresh_callback( 0, 0 );
-    ///////////////
-
-    //double mog2CThres = pMOG2->getComplexityReductionThreshold(); ///This parameter defines the number of samples needed to accept to prove the component exists. CT=0.05 is a default value for all the samples. By setting CT=0 you get an algorithm very similar to the standard Stauffer&Grimson algorithm.
-    //pMOG2->setComplexityReductionThreshold(0.0);
-
-    //(int history=200, int nmixtures=5, double backgroundRatio=0.7, double noiseSigma=0)
-    //pMOG =   cv::bgsegm::createBackgroundSubtractorMOG(MOGhistory,12,0.05,0.00); //MOG approach
-     //pKNN = cv::createBackgroundSubtractorKNN(MOGhistory,50,false);
-//    pGMG =   cv::bgsegm::createBackgroundSubtractorGMG(MOGhistory,0.3); //GMG approach
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
@@ -793,10 +773,6 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
         nLarva = ptFishblobs.size();
-        //frameDebugD = fgFishMask.clone(); //Stop Leaks
-        //fgFishMask.copyTo(frameDebugD);
-        ////Make image having masked all fish
-        //maskedImg_gray.copyTo(maskedfishImg_gray,fgMask); //Mask The Laplacian //Input Already Masked
 
 
         ///Update Fish Models Against Image and Tracks
@@ -2185,7 +2161,8 @@ void removeDataFile(QFile& data)
 
    std::clog << gTimer.elapsed()/60000 << "[Warning] Deleting Output File " << data.fileName().toStdString() << std::endl;
 
-   data.deleteLater();
+   if (data.exists())
+    data.deleteLater();
 }
 
 ///
@@ -2883,18 +2860,22 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         it += idxTail;
         curve.insert(it,ptSharp);
 
+        //Copy with Tail At zero index
+        vector<cv::Point> vcurveR( curve.begin() + idxTail ,curve.end());
+        vcurveR.insert(vcurveR.end(),curve.begin(),curve.begin() + std::max(0,idxTail) );
+
         /// Find Head-Tail Point As Point Of Maximum Arc Lenght //
         //1st Approach is the noddy Way, n!
         int maxLen = 0;
         int lenA,lenB; //Arc Lenght ClockWise, And AntiClockWise
         int idxA,idxB,idxT;
-        for (uint j=0; j<curve.size(); j++)
+        for (uint j=0; j < 2 ; j++) //Isolate to 1st found Tail Point
         {
-            for (uint k=j+3; k<curve.size(); k++)
+            for (uint k=j+2; k< vcurveR.size(); k++)
             {
-                vector<cv::Point>::const_iterator first = curve.begin() + j;
-                vector<cv::Point>::const_iterator last = curve.begin() + k;
-                vector<cv::Point>::const_iterator end = curve.end();
+                vector<cv::Point>::const_iterator first = vcurveR.begin() + j;
+                vector<cv::Point>::const_iterator last = vcurveR.begin() + k;
+                vector<cv::Point>::const_iterator end = vcurveR.end();
                 vector<cv::Point> vArc(first, last); //Copy Points Over And Test For arc Length
                 vector<cv::Point> vArcRev(last, end); //Copy Points Over And Test For arc Length
 
@@ -2919,17 +2900,20 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
         }
         //Check Which curve point is closes to the TailInflection Candidate - Mark As Tail
-        if (norm(curve[idxTail]-curve[idxA]) < norm(curve[idxTail]-curve[idxB]))
+        if (norm(curve[idxTail]-vcurveR[idxA]) < norm(curve[idxTail]-vcurveR[idxB]))
         {
-            ptTail = curve[idxA];
-            ptHead = curve[idxB];
-            ptHead2 = curve[idxB-1];
-        }else
-        {
-            ptTail = curve[idxB];
-            ptHead = curve[idxA];
-            ptHead2 = curve[idxA-1];
+            ptTail = vcurveR[idxA];
+            ptHead = vcurveR[idxB];
+            ptHead2 = vcurveR[idxB-1];
         }
+        else
+        {
+            ptTail = vcurveR[idxB];
+            ptHead = vcurveR[idxA];
+            ptHead2 = vcurveR[idxA-1];
+        }
+        //Replace Old Curve
+        curve = vcurveR;
 
         /// \todo move this to some object prop, use ArcLength for fish Size Estimates
         gptHead = ptHead; //Hack To Get position For Template
@@ -3039,6 +3023,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
     cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),3,3);
 
+    //cv::imshow("BlugTail",maskedfishFeature_blur);
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 
