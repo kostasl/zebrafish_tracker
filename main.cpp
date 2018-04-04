@@ -1019,6 +1019,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
         // 1st Check If user changed Frame - and go to that frame
         if (bStartFrameChanged)
         {
+            nFrame = window_main.nFrame;
             capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
             bPaused = true;
             bTracking = false;
@@ -1027,6 +1028,13 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             ReleaseFishModels(vfishmodels);
             ReleaseFoodModels(vfoodmodels);
         }
+        else
+        {
+            nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+            window_main.nFrame = nFrame; //Update The Frame Value Stored in Tracker Window
+            window_main.tickProgress();
+        }
+
 
 
         if (nFrame == stopFrame && stopFrame > 0)
@@ -1041,14 +1049,12 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             bTracking = true;
         }
 
-
-        nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
-        window_main.nFrame = nFrame; //Update The Frame Value Stored in Tracker Window
-        window_main.tickProgress();
-        frameNumberString = QString::number(nFrame); //Update Display String Holding FrameNumber
+         frameNumberString = QString::number(nFrame); //Update Display String Holding FrameNumber
 
     if (!bPaused)
     {
+
+
         try //Try To Read The Image of that video Frame
         {
             //read the current frame
@@ -1737,7 +1743,7 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
             //while (QTime::currentTime() < dieTime)
               //  keyCommandFlag(win,keyboard,nFrame);
 
-//                QCoreApplication::processEvents(QEventLoop::AllEvents);
+                QCoreApplication::processEvents(QEventLoop::AllEvents);
   //              cv::waitKey(100);
 
 
@@ -3016,7 +3022,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
         maskedImg_gray = fullImgIn; //Tautology
 
 
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),2,2);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),3,3);
 
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
