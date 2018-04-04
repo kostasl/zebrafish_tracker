@@ -81,12 +81,12 @@
 
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
-const unsigned int MOGhistory   = gfVidfps*1;//Use 3 sec Of Video So rotifers Have Moved  A little
+const unsigned int MOGhistory   = gfVidfps*4;//Use 4 sec Of Video So rotifers Have Moved  A little
 bool gbUseBGModelling           = false; ///Use BG Modelling TO Segment FG Objects
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
-double dLearningRate                    = 1.0/(5.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+double dLearningRate                    = 1.0/(4.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
 double dLearningRateNominal       = 0.00001;
 
 
@@ -96,7 +96,7 @@ double dMeanBlobArea                    = 100; //Initial Value that will get upd
 double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
-const unsigned int thresh_maxfishblobarea = 1850; //Min area above which to Filter The fish blobs
+const unsigned int thresh_maxfishblobarea = 2250; //Min area above which to Filter The fish blobs
 const unsigned int gthres_maxfoodblobarea = 150;
 
 
@@ -141,7 +141,7 @@ int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and T
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 1;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.87; //If not higher than 0.9 The fish body can be matched at extremeties
+double gTemplateMatchThreshold  = 0.88; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -170,7 +170,7 @@ cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 //cv::Ptr<cv::BackgroundSubtractorKNN> pKNN; //MOG Background subtractor
 //cv::Ptr<cv::bgsegm::BackgroundSubtractorGMG> pGMG; //GMG Background subtractor
 
-//Fish Detection
+// Fish Detection //
 Ptr<GeneralizedHough> pGHT;
 Ptr<GeneralizedHoughBallard> pGHTBallard;
 Ptr<GeneralizedHoughGuil> pGHTGuil;
@@ -184,22 +184,17 @@ cv::Mat gLastfishimg_template;// OUr Fish Image Template
 cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
 cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
 
+/// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
 cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
 
-//Global Shortcut of Type conversion to legacy IplImage
-//IplImage framefishMaskImg;
 
-
-//ltROI tRoi( cv::Point(0,0) , cv::Point(1024,768));
 ltROIlist vRoi;
 //
-//cv::Point ptROI1 = cv::Point(320,240);
-//cv::Point ptROI2 = cv::Point(1,134); //This Default Value Is later Modified
 
-cv::Point ptROI1 = cv::Point(634,182);
-cv::Point ptROI2 = cv::Point(18,341);
-cv::Point ptROI3 = cv::Point(18,182);
-cv::Point ptROI4 = cv::Point(635,344);
+cv::Point ptROI1 = cv::Point(gFishBoundBoxSize+1,182);
+cv::Point ptROI2 = cv::Point(634,182);
+cv::Point ptROI3 = cv::Point(635,344);
+cv::Point ptROI4 = cv::Point(gFishBoundBoxSize+1,341);
 
 
 
@@ -247,7 +242,7 @@ bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimiza
 bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
-
+bool gStaticAccumulatedBGMaskRemove = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -769,7 +764,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
 
         //Remove Stationary Learned Pixels From Mask
-        //cv::bitwise_and(bgMask,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
+        if (gStaticAccumulatedBGMaskRemove)
+           cv::bitwise_and(bgMask,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
@@ -1045,17 +1041,19 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             bTracking = true;
         }
 
+
         nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
         window_main.nFrame = nFrame; //Update The Frame Value Stored in Tracker Window
         window_main.tickProgress();
         frameNumberString = QString::number(nFrame); //Update Display String Holding FrameNumber
 
+    if (!bPaused)
+    {
         try //Try To Read The Image of that video Frame
         {
             //read the current frame
             if(!capture.read(frame))
             {
-
                 if (nFrame == startFrameCount)
                 {
                     std::cerr << gTimer.elapsed()/60000.0 << " " <<  nFrame << "# [Error]  Unable to read first frame." << std::endl;
@@ -1106,6 +1104,9 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             else
                 continue;
         }
+
+    } //If Not Paused //
+
         nErrorFrames = 0;
 
 
@@ -1215,7 +1216,7 @@ bool operator<(const fishModel& a, const fishModel& b)
 }
 
 ///
-/// \brief UpdateFishModels
+/// \brief UpdateFishModels starting from Blob Info do the processing steps to update FishModels for this frame,
 /// \param maskedImg_gray
 /// \param vfishmodels
 /// \param fishblobs
@@ -1245,8 +1246,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         //cv::Point centroid = fishblob->pt;
          //Locate Centroid Region at a point between blob Centroid And Detect HeadPoint on Curve
         cv::Point centroid = ((cv::Point)fishblob->pt-gptHead)/4+gptHead;
-        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-20)), max(0,min(maskedImg_gray.rows,centroid.y-20)));
-        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+20)), max(0,min(maskedImg_gray.rows,centroid.y+20)));
+        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-gFishBoundBoxSize-1)), max(0,min(maskedImg_gray.rows,centroid.y-gFishBoundBoxSize-1)));
+        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+gFishBoundBoxSize+1)), max(0,min(maskedImg_gray.rows,centroid.y+gFishBoundBoxSize+1)));
 
         // Look for Fish Template Within The Blob Region //
         cv::Rect rectFish(pBound1,pBound2);
@@ -1726,8 +1727,8 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
     }
        // cv::waitKey(1);
 
-        while (bPaused && !bExiting)
-        {
+        //while (bPaused && !bExiting)
+       // {
 
 
             //Wait Until Key to unpause is pressed
@@ -1737,11 +1738,11 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
             //while (QTime::currentTime() < dieTime)
               //  keyCommandFlag(win,keyboard,nFrame);
 
-                QCoreApplication::processEvents(QEventLoop::AllEvents);
-                cv::waitKey(100);
+//                QCoreApplication::processEvents(QEventLoop::AllEvents);
+  //              cv::waitKey(100);
 
 
-        }
+        //}
 
 }
 
@@ -2925,7 +2926,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
         //Draw New One
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
-        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),8); //Draw Thick Outline To Cover for Contour Losses
+        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),2); //Draw Thick Outline To Cover for Contour Losses
         cv::circle(outFishMask, ptTail,16,CV_RGB(255,255,255),cv::FILLED);
         cv::circle(outFishMask, ptHead,4,CV_RGB(255,255,255),cv::FILLED);
          cv::circle(outFishMask, ptHead2,4,CV_RGB(255,255,255),cv::FILLED);

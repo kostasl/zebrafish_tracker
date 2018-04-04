@@ -16,7 +16,9 @@ extern int gi_maxEllipseMajor;
 extern int gi_minEllipseMajor;
 extern QElapsedTimer gTimer;
 
+
 extern ltROIlist vRoi;
+extern int gFishBoundBoxSize;
 
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
@@ -572,9 +574,9 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 
 
     if (bDraggingRoiPoint)
-    {   //Update Point
-        ptDrag->x = ptMouse.x;
-        ptDrag->y = ptMouse.y;
+    {   //Update Point - Bound it from Periphery - OtherWise TemplateMatch Fails due to Small Image Crop at boundary
+        ptDrag->x = std::max(gFishBoundBoxSize, std::min(frameScene.cols - gFishBoundBoxSize,ptMouse.x));
+        ptDrag->y = std::max(gFishBoundBoxSize, std::min(frameScene.rows - gFishBoundBoxSize,ptMouse.y));
     }
     else
         ptDrag = 0;
