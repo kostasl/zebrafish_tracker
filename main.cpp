@@ -1023,12 +1023,13 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
             bPaused = true;
             bTracking = false;
-            bStartFrameChanged = false;
+            //bStartFrameChanged = false; //This is Reset Once The frame Is captured
             //Since we are jumping Frames - The fish Models Are invalidated / Delete
             ReleaseFishModels(vfishmodels);
             ReleaseFoodModels(vfoodmodels);
         }
-        else
+
+        if (!bPaused)
         {
             nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
             window_main.nFrame = nFrame; //Update The Frame Value Stored in Tracker Window
@@ -1051,9 +1052,9 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
          frameNumberString = QString::number(nFrame); //Update Display String Holding FrameNumber
 
-    if (!bPaused)
+    if (!bPaused && !bStartFrameChanged)
     {
-
+        bStartFrameChanged = false; //Reset
 
         try //Try To Read The Image of that video Frame
         {
@@ -1557,6 +1558,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     {
         //frame.copyTo(frameCpy);
         bPaused = true;
+
         std::cout << "Paused" << endl;
     }
 
@@ -1625,6 +1627,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     {
         std::cout << "Run" << endl;
         bPaused = false;
+        bStartFrameChanged = false;
         gTimer.start();
     }
 
@@ -1720,16 +1723,16 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 //    nanosleep(&ts, NULL);
     ///Memory Crash Here ///
     ///
-    try
-    {
+//    try
+//    {
         QCoreApplication::processEvents(QEventLoop::AllEvents);
-    }catch(...)
-    {
+//    }catch(...)
+//    {
         //std::cerr << "Event Processing Exception!" << std::endl;
-        qWarning() << "Event Processing Exception!";
-        win->LogEvent(QString("Event Processing Exception!"));
+//        qWarning() << "Event Processing Exception!";
+//        win->LogEvent(QString("Event Processing Exception!"));
 
-    }
+  //  }
        // cv::waitKey(1);
 
         //while (bPaused && !bExiting)
@@ -1737,13 +1740,19 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
 
 
             //Wait Until Key to unpause is pressed
-            //keyboard = cv::waitKey( 30 );
+            //
 
-            //QTime dieTime= QTime::currentTime().addSecs(1);
-            //while (QTime::currentTime() < dieTime)
-              //  keyCommandFlag(win,keyboard,nFrame);
-
+    if (bPaused)
+    { //Spend more time processing GUI events when Paused
+        //keyboard = cv::waitKey( 1 );
+        QTime dieTime= QTime::currentTime().addMSecs(20);
+            while (QTime::currentTime() < dieTime)
                 QCoreApplication::processEvents(QEventLoop::AllEvents);
+
+        //keyCommandFlag(win,keyboard,nFrame);
+    }           //
+
+
   //              cv::waitKey(100);
 
 

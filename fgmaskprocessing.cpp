@@ -88,6 +88,8 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         //Do Not Overrun Vid Length In BG COmputation
         uint uiStopFrame = std::min(totFrames,MOGhistoryLength);
         //read input data. ESC or 'q' for quitting
+
+        window_main.setTotalFrames(uiStopFrame); //Set To BG Processing REgion
         while( !bExiting && (char)keyboard != 27 && nFrame < (uint) uiStopFrame)
         {
             //read the current frame

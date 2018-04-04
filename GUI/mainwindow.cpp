@@ -147,7 +147,7 @@ void MainWindow::createSpinBoxes()
 
 void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
 {
-    this->ui->horizontalSlider->setValue(nFrame);
+    //this->ui->horizontalSlider->setValue(nFrame);
 
     showCVimg(img);
 }
@@ -360,7 +360,15 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
          if (strkey.length() > 0)
             key =  strkey.at(0);
 
-         qDebug() << "Ate key press " << keyEvent->text().toStdString().c_str() << " k: " << key << " from " << obj->objectName();
+         //Cancel Any Drag Event Going On
+         if (bDraggingTemplateCentre)
+         {
+            bDraggingTemplateCentre = false;
+            LogEvent("Cancelled Template Adjustment");
+         }
+
+
+         //qDebug() << "Ate key press " << keyEvent->text().toStdString().c_str() << " k: " << key << " from " << obj->objectName();
         ///Catch Frame Number Edit Enter Press
          if (obj == ui->spinBoxFrame && (event->type() == QEvent::KeyPress) )
          {
@@ -480,6 +488,7 @@ void MainWindow::handleSliderChange(QEvent* event)
         bStartFrameChanged = true;
         bPaused = false;
         nFrame = this->ui->horizontalSlider->value();
+        this->ui->spinBoxFrame->setValue(nFrame);
     }
     if (event->type() == QEvent::HoverMove)
     {
@@ -710,6 +719,8 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
         if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
         {
             bDraggingTemplateCentre = true;
+            LogEvent("[info] Adjust Template from position ON- Start Dragging");
+            //this->statusBar()->set
             qDebug() << "Start Dragging Fish Bound from position x: " << ptMouse.x << " y:" << ptMouse.y;
 
         }
