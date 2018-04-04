@@ -12,9 +12,9 @@ echo $DATDIR
 
 rm datafileslist.txt
 rm vidfilelist.txt
-find $DATDIR -maxdepth 3 -name "*.csv" | sed 's,^[^/]*/,,' | sed s/\.[^\_]*$// | sed s/\.[^\_]*$// | sed 's/.*\///' |sed '/^$/d' | sort | uniq > datafileslist.txt
+find $DATDIR -maxdepth 3 -name "*.csv" | sed 's,^[^/]*/,,' | sed s/\.[^\_]*$// | sed s/\.[^\_]*$// | sed 's/.*\///' |sed '/^$/d' | uniq | sort > datafileslist.txt
 find $VIDDIR -maxdepth 3  -name "*.mp4" > vidfilesfullpath.txt
-cat vidfilesfullpath.txt | sed 's,^[^/]*/,,' | sed s/\.[^\.]*$// | sed 's/.*\///' |sed '/^$/d' | sort | uniq > vidfilelist.txt
+cat vidfilesfullpath.txt | sed 's,^[^/]*/,,' | sed s/\.[^\.]*$// | sed 's/.*\///' |sed '/^$/d' | uniq | sort > vidfilelist.txt
 diff --changed-group-format='%>' --unchanged-group-format='' datafileslist.txt vidfilelist.txt > unprocessedfiles.txt
 
 
@@ -24,7 +24,8 @@ echo " unprocessed video files in $VIDDIR"
 echo "Here are the list of video file that have not been tracked/processed yet:"
 echo "--------------------------"
 
-grep -f unprocessedfiles.txt vidfilesfullpath.txt > VidFilesToProcess.txt
+grep -f unprocessedfiles.txt vidfilesfullpath.txt | sort > VidFilesToProcess.txt
+
 
 lines=`wc -l VidFilesToProcess.txt | cut -f1 -d' '`
 #procsize=$lines

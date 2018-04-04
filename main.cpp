@@ -3284,16 +3284,19 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                    if (idxFish>=0)
                         fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
 
+                   qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
                }
 
                //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
                //Best To reset Spine and Start Over Next Time
                /// \todo Make this parameter threshold formal
-               if (fish->lastTailFitError > fish->c_fitErrorPerContourPoint)
+               if (abs(fish->lastTailFitError) > fish->c_fitErrorPerContourPoint)
                {
                    fish->resetSpine(); //No Solution Found So Reset
-                   pwindow_main->LogEvent("Reset Spine as Error above c_fitErrorPerContourPoint");
+                   pwindow_main->LogEvent(QString("[warning] Reset Spine. lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
+
                }
+
 #endif
 
 
