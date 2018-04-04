@@ -146,7 +146,7 @@ public:
   static const int c_spinePoints   = ZTF_TAILSPINECOUNT; //\todo fix compilation Problems with Including COnfig.h
   static const int c_spineParamCnt = c_spinePoints+2;
 
-  const int c_fitErrorPerContourPoint = 5;
+  const int c_fitErrorPerContourPoint = 1.0;
 
 private:
 
