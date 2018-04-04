@@ -243,7 +243,7 @@ bool bStartFrameChanged = false; /// When True, the Video Processing loop stops 
 bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 bool bStaticAccumulatedBGMaskRemove = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
-bool bApplyFishMaskBeforeFeatureDetection = true; //Pass the masked image of the fish to the feature detector
+bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
 
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -766,7 +766,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
 
         //Remove Stationary Learned Pixels From Mask
-        if (gStaticAccumulatedBGMaskRemove)
+        if (bStaticAccumulatedBGMaskRemove)
            cv::bitwise_and(bgMask,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
