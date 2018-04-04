@@ -3016,7 +3016,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
         maskedImg_gray = fullImgIn; //Tautology
 
 
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
+    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),2,2);
 
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
