@@ -242,7 +242,9 @@ bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimiza
 bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
-bool gStaticAccumulatedBGMaskRemove = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+bool bStaticAccumulatedBGMaskRemove = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+bool bApplyFishMaskBeforeFeatureDetection = true; //Pass the masked image of the fish to the feature detector
+
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -697,7 +699,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        window_main.nFrame = 0;
        window_main.tickProgress(); //Update Slider
 
-       std::cout << "Press p to pause Video processing" << std::endl;
+       //std::cout << "Press p to pause Video processing" << std::endl;
 
 
 
@@ -769,7 +771,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
-        frame_gray.copyTo(fgFishImgMasked); //fgFishMask //Use Enhanced Mask
+
+        if (bApplyFishMaskBeforeFeatureDetection)
+            frame_gray.copyTo(fgFishImgMasked,fgFishMask); //fgFishMask //Use Enhanced Mask
+        else
+            frame_gray.copyTo(fgFishImgMasked); //fgFishMask //Use Enhanced Mask
 
         //outframe.copyTo(fgFoodImgMasked,fgFoodMask); //Use Enhanced Mask
         //show the current frame and the fg masks
