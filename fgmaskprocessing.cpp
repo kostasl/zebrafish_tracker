@@ -10,11 +10,14 @@
 #include <fgmaskprocessing.h>
 #include <larvatrack.h>
 
+#include <opencv2/core/ocl.hpp> //For setting setUseOpenCL
+
 extern int g_Segthresh;
 extern cv::Mat kernelOpen;
 extern double dLearningRate; //Learning Rate During Initial BG Modelling done over MOGhistory frames
 extern double dLearningRateNominal;
 
+//When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
 extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
 
@@ -233,8 +236,18 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
    // cv::cvtColor( fgMask, fgMask, cv::COLOR_BGR2GRAY);
 
     enhanceMask(frame,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+    //cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+    try
+    {
+        pMOG2->apply(frame,fgFishMask,dLearningRate); //Let the Model Learn , Dont Interact With The Accumulated Mask
+    }
+    catch(...)
+    {
+        std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
+        window_main.LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+        cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+    }
 
-    pMOG2->apply(frame,fgFishMask,dLearningRate); //Let the Model Learn , Dont Interact With The Accumulated Mask
     cv::accumulateWeighted(fgFoodMask,bgAcc,0.00001); //Also Learn A pic of the stable features
 
 
