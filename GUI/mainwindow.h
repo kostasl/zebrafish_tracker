@@ -75,6 +75,9 @@ protected:
     QImage qimg; //SCene Image Updated in ShowCV Image
     QImage qimgHead; //SCene Image Updated in ShowCV Image
     cv::Mat frameScene; //CvMat Last Frame Drawn
+private slots:
+    void on_spinBoxTemplateThres_valueChanged(int arg1);
+
 private:
     Ui::MainWindow      *ui;
 

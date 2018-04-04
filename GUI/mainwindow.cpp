@@ -15,10 +15,9 @@ extern int gthresEyeSeg;
 extern int gi_maxEllipseMajor;
 extern int gi_minEllipseMajor;
 extern QElapsedTimer gTimer;
-
-
 extern ltROIlist vRoi;
 extern int gFishBoundBoxSize;
+extern double gTemplateMatchThreshold;
 
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
@@ -107,6 +106,7 @@ void MainWindow::createSpinBoxes()
     this->ui->spinBoxSpineSegSize->setRange(2,20);
     this->ui->spinBoxSpineSegSize->setValue(gFishTailSpineSegmentLength);
 
+    this->ui->spinBoxTemplateThres->setValue(gTemplateMatchThreshold*100.0);
 
     //this->connect(this->ui->spinBoxEyeThres, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this->ui->spinBoxEyeThres, &QSlider::setValue);
 
@@ -734,4 +734,11 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_spinBoxTemplateThres_valueChanged(int arg1)
+{
+ double newTMatchThresh = (double)arg1/100.0;
+ gTemplateMatchThreshold = newTMatchThresh;
+ LogEvent(QString("[info] Changed Template Match Thres:" ) + QString::number(newTMatchThresh,'g',4) ) ;
 }
