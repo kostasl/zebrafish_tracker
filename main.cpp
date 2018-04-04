@@ -148,7 +148,7 @@ int iLastKnownGoodTemplateCol   = 0;
 
 ///Global Variables
 const double sigma = 3.0;
-const int M = round((8.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+const int M = round((3.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
 
  // Gaussian Curve Smoothing Kernels For fish Contour//
  std::vector<double> gGaussian,dgGaussian,d2gGaussian;
@@ -244,7 +244,7 @@ bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 bool bStaticAccumulatedBGMaskRemove = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
-
+bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
     gszTemplateImg.height = gLastfishimg_template.size().height; //Save TO Global Size Variable
 
 
-    int ifileCount =loadTemplatesFromDirectory(gstroutDirCSV + QString("/templates/"));
+    int ifileCount = loadTemplatesFromDirectory(gstroutDirCSV + QString("/templates/"));
     pwindow_main->nFrame = 1;
     pwindow_main->LogEvent(QString::number(ifileCount+nTemplatesToLoad) + QString("# Templates Loaded "));
 
@@ -683,11 +683,20 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 
 
 
+        //Can Return 0 If DataFile Already Exists and bSkipExisting is true
+        uint ret = processVideo(bgMask,window_main,invideoname,outputFile,istartFrame,istopFrame);
 
-        if (processVideo(bgMask,window_main,invideoname,outputFile,istartFrame,istopFrame) == 0)
+        if (ret == 0)
+            window_main.LogEvent(" [Error] Could not open Video file for last video");
+
+        if (ret == 1)
         {
-            std::cerr << gTimer.elapsed()/60000.0 << "Could not process last video - Exiting loop." << std::endl;
-            break;
+            if (!bSkipExisting)
+                std::cerr << gTimer.elapsed()/60000.0 << " Error Occurred Could not open data file for last video" << std::endl;
+            else
+                window_main.LogEvent(" Skipping  previously processed Video."); // std::cerr << gTimer.elapsed()/60000.0 << " Error Occurred Could not process last video" << std::endl;
+
+            continue; //Do Next File
         }
         istartFrame = 1; //Reset So Next Vid Starts From The Beginnning
         istopFrame = 0; //Rest So No Stopping On Next Video
@@ -986,7 +995,8 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     // Open OutputFile
 
     if (!openDataFile(trkoutFileCSV,videoFilename,outdatafile))
-        return 0;
+        return 1;
+
     outfilename = outdatafile.fileName();
 
     capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
@@ -1233,9 +1243,9 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         ///
         //cv::Point centroid = fishblob->pt;
          //Locate Centroid Region at a point between blob Centroid And Detect HeadPoint on Curve
-        cv::Point centroid = ((cv::Point)fishblob->pt-gptHead)/4+gptHead;
-        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-gFishBoundBoxSize-1)), max(0,min(maskedImg_gray.rows,centroid.y-gFishBoundBoxSize-1)));
-        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+gFishBoundBoxSize+1)), max(0,min(maskedImg_gray.rows,centroid.y+gFishBoundBoxSize+1)));
+        cv::Point centroid = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
+        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-gFishBoundBoxSize-2)), max(0,min(maskedImg_gray.rows,centroid.y-gFishBoundBoxSize-2)));
+        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+gFishBoundBoxSize+2)), max(0,min(maskedImg_gray.rows,centroid.y+gFishBoundBoxSize+2)));
 
         // Look for Fish Template Within The Blob Region //
         cv::Rect rectFish(pBound1,pBound2);
@@ -2102,23 +2112,31 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
     dirOutPath.append(buff); //Append extension track and ROI number
 
     data.setFileName(dirOutPath);
-    //Make Sure New File Is created On Every Run
+    //Make Sure We do not Overwrite existing Data Files
     while (!newFile)
     {
         if (!data.exists()) //Write HEader
         {
             newFile = true;
 
-        }else{ //File Exists - Create Name
-        //FilenAme Is Linke AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
-            //Increase Seq Number And Reconstruct Name
-            Vcnt++;
-            sprintf(buff,"_tracks_%d.csv",Vcnt);
-            dirOutPath = fiOut.absolutePath() + "/";
-            dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
-            dirOutPath.append(buff); //Append extension track and ROI number
-            data.setFileName(dirOutPath);
-
+        }else{
+            //File Exists
+            if (bSkipExisting)
+            {
+                return false; //File Exists Skip this Video
+            }
+            else
+            {
+                //- Create Name
+            //FilenAme Is Linke AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
+                //Increase Seq Number And Reconstruct Name
+                Vcnt++;
+                sprintf(buff,"_tracks_%d.csv",Vcnt);
+                dirOutPath = fiOut.absolutePath() + "/";
+                dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
+                dirOutPath.append(buff); //Append extension track and ROI number
+                data.setFileName(dirOutPath);
+            }
          }
     }
     if (!data.open(QFile::WriteOnly |QFile::Append))
