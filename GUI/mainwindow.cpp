@@ -364,7 +364,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
          if (bDraggingTemplateCentre)
          {
             bDraggingTemplateCentre = false;
-            LogEvent("Cancelled Template Adjustment");
+            LogEvent("[info] Cancelled Template Adjustment");
          }
 
 
