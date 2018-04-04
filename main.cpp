@@ -141,7 +141,7 @@ int giHeadIsolationMaskVOffset      = 8; //Vertical Distance to draw  Mask and T
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 1;
 int gEyeTemplateAngleSteps      = 5;
-double gTemplateMatchThreshold  = 0.88; //If not higher than 0.9 The fish body can be matched at extremeties
+double gTemplateMatchThreshold  = 0.9; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iLastKnownGoodTemplateCol   = 0;
 //using namespace std;
@@ -192,8 +192,8 @@ ltROIlist vRoi;
 //
 
 cv::Point ptROI1 = cv::Point(gFishBoundBoxSize+1,182);
-cv::Point ptROI2 = cv::Point(634,182);
-cv::Point ptROI3 = cv::Point(635,344);
+cv::Point ptROI2 = cv::Point(618,182);
+cv::Point ptROI3 = cv::Point(618,344);
 cv::Point ptROI4 = cv::Point(gFishBoundBoxSize+1,341);
 
 
@@ -1181,11 +1181,10 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
 
 
-        if (bTracking)
+        //Save only when tracking - And Not While Paused
+        if (bTracking && !bPaused)
             saveTracks(vfishmodels,outdatafile,frameNumberString);
             //saveTracks(vfishmodels,trkoutFileCSV,videoFilename,frameNumberString);
-
-
 
 
         checkPauseRun(&window_main,keyboard,nFrame);
@@ -2927,7 +2926,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //Draw New One
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),2); //Draw Thick Outline To Cover for Contour Losses
-        cv::circle(outFishMask, ptTail,16,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, (ptTail-ptHead)/6+ptTail,6,CV_RGB(255,255,255),cv::FILLED); //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
         cv::circle(outFishMask, ptHead,4,CV_RGB(255,255,255),cv::FILLED);
          cv::circle(outFishMask, ptHead2,4,CV_RGB(255,255,255),cv::FILLED);
 
