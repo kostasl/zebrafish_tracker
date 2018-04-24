@@ -7,6 +7,7 @@
 
 // #include <opencv2\opencv.hpp>
 
+#include <GUI/mainwindow.h>
 #include <fgmaskprocessing.h>
 #include <larvatrack.h>
 
@@ -25,6 +26,8 @@ extern ltROIlist vRoi;
 extern cv::Point ptROI1;
 extern cv::Point ptROI2; //This Default Value Is later Modified
 extern cv::Size gszTemplateImg; //Used For ROI size
+
+extern MainWindow* pwindow_main;
 
 /*// Example Of Mean Image
 Mat3b getMean(const vector<Mat3b>& images)
@@ -244,7 +247,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
     catch(...)
     {
         std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
-        window_main.LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+        pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
         cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
     }
 
