@@ -2796,12 +2796,12 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
 
 
-
+        cv::Point centroid;
         ///Check Area and then  Find the thresholded Fish Contour std::max(dMeanBlobArea*8,(double)thresh_fishblobarea)
         if (area >  thresh_fishblobarea && area <= thresh_maxfishblobarea) //If Contour Is large Enough then Must be fish
         {
             cv::Moments moments =  cv::moments(fishbodycontours[kk]);
-            cv::Point centroid;
+
             centroid.x = moments.m10/moments.m00;
             centroid.y = moments.m01/moments.m00;
             //If Contained In ROI
@@ -2918,8 +2918,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             }
 
         }
-        //Check Which curve point is closes to the TailInflection Candidate - Mark As Tail
-        if (norm(curve[idxTail]-vcurveR[idxA]) < norm(curve[idxTail]-vcurveR[idxB]))
+        //
+        //Check Which curve point is closest to the TailInflection Candidate - Initially Mark As Tail
+        if (norm(curve[idxTail]-vcurveR[idxA]) < norm(curve[idxTail]-vcurveR[idxB]) )
         {
             ptTail = vcurveR[idxA];
             ptHead = vcurveR[idxB];
@@ -2931,6 +2932,15 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             ptHead = vcurveR[idxA];
             ptHead2 = vcurveR[idxA-1];
         }
+         //Verify Head Point is closest to the Centroid (COM) than tail / Otherwise Switch
+        if (norm(ptTail-centroid)  < norm(ptHead-centroid))
+        {
+            cv:Point temp = ptTail;
+            ptTail = ptHead;
+            ptHead = temp;
+        }
+
+
         //Replace Old Curve
         curve = vcurveR;
 
