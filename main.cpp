@@ -1219,9 +1219,17 @@ bool operator<(const fishModel& a, const fishModel& b)
 
 
 /// \brief Defines search area region and runs template matching
+/// pt Cant be closer to image border than gFishBoundBoxSize - If it is it will fixed to this distance
 /// Returns Angle of Matched Template, centre of Detected Template and Match Score
 double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut )
 {
+    /// Fix Bounds For Search point such that search temaplte region is not smaller than template size
+    pt.x = (pt.x <= gLastfishimg_template.cols)?(gLastfishimg_template.cols+2): pt.x;
+    pt.x = (maskedImg_gray.cols-pt.x <= gLastfishimg_template.cols)?maskedImg_gray.cols-gLastfishimg_template.cols-2: pt.x;
+
+    pt.y = (pt.y <= gLastfishimg_template.rows)?(gLastfishimg_template.rows+2): pt.y;
+    pt.y = (maskedImg_gray.rows-pt.y <= gLastfishimg_template.rows)?maskedImg_gray.rows-gLastfishimg_template.rows-2: pt.y;
+    ///
 
     double maxMatchScore =0; //
     cv::Point gptmaxLoc; //point Of Bestr Match
@@ -2345,7 +2353,10 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
             //File Exists
             if (bSkipExisting)
             {
+                pwindow_main->LogEvent("[warning] Output File Exists and SkipExisting Mode is on.");
+                std::cerr << "Skipping Previously Tracked Video File" << std::endl;
                 return false; //File Exists Skip this Video
+
             }
             else
             {
