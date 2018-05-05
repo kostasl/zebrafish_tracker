@@ -29,6 +29,11 @@ void on_sigabrt (int signum)
     // Skip  Code Block
     //std::cerr << ">>>> Skipping Execution <<<<<" << std::endl;
 
+    closeDataFile(outdatafile);
+    std::cerr << "Delete the output File" << std::endl;
+
+    if (outdatafile.exists())
+       outdatafile.remove();
     /*
      * The abort function causes abnormal program termination to occur, unless the signal
      * SIGABRT is being caught and the signal handler does not return. ...

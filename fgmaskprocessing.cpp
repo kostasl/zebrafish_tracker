@@ -7,6 +7,7 @@
 
 // #include <opencv2\opencv.hpp>
 
+#include <GUI/mainwindow.h>
 #include <fgmaskprocessing.h>
 #include <larvatrack.h>
 
@@ -26,8 +27,8 @@ extern cv::Point ptROI1;
 extern cv::Point ptROI2; //This Default Value Is later Modified
 extern cv::Size gszTemplateImg; //Used For ROI size
 
-
 extern MainWindow* pwindow_main;
+
 /*// Example Of Mean Image
 Mat3b getMean(const vector<Mat3b>& images)
 {
