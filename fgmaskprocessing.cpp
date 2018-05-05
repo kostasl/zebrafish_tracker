@@ -26,6 +26,8 @@ extern cv::Point ptROI1;
 extern cv::Point ptROI2; //This Default Value Is later Modified
 extern cv::Size gszTemplateImg; //Used For ROI size
 
+
+extern MainWindow* pwindow_main;
 /*// Example Of Mean Image
 Mat3b getMean(const vector<Mat3b>& images)
 {
@@ -114,7 +116,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
             }
             else //Frame Grabbed - Process It
             {
-                //Get Frame Position From Vid Stream
+                //Get Frame Position From Vid Sam
                 nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
                 window_main.nFrame = nFrame; //Update Window
                 window_main.tickProgress();
@@ -244,7 +246,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
     catch(...)
     {
         std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
-        window_main.LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+        pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
         cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
     }
 

@@ -37,7 +37,7 @@
  ///  Added Record of Food Count at regular intervals on each video in case
  ///          no fish is being tracked ROI - This should show the evolution of prey Count in time
  ///
- ///
+ /// /note Found source of MultiProcess SegFault in OpenCL, Added try block on MOG2, and then flag to switch off OpenCL
  ///
  ////////
 
