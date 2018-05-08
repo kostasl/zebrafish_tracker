@@ -2375,7 +2375,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
     if (!data.open(QFile::WriteOnly |QFile::Append))
     {
 
-        std::cerr << "Could not open output file : " << std::endl;
+        std::cerr << "Could not open output file : " << data.fileName().toStdString() << std::endl;
 
         return false;
     }else {
