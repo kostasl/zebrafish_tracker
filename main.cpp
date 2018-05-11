@@ -115,7 +115,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 
 
 ///Segmentation Params
-int g_Segthresh             = 35; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 30; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -1069,7 +1069,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
          frameNumberString = QString::number(nFrame); //Update Display String Holding FrameNumber
 
-    if (!bPaused && !bStartFrameChanged)
+    if (!bPaused || bStartFrameChanged)
     {
         bStartFrameChanged = false; //Reset
 
@@ -1138,7 +1138,6 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
          std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;
          pwindow_main->LogEvent(QString(">>Stop Frame Reached - Video Paused<<"));
     }
-
 
         nErrorFrames = 0;
 
