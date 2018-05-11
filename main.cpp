@@ -744,7 +744,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
     std::vector<cv::Vec4i> fishbodyhierarchy;
 
     unsigned int nLarva         =  0;
-    unsigned int nFood          =  0;
+    //unsigned int nFood          =  0;
     double dblRatioPxChanged    =  0.0;
 
     QString frameNumberString;
@@ -845,7 +845,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         if (bTrackFood)
         {
 
-            nFood = processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+            processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
 
             //If A fish Is Detected Then Draw Its tracks
@@ -1679,7 +1679,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
 
     /// Assign Blobs To Food Models //
-     // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
+     // Look through Blobs find Respective food model attached or Create New Food Model if missing
     for (zfdblobs::iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
     {
         zfdblob* foodblob = &(*it);
@@ -1703,8 +1703,9 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
              bool bMatch = false;
              ///Does this Blob Belong To A Known Food Model?
 
-             //Skip This food Model if it Has Already Been Assigned on this Frame
-             if ((nFrame - pfood->nLastUpdateFrame)==0)
+             //Skip This food Model if it Has Already Been Assigned on this
+             // Frame Unless We Paused And Stuck on the same Frame
+             if ((nFrame - pfood->nLastUpdateFrame)==0 && bPaused == false)
                 continue;
 
              pfood->blobMatchScore = 0;//Reset So We Can Rank this Match
@@ -3389,7 +3390,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
           cv::Rect rectfishAnteriorBound = rectFish; //Use A square // fishRotAnteriorBox.boundingRect();
           cv::Size szFishAnteriorNorm(min(rectfishAnteriorBound.width,rectfishAnteriorBound.height)+4,max(rectfishAnteriorBound.width,rectfishAnteriorBound.height)+4); //Size Of Norm Image
           //Rot Centre Relative To Bounding Box Of UnNormed Image
-          cv::Point2f ptFishAnteriorRotCentre = (cv::Point2f)fishRotAnteriorBox.center-(cv::Point2f)rectfishAnteriorBound.tl();
+          //cv::Point2f ptFishAnteriorRotCentre = (cv::Point2f)fishRotAnteriorBox.center-(cv::Point2f)rectfishAnteriorBound.tl();
 
           //Define Regions and Sizes for extracting Orthonormal Fish
           //Top Left Corner of templateSized Rect relative to Rectangle Centered in Normed Img
@@ -3583,7 +3584,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
                /// Optionally Check For Errors Using Spine to Contour Fitting Periodically//
 #ifdef _USEPERIODICSPINETOCONTOUR_TEST
-               if ( (pwindow_main->nFrame % gfVidfps) == 0)
+               if ( (pwindow_main->nFrame % (uint)gfVidfps) == 0)
                {
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)

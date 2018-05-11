@@ -92,6 +92,8 @@ public:
 
         if (mType == RoiType::Polygon)
             return (cv::pointPolygonTest(vPoints,pt,false)== 1);
+
+        return false;
     }
 
     bool operator ==(const tRoi& c2)
