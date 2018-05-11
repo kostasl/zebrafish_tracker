@@ -29,6 +29,8 @@ extern cv::Size gszTemplateImg; //Used For ROI size
 
 extern MainWindow* pwindow_main;
 
+extern bool bStaticAccumulatedBGMaskRemove;
+
 /*// Example Of Mean Image
 Mat3b getMean(const vector<Mat3b>& images)
 {
@@ -92,12 +94,16 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         //Get Length of Video
         uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
         //Do Not Overrun Vid Length In BG COmputation
-        uint uiStopFrame = std::min(totFrames,MOGhistoryLength);
+        uint uiStopFrame = totFrames ; //std::min(totFrames,MOGhistoryLength);
         //read input data. ESC or 'q' for quitting
+        uint uiLearnedFrames = 0;
+        uint skipFrames = uiStopFrame/ MOGhistoryLength;
 
         window_main.setTotalFrames(uiStopFrame); //Set To BG Processing REgion
-        while( !bExiting && (char)keyboard != 27 && nFrame < (uint) uiStopFrame)
+
+        while( !bExiting && (char)keyboard != 27 && nFrame < (uint) uiStopFrame && uiLearnedFrames < MOGhistoryLength)
         {
+            uiLearnedFrames++;
             //read the current frame
             if(!capture.read(frame))
             {
@@ -168,6 +174,8 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
            checkPauseRun(&window_main,keyboard,nFrame);
 
+           //Jump To Next Frame To Learn
+           capture.set(CV_CAP_PROP_POS_FRAMES, nFrame+ skipFrames); //Move To Next So We Take MOGHistory Samples From the Video
 
         } //main While loop
 
@@ -176,7 +184,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         //Find Max Value,this should belong to stationary objects, and Use it as a relative measure to detect BG Objects
         cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,0);
-        cv::threshold(bgAcc,bgMask,uiMaxVal*0.3,255,cv::THRESH_BINARY); //All; Above 30% of Max are Stationary
+        cv::threshold(bgAcc,bgMask,uiMaxVal*0.05,255,cv::THRESH_BINARY); //All; Above 5% of Max are Stationary
 
         bgMask.convertTo(bgMask,CV_8UC1);
 
@@ -184,14 +192,15 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         //delete capture object
         capture.release();
 
-
-        //cv::imshow("Accumulated BG Mask",bgMask);
+        if (bStaticAccumulatedBGMaskRemove)
+            cv::imshow("Accumulated BG Model",bgMask);
         //delete kernel;
         //delete kernelClose;
 
 
         //std::clog << gTimer.elapsed()/60000.0 << " Background Processing  loop. Finished" << std::endl;
          window_main.LogEvent(" Background Processing  loop. Finished");
+         cv::destroyWindow("Accumulated Bg Model");
 
       return nFrame;
 } ///trackImageSequencefile
@@ -215,13 +224,6 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
     //Speed that stationary objects are removed
    // double dblRatioPxChanged    = 0.0;
 
-    //update the background model
-    //OPEN CV 2.4
-    if (nFrame > MOGhistory)
-    {
-       // dLearningRate = dLearningRateNominal; //Nominal
-        ret = false;
-    }
 
     //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
     //In That case make OpenCV With No CUDA or OPENCL support
@@ -239,6 +241,8 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
    // cv::cvtColor( fgMask, fgMask, cv::COLOR_BGR2GRAY);
 
     enhanceMask(frame,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+
+
     //cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
     try
     {
@@ -251,15 +255,19 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
         cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
     }
 
-    cv::accumulateWeighted(fgFoodMask,bgAcc,0.00001); //Also Learn A pic of the stable features
+
+    //Also Learn A pic of the stable features - Found In FoodMask - ie Fish Removed
+    cv::accumulateWeighted(fgFoodMask,bgAcc,0.0001);
 
 
     //pKNN->apply(frame, fgMask,dLearningRate);
     //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
     //DEBUG //
-    //cv::imshow("FoodMask",fgFoodMask);
-    //cv::imshow("Avg Bg Model",bgAcc);
+    //cv::imshow("fishMask",fgFishMask);
+
+    pwindow_main->showVideoFrame(fgFishMask,nFrame);
+    cv::imshow("Accumulated Bg Model",bgAcc);
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);
     //pGMG->apply(frame,fgMaskGMG,dLearningRate);

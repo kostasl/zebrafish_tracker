@@ -179,7 +179,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
   int iScanRowLimit = imgtemplCache.rows;
 
   if (!bTemplateSearchThroughRows) //Do not Search Subsequent Template Rows
-      iScanRowLimit = templSz.height*startRow + templRegion.height;
+      iScanRowLimit = std::min(templSz.height*startRow + templRegion.height,imgtemplCache.rows) ;
 
   for (int j=templSz.height*startRow; j<iScanRowLimit;j+=templRegion.height) //Remove for Speed Optimization.
   {

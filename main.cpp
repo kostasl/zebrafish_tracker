@@ -82,12 +82,12 @@
 
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
-const unsigned int MOGhistory   = gfVidfps*4;//Use 4 sec Of Video So rotifers Have Moved  A little
-bool gbUseBGModelling           = false; ///Use BG Modelling TO Segment FG Objects
+const unsigned int MOGhistory   = 100;//Use 100 frames Distributed across the video length To Find What the BGModel is
+
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
-double dLearningRate                    = 1.0/(4.0*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+double dLearningRate                    = 0.2;//1.0/(0.5*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
 double dLearningRateNominal       = 0.00001;
 
 
@@ -103,9 +103,9 @@ const unsigned int gthres_maxfoodblobarea = 150;
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 250; //Number of frames inactive until track is deleted
-const int gcMinFoodModelActiveFrames    = 3; //Number of frames inactive until track is deleted
-const int gMaxClusterRadiusFoodToBlob   = 5;
+const int gcMaxFoodModelInactiveFrames  = 50; //Number of frames inactive until track is deleted
+const int gcMinFoodModelActiveFrames    = 10; //Min Number of consecutive frames it needs to be active otherwise its deleted
+const int gMaxClusterRadiusFoodToBlob   = 8;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
 const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
@@ -131,7 +131,7 @@ float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as t
 int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 10;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
-int gFitTailIntensityScanAngleDeg   = 60; //
+int gFitTailIntensityScanAngleDeg   = 90; //
 
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -191,10 +191,10 @@ cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template 
 ltROIlist vRoi;
 //
 
-cv::Point ptROI1 = cv::Point(gFishBoundBoxSize+1,182);
-cv::Point ptROI2 = cv::Point(618,182);
-cv::Point ptROI3 = cv::Point(618,344);
-cv::Point ptROI4 = cv::Point(gFishBoundBoxSize+1,341);
+cv::Point ptROI1 = cv::Point(gFishBoundBoxSize+1,82);
+cv::Point ptROI2 = cv::Point(618,82);
+cv::Point ptROI3 = cv::Point(618,441);
+cv::Point ptROI4 = cv::Point(gFishBoundBoxSize+1,441);
 
 
 
@@ -242,11 +242,12 @@ bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimiza
 bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
-bool bStaticAccumulatedBGMaskRemove = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+bool gbUseBGModelling                     = true; ///Use BG Modelling TO Segment FG Objects
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
 bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
 bool bMakeCustomROIRegion                 = true; /// Uses Point array to construct
-bool bUseMaskedFishForSpineDetect         = true;
+bool bUseMaskedFishForSpineDetect         = false; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
 bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -759,9 +760,13 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         cv::Mat fgMask;
         pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
 
-        //Remove Stationary Learned Pixels From Mask
+        //Combine Masks and Remove Stationary Learned Pixels From Mask
         if (bStaticAccumulatedBGMaskRemove)
+        {
+           //cv::bitwise_not(fgMask,fgMask);
+            //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
            cv::bitwise_and(bgMask,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
+        }
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
@@ -1745,7 +1750,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         pfood = ft->second;
         // Delete If Inactive For Too Long
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
-        if ((pfood->inactiveFrames > gcMaxFoodModelInactiveFrames) ||
+        if (pfood->inactiveFrames > gcMaxFoodModelInactiveFrames ||
             (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames)
             ) //Check If it Timed Out / Then Delete
         {
@@ -2952,11 +2957,11 @@ outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
-if (gbUseBGModelling && !fgMask.empty()) //We Have a Model In maskBG - So Remove those Stationary Pixels
+if (gbUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
 {
     cv::Mat fgMask_dilate; //Expand The MOG Mask And Intersect with Threshold
-    cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1);
-    //cv::dilate(fgMask,fgMask_dilate,kernelOpenfish,cv::Point(-1,-1),2);
+    //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpenfish,cv::Point(-1,-1),1);
+    cv::dilate(fgMask,fgMask_dilate,kernelOpenfish,cv::Point(-1,-1),2);
     cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
     //fgMask.copyTo(maskFGImg);
 }
@@ -3169,7 +3174,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
          //Verify Head Point is closest to the Centroid (COM) than tail / Otherwise Switch
         if (norm(ptTail-centroid)  < norm(ptHead-centroid))
         {
-            cv:Point temp = ptTail;
+            cv::Point temp = ptTail;
             ptTail = ptHead;
             ptHead = temp;
         }
@@ -3285,9 +3290,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
  ///Do not Use MaskedFish For Spine maskedfishImg_gray
     if (bUseMaskedFishForSpineDetect)
-          cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),3,3);
+          cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
     else
-        cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(3,3),3,3);
+        cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
 
     //cv::imshow("BlugTail",maskedfishFeature_blur);
     //Make image having masked all fish
