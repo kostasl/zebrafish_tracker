@@ -240,7 +240,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
     //cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
     //cv::cvtColor( threshold_output, threshold_output, cv::COLOR_BGR2GRAY);
    // cv::cvtColor( fgMask, fgMask, cv::COLOR_BGR2GRAY);
-
+    cv::equalizeHist( frame, frame );
     enhanceMask(frame,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
 
 

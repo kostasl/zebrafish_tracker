@@ -129,9 +129,9 @@ int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isola
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 10;
+int gFishTailSpineSegmentLength     = 9;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
-int gFitTailIntensityScanAngleDeg   = 45; //
+int gFitTailIntensityScanAngleDeg   = 80; //
 
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -645,7 +645,7 @@ int main(int argc, char *argv[])
 
 
 
-unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringList invideonames,unsigned int istartFrame = 0,unsigned int istopFrame = 0)
+unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStringList invideonames,unsigned int istartFrame = 0,unsigned int istopFrame = 0)
 {
     cv::Mat fgMask;
     cv::Mat bgMask;
@@ -678,18 +678,12 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() << " StartFrame: " << istartFrame << std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
-       ///Check If We Skip Processed Files
-
-       if (bSkipExisting)
-       {
-             QFileInfo fiOut(outputFile);
-             if (fiOut.exists())
-                {
-                 window_main.LogEvent(QString("[warning] Skipping  previously processed Video:") + invideoname); //
-                 std::cerr << "Skipping  previously  tracked Video " << gstrvidFilename.toStdString() << std::endl;
+       ///Open Output File Check If We Skip Processed Files
+       if ( !openDataFile(outputFileName,invideoname,outdatafile) )
+            if (bSkipExisting) //Failed Due to Skip Flag
                  continue; //Do Next File
-                }
-       }
+
+
 
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
@@ -710,7 +704,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
         //cv::destroyWindow("Accumulated BG Model");
 
         //Can Return 0 If DataFile Already Exists and bSkipExisting is true
-        uint ret = processVideo(bgMask,window_main,invideoname,outputFile,istartFrame,istopFrame);
+        uint ret = processVideo(bgMask,window_main,invideoname,outdatafile,istartFrame,istopFrame);
 
         if (ret == 0)
             window_main.LogEvent(" [Error] Could not open Video file for last video");
@@ -756,7 +750,9 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
     //update the background model
     //OPEN CV 2.4
     // dLearningRate is now Nominal value
-    frame.copyTo(outframe); //Make Replicate On which we draw output
+    /// Apply Histogram Equalization
+     cv::equalizeHist( frame, outframe );
+//    frame.copyTo(outframe); //Make Replicate On which we draw output
 
 
     ///DRAW ROI
@@ -973,7 +969,7 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
 // Process Larva video, removing BG, detecting moving larva- Setting the learning rate will change the time required
 // to remove a pupa from the scene -
 //
-unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString videoFilename, QString outFileCSV, unsigned int startFrameCount,unsigned int stopFrame=0)
+unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString videoFilename, QFile& outdatafile, unsigned int startFrameCount,unsigned int stopFrame=0)
 {
 
     //Speed that stationary objects are removed
@@ -994,7 +990,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
     //Make Variation of FileNames for other Output
 
-    QString trkoutFileCSV = outFileCSV;
+    //QString trkoutFileCSV = outFileCSV;
 
 
 
@@ -1025,8 +1021,8 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
     // Open OutputFile
 
-    if (!openDataFile(trkoutFileCSV,videoFilename,outdatafile))
-        return 1;
+   // if (!openDataFile(trkoutFileCSV,videoFilename,outdatafile))
+   //     return 1;
 
     outfilename = outdatafile.fileName();
 
@@ -1059,14 +1055,6 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             window_main.tickProgress();
         }
 
-
-
-        if (nFrame == stopFrame && stopFrame > 0)
-        {
-             bPaused = true; //Stop Here
-             std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;
-             pwindow_main->LogEvent(QString(">>Stop Frame Reached - Video Paused<<"));
-        }
 
         if (nFrame == startFrameCount)
         {
@@ -1136,6 +1124,15 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
         }
 
     } //If Not Paused //
+
+    //Check If StopFrame Reached And Pause
+    if (nFrame == stopFrame && stopFrame > 0 && !bPaused)
+    {
+         bPaused = true; //Stop Here
+         std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;
+         pwindow_main->LogEvent(QString(">>Stop Frame Reached - Video Paused<<"));
+    }
+
 
         nErrorFrames = 0;
 
@@ -3314,7 +3311,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     else
         cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
 
-    //cv::imshow("BlugTail",maskedfishFeature_blur);
+
+
+    cv::imshow("BlugTail",maskedfishFeature_blur);
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
 

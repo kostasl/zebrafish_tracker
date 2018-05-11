@@ -695,14 +695,14 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
         } //Loop Through Arc Sample Points
 
         //Update Spline to COM (Centre Of Mass) And Set As New Spline Point
-        uint comIdx = std::round((float)iTailArcMoment/(float)iSumPxIntensity);
+        uint comIdx = iTailArcMoment/iSumPxIntensity;
         spline[k].x     = ellipse_pts[comIdx].x;
         spline[k].y     = ellipse_pts[comIdx].y;
         ///Get Arc tan and Translate back to 0 being the Vertical Axis
         if (k==1) //1st point Always points in the opposite direction of the body
             spline[k-1].angleRad    = (this->bearingRads)-CV_PI ; //  //Spine Looks In Opposite Direction
         else
-            spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+            spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2.0; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
         //spline[k].angleRad = spline[k-1].angleRad;
         //Constrain Large Deviations
         if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/3.0)
