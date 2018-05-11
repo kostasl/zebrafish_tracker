@@ -114,7 +114,6 @@ const int gFoodReportInterval           = (int)gfVidfps;
 const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
 
-
 ///Segmentation Params
 int g_Segthresh             = 35; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
@@ -246,8 +245,9 @@ bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed 
 bool bStaticAccumulatedBGMaskRemove = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
 bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
-bool bMakeCustomROIRegion                 = true; //Uses Point array to construct
+bool bMakeCustomROIRegion                 = true; /// Uses Point array to construct
 bool bUseMaskedFishForSpineDetect         = true;
+bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource

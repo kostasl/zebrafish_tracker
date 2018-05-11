@@ -12,6 +12,7 @@ extern int gFishTemplateAngleSteps;
 extern int gnumberOfTemplatesInCache;
 extern cv::Mat gFishTemplateCache;
 extern MainWindow* pwindow_main;
+extern bool bTemplateSearchThroughRows;
 
 static cv::Mat loadImage(const std::string& name)
 {
@@ -128,7 +129,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \param startCol - Optimization So search begins from the most likely Template Angle
 /// \param findFirstMatch if true It Looks for 1st template that exceeds threshold - otherwise it looks for best match through all cache
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
-///
+/// if Row scanning is disabled when bTemplateSearchThroughRows is not set
 int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
 {
   const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
@@ -174,8 +175,13 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
   Colidx = startCol;
 
   ///Run Through All rotated Templates - optional starting row for optimization
-  //Run Through Each Row
-  for (int j=templSz.height*startRow; j<imgtemplCache.rows;j+=templRegion.height)
+  /// \note For Speed Up - We Remove Running Through All Rows - Stick to LastKnown Good Row- And Let Random switch when this fails take Care Of Changing Row
+  int iScanRowLimit = imgtemplCache.rows;
+
+  if (!bTemplateSearchThroughRows) //Do not Search Subsequent Template Rows
+      iScanRowLimit = templSz.height*startRow + templRegion.height;
+
+  for (int j=templSz.height*startRow; j<iScanRowLimit;j+=templRegion.height) //Remove for Speed Optimization.
   {
       templRegion.y    = j;
        /// Run Throught each  *Columns/Angle* (Ie Different Angles of this template
