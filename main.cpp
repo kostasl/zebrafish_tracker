@@ -131,7 +131,7 @@ float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as t
 int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 9;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
-int gFitTailIntensityScanAngleDeg   = 80; //
+int gFitTailIntensityScanAngleDeg   = 60; //
 
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -247,7 +247,7 @@ bool gbUseBGModelling                     = true; ///Use BG Modelling TO Segment
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
 bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
 bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
-bool bUseMaskedFishForSpineDetect         = false; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
+bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
 bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
@@ -277,6 +277,8 @@ void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 /// MAIN FUNCTION - ENTRY POINT ////
 
 jmp_buf env; //For Memory Exception Handling
+
+
 
 
 int main(int argc, char *argv[])
@@ -350,7 +352,8 @@ int main(int argc, char *argv[])
         "{duration d | 0  | Number of frames to Track for starting from start frame }"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
-        "{SkipTracked b | 1  | Skip Previously Tracked Videos}"
+        "{SkipTracked b | 0  | Skip Previously Tracked Videos}"
+        "{PolygonROI b | 0  | Use pointArray for Custom ROI Region}"
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -449,6 +452,9 @@ int main(int argc, char *argv[])
 
     if (parser.has("SkipTracked"))
         bSkipExisting = (parser.get<int>("SkipTracked") == 1)?true:false;
+
+    if (parser.has("PolygonROI"))
+        bMakeCustomROIRegion = (parser.get<int>("PolygonROI") == 1)?true:false;
 
 
 
@@ -751,8 +757,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
     //OPEN CV 2.4
     // dLearningRate is now Nominal value
     /// Apply Histogram Equalization
-     cv::equalizeHist( frame, outframe );
-//    frame.copyTo(outframe); //Make Replicate On which we draw output
+      frame.copyTo(outframe); //Make Replicate On which we draw output
 
 
     ///DRAW ROI
@@ -771,6 +776,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
     //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
         cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
+
 
         // Update BG Substraction Model
         cv::Mat fgMask;
@@ -3305,18 +3311,20 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     else
         maskedImg_gray = fullImgIn; //Tautology
 
- ///Do not Use MaskedFish For Spine maskedfishImg_gray
+    cv::Mat fishTailFixed;
+
+ ///Do not Use MaskedFish For Spine maskedfishImg_gray / + Fixed Contrast
     if (bUseMaskedFishForSpineDetect)
-          cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
+        fishTailFixed = maskedfishImg_gray*2.2;
     else
-        cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
+        fishTailFixed = maskedImg_gray*2.2;
 
+    cv::GaussianBlur(fishTailFixed,maskedfishFeature_blur,cv::Size(11,11),7,7);
 
-
-    cv::imshow("BlugTail",maskedfishFeature_blur);
+    //cv::imshow("BlugTail",maskedfishFeature_blur);
+    //cv::imshow("ContrastTail",fishTailFixed);
     //Make image having masked all fish
     //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
-
 
 
     ////Template Matching Is already Done On Fish Blob/Object

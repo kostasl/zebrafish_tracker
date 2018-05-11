@@ -663,18 +663,19 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
         angle = spline[k-1].angleRad/CV_PI*180.0-90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
         //angle = spline[k].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing Around THe point this Spine Was looking At initially
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
-        cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 1, ellipse_pts);
+        cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 2, ellipse_pts);
 
         ///Calculate Moment of inertia Sum m theta along arc
-        pxValMax            = 0;
-        uint iTailArcMoment = 0;
-        uint iPxIntensity   = 0;
-        uint iSumPxIntensity   = 1;
+        pxValMax                = 0;
+        uint iTailArcMoment     = 0;
+        uint iPxIntensity       = 0;
+        uint iSumPxIntensity    = 1;
+
         for(int idx=0;idx<(int)ellipse_pts.size();idx++){
             //Obtain Value From Image at Point on Arc - Boundit in case it goes outside image
             int x = std::min(frameimg_Blur.cols,std::max(1,ellipse_pts[idx].x));
             int y = std::min(frameimg_Blur.rows,std::max(1,ellipse_pts[idx].y));
-            iPxIntensity=frameimg_Blur.at<uchar>(cv::Point(x,y));
+            iPxIntensity = frameimg_Blur.at<uchar>(cv::Point(x,y));
 
             //Use idx As Angle /Position
             iTailArcMoment  += idx*iPxIntensity;
@@ -704,9 +705,10 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
         else
             spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2.0; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
         //spline[k].angleRad = spline[k-1].angleRad;
+
         //Constrain Large Deviations
-        if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/3.0)
-            spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
+        if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/2.0)
+           spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
 
         //out<<tgt<<' '<<angle<<' '<<tmp_pts[k]<<' '<<loc<<' '<<index<<' '<<ellipse_pts.size()<<endl;
 
