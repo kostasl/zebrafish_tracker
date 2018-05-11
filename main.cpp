@@ -131,7 +131,7 @@ float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as t
 int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 10;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
-int gFitTailIntensityScanAngleDeg   = 90; //
+int gFitTailIntensityScanAngleDeg   = 70; //
 
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -3290,9 +3290,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
  ///Do not Use MaskedFish For Spine maskedfishImg_gray
     if (bUseMaskedFishForSpineDetect)
-          cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
+          cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
     else
-        cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),3,3);
+        cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(5,5),5,5);
 
     //cv::imshow("BlugTail",maskedfishFeature_blur);
     //Make image having masked all fish

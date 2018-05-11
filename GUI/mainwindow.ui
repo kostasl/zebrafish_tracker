@@ -142,7 +142,7 @@
       </rect>
      </property>
      <property name="toolTip">
-      <string>Intensity Threshold for segmenting the fish from Background</string>
+      <string>Intensity Threshold for segmenting the food/fish from Background</string>
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::PlusMinus</enum>
@@ -240,7 +240,7 @@
       <string>Fish BG segmentation Intensity Threshold</string>
      </property>
      <property name="text">
-      <string>Fish Θ</string>
+      <string>BG Θ</string>
      </property>
     </widget>
     <widget class="QLabel" name="label_2">
@@ -344,12 +344,12 @@
       <rect>
        <x>80</x>
        <y>90</y>
-       <width>71</width>
+       <width>81</width>
        <height>21</height>
       </rect>
      </property>
      <property name="text">
-      <string> T.M. Θ</string>
+      <string> Tem Θ</string>
      </property>
     </widget>
    </widget>

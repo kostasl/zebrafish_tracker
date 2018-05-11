@@ -97,18 +97,18 @@ void MainWindow::createSpinBoxes()
 
 
     this->ui->spinBoxFishThres->installEventFilter(this);
-    this->ui->spinBoxFishThres->setRange(19,40); //Too low Below 19 App Stalls -- Too many Large Objects Appear
+    this->ui->spinBoxFishThres->setRange(19,100); //Too low Below 19 App Stalls -- Too many Large Objects Appear
     this->ui->spinBoxFishThres->setValue(g_Segthresh);
 
 
 
     this->ui->spinBoxMinEllipse->installEventFilter(this);
-    this->ui->spinBoxMinEllipse->setRange(5,20);
+    this->ui->spinBoxMinEllipse->setRange(5,22);
     this->ui->spinBoxMinEllipse->setValue(gi_minEllipseMajor);
 
 
     this->ui->spinBoxMaxEllipse->installEventFilter(this);
-    this->ui->spinBoxMaxEllipse->setRange(15,30);
+    this->ui->spinBoxMaxEllipse->setRange(15,35);
     this->ui->spinBoxMaxEllipse->setValue(gi_maxEllipseMajor);
 
 

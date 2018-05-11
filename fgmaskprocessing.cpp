@@ -257,7 +257,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
 
 
     //Also Learn A pic of the stable features - Found In FoodMask - ie Fish Removed
-    cv::accumulateWeighted(fgFoodMask,bgAcc,0.0001);
+    cv::accumulateWeighted(fgFoodMask,bgAcc,0.001);
 
 
     //pKNN->apply(frame, fgMask,dLearningRate);
