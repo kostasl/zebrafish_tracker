@@ -1,3 +1,10 @@
+///*
+/// Uses Template Image To detect Matching and orientation of fish Body
+/// \todo Need to Look into feature descriptors for matching as a faster method.
+/// OpenCV includes some ready made, ORB being free. I Found an intuitive and external to OPENCV called FREAK
+/// which could be implemented (uses a retina inspired sampling pattern to encode a binary string of the template)
+///*
+
 
 
 #include <template_detect.h>
