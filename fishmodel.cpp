@@ -695,7 +695,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
         } //Loop Through Arc Sample Points
 
         //Update Spline to COM (Centre Of Mass) And Set As New Spline Point
-        uint comIdx = iTailArcMoment/iSumPxIntensity;
+        uint comIdx = std::round((float)iTailArcMoment/(float)iSumPxIntensity);
         spline[k].x     = ellipse_pts[comIdx].x;
         spline[k].y     = ellipse_pts[comIdx].y;
         ///Get Arc tan and Translate back to 0 being the Vertical Axis

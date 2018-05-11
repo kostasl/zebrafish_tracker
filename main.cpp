@@ -131,7 +131,7 @@ float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as t
 int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 10;
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
-int gFitTailIntensityScanAngleDeg   = 70; //
+int gFitTailIntensityScanAngleDeg   = 45; //
 
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -673,6 +673,20 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() << " StartFrame: " << istartFrame << std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
+       ///Check If We Skip Processed Files
+
+       if (bSkipExisting)
+       {
+             QFileInfo fiOut(outputFile);
+             if (fiOut.exists())
+                {
+                 window_main.LogEvent(QString("[warning] Skipping  previously processed Video:") + invideoname); //
+                 std::cerr << "Skipping  previously  tracked Video " << gstrvidFilename.toStdString() << std::endl;
+                 continue; //Do Next File
+                }
+       }
+
+
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
        if (gbUseBGModelling)
        {
@@ -688,6 +702,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        //std::cout << "Press p to pause Video processing" << std::endl;
 
 
+
+       cv::destroyWindow("Accumulated BG Model");
 
         //Can Return 0 If DataFile Already Exists and bSkipExisting is true
         uint ret = processVideo(bgMask,window_main,invideoname,outputFile,istartFrame,istopFrame);

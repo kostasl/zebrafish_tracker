@@ -188,19 +188,19 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         bgMask.convertTo(bgMask,CV_8UC1);
 
+        if (bStaticAccumulatedBGMaskRemove)
+            cv::imshow("Accumulated BG Model",bgMask);
+
 
         //delete capture object
         capture.release();
 
-        if (bStaticAccumulatedBGMaskRemove)
-            cv::imshow("Accumulated BG Model",bgMask);
-        //delete kernel;
-        //delete kernelClose;
+
 
 
         //std::clog << gTimer.elapsed()/60000.0 << " Background Processing  loop. Finished" << std::endl;
          window_main.LogEvent(" Background Processing  loop. Finished");
-         cv::destroyWindow("Accumulated Bg Model");
+
 
       return nFrame;
 } ///trackImageSequencefile
