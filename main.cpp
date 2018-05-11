@@ -1047,7 +1047,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             nFrame = window_main.nFrame;
             capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
             bPaused = true;
-            bTracking = false;
+            bTracking = bTracking; //Do Not Change
             //bStartFrameChanged = false; //This is Reset Once The frame Is captured
             //Since we are jumping Frames - The fish Models Are invalidated / Delete
             ReleaseFishModels(vfishmodels);
