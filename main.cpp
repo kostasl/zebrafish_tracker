@@ -246,7 +246,8 @@ bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed 
 bool bStaticAccumulatedBGMaskRemove = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
 bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
-bool bMakeCustomROIRegion                 = false; //Uses Point array to construct
+bool bMakeCustomROIRegion                 = true; //Uses Point array to construct
+bool bUseMaskedFishForSpineDetect         = true;
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -808,6 +809,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         /// Isolate Head, Get Eye models, and Get and draw Spine model
         if (nLarva > 0)
             //An Image Of the Full Fish Is best In this Case
+            //Do Not Use Masked Fish Image For Spine Fitting
             detectZfishFeatures(window_main, frame_gray,outframe,frameHead,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
@@ -3281,8 +3283,11 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     else
         maskedImg_gray = fullImgIn; //Tautology
 
-
-    cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),3,3);
+ ///Do not Use MaskedFish For Spine maskedfishImg_gray
+    if (bUseMaskedFishForSpineDetect)
+          cv::GaussianBlur(maskedfishImg_gray,maskedfishFeature_blur,cv::Size(3,3),3,3);
+    else
+        cv::GaussianBlur(maskedImg_gray,maskedfishFeature_blur,cv::Size(3,3),3,3);
 
     //cv::imshow("BlugTail",maskedfishFeature_blur);
     //Make image having masked all fish
