@@ -188,8 +188,9 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         bgMask.convertTo(bgMask,CV_8UC1);
 
-        if (bStaticAccumulatedBGMaskRemove)
-            cv::imshow("Accumulated BG Model",bgMask);
+        //if (bStaticAccumulatedBGMaskRemove)
+        //    cv::imshow("Accumulated BG Model",bgMask);
+        pwindow_main->showVideoFrame(bgMask,nFrame);
 
 
         //delete capture object
@@ -267,7 +268,7 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
     //cv::imshow("fishMask",fgFishMask);
 
     pwindow_main->showVideoFrame(fgFishMask,nFrame);
-    cv::imshow("Accumulated Bg Model",bgAcc);
+    //cv::imshow("Accumulated Bg Model",bgAcc);
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);
     //pGMG->apply(frame,fgMaskGMG,dLearningRate);

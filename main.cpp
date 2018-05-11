@@ -246,7 +246,7 @@ bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask t
 bool gbUseBGModelling                     = true; ///Use BG Modelling TO Segment FG Objects
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
 bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
-bool bMakeCustomROIRegion                 = true; /// Uses Point array to construct
+bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
 bool bUseMaskedFishForSpineDetect         = false; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
 bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
 /// \todo Make this path relative or embed resource
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
         "{duration d | 0  | Number of frames to Track for starting from start frame }"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
-
+        "{SkipTracked b | 1  | Skip Previously Tracked Videos}"
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -446,6 +446,11 @@ int main(int argc, char *argv[])
     //Check If We Are BG Modelling / BEst to switch off when Labelling Hunting Events
     if (parser.has("ModelBG"))
         gbUseBGModelling = (parser.get<int>("ModelBG") == 1)?true:false;
+
+    if (parser.has("SkipTracked"))
+        bSkipExisting = (parser.get<int>("SkipTracked") == 1)?true:false;
+
+
 
 
     //If No video Files have been loaded then Give GUI to User
@@ -699,11 +704,10 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
        window_main.nFrame = 0;
        window_main.tickProgress(); //Update Slider
 
-       //std::cout << "Press p to pause Video processing" << std::endl;
 
 
-
-       cv::destroyWindow("Accumulated BG Model");
+       //if (bStaticAccumulatedBGMaskRemove) //Hide The PopUp
+        //cv::destroyWindow("Accumulated BG Model");
 
         //Can Return 0 If DataFile Already Exists and bSkipExisting is true
         uint ret = processVideo(bgMask,window_main,invideoname,outputFile,istartFrame,istopFrame);
