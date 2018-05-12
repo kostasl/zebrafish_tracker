@@ -285,7 +285,7 @@ int compString(QString str1,QString str2)
 {
     int ret =0;
   for (int j=0;j<std::min(str1.length(),str2.length());j++)
-        if (str1.mid(j) != str2.mid(j))
+        if (str1.mid(j,1) != str2.mid(j,1))
             ret++;
 
   return ret;
@@ -710,18 +710,19 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
-       if (gbUseBGModelling && gbUpdateBGModel)
+       if ((gbUseBGModelling && gbUpdateBGModel) || (gbUseBGModelling && gbUpdateBGModelOnAllVids) )
        {
             getBGModelFromVideo(bgMask, window_main,invideoname,outfilename,MOGhistory);
             cv::bitwise_not ( bgMask, bgMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
-
-
 
             //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
             if (compString(invideoname,nextvideoname) < 3 && !gbUpdateBGModelOnAllVids)
                 gbUpdateBGModel = false; //Turn Off BG Updates
 
        }
+        //Next File Is Different Experiment, Update The BG
+       if (compString(invideoname,nextvideoname) > 2  )
+           gbUpdateBGModel = true;
 
        QFileInfo fiVidFile(invideoname);
        window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
