@@ -283,7 +283,7 @@ jmp_buf env; //For Memory Exception Handling
 //Count Number of different Characters Between str1 and str2
 int compString(QString str1,QString str2)
 {
-    int ret;
+    int ret =0;
   for (int j=0;j<std::min(str1.length(),str2.length());j++)
         if (str1.mid(j) != str2.mid(j))
             ret++;
