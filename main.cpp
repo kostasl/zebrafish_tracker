@@ -87,8 +87,8 @@ const unsigned int MOGhistory   = 100;//Use 100 frames Distributed across the vi
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
-double dLearningRate                    = 0.2;//1.0/(0.5*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
-double dLearningRateNominal       = 0.00001;
+double dLearningRate                = 1.0/(2*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+double dLearningRateNominal         = 0.00001;
 
 
 /// BLOB DETECTION Filters //
@@ -244,6 +244,8 @@ bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
 bool gbUseBGModelling                     = true; ///Use BG Modelling TO Segment FG Objects
+bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
+bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
 bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
 bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
@@ -278,7 +280,16 @@ void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 
 jmp_buf env; //For Memory Exception Handling
 
+//Count Number of different Characters Between str1 and str2
+int compString(QString str1,QString str2)
+{
+    int ret;
+  for (int j=0;j<std::min(str1.length(),str2.length());j++)
+        if (str1.mid(j) != str2.mid(j))
+            ret++;
 
+  return ret;
+}
 
 
 int main(int argc, char *argv[])
@@ -352,8 +363,9 @@ int main(int argc, char *argv[])
         "{duration d | 0  | Number of frames to Track for starting from start frame }"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
-        "{SkipTracked b | 0  | Skip Previously Tracked Videos}"
-        "{PolygonROI b | 0  | Use pointArray for Custom ROI Region}"
+        "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
+        "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
+        "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -450,11 +462,15 @@ int main(int argc, char *argv[])
     if (parser.has("ModelBG"))
         gbUseBGModelling = (parser.get<int>("ModelBG") == 1)?true:false;
 
+    if (parser.has("ModelBGOnAllVids"))
+        gbUpdateBGModelOnAllVids = (parser.get<int>("ModelBGOnAllVids") == 1)?true:false;
+
     if (parser.has("SkipTracked"))
         bSkipExisting = (parser.get<int>("SkipTracked") == 1)?true:false;
 
     if (parser.has("PolygonROI"))
         bMakeCustomROIRegion = (parser.get<int>("PolygonROI") == 1)?true:false;
+
 
 
 
@@ -516,10 +532,11 @@ int main(int argc, char *argv[])
     /// create Background Subtractor objects
     //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 3
-
-    pMOG2 =  cv::createBackgroundSubtractorMOG2();
-    //pMOG2->setNMixtures(160);
-    //pMOG2->setBackgroundRatio(0.98);
+    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 16,false);
+    pMOG2->setHistory(MOGhistory);
+    pMOG2->setNMixtures(20);
+    pMOG2->setBackgroundRatio(0.10);
+    //pMOG2->setShadowValue(255);
 
     //double dmog2TG = pMOG2->getVarThresholdGen();
     //pMOG2->setVarThresholdGen(1.0);
@@ -657,7 +674,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
     cv::Mat bgMask;
 
     QString invideoname = "*.mp4";
-
+    QString nextvideoname;
     //Show Video list to process
     //std::cout << "Video List To process:" <<std::endl;
     window_main.LogEvent("Video List To process:");
@@ -677,10 +694,10 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        ReleaseFishModels(vfishmodels);
        ReleaseFoodModels(vfoodmodels);
 
-
-
        invideoname = invideonames.at(i);
+       nextvideoname = invideonames.at(std::min(invideonames.length(),i+1));
        gstrvidFilename = invideoname; //Global
+
        std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() << " StartFrame: " << istartFrame << std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
@@ -693,10 +710,17 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
-       if (gbUseBGModelling)
+       if (gbUseBGModelling && gbUpdateBGModel)
        {
             getBGModelFromVideo(bgMask, window_main,invideoname,outfilename,MOGhistory);
             cv::bitwise_not ( bgMask, bgMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
+
+
+
+            //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
+            if (compString(invideoname,nextvideoname) < 3 && !gbUpdateBGModelOnAllVids)
+                gbUpdateBGModel = false; //Turn Off BG Updates
+
        }
 
        QFileInfo fiVidFile(invideoname);
