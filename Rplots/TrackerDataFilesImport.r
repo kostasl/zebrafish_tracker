@@ -24,7 +24,7 @@ getFileSet <- function(strCondDir,strsrc)
     lfileList = append(lfileList, list.files(path=paste(i,strCondDir,sep = "/"), pattern=strCondR,full.names = TRUE))
 
     if (length(unlist(lfileList)) < 1)
-      stop(paste("No files found while loading from :",paste(i,strCondDir,sep = "/")))
+      warning(paste("No files found while loading from :",paste(i,strCondDir,sep = "/")))
     
   }
   

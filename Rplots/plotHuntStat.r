@@ -72,10 +72,12 @@ plotConnectedPointsPairs <- function(vIDTable,vDat,strCondTags,xbarcenters)
     gE <- strCondTags[gIdx] ##Empty Condution
     gL <- strCondTags[gIdx+1] ##With ROtifers Test Condition 
     
-    datSetID <- levels(vIDTable[[gE]]$dataSetID)[ vIDTable[[gE]]$dataSetID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID] ]
+    stopifnot(NROW(vIDTable[[gE]]$dataSetID) == NROW(vIDTable[[gL]]$dataSetID) )
+    
+    datSetID <- levels(vIDTable[[gE]]$dataSetID)[ vIDTable[[gE]]$dataSetID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID & vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID] ]
 
-    idsE <- vIDTable[[gE]]$expID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID ==vIDTable[[gL]]$dataSetID]
-    idsL <- vIDTable[[gL]]$expID[vIDTable[[gL]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID]
+    idsE <- vIDTable[[gE]]$expID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID & vIDTable[[gE]]$dataSetID ==vIDTable[[gL]]$dataSetID]
+    idsL <- vIDTable[[gL]]$expID[vIDTable[[gL]]$larvaID == vIDTable[[gL]]$larvaID & vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID]
     ptSrc  <- vDat[[gE]][levels(idsE)[idsE]]
     ptDest <- vDat[[gL]][levels(idsL)[idsL]]
     
@@ -114,7 +116,7 @@ plotPairedChangeHistogram <- function(vIDTable,vDat,strCondTags,uLim,lLim)
     gE <- strCondTags[gIdx] ##Empty Condution
     gL <- strCondTags[gIdx+1] ##With ROtifers Test Condition 
     
-    datSetID <- levels(vIDTable[[gE]]$dataSetID)[ vIDTable[[gE]]$dataSetID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID] ]
+    datSetID <- levels(vIDTable[[gE]]$dataSetID) [ vIDTable[[gE]]$dataSetID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID & vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID] ]
     idsE <- vIDTable[[gE]]$expID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID ==vIDTable[[gL]]$dataSetID]
     idsL <- vIDTable[[gL]]$expID[vIDTable[[gL]]$larvaID == vIDTable[[gL]]$larvaID && vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID]
     ptSrc <-  vDat[[gE]][levels(idsE)[idsE]]
@@ -867,7 +869,7 @@ dev.off()
 
 
 ######## EPISODE DURATION ############
-#X11()
+
 
 strPlotName = "plots/meanEpisodeDurationOfGroup.pdf"
 datmean <- unlist(datHuntStat[,"meanEpisodeDuration"],use.names = FALSE) #Of the Group

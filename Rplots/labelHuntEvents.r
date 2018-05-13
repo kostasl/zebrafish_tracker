@@ -8,14 +8,17 @@
 ##Check If Qt Is already Added To Exec Path
 if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE) 
 {
-  #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.9.2/gcc_64/lib/",sep=":" ) )
   Sys.setenv(LD_LIBRARY_PATH="")
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.9/5.9/gcc_64/lib",sep=":" ) ) ##Home PC
+  #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"",sep=":" ) ) 
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.9/5.9/gcc_64/lib",sep=":" ) ) ##Home PC/
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.9.2/gcc_64/lib/",sep=":" ) ) ####Office
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/usr/lib/x86_64-linux-gnu/",sep=":" ) )
 }
 
-vHuntEventLabels <- c("NA","Success","Fail","No_Target","Not_HuntMode/Delete","Escape","Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike","Success-SpitBackOut")
-huntLabels <- factor(x=5,levels=c(1,2,3,4,5,6,7,8,9,10,11),labels=vHuntEventLabels )##Set To NoTHuntMode
+vHuntEventLabels <- c("UnLabelled","NA","Success","Fail","No_Target","Not_HuntMode/Delete","Escape","Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike",
+                      "Success-SpitBackOut",
+                      "Debri-Triggered")
+huntLabels <- factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12),labels=vHuntEventLabels )##Set To NoTHuntMode
 
 labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath)
 {
@@ -28,7 +31,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
   {
     rec <- datHuntEvent[i,] 
     
-    if (rec$huntScore != 0 && rec$huntScore != which(levels(huntLabels)=="NA") )
+    if (rec$huntScore != 0  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
         next ##SKip Record if previously Labelled
 
     ##For Larva That Did not register any sufficient Hunting Events -  An Empty Record has been added To Acknowledge 
@@ -45,7 +48,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     message(paste("\n",i,". Examining Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
     ##--
-    strArgs = paste("--ModelBG=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame,sep="")
+    strArgs = paste(" --ModelBG=0 --SkipTracked=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame,sep="")
     message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
     execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout="",stderr=TRUE)
     
@@ -65,13 +68,16 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       l <- 0
       for (g in levels(huntLabels) )
       {
-        l=l+1
         message(paste(l,g,sep="-"))
+        l=l+1
       }
       l=l+1
       message(paste("f","Fix Frame Range",sep="-"))
       l=l+1
       message(paste("c","End Labelling Process",sep="-"))
+      l=l+1
+      message(paste("n"," Add New Unlabelled Dublicate event",sep="-"))
+      
       
       failInputCount <- failInputCount + 1
       Keyc <- readline(prompt="###Was this Hunt Succesfull? (# / c to END) :")
@@ -104,8 +110,19 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
         
         message(paste("*New start:",datHuntEvent[i,"startFrame"]," end frame:", datHuntEvent[i,"endFrame"],"\n") )
       }
+      
+      ##Add Copy of this Event
+      if (Keyc == 'n')## Unlabelled - Such that we can split / add new Hunting Event
+      {
+        rec <- datHuntEvent[i,]
+        datHuntEvent<-rbind(rec,datHuntEvent)
+        datHuntEvent[1,]$huntScore <- 0 ##Set To Unlabellled and let 
+        i <- 1 ##Start From Top Again
+        next
+      }
+        
       ##User Has selected Label? Then Break From menu loop
-      if (!is.na(factor(levels(huntLabels)[as.numeric(Keyc)] ) ) )
+      if (!is.na(factor(levels(huntLabels)[as.numeric(Keyc)+1] ) ) )
         break
 
     } ##End Menu Loop
@@ -113,15 +130,15 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
 
     datHuntEvent[i,"huntScore"] <-rec$huntScore
     message(datHuntEvent[i,"huntScore"])
-     if (rec$huntScore == which(levels(huntLabels)=="Success") )
+     if (rec$huntScore == (which(levels(huntLabels)=="Success")-1) )
      {
        message("~Mark Succesfull")
      }
-    if (rec$huntScore == 0 || rec$huntScore == which(levels(huntLabels)=="NA"))
+    if (rec$huntScore == 0 || rec$huntScore == (which(levels(huntLabels)=="NA")-1) )
      {
        message("~Leave Unlabelled")
      }
-    if (rec$huntScore == which(levels(huntLabels)=="Fail"))
+    if (rec$huntScore == (which(levels(huntLabels)=="Fail")-1) )
      {
        message("~Failed To Capture Prey")
      }
@@ -133,7 +150,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       #break
     }
     else
-       message(paste(levels(huntLabels)[as.numeric(Keyc)] , "-Proceeding to Next Video.") )
+       message(paste(levels(huntLabels)[as.numeric(Keyc)+1] , "-Proceeding to Next Video.") )
      
      #####################################################################################################
     ##### Save With Dataset Idx Identifier On Every Labelling As An Error Could Lose Everything  ########

@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
     /// create Background Subtractor objects
     //(int history=500, double varThreshold=16, bool detectShadows=true
     //OPENCV 3
-    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 16,false);
+    pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 20,false);
     pMOG2->setHistory(MOGhistory);
     pMOG2->setNMixtures(20);
     pMOG2->setBackgroundRatio(0.10);
@@ -695,7 +695,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        ReleaseFoodModels(vfoodmodels);
 
        invideoname = invideonames.at(i);
-       nextvideoname = invideonames.at(std::min(invideonames.length(),i+1));
+       nextvideoname = invideonames.at(std::min(invideonames.size()-1,i+1));
        gstrvidFilename = invideoname; //Global
 
        std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() << " StartFrame: " << istartFrame << std::endl;
