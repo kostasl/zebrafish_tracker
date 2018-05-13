@@ -232,9 +232,17 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
 
    // cv::equalizeHist( frame, frame );
 
+
     //Its Important to remove THe nOise Before doing MOG on the Pixels
     //cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
-    cv::fastNlMeansDenoising(frame, frameImg_gray,3.0,7, 21);
+///* Parameters:
+/// src – Input 8-bit 1-channel, 2-channel or 3-channel image.
+/// dst – Output image with the same size and type as src .
+/// templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels
+/// searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels
+/// h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
+////
+    cv::fastNlMeansDenoising(frame, frameImg_gray,3.0,7, 41); /// \todo VS Vid 161 001 still fails in centre maybe increase the window size
 
     enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
 
