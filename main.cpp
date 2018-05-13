@@ -83,7 +83,7 @@
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
 const unsigned int MOGhistory   = 100;//Use 100 frames Distributed across the video length To Find What the BGModel is
-double gdMOGBGRatio               = 0.55; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
+double gdMOGBGRatio               = 0.95; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
 //Processing Loop delay
 uint cFrameDelayms              = 1;
