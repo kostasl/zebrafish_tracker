@@ -88,7 +88,7 @@ double gdMOGBGRatio               = 0.95; ///If a foreground pixel keeps semi-co
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
-double dLearningRate                = 1.0/(8*MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
 double dLearningRateNominal         = 0.00001;
 
 
@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
-    kernelDilateMOGMask = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(7,7),cv::Point(-1,-1));
+    kernelDilateMOGMask = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
     kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
 
@@ -802,7 +802,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
     //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
         cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
-
+        //cv::fastNlMeansDenoising(frame_gray, frame_gray,3.0,7, 21);
 
         // Update BG Substraction Model
         cv::Mat fgMask;
@@ -1217,6 +1217,11 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             // Render Next Frame To Display
             if (bOffLineTracking)
                 bRenderToDisplay = true;
+
+            ss.str(std::string()); //Clear
+          //Report MOG Mixtures
+            ss << "[Progress] MOGMixtures : " << pMOG2->getNMixtures() << " VarThres:" << pMOG2->getNMixtures() << " VarGen:" << pMOG2->getVarThresholdGen();
+            window_main.LogEvent(QString::fromStdString(ss.str()));
 
         }
 
@@ -2994,12 +2999,21 @@ cv::Mat maskFGImg; //The FG Mask - After Combining Threshold Detection
 ///// Convert image to gray, Mask and
 //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
 frameImg.copyTo(frameImg_gray); //Its Grey Anyway
+
+//cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
+///Remove Pixel Noise
+///
+///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.
+///        dst – Output image with the same size and type as src .
+///       templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels
+////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels
+///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
+///
+
+
 //frameImg_gray = frameImg.clone();
 //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 
-/// Detect edges using Threshold , A High And  low /
-/// Trick, threshold Before Marking ROI - So as to Obtain Fish Features Outside Roi When Fish is incomplete Within The ROI
-//cv::threshold( frameImg_gray, outFishMask, g_Segthresh*1.5, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 
 

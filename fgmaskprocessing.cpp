@@ -219,6 +219,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGhistory)
 {
 
+
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
     bool ret = true;
@@ -226,31 +227,27 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
    // double dblRatioPxChanged    = 0.0;
 
 
-    //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
-    //In That case make OpenCV With No CUDA or OPENCL support
-    //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
-    //if (!frame.empty())
-    //    pMOG2->apply(frame, fgMask,dLearningRate);
-
     // Detect Food at Lower Thresh //
-    cv::Mat bgMask,fgFishMask,fgFoodMask;
+    cv::Mat bgMask,fgFishMask,fgFoodMask,frameImg_gray;
 
-    ///cv::threshold( frame, threshold_output, g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-
-    //cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
-    //cv::cvtColor( threshold_output, threshold_output, cv::COLOR_BGR2GRAY);
-   // cv::cvtColor( fgMask, fgMask, cv::COLOR_BGR2GRAY);
    // cv::equalizeHist( frame, frame );
-    enhanceMask(frame,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
 
+    //Its Important to remove THe nOise Before doing MOG on the Pixels
+    //cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
+    cv::fastNlMeansDenoising(frame, frameImg_gray,3.0,7, 21);
 
-    //cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+    enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+
     try
     {
-        pMOG2->apply(frame,fgFishMask,dLearningRate); //Let the Model Learn , Dont Interact With The Accumulated Mask
+        pMOG2->apply(frameImg_gray,fgFishMask,dLearningRate); //Let the Model Learn , Dont Interact With The Accumulated Mask
     }
     catch(...)
     {
+        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
+        //In That case make OpenCV With No CUDA or OPENCL support
+        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
+        //A runtime Work Around Is given Here:
         std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
         pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
         cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
@@ -260,8 +257,6 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
     //Also Learn A pic of the stable features - Found In FoodMask - ie Fish Removed
     cv::accumulateWeighted(fgFoodMask,bgAcc,0.001);
 
-
-    //pKNN->apply(frame, fgMask,dLearningRate);
     //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
     //DEBUG //
