@@ -79,6 +79,8 @@ protected:
 private slots:
     void on_spinBoxTemplateThres_valueChanged(int arg1);
 
+    void on_spinBoxMOGBGRatio_valueChanged(int arg1);
+
 private:
     Ui::MainWindow      *ui;
 

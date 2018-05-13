@@ -18,9 +18,11 @@ extern QElapsedTimer gTimer;
 extern ltROIlist vRoi;
 extern int gFishBoundBoxSize;
 extern double gTemplateMatchThreshold;
-
+extern double gdMOGBGRatio;
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
+
+extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
 cv::Point* ptDrag;
 
@@ -116,7 +118,11 @@ void MainWindow::createSpinBoxes()
     this->ui->spinBoxSpineSegSize->setRange(2,20);
     this->ui->spinBoxSpineSegSize->setValue(gFishTailSpineSegmentLength);
 
+    //These spinBoxes Use Slots For Events
     this->ui->spinBoxTemplateThres->setValue(gTemplateMatchThreshold*100.0);
+
+    this->ui->spinBoxMOGBGRatio->setValue(gdMOGBGRatio*100.0);
+
 
     //this->connect(this->ui->spinBoxEyeThres, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this->ui->spinBoxEyeThres, &QSlider::setValue);
 
@@ -125,6 +131,8 @@ void MainWindow::createSpinBoxes()
 //                     this->ui->spinBoxEyeThres,
 //                     static_cast<void (MainWindow::*)(int)>(&MainWindow::valueChanged));
 
+
+    ///\todo Remove These and Make Use of Auto Slots via form editor just like the spinBoxMOGBGRatio or spinBoxTemplateThres
     QObject::connect(this->ui->spinBoxEyeThres,
                      SIGNAL(valueChanged(int)),
                      this,
@@ -769,4 +777,19 @@ void MainWindow::on_spinBoxTemplateThres_valueChanged(int arg1)
  double newTMatchThresh = (double)arg1/100.0;
  gTemplateMatchThreshold = newTMatchThresh;
  LogEvent(QString("[info] Changed Template Match Thres:" ) + QString::number(newTMatchThresh,'g',4) ) ;
+}
+
+void MainWindow::on_spinBoxMOGBGRatio_valueChanged(int arg1)
+{
+    double newBGRatio = (double)arg1/100.0;
+    gdMOGBGRatio = newBGRatio; //Updated Value Takes effect in processFrame and in updateBGFrame
+
+    if (pMOG2)
+    {
+       pMOG2->setBackgroundRatio(gdMOGBGRatio);
+       LogEvent(QString("[info] Changed MOG BG Ratio: " ) + QString::number(gdMOGBGRatio,'g',4) ) ;
+
+    }
+
+
 }

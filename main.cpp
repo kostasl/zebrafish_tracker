@@ -83,6 +83,7 @@
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
 const unsigned int MOGhistory   = 100;//Use 100 frames Distributed across the video length To Find What the BGModel is
+double gdMOGBGRatio               = 0.55; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
 //Processing Loop delay
 uint cFrameDelayms              = 1;
@@ -177,7 +178,7 @@ Ptr<GeneralizedHoughGuil> pGHTGuil;
 
 //Morphological Kernels
 cv::Mat kernelOpen;
-cv::Mat kernelOpenLaplace;
+cv::Mat kernelDilateMOGMask;
 cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
 cv::Mat gLastfishimg_template;// OUr Fish Image Template
@@ -535,7 +536,7 @@ int main(int argc, char *argv[])
     pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 20,false);
     pMOG2->setHistory(MOGhistory);
     pMOG2->setNMixtures(20);
-    pMOG2->setBackgroundRatio(0.10);
+    pMOG2->setBackgroundRatio(gdMOGBGRatio); ///
     //pMOG2->setShadowValue(255);
 
     //double dmog2TG = pMOG2->getVarThresholdGen();
@@ -572,7 +573,7 @@ int main(int argc, char *argv[])
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
-    kernelOpenLaplace = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(1,1),cv::Point(-1,-1));
+    kernelDilateMOGMask = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(7,7),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
     kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
 
@@ -642,7 +643,7 @@ int main(int argc, char *argv[])
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelClose.release();
     kernelOpenfish.release();
-    kernelOpenLaplace.release();
+    kernelDilateMOGMask.release();
     kernelOpen.release();
     gLastfishimg_template.release();
     gEyeTemplateCache.release();
@@ -805,6 +806,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
 
         // Update BG Substraction Model
         cv::Mat fgMask;
+        //Check If BG Ratio Changed
         pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
 
         //Combine Masks and Remove Stationary Learned Pixels From Mask
@@ -3009,7 +3011,7 @@ if (gbUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So 
 {
     cv::Mat fgMask_dilate; //Expand The MOG Mask And Intersect with Threshold
     //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpenfish,cv::Point(-1,-1),1);
-    cv::dilate(fgMask,fgMask_dilate,kernelOpenfish,cv::Point(-1,-1),2);
+    cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),2);
     cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
     //fgMask.copyTo(maskFGImg);
 }

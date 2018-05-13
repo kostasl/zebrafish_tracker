@@ -311,9 +311,9 @@
     <widget class="QSpinBox" name="spinBoxTemplateThres">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>0</x>
        <y>90</y>
-       <width>51</width>
+       <width>71</width>
        <height>26</height>
       </rect>
      </property>
@@ -350,6 +350,50 @@
      </property>
      <property name="text">
       <string> Tem Θ</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="spinBoxMOGBGRatio">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>120</y>
+       <width>71</width>
+       <height>26</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Template Match Threshold</string>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::PlusMinus</enum>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="singleStep">
+      <number>1</number>
+     </property>
+     <property name="displayIntegerBase">
+      <number>10</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_MOGBGRatio">
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>120</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string> % BG</string>
      </property>
     </widget>
    </widget>

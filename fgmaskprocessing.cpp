@@ -17,7 +17,7 @@ extern int g_Segthresh;
 extern cv::Mat kernelOpen;
 extern double dLearningRate; //Learning Rate During Initial BG Modelling done over MOGhistory frames
 extern double dLearningRateNominal;
-
+extern double gdMOGBGRatio;
 //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
 extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
