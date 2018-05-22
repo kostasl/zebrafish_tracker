@@ -439,12 +439,16 @@
      <string>Track</string>
     </property>
     <addaction name="separator"/>
+    <addaction name="actionTrack_Fish"/>
+    <addaction name="actionTrack_Food"/>
     <addaction name="actionPaus_tracking_p"/>
     <addaction name="actionStart_tracking"/>
+    <addaction name="actionRecord_Tracks_to_File_w"/>
+    <addaction name="separator"/>
     <addaction name="actionRest_Spine"/>
     <addaction name="actionAdd_fish_to_Template"/>
     <addaction name="actionRemove_last_Template_D"/>
-    <addaction name="actionShow_Eye_Plot"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTrack"/>
@@ -457,12 +461,12 @@
   </action>
   <action name="actionPaus_tracking_p">
    <property name="text">
-    <string>Pause tracking -p</string>
+    <string>Pause (p)</string>
    </property>
   </action>
   <action name="actionStart_tracking">
    <property name="text">
-    <string>Start tracking - r</string>
+    <string>Run  (r)</string>
    </property>
   </action>
   <action name="actionRest_Spine">
@@ -495,7 +499,88 @@
     <string>Show Eye Plot</string>
    </property>
   </action>
+  <action name="actionRecord_Tracks_to_File_w">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Record Tracks to File (w)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggles Recording tracks to output file- New File created each time</string>
+   </property>
+   <property name="whatsThis">
+    <string>Toggles  Writing to output file</string>
+   </property>
+   <property name="shortcut">
+    <string>W</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionTrack_Food">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Track Food (f)</string>
+   </property>
+  </action>
+  <action name="actionTrack_Fish">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Track Fish (t)</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+  </action>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actionRecord_Tracks_to_File_w</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>actionRecord_Tracks_to_File_w</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionTrack_Fish</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>actionTrack_Fish</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

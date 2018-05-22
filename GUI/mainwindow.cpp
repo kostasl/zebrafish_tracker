@@ -19,8 +19,14 @@ extern ltROIlist vRoi;
 extern int gFishBoundBoxSize;
 extern double gTemplateMatchThreshold;
 extern double gdMOGBGRatio;
+extern bool bTrackFood;
+extern bool bTracking;
+extern bool bExiting;
+extern bool bRecordToFile;
+
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
+
 
 extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
@@ -792,4 +798,36 @@ void MainWindow::on_spinBoxMOGBGRatio_valueChanged(int arg1)
     }
 
 
+}
+
+void MainWindow::on_actionTrack_Fish_triggered(bool checked)
+{
+
+    if (!bTracking)
+    {
+        //iLastKnownGoodTemplateRow = 0; //Reset Row
+        //iLastKnownGoodTemplateCol = 0;
+        LogEvent(QString("Tracking ON"));
+    }else
+        LogEvent(QString("Tracking OFF"));
+
+    bTracking = checked;
+
+
+}
+
+void MainWindow::on_actionTrack_Food_triggered(bool checked)
+{
+
+    bTrackFood = checked;
+}
+
+void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
+{
+    bRecordToFile = checked;
+}
+
+void MainWindow::on_actionQuit_triggered()
+{
+    bExiting = true;
 }

@@ -231,11 +231,12 @@ bool bROIChanged;
 bool bPaused;
 bool bExiting;
 bool bTracking;
-bool bTrackFood = true;
-bool bSaveImages = false;
+bool bTrackFood    = true;
+bool bRecordToFile = true;
+bool bSaveImages   = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
-bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
+//bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 bool bStoreThisTemplate = false;
 bool bDraggingTemplateCentre = false;
@@ -249,7 +250,7 @@ bool gbUseBGModelling                     = true; ///Use BG Modelling TO Segment
 bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
-bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
+bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
 bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
 bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
 bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
@@ -837,18 +838,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         else
             frame_gray.copyTo(fgFishImgMasked); //fgFishMask //Use Enhanced Mask
 
-        //outframe.copyTo(fgFoodImgMasked,fgFoodMask); //Use Enhanced Mask
-        //show the current frame and the fg masks
-        //cv::imshow(gstrwinName + " FishOnly",frameMasked);
-
-
 
         cv::Mat maskedImg_gray;
         /// Convert image to gray and blur it
         cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
 
-       // Filters Blobs between fish and food - save into global vectors
-        //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
 
         //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
@@ -1259,7 +1253,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
 
         //Save only when tracking - And Not While Paused
-        if (bTracking && !bPaused)
+        if (bTracking && !bPaused && bRecordToFile)
             saveTracks(vfishmodels,outdatafile,frameNumberString);
             //saveTracks(vfishmodels,trkoutFileCSV,videoFilename,frameNumberString);
 
@@ -1862,6 +1856,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'q')
     {
         bExiting = true;
+        pwindow_main->LogEvent("[info] User Terminated Tracker- Bye!");
         std::cout << "Quit" << endl;
     }
 
@@ -1951,9 +1946,26 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     }
 
 
+    if ((char)keyboard == 'w')
+    {
+      bRecordToFile = !bRecordToFile; //Main Loop Will handle this
+      if (bRecordToFile)
+      {
+        pwindow_main->LogEvent(QString(">> Recording Tracks ON - New File <<"));
+        resetDataRecording();
+      }
+      else
+        pwindow_main->LogEvent(QString("<< Recording Tracks OFF >>"));
+    }
+
+
+
+
     if ((char)keyboard == 'q')
         bExiting = true; //Main Loop Will handle this
          //break;
+
+
 
 
 //    //if ((char)keyboard == 'c')
@@ -2400,6 +2412,24 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
     return 0; //Couldn't find it
 }
 
+///
+/// \brief resetDataRecording Clean the Output File, And Starts Over -
+/// Triggered when Recording Is toggled on - such that a fresh file is created Each Time
+/// \return  True if file opened Succesfully
+///
+bool resetDataRecording()
+{
+    closeDataFile(outdatafile); //
+    //removeDataFile(outdatafile);
+    if ( !openDataFile(gstroutDirCSV,gstrvidFilename,outdatafile) )
+    {
+        pwindow_main->LogEvent(QString("[Error] Opening Data File"));
+        return false;
+    }
+    else
+        return true;
+}
+
 
 bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
 {
@@ -2431,12 +2461,11 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
                 pwindow_main->LogEvent("[warning] Output File Exists and SkipExisting Mode is on.");
                 std::cerr << "Skipping Previously Tracked Video File" << std::endl;
                 return false; //File Exists Skip this Video
-
             }
             else
             {
                 //- Create Name
-            //FilenAme Is Linke AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
+            //Filename Is Like AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
                 //Increase Seq Number And Reconstruct Name
                 Vcnt++;
                 sprintf(buff,"_tracks_%d.csv",Vcnt);

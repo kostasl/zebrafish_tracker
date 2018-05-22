@@ -110,6 +110,7 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber);
 bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data);
 void closeDataFile(QFile& data);
 void removeDataFile(QFile& data);
+bool resetDataRecording(); //Uses Global File Info
 
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
 int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
