@@ -4,7 +4,7 @@
 ## Run The tracker Specifically on video frames isolating the Hunt Events - let the user label if the event was succesful or not
 
 ##To Execute The QT tracker application We may need to give the QT library Path - (xcb error)
-#Sys.setenv(LD_LIBRARY_PATH="/home/kostasl/Qt/5.9.2/gcc_64/lib/" )
+#Sys.setenv(LD_LIBR4ARY_PATH="/home/kostasl/Qt/5.9.2/gcc_64/lib/" )
 ##Check If Qt Is already Added To Exec Path
 if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE) 
 {
@@ -17,8 +17,8 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
 
 vHuntEventLabels <- c("UnLabelled","NA","Success","Fail","No_Target","Not_HuntMode/Delete","Escape","Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike",
                       "Success-SpitBackOut",
-                      "Debri-Triggered")
-huntLabels <- factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12),labels=vHuntEventLabels )##Set To NoTHuntMode
+                      "Debri-Triggered","Near-Hunt State")
+huntLabels <- factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
 
 labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath)
 {
@@ -45,6 +45,10 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     strVideoFile <- list.files(path =strVideoFilePath, pattern = rec$filenames , all.files = FALSE,
                full.names = TRUE, recursive = TRUE,
                ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
+    
+    if (!file.exists(strVideoFile) )
+      stop(paste("Could not find video file: ",strVideoFile ) )
+    
     
     message(paste("\n",i,". Examining Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
     ##--
@@ -154,10 +158,12 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
      
      #####################################################################################################
     ##### Save With Dataset Idx Identifier On Every Labelling As An Error Could Lose Everything  ########
-    save(datHuntEvent,file=paste(strDataFileName,".RData",sep="" ))      
-    strOutFileName <- paste(strDataFileName,"-updates.csv",sep="")
+    save(datHuntEvent,file=paste(strDatDir,"/",strDataFileName,".RData",sep="" ))      
+    
+    strOutFileName <- paste(strDatDir,"/",strDataFileName,"-updates.csv",sep="")
+    message(paste("Data Updated ",strDatDir,"/",strDataFileName,".RData",sep="" ))
     bColNames = FALSE
-    if (!file.exists(paste(strDataFileName,"-updates.csv",sep="" )) )
+    if (!file.exists(strOutFileName) )
       bColNames = TRUE
 
     ##Need to Use write.table if you want to append down this list- I Found out after a lot of messing around

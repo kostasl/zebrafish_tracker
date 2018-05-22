@@ -71,6 +71,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/video/background_segm.hpp>
 
+#include <opencv2/core/ocl.hpp> //For setting setUseOpenCL
 
 #include <GUI/mainwindow.h>
 ///Curve Smoothing and Matching
@@ -804,10 +805,21 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
         //cv::fastNlMeansDenoising(frame_gray, frame_gray,3.0,7, 21);
 
-        // Update BG Substraction Model
+        // Update BG Substraction Model /Check For OCL Error
         cv::Mat fgMask;
         //Check If BG Ratio Changed
-        pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+        try{
+            pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+        }catch(...)
+        {
+        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
+        //In That case make OpenCV With No CUDA or OPENCL support
+        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
+        //A runtime Work Around Is given Here:
+            std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
+            pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+            cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+        }
 
         //Combine Masks and Remove Stationary Learned Pixels From Mask
         if (bStaticAccumulatedBGMaskRemove)
@@ -1032,6 +1044,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     if(!capture.isOpened())
     {
         //error in opening the video input
+        window_main.LogEvent("[ERROR] Failed to open video capture device");
         std::cerr << gTimer.elapsed()/60000.0 << " [Error] Unable to open video file: " << videoFilename.toStdString() << std::endl;
         return 0;
         //std::exit(EXIT_FAILURE);

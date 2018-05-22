@@ -7,7 +7,7 @@ meanf <- function(t,k) {tproc=rep(NA,length(t)); for(i in 1:length(t)) tproc[i]=
 
 colTraj <- function(x){
   ids = unique(x);
-  rcol = rf(length(ids))
+  rcol = rfc(length(ids)) ##Colour Function Defined in Main File
   
   #z_scl <- (x - min(x, na.rm=T))/(max(x, na.rm=T) - min(x, na.rm=T))
   #return(r[z_scl*length(r)])

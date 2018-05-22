@@ -1,6 +1,6 @@
 ##plot Hunting Event Statistics
 
-
+##\todo convert Means to BoxPlots
 ## Box Plots Used to Compare Conditions On Mean Stats - Saves Output As Pdf
 boxplotPerCondition <- function(datStat,datMean,datSe,strtitle,strsubt,stroutFileName,plotTop)
 {
@@ -10,7 +10,7 @@ boxplotPerCondition <- function(datStat,datMean,datSe,strtitle,strsubt,stroutFil
   datN = vector()
   if (is.null(dim(datStat))) ##This is probably A List
   {
-    datlbls <-names(datStat) ##Input is List
+    datlbls <-names(datStat) ##Input is LisFt
     for (i in seq(1:NROW(datStat)))
     {
       datN[i] <-NROW( datStat[[i]][!is.na(datStat[[i]]) ]   )
