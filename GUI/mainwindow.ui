@@ -461,12 +461,21 @@
   </action>
   <action name="actionPaus_tracking_p">
    <property name="text">
-    <string>Pause (p)</string>
+    <string>Pause</string>
+   </property>
+   <property name="shortcut">
+    <string>P</string>
    </property>
   </action>
   <action name="actionStart_tracking">
    <property name="text">
     <string>Run  (r)</string>
+   </property>
+   <property name="toolTip">
+    <string>Continue Processing Frames</string>
+   </property>
+   <property name="shortcut">
+    <string>R</string>
    </property>
   </action>
   <action name="actionRest_Spine">
@@ -507,7 +516,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Record Tracks to File (w)</string>
+    <string>Record Tracks to File</string>
    </property>
    <property name="toolTip">
     <string>Toggles Recording tracks to output file- New File created each time</string>
@@ -530,7 +539,13 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Track Food (f)</string>
+    <string>Track Food</string>
+   </property>
+   <property name="toolTip">
+    <string>Track Food</string>
+   </property>
+   <property name="shortcut">
+    <string>F</string>
    </property>
   </action>
   <action name="actionTrack_Fish">

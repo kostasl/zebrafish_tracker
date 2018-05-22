@@ -89,6 +89,12 @@ private slots:
 
     void on_actionQuit_triggered();
 
+    void on_actionPaus_tracking_p_triggered(bool checked);
+
+    void on_actionStart_tracking_triggered();
+
+    void on_actionPaus_tracking_p_triggered();
+
 private:
     Ui::MainWindow      *ui;
 

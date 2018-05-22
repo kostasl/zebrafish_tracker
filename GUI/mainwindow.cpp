@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "larvatrack.h" //For resetDataRecording()
 #include "QtOpencvCore.hpp"
 #include <QStringListModel>
 #include <qlineedit.h>
@@ -825,9 +826,41 @@ void MainWindow::on_actionTrack_Food_triggered(bool checked)
 void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
 {
     bRecordToFile = checked;
+    if (bRecordToFile)
+    {
+      LogEvent(QString(">> Recording Tracks ON - New File <<"));
+      resetDataRecording();
+    }
+    else
+      LogEvent(QString("<< Recording Tracks OFF >>"));
+
 }
 
 void MainWindow::on_actionQuit_triggered()
 {
     bExiting = true;
+    LogEvent("[info] User Terminated - Bye!");
+}
+
+
+
+void MainWindow::on_actionStart_tracking_triggered()
+{
+    if (bPaused)
+        LogEvent("[info] Running");
+
+    bPaused = false;
+
+}
+
+void MainWindow::on_actionPaus_tracking_p_triggered()
+{
+    bPaused = true;
+    if (bPaused)
+    LogEvent("[info] Paused");
+
+}
+
+void MainWindow::on_actionPaus_tracking_p_triggered(bool checked)
+{
 }

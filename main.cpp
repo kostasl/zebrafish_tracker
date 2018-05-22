@@ -309,6 +309,8 @@ int main(int argc, char *argv[])
     auto old_rdbufclog = std::clog.rdbuf();
     auto old_rdbufcerr = std::cerr.rdbuf();
 
+    cv::ocl::setUseOpenCL(false); /// \todo Control This Option
+
 
        // install Error/Seg Fault handler
     if (signal(SIGSEGV, handler) == SIG_ERR)
