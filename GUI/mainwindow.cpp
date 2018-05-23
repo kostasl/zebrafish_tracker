@@ -6,7 +6,11 @@
 #include <QStringListModel>
 #include <qlineedit.h>
 
+extern QFile outfishdatafile;
+extern QFile outfooddatafile;
+
 extern fishModels vfishmodels; //Vector containing live fish models
+extern foodModels vfoodmodels; //Vector containing live fish models
 extern bool bPaused;
 extern bool bStoreThisTemplate;
 extern bool bDraggingTemplateCentre;
@@ -769,6 +773,30 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
         }
     }
 
+    ///Check Clicking On Food Item
+    for (foodModels::iterator it=vfoodmodels.begin(); it!=vfoodmodels.end(); ++it)
+    {
+
+        foodModel* food = (*it).second;
+        if (food->zTrack.boundingBox.contains(ptMouse) ) //Clicked On Fish Box
+        //if (cv::norm((cv::Point) food->zTrack.centroid - ptMouse) < 5 ) //Clicked On Fish Box
+        {
+            // Make Targeted
+            if (!food->isTargeted)
+            {
+                food->isTargeted = true;
+                qDebug() << "Food Targetting On  x: " << ptMouse.x << " y:" << ptMouse.y;
+                LogEvent("[info] Begin Tracking Food Item");
+            }else
+            {
+               LogEvent("[info] END Tracking Food Item");
+                food->isTargeted = false;
+            }
+
+        }
+    }
+
+
 
 }
 
@@ -829,7 +857,12 @@ void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
     if (bRecordToFile)
     {
       LogEvent(QString(">> Recording Tracks ON - New File <<"));
-      resetDataRecording();
+
+      resetDataRecording(outfishdatafile);
+      writeFishDataCSVHeader(outfishdatafile);
+      resetDataRecording(outfooddatafile);
+      writeFoodDataCSVHeader(outfooddatafile);
+
     }
     else
       LogEvent(QString("<< Recording Tracks OFF >>"));

@@ -750,47 +750,6 @@ void fishModel::drawSpine(cv::Mat& outFrame)
 
 
 
-///
-/// \brief operator << //Overloaded Stream Operator // Output Current State Of The Track
-/// \param out
-/// \param h
-/// \return
-///
-std::ostream& operator<<(std::ostream& out, const zftTrack& h)
-{
-
-    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
-    if (h.pointStack.size() > 0)
-    {
-        zftTrackPoint ptt = h.pointStack.back();
-        out << ptt.x << "\t" << ptt.y;
-    }
-    else
-        out << 0 << "\t" << 0;
-
-    return out;
-}
-
-///
-/// \brief operator << //Overloaded Stream Operator // Output Current State Of The Track
-/// \param out
-/// \param h
-/// \return
-///
-QTextStream& operator<<(QTextStream& out, const zftTrack& h)
-{
-
-    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
-if (h.pointStack.size() > 0)
-{
-    zftTrackPoint ptt = h.pointStack.back();
-    out << ptt.x << "\t" << ptt.y;
-}else
-    out << 0 << "\t" << 0;
-
-    return out;
-}
-
 
 
 ///

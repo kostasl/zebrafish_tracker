@@ -106,11 +106,15 @@ int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb:
 int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs);
 int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs);
 
-int saveTracks(fishModels& vfish,QFile& data,QString frameNumber);
-bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data);
+int saveTracks(fishModels& vfish,foodModels& vfood, QFile& data, QString frameNumber);
+int saveFoodTracks(fishModels& vfish,foodModels& vfood, QFile& fooddata,QString frameNumber);
+bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString strpostfix="_tracks");
 void closeDataFile(QFile& data);
 void removeDataFile(QFile& data);
-bool resetDataRecording(); //Uses Global File Info
+bool resetDataRecording(QFile& outdatafile); //Uses Global File Info
+
+void writeFishDataCSVHeader(QFile& data);
+void writeFoodDataCSVHeader(QFile& data);
 
 int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
 int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);

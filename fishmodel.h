@@ -160,11 +160,8 @@ private:
 /// \param h
 /// \return
 ///
-std::ostream& operator<<(std::ostream& out, const zftTrack& h);
-QTextStream& operator<<(QTextStream& out, const zftTrack& h);
 std::ostream& operator<<(std::ostream& out, const fishModel& h);
 QTextStream& operator<<(QTextStream& out, const fishModel& h);
-
 
 ///Auxiliary
 

@@ -31,10 +31,16 @@ public:
     int blobMatchScore;
     zftTrack zTrack;
     unsigned int nLastUpdateFrame; ///<-Holds the frame Number of the last State Update
+    bool isTargeted;
 };
 
 typedef std::map<zfdID,foodModel* > foodModels;
 typedef std::pair<zfdID, foodModel* > IDFoodModel;
+
+
+//To Write Selected Food Vector Data To File
+std::ostream& operator<<(std::ostream& out, const foodModels& h);
+QTextStream& operator<<(QTextStream& out, const foodModels& h);
 
 
 //Top Item Is one With Least Penalty (Score)
