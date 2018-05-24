@@ -46,6 +46,47 @@
 
 
 
+///
+/// \brief operator << //Overloaded Stream Operator // Output Current State Of The Track
+/// \param out
+/// \param h
+/// \return
+///
+std::ostream& operator<<(std::ostream& out, const zftTrack& h)
+{
+
+    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
+    if (h.pointStack.size() > 0)
+    {
+        zftTrackPoint ptt = h.pointStack.back();
+        out << ptt.x << "\t" << ptt.y;
+    }
+    else
+        out << 0 << "\t" << 0;
+
+    return out;
+}
+
+///
+/// \brief operator << //Overloaded Stream Operator // Output Current State Of The Track
+/// \param out
+/// \param h
+/// \return
+///
+QTextStream& operator<<(QTextStream& out, const zftTrack& h)
+{
+
+    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
+if (h.pointStack.size() > 0)
+{
+    zftTrackPoint ptt = h.pointStack.back();
+    out << ptt.x << "\t" << ptt.y;
+}else
+    out << 0 << "\t" << 0;
+
+    return out;
+}
+
 void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface,float fontScale )
 {
 
@@ -55,16 +96,17 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
 //        {
           std::stringstream buffer;
           buffer << track.id;
-          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.centroid)+cv::Point(-5,-2),fontface,fontScale, CV_RGB(0,250,0));
+          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.boundingBox.tl())+cv::Point(-5,-2),fontface,fontScale, CV_RGB(0,250,0));
           //cv::putText(frameOut, buffer.str().c_str(), track.boundingBox.tl(),fontface,fontScale, CV_RGB(10.,220.,0.));
 
      }
 
       if (mode&CV_TRACK_RENDER_BOUNDING_BOX)
-        if (track.inactive)
-          cv::rectangle(frameOut,track.boundingBox,CV_RGB(0., 0., 50.));
-        else
-          cv::rectangle(frameOut,track.boundingBox,CV_RGB(0., 0., 255.));
+        //if (track.inactive > 0)
+       //   cv::rectangle(frameOut,track.boundingBox,CV_RGB(0., 40., 150.));
+       // else
+          //cv::rectangle(frameOut,track.boundingBox,CV_RGB(0., 0., 255.));
+            cv::rectangle(frameOut,track.boundingBox,track.colour);
 
       if (mode&CV_TRACK_RENDER_TO_LOG)
       {
@@ -107,8 +149,8 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
                           1, 		        // line thickness
                           CV_AA, 0);
           //delete pts;
-          if (mTrack.u)
-            qDebug() << "mTrack.u->refcount" << mTrack.u->refcount;
+          //if (mTrack.u)
+          //  qDebug() << "mTrack.u->refcount" << mTrack.u->refcount;
 
           mTrack.release();
       }

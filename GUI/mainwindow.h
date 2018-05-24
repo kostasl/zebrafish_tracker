@@ -81,6 +81,20 @@ private slots:
 
     void on_spinBoxMOGBGRatio_valueChanged(int arg1);
 
+    void on_actionTrack_Fish_triggered(bool checked);
+
+    void on_actionTrack_Food_triggered(bool checked);
+
+    void on_actionRecord_Tracks_to_File_w_triggered(bool checked);
+
+    void on_actionQuit_triggered();
+
+    void on_actionPaus_tracking_p_triggered(bool checked);
+
+    void on_actionStart_tracking_triggered();
+
+    void on_actionPaus_tracking_p_triggered();
+
 private:
     Ui::MainWindow      *ui;
 

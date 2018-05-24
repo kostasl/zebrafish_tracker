@@ -1,11 +1,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "larvatrack.h" //For resetDataRecording()
 #include "QtOpencvCore.hpp"
 #include <QStringListModel>
 #include <qlineedit.h>
 
+extern QFile outfishdatafile;
+extern QFile outfooddatafile;
+
 extern fishModels vfishmodels; //Vector containing live fish models
+extern foodModels vfoodmodels; //Vector containing live fish models
 extern bool bPaused;
 extern bool bStoreThisTemplate;
 extern bool bDraggingTemplateCentre;
@@ -19,8 +24,14 @@ extern ltROIlist vRoi;
 extern int gFishBoundBoxSize;
 extern double gTemplateMatchThreshold;
 extern double gdMOGBGRatio;
+extern bool bTrackFood;
+extern bool bTracking;
+extern bool bExiting;
+extern bool bRecordToFile;
+
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
+
 
 extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
@@ -762,6 +773,30 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
         }
     }
 
+    ///Check Clicking On Food Item
+    for (foodModels::iterator it=vfoodmodels.begin(); it!=vfoodmodels.end(); ++it)
+    {
+
+        foodModel* food = (*it).second;
+        if (food->zTrack.boundingBox.contains(ptMouse) ) //Clicked On Fish Box
+        //if (cv::norm((cv::Point) food->zTrack.centroid - ptMouse) < 5 ) //Clicked On Fish Box
+        {
+            // Make Targeted
+            if (!food->isTargeted)
+            {
+                food->isTargeted = true;
+                qDebug() << "Food Targetting On  x: " << ptMouse.x << " y:" << ptMouse.y;
+                LogEvent("[info] Begin Tracking Food Item");
+            }else
+            {
+               LogEvent("[info] END Tracking Food Item");
+                food->isTargeted = false;
+            }
+
+        }
+    }
+
+
 
 }
 
@@ -792,4 +827,73 @@ void MainWindow::on_spinBoxMOGBGRatio_valueChanged(int arg1)
     }
 
 
+}
+
+void MainWindow::on_actionTrack_Fish_triggered(bool checked)
+{
+
+    if (!bTracking)
+    {
+        //iLastKnownGoodTemplateRow = 0; //Reset Row
+        //iLastKnownGoodTemplateCol = 0;
+        LogEvent(QString("Tracking ON"));
+    }else
+        LogEvent(QString("Tracking OFF"));
+
+    bTracking = checked;
+
+
+}
+
+void MainWindow::on_actionTrack_Food_triggered(bool checked)
+{
+
+    bTrackFood = checked;
+}
+
+void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
+{
+    bRecordToFile = checked;
+    if (bRecordToFile)
+    {
+      LogEvent(QString(">> Recording Tracks ON - New File <<"));
+
+      resetDataRecording(outfishdatafile);
+      writeFishDataCSVHeader(outfishdatafile);
+      resetDataRecording(outfooddatafile);
+      writeFoodDataCSVHeader(outfooddatafile);
+
+    }
+    else
+      LogEvent(QString("<< Recording Tracks OFF >>"));
+
+}
+
+void MainWindow::on_actionQuit_triggered()
+{
+    bExiting = true;
+    LogEvent("[info] User Terminated - Bye!");
+}
+
+
+
+void MainWindow::on_actionStart_tracking_triggered()
+{
+    if (bPaused)
+        LogEvent("[info] Running");
+
+    bPaused = false;
+
+}
+
+void MainWindow::on_actionPaus_tracking_p_triggered()
+{
+    bPaused = true;
+    if (bPaused)
+    LogEvent("[info] Paused");
+
+}
+
+void MainWindow::on_actionPaus_tracking_p_triggered(bool checked)
+{
 }

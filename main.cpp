@@ -71,6 +71,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/video/background_segm.hpp>
 
+#include <opencv2/core/ocl.hpp> //For setting setUseOpenCL
 
 #include <GUI/mainwindow.h>
 ///Curve Smoothing and Matching
@@ -157,7 +158,8 @@ const int M = round((3.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
 
 
 QElapsedTimer gTimer;
-QFile outdatafile;
+QFile outfishdatafile;
+QFile outfooddatafile;
 QString outfilename;
 std::string gstrwinName = "FishFrame";
 QString gstroutDirCSV,gstrvidFilename; //The Output Directory
@@ -230,11 +232,12 @@ bool bROIChanged;
 bool bPaused;
 bool bExiting;
 bool bTracking;
-bool bTrackFood = true;
-bool bSaveImages = false;
+bool bTrackFood    = true;
+bool bRecordToFile = true;
+bool bSaveImages   = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
-bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
+//bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 bool bStoreThisTemplate = false;
 bool bDraggingTemplateCentre = false;
@@ -248,7 +251,7 @@ bool gbUseBGModelling                     = true; ///Use BG Modelling TO Segment
 bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
-bool bSkipExisting                        = true; /// If A Tracker DataFile Exists Then Skip This Video
+bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
 bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
 bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
 bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
@@ -307,6 +310,8 @@ int main(int argc, char *argv[])
     // We will need it to reset the value before exiting.
     auto old_rdbufclog = std::clog.rdbuf();
     auto old_rdbufcerr = std::cerr.rdbuf();
+
+    cv::ocl::setUseOpenCL(false); /// \todo Control This Option
 
 
        // install Error/Seg Fault handler
@@ -606,12 +611,12 @@ int main(int argc, char *argv[])
     }catch (char *e)
     {
         //printf("Exception Caught: %s\n",e);
-        qDebug() << "[Error] >>> Exception Caught while processing: " << outdatafile.fileName();
+        qDebug() << "[Error] >>> Exception Caught while processing: " << outfishdatafile.fileName();
         std::cerr << "[Error] Memory Allocation Error :" << e;
         //std::cerr << "Memory Allocation Error! - Exiting";
-        std::cerr << "[Error] Close And Delete Current output file: " << outdatafile.fileName().toStdString() ;
-        closeDataFile(outdatafile);
-        removeDataFile(outdatafile);
+        std::cerr << "[Error] Close And Delete Current output file: " << outfishdatafile.fileName().toStdString() ;
+        closeDataFile(outfishdatafile);
+        removeDataFile(outfishdatafile);
         app.quit();
 
         std::exit(EXIT_FAILURE);
@@ -709,9 +714,17 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
 
        ///Open Output File Check If We Skip Processed Files
-       if ( !openDataFile(outputFileName,invideoname,outdatafile) )
+       if ( !openDataFile(outputFileName,invideoname,outfishdatafile) )
+       {
             if (bSkipExisting) //Failed Due to Skip Flag
                  continue; //Do Next File
+       }else
+           writeFishDataCSVHeader(outfishdatafile);
+
+       ///Open Output File Check If We Skip Processed Files
+       if (openDataFile(outputFileName,invideoname,outfooddatafile,"_food") )
+           writeFoodDataCSVHeader(outfooddatafile);
+
 
 
 
@@ -742,7 +755,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
         //cv::destroyWindow("Accumulated BG Model");
 
         //Can Return 0 If DataFile Already Exists and bSkipExisting is true
-        uint ret = processVideo(bgMask,window_main,invideoname,outdatafile,istartFrame,istopFrame);
+        uint ret = processVideo(bgMask,window_main,invideoname,outfishdatafile,istartFrame,istopFrame);
 
         if (ret == 0)
             window_main.LogEvent(" [Error] Could not open Video file for last video");
@@ -820,10 +833,21 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         if (bRemovePixelNoise)
             cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
 
-        // Update BG Substraction Model
+        // Update BG Substraction Model /Check For OCL Error
         cv::Mat fgMask;
         //Check If BG Ratio Changed
-        pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+        try{
+            pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+        }catch(...)
+        {
+        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
+        //In That case make OpenCV With No CUDA or OPENCL support
+        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
+        //A runtime Work Around Is given Here:
+            std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
+            pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+            cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+        }
 
         //Combine Masks and Remove Stationary Learned Pixels From Mask
         if (bStaticAccumulatedBGMaskRemove)
@@ -841,18 +865,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         else
             frame_gray.copyTo(fgFishImgMasked); //fgFishMask //Use Enhanced Mask
 
-        //outframe.copyTo(fgFoodImgMasked,fgFoodMask); //Use Enhanced Mask
-        //show the current frame and the fg masks
-        //cv::imshow(gstrwinName + " FishOnly",frameMasked);
-
-
 
         cv::Mat maskedImg_gray;
         /// Convert image to gray and blur it
         cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
 
-       // Filters Blobs between fish and food - save into global vectors
-        //processBlobs(&lplframe,fgMask, blobs,tracks,gstroutDirCSV,frameNumberString,dMeanBlobArea);
 
         //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
@@ -897,7 +914,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
             {
                 foodModel* pfood = ft->second;
                 assert(pfood);
-                zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX, CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,trackFntScale );
                 ++ft;
             }
 
@@ -1048,6 +1065,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     if(!capture.isOpened())
     {
         //error in opening the video input
+        window_main.LogEvent("[ERROR] Failed to open video capture device");
         std::cerr << gTimer.elapsed()/60000.0 << " [Error] Unable to open video file: " << videoFilename.toStdString() << std::endl;
         return 0;
         //std::exit(EXIT_FAILURE);
@@ -1259,12 +1277,12 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
         //cv::imshow("Debug B",frameDebugB);
         //cv::imshow("Debug C",frameDebugC);
 
-
-
         //Save only when tracking - And Not While Paused
-        if (bTracking && !bPaused)
-            saveTracks(vfishmodels,outdatafile,frameNumberString);
-            //saveTracks(vfishmodels,trkoutFileCSV,videoFilename,frameNumberString);
+        if (bTracking && !bPaused && bRecordToFile)
+        {
+            saveTracks(vfishmodels,vfoodmodels,outfishdatafile,frameNumberString);
+            saveFoodTracks(vfishmodels,vfoodmodels,outfooddatafile,frameNumberString);
+        }
 
 
         checkPauseRun(&window_main,keyboard,nFrame);
@@ -1865,6 +1883,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'q')
     {
         bExiting = true;
+        pwindow_main->LogEvent("[info] User Terminated Tracker- Bye!");
         std::cout << "Quit" << endl;
     }
 
@@ -1954,9 +1973,30 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     }
 
 
+    if ((char)keyboard == 'w')
+    {
+      bRecordToFile = !bRecordToFile; //Main Loop Will handle this
+      if (bRecordToFile)
+      {
+        pwindow_main->LogEvent(QString(">> Recording Tracks ON - New File <<"));
+        resetDataRecording(outfishdatafile);
+        writeFishDataCSVHeader(outfishdatafile);
+        resetDataRecording(outfooddatafile);
+        writeFishDataCSVHeader(outfooddatafile);
+
+      }
+      else
+        pwindow_main->LogEvent(QString("<< Recording Tracks OFF >>"));
+    }
+
+
+
+
     if ((char)keyboard == 'q')
         bExiting = true; //Main Loop Will handle this
          //break;
+
+
 
 
 //    //if ((char)keyboard == 'c')
@@ -2180,7 +2220,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
     //frame.copyTo(frameOut,maskimg); //mask Source Image
-    cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS ); //cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS
+    //cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DEFAULT ); //cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS
 
 
     detector->clear();
@@ -2269,7 +2309,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
     //frame.copyTo(frameOut,maskimg); //mask Source Image
-    cv::drawKeypoints( frameOut, ptFoodblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+    //cv::drawKeypoints( frameOut, ptFoodblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DEFAULT );
 
 
     detector->clear();
@@ -2403,8 +2443,56 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
     return 0; //Couldn't find it
 }
 
+///
+/// \brief resetDataRecording Clean the Output File, And Starts Over -
+/// Triggered when Recording Is toggled on - such that a fresh file is created Each Time
+/// \return  True if file opened Succesfully
+///
+bool resetDataRecording(QFile& outdatafile)
+{
+    closeDataFile(outdatafile); //
+    //removeDataFile(outdatafile);
+    if ( !openDataFile(gstroutDirCSV,gstrvidFilename,outdatafile) )
+    {
+        pwindow_main->LogEvent(QString("[Error] Opening Data File"));
+        return false;
+    }
+    else
+    {
 
-bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
+        return true;
+    }
+}
+
+void writeFishDataCSVHeader(QFile& data)
+{
+
+    /// Write Header //
+    QTextStream output(&data);
+    output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t ";
+    for (int i=1;i<gFishTailSpineSegmentCount;i++)
+        output <<  "DThetaSpine_" << i << "\t";
+
+    output << " templateScore";
+    output << "\t lastTailFitError";
+    output << "\t lEyeFitScore";
+    output << "\t rEyeFitScore";
+    output << "\t nFailedEyeDetectionCount";
+    output << "\t RotiferCount \n";
+
+}
+
+
+void writeFoodDataCSVHeader(QFile& data)
+{
+    /// Write Header //
+    QTextStream output(&data);
+    output << "frameN \t ROI \t foodID \t Centroid_X \t Centroid_Y \n";
+
+}
+
+
+bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString strpostfix)
 {
     int Vcnt = 1;
     bool newFile = false;
@@ -2414,11 +2502,14 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
     QString fileVidCoreName = fiVid.completeBaseName();
     QString dirOutPath = fiOut.absolutePath() + "/"; //filenameCSV.left(filenameCSV.lastIndexOf("/")); //Get Output Directory
 
-    char buff[50];
-    sprintf(buff,"_tracks_%d.csv",Vcnt);
-    dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
-    dirOutPath.append(buff); //Append extension track and ROI number
+    //strpostfix = strpostfix + "_%d.csv";
 
+
+    //char buff[50];
+    //sprintf(buff,strpostfix.toStdString(),Vcnt);
+    //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
+    //dirOutPath.append(buff); //Append extension track and ROI number
+    dirOutPath = dirOutPath + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
     data.setFileName(dirOutPath);
     //Make Sure We do not Overwrite existing Data Files
     while (!newFile)
@@ -2426,7 +2517,6 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
         if (!data.exists()) //Write HEader
         {
             newFile = true;
-
         }else{
             //File Exists
             if (bSkipExisting)
@@ -2434,50 +2524,39 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data)
                 pwindow_main->LogEvent("[warning] Output File Exists and SkipExisting Mode is on.");
                 std::cerr << "Skipping Previously Tracked Video File" << std::endl;
                 return false; //File Exists Skip this Video
-
             }
             else
             {
                 //- Create Name
-            //FilenAme Is Linke AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
+            //Filename Is Like AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
                 //Increase Seq Number And Reconstruct Name
                 Vcnt++;
-                sprintf(buff,"_tracks_%d.csv",Vcnt);
-                dirOutPath = fiOut.absolutePath() + "/";
-                dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
-                dirOutPath.append(buff); //Append extension track and ROI number
+                //sprintf(buff,"_tracks_%d.csv",Vcnt);
+                //dirOutPath = fiOut.absolutePath() + "/";
+                //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
+                //dirOutPath.append(buff); //Append extension track and ROI number
+                dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
                 data.setFileName(dirOutPath);
             }
          }
     }
     if (!data.open(QFile::WriteOnly |QFile::Append))
     {
-
         std::cerr << "Could not open output file : " << std::endl;
-
         return false;
     }else {
-
+        //New File
         std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
 
-        /// Write Header //
-        QTextStream output(&data);
-        output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t ";
-        for (int i=1;i<gFishTailSpineSegmentCount;i++)
-            output <<  "DThetaSpine_" << i << "\t";
-
-        output << " templateScore";
-        output << "\t lastTailFitError";
-        output << "\t lEyeFitScore";
-        output << "\t rEyeFitScore";
-        output << "\t nFailedEyeDetectionCount";
-        output << "\t RotiferCount \n";
         //output.flush();
 
     }
 
     return true;
 }
+
+
+
 
 void closeDataFile(QFile& data)
 {
@@ -2501,7 +2580,7 @@ void removeDataFile(QFile& data)
 /// \param frameNumber
 /// \return
 ///
-int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
+int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frameNumber)
 {
     int cnt;
     int Vcnt = 0;
@@ -2514,7 +2593,7 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
         ltROI iroi = (ltROI)(*it);
         //Make ROI dependent File Name
 
-        QTextStream output(&data);
+        QTextStream output(&fishdata);
 
         //Save Tracks In ROI
         for (fishModels::iterator it=vfish.begin(); it!=vfish.end(); ++it)
@@ -2530,7 +2609,7 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
                 //+active; ///< Indicates number of frames that has been active from last inactive period.
                 //+ inactive; ///< Indicates number of frames that has been missing.
                 output << frameNumber << "\t" << Vcnt  << "\t" << (*pfish);
-                output << "\t" << vfoodmodels.size() << "\n";
+                output << "\t" << vfood.size() << "\n";
             }
             //Empty Memory Once Logged
             pfish->zTrack.pointStack.clear();
@@ -2548,15 +2627,48 @@ int saveTracks(fishModels& vfish,QFile& data,QString frameNumber)
             pNullfish->resetSpine();
 
             output << frameNumber << "\t" << Vcnt  << "\t" << (*pNullfish);
-            output << "\t" << vfoodmodels.size() << "\n";
+            output << "\t" << vfood.size() << "\n";
             delete pNullfish;
         }
 
    } //Loop ROI
 
  return cnt;
-}
+} //saveTracks
 
+int saveFoodTracks(fishModels& vfish,foodModels& vfood,QFile& fooddata,QString frameNumber)
+{
+    //Make ROI dependent File Name
+    if (!fooddata.isOpen())
+    {
+        std::cerr << "Food Model File Is Closed" << std::endl;
+        pwindow_main->LogEvent("[Error] Food File Is Closed");
+        return 0;
+    }
+    QTextStream output(&fooddata);
+
+    foodModels::iterator ft = vfoodmodels.begin();
+    while (ft != vfoodmodels.end())
+    //for (int i =0;i<v.size();i++)
+    {
+        foodModel* pfood = ft->second;
+
+         if (pfood->isTargeted) //Only Log The Marked Food
+         {
+            output << frameNumber << "\t" << 1 << "\t" << pfood->ID << "\t" << pfood->zTrack << "\n";
+
+            pfood->zTrack.pointStack.clear();
+            pfood->zTrack.pointStack.shrink_to_fit();
+         }
+    ++ft;
+    }
+
+
+
+
+
+    return 1;
+}
 
 //Mouse Call Back Function
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
