@@ -252,6 +252,7 @@ bool bSkipExisting                        = true; /// If A Tracker DataFile Exis
 bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
 bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
 bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
+bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -367,6 +368,7 @@ int main(int argc, char *argv[])
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
+        "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (BGProcessing does it by default)"
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -471,6 +473,9 @@ int main(int argc, char *argv[])
 
     if (parser.has("PolygonROI"))
         bMakeCustomROIRegion = (parser.get<int>("PolygonROI") == 1)?true:false;
+
+    if (parser.has("FilterPixelNoise"))
+        bRemovePixelNoise = (parser.get<int>("FilterPixelNoise") == 1)?true:false;
 
 
 
@@ -696,6 +701,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        ReleaseFoodModels(vfoodmodels);
 
        invideoname = invideonames.at(i);
+
        nextvideoname = invideonames.at(std::min(invideonames.size()-1,i+1));
        gstrvidFilename = invideoname; //Global
 
@@ -802,7 +808,17 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
     //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
         cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
-        //cv::fastNlMeansDenoising(frame_gray, frame_gray,3.0,7, 21);
+
+        ///Remove Pixel Noise
+        ///
+        ///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.
+        ///        dst – Output image with the same size and type as src .
+        ///       templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels
+        ////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels
+        ///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
+        ///
+        if (bRemovePixelNoise)
+            cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
 
         // Update BG Substraction Model
         cv::Mat fgMask;
@@ -3000,7 +3016,7 @@ cv::Mat maskFGImg; //The FG Mask - After Combining Threshold Detection
 //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
 frameImg.copyTo(frameImg_gray); //Its Grey Anyway
 
-//cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
+
 ///Remove Pixel Noise
 ///
 ///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.
@@ -3009,7 +3025,7 @@ frameImg.copyTo(frameImg_gray); //Its Grey Anyway
 ////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels
 ///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
 ///
-
+//cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
 
 //frameImg_gray = frameImg.clone();
 //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
