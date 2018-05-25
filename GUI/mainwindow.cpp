@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ptDrag = 0;
-
+    this->nFrame = 0;
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
     this->mInsetScene = new QGraphicsScene(this->ui->graphicsViewHead);
     this->mInsetTemplateScene = new QGraphicsScene(this->ui->graphicsViewTemplate);
@@ -241,7 +241,8 @@ void MainWindow::LogEvent(QString strMessage)
     std::clog << gTimer.elapsed()/60000 << " #" << nFrame-1 << " " << strMessage.toStdString() << std::endl;
 
     try{
-        this->ui->listView->scrollToBottom();
+        //if ((gTimer.elapsed()/60000) % 3 == 0 ) //Scroll To Bottom Every 3 sec
+//            this->ui->listView->scrollToBottom();
     }
     catch (char* e)
     {

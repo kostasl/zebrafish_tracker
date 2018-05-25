@@ -310,8 +310,8 @@ int main(int argc, char *argv[])
     // We will need it to reset the value before exiting.
     auto old_rdbufclog = std::clog.rdbuf();
     auto old_rdbufcerr = std::cerr.rdbuf();
-
-    cv::ocl::setUseOpenCL(false); /// \todo Control This Option
+DisableOpenCL
+    cv::ocl::setUseOpenCL(true); /// \todo Control This Option
 
 
        // install Error/Seg Fault handler
@@ -361,19 +361,20 @@ int main(int argc, char *argv[])
 
     /// Handle Command Line Parameters //
     const cv::String keys =
-        "{help h usage ? |    | print this help  message   }"
+        "{help h usage ? |    | print this help  message}"
         "{outputdir   o |    | Dir where To save sequence of images }"
         "{invideofile v |    | Behavioural Video file to analyse }"
-        "{invideolist f |    | A text file listing full path to video files to process }"
-        "{startframe s | 1  | Video Will start by Skipping to this frame    }"
-        "{stopframe p | 0  | Video Will stop at this frame    }"
-        "{duration d | 0  | Number of frames to Track for starting from start frame }"
+        "{invideolist f |    | A text file listing full path to video files to process}"
+        "{startframe s | 1  | Video Will start by Skipping to this frame}"
+        "{stopframe p | 0  | Video Will stop at this frame}"
+        "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
-        "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (BGProcessing does it by default)"
+        "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking Note:BGProcessing does it by default)}"
+        "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
         ;
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -401,6 +402,7 @@ int main(int argc, char *argv[])
 
     MainWindow window_main;
     pwindow_main = &window_main;
+
     window_main.show();
 
     QString outfilename;
@@ -481,6 +483,11 @@ int main(int argc, char *argv[])
 
     if (parser.has("FilterPixelNoise"))
         bRemovePixelNoise = (parser.get<int>("FilterPixelNoise") == 1)?true:false;
+
+    ///Disable OPENCL in case SEG Fault is hit - usually from MOG when running multiple tracker processes
+    if (parser.has("DisableOpenCL"))
+            if (parser.get<int>("DisableOpenCL") == 1)
+                cv::ocl::setUseOpenCL(false);
 
 
 
