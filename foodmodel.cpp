@@ -75,11 +75,11 @@ void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsign
     if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)
     {
         this->zTrack.pointStackRender.push_back(bcentre);
-        this->zTrack.active++;
+        //this->zTrack.active++;
 
-        this->zTrack.inactive = 0;
+        //this->zTrack.inactive = 0;
     }else {
-        this->zTrack.inactive++;
+        //this->zTrack.inactive++;
     }
 
     if (isTargeted )

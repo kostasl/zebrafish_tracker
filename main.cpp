@@ -105,8 +105,8 @@ const unsigned int gthres_maxfoodblobarea = 150;
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 50; //Number of frames inactive until track is deleted
-const int gcMinFoodModelActiveFrames    = 10; //Min Number of consecutive frames it needs to be active otherwise its deleted
+const int gcMaxFoodModelInactiveFrames  = 450; //Number of frames inactive (Not Matched to a Blob) until track is deleted
+const int gcMinFoodModelActiveFrames    = 100; //Min Number of consecutive frames it needs to be active  otherwise its deleted
 const int gMaxClusterRadiusFoodToBlob   = 8;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
     // We will need it to reset the value before exiting.
     auto old_rdbufclog = std::clog.rdbuf();
     auto old_rdbufcerr = std::cerr.rdbuf();
-DisableOpenCL
+
     cv::ocl::setUseOpenCL(true); /// \todo Control This Option
 
 
@@ -921,7 +921,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
             {
                 foodModel* pfood = ft->second;
                 assert(pfood);
-                zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                if (pfood->isTargeted) //Draw Track Only on Targetted Food
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX, CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                else
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,trackFntScale );
+
                 ++ft;
             }
 
