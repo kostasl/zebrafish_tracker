@@ -2490,7 +2490,7 @@ bool resetDataRecording(QFile& outdatafile)
     //extract Post Fix
     QFileInfo fileInfFish(outdatafile);
 
-    if ( !openDataFile(fileInfFish.absoluteDir().path() ,gstrvidFilename,outdatafile,"_tracks") )
+    if ( !openDataFile(fileInfFish.absoluteDir().absolutePath(),gstrvidFilename,outdatafile,"_tracks") )
     {
         pwindow_main->LogEvent(QString("[Error] Opening Data Fish Tracks File"));
         return false;
@@ -2534,7 +2534,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
     bool newFile = false;
     //Make ROI dependent File Name
     QFileInfo fiVid(filenameVid);
-    QFileInfo fiOut(filepathCSV) ;
+    QFileInfo fiOut(filepathCSV+"/") ;
     QString fileVidCoreName = fiVid.completeBaseName();
     QString dirOutPath = fiOut.absolutePath() + "/"; //filenameCSV.left(filenameCSV.lastIndexOf("/")); //Get Output Directory
 
@@ -2546,7 +2546,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
     //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
     //dirOutPath.append(buff); //Append extension track and ROI number
     if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
-        dirOutPath = dirOutPath + fileVidCoreName;
+        dirOutPath = dirOutPath + fileVidCoreName+ ".csv";
     else
         dirOutPath = dirOutPath + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
     data.setFileName(dirOutPath);
@@ -2575,13 +2575,14 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
                 //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
                 //dirOutPath.append(buff); //Append extension track and ROI number
                 if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
-                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName;
+                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName+ ".csv";
                 else
                     dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
 
 
 
                 data.setFileName(dirOutPath);
+                data.open(QFile::WriteOnly)
             }
          }
     }

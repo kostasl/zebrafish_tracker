@@ -861,14 +861,14 @@ void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
       closeDataFile(outfishdatafile); //
       closeDataFile(outfooddatafile); //
 
-      QFileInfo fileInfFish(outfooddatafile);
+      QFileInfo fileInfFish(outfishdatafile);
 
-      QFileInfo fileInfFood(outfishdatafile);
+      QFileInfo fileInfFood(outfooddatafile);
 
-      if ( !openDataFile(fileInfFish.absoluteDir().path(),fileInfFish.completeBaseName(),outfishdatafile,"_tracks") )
+      if ( !openDataFile(fileInfFish.absoluteDir().absolutePath(),fileInfFish.completeBaseName(),outfishdatafile,"_tracks") )
          LogEvent(QString("[Error] Opening Data Fish Tracks File"));
 
-      if ( !openDataFile(fileInfFood.absoluteDir().path(),fileInfFood.completeBaseName(),outfooddatafile,"_food") )
+      if ( !openDataFile(fileInfFood.absoluteDir().absolutePath(),fileInfFood.completeBaseName(),outfooddatafile,"_food") )
           LogEvent(QString("[Error] Opening Data Food Tracks File"));
     }
     else
