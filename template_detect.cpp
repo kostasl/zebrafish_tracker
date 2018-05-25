@@ -14,6 +14,8 @@
 #include <QDir>
 #include <QDebug>
 
+//#include <cudaimgproc.hpp> //Template Matching
+
 extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
 extern int gnumberOfTemplatesInCache;
@@ -137,6 +139,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \param findFirstMatch if true It Looks for 1st template that exceeds threshold - otherwise it looks for best match through all cache
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
 /// if Row scanning is disabled when bTemplateSearchThroughRows is not set
+/// Use of UMat for matchTemplate is superfluous , as the GPU is not Utilized - A function for this is included in the bottom of the file.
 int templatefindFishInImage(cv::UMat& imgGreyIn,cv::UMat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
 {
   const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
@@ -420,3 +423,53 @@ int loadTemplatesFromDirectory(QString strDir)
          qDebug() << "Loaded # " << fileCount << "Templates";
         return fileCount;
 }
+
+
+
+//////////////////////// MATCH TEMPLATE EXAMPLE FOR GPU ////////////////////////
+//void process(cv::Mat templ_h,cv::Mat image_h) {
+//cv::cuda::setDevice(0);	//initialize CUDA
+
+////cv::Mat image_h = cv::imread(	"/home/buddy/Documents/workspace/OpenCVTemplateMatch1/src/input_image.jpg");
+////cv::Mat templ_h = cv::imread(				"/home/buddy/Documents/workspace/OpenCVTemplateMatch1/src/template_image.jpg");
+
+//cv::cuda::GpuMat templ_d(templ_h); //upload image on gpu
+//cv::cuda::GpuMat image_d, result;
+
+//if (image_h.empty())
+//exit(1);
+
+
+
+//image_d.upload(image_h);
+//cv::Ptr<cv::cuda::TemplateMatching> alg = cv::cuda::createTemplateMatching(
+//    templ_h.type(), CV_TM_CCOEFF_NORMED);
+
+//cv::cuda::GpuMat dst;
+//alg->match(image_d, templ_d, result);
+
+//cv::cuda::normalize(result, result, 0, 1, cv::NORM_MINMAX, -1);
+//double max_value;
+
+//cv::Point location;
+
+//cv::cuda::minMaxLoc(result, 0, &max_value, 0, &location);
+
+////copying back to host memory for display
+//cv::Mat result_h;
+//result.download(result_h);
+
+////show now the two rectangles, one with the image and the other with matched template
+
+//cv::rectangle(image_h, location,
+//    cv::Point(location.x + templ_h.cols, location.y + templ_h.rows),
+//    cv::Scalar::all(0), 2, 8, 0);
+//cv::rectangle(result_h, location,
+//        cv::Point(location.x + templ_h.cols, location.y + templ_h.rows),
+//        cv::Scalar::all(0), 2, 8, 0);
+//cv::imshow("Frame", result_h);
+//cv::imshow("Image", image_h);
+
+//cv::waitKey(0);
+
+//}

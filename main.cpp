@@ -230,6 +230,7 @@ int screenx,screeny;
 bool bshowMask; //True will show the BGSubstracted IMage/Processed Mask
 bool bROIChanged;
 bool bPaused;
+bool bStartPaused;
 bool bExiting;
 bool bTracking;
 bool bTrackFood    = true;
@@ -367,6 +368,7 @@ int main(int argc, char *argv[])
         "{invideolist f |    | A text file listing full path to video files to process}"
         "{startframe s | 1  | Video Will start by Skipping to this frame}"
         "{stopframe p | 0  | Video Will stop at this frame}"
+        "{startpaused P | 0  | Start tracking Paused On 1st Frame/Need to Run Manually}"
         "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
@@ -483,6 +485,13 @@ int main(int argc, char *argv[])
 
     if (parser.has("FilterPixelNoise"))
         bRemovePixelNoise = (parser.get<int>("FilterPixelNoise") == 1)?true:false;
+
+    if (parser.has("startpaused"))
+            bStartPaused = (parser.get<int>("startpaused") == 1)?true:false;
+
+
+
+
 
     ///Disable OPENCL in case SEG Fault is hit - usually from MOG when running multiple tracker processes
     if (parser.has("DisableOpenCL"))
@@ -802,6 +811,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
     QString frameNumberString;
     frameNumberString = QString::number(nFrame);
 
+    assert(!frame.empty());
+
     //For Morphological Filter
     ////cv::Size sz = cv::Size(3,3);
     //frame.copyTo(inputframe); //Keep Original Before Painting anything on it
@@ -827,7 +838,10 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         //cvtColo frame_grey
         //Draw THe fish Masks more accuratelly by threshold detection - Enhances full fish body detection
     //    enhanceFishMask(outframe, fgMask,fishbodycontours,fishbodyhierarchy);// Add fish Blobs
-        cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
+        if (frame.channels() > 2)
+            cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
+        else
+            frame.copyTo(frame_gray);
 
         ///Remove Pixel Noise
         ///
@@ -1054,9 +1068,6 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     unsigned int nFrame = 0;
     unsigned int nErrorFrames = 0;
     outframeHead = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
-    bPaused =false; //Start Paused
-
-
 
     QString frameNumberString;
     //?Replicate FG Mask to method specific
@@ -1064,7 +1075,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     //fgMask.copyTo(fgMaskMOG);
     //fgMask.copyTo(fgMaskGMG);
 
-
+    bPaused = false;
     //Make Variation of FileNames for other Output
 
     //QString trkoutFileCSV = outFileCSV;
@@ -1107,6 +1118,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
     nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
     frameNumberString = QString::number(nFrame);
+    pwindow_main->nFrame = nFrame;
 
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
@@ -1126,7 +1138,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             ReleaseFoodModels(vfoodmodels);
         }
 
-        if (!bPaused)
+        if (!bPaused  )
         {
             nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
             window_main.nFrame = nFrame; //Update The Frame Value Stored in Tracker Window
@@ -1210,6 +1222,16 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
          std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;
          pwindow_main->LogEvent(QString(">>Stop Frame Reached - Video Paused<<"));
     }
+
+    //Pause on 1st Frame If Flag Start Paused is set
+    if (bStartPaused && nFrame == startFrameCount && !bPaused)
+    {
+        bPaused =true; //Start Paused //Now Controlled By bstartPaused
+        pwindow_main->LogEvent(QString("[info]>> Video Paused<<"));
+    }
+
+
+
 
         nErrorFrames = 0;
 
@@ -2465,16 +2487,17 @@ bool resetDataRecording(QFile& outdatafile)
 {
     closeDataFile(outdatafile); //
     //removeDataFile(outdatafile);
-    if ( !openDataFile(gstroutDirCSV,gstrvidFilename,outdatafile) )
+    //extract Post Fix
+    QFileInfo fileInfFish(outdatafile);
+
+    if ( !openDataFile(fileInfFish.absoluteDir().path() ,gstrvidFilename,outdatafile,"_tracks") )
     {
-        pwindow_main->LogEvent(QString("[Error] Opening Data File"));
+        pwindow_main->LogEvent(QString("[Error] Opening Data Fish Tracks File"));
         return false;
     }
-    else
-    {
 
-        return true;
-    }
+    return true;
+
 }
 
 void writeFishDataCSVHeader(QFile& data)
@@ -2511,7 +2534,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
     bool newFile = false;
     //Make ROI dependent File Name
     QFileInfo fiVid(filenameVid);
-    QFileInfo fiOut(filepathCSV);
+    QFileInfo fiOut(filepathCSV) ;
     QString fileVidCoreName = fiVid.completeBaseName();
     QString dirOutPath = fiOut.absolutePath() + "/"; //filenameCSV.left(filenameCSV.lastIndexOf("/")); //Get Output Directory
 
@@ -2522,7 +2545,10 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
     //sprintf(buff,strpostfix.toStdString(),Vcnt);
     //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
     //dirOutPath.append(buff); //Append extension track and ROI number
-    dirOutPath = dirOutPath + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
+    if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
+        dirOutPath = dirOutPath + fileVidCoreName;
+    else
+        dirOutPath = dirOutPath + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
     data.setFileName(dirOutPath);
     //Make Sure We do not Overwrite existing Data Files
     while (!newFile)
@@ -2548,7 +2574,13 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
                 //dirOutPath = fiOut.absolutePath() + "/";
                 //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
                 //dirOutPath.append(buff); //Append extension track and ROI number
-                dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
+                if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
+                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName;
+                else
+                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
+
+
+
                 data.setFileName(dirOutPath);
             }
          }

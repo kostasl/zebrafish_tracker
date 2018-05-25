@@ -34,6 +34,8 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTemp
 
 
 int deleteTemplateRow(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTempl);
+
+void process(cv::Mat templ_h,cv::Mat image_h);
 //expandTemplateCache(newTemplateImage)
 //templatefindFishInImage()
 #endif // TEMPLATE_DETECT_H
