@@ -146,7 +146,7 @@ public:
   static const int c_spinePoints   = ZTF_TAILSPINECOUNT; //\todo fix compilation Problems with Including COnfig.h
   static const int c_spineParamCnt = c_spinePoints+2;
 
-  const int c_fitErrorPerContourPoint = 1.0;
+  const double c_fitErrorPerContourPoint = 1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
 
 private:
 
@@ -160,11 +160,8 @@ private:
 /// \param h
 /// \return
 ///
-std::ostream& operator<<(std::ostream& out, const zftTrack& h);
-QTextStream& operator<<(QTextStream& out, const zftTrack& h);
 std::ostream& operator<<(std::ostream& out, const fishModel& h);
 QTextStream& operator<<(QTextStream& out, const fishModel& h);
-
 
 ///Auxiliary
 

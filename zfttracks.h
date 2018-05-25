@@ -8,7 +8,8 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d.hpp>
-
+#include <string>
+#include <QTextStream>
 
 #define CV_TRACK_RENDER_ID            0x0001 ///< Print the ID of each track in the image. \see cvRenderTrack
 #define CV_TRACK_RENDER_BOUNDING_BOX  0x0002 ///< Draw bounding box of each track in the image. \see cvRenderTrack
@@ -29,7 +30,6 @@ typedef unsigned int zfdID;
 typedef cv::Point2f zftTrackPoint;
 typedef std::vector<zftTrackPoint> zftTrackPoints;
 typedef std::vector<cv::Point> zftRenderedTrackPoints; //Used only For Rendering on image /Shorter vector And Integer based
-
 
 
 ///// \var typedef std::map<CvID, CvTrack *> CvTracks
@@ -100,5 +100,10 @@ struct zftTrack
 /// \brief Render A zftracker Track
 ///
 void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface,float fontScale );
+
+
+
+std::ostream& operator<<(std::ostream& out, const zftTrack& h);
+QTextStream& operator<<(QTextStream& out, const zftTrack& h);
 #endif // ZFTTRACKS
 

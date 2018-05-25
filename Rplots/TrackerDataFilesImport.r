@@ -7,7 +7,7 @@ meanf <- function(t,k) {tproc=rep(NA,length(t)); for(i in 1:length(t)) tproc[i]=
 
 colTraj <- function(x){
   ids = unique(x);
-  rcol = rf(length(ids))
+  rcol = rfc(length(ids)) ##Colour Function Defined in Main File
   
   #z_scl <- (x - min(x, na.rm=T))/(max(x, na.rm=T) - min(x, na.rm=T))
   #return(r[z_scl*length(r)])
@@ -24,7 +24,7 @@ getFileSet <- function(strCondDir,strsrc)
     lfileList = append(lfileList, list.files(path=paste(i,strCondDir,sep = "/"), pattern=strCondR,full.names = TRUE))
 
     if (length(unlist(lfileList)) < 1)
-      stop(paste("No files found while loading from :",paste(i,strCondDir,sep = "/")))
+      warning(paste("No files found while loading from :",paste(i,strCondDir,sep = "/")))
     
   }
   

@@ -1,3 +1,10 @@
+///*
+/// Uses Template Image To detect Matching and orientation of fish Body
+/// \todo Need to Look into feature descriptors for matching as a faster method.
+/// OpenCV includes some ready made, ORB being free. I Found an intuitive and external to OPENCV called FREAK
+/// which could be implemented (uses a retina inspired sampling pattern to encode a binary string of the template)
+///*
+
 
 
 #include <template_detect.h>
@@ -7,11 +14,14 @@
 #include <QDir>
 #include <QDebug>
 
+//#include <cudaimgproc.hpp> //Template Matching
+
 extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
 extern int gnumberOfTemplatesInCache;
-extern cv::Mat gFishTemplateCache;
+extern cv::UMat gFishTemplateCache;
 extern MainWindow* pwindow_main;
+extern bool bTemplateSearchThroughRows;
 
 static cv::Mat loadImage(const std::string& name)
 {
@@ -128,8 +138,9 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \param startCol - Optimization So search begins from the most likely Template Angle
 /// \param findFirstMatch if true It Looks for 1st template that exceeds threshold - otherwise it looks for best match through all cache
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
-///
-int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
+/// if Row scanning is disabled when bTemplateSearchThroughRows is not set
+/// Use of UMat for matchTemplate is superfluous , as the GPU is not Utilized - A function for this is included in the bottom of the file.
+int templatefindFishInImage(cv::UMat& imgGreyIn,cv::UMat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
 {
   const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
   int matchColIdx = 0;
@@ -174,8 +185,13 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
   Colidx = startCol;
 
   ///Run Through All rotated Templates - optional starting row for optimization
-  //Run Through Each Row
-  for (int j=templSz.height*startRow; j<imgtemplCache.rows;j+=templRegion.height)
+  /// \note For Speed Up - We Remove Running Through All Rows - Stick to LastKnown Good Row- And Let Random switch when this fails take Care Of Changing Row
+  int iScanRowLimit = imgtemplCache.rows;
+
+  if (!bTemplateSearchThroughRows) //Do not Search Subsequent Template Rows
+      iScanRowLimit = std::min(templSz.height*startRow + templRegion.height,imgtemplCache.rows) ;
+
+  for (int j=templSz.height*startRow; j<iScanRowLimit;j+=templRegion.height) //Remove for Speed Optimization.
   {
       templRegion.y    = j;
        /// Run Throught each  *Columns/Angle* (Ie Different Angles of this template
@@ -183,7 +199,7 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
 
       while(templRegion.x < imgtemplCache.cols ){
         //Obtain next Template At Angle
-         templ_rot = imgtemplCache(templRegion);
+         imgtemplCache(templRegion).copyTo(templ_rot) ;
         //Convolution  // CV_TM_SQDIFF_NORMED Poor Matching
         cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv, CV_TM_CCORR_NORMED  );// CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
         //Find Min Max Location
@@ -292,24 +308,25 @@ int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtemplCache,cv::Size t
 ///\brief addTemplateToCache
 ///\note assumes all Templates are the same size
 ///
-int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
+int addTemplateToCache(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTempl)
 {
 
     //Make Variations And store in template Cache
-    cv::Mat fishTemplateVar,mtCacheRow,mtEnlargedCache;
+    cv::Mat fishTemplateVar;
+    cv::UMat mtCacheRow,mtEnlargedCache;
     makeTemplateVar(imgTempl,fishTemplateVar, gFishTemplateAngleSteps);
 
     ///Initialize The Cache if this the 1st Template added
     if (idxTempl == 0)
-        FishTemplateCache = cv::Mat::zeros(fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
+        FishTemplateCache = cv::UMat::zeros(fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
     else{
         //Copy COntents To Enlarged Cache and replace pointer
-        mtEnlargedCache = cv::Mat::zeros(FishTemplateCache.rows+fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
+        mtEnlargedCache = cv::UMat::zeros(FishTemplateCache.rows+fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
         //Get Ref To Old Sized Cache Only
         mtCacheRow = mtEnlargedCache(cv::Rect(0,0,FishTemplateCache.cols,FishTemplateCache.rows));
         FishTemplateCache.copyTo(mtCacheRow); //Copy Old Cache into New replacing that part of empty cache
         mtEnlargedCache.copyTo(FishTemplateCache); //Copy Back So gFishTemplateCache = mtEnlargedCache;
-        mtEnlargedCache.deallocate();
+        //mtEnlargedCache.deallocate();
     }
      //Fill The Last (New Row) In The Cache
     mtCacheRow = FishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl),fishTemplateVar.cols,fishTemplateVar.rows));
@@ -333,18 +350,19 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
 /// \param idxTempl - Row To Remove
 /// \return
 ///
-int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
+int deleteTemplateRow(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTempl)
 {
     //Draw Black
     int mxDim = std::max(imgTempl.cols,imgTempl.rows);
     //\note RECT constructor takes starting point x,y, size_w, size_h)
     cv::Rect rectblankcv(0,mxDim*(idxTempl),FishTemplateCache.cols,mxDim);
-    cv::rectangle(FishTemplateCache,rectblankcv,CV_RGB(0,0,0),CV_FILLED); //Blank It OUt
+    cv::Mat mFishTemplate_local = FishTemplateCache.getMat(cv::ACCESS_WRITE);
+    cv::rectangle(mFishTemplate_local,rectblankcv,CV_RGB(0,0,0),CV_FILLED); //Blank It OUt
 
     //Shrink Template
     if (idxTempl == (gnumberOfTemplatesInCache-1))
     {
-        FishTemplateCache  = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl)));
+        FishTemplateCache  = mFishTemplate_local(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl))).getUMat(cv::ACCESS_READ);
         gnumberOfTemplatesInCache--;
     }else
     {
@@ -405,3 +423,53 @@ int loadTemplatesFromDirectory(QString strDir)
          qDebug() << "Loaded # " << fileCount << "Templates";
         return fileCount;
 }
+
+
+
+//////////////////////// MATCH TEMPLATE EXAMPLE FOR GPU ////////////////////////
+//void process(cv::Mat templ_h,cv::Mat image_h) {
+//cv::cuda::setDevice(0);	//initialize CUDA
+
+////cv::Mat image_h = cv::imread(	"/home/buddy/Documents/workspace/OpenCVTemplateMatch1/src/input_image.jpg");
+////cv::Mat templ_h = cv::imread(				"/home/buddy/Documents/workspace/OpenCVTemplateMatch1/src/template_image.jpg");
+
+//cv::cuda::GpuMat templ_d(templ_h); //upload image on gpu
+//cv::cuda::GpuMat image_d, result;
+
+//if (image_h.empty())
+//exit(1);
+
+
+
+//image_d.upload(image_h);
+//cv::Ptr<cv::cuda::TemplateMatching> alg = cv::cuda::createTemplateMatching(
+//    templ_h.type(), CV_TM_CCOEFF_NORMED);
+
+//cv::cuda::GpuMat dst;
+//alg->match(image_d, templ_d, result);
+
+//cv::cuda::normalize(result, result, 0, 1, cv::NORM_MINMAX, -1);
+//double max_value;
+
+//cv::Point location;
+
+//cv::cuda::minMaxLoc(result, 0, &max_value, 0, &location);
+
+////copying back to host memory for display
+//cv::Mat result_h;
+//result.download(result_h);
+
+////show now the two rectangles, one with the image and the other with matched template
+
+//cv::rectangle(image_h, location,
+//    cv::Point(location.x + templ_h.cols, location.y + templ_h.rows),
+//    cv::Scalar::all(0), 2, 8, 0);
+//cv::rectangle(result_h, location,
+//        cv::Point(location.x + templ_h.cols, location.y + templ_h.rows),
+//        cv::Scalar::all(0), 2, 8, 0);
+//cv::imshow("Frame", result_h);
+//cv::imshow("Image", image_h);
+
+//cv::waitKey(0);
+
+//}

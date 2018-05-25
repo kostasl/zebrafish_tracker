@@ -6,9 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>784</width>
-    <height>795</height>
+    <width>855</width>
+    <height>789</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>FreeMono</family>
+   </font>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
@@ -89,7 +94,7 @@
      <rect>
       <x>0</x>
       <y>570</y>
-      <width>751</width>
+      <width>841</width>
       <height>171</height>
      </rect>
     </property>
@@ -125,7 +130,7 @@
      <rect>
       <x>650</x>
       <y>60</y>
-      <width>131</width>
+      <width>181</width>
       <height>351</height>
      </rect>
     </property>
@@ -142,7 +147,7 @@
       </rect>
      </property>
      <property name="toolTip">
-      <string>Intensity Threshold for segmenting the fish from Background</string>
+      <string>Intensity Threshold for segmenting the food/fish from Background</string>
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::PlusMinus</enum>
@@ -232,7 +237,7 @@
       <rect>
        <x>80</x>
        <y>30</y>
-       <width>71</width>
+       <width>101</width>
        <height>20</height>
       </rect>
      </property>
@@ -240,7 +245,7 @@
       <string>Fish BG segmentation Intensity Threshold</string>
      </property>
      <property name="text">
-      <string>Fish Θ</string>
+      <string>BG Θ</string>
      </property>
     </widget>
     <widget class="QLabel" name="label_2">
@@ -248,7 +253,7 @@
       <rect>
        <x>80</x>
        <y>60</y>
-       <width>71</width>
+       <width>101</width>
        <height>21</height>
       </rect>
      </property>
@@ -261,7 +266,7 @@
       <rect>
        <x>0</x>
        <y>160</y>
-       <width>131</width>
+       <width>181</width>
        <height>20</height>
       </rect>
      </property>
@@ -272,9 +277,9 @@
     <widget class="QLabel" name="label_4">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>10</x>
        <y>180</y>
-       <width>31</width>
+       <width>51</width>
        <height>21</height>
       </rect>
      </property>
@@ -287,7 +292,7 @@
       <rect>
        <x>80</x>
        <y>180</y>
-       <width>31</width>
+       <width>41</width>
        <height>21</height>
       </rect>
      </property>
@@ -300,7 +305,7 @@
       <rect>
        <x>70</x>
        <y>260</y>
-       <width>61</width>
+       <width>101</width>
        <height>20</height>
       </rect>
      </property>
@@ -311,9 +316,9 @@
     <widget class="QSpinBox" name="spinBoxTemplateThres">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>0</x>
        <y>90</y>
-       <width>51</width>
+       <width>71</width>
        <height>26</height>
       </rect>
      </property>
@@ -342,14 +347,58 @@
     <widget class="QLabel" name="label_TemplateMatch">
      <property name="geometry">
       <rect>
-       <x>80</x>
+       <x>70</x>
        <y>90</y>
-       <width>71</width>
+       <width>111</width>
        <height>21</height>
       </rect>
      </property>
      <property name="text">
-      <string> T.M. Θ</string>
+      <string> Template Θ</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="spinBoxMOGBGRatio">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>120</y>
+       <width>71</width>
+       <height>26</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Template Match Threshold</string>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::PlusMinus</enum>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="singleStep">
+      <number>1</number>
+     </property>
+     <property name="displayIntegerBase">
+      <number>10</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_MOGBGRatio">
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>120</y>
+       <width>101</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string> % BG</string>
      </property>
     </widget>
    </widget>
@@ -378,8 +427,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>784</width>
-     <height>25</height>
+     <width>855</width>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -395,12 +444,16 @@
      <string>Track</string>
     </property>
     <addaction name="separator"/>
+    <addaction name="actionTrack_Fish"/>
+    <addaction name="actionTrack_Food"/>
     <addaction name="actionPaus_tracking_p"/>
     <addaction name="actionStart_tracking"/>
+    <addaction name="actionRecord_Tracks_to_File_w"/>
+    <addaction name="separator"/>
     <addaction name="actionRest_Spine"/>
     <addaction name="actionAdd_fish_to_Template"/>
     <addaction name="actionRemove_last_Template_D"/>
-    <addaction name="actionShow_Eye_Plot"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTrack"/>
@@ -413,12 +466,21 @@
   </action>
   <action name="actionPaus_tracking_p">
    <property name="text">
-    <string>Pause tracking -p</string>
+    <string>Pause</string>
+   </property>
+   <property name="shortcut">
+    <string>P</string>
    </property>
   </action>
   <action name="actionStart_tracking">
    <property name="text">
-    <string>Start tracking - r</string>
+    <string>Run  (r)</string>
+   </property>
+   <property name="toolTip">
+    <string>Continue Processing Frames</string>
+   </property>
+   <property name="shortcut">
+    <string>R</string>
    </property>
   </action>
   <action name="actionRest_Spine">
@@ -451,7 +513,94 @@
     <string>Show Eye Plot</string>
    </property>
   </action>
+  <action name="actionRecord_Tracks_to_File_w">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Record Tracks to File</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggles Recording tracks to output file- New File created each time</string>
+   </property>
+   <property name="whatsThis">
+    <string>Toggles  Writing to output file</string>
+   </property>
+   <property name="shortcut">
+    <string>W</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionTrack_Food">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Track Food</string>
+   </property>
+   <property name="toolTip">
+    <string>Track Food</string>
+   </property>
+   <property name="shortcut">
+    <string>F</string>
+   </property>
+  </action>
+  <action name="actionTrack_Fish">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Track Fish (t)</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+  </action>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actionRecord_Tracks_to_File_w</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>actionRecord_Tracks_to_File_w</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionTrack_Fish</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>actionTrack_Fish</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

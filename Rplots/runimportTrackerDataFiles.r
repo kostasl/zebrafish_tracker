@@ -27,8 +27,8 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   ##OutPutFIleName
   strDataSetIdentifier <- strsplit(d,"/")
   strDataSetIdentifier <- strDataSetIdentifier[[1]][[ length(strDataSetIdentifier[[1]]) ]]
-  strDataFileName <- paste("setn1_Dataset_", strDataSetIdentifier,".RData",sep="") ##To Which To Save After Loading
-  strDataFileNameRDS <- paste("setn1_Dataset_", strDataSetIdentifier,".rds",sep="") ##To Which To Save After Loading
+  strDataFileName <- paste(strDataExportDir,"/setn1_Dataset_", strDataSetIdentifier,".RData",sep="") ##To Which To Save After Loading
+  strDataFileNameRDS <- paste(strDataExportDir,"/setn1_Dataset_", strDataSetIdentifier,".rds",sep="") ##To Which To Save After Loading
   message(paste(" Importing to:",strDataFileName))
   ##RUN IMPORT FUNCTION
   datAllFrames <-importTrackerFilesToFrame(groupsrcdatList)
@@ -48,8 +48,8 @@ for ( idxDataSet in firstDataSet:lastDataSet )
 #### END OF IMPORT TRACKER DATA ############
 
 ##Save the File Sources and all The Frames Combined - Just In case there are loading Problems Of the Individual RData files from each set
-save(groupsrcdatListPerDataSet,file=paste("groupsrcdatListPerDataSet_Ds",firstDataSet,lastDataSet,".RData",sep="-"))
+save(groupsrcdatListPerDataSet,file=paste(strDataExportDir,"/groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
 
 #datAllFrames <- rbindlist(datAllSets);
 datAllFrames = do.call(rbind,datAllSets);
-save(datAllFrames,file=paste("datAllFrames_Ds",firstDataSet,lastDataSet,".RData",sep="-"))
+save(datAllFrames,file=paste(strDataExportDir,"datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))

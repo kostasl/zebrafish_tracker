@@ -4,7 +4,7 @@
 
 
 extern QString outfilename;
-extern QFile outdatafile;
+extern QFile outfishdatafile;
 extern MainWindow* pwindow_main;
 
 
@@ -29,11 +29,11 @@ void on_sigabrt (int signum)
     // Skip  Code Block
     //std::cerr << ">>>> Skipping Execution <<<<<" << std::endl;
 
-    closeDataFile(outdatafile);
+    closeDataFile(outfishdatafile);
     std::cerr << "Delete the output File" << std::endl;
 
-    if (outdatafile.exists())
-       outdatafile.remove();
+    if (outfishdatafile.exists())
+       outfishdatafile.remove();
     /*
      * The abort function causes abnormal program termination to occur, unless the signal
      * SIGABRT is being caught and the signal handler does not return. ...
@@ -57,11 +57,11 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
      std::cerr << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
      std::cerr << ">>>>  SIG SEG Handler with Demangling was Triggered <<<<<" << std::endl;
 
-     closeDataFile(outdatafile);
+     closeDataFile(outfishdatafile);
      std::cerr << "Delete the output File" << std::endl;
 
-     if (outdatafile.exists())
-        outdatafile.remove();
+     if (outfishdatafile.exists())
+        outfishdatafile.remove();
 
 
      /* Get the address at the time the signal was raised */

@@ -17,7 +17,7 @@ extern int g_Segthresh;
 extern cv::Mat kernelOpen;
 extern double dLearningRate; //Learning Rate During Initial BG Modelling done over MOGhistory frames
 extern double dLearningRateNominal;
-
+extern double gdMOGBGRatio;
 //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
 extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
@@ -28,6 +28,8 @@ extern cv::Point ptROI2; //This Default Value Is later Modified
 extern cv::Size gszTemplateImg; //Used For ROI size
 
 extern MainWindow* pwindow_main;
+
+extern bool bStaticAccumulatedBGMaskRemove;
 
 /*// Example Of Mean Image
 Mat3b getMean(const vector<Mat3b>& images)
@@ -92,12 +94,16 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         //Get Length of Video
         uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
         //Do Not Overrun Vid Length In BG COmputation
-        uint uiStopFrame = std::min(totFrames,MOGhistoryLength);
+        uint uiStopFrame = totFrames ; //std::min(totFrames,MOGhistoryLength);
         //read input data. ESC or 'q' for quitting
+        uint uiLearnedFrames = 0;
+        uint skipFrames = uiStopFrame/ MOGhistoryLength;
 
         window_main.setTotalFrames(uiStopFrame); //Set To BG Processing REgion
-        while( !bExiting && (char)keyboard != 27 && nFrame < (uint) uiStopFrame)
+
+        while( !bExiting && (char)keyboard != 27 && nFrame < (uint) uiStopFrame && uiLearnedFrames < MOGhistoryLength)
         {
+            uiLearnedFrames++;
             //read the current frame
             if(!capture.read(frame))
             {
@@ -117,7 +123,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
             }
             else //Frame Grabbed - Process It
             {
-                //Get Frame Position From Vid Stream
+                //Get Frame Position From Vid Sam
                 nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
                 window_main.nFrame = nFrame; //Update Window
                 window_main.tickProgress();
@@ -168,6 +174,8 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
            checkPauseRun(&window_main,keyboard,nFrame);
 
+           //Jump To Next Frame To Learn
+           capture.set(CV_CAP_PROP_POS_FRAMES, nFrame+ skipFrames); //Move To Next So We Take MOGHistory Samples From the Video
 
         } //main While loop
 
@@ -176,22 +184,24 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         //Find Max Value,this should belong to stationary objects, and Use it as a relative measure to detect BG Objects
         cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,0);
-        cv::threshold(bgAcc,bgMask,uiMaxVal*0.3,255,cv::THRESH_BINARY); //All; Above 30% of Max are Stationary
+        cv::threshold(bgAcc,bgMask,uiMaxVal*0.05,255,cv::THRESH_BINARY); //All; Above 5% of Max are Stationary
 
         bgMask.convertTo(bgMask,CV_8UC1);
+
+        //if (bStaticAccumulatedBGMaskRemove)
+        //    cv::imshow("Accumulated BG Model",bgMask);
+        pwindow_main->showVideoFrame(bgMask,nFrame);
 
 
         //delete capture object
         capture.release();
 
 
-        //cv::imshow("Accumulated BG Mask",bgMask);
-        //delete kernel;
-        //delete kernelClose;
 
 
         //std::clog << gTimer.elapsed()/60000.0 << " Background Processing  loop. Finished" << std::endl;
          window_main.LogEvent(" Background Processing  loop. Finished");
+
 
       return nFrame;
 } ///trackImageSequencefile
@@ -209,57 +219,59 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGhistory)
 {
 
+
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
     bool ret = true;
     //Speed that stationary objects are removed
    // double dblRatioPxChanged    = 0.0;
 
-    //update the background model
-    //OPEN CV 2.4
-    if (nFrame > MOGhistory)
-    {
-       // dLearningRate = dLearningRateNominal; //Nominal
-        ret = false;
-    }
-
-    //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
-    //In That case make OpenCV With No CUDA or OPENCL support
-    //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
-    //if (!frame.empty())
-    //    pMOG2->apply(frame, fgMask,dLearningRate);
 
     // Detect Food at Lower Thresh //
-    cv::Mat bgMask,fgFishMask,fgFoodMask;
+    cv::Mat bgMask,fgFishMask,fgFoodMask,frameImg_gray;
 
-    ///cv::threshold( frame, threshold_output, g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+   // cv::equalizeHist( frame, frame );
 
-    //cv::morphologyEx(threshold_output,threshold_output, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),2);
-    //cv::cvtColor( threshold_output, threshold_output, cv::COLOR_BGR2GRAY);
-   // cv::cvtColor( fgMask, fgMask, cv::COLOR_BGR2GRAY);
 
-    enhanceMask(frame,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
-    //cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+    //Its Important to remove THe nOise Before doing MOG on the Pixels
+    //cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
+///* Parameters:
+/// src – Input 8-bit 1-channel, 2-channel or 3-channel image.
+/// dst – Output image with the same size and type as src .
+/// templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels
+/// searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels
+/// h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
+////
+    cv::fastNlMeansDenoising(frame, frameImg_gray,4.0,7, 41); /// \todo VS Vid 161 001 still fails in centre maybe increase the window size
+
+    enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+
     try
     {
-        pMOG2->apply(frame,fgFishMask,dLearningRate); //Let the Model Learn , Dont Interact With The Accumulated Mask
+        pMOG2->apply(frameImg_gray,fgFishMask,dLearningRate); //Let the Model Learn , Dont Interact With The Accumulated Mask
     }
     catch(...)
     {
+        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
+        //In That case make OpenCV With No CUDA or OPENCL support
+        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
+        //A runtime Work Around Is given Here:
         std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
         pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
         cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
     }
 
-    cv::accumulateWeighted(fgFoodMask,bgAcc,0.00001); //Also Learn A pic of the stable features
 
+    //Also Learn A pic of the stable features - Found In FoodMask - ie Fish Removed
+    cv::accumulateWeighted(fgFoodMask,bgAcc,0.001);
 
-    //pKNN->apply(frame, fgMask,dLearningRate);
     //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
     //DEBUG //
-    //cv::imshow("FoodMask",fgFoodMask);
-    //cv::imshow("Avg Bg Model",bgAcc);
+    //cv::imshow("fishMask",fgFishMask);
+
+    pwindow_main->showVideoFrame(fgFishMask,nFrame);
+    //cv::imshow("Accumulated Bg Model",bgAcc);
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);
     //pGMG->apply(frame,fgMaskGMG,dLearningRate);

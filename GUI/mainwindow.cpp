@@ -1,11 +1,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "larvatrack.h" //For resetDataRecording()
 #include "QtOpencvCore.hpp"
 #include <QStringListModel>
 #include <qlineedit.h>
 
+extern QFile outfishdatafile;
+extern QFile outfooddatafile;
+
 extern fishModels vfishmodels; //Vector containing live fish models
+extern foodModels vfoodmodels; //Vector containing live fish models
 extern bool bPaused;
 extern bool bStoreThisTemplate;
 extern bool bDraggingTemplateCentre;
@@ -18,9 +23,17 @@ extern QElapsedTimer gTimer;
 extern ltROIlist vRoi;
 extern int gFishBoundBoxSize;
 extern double gTemplateMatchThreshold;
+extern double gdMOGBGRatio;
+extern bool bTrackFood;
+extern bool bTracking;
+extern bool bExiting;
+extern bool bRecordToFile;
 
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
+
+
+extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
 cv::Point* ptDrag;
 
@@ -30,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ptDrag = 0;
-
+    this->nFrame = 0;
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
     this->mInsetScene = new QGraphicsScene(this->ui->graphicsViewHead);
     this->mInsetTemplateScene = new QGraphicsScene(this->ui->graphicsViewTemplate);
@@ -97,18 +110,18 @@ void MainWindow::createSpinBoxes()
 
 
     this->ui->spinBoxFishThres->installEventFilter(this);
-    this->ui->spinBoxFishThres->setRange(19,40); //Too low Below 19 App Stalls -- Too many Large Objects Appear
+    this->ui->spinBoxFishThres->setRange(19,100); //Too low Below 19 App Stalls -- Too many Large Objects Appear
     this->ui->spinBoxFishThres->setValue(g_Segthresh);
 
 
 
     this->ui->spinBoxMinEllipse->installEventFilter(this);
-    this->ui->spinBoxMinEllipse->setRange(5,20);
+    this->ui->spinBoxMinEllipse->setRange(5,22);
     this->ui->spinBoxMinEllipse->setValue(gi_minEllipseMajor);
 
 
     this->ui->spinBoxMaxEllipse->installEventFilter(this);
-    this->ui->spinBoxMaxEllipse->setRange(15,30);
+    this->ui->spinBoxMaxEllipse->setRange(15,35);
     this->ui->spinBoxMaxEllipse->setValue(gi_maxEllipseMajor);
 
 
@@ -116,7 +129,11 @@ void MainWindow::createSpinBoxes()
     this->ui->spinBoxSpineSegSize->setRange(2,20);
     this->ui->spinBoxSpineSegSize->setValue(gFishTailSpineSegmentLength);
 
+    //These spinBoxes Use Slots For Events
     this->ui->spinBoxTemplateThres->setValue(gTemplateMatchThreshold*100.0);
+
+    this->ui->spinBoxMOGBGRatio->setValue(gdMOGBGRatio*100.0);
+
 
     //this->connect(this->ui->spinBoxEyeThres, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this->ui->spinBoxEyeThres, &QSlider::setValue);
 
@@ -125,6 +142,8 @@ void MainWindow::createSpinBoxes()
 //                     this->ui->spinBoxEyeThres,
 //                     static_cast<void (MainWindow::*)(int)>(&MainWindow::valueChanged));
 
+
+    ///\todo Remove These and Make Use of Auto Slots via form editor just like the spinBoxMOGBGRatio or spinBoxTemplateThres
     QObject::connect(this->ui->spinBoxEyeThres,
                      SIGNAL(valueChanged(int)),
                      this,
@@ -222,7 +241,8 @@ void MainWindow::LogEvent(QString strMessage)
     std::clog << gTimer.elapsed()/60000 << " #" << nFrame-1 << " " << strMessage.toStdString() << std::endl;
 
     try{
-        this->ui->listView->scrollToBottom();
+        if ((gTimer.elapsed()/60000) % 1 == 0 ) //Scroll To Bottom Every 3 sec
+            this->ui->listView->scrollToBottom();
     }
     catch (char* e)
     {
@@ -754,6 +774,30 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
         }
     }
 
+    ///Check Clicking On Food Item
+    for (foodModels::iterator it=vfoodmodels.begin(); it!=vfoodmodels.end(); ++it)
+    {
+
+        foodModel* food = (*it).second;
+        if (food->zTrack.boundingBox.contains(ptMouse) ) //Clicked On Fish Box
+        //if (cv::norm((cv::Point) food->zTrack.centroid - ptMouse) < 5 ) //Clicked On Fish Box
+        {
+            // Make Targeted
+            if (!food->isTargeted)
+            {
+                food->isTargeted = true;
+                qDebug() << "Food Targetting On  x: " << ptMouse.x << " y:" << ptMouse.y;
+                LogEvent("[info] Begin Tracking Food Item");
+            }else
+            {
+               LogEvent("[info] END Tracking Food Item");
+                food->isTargeted = false;
+            }
+
+        }
+    }
+
+
 
 }
 
@@ -769,4 +813,99 @@ void MainWindow::on_spinBoxTemplateThres_valueChanged(int arg1)
  double newTMatchThresh = (double)arg1/100.0;
  gTemplateMatchThreshold = newTMatchThresh;
  LogEvent(QString("[info] Changed Template Match Thres:" ) + QString::number(newTMatchThresh,'g',4) ) ;
+}
+
+void MainWindow::on_spinBoxMOGBGRatio_valueChanged(int arg1)
+{
+    double newBGRatio = (double)arg1/100.0;
+    gdMOGBGRatio = newBGRatio; //Updated Value Takes effect in processFrame and in updateBGFrame
+
+    if (pMOG2)
+    {
+       pMOG2->setBackgroundRatio(gdMOGBGRatio);
+       LogEvent(QString("[info] Changed MOG BG Ratio: " ) + QString::number(gdMOGBGRatio,'g',4) ) ;
+
+    }
+
+
+}
+
+void MainWindow::on_actionTrack_Fish_triggered(bool checked)
+{
+
+    if (!bTracking)
+    {
+        //iLastKnownGoodTemplateRow = 0; //Reset Row
+        //iLastKnownGoodTemplateCol = 0;
+        LogEvent(QString("Tracking ON"));
+    }else
+        LogEvent(QString("Tracking OFF"));
+
+    bTracking = checked;
+
+
+}
+
+void MainWindow::on_actionTrack_Food_triggered(bool checked)
+{
+
+    bTrackFood = checked;
+}
+
+void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
+{
+    bRecordToFile = checked;
+    if (bRecordToFile)
+    {
+      LogEvent(QString(">> Recording Tracks ON - New File <<"));
+
+      resetDataRecording(outfishdatafile,"tracks");
+      writeFishDataCSVHeader(outfishdatafile);
+      resetDataRecording(outfooddatafile,"food");
+      writeFoodDataCSVHeader(outfooddatafile);
+//      closeDataFile(outfishdatafile); //
+//      closeDataFile(outfooddatafile); //
+
+//      QFileInfo fileInfFish(outfishdatafile);
+
+//      QFileInfo fileInfFood(outfooddatafile);
+
+//      if ( !openDataFile(fileInfFish.absoluteDir().absolutePath(),fileInfFish.completeBaseName(),outfishdatafile,"_tracks") )
+//         LogEvent(QString("[Error] Opening Data Fish Tracks File"));
+
+//      if ( !openDataFile(fileInfFood.absoluteDir().absolutePath(),fileInfFood.completeBaseName(),outfooddatafile,"_food") )
+//          LogEvent(QString("[Error] Opening Data Food Tracks File"));
+    }
+    else
+      LogEvent(QString("<< Recording Tracks OFF >>"));
+
+}
+
+void MainWindow::on_actionQuit_triggered()
+{
+    bExiting = true;
+    LogEvent("[info] User Terminated - Bye!");
+}
+
+
+
+void MainWindow::on_actionStart_tracking_triggered()
+{
+    if (bPaused)
+        LogEvent("[info] Running");
+
+    bPaused = false;
+
+}
+
+void MainWindow::on_actionPaus_tracking_p_triggered()
+{
+    bPaused = true;
+    if (bPaused)
+    LogEvent("[info] Paused");
+
+}
+
+void MainWindow::on_actionPaus_tracking_p_triggered(bool checked)
+{
 }

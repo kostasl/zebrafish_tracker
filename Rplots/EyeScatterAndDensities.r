@@ -87,6 +87,7 @@ sampleSize  <- length(vexpID) #Number of Larvae Used
 hotMap <- c(rfHot(sampleSize),"#FF0000");
 image((-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),hGroupbinDensity,axes=TRUE,col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
 title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
+#dev.copy(jpeg,filename=paste(strDensityplotFileName,"-plot.jpg"));
 dev.off()
 ###
 
