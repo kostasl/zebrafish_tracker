@@ -20,7 +20,7 @@ int loadTemplatesFromDirectory(QString strDir);
 //makeTemplateCache(angleStep)
 void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStepDeg);
 //int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol);
-int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch);
+int templatefindFishInImage(cv::UMat& imgGreyIn,cv::UMat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch);
 double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut );
 
 ///
@@ -30,10 +30,10 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 /// \param idxTempl
 /// \return idxTempl
 ///
-int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl);
+int addTemplateToCache(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTempl);
 
 
-int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl);
+int deleteTemplateRow(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTempl);
 //expandTemplateCache(newTemplateImage)
 //templatefindFishInImage()
 #endif // TEMPLATE_DETECT_H

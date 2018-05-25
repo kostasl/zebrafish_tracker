@@ -184,7 +184,7 @@ cv::Mat kernelDilateMOGMask;
 cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
 cv::Mat gLastfishimg_template;// OUr Fish Image Template
-cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
+cv::UMat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
 cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
 
 /// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
@@ -1366,7 +1366,8 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     if (findBestMatch)
         pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
-    int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
+    cv::UMat fishRegionP = fishRegion.getUMat(cv::ACCESS_READ);
+    int AngleIdx = templatefindFishInImage(fishRegionP,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
 
     detectedAngle =AngleIdx*gFishTemplateAngleSteps;
 
@@ -1598,7 +1599,8 @@ void UpdateFishModelsOrig(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,
         if (findBestMatch)
             pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
-        int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
+        cv::UMat fishRegionP = fishRegion.getUMat(cv::ACCESS_READ);
+        int AngleIdx = templatefindFishInImage(fishRegionP,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
 
         int bestAngle =AngleIdx*gFishTemplateAngleSteps;
         cv::Point top_left = pBound1+gptmaxLoc;
