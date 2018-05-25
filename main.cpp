@@ -922,9 +922,9 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
                 foodModel* pfood = ft->second;
                 assert(pfood);
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX, CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 );
                 else
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX , CV_FONT_HERSHEY_PLAIN,trackFntScale );
 
                 ++ft;
             }
