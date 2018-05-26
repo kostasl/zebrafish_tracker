@@ -491,8 +491,6 @@ int main(int argc, char *argv[])
 
 
 
-
-
     ///Disable OPENCL in case SEG Fault is hit - usually from MOG when running multiple tracker processes
     if (parser.has("DisableOpenCL"))
             if (parser.get<int>("DisableOpenCL") == 1)
@@ -2700,7 +2698,7 @@ int saveFoodTracks(fishModels& vfish,foodModels& vfood,QFile& fooddata,QString f
 
          if (pfood->isTargeted) //Only Log The Marked Food
          {
-            output << frameNumber << "\t" << 1 << "\t" << pfood->ID << "\t" << pfood->zTrack << "\n";
+            output << frameNumber << "\t" << pfood->ROIID << "\t" << pfood->ID << "\t" << pfood->zTrack << "\n";
 
             pfood->zTrack.pointStack.clear();
             pfood->zTrack.pointStack.shrink_to_fit();

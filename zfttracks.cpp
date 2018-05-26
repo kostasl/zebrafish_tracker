@@ -62,7 +62,8 @@ std::ostream& operator<<(std::ostream& out, const zftTrack& h)
         out << ptt.x << "\t" << ptt.y;
     }
     else
-        out << 0 << "\t" << 0;
+        //If the Point Stack Is empty //Report The stable Point Saved on Centroid/
+        out << h.centroid.x << "\t" << h.centroid.y;
 
     return out;
 }

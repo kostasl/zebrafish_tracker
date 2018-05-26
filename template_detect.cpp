@@ -14,7 +14,8 @@
 #include <QDir>
 #include <QDebug>
 
-//#include <cudaimgproc.hpp> //Template Matching
+
+//#include <opencv2/cudaimgproc.hpp> //Template Matching \todo Compile OpenCv With CUDA Support
 
 extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;

@@ -19,6 +19,7 @@ inactiveFrames = 0;
 activeFrames = 0;
 blobMatchScore = 0;
 this->ID = lastFoodID;
+ROIID = 0;
 isTargeted = false; //Saves Location To Data File When True
 
 }
