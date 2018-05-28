@@ -869,7 +869,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         }
 
         //Combine Masks and Remove Stationary Learned Pixels From Mask
-        if (bStaticAccumulatedBGMaskRemove)
+        if (bStaticAccumulatedBGMaskRemove && !fgMask.empty())
         {
            //cv::bitwise_not(fgMask,fgMask);
             //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
