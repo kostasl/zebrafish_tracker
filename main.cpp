@@ -185,7 +185,7 @@ cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
 cv::Mat gLastfishimg_template;// OUr Fish Image Template
 cv::UMat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
-cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
+//cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
 
 /// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
 cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
@@ -670,9 +670,10 @@ int main(int argc, char *argv[])
     kernelDilateMOGMask.release();
     kernelOpen.release();
     gLastfishimg_template.release();
-    gEyeTemplateCache.release();
+
     gFishTemplateCache.release();
 
+    //gFishTemplateCache.deallocate();
 
     //app.quit();
     window_main.close();
@@ -686,6 +687,8 @@ int main(int argc, char *argv[])
 
     app.quit();
     //Catch Any Mem Alloc Error
+    ///\note ever since I converted gFishCache to UMat, a deallocation error Is Hit
+    /// This Is  KNown But When OpenCL Is False https://github.com/opencv/opencv/issues/8693
     std::exit(EXIT_SUCCESS);
     return EXIT_SUCCESS;
 
@@ -795,6 +798,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
 {
     cv::Mat frame_gray,fgFishMask,fgFishImgMasked;
     cv::Mat fgFoodMask;
+    cv::Mat fgMask;
 
     std::vector<cv::KeyPoint> ptFoodblobs;
     std::vector<cv::KeyPoint> ptFishblobs;
@@ -853,7 +857,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
             cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
 
         // Update BG Substraction Model /Check For OCL Error
-        cv::Mat fgMask;
+
         //Check If BG Ratio Changed
         try{
             pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
