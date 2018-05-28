@@ -80,7 +80,8 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      ## Detects End Events as +ve differences
 	      vDeltaXFrames        <- diff(datEventFrames$posX,lag=1,differences=1)
 	      vDeltaYFrames        <- diff(datEventFrames$posY,lag=1,differences=1)
-	      vEventPathLength     <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2)
+	      vEventPathLength     <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
+	      #nNumberOfBouts       <- 
 	      dframe               <- diff(datEventFrames$frameN,lag=1,differences=1)
 	      dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - Why is dFrame 0?  
 	      dEventSpeed          <- vEventPathLength/dframe

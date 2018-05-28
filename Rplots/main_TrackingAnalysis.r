@@ -72,7 +72,7 @@ G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
 PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 
-nFrWidth                 <- 50 ## Sliding Window Filter Width
+nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
 
 
 strDataSetDirectories <- paste(strTrackInputPath, list(
@@ -110,7 +110,7 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
-  lastDataSet = NROW(strDataSetDirectories)-1
+  lastDataSet = NROW(strDataSetDirectories)-11
   firstDataSet = 1
   source("runimportTrackerDataFiles.r") 
 
@@ -159,10 +159,12 @@ source("plotHuntStat.r")
 
 ###
   source("plotMotionStat.r")
+
+  
   source("labelHuntEvents.r")
 
 #### LABEL MANUALLY THE HUNT EVENTS WITH THE HELP OF THE TRACKER ###
-gc <- "DL"
+gc <- "LL"
 firstDataSet = NROW(strDataSetDirectories)-11
 lastDataSet = NROW(strDataSetDirectories)
 dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
@@ -171,18 +173,24 @@ strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-")
 message(paste(" Loading Hunt Events: ",strDataFileName))
 ##ExPORT 
 load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent <- labelHuntEvents(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackeroutPath )
+TargetLabel = which(vHuntEventLabels == "Success")-1;
+datHuntEvent <- labelHuntEvents(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackeroutPath, TargetLabel)
 ##Saving is done in labelHuntEvent on Every loop - But repeated here
 save(datHuntEvent,file=paste(strDatDir,"/",strDataFileName,"-backup.RData",sep="" )) ##Save With Dataset Idx Identifier
 message(paste("Saved Backup :",strDatDir,"/",strDataFileName,"-backup.RData",sep="") )
+
 ##########################
+####
+
+
+
 
 ########################################## SUMMARY OF LABELLING #####################
 ##How to Summarize Success / Fail Scores :
 gc <- "LL"
 strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
 load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12),labels=vHuntEventLabels )##Set To NoTHuntMode
+datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
 message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
 tblLLStat <- table(datHuntEvent$huntScore)
 write.csv(tblLLStat,file="tbLLHuntLabelStat.csv")
@@ -194,7 +202,7 @@ nSuccessLL <- tblLLStat[[3]]+tblLLStat[[12]]
 gc <- "NL"
 strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
 load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12),labels=vHuntEventLabels )##Set To NoTHuntMode
+datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
 message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
 tblNLStat <- table(datHuntEvent$huntScore)
 write.csv(tblNLStat,file="tbNLHuntLabelStat.csv")
@@ -204,20 +212,23 @@ nSuccessNL <- tblNLStat[[3]]+tblNLStat[[12]]
 
 
 gc <- "DL"
-strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
-load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12),labels=vHuntEventLabels )##Set To NoTHuntMode
+strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
+load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
 message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
 tblDLStat <- table(datHuntEvent$huntScore)
 write.csv(tblDLStat,file="tbDLHuntLabelStat.csv")
 
 nFailDL <- tblDLStat[[4]]+tblDLStat[[5]]+tblDLStat[[10]]+tblDLStat[[11]]
 nSuccessDL <- tblDLStat[[3]]+tblDLStat[[12]]
+
+message(paste("Rates:",nSuccessLL/nFailLL,nSuccessNL/nFailNL,nSuccessDL/nFailDL,sep="  "))
 ###
 
 
 ######## CALC Stat On Hunt Events ######
 ## Re-process Hunt Stat On Modified Events
+source("HuntingEventAnalysis.r")
 lHuntStat <- list()
 groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
 strCondTags <- names(groupsrcdatList)
@@ -229,12 +240,13 @@ for (i in strCondTags)
   ##ExPORT 
   load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
   
-  datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12),labels=vHuntEventLabels )##Set To NoTHuntMode
+  datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
   ##Filter Hunt Events ##
-  datHuntEventFilt <- datHuntEvent[datHuntEvent$huntScore != which(levels(huntLabels) == "NA") &
-                                   datHuntEvent$huntScore != which(levels(huntLabels) == "Not_HuntMode/Delete") &
-                                   datHuntEvent$huntScore != which(levels(huntLabels) == "Out_Of_Range") & 
-                                   datHuntEvent$huntScore != which(levels(huntLabels) == "Duplicate/Overlapping") |
+  datHuntEventFilt <- datHuntEvent[datHuntEvent$huntScore != "NA" &
+                                   datHuntEvent$huntScore != "Not_HuntMode/Delete" &
+                                   datHuntEvent$huntScore != "Out_Of_Range" & 
+                                   datHuntEvent$huntScore != "Duplicate/Overlapping" &
+                                   datHuntEvent$huntScore != "Near-Hunt State" |
                                    datHuntEvent$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
   
   
