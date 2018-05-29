@@ -16,7 +16,8 @@ find_peaks <- function (x, m = 3){
     if(all(x[c(z : i, (i + 2) : w)] <= x[i + 1])) return(i + 1) else return(numeric(0))
   })
   pks <- unlist(pks)
-  ##KL Custom - Combine Peaks Closer than m Apart
+  ##KL Custom - Remove Peaks Closer than m Apart 
+  pks <- pks[diff(pks) > m]
   pks
 }
 

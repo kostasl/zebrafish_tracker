@@ -161,7 +161,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     tR = (1: min( c(i,NROW(datHuntEventMergedFrames) ) ) )
     posX = datHuntEventMergedFrames[max(tR),]$posX
     posY = 640-datHuntEventMergedFrames[max(tR),]$posY
-    bearingRad = pi/180*(datHuntEventMergedFrames[max(tR),]$BodyAngle+90+180)
+    bearingRad = pi/180*(datHuntEventMergedFrames[max(tR),]$BodyAngle-90)##+90+180
     posVX = posX+cos(bearingRad)*15
     posVY = posY-sin(bearingRad)*15
     
@@ -171,8 +171,40 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     points(datHuntEventMergedFrames[max(tR),]$Prey_X,640-datHuntEventMergedFrames[max(tR),]$Prey_Y,col="red",pch=16)
     arrows(posX,posY,posVX,posVY)
     
+    ##Draw Eyes 
+    ##Left Eye - Requires Inversions due to differences in How Angles Are Calculated in Tracker and In R Plots
+    iConeLength = 100
     
+    ## (see Bianco et al. 2011) : "the functional retinal field as 163˚ after Easter and Nicola (1996)."
+    iConeArc = 163/2 ##Degrees Of Assumed Half FOV of Each Eye
+    ##Eye Distance taken By Bianco As 453mum, ie 0.5mm , take tracker
+    EyeDist = 0.25/DIM_MMPERPX ##From Head Centre
+    LEyePosX <- posX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90))*EyeDist
+    LEyePosY <- posY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90))*EyeDist
     
+    LEyeConeX <- c(LEyePosX,
+                   LEyePosX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90-iConeArc))*iConeLength,
+                   LEyePosX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90+iConeArc))*iConeLength )
+    
+    LEyeConeY <- c(LEyePosY,
+                   LEyePosY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90-iConeArc))*iConeLength,
+                   LEyePosY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90+iConeArc))*iConeLength )
+    polygon(LEyeConeX,LEyeConeY,col="red") #density=20,angle=45
+
+    ##Right Eye
+    REyePosX <- posX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle-90))*EyeDist
+    REyePosY <- posY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle-90))*EyeDist
+    
+    REyeConeX <- c(REyePosX,
+                   REyePosX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$REyeAngle-90-iConeArc))*iConeLength,
+                   REyePosX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$REyeAngle-90+iConeArc))*iConeLength )
+    
+    REyeConeY <- c(REyePosY,
+                   REyePosY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$REyeAngle-90-iConeArc))*iConeLength,
+                   REyePosY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$REyeAngle-90+iConeArc))*iConeLength )
+    polygon(REyeConeX,REyeConeY,col="green") ##,density=25,angle=-45
+    
+        
    }
 }
 

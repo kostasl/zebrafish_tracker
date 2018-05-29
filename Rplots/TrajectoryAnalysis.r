@@ -67,11 +67,18 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	    ##Select Motion Frames of this Event ## 
       ## Filter Out Tracking Loses Set to poxX,Y=0
 	    datEventFrames       <- datLarvaFrames[datLarvaFrames$eventID == k & datLarvaFrames$posX > 0 & datLarvaFrames$posY > 0,]
-      
 
 	    ##Consider Only if there are at least 100 frames Durations Minimum Duration  / Here MisUsing The Name EpisodeDuration
-	    if  (NROW(datEventFrames$frameN) > 100)
+	    if  (NROW(datEventFrames$frameN) < 100)
 	    {
+	      ## Episode Trajectory is too Short Insufficient ##	
+	      warning(paste("Trajectory Too short - Ignoring Trajectory  of Experiment:",i,"event",k," larva",larvaID) )
+	      
+	      lTEventDisplacement[[k]] <- 0
+	      lTEventSpeed[[k]]        <- 0
+	      lTEventSinuosity[[k]]    <- 0
+	      next #Skip To Next Event
+	    }
 	      
 	      nEventsAnalysed               <- nEventsAnalysed + 1
 	      nLarvalAnalysedFrames         <- nLarvalAnalysedFrames + length(datEventFrames$frameN)
@@ -81,11 +88,12 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      vDeltaXFrames        <- diff(datEventFrames$posX,lag=1,differences=1)
 	      vDeltaYFrames        <- diff(datEventFrames$posY,lag=1,differences=1)
 	      vEventPathLength     <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
-	      #nNumberOfBouts       <- 
+	     
 	      dframe               <- diff(datEventFrames$frameN,lag=1,differences=1)
 	      dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - Why is dFrame 0?  
-	      dEventSpeed          <- vEventPathLength/dframe
-	      
+	      #dEventSpeed          <- vEventPathLength/dframe
+	      dEventSpeed          <- meanf(vEventPathLength/dframe,5) ##Apply Mean Filter Smooth Out 
+
 	      if (any(is.nan(dEventSpeed)))
 	      {
 	        stop(paste("Speed is NaN, expID:",i,",eventID",k) )
@@ -96,7 +104,44 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	        warning(paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) )
 	        message((paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) ))
 	      }
-	        
+	      ###                                              ######
+        ### Process Speed/ Extract Bouts Via Peak Speed    ####
+	      ###                                              ######
+	      dEventSpeed_smooth   <- meanf(dEventSpeed,20)
+	      dEventSpeed_smooth[is.na(dEventSpeed_smooth)] = 0 ##Remove NA
+	      ### FInd Peaks In Speed to Identify Bouts
+	      MoveboutsIdx <- find_peaks(dEventSpeed_smooth,25)
+	      ##Reject Peaks Below Half An SD Peak Value - So As to Choose Only Significant Bout Movements # That Are Above the Minimum Speed to Consider As Bout
+	      MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/2 
+	                                                 & dEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
+	      
+	      #nNumberOfBouts       <- length(MoveboutsIdx_cleaned)
+	      #### Identify Bouts, Count, Duration 
+	      ###Binarize , Use indicator function 1/0 for frames where Motion Occurs
+	      vMotionBout <- dEventSpeed_smooth
+	      vMotionBout[ vMotionBout < G_MIN_BOUTSPEED  ] = 0
+	      vMotionBout[vMotionBout > G_MIN_BOUTSPEED  ] = 1
+	      vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
+	      vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
+	      vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+1 ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
+	      nNumberOfBouts <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
+	      ##Remove The Motion Regions Where A Peak Was not detected / Only Keep The Bouts with Peaks 
+	      vMotionBout[1:length(vMotionBout)] =0 ##Reset / Remove All Identified Movement 
+	      for (i in 1:nNumberOfBouts)
+	      {
+	        if (any( MoveboutsIdx_cleaned >= vMotionBout_On[i] & MoveboutsIdx_cleaned < vMotionBout_Off[i] ) == TRUE)
+	        { ###Motion Interval Does not belong to a detect bout(peak) so remove
+	          vMotionBout[vMotionBout_On[i]:vMotionBout_Off[i] ] = 1 ##Remove Motion From Vector
+	        }else
+	        {##Remove the Ones That Do not Have a peak In them
+	          vMotionBout_On[i] = NA
+	          vMotionBout_Off[i] = NA
+	        }
+	      }
+	      vMotionBoutDuration <- vMotionBout_Off[1:nNumberOfBouts]-vMotionBout_On[1:nNumberOfBouts]
+	      vMotionBoutDuration <- vMotionBoutDuration[!is.na(vMotionBoutDuration)]
+	      
+	     
 	      
 	      dEventTotalDistance       <- sum(vEventPathLength)
 	      ##Straight Line From start to end 
@@ -123,15 +168,6 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      lTEventDisplacement[[k]] <- dEventTotalDistance
 	      lTEventSpeed[[k]]        <- dEventSpeed
 	      lTEventSinuosity[[k]]    <- dEventSinuosity
-	      
-	    }else{
-       ## Episode Trajectory is too Short Insufficient ##	
-        warning(paste("Trajectory Too short - Ignoring Trajectory  of Experiment:",i,"event",k," larva",larvaID) )
-	      
-	      lTEventDisplacement[[k]] <- 0
-	      lTEventSpeed[[k]]        <- 0
-	      lTEventSinuosity[[k]]    <- 0
-     }
 
   }##For each Event Of this Larva    
     
