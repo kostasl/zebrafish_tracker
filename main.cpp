@@ -2553,7 +2553,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
     //Make Sure We do not Overwrite existing Data Files
     while (!newFile)
     {
-        if (!data.exists()) //Write HEader
+        if (!data.exists() || data.isOpen()) //Write HEader
         {
             newFile = true;
         }else{
@@ -2582,7 +2582,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
 
 
                 data.setFileName(dirOutPath);
-                data.open(QFile::WriteOnly)
+                data.open(QFile::WriteOnly);
             }
          }
     }
