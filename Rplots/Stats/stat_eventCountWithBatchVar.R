@@ -30,10 +30,10 @@ modelI="model {
 
 fromchain=1000
 
-datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL) )
+datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL) )
 
 nDat <- nrow(datHuntVsPreyNL)
-nDatList <- (nDat-10):nDat
+nDatList <- seq(4,nDat,4) ##Make List Of Data Points to Include Cummulativelly
 datSliceNL <- (datHuntVsPreyNL[,2])
 
 library(rjags)
@@ -64,13 +64,16 @@ for(i in 1:length(nDatList)){
 
 ##q[idx,sampleID,chainID]
 
+strPlotName <- "plots/stat_MeanRateShiftWithNewDataSets_DL.pdf"
+pdf(strPlotName,width=8,height=10,title="Dataset Variability in mean rate") #col=(as.integer(filtereddatAllFrames$expID))
 
-layout(matrix(1:(2*ceiling(length(nDatList)/2)),ncol=2))
-for(i in 1:length(nDatList)) hist(draw[[i]]$qmean[1,(steps/10-fromchain):(steps/10),1],
-                   breaks=seq(0,50,length=100),
+layout(matrix(1:(2*ceiling((length(nDatList)+1)/2)),ncol=2))
+for(i in 1:length(nDatList)) 
+  hist(draw[[i]]$qmean[1,(steps/10-fromchain):(steps/10),1],
+                   breaks=seq(0,100,length=50),
                    col=gray.colors(4)[i],
                    xlab="Rate Parameter",
-                   add=F,main=i)
+                   add=F,main=paste(i,"Sets,","n=",length(nNLlist[[i]])) )
 
-
+dev.off()
 

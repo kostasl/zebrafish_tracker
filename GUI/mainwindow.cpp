@@ -858,18 +858,23 @@ void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
     if (bRecordToFile)
     {
       LogEvent(QString(">> Recording Tracks ON - New File <<"));
-      closeDataFile(outfishdatafile); //
-      closeDataFile(outfooddatafile); //
 
-      QFileInfo fileInfFish(outfishdatafile);
+      resetDataRecording(outfishdatafile,"tracks");
+      writeFishDataCSVHeader(outfishdatafile);
+      resetDataRecording(outfooddatafile,"food");
+      writeFoodDataCSVHeader(outfooddatafile);
+//      closeDataFile(outfishdatafile); //
+//      closeDataFile(outfooddatafile); //
 
-      QFileInfo fileInfFood(outfooddatafile);
+//      QFileInfo fileInfFish(outfishdatafile);
 
-      if ( !openDataFile(fileInfFish.absoluteDir().absolutePath(),fileInfFish.completeBaseName(),outfishdatafile,"_tracks") )
-         LogEvent(QString("[Error] Opening Data Fish Tracks File"));
+//      QFileInfo fileInfFood(outfooddatafile);
 
-      if ( !openDataFile(fileInfFood.absoluteDir().absolutePath(),fileInfFood.completeBaseName(),outfooddatafile,"_food") )
-          LogEvent(QString("[Error] Opening Data Food Tracks File"));
+//      if ( !openDataFile(fileInfFish.absoluteDir().absolutePath(),fileInfFish.completeBaseName(),outfishdatafile,"_tracks") )
+//         LogEvent(QString("[Error] Opening Data Fish Tracks File"));
+
+//      if ( !openDataFile(fileInfFood.absoluteDir().absolutePath(),fileInfFood.completeBaseName(),outfooddatafile,"_food") )
+//          LogEvent(QString("[Error] Opening Data Food Tracks File"));
     }
     else
       LogEvent(QString("<< Recording Tracks OFF >>"));

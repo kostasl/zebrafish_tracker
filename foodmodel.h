@@ -25,6 +25,7 @@ public:
     ~foodModel();
     void updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore);
     zfdID ID;
+    int ROIID;
     int inactiveFrames; //Count Of Number Of Frames That this model Has not Been Matched To Any Fish
     int activeFrames; //Count Of Last Consecutive Active Frames
     zfdblob  zfoodblob;

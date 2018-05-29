@@ -21,21 +21,37 @@ n[j] ~ dpois(q)
 
 fromchain=1000
 
-nLL1=read.table("Stats/mcmc/testLL.dat")$Freq
-nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
-nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
+#nLL1=read.table("Stats/mcmc/testLL.dat")$Freq
+#nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
+#nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
 
 ## Get Event Counts Within Range ##
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
+datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE) )
+datHuntVsPreyL <- rbind(datHuntVsPreyLL,datHuntVsPreyLE)
+
+datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]),]
+
+
 datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL) )
+datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE) )
+datHuntVsPreyN <- rbind(datHuntVsPreyNL,datHuntVsPreyNE)
+
+datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]),]
+
+
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL) )
+datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE) )
+datHuntVsPreyD <- rbind(datHuntVsPreyDL,datHuntVsPreyDE)
+##Remove NA 
+datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),]
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(20,40)
+preyCntRange <- c(10,30)
 
-datSliceLL <- datHuntVsPreyLL[datHuntVsPreyLL[,1] > preyCntRange[1] & datHuntVsPreyLL[,1] < preyCntRange[2],2 ]
-datSliceNL <- datHuntVsPreyNL[datHuntVsPreyNL[,1] > preyCntRange[1] & datHuntVsPreyNL[,1] < preyCntRange[2],2 ]
-datSliceDL <- datHuntVsPreyDL[datHuntVsPreyDL[,1] > preyCntRange[1] & datHuntVsPreyDL[,1] < preyCntRange[2],2 ]
+datSliceLL <- datHuntVsPreyL[datHuntVsPreyL[,1] >= preyCntRange[1] & datHuntVsPreyL[,1] <= preyCntRange[2],2 ]
+datSliceNL <- datHuntVsPreyN[datHuntVsPreyN[,1] >= preyCntRange[1] & datHuntVsPreyN[,1] <= preyCntRange[2],2 ]
+datSliceDL <- datHuntVsPreyD[datHuntVsPreyD[,1] >= preyCntRange[1] & datHuntVsPreyD[,1] <= preyCntRange[2],2 ]
 nDatLL <- length(datSliceLL)
 nDatNL <- length(datSliceNL)
 nDatDL <- length(datSliceDL)
@@ -77,11 +93,11 @@ strPlotName <- paste("plots/stat_HuntEventRateParamPreyRange",preyCntRange[1],pr
 pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
 ##X11()
 
-hist(drawLL2$q[1,,1],breaks=seq(5,35,length=100),col=colourH[1],xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
-hist(drawNL2$q[1,,1],breaks=seq(5,35,length=100),add=T,col=colourH[2])
-hist(drawDL2$q[1,,1],breaks=seq(5,35,length=100),add=T,col=colourH[3])
+hist(drawLL2$q[1,,1],breaks=seq(5,35,length=100),col=colourH[1],xlim=c(0,40),xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
+hist(drawNL2$q[1,,1],breaks=seq(5,35,length=100),add=T,col=colourH[2],xlim=c(0,40))
+hist(drawDL2$q[1,,1],breaks=seq(5,35,length=100),add=T,col=colourH[3],xlim=c(0,40))
 
-legend(5,500,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
+legend(32,700,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
 
 dev.off()
 #hist(drawLL$qq[1,,1],breaks=seq(0,50,length=100))

@@ -151,6 +151,31 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
 } ##End of Function
 
 
+
+##Test  PlayBack Plot Hunt Event###
+renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
+{
+  X11()
+  for (i in seq(1,NROW(datHuntEventMergedFrames),speed) )
+  {
+    tR = (1: min( c(i,NROW(datHuntEventMergedFrames) ) ) )
+    posX = datHuntEventMergedFrames[max(tR),]$posX
+    posY = 640-datHuntEventMergedFrames[max(tR),]$posY
+    bearingRad = pi/180*(datHuntEventMergedFrames[max(tR),]$BodyAngle+90+180)
+    posVX = posX+cos(bearingRad)*15
+    posVY = posY-sin(bearingRad)*15
+    
+    plot(datHuntEventMergedFrames[tR,]$posX,640-datHuntEventMergedFrames[tR,]$posY,xlim=c(20,480),ylim=c(0,600),col="black",cex = .5,type='l',xlab="X",ylab="Y")
+    points(posX,posY,col="black",pch=16)
+    lines(datHuntEventMergedFrames[tR,]$Prey_X,640-datHuntEventMergedFrames[tR,]$Prey_Y,col="red")
+    points(datHuntEventMergedFrames[max(tR),]$Prey_X,640-datHuntEventMergedFrames[max(tR),]$Prey_Y,col="red",pch=16)
+    arrows(posX,posY,posVX,posVY)
+    
+    
+    
+   }
+}
+
 ############# PLot Heat Map of Movement Trajectories Across COnditions #####
 # strTrajectoryDensityFileName <- paste("plots/densities/MotionDensity-Set-",strCond,".pdf",collapse=NULL);
 # pdf(strTrajectoryDensityFileName,width=8,height=8)

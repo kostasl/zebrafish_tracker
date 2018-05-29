@@ -111,7 +111,7 @@ int saveFoodTracks(fishModels& vfish,foodModels& vfood, QFile& fooddata,QString 
 bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString strpostfix="_tracks");
 void closeDataFile(QFile& data);
 void removeDataFile(QFile& data);
-bool resetDataRecording(QFile& outdatafile); //Uses Global File Info
+bool resetDataRecording(QFile& outdatafile,QString strpostfix); //Uses Global File Info
 
 void writeFishDataCSVHeader(QFile& data);
 void writeFoodDataCSVHeader(QFile& data);

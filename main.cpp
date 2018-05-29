@@ -185,7 +185,7 @@ cv::Mat kernelOpenfish;
 cv::Mat kernelClose;
 cv::Mat gLastfishimg_template;// OUr Fish Image Template
 cv::UMat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
-cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
+//cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
 
 /// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
 cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
@@ -491,8 +491,6 @@ int main(int argc, char *argv[])
 
 
 
-
-
     ///Disable OPENCL in case SEG Fault is hit - usually from MOG when running multiple tracker processes
     if (parser.has("DisableOpenCL"))
             if (parser.get<int>("DisableOpenCL") == 1)
@@ -672,9 +670,10 @@ int main(int argc, char *argv[])
     kernelDilateMOGMask.release();
     kernelOpen.release();
     gLastfishimg_template.release();
-    gEyeTemplateCache.release();
+
     gFishTemplateCache.release();
 
+    //gFishTemplateCache.deallocate();
 
     //app.quit();
     window_main.close();
@@ -688,6 +687,8 @@ int main(int argc, char *argv[])
 
     app.quit();
     //Catch Any Mem Alloc Error
+    ///\note ever since I converted gFishCache to UMat, a deallocation error Is Hit
+    /// This Is  KNown But When OpenCL Is False https://github.com/opencv/opencv/issues/8693
     std::exit(EXIT_SUCCESS);
     return EXIT_SUCCESS;
 
@@ -797,6 +798,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
 {
     cv::Mat frame_gray,fgFishMask,fgFishImgMasked;
     cv::Mat fgFoodMask;
+    cv::Mat fgMask;
 
     std::vector<cv::KeyPoint> ptFoodblobs;
     std::vector<cv::KeyPoint> ptFishblobs;
@@ -855,7 +857,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
             cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
 
         // Update BG Substraction Model /Check For OCL Error
-        cv::Mat fgMask;
+
         //Check If BG Ratio Changed
         try{
             pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
@@ -871,7 +873,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         }
 
         //Combine Masks and Remove Stationary Learned Pixels From Mask
-        if (bStaticAccumulatedBGMaskRemove)
+        if (bStaticAccumulatedBGMaskRemove && !fgMask.empty())
         {
            //cv::bitwise_not(fgMask,fgMask);
             //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
@@ -1332,6 +1334,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     //stopFrame       = 0;//No Stopping on NExt Video
     //Close File
     closeDataFile(outdatafile);
+    closeDataFile(outfooddatafile);
 
     return nFrame; //Return Number of Last Frame Processed
 }
@@ -1844,13 +1847,13 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         foodModel* pfoodBest = 0;
         if (qfoodrank.size() > 0)
         {
-            pfoodBest = qfoodrank.top(); //Get Pointer To Best Scoring Fish
+            pfoodBest = qfoodrank.top(); //Get Pointer To Best Scoring Food Blob
             //qrank.pop();//Remove From Priority Queue Rank
             pfoodBest->inactiveFrames   = 0; //Reset Counter
-            pfoodBest->activeFrames = pfoodBest->activeFrames+1; //Increase Count Of Consecutive Active Frames
-            pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,pfoodBest->blobMatchScore);
+            pfoodBest->activeFrames ++; //Increase Count Of Consecutive Active Frames
+            pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,pfoodBest->blobMatchScore);
 
-        }else  ///No Food Model Found - Create A new One //
+        }else  ///No Food Model Found for this Blob- Create A new One - Give the blob's the Position //
         {
             pfoodBest = new foodModel(*foodblob,++gi_MaxFoodID);
 
@@ -1859,7 +1862,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             strmsg << "# New foodmodel: " << pfoodBest->ID << " N:" << vfoodmodels.size();
             std::clog << nFrame << strmsg.str() << std::endl;
 
-            pfoodBest->updateState(foodblob,0,pfoodBest->zfoodblob.pt,nFrame,500);
+            pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,500);
         }
 
         clearpq2(qfoodrank);
@@ -2013,15 +2016,11 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
       bRecordToFile = !bRecordToFile; //Main Loop Will handle this
       if (bRecordToFile)
       {
-        pwindow_main->LogEvent(QString(">> Recording Tracks ON - New File <<"));
-        resetDataRecording(outfishdatafile);
-        writeFishDataCSVHeader(outfishdatafile);
-        resetDataRecording(outfooddatafile);
-        writeFishDataCSVHeader(outfooddatafile);
-
+        pwindow_main->LogEvent(QString(">> [DISABLED] Recording Tracks ON - New File <<"));
+        ///Code Moved TO MainWindow GUI
       }
       else
-        pwindow_main->LogEvent(QString("<< Recording Tracks OFF >>"));
+        pwindow_main->LogEvent(QString("<< [DISABLED] Recording Tracks OFF >>"));
     }
 
 
@@ -2481,18 +2480,19 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
 ///
 /// \brief resetDataRecording Clean the Output File, And Starts Over -
 /// Triggered when Recording Is toggled on - such that a fresh file is created Each Time
+/// \param strpostfix / Either food or tracks, added to the file name with a sequential Number
 /// \return  True if file opened Succesfully
 ///
-bool resetDataRecording(QFile& outdatafile)
+bool resetDataRecording(QFile& outdatafile,QString strpostfix)
 {
     closeDataFile(outdatafile); //
     //removeDataFile(outdatafile);
     //extract Post Fix
     QFileInfo fileInfFish(outdatafile);
 
-    if ( !openDataFile(fileInfFish.absoluteDir().absolutePath(),gstrvidFilename,outdatafile,"_tracks") )
+    if ( !openDataFile(fileInfFish.absoluteDir().absolutePath(),fileInfFish.completeBaseName(),outdatafile,strpostfix) )
     {
-        pwindow_main->LogEvent(QString("[Error] Opening Data Fish Tracks File"));
+        pwindow_main->LogEvent(QString("[Error] Opening Data " + strpostfix +" Tracks File"));
         return false;
     }
 
@@ -2546,9 +2546,13 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
     //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
     //dirOutPath.append(buff); //Append extension track and ROI number
     if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
-        dirOutPath = dirOutPath + fileVidCoreName+ ".csv";
+    {
+        fileVidCoreName = fileVidCoreName.left(fileVidCoreName.lastIndexOf("_"));
+        dirOutPath = dirOutPath + fileVidCoreName+ "_" + QString::number(Vcnt) +  ".csv";
+    }
     else
         dirOutPath = dirOutPath + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
+
     data.setFileName(dirOutPath);
     //Make Sure We do not Overwrite existing Data Files
     while (!newFile)
@@ -2570,25 +2574,23 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
             //Filename Is Like AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
                 //Increase Seq Number And Reconstruct Name
                 Vcnt++;
-                //sprintf(buff,"_tracks_%d.csv",Vcnt);
-                //dirOutPath = fiOut.absolutePath() + "/";
-                //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
-                //dirOutPath.append(buff); //Append extension track and ROI number
+                // If postfix (track / food) already there, then just add new number
                 if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
-                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName+ ".csv";
+                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + "_" + QString::number(Vcnt) + ".csv";
                 else
                     dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
 
 
 
                 data.setFileName(dirOutPath);
-                data.open(QFile::WriteOnly);
+                //data.open(QFile::WriteOnly)
+
             }
          }
     }
     if (!data.open(QFile::WriteOnly |QFile::Append))
     {
-        std::cerr << "Could not open output file : " << std::endl;
+        std::cerr << "Could not open output file : " << data.fileName().toStdString() << std::endl;
         return false;
     }else {
         //New File
@@ -2701,7 +2703,7 @@ int saveFoodTracks(fishModels& vfish,foodModels& vfood,QFile& fooddata,QString f
 
          if (pfood->isTargeted) //Only Log The Marked Food
          {
-            output << frameNumber << "\t" << 1 << "\t" << pfood->ID << "\t" << pfood->zTrack << "\n";
+            output << frameNumber << "\t" << pfood->ROIID << "\t" << pfood->ID << "\t" << pfood->zTrack << "\n";
 
             pfood->zTrack.pointStack.clear();
             pfood->zTrack.pointStack.shrink_to_fit();

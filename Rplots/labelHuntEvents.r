@@ -20,7 +20,7 @@ vHuntEventLabels <- c("UnLabelled","NA","Success","Fail","No_Target","Not_HuntMo
                       "Debri-Triggered","Near-Hunt State")
 huntLabels <- factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
 
-labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath)
+labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath,factorLabelFilter)
 {
   message(paste(NROW(datHuntEvent[datHuntEvent$huntScore >0,]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
   nLabelledSuccess <- NROW(datHuntEvent[datHuntEvent$huntScore == which(levels(huntLabels) == "Success") | datHuntEvent$huntScore == which(levels(huntLabels) == "Success-SpitBackOut"),])
@@ -31,7 +31,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
   {
     rec <- datHuntEvent[i,] 
     
-    if (rec$huntScore != 0  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
+    if (rec$huntScore != factorLabelFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
         next ##SKip Record if previously Labelled
 
     ##For Larva That Did not register any sufficient Hunting Events -  An Empty Record has been added To Acknowledge 
@@ -52,7 +52,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     message(paste("\n",i,". Examining Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
     ##--
-    strArgs = paste(" --ModelBG=0 --SkipTracked=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame,sep="")
+    strArgs = paste(" --ModelBG=0 --SkipTracked=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
     message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
     execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout="",stderr=TRUE)
     
@@ -121,6 +121,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
         rec <- datHuntEvent[i,]
         datHuntEvent<-rbind(rec,datHuntEvent)
         datHuntEvent[1,]$huntScore <- 0 ##Set To Unlabellled and let 
+        message("-Event Cloned - Moved pointer to the Clone.");
         i <- 1 ##Start From Top Again
         next
       }
@@ -183,4 +184,8 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
   return(datHuntEvent)
   
 }
+
+
+
+
 

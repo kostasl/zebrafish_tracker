@@ -14,7 +14,8 @@
 #include <QDir>
 #include <QDebug>
 
-//#include <cudaimgproc.hpp> //Template Matching
+
+//#include <opencv2/cudaimgproc.hpp> //Template Matching \todo Compile OpenCv With CUDA Support
 
 extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
@@ -326,7 +327,9 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTemp
         mtCacheRow = mtEnlargedCache(cv::Rect(0,0,FishTemplateCache.cols,FishTemplateCache.rows));
         FishTemplateCache.copyTo(mtCacheRow); //Copy Old Cache into New replacing that part of empty cache
         mtEnlargedCache.copyTo(FishTemplateCache); //Copy Back So gFishTemplateCache = mtEnlargedCache;
-        //mtEnlargedCache.deallocate();
+
+        mtEnlargedCache.release();
+//        mtEnlargedCache.deallocate();
     }
      //Fill The Last (New Row) In The Cache
     mtCacheRow = FishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl),fishTemplateVar.cols,fishTemplateVar.rows));
