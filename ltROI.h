@@ -85,7 +85,32 @@ public:
 
     }
 
-    bool contains(cv::Point pt)
+
+   void  drawMask(cv::Mat& frame)
+    {
+        if (mType == RoiType::Circle)
+        {
+           //cv::circle(frame,centre,radius,cv::Scalar(0,0,250),2);
+           cv::circle(frame,centre,radius,CV_RGB(255,255,255),-1);
+        }
+
+        if (mType == RoiType::Polygon)
+        {
+            //void fillPoly(Mat& img, const Point** pts, const int* npts, int ncontours, const Scalar& color, int lineType=8, int shift=0, Point offset=Point() )¶
+             //void fillConvexPoly(Mat& img, const Point* pts, int npts, const Scalar& color, int lineType=8, int shift=0)
+            cv::fillConvexPoly(frame,vPoints,CV_RGB(255,255,255));
+//            //Draw Anchor points
+//            for (std::vector<cv::Point>::iterator it = vPoints.begin() ; it != vPoints.end(); ++it)
+//            {
+//                cv::circle(frame,*it,1,cv::Scalar(0,0,250),2);
+
+//            }
+
+        }
+
+    }
+
+   bool contains(cv::Point pt)
     {
         if (mType == RoiType::Circle)
             return (cv::norm(pt - centre) < radius);

@@ -549,6 +549,15 @@ int main(int argc, char *argv[])
         ltROI rectRoi(vPolygon);
         vRoi.push_back(rectRoi);
      }
+      else //Make Default ROI Region
+    {
+        ptROI2.x = (640-gFishBoundBoxSize)/2;
+        ptROI2.y = gszTemplateImg.height/3;
+    //Add Global Roi - Center - Radius
+        ltROI newROI(cv::Point(640/2,520/2),ptROI2);
+        addROI(newROI);
+    }
+
 
     /// create Gaussian Smoothing kernels for Contour //
     getGaussianDerivs(sigma,M,gGaussian,dgGaussian,d2gGaussian);
@@ -873,7 +882,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         }
 
         //Combine Masks and Remove Stationary Learned Pixels From Mask
-        if (bStaticAccumulatedBGMaskRemove && !fgMask.empty())
+        if (bStaticAccumulatedBGMaskRemove && !fgMask.empty() ) //&& !bgMask.empty()
         {
            //cv::bitwise_not(fgMask,fgMask);
             //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
@@ -1239,21 +1248,13 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
 
         //Make Global Roi on 1st frame if it doesn't prexist
-        if (vRoi.size() == 0)
+        //Check If FG Mask Has Been Created - And Make A new One
+        if (bgMask.cols == 0)
         {
-            ptROI2.x = (frame.cols-gFishBoundBoxSize)/2;
-            ptROI2.y = gszTemplateImg.height/3;
-        //Add Global Roi - Center - Radius
-            ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
-            addROI(newROI);
+            bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+            // Drawing A ROI Mask Reduces Burden On Blob Detection, for out of ROI objects
+            vRoi.at(0).drawMask(bgMask);
 
-            //Check If FG Mask Has Been Created - And Make A new One
-            if (bgMask.cols == 0)
-            {
-                bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
-                // Add Roi To Mask Otherwise Make On Based oN ROI
-                cv::circle(bgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
-            }
         }
 
         //Pass Processed bgMask which Is then passed on to enhanceMask
