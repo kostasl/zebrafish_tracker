@@ -238,7 +238,7 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
     ## FOR EACH DATA FIle IN Group - Filter Data And combine into Single DataFrame For Group ##
     for (j in 1:nDat)
     {
-      procDatIdx = procDatIdx+1; ##INcreased Count Of Processed Files    
+      
       
       message(paste(j,". Filtering Data :",  temp[[j]]))
       procDatFrames = procDatFrames + length(TrackerData[[i]][[j]]$frameN);
@@ -270,62 +270,71 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
       stopifnot(!is.na(expID))
       stopifnot(!is.na(eventID))
       
-      ##FILTER Out NA values - Set to 0
-      #message(NROW(TrackerData[[i]][[j]][is.na(TrackerData[[i]][[j]]$EyeLDeg),]))
-      if (any(is.na(TrackerData[[i]][[j]]$Centroid_X)) )
+      
+      ## Separate Data For Each Prey ID recorded
+      vTrackPreyID <- unique(TrackerData[[i]][[j]]$foodID)
+      for (p in vTrackPreyID)
       {
-        ##Filter Out NA Values
-        TrackerData[[i]][[j]][is.na(TrackerData[[i]][[j]]$Centroid_X),]$Centroid_X <- 1000
-        message(paste("**NA Values Centroid_X of procDatIdx: ",procDatIdx, " will be set to 1000 in file:" , temp[[j]]))
-        warning(paste(" Food Position X  NA Values in procDatIdx:",procDatIdx,  temp[[j]]))
-      }
-      if (any(is.na(TrackerData[[i]][[j]]$Centroid_Y)) )
-      {
-        ##Filter Out NA Values
-        TrackerData[[i]][[j]][is.na(TrackerData[[i]][[j]]$Centroid_Y),]$Centroid_Y <- 1000
-        message(paste("**NA Values in Centroid_Y procDatIdx: ",procDatIdx, " will be setto 1000 in file:" , temp[[j]]))
-        warning(paste("Food Position Y NA Values in procDatIdx:",procDatIdx,  temp[[j]]))
-      }
-      
-      
-      if ( length(TrackerData[[i]][[j]]$frameN) > 1  )
-      {       
-        Nn <- length(TrackerData[[i]][[j]]$Centroid_X)
-        datProcessed[[procDatIdx]] = data.frame(Prey_X= medianf(TrackerData[[i]][[j]]$Centroid_X,nFrWidth),
-                                                Prey_Y= medianf(TrackerData[[i]][[j]]$Centroid_Y,nFrWidth),
-                                                frameN=TrackerData[[i]][[j]]$frameN,
-                                                ROI = TrackerData[[i]][[j]]$ROI,
-                                                fileIdx=rep(j,Nn),
-                                                expID=rep(expID,Nn),
-                                                eventID=rep(eventID,Nn),
-                                                larvaID=rep(larvaID,Nn),
-                                                trackID=rep(trackID,Nn),
-                                                PreyID =TrackerData[[i]][[j]]$foodID,
-                                                group=rep(i,Nn)
-        );
+        procDatIdx = procDatIdx+1; ##INcreased Count Of Processed Prey Track Data
         
-        groupDatIdx = groupDatIdx + 1; ##Count Of Files Containing Data
+        datPreyTracks <- TrackerData[[i]][[j]][TrackerData[[i]][[j]]$foodID == p,]
         
-      }   
-      else
-      {
-        ###No Records So add Empty Row - Such that Event And Larva Are on Record
-        datProcessed[[procDatIdx]] = data.frame(Prey_X= 180,
-                                                Prey_Y= 180,
-                                                frameN=0,
-                                                fileIdx=j,
-                                                expID=expID,
-                                                eventID=eventID,
-                                                larvaID=larvaID,
-                                                trackID=trackID,
-                                                PreyID = NA,
-                                                group=i
-        );
-        message(paste("No Data for ΕχpID",expID,"event ",eventID," larva ",larvaID, " TrackNo",trackID))
+        ##FILTER Out NA values - Set to 0
+        #message(NROW(TrackerData[[i]][[j]][is.na(TrackerData[[i]][[j]]$EyeLDeg),]))
+        if (any(is.na(datPreyTracks$Centroid_X)) )
+        {
+          ##Filter Out NA Values
+          datPreyTracks[is.na(datPreyTracks$Centroid_X),]$Centroid_X <- 1000
+          message(paste("**NA Values Centroid_X of procDatIdx: ",procDatIdx, " will be set to 1000 in file:" , temp[[j]]))
+          warning(paste(" Food Position X  NA Values in procDatIdx:",procDatIdx,  temp[[j]]))
+        }
+        if (any(is.na(datPreyTracks$Centroid_Y)) )
+        {
+          ##Filter Out NA Values
+          datPreyTracks[is.na(datPreyTracks$Centroid_Y),]$Centroid_Y <- 1000
+          message(paste("**NA Values in Centroid_Y procDatIdx: ",procDatIdx, " will be setto 1000 in file:" , temp[[j]]))
+          warning(paste("Food Position Y NA Values in procDatIdx:",procDatIdx,  temp[[j]]))
+        }
         
-      }
+        
+        if ( length(datPreyTracks$frameN) > 1  )
+        {       
+          Nn <- length(datPreyTracks$Centroid_X)
+          datProcessed[[procDatIdx]] = data.frame(Prey_X= medianf(datPreyTracks$Centroid_X,nFrWidth),
+                                                  Prey_Y= medianf(datPreyTracks$Centroid_Y,nFrWidth),
+                                                  frameN=datPreyTracks$frameN,
+                                                  ROI = datPreyTracks$ROI,
+                                                  fileIdx=rep(j,Nn),
+                                                  expID=rep(expID,Nn),
+                                                  eventID=rep(eventID,Nn),
+                                                  larvaID=rep(larvaID,Nn),
+                                                  trackID=rep(trackID,Nn),
+                                                  PreyID =datPreyTracks$foodID,
+                                                  group=rep(i,Nn)
+          );
+          
+          groupDatIdx = groupDatIdx + 1; ##Count Of Files Containing Data
+          
+        }   
+        else
+        {
+          ###No Records So add Empty Row - Such that Event And Larva Are on Record
+          datProcessed[[procDatIdx]] = data.frame(Prey_X= 180,
+                                                  Prey_Y= 180,
+                                                  frameN=0,
+                                                  fileIdx=j,
+                                                  expID=expID,
+                                                  eventID=eventID,
+                                                  larvaID=larvaID,
+                                                  trackID=trackID,
+                                                  PreyID = NA,
+                                                  group=i
+          );
+          message(paste("No  Prey Track Data for ΕχpID",expID,"event ",eventID," larva ",larvaID, " TrackNo",trackID))
+          
+        }
       
-      
+      }#### For Each Prey Id In Food File
       
       ## Report NA Values ##
       if (any(is.na(datProcessed[[procDatIdx]] ) ))

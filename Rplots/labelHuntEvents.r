@@ -18,7 +18,13 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
 vHuntEventLabels <- c("UnLabelled","NA","Success","Fail","No_Target","Not_HuntMode/Delete","Escape","Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike",
                       "Success-SpitBackOut",
                       "Debri-Triggered","Near-Hunt State")
-huntLabels <- factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+
+convertToScoreLabel <- function (huntScore) { 
+  return (factor(x=huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels ) )
+}
+
+huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+
 
 labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath,factorLabelFilter)
 {
@@ -30,6 +36,13 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
   for (i in  (1:NROW(datHuntEvent)) )
   {
     rec <- datHuntEvent[i,] 
+    
+    ##Added Later To Struct Is  A Flag that a Hunt Event Has been Retracked - adding the food target
+    if (any(names(datHuntEvent)=="markTracked")  ) ##This Marks Videos that have been Labelled and Retracked For anal
+      if (!is.na(rec$markTracked))
+        if (rec$markTracked == 1)
+      next ##SKip Record if previously Labelled
+    
     
     if (rec$huntScore != factorLabelFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
         next ##SKip Record if previously Labelled
@@ -52,7 +65,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     message(paste("\n",i,". Examining Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
     ##--
-    strArgs = paste(" --ModelBG=0 --SkipTracked=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    strArgs = paste(" --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
     message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
     execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout="",stderr=TRUE)
     
@@ -66,10 +79,16 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     ##Log Updates to Separate File ## 
     bColNames = FALSE
-  
-    while ( Keyc != 'c' & failInputCount < 3 | nchar(Keyc) > 1) #is.na(factor(levels(huntLabels)[as.numeric(Keyc)] ) ) 
+    ### MENU  LOOP ###
+    while ( (Keyc != 'c' | Keyc != 's')  & failInputCount < 3 | nchar(Keyc) > 1) #is.na(factor(levels(huntLabels)[as.numeric(Keyc)] ) ) 
     {
       l <- 0
+      
+      setLabel <- factor(x=rec$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )
+      message(paste("### Event's ",i, " Current Label is :",setLabel," ####" ) )
+      message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
+      
+      
       for (g in levels(huntLabels) )
       {
         message(paste(l,g,sep="-"))
@@ -81,21 +100,55 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       message(paste("c","End Labelling Process",sep="-"))
       l=l+1
       message(paste("n"," Add New Unlabelled Dublicate event",sep="-"))
+      l=l+1
+      message(paste("s"," Skip and proceeed to next",sep="-"))
+      l=l+1
+      message(paste("m"," Mark As Tracked (HuntEvent) ",sep="-"))
+      l=l+1
+      message(paste("u"," Mark As NOT Trackable (HuntEvent) ",sep="-"))
       
       
       failInputCount <- failInputCount + 1
-      Keyc <- readline(prompt="###Was this Hunt Succesfull? (# / c to END) :")
+      Keyc <- readline(prompt="### Was this Hunt Succesfull? (# / c to END) :")
       #message(paste(failInputCount,Keyc) )
       
       ##Check for Stop Loop Signal
-      print("###")
+      
+      ##Add Copy of this Event
+      if (Keyc == 's')## Unlabelled - Such that we can split / add new Hunting Event
+      {
+        
+        break
+      }
+      
+      if (Keyc == 'm') 
+      {
+        message(paste(Keyc,"~ Hunt Event ",i," Marked As Tracked for Detailed Analysis ~") )
+        rec$markTracked <- 1 ##Reduntant But Here for consistency
+        datHuntEvent[i,"markTracked"] <- 1
+        break; ##Stop Menu Loop
+        
+      }
+      
+      if (Keyc == 'u') 
+      {
+        message(paste(Keyc,"~ Hunt Event ",i," Marked As *UnTrackable* for Detailed Analysis ~") )
+        rec$markTracked <- -1 ##Reduntant But Here for consistency
+        datHuntEvent[i,"markTracked"] <- -1
+        break; ##Stop Menu Loop
+        
+      }
+      
+      
       if (Keyc == 'c') 
       {
         message(paste(Keyc,"~End Label Process Here") )
         rec$huntScore <- 0
         return(datHuntEvent)
         
-      }else {
+      }
+      if (is.numeric(Keyc))
+      {
         rec$huntScore <- as.numeric(Keyc) ##factor(levels(huntLabels)[as.numeric(c)]
       }
       ##Fix Frame Range Manually
@@ -132,7 +185,8 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
 
     } ##End Menu Loop
     
-
+    
+      
     datHuntEvent[i,"huntScore"] <-rec$huntScore
     message(datHuntEvent[i,"huntScore"])
      if (rec$huntScore == (which(levels(huntLabels)=="Success")-1) )
@@ -147,7 +201,13 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
      {
        message("~Failed To Capture Prey")
      }
-    # 
+    
+    if (Keyc == 's')
+    {
+      message(" SKIP, and label next one " )
+      next ##Skip To Next
+    }
+    
     if (Keyc == 'c')  ##Stop Event Loop Here if c was pressed
     {
       message(" Stop Labelling Loop Here " )

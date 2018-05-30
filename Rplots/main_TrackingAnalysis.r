@@ -161,7 +161,6 @@ source("plotHuntStat.r")
 ###
   source("plotMotionStat.r")
 
-  
   source("labelHuntEvents.r")
 
 #### LABEL MANUALLY THE HUNT EVENTS WITH THE HELP OF THE TRACKER ###
@@ -175,6 +174,7 @@ message(paste(" Loading Hunt Events: ",strDataFileName))
 ##ExPORT 
 load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 TargetLabel = which(vHuntEventLabels == "Success")-1;
+
 datHuntEvent <- labelHuntEvents(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackeroutPath, TargetLabel)
 ##Saving is done in labelHuntEvent on Every loop - But repeated here
 save(datHuntEvent,file=paste(strDatDir,"/",strDataFileName,"-backup.RData",sep="" )) ##Save With Dataset Idx Identifier
@@ -191,7 +191,7 @@ message(paste("Saved Backup :",strDatDir,"/",strDataFileName,"-backup.RData",sep
 gc <- "LL"
 strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
 load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
 message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
 tblLLStat <- table(datHuntEvent$huntScore)
 write.csv(tblLLStat,file="tbLLHuntLabelStat.csv")
@@ -203,7 +203,7 @@ nSuccessLL <- tblLLStat[[3]]+tblLLStat[[12]]
 gc <- "NL"
 strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
 load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
 message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
 tblNLStat <- table(datHuntEvent$huntScore)
 write.csv(tblNLStat,file="tbNLHuntLabelStat.csv")
@@ -215,7 +215,7 @@ nSuccessNL <- tblNLStat[[3]]+tblNLStat[[12]]
 gc <- "DL"
 strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
 load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
 message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
 tblDLStat <- table(datHuntEvent$huntScore)
 write.csv(tblDLStat,file="tbDLHuntLabelStat.csv")

@@ -156,19 +156,36 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
 renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
 {
   X11()
-  for (i in seq(1,NROW(datHuntEventMergedFrames),speed) )
+  startFrame <- min(datHuntEventMergedFrames$frameN)
+  endFrame <- max(datHuntEventMergedFrames$frameN)
+  for (i in seq(startFrame,endFrame,speed) )
   {
-    tR = (1: min( c(i,NROW(datHuntEventMergedFrames) ) ) )
-    posX = datHuntEventMergedFrames[max(tR),]$posX
-    posY = 640-datHuntEventMergedFrames[max(tR),]$posY
-    bearingRad = pi/180*(datHuntEventMergedFrames[max(tR),]$BodyAngle-90)##+90+180
-    posVX = posX+cos(bearingRad)*15
-    posVY = posY-sin(bearingRad)*15
+    tR = (startFrame: min( c(i,endFrame ) ) )
+    ##Multiple Copies Of Fish Can Exist As its Joined the Food Records, when tracking more than one Food Item.
+    ## Thus When Rendering the fish Choose one of the food items that appears in the current frame range
     
-    plot(datHuntEventMergedFrames[tR,]$posX,640-datHuntEventMergedFrames[tR,]$posY,xlim=c(20,480),ylim=c(0,600),col="black",cex = .5,type='l',xlab="X",ylab="Y")
+    
+    
+    datFishFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN %in% tR,] ##in Range
+    vTrackedPreyIDs <- unique(datFishFrames$PreyID)
+    preyTargetID <- max(vTrackedPreyIDs) ##Choose The max Id One
+    ##Now Isolate Fish Rec, Focus on Single Prey Item
+    datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID,]
+    recLastFishFrame <- datFishFrames[datFishFrames$frameN == i,]
+    
+    
+    
+    posX = recLastFishFrame$posX
+    posY = 640-recLastFishFrame$posY
+    bearingRad = pi/180*(recLastFishFrame$BodyAngle-90)##+90+180
+    posVX = posX+cos(bearingRad)*13
+    posVY = posY-sin(bearingRad)*13
+    
+    ##Plot Track
+    plot(datFishFrames$posX,640-datFishFrames$posY,xlim=c(20,480),ylim=c(0,600),col="black",cex = .5,type='l',xlab="X",ylab="Y")
+    ##Plot Current Frame Position
     points(posX,posY,col="black",pch=16)
-    lines(datHuntEventMergedFrames[tR,]$Prey_X,640-datHuntEventMergedFrames[tR,]$Prey_Y,col="red")
-    points(datHuntEventMergedFrames[max(tR),]$Prey_X,640-datHuntEventMergedFrames[max(tR),]$Prey_Y,col="red",pch=16)
+    
     arrows(posX,posY,posVX,posVY)
     
     ##Draw Eyes 
@@ -178,33 +195,43 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     ## (see Bianco et al. 2011) : "the functional retinal field as 163˚ after Easter and Nicola (1996)."
     iConeArc = 163/2 ##Degrees Of Assumed Half FOV of Each Eye
     ##Eye Distance taken By Bianco As 453mum, ie 0.5mm , take tracker
-    EyeDist = 0.25/DIM_MMPERPX ##From Head Centre
-    LEyePosX <- posX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90))*EyeDist
-    LEyePosY <- posY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90))*EyeDist
+    EyeDist = 0.4/DIM_MMPERPX ##From Head Centre
+    LEyePosX <- posX-cos(bearingRad+pi/180*(45+90))*EyeDist
+    LEyePosY <- posY+sin(bearingRad+pi/180*(45+90))*EyeDist
     
     LEyeConeX <- c(LEyePosX,
-                   LEyePosX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90-iConeArc))*iConeLength,
-                   LEyePosX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90+iConeArc))*iConeLength )
+                   LEyePosX-cos(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90-iConeArc))*iConeLength,
+                   LEyePosX-cos(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90+iConeArc))*iConeLength )
     
     LEyeConeY <- c(LEyePosY,
-                   LEyePosY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90-iConeArc))*iConeLength,
-                   LEyePosY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle+90+iConeArc))*iConeLength )
+                   LEyePosY+sin(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90-iConeArc))*iConeLength,
+                   LEyePosY+sin(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90+iConeArc))*iConeLength )
     polygon(LEyeConeX,LEyeConeY,col="red") #density=20,angle=45
 
     ##Right Eye
-    REyePosX <- posX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle-90))*EyeDist
-    REyePosY <- posY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$LEyeAngle-90))*EyeDist
+    REyePosX <- posX-cos(bearingRad+pi/180*(-45-90))*EyeDist
+    REyePosY <- posY+sin(bearingRad+pi/180*(-45-90))*EyeDist
     
     REyeConeX <- c(REyePosX,
-                   REyePosX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$REyeAngle-90-iConeArc))*iConeLength,
-                   REyePosX-cos(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$REyeAngle-90+iConeArc))*iConeLength )
+                   REyePosX-cos(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90-iConeArc))*iConeLength,
+                   REyePosX-cos(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90+iConeArc))*iConeLength )
     
     REyeConeY <- c(REyePosY,
-                   REyePosY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$REyeAngle-90-iConeArc))*iConeLength,
-                   REyePosY+sin(bearingRad+pi/180*(datHuntEventMergedFrames[max(tR),]$REyeAngle-90+iConeArc))*iConeLength )
+                   REyePosY+sin(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90-iConeArc))*iConeLength,
+                   REyePosY+sin(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90+iConeArc))*iConeLength )
     polygon(REyeConeX,REyeConeY,col="green") ##,density=25,angle=-45
     
         
+    
+    ###Draw Prey
+    
+    for (f in vTrackedPreyIDs)
+    {
+      lastPreyFrame <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN == i & datHuntEventMergedFrames$PreyID == f,]
+      rangePreyFrame <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN >= startFrame & datHuntEventMergedFrames$frameN <= i & datHuntEventMergedFrames$PreyID == f,]
+      points(lastPreyFrame$Prey_X,640-lastPreyFrame$Prey_Y,col="red",pch=16)
+      lines(rangePreyFrame$Prey_X,640-rangePreyFrame$Prey_Y,col="red")
+    }
    }
 }
 
