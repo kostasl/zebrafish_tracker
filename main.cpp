@@ -245,6 +245,7 @@ bool bDraggingTemplateCentre = false;
 bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
 bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
+
 bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
@@ -300,7 +301,7 @@ int compString(QString str1,QString str2)
 
 int main(int argc, char *argv[])
 {
-    bROIChanged = false;
+    bROIChanged = true;
     bPaused = false;
     bshowMask = false;
     bTracking = true; //Start By Tracking by default
@@ -881,8 +882,9 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
             cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
         }
 
+
         //Combine Masks and Remove Stationary Learned Pixels From Mask
-        if (bStaticAccumulatedBGMaskRemove && !fgMask.empty() ) //&& !bgMask.empty()
+        if (bStaticAccumulatedBGMaskRemove && !fgMask.empty() && !bgMask.empty() )//Although bgMask Init To zero, it may appear empty here!
         {
            //cv::bitwise_not(fgMask,fgMask);
             //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
@@ -1075,7 +1077,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 {
 
     //Speed that stationary objects are removed
-    cv::Mat frame,outframe,outframeHead;
+    cv::Mat frame,outframe,outframeHead,bgROIMask,bgMaskWithRoi;
     unsigned int nFrame = 0;
     unsigned int nErrorFrames = 0;
     outframeHead = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
@@ -1090,6 +1092,9 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     //Make Variation of FileNames for other Output
 
     //QString trkoutFileCSV = outFileCSV;
+
+    //Make Global Roi on 1st frame if it doesn't prexist
+    //Check If FG Mask Has Been Created - And Make A new One
 
 
 
@@ -1241,24 +1246,27 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
         pwindow_main->LogEvent(QString("[info]>> Video Paused<<"));
     }
 
+    nErrorFrames = 0;
+
+    if (bROIChanged)
+    {
+        bgROIMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+        vRoi.at(0).drawMask(bgROIMask);
+    }
+
+    if (bgMask.cols == 0)
+    {
+       bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+    }
+    //Combine Roi Mask With BgAccumulated Mask
+    cv::bitwise_or(bgROIMask,bgMask,bgMaskWithRoi);
 
 
 
-        nErrorFrames = 0;
 
-
-        //Make Global Roi on 1st frame if it doesn't prexist
-        //Check If FG Mask Has Been Created - And Make A new One
-        if (bgMask.cols == 0)
-        {
-            bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
-            // Drawing A ROI Mask Reduces Burden On Blob Detection, for out of ROI objects
-            vRoi.at(0).drawMask(bgMask);
-
-        }
 
         //Pass Processed bgMask which Is then passed on to enhanceMask
-        processFrame(window_main,frame,bgMask,nFrame,outframe,outframeHead);
+        processFrame(window_main,frame,bgMaskWithRoi,nFrame,outframe,outframeHead);
         if (bRenderToDisplay)
         {
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window

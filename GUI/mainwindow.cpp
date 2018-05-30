@@ -27,6 +27,7 @@ extern double gdMOGBGRatio;
 extern bool bTrackFood;
 extern bool bTracking;
 extern bool bExiting;
+extern bool bROIChanged;//Signalled So Mask ROI Can be drawn Again In ProcessFrame
 extern bool bRecordToFile;
 
 bool bSceneMouseLButtonDown;
@@ -634,6 +635,7 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
     {   //Update Point - Bound it from Periphery - OtherWise TemplateMatch Fails due to Small Image Crop at boundary
         ptDrag->x = std::max(gFishBoundBoxSize, std::min(frameScene.cols - gFishBoundBoxSize,ptMouse.x));
         ptDrag->y = std::max(gFishBoundBoxSize, std::min(frameScene.rows - gFishBoundBoxSize,ptMouse.y));
+        bROIChanged = true;
     }
     else
         ptDrag = 0;
