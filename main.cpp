@@ -68,10 +68,18 @@
 #include "opencv2/core/utility.hpp"
 //#include <opencv2/bgsegm.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d.hpp>
 #include <opencv2/video/background_segm.hpp>
 
 #include <opencv2/core/ocl.hpp> //For setting setUseOpenCL
+
+/// CUDA //
+//#include "opencv2/cudaarithm.hpp"
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/photo/cuda.hpp>
+#include <opencv2/core/cuda_types.hpp>
+
 
 #include <GUI/mainwindow.h>
 ///Curve Smoothing and Matching
@@ -864,8 +872,15 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         ///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
         ///
         if (bRemovePixelNoise)
+        {
+#if defined(HAVE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+         cv::cuda::GpuMat dgray;
+         cv::cuda::fastNlMeansDenoising(cv::cuda::GpuMat(frame_gray), dgray,2.0, 21,7);
+         dgray.download(frame_gray);
+#else
             cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
-
+#endif
+        }
         // Update BG Substraction Model /Check For OCL Error
 
         //Check If BG Ratio Changed
