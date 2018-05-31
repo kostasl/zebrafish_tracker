@@ -574,21 +574,22 @@ int main(int argc, char *argv[])
 
     /// create Background Subtractor objects
     //(int history=500, double varThreshold=16, bool detectShadows=true
+
+    /// CUDA Version Of BG MOG //
+#if defined(HAVE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+    pMOG2 = cv::cuda::createBackgroundSubtractorMOG2(MOGhistory,20,false);
+#else
     //OPENCV 3
     pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 20,false);
+#endif
+
+
     pMOG2->setHistory(MOGhistory);
     pMOG2->setNMixtures(20);
     pMOG2->setBackgroundRatio(gdMOGBGRatio); ///
-    //pMOG2->setShadowValue(255);
-
-    //double dmog2TG = pMOG2->getVarThresholdGen();
-    //pMOG2->setVarThresholdGen(1.0);
-    //double dmog2VT = pMOG2->getVarThreshold();
-    //pMOG2->setVarThreshold(3.0);
 
     ///////////////////////////////////////
     /// Setup Fish Body Template Cache //
-
     int idxTempl;
 
     for (idxTempl=0; idxTempl<nTemplatesToLoad;idxTempl++)
