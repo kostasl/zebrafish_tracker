@@ -15,6 +15,7 @@ extern bool bPaused;
 extern bool bStoreThisTemplate;
 extern bool bDraggingTemplateCentre;
 extern bool bStartFrameChanged;
+extern bool bBlindSourceTracking;// Do Not Show File Names
 extern int g_Segthresh;
 extern int gthresEyeSeg;
 extern int gi_maxEllipseMajor;

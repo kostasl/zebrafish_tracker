@@ -273,6 +273,7 @@ bool bStartFrameChanged = false; /// When True, the Video Processing loop stops 
 
 bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
+bool bBlindSourceTracking = false; /// Used for Data Labelling, so as to hide the data source/group/condition
 bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
 bool gbUseBGModelling                     = true; ///Use BG Modelling TO Segment FG Objects
 bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
@@ -403,7 +404,10 @@ int main(int argc, char *argv[])
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
         "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking Note:BGProcessing does it by default)}"
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
+        "{EnableCuda cuda | 1  | Use CUDA for MOG, and mask processing - if available  }"
+        "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
         ;
+
 
     cv::CommandLineParser parser(argc, argv, keys);
 
@@ -514,6 +518,9 @@ int main(int argc, char *argv[])
 
     if (parser.has("startpaused"))
             bStartPaused = (parser.get<int>("startpaused") == 1)?true:false;
+
+    if (parser.has("HideDataSource"))
+           bBlindSourceTracking = (parser.get<int>("HideDataSource") == 1)?true:false;
 
 
 
@@ -640,18 +647,6 @@ int main(int argc, char *argv[])
     kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
 
 
-    //unsigned int hWnd = cvGetWindowHandle(sgstrwinName);
-//    try{ //Check If cv is compiled with QT support //Remove otherwise
-//        cv::setWindowTitle(strwinName, outfilename.toStdString());
-
-//     //trackVideofiles(window_main);
-
-//    }catch(int e)
-//    {
-//        std::cerr << "OpenCV not compiled with QT support! can display overlay" <<std::endl;
-//    }
-
-    //trackImageSequencefiles(window_main);
     try{
 
         //app.exec();
@@ -800,7 +795,10 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
            gbUpdateBGModel = true;
 
        QFileInfo fiVidFile(invideoname);
-       window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
+       if (bBlindSourceTracking)
+          window_main.setWindowTitle("Labelling Hunt Event");
+       else
+         window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
        window_main.nFrame = 0;
        window_main.tickProgress(); //Update Slider
 
@@ -1159,8 +1157,13 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     window_main.setTotalFrames(totFrames);
     window_main.nFrame = nFrame;
-    window_main.LogEvent(" **Begin Processing: " + videoFilename);
-    std::cout << " **Begin Processing: " << videoFilename.toStdString() << std::endl; //Show Vid Name To StdOUt
+    if (!bBlindSourceTracking)
+    {
+        window_main.LogEvent(" **Begin Processing: " + videoFilename);
+        std::cout << " **Begin Processing: " << videoFilename.toStdString() << std::endl; //Show Vid Name To StdOUt
+     }else
+        window_main.LogEvent("** Begin Processing of video file ** ");
+
     window_main.stroutDirCSV = gstroutDirCSV;
     window_main.vidFilename = videoFilename;
     QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames) + " Start:" + QString::number(startFrameCount));
@@ -2648,6 +2651,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
         return false;
     }else {
         //New File
+        if (!bBlindSourceTracking)
         std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
 
         //output.flush();
@@ -2663,13 +2667,18 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
 void closeDataFile(QFile& data)
 {
     data.close();
-    std::clog << gTimer.elapsed()/60000 << " Closed Output File " << data.fileName().toStdString() << std::endl;
+    if (bBlindSourceTracking)
+        std::clog << gTimer.elapsed()/60000 << " Closed Output File " << std::endl;
+    else
+        std::clog << gTimer.elapsed()/60000 << " Closed Output File " << data.fileName().toStdString() << std::endl;
 }
 
 void removeDataFile(QFile& data)
 {
-
-   std::clog << gTimer.elapsed()/60000 << "[Warning] Deleting Output File " << data.fileName().toStdString() << std::endl;
+    if (bBlindSourceTracking)
+        std::clog << gTimer.elapsed()/60000 << "[Warning] Deleting Output File " << std::endl;
+    else
+        std::clog << gTimer.elapsed()/60000 << "[Warning] Deleting Output File " << data.fileName().toStdString() << std::endl;
 
    if (data.exists())
     data.deleteLater();
@@ -4078,128 +4087,6 @@ void process_mem_usage(double& vm_usage, double& resident_set)
    resident_set = rss * page_size_kb;
 }
 
-
-///////////////////// For Image Sequence /////////////
-
-
-//unsigned int trackImageSequencefiles(MainWindow& window_main)
-//{
-
-//    cv::Mat frame,frameMasked,fgMask,outframe,outframeHead;
-
-//    QString inVideoDirname = QFileDialog::getExistingDirectory(&window_main,"Select folder with video images to track", gstroutDirCSV);
-
-//    //unsigned int istartFrame = 0;
-//    unsigned int nFrame = 0;
-
-//    QStringList strImageNames; //Save Passed Files Here
-
-//    qDebug() << "Open File Sequence in : " << inVideoDirname;
-
-//        ///* Obtain BG Model LOOP//////////////
-//        //QDirIterator itBGimgDir(inVideoDirname, QDirIterator::Subdirectories);
-//        QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
-//        QStringList imgFiles = QDir(inVideoDirname).entryList(fileFilters,QDir::Files,QDir::Name);
-//        inVideoDirname.append('/');
-//        QListIterator<QString> itfile (imgFiles);
-//        while (itfile.hasNext() && !bExiting)
-//        {
-//          QString filename = itfile.next();
-//          qDebug() << filename;
-//          std::string filepath = filename.prepend(inVideoDirname ).toStdString();
-//          //std::cout << filepath << std::endl;
-
-//          frame  = cv::imread(filepath , CV_LOAD_IMAGE_COLOR);
-//          //Contrast Brightness
-//          //frame.convertTo(frame, -1, 1, 0); //increase the contrast (double)
-
-
-//          nFrame++;
-//          window_main.nFrame = nFrame;
-//          if (!updateBGFrame(frame,fgMask,nFrame)) //Stop when BG learning says so
-//            break;
-
-//          /// Display Output //
-//          frameMasked = cv::Mat::zeros(frameMasked.rows, frameMasked.cols, CV_8U);
-//          frame.copyTo(frameMasked,fgMask);
-
-//          ///Display Output
-//          cv::imshow(gstrwinName,frameMasked);
-//          //cv::displayOverlay(gstrwinName,"Press 'e' when features Have been detected" , 10000 );
-
-//          window_main.showVideoFrame(frame,nFrame); //Show On QT Window
-//          //cv::imshow(gstrwinName + " FG Mask", fgMask);
-//          //Check For input Control
-//          //keyboard = cv::waitKey( cFrameDelayms );
-//          checkPauseRun(&window_main,keyboard,nFrame);
-//        }
-
-
-//    ///\brief LOOP Tracking Process images with Obtained BG Model - Now Start over images afresh
-//    nFrame = 0;
-//    window_main.nFrame = nFrame;
-
-//    //Show Video list to process
-//    //Go through Each Video - Hold Last Frame N , make it the start of the next vid.
-//    std::cout << "Starting Tracking  processing" << std::endl;
-
-//    itfile.toFront();
-//    while (itfile.hasNext() && !bExiting)
-//    {
-//      QString filename = itfile.next();
-//      qDebug() << filename;
-//      std::string filepath = filename.prepend(inVideoDirname).toStdString();
-
-//      //std::cout << filepath << std::endl;
-
-//       frame  = cv::imread(filepath , CV_LOAD_IMAGE_COLOR);
-//       if (!frame.data)
-//       {
-//            std::cerr << "Could not open next Image frame." << std::endl;
-//            std::exit(EXIT_FAILURE);
-//       }
-//       //if (frame.depth() < 3) //Need To increase depth if we are to paint on this frame
-//       //     cv::cvtColor( frame, frame, cv::COLOR_GRAY2RGB);
-
-//       //Contrast Brightness
-//       //frame.convertTo(frame, -1, 1.2, 0); //increase the contrast (double)
-//       nFrame++;
-//       window_main.nFrame = nFrame;
-
-//              //Make Global Roi on 1st frame
-//       if (nFrame == 1)
-//       {
-//           //Add Global Roi
-//           ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
-//           addROI(newROI);
-//       }
-
-//      // std::cout << " Now Processing : "<< itimgDir.fileName().toStdString() ;
-
-//       /// Frame The Fish ///
-//       frameMasked = cv::Mat::zeros(frame.rows, frame.cols,frame.type());
-//       frame.copyTo(frameMasked,fgMask);
-
-
-//       processFrame(window_main,frame,fgMask,nFrame,outframe,outframeHead);
-//       cv::imshow(gstrwinName + " FishOnly",frameMasked);
-
-//       /// Display Output //
-//       window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
-
-//       if (bshowMask)
-//       {
-//            cv::imshow(gstrwinName + " FG Mask", fgMask);
-//            //cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish); //The Circle mask
-//       }
-
-
-//       window_main.setWindowTitle("Tracking:" + filename);
-//       //keyboard = cv::waitKey( cFrameDelayms );
-//       checkPauseRun(&window_main,keyboard,nFrame);
-//    }
-//    return nFrame;
-//}///trackImageSequencefiles
 
 
 
