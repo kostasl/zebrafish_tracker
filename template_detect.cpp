@@ -244,7 +244,6 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 
         //Assume Value < 0.7 is non Fish,
 
-
         if (maxGVal < maxVal)
         {
             maxGVal         = maxVal;

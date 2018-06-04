@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
-        "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking Note:BGProcessing does it by default)}"
+        "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)}"
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
         "{EnableCuda cuda | 1  | Use CUDA for MOG, and mask processing - if available  }"
         "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
@@ -413,10 +413,10 @@ int main(int argc, char *argv[])
 
     stringstream ssMsg;
     ssMsg<<"Zebrafish Behavioural Video Tracker"<< std::endl;
-    ssMsg<<"--------------------------"<<std::endl;
+    ssMsg<<"--------------------------" << std::endl;
     ssMsg<<"Author : Konstantinos Lagogiannis 2017"<<std::endl;
     ssMsg<<"./zebraprey_track <outfolder> <inVideoFile> <startframe=1> <stopframe=0> <duration=inf>"<<std::endl;
-    ssMsg<<"(note: folder is automatically generated when absent)"<<std::endl;
+    ssMsg<<"(note: output folder is automatically generated when absent)"<<std::endl;
     ssMsg << "Example: \n  Use checkFilesProcessed.sh script to generate list of videos to processes then execute as : " << std::endl;
     ssMsg << "./zebrafish_track -f=VidFilesToProcessSplit1.txt -o=/media/kostasl/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/Tracked30-11-17/" << std::endl;
 
@@ -514,7 +514,10 @@ int main(int argc, char *argv[])
         bMakeCustomROIRegion = (parser.get<int>("PolygonROI") == 1)?true:false;
 
     if (parser.has("FilterPixelNoise"))
+    {
         bRemovePixelNoise = (parser.get<int>("FilterPixelNoise") == 1)?true:false;
+        std::clog << "Remove Pixel Noise Filter Is On" << std::endl;
+    }
 
     if (parser.has("startpaused"))
             bStartPaused = (parser.get<int>("startpaused") == 1)?true:false;
@@ -881,47 +884,42 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         else
             frame.copyTo(frame_gray);
 
-        ///Remove Pixel Noise
-        ///
-        ///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.
-        ///        dst – Output image with the same size and type as src .
-        ///       templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels
-        ////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels
-        ///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
-        ///
-        if (bRemovePixelNoise)
-        {
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
          dframe_gray.upload(frame_gray);
-         cv::cuda::fastNlMeansDenoising(dframe_gray, dframe_gray,2.0, 21,7);
-         dframe_gray.download(frame_gray);
+         if (bRemovePixelNoise)
+         {        ///Remove Pixel Noise
+             ///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.         ///        dst – Output image with the same size and type as src .         ///       templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels         ////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels         ///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise         ///
+            cv::cuda::fastNlMeansDenoising(dframe_gray, dframe_gray,2.0, 21,7);
+            dframe_gray.download(frame_gray);
+         }
+
          try{
             pMOG2->apply(dframe_gray,dframe_mask,dLearningRateNominal);
             dframe_mask.download(fgMask);
          }catch(...)
          {
-             std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
-             pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
-             cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+             pwindow_main->LogEvent("[Error] CUDA MOG2 failed");
+             //cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
          }
 #else
-            cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
+          if (bRemovePixelNoise)
+              cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
             //Check If BG Ratio Changed
 
-            try{
-                pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
-            }catch(...)
-            {
-            //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
-            //In That case make OpenCV With No CUDA or OPENCL support
-            //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
-            //A runtime Work Around Is given Here:
-                std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
-                pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
-                cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
-            }
-#endif
+        try{
+            pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+        }catch(...)
+        {
+        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
+        //In That case make OpenCV With No CUDA or OPENCL support
+        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
+        //A runtime Work Around Is given Here:
+            std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
+            pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+            cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
         }
+#endif
+
         // Update BG Substraction Model /Check For OCL Error
 
 
