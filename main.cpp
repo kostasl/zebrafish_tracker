@@ -1159,8 +1159,9 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     window_main.nFrame = nFrame;
     if (!bBlindSourceTracking)
     {
-        window_main.LogEvent(" **Begin Processing: " + videoFilename);
-        std::cout << " **Begin Processing: " << videoFilename.toStdString() << std::endl; //Show Vid Name To StdOUt
+        QFileInfo vidFileInfo(videoFilename);
+        window_main.LogEvent(" **Begin Processing: " + vidFileInfo.completeBaseName());
+        std::cout << " **Begin Processing: " << vidFileInfo.completeBaseName().toStdString() << std::endl; //Show Vid Name To StdOUt
      }else
         window_main.LogEvent("** Begin Processing of video file ** ");
 
