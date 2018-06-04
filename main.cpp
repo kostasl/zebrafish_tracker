@@ -62,7 +62,7 @@
 #include <QTime>
 
 //Open CV
-
+#include <opencv2/opencv_modules.hpp> //THe Cuda Defines are in here
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include "opencv2/core/utility.hpp"
@@ -75,7 +75,9 @@
 #include <opencv2/core/ocl.hpp> //For setting setUseOpenCL
 
 /// CUDA //
-//#include "opencv2/cudaarithm.hpp"
+/// #include <opencv2/opencv_modules.hpp> //THe Cuda Defines are in here
+#include "opencv2/cudaimgproc.hpp"
+#include "opencv2/cudaarithm.hpp"
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/photo/cuda.hpp>
 #include <opencv2/core/cuda_types.hpp>
@@ -174,6 +176,28 @@ QString gstroutDirCSV,gstrvidFilename; //The Output Directory
 
 //Global Matrices Used to show debug images
 cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
+
+//Morphological Kernels
+cv::Mat kernelOpen;
+cv::Mat kernelDilateMOGMask;
+cv::Mat kernelOpenfish;
+cv::Mat kernelClose;
+cv::Mat gLastfishimg_template;// OUr Fish Image Template
+cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
+//cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
+
+
+//Global CUda Utility Matrices Used to Tranfser Images To GPU
+// Defined here to save reallocation Time
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+         cv::cuda::GpuMat dMask; //Passed to MOG Cuda
+         cv::cuda::GpuMat dframe_gray; // For Denoising
+         cv::Ptr<cv::cuda::TemplateMatching> gpu_MatchAlg;// For Template Matching
+#endif
+
+
+
+
 cv::Size gszTemplateImg;
 
 //cv::Ptr<cv::BackgroundSubtractor> pMOG; //MOG Background subtractor
@@ -185,15 +209,6 @@ cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 Ptr<GeneralizedHough> pGHT;
 Ptr<GeneralizedHoughBallard> pGHTBallard;
 Ptr<GeneralizedHoughGuil> pGHTGuil;
-
-//Morphological Kernels
-cv::Mat kernelOpen;
-cv::Mat kernelDilateMOGMask;
-cv::Mat kernelOpenfish;
-cv::Mat kernelClose;
-cv::Mat gLastfishimg_template;// OUr Fish Image Template
-cv::UMat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
-//cv::Mat gEyeTemplateCache; //A mosaic image contaning copies of template across different angles
 
 /// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
 cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
@@ -576,8 +591,9 @@ int main(int argc, char *argv[])
     //(int history=500, double varThreshold=16, bool detectShadows=true
 
     /// CUDA Version Of BG MOG //
-#if defined(HAVE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
     pMOG2 = cv::cuda::createBackgroundSubtractorMOG2(MOGhistory,20,false);
+    gpu_MatchAlg = cv::cuda::createTemplateMatching(CV_8U, CV_TM_CCORR_NORMED);
 #else
     //OPENCV 3
     pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 20,false);
@@ -706,7 +722,7 @@ int main(int argc, char *argv[])
 
     app.quit();
     //Catch Any Mem Alloc Error
-    ///\note ever since I converted gFishCache to UMat, a deallocation error Is Hit
+    ///\note ever since I converted gFishCache to UMat, a deallocation error Is Hit - UMat was then Removed
     /// This Is  KNown But When OpenCL Is False https://github.com/opencv/opencv/issues/8693
     std::exit(EXIT_SUCCESS);
     return EXIT_SUCCESS;
@@ -874,29 +890,39 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         ///
         if (bRemovePixelNoise)
         {
-#if defined(HAVE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
-         cv::cuda::GpuMat dgray;
-         cv::cuda::fastNlMeansDenoising(cv::cuda::GpuMat(frame_gray), dgray,2.0, 21,7);
-         dgray.download(frame_gray);
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+         dframe_gray.upload(frame_gray);
+         cv::cuda::fastNlMeansDenoising(dframe_gray, dframe_gray,2.0, 21,7);
+         dframe_gray.download(frame_gray);
+         try{
+            pMOG2->apply(dframe_gray,dMask,dLearningRateNominal);
+            dMask.download(fgMask);
+         }catch(...)
+         {
+             std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
+             pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+             cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+         }
 #else
             cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
+            //Check If BG Ratio Changed
+
+            try{
+                pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+            }catch(...)
+            {
+            //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
+            //In That case make OpenCV With No CUDA or OPENCL support
+            //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
+            //A runtime Work Around Is given Here:
+                std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
+                pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+                cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+            }
 #endif
         }
         // Update BG Substraction Model /Check For OCL Error
 
-        //Check If BG Ratio Changed
-        try{
-            pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
-        }catch(...)
-        {
-        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
-        //In That case make OpenCV With No CUDA or OPENCL support
-        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
-        //A runtime Work Around Is given Here:
-            std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
-            pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
-            cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
-        }
 
 
         //Combine Masks and Remove Stationary Learned Pixels From Mask
@@ -1416,8 +1442,8 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     if (findBestMatch)
         pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
-    cv::UMat fishRegionP = fishRegion.getUMat(cv::ACCESS_READ);
-    int AngleIdx = templatefindFishInImage(fishRegionP,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
+
+    int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
 
     detectedAngle =AngleIdx*gFishTemplateAngleSteps;
 
@@ -1649,8 +1675,8 @@ void UpdateFishModelsOrig(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,
         if (findBestMatch)
             pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
-        cv::UMat fishRegionP = fishRegion.getUMat(cv::ACCESS_READ);
-        int AngleIdx = templatefindFishInImage(fishRegionP,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
+        //cv::UMat fishRegionP = fishRegion.getUMat(cv::ACCESS_READ);
+        int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
 
         int bestAngle =AngleIdx*gFishTemplateAngleSteps;
         cv::Point top_left = pBound1+gptmaxLoc;

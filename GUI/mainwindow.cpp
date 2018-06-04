@@ -95,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->ui->horizontalSlider->installEventFilter(this);
 
+    this->ui->actionTrack_Fish->setChecked(bTracking);
     createSpinBoxes();
     nFrame = 0;
 }
@@ -840,10 +841,14 @@ void MainWindow::on_actionTrack_Fish_triggered(bool checked)
         //iLastKnownGoodTemplateRow = 0; //Reset Row
         //iLastKnownGoodTemplateCol = 0;
         LogEvent(QString("Tracking ON"));
+        this->ui->actionTrack_Fish->setChecked(true);
     }else
+    {
         LogEvent(QString("Tracking OFF"));
+        this->ui->actionTrack_Fish->setChecked(false);
+    }
 
-    bTracking = checked;
+    bTracking=!bTracking;
 
 
 }

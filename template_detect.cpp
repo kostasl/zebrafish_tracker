@@ -9,10 +9,29 @@
 
 #include <template_detect.h>
 #include <larvatrack.h>
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include "opencv2/core/utility.hpp"
+#include <opencv2/highgui/highgui.hpp>
+
+
+/// CUDA //
+#include <opencv2/opencv_modules.hpp> //THe Cuda Defines are in here
+#include "opencv2/cudaimgproc.hpp"
+#include "opencv2/cudaarithm.hpp"
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/photo/cuda.hpp>
+#include <opencv2/core/cuda_types.hpp>
+
+#include <QString>
 #include <random>
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
+
+
+
 
 
 //#include <opencv2/cudaimgproc.hpp> //Template Matching \todo Compile OpenCv With CUDA Support
@@ -20,9 +39,13 @@
 extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
 extern int gnumberOfTemplatesInCache;
-extern cv::UMat gFishTemplateCache;
+extern cv::Mat gFishTemplateCache;
 extern MainWindow* pwindow_main;
 extern bool bTemplateSearchThroughRows;
+
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+    extern cv::Ptr<cv::cuda::TemplateMatching> gpu_MatchAlg;
+#endif
 
 static cv::Mat loadImage(const std::string& name)
 {
@@ -137,22 +160,28 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \param templRegion Rect of template img Size to look for within the larger template Cache
 /// \param startRow - Optimization So search begins from the most likely Template as of the last one
 /// \param startCol - Optimization So search begins from the most likely Template Angle
-/// \param findFirstMatch if true It Looks for 1st template that exceeds threshold - otherwise it looks for best match through all cache
+/// \param findFirstMatch if true It Looks for 1st template row that exceeds threshold - otherwise it looks for best match through all cache
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
 /// if Row scanning is disabled when bTemplateSearchThroughRows is not set
-/// Use of UMat for matchTemplate is superfluous , as the GPU is not Utilized - A function for this is included in the bottom of the file.
-int templatefindFishInImage(cv::UMat& imgGreyIn,cv::UMat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
+/// Use of UMat for matchTemplate is superfluous , as the GPU is not Utilized and it causes a dealloc mem bug to trigger -  Removed UMat
+/// A gpuAssisted  function for this is included in the bottom of the file.
+int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
 {
   const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
   int matchColIdx = 0;
   int Colidx = 0; //Current Angle Index Being tested in the loop
 
-  assert(!imgGreyIn.empty());
+  assert(!imgRegionIn.empty());
   assert(templSz.height*startRow <= imgtemplCache.rows);
   assert(templSz.width*startCol <= imgtemplCache.cols);
 
   //startRow = 0;
   cv::Mat templ_rot; //The Matched template
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+        cv::cuda::GpuMat dimgRegionIn(imgRegionIn);
+#endif
+
+
   int idRow = startRow;
   int ibestMatchRow  = startRow;
   double minVal;
@@ -172,8 +201,8 @@ int templatefindFishInImage(cv::UMat& imgGreyIn,cv::UMat& imgtemplCache,cv::Size
   if (startCol > iIdxAngleMargin)
       startCol -=iIdxAngleMargin; //Move to Template 3Angle Steps anticlockwise
 
-
-  if (findFirstMatch)
+ //Best Match Flag Forces A Full Search Through the Cache
+  if (findFirstMatch) //Reset Search To Start From Top
   {
       startRow = 0;
       idRow = 0;
@@ -198,14 +227,24 @@ int templatefindFishInImage(cv::UMat& imgGreyIn,cv::UMat& imgtemplCache,cv::Size
        /// Run Throught each  *Columns/Angle* (Ie Different Angles of this template
       //for (int i=templSz.width*startCol; i<imgtempl.cols;i+=templRegion.width)
 
-      while(templRegion.x < imgtemplCache.cols ){
+      ///Limit Search To Within FIXED (15) Degrees/Templates from Starting Col.Point If Not Searching From The top
+      while(templRegion.x < imgtemplCache.cols && ((Colidx-startCol) < TEMPLATE_COL_SEARCH_REGION || startCol==0)){
         //Obtain next Template At Angle
          imgtemplCache(templRegion).copyTo(templ_rot) ;
-        //Convolution  // CV_TM_SQDIFF_NORMED Poor Matching
-        cv::matchTemplate(imgGreyIn,templ_rot,outMatchConv, CV_TM_CCORR_NORMED  );// CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
-        //Find Min Max Location
-        cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
+
+        //Run Lib MatchTemplate COnvolution Either On CPU OR GPU //
+         // WIth Current Setup Using GPU for multiple template Matching/scanning is too slow
+#if defined(USE_CUDA) && defined(USE_CUDA_FOR_TEMPLATE_MATCHING) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+        maxVal = gpu_matchTemplate(templ_rot,dimgRegionIn,ptmaxLoc);
+#else
+         cv::matchTemplate(imgRegionIn,templ_rot,outMatchConv, CV_TM_CCORR_NORMED  ); // CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
+         //Find Min Max Location
+         cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
+#endif         //Convolution  // CV_TM_SQDIFF_NORMED Poor Matching
+
         //Assume Value < 0.7 is non Fish,
+
+
         if (maxGVal < maxVal)
         {
             maxGVal         = maxVal;
@@ -244,9 +283,11 @@ int templatefindFishInImage(cv::UMat& imgGreyIn,cv::UMat& imgtemplCache,cv::Size
        //Save Results To Output
        //matchScore    = maxGVal;
        //locations_tl  = ptGmaxLoc;
+       startCol = Colidx; //Save AS Best - For next Iteration - Only If Exceeds Threshold
        break; ///Stop The loop Rows search Here
 
-    }
+    }else //Reset StartCol Hint, So Next Time The whole Cache Row is scanned
+        startCol = 0;
 
 //   else{ //Nothing Found YEt-- Proceed To Next Template variation
 //       matchColIdx  = 0;
@@ -309,27 +350,27 @@ int templatefindFishInImage(cv::UMat& imgGreyIn,cv::UMat& imgtemplCache,cv::Size
 ///\brief addTemplateToCache
 ///\note assumes all Templates are the same size
 ///
-int addTemplateToCache(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTempl)
+int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 {
 
     //Make Variations And store in template Cache
     cv::Mat fishTemplateVar;
-    cv::UMat mtCacheRow,mtEnlargedCache;
+    cv::Mat mtCacheRow,mtEnlargedCache;
     makeTemplateVar(imgTempl,fishTemplateVar, gFishTemplateAngleSteps);
 
     ///Initialize The Cache if this the 1st Template added
     if (idxTempl == 0)
-        FishTemplateCache = cv::UMat::zeros(fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
+        FishTemplateCache = cv::Mat::zeros(fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
     else{
         //Copy COntents To Enlarged Cache and replace pointer
-        mtEnlargedCache = cv::UMat::zeros(FishTemplateCache.rows+fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
+        mtEnlargedCache = cv::Mat::zeros(FishTemplateCache.rows+fishTemplateVar.rows,fishTemplateVar.cols,CV_8UC1);
         //Get Ref To Old Sized Cache Only
         mtCacheRow = mtEnlargedCache(cv::Rect(0,0,FishTemplateCache.cols,FishTemplateCache.rows));
         FishTemplateCache.copyTo(mtCacheRow); //Copy Old Cache into New replacing that part of empty cache
         mtEnlargedCache.copyTo(FishTemplateCache); //Copy Back So gFishTemplateCache = mtEnlargedCache;
 
         mtEnlargedCache.release();
-//        mtEnlargedCache.deallocate();
+        mtEnlargedCache.deallocate();
     }
      //Fill The Last (New Row) In The Cache
     mtCacheRow = FishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl),fishTemplateVar.cols,fishTemplateVar.rows));
@@ -353,21 +394,22 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTemp
 /// \param idxTempl - Row To Remove
 /// \return
 ///
-int deleteTemplateRow(cv::Mat& imgTempl,cv::UMat& FishTemplateCache,int idxTempl)
+int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 {
     //Draw Black
     int mxDim = std::max(imgTempl.cols,imgTempl.rows);
     //\note RECT constructor takes starting point x,y, size_w, size_h)
     cv::Rect rectblankcv(0,mxDim*(idxTempl),FishTemplateCache.cols,mxDim);
-    cv::Mat mFishTemplate_local = FishTemplateCache.getMat(cv::ACCESS_WRITE);
+    cv::Mat mFishTemplate_local;// = FishTemplateCache.getMat(cv::ACCESS_WRITE);
     cv::rectangle(mFishTemplate_local,rectblankcv,CV_RGB(0,0,0),CV_FILLED); //Blank It OUt
 
+    //If Removing Last Row, Then Its Simple
     //Shrink Template
     if (idxTempl == (gnumberOfTemplatesInCache-1))
     {
-        FishTemplateCache  = mFishTemplate_local(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl))).getUMat(cv::ACCESS_READ);
+        FishTemplateCache  = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl)));
         gnumberOfTemplatesInCache--;
-    }else
+    }else //Other Wise, We need to Cut and stich
     {
         //Cut In 2- Halves and rejoin
         cv::Mat mTop;
@@ -430,49 +472,45 @@ int loadTemplatesFromDirectory(QString strDir)
 
 
 //////////////////////// MATCH TEMPLATE EXAMPLE FOR GPU ////////////////////////
-//void process(cv::Mat templ_h,cv::Mat image_h) {
-//cv::cuda::setDevice(0);	//initialize CUDA
+/// \brief gpu_matchTemplate
+/// \param templ_h
+/// \param image_h IMage region TO search In
+/// \param ptBestMatch
+/// \return MatchTemplateSCore
+///
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+    double gpu_matchTemplate(cv::Mat templ_h,cv::cuda::GpuMat& dimage,cv::Point& ptBestMatch)
+    {
+    //cv::cuda::setDevice(0);	//initialize CUDA
 
-////cv::Mat image_h = cv::imread(	"/home/buddy/Documents/workspace/OpenCVTemplateMatch1/src/input_image.jpg");
-////cv::Mat templ_h = cv::imread(				"/home/buddy/Documents/workspace/OpenCVTemplateMatch1/src/template_image.jpg");
+    ////cv::Mat image_h = cv::imread(	"/home/buddy/Documents/workspace/OpenCVTemplateMatch1/src/input_image.jpg");
+    ////cv::Mat templ_h = cv::imread(				"/home/buddy/Documents/workspace/OpenCVTemplateMatch1/src/template_image.jpg");
 
-//cv::cuda::GpuMat templ_d(templ_h); //upload image on gpu
-//cv::cuda::GpuMat image_d, result;
+    cv::cuda::GpuMat dtempl(templ_h); //upload image on gpu
 
-//if (image_h.empty())
-//exit(1);
+    cv::cuda::GpuMat dresult;
+
+    //dtempl.upload(image_h);
+    //cv::Ptr<cv::cuda::TemplateMatching> alg = cv::cuda::createTemplateMatching(templ_h.type(), CV_TM_CCORR_NORMED);
 
 
+    //cv::cuda::GpuMat dst;
+    gpu_MatchAlg->match(dimage, dtempl, dresult);
 
-//image_d.upload(image_h);
-//cv::Ptr<cv::cuda::TemplateMatching> alg = cv::cuda::createTemplateMatching(
-//    templ_h.type(), CV_TM_CCOEFF_NORMED);
+    //cv::cuda::normalize(dresult, dresult, 0, 1, cv::NORM_MINMAX, -1);
+    double max_value;
 
-//cv::cuda::GpuMat dst;
-//alg->match(image_d, templ_d, result);
+    //cv::Point location;
+    //Find Best Match
+    cv::cuda::minMaxLoc(dresult, 0, &max_value, 0, &ptBestMatch);
 
-//cv::cuda::normalize(result, result, 0, 1, cv::NORM_MINMAX, -1);
-//double max_value;
 
-//cv::Point location;
+    ////copying back to host memory for display
+    //cv::Mat result_h;
+    //result.download(result_h);
 
-//cv::cuda::minMaxLoc(result, 0, &max_value, 0, &location);
+    //Return The Match Value
+    return max_value;
 
-////copying back to host memory for display
-//cv::Mat result_h;
-//result.download(result_h);
-
-////show now the two rectangles, one with the image and the other with matched template
-
-//cv::rectangle(image_h, location,
-//    cv::Point(location.x + templ_h.cols, location.y + templ_h.rows),
-//    cv::Scalar::all(0), 2, 8, 0);
-//cv::rectangle(result_h, location,
-//        cv::Point(location.x + templ_h.cols, location.y + templ_h.rows),
-//        cv::Scalar::all(0), 2, 8, 0);
-//cv::imshow("Frame", result_h);
-//cv::imshow("Image", image_h);
-
-//cv::waitKey(0);
-
-//}
+    }
+#endif
