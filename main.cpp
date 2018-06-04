@@ -190,9 +190,11 @@ cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across
 //Global CUda Utility Matrices Used to Tranfser Images To GPU
 // Defined here to save reallocation Time
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
-         cv::cuda::GpuMat dMask; //Passed to MOG Cuda
+         cv::cuda::GpuMat dframe_mask; //Passed to MOG Cuda
          cv::cuda::GpuMat dframe_gray; // For Denoising
+         cv::cuda::GpuMat dframe_thres; // Used In Mask Enhancement
          cv::Ptr<cv::cuda::TemplateMatching> gpu_MatchAlg;// For Template Matching
+         Ptr<cuda::Filter> gpu_DilateFilter;
 #endif
 
 
@@ -594,6 +596,7 @@ int main(int argc, char *argv[])
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
     pMOG2 = cv::cuda::createBackgroundSubtractorMOG2(MOGhistory,20,false);
     gpu_MatchAlg = cv::cuda::createTemplateMatching(CV_8U, CV_TM_CCORR_NORMED);
+    gpu_DilateFilter = cuda::createMorphologyFilter(MORPH_DILATE, CV_8U, kernelDilateMOGMask);
 #else
     //OPENCV 3
     pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 20,false);
@@ -895,8 +898,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
          cv::cuda::fastNlMeansDenoising(dframe_gray, dframe_gray,2.0, 21,7);
          dframe_gray.download(frame_gray);
          try{
-            pMOG2->apply(dframe_gray,dMask,dLearningRateNominal);
-            dMask.download(fgMask);
+            pMOG2->apply(dframe_gray,dframe_mask,dLearningRateNominal);
+            dframe_mask.download(fgMask);
          }catch(...)
          {
              std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
@@ -3243,22 +3246,37 @@ frameImg.copyTo(frameImg_gray); //Its Grey Anyway
 
 outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 
+//##CUDA For Dilate And Threshold
+#if defined(USE_CUDA)
+    cv::cuda::threshold(dframe_gray,dframe_thres,g_Segthresh,max_thresh,cv::THRESH_BINARY);
+#else
+    cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+#endif
 
 
-cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
 if (gbUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
 {
     cv::Mat fgMask_dilate; //Expand The MOG Mask And Intersect with Threshold
     //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpenfish,cv::Point(-1,-1),1);
+#if defined(USE_CUDA)
+    gpu_DilateFilter->apply(dframe_mask,dframe_mask); //Use Global GPU Mat to run dilation
+    cv::cuda::bitwise_and(dframe_mask,dframe_thres,dframe_mask);
+    dframe_mask.download(maskFGImg); //Transfer processed Mask Back To CPU Memory
+#else
     cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
     cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
-    //fgMask.copyTo(maskFGImg);
+#endif
 }
 else
 {
     // Use thresh Only to Detect FG Fish Mask Detect
+    //Returning The thresholded image is only required when No BGMask Exists
+#if defined(USE_CUDA)
+        dframe_thres.download(threshold_output);
+#endif
+
     threshold_output.copyTo(maskFGImg);
 }
 
