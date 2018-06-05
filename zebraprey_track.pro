@@ -23,7 +23,8 @@ SOURCES += main.cpp \
     zfttracks.cpp \
     foodmodel.cpp \
     fgmaskprocessing.cpp \
-    errorhandlers.cpp
+    errorhandlers.cpp \
+    config.cpp
 
 RESOURCES += qml.qrc
 #INCLUDEPATH += /usr/include/opencv

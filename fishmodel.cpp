@@ -10,8 +10,8 @@ extern cv::Size gszTemplateImg;
 //extern int gFishTailSpineSegmentLength;
 //extern int gFitTailIntensityScanAngleDeg;
 //extern const int gcFishContourSize; //Fixed number of fish Contour Points
-const int gMaxFitIterations = ZTF_TAILFITMAXITERATIONS;
-extern double gTemplateMatchThreshold;
+
+//extern double gTemplateMatchThreshold;
 
 fishModel::fishModel()
 {
