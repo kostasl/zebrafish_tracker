@@ -5,7 +5,7 @@
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
 const unsigned int MOGhistory   = 92;//Use 100 frames Distributed across the video length To Find What the BGModel is
-const double gdMOGBGRatio       = 0.95; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
+double gdMOGBGRatio       = 0.95; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
 //Processing Loop delay
 uint cFrameDelayms              = 1;
@@ -54,7 +54,7 @@ float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as t
 int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 int gFishTailSpineSegmentLength     = 9;
 
-const int gFitTailIntensityScanAngleDeg   = 60; //
+int gFitTailIntensityScanAngleDeg   = 60; //
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour

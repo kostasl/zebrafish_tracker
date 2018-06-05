@@ -17,7 +17,7 @@
 /// VIDEO AND BACKGROUND PROCESSING //
 extern float gfVidfps;
 extern const  unsigned int MOGhistory;//Use 100 frames Distributed across the video length To Find What the BGModel is
-extern const  double gdMOGBGRatio; ///If a foreground pixel keeps semi-extern const ant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
+extern double gdMOGBGRatio; ///If a foreground pixel keeps semi-extern const ant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
 //Processing Loop delay
 extern uint cFrameDelayms;
