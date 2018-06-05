@@ -101,6 +101,10 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->horizontalSlider->installEventFilter(this);
 
     this->ui->actionTrack_Fish->setChecked(bTracking);
+    this->ui->checkBoxGPU->setChecked(bUseGPU);
+    this->ui->checkBoxMOG->setChecked(bUseBGModelling);
+    this->ui->checkBoxNoiseFilter->setChecked(bRemovePixelNoise);
+
     createSpinBoxes();
     nFrame = 0;
 }
