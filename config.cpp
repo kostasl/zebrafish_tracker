@@ -38,7 +38,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 
 
 ///Segmentation Params
-int g_Segthresh             = 33; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+int g_Segthresh             = 30; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
@@ -52,7 +52,7 @@ int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isola
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 22; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 9;
+int gFishTailSpineSegmentLength     = 10;
 
 int gFitTailIntensityScanAngleDeg   = 60; //
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
