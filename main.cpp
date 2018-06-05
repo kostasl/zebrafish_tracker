@@ -275,7 +275,7 @@ bool bRenderToDisplay = true; ///Updates Screen to User When True
 bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 bool bBlindSourceTracking = false; /// Used for Data Labelling, so as to hide the data source/group/condition
 bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
-bool gbUseBGModelling                     = true; ///Use BG Modelling TO Segment FG Objects
+bool bUseBGModelling                    = true; ///Use BG Modelling TO Segment FG Objects
 bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
@@ -284,6 +284,8 @@ bool bMakeCustomROIRegion                 = false; /// Uses Point array to const
 bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
 bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
 bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
+bool bUseGPU                              = false;
+bool bUseOpenCL                           = true;
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -339,7 +341,6 @@ int main(int argc, char *argv[])
     auto old_rdbufclog = std::clog.rdbuf();
     auto old_rdbufcerr = std::cerr.rdbuf();
 
-    cv::ocl::setUseOpenCL(true); /// \todo Control This Option
 
 
        // install Error/Seg Fault handler
@@ -404,7 +405,7 @@ int main(int argc, char *argv[])
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
         "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)}"
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
-        "{EnableCuda cuda | 1  | Use CUDA for MOG, and mask processing - if available  }"
+        "{EnableCUDA cuda | 1  | Use CUDA for MOG, and mask processing - if available  }"
         "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
         ;
 
@@ -502,7 +503,7 @@ int main(int argc, char *argv[])
 
     //Check If We Are BG Modelling / BEst to switch off when Labelling Hunting Events
     if (parser.has("ModelBG"))
-        gbUseBGModelling = (parser.get<int>("ModelBG") == 1)?true:false;
+        bUseBGModelling = (parser.get<int>("ModelBG") == 1)?true:false;
 
     if (parser.has("ModelBGOnAllVids"))
         gbUpdateBGModelOnAllVids = (parser.get<int>("ModelBGOnAllVids") == 1)?true:false;
@@ -525,14 +526,20 @@ int main(int argc, char *argv[])
     if (parser.has("HideDataSource"))
            bBlindSourceTracking = (parser.get<int>("HideDataSource") == 1)?true:false;
 
-
-
     ///Disable OPENCL in case SEG Fault is hit - usually from MOG when running multiple tracker processes
     if (parser.has("DisableOpenCL"))
             if (parser.get<int>("DisableOpenCL") == 1)
+            {
                 cv::ocl::setUseOpenCL(false);
+                bUseOpenCL =false;
+            }else
+            {
+                cv::ocl::setUseOpenCL(true);
+                bUseOpenCL =true;
+            }
 
-
+    if (parser.has("EnableCUDA"))
+           bUseGPU = (parser.get<int>("EnableCUDA") == 1)?true:false;
 
 
 
@@ -604,11 +611,15 @@ int main(int argc, char *argv[])
 
     /// CUDA Version Of BG MOG //
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
-    pMOG2 = cv::cuda::createBackgroundSubtractorMOG2(MOGhistory,20,false);
-    gpu_MatchAlg = cv::cuda::createTemplateMatching(CV_8U, CV_TM_CCORR_NORMED);
-    gpu_DilateFilter = cuda::createMorphologyFilter(MORPH_DILATE, CV_8U, kernelDilateMOGMask);
+    if (bUseGPU)
+    {
+        pMOG2 = cv::cuda::createBackgroundSubtractorMOG2(MOGhistory,20,false);
+        gpu_MatchAlg = cv::cuda::createTemplateMatching(CV_8U, CV_TM_CCORR_NORMED);
+        gpu_DilateFilter = cuda::createMorphologyFilter(MORPH_DILATE, CV_8U, kernelDilateMOGMask);
+    }else
+        pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 20,false);
 #else
-    //OPENCV 3
+    //Doesn't matter if cuda FLAG is enabled
     pMOG2 =  cv::createBackgroundSubtractorMOG2(MOGhistory, 20,false);
 #endif
 
@@ -779,11 +790,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
            writeFoodDataCSVHeader(outfooddatafile);
 
 
-
-
-
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
-       if ((gbUseBGModelling && gbUpdateBGModel) || (gbUseBGModelling && gbUpdateBGModelOnAllVids) )
+       if ((bUseBGModelling && gbUpdateBGModel) || (bUseBGModelling && gbUpdateBGModelOnAllVids) )
        {
             getBGModelFromVideo(bgMask, window_main,invideoname,outfilename,MOGhistory);
             cv::bitwise_not ( bgMask, bgMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
@@ -831,13 +839,97 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
     return istartFrame;
 }
 
+///
+/// \brief processMasks Can Filter Pixel noise from frame_gray, Adds the BGModel Mask to a static mask, Can use Noise filtering to improve FG segmentation
+/// \param frame_gray //Current greyScale Frame - Noise May be Removed If filtering Is Set To On
+/// \param bgStaticMaskInOut The mask provided to processFrame, Includes Static Objects and ROI Region
+///
+void processMasks(cv::Mat& frame_gray,cv::Mat& bgStaticMaskInOut)
+{
+ cv::Mat fgMask;
+
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+         if (bUseGPU)
+         {
+             dframe_gray.upload(frame_gray);
+
+             if (bRemovePixelNoise)
+             {        ///Remove Pixel Noise
+                 ///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.         ///        dst – Output image with the same size and type as src .         ///       templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels         ////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels         ///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise         ///
+                cv::cuda::fastNlMeansDenoising(dframe_gray, dframe_gray,2.0, 21,7);
+                dframe_gray.download(frame_gray);
+             }
+             if (bUseBGModelling)
+             {
+                 try{
+                        pMOG2->apply(dframe_gray,dframe_mask,dLearningRateNominal);
+                    dframe_mask.download(fgMask);
+                 }catch(...)
+                 {
+                     pwindow_main->LogEvent("[Error] CUDA MOG2 failed");
+                     //cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+                 }
+             } //BGMOdel
+           }//Use GPU
+         else{ //Note This Is the Same Code as In THe NO USE_CUDA Case
+             if (bRemovePixelNoise)
+                     cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
+                   //Check If BG Ratio Changed
+             if (bUseBGModelling)
+             {
+               try{
+                   pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+               }catch(...)
+               {
+                   std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
+                   pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+                   cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+                   bUseOpenCL = false;
+               }
+             }//BGModel
+         }
+#else //NO GPU VERSION
+      if (bRemovePixelNoise)
+              cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
+            //Check If BG Ratio Changed
+      if (bUseBGModelling)
+      {
+        try{
+            pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+        }catch(...)
+        {
+        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
+        //In That case make OpenCV With No CUDA or OPENCL support
+        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
+        //A runtime Work Around Is given Here:
+            std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
+            pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
+            cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
+        }
+      }//BGModel
+#endif
+
+      if (bUseBGModelling)
+      {
+        //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
+        if (bStaticAccumulatedBGMaskRemove && !bgStaticMaskInOut.empty() )//Although bgMask Init To zero, it may appear empty here!
+        {
+           //cv::bitwise_not(fgMask,fgMask);
+            //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
+           cv::bitwise_and(bgStaticMaskInOut,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
+        }else
+            fgMask.copyTo(bgStaticMaskInOut);
+       }
+      //NO FGMask As No Dynamic (MOG) Model Exists so simply Return the Static Mask
 
 
-void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
+} //END PROCESSMASKS
+
+void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStaticMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
 {
     cv::Mat frame_gray,fgFishMask,fgFishImgMasked;
     cv::Mat fgFoodMask;
-    cv::Mat fgMask;
+
 
     std::vector<cv::KeyPoint> ptFoodblobs;
     std::vector<cv::KeyPoint> ptFishblobs;
@@ -884,56 +976,10 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgMask, 
         else
             frame.copyTo(frame_gray);
 
-#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
-         dframe_gray.upload(frame_gray);
-         if (bRemovePixelNoise)
-         {        ///Remove Pixel Noise
-             ///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.         ///        dst – Output image with the same size and type as src .         ///       templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels         ////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels         ///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise         ///
-            cv::cuda::fastNlMeansDenoising(dframe_gray, dframe_gray,2.0, 21,7);
-            dframe_gray.download(frame_gray);
-         }
-
-         try{
-            pMOG2->apply(dframe_gray,dframe_mask,dLearningRateNominal);
-            dframe_mask.download(fgMask);
-         }catch(...)
-         {
-             pwindow_main->LogEvent("[Error] CUDA MOG2 failed");
-             //cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
-         }
-#else
-          if (bRemovePixelNoise)
-              cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
-            //Check If BG Ratio Changed
-
-        try{
-            pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
-        }catch(...)
-        {
-        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
-        //In That case make OpenCV With No CUDA or OPENCL support
-        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
-        //A runtime Work Around Is given Here:
-            std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
-            pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
-            cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
-        }
-#endif
-
-        // Update BG Substraction Model /Check For OCL Error
-
-
-
-        //Combine Masks and Remove Stationary Learned Pixels From Mask
-        if (bStaticAccumulatedBGMaskRemove && !fgMask.empty() && !bgMask.empty() )//Although bgMask Init To zero, it may appear empty here!
-        {
-           //cv::bitwise_not(fgMask,fgMask);
-            //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
-           cv::bitwise_and(bgMask,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
-        }
-
-        enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
-        //frameMasked = cv::Mat::zeros(frame.rows, frame.cols,CV_8UC3);
+        /// DO BG-FG SEGMENTATION MASKING and processing///
+        processMasks(frame_gray,bgStaticMask); //Applies MOG if bUseBGModelling is on
+        enhanceMask(frame_gray,bgStaticMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+        /// //
 
         if (bApplyFishMaskBeforeFeatureDetection)
             frame_gray.copyTo(fgFishImgMasked,fgFishMask); //fgFishMask //Use Enhanced Mask
@@ -3256,32 +3302,44 @@ outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 
 //##CUDA For Dilate And Threshold
 #if defined(USE_CUDA)
+ if (bUseGPU)
+ {
     cv::cuda::threshold(dframe_gray,dframe_thres,g_Segthresh,max_thresh,cv::THRESH_BINARY);
+ }
+ else
+    cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 #else
     cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 #endif
 
 
-
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
-if (gbUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
+if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
 {
     cv::Mat fgMask_dilate; //Expand The MOG Mask And Intersect with Threshold
     //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpenfish,cv::Point(-1,-1),1);
 #if defined(USE_CUDA)
-    gpu_DilateFilter->apply(dframe_mask,dframe_mask); //Use Global GPU Mat to run dilation
-    cv::cuda::bitwise_and(dframe_mask,dframe_thres,dframe_mask);
-    dframe_mask.download(maskFGImg); //Transfer processed Mask Back To CPU Memory
+    if (bUseGPU) //Dilate The MOG Mask , and Combine
+    {
+        gpu_DilateFilter->apply(dframe_mask,dframe_mask); //Use Global GPU Mat to run dilation
+        cv::cuda::bitwise_and(dframe_mask,dframe_thres,dframe_mask);
+        dframe_mask.download(maskFGImg); //Transfer processed Mask Back To CPU Memory
+    }else
+    {
+        cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
+        cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
+    }
 #else
     cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
     cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
 #endif
-}
+} //If BGModelling
 else
 {
     // Use thresh Only to Detect FG Fish Mask Detect
     //Returning The thresholded image is only required when No BGMask Exists
 #if defined(USE_CUDA)
+     if (bUseGPU)
         dframe_thres.download(threshold_output);
 #endif
 
@@ -3290,8 +3348,6 @@ else
 
 /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
 //frameImg_gray.copyTo(frameImg_gray,maskFGImg);
-
-
 //cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
 //ADAPTIVE_THRESH_MEAN_C
 
@@ -3538,7 +3594,11 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
     if (bshowMask)
     {
-        cv::imshow("Threshold Out",threshold_output);
+        if (bUseGPU)
+            dframe_thres.download(threshold_output);
+
+           cv::imshow("Threshold Out",threshold_output);
+
         cv::imshow("Fish Mask",outFishMask);
         cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
         if (!fgMask.empty())

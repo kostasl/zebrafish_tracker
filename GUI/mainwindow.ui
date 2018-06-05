@@ -130,8 +130,8 @@
      <rect>
       <x>650</x>
       <y>60</y>
-      <width>181</width>
-      <height>351</height>
+      <width>191</width>
+      <height>461</height>
      </rect>
     </property>
     <property name="title">
@@ -399,6 +399,45 @@
      </property>
      <property name="text">
       <string> % BG</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBoxNoiseFilter">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>300</y>
+       <width>161</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Noise Filtering</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBoxMOG">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>330</y>
+       <width>191</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>MOG BG Segmentation</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBoxGPU">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>360</y>
+       <width>92</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Use GPU</string>
      </property>
     </widget>
    </widget>

@@ -31,6 +31,10 @@ extern MainWindow* pwindow_main;
 
 extern bool bStaticAccumulatedBGMaskRemove;
 
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+    extern cv::cuda::GpuMat dframe_gray;
+#endif
+
 /*// Example Of Mean Image
 Mat3b getMean(const vector<Mat3b>& images)
 {
@@ -153,6 +157,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
                 frame.copyTo(frame,bgMask);
                 cv::cvtColor( frame, frame, cv::COLOR_BGR2GRAY);
+
                 updateBGFrame(frame, bgAcc, nFrame, MOGhistoryLength);
             }
             //Hold A copy of Frame With all txt
@@ -243,10 +248,11 @@ bool updateBGFrame(cv::Mat& frame, cv::Mat& bgAcc, unsigned int nFrame,uint MOGh
 /// h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
 ///
 
-#if defined(HAVE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
-         cv::cuda::GpuMat dgray;
-         cv::cuda::fastNlMeansDenoising(cv::cuda::GpuMat(frame), dgray,4.0, 41,7);
-         dgray.download(frameImg_gray);
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+
+         dframe_gray.upload(frame);
+         cv::cuda::fastNlMeansDenoising(dframe_gray, dframe_gray,4.0, 41,7);
+         dframe_gray.download(frameImg_gray);
 #else
     cv::fastNlMeansDenoising(frame, frameImg_gray,4.0,7, 41); /// \todo VS Vid 161 001 still fails in centre maybe increase the window size
 #endif

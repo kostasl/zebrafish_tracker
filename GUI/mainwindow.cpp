@@ -30,6 +30,10 @@ extern bool bTracking;
 extern bool bExiting;
 extern bool bROIChanged;//Signalled So Mask ROI Can be drawn Again In ProcessFrame
 extern bool bRecordToFile;
+extern bool bRemovePixelNoise;
+extern bool bUseBGModelling;
+extern bool bUseGPU;
+
 
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
@@ -854,11 +858,6 @@ void MainWindow::on_actionTrack_Fish_triggered(bool checked)
 
 }
 
-void MainWindow::on_actionTrack_Food_triggered(bool checked)
-{
-
-    bTrackFood = checked;
-}
 
 void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
 {
@@ -889,6 +888,12 @@ void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
 
 }
 
+void MainWindow::on_actionTrack_Food_triggered(bool checked)
+{
+
+    bTrackFood = checked;
+}
+
 void MainWindow::on_actionQuit_triggered()
 {
     bExiting = true;
@@ -913,7 +918,63 @@ void MainWindow::on_actionPaus_tracking_p_triggered()
     LogEvent("[info] Paused");
 
 }
-
 void MainWindow::on_actionPaus_tracking_p_triggered(bool checked)
 {
 }
+
+
+void MainWindow::on_checkBoxGPU_toggled(bool checked)
+{
+    bUseGPU = checked;
+    if (bUseGPU)
+        LogEvent("[info] GPU use is ON");
+    else
+        LogEvent("[info] GPU use is OFF");
+}
+
+void MainWindow::on_checkBoxMOG_toggled(bool checked)
+{
+    bUseBGModelling = checked;
+    if (bUseBGModelling)
+            LogEvent("[info] Use Of MOG for BG Model is ON");
+        else
+            LogEvent("[info] Use Of MOG for BG Model is OFF");
+}
+
+void MainWindow::on_checkBoxNoiseFilter_toggled(bool checked)
+{
+    bRemovePixelNoise = checked;
+    if (bRemovePixelNoise)
+            LogEvent("[info] Pixel Noise Filtering is ON");
+        else
+            LogEvent("[info] Pixel Noise Filtering is OFF");
+}
+
+
+
+//void MainWindow::on_checkBoxGPU_toggled(bool checked)
+//{
+//    bUseGPU = checked;
+//    if (bUseGPU)
+//        LogEvent("[info] GPU use is OFF");
+//    else
+//        LogEvent("[info] GPU use is ON");
+//}
+
+//void MainWindow::on_checkBoxMOG_toggled(bool checked)
+//{
+//    gbUseBGModelling = checked;
+//    if (gbUseBGModelling)
+//            LogEvent("[info] Use Of MOG for BG Model is OFF");
+//        else
+//            LogEvent("[info] Use Of MOG for BG Model is ON");
+//}
+
+//void MainWindow::on_checkBoxNoiseFilter_toggled(bool checked)
+//{
+//    bRemovePixelNoise = checked;
+//    if (bRemovePixelNoise)
+//            LogEvent("[info] Pixel Noise Filtering is OFF");
+//        else
+//            LogEvent("[info] Pixel Noise Filtering is ON");
+//}

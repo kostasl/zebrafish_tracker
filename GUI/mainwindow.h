@@ -95,6 +95,13 @@ private slots:
 
     void on_actionPaus_tracking_p_triggered();
 
+
+    void on_checkBoxGPU_toggled(bool checked);
+
+    void on_checkBoxMOG_toggled(bool checked);
+
+    void on_checkBoxNoiseFilter_toggled(bool checked);
+
 private:
     Ui::MainWindow      *ui;
 
