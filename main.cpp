@@ -148,10 +148,10 @@ cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template 
 ltROIlist vRoi;
 //
 
-cv::Point ptROI1 = cv::Point(gFishBoundBoxSize+1,82);
-cv::Point ptROI2 = cv::Point(618,82);
-cv::Point ptROI3 = cv::Point(618,441);
-cv::Point ptROI4 = cv::Point(gFishBoundBoxSize+1,441);
+cv::Point ptROI1 = cv::Point(gFishBoundBoxSize+1,gFishBoundBoxSize);
+cv::Point ptROI2 = cv::Point(640-gFishBoundBoxSize,gFishBoundBoxSize);
+cv::Point ptROI3 = cv::Point(640-gFishBoundBoxSize,512-gFishBoundBoxSize);
+cv::Point ptROI4 = cv::Point(gFishBoundBoxSize+1,512-gFishBoundBoxSize);
 
 
 
@@ -681,14 +681,16 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
     QString nextvideoname;
     //Show Video list to process
     //std::cout << "Video List To process:" <<std::endl;
-    window_main.LogEvent("Video List To process:");
-    for (int i = 0; i<invideonames.size(); ++i)
+    if (!bBlindSourceTracking)
     {
-       invideoname = invideonames.at(i);
-       //std::cout << "*" <<  invideoname.toStdString() << std::endl;
-       window_main.LogEvent(invideoname );
+        window_main.LogEvent("Video List To process:");
+        for (int i = 0; i<invideonames.size(); ++i)
+        {
+           invideoname = invideonames.at(i);
+           //std::cout << "*" <<  invideoname.toStdString() << std::endl;
+           window_main.LogEvent(invideoname );
+        }
     }
-
 
     //Go through Each Image/Video - Hold Last Frame N , make it the start of the next vid.
     for (int i = 0; i<invideonames.size() && !bExiting; ++i)
@@ -1216,7 +1218,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
         //cv::imshow("Debug D",frameDebugD);
 
         /// Report Memory Usage Periodically - Every realtime Second//
-        if ((nFrame % (uint)gfVidfps) == 0 || nFrame == 2)
+        if (!bPaused && (nFrame % (uint)gfVidfps) == 0 || !bPaused && nFrame == 2)
         {
             double rss,vm;
             process_mem_usage(vm, rss);
@@ -2240,7 +2242,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
 
     // Filter by Area.
     params.filterByArea = true;
-    params.minArea = 2;
+    params.minArea = 1;
     params.maxArea = gthres_maxfoodblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)

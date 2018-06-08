@@ -461,8 +461,11 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 //Make Food Mask OUt Of FG Model /After Removing Noise
+
 //cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
-cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1);
+
+cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_CLOSE,kernelOpen,cv::Point(-1,-1),1);
+
 //cv::dilate(outFoodMask,outFoodMask,kernelClose,cv::Point(-1,-1),1);
 
 //threshold_output_COMB.copyTo(outFoodMask);
