@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
         "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)}"
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
-        "{EnableCUDA cuda | 1  | Use CUDA for MOG, and mask processing - if available  }"
+        "{EnableCUDA cuda | 0  | Use CUDA for MOG, and mask processing - if available  }"
         "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
         ;
 
