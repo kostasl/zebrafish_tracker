@@ -719,6 +719,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        ///Open Output File Check If We Skip Processed Files
        if (openDataFile(outputFileName,invideoname,outfooddatafile,"_food") )
            writeFoodDataCSVHeader(outfooddatafile);
+       else
+           pwindow_main->LogEvent("[Error] Cannot open tracked prey data file.");
 
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
@@ -2586,6 +2588,15 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
     int cnt;
     int Vcnt = 0;
 
+
+    //Make ROI dependent File Name
+    if (!fishdata.exists())
+    {
+        std::cerr << "Fish Track File Is Missing" << std::endl;
+        pwindow_main->LogEvent("[Error] Fish Track File Is Missing");
+        return 0;
+    }
+
     //Loop Over ROI
     for (ltROIlist::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
@@ -2639,13 +2650,15 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
 
 int saveFoodTracks(fishModels& vfish,foodModels& vfood,QFile& fooddata,QString frameNumber)
 {
+
     //Make ROI dependent File Name
-    if (!fooddata.isOpen())
+    if (!fooddata.exists())
     {
-        std::cerr << "Food Model File Is Closed" << std::endl;
-        pwindow_main->LogEvent("[Error] Food File Is Closed");
+        std::cerr << "Prey Model File Is Missing" << std::endl;
+        pwindow_main->LogEvent("[Error] Prey File Is Missing");
         return 0;
     }
+
     QTextStream output(&fooddata);
 
     foodModels::iterator ft = vfoodmodels.begin();
