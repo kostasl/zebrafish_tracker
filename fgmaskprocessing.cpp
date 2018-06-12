@@ -107,7 +107,7 @@ extern bool bExiting;//Exit Flag
 unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString videoFilename,QString outFileCSV,unsigned int MOGhistoryLength)
 {
 
-        cv::Mat frame;
+        cv::Mat frame,frame_gray;
 
         const int startFrameCount   = 1; //Start Modelling From THe Start
         unsigned int nFrame         = 1; //Current Frame Number
@@ -188,9 +188,9 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
                     bgAcc = cv::Mat::zeros(frame.rows,frame.cols,CV_32FC(bgMask.channels()));
 
                 frame.copyTo(frame,bgMask);
-                cv::cvtColor( frame, frame, cv::COLOR_BGR2GRAY);
+                cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
 
-                updateBGFrame(frame, bgAcc, nFrame, MOGhistoryLength);
+                updateBGFrame(frame_gray, bgAcc, nFrame, MOGhistoryLength);
             }
             //Hold A copy of Frame With all txt
             //frame.copyTo(frameMasked);
@@ -660,10 +660,10 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
         //Draw New One
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
-        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),2); //Draw Thick Outline To Cover for Contour Losses
-        cv::circle(outFishMask, (ptTail-ptHead)/6+ptTail,6,CV_RGB(255,255,255),cv::FILLED); //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
-        cv::circle(outFishMask, ptHead,4,CV_RGB(255,255,255),cv::FILLED);
-         cv::circle(outFishMask, ptHead2,4,CV_RGB(255,255,255),cv::FILLED);
+        //cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),2); //Draw Thick Outline To Cover for Contour Losses
+        cv::circle(outFishMask, (ptTail-ptHead)/12+ptTail,4,CV_RGB(255,255,255),cv::FILLED); //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
+        //cv::circle(outFishMask, ptHead,4,CV_RGB(255,255,255),cv::FILLED);
+        // cv::circle(outFishMask, ptHead2,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Erase Fish From Food Mask
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),15);
@@ -727,34 +727,8 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
 
    // cv::equalizeHist( frame, frame );
 
-
-//#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
-
-//         dframe_gray.upload(frame);
-//         cv::cuda::fastNlMeansDenoising(dframe_gray, dframe_gray,4.0, 41,7);
-//         dframe_gray.download(frameImg_gray);
-//#else
-//    cv::fastNlMeansDenoising(frame, frameImg_gray,4.0,7, 41); /// \todo VS Vid 161 001 still fails in centre maybe increase the window size
-//#endif
-
     processMasks(frameImg_gray,bgMask); //Applies MOG if bUseBGModelling is on
     enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
-
-//    try
-//    {
-//        pMOG2->apply(frameImg_gray,fgFishMask,dLearningRate); //Let the Model Learn , Dont Interact With The Accumulated Mask
-//    }
-//    catch(...)
-//    {
-//        //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
-//        //In That case make OpenCV With No CUDA or OPENCL support
-//        //Ex: cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_CUDA=OFF  -D WITH_OPENCL=OFF -D WITH_OPENCLAMDFFT=OFF -D WITH_OPENCLAMDBLAS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local
-//        //A runtime Work Around Is given Here:
-//        std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
-//        pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
-//        cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
-//    }
-
 
     //Also Learn A pic of the stable features - Found In FoodMask - ie Fish Removed
     cv::accumulateWeighted(fgFoodMask,bgAcc,0.001);
