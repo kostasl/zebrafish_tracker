@@ -1,9 +1,11 @@
 
 
 #### Filter FUNCTIONS Using Window to estimate value at point i using  k surrounding values on a window centred at i###
-medianf <- function(t,k) {n=length(t);tproc=rep(NA,n); for(i in (k/2):n) tproc[i]=median(t[max(1,i-k/2): min(n, i+k/2) ],na.rm=TRUE); return(tproc)}
+##  Adjust window Size to Vector Length, in case small data samples are provided
+## Replace NaN with NA, (this can happen if  calculating mean over NA entries) ,tproc[is.nan(tproc) ] = NA; / If ,na.rm=TRUE Is removed then At LEast A NA is returned By Default
+medianf <- function(t,k) {n=length(t);tproc=rep(NA,n); k=min(k,n); for(i in (k/2):n) tproc[i]=median(t[max(1,i-k/2): min(n, i+k/2) ]);  return(tproc)}
 ##Note It Returns Mean of Vector values centrered at x , with a window width k
-meanf <- function(t,k) {n=length(t);tproc=rep(NA,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ],na.rm=TRUE); return(tproc)}
+meanf <- function(t,k) {n=length(t);tproc=rep(NA,n);k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);  return(tproc)}
 
 ### Find Peak in 1D vector / Courtesy of https://github.com/stas-g/findPeaks
 find_peaks <- function (x, m = 3){
@@ -139,13 +141,15 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 frameN=TrackerData[[i]][[j]]$frameN,
                                                 fileIdx=rep(j,Nn),
                                                 expID=rep(expID,Nn),
-                                                eventID=rep(eventID,Nn),
-                                                larvaID=rep(larvaID,Nn),
-                                                trackID=rep(trackID,Nn),
+                                                eventID=rep(eventID,Nn), ##From Filename - Sequence # of Event captured during recording 
+                                                larvaID=rep(larvaID,Nn), ##As defined in the filename 
+                                                trackID=rep(trackID,Nn), ##The ID given to the pointtrack from the tracker 
                                                 group=rep(i,Nn),
+                                                trackletID= TrackerData[[i]][[j]]$fishID,
                                                 PreyCount=meanf(TrackerData[[i]][[j]]$RotiferCount,nFrWidth*8),
                                                 countEyeErrors=TrackerData[[i]][[j]]$nFailedEyeDetectionCount,
-                                                TailFitError=TrackerData[[i]][[j]]$lastTailFitError
+                                                TailFitError=TrackerData[[i]][[j]]$lastTailFitError,
+                                                templateScore=TrackerData[[i]][[j]]$templateScore
                                                 );
         
         groupDatIdx = groupDatIdx + 1; ##Count Of Files Containing Data
@@ -174,9 +178,11 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 larvaID=larvaID,
                                                 trackID=trackID,
                                                 group=i,
+                                                trackletID=0,
                                                 PreyCount=0,
                                                 countEyeErrors=0,
-                                                TailFitError=0
+                                                TailFitError=0,
+                                                templateScore=0.0
                                                 );
         message(paste("No Data for ΕχpID",expID,"event ",eventID," larva ",larvaID))
         
@@ -225,7 +231,7 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
   groupDatIdx = 0;
   for (i in strCondTags)
   {
-    message(paste("#### Load Food Track Files Of Group ",i," ###############"))
+    message(paste("#### Load Prey Track Files Of Group ",i," ###############"))
     
     TrackerData <- list();	
     subsetDat = listSrcFoodFiles[[i]];
@@ -238,11 +244,10 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
     ## FOR EACH DATA FIle IN Group - Filter Data And combine into Single DataFrame For Group ##
     for (j in 1:nDat)
     {
-      
-      
-      message(paste(j,". Filtering Data :",  temp[[j]]))
+
+      message(paste(j,". Filtering Prey Data :",  temp[[j]]))
       procDatFrames = procDatFrames + length(TrackerData[[i]][[j]]$frameN);
-      message(paste("Found #Rec:",  length(TrackerData[[i]][[j]]$frameN) ))
+      message(paste("Found Prey #Rec:",  length(TrackerData[[i]][[j]]$frameN) ))
       
       ##Extract Experiment ID
       brokenname = strsplit(temp[[j]],"_")
@@ -276,7 +281,9 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
       for (p in vTrackPreyID)
       {
         procDatIdx = procDatIdx+1; ##INcreased Count Of Processed Prey Track Data
-        
+       
+        message(paste("#Prey ID:",p ) )
+         
         datPreyTracks <- TrackerData[[i]][[j]][TrackerData[[i]][[j]]$foodID == p,]
         
         ##FILTER Out NA values - Set to 0

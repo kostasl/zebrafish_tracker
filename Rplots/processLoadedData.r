@@ -63,7 +63,7 @@ for (i in strCondTags)
       datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$filenames <- filelist[ datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$fileIdx ]
     }
     
-    strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
+    strDataFileName <- paste("setn",NROW(dataSetsToProcess),"-D",dataSetsToProcess[1],"-",dataSetsToProcess[NROW(dataSetsToProcess)],"-HuntEvents-",i,sep="") ##To Which To Save After Loading
     
     write.csv(datHuntEvent,file=paste(strDataExportDir,"/",strDataFileName,".csv",sep="" ) , row.names=FALSE ) 
     ###Save Hunt Event Data Frame
@@ -88,8 +88,8 @@ datMotionStat = do.call(rbind,lMotionStat)
 #datHuntStat <- rbindlist(lHuntStat)
 #datMotionStat <-rbindlist(lMotionStat)
 #Data Exported In One Dir -> strDataExportDir, and read from another - so as to Avoid accidental Overwrites
-save(datHuntStat, file=paste(strDataExportDir,"/","setn",NROW(dataSetsToProcess),"D",firstDataSet,lastDataSet,"datHuntStat.RData",sep="-"))
+save(datHuntStat, file=paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datHuntStat.RData",sep=""))
 
 
-save(datMotionStat, file=paste(strDataExportDir,"/","setn",NROW(dataSetsToProcess),"D",firstDataSet,lastDataSet,"datMotionStat.RData",sep="-"))
+save(datMotionStat, file=paste(strDataExportDir,"/","setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datMotionStat.RData",sep=""))
 

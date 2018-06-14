@@ -138,11 +138,11 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
         
         ##On 1st Event Save THe Initial mean Prey Count
         if (k==1 & NROW(datEventFrames) > 0)
-          nInitialPrey <- mean(datEventFrames$PreyCount[1:min(NROW(datEventFrames),PREY_COUNT_FRAMEWINDOW)])
+          nInitialPrey <- mean(datEventFrames$PreyCount[1:min(NROW(datEventFrames),PREY_COUNT_FRAMEWINDOW)],na.rm = TRUE)
         
         ##Count Prey On Final Event
         if ( (k == max(vEventID)) & NROW(datEventFrames) > 0)
-          nFinalPrey <- mean(datEventFrames$PreyCount[max(1,NROW(datEventFrames)-PREY_COUNT_FRAMEWINDOW):NROW(datEventFrames)])
+          nFinalPrey <- mean(datEventFrames$PreyCount[max(1,NROW(datEventFrames)-PREY_COUNT_FRAMEWINDOW):NROW(datEventFrames)],na.rm = TRUE)
         
         ##Add to Total Number of frames - Using Actual Frame Number of steps Instead of simpler NRow(datLarvaFrames) 
         ##(ideally these should match tho) but tracker can loose object for a few frames and skip
@@ -235,6 +235,7 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
                                                      FinalPreyCount     = c(rep(NA,length(vHuntEndFrames)-1),nFinalPrey), ##Mean Prey COunt On Last Event's PREY_COUNT_FRAMEWINDOW frames-Add only To Last Record
                                                      PreyCount          =  mean(datHuntFrames$PreyCount), ##Mean Prey Count Across Hunt Frames
                                                      huntScore          = 0,
+                                                     markTracked        = NA, ## Flags that this event has been been closelly Retracked for Analysis
                                                      stringsAsFactors = FALSE) ##0 To Be used for Manual Labelling Of Hunting Success
           
           if( lHuntingDuration[[k]] < 0) 
@@ -301,12 +302,13 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
                                                  fileIdx    = 0,
                                                  startFrame = 0,
                                                  endFrame   = 0,
-                                                 nextHuntFrame = 0,
-                                                 nExpFrames = nTotalRecordedFrames,
-                                                 InitPreyCount = nInitialPrey,
-                                                 FinalPreyCount = nFinalPrey,
-                                                 PreyCount  = nmeanPreyCount,
-                                                 huntScore  = 0,
+                                                 nextHuntFrame      = 0,
+                                                 nExpFrames         = nTotalRecordedFrames,
+                                                 InitPreyCount      = nInitialPrey,
+                                                 FinalPreyCount     = nFinalPrey,
+                                                 PreyCount          = nmeanPreyCount,
+                                                 huntScore          = 0,
+                                                 markTracked        = NA, ## Flags that this event has been been closelly Retracked for Analysis
                                                  stringsAsFactors = FALSE) ##0 To Be used for Manual Labelling Of Hunting Success
       
     }
@@ -323,7 +325,7 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
   #stopifnot(any(is.nan(datHuntingEvents) ) ==FALSE )
   #  datGroupHunting = as.data.frame(lGroupHunting)
 
-  nHuntingEvents            <- length(datHuntingEvents);
+  nHuntingEvents            <- NROW(datHuntingEvents);
   message("Hunting Event For This Group:",nHuntingEvents)
   
 
@@ -350,9 +352,11 @@ calcHuntStat3 <- function(datHuntEvent)
   message(paste("##V3 Calculate Hunting Statitistics for Group ",unique(datHuntEvent$groupID), " ##" ) )
   
   stopifnot(length(unique(datHuntEvent$groupID) ) ==1 ) ##Only One Condition Should Be analysed at a time - OtherWise LarvaID may mix results between conditions 
-  
+  ## Redo Factor On Subset Of Data - Excluding any ExpID that do not belong Here
+  datHuntEvent$expID <- factor(datHuntEvent$expID) 
   ##This Method Produces The Vector WIth The zero Values for Non Hunting Larvae - but mean And SD are correct with aggregate Method
-  tblHuntDurationPerLarva  <- tapply(datHuntEvent$endFrame-datHuntEvent$startFrame, datHuntEvent$expID,sum)
+  ##Remove Factor from expID, so as to select only expIDs from this group
+  tblHuntDurationPerLarva  <- tapply(datHuntEvent$endFrame-datHuntEvent$startFrame, (datHuntEvent$expID),sum)
   tblHuntDurationPerLarva  <- replace(tblHuntDurationPerLarva,is.na(tblHuntDurationPerLarva),0) ##Replace NA with 0 -Duration
   
   
@@ -363,8 +367,8 @@ calcHuntStat3 <- function(datHuntEvent)
   
   ##Replace 0s with NA - Ignore 0 Duration Episodes
   datHuntEventNonZeroEpi <- datHuntEvent[datHuntEvent$endFrame-datHuntEvent$startFrame > 0,] 
-  ##Calc number of hunting events stat per Experiment
-  tblHuntsCounts<-table(datHuntEventNonZeroEpi$expID)
+  ##Calc number of hunting events stat per Experiment (Convert to numeric so as to select only exp from selected GroupID stats)
+  tblHuntsCounts<-table((datHuntEventNonZeroEpi$expID) ) 
   ##Given An Episode Occured
   tblMeanEpisodeDurationPerLarva  <- tapply(datHuntEventNonZeroEpi$endFrame-datHuntEventNonZeroEpi$startFrame, datHuntEventNonZeroEpi$expID,mean)
   #tblMeanEpisodeDurationPerLarva  <- replace(tblMeanEpisodeDurationPerLarva,is.na(tblMeanEpisodeDurationPerLarva),0) ##Replace NA with 0 -Duration
@@ -423,9 +427,15 @@ calcHuntStat3 <- function(datHuntEvent)
   
   ## COmbine Results Into One Handy Structure containing precalculated results ##
   
-  nLarva <- nrow(tblHuntDurationPerLarva)
-  nAvailInitialPreyCount <- nrow(tblAvailableInitialPreyCountPerLarva[is.na(tblAvailableInitialPreyCountPerLarva) == FALSE])
-  nPreyCountSamples <- nrow(tblPreyCountReductionPerLarvaHunt[is.na(tblPreyCountReductionPerLarvaHunt) == FALSE]) 
+  nLarva <- NROW(tblHuntDurationPerLarva)
+  nAvailInitialPreyCount <- NROW(tblAvailableInitialPreyCountPerLarva[is.na(tblAvailableInitialPreyCountPerLarva) == FALSE])
+  nPreyCountSamples <- NROW(tblPreyCountReductionPerLarvaHunt[is.na(tblPreyCountReductionPerLarvaHunt) == FALSE]) 
+
+  if ( is.na(nPreyCountSamples) | is.nan(nPreyCountSamples) ) 
+  {
+    stop(paste("nPreyCountSamples not counted correctly : ",nPreyCountSamples) )
+  }
+  
   lGroupHuntStats <- list(nLarva                        = nLarva,
                           vHNablaPreyCount              = tblPreyCountReductionPerLarvaHunt, ##Mean Prey Reduction
                           vHInitialPreyCount            = tblAvailableInitialPreyCountPerLarva,

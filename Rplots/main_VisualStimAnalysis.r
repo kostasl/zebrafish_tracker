@@ -1,9 +1,4 @@
-## Processing Of Tracker Eye TrackerData, Using R 
-# Kostasl Nov 2017
-# 10-12-17 : Fixed Error on counting number of hunting episodes
-#            Converted to Adding A Row for empty data files such that larva That were tested but produced no data count towards the mean / The case that a fish is invalid should be actually handled when testing in empty conditions and reject a fish that does nothing
-#            Otherwise, a non appearing fish counts towards the group mean since its tested for a fixed amount of time (10mins each fish)
-# 14-12-17 :  Added MotionTrajectory Analysis - PathLengths/Speed/Ratio #frames(Speed>0) over All ANalysed Event Frames Of A Larva 
+## Main Function TO IMport and Process Tracker CSV files for the Visual Stimulation Control Experiment (Rectangular Arenas) ##
 #            
 # Consider What the Hunt Ratio Is On a No Show Larva? Currently Set To 0 - 
 #TODO: Add Colour Marker of Hunting On Trajectories

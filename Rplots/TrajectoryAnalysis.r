@@ -99,7 +99,7 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	        stop(paste("Speed is NaN, expID:",i,",eventID",k) )
 	      }
 	      ##Check If Some Video Frame Stuck Error Has Occured 
-	      if (sum(dEventSpeed) == 0 && NROW(datEventFrames$frameN) > 2000)
+	      if (sum(dEventSpeed,na.rm=TRUE) == 0 & NROW(datEventFrames$frameN) > 2000)
 	      {
 	        warning(paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) )
 	        message((paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) ))
@@ -123,13 +123,28 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      vMotionBout[vMotionBout > G_MIN_BOUTSPEED  ] = 1
 	      vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
 	      vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
-	      vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+1 ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
+	      if (any(is.nan(vMotionBout_On)) | any(is.na(vMotionBout_On)))
+	      {
+	        stop("vMotionBout_On Had Non Valid Entries")
+	      }
+	      vMotionBout_Off <- vMotionBout_On
+	      if (NROW(vMotionBout_On) > 0) 
+	        vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
+	      
+	      if (NROW(vMotionBout_Off) == 0 ) ##No End FOund So Motion Bout Is Invalid? Or Does it just go to the end of this Frame
+	      {
+	        warning(paste("Motion Bout End Point not identified, removing Bout") )
+	      }
+	      
 	      nNumberOfBouts <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
 	      ##Remove The Motion Regions Where A Peak Was not detected / Only Keep The Bouts with Peaks 
 	      vMotionBout[1:length(vMotionBout)] =0 ##Reset / Remove All Identified Movement 
 	      for (i in 1:nNumberOfBouts)
 	      {
-	        if (any( MoveboutsIdx_cleaned >= vMotionBout_On[i] & MoveboutsIdx_cleaned < vMotionBout_Off[i] ) == TRUE)
+	        if (nNumberOfBouts == 0)
+	          break
+	        
+	        if (any(MoveboutsIdx_cleaned >= vMotionBout_On[i] & MoveboutsIdx_cleaned < vMotionBout_Off[i] ) == TRUE)
 	        { ###Motion Interval Does not belong to a detect bout(peak) so remove
 	          vMotionBout[vMotionBout_On[i]:vMotionBout_Off[i] ] = 1 ##Remove Motion From Vector
 	        }else
@@ -143,7 +158,7 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      
 	     
 	      
-	      dEventTotalDistance       <- sum(vEventPathLength)
+	      dEventTotalDistance       <- sum(vEventPathLength,na.rm=TRUE)
 	      ##Straight Line From start to end 
 	      dShortestPathDisplacement <- sqrt(((datEventFrames[1,]$posX-datEventFrames[NROW(datEventFrames),]$posX)^2+(datEventFrames[1,]$posY-datEventFrames[NROW(datEventFrames),]$posY)^2 ))
 	      
@@ -468,7 +483,7 @@ calcMotionStat2 <- function(datAllFrames,vexpID,vdatasetID)
           stop(paste("Speed is NaN, expID:",i,",eventID",k) )
         }
         ##Check If Some Video Frame Stuck Error Has Occured 
-        if (sum(dEventSpeed) == 0 && NROW(datEventFrames$frameN) > 2000)
+        if (sum(dEventSpeed,na.rm = TRUE) == 0 & NROW(datEventFrames$frameN) > 2000)
         {
           warning(paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) )
           message((paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) ))

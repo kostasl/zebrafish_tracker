@@ -39,7 +39,8 @@ setwd("/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
 strVideoFilePath  <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/expDataKostas/AnalysisSetAlpha/" 
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_9_2_GCC_64bit-Release/"
 strTrackeroutPath <- "/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
-strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from 
+#strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
+strTrackInputPath <- "/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Where to source the Tracker csv files from 
 strDatDir        <- "./dat/TrackedSessionA" ##Where Are the Imported RData Stored
 strDataExportDir <- "./out/"
 
@@ -47,7 +48,7 @@ strDataExportDir <- "./out/"
 setwd("~/Dropbox/Calculations/zebrafishtrackerData/")
 strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
 strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
-strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_UpTo21Dec/" ##Where to stre the Tracker output csv files when labelling events
+strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
 strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
 strDataExportDir <- "./out/"
 
@@ -82,17 +83,18 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                               "/Tracked02-11-17/",##MDataset 3 -NOTE: Does not Larva ID on File Name 
                               "Tracked08-11-17/", #4 350fps - Missing a condition WTDryFed3Roti - So removed One Set Larva of Data from other conditions to balance the dataset
                               "/Tracked16-11-17/",#5 400fps - Strict Timer Dataset
-                              "/Tracked30-11-17/",#6 420fps
+                              "/Tracked30-11-17/",#6 420fps ## Most Simular - Start ANalysis From here
                               "/Tracked07-12-17/",#7
                               "/Tracked14-12-17/",#8
-                              "Tracked21-12-17/",
-                              "/Tracked11-01-18/",
-                              "/Tracked18-01-18/",
-                              "/Tracked25-01-18/",
-                              "/Tracked01-02-18/",
-                              "/Tracked08-02-18/",
-                              "/Tracked15-02-18/",
-                              "/Tracked22-02-18/"##Dataset n 
+                              "Tracked21-12-17/", # 9
+                              "/Tracked11-01-18/",#10
+                              "/Tracked18-01-18/",#11
+                              "/Tracked25-01-18/",#12
+                              "/Tracked01-02-18/",#13
+                              "/Tracked08-02-18/",#14
+                              "/Tracked15-02-18/",#15
+                              "/Tracked22-02-18/",#16
+                              "/Tracked_07-06-18/"##Dataset n 
                               ),sep="/")
 ##Add Source Directory
 
@@ -111,7 +113,7 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
-  lastDataSet = NROW(strDataSetDirectories)-11
+  lastDataSet = NROW(strDataSetDirectories)-12
   firstDataSet = 1
   source("runimportTrackerDataFiles.r") 
 
@@ -119,48 +121,50 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
 
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
-  firstDataSet = NROW(strDataSetDirectories)-11
+  ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
+  firstDataSet = NROW(strDataSetDirectories)-13
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   ##oad Frames and HuntStats
   source("loadAllDataSets.r")
 
-  ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   source("processLoadedData.r")
 
 
-### Make Eye Phase Space Density Plots ##########
-for (i in strCondTags)
-{
-  message(paste("#### Eye ProcessGroup ",i," ###############"))
-  subsetDat = groupsrcdatList[[i]]
-  strCond   <- paste(strCondR,subsetDat[2],collapse=NULL);
-  
-  ##Take All larva IDs recorded - Regardless of Data Produced - No Tracks Is Also Data
-  #vexpID = unique(filtereddatAllFrames$expID)
-  ##Select Larvaof this Group
-  
-  datAllGroupFrames <- datAllFrames[which(datAllFrames$group == i),]
-  #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
-  vexpID = unique(datAllGroupFrames$expID)
-  #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vexpID)
-  #######################################################################
-  ###  EYE - PLOT Scatter and Eye Densities #####
-  strCond = i;
-  source("EyeScatterAndDensities.r")
-  #####
-}
+  ### Make Eye Phase Space Density Plots ##########
+  for (i in strCondTags)
+  {
+    message(paste("#### Eye ProcessGroup ",i," ###############"))
+    subsetDat = groupsrcdatList[[i]]
+    strCond   <- paste(strCondR,subsetDat[2],collapse=NULL);
+    
+    ##Take All larva IDs recorded - Regardless of Data Produced - No Tracks Is Also Data
+    #vexpID = unique(filtereddatAllFrames$expID)
+    ##Select Larvaof this Group
+    
+    datAllGroupFrames <- datAllFrames[which(datAllFrames$group == i),]
+    #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
+    vexpID = unique(datAllGroupFrames$expID)
+    #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vexpID)
+    #######################################################################
+    ###  EYE - PLOT Scatter and Eye Densities #####
+    strCond = i;
+    source("EyeScatterAndDensities.r")
+    #####
+  }
 
 
-######## Make Hunt Statistics ##
+######## Plot Hunt Statistics using datHuntStat##
 source("plotHuntStat.r") 
 
 ###
-  source("plotMotionStat.r")
+source("plotMotionStat.r")
 
+
+  
   source("labelHuntEvents.r")
 
 #### LABEL MANUALLY THE HUNT EVENTS WITH THE HELP OF THE TRACKER ###
@@ -226,6 +230,64 @@ nSuccessDL <- tblDLStat[[3]]+tblDLStat[[12]]
 message(paste("Rates:",nSuccessLL/nFailLL,nSuccessNL/nFailNL,nSuccessDL/nFailDL,sep="  "))
 ###
 
+###########################################################
+####        MERGE HUNT EVENT FILES              ##########
+source("HuntingEventAnalysis.r")
+source("labelHuntEvents.r")
+lHuntEvents <- list()
+fileList <- list.files(path=paste(strDatDir,"/HuntEvents/",sep = ""), pattern="*",full.names = TRUE) 
+n <-1
+for (fl in fileList)
+{
+  
+  message(paste(" Loading Hunt Events: ",fl))
+  ##ExPORT 
+  load(file=fl) ##Save With Dataset Idx Identifier
+  
+  ##Add Custom Fields
+  if ("markTracked" %in% names(datHuntEvent) == FALSE)
+  {
+    datHuntEvent$markTracked = NA
+  }
+  
+  ##Save to List
+  lHuntEvents[[n]] <- datHuntEvent
+  message(paste(n,". Added to List, with #columns:",NROW(names(datHuntEvent)), " #rows:", NROW(datHuntEvent) ) )
+  message(names(datHuntEvent))
+  n<-n+1
+}  
+##Bind All Events Records Together 
+datAllHuntEvent <- do.call(rbind,lHuntEvents)
+strDataFileName <- paste("setn",NROW(unique(datAllHuntEvent$dataSetID)),"-D",min(as.numeric(datAllHuntEvent$dataSetID) ),"-",max(as.numeric(datAllHuntEvent$dataSetID) ),"-HuntEvents-Merged",sep="" )
+save(datAllHuntEvent,file=paste(strDataExportDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+
+###Calc Hunt Stat
+lHuntStat <- list()
+groups <- unique(datAllHuntEvent$groupID)
+for (g in groups)
+{
+  datHuntEventFilt<- datAllHuntEvent[datAllHuntEvent$groupID == g,]
+  ####We Are Using Labelled Files So We can Filter Out The Labelled Non Hunt Events
+  datHuntEventFilt$huntScore <- factor(x=datHuntEventFilt$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+  ##Filter Hunt Events ##
+  datHuntEventFilt <- datHuntEventFilt[datHuntEventFilt$huntScore != "NA" &
+                                 datHuntEventFilt$huntScore != "Not_HuntMode/Delete" &
+                                 datHuntEventFilt$huntScore != "Out_Of_Range" & 
+                                 datHuntEventFilt$huntScore != "Duplicate/Overlapping" &
+                                 datHuntEventFilt$huntScore != "Near-Hunt State" |
+                                 datHuntEventFilt$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
+  
+  lHuntStat[[g]] <- calcHuntStat3(datHuntEventFilt)
+}
+datHuntStat = do.call(rbind,lHuntStat)#
+
+strDataFileName <- paste("setn",NROW(unique(datAllHuntEvent$dataSetID)),"-D",min(as.numeric(datAllHuntEvent$dataSetID) ),"-",max(as.numeric(datAllHuntEvent$dataSetID) ),"-datHuntStat",sep="" )
+save(datHuntStat,file=paste(strDataExportDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+
+###############
+################ END OF MERGING ### ### # #
+
+lHuntEvents[[4]]
 
 ######## CALC Stat On Hunt Events ######
 ## Re-process Hunt Stat On Modified Events

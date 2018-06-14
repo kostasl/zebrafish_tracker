@@ -1,10 +1,13 @@
 ##########  LOAD DATA SETS #####
-##de
+## Note : It takes care of differences in Field countsbetween dataFrames/DataSets, by using the names in the previous frame to take them as subset from the next Dataset
+## 
 
 
 datAllSets <- list()
 groupsrcdatListPerDataSet <- list() ##Holds File List Per Data Set - Used to Cross Ref FileIdx 
 n <- 0
+
+fieldNames <- "expID"
 for (i in dataSetsToProcess )
 {
   n <- n + 1
@@ -22,7 +25,14 @@ for (i in dataSetsToProcess )
   groupsrcdatListPerDataSet[[i]] <- groupsrcdatList 
   stopifnot(datAllFrames$dataSet ==  i) ##Identify DataSet
   ##Add Only Sequencially, so there are no Empty Entries in the List
-  datAllSets[[n]] <- datAllFrames
+  if (n > 1) ##Only Combine DataSets on the fields existing On the Prior dataFrame
+    datAllSets[[n]] <- datAllFrames[fieldNames]
+  else
+    datAllSets[[n]] <- datAllFrames
+  
+  if (n==1)
+    fieldNames <- names(datAllFrames)
+  
   
 }
 message(paste("Done Loading All datasets. Now Merging... ",dataSetsToProcess[1]," to ",dataSetsToProcess[length(dataSetsToProcess)]) )
