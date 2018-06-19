@@ -17,11 +17,13 @@
 #include <opencv2/core/ocl.hpp> //For setting setUseOpenCL
 /// CUDA //
 /// #include <opencv2/opencv_modules.hpp> //THe Cuda Defines are in here
-#include <opencv2/core/cuda.hpp>
-#include "opencv2/cudaimgproc.hpp"
-#include "opencv2/cudaarithm.hpp"
-#include <opencv2/photo/cuda.hpp>
-#include <opencv2/core/cuda_types.hpp>
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+    #include <opencv2/core/cuda.hpp>
+    #include "opencv2/cudaimgproc.hpp"
+    #include "opencv2/cudaarithm.hpp"
+    #include <opencv2/photo/cuda.hpp>
+    #include <opencv2/core/cuda_types.hpp>
+#endif
 
 
 //const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
@@ -683,8 +685,10 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
     if (bshowMask)
     {
-        if (bUseGPU)
-            dframe_thres.download(threshold_output);
+
+        #if defined(USE_CUDA)
+            if (bUseGPU) dframe_thres.download(threshold_output);
+        #endif
 
            cv::imshow("Threshold Out",threshold_output);
 

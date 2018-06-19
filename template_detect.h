@@ -10,9 +10,11 @@
 
 /// CUDA //
 #include <opencv2/opencv_modules.hpp> //THe Cuda Defines are in here
-#include "opencv2/cudaimgproc.hpp"
-#include "opencv2/cudaarithm.hpp"
-#include <opencv2/core/cuda.hpp>
+#if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
+    #include "opencv2/cudaimgproc.hpp"
+    #include "opencv2/cudaarithm.hpp"
+    #include <opencv2/core/cuda.hpp>
+#endif
 
 #include <QString>
 
