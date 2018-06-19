@@ -331,6 +331,7 @@ int main(int argc, char *argv[])
         "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
+        "{BGThreshold bgthres | 30  | Absolute grey value used to segment BG (g_Segthresh)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
@@ -340,7 +341,7 @@ int main(int argc, char *argv[])
         "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
         ;
 
-
+//
     cv::CommandLineParser parser(argc, argv, keys);
 
     stringstream ssMsg;
@@ -444,6 +445,9 @@ int main(int argc, char *argv[])
 
     if (parser.has("PolygonROI"))
         bMakeCustomROIRegion = (parser.get<int>("PolygonROI") == 1)?true:false;
+
+      if (parser.has("BGThreshold"))
+          g_Segthresh = parser.get<int>("BGThreshold");
 
     if (parser.has("FilterPixelNoise"))
     {
