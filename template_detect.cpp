@@ -43,6 +43,7 @@ extern double gTemplateMatchThreshold;
 extern int gFishTemplateAngleSteps;
 extern int gnumberOfTemplatesInCache;
 extern cv::Mat gFishTemplateCache;
+extern cv::Mat gLastfishimg_template; // The last Template Image Used
 extern MainWindow* pwindow_main;
 extern bool bTemplateSearchThroughRows;
 
@@ -59,6 +60,61 @@ static cv::Mat loadImage(const std::string& name)
         exit(-1);
     }
     return image;
+}
+
+
+/// \brief Defines search area region and runs template matching
+/// pt Cant be closer to image border than gFishBoundBoxSize - If it is it will fixed to this distance
+/// Returns Angle of Matched Template, centre of Detected Template and Match Score
+double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,int& iLastKnownGoodTemplateCol,int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut )
+{
+    /// Fix Bounds For Search point such that search temaplte region is not smaller than template size
+    pt.x = (pt.x <= gLastfishimg_template.cols)?(gLastfishimg_template.cols+2): pt.x;
+    pt.x = (maskedImg_gray.cols-pt.x <= gLastfishimg_template.cols)?maskedImg_gray.cols-gLastfishimg_template.cols-2: pt.x;
+
+    pt.y = (pt.y <= gLastfishimg_template.rows)?(gLastfishimg_template.rows+2): pt.y;
+    pt.y = (maskedImg_gray.rows-pt.y <= gLastfishimg_template.rows)?maskedImg_gray.rows-gLastfishimg_template.rows-2: pt.y;
+    ///
+
+    double maxMatchScore =0; //
+    cv::Point gptmaxLoc; //point Of Bestr Match
+    cv::Size szTempIcon(std::max(gLastfishimg_template.cols,gLastfishimg_template.rows),std::max(gLastfishimg_template.cols,gLastfishimg_template.rows));
+    cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
+    ///
+    /// Check If Track Centre Point Contains An image that matches a fish template
+    /// \todo make HeadPoint/Tail point a Propery of FishBlob
+    //cv::Point centroid = fishblob->pt;
+     //Locate Centroid Region at a point between blob Centroid And Detect HeadPoint on Curve
+   // cv::Point centroid = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
+    cv::Point pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-gFishBoundBoxSize-2)), std::max(0,std::min(maskedImg_gray.rows,pt.y-gFishBoundBoxSize-2)));
+    cv::Point pBound2 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x+gFishBoundBoxSize+2)), std::max(0,std::min(maskedImg_gray.rows,pt.y+gFishBoundBoxSize+2)));
+
+    // Look for Fish Template Within The Blob Region //
+    cv::Rect rectFish(pBound1,pBound2);
+
+    // Debug //
+    //#ifdef _ZTFDEBUG_
+    cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1);
+    //#endif
+
+    cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
+
+
+    //If blob exists but No Fish Model yet then Search Through Cache to improve matching;
+    //bool findBestMatch = (vfishmodels.size() == 0);
+    bool findBestMatch = (iLastKnownGoodTemplateRow == 0 && iLastKnownGoodTemplateCol == 0);
+    if (findBestMatch)
+        pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
+
+
+    int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
+
+    detectedAngle =AngleIdx*gFishTemplateAngleSteps;
+
+    cv::Point top_left  = pBound1+gptmaxLoc; //Get top Left Corner Of Template Detected Region
+    detectedPoint = top_left + rotCentre; //Get Centre Of Template Detection Region - Used for Tracking
+
+    return maxMatchScore;
 }
 
 

@@ -1304,60 +1304,6 @@ bool operator<(const fishModel& a, const fishModel& b)
 }
 
 
-/// \brief Defines search area region and runs template matching
-/// pt Cant be closer to image border than gFishBoundBoxSize - If it is it will fixed to this distance
-/// Returns Angle of Matched Template, centre of Detected Template and Match Score
-double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut )
-{
-    /// Fix Bounds For Search point such that search temaplte region is not smaller than template size
-    pt.x = (pt.x <= gLastfishimg_template.cols)?(gLastfishimg_template.cols+2): pt.x;
-    pt.x = (maskedImg_gray.cols-pt.x <= gLastfishimg_template.cols)?maskedImg_gray.cols-gLastfishimg_template.cols-2: pt.x;
-
-    pt.y = (pt.y <= gLastfishimg_template.rows)?(gLastfishimg_template.rows+2): pt.y;
-    pt.y = (maskedImg_gray.rows-pt.y <= gLastfishimg_template.rows)?maskedImg_gray.rows-gLastfishimg_template.rows-2: pt.y;
-    ///
-
-    double maxMatchScore =0; //
-    cv::Point gptmaxLoc; //point Of Bestr Match
-    cv::Size szTempIcon(std::max(gLastfishimg_template.cols,gLastfishimg_template.rows),std::max(gLastfishimg_template.cols,gLastfishimg_template.rows));
-    cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
-    ///
-    /// Check If Track Centre Point Contains An image that matches a fish template
-    /// \todo make HeadPoint/Tail point a Propery of FishBlob
-    //cv::Point centroid = fishblob->pt;
-     //Locate Centroid Region at a point between blob Centroid And Detect HeadPoint on Curve
-   // cv::Point centroid = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
-    cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,pt.x-gFishBoundBoxSize-2)), max(0,min(maskedImg_gray.rows,pt.y-gFishBoundBoxSize-2)));
-    cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,pt.x+gFishBoundBoxSize+2)), max(0,min(maskedImg_gray.rows,pt.y+gFishBoundBoxSize+2)));
-
-    // Look for Fish Template Within The Blob Region //
-    cv::Rect rectFish(pBound1,pBound2);
-
-    // Debug //
-    //#ifdef _ZTFDEBUG_
-    cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1);
-    //#endif
-
-    cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
-
-
-    //If blob exists but No Fish Model yet then Search Through Cache to improve matching;
-    bool findBestMatch = (vfishmodels.size() == 0);
-    if (findBestMatch)
-        pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
-
-
-    int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
-
-    detectedAngle =AngleIdx*gFishTemplateAngleSteps;
-
-    cv::Point top_left  = pBound1+gptmaxLoc; //Get top Left Corner Of Template Detected Region
-    detectedPoint = top_left + rotCentre; //Get Centre Of Template Detection Region - Used for Tracking
-
-    return maxMatchScore;
-}
-
-
 ///
 /// \brief UpdateFishModels starting from Blob Info do the processing steps to update FishModels for this frame,
 /// \param maskedImg_gray
@@ -1381,11 +1327,14 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         zftblob* fishblob = &(*it);
 
         cv::Point ptbcentre = fishblob->pt; //Start As First Guess - This is updated When TemplMatching
+        cv::Point ptSearch; //Where To Centre The Template Matching Searcrh
         int bestAngle;
         double  maxMatchScore = 0.0;
         bool bModelFound = false;
 
         //Check Through Models And Find The Closest Fish To This FishBlob
+        /// Note We do Template Matching On Previous Fish Coordinates First , (Not On Wobbly Blobs Coordinates)
+        /// If No FishModel Is Matched with this Blob, then We Follow Up to Check the template score Of the Blob, before Creating A new Fish Model
         for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
         {
              pfish = ft->second;
@@ -1395,14 +1344,15 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              {
                  //If Yes then assign the fish with the overlapping blob the template Match Score
                 bModelFound = true;
-                cv::Point ptSearch = pfish->ptRotCentre; //((cv::Point)fishblob->pt-gptHead)/3+gptHead;
-                maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,bestAngle,ptbcentre,frameOut);
+                ptSearch = pfish->ptRotCentre; //((cv::Point)fishblob->pt-gptHead)/3+gptHead;
+                maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,pfish->idxTemplateRow,pfish->idxTemplateCol,bestAngle,ptbcentre,frameOut);
 
                 //Failed? Try the blob Head (From Enhance Mask) Detected position
                 if ( maxMatchScore < gTemplateMatchThreshold)
                 {
+
                   ptSearch = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
-                  maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,bestAngle,ptbcentre,frameOut);
+                  maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,pfish->idxTemplateRow,pfish->idxTemplateCol,bestAngle,ptbcentre,frameOut);
                 }
                 pfish->templateScore = maxMatchScore;
 
@@ -1446,19 +1396,28 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
        //
         if (!bModelFound) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
         {
-            //Make new fish Model
-            //fishModel* fish= new fishModel(track,fishblob);
-           fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
-           fish->ID = ++gi_MaxFishID;
+            //Check Template Match Score
+            ptSearch = fishblob->pt;
+            int iTemplRow = 0; //Starting Search Point For Template
+            int iTemplCol = 0;
+            maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
+            //If New Blob Looks Like A Fish, Then Make  A New Model
+            if (maxMatchScore > gTemplateMatchThreshold*0.90)
+            {
+                //Make new fish Model
+               fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
+               fish->ID = ++gi_MaxFishID;
+               fish->idxTemplateRow = iTemplRow;
+               fish->idxTemplateCol = iTemplCol;
+               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
 
-           fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
-
-           vfishmodels.insert(IDFishModel(fish->ID,fish));
-           qfishrank.push(fish); //Add To Priority Queue
-           std::stringstream strmsg;
-           strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore;
-           //std::clog << nFrame << strmsg.str() << std::endl;
-           pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
+               vfishmodels.insert(IDFishModel(fish->ID,fish));
+               qfishrank.push(fish); //Add To Priority Queue
+               std::stringstream strmsg;
+               strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore;
+               //std::clog << nFrame << strmsg.str() << std::endl;
+               pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
+            }
 
         }
 //        //Report No Fish
