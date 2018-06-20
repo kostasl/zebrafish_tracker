@@ -1365,7 +1365,8 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 /// \param fishblobs
 /// \param nFrame
 /// \param frameOut
-///\todo - Add TimeOut Period Before Deleting Model
+///\todo
+///
 void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
 
     qfishModels qfishrank;
@@ -1494,9 +1495,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         pfishBest->inactiveFrames   = 0; //Reset Counter
     }
 
-
-
-    ///Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
+   ///Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
     ft = vfishmodels.begin();
     while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
     {
@@ -1508,16 +1507,16 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //OtherWise Delete The model?
             //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
-            if (pfish->inactiveFrames > gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
-            {
-                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
+   //         if (pfish->inactiveFrames > gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
+//            {
+  //              std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
                 ft = vfishmodels.erase(ft);
                 delete(pfish);
                 continue;
-            }else
-            {
-                pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
-            }
+//            }else
+//            {
+//                pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+//            }
         }
         ++ft; //Increment Iterator
     } //Loop To Delete Other FishModels
@@ -3193,7 +3192,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
           fishModel* fish = (*it).second;
 
           //fish->bearingAngle   = AngleIdx;
-            if (fish == 0 || fish->inactiveFrames > 1)
+            if (fish == 0 ) //|| fish->inactiveFrames > 1
                 continue;
 
           //Draw A general Region Where the FIsh Is located,
