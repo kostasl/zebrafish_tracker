@@ -116,8 +116,9 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
 strProcDataFileName <-paste("setn",NROW(dataSetsToProcess),"-D",firstDataSet,"-",lastDataSet,"-","HuntEvents-Merged",sep="") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... "))
-load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEventAllGroupToLabel <- datHuntEvent
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+ ##<- datHuntEvent
 groupsList <- c("DL","NL","LL") ##unique(datHuntEventAllGroupToLabel$groupID)
 
 ##Select Randomly From THe Already Labelled Set ##
@@ -169,11 +170,25 @@ while (Keyc != 'q')
   ##Saving is done in labelHuntEvent on Every loop - But repeated here
   save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) 
   save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,"-backup.RData",sep="" )) ##Save With Dataset Idx Identifier
+  saveRDS(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
   message(paste("Saved :",strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="") )
   
   
 }
 
+tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel$huntScore),datHuntEventAllGroupToLabel$groupID)
+write.csv(tblRes,file=paste(strDatDir,"/","tbLabelHuntEventSummary.csv",sep="") )
+
+lLabelSummary <- list()
+nLabelledDL <- sum(tblRes[3:13,2])
+nLabelledLL <- sum(tblRes[3:13,4])
+nLabelledNL <- sum(tblRes[3:13,6])
+
+
+message(paste("HuntEvents Labelled (exclude NA) #DL:",nLabelledDL,"#LL:",nLabelledLL,"#NL:",nLabelledNL ) )
+lLabelSummary$HuntEventCount <- list(DL=nLabelledDL,LL=nLabelledLL,NL=nLabelledNL)
+lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),2]),LL=sum(tblRes[c(3,12),4]),NL=sum(tblRes[c(3,12),6]) )
+lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$HuntEventCount$DL,LL=lLabelSummary$Success$LL/lLabelSummary$HuntEventCount$LL,NL=lLabelSummary$Success$NL/lLabelSummary$HuntEventCount$NL )
 ##########################
 ####
 

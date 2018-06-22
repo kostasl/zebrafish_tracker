@@ -260,7 +260,45 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
   
 }
 
-
+compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
+{
+  
+  datHuntEventComp <- datHuntEventA
+  datHuntEventComp$huntScoreB <- NA
+  for (i in 1:NROW(datHuntEventA) )
+  {
+    rec <- datHuntEventA[i,]
+    
+    
+    res <- datHuntEventB[as.character(datHuntEventB$expID) == as.character(rec$expID) &
+                           as.character(datHuntEventB$eventID) == as.character(rec$eventID) & 
+                           (##Episode startFrame Should have some overlap within the region of the other 
+                           (datHuntEventB$startFrame >= rec$startFrame & ## B Start Contained In A
+                           datHuntEventB$startFrame <= rec$endFrame) | 
+                           (datHuntEventB$endFrame >= rec$startFrame &  ## B End Contained in A
+                            datHuntEventB$endFrame <= rec$endFrame) |
+                             (datHuntEventB$endFrame >= rec$endFrame & ## B contains A as a whole
+                                datHuntEventB$startFrame <= rec$startFrame) |
+                             (datHuntEventB$endFrame <= rec$endFrame & ## A Contains B as A whole 
+                                datHuntEventB$endFrame >= rec$startFrame)
+                           ), ]
+   if ( NROW(res) == 1)  
+   {
+      datHuntEventComp[i,]$huntScoreB  <- res$huntScore
+      datHuntEventComp[i,]$startFrameB <- res$startFrame
+      datHuntEventComp[i,]$endFrameB   <- res$endFrame
+   }
+   
+  if ( NROW(res) == 0)  
+     warning(paste( " No Match For eventID:",rec$eventID, " expID:",rec$expID," sFrame:",rec$startFrame, " -endFrame:",rec$endFrame ) )
+   
+   if ( NROW(res) > 1)  
+      warning(paste("More than a single match for eventID:",rec$eventID, " expID:",rec$expID," sFrame:",rec$startFrame, " -endFrame:",rec$endFrame  ) )
+    
+  }
+  
+  return(datHuntEventComp)
+}
 
 
 
