@@ -11,6 +11,7 @@
 
 #################
 
+source("TrackerDataFilesImport.r")
 
 calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 {

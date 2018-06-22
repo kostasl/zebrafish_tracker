@@ -156,6 +156,7 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
 renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
 {
 
+  
   frameWidth = 610
   frameHeight = 470
   
@@ -167,7 +168,12 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
   BodyArrowLength = 13
   LEyecolour = "#00FF00AA"
   REyecolour = "#FF0000AA"
+
+  #display.brewer.all() to see avaulable options
+  Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
   
+  
+    
   datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$posX < frameWidth & datRenderHuntEvent$posY < frameHeight ,]
  
   X11()
@@ -185,6 +191,9 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     
     datFishFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN %in% tR,] ##in Range
     vTrackedPreyIDs <- unique(datFishFrames$PreyID)
+    
+    
+    
     preyTargetID <- min(datFishFrames[datFishFrames$frameN == i,]$PreyID) ##Choose A Prey ID found on the Last Frame The max Id F
     ##Now Isolate Fish Rec, Focus on Single Prey Item
     datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
@@ -204,6 +213,11 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     points(posX,posY,col="black",pch=16)
     
     arrows(posX,posY,posVX,posVY)
+
+    posVX2 = posX+cos(bearingRad)*BodyArrowLength*10
+    posVY2 = posY-sin(bearingRad)*BodyArrowLength*10
+    arrows(posX,posY,posVX2,posVY2,length=0.01,col="blue")
+        
     
     ##Draw Eyes 
     ##Left Eye - Requires Inversions due to differences in How Angles Are Calculated in Tracker and In R Plots
@@ -232,18 +246,23 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
                    REyePosY+sin(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90+iConeArc))*iConeLength )
     polygon(REyeConeX,REyeConeY,col=LEyecolour) ##,density=25,angle=-45
     
-        
     
+    ##Draw Frame 
+    text(10,frameHeight-10,labels=i,col="darkblue",cex=0.7)
+    
+    colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
     ###Draw Prey
-    
+    nn <- 0
     for (f in vTrackedPreyIDs)
     {
+      nn <- nn + 1
       lastPreyFrame <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN == i & datHuntEventMergedFrames$PreyID == f,]
       rangePreyFrame <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN >= startFrame & datHuntEventMergedFrames$frameN <= i & datHuntEventMergedFrames$PreyID == f,]
       
       if (NROW(lastPreyFrame$Prey_X) > 0 )
       {
-        points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col="red",pch=16)
+        
+        points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=16)
         lines(rangePreyFrame$Prey_X,frameWidth-rangePreyFrame$Prey_Y,col="red")
         text(lastPreyFrame$Prey_X+5,frameWidth-lastPreyFrame$Prey_Y+10,labels=f,col="darkred",cex=0.5)
       }
@@ -252,6 +271,120 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     dev.flush()
    }
 }
+
+
+## PLot The Relative Angle Of Fish Bearing to Prey Over Time On  a Polar Plot - For Each Prey Of this Hunt Event
+polarPlotAngleToPrey <- function(datRenderHuntEvent)
+{
+### Plot Relative Angle To Each Prey ###
+vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
+Range <- ((max(datRenderHuntEvent$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
+relAngle <- list()
+
+
+txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))
+plot(1,type='n',xlim=c(-(Range+txtW),(Range+txtW)) ,ylim=c(-(Range+txtW),(Range+txtW) ),main="Angle to Prey Over Time ")
+
+#display.brewer.all() to see avaulable options
+Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
+
+  colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
+  n <- 0
+  for (f in vTrackedPreyIDs)
+  {
+    n<-n+1
+    message(f)
+    message(colR[n])
+    if (is.na(f))
+      next
+    datRenderPrey <- datRenderHuntEvent[datRenderHuntEvent$PreyID == f,]
+    ##Atan2 returns -180 to 180, so 1st add 180 to convert to 360, then sub the fishBody Angle, then Mod 360 to wrap in 360deg circle, then sub 180 to convert to -180 to 180 relative to fish heading angles
+    #relAngle[[as.character(f)]] <- ( ((360+180/pi * atan2( datRenderHuntEvent$Prey_X-datRenderHuntEvent$posX,datRenderHuntEvent$posY - datRenderHuntEvent$Prey_Y)) - datRenderHuntEvent$BodyAngle) %% 360) -180
+    
+    relAngle[[as.character(f)]]  <- (  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+    
+    #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
+    
+    ##Convert Frames To Seconds
+    
+    d <- (datRenderPrey$frameN-min(datRenderHuntEvent$frameN)) / G_APPROXFPS
+    x <- (d)*cos(pi/180 * relAngle[[as.character(f)]] + pi/2)
+    y <- (d)*sin(pi/180 * relAngle[[as.character(f)]] + pi/2)
+    points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",col=colR[n])
+    
+    points(0,0,cex=0.8,col="blue")
+    for (i in seq(0,Range,0.5 )  )
+    {
+      lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col="blue")
+      txtW <- strwidth(paste(as.character(i),"s",sep="") )/2
+      text(i*cos(pi/180 * 0 )+txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i),"s",sep="")   ,col="blue",cex=0.7)
+    }
+    
+    lines(c(0,0),c(0,Range+Range/30) ,col="blue") 
+    txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/2
+    text((Range+txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,(Range+txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col="blue",cex=0.8)
+  }
+  
+}
+
+#
+
+## PLot The Relative Angle Of Fish Bearing to Prey Over Distance to Prey as a Polar Plot
+##- For Each Prey Of this Hunt Event
+## The Is assumed to be at the centre of the polar plot 
+polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent)
+{
+  ### Plot Relative Angle To Each Prey ###
+  vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
+  Range <- 80 ##300 Pixels Around the prey
+  relAngle <- list()
+  
+  txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))
+  plot(1,type='n',xlim=c(-(Range+4*txtW),(Range+4*txtW)) ,ylim=c(-(Range+4*txtW),(Range+4*txtW) ),main="Angle to Prey Vs Distance ")
+  
+  #display.brewer.all() to see avaulable options
+  Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
+  
+  colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
+  n <- 0
+  for (f in vTrackedPreyIDs)
+  {
+    n<-n+1
+    message(f)
+    message(colR[n])
+    if (is.na(f))
+      next
+    
+    datRenderPrey <- datRenderHuntEvent[datRenderHuntEvent$PreyID == f,]
+    ##Atan2 returns -180 to 180, so 1st add 180 to convert to 360, then sub the fishBody Angle, then Mod 360 to wrap in 360deg circle, then sub 180 to convert to -180 to 180 relative to fish heading angles
+    #relAngle[[as.character(f)]] <- ( ((360+180/pi * atan2( datRenderHuntEvent$Prey_X-datRenderHuntEvent$posX,datRenderHuntEvent$posY - datRenderHuntEvent$Prey_Y)) - datRenderHuntEvent$BodyAngle) %% 360) -180
+    
+    relAngle[[as.character(f)]]  <- (  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+    
+    #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
+    
+    ##Convert Frames To Seconds
+    
+    d <- sqrt(  (datRenderPrey$Prey_X -datRenderPrey$posX )^2 + (datRenderPrey$Prey_Y -datRenderPrey$posY)^2   ) 
+    x <- (d)*cos(pi/180 * relAngle[[as.character(f)]] + pi/2)
+    y <- (d)*sin(pi/180 * relAngle[[as.character(f)]] + pi/2)
+    points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",col=colR[n])
+    
+    points(0,0,cex=0.8,col="blue")
+    for (i in seq(0,Range,1/DIM_MMPERPX )  )
+    {
+      lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col="blue")
+      txtW <- strwidth(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
+      text(i*cos(pi/180 * 0 )+txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="")   ,col="blue",cex=0.7)
+    }
+    
+    lines(c(0,0),c(0,Range+Range/30) ,col="blue") 
+    txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/2
+    text((Range+txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,(Range+txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col="blue",cex=0.8)
+  }
+  
+}
+
 
 ############# PLot Heat Map of Movement Trajectories Across COnditions #####
 # strTrajectoryDensityFileName <- paste("plots/densities/MotionDensity-Set-",strCond,".pdf",collapse=NULL);

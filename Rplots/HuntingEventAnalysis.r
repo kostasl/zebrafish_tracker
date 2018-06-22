@@ -138,11 +138,18 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
         
         ##On 1st Event Save THe Initial mean Prey Count
         if (k==1 & NROW(datEventFrames) > 0)
+        {
           nInitialPrey <- mean(datEventFrames$PreyCount[1:min(NROW(datEventFrames),PREY_COUNT_FRAMEWINDOW)],na.rm = TRUE)
-        
+          stopifnot(!is.na(nInitialPrey))
+        }
+       
+         
         ##Count Prey On Final Event
         if ( (k == max(vEventID)) & NROW(datEventFrames) > 0)
+        {
           nFinalPrey <- mean(datEventFrames$PreyCount[max(1,NROW(datEventFrames)-PREY_COUNT_FRAMEWINDOW):NROW(datEventFrames)],na.rm = TRUE)
+          stopifnot(!is.na(nFinalPrey))
+        }
         
         ##Add to Total Number of frames - Using Actual Frame Number of steps Instead of simpler NRow(datLarvaFrames) 
         ##(ideally these should match tho) but tracker can loose object for a few frames and skip
@@ -221,6 +228,10 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
             
           idxHuntRec = idxHuntRec + 1;
           
+          muEpiPreyCount <- mean(datHuntFrames$PreyCount,na.rm = TRUE) ##Mean Prey Count Across Hunt Frames
+          
+          stopifnot(!is.na(muEpiPreyCount))
+          
           lHuntingEvents[[idxHuntRec]] <- data.frame(expID               = factor(i,levels=vexpID),
                                                      eventID             = k,
                                                      dataSetID           = factor(DataSetID,levels=vdatasetID),
@@ -233,7 +244,7 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
                                                      nExpFrames          = nTotalRecordedFrames,
                                                      InitPreyCount      = nInitialPrey, ##Mean Prey Count Across Hunt PREY_COUNT_FRAMEWINDOW Frames of 1st Event
                                                      FinalPreyCount     = c(rep(NA,length(vHuntEndFrames)-1),nFinalPrey), ##Mean Prey COunt On Last Event's PREY_COUNT_FRAMEWINDOW frames-Add only To Last Record
-                                                     PreyCount          =  mean(datHuntFrames$PreyCount), ##Mean Prey Count Across Hunt Frames
+                                                     PreyCount          =  muEpiPreyCount,
                                                      huntScore          = 0,
                                                      markTracked        = NA, ## Flags that this event has been been closelly Retracked for Analysis
                                                      stringsAsFactors = FALSE) ##0 To Be used for Manual Labelling Of Hunting Success
@@ -496,6 +507,13 @@ calcHuntStat3 <- function(datHuntEvent)
   
 } ### END oF CALC Stat ##
 
+##After Labelling The the nextHuntFrame Field would need adjustments - as we change frame durations.
+##Durations Are Difficult as the begining of a hunt event is not clearly defined (Tirverdi et al ) used a monocular critirion eye vergence criterion
+##
+fixNextHuntEventFrame <- function(datHuntEvents)
+{
+  
+}
 
 ############# Function to Analyse HuntEpisode tracks Combined With food #########
 ## Import The retracked Hunt/Food Episodes - 

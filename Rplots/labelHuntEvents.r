@@ -11,7 +11,7 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
   Sys.setenv(LD_LIBRARY_PATH="")
   #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"",sep=":" ) ) 
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.9/5.9/gcc_64/lib",sep=":" ) ) ##Home PC/
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.9.2/gcc_64/lib/",sep=":" ) ) ####Office
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) ####Office
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/usr/lib/x86_64-linux-gnu/",sep=":" ) )
 }
 
@@ -26,11 +26,19 @@ convertToScoreLabel <- function (huntScore) {
 huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
 
 
-labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath,factorLabelFilter)
+labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath,factorLabelFilter,ExpIDFilter,EventIDFilter,idxFilter=NA)
 {
   message(paste(NROW(datHuntEvent[datHuntEvent$huntScore >0,]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
   nLabelledSuccess <- NROW(datHuntEvent[datHuntEvent$huntScore == which(levels(huntLabels) == "Success") | datHuntEvent$huntScore == which(levels(huntLabels) == "Success-SpitBackOut"),])
-  readline(prompt="-.Begin Data labelling.-")
+  if (is.na(idxFilter))
+  {
+    nEventsToLabel <- NROW(datHuntEvent[datHuntEvent$expID   == ExpIDFilter &
+                                        datHuntEvent$eventID == EventIDFilter &
+                                          convertToScoreLabel(datHuntEvent$huntScore) %in% factorLabelFilter,])  
+    message (paste("There are ",nEventsToLabel, " to label in this cycle.") )
+  }
+  
+  readline(prompt="- Press Any key to Begin Data labelling.-")
   
   
   for (i in  (1:NROW(datHuntEvent)) )
@@ -40,13 +48,17 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     ##Added Later To Struct Is  A Flag that a Hunt Event Has been Retracked - adding the food target
     if (any(names(datHuntEvent)=="markTracked")  ) ##This Marks Videos that have been Labelled and Retracked For anal
       if (!is.na(rec$markTracked))
-        #if (rec$markTracked == 1 | rec$markTracked == -1)
-          next ##SKip Record if previously Labelled
+        if (rec$markTracked == 1)
+      next ##SKip Record if previously Labelled
     
-    
-    if (rec$huntScore != factorLabelFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
+    ##A Noddy  Way of selecting Records
+    if (!(convertToScoreLabel(rec$huntScore) %in% factorLabelFilter) | rec$expID != ExpIDFilter | rec$eventID != EventIDFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
         next ##SKip Record if previously Labelled
 
+    ## If User Gave Specific Hunt Event, Then Look for it Specifically
+    if (!is.na(idxFilter) & idxFilter != i )
+      next
+    
     ##For Larva That Did not register any sufficient Hunting Events -  An Empty Record has been added To Acknowledge 
     if (rec$eventID == 0 & rec$huntScore == 0)
     {##Set To Not Hunt Event/Delete - So as to Ignore In Hunt Event Counts
@@ -63,10 +75,10 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       stop(paste("Could not find video file: ",strVideoFile ) )
     
     
-    message(paste("\n",i,". Examining Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
+    message(paste("\n",i,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame) )
     ##--
-    strArgs = paste(" --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
-    message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
+    strArgs = paste("--HideDataSource=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    #message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
     execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout="",stderr=TRUE)
     
     ## execres contains all of the stdout - so cant be used for exit code
@@ -86,7 +98,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       
       setLabel <- factor(x=rec$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )
       message(paste("### Event's ",i, " Current Label is :",setLabel," ####" ) )
-      message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
+      #message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
       
       
       for (g in levels(huntLabels) )
@@ -147,8 +159,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
         return(datHuntEvent)
         
       }
-      ###UPDATE SCORE VALUE
-      if (!is.na(as.numeric(Keyc)) )
+      if (!is.na(as.numeric(Keyc)))
       {
         rec$huntScore <- as.numeric(Keyc) ##factor(levels(huntLabels)[as.numeric(c)]
       }
@@ -216,14 +227,17 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       #break
     }
     else
-       message(paste(vHuntEventLabels[datHuntEvent[i,"huntScore"]+1] , "-Proceeding to Next Video.") )
+       message(paste(levels(huntLabels)[as.numeric(Keyc)+1] , "-Proceeding to Next Video.") )
      
      #####################################################################################################
     ##### Save With Dataset Idx Identifier On Every Labelling As An Error Could Lose Everything  ########
-    save(datHuntEvent,file=paste(strDatDir,"/",strDataFileName,".RData",sep="" ))      
+    
+    
+    save(datHuntEvent,file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+    
     
     strOutFileName <- paste(strDatDir,"/",strDataFileName,"-updates.csv",sep="")
-    message(paste("Data Updated ",strDatDir,"/",strDataFileName,".RData",sep="" ))
+    message(paste("Data Updated *",strDatDir,"/",sep="" ))
     bColNames = FALSE
     if (!file.exists(strOutFileName) )
       bColNames = TRUE

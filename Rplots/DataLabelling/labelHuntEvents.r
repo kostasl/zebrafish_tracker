@@ -11,7 +11,7 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
   Sys.setenv(LD_LIBRARY_PATH="")
   #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"",sep=":" ) ) 
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.9/5.9/gcc_64/lib",sep=":" ) ) ##Home PC/
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.9.2/gcc_64/lib/",sep=":" ) ) ####Office
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) ####Office
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/usr/lib/x86_64-linux-gnu/",sep=":" ) )
 }
 
@@ -30,7 +30,15 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
 {
   message(paste(NROW(datHuntEvent[datHuntEvent$huntScore >0,]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
   nLabelledSuccess <- NROW(datHuntEvent[datHuntEvent$huntScore == which(levels(huntLabels) == "Success") | datHuntEvent$huntScore == which(levels(huntLabels) == "Success-SpitBackOut"),])
-  readline(prompt="-.Begin Data labelling.-")
+  if (is.na(idxFilter))
+  {
+    nEventsToLabel <- NROW(datHuntEvent[datHuntEvent$expID   == ExpIDFilter &
+                                        datHuntEvent$eventID == EventIDFilter &
+                                          convertToScoreLabel(datHuntEvent$huntScore) %in% factorLabelFilter,])  
+    message (paste("There are ",nEventsToLabel, " to label in this cycle.") )
+  }
+  
+  readline(prompt="- Press Any key to Begin Data labelling.-")
   
   
   for (i in  (1:NROW(datHuntEvent)) )
@@ -225,7 +233,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     ##### Save With Dataset Idx Identifier On Every Labelling As An Error Could Lose Everything  ########
     
     
-    save(datHuntEventAllGroup,file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+    save(datHuntEvent,file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
     
     
     strOutFileName <- paste(strDatDir,"/",strDataFileName,"-updates.csv",sep="")
