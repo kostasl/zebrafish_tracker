@@ -177,18 +177,27 @@ while (Keyc != 'q')
 }
 
 tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel$huntScore),datHuntEventAllGroupToLabel$groupID)
-write.csv(tblRes,file=paste(strDatDir,"/","tbLabelHuntEventSummary.csv",sep="") )
+write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary-SB.csv",sep="") )
 
 lLabelSummary <- list()
-nLabelledDL <- sum(tblRes[3:13,2])
-nLabelledLL <- sum(tblRes[3:13,4])
-nLabelledNL <- sum(tblRes[3:13,6])
+nLabelledDL <- sum(tblRes[2:13,"DL"])
+nLabelledLL <- sum(tblRes[2:13,"LL"])
+nLabelledNL <- sum(tblRes[2:13,"NL"])
 
 
 message(paste("HuntEvents Labelled (exclude NA) #DL:",nLabelledDL,"#LL:",nLabelledLL,"#NL:",nLabelledNL ) )
 lLabelSummary$HuntEventCount <- list(DL=nLabelledDL,LL=nLabelledLL,NL=nLabelledNL)
-lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),2]),LL=sum(tblRes[c(3,12),4]),NL=sum(tblRes[c(3,12),6]) )
+lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),"DL"]),LL=sum(tblRes[c(3,12),"LL"]),NL=sum(tblRes[c(3,12),"NL"]) )
 lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$HuntEventCount$DL,LL=lLabelSummary$Success$LL/lLabelSummary$HuntEventCount$LL,NL=lLabelSummary$Success$NL/lLabelSummary$HuntEventCount$NL )
+
+##   Can COMPARE Two Labelling Sets Using : ########
+#huntComp <- compareLabelledEvents(datHuntEventsSB,datHuntEventsKL)
+#huntComp$huntScore <- convertToScoreLabel(huntComp$huntScore) ##Convert to Labels
+#huntComp$huntScoreB <- convertToScoreLabel(huntComp$huntScoreB)
+#huntComp[huntComp$huntScore != huntComp$huntScoreB & huntComp$huntScore != "UnLabelled",] ##Bring Out The labelled Mismatches
+##Compare:
+#tblLabelCompare <- table(huntComp$huntScore, huntComp$huntScoreB) ##COlumns is HuntEventB scores
+#write.csv(tblLabelCompare,file=paste(strDatDir,"/LabelledSet/","tblCompareLabellingSummary.csv",sep="") )
 ##########################
 ####
 

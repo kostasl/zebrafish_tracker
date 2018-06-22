@@ -260,11 +260,20 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
   
 }
 
+
+## Takes two labelled HuntEvent dataframes, and attempts to match the identified events between 
+## the two and combines them in a new dataframe adding the score, start and end frames From B -
+## only where a one to one matching is possible
 compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
 {
-  
+  nMultiCollision <- 0
+  nNonMatch <- 0
+  ##Make Copy And Initialize new Comparison fields As NA
   datHuntEventComp <- datHuntEventA
   datHuntEventComp$huntScoreB <- NA
+  datHuntEventComp$startFrameB <- NA
+  datHuntEventComp$endFrameB <- NA
+  
   for (i in 1:NROW(datHuntEventA) )
   {
     rec <- datHuntEventA[i,]
@@ -272,6 +281,7 @@ compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
     
     res <- datHuntEventB[as.character(datHuntEventB$expID) == as.character(rec$expID) &
                            as.character(datHuntEventB$eventID) == as.character(rec$eventID) & 
+                           convertToScoreLabel(datHuntEventB$huntScore) != "Duplicate/Overlapping" & ##Ignore Labels Set As Dublicate Already
                            (##Episode startFrame Should have some overlap within the region of the other 
                            (datHuntEventB$startFrame >= rec$startFrame & ## B Start Contained In A
                            datHuntEventB$startFrame <= rec$endFrame) | 
@@ -280,7 +290,7 @@ compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
                              (datHuntEventB$endFrame >= rec$endFrame & ## B contains A as a whole
                                 datHuntEventB$startFrame <= rec$startFrame) |
                              (datHuntEventB$endFrame <= rec$endFrame & ## A Contains B as A whole 
-                                datHuntEventB$endFrame >= rec$startFrame)
+                                datHuntEventB$endFrame >= rec$startFrame) 
                            ), ]
    if ( NROW(res) == 1)  
    {
@@ -289,15 +299,36 @@ compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
       datHuntEventComp[i,]$endFrameB   <- res$endFrame
    }
    
-  if ( NROW(res) == 0)  
-     warning(paste( " No Match For eventID:",rec$eventID, " expID:",rec$expID," sFrame:",rec$startFrame, " -endFrame:",rec$endFrame ) )
+  if ( NROW(res) == 0)
+  {
+    nNonMatch <- nNonMatch + 1
+    warning(paste( " No Match For eventID:",rec$eventID, " expID:",rec$expID," sFrame:",rec$startFrame, " -endFrame:",rec$endFrame ) )
+  }
+    
    
    if ( NROW(res) > 1)  
+   {
+      nMultiCollision <- nMultiCollision + 1
       warning(paste("More than a single match for eventID:",rec$eventID, " expID:",rec$expID," sFrame:",rec$startFrame, " -endFrame:",rec$endFrame  ) )
+   }
     
   }
   
+  message(paste( " There were MultimatchCollisions:",nMultiCollision, " and Not Matched events:",nNonMatch ) ) 
+  
   return(datHuntEventComp)
+  
+  ##Matches
+  ##huntComp[huntComp$huntScore == huntComp$huntScoreB & huntComp$huntScore != 0,]
+  ##NonMatches 
+  #huntComp[huntComp$huntScore != huntComp$huntScoreB & huntComp$huntScore != 0,]
+  
+  ##Find the the Mismaches 
+  #huntComp$huntScore <- convertToScoreLabel(huntComp$huntScore) ##Convert to Labels
+  #huntComp$huntScoreB <- convertToScoreLabel(huntComp$huntScoreB)
+  #huntComp[huntComp$huntScore != huntComp$huntScoreB & huntComp$huntScore != "UnLabelled",] ##Bring Out The labelled Mismatches
+  ##Compare:
+  #table(huntComp$huntScore, huntComp$huntScoreB)
 }
 
 
