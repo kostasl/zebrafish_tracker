@@ -233,10 +233,10 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     ##### Save With Dataset Idx Identifier On Every Labelling As An Error Could Lose Everything  ########
     
     
-    save(datHuntEvent,file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+    save(datHuntEvent,file=paste(strDatDir,"/LabelledSet/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
     
     
-    strOutFileName <- paste(strDatDir,"/",strDataFileName,"-updates.csv",sep="")
+    strOutFileName <- paste(strDatDir,"/LabelledSet/",strDataFileName,"-updates.csv",sep="")
     message(paste("Data Updated *",strDatDir,"/",sep="" ))
     bColNames = FALSE
     if (!file.exists(strOutFileName) )

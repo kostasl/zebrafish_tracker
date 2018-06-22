@@ -33,14 +33,15 @@ library("MASS");
 
 # 
 # ## Office PC
- setwd("/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/")
- strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
- strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
- strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
- #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
- strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/zebrafishtrackerData/" ##Where to source the Tracker csv files from 
- strDatDir        <- "./dat/TrackedSessionA" ##Where Are the Imported RData Stored
- strDataExportDir <- "./out/"
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
+strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
+strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
+#strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
+strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Where to source the Tracker csv files from 
+strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
+strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
+
 # 
 # ## Laptop
 # 
@@ -54,9 +55,6 @@ library("MASS");
 # strTrackInputPath <- "/media/sabina/LinuxDat/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from 
 # strDatDir        <- "./dat/" ##Where Are the Imported RData Stored
 # strDataExportDir <- "./out/"
-
-
-
 
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
@@ -94,23 +92,19 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                               "/Tracked14-06-18/"##Dataset n ##Dataset n 
                               ),sep="/")
 ##Add Source Directory
-
 strCondR  <- "*.csv"; 
-
 
 ### Set Colour Pallette Size from List Of Datasets
 G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
 
 #source("HuntingEventAnalysis.r")
 #source("TrajectoryAnalysis.r")
-source("labelHuntEvents.r")
-
+source("./DataLabelling/labelHuntEvents.r")
 
 
 firstDataSet = NROW(strDataSetDirectories)-13
 lastDataSet = NROW(strDataSetDirectories)
 dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
-
 
 
 #message(paste(" Loading Hunt Event List to Validate... "))
@@ -175,7 +169,7 @@ while (Keyc != 'q')
   ##Saving is done in labelHuntEvent on Every loop - But repeated here
   save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) 
   save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,"-backup.RData",sep="" )) ##Save With Dataset Idx Identifier
-  message(paste("Saved Backup :",strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="") )
+  message(paste("Saved :",strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="") )
   
   
 }
