@@ -355,23 +355,30 @@ plotInterHuntIntervalPerLarvaVsPreyCountHist <- function(datAllHuntEvent)
 boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
 {
   
-  layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+  layout(matrix(c(1,2,3,3,4,5), 3, 2, byrow = TRUE))
   
   ##tblHuntEpisodeDuration <- tapply(datAllHuntEvent$nextHuntFrame-datAllHuntEvent$endFrame,datAllHuntEvent$groupID,mean,na.rm=TRUE)
   datAllHuntEvent_local <- datAllHuntEvent
-  datAllHuntEvent_local$huntScore <- factor(x=datAllHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+  datAllHuntEvent_local$huntScore <- convertToScoreLabel(datAllHuntEvent$huntScore)
   datAllHuntEventSucc <- datAllHuntEvent_local[datAllHuntEvent_local$huntScore == "Success" |
                                             datAllHuntEvent_local$huntScore == "Success-SpitBackOut",]
   boxplot((datAllHuntEventSucc$nextHuntFrame-datAllHuntEventSucc$endFrame)/G_APPROXFPS ~  datAllHuntEventSucc$groupID,
-          main="Successful Episode Duration", ylab="(sec)",ylim=c(0,60))
+          main="Successful Episode Duration", ylab="(sec)",ylim=c(0,40))
   
   datAllHuntEventFail <- datAllHuntEvent_local[datAllHuntEvent_local$huntScore == "Fail-With Strike" |
                                                  datAllHuntEvent_local$huntScore == "Fail-No Strike" |
                                                  datAllHuntEvent_local$huntScore == "Fail",]
-  
+  datSuccessVsFail <- list()
+  datSuccessVsFail[["Success"]] <- datAllHuntEventSucc
+  datSuccessVsFail[["Fail"]] <- datAllHuntEventFail
   
   boxplot((datAllHuntEventFail$nextHuntFrame-datAllHuntEventFail$endFrame)/G_APPROXFPS ~  datAllHuntEventFail$groupID,
-          main="Failed Episode Duration",ylab="(sec)",ylim=c(0,60))
+          main="Failed Episode Duration",ylab="(sec)",ylim=c(0,40))
+  
+
+  ##Per Label  
+  boxplot((datAllHuntEvent_local$nextHuntFrame-datAllHuntEvent_local$endFrame)/G_APPROXFPS ~  datAllHuntEvent_local$huntScore,
+          main="Episode Duration Per Label",ylab="(sec)",ylim=c(0,20))
   
   
 }
@@ -379,15 +386,17 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
 
 
 ### Load Merged Hunt Event Files datAllHuntEvent ###
-strDataFileName <- paste("setn",NROW(unique(datAllHuntEvent$dataSetID)),"-D5-18-HuntEvents-Merged",sep="" )
+strDataFileName <- paste("setn14-D5-18-HuntEvents-Merged",sep="" )
 message(paste("Load datAllHuntEvent :",strDataFileName ) )
 load(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datAllHuntEvent <- datHuntEventAllGroupToLabel
 
 ## Load Hunt Stats from Merged Data
-strDataFileName <- paste("setn",NROW(unique(datAllHuntEvent$dataSetID)),"-D",min(as.numeric(datAllHuntEvent$dataSetID) ),"-",max(as.numeric(datAllHuntEvent$dataSetID) ),"-datHuntStat",sep="" )
+strDataFileName <- paste("setn",NROW(unique(datAllHuntEvent$dataSetID)),"-D",min(as.numeric(datAllHuntEvent$dataSetID) ),
+                         "-",max(as.numeric(datAllHuntEvent$dataSetID) ),"-datHuntStat",sep="" )
 message(paste("Load datHuntStat :",strDataFileName ) )
-save(datHuntStat,file=paste(strDataExportDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+load(file=paste(strDataExportDir,"/",strDataFileName,".RData",sep="" ))
+#save(datHuntStat,file=paste(strDataExportDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 
 
 

@@ -45,13 +45,13 @@ strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat
 strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
 
 ## Laptop
-setwd("~/Dropbox/Calculations/zebrafishtrackerData/")
+setwd("~/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
 strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
 strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
 strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
-strDatDir        <- "./dat/TrackedSessionA" ##Where Are the Imported RData Stored
-strDataExportDir <- "./out/"
+strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
+strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
 
 ####################
 #source("TrackerDataFilesImport.r")
