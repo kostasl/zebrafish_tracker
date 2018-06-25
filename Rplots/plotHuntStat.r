@@ -368,10 +368,8 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
   datAllHuntEventFail <- datAllHuntEvent_local[datAllHuntEvent_local$huntScore == "Fail-With Strike" |
                                                  datAllHuntEvent_local$huntScore == "Fail-No Strike" |
                                                  datAllHuntEvent_local$huntScore == "Fail",]
-  datSuccessVsFail <- list()
-  datSuccessVsFail[["Success"]] <- datAllHuntEventSucc
-  datSuccessVsFail[["Fail"]] <- datAllHuntEventFail
-  
+
+    
   boxplot((datAllHuntEventFail$nextHuntFrame-datAllHuntEventFail$endFrame)/G_APPROXFPS ~  datAllHuntEventFail$groupID,
           main="Failed Episode Duration",ylab="(sec)",ylim=c(0,40))
   
@@ -379,6 +377,17 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
   ##Per Label  
   boxplot((datAllHuntEvent_local$nextHuntFrame-datAllHuntEvent_local$endFrame)/G_APPROXFPS ~  datAllHuntEvent_local$huntScore,
           main="Episode Duration Per Label",ylab="(sec)",ylim=c(0,20))
+  
+  
+  lSuccessVsFail <- list()
+  
+  lSuccessVsFail[["Success"]] <- datAllHuntEventSucc
+  lSuccessVsFail[["Fail"]] <- datAllHuntEventFail
+  datSuccessVsFail <- do.call(rbind,lSuccessVsFail)
+  
+  ##Per Success Fail Label  
+  boxplot((datSuccessVsFail$nextHuntFrame-datSuccessVsFail$endFrame)/G_APPROXFPS ~  datSuccessVsFail$huntScore,
+          main="Episode Duration Per Success",ylab="(sec)",ylim=c(0,20))
   
   
 }
