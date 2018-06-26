@@ -114,7 +114,7 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
 ##Load The List To process
 
-strProcDataFileName <-paste("setn",NROW(dataSetsToProcess),"-D",firstDataSet,"-",lastDataSet,"-","HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
@@ -199,6 +199,40 @@ lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$Hun
 #write.csv(tblLabelCompare,file=paste(strDatDir,"/LabelledSet/","tblCompareLabellingSummary.csv",sep="") )
 ##########################
 ####
+
+
+
+############# PLOT LABELLED RESULTS ##########
+
+# Create Data
+Prop=c(3,7,9,1,2)
+
+# Make the default Pie Plot
+pie(Prop)
+
+# You can also custom the labels:
+pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E"))
+
+# If you give a low value to the "edge" argument, you go from something circular to a shape with edges
+pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , edges=10)
+
+# With the radius argument, you choose to zoom in (high values --> big pie) or out (low values --> small pie)
+pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , radius=10)
+pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , radius=0.2)
+
+# The clockwise function to decide where you add the first group. If false, starts 90° right, it true, starts on the top of the pie
+pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , clockwise = FALSE)
+pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , clockwise = TRUE)
+
+# The density arguments permits to add shading lines, and you can control the angle of this lines with "angle"
+pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , density=10 , angle=c(20,90,30,10,0))
+
+# You can change the border of each area with the classical parameters:
+pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E")  , border="grey" )
+
+
+
+
 
 # 
 # 
