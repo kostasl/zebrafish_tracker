@@ -507,6 +507,40 @@ calcHuntStat3 <- function(datHuntEvent)
   
 } ### END oF CALC Stat ##
 
+##Filters out Events labelled as nOn Hunting and produces the hunting Statistics on the rest
+## Spliting the statistics of Each Group
+makeHuntStat <- function(datHuntEvent)
+{
+  lHuntStat <- list()
+  #groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
+  strCondTags <- unique(datHuntEvent$groupID)
+  datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)
+  
+  for (i in strCondTags)
+  {
+    message(paste("#### ProcessGroup ",i," ###############"))
+    ##ExPORT
+    #load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+    
+    ##Filter Hunt Events ##
+    datHuntEventFilt <- datHuntEvent[datHuntEvent$groupID == i,]
+    
+    datHuntEventFilt <- datHuntEventFilt[datHuntEventFilt$huntScore != "NA" &
+                                           datHuntEventFilt$huntScore != "Not_HuntMode/Delete" &
+                                           datHuntEventFilt$huntScore != "Out_Of_Range" &
+                                           datHuntEventFilt$huntScore != "Duplicate/Overlapping" &
+                                           datHuntEventFilt$huntScore != "Near-Hunt State" |
+                                           datHuntEventFilt$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
+    
+    
+    lHuntStat[[i]] <- calcHuntStat3(datHuntEventFilt)
+  }
+  
+  datHuntStat = do.call(rbind,lHuntStat)#
+  
+  return(datHuntStat)
+}
+
 ##After Labelling The the nextHuntFrame Field would need adjustments - as we change frame durations.
 ##Durations Are Difficult as the begining of a hunt event is not clearly defined (Tirverdi et al ) used a monocular critirion eye vergence criterion
 ##

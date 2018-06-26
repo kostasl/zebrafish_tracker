@@ -53,7 +53,7 @@ strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/Tr
 strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
 strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
 strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
-strPlotExportPath <- ""
+strPlotExportPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots"
 ####################
 #source("TrackerDataFilesImport.r")
 ### Hunting Episode Analysis ####
@@ -166,18 +166,12 @@ source("plotHuntStat.r")
 ###
 source("plotMotionStat.r")
 
-
-
- source("labelHuntEvents.r") ##Library 
+  source("labelHuntEvents.r") ##Library 
   source("main_LabellingBlind.r")
 
 
-
-
-
-lHuntEvents[[4]]
-
-######## CALC Stat On Hunt Events ######
+  
+  ######## CALC Stat On Hunt Events ######
 ## Re-process Hunt Stat On Modified Events
 source("HuntingEventAnalysis.r")
 lHuntStat <- list()
@@ -230,44 +224,4 @@ datHuntStat = do.call(rbind,lHuntStat)#
 # 
 # ##########################
 # ####
-
-########################################## SUMMARY OF LABELLING #####################
-##How to Summarize Success / Fail Scores :
-gc <- "LL"
-strDataFileName <- paste("setn",NROW(dataSetsToProcess),"-D-",firstDataSet,"-",firstDataSet,"-","HuntEvents",gc,sep="") ##To Which To Save After Loading
-load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
-message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
-tblLLStat <- table(datHuntEvent$huntScore)
-write.csv(tblLLStat,file="tbLLHuntLabelStat.csv")
-
-nFailLL <- tblLLStat[[4]]+tblLLStat[[5]]+tblLLStat[[10]]+tblLLStat[[11]]
-nSuccessLL <- tblLLStat[[3]]+tblLLStat[[12]]
-
-
-gc <- "NL"
-strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
-load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
-message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
-tblNLStat <- table(datHuntEvent$huntScore)
-write.csv(tblNLStat,file="tbNLHuntLabelStat.csv")
-
-nFailNL <- tblNLStat[[4]]+tblNLStat[[5]]+tblNLStat[[10]]+tblNLStat[[11]]
-nSuccessNL <- tblNLStat[[3]]+tblNLStat[[12]]
-
-
-gc <- "DL"
-strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
-load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
-message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
-tblDLStat <- table(datHuntEvent$huntScore)
-write.csv(tblDLStat,file="tbDLHuntLabelStat.csv")
-
-nFailDL <- tblDLStat[[4]]+tblDLStat[[5]]+tblDLStat[[10]]+tblDLStat[[11]]
-nSuccessDL <- tblDLStat[[3]]+tblDLStat[[12]]
-
-message(paste("Rates:",nSuccessLL/nFailLL,nSuccessNL/nFailNL,nSuccessDL/nFailDL,sep="  "))
-###
 
