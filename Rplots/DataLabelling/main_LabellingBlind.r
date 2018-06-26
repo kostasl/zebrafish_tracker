@@ -114,13 +114,13 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
 ##Load The List To process
 
-strProcDataFileName <-paste("setn",NROW(dataSetsToProcess),"-D",firstDataSet,"-",lastDataSet,"-","HuntEvents-Merged",sep="") ##To Which To Save After Loading
+strProcDataFileName <-paste("setn",NROW(dataSetsToProcess),"-D",firstDataSet,"-",lastDataSet,"-","HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
  ##<- datHuntEvent
 groupsList <- c("DL","NL","LL") ##unique(datHuntEventAllGroupToLabel$groupID)
-
+str_FilterLabel <- "UnLabelled"
 ##Select Randomly From THe Already Labelled Set ##
 ##Main Sample Loop
 Keyc <- 'n'
@@ -131,7 +131,7 @@ while (Keyc != 'q')
   if (Keyc == 'q')
     break
   
-  TargetLabel = which(vHuntEventLabels == "UnLabelled")-1;
+  TargetLabel = which(vHuntEventLabels == str_FilterLabel)-1; ##Convert to Number Score
   gc <- sample(groupsList,1)
   idx <- NA
   TargetLabels <- vHuntEventLabels
@@ -148,7 +148,7 @@ while (Keyc != 'q')
     datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
     eventID <- sample(datHuntEventPool$eventID,1)
     ###
-    TargetLabels <- vHuntEventLabels[vHuntEventLabels=="UnLabelled"]
+    TargetLabels <- vHuntEventLabels[vHuntEventLabels==str_FilterLabel] ##Convert to Text Label Score to Use for Filtering OUt
   }
   
   if (!is.na(as.numeric(Keyc) ) )
@@ -172,8 +172,7 @@ while (Keyc != 'q')
   save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,"-backup.RData",sep="" )) ##Save With Dataset Idx Identifier
   saveRDS(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
   message(paste("Saved :",strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="") )
-  
-  
+
 }
 
 tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel$huntScore),datHuntEventAllGroupToLabel$groupID)

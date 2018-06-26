@@ -359,24 +359,32 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
   
   ##tblHuntEpisodeDuration <- tapply(datAllHuntEvent$nextHuntFrame-datAllHuntEvent$endFrame,datAllHuntEvent$groupID,mean,na.rm=TRUE)
   datAllHuntEvent_local <- datAllHuntEvent
-  datAllHuntEvent_local$huntScore <- convertToScoreLabel(datAllHuntEvent$huntScore)
+  datAllHuntEvent_local$huntScore <- convertToScoreLabel(datAllHuntEvent_local$huntScore)
+  
   datAllHuntEventSucc <- datAllHuntEvent_local[datAllHuntEvent_local$huntScore == "Success" |
                                             datAllHuntEvent_local$huntScore == "Success-SpitBackOut",]
+  ##Merge Success
+  datAllHuntEventSucc[datAllHuntEventSucc$huntScore == "Success-SpitBackOut",]$huntScore <- "Success" 
+  
   boxplot((datAllHuntEventSucc$nextHuntFrame-datAllHuntEventSucc$endFrame)/G_APPROXFPS ~  datAllHuntEventSucc$groupID,
-          main="Successful Episode Duration", ylab="(sec)",ylim=c(0,40))
+          main=paste("Successful Episode T Per Group"," #",NROW(datAllHuntEventSucc)), ylab="(sec)",ylim=c(0,40))
   
   datAllHuntEventFail <- datAllHuntEvent_local[datAllHuntEvent_local$huntScore == "Fail-With Strike" |
-                                                 datAllHuntEvent_local$huntScore == "Fail-No Strike" |
-                                                 datAllHuntEvent_local$huntScore == "Fail",]
+                                               datAllHuntEvent_local$huntScore == "Fail-No Strike" |
+                                               datAllHuntEvent_local$huntScore == "Fail" |
+                                               datAllHuntEvent_local$huntScore == "No_Target",]
 
+  ##Merge Fail
+  datAllHuntEventFail[datAllHuntEventFail$huntScore == "Fail",]$huntScore <- "Fail-No Strike" 
+  
     
   boxplot((datAllHuntEventFail$nextHuntFrame-datAllHuntEventFail$endFrame)/G_APPROXFPS ~  datAllHuntEventFail$groupID,
-          main="Failed Episode Duration",ylab="(sec)",ylim=c(0,40))
+          main=paste("Failed Episode T Per Group"," #",NROW(datAllHuntEventFail)),ylab="(sec)",ylim=c(0,40))
   
 
   ##Per Label  
   boxplot((datAllHuntEvent_local$nextHuntFrame-datAllHuntEvent_local$endFrame)/G_APPROXFPS ~  datAllHuntEvent_local$huntScore,
-          main="Episode Duration Per Label",ylab="(sec)",ylim=c(0,20))
+          main=paste("T Per Label"," #",NROW(datAllHuntEvent_local)),ylab="(sec)",ylim=c(0,40))
   
   
   lSuccessVsFail <- list()
@@ -385,9 +393,22 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
   lSuccessVsFail[["Fail"]] <- datAllHuntEventFail
   datSuccessVsFail <- do.call(rbind,lSuccessVsFail)
   
+  
+  ##Merge Relevant Scores
+ 
+  
+  datSuccessVsFail$huntScore <- factor(datSuccessVsFail$huntScore) #factor(x=datSuccessVsFail$huntScore,levels=c(0,2,12,4,3,9,10),labels=c("UnLabelled","Success","Success/SpitOut","No_Target","Fail","Fail-No Strike","Fail-With Strike") ) 
+  
+  
   ##Per Success Fail Label  
   boxplot((datSuccessVsFail$nextHuntFrame-datSuccessVsFail$endFrame)/G_APPROXFPS ~  datSuccessVsFail$huntScore,
-          main="Episode Duration Per Success",ylab="(sec)",ylim=c(0,20))
+          main=paste("Episode T Per Outcome"," #",NROW(datSuccessVsFail)),ylab="(sec)",ylim=c(0,40))
+  
+  
+  
+  ##Success Per Group
+  boxplot((datAllHuntEventSucc$nextHuntFrame-datAllHuntEventSucc$endFrame)/G_APPROXFPS ~  datAllHuntEventSucc$groupID,
+          main=paste("Successful Hunt T Per Group"," #",NROW(datAllHuntEventSucc)),ylab="(sec)",ylim=c(0,40))
   
   
 }
@@ -464,6 +485,12 @@ dev.off()
 strPlotName = "plots/HuntEventIntervalsPerLarvaVsPreyCount_Hist.pdf"
 pdf(strPlotName,width=8,height=10,title="Time between Hunt Episodes of the Same event Vs the Prey Count they Occured under, for each Condition") #col=(as.integer(filtereddatAllFrames$expID))
 plotMeanHuntIntervalPerLarvaVsPreyCountHist(datAllHuntEvent)
+dev.off()
+
+## Episode Duration Summary Box Plots
+strPlotName = paste(strPlotExportPath,"/EpisodeDurationOnLabelledSet.pdf",sep="")
+pdf(strPlotName,width=9,height=10,title="Episode Duration (T) compared across labels and Conditions (Labelled set)") #col=(as.integer(filtereddatAllFrames$expID))
+boxPlotHuntEpisodeDuration(datAllHuntEvent)
 dev.off()
 
 ########### MEAN and Distribution of Prey Count At Start of Hunt EVENTS ##### 
