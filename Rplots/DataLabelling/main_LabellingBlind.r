@@ -17,8 +17,6 @@ library("MASS");
 ####################
 
 
-
-
 ## GLOBAL VARS ###
 ## Required Variables - Locations 
 # Home Desktop
@@ -203,34 +201,47 @@ lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$Hun
 
 
 ############# PLOT LABELLED RESULTS ##########
-
-# Create Data
-Prop=c(3,7,9,1,2)
-
-# Make the default Pie Plot
-pie(Prop)
-
-# You can also custom the labels:
-pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E"))
-
-# If you give a low value to the "edge" argument, you go from something circular to a shape with edges
-pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , edges=10)
-
-# With the radius argument, you choose to zoom in (high values --> big pie) or out (low values --> small pie)
-pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , radius=10)
-pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , radius=0.2)
-
-# The clockwise function to decide where you add the first group. If false, starts 90° right, it true, starts on the top of the pie
-pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , clockwise = FALSE)
-pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , clockwise = TRUE)
-
-# The density arguments permits to add shading lines, and you can control the angle of this lines with "angle"
-pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E") , density=10 , angle=c(20,90,30,10,0))
-
-# You can change the border of each area with the classical parameters:
-pie(Prop , labels = c("Gr-A","Gr-B","Gr-C","Gr-D","Gr-E")  , border="grey" )
+strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+message(paste(" Loading Hunt Event List to Process... "))
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+tblResSB <- table(convertToScoreLabel(datHuntLabelledEventsSB$huntScore),datHuntLabelledEventsSB$groupID)
+##Load My KL Labelled File
+strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
+datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHuntLabelledEventsKL$groupID)
 
 
+layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
+pieChartLabelledEvents(tblResSB,"DL")
+pieChartLabelledEvents(tblResSB,"NL")
+pieChartLabelledEvents(tblResSB,"LL")
+pieChartLabelledEvents(tblResKL,"DL")
+pieChartLabelledEvents(tblResKL,"NL")
+pieChartLabelledEvents(tblResKL,"LL")
+
+
+
+
+pieChartLabelledEvents <- function(tblRes,GroupID)
+{
+##Summarize COmbine Labels ###
+# Success Together, And Fails Together
+DLRes=c(sum(tblRes[c(3,12),GroupID]) ,sum(tblRes[c(4,10,11),GroupID]),sum(tblRes[c(5),GroupID]),sum(tblRes[c(7),GroupID]))
+#NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
+#LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
+
+nLabelledDL <- sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+#nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
+#nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
+
+ScoreLabels <- c("Success","Fail","No Target","Escape")
+
+pie(DLRes , labels = paste(ScoreLabels," %",round((DLRes/nLabelledDL)*100)/100,sep=""),clockwise = TRUE,main=paste(GroupID," #",nLabelledDL),radius=1.08)
+#pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
+#pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
+
+}
 
 
 
