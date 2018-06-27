@@ -1016,6 +1016,8 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
 unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString videoFilename, QFile& outdatafile, unsigned int startFrameCount,unsigned int stopFrame=0)
 {
 
+    QElapsedTimer otLastUpdate; //Time Since Last Progress Report
+    otLastUpdate.start();
     //Speed that stationary objects are removed
     cv::Mat frame,outframe,outframeHead,bgROIMask,bgMaskWithRoi;
     unsigned int nFrame = 0;
@@ -1235,9 +1237,11 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
             std::stringstream ss;
             ss.precision(4);
-            ss  << " [Progress] " << nFrame <<"/" << totFrames << " D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
+            float fFps = gfVidfps/(float)gTimer.secsTo( otLastUpdate);
+            ss  << " [Progress] " << nFrame <<"/" << totFrames << " fps:" <<  fFps << " D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
             window_main.LogEvent(QString::fromStdString(ss.str()));
 
+            otLastUpdate.restart();
             // Render Next Frame To Display
             if (bOffLineTracking)
                 bRenderToDisplay = true;
@@ -1331,6 +1335,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         int bestAngle;
         double  maxMatchScore = 0.0;
         bool bModelFound = false;
+        int iTemplRow = 0; //Starting Search Point For Template
+        int iTemplCol = 0;
 
         //Check Through Models And Find The Closest Fish To This FishBlob
         /// Note We do Template Matching On Previous Fish Coordinates First , (Not On Wobbly Blobs Coordinates)
@@ -1345,16 +1351,18 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                  //If Yes then assign the fish with the overlapping blob the template Match Score
                 bModelFound = true;
                 ptSearch = pfish->ptRotCentre; //((cv::Point)fishblob->pt-gptHead)/3+gptHead;
-                maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,pfish->idxTemplateRow,pfish->idxTemplateCol,bestAngle,ptbcentre,frameOut);
+                iTemplRow = pfish->idxTemplateRow;
+                iTemplCol = pfish->idxTemplateCol;
+                maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
 
                 //Failed? Try the blob Head (From Enhance Mask) Detected position
                 if ( maxMatchScore < gTemplateMatchThreshold)
                 {
-
                   ptSearch = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
-                  maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,pfish->idxTemplateRow,pfish->idxTemplateCol,bestAngle,ptbcentre,frameOut);
+                  maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
                 }
                 pfish->templateScore = maxMatchScore;
+                //pfish->idxTemplateRow = iTemplRow; pfish->idxTemplateCol = iTemplCol;
 
                  if ( maxMatchScore >= gTemplateMatchThreshold)
                  {
@@ -1363,7 +1371,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
                     if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
                     {
-                        pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+                        pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
                     }
                     else
                     { //Rotate Template Box - Since this cannot be done Manually
@@ -1398,8 +1406,10 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         {
             //Check Template Match Score
             ptSearch = fishblob->pt;
-            int iTemplRow = 0; //Starting Search Point For Template
-            int iTemplCol = 0;
+             iTemplRow = 0; //Starting Search Point For Template
+             iTemplCol = 0;
+            pwindow_main->LogEvent("No Fish model found for blob");
+            cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
             maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
             //If New Blob Looks Like A Fish, Then Make  A New Model
             if (maxMatchScore > gTemplateMatchThreshold*0.90)

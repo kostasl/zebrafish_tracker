@@ -28,17 +28,17 @@ library("MASS");
 #strDatDir        <- "./dat/TrackedSessionA" ##Where Are the Imported RData Stored
 #strDataExportDir <- "./out/"
 
-
 # 
-# ## Office PC
-setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
-strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
-strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
-#strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
-strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Where to source the Tracker csv files from 
-strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
-strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
+# # 
+# # ## Office PC
+# setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+# strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
+# strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
+# strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
+# #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
+# strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Where to source the Tracker csv files from 
+# strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
+# strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
 
 # 
 # ## Laptop
@@ -113,6 +113,8 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 ##Load The List To process
 
 strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+
+strProcDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
@@ -151,11 +153,18 @@ while (Keyc != 'q')
   
   if (!is.na(as.numeric(Keyc) ) )
   {
-    idx <- as.numeric(Keyc)
+    message(paste("Goto Event:",as.numeric(Keyc) ) )
+    idx <- as.character(Keyc) ##Note It acts as key only as string, numeric would just bring out the respective order idx record
     datHuntEventPool <- datHuntEventAllGroupToLabel[idx,]
     expID <- datHuntEventPool$expID
     eventID <- datHuntEventPool$eventID
     TargetLabels <- vHuntEventLabels
+    
+    if (is.na(datHuntEventAllGroupToLabel[idx,]$expID))
+    {
+      message("Event Not Found")
+      next
+    }
   }
   ##ExPORT 
 

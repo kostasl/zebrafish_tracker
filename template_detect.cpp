@@ -69,11 +69,11 @@ static cv::Mat loadImage(const std::string& name)
 double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,int& iLastKnownGoodTemplateCol,int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut )
 {
     /// Fix Bounds For Search point such that search temaplte region is not smaller than template size
-    pt.x = (pt.x <= gLastfishimg_template.cols)?(gLastfishimg_template.cols+2): pt.x;
-    pt.x = (maskedImg_gray.cols-pt.x <= gLastfishimg_template.cols)?maskedImg_gray.cols-gLastfishimg_template.cols-2: pt.x;
+    pt.x = (pt.x <= gLastfishimg_template.cols)?(gLastfishimg_template.cols/2): pt.x;
+    pt.x = (maskedImg_gray.cols-pt.x <= gLastfishimg_template.cols/2)?maskedImg_gray.cols-gLastfishimg_template.cols/2: pt.x;
 
-    pt.y = (pt.y <= gLastfishimg_template.rows)?(gLastfishimg_template.rows+2): pt.y;
-    pt.y = (maskedImg_gray.rows-pt.y <= gLastfishimg_template.rows)?maskedImg_gray.rows-gLastfishimg_template.rows-2: pt.y;
+    pt.y = (pt.y <= gLastfishimg_template.rows/2)?(gLastfishimg_template.rows/2): pt.y;
+    pt.y = (maskedImg_gray.rows-pt.y <= gLastfishimg_template.rows/2)?maskedImg_gray.rows-gLastfishimg_template.rows/2: pt.y;
     ///
 
     double maxMatchScore =0; //
@@ -86,8 +86,18 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     //cv::Point centroid = fishblob->pt;
      //Locate Centroid Region at a point between blob Centroid And Detect HeadPoint on Curve
    // cv::Point centroid = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
-    cv::Point pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-gFishBoundBoxSize-2)), std::max(0,std::min(maskedImg_gray.rows,pt.y-gFishBoundBoxSize-2)));
-    cv::Point pBound2 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x+gFishBoundBoxSize+2)), std::max(0,std::min(maskedImg_gray.rows,pt.y+gFishBoundBoxSize+2)));
+
+
+    cv::Point pBound1,pBound2;
+    int iSearchRegionSize = gFishBoundBoxSize;
+
+//If We are not Following A known Fish, then Expand the Search Region
+    if (iLastKnownGoodTemplateRow ==0)
+       iSearchRegionSize = 2*gFishBoundBoxSize;
+
+
+    pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));
+    pBound2 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x+iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y+iSearchRegionSize)));
 
     // Look for Fish Template Within The Blob Region //
     cv::Rect rectFish(pBound1,pBound2);
@@ -102,7 +112,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
     //If blob exists but No Fish Model yet then Search Through Cache to improve matching;
     //bool findBestMatch = (vfishmodels.size() == 0);
-    bool findBestMatch = (iLastKnownGoodTemplateRow == 0 && iLastKnownGoodTemplateCol == 0);
+    bool findBestMatch = (iLastKnownGoodTemplateRow == 0);
     if (findBestMatch)
         pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
@@ -328,24 +338,25 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
       } //Loop Through Columns/Angle
 
 
+    //Dont scan all Rows Just Check If Found on this One before Proceeding
+
+   ///Check If Matching Exceeeds threshold And Stop Loops - Return Found Column Idx//
+   if (maxGVal >= gTemplateMatchThreshold && maxGVal > 0.1) //!findFirstMatch
+   {
+       //Save Results To Output
+       //matchScore    = maxGVal;
+       //locations_tl  = ptGmaxLoc;
+       startCol = matchColIdx; //Save AS Best - For next Iteration - Only If Exceeds Threshold
+       break; ///Stop The loop Rows search Here
+
+    }else //Reset StartCol Hint, So Next Time The whole Cache Row is scanned
+        startCol = 0;
+
    idRow++;             //We Start Again From The Next Row
    Colidx               = 0;
    templRegion.x        = 0; //ReStart from 1st col
 
 
-    //Dont scan all Rows Just Check If Found on this One before Proceeding
-
-   ///Check If Matching Exceeeds threshold And Stop Loops - Return Found Column Idx//
-   if (maxGVal >= gTemplateMatchThreshold && !findFirstMatch && maxGVal > 0.1)
-   {
-       //Save Results To Output
-       //matchScore    = maxGVal;
-       //locations_tl  = ptGmaxLoc;
-       startCol = Colidx; //Save AS Best - For next Iteration - Only If Exceeds Threshold
-       break; ///Stop The loop Rows search Here
-
-    }else //Reset StartCol Hint, So Next Time The whole Cache Row is scanned
-        startCol = 0;
 
 //   else{ //Nothing Found YEt-- Proceed To Next Template variation
 //       matchColIdx  = 0;
@@ -392,7 +403,9 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
      }
      pwindow_main->LogEvent(QString::fromStdString(ss.str()));
 
- }
+ }else
+     startRow = ibestMatchRow;
+
 
  if (templ_rot.cols > 0 && templ_rot.rows > 0)
          //cv::imshow("MTemplate",templ_rot);

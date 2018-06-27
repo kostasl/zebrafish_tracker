@@ -25,7 +25,7 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 
 ## Required Variables - Locations 
 # Home Desktop
-setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
+setwd("/home/klagogia1/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "/media/extStore/ExpData/zebrapreyCap/AnalysisSet/"
 strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
 strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"

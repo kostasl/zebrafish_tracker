@@ -43,7 +43,13 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
   
   for (i in  (1:NROW(datHuntEvent)) )
   {
+    ## If User Gave Specific Hunt Event, Then Look for it Specifically
+    if (!is.na(idxFilter) )
+      i <- as.character(idxFilter) ##Convert i into Specific str ID 
+           
+
     rec <- datHuntEvent[i,] 
+    
     
     ##Added Later To Struct Is  A Flag that a Hunt Event Has been Retracked - adding the food target
     if (any(names(datHuntEvent)=="markTracked")  ) ##This Marks Videos that have been Labelled and Retracked For anal
@@ -55,9 +61,6 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     if (!(convertToScoreLabel(rec$huntScore) %in% factorLabelFilter) | rec$expID != ExpIDFilter | rec$eventID != EventIDFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
         next ##SKip Record if previously Labelled
 
-    ## If User Gave Specific Hunt Event, Then Look for it Specifically
-    if (!is.na(idxFilter) & idxFilter != i )
-      next
     
     ##For Larva That Did not register any sufficient Hunting Events -  An Empty Record has been added To Acknowledge 
     if (rec$eventID == 0 & rec$huntScore == 0)
@@ -198,9 +201,10 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     } ##End Menu Loop
     
     
-      
-    datHuntEvent[i,"huntScore"] <-rec$huntScore
-    message(datHuntEvent[i,"huntScore"])
+     datHuntEvent[i,"huntScore"]  <- rec$huntScore
+     message(datHuntEvent[i,"huntScore"])
+    
+    
      if (rec$huntScore == (which(levels(huntLabels)=="Success")-1) )
      {
        message("~Mark Succesfull")
@@ -234,10 +238,10 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     
     save(datHuntEvent,file=paste(strDatDir,"/LabelledSet/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-    
+    saveRDS(datHuntEvent,file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
     
     strOutFileName <- paste(strDatDir,"/LabelledSet/",strDataFileName,"-updates.csv",sep="")
-    message(paste("Data Updated *",strDatDir,"/",sep="" ))
+    message(paste("Data Updated *",strOutFileName,sep="" ))
     bColNames = FALSE
     if (!file.exists(strOutFileName) )
       bColNames = TRUE
