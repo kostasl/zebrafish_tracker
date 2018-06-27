@@ -1237,7 +1237,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
             std::stringstream ss;
             ss.precision(4);
-            float fFps = gfVidfps/(float)gTimer.secsTo( otLastUpdate);
+            float fFps = gfVidfps/((float)otLastUpdate.elapsed()/1000.0);
             ss  << " [Progress] " << nFrame <<"/" << totFrames << " fps:" <<  fFps << " D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
             window_main.LogEvent(QString::fromStdString(ss.str()));
 
