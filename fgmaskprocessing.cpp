@@ -305,6 +305,7 @@ void processMasks(cv::Mat& frame_gray,cv::Mat& bgStaticMaskInOut)
       {
         try{
             pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+            //
         }catch(...)
         {
         //##With OpenCL Support in OPENCV a Runtime Assertion Error Can occur /
@@ -325,7 +326,8 @@ void processMasks(cv::Mat& frame_gray,cv::Mat& bgStaticMaskInOut)
         {
            //cv::bitwise_not(fgMask,fgMask);
             //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
-           cv::bitwise_and(bgStaticMaskInOut,fgMask,fgMask); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
+           cv::bitwise_and(bgStaticMaskInOut,fgMask,bgStaticMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
+
         }else
             fgMask.copyTo(bgStaticMaskInOut);
        }
@@ -422,7 +424,7 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
     cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
 #endif
 } //If BGModelling
-else
+else //No BG Modelling
 {
     // Use thresh Only to Detect FG Fish Mask Detect
     //Returning The thresholded image is only required when No BGMask Exists

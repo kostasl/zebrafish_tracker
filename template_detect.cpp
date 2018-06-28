@@ -92,7 +92,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     int iSearchRegionSize = gFishBoundBoxSize;
 
 //If We are not Following A known Fish, then Expand the Search Region
-    if (iLastKnownGoodTemplateRow ==0)
+    if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
        iSearchRegionSize = 2*gFishBoundBoxSize;
 
 
@@ -112,7 +112,8 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
     //If blob exists but No Fish Model yet then Search Through Cache to improve matching;
     //bool findBestMatch = (vfishmodels.size() == 0);
-    bool findBestMatch = (iLastKnownGoodTemplateRow == 0);
+    // Crude Way to detect if this fish has been searched before/ First Time this blob is searched?
+    bool findBestMatch = (iLastKnownGoodTemplateRow == 0 && iLastKnownGoodTemplateCol == 0);
     if (findBestMatch)
         pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
