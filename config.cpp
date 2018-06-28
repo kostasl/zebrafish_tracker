@@ -26,7 +26,7 @@ const unsigned int gthres_maxfoodblobarea = 150;
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = 450; //Number of frames inactive (Not Matched to a Blob) until track is deleted
+const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive (Not Matched to a Blob) until track is deleted
 const int gcMinFoodModelActiveFrames    = 100; //Min Number of consecutive frames it needs to be active  otherwise its deleted
 const int gMaxClusterRadiusFoodToBlob   = 8;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.

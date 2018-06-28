@@ -24,7 +24,7 @@ expID <- sample(datHuntEventPool$expID,1)
 datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
 eventID <- sample(datHuntEventPool$eventID,1)
 
-##ExPORT 
+##ExPORT 2
 datHuntEventPool <- labelHuntEvents(datHuntEventPool,
                                     strDataFileName,strVideoFilePath,
                                     strTrackerPath,strTrackeroutPath,

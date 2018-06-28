@@ -55,7 +55,7 @@ foodModel::~foodModel()
 
 }
 
-void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore)
+void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius)
 {
 
     blobMatchScore = matchScore;
@@ -64,7 +64,7 @@ void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsign
     this->zTrack.pointStack.push_back(bcentre);
     this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
-
+    this->blobRadius = szradius;
     zTrack.boundingBox.x = bcentre.x - 6;
     zTrack.boundingBox.y = bcentre.y - 6;
     zTrack.boundingBox.width = 12;

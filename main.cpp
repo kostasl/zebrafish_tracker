@@ -890,7 +890,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 );
                 else
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX , CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID, CV_FONT_HERSHEY_PLAIN,trackFntScale );
 
                 ++ft;
             }
@@ -958,52 +958,15 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
     cv::putText(outframe, strCount.str(), cv::Point(15, 38),
            trackFnt, trackFntScale ,  CV_RGB(250,250,0));
 
-
-    //Report Time
+/*
+ *     //Report Time
     std::sprintf(buff,"t: %0.2f",gTimer.elapsed()/(1000.0*60.0) );
     //strLearningRate << "dL:" << (double)(dLearningRate);
     cv::rectangle(outframe, cv::Point(10, 50), cv::Point(50,70), cv::Scalar(10,10,10), -1);
     cv::putText(outframe, buff, cv::Point(15, 63),
             trackFnt, trackFntScale , CV_RGB(250,250,0));
+*/
 
-//Memory Reporting Moved to Main Loop
-//    //Time Rate - conv from ms to minutes
-//    ///Report Status  + Memory Usage
-//    if ((nFrame%300) == 0 || nFrame == 1)
-//    {
-//        //Report
-//        ss.str("");
-//        std::clog << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0 << std::endl;
-//        //THats In KiB units /So 1Million is A Gigabyte
-//        std::clog << "#Fish " << nLarva << " #Food Blobs:" << nFood << std::endl;
-
-//        ss << "Frame:" << nFrame << " Processing time (mins): " << gTimer.elapsed()/60000.0;
-//        window_main.LogEvent(QString::fromStdString(ss.str()));
-
-//        //Show Memory Consumption
-//        ss.str("");
-//        ss.precision(4);
-//        process_mem_usage(vm, rss);
-//        std::clog << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
-//        ss  << "Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
-//        window_main.LogEvent(QString::fromStdString(ss.str()));
-
-//    }//Report on Next Frame
-//    if ((nFrame%301) == 0 || nFrame == 2)
-//    {
-//        process_mem_usage(vm, rss);
-//        std::clog << "Delta Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB" << std::endl;
-//        //Show Memory Consumption
-//        ss.str("");
-//        ss.precision(4);
-//        ss  << "D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
-//        window_main.LogEvent(QString::fromStdString(ss.str()));
-//    }
-//    ///Show Memory On Image Frame
-//    std::sprintf(buff,"Vm: %0.2fMB;Rss:%0.2fMB",vm/1024.0,rss/1024.0);
-//    cv::rectangle(outframe, cv::Point(5, 490), cv::Point(80,510), cv::Scalar(10,10,10), -1);
-//    cv::putText(outframe, buff, cv::Point(10, 505),
-//            trackFnt,trackFntScale , CV_RGB(10,250,0));
 } //DrawFrameText
 
 
@@ -1080,7 +1043,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
     capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
     nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
-    frameNumberString = QString::number(nFrame);
+    frameNumberString = QString("%1").arg(nFrame, 5, 10, QChar('0')); //QString::number(nFrame);
     pwindow_main->nFrame = nFrame;
 
     //read input data. ESC or 'q' for quitting
@@ -1109,12 +1072,12 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
         }
 
 
-        if (nFrame == startFrameCount)
+        if (nFrame == startFrameCount && !bPaused) //Only Switch Tracking On When Running Vid.
         {
             bTracking = true;
         }
 
-         frameNumberString = QString::number(nFrame); //Update Display String Holding FrameNumber
+         frameNumberString = QString("%1").arg(nFrame, 5, 10, QChar('0')); //QString::number(nFrame); //QString::number(nFrame); //Update Display String Holding FrameNumber
 
     if (!bPaused || bStartFrameChanged)
     {
@@ -1714,7 +1677,8 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+5)), max(0,min(maskedImg_gray.rows,centroid.y+5)));
 
         cv::Rect rectFood(pBound1,pBound2);
-        cv::rectangle(frameOut,rectFood,CV_RGB(10,150,150),1);
+        //cv::rectangle(frameOut,rectFood,CV_RGB(10,150,150),1);
+        cv::circle(frameOut,centroid,foodblob->size,CV_RGB(10,150,150),1);
         // Debug //
 #ifdef _ZTFDEBUG_
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
@@ -1773,7 +1737,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             //qrank.pop();//Remove From Priority Queue Rank
             pfoodBest->inactiveFrames   = 0; //Reset Counter
             pfoodBest->activeFrames ++; //Increase Count Of Consecutive Active Frames
-            pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,pfoodBest->blobMatchScore);
+            pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,pfoodBest->blobMatchScore,foodblob->size);
 
         }else  ///No Food Model Found for this Blob- Create A new One - Give the blob's the Position //
         {
@@ -1784,7 +1748,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             strmsg << "# New foodmodel: " << pfoodBest->ID << " N:" << vfoodmodels.size();
             std::clog << nFrame << strmsg.str() << std::endl;
 
-            pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,500);
+            pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,500,foodblob->size);
         }
 
         clearpq2(qfoodrank);
@@ -2068,8 +2032,9 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
     //Save Output BG Masks
     //QString imageToSave =   QString::fromStdString( std::string("output_MOG_") + frameNumberString + std::string(".png"));
 
-    dirToSave.append("/pics/");
-    QString imageToSave =  fileVidCoreName + "_" + frameNumberString + ".png";
+    dirToSave.append("/pics/" + fileVidCoreName + "/");
+    //QString imageToSave =  fileVidCoreName + "_" + frameNumberString + ".png";
+    QString imageToSave = frameNumberString + ".png";
     imageToSave.prepend(dirToSave);
 
     if (!QDir(dirToSave).exists())
@@ -2191,6 +2156,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 /// \param frameOut //Output Image With FishBlob Rendered
 /// \param ptFoodblobs opencv keypoints vector of the Fish
 /// \return
+/// \note Draws Blue circle around food blob, with relative size
 ///
 int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
 {
@@ -2445,7 +2411,7 @@ void writeFoodDataCSVHeader(QFile& data)
 {
     /// Write Header //
     QTextStream output(&data);
-    output << "frameN \t ROI \t foodID \t Centroid_X \t Centroid_Y \n";
+    output << "frameN \t ROI \t foodID \t Centroid_X \t Centroid_Y \t radius \n";
 
 }
 
@@ -2642,7 +2608,7 @@ int saveFoodTracks(fishModels& vfish,foodModels& vfood,QFile& fooddata,QString f
 
          if (pfood->isTargeted) //Only Log The Marked Food
          {
-            output << frameNumber << "\t" << pfood->ROIID << "\t" << pfood->ID << "\t" << pfood->zTrack << "\n";
+            output << frameNumber << "\t" << pfood->ROIID << "\t" << pfood->ID << "\t" << pfood->zTrack << "\t"  << pfood->blobRadius << "\n";
 
             pfood->zTrack.pointStack.clear();
             pfood->zTrack.pointStack.shrink_to_fit();
