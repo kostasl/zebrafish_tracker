@@ -36,7 +36,7 @@ strDataExportDir <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrack
 
 ## Office PC
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-strVideoFilePath  <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/expDataKostas/AnalysisSetAlpha/" 
+strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
 strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
 #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from

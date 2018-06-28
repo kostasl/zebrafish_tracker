@@ -112,7 +112,7 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
 ##Load The List To process
 
-strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+#strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 
 strProcDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... "))
@@ -208,7 +208,7 @@ lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$Hun
 ####
 
 
-
+##source() Needs Plot Hunt Stat for PieChart
 ############# PLOT LABELLED RESULTS ##########
 strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... "))
@@ -222,38 +222,19 @@ tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHunt
 
 
 strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSummary.pdf",sep="")
-pdf(strPlotName,width=14,height=8,title="Summary Of Manual Hunt Event Labelling for both SB and KL sets") #col=(as.integer(filtereddatAllFrames$expID))
+pdf(strPlotName,width=17,height=8,title="Summary Of Manual Hunt Event Labelling for both SB and KL sets") #col=(as.integer(filtereddatAllFrames$expID))
   
   layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
   pieChartLabelledEvents(tblResSB,"DL")
   pieChartLabelledEvents(tblResSB,"NL")
   pieChartLabelledEvents(tblResSB,"LL")
+  text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
   pieChartLabelledEvents(tblResKL,"DL")
   pieChartLabelledEvents(tblResKL,"NL")
   pieChartLabelledEvents(tblResKL,"LL")
-
+  text(x=1.4,y=-0.8,labels = "KL",cex=1.5)
+  
 dev.off()
-
-
-pieChartLabelledEvents <- function(tblRes,GroupID)
-{
-##Summarize COmbine Labels ###
-# Success Together, And Fails Together
-DLRes=c(sum(tblRes[c(3,12),GroupID]) ,sum(tblRes[c(4,10,11),GroupID]),sum(tblRes[c(5),GroupID]),sum(tblRes[c(7),GroupID]))
-#NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
-#LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
-
-nLabelledDL <- sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
-#nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
-#nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
-
-ScoreLabels <- c("Success","Fail","No Target","Escape")
-
-pie(DLRes , labels = paste(ScoreLabels," %",round((DLRes/nLabelledDL)*100)/100,sep=""),clockwise = TRUE,main=paste(GroupID," #",nLabelledDL),radius=1.08)
-#pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
-#pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
-
-}
 
 
 ######## CALC Stat On Hunt Events ######

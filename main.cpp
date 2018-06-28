@@ -29,10 +29,9 @@
  /// Added: Detection of stopped Larva or loss of features from BG Substraction - via mask correction
  ///    *Filter blobs and maintain separate lists for each class (food/fish)
  ///    * track blobs of different class (food/fish) separatelly so tracks do not interfere
- ///    *Issues:
- ///        *Multiple models for same blob
- ///    *Template Matching to spot fish across angles
- ///    *Ellipsoid fitting on edge points
+  ///    *Ellipsoid fitting on edge points
+  ///   *Changes template Match region, wide for new blobs, narrow for known fish - Can track at 50fps (06/2018)
+ ///
  ///
  ///  Added Record of Food Count at regular intervals on each video in case
  ///          no fish is being tracked ROI - This should show the evolution of prey Count in time

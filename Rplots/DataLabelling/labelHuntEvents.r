@@ -78,7 +78,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       stop(paste("Could not find video file: ",strVideoFile ) )
     
     
-    message(paste("\n",i,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame) )
+    message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame) )
     ##--
     strArgs = paste("--HideDataSource=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
     #message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
@@ -100,7 +100,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       l <- 0
       
       setLabel <- factor(x=rec$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )
-      message(paste("### Event's ",i, " Current Label is :",setLabel," ####" ) )
+      message(paste("### Event's ", row.names(rec) , " Current Label is :",setLabel," ####" ) )
       #message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
       
       
