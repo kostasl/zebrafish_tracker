@@ -641,6 +641,9 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
     //const int c_tailscanAngle = gFitTailIntensityScanAngleDeg;
 
 
+    if (inactiveFrames > 0)
+        return; //Do not Calculate For Inactive Fish
+
     uint pxValMax;
 
     int angle; //In Deg of Where The spline point is looking towards - Used by Ellipse Arc Drawing
