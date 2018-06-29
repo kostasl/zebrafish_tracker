@@ -1,12 +1,12 @@
 ///*
-//// 25/11/2015 : kostasl Testing OpenCV bg substraction - to process larva in vial recording timelapses.
- //// App uses BG substyraction MOG2, with a slow learning rate.
- //// then Uses Open and Close / Dilation contraction techniques to get rid of noise and fill gaps
- //// Then uses cvBlob library to track and count larva on BG-processed images.
- //// The lib sources have been included to the source and slightly modified in update tracks to fix a bug.
- ////
- ///* User:
- ///    * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
+/// \title
+/// \date Jun 2018
+/// \author Konstantinos Lagogiannis
+/// \version 1.0
+/// \brief Video Analysis software to track zebrafish behaviour from images obtained at high frame rates (>350fps) using darkfield IR illumination(IR light-ring) on a 35mm petridish containing a single animal.
+///
+/// \remark
+///     * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
  ///    * The green box defines the region over which the larvae are counted-tracked and recorded to file.
  ///    * Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
  ///    * Press p to pause Image. once paused:
@@ -24,19 +24,22 @@
  ///* The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
  ///* So I reverted to not tracking - as the code does not work well - I am recording blobs For now
  ///*
- ///*  Dependencies : opencv3
+ ///*  Dependencies : opencv3 (W/O CUDA ) QT5
  ///*
- /// Added: Detection of stopped Larva or loss of features from BG Substraction - via mask correction
- ///    *Filter blobs and maintain separate lists for each class (food/fish)
- ///    * track blobs of different class (food/fish) separatelly so tracks do not interfere
-  ///    *Ellipsoid fitting on edge points
-  ///   *Changes template Match region, wide for new blobs, narrow for known fish - Can track at 50fps (06/2018)
+ /// \details
+ ///  Heurestic optimizations:
+ ///   * Detection of stopped Larva or loss of features from BG Substraction - via mask correction
+ ///   * Filter blobs and maintain separate lists for each class (food/fish)
+ ///   * track blobs of different class (food/fish) separatelly so tracks do not interfere
+  ///  * Second method of Ellipsoid fitting, using a fast algorithm on edge points
+  ///  * Changes template Match region, wide for new blobs, narrow for known fish - Can track at 50fps (06/2018)
  ///
+ ///   \remark
+ ///  Data processing:
+ ///  * Added Record of Food Count at regular intervals on each video in case, so that even if no fish is being tracked ROI
+ ///    the evolution of prey Count in time can be observed.
  ///
- ///  Added Record of Food Count at regular intervals on each video in case
- ///          no fish is being tracked ROI - This should show the evolution of prey Count in time
- ///
- /// /note Found source of MultiProcess SegFault in OpenCL, Added try block on MOG2, and then flag to switch off OpenCL
+ /// \bug MOG use under Multi-Processing gives a SegFault in OpenCL - Workaround: Added try block on MOG2, and then flag to switch off OpenCL.
  ///
  ////////
 

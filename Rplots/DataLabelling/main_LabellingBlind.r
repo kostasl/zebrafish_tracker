@@ -183,12 +183,12 @@ while (Keyc != 'q')
 }
 
 tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel$huntScore),datHuntEventAllGroupToLabel$groupID)
-write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary-SB.csv",sep="") )
+write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary-KL.csv",sep="") )
 
 lLabelSummary <- list()
-nLabelledDL <- sum(tblRes[2:13,"DL"])
-nLabelledLL <- sum(tblRes[2:13,"LL"])
-nLabelledNL <- sum(tblRes[2:13,"NL"])
+nLabelledDL <- sum(tblRes[3:13,"DL"])
+nLabelledLL <- sum(tblRes[3:13,"LL"])
+nLabelledNL <- sum(tblRes[3:13,"NL"])
 
 
 message(paste("HuntEvents Labelled (exclude NA) #DL:",nLabelledDL,"#LL:",nLabelledLL,"#NL:",nLabelledNL ) )

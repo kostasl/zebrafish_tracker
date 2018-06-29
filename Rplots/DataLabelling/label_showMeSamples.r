@@ -25,7 +25,7 @@ datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
 eventID <- sample(datHuntEventPool$eventID,1)
 
 ##ExPORT 2
-datHuntEventPool <- labelHuntEvents(datHuntEventPool,
+datHuntEventPool <- labelHuntEvents(datHuntEventAllGroupToValidate,
                                     strDataFileName,strVideoFilePath,
                                     strTrackerPath,strTrackeroutPath,
                                     convertToScoreLabel(TargetLabel),expID,eventID)

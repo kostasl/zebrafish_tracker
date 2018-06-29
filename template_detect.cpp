@@ -103,9 +103,9 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     cv::Rect rectFish(pBound1,pBound2);
 
     // Debug //
-    //#ifdef _ZTFDEBUG_
-    cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1);
-    //#endif
+    #ifdef _ZTFDEBUG_
+       cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150,30),1); //Ucomment to debug template search Region
+    #endif
 
     cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
