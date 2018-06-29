@@ -793,7 +793,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     std::vector<cv::Vec4i> fishbodyhierarchy;
 
     unsigned int nLarva         =  0;
-    //unsigned int nFood          =  0;
+    unsigned int nFood          =  0;
     double dblRatioPxChanged    =  0.0;
 
     QString frameNumberString;
@@ -886,16 +886,27 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
             //If A fish Is Detected Then Draw Its tracks
             foodModels::iterator ft = vfoodmodels.begin();
+            nFood = 0;
             while (ft != vfoodmodels.end() && bRenderToDisplay)
             {
+
                 foodModel* pfood = ft->second;
                 assert(pfood);
+
+                // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob
+                if (pfood->activeFrames < gcMinFoodModelActiveFrames)
+                {
+                    ++ft;
+                    continue;
+                }
+
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 );
                 else
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID, CV_FONT_HERSHEY_PLAIN,trackFntScale );
 
-                ++ft;
+
+                nFood++; //only count the rendered Food Items
             }
 
 
@@ -911,7 +922,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     ///
     /// \brief drawFrameText
     if (bRenderToDisplay)
-        drawFrameText(window_main,nFrame,nLarva,vfoodmodels.size(),outframe);
+        drawFrameText(window_main,nFrame,nLarva,nFood,outframe);
 
     if (bshowMask && bTracking)
         cv::imshow("Isolated Fish",fgFishImgMasked);
@@ -3141,9 +3152,6 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
           cv::Rect rectFish(pBound1,pBound2);
 
           //cv::rectangle(fullImgOut,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
-#ifdef _ZTFDEBUG_
-
-#endif
           // cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
           //0 Degrees Is along the Y Axis Looking Upwards
