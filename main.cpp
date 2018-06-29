@@ -905,7 +905,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 else
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID, CV_FONT_HERSHEY_PLAIN,trackFntScale );
 
-
+                ++ft;
                 nFood++; //only count the rendered Food Items
             }
 

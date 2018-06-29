@@ -30,7 +30,7 @@ const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive (Not 
 const int gcMinFoodModelActiveFrames    = 50; //Min Number of consecutive frames it needs to be active  otherwise its deleted
 const int gMaxClusterRadiusFoodToBlob   = 4;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
-const int thDistanceFish                = 150; //Threshold for distance between track-to blob assignement
+const int thDistanceFish                = 250; //Threshold for distance between track (last known point) -to blob assignement
 const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
 const int gFoodReportInterval           = (int)gfVidfps;
 
