@@ -246,8 +246,8 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
     {
 
       message(paste(j,". Filtering Prey Data :",  temp[[j]]))
-      procDatFrames = procDatFrames + length(TrackerData[[i]][[j]]$frameN);
-      message(paste("Found Prey #Rec:",  length(TrackerData[[i]][[j]]$frameN) ))
+      procDatFrames = procDatFrames + length(TrackerData[[i]][[j]]$FrameN);
+      message(paste("Found Prey #Rec:",  length(TrackerData[[i]][[j]]$FrameN) ))
       
       ##Extract Experiment ID
       brokenname = strsplit(temp[[j]],"_")
@@ -277,14 +277,14 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
       
       
       ## Separate Data For Each Prey ID recorded
-      vTrackPreyID <- unique(TrackerData[[i]][[j]]$foodID)
+      vTrackPreyID <- unique(TrackerData[[i]][[j]]$FoodID)
       for (p in vTrackPreyID)
       {
         procDatIdx = procDatIdx+1; ##INcreased Count Of Processed Prey Track Data
        
         message(paste("#Prey ID:",p ) )
          
-        datPreyTracks <- TrackerData[[i]][[j]][TrackerData[[i]][[j]]$foodID == p,]
+        datPreyTracks <- TrackerData[[i]][[j]][TrackerData[[i]][[j]]$FoodID == p,]
         
         ##FILTER Out NA values - Set to 0
         #message(NROW(TrackerData[[i]][[j]][is.na(TrackerData[[i]][[j]]$EyeLDeg),]))
@@ -304,7 +304,7 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
         }
         
         
-        if ( length(datPreyTracks$frameN) > 1  )
+        if ( length(datPreyTracks$FrameN) > 1  )
         {       
           Nn <- length(datPreyTracks$Centroid_X)
           datProcessed[[procDatIdx]] = data.frame(Prey_X= medianf(datPreyTracks$Centroid_X,nFrWidth),

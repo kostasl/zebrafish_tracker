@@ -20,8 +20,8 @@ lHuntEventTRACKSfileSrc <- list()
   #lHuntEventTRACKSfileSrc[["LE"]] <- list(getFileSet("LiveFed/Empty/",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
   #lHuntEventFOODfileSrc[["LE"]] <- list(getFileSet("LiveFed/Empty/",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
 
-  #lHuntEventTRACKSfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
-  #lHuntEventFOODfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
+  lHuntEventTRACKSfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
+  lHuntEventFOODfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
   
   lHuntEventTRACKSfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-DryFed-Live")
   lHuntEventFOODfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-DryFed-Live")
@@ -54,7 +54,8 @@ lHuntEventTRACKSfileSrc <- list()
   ##Make an Updated list of ReTracked Hunt Events that have been imported
   datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
   names(datTrackedEventsRegister) <- c("expID","eventID","trackID")
-  idxH <- 10
+  idxH <- 8
+  
   datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==datTrackedEventsRegister[idxH,]$expID 
                                                  & datHuntEventMergedFrames$trackID==datTrackedEventsRegister[idxH,]$trackID 
                                                  & datHuntEventMergedFrames$eventID==datTrackedEventsRegister[idxH,]$eventID,]

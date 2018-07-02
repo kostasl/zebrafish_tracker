@@ -193,8 +193,10 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     vTrackedPreyIDs <- unique(datFishFrames$PreyID)
     
     
+    if (NROW(datFishFrames[datFishFrames$frameN == i,]) < 1)
+     next
     
-    preyTargetID <- min(datFishFrames[datFishFrames$frameN == i,]$PreyID) ##Choose A Prey ID found on the Last Frame The max Id F
+    preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == i,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
     ##Now Isolate Fish Rec, Focus on Single Prey Item
     datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
     recLastFishFrame <- datFishFrames[datFishFrames$frameN == i,]
@@ -208,7 +210,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     posVY = posY-sin(bearingRad)*BodyArrowLength
     dev.hold()
     ##Plot Track
-    plot(datFishFrames$posX,frameWidth-datFishFrames$posY,xlim=c(20,480),ylim=c(0,600),col="black",cex = .5,type='l',xlab="X",ylab="Y")
+    plot(datFishFrames$posX,frameWidth-datFishFrames$posY,xlim=c(20,frameWidth),ylim=c(0,frameHeight),col="black",cex = .5,type='l',xlab="X",ylab="Y")
     ##Plot Current Frame Position
     points(posX,posY,col="black",pch=16)
     
