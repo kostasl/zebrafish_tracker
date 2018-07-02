@@ -1778,7 +1778,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         // Delete If Inactive For Too Long
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
         if (pfood->inactiveFrames > gcMaxFoodModelInactiveFrames ||
-            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames)
+            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames && (pfood->isTargeted == false))
             ) //Check If it Timed Out / Then Delete
         {
             ft = vfoodmodels.erase(ft);
@@ -2425,7 +2425,7 @@ void writeFoodDataCSVHeader(QFile& data)
 {
     /// Write Header //
     QTextStream output(&data);
-    output << "frameN \t ROI \t foodID \t Centroid_X \t Centroid_Y \t radius \n";
+    output << "FrameN \t ROI \t FoodID \t Centroid_X \t Centroid_Y \t Radius \t InactiveFrames \n";
 
 }
 
@@ -2622,7 +2622,7 @@ int saveFoodTracks(fishModels& vfish,foodModels& vfood,QFile& fooddata,QString f
 
          if (pfood->isTargeted) //Only Log The Marked Food
          {
-            output << frameNumber << "\t" << pfood->ROIID << "\t" << pfood->ID << "\t" << pfood->zTrack << "\t"  << pfood->blobRadius << "\n";
+            output << frameNumber << "\t" << pfood->ROIID << "\t" << pfood->ID << "\t" << pfood->zTrack << "\t"  << pfood->blobRadius << "\t"  << pfood->inactiveFrames << "\n";
 
             pfood->zTrack.pointStack.clear();
             pfood->zTrack.pointStack.shrink_to_fit();

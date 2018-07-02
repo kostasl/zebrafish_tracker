@@ -309,14 +309,16 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
           Nn <- length(datPreyTracks$Centroid_X)
           datProcessed[[procDatIdx]] = data.frame(Prey_X= medianf(datPreyTracks$Centroid_X,nFrWidth),
                                                   Prey_Y= medianf(datPreyTracks$Centroid_Y,nFrWidth),
-                                                  frameN=datPreyTracks$frameN,
+                                                  Prey_Radius= medianf(datPreyTracks$Radius,nFrWidth),
+                                                  frameN=datPreyTracks$FrameN,
+                                                  inactiveFrames = datPreyTracks$InactiveFrames,
                                                   ROI = datPreyTracks$ROI,
                                                   fileIdx=rep(j,Nn),
                                                   expID=rep(expID,Nn),
                                                   eventID=rep(eventID,Nn),
                                                   larvaID=rep(larvaID,Nn),
                                                   trackID=rep(trackID,Nn),
-                                                  PreyID =datPreyTracks$foodID,
+                                                  PreyID =datPreyTracks$FoodID,
                                                   group=rep(i,Nn)
           );
           
@@ -328,7 +330,10 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
           ###No Records So add Empty Row - Such that Event And Larva Are on Record
           datProcessed[[procDatIdx]] = data.frame(Prey_X= 180,
                                                   Prey_Y= 180,
+                                                  Prey_Radius= 0,
                                                   frameN=0,
+                                                  inactiveFrames=0,
+                                                  ROI =0,
                                                   fileIdx=j,
                                                   expID=expID,
                                                   eventID=eventID,

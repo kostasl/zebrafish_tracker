@@ -671,7 +671,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
         //Erase Fish From Food Mask
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
-        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),5);
+        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),3);
 
 } //For Each Fish Contour
 

@@ -32,6 +32,7 @@ strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrac
 strTrackInputPath <- "/media/extStore//kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
 strDatDir        <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
 strDataExportDir <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
+strPlotExportPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
 
 
 ## Office PC

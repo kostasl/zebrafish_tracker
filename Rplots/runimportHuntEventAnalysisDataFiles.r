@@ -20,8 +20,11 @@ lHuntEventTRACKSfileSrc <- list()
   #lHuntEventTRACKSfileSrc[["LE"]] <- list(getFileSet("LiveFed/Empty/",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
   #lHuntEventFOODfileSrc[["LE"]] <- list(getFileSet("LiveFed/Empty/",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
 
-  lHuntEventTRACKSfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
-  lHuntEventFOODfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
+  #lHuntEventTRACKSfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
+  #lHuntEventFOODfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
+  
+  lHuntEventTRACKSfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-DryFed-Live")
+  lHuntEventFOODfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-DryFed-Live")
   
   
   ##OutPutFIleName

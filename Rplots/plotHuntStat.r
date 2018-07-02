@@ -27,7 +27,7 @@ pieChartLabelledEvents <- function(tblRes,GroupID)
   colourH <- c(rfc(NROW(ScoreLabels)),"#FF0000");
   
   
-  pie(DLRes , labels = paste(ScoreLabels," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=1.6,clockwise = TRUE,
+  pie(DLRes , labels = paste(ScoreLabels," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=1.7,cex.main=2.6,clockwise = TRUE,
       main=paste(GroupID," #",nLabelledDL),
       radius=1.0,col=colourH)
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
