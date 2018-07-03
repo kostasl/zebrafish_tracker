@@ -153,12 +153,15 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
 
 
 ##Test  PlayBack Plot Hunt Event###
-renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
+renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,bsaveToFile=FALSE)
 {
 
   
   frameWidth = 610
   frameHeight = 470
+  
+  X_FRAME <- c(0,frameWidth)
+  Y_FRAME <- c(0,frameHeight)
   
   iConeLength = 100
   ## (see Bianco et al. 2011) : "the functional retinal field as 163˚ after Easter and Nicola (1996)."
@@ -210,7 +213,8 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     posVY = posY-sin(bearingRad)*BodyArrowLength
     dev.hold()
     ##Plot Track
-    plot(datFishFrames$posX,frameWidth-datFishFrames$posY,xlim=c(20,frameWidth),ylim=c(0,frameHeight),col="black",cex = .5,type='l',xlab="X",ylab="Y")
+ 
+    plot(datFishFrames$posX,frameWidth-datFishFrames$posY,xlim=X_FRAME,ylim=Y_FRAME,col="black",cex = .5,type='l',xlab="X",ylab="Y")
     ##Plot Current Frame Position
     points(posX,posY,col="black",pch=16)
     
@@ -250,7 +254,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     
     
     ##Draw Frame 
-    text(10,frameHeight-10,labels=i,col="darkblue",cex=0.7)
+    text(X_FRAME[1] + 20,frameHeight-10,labels=i,col="darkblue",cex=0.7)
     
     colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
     ###Draw Prey
@@ -271,8 +275,16 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1)
     }
     
     dev.flush()
-   }
-}
+    if (bsaveToFile)
+    {
+      dev.copy(png,filename=paste(strPlotExportPath,"/renderedHuntEvent/",i,".png",sep="") );
+      dev.off ();
+    }
+    
+   } ##For Each Frame
+  
+  
+}##RenderHunt Event
 
 
 ## PLot The Relative Angle Of Fish Bearing to Prey Over Time On  a Polar Plot - For Each Prey Of this Hunt Event

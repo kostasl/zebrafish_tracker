@@ -54,12 +54,12 @@ lHuntEventTRACKSfileSrc <- list()
   ##Make an Updated list of ReTracked Hunt Events that have been imported
   datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
   names(datTrackedEventsRegister) <- c("expID","eventID","trackID")
-  idxH <- 8
+  idxH <- 10
   
   datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==datTrackedEventsRegister[idxH,]$expID 
                                                  & datHuntEventMergedFrames$trackID==datTrackedEventsRegister[idxH,]$trackID 
                                                  & datHuntEventMergedFrames$eventID==datTrackedEventsRegister[idxH,]$eventID,]
-  renderHuntEventPlayback(datRenderHuntEvent,speed=1)
+  renderHuntEventPlayback(datRenderHuntEvent,speed=1,bsaveToFile =  FALSE)
 
   #### PROCESS BOUTS ###
   vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
@@ -73,11 +73,11 @@ lHuntEventTRACKSfileSrc <- list()
   #speed_Smoothed <- meanf(dEventSpeed,10)
   ##Replace NA with 0s
 #  dEventSpeed[is.na(dEventSpeed)] = 0
-  dEventSpeed_smooth <- meanf(dEventSpeed,20)
+  dEventSpeed_smooth <- meanf(dEventSpeed,100)
   dEventSpeed_smooth[is.na(dEventSpeed_smooth)] = 0
   MoveboutsIdx <- find_peaks(dEventSpeed_smooth*100,25)
   ##Reject Peaks Below Half An SD Peak Value - So As to Choose Only Significant Bout Movements # That Are Above the Minimum Speed to Consider As Bout
-  MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/2 
+  MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/4 
                                              & dEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
   ##Plot Displacement and Speed(Scaled)
   X11()
