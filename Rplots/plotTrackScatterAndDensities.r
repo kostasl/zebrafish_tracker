@@ -1,3 +1,5 @@
+
+
 rfHot <- colorRampPalette(rev(brewer.pal(11,'Spectral')));
 
 histj<- function(x,y,x.breaks,y.breaks){
@@ -153,9 +155,11 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
 
 
 ##Test  PlayBack Plot Hunt Event###
-renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,bsaveToFile=FALSE)
+renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolder=NA)
 {
 
+  datHuntEventMergedFrames$LEyeAngle <- meanf(datHuntEventMergedFrames$LEyeAngle,20)
+  datHuntEventMergedFrames$REyeAngle <- meanf(datHuntEventMergedFrames$REyeAngle,20)
   
   frameWidth = 610
   frameHeight = 470
@@ -195,14 +199,16 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,bsaveToFile
     datFishFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN %in% tR,] ##in Range
     vTrackedPreyIDs <- unique(datFishFrames$PreyID)
     
-    
+    lastFrame <- i
     if (NROW(datFishFrames[datFishFrames$frameN == i,]) < 1)
-     next
+      lastFrame <- max(datFishFrames$frameN)
+     
     
-    preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == i,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
+    
+    preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == lastFrame,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
     ##Now Isolate Fish Rec, Focus on Single Prey Item
     datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
-    recLastFishFrame <- datFishFrames[datFishFrames$frameN == i,]
+    recLastFishFrame <- datFishFrames[datFishFrames$frameN == lastFrame,]
     
     
     
@@ -213,7 +219,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,bsaveToFile
     posVY = posY-sin(bearingRad)*BodyArrowLength
     dev.hold()
     ##Plot Track
- 
+    par(bg="white") 
     plot(datFishFrames$posX,frameWidth-datFishFrames$posY,xlim=X_FRAME,ylim=Y_FRAME,col="black",cex = .5,type='l',xlab="X",ylab="Y")
     ##Plot Current Frame Position
     points(posX,posY,col="black",pch=16)
@@ -262,8 +268,8 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,bsaveToFile
     for (f in vTrackedPreyIDs)
     {
       nn <- nn + 1
-      lastPreyFrame <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN == i & datHuntEventMergedFrames$PreyID == f,]
-      rangePreyFrame <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN >= startFrame & datHuntEventMergedFrames$frameN <= i & datHuntEventMergedFrames$PreyID == f,]
+      lastPreyFrame <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN == lastFrame & datHuntEventMergedFrames$PreyID == f,]
+      rangePreyFrame <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN >= startFrame & datHuntEventMergedFrames$frameN <= lastFrame & datHuntEventMergedFrames$PreyID == f,]
       
       if (NROW(lastPreyFrame$Prey_X) > 0 )
       {
@@ -275,9 +281,9 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,bsaveToFile
     }
     
     dev.flush()
-    if (bsaveToFile)
+    if (!is.na(saveToFolder) )
     {
-      dev.copy(png,filename=paste(strPlotExportPath,"/renderedHuntEvent/",i,".png",sep="") );
+      dev.copy(png,filename=paste(saveToFolder,"/",sprintf("%05d", i) ,".png",sep=""), bg="white" );
       dev.off ();
     }
     

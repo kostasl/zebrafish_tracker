@@ -9,6 +9,8 @@
 ## The list of Analysed Hunt Events Is Given by datTrackedEventsRegister
 ###
 
+library(signal)
+
 source("TrackerDataFilesImport.r")
 source("plotTrackScatterAndDensities.r")
 #################IMPORT HuntEvent TRACKER FILES # source Tracker Data Files############################### 
@@ -54,14 +56,17 @@ lHuntEventTRACKSfileSrc <- list()
   ##Make an Updated list of ReTracked Hunt Events that have been imported
   datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
   names(datTrackedEventsRegister) <- c("expID","eventID","trackID")
-  idxH <- 11
+  idxH <- 4
   expID <- datTrackedEventsRegister[idxH,]$expID
   trackID<- datTrackedEventsRegister[idxH,]$trackID
   eventID <- datTrackedEventsRegister[idxH,]$eventID
   datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
                                                  & datHuntEventMergedFrames$trackID==trackID 
                                                  & datHuntEventMergedFrames$eventID==eventID,]
-  renderHuntEventPlayback(datRenderHuntEvent,speed=1,bsaveToFile =  FALSE)
+  
+  strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",eventID,"_track",trackID,sep="" )
+  dir.create(strFolderName )
+  renderHuntEventPlayback(datRenderHuntEvent,speed=1,saveToFolder =  strFolderName)
 
   #### PROCESS BOUTS ###
   vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)

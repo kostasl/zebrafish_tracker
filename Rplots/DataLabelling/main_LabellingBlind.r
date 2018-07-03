@@ -221,20 +221,19 @@ datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcD
 tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHuntLabelledEventsKL$groupID)
 
 
-strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSummary-SB.pdf",sep="")
-pdf(strPlotName,width=27,height=8,title="Summary Of Manual Hunt Event Labelling for both SB and KL sets") #col=(as.integer(filtereddatAllFrames$expID))
+strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSummary-KL.pdf",sep="")
+pdf(strPlotName,width=27,height=8,title="Summary Of Manual Hunt Event Labelling for both SB and KL sets",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
   
   #layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
 layout(matrix(c(1,2,3), 1, 3, byrow = TRUE))
-  pieChartLabelledEvents(tblResSB,"DL")
-  pieChartLabelledEvents(tblResSB,"NL")
-  pieChartLabelledEvents(tblResSB,"LL")
-  # text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
-  # pieChartLabelledEvents(tblResKL,"DL")
-  # pieChartLabelledEvents(tblResKL,"NL")
-  # pieChartLabelledEvents(tblResKL,"LL")
-  # text(x=1.4,y=-0.8,labels = "KL",cex=1.5)
-  
+  #pieChartLabelledEvents(tblResSB,"DL")
+  #pieChartLabelledEvents(tblResSB,"NL")
+  #pieChartLabelledEvents(tblResSB,"LL")
+  #  text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
+   pieChartLabelledEvents(tblResKL,"DL")
+   pieChartLabelledEvents(tblResKL,"NL")
+   pieChartLabelledEvents(tblResKL,"LL")
+   text(x=1.4,y=-0.8,labels = "KL",cex=1.5)
 dev.off()
 
 
