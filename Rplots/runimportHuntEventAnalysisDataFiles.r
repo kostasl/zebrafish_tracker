@@ -54,11 +54,13 @@ lHuntEventTRACKSfileSrc <- list()
   ##Make an Updated list of ReTracked Hunt Events that have been imported
   datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
   names(datTrackedEventsRegister) <- c("expID","eventID","trackID")
-  idxH <- 10
-  
-  datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==datTrackedEventsRegister[idxH,]$expID 
-                                                 & datHuntEventMergedFrames$trackID==datTrackedEventsRegister[idxH,]$trackID 
-                                                 & datHuntEventMergedFrames$eventID==datTrackedEventsRegister[idxH,]$eventID,]
+  idxH <- 11
+  expID <- datTrackedEventsRegister[idxH,]$expID
+  trackID<- datTrackedEventsRegister[idxH,]$trackID
+  eventID <- datTrackedEventsRegister[idxH,]$eventID
+  datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
+                                                 & datHuntEventMergedFrames$trackID==trackID 
+                                                 & datHuntEventMergedFrames$eventID==eventID,]
   renderHuntEventPlayback(datRenderHuntEvent,speed=1,bsaveToFile =  FALSE)
 
   #### PROCESS BOUTS ###
@@ -86,7 +88,9 @@ lHuntEventTRACKSfileSrc <- list()
   points(MoveboutsIdx,dEventSpeed_smooth[MoveboutsIdx]*100,col="black")
   points(MoveboutsIdx_cleaned,dEventSpeed_smooth[MoveboutsIdx_cleaned]*100,col="red")
   message(paste("Number oF Bouts:",length(MoveboutsIdx_cleaned)))
-
+  dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  dev.off()
+  
    ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
    vMotionBout <- dEventSpeed_smooth
    vMotionBout[ vMotionBout < G_MIN_BOUTSPEED  ] = 0
@@ -116,8 +120,8 @@ lHuntEventTRACKSfileSrc <- list()
 
    plot(vMotionBout,type='p')
    points(MoveboutsIdx_cleaned,vMotionBout[MoveboutsIdx_cleaned],col="red")
-   points(vMotionBout_On,vMotionBout[vMotionBout_On],col="green")
-   points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow")
+   points(vMotionBout_On,vMotionBout[vMotionBout_On],col="green") ##On
+   points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow")##Off
 
    ######### END OF PROCESS BOUT #########
 
@@ -126,11 +130,14 @@ lHuntEventTRACKSfileSrc <- list()
    X11()
    plot.new()
    polarPlotAngleToPrey(datRenderHuntEvent)
- 
+   dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsTime_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+   dev.off()
+   
    X11()
    plot.new()
    polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
-   
+   dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsDistance_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+   dev.off()
    ###################################################
    
 ##Save the File Sources and all The Frames Combined - Just In case there are loading Problems Of the Individual RData files from each set

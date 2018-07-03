@@ -322,8 +322,8 @@ Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
     ##Convert Frames To Seconds
     
     d <- (datRenderPrey$frameN-min(datRenderHuntEvent$frameN)) / G_APPROXFPS
-    x <- (d)*cos(pi/180 * relAngle[[as.character(f)]] + pi/2)
-    y <- (d)*sin(pi/180 * relAngle[[as.character(f)]] + pi/2)
+    x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
+    y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",col=colR[n])
     
     points(0,0,cex=0.8,col="blue")
@@ -380,8 +380,8 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent)
     ##Convert Frames To Seconds
     
     d <- sqrt(  (datRenderPrey$Prey_X -datRenderPrey$posX )^2 + (datRenderPrey$Prey_Y -datRenderPrey$posY)^2   ) 
-    x <- (d)*cos(pi/180 * relAngle[[as.character(f)]] + pi/2)
-    y <- (d)*sin(pi/180 * relAngle[[as.character(f)]] + pi/2)
+    x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
+    y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",col=colR[n])
     
     points(0,0,cex=0.8,col="blue")
