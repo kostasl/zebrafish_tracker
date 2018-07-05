@@ -2,9 +2,9 @@
 myplot_res<- function(ind,qq=0.05){
   
   
-  plot(foodlevelsLL,countsLL,col=colourH[1],)
-  points(foodlevelsNL,countsNL,col=colourH[2])
-  points(foodlevelsDL,countsDL,col=colourH[3])
+  plot(foodlevelsLL,countsLL,col=colourH[1],pch=16)
+  points(foodlevelsNL,countsNL,col=colourH[2],pch=16)
+  points(foodlevelsDL,countsDL,col=colourH[3],pch=16)
   
   muLL=apply(drawLL$lambda[,(steps-ind):steps,1],1,mean)
   muNL=apply(drawNL$lambda[,(steps-ind):steps,1],1,mean)
@@ -45,8 +45,8 @@ for(i in 1:N) {
   Sigma[i,i] <- pow(tau, 2)+pow(tau0,2)
 
   for(j in (i+1):N) {
-    #Sigma[i,j] <- pow(tau,2) * exp( - rho * pow(food[i] - food[j], 2) )
-    Sigma[i,j] <- pow(tau,2) * exp( - 0.5*rho^2 * pow(food[i] - food[j], 2) )
+    Sigma[i,j] <- pow(tau,2) * exp( - rho * pow(food[i] - food[j], 2) )
+    #Sigma[i,j] <- pow(tau,2) * exp( - 0.5*rho^2 * pow(food[i] - food[j], 2) )
     #Sigma[i,j] <-  exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
     Sigma[j,i] <- Sigma[i,j]
   }
@@ -54,11 +54,11 @@ for(i in 1:N) {
 
 alpha ~ dnorm(0,1e-4)T(0,) 
 #tau ~ dnorm(tauRange,1e-1)T(0,)
-rho = rhoMax
+#rho = rhoMax
 
 tau0 ~ dgamma(tauRange,0.2) 
 tau  ~ dgamma(tauRange,0.2) 
-#rho ~ dunif(0,rhoMax)
+rho ~ dunif(0,rhoMax)
 
 }"
 
@@ -136,12 +136,12 @@ preyCntRange <- c(0,100)
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
 
 ##Thse RC params Work Well to Smooth LF And NF
-tauRangeA =1
+tauRangeA =10
 rhoMaxA = 0.5
 Noise = 1 ##The Gaussian Noise Term
 
-burn_in=100;
-steps=1000;
+burn_in=10;
+steps=100;
 thin=1;
 
 

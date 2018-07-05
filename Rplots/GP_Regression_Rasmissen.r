@@ -45,6 +45,7 @@ calcSigma <- function(X1,X2,l=1) {
 # as shown in Figure 2.2(a)
 
 # Define the points at which we want to define the functions
+preyCntRange <- c(0,80)
 x.star <- seq(-5,5,len=50)
 
 # Calculate the covariance matrix
@@ -80,8 +81,11 @@ f <- data.frame(x=c(-4,-3,-1,0,2),
                 y=c(-2,0,1,2,-1))
 
 #datHuntVsPreyL
-f <- data.frame(x=as.numeric(datHuntVsPreyL[1:10,1]),
-               y=as.numeric(datHuntVsPreyL[1:10,2]) )
+preyCntRange <- c(0,30)
+x.star <- seq(preyCntRange[1],preyCntRange[2],len=preyCntRange[2])
+
+f <- data.frame(x=as.numeric(datHuntVsPreyL[1:40,1]),
+               y=as.numeric(datHuntVsPreyL[1:40,2]) )
 # Calculate the covariance matrices
 # using the same x.star values as above
 rho = 1
@@ -100,7 +104,7 @@ cov.f.star <- k.xsxs - k.xsx%*%solve(k.xx)%*%k.xxs
 # This time we'll plot more samples.  We could of course
 # simply plot a +/- 2 standard deviation confidence interval
 # as in the book but I want to show the samples explicitly here.
-n.samples <- 50
+n.samples <- 10
 values <- matrix(rep(0,length(x.star)*n.samples), ncol=n.samples)
 for (i in 1:n.samples) {
   values[,i] <- mvrnorm(1, f.star.bar, cov.f.star)
@@ -108,7 +112,7 @@ for (i in 1:n.samples) {
 values <- cbind(x=x.star,as.data.frame(values))
 values <- melt(values,id="x")
 
-
+X11()
 plot(values$x,values$value)
 
 # Plot the results including the mean function
