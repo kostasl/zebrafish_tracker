@@ -27,7 +27,7 @@ pieChartLabelledEvents <- function(tblRes,GroupID)
   colourH <- c(rfc(NROW(ScoreLabels)),"#FF0000");
   
   
-  pie(DLRes , labels = paste(ScoreLabels," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=1.8,cex.main=2.8,clockwise = TRUE,
+  pie(DLRes , labels = paste(""," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=2.8,cex.main=2.8,clockwise = TRUE,
       main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[c(1)]) ),
       radius=1.0,col=colourH) 
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
@@ -54,7 +54,7 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID)
   colourH <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
   
   
-  pie(DLRes , labels = paste(""," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=2.8,cex.main=2.8,clockwise = TRUE,
+  pie(DLRes , labels = paste(""," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=3.8,cex.main=3.8,clockwise = TRUE,
       main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[c(1)]) ),
       radius=1.0,col=colourH) 
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
@@ -134,7 +134,7 @@ plotConnectedPointsPairs <- function(vIDTable,vDat,strCondTags,xbarcenters)
     gE <- strCondTags[gIdx] ##Empty Condution
     gL <- strCondTags[gIdx+1] ##With ROtifers Test Condition 
     
-    stopifnot(NROW(vIDTable[[gE]]$dataSetID) == NROW(vIDTable[[gL]]$dataSetID) )
+    #stopifnot(NROW(vIDTable[[gE]]$dataSetID) == NROW(vIDTable[[gL]]$dataSetID) )
     
     datSetID <- levels(vIDTable[[gE]]$dataSetID)[ vIDTable[[gE]]$dataSetID[vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID & vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID] ]
 
@@ -144,7 +144,6 @@ plotConnectedPointsPairs <- function(vIDTable,vDat,strCondTags,xbarcenters)
     ptDest <- vDat[[gL]][levels(idsL)[idsL]]
     
     ##OPTIONAL: Replace NAs With 0 when Plotting So as to To Show Direction For All points
-    #ptSrc <- replace(ptSrc,is.na(ptSrc),0)
     #ptDest <- replace(ptDest,is.na(ptDest),0)
     ##Otherwise Do not Plot NA connecting line
     
@@ -1009,14 +1008,14 @@ dev.off()
 ####
 
 
-
+############################################
 ########### MEAN HUNTING EVENTS ##### 
 #X11()
-strPlotName = "plots/meanHuntingEventsPerCond.pdf"
+strPlotName = "plots/meanHuntEventsPerCond.pdf"
 vDat <- datHuntStat[,"vHLarvaEventCount"]
 vDatSetID <- datHuntStat[,"vDataSetID"]
 vIDTable <- datHuntStat[,"vIDLookupTable"]
-
+strCondTags <- names(datHuntStat[,1])
 #vDat$DL <- vDat$DL[!is.na(vDat$DL)] 
 #vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
 

@@ -221,31 +221,34 @@ datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcD
 tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHuntLabelledEventsKL$groupID)
 
 
-##Sucess Fail Summary
+###Label Summary  /No Target/Escapes /Success / Fail
 strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSummary-Both.pdf",sep="")
 pdf(strPlotName,width=16,height=8,title="Summary Of Manual Hunt Event Labelling for both SB and KL sets",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
  layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
  #layout(matrix(c(1,2,3), 2, 3, byrow = TRUE))
-colourH <-  c("#B3B3B3","#66C2A5") #c(rfc(NROW(ScoreLabels)),"#FF0000");
- pieChartLabelledSuccessVsFails(tblResSB,"DL") #pieChartLabelledEvents(tblResSB,"DL")
- pieChartLabelledSuccessVsFails(tblResSB,"NL")
- pieChartLabelledSuccessVsFails(tblResSB,"LL")
+ ScoreLabels <- c("Success","Fail","No Target","Escape")
+ colourH <-   c(rfc(NROW(ScoreLabels)),"#FF0000");
+pieChartLabelledEvents(tblResSB,"DL") #pieChartLabelledEvents(tblResSB,"DL")
+pieChartLabelledEvents(tblResSB,"NL")
+pieChartLabelledEvents(tblResSB,"LL")
  text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
- pieChartLabelledSuccessVsFails(tblResKL,"DL") #pieChartLabelledEvents(tblResSB,"DL")
- pieChartLabelledSuccessVsFails(tblResKL,"NL")
- pieChartLabelledSuccessVsFails(tblResKL,"LL")
- text(x=1.4,y=-0.8,labels = "KL",cex=1.5)
+ pieChartLabelledEvents(tblResKL,"DL") #pieChartLabelledEvents(tblResSB,"DL")
+ pieChartLabelledEvents(tblResKL,"NL")
+ pieChartLabelledEvents(tblResKL,"LL")
+ text(x=1.4,y=0.8,labels = "KL",cex=1.5)
     #plot.new()
-    legend(-1.55,1.0,legend=c("Fail","Success"),
+    legend(-1.55,0.2,legend=ScoreLabels,
            fill=colourH,
            col = colourH,
-           bg = "white",cex=3.0,
+           bg = "white",cex=1.0,
            merge=FALSE,horiz=FALSE)
     
 dev.off()
 
-strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSummary-SB.pdf",sep="")
-pdf(strPlotName,width=32,height=8,title="Summary Of Manual Hunt Event Labelling for both SB and KL sets",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+
+###Label ##Sucess Fail Summary 
+strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSuccessSummary-SB.pdf",sep="")
+pdf(strPlotName,width=29,height=8,title="Summary Of Manual Hunt Event Labelling for both SB and KL sets",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 #layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
 layout(matrix(c(1,2,3), 2, 3, byrow = TRUE))
 colourH <-  c("#B3B3B3","#66C2A5") #c(rfc(NROW(ScoreLabels)),"#FF0000");
@@ -258,7 +261,7 @@ text(x=1.4,y=-0.8,labels = "SB",cex=1.5)
 # pieChartLabelledEvents(tblResKL,"LL")
 # text(x=1.4,y=-0.8,labels = "KL",cex=1.5)
 #plot.new()
-legend(-1.55,1.0,legend=c("Fail","Success"),
+legend(-1.40,1.0,legend=c("Fail","Success"),
        fill=colourH,
        col = colourH,
        bg = "white",cex=3.0,

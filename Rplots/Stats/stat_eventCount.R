@@ -30,32 +30,44 @@ colourH <- c(rgb(0.01,0.7,0.01,0.2),rgb(0.9,0.01,0.01,0.2),rgb(0.01,0.01,0.9,0.2
 strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
 datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
+strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
 datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
 
 ## Get Event Counts Within Range - Combine Empty and Live Test Conditions ##
 ##TODO : Instead of InitialPrey Distribution Try the mean number of prey, across huntevents of a larva
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
 datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE) )
-datHuntVsPreyL <- rbind(datHuntVsPreyLL,datHuntVsPreyLE)
 
-datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]),]
 
 
 datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL) )
 datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE) )
-datHuntVsPreyN <- rbind(datHuntVsPreyNL,datHuntVsPreyNE)
 
-datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]),]
 
 
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL) )
 datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE) )
+
+
+
 datHuntVsPreyD <- rbind(datHuntVsPreyDL,datHuntVsPreyDE)
+datHuntVsPreyN <- rbind(datHuntVsPreyNL,datHuntVsPreyNE)
+datHuntVsPreyL <- rbind(datHuntVsPreyLL,datHuntVsPreyLE)
+#datHuntVsPreyD <- rbind(datHuntVsPreyDL)
+#datHuntVsPreyN <- rbind(datHuntVsPreyNL)
+#datHuntVsPreyL <- rbind(datHuntVsPreyLL)
+
+
 ##Remove NA 
 datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),]
+datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]),]
+datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]),]
+
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,40)
+preyCntRange <- c(10,30)
 
 datSliceLL <- datHuntVsPreyL[datHuntVsPreyL[,1] >= preyCntRange[1] & datHuntVsPreyL[,1] <= preyCntRange[2],2 ]
 datSliceNL <- datHuntVsPreyN[datHuntVsPreyN[,1] >= preyCntRange[1] & datHuntVsPreyN[,1] <= preyCntRange[2],2 ]
@@ -97,16 +109,17 @@ drawDL2=jags.samples(mDL2,steps,thin=thin,variable.names=varnames1)
 
 ##q[idx,sampleID,chainID]
 
-strPlotName = paste(strPlotExportPath,"/stat_HuntEventRateParamPreyRange-",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
+strPlotName = paste(strPlotExportPath,"/stat_HuntEventRateParamPreyRangeKLEmptyToLive-",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
 
 pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
 ##X11()
 
-hist(drawLL2$q[1,,1],breaks=seq(0,35,length=100),col=colourH[1],xlim=c(0,40),xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
-hist(drawNL2$q[1,,1],breaks=seq(0,35,length=100),add=T,col=colourH[2],xlim=c(0,40))
-hist(drawDL2$q[1,,1],breaks=seq(0,35,length=100),add=T,col=colourH[3],xlim=c(0,40))
+hist(drawLL2$q[1,,1],breaks=seq(0,30,length=200),col=colourH[1],xlim=c(5,20),
+     xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
+hist(drawNL2$q[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,20))
+hist(drawDL2$q[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,20))
 
-legend(32,700,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
+legend(5,700,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
 
 dev.off()
 #hist(drawLL$qq[1,,1],breaks=seq(0,50,length=100))

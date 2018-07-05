@@ -46,7 +46,8 @@ for(i in 1:N) {
 
   for(j in (i+1):N) {
     #Sigma[i,j] <- pow(tau,2) * exp( - rho * pow(food[i] - food[j], 2) )
-     Sigma[i,j] <- pow(tau,2) * exp( - 0.5*rho^2 * pow(food[i] - food[j], 2) )
+    Sigma[i,j] <- pow(tau,2) * exp( - 0.5*rho^2 * pow(food[i] - food[j], 2) )
+    #Sigma[i,j] <-  exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
     Sigma[j,i] <- Sigma[i,j]
   }
 }
@@ -55,7 +56,8 @@ alpha ~ dnorm(0,1e-4)T(0,)
 #tau ~ dnorm(tauRange,1e-1)T(0,)
 rho = rhoMax
 
-tau  ~ dgamma(tauRange,0.5) 
+tau0 ~ dgamma(tauRange,0.2) 
+tau  ~ dgamma(tauRange,0.2) 
 #rho ~ dunif(0,rhoMax)
 
 }"
@@ -92,7 +94,20 @@ modelGPFixedRho="model {
 #nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
 #nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
 
-load("out/setn-12-D-5-16-datHuntStat.RData")
+#load("out/setn-12-D-5-16-datHuntStat.RData")
+
+
+#nLL1=read.table("Stats/mcmc/testLL.dat")$Freq
+#nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
+#nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
+strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
+datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+#strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+#datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
+
 
 ## Get Event Counts Within Range ##
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
@@ -121,9 +136,9 @@ preyCntRange <- c(0,100)
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
 
 ##Thse RC params Work Well to Smooth LF And NF
-tauRangeA =40
-rhoMaxA = 0.01
-Noise = 18 ##The Gaussian Noise Term
+tauRangeA =1
+rhoMaxA = 0.5
+Noise = 1 ##The Gaussian Noise Term
 
 burn_in=100;
 steps=1000;
@@ -182,16 +197,16 @@ writeLines(modelGPV1,fileConn);
 close(fileConn)
 
 mLL=jags.model(file="model.tmp",data=dataLL);
-mNL=jags.model(file="model.tmp",data=dataNL);
-mDL=jags.model(file="model.tmp",data=dataDL);
-update(mLL,burn_in);update(mNL,burn_in);update(mDL,burn_in)
+#mNL=jags.model(file="model.tmp",data=dataNL);
+#mDL=jags.model(file="model.tmp",data=dataDL);
+update(mLL,burn_in);#update(mNL,burn_in);update(mDL,burn_in)
 
 
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
-drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
-drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
+#drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
+#drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
-strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauMax",tauRangeA,".pdf",sep="-")
+strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GPEstimate-tauMax",tauRangeA,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 
 X11()

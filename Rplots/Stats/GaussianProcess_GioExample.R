@@ -11,7 +11,7 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05){
   Xn=Xn[ord] ##Place Points In order so we can draw the Polygon Bands
   Yn=Yn[ord]
   
-  points(Xn,Yn,col=colour)
+  points(Xn,Yn,col=colour, pch=16)
   x_predict=seq(1,80,0.1)
   Ef=matrix(NA,ncol=length(x_predict),nrow=ind)
   for(j in 1:ind){
@@ -40,15 +40,18 @@ model="model {
     Sigma[i,i] <- pow(tau, 2)+pow(tau0,2)
   
     for(j in (i+1):N) {
-      Sigma[i,j] <- pow(tau,2) * exp( - 0.5*rho^2 * pow(food[i] - food[j], 2) )
+      #Sigma[i,j] <- pow(tau,2) * exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
+      ##exp(-0.5*(abs(X1[i]-X2[j])/l)^2)
+      Sigma[i,j] <-  exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
+        
       Sigma[j,i] <- Sigma[i,j]
     }
   }
  
   alpha=0 
-  tau0 ~ dgamma(40,0.5) 
+  tau0 ~ dgamma(20,0.5) 
   tau  ~ dgamma(40,0.5) 
-  rho = 0.01
+  rho = 0.06
   
 }"
 
@@ -62,9 +65,21 @@ steps=1000;
 thin=1;
 varnames=c("tau","rho","alpha","tau0")
 
+
+preyCntRange <- c(0,80)
 #load("data/setn-12-D-5-16-datHuntStat.RData")
 
-load("./Stats/data/setn-12-D-5-16-datHuntStat.RData")
+#load("./Stats/data/setn-12-D-5-16-datHuntStat.RData")
+
+strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
+datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+#strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+#datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
+
+
 
 ## Get Event Counts Within Range ##
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
@@ -143,15 +158,23 @@ ind = 10
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
 
 
-strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
+#strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
+strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tauRangeA,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 
-plot(nFoodLL2,nEventsLL2,col=colourH[1],main = "GP Regression Of HuntRate Vs Initial Prey Count ",
-     ylab="Number of Hunt Events",xlab="Initial Tracker-Estimated Prey Count",
-     sub=paste("GP tau:",format(mean(draw[["LL"]]$tau),digits=4 ),"tau0:",format(mean(draw[["LL"]]$tau0),digits=4 ) ,"rho:",format(mean(draw[["LL"]]$rho),digits=4 ) )  
+
+plot(nFoodLL2,nEventsLL2,col=colourH[1],
+     main = "GP Regression Of HuntRate Vs Initial Prey Count ",
+     ylab="Number of Hunt Events",
+     xlab="Initial Tracker-Estimated Prey Count",
+     xlim = preyCntRange,
+     pch=16,
+     sub=paste("GP tau:",format(mean(draw[["LL"]]$tau),digits=4 ),
+               "tau0:",format(mean(draw[["LL"]]$tau0),digits=4 ) ,
+               "rho:",format(mean(draw[["LL"]]$rho),digits=4 ) )  
                )
 
-legend(35,75,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
+legend(60,75,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
 
 
 plot_res(ind,draw[["LL"]],nFoodLL2,nEventsLL2,colourH[1],0.05)
@@ -161,6 +184,8 @@ plot_res(ind,draw[["NL"]],nFoodNL2,nEventsNL2,colourH[2],0.05)
 #plot(nFoodDL2,nEventsDL2,col="blue")
 
 plot_res(ind,draw[["DL"]],nFoodDL2,nEventsDL2,colourH[3],0.05)
+
+#legend(5,700,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
 
 dev.off()
 #points(datSliceLL[,1],datSliceLL[,2],col="black")
