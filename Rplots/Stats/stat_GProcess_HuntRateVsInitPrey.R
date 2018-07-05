@@ -1,18 +1,36 @@
+
+source("TrackerDataFilesImport.r")
+### Hunting Episode Analysis ####
+source("HuntingEventAnalysis.r")
+
+source("DataLabelling/labelHuntEvents.r")
 ### GP Process Estimation Of Hunt Rate Vs Prey Density Using Bayesian Inference Model
 myplot_res<- function(ind,qq=0.05){
   
+  xplotLim <- c(0,60)
   
-  plot(foodlevelsLL,countsLL,col=colourH[1],pch=16)
-  points(foodlevelsNL,countsNL,col=colourH[2],pch=16)
-  points(foodlevelsDL,countsDL,col=colourH[3],pch=16)
+  plot(foodlevelsLL,countsLL,col=colourP[1],
+       main = "GP Regression Of HuntRate Vs Initial Prey Count ",
+       ylab="Number of Hunt Events",
+       xlab="Initial Tracker-Estimated Prey Count",
+       xlim = xplotLim,
+       pch=16,
+       sub=paste("GP tau:",format(mean(drawLL$tau),digits=4 ),
+                 "rho:",format(mean(drawLL$rho),digits=4 ) )  
+       )
+  
+  legend(45,75,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
+  
+  points(foodlevelsNL,countsNL,col=colourP[2],pch=16,xlim = xplotLim)
+  points(foodlevelsDL,countsDL,col=colourP[3],pch=16,xlim = xplotLim)
   
   muLL=apply(drawLL$lambda[,(steps-ind):steps,1],1,mean)
   muNL=apply(drawNL$lambda[,(steps-ind):steps,1],1,mean)
   muDL=apply(drawDL$lambda[,(steps-ind):steps,1],1,mean)
   
-  lines(foodlevelsLL,muLL,col=colourH[1],lwd=4)
-  lines(foodlevelsNL,muNL,col=colourH[2],lwd=4)
-  lines(foodlevelsDL,muDL,col=colourH[3],lwd=4)
+  lines(foodlevelsLL,muLL,col=colourH[1],lwd=4,xlim = xplotLim)
+  lines(foodlevelsNL,muNL,col=colourH[2],lwd=4,xlim = xplotLim)
+  lines(foodlevelsDL,muDL,col=colourH[3],lwd=4,xlim = xplotLim)
   
   band=apply(drawLL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
   polygon(c(foodlevelsLL,rev(foodlevelsLL)),c(band[1,],rev(band[2,])),col=colourH[1])
@@ -132,12 +150,12 @@ datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),]
 
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,100)
+preyCntRange <- c(0,120)
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
-
+colourP <- c(rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,1.0))
 ##Thse RC params Work Well to Smooth LF And NF
-tauRangeA =10
-rhoMaxA = 0.5
+tauRangeA =50
+rhoMaxA = 0.6
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
@@ -197,20 +215,21 @@ writeLines(modelGPV1,fileConn);
 close(fileConn)
 
 mLL=jags.model(file="model.tmp",data=dataLL);
-#mNL=jags.model(file="model.tmp",data=dataNL);
-#mDL=jags.model(file="model.tmp",data=dataDL);
+mNL=jags.model(file="model.tmp",data=dataNL);
+mDL=jags.model(file="model.tmp",data=dataDL);
 update(mLL,burn_in);#update(mNL,burn_in);update(mDL,burn_in)
 
 
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
-#drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
-#drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
+drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
+drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
 strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GPEstimate-tauMax",tauRangeA,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
+myplot_res(100)
+dev.off()
+
 
 X11()
 myplot_res(100)
-  
-dev.off()
 
