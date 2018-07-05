@@ -35,6 +35,33 @@ pieChartLabelledEvents <- function(tblRes,GroupID)
   
 }
 
+pieChartLabelledSuccessVsFails <- function(tblRes,GroupID)
+{
+  
+  ##Summarize COmbine Labels ###
+  # Success Together, And Fails Together
+  DLRes=c(sum(tblRes[c(3,12),GroupID]) ,sum(tblRes[c(4,10,11),GroupID] ) ) 
+  #NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
+  #LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
+  
+  nLabelledDL <- sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+  #nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
+  #nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
+  
+  ScoreLabels <- c("Success","Fail")
+  
+  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
+  colourH <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+  
+  
+  pie(DLRes , labels = paste(""," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=2.8,cex.main=2.8,clockwise = TRUE,
+      main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[c(1)]) ),
+      radius=1.0,col=colourH) 
+  #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
+  #pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
+  
+}
+
 ##\todo convert Means to BoxPlots
 ## Box Plots Used to Compare Conditions On Mean Stats - Saves Output As Pdf
 barplotPerCondition <- function(datStat,datMean,datSe,strtitle,strsubt,stroutFileName,plotTop)
