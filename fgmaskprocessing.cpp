@@ -359,6 +359,8 @@ cv::Mat maskFGImg; //The FG Mask - After Combining Threshold Detection
 
 //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
+std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
+
 ///////////////// MOG Mask Is not Used Currently //
 /////get rid of noise/food marks
 ////Apply Open Operation dilate(erode())
@@ -517,6 +519,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
                 if (iroi.contains(centroid))
                 {
                      curve = fishbodycontours[kk];
+                     vFilteredFishbodycontours.push_back(curve);
                      outfishbodyhierarchy.push_back(fishbodyhierarchy[kk]); //Save Hierarchy Too
                 }
             }
@@ -527,6 +530,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             //idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
             //std::clog << " cntr area :" << area << std::endl;
         }
+
+        //If curve is empty then  Small Area Contour will be skipped
 
         //Skip Very Small Curves
         if (curve.size() < gcFishContourSize)
@@ -661,22 +666,20 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         /////COMBINE - DRAW CONTOURS
         //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
         // they should still fall within contour - )
-        //cv::drawContours( maskFGImg, fgMaskcontours, kk, CV_RGB(0,0,0), cv::FILLED); //Erase Previous Fish Blob
-        //Draw New One
-        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
-        //cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),2); //Draw Thick Outline To Cover for Contour Losses
-        cv::circle(outFishMask, (ptTail-ptHead)/12+ptTail,4,CV_RGB(255,255,255),cv::FILLED); //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
-        //cv::circle(outFishMask, ptHead,4,CV_RGB(255,255,255),cv::FILLED);
-        // cv::circle(outFishMask, ptHead2,4,CV_RGB(255,255,255),cv::FILLED);
 
-        //Erase Fish From Food Mask
-        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
-        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),3);
+        //Draw New Smoothed One
+        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
+
+        cv::circle(outFishMask, (ptTail-ptHead)/12+ptTail,4,CV_RGB(255,255,255),cv::FILLED); //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
+
+        //Erase Fish From Food Mask Using Smoothed Contour
+        //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
+        //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),3);
 
 } //For Each Fish Contour
 
-
-
+     //Erase Fish From Food Mask Using Original Contour (Not Smoothed
+     cv::drawContours( outFoodMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
 
     //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
     //cv::bitwise_or(outFishMask,maskFGImg,maskFGImg);

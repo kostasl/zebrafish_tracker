@@ -893,8 +893,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 foodModel* pfood = ft->second;
                 assert(pfood);
 
-                // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob
-                if (pfood->activeFrames < gcMinFoodModelActiveFrames)
+                // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob - Except If Food is being Tracked
+                if (pfood->activeFrames < gcMinFoodModelActiveFrames && (!pfood->isTargeted))
                 {
                     ++ft;
                     continue;
