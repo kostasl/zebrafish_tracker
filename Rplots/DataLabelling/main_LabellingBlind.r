@@ -150,10 +150,10 @@ while (Keyc != 'q')
     ###
     TargetLabels <- vHuntEventLabels[vHuntEventLabels==str_FilterLabel] ##Convert to Text Label Score to Use for Filtering OUt
   }
-  
-  if (!is.na(as.numeric(Keyc) ) )
+  ##Extract If Any Numbers In Input/ Then User Picked a specific Row
+  if (!is.na(as.numeric(gsub("[^0-9]","",Keyc)) ) )
   {
-    message(paste("Goto Event:",as.numeric(Keyc) ) )
+    message(paste("Goto Event:",Keyc ) )
     idx <- as.character(Keyc) ##Note It acts as key only as string, numeric would just bring out the respective order idx record
     datHuntEventPool <- datHuntEventAllGroupToLabel[idx,]
     expID <- datHuntEventPool$expID

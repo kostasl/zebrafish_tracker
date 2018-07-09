@@ -1,3 +1,7 @@
+### I used showMeSamples.r to reTrack specific Events of given Outcome along with prey tracking- 
+## The Tracked files are then imported and combined in runimportHuntEventAnalysisDataFiles.r
+##
+
 
 source("DataLabelling/labelHuntEvents.r")
 
