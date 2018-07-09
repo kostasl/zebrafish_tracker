@@ -205,7 +205,9 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     
     preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == lastFrame,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
     ##Now Isolate Fish Rec, Focus on Single Prey Item
-    datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
+    if (!is.na(preyTargetID))
+      datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
+    
     recLastFishFrame <- datFishFrames[datFishFrames$frameN == lastFrame,]
     
     
@@ -270,7 +272,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
       if (NROW(lastPreyFrame$Prey_X) > 0 )
       {
         
-        points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=16)
+        points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=16,cex=lastPreyFrame$Prey_Radius/5)
         lines(rangePreyFrame$Prey_X,frameWidth-rangePreyFrame$Prey_Y,col="red")
         text(lastPreyFrame$Prey_X+5,frameWidth-lastPreyFrame$Prey_Y+10,labels=f,col="darkred",cex=0.5)
       }

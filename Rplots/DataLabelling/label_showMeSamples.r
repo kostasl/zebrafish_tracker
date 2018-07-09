@@ -2,7 +2,8 @@
 source("DataLabelling/labelHuntEvents.r")
 
 message(paste(" Loading Hunt Event List to Validate... "))
-strDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
+#strDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
+strDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 datHuntEventAllGroupToValidate <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
  
 groupsList <- unique(datHuntEventAllGroupToValidate$groupID)

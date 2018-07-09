@@ -28,6 +28,9 @@ lHuntEventTRACKSfileSrc <- list()
   lHuntEventTRACKSfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-DryFed-Live")
   lHuntEventFOODfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-DryFed-Live")
   
+  lHuntEventTRACKSfileSrc[["NL"]] <- list(getFileSet("NotFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-NotFed-Live")
+  lHuntEventFOODfileSrc[["NL"]] <- list(getFileSet("NotFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-NotFed-Live")
+  
   
   ##OutPutFIleName
   strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
