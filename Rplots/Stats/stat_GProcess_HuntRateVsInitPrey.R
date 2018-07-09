@@ -1,4 +1,9 @@
 
+### This File Generates the Gaussian Processs Plot with the correct uncesrtainty region 
+###
+##
+
+
 source("TrackerDataFilesImport.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis.r")
@@ -19,7 +24,7 @@ myplot_res<- function(ind,qq=0.05){
                  "rho:",format(mean(drawLL$rho),digits=4 ) )  
        )
   
-  legend(45,75,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
+  legend(45,45,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
   
   points(foodlevelsNL,countsNL,col=colourP[2],pch=16,xlim = xplotLim)
   points(foodlevelsDL,countsDL,col=colourP[3],pch=16,xlim = xplotLim)
@@ -33,13 +38,13 @@ myplot_res<- function(ind,qq=0.05){
   lines(foodlevelsDL,muDL,col=colourH[3],lwd=4,xlim = xplotLim)
   
   band=apply(drawLL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
-  polygon(c(foodlevelsLL,rev(foodlevelsLL)),c(band[1,],rev(band[2,])),col=colourH[1])
+  polygon(c(foodlevelsLL,rev(foodlevelsLL)),c(band[1,],rev(band[2,])),col=colourR[1])
   
   band=apply(drawNL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
-  polygon(c(foodlevelsNL,rev(foodlevelsNL)),c(band[1,],rev(band[2,])),col=colourH[2])
+  polygon(c(foodlevelsNL,rev(foodlevelsNL)),c(band[1,],rev(band[2,])),col=colourR[2])
   
   band=apply(drawDL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
-  polygon(c(foodlevelsDL,rev(foodlevelsDL)),c(band[1,],rev(band[2,])),col=colourH[3])
+  polygon(c(foodlevelsDL,rev(foodlevelsDL)),c(band[1,],rev(band[2,])),col=colourR[3])
   
 }
 
@@ -118,13 +123,13 @@ modelGPFixedRho="model {
 #nLL1=read.table("Stats/mcmc/testLL.dat")$Freq
 #nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
 #nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
-strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
-datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 #datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
-datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
+#strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
+#datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
 
 
 ## Get Event Counts Within Range ##
@@ -151,15 +156,16 @@ datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),]
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
 preyCntRange <- c(0,120)
-colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
+colourH <- c(rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.01,0.01,0.9,0.8),rgb(0.00,0.00,0.0,1.0))
 colourP <- c(rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,1.0))
+colourR <- c(rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.01,0.01,0.9,0.4),rgb(0.00,0.00,0.0,1.0))
 ##Thse RC params Work Well to Smooth LF And NF
-tauRangeA =50
-rhoMaxA = 0.6
+tauRangeA =50 #10000
+rhoMaxA = 0.8
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
-steps=100;
+steps=1000;
 thin=1;
 
 
@@ -224,7 +230,7 @@ drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
 drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
-strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GPEstimate-tauMax",tauRangeA,".pdf",sep="")
+strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateUnlabelledT30V50VsPrey_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 myplot_res(100)
 dev.off()

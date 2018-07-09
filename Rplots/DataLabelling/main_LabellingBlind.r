@@ -112,9 +112,9 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
 ##Load The List To process
 
-#strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 
-strProcDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
+#strProcDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
@@ -183,7 +183,7 @@ while (Keyc != 'q')
 }
 
 tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel$huntScore),datHuntEventAllGroupToLabel$groupID)
-write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary-KL.csv",sep="") )
+write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary-SB.csv",sep="") )
 
 lLabelSummary <- list()
 nLabelledDL <- sum(tblRes[3:13,"DL"])
@@ -196,7 +196,7 @@ lLabelSummary$HuntEventCount <- list(DL=nLabelledDL,LL=nLabelledLL,NL=nLabelledN
 lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),"DL"]),LL=sum(tblRes[c(3,12),"LL"]),NL=sum(tblRes[c(3,12),"NL"]) )
 lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$HuntEventCount$DL,LL=lLabelSummary$Success$LL/lLabelSummary$HuntEventCount$LL,NL=lLabelSummary$Success$NL/lLabelSummary$HuntEventCount$NL )
 
-##   Can COMPARE Two Labelling Sets Using : ########
+##   COMPARE Two Labelling Sets Using : ########
 #huntComp <- compareLabelledEvents(datHuntEventsSB,datHuntEventsKL)
 #huntComp$huntScore <- convertToScoreLabel(huntComp$huntScore) ##Convert to Labels
 #huntComp$huntScoreB <- convertToScoreLabel(huntComp$huntScoreB)
@@ -222,15 +222,19 @@ tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHunt
 
 
 ###Label Summary  /No Target/Escapes /Success / Fail
+
+#display.brewer.all() to see avaulable options
+rfc <- colorRampPalette(rev(brewer.pal(11,'Set3')));
+r <- c(rfc(30),"#FF0000");
 strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSummary-Both.pdf",sep="")
 pdf(strPlotName,width=16,height=8,title="Summary Of Manual Hunt Event Labelling for both SB and KL sets",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
  layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
  #layout(matrix(c(1,2,3), 2, 3, byrow = TRUE))
  ScoreLabels <- c("Success","Fail","No Target","Escape")
  colourH <-   c(rfc(NROW(ScoreLabels)),"#FF0000");
-pieChartLabelledEvents(tblResSB,"DL") #pieChartLabelledEvents(tblResSB,"DL")
-pieChartLabelledEvents(tblResSB,"NL")
-pieChartLabelledEvents(tblResSB,"LL")
+ pieChartLabelledEvents(tblResSB,"DL") #pieChartLabelledEvents(tblResSB,"DL")
+ pieChartLabelledEvents(tblResSB,"NL")
+ pieChartLabelledEvents(tblResSB,"LL")
  text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
  pieChartLabelledEvents(tblResKL,"DL") #pieChartLabelledEvents(tblResSB,"DL")
  pieChartLabelledEvents(tblResKL,"NL")

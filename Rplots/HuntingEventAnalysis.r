@@ -507,6 +507,7 @@ calcHuntStat3 <- function(datHuntEvent)
   
 } ### END oF CALC Stat ##
 
+## Make Hunt Stat For dataFrames of HuntEvents with Mixed GroupID
 ##Filters out Events labelled as nOn Hunting and produces the hunting Statistics on the rest
 ## Spliting the statistics of Each Group
 makeHuntStat <- function(datHuntEvent)

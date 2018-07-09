@@ -173,8 +173,8 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
   ##Eye Distance taken By Bianco As 453mum, ie 0.5mm , take tracker
   EyeDist = 0.4/DIM_MMPERPX ##From Head Centre
   BodyArrowLength = 13
-  LEyecolour = "#00FF00AA"
-  REyecolour = "#FF0000AA"
+  LEyecolour = "#00FF008A"
+  REyecolour = "#FF00008A"
 
   #display.brewer.all() to see avaulable options
   Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
@@ -183,7 +183,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     
   datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$posX < frameWidth & datRenderHuntEvent$posY < frameHeight ,]
  
-  X11()
+  X11() ##Show On Screen
   startFrame <- min(datHuntEventMergedFrames$frameN)
   endFrame <- max(datHuntEventMergedFrames$frameN)
 
@@ -195,7 +195,6 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     ## Thus When Rendering the fish Choose one of the food items that appears in the current frame range
     
     
-    
     datFishFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN %in% tR,] ##in Range
     vTrackedPreyIDs <- unique(datFishFrames$PreyID)
     
@@ -204,12 +203,10 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
       lastFrame <- max(datFishFrames$frameN)
      
     
-    
     preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == lastFrame,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
     ##Now Isolate Fish Rec, Focus on Single Prey Item
     datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
     recLastFishFrame <- datFishFrames[datFishFrames$frameN == lastFrame,]
-    
     
     
     posX = recLastFishFrame$posX
@@ -236,27 +233,26 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     LEyePosX <- posX-cos(bearingRad+pi/180*(45+90))*EyeDist
     LEyePosY <- posY+sin(bearingRad+pi/180*(45+90))*EyeDist
     
-    LEyeConeX <- c(LEyePosX,
-                   LEyePosX-cos(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90-iConeArc))*iConeLength,
-                   LEyePosX-cos(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90+iConeArc))*iConeLength )
+    #LEyeConeX <- c(LEyePosX,LEyePosX-cos(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90-iConeArc))*iConeLength,                   LEyePosX-cos(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90+iConeArc))*iConeLength )
+    #LEyeConeY <- c(LEyePosY,LEyePosY+sin(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90-iConeArc))*iConeLength,                   LEyePosY+sin(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90+iConeArc))*iConeLength )
+    nsteps = 10
+    rs <- seq(-iConeArc,+iConeArc,len=nsteps) 
+    LEyeConeX <- c(LEyePosX,LEyePosX-cos(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90-rs))*iConeLength)
+    LEyeConeY <- c(LEyePosY, LEyePosY+sin(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90-rs))*iConeLength)
     
-    LEyeConeY <- c(LEyePosY,
-                   LEyePosY+sin(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90-iConeArc))*iConeLength,
-                   LEyePosY+sin(bearingRad+pi/180*(recLastFishFrame$LEyeAngle+90+iConeArc))*iConeLength )
-    polygon(LEyeConeX,LEyeConeY,col=REyecolour) #density=20,angle=45
+    polygon(LEyeConeX,LEyeConeY,col=LEyecolour) #density=20,angle=45
 
     ##Right Eye
     REyePosX <- posX-cos(bearingRad+pi/180*(-45-90))*EyeDist
     REyePosY <- posY+sin(bearingRad+pi/180*(-45-90))*EyeDist
     
     REyeConeX <- c(REyePosX,
-                   REyePosX-cos(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90-iConeArc))*iConeLength,
-                   REyePosX-cos(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90+iConeArc))*iConeLength )
+                   REyePosX-cos(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90-rs))*iConeLength )
     
     REyeConeY <- c(REyePosY,
-                   REyePosY+sin(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90-iConeArc))*iConeLength,
-                   REyePosY+sin(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90+iConeArc))*iConeLength )
-    polygon(REyeConeX,REyeConeY,col=LEyecolour) ##,density=25,angle=-45
+                   REyePosY+sin(bearingRad+pi/180*(recLastFishFrame$REyeAngle-90-rs))*iConeLength)
+    
+    polygon(REyeConeX,REyeConeY,col=REyecolour) ##,density=25,angle=-45
     
     
     ##Draw Frame 

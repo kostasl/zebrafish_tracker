@@ -72,6 +72,7 @@ for (i in strCondTags)
     ##ExPORT 
     datHuntEvent$groupID = i
     save(datHuntEvent,file=paste(strDataExportDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+    saveRDS(datHuntEvent,file=paste(strDataExportDir,"/",strDataFileName,".rds",sep="" )) ##So It can be loaded into a custom Named Structure
     
   }else{
     message("No Hunting Event to write!")
@@ -89,7 +90,36 @@ datMotionStat = do.call(rbind,lMotionStat)
 #datMotionStat <-rbindlist(lMotionStat)
 #Data Exported In One Dir -> strDataExportDir, and read from another - so as to Avoid accidental Overwrites
 save(datHuntStat, file=paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datHuntStat.RData",sep=""))
-
-
 save(datMotionStat, file=paste(strDataExportDir,"/","setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datMotionStat.RData",sep=""))
 
+
+
+### Loads Each HuntEvent RData File Found in A given directory and merges the records, which can then be identified by groupID
+mergeHuntEventRecords <- function(strSrcDir,strExt = "*.RData")
+{
+
+  ldatHunt <- list()
+#  groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
+#  strCondTags <- names(groupsrcdatList)
+  ldatFiles <- getFileSet("",strSrcDir,strExt)
+  
+  i <- 1
+  for (f in ldatFiles)
+  {
+    message(paste("#### Load HuntEvent File ",f," ###############"))
+    load(file=paste(f,"",sep="" )) ##Save With Dataset Idx Identifier
+    
+    #datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+
+    ldatHunt[[i]] <- datHuntEvent
+    i <- i +1
+  }
+
+  datHuntEvents = do.call(rbind,ldatHunt)#
+
+  nDat <- NROW(unique(datHuntEvents$dataSetID) )
+  first <- levels(datHuntEvents$dataSetID)[min(unique(as.numeric(datHuntEvents$dataSetID)) )]
+  last <- levels(datHuntEvents$dataSetID)[max(unique(as.numeric(datHuntEvents$dataSetID) ) )]
+
+  saveRDS(datHuntEvents,file=paste(strDataExportDir,"/setn",nDat,"-D",first,"-",last,"-HuntEvents-Merged.rds",sep="")  )
+}
