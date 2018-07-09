@@ -54,7 +54,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     ##Added Later To Struct Is  A Flag that a Hunt Event Has been Retracked - adding the food target
     if (any(names(datHuntEvent)=="markTracked")  ) ##This Marks Videos that have been Labelled and Retracked For anal
       if (!is.na(rec$markTracked))
-        if (rec$markTracked == 1)
+        if (rec$markTracked == 1 & is.na(idxFilter) )
       next ##SKip Record if previously Labelled
     
     ##A Noddy  Way of selecting Records

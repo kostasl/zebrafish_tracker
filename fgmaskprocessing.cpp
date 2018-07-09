@@ -679,7 +679,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 } //For Each Fish Contour
 
      //Erase Fish From Food Mask Using Original Contour (Not Smoothed
-     cv::drawContours( outFoodMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
+     //cv::drawContours( outFoodMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
 
     //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
     //cv::bitwise_or(outFishMask,maskFGImg,maskFGImg);

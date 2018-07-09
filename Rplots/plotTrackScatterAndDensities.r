@@ -162,7 +162,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
   datHuntEventMergedFrames$REyeAngle <- meanf(datHuntEventMergedFrames$REyeAngle,20)
   
   frameWidth = 610
-  frameHeight = 470
+  frameHeight = 610
   
   X_FRAME <- c(0,frameWidth)
   Y_FRAME <- c(0,frameHeight)
@@ -173,7 +173,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
   ##Eye Distance taken By Bianco As 453mum, ie 0.5mm , take tracker
   EyeDist = 0.4/DIM_MMPERPX ##From Head Centre
   BodyArrowLength = 13
-  LEyecolour = "#00FF008A"
+  LEyecolour = "#0C0CFF8A"
   REyecolour = "#FF00008A"
 
   #display.brewer.all() to see avaulable options
