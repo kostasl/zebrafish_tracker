@@ -59,7 +59,7 @@ lHuntEventTRACKSfileSrc <- list()
   ##Make an Updated list of ReTracked Hunt Events that have been imported
   datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
   names(datTrackedEventsRegister) <- c("expID","eventID","trackID")
-  idxH <- 23
+  idxH <- 17
   expID <- datTrackedEventsRegister[idxH,]$expID
   trackID<- datTrackedEventsRegister[idxH,]$trackID
   eventID <- datTrackedEventsRegister[idxH,]$eventID
