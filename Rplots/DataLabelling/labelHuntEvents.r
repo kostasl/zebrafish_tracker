@@ -338,5 +338,22 @@ compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
   #table(huntComp$huntScore, huntComp$huntScoreB)
 }
 
+##Finds labels from datSource for unlabelled events in datTarget 
+digestHuntLabels <- function(datTarget,datSource)
+{
+  
+  huntComp <- compareLabelledEvents(datTarget,datSource)
+  
+  ##Find which labels are new  - where the scores Differ and the Target Event List has these events unlabelled
+  datNewLabels <- huntComp[huntComp$huntScore != huntComp$huntScoreB & !is.na(huntComp$huntScoreB) & !is.na(huntComp$huntScore) 
+                            & huntComp$huntScore=="UnLabelled",] ##Bring Out The labelled Mismatches##Compare:
+  
+  rowIDs <- row.names(datNewLabels)
+  datTarget[row.names(datNewLabels),"huntScore"] <- datSource[row.names(datNewLabels),"huntScore"]
+  
+  ##Return The dataframe with the Updated Scores that came from datSource
+  return(datTarget)
+}
+
 
 

@@ -53,13 +53,15 @@ lHuntEventTRACKSfileSrc <- list()
   # #### END OF IMPORT HUNT EVENT TRACKER DATA ############
   
   
+  
+  
   ############# LOAD AND PLAYBACK ####
   load(strDataFileName)
   ##Test  PlayBack Plot Hunt Event###  
   ##Make an Updated list of ReTracked Hunt Events that have been imported
   datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
   names(datTrackedEventsRegister) <- c("expID","eventID","trackID")
-  idxH <- 17
+  idxH <- 11
   expID <- datTrackedEventsRegister[idxH,]$expID
   trackID<- datTrackedEventsRegister[idxH,]$trackID
   eventID <- datTrackedEventsRegister[idxH,]$eventID
