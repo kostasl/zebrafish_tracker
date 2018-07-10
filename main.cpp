@@ -2206,6 +2206,7 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     params.maxInertiaRatio      = 1.0;
     params.minInertiaRatio      = 0.1;
 
+    params.minDistBetweenBlobs = gMaxClusterRadiusFoodToBlob/2;
 
     //params.filterByInertia = true;
 

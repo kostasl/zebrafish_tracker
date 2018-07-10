@@ -48,7 +48,7 @@ extern const  int gcMinFoodModelActiveFrames; //Min Number of consecutive frames
 extern const  int gMaxClusterRadiusFoodToBlob;
 extern const  int thActive;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 extern const  int thDistanceFish; //Threshold for distance between track-to blob assignement
-extern const  int thDistanceFood; //Threshold for distance between track-to blob assignement
+//extern const  int thDistanceFood; //Threshold for distance between track-to blob assignement
 extern const  int gFoodReportInterval;
 
 extern const  int nTemplatesToLoad; //Number of Templates To Load Into Cache - These need to exist as images in QtResources

@@ -21,17 +21,17 @@ const double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength        = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
 const unsigned int thresh_maxfishblobarea = 2250; //Min area above which to Filter The fish blobs
-const unsigned int gthres_maxfoodblobarea = 150;
+const unsigned int gthres_maxfoodblobarea = 40;
 
 
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
 const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive (Not Matched to a Blob) until track is deleted
 const int gcMinFoodModelActiveFrames    = 50; //Min Number of consecutive frames it needs to be active  otherwise its deleted
-const int gMaxClusterRadiusFoodToBlob   = 1;
+const int gMaxClusterRadiusFoodToBlob   = 3;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 //const int thDistanceFish                = 250; //NOT USED / Blobs need to overlap Threshold for distance between track (last known point) -to blob assignement
-const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
+//const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
 const int gFoodReportInterval           = (int)gfVidfps;
 
 const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
