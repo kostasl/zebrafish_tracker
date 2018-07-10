@@ -24,7 +24,9 @@ for (g in vHuntEventLabels )
 TargetLabel <- as.numeric(readline(prompt="### Key In A Number For Which Label You want to see:"))
 #TargetLabel = which(vHuntEventLabels == vHuntEventLabels[Keyc])-1;
 #gc <- sample(groupsList,1)
-datHuntEventPool <- datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$huntScore == TargetLabel & datHuntEventAllGroupToValidate$eventID != 0 ,]
+datHuntEventPool <- datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$huntScore == TargetLabel &
+                                                     datHuntEventAllGroupToValidate$eventID != 0 &
+                                                     is.na(datHuntEventAllGroupToValidate$markTracked),]
 expID <- sample(datHuntEventPool$expID,1)
 datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
 eventID <- sample(datHuntEventPool$eventID,1)

@@ -83,7 +83,7 @@ extern int gFishTemplateAngleSteps;
 extern int gEyeTemplateAngleSteps;
 extern double gTemplateMatchThreshold; //If not higher than 0.9 The fish body can be matched at extremeties
 extern int iLastKnownGoodTemplateRow;
-extern int iLastKnownGoodTemplateCol;
+extern int iFishAngleOffset; //Manual User Corrected Fish Angle added to detected one
 //using namespace std;
 
 ///Global Variables

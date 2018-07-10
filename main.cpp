@@ -1347,12 +1347,12 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
                     if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
                     {
-                        pfish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
+                        pfish->updateState(fishblob,maxMatchScore,bestAngle+iFishAngleOffset,ptbcentre,nFrame,gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
                     }
                     else
                     { //Rotate Template Box - Since this cannot be done Manually
-                        pfish->bearingAngle   = bestAngle;
-                        pfish->bearingRads   =  bestAngle*CV_PI/180.0;
+                        pfish->bearingAngle   = (bestAngle+iFishAngleOffset);
+                        pfish->bearingRads   =  (bestAngle+iFishAngleOffset)*CV_PI/180.0;
                     }
 
                  }
@@ -1360,8 +1360,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                  {
                        //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
                        if (pfish->inactiveFrames > 3)
-                           iLastKnownGoodTemplateCol = 0;
-                         qDebug() << nFrame << " Guessing next TemplCol:" << iLastKnownGoodTemplateCol;
+                           iFishAngleOffset = 0;
+                         qDebug() << nFrame << " Guessing next TemplCol:" << iFishAngleOffset;
                  }
 
                  ////////  Write Angle / Show Box  //////
@@ -1395,7 +1395,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                fish->ID = ++gi_MaxFishID;
                fish->idxTemplateRow = iTemplRow;
                fish->idxTemplateCol = iTemplCol;
-               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol);
+               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
 
                vfishmodels.insert(IDFishModel(fish->ID,fish));
                qfishrank.push(fish); //Add To Priority Queue
@@ -1838,7 +1838,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         if (!bTracking)
         {
             iLastKnownGoodTemplateRow = 0; //Reset Row
-            iLastKnownGoodTemplateCol = 0;
+            iFishAngleOffset = 0;
             pwindow_main->LogEvent(QString("Tracking ON"));
         }else
             pwindow_main->LogEvent(QString("Tracking OFF"));
@@ -1858,16 +1858,16 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     if ((char)keyboard == '[') //Rotate Template AntiClock Wise
     {
-        iLastKnownGoodTemplateCol--;
-        iLastKnownGoodTemplateCol = max(0,iLastKnownGoodTemplateCol);
-        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(iLastKnownGoodTemplateCol)  );
+        iFishAngleOffset--;
+        iFishAngleOffset = max(-180,iFishAngleOffset);
+        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(iFishAngleOffset)  );
     }
 
     if ((char)keyboard == ']') //Rotate Template ClockWise
     {
-        iLastKnownGoodTemplateCol++;
-        iLastKnownGoodTemplateCol = min(360/gFishTemplateAngleSteps , iLastKnownGoodTemplateCol);
-        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(iLastKnownGoodTemplateCol)  );
+        iFishAngleOffset++;
+        iFishAngleOffset = min(180, iFishAngleOffset);
+        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(iFishAngleOffset)  );
     }
 
 
@@ -1983,7 +1983,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
         pwindow_main->LogEvent(QString::fromStdString(ss.str()));
         iLastKnownGoodTemplateRow = iNewTemplateRow;
-        iLastKnownGoodTemplateCol = 0;
+        iFishAngleOffset = 0;
     }
 
 }
