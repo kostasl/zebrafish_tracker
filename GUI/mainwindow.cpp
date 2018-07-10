@@ -771,6 +771,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
     // get the scene pos in the item's local coordinate space
     QPointF ptImg = item->mapFromScene(ptSceneclick);
 
+    cv::Point ptMouse(ptImg.x(),ptImg.y());
 
     ///Check First if Clicking On Food Item
     for (foodModels::iterator it=vfoodmodels.begin(); it!=vfoodmodels.end(); ++it)
@@ -796,7 +797,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
         }
     }
 
-    cv::Point ptMouse(ptImg.x(),ptImg.y());
+
     for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
     {
 
