@@ -167,7 +167,7 @@ void drawEllipse(cv::Mat imgOut,tDetectedEllipsoid ellipse)
     imgOut.at<cv::Vec3b>(ellipse.ptAxisMj1)[1] = 255; imgOut.at<cv::Vec3b>(ellipse.ptAxisMj1)[2] = 255;
     imgOut.at<cv::Vec3b>(ellipse.ptAxisMj2)[1] = 255; imgOut.at<cv::Vec3b>(ellipse.ptAxisMj2)[2] = 255;
     //cv::circle(img_colour,ptxy1,1,CV_RGB(0,255,255),1);
-    //cv::circle(img_colour,ptxy2,1,CV_RGB(0,255,255),1);
+    //cv::circle(,ptxy2,1,CV_RGB(0,255,255),1);
     //Debug Mark As Good Pair
     //imgDebug.at<uchar>(ellipse.ptAxisMj1) = 255;
     //imgDebug.at<uchar>(ellipse.ptAxisMj2) = 255;
@@ -513,6 +513,8 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
 int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameMonitor,cv::Mat& outHeadFrameProc)
 {
 
+     cv::Mat imgFishHead_Lapl;
+
     int ret = 0;//Return Value Is the Count Of Ellipses Detected (Eyes)
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
     ///Keep Image processing Arrays Static to avoid memory Alloc On Each Run
@@ -612,22 +614,29 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
 
     // Do Thresholding Of Masked Image to Obtain Segmented Eyes //
-    cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY | cv::THRESH_OTSU); // Log Threshold Image + cv::THRESH_OTSU
+
+    //Try Laplacian CV_8U
+    cv::Laplacian(imgIn_thres,imgFishHead_Lapl,imgIn_thres.type(),3);
+    imgFishHead_Lapl.copyTo(imgEdge_local);
+
+
     //Separate Eyes Mask
-    cv::line(imgIn_thres,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes
-    cv::circle(imgIn_thres,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3*giHeadIsolationMaskVOffset+2,CV_RGB(0,0,0),-1); //Mask Body
+
+    cv::line(imgEdge_local,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes
+    cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3*giHeadIsolationMaskVOffset+2,CV_RGB(0,0,0),-1); //Mask Body
 
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
-    outHeadFrameMonitor = imgIn_thres.clone();
+    outHeadFrameMonitor = imgEdge_local.clone();
     //imgIn_thres.copyTo(outHeadFrameMonitor);
 
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
-    //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),1);
-    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
+    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),1); //Break Connections
+    //cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),3);
 
-    cv::findContours(imgIn_thres, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    cv::findContours(imgEdge_local, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 
     //Empty List
@@ -682,7 +691,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         try
         {
             //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
-            cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
+           // cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
         }
         catch (char* e)
         {
@@ -692,7 +701,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         }
         outHeadFrameMonitor = imgEdge_local.clone();
         //COVER Right Eye
-        cv::Rect r(imgIn_thres.cols/2,0,imgIn_thres.cols,imgIn_thres.rows);
+        cv::Rect r(imgEdge_local.cols/2,0,imgIn_thres.cols,imgIn_thres.rows);
         //imgEdge.copyTo(imgEdge_local);
         cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
         //cv::imshow("REyeCover",imgEdge_local);
@@ -775,7 +784,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         try
         {
             //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
-            cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
+            //cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
 
         }
         catch (char* e)
