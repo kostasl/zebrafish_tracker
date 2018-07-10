@@ -55,7 +55,10 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     if (any(names(datHuntEvent)=="markTracked")  ) ##This Marks Videos that have been Labelled and Retracked For anal
       if (!is.na(rec$markTracked))
         if (rec$markTracked == 1 & is.na(idxFilter) )
-      next ##SKip Record if previously Labelled
+        {
+          message("Arleady Marked Tracked")
+          next ##SKip Record if previously Labelled
+        }
     
     ##A Noddy  Way of selecting Records
     if (!(convertToScoreLabel(rec$huntScore) %in% factorLabelFilter) | rec$expID != ExpIDFilter | rec$eventID != EventIDFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
