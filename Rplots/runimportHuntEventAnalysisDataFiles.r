@@ -53,7 +53,7 @@ lHuntEventTRACKSfileSrc <- list()
   # #### END OF IMPORT HUNT EVENT TRACKER DATA ############
   
   
-  
+  ## rle() - Use Run Length Encoding
   
   ############# LOAD AND PLAYBACK ####
   load(strDataFileName)
