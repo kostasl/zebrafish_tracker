@@ -9,7 +9,7 @@
 ## The list of Analysed Hunt Events Is Given by datTrackedEventsRegister
 ###
 
-#library(signal)
+library(signal)
 
 source("TrackerDataFilesImport.r")
 source("plotTrackScatterAndDensities.r")
@@ -46,8 +46,9 @@ lHuntEventTRACKSfileSrc <- list()
   ##CHeck If Exp Ids not found 
   stopifnot(NROW(datHuntEventFrames[which(is.na(datHuntEventFrames$expID)), ]) == 0)
   
-
-  datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
+  #Make an Updated list of ReTracked Hunt Events that have been imported
+  datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID,as.character(datHuntEventMergedFrames$group) ) ))
+  names(datTrackedEventsRegister) <- c("expID","eventID","trackID","groupID")
   
   save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
   # #### END OF IMPORT HUNT EVENT TRACKER DATA ############
@@ -55,13 +56,13 @@ lHuntEventTRACKSfileSrc <- list()
   
   ## rle() - Use Run Length Encoding
   
-  ############# LOAD AND PLAYBACK ####
+  ############# LOAD AND PLAYBACK OF HUNT EVENTS ####
   load(strDataFileName)
   ##Test  PlayBack Plot Hunt Event###  
   ##Make an Updated list of ReTracked Hunt Events that have been imported
-  datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
-  names(datTrackedEventsRegister) <- c("expID","eventID","trackID")
-  idxH <- 11
+   # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
+  
+  idxH <- 10
   expID <- datTrackedEventsRegister[idxH,]$expID
   trackID<- datTrackedEventsRegister[idxH,]$trackID
   eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -74,18 +75,23 @@ lHuntEventTRACKSfileSrc <- list()
   renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
 
   #### PROCESS BOUTS ###
+  Fs <- 430; #sampling rate
+  bf <- butter(4, c(0.02,0.2),type="pass");  
+  
+  
+  
   vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
   vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
   vEventPathLength     <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
   #nNumberOfBouts       <- 
   dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
   dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - Why is dFrame 0?  
-  dEventSpeed          <- meanf(vEventPathLength/dframe,5) ##Apply Mean Filter Smooth Out 
+  dEventSpeed          <- meanf(vEventPathLength/dframe,3) ##Apply Mean Filter Smooth Out 
   
   #speed_Smoothed <- meanf(dEventSpeed,10)
   ##Replace NA with 0s
 #  dEventSpeed[is.na(dEventSpeed)] = 0
-  dEventSpeed_smooth <- meanf(dEventSpeed,100)
+  dEventSpeed_smooth <- meanf(dEventSpeed,100) #filtfilt(bf, dEventSpeed) 
   dEventSpeed_smooth[is.na(dEventSpeed_smooth)] = 0
   MoveboutsIdx <- find_peaks(dEventSpeed_smooth*100,25)
   ##Reject Peaks Below Half An SD Peak Value - So As to Choose Only Significant Bout Movements # That Are Above the Minimum Speed to Consider As Bout
@@ -127,15 +133,27 @@ lHuntEventTRACKSfileSrc <- list()
    vMotionBoutDuration <- vMotionBout_Off[1:iPairs]-vMotionBout_On[1:iPairs]
    vMotionBoutDuration <- vMotionBoutDuration[!is.na(vMotionBoutDuration)]
 
-
+    X11()
    plot(vMotionBout,type='p')
    points(MoveboutsIdx_cleaned,vMotionBout[MoveboutsIdx_cleaned],col="red")
    points(vMotionBout_On,vMotionBout[vMotionBout_On],col="green") ##On
    points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow")##Off
-
+   
    ######### END OF PROCESS BOUT #########
 
-
+   ## ## Tail Curvature 
+  ##Filter The Noise 
+   #when apply twice with filtfilt, #results in a 0 phase shift  : W * (Fs/2) == half-amplitude cut-off when combined with filtfilt
+   X11()
+   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
+   vTailDisp <- datRenderHuntEvent$DThetaSpine_6 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
+   vTailDispFilt <- filtfilt(bf, vTailDisp)
+   plot(vTailDispFilt,type="l")
+   lines(dEventSpeed_smooth*100,type='l',col="blue")
+   lines(vTailDir,type='l',col="green")
+   ##END OF CURVATURE ##
+   
+   
    ###########  Plot Polar Angle to Prey ##############
    X11()
    plot.new()
