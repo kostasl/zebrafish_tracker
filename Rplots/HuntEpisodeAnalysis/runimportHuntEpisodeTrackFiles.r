@@ -9,9 +9,16 @@
 ## The list of Analysed Hunt Events Is Given by datTrackedEventsRegister
 ###
 
+
+############# Function to Analyse HuntEpisode tracks Combined With food #########
+## Import The retracked Hunt/Food Episodes - 
+## Find/Record first turn to Prey  ##
+## Analyse Distance To Prey Progress, Number of Bouts ... Bout length changes ##
+
+
 library(signal)
 
-source("TrackerDataFilesImport.r")
+source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 #################IMPORT HuntEvent TRACKER FILES # source Tracker Data Files############################### 
 ##OutPutFIleName
@@ -42,7 +49,7 @@ lHuntEventTRACKSfileSrc <- list()
   datHuntEventFrames <-importTrackerFilesToFrame(lHuntEventTRACKSfileSrc)
   ##Clean Out Non (Fish) Tracks -  Dublicates - Use Template Score TO detect Irrelevant Tracks
   datHuntEventFrames <- datHuntEventFrames[datHuntEventFrames$templateScore > 0.70,] 
-  ## IMport Food Tracks And Merge With Fish Tracks In Hunt Events
+  ## IMport Food Tracks And Merge With Fish Tracks In Hunt Events # Found in TrackerDataFilesImport_lib
   datHuntEventMergedFrames<- mergeFoodTrackerFilesToFrame(lHuntEventFOODfileSrc,datHuntEventFrames) ##Load Food Tracking Files And Attach Data On Respective Hunt Event Frames.
   #datHuntEventFrames$dataSet <- idxDataSet ##Identify DataSet
   
