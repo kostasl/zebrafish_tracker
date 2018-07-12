@@ -158,8 +158,8 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
 renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolder=NA)
 {
 
-  datHuntEventMergedFrames$LEyeAngle <- meanf(datHuntEventMergedFrames$LEyeAngle,20)
-  datHuntEventMergedFrames$REyeAngle <- meanf(datHuntEventMergedFrames$REyeAngle,20)
+  #datHuntEventMergedFrames$LEyeAngle <- meanf(datHuntEventMergedFrames$LEyeAngle,20)
+  #datHuntEventMergedFrames$REyeAngle <- meanf(datHuntEventMergedFrames$REyeAngle,20)
   
   frameWidth = 610
   frameHeight = 610

@@ -338,6 +338,9 @@ compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
   #table(huntComp$huntScore, huntComp$huntScoreB)
 }
 
+
+## USe it To Update a Labelled Set With The Changes Introduced from Another 
+###- Only Merges Unlabelled Onto Target Set
 ##Finds labels from datSource for unlabelled events in datTarget 
 digestHuntLabels <- function(datTarget,datSource)
 {
@@ -346,11 +349,13 @@ digestHuntLabels <- function(datTarget,datSource)
   
   ##Find which labels are new  - where the scores Differ and the Target Event List has these events unlabelled
   datNewLabels <- huntComp[huntComp$huntScore != huntComp$huntScoreB & !is.na(huntComp$huntScoreB) & !is.na(huntComp$huntScore) 
-                            & huntComp$huntScore=="UnLabelled",] ##Bring Out The labelled Mismatches##Compare:
+                            & convertToScoreLabel(huntComp$huntScore)=="UnLabelled",] ##Bring Out The labelled Mismatches##Compare:
   
-  rowIDs <- row.names(datNewLabels)
-  datTarget[row.names(datNewLabels),"huntScore"] <- datSource[row.names(datNewLabels),"huntScore"]
-  
+  rowIDs <- row.names(datNewLabels) ## Get ID to match records between datasets
+  ##Transfer Label And Start End Frame
+  datTarget[row.names(datNewLabels),"huntScore"] <- datSource[row.names(datNewLabels),"huntScore"] 
+  datTarget[row.names(datNewLabels),"startFrame"] <- datSource[row.names(datNewLabels),"startFrame"]
+  datTarget[row.names(datNewLabels),"endFrame"] <- datSource[row.names(datNewLabels),"endFrame"]
   ##Return The dataframe with the Updated Scores that came from datSource
   return(datTarget)
 }
