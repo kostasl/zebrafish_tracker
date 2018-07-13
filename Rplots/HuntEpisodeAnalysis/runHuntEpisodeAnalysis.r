@@ -22,7 +22,7 @@ bf_speed <- butter(4, 0.05,type="low");
 ###
 
 
-idxH <- 15
+idxH <- 18
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -66,13 +66,15 @@ plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",
 lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magenta")
 
 
-datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_7)
-datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_6)
-datRenderHuntEvent$DThetaSpine_5 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_5)
-datRenderHuntEvent$DThetaSpine_4 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_4)
-datRenderHuntEvent$DThetaSpine_3 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_3)
-datRenderHuntEvent$DThetaSpine_2 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_2)
-datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_1)
+lMax <- +50
+lMin <- -50
+datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_7,lMin,lMax) )
+datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_6,lMin,lMax) )
+datRenderHuntEvent$DThetaSpine_5 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_5,lMin,lMax) )
+datRenderHuntEvent$DThetaSpine_4 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_4,lMin,lMax))
+datRenderHuntEvent$DThetaSpine_3 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_3,lMin,lMax))
+datRenderHuntEvent$DThetaSpine_2 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_2,lMin,lMax))
+datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_1,lMin,lMax))
 
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(8),"#FF0000");
