@@ -21,6 +21,44 @@ wrapAngle <- function(x)
 }
 
 
+##Fixes Lost Tracking / and Out of Range values by Filling In Gaps with Last known good Value 
+clipEyeRange <- function(vEyeAngle,lMin,lMax)
+{
+  for (e in 2:NROW(vEyeAngle))
+  {
+    
+    if (vEyeAngle[e] == 180)
+      vEyeAngle[e] <- vEyeAngle[e-1]
+    
+    if (vEyeAngle[e] > lMax)
+      vEyeAngle[e] <- vEyeAngle[e-1]
+    
+    if (vEyeAngle[e] < lMin)
+      vEyeAngle[e] <- vEyeAngle[e-1]
+    # ## This part Was used to remove all sudden Spikes - But simpler solution of Clipping Works Fine
+    # ##Check Diff
+    # dd <- vEyeAngle[e-1]-vEyeAngle[e]
+    # ##If Eyes Move More than 3 degrees per frame
+    # if (abs(dd) > 20 )
+    # {
+    #   ##Interpolate // Find Next Value Close to this one
+    #   for (ff in (e):NROW(vEyeAngle))
+    #   {
+    #     dd2 <- vEyeAngle[e-1]-vEyeAngle[ff]
+    #     if (abs(dd2) <= 45 )
+    #       break; # Found Next Matching Value - Exit Seach Loop
+    # 
+    #     vEyeAngle[ff] <- vEyeAngle[e-1] #seq(vEyeAngle[e],vEyeAngle[ff],by=-dd2/(ff-e) )
+    #   }
+    # }
+    ##vEyeAngle[e] <- vEyeAngle[e-1]-vEyeAngle[e-2]dd*0.01
+  }
+  
+  return(vEyeAngle)
+}
+
+
+
 ### Find Peak in 1D vector / Courtesy of https://github.com/stas-g/findPeaks
 find_peaks <- function (x, m = 3){
   shape <- diff(sign(diff(x, na.pad = FALSE)))

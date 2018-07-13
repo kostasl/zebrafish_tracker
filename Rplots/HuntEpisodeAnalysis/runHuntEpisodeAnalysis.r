@@ -1,7 +1,6 @@
 library(signal)
-#### Analyse Extracted/Labelled and then Retracked Hunt Events ///
 
-
+source("plotTrackScatterAndDensities.r")
 
 
 strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
@@ -23,7 +22,7 @@ bf_speed <- butter(4, 0.05,type="low");
 ###
 
 
-idxH <- 32
+idxH <- 37
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -38,7 +37,10 @@ strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",ev
 
 
 
+lMax <- 55
+lMin <- -20
 #spectrum(datRenderHuntEvent$LEyeAngle)
+datRenderHuntEvent$LEyeAngle <- clipEyeRange(datRenderHuntEvent$LEyeAngle,lMin,lMax)
 datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nFrWidth*5)
 datRenderHuntEvent$LEyeAngle[is.na(datRenderHuntEvent$LEyeAngle)] <- 0
 #X11()
@@ -50,15 +52,21 @@ datRenderHuntEvent$LEyeAngle <-filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle) # 
 #X11()
 #lines(medianf(datRenderHuntEvent$LEyeAngle,nFrWidth),col='red')
 #lines(datRenderHuntEvent$LEyeAngle,type='l',col='blue')
+##Replace Tracking Errors (Values set to 180) with previous last known value
 
+lMax <- 20
+lMin <- -55
+datRenderHuntEvent$REyeAngle <- clipEyeRange(datRenderHuntEvent$REyeAngle,lMin,lMax)
 datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth*5)
 datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
 datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
 #datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
 X11()
-plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-50,50),main="Eye Motion ")
-lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="red")
+plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-60,60),main="Eye Motion ")
 
+lines(datRenderHuntEvent$frameN,medianf(vEyeAngle,nFrWidth*5 ),type='p',col="green")
+lines(datRenderHuntEvent$frameN,vEyeAngle,type='l',col="magenta")
+lines(datRenderHuntEvent$frameN,vOrig,type='l',col="red")
 
 datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_7)
 datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_6)
