@@ -199,6 +199,7 @@ lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),"DL"]),LL=sum(tblRes[c(3,12)
 lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$HuntEventCount$DL,LL=lLabelSummary$Success$LL/lLabelSummary$HuntEventCount$LL,NL=lLabelSummary$Success$NL/lLabelSummary$HuntEventCount$NL )
 
 ####
+##Testing on 4581/542
 
 
 ######## CALC Stat On Hunt Events ######

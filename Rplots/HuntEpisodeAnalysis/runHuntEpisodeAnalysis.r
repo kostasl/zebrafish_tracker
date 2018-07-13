@@ -19,11 +19,11 @@ load(strDataFileName)
 Fs <- 430; #sampling rate
 bf_tail <- butter(4, c(0.02,0.1),type="pass");
 bf_eyes <- butter(4, 0.015,type="low",plane="z");
-bf_speed <- butter(4, 0.02,type="low");  
+bf_speed <- butter(4, 0.05,type="low");  
 ###
 
 
-idxH <- 14
+idxH <- 10
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
