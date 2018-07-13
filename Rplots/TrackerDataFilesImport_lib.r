@@ -11,6 +11,8 @@ meanf <- function(t,k) {n=length(t);tproc=rep(NA,n);k=min(k,n); for(i in (k/2):n
 wrapAngle <- function(x)
 {
   res <- x %% 360
+  if (is.na(x))
+    return(0)
   
   if (abs(res) > abs(360-res))
     res <- res-360
@@ -143,13 +145,13 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 posY =TrackerData[[i]][[j]]$Centroid_Y,
                                                 BodyAngle = TrackerData[[i]][[j]]$AngleDeg,
                                                 ThetaSpine_0 = TrackerData[[i]][[j]]$ThetaSpine_0, ## Angle of 1st Spine Tail Seg on Global Coordinates
-                                                DThetaSpine_1 = sapply(TrackerData[[i]][[j]]$DThetaSpine_1,wrapAngle) , ##Relative Angle Diff Between Next 2nd Tail Seg And The 1st one / Call wrap to wrap DAngle between -180 to 180
-                                                DThetaSpine_2 = sapply(TrackerData[[i]][[j]]$DThetaSpine_2,wrapAngle), ##Consecutive Angle diffs
-                                                DThetaSpine_3 = sapply(TrackerData[[i]][[j]]$DThetaSpine_3,wrapAngle),
-                                                DThetaSpine_4 = sapply(TrackerData[[i]][[j]]$DThetaSpine_4,wrapAngle),
-                                                DThetaSpine_5 = sapply(TrackerData[[i]][[j]]$DThetaSpine_5,wrapAngle),
-                                                DThetaSpine_6 = sapply(TrackerData[[i]][[j]]$DThetaSpine_6,wrapAngle),
-                                                DThetaSpine_7 = sapply(TrackerData[[i]][[j]]$DThetaSpine_7,wrapAngle),
+                                                DThetaSpine_1 = sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_1,5),wrapAngle) , ##Relative Angle Diff Between Next 2nd Tail Seg And The 1st one / Call wrap to wrap DAngle between -180 to 180
+                                                DThetaSpine_2 = sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_2,5),wrapAngle), ##Consecutive Angle diffs
+                                                DThetaSpine_3 = sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_3,5),wrapAngle),
+                                                DThetaSpine_4 = sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_4,5),wrapAngle),
+                                                DThetaSpine_5 = sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_5,5),wrapAngle),
+                                                DThetaSpine_6 = sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_6,5),wrapAngle),
+                                                DThetaSpine_7 = sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_7,5),wrapAngle),
                                                 frameN=TrackerData[[i]][[j]]$frameN,
                                                 fileIdx=rep(j,Nn),
                                                 expID=rep(expID,Nn),

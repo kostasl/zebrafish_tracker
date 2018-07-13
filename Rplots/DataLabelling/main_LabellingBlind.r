@@ -199,8 +199,12 @@ lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),"DL"]),LL=sum(tblRes[c(3,12)
 lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$HuntEventCount$DL,LL=lLabelSummary$Success$LL/lLabelSummary$HuntEventCount$LL,NL=lLabelSummary$Success$NL/lLabelSummary$HuntEventCount$NL )
 
 ####
-##Testing on 4581/542
-
+##Testing on 4581/542 , 446/1529
+##Find Event
+expID <- "3521"
+eventID <- 14 
+datRes <- datHuntEventAllGroupToValidate[as.character(datHuntEventAllGroupToValidate$expID) == expID ,]
+datRes[as.character(datRes$eventID) == eventID ,]
 
 ######## CALC Stat On Hunt Events ######
 ## Re-process Hunt Stat On Modified Events

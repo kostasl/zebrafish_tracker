@@ -17,13 +17,13 @@ load(strDataFileName)
 
 ## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
-bf_tail <- butter(4, c(0.02,0.2),type="pass");
+bf_tail <- butter(1, c(0.001,0.8),type="pass");
 bf_eyes <- butter(4, 0.015,type="low",plane="z");
 bf_speed <- butter(4, 0.05,type="low");  
 ###
 
 
-idxH <- 14
+idxH <- 39
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -91,7 +91,7 @@ dEventSpeed_smooth <- filtfilt(bf_speed, dEventSpeed) #meanf(dEventSpeed,100) #
 dEventSpeed_smooth[is.na(dEventSpeed_smooth)] = 0
 MoveboutsIdx <- find_peaks(dEventSpeed_smooth*100,25)
 ##Reject Peaks Below Half An SD Peak Value - So As to Choose Only Significant Bout Movements # That Are Above the Minimum Speed to Consider As Bout
-MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/4 
+MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/3 
                                            & dEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
 
 
@@ -119,8 +119,11 @@ for (i in 1:iPairs)
   }
 }
 
-vMotionBoutDuration <- vMotionBout_Off[1:iPairs]-vMotionBout_On[1:iPairs]
-vMotionBoutDuration <- vMotionBoutDuration[!is.na(vMotionBoutDuration)]
+##Get Bout Statistics ##
+vMotionBoutDuration_msec <- vMotionBout_Off[1:iPairs]-vMotionBout_On[1:iPairs]
+vMotionBoutDuration_msec <- vMotionBoutDuration_msec[!is.na(vMotionBoutDuration_msec)]/Fs
+vMotionBoutIntervals_msec <- (vMotionBout_On[3:(iPairs)] - vMotionBout_Off[2:(iPairs-1)])/Fs
+
 
 X11()
 plot(vMotionBout,type='p')
@@ -133,27 +136,31 @@ points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow")##Off
 ## ## Tail Curvature 
 ##Filter The Noise 
 #when apply twice with filtfilt, #results in a 0 phase shift  : W * (Fs/2) == half-amplitude cut-off when combined with filtfilt
-X11()
+
 vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
-vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
-vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
+vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
+#vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
 
-corr_speedVsTail <- ccf(vTailDispFilt,dEventSpeed_smooth,type="correlation",plot=TRUE)
+X11()
+layout(matrix(c(1,2), 2, 1, byrow = TRUE))
+plot(vTailDisp,type="l")
+lines(dEventSpeed_smooth*50,type='l',col="blue")
+##plot Correlation Of Tail Movement To speed 
+corr_speedVsTail <- ccf(abs(vTailDisp),dEventSpeed_smooth,type="correlation",plot=TRUE)
 
-plot(vTailDispFilt,type="l")
-lines(dEventSpeed_smooth*100,type='l',col="blue")
+
 #lines(vTailDir,type='l',col="green")
 ##END OF CURVATURE ##
 
 ##Plot Tail Segments Displacements #
-X11()
-plot(datRenderHuntEvent$DThetaSpine_1,type='l',col=r[1])
-lines(datRenderHuntEvent$DThetaSpine_2,type='l',col=r[2])
-lines(datRenderHuntEvent$DThetaSpine_3,type='l',col=r[3])
-lines(datRenderHuntEvent$DThetaSpine_4,type='l',col=r[4])
-lines(datRenderHuntEvent$DThetaSpine_5,type='l',col=r[5])
-lines(datRenderHuntEvent$DThetaSpine_6,type='l',col=r[6])
-lines(datRenderHuntEvent$DThetaSpine_7,type='l',col=r[7])
+#X11()
+#plot(datRenderHuntEvent$DThetaSpine_1,type='l',col=r[1])
+#lines(datRenderHuntEvent$DThetaSpine_2,type='l',col=r[2])
+#lines(datRenderHuntEvent$DThetaSpine_3,type='l',col=r[3])
+#lines(datRenderHuntEvent$DThetaSpine_4,type='l',col=r[4])
+#lines(datRenderHuntEvent$DThetaSpine_5,type='l',col=r[5])
+#lines(datRenderHuntEvent$DThetaSpine_6,type='l',col=r[6])
+#lines(datRenderHuntEvent$DThetaSpine_7,type='l',col=r[7])
 
 
 ##Plot Displacement and Speed(Scaled)
