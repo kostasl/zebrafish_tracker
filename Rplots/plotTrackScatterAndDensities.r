@@ -242,10 +242,10 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     ##Draw Tail Segment Motion
     posTX2 = posX
     posTY2 = posY
-    for (i in 1:NROW(TailRad))
+    for (s in 1:NROW(TailRad))
     {
-      posTX2n <- posTX2+cos(TailRad[i])*BodyArrowLength*1
-      posTY2n <- posTY2-sin(TailRad[i])*BodyArrowLength*1
+      posTX2n <- posTX2+cos(TailRad[s])*BodyArrowLength*1
+      posTY2n <- posTY2-sin(TailRad[s])*BodyArrowLength*1
       arrows(posTX2,posTY2,posTX2n,posTY2n,length=0.03,col="magenta") ##Draw Heading Forward Arrow
       posTX2 <- posTX2n ##Next Tail Segment Is Drawn from the end of previous one
       posTY2 <- posTY2n

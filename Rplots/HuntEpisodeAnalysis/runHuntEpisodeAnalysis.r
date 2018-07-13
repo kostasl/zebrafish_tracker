@@ -23,7 +23,7 @@ bf_speed <- butter(4, 0.05,type="low");
 ###
 
 
-idxH <- 39
+idxH <- 32
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -35,13 +35,11 @@ strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",ev
 #dir.create(strFolderName )
 ##Remove NAs
 
-X11()
-plot(datRenderHuntEvent$LEyeAngle,type='l')
-lines(medianf(datRenderHuntEvent$LEyeAngle,nFrWidth),col='red')
+
+
 
 #spectrum(datRenderHuntEvent$LEyeAngle)
-
-datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nFrWidth)
+datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nFrWidth*5)
 datRenderHuntEvent$LEyeAngle[is.na(datRenderHuntEvent$LEyeAngle)] <- 0
 #X11()
 #spectrum(datRenderHuntEvent$LEyeAngle)
@@ -50,12 +48,17 @@ datRenderHuntEvent$LEyeAngle <-filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle) # 
 #spectrum(datRenderHuntEvent$LEyeAngle)
 
 #X11()
-lines(datRenderHuntEvent$LEyeAngle,type='l',col='blue')
+#lines(medianf(datRenderHuntEvent$LEyeAngle,nFrWidth),col='red')
+#lines(datRenderHuntEvent$LEyeAngle,type='l',col='blue')
 
-datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
+datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth*5)
 datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
 datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
-datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
+#datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
+X11()
+plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-50,50),main="Eye Motion ")
+lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="red")
+
 
 datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_7)
 datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_6)
