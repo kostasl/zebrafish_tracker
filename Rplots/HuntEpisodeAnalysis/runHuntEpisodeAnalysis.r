@@ -17,12 +17,12 @@ load(strDataFileName)
 ## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.001,0.8),type="pass");
-bf_eyes <- butter(4, 0.015,type="low",plane="z");
+bf_eyes <- butter(4, 0.025,type="low",plane="z");
 bf_speed <- butter(4, 0.05,type="low");  
 ###
 
 
-idxH <- 37
+idxH <- 15
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -41,7 +41,7 @@ lMax <- 55
 lMin <- -20
 #spectrum(datRenderHuntEvent$LEyeAngle)
 datRenderHuntEvent$LEyeAngle <- clipEyeRange(datRenderHuntEvent$LEyeAngle,lMin,lMax)
-datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nFrWidth*5)
+datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nFrWidth*2)
 datRenderHuntEvent$LEyeAngle[is.na(datRenderHuntEvent$LEyeAngle)] <- 0
 #X11()
 #spectrum(datRenderHuntEvent$LEyeAngle)
@@ -57,16 +57,14 @@ datRenderHuntEvent$LEyeAngle <-filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle) # 
 lMax <- 20
 lMin <- -55
 datRenderHuntEvent$REyeAngle <- clipEyeRange(datRenderHuntEvent$REyeAngle,lMin,lMax)
-datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth*5)
+datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth*2)
 datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
 datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
 #datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
 X11()
 plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-60,60),main="Eye Motion ")
+lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magenta")
 
-lines(datRenderHuntEvent$frameN,medianf(vEyeAngle,nFrWidth*5 ),type='p',col="green")
-lines(datRenderHuntEvent$frameN,vEyeAngle,type='l',col="magenta")
-lines(datRenderHuntEvent$frameN,vOrig,type='l',col="red")
 
 datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_7)
 datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_6)
