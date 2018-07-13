@@ -17,13 +17,13 @@ load(strDataFileName)
 
 ## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
-bf_tail <- butter(4, c(0.02,0.1),type="pass");
+bf_tail <- butter(4, c(0.02,0.2),type="pass");
 bf_eyes <- butter(4, 0.015,type="low",plane="z");
 bf_speed <- butter(4, 0.05,type="low");  
 ###
 
 
-idxH <- 10
+idxH <- 14
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -57,6 +57,17 @@ datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
 datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
 datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
 
+datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_7)
+datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_6)
+datRenderHuntEvent$DThetaSpine_5 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_5)
+datRenderHuntEvent$DThetaSpine_4 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_4)
+datRenderHuntEvent$DThetaSpine_3 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_3)
+datRenderHuntEvent$DThetaSpine_2 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_2)
+datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, datRenderHuntEvent$DThetaSpine_1)
+
+rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
+r <- c(rfc(8),"#FF0000");
+
 
 renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
 
@@ -82,21 +93,14 @@ MoveboutsIdx <- find_peaks(dEventSpeed_smooth*100,25)
 ##Reject Peaks Below Half An SD Peak Value - So As to Choose Only Significant Bout Movements # That Are Above the Minimum Speed to Consider As Bout
 MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/4 
                                            & dEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
-##Plot Displacement and Speed(Scaled)
-X11()
-plot(cumsum(vEventPathLength)) ##PLot Total Displacemnt over time
-lines(dEventSpeed_smooth*100,type='l',col="blue")
-points(MoveboutsIdx,dEventSpeed_smooth[MoveboutsIdx]*100,col="black")
-points(MoveboutsIdx_cleaned,dEventSpeed_smooth[MoveboutsIdx_cleaned]*100,col="red")
-message(paste("Number oF Bouts:",length(MoveboutsIdx_cleaned)))
-dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
-dev.off()
+
 
 ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
 vMotionBout <- dEventSpeed_smooth
 vMotionBout[ vMotionBout < G_MIN_BOUTSPEED  ] = 0
 vMotionBout[vMotionBout > G_MIN_BOUTSPEED  ] = 1
 vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
+rle(vMotionBout)
 vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
 vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
 iPairs <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
@@ -141,6 +145,27 @@ lines(dEventSpeed_smooth*100,type='l',col="blue")
 #lines(vTailDir,type='l',col="green")
 ##END OF CURVATURE ##
 
+##Plot Tail Segments Displacements #
+X11()
+plot(datRenderHuntEvent$DThetaSpine_1,type='l',col=r[1])
+lines(datRenderHuntEvent$DThetaSpine_2,type='l',col=r[2])
+lines(datRenderHuntEvent$DThetaSpine_3,type='l',col=r[3])
+lines(datRenderHuntEvent$DThetaSpine_4,type='l',col=r[4])
+lines(datRenderHuntEvent$DThetaSpine_5,type='l',col=r[5])
+lines(datRenderHuntEvent$DThetaSpine_6,type='l',col=r[6])
+lines(datRenderHuntEvent$DThetaSpine_7,type='l',col=r[7])
+
+
+##Plot Displacement and Speed(Scaled)
+X11()
+plot(cumsum(vEventPathLength)) ##PLot Total Displacemnt over time
+lines(dEventSpeed_smooth*100,type='l',col="blue")
+lines(vTailDispFilt,type='l',col="magenta")
+points(MoveboutsIdx,dEventSpeed_smooth[MoveboutsIdx]*100,col="black")
+points(MoveboutsIdx_cleaned,dEventSpeed_smooth[MoveboutsIdx_cleaned]*100,col="red")
+message(paste("Number oF Bouts:",length(MoveboutsIdx_cleaned)))
+dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+dev.off()
 
 ###########  Plot Polar Angle to Prey ##############
 X11()

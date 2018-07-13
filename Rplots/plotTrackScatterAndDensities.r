@@ -213,9 +213,18 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     
     posX = recLastFishFrame$posX
     posY = frameWidth-recLastFishFrame$posY
-    bearingRad = pi/180*(recLastFishFrame$BodyAngle-90)##+90+180
+    bearingRad = pi/180*(recLastFishFrame$BodyAngle-90)##+90+180 - Body Heading
+    TailRad <- vector()
+    TailRad[1] =   pi/180*(recLastFishFrame$DThetaSpine_1 + recLastFishFrame$ThetaSpine_0 - 90) #Tail - bearingRad+pi
+    TailRad[2] =   pi/180*(recLastFishFrame$DThetaSpine_2 + recLastFishFrame$ThetaSpine_0 - 90) #Tail - bearingRad+pi
+    TailRad[3] =   pi/180*(recLastFishFrame$DThetaSpine_3 + recLastFishFrame$ThetaSpine_0 - 90) #Tail - bearingRad+pi
+    TailRad[4] =   pi/180*(recLastFishFrame$DThetaSpine_4 + recLastFishFrame$ThetaSpine_0 - 90) #Tail - bearingRad+pi
+    TailRad[5] =   pi/180*(recLastFishFrame$DThetaSpine_5 + recLastFishFrame$ThetaSpine_0 - 90) #Tail - bearingRad+pi
+    TailRad[6] =   pi/180*(recLastFishFrame$DThetaSpine_6 + recLastFishFrame$ThetaSpine_0 - 90) #Tail - bearingRad+pi
+    TailRad[7] =   pi/180*(recLastFishFrame$DThetaSpine_7 + recLastFishFrame$ThetaSpine_0 - 90) #Tail - bearingRad+pi
     posVX = posX+cos(bearingRad)*BodyArrowLength
     posVY = posY-sin(bearingRad)*BodyArrowLength
+    
     dev.hold()
     ##Plot Track
     par(bg="white") 
@@ -224,10 +233,24 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     points(posX,posY,col="black",pch=16)
     
     arrows(posX,posY,posVX,posVY)
-
+    
+    ##Draw Heading Line Of Sight In Blue
     posVX2 = posX+cos(bearingRad)*BodyArrowLength*10
     posVY2 = posY-sin(bearingRad)*BodyArrowLength*10
-    arrows(posX,posY,posVX2,posVY2,length=0.01,col="blue")
+    arrows(posX,posY,posVX2,posVY2,length=0.01,col="blue") ##Draw Heading Forward Arrow
+    
+    ##Draw Tail Segment Motion
+    posTX2 = posX
+    posTY2 = posY
+    for (i in 1:NROW(TailRad))
+    {
+      posTX2n <- posTX2+cos(TailRad[i])*BodyArrowLength*1
+      posTY2n <- posTY2-sin(TailRad[i])*BodyArrowLength*1
+      arrows(posTX2,posTY2,posTX2n,posTY2n,length=0.03,col="magenta") ##Draw Heading Forward Arrow
+      posTX2 <- posTX2n ##Next Tail Segment Is Drawn from the end of previous one
+      posTY2 <- posTY2n
+    }
+    
         
     
     ##Draw Eyes 
