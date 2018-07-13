@@ -43,6 +43,7 @@ int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Dep
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
+
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
 int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods

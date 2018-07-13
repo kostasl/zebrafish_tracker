@@ -219,6 +219,7 @@ bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Sca
 bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
 bool bUseGPU                              = false;
 bool bUseOpenCL                           = true;
+bool bUseHistEqualization                 = false; //To enhance to contrast in Eye Ellipse detection
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -807,7 +808,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     //update the background model
     //OPEN CV 2.4
     // dLearningRate is now Nominal value
-    /// Apply Histogram Equalization
+
       frame.copyTo(outframe); //Make Replicate On which we draw output
 
 

@@ -2,6 +2,8 @@ library(signal)
 #### Analyse Extracted/Labelled and then Retracked Hunt Events ///
 
 
+
+
 strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
@@ -13,15 +15,15 @@ load(strDataFileName)
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
 
-## Setup Filters 
+## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
-bf_tail <- butter(4, c(0.02,0.2),type="pass");
-bf_eyes <- butter(4, c(0.05),type="low");
-bf_speed <- butter(4, c(0.1),type="low");  
+bf_tail <- butter(4, c(0.02,0.1),type="pass");
+bf_eyes <- butter(4, 0.015,type="low",plane="z");
+bf_speed <- butter(4, 0.02,type="low");  
 ###
 
 
-idxH <- 5
+idxH <- 14
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -32,10 +34,28 @@ datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==e
 strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",eventID,"_track",trackID,sep="" )
 #dir.create(strFolderName )
 ##Remove NAs
-datHuntEventMergedFrames$LEyeAngle[is.na(datHuntEventMergedFrames$LEyeAngle)] <- 0
-datHuntEventMergedFrames$REyeAngle[is.na(datHuntEventMergedFrames$REyeAngle)] <- 0
-datHuntEventMergedFrames$LEyeAngle <- filtfilt(bf_eyes, datHuntEventMergedFrames$LEyeAngle) #meanf(datHuntEventMergedFrames$LEyeAngle,20)
-datHuntEventMergedFrames$REyeAngle <- filtfilt(bf_eyes, datHuntEventMergedFrames$REyeAngle) #meanf(datHuntEventMergedFrames$REyeAngle,20)
+
+X11()
+plot(datRenderHuntEvent$LEyeAngle,type='l')
+lines(medianf(datRenderHuntEvent$LEyeAngle,nFrWidth),col='red')
+
+#spectrum(datRenderHuntEvent$LEyeAngle)
+
+datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nFrWidth)
+datRenderHuntEvent$LEyeAngle[is.na(datRenderHuntEvent$LEyeAngle)] <- 0
+#X11()
+#spectrum(datRenderHuntEvent$LEyeAngle)
+datRenderHuntEvent$LEyeAngle <-filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle) # filtfilt(bf_eyes, medianf(datRenderHuntEvent$LEyeAngle,nFrWidth)) #meanf(datHuntEventMergedFrames$LEyeAngle,20)
+#X11()
+#spectrum(datRenderHuntEvent$LEyeAngle)
+
+#X11()
+lines(datRenderHuntEvent$LEyeAngle,type='l',col='blue')
+
+datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
+datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
+datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
+datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
 
 
 renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
@@ -111,11 +131,14 @@ points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow")##Off
 #when apply twice with filtfilt, #results in a 0 phase shift  : W * (Fs/2) == half-amplitude cut-off when combined with filtfilt
 X11()
 vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
-vTailDisp <- datRenderHuntEvent$DThetaSpine_6 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
+vTailDisp <- datRenderHuntEvent$DThetaSpine_6 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
 vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
+
+corr_speedVsTail <- ccf(vTailDispFilt,dEventSpeed_smooth,type="correlation",plot=TRUE)
+
 plot(vTailDispFilt,type="l")
 lines(dEventSpeed_smooth*100,type='l',col="blue")
-lines(vTailDir,type='l',col="green")
+#lines(vTailDir,type='l',col="green")
 ##END OF CURVATURE ##
 
 

@@ -28,7 +28,7 @@ datHuntEventPool <- datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidat
                                                      datHuntEventAllGroupToValidate$eventID != 0 &
                                                      is.na(datHuntEventAllGroupToValidate$markTracked),]
 expID <- sample(datHuntEventPool$expID,1)
-datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
+datHuntEventPool <- datHuntEventPool[as.character(datHuntEventPool$expID) == expID ,]
 eventID <- sample(datHuntEventPool$eventID,1)
 
 ##ExPORT 2

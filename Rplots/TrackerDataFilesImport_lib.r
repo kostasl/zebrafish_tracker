@@ -7,6 +7,18 @@ medianf <- function(t,k) {n=length(t);tproc=rep(NA,n); k=min(k,n); for(i in (k/2
 ##Note It Returns Mean of Vector values centrered at x , with a window width k
 meanf <- function(t,k) {n=length(t);tproc=rep(NA,n);k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);  return(tproc)}
 
+##Make Angles appear as offsets from 0 angle, within range -180 to 180 # Used onr Diff Tail angles
+wrapAngle <- function(x)
+{
+  res <- x %% 360
+  
+  if (abs(res) > abs(360-res))
+    res <- res-360
+  
+  return(res)
+}
+
+
 ### Find Peak in 1D vector / Courtesy of https://github.com/stas-g/findPeaks
 find_peaks <- function (x, m = 3){
   shape <- diff(sign(diff(x, na.pad = FALSE)))
@@ -125,19 +137,19 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
       if ( length(TrackerData[[i]][[j]]$frameN) > 1  )
       {       
         Nn <- length(TrackerData[[i]][[j]]$EyeLDeg)
-        datProcessed[[procDatIdx]] = data.frame(LEyeAngle= medianf(TrackerData[[i]][[j]]$EyeLDeg,nFrWidth),
-                                                REyeAngle= medianf(TrackerData[[i]][[j]]$EyeRDeg,nFrWidth),
+        datProcessed[[procDatIdx]] = data.frame(LEyeAngle= (TrackerData[[i]][[j]]$EyeLDeg),
+                                                REyeAngle= (TrackerData[[i]][[j]]$EyeRDeg),##medianf(x,nFrWidth)
                                                 posX = TrackerData[[i]][[j]]$Centroid_X,
                                                 posY =TrackerData[[i]][[j]]$Centroid_Y,
                                                 BodyAngle = TrackerData[[i]][[j]]$AngleDeg,
-                                                ThetaSpine_0 = TrackerData[[i]][[j]]$ThetaSpine_0, ## Angle of 1st Spine Tail Seg
-                                                DThetaSpine_1 = TrackerData[[i]][[j]]$DThetaSpine_1, ##Relative Angle Diff Between Next 2nd Tail Seg And The 1st one
-                                                DThetaSpine_2 = TrackerData[[i]][[j]]$DThetaSpine_2, ##Consecutive Angle diffs
-                                                DThetaSpine_3 = TrackerData[[i]][[j]]$DThetaSpine_3,
-                                                DThetaSpine_4 = TrackerData[[i]][[j]]$DThetaSpine_4,
-                                                DThetaSpine_5 = TrackerData[[i]][[j]]$DThetaSpine_5,
-                                                DThetaSpine_6 = TrackerData[[i]][[j]]$DThetaSpine_6,
-                                                DThetaSpine_7 = TrackerData[[i]][[j]]$DThetaSpine_7,
+                                                ThetaSpine_0 = TrackerData[[i]][[j]]$ThetaSpine_0, ## Angle of 1st Spine Tail Seg on Global Coordinates
+                                                DThetaSpine_1 = sapply(TrackerData[[i]][[j]]$DThetaSpine_1,wrapAngle) , ##Relative Angle Diff Between Next 2nd Tail Seg And The 1st one / Call wrap to wrap DAngle between -180 to 180
+                                                DThetaSpine_2 = sapply(TrackerData[[i]][[j]]$DThetaSpine_2,wrapAngle), ##Consecutive Angle diffs
+                                                DThetaSpine_3 = sapply(TrackerData[[i]][[j]]$DThetaSpine_3,wrapAngle),
+                                                DThetaSpine_4 = sapply(TrackerData[[i]][[j]]$DThetaSpine_4,wrapAngle),
+                                                DThetaSpine_5 = sapply(TrackerData[[i]][[j]]$DThetaSpine_5,wrapAngle),
+                                                DThetaSpine_6 = sapply(TrackerData[[i]][[j]]$DThetaSpine_6,wrapAngle),
+                                                DThetaSpine_7 = sapply(TrackerData[[i]][[j]]$DThetaSpine_7,wrapAngle),
                                                 frameN=TrackerData[[i]][[j]]$frameN,
                                                 fileIdx=rep(j,Nn),
                                                 expID=rep(expID,Nn),

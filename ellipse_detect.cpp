@@ -65,6 +65,7 @@
 //extern MainWindow window_main;
 extern MainWindow* pwindow_main;
 
+extern bool bUseHistEqualization;
 extern int gi_CannyThresSmall;
 extern int gi_CannyThres;
 extern int gi_VotesEllipseThres;
@@ -586,6 +587,15 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     int ilFloodRange,iuFloodRange;
     //Fill BG //
 //    cv::floodFill(imgUpsampled_gray, cv::Point(0,0), cv::Scalar(0),0,cv::Scalar(3),cv::Scalar(5));
+
+    //equalize the histogram
+     //cv::Mat hist_equalized_image;
+
+    /// Equalize Histogram to Enhance Contrast
+    if (bUseHistEqualization)
+     cv::equalizeHist(imgUpsampled_gray, imgUpsampled_gray);
+
+    /// Estimate Eye Segmentation threshold from sample points in Image
     int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
     //int ilFloodSeed=imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
@@ -614,7 +624,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
 
     // Do Thresholding Of Masked Image to Obtain Segmented Eyes //
-    cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY | cv::THRESH_OTSU); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
 
     //Try Laplacian CV_8U
     cv::Laplacian(imgIn_thres,imgFishHead_Lapl,imgIn_thres.type(),3);
