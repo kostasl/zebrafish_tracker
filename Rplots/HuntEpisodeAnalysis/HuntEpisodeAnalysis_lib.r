@@ -4,7 +4,7 @@ library(signal)
 library(MASS)
 library(mclust,quietly = TRUE)
 
-library(sBIC)
+#library(sBIC)
 
 citation("mclust")
 
@@ -12,12 +12,12 @@ citation("mclust")
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 detectMotionBouts <- function(dEventSpeed)
 {
-  prior_factor <- 0.15 ## Adds a prior shift in the threshold Of Classification 
+  prior_factor <- 0.25 ## Adds a prior shift in the threshold Of Classification 
   colClass <- c("#FF0000","#00FF22","#0000FF")
   
   #t <- datRenderHuntEvent$frameN
   
-  BIC <- mclustBIC(dEventSpeed)
+  #BIC <- mclustBIC(dEventSpeed)
   
   fit <- Mclust(dEventSpeed,G=2,modelNames = "V", prior = priorControl(shrinkage = 0))
   summary(fit)

@@ -139,17 +139,20 @@ vMotionBoutIntervals_msec <- 1000*(vMotionBout_On[3:(iPairs)] - vMotionBout_Off[
 
 ## Take InterBoutIntervals in msec from Last to first
 vMotionBout_rle <- rle(vMotionBout)
-vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(NROW(vMotionBout_rle$lengths),1,-2 )]/Fs
+vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(NROW(vMotionBout_rle$lengths)-2,1,-2 )]/Fs
 vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(NROW(vMotionBout_rle$lengths)-1,2,-2 )]/Fs
 stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )
-stopifnot(vMotionBout_rle$values[1] == 0 )
+stopifnot(vMotionBout_rle$values[3] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
 ##On Bout Lengths
-X11()
+##Where t=0 is the capture bout, -1 -2 are the steps leading to it
+vMotionPeriod <- 1-(NROW(vMotionBoutIBI)-seq(NROW(vMotionBoutIBI),1 ))
+vMotionBoutDuration <- vMotionBoutDuration
 
-plot(1000*vMotionBout_rle$lengths[seq(2,NROW(vMotionBout_rle$lengths),2 )]/Fs,
+X11()
+plot(0.0+NROW(vMotionBoutDuration)-seq(NROW(vMotionBoutDuration),1 ),vMotionBoutDuration,
      xlab="Bout",ylab="msec",xlim=c(0,10),ylim=c(0,500),
      col="red",main="Bout Duration",pch=16) ##Take Every Bout Length
-points(1000*vMotionBout_rle$lengths[seq(1,NROW(vMotionBout_rle$lengths),2 )]/Fs,col="blue",pch=21) ##Take every period between / Inter Bout Interval
+points(0.5+NROW(vMotionBoutIBI)-seq(NROW(vMotionBoutIBI),1 ),vMotionBoutIBI,col="blue",pch=21) ##Take every period between / Inter Bout Interval
 legend(1,400,c("Duration","Interval" ),col=c("red","blue"),pch=c(16,21) )
 
 
