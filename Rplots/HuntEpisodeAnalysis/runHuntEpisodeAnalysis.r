@@ -9,6 +9,7 @@ source("plotTrackScatterAndDensities.r")
 strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
+#for (i in 1:20) dev.off()
 
 #
 ############# LOAD AND PLAYBACK OF HUNT EVENTS ####
@@ -19,14 +20,14 @@ load(strDataFileName)
 
 ## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
-bf_tail <- butter(1, c(0.001,0.8),type="pass");
+bf_tail <- butter(1, c(0.001,0.1),type="pass");
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
 bf_speed <- butter(4, 0.05,type="low");  
 ###
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 18
+idxH <- 20
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -37,8 +38,6 @@ datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==e
 strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",eventID,"_track",trackID,sep="" )
 #dir.create(strFolderName )
 ##Remove NAs
-
-
 
 
 lMax <- 55
@@ -110,10 +109,10 @@ MoveboutsIdx_cleaned <-MoveboutsIdx #[which(dEventSpeed_smooth[MoveboutsIdx] > G
 
 ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
 vMotionBout <- dEventSpeed_smooth
-vMotionBout[ vMotionBout < G_MIN_BOUTSPEED  ] = 0
-vMotionBout[vMotionBout > G_MIN_BOUTSPEED  ] = 1
+vMotionBout[ 1:NROW(vMotionBout) ] = 0
+vMotionBout[ MoveboutsIdx_cleaned  ] = 1
 vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
-rle(vMotionBout)
+vMotionBout_rle <- rle(vMotionBout)
 vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
 vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
 iPairs <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
@@ -134,8 +133,30 @@ for (i in 1:iPairs)
 
 ##Get Bout Statistics ##
 vMotionBoutDuration_msec <- vMotionBout_Off[1:iPairs]-vMotionBout_On[1:iPairs]
-vMotionBoutDuration_msec <- vMotionBoutDuration_msec[!is.na(vMotionBoutDuration_msec)]/Fs
-vMotionBoutIntervals_msec <- (vMotionBout_On[3:(iPairs)] - vMotionBout_Off[2:(iPairs-1)])/Fs
+vMotionBoutDuration_msec <- 1000*vMotionBoutDuration_msec[!is.na(vMotionBoutDuration_msec)]/Fs
+vMotionBoutIntervals_msec <- 1000*(vMotionBout_On[3:(iPairs)] - vMotionBout_Off[2:(iPairs-1)])/Fs
+
+
+## Take InterBoutIntervals in msec from Last to first
+vMotionBout_rle <- rle(vMotionBout)
+vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(NROW(vMotionBout_rle$lengths),1,-2 )]/Fs
+vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(NROW(vMotionBout_rle$lengths)-1,2,-2 )]/Fs
+stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )
+stopifnot(vMotionBout_rle$values[1] == 0 )
+##On Bout Lengths
+X11()
+
+plot(1000*vMotionBout_rle$lengths[seq(2,NROW(vMotionBout_rle$lengths),2 )]/Fs,
+     xlab="Bout",ylab="msec",xlim=c(0,10),ylim=c(0,500),
+     col="red",main="Bout Duration",pch=16) ##Take Every Bout Length
+points(1000*vMotionBout_rle$lengths[seq(1,NROW(vMotionBout_rle$lengths),2 )]/Fs,col="blue",pch=21) ##Take every period between / Inter Bout Interval
+legend(1,400,c("Duration","Interval" ),col=c("red","blue"),pch=c(16,21) )
+
+
+
+
+
+
 
 
 X11()
@@ -152,7 +173,7 @@ points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow")##Off
 
 vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
 vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
-#vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
+vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
 
 X11()
 layout(matrix(c(1,2), 2, 1, byrow = TRUE))
@@ -165,8 +186,8 @@ llRange <- min(NROW(abs(dEventSpeed_smooth)),NROW(abs(vTailDisp)))
 cor_TailToSpeed <- cov(abs(vTailDisp[1:llRange]),dEventSpeed_smooth[1:llRange])
 
 X11()
-plot( abs(vTailDisp[1:llRange]) , type="l")
-lines( abs(diff(dEventSpeed_smooth[1:llRange])*1200 ), type="l",col="blue")
+plot(abs(dEventSpeed_smooth[1:llRange]) , abs(vTailDisp[1:llRange]) , type="p")
+
 #lines(vTailDir,type='l',col="green")
 ##END OF CURVATURE ##
 
