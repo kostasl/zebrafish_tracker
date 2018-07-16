@@ -1,5 +1,8 @@
 library(signal)
+library(MASS)
+library(mclust,quietly = TRUE)
 
+source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 
 
@@ -20,6 +23,7 @@ bf_tail <- butter(1, c(0.001,0.8),type="pass");
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
 bf_speed <- butter(4, 0.05,type="low");  
 ###
+nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
 idxH <- 18
@@ -39,9 +43,10 @@ strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",ev
 
 lMax <- 55
 lMin <- -20
+
 #spectrum(datRenderHuntEvent$LEyeAngle)
 datRenderHuntEvent$LEyeAngle <- clipEyeRange(datRenderHuntEvent$LEyeAngle,lMin,lMax)
-datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nFrWidth*2)
+datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nEyeFilterWidth)
 datRenderHuntEvent$LEyeAngle[is.na(datRenderHuntEvent$LEyeAngle)] <- 0
 #X11()
 #spectrum(datRenderHuntEvent$LEyeAngle)
@@ -54,10 +59,10 @@ datRenderHuntEvent$LEyeAngle <-filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle) # 
 #lines(datRenderHuntEvent$LEyeAngle,type='l',col='blue')
 ##Replace Tracking Errors (Values set to 180) with previous last known value
 
-lMax <- 20
-lMin <- -55
+lMax <- 15
+lMin <- -50
 datRenderHuntEvent$REyeAngle <- clipEyeRange(datRenderHuntEvent$REyeAngle,lMin,lMax)
-datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth*2)
+datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nEyeFilterWidth)
 datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
 datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
 #datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
@@ -80,31 +85,28 @@ rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(8),"#FF0000");
 
 
-renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+#renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
 
 #### PROCESS BOUTS ###
-
-
-
-
 vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
 vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
-vEventPathLength     <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
+vEventPathLength     <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2)*DIM_MMPERPX ## Path Length Calculated As Total Displacement
 #nNumberOfBouts       <- 
 dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
-dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - Why is dFrame 0?  
+dframe               <- dframe[dframe > 0]/Fs ##Clear Any possible Nan - and Convert To Time sec  
 dEventSpeed          <- meanf(vEventPathLength/dframe,3) ##Apply Mean Filter Smooth Out 
+
 
 #speed_Smoothed <- meanf(dEventSpeed,10)
 ##Replace NA with 0s
 dEventSpeed[is.na(dEventSpeed)] = 0
 dEventSpeed_smooth <- filtfilt(bf_speed, dEventSpeed) #meanf(dEventSpeed,100) #
 dEventSpeed_smooth[is.na(dEventSpeed_smooth)] = 0
-MoveboutsIdx <- find_peaks(dEventSpeed_smooth*100,25)
+MoveboutsIdx <- detectMotionBouts(dEventSpeed_smooth)##find_peaks(dEventSpeed_smooth*100,25)
 ##Reject Peaks Below Half An SD Peak Value - So As to Choose Only Significant Bout Movements # That Are Above the Minimum Speed to Consider As Bout
-MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/3 
-                                           & dEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
-
+#MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/3 
+                                           #& dEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
+MoveboutsIdx_cleaned <-MoveboutsIdx #[which(dEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
 
 ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
 vMotionBout <- dEventSpeed_smooth
@@ -159,7 +161,12 @@ lines(dEventSpeed_smooth*50,type='l',col="blue")
 ##plot Correlation Of Tail Movement To speed 
 corr_speedVsTail <- ccf(abs(vTailDisp),dEventSpeed_smooth,type="correlation",plot=TRUE)
 
+llRange <- min(NROW(abs(dEventSpeed_smooth)),NROW(abs(vTailDisp))) 
+cor_TailToSpeed <- cov(abs(vTailDisp[1:llRange]),dEventSpeed_smooth[1:llRange])
 
+X11()
+plot( abs(vTailDisp[1:llRange]) , type="l")
+lines( abs(diff(dEventSpeed_smooth[1:llRange])*1200 ), type="l",col="blue")
 #lines(vTailDir,type='l',col="green")
 ##END OF CURVATURE ##
 
@@ -176,11 +183,11 @@ corr_speedVsTail <- ccf(abs(vTailDisp),dEventSpeed_smooth,type="correlation",plo
 
 ##Plot Displacement and Speed(Scaled)
 X11()
-plot(cumsum(vEventPathLength)) ##PLot Total Displacemnt over time
-lines(dEventSpeed_smooth*100,type='l',col="blue")
+plot(cumsum(vEventPathLength),ylab="mm/sec",ylim=c(0,max(dEventSpeed_smooth))) ##PLot Total Displacemnt over time
+lines(dEventSpeed_smooth,type='l',col="blue")
 lines(vTailDispFilt,type='l',col="magenta")
-points(MoveboutsIdx,dEventSpeed_smooth[MoveboutsIdx]*100,col="black")
-points(MoveboutsIdx_cleaned,dEventSpeed_smooth[MoveboutsIdx_cleaned]*100,col="red")
+points(MoveboutsIdx,dEventSpeed_smooth[MoveboutsIdx],col="black")
+points(MoveboutsIdx_cleaned,dEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
 message(paste("Number oF Bouts:",length(MoveboutsIdx_cleaned)))
 dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
 dev.off()
