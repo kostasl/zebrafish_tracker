@@ -136,13 +136,15 @@ vMotionBout_rle <- rle(vMotionBout)
 vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*10)
 vEventDeltaAccell_smooth <- diff(vEventAccell_smooth)
 vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
+vEventAccell_smooth_Offset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
 ##Take Only Rising Edges / Remove Peak Stationary Points /Or Reversal of downward
-vEventAccell_smooth_Onset <- vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
-
+vEventAccell_smooth_Onset <-  vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+vEventAccell_smooth_Offset <- vEventAccell_smooth_Offset[vEventDeltaAccell_smooth[vEventAccell_smooth_Offset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
 
 X11()
 plot(vEventAccell_smooth,type='l')
 points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
+points(vEventAccell_smooth_Offset,vEventAccell_smooth[vEventAccell_smooth_Offset],pch=6)
 
 ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
 vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
@@ -167,13 +169,14 @@ for (i in 1:iPairs)
     if (NROW( min(OnSetTD[OnSetTD > 0  ]) ) > 0) ##If Start Of Accellaration For this Bout Can Be Found / Fix It otherwise Leave it alone
       vMotionBout_On[i] <-  vMotionBout_On[i] - min(OnSetTD[OnSetTD > 0  ]) 
     ##FIX OFFSET to when Decellaration Ends and A new One Begins
-    OffSetTD <- vEventAccell_smooth_Onset - vMotionBout_Off[i]  
+    OffSetTD <- vEventAccell_smooth_Offset - vMotionBout_Off[i]  
     if (NROW(OffSetTD[OffSetTD > 0  ]) > 0) ##If An Offset Can Be Found (Last Bout Maybe Runs Beyond Tracking Record)
       vMotionBout_Off[i] <-  vMotionBout_Off[i] + min(OffSetTD[OffSetTD > 0  ]) ##Shift |Forward To The End Of The bout
     
       
     
     vMotionBout[vMotionBout_On[i]:vMotionBout_Off[i] ] = 1 
+    
   }
   else
   {##Remove the Ones That Do not Have a peak In them
@@ -183,11 +186,19 @@ for (i in 1:iPairs)
   
   
 }
+vMotionBout[vMotionBout_Off] = 0 ##Make Sure Off Remains / For Rle to Work
+
+
+X11()
+plot(vEventAccell_smooth,type='l')
+points(vMotionBout_On,vEventAccell_smooth[vMotionBout_On])
+points(vMotionBout_Off,vEventAccell_smooth[vMotionBout_Off],pch=6)
+
 
 ##Get Bout Statistics #### NOt Used / Replaced##
-#vMotionBoutDuration_msec <- vMotionBout_Off[1:iPairs]-vMotionBout_On[1:iPairs]
-#vMotionBoutDuration_msec <- 1000*vMotionBoutDuration_msec[!is.na(vMotionBoutDuration_msec)]/Fs
-#vMotionBoutIntervals_msec <- 1000*(vMotionBout_On[3:(iPairs)] - vMotionBout_Off[2:(iPairs-1)])/Fs
+vMotionBoutDuration_msec <- vMotionBout_Off[1:iPairs]-vMotionBout_On[1:iPairs]
+vMotionBoutDuration_msec <- 1000*vMotionBoutDuration_msec[!is.na(vMotionBoutDuration_msec)]/Fs
+vMotionBoutIntervals_msec <- 1000*(vMotionBout_On[3:(iPairs)] - vMotionBout_Off[2:(iPairs-1)])/Fs
 ############################
 
 ## Distance To Prey Handling  -- Fixing missing Values By Interpolation ##
