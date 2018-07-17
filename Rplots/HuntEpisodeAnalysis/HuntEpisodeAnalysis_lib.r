@@ -12,14 +12,15 @@ citation("mclust")
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 detectMotionBouts <- function(dEventSpeed)
 {
-  prior_factor <- 0.15 ## Adds a prior shift in the threshold Of Classification 
+  prior_factor <- 0.02 ## Adds a prior shift in the threshold Of Classification 
   colClass <- c("#FF0000","#00FF22","#0000FF")
   
   #t <- datRenderHuntEvent$frameN
   
   #BIC <- mclustBIC(dEventSpeed)
   
-  fit <- Mclust(dEventSpeed,G=2,modelNames = "V", prior = priorControl(shrinkage = 0))
+  ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
+  fit <- Mclust(dEventSpeed,G=3 ) #modelNames = "V" prior = priorControl(shrinkage = 0) 
   summary(fit)
   
   region <- min(NROW(t),NROW(dEventSpeed))
@@ -34,6 +35,6 @@ detectMotionBouts <- function(dEventSpeed)
   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   
-  return (which( fit$z[,2]> fit$z[,1]*prior_factor  ))
+  return (which( fit$z[,3]> fit$z[,1]*prior_factor  ))
   
 }

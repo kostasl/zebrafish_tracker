@@ -109,7 +109,7 @@ vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2)*DIM_MMPERPX ## Pat
 dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
 dframe               <- dframe[dframe > 0]/Fs ##Clear Any possible Nan - and Convert To Time sec  
 vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
-vEventPathLength     <- cumsum(vEventSpeed)
+#vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
 vDistToPrey          <- meanf(sqrt( (datRenderHuntEvent$Prey_X -datRenderHuntEvent$posX )^2 + (datRenderHuntEvent$Prey_Y -datRenderHuntEvent$posY)^2   ),3)
 vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
 
@@ -118,6 +118,7 @@ vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
 vEventSpeed[is.na(vEventSpeed)] = 0
 vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
 vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+vEventPathLength <- cumsum(vEventSpeed_smooth)
 MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)##find_peaks(vEventSpeed_smooth*100,25)
 #MoveboutsIdx_cleaned <- MoveboutsIdx[which(vEventSpeed_smooth[MoveboutsIdx] > sd(vEventSpeed_smooth[MoveboutsIdx])/3 
                                            #& vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
@@ -138,6 +139,7 @@ vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0) ##Where Spee
 ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
 vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
 
+stopifnot(NROW(vMotionBout_On) > 0) ##No Bouts Detected
 
 ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
 vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] 
@@ -189,6 +191,7 @@ InitDistance             <- max(vDistToPrey[!is.na(vDistToPrey)]-vDisplacementTo
 vSpeedToPrey[is.na(vSpeedToPrey)] <- -vEventSpeed_smooth[is.na(vSpeedToPrey)] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
 vDistToPrey_Fixed <- abs(InitDistance + (cumsum(vSpeedToPrey))) ## From Initial Distance Integrate the Displacents / need -Ve Convert To Increasing Distance
 vMotionBoutDistanceToPrey_mm <- vDistToPrey_Fixed[vMotionBout_On]*DIM_MMPERPX
+vMotionBoutDistanceTravelled <- (vEventPathLength[vMotionBout_Off]-vEventPathLength[vMotionBout_On])*DIM_MMPERPX ##The Power of A Bout can be measured by distance Travelled
 
 X11()
 plot((cumsum(vSpeedToPrey)+InitDistance),type='l')
@@ -208,7 +211,7 @@ boutSeq <- seq(NROW(vMotionBoutDistanceToPrey_mm),1,-1 )
 vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] ##Reverse Order
 stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )
 stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
-datMotionBout <- cbind(boutSeq,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm) ##Make Data Frame
+datMotionBout <- cbind(boutSeq,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled) ##Make Data Frame
 ##On Bout Lengths
 ##Where t=0 is the capture bout, -1 -2 are the steps leading to it
 
@@ -282,7 +285,7 @@ points(MoveboutsIdx_cleaned,vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
 points(vMotionBout_On,vEventSpeed_smooth[vMotionBout_On],col="red",pch=17)
 points(vMotionBout_Off,vEventSpeed_smooth[vMotionBout_Off],col="blue",pch=6)
 lines(vDistToPrey_Fixed*DIM_MMPERPX,col="purple",lw=2)
-legend(1,58,c("PathLength","FishSpeed","BoutDetect","TailMotion","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
+legend(1,58,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
 message(paste("Number oF Bouts:",length(MoveboutsIdx_cleaned)))
 dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
 
