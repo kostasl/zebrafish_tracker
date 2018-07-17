@@ -129,17 +129,25 @@ MoveboutsIdx_cleaned <-MoveboutsIdx #[which(vEventSpeed_smooth[MoveboutsIdx] > G
 #vMotionBout <- vEventSpeed_smooth
 vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
 vMotionBout[ MoveboutsIdx_cleaned  ] <- 1
+vMotionBout[ vEventAccell_smooth_Offset ] <- 0 ##Add These OffSet Cuts In Case Bouts Look Continuous
 vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
 vMotionBout_rle <- rle(vMotionBout)
 
 ##x10 and Round so as to detect zeroCrossings simply
-vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*15)
-vEventDeltaAccell_smooth <- diff(vEventAccell_smooth,lag=3)
+vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*35)
+vEventDeltaAccell_smooth <- diff(vEventAccell_smooth,lag=2)
 vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0)-1 ##Where Speed Rises Begin
 vEventAccell_smooth_Offset <- which(round(vEventAccell_smooth) == 0)-1 ##Where Speed Rises Begin
 ##Take Only Rising Edges / Remove Peak Stationary Points /Or Reversal of downward
-vEventAccell_smooth_Onset <-  vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
-vEventAccell_smooth_Offset <- vEventAccell_smooth_Offset[vEventDeltaAccell_smooth[vEventAccell_smooth_Offset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+vEventAccell_smooth_Onset <-  vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] >= 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+vEventAccell_smooth_Offset <- vEventAccell_smooth_Offset[vEventDeltaAccell_smooth[vEventAccell_smooth_Offset] >= 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+
+
+X11()
+plot(vEventAccell_smooth,type='l',main="Unprocessed")
+points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
+points(vEventAccell_smooth_Offset,vEventAccell_smooth[vEventAccell_smooth_Offset],pch=6)
+
 
 ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
 vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
@@ -181,11 +189,11 @@ for (i in 1:iPairs)
   
   
 }
-vMotionBout[vMotionBout_Off] = 0 ##Make Sure Off Remains / For Rle to Work
+#vMotionBout[vMotionBout_Off-1] = 0 ##Make Sure Off Remains / For Rle to Work
 
 
 X11()
-plot(vEventAccell_smooth,type='l')
+plot(vEventAccell_smooth,type='l',main="Processed")
 points(vMotionBout_On,vEventAccell_smooth[vMotionBout_On])
 points(vMotionBout_Off,vEventAccell_smooth[vMotionBout_Off],pch=6)
 
@@ -201,7 +209,7 @@ vMotionBoutIntervals_msec <- 1000*(vMotionBout_On[3:(iPairs)] - vMotionBout_Off[
 ## Interpolate Missing Values from Fish Speed - Assume Fish Is moving to Prey ##
 ##Estimate Initial DIstance From Prey Onto Which We Add the integral of Speed, By Looking At Initial PreyDist and adding any fish displacemnt to this in case The initial dist Record Is NA
 vDisplacementToPrey <- (cumsum(vSpeedToPrey[!is.na(vDistToPrey)]) ) ##But diff and integration Caused a shift
-vDisplacementToPrey[3:NROW(vDisplacementToPrey)] <- vDisplacementToPrey[1:(NROW(vDisplacementToPrey)-3)] ##Fix Time Shift
+vDisplacementToPrey[4:NROW(vDisplacementToPrey)] <- vDisplacementToPrey[1:(NROW(vDisplacementToPrey)-3)] ##Fix Time Shift
 InitDistance             <- mean(vDistToPrey[!is.na(vDistToPrey)]-vDisplacementToPrey,na.rm = TRUE )  ##vDistToPrey[!is.na(vDistToPrey)][1] + sum(vEventSpeed_smooth[(1:which(!is.na(vDistToPrey))[1])])
 vSpeedToPrey[is.na(vSpeedToPrey)] <- -vEventSpeed_smooth[is.na(vSpeedToPrey)] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
 vDistToPrey_Fixed <- abs(InitDistance + (cumsum(vSpeedToPrey))) ## From Initial Distance Integrate the Displacents / need -Ve Convert To Increasing Distance
@@ -222,7 +230,7 @@ firstBout <- min(which(vMotionBout_rle$values[2:lastBout] == 1)+1) ##Skip If Rec
 vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,1,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
 vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,2,-2 )]/Fs
 
-boutSeq <- seq(NROW(vMotionBoutDistanceToPrey_mm),1,-1 ) ## Denotes the Relative Time Of Each Bout in Sequence 1 is first, ... 10th -closer to Prey
+boutSeq <- seq(NROW(vMotionBoutIBI),1,-1 ) ## Denotes the Relative Time Of Each Bout in Sequence 1 is first, ... 10th -closer to Prey
 ##Reverse Order 
 vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
 vMotionBoutDistanceTravelled <- vMotionBoutDistanceTravelled[boutSeq]
