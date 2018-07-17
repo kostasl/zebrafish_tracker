@@ -5,7 +5,7 @@
 ## Replace NaN with NA, (this can happen if  calculating mean over NA entries) ,tproc[is.nan(tproc) ] = NA; / If ,na.rm=TRUE Is removed then At LEast A NA is returned By Default
 medianf <- function(t,k) {n=length(t);tproc=rep(NA,n); k=min(k,n); for(i in (k/2):n) tproc[i]=median(t[max(1,i-k/2): min(n, i+k/2) ]);  return(tproc)}
 ##Note It Returns Mean of Vector values centrered at x , with a window width k
-meanf <- function(t,k) {n=length(t);tproc=rep(NA,n);k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);  return(tproc)}
+meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);  return(tproc)} #tproc=rep(NA,n);
 
 ##Make Angles appear as offsets from 0 angle, within range -180 to 180 # Used onr Diff Tail angles
 wrapAngle <- function(x)

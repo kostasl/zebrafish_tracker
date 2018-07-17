@@ -42,21 +42,13 @@ bf_speed <- butter(4, 0.05,type="low");
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 25
+idxH <- 12
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
 datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
                                                & datHuntEventMergedFrames$trackID==trackID 
                                                & datHuntEventMergedFrames$eventID==eventID,]
-
-tblPreyRecord <-table(datRenderHuntEvent$PreyID) ##Get Number oF Records per Prey
-if (NROW(tblPreyRecord) > 1)
-  warning("Multiple Prey Items Tracked In Hunt Episode-Selecting Longest Track")
-
-selectedPreyID <- as.numeric(names(which(tblPreyRecord == max(tblPreyRecord))))
-##Select Prey Specific Subset
-datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$PreyID == selectedPreyID,] 
 
 strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",eventID,"_track",trackID,sep="" )
 #dir.create(strFolderName )
@@ -106,8 +98,23 @@ datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, clipEyeRange(datRenderHunt
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(8),"#FF0000");
 
-## PLAYBACK ##
+
+
+## PLAYBACK ####
 #renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+########################
+
+## Begin Data EXtraction ###
+## Remove Multiple Prey Targets ########
+##Get Number oF Records per Prey
+tblPreyRecord <-table(datRenderHuntEvent$PreyID) 
+if (NROW(tblPreyRecord) > 1)
+  warning("Multiple Prey Items Tracked In Hunt Episode-Selecting Longest Track")
+
+selectedPreyID <- as.numeric(names(which(tblPreyRecord == max(tblPreyRecord))))
+##Select Prey Specific Subset
+datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$PreyID == selectedPreyID,] 
+
 
 #### PROCESS BOUTS ###
 vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
@@ -127,9 +134,9 @@ vEventSpeed[is.na(vEventSpeed)] = 0
 vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
 vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
 vEventPathLength <- cumsum(vEventSpeed_smooth)
-MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)##find_peaks(vEventSpeed_smooth*100,25)
+MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
 
-MoveboutsIdx_cleaned <-MoveboutsIdx #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
+MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )
 
 ##Distance To PRey
 vDistToPrey_Fixed <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth)
@@ -218,6 +225,8 @@ polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
 dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsDistance_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
 dev.off()
 ###################################################
+
+
 
 # for (i in 1:20) dev.off()
 

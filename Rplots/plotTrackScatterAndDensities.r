@@ -180,8 +180,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
   Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
   
   
-    
-  datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$posX < frameWidth & datRenderHuntEvent$posY < frameHeight ,]
+  datHuntEventMergedFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$posX < frameWidth & datRenderHuntEvent$posY < frameHeight & !is.na(datHuntEventMergedFrames$frameN) ,]
  
   X11() ##Show On Screen
   startFrame <- min(datHuntEventMergedFrames$frameN)
