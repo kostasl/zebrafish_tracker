@@ -189,7 +189,9 @@ for (i in 1:iPairs)
   
   
 }
-#vMotionBout[vMotionBout_Off-1] = 0 ##Make Sure Off Remains / For Rle to Work
+vMotionBout[vMotionBout_On+1] = 1
+vMotionBout[vMotionBout_Off] = 0 ##Make Sure Off Remains / For Rle to Work
+
 
 
 X11()
