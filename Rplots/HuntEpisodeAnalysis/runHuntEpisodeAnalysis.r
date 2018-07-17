@@ -42,7 +42,7 @@ bf_speed <- butter(4, 0.05,type="low");
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 20
+idxH <- 10
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -133,17 +133,14 @@ vMotionBout_rle <- rle(vMotionBout)
 
 ##x10 and Round so as to detect zeroCrossings simply
 vEventAccell_smooth <- round(abs(diff(vEventSpeed_smooth,lag=1,difference = 1))*10)
-vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0)
-
-X11()
-plot(vEventAccell_smooth,type='l',col="blue")
-lines(vEventSpeed_smooth,type='l',col="red")
+vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
 
 ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
 vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
 
 
-vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
+##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
+vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] 
 iPairs <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
 ##Remove The Motion Regions Where A Peak Was not detected / Only Keep The Bouts with Peaks
 vMotionBout[1:length(vMotionBout)] = 0 ##Reset / Remove All Identified Movement
@@ -157,10 +154,14 @@ for (i in 1:iPairs)
     ##Calculate TimeDiff Between Detected BoutOnset And Actual Accelleration Onsets - Find the Onset Preceding the Detected Bout 
     OnSetTD <- vMotionBout_On[i] - vEventAccell_smooth_Onset
     ##Shift To Correct Onset Of Speed Increase / Denoting Where Bout Actually Began ##FIX ONSETS 
-    vMotionBout_On[i] <-  vMotionBout_On[i] - min(OnSetTD[OnSetTD > 0  ]) 
+    if (NROW( min(OnSetTD[OnSetTD > 0  ]) ) > 0) ##If Start Of Accellaration For this Bout Can Be Found / Fix It otherwise Leave it alone
+      vMotionBout_On[i] <-  vMotionBout_On[i] - min(OnSetTD[OnSetTD > 0  ]) 
     ##FIX OFFSET to when Decellaration Ends and A new One Begins
     OffSetTD <- vEventAccell_smooth_Onset - vMotionBout_Off[i]  
-    vMotionBout_Off[i] <-  vMotionBout_Off[i] + min(OffSetTD[OffSetTD > 0  ]) ##Shift |Forward To The End Of The bout
+    if (NROW(OffSetTD[OffSetTD > 0  ]) > 0) ##If An Offset Can Be Found (Last Bout Maybe Runs Beyond Tracking Record)
+      vMotionBout_Off[i] <-  vMotionBout_Off[i] + min(OffSetTD[OffSetTD > 0  ]) ##Shift |Forward To The End Of The bout
+    
+      
     
     vMotionBout[vMotionBout_On[i]:vMotionBout_Off[i] ] = 1 
   }
@@ -179,16 +180,18 @@ for (i in 1:iPairs)
 #vMotionBoutIntervals_msec <- 1000*(vMotionBout_On[3:(iPairs)] - vMotionBout_Off[2:(iPairs-1)])/Fs
 ############################
 
-## Distance To Prey Handling ##
+## Distance To Prey Handling  -- Fixing missing Values By Interpolation ##
 ## Interpolate Missing Values from Fish Speed - Assume Fish Is moving to Prey ##
 ##Estimate Initial DIstance From Prey Onto Which We Add the integral of Speed, By Looking At Initial PreyDist and adding any fish displacemnt to this in case The initial dist Record Is NA
-InitDistance             <- vDistToPrey[!is.na(vDistToPrey)][1] + sum(vEventSpeed_smooth[(1:which(!is.na(vDistToPrey))[1])])
-vSpeedToPrey[is.na(vSpeedToPrey)] <- -vEventSpeed_smooth[is.na(vSpeedToPrey)]
+vDisplacementToPrey <- (cumsum(vSpeedToPrey[!is.na(vDistToPrey)]) ) ##But diff and integration Caused a shift
+vDisplacementToPrey[3:NROW(vDisplacementToPrey)] <- vDisplacementToPrey[1:(NROW(vDisplacementToPrey)-3)] ##Fix Time Shift
+InitDistance             <- max(vDistToPrey[!is.na(vDistToPrey)]-vDisplacementToPrey,na.rm = TRUE )  ##vDistToPrey[!is.na(vDistToPrey)][1] + sum(vEventSpeed_smooth[(1:which(!is.na(vDistToPrey))[1])])
+vSpeedToPrey[is.na(vSpeedToPrey)] <- -vEventSpeed_smooth[is.na(vSpeedToPrey)] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
 vDistToPrey_Fixed <- abs(InitDistance + (cumsum(vSpeedToPrey))) ## From Initial Distance Integrate the Displacents / need -Ve Convert To Increasing Distance
 vMotionBoutDistanceToPrey_mm <- vDistToPrey_Fixed[vMotionBout_On]*DIM_MMPERPX
 
 X11()
-plot((vDistToPrey_Fixed),type='l')
+plot((cumsum(vSpeedToPrey)+InitDistance),type='l')
 lines(vDistToPrey,type='l',col="blue")
 
 
@@ -196,6 +199,7 @@ lines(vDistToPrey,type='l',col="blue")
 ## Take InterBoutIntervals in msec from Last to first - 
 vMotionBout_rle <- rle(vMotionBout)
 lastBout <- max(which(vMotionBout_rle$values == 1))
+firstBout <- min(which(vMotionBout_rle$values[2:lastBout] == 1)+1) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
 vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,1,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
 vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,2,-2 )]/Fs
 boutSeq <- seq(NROW(vMotionBoutDistanceToPrey_mm),1,-1 )
@@ -203,7 +207,7 @@ boutSeq <- seq(NROW(vMotionBoutDistanceToPrey_mm),1,-1 )
 
 vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] ##Reverse Order
 stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )
-stopifnot(vMotionBout_rle$values[3] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
+stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
 datMotionBout <- cbind(boutSeq,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm) ##Make Data Frame
 ##On Bout Lengths
 ##Where t=0 is the capture bout, -1 -2 are the steps leading to it
