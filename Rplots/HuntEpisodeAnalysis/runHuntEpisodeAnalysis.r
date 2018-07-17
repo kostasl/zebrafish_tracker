@@ -42,7 +42,7 @@ bf_speed <- butter(4, 0.05,type="low");
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 12
+idxH <- 26
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -134,9 +134,9 @@ vEventSpeed[is.na(vEventSpeed)] = 0
 vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
 vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
 vEventPathLength <- cumsum(vEventSpeed_smooth)
-MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
+MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)##find_peaks(vEventSpeed_smooth*100,25)
 
-MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )
+MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
 
 ##Distance To PRey
 vDistToPrey_Fixed <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth)

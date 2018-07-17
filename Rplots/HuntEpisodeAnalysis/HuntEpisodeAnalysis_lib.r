@@ -13,8 +13,8 @@ citation("mclust")
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectMotionBouts <- function(dEventSpeed_smooth)
 {
-  prior_factor2 <- 0.15 ## Adds a prior shift in the threshold Of Classification
-  prior_factor1 <- 0.15 ## Adds a prior shift in the threshold Of Classification 
+  prior_factor2 <- 1.0 ## Adds a prior shift in the threshold Of Classification
+  prior_factor1 <- 1.0 ## Adds a prior shift in the threshold Of Classification 
   colClass <- c("#FF0000","#00FF22","#0000FF")
   
   #t <- datRenderHuntEvent$frameN
@@ -22,13 +22,13 @@ detectMotionBouts <- function(dEventSpeed_smooth)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(dEventSpeed_smooth ,G=3 ) #modelNames = "V" prior = priorControl(shrinkage = 0) 
+  fit <- Mclust(dEventSpeed_smooth ,G=3 ) #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
   region <- min(NROW(t),NROW(dEventSpeed_smooth))
-  #X11()
-  #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  #rug(dEventSpeed)
+  X11()
+  plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+  rug(dEventSpeed)
   
   #X11()
   #boutClass <- fit$classification
@@ -37,7 +37,8 @@ detectMotionBouts <- function(dEventSpeed_smooth)
 
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   ## Add Prior Bias to Selects from Clusters To The 
-  return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
+  return (which(fit$classification == 3))
+  #return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
   
 }
 
@@ -84,13 +85,13 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   
   ##x10 and Round so as to detect zeroCrossings simply
   vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*10)
-  vEventDeltaAccell_smooth <- meanf(diff(vEventAccell_smooth,lag=3),nFrWidth)
+  vEventDeltaAccell_smooth <- meanf(diff(vEventAccell_smooth,lag=3),nFrWidth*5)
   
   vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
   vEventAccell_smooth_Offset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
   ##Take Only Rising Edges / Remove Peak Stationary Points /Or Reversal of downward
-  vEventAccell_smooth_Onset <-  vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] > 0]-nFrWidth/4 #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
-  vEventAccell_smooth_Offset <- vEventAccell_smooth_Offset[vEventDeltaAccell_smooth[vEventAccell_smooth_Offset] > 0]-nFrWidth/4 #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+  vEventAccell_smooth_Onset <-  vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+  vEventAccell_smooth_Offset <- vEventAccell_smooth_Offset[vEventDeltaAccell_smooth[vEventAccell_smooth_Offset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
   
   
   X11()
