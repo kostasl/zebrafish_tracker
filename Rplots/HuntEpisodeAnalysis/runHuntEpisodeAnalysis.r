@@ -24,7 +24,7 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
 
 
-#for (i in 1:40) dev.off()
+#    for (i in 1:40) dev.off()
 
 #
 ############# LOAD AND PLAYBACK OF HUNT EVENTS ####
@@ -42,7 +42,7 @@ bf_speed <- butter(4, 0.05,type="low");
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 26
+idxH <- 30
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
