@@ -42,7 +42,7 @@ bf_speed <- butter(4, 0.05,type="low");
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 10
+idxH <- 18
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -133,8 +133,16 @@ vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset o
 vMotionBout_rle <- rle(vMotionBout)
 
 ##x10 and Round so as to detect zeroCrossings simply
-vEventAccell_smooth <- round(abs(diff(vEventSpeed_smooth,lag=1,difference = 1))*10)
+vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*10)
+vEventDeltaAccell_smooth <- diff(vEventAccell_smooth)
 vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
+##Take Only Rising Edges / Remove Peak Stationary Points /Or Reversal of downward
+vEventAccell_smooth_Onset <- vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+
+
+X11()
+plot(vEventAccell_smooth,type='l')
+points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
 
 ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
 vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
@@ -187,13 +195,14 @@ for (i in 1:iPairs)
 ##Estimate Initial DIstance From Prey Onto Which We Add the integral of Speed, By Looking At Initial PreyDist and adding any fish displacemnt to this in case The initial dist Record Is NA
 vDisplacementToPrey <- (cumsum(vSpeedToPrey[!is.na(vDistToPrey)]) ) ##But diff and integration Caused a shift
 vDisplacementToPrey[3:NROW(vDisplacementToPrey)] <- vDisplacementToPrey[1:(NROW(vDisplacementToPrey)-3)] ##Fix Time Shift
-InitDistance             <- max(vDistToPrey[!is.na(vDistToPrey)]-vDisplacementToPrey,na.rm = TRUE )  ##vDistToPrey[!is.na(vDistToPrey)][1] + sum(vEventSpeed_smooth[(1:which(!is.na(vDistToPrey))[1])])
+InitDistance             <- mean(vDistToPrey[!is.na(vDistToPrey)]-vDisplacementToPrey,na.rm = TRUE )  ##vDistToPrey[!is.na(vDistToPrey)][1] + sum(vEventSpeed_smooth[(1:which(!is.na(vDistToPrey))[1])])
 vSpeedToPrey[is.na(vSpeedToPrey)] <- -vEventSpeed_smooth[is.na(vSpeedToPrey)] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
 vDistToPrey_Fixed <- abs(InitDistance + (cumsum(vSpeedToPrey))) ## From Initial Distance Integrate the Displacents / need -Ve Convert To Increasing Distance
 vMotionBoutDistanceToPrey_mm <- vDistToPrey_Fixed[vMotionBout_On]*DIM_MMPERPX
 vMotionBoutDistanceTravelled <- (vEventPathLength[vMotionBout_Off]-vEventPathLength[vMotionBout_On])*DIM_MMPERPX ##The Power of A Bout can be measured by distance Travelled
+#vMotionBoutDistanceTravelled <- vMotionBoutDistanceTravelled[boutSeq] ##Re Order from Prey To Far
 
-X11()
+X11() ##Compare Estimated To Recorded Prey Distance
 plot((cumsum(vSpeedToPrey)+InitDistance),type='l')
 lines(vDistToPrey,type='l',col="blue")
 
@@ -205,10 +214,15 @@ lastBout <- max(which(vMotionBout_rle$values == 1))
 firstBout <- min(which(vMotionBout_rle$values[2:lastBout] == 1)+1) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
 vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,1,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
 vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,2,-2 )]/Fs
-boutSeq <- seq(NROW(vMotionBoutDistanceToPrey_mm),1,-1 )
+
+boutSeq <- seq(NROW(vMotionBoutDistanceToPrey_mm),1,-1 ) ## Denotes the Relative Time Of Each Bout in Sequence 1 is first, ... 10th -closer to Prey
+##Reverse Order 
+vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
+vMotionBoutDistanceTravelled <- vMotionBoutDistanceTravelled[boutSeq]
 
 
-vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] ##Reverse Order
+
+
 stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )
 stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
 datMotionBout <- cbind(boutSeq,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled) ##Make Data Frame
@@ -216,14 +230,27 @@ datMotionBout <- cbind(boutSeq,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDis
 ##Where t=0 is the capture bout, -1 -2 are the steps leading to it
 
 
-
 ## Plot Durations of Pause/Go
 X11()
-plot(0.0+NROW(vMotionBoutDuration)-seq(NROW(vMotionBoutDuration),1 ),vMotionBoutDuration,
-     xlab="Bout",ylab="msec",xlim=c(0,10),ylim=c(0,500),
+plot(datMotionBout[,"vMotionBoutDuration"],
+     xlab="Bout",ylab="msec",xlim=c(0,max(boutSeq) ),ylim=c(0,500),
      col="red",main="Bout Duration",pch=16) ##Take Every Bout Length
-points(0.5+NROW(vMotionBoutIBI)-seq(NROW(vMotionBoutIBI),1 ),vMotionBoutIBI,col="blue",pch=21) ##Take every period between / Inter Bout Interval
+points(datMotionBout[,"vMotionBoutIBI"],col="blue",pch=21) ##Take every period between / Inter Bout Interval
 legend(1,400,c("Motion","Pause" ),col=c("red","blue"),pch=c(16,21) )
+
+X11()
+plot(datMotionBout[,"vMotionBoutDistanceToPrey_mm"],
+     xlab="Bout",ylab="mm",xlim=c(0,max(boutSeq)),ylim=c(0,5),
+     col="red",main="Bout Distance To Prey",pch=16) ##Take Every Bout Length
+
+X11()
+plot(datMotionBout[,"vMotionBoutDistanceTravelled"],
+     xlab="Bout",ylab="mm",xlim=c(0,max(boutSeq)),ylim=c(0,300),
+     col="red",main="Bout Power",pch=16) ##Take Every Bout Length
+
+
+
+
 
 
 
@@ -235,8 +262,8 @@ legend(1,400,c("Motion","Pause" ),col=c("red","blue"),pch=c(16,21) )
 X11()
 plot(vMotionBout,type='p')
 points(MoveboutsIdx_cleaned,vMotionBout[MoveboutsIdx_cleaned],col="red")
-points(vMotionBout_On,vMotionBout[vMotionBout_On],col="green") ##On
-points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow")##Off
+points(vMotionBout_On,vMotionBout[vMotionBout_On],col="green",pch=7) ##On
+points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow",pch=21)##Off
 
 ######### END OF PROCESS BOUT #########
 
