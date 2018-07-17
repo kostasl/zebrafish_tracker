@@ -26,9 +26,9 @@ detectMotionBouts <- function(dEventSpeed_smooth)
   summary(fit)
   
   region <- min(NROW(t),NROW(dEventSpeed_smooth))
-  X11()
-  plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  rug(dEventSpeed)
+#  X11()
+#  plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+#  rug(dEventSpeed)
   
   #X11()
   #boutClass <- fit$classification

@@ -42,7 +42,7 @@ bf_speed <- butter(4, 0.05,type="low");
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 18
+idxH <- 21
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -98,7 +98,7 @@ datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, clipEyeRange(datRenderHunt
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(8),"#FF0000");
 
-##PlayBack
+## PLAYBACK ##
 #renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
 
 #### PROCESS BOUTS ###
@@ -133,18 +133,13 @@ vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset o
 vMotionBout_rle <- rle(vMotionBout)
 
 ##x10 and Round so as to detect zeroCrossings simply
-vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*10)
-vEventDeltaAccell_smooth <- diff(vEventAccell_smooth)
-vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
-vEventAccell_smooth_Offset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
+vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*15)
+vEventDeltaAccell_smooth <- diff(vEventAccell_smooth,lag=3)
+vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0)-1 ##Where Speed Rises Begin
+vEventAccell_smooth_Offset <- which(round(vEventAccell_smooth) == 0)-1 ##Where Speed Rises Begin
 ##Take Only Rising Edges / Remove Peak Stationary Points /Or Reversal of downward
 vEventAccell_smooth_Onset <-  vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
 vEventAccell_smooth_Offset <- vEventAccell_smooth_Offset[vEventDeltaAccell_smooth[vEventAccell_smooth_Offset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
-
-X11()
-plot(vEventAccell_smooth,type='l')
-points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
-points(vEventAccell_smooth_Offset,vEventAccell_smooth[vEventAccell_smooth_Offset],pch=6)
 
 ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
 vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
@@ -171,7 +166,7 @@ for (i in 1:iPairs)
     ##FIX OFFSET to when Decellaration Ends and A new One Begins
     OffSetTD <- vEventAccell_smooth_Offset - vMotionBout_Off[i]  
     if (NROW(OffSetTD[OffSetTD > 0  ]) > 0) ##If An Offset Can Be Found (Last Bout Maybe Runs Beyond Tracking Record)
-      vMotionBout_Off[i] <-  vMotionBout_Off[i] + min(OffSetTD[OffSetTD > 0  ]) ##Shift |Forward To The End Of The bout
+      vMotionBout_Off[i] <-  vMotionBout_Off[i] + min(OffSetTD[OffSetTD > 0  ],rm.na=TRUE) ##Shift |Forward To The End Of The bout
     
       
     
@@ -193,6 +188,7 @@ X11()
 plot(vEventAccell_smooth,type='l')
 points(vMotionBout_On,vEventAccell_smooth[vMotionBout_On])
 points(vMotionBout_Off,vEventAccell_smooth[vMotionBout_Off],pch=6)
+
 
 
 ##Get Bout Statistics #### NOt Used / Replaced##
@@ -320,8 +316,8 @@ lines(vEventSpeed_smooth,type='l',col="blue")
 lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
 points(MoveboutsIdx,vEventSpeed_smooth[MoveboutsIdx],col="black")
 points(MoveboutsIdx_cleaned,vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
-points(vMotionBout_On,vEventSpeed_smooth[vMotionBout_On],col="red",pch=17)
-points(vMotionBout_Off,vEventSpeed_smooth[vMotionBout_Off],col="blue",pch=6)
+points(vMotionBout_On,vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17)
+points(vMotionBout_Off,vEventSpeed_smooth[vMotionBout_Off],col="yellow",pch=14)
 lines(vDistToPrey_Fixed*DIM_MMPERPX,col="purple",lw=2)
 legend(1,58,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
 message(paste("Number oF Bouts:",length(MoveboutsIdx_cleaned)))
