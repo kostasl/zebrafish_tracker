@@ -27,6 +27,9 @@ clipEyeRange <- function(vEyeAngle,lMin,lMax)
   for (e in 2:NROW(vEyeAngle))
   {
     
+    if (is.na(vEyeAngle[e])) 
+      vEyeAngle[e] <- vEyeAngle[e-1]
+    
     if (vEyeAngle[e] == 180)
       vEyeAngle[e] <- vEyeAngle[e-1]
     
