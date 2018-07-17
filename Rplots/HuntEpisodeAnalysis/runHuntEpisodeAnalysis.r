@@ -24,7 +24,7 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
 
 
-#for (i in 1:20) dev.off()
+#for (i in 1:40) dev.off()
 
 #
 ############# LOAD AND PLAYBACK OF HUNT EVENTS ####
@@ -274,16 +274,18 @@ vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
 
 ##Plot Displacement and Speed(Scaled)
 X11()
-plot(cumsum(vEventPathLength),ylab="mm/sec",ylim=c(0,max(vEventSpeed_smooth))) ##PLot Total Displacemnt over time
+plot(vEventPathLength*DIM_MMPERPX,ylab="mm/sec",ylim=c(-3,max(vEventPathLength[!is.na(vEventPathLength)]*DIM_MMPERPX)  )) ##PLot Total Displacemnt over time
 lines(vEventSpeed_smooth,type='l',col="blue")
-lines(vTailDispFilt,type='l',col="magenta")
+lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
 points(MoveboutsIdx,vEventSpeed_smooth[MoveboutsIdx],col="black")
 points(MoveboutsIdx_cleaned,vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
 points(vMotionBout_On,vEventSpeed_smooth[vMotionBout_On],col="red",pch=17)
 points(vMotionBout_Off,vEventSpeed_smooth[vMotionBout_Off],col="blue",pch=6)
 lines(vDistToPrey_Fixed*DIM_MMPERPX,col="purple",lw=2)
+legend(1,58,c("PathLength","FishSpeed","BoutDetect","TailMotion","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
 message(paste("Number oF Bouts:",length(MoveboutsIdx_cleaned)))
 dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+
 dev.off()
 
 ###########  Plot Polar Angle to Prey ##############

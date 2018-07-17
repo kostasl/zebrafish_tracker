@@ -12,7 +12,7 @@ citation("mclust")
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 detectMotionBouts <- function(dEventSpeed)
 {
-  prior_factor <- 0.5 ## Adds a prior shift in the threshold Of Classification 
+  prior_factor <- 0.15 ## Adds a prior shift in the threshold Of Classification 
   colClass <- c("#FF0000","#00FF22","#0000FF")
   
   #t <- datRenderHuntEvent$frameN
