@@ -146,14 +146,15 @@ stopifnot(vMotionBout_rle$values[3] == 0 ) ##THe INitial vMotionBoutIBI Is not A
 ##On Bout Lengths
 ##Where t=0 is the capture bout, -1 -2 are the steps leading to it
 vMotionPeriod <- 1-(NROW(vMotionBoutIBI)-seq(NROW(vMotionBoutIBI),1 ))
-vMotionBoutDuration <- vMotionBoutDuration
+vMotionBoutIBI <- vMotionBoutIBI
 
+## Plot Durations of Pause/Go
 X11()
 plot(0.0+NROW(vMotionBoutDuration)-seq(NROW(vMotionBoutDuration),1 ),vMotionBoutDuration,
      xlab="Bout",ylab="msec",xlim=c(0,10),ylim=c(0,500),
      col="red",main="Bout Duration",pch=16) ##Take Every Bout Length
 points(0.5+NROW(vMotionBoutIBI)-seq(NROW(vMotionBoutIBI),1 ),vMotionBoutIBI,col="blue",pch=21) ##Take every period between / Inter Bout Interval
-legend(1,400,c("Duration","Interval" ),col=c("red","blue"),pch=c(16,21) )
+legend(1,400,c("Motion","Pause" ),col=c("red","blue"),pch=c(16,21) )
 
 
 
@@ -161,7 +162,7 @@ legend(1,400,c("Duration","Interval" ),col=c("red","blue"),pch=c(16,21) )
 
 
 
-
+## Plot The Start Stop Motion Bout Binarized Data
 X11()
 plot(vMotionBout,type='p')
 points(MoveboutsIdx_cleaned,vMotionBout[MoveboutsIdx_cleaned],col="red")
@@ -178,18 +179,18 @@ vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_
 vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
 vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
 
-X11()
-layout(matrix(c(1,2), 2, 1, byrow = TRUE))
-plot(vTailDisp,type="l")
-lines(dEventSpeed_smooth*50,type='l',col="blue")
+#X11()
+#layout(matrix(c(1,2), 2, 1, byrow = TRUE))
+#plot(vTailDisp,type="l")
+#lines(dEventSpeed_smooth*50,type='l',col="blue")
 ##plot Correlation Of Tail Movement To speed 
-corr_speedVsTail <- ccf(abs(vTailDisp),dEventSpeed_smooth,type="correlation",plot=TRUE)
+#corr_speedVsTail <- ccf(abs(vTailDisp),dEventSpeed_smooth,type="correlation",plot=TRUE)
 
-llRange <- min(NROW(abs(dEventSpeed_smooth)),NROW(abs(vTailDisp))) 
-cor_TailToSpeed <- cov(abs(vTailDisp[1:llRange]),dEventSpeed_smooth[1:llRange])
+#llRange <- min(NROW(abs(dEventSpeed_smooth)),NROW(abs(vTailDisp))) 
+#cor_TailToSpeed <- cov(abs(vTailDisp[1:llRange]),dEventSpeed_smooth[1:llRange])
 
-X11()
-plot(abs(dEventSpeed_smooth[1:llRange]) , abs(vTailDisp[1:llRange]) , type="p")
+#X11()
+#plot(abs(dEventSpeed_smooth[1:llRange]) , abs(vTailDisp[1:llRange]) , type="p")
 
 #lines(vTailDir,type='l',col="green")
 ##END OF CURVATURE ##
