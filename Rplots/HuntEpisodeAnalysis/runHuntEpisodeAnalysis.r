@@ -42,7 +42,7 @@ bf_speed <- butter(4, 0.05,type="low");
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 30
+idxH <- 20
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -150,19 +150,19 @@ datEpisodeMotionBout <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smoo
 ## Plot Durations of Pause/Go
 X11()
 plot(datEpisodeMotionBout[,"vMotionBoutDuration"],
-     xlab="Bout",ylab="msec",xlim=c(0,max(boutSeq) ),ylim=c(0,500),
+     xlab="Bout",ylab="msec",xlim=c(0,NROW(datEpisodeMotionBout) ),ylim=c(0,500),
      col="red",main="Bout Duration",pch=16) ##Take Every Bout Length
 points(datEpisodeMotionBout[,"vMotionBoutIBI"],col="blue",pch=21) ##Take every period between / Inter Bout Interval
 legend(1,400,c("Motion","Pause" ),col=c("red","blue"),pch=c(16,21) )
 
 X11()
 plot(datEpisodeMotionBout[,"vMotionBoutDistanceToPrey_mm"],
-     xlab="Bout",ylab="mm",xlim=c(0,max(boutSeq)),ylim=c(0,5),
+     xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,5),
      col="red",main="Bout Distance To Prey",pch=16) ##Take Every Bout Length
 
 X11()
 plot(datEpisodeMotionBout[,"vMotionBoutDistanceTravelled"],
-     xlab="Bout",ylab="mm",xlim=c(0,max(boutSeq)),ylim=c(0,300),
+     xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,300),
      col="red",main="Bout Power",pch=16) ##Take Every Bout Length
 
 

@@ -25,10 +25,10 @@ detectMotionBouts <- function(vEventSpeed)
   fit <- Mclust(vEventSpeed ,G=3 ) #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
-  region <- min(NROW(t),NROW(vEventSpeed))
-  X11()
-  plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  rug(vEventSpeed)
+  #region <- min(NROW(t),NROW(vEventSpeed))
+  #X11()
+  #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+  #rug(vEventSpeed)
   
   #X11()
   #boutClass <- fit$classification
@@ -60,11 +60,10 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth)
   vDistToPrey_Fixed <- abs(InitDistance +  vDisplacementToPrey)# (cumsum(vSpeedToPrey))) ## From Initial Distance Integrate the Displacents / need -Ve Convert To Increasing Distance
   
   
-  X11() ##Compare Estimated To Recorded Prey Distance
-  plot(vDistToPrey_Fixed,type='l')
-  lines(vDistToPrey,type='l',col="blue")
+  #X11() ##Compare Estimated To Recorded Prey Distance
+  #plot(vDistToPrey_Fixed,type='l')
+  #lines(vDistToPrey,type='l',col="blue")
   #legend()
-  
   
   return(vDistToPrey_Fixed)
 }
@@ -100,10 +99,10 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   vEventAccell_smooth_Onset <- boutEdgesIdx
   vEventAccell_smooth_Offset <- boutEdgesIdx
 
-  X11()
- plot(vEventAccell_smooth, type='l', main="Unprocessed Cut Points")
- points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
- points(vEventAccell_smooth_Offset,vEventAccell_smooth[vEventAccell_smooth_Offset],pch=6)
+  #X11()
+ #plot(vEventAccell_smooth, type='l', main="Unprocessed Cut Points")
+ #points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
+ #points(vEventAccell_smooth_Offset,vEventAccell_smooth[vEventAccell_smooth_Offset],pch=6)
   
   
   ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
@@ -151,10 +150,10 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   vMotionBout[vMotionBout_Off] = 0 ##Make Sure Off Remains / For Rle to Work
   
   
-  X11()
- plot(vEventAccell_smooth,type='l',main="Processed Cut-Points")
-  points(vMotionBout_On,vEventAccell_smooth[vMotionBout_On])
-  points(vMotionBout_Off,vEventAccell_smooth[vMotionBout_Off],pch=6)
+  #X11()
+  #plot(vEventAccell_smooth,type='l',main="Processed Cut-Points")
+  #points(vMotionBout_On,vEventAccell_smooth[vMotionBout_On])
+  #points(vMotionBout_Off,vEventAccell_smooth[vMotionBout_Off],pch=6)
   
   
   ##Get Bout Statistics #### NOt Used / Replaced##
@@ -164,7 +163,6 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   ############################
   
   
-
   ## Get Bout Statistics Again Now Using Run Length Encoding Method 
   ## Take InterBoutIntervals in msec from Last to first - 
   vMotionBout_rle <- rle(vMotionBout)
@@ -176,7 +174,9 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
   boutSeq <- seq(NROW(vMotionBoutIBI),1,-1 ) 
   
-  
+  vMotionBout_Off <- unique(vMotionBout_Off)
+  vMotionBout_On <- unique(vMotionBout_On)
+  ## TODO FIx these
   vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
   vMotionBoutDistanceTravelled <- (vEventPathLength[vMotionBout_Off[1:iPairs]]-vEventPathLength[vMotionBout_On[1:iPairs]])*DIM_MMPERPX ##The Power of A Bout can be measured by distance Travelled
   
@@ -190,8 +190,6 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   
   ##Combine and Return
   datMotionBout <- cbind(boutSeq,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled) ##Make Data Frame
-  
-  
   
   
   ##Plot Displacement and Speed(Scaled)
