@@ -101,7 +101,7 @@ r <- c(rfc(8),"#FF0000");
 
 
 ## PLAYBACK ####
-#renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+#   renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
 ########################
 
 ## Begin Data EXtraction ###
@@ -134,7 +134,7 @@ vEventSpeed[is.na(vEventSpeed)] = 0
 vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
 vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
 vEventPathLength <- cumsum(vEventSpeed_smooth)
-MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)##find_peaks(vEventSpeed_smooth*100,25)
+MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
 
 MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
 

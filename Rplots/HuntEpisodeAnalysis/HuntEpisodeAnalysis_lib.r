@@ -11,7 +11,7 @@ citation("mclust")
 
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
-detectMotionBouts <- function(dEventSpeed_smooth)
+detectMotionBouts <- function(vEventSpeed)
 {
   prior_factor2 <- 1.0 ## Adds a prior shift in the threshold Of Classification
   prior_factor1 <- 1.0 ## Adds a prior shift in the threshold Of Classification 
@@ -22,13 +22,13 @@ detectMotionBouts <- function(dEventSpeed_smooth)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(dEventSpeed_smooth ,G=3 ) #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  fit <- Mclust(vEventSpeed ,G=3 ) #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
-  region <- min(NROW(t),NROW(dEventSpeed_smooth))
+  region <- min(NROW(t),NROW(vEventSpeed))
   X11()
   plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  rug(dEventSpeed)
+  rug(vEventSpeed)
   
   #X11()
   #boutClass <- fit$classification
@@ -37,8 +37,8 @@ detectMotionBouts <- function(dEventSpeed_smooth)
 
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   ## Add Prior Bias to Selects from Clusters To The 
-  return (which(fit$classification == 3 ) )
-  #return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
+  #return (which(fit$classification == 3 ) )
+  return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
   
 }
 
@@ -75,25 +75,31 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
 {
   MoveboutsIdx_cleaned <-MoveboutsIdx #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
   
+  meanBoutSpeed <- median(vEventSpeed_smooth[MoveboutsIdx_cleaned])
+  
   ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
-  #vMotionBout <- vEventSpeed_smooth
+  vMotionBout <- vEventSpeed_smooth
   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
   vMotionBout[ MoveboutsIdx_cleaned  ] <- 1
-  vMotionBout[ vEventAccell_smooth_Offset ] <- 0 ##Add These OffSet Cuts In Case Bouts Look Continuous
+  
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   vMotionBout_rle <- rle(vMotionBout)
   
   ##x10 and Round so as to detect zeroCrossings simply
-  vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*10)
-  vEventDeltaAccell_smooth <- meanf(diff(vEventAccell_smooth,lag=3),nFrWidth*5)
+  #vEventAccell_smooth <- round((diff(vEventSpeed_smooth,lag=1,difference = 1))*15)
+  #vEventDeltaAccell_smooth <- meanf(diff(vEventAccell_smooth,lag=3),nFrWidth*5)
   
-  vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
-  vEventAccell_smooth_Offset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
+  #vEventAccell_smooth_Onset <- which(round(vEventAccell_smooth) == 0 ) ##Where Speed Rises Begin
+  #vEventAccell_smooth_Offset <- which(round(vEventAccell_smooth) == 0) ##Where Speed Rises Begin
   ##Take Only Rising Edges / Remove Peak Stationary Points /Or Reversal of downward
-  vEventAccell_smooth_Onset <-  vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
-  vEventAccell_smooth_Offset <- vEventAccell_smooth_Offset[vEventDeltaAccell_smooth[vEventAccell_smooth_Offset] > 0] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+  #vEventAccell_smooth_Onset <-  vEventAccell_smooth_Onset[vEventDeltaAccell_smooth[vEventAccell_smooth_Onset] >= 0 & vEventSpeed_smooth[ vEventAccell_smooth_Onset ]  < meanBoutSpeed/3] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
+  #vEventAccell_smooth_Offset <- vEventAccell_smooth_Offset[vEventDeltaAccell_smooth[vEventAccell_smooth_Offset] >= 0 & vEventSpeed_smooth[ vEventAccell_smooth_Offset ]  < meanBoutSpeed/3] #which( vEventAccell_smooth[(vEventAccell_smooth_Onset)] < vEventAccell_smooth[(vEventAccell_smooth_Onset+5)] )
   
-  
+  ##Invert Speed / And Use Peak Finding To detect Bout Edges (Troughs are Peaks in the Inverse image)
+  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,15)
+  vEventAccell_smooth_Onset <- boutEdgesIdx
+  vEventAccell_smooth_Offset <- boutEdgesIdx
+
   X11()
  plot(vEventAccell_smooth, type='l', main="Unprocessed Cut Points")
  points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
@@ -186,15 +192,18 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   datMotionBout <- cbind(boutSeq,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled) ##Make Data Frame
   
   
+  
+  
   ##Plot Displacement and Speed(Scaled)
   X11()
   plot(vEventPathLength*DIM_MMPERPX,ylab="mm/sec",ylim=c(-3,max(vEventPathLength[!is.na(vEventPathLength)]*DIM_MMPERPX)  )) ##PLot Total Displacemnt over time
   lines(vEventSpeed_smooth,type='l',col="blue")
-  lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
+  #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
   points(MoveboutsIdx,vEventSpeed_smooth[MoveboutsIdx],col="black")
   points(MoveboutsIdx_cleaned,vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
   points(vMotionBout_On,vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
   points(vMotionBout_Off,vEventSpeed_smooth[vMotionBout_Off],col="yellow",pch=14,lwd=3)
+  points(boutEdgesIdx,vEventSpeed_smooth[boutEdgesIdx],col="red",pch=8,lwd=3) 
   lines(vDistToPrey_Fixed*DIM_MMPERPX,col="purple",lw=2)
   legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
   message(paste("Number oF Bouts:",NROW(datMotionBout)))
