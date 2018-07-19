@@ -161,6 +161,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
   #datHuntEventMergedFrames$LEyeAngle <- meanf(datHuntEventMergedFrames$LEyeAngle,20)
   #datHuntEventMergedFrames$REyeAngle <- meanf(datHuntEventMergedFrames$REyeAngle,20)
   
+  
   frameWidth = 610
   frameHeight = 610
   
@@ -279,8 +280,8 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     polygon(REyeConeX,REyeConeY,col=REyecolour) ##,density=25,angle=-45
     
     
-    ##Draw Frame 
-    text(X_FRAME[1] + 20,frameHeight-10,labels=i,col="darkblue",cex=0.7)
+    ##Draw Frame Number
+    text(X_FRAME[1] + 30,frameHeight-10,labels=paste("#",i,round(1000* (i-startFrame)/(Fs)),"msec" ) ,col="darkblue",cex=0.7)
     
     colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
     ###Draw Prey

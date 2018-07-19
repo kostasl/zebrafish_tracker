@@ -42,7 +42,7 @@ bf_speed <- butter(4, 0.05,type="low");  ##Focus On Low Fq to improve Detection 
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 30
+idxH <- 18
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -105,7 +105,7 @@ r <- c(rfc(8),"#FF0000");
 
 
 ## PLAYBACK ####
-#        renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+        renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
 ########################
 
 ############ PREY SELECTION #####
