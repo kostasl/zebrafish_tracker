@@ -263,8 +263,10 @@ dev.off()
 
 
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
- 
-datMotionBoutCombined <- datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == 3, ]
+
+datMotionBoutCombinedAll$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombinedAll$groupID]
+
+datMotionBoutCombined <-datMotionBoutCombinedAll# datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == "DL", ]
 X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
 boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
@@ -283,3 +285,4 @@ plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutIBI,main=" 
 boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
 # for (i in 1:20) dev.off()
 
+RegistarIdx
