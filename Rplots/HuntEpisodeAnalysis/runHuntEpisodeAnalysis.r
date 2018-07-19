@@ -170,7 +170,7 @@ for (idxH in 1:NROW(datTrackedEventsRegister))
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth)
   lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed)
   rows <- NROW(lMotionBoutDat[[idxH]])
-  lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = rep(idxH,rows),expID=rep(expID,rows),eventID=rep(eventID,rows),groupID=rep(as.character(groupID),rows))
+  lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
 }  
 
 datEpisodeMotionBout <- lMotionBoutDat[[1]]
@@ -262,11 +262,12 @@ dev.off()
 
 
 
-datMotionBoutCombined <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
  
+datMotionBoutCombined <- datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == 3, ]
 X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
-boxplot(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm ~ datMotionBoutCombined$boutRank,main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
+boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
 
 X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main="Distance Of Bout (power)",ylab="mm")
