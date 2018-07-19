@@ -26,9 +26,9 @@ detectMotionBouts <- function(vEventSpeed)
   summary(fit)
   
   #region <- min(NROW(t),NROW(vEventSpeed))
-  X11()
-  plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  rug(vEventSpeed)
+  #X11()
+  #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+  #rug(vEventSpeed)
   
   #X11()
   #boutClass <- fit$classification
@@ -180,7 +180,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotR
   vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
   boutSeq <- seq(NROW(vMotionBoutIBI),1,-1 ) 
-  
+  boutRank <- seq(1,NROW(vMotionBoutIBI),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
   ## TODO FIx these
   vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
   vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
@@ -194,43 +194,47 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotR
   stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
   
   ##Combine and Return
-  datMotionBout <- cbind(boutSeq,vMotionBout_On,vMotionBout_Off,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm) ##Make Data Frame
+  datMotionBout <- cbind(boutSeq,boutRank,vMotionBout_On,vMotionBout_Off,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm) ##Make Data Frame
   
   
   #### PLOT DEBUG RESULTS ###
 ##Make Shaded Polygons
-  
-  lshadedBout <- list()
-  t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)
-  for (i in 1:NROW(vMotionBout_Off))  
+  if (plotRes)
   {
-  lshadedBout[[i]] <- rbind(
-                     cbind(t[vMotionBout_Off[i] ],vEventSpeed_smooth[vMotionBout_Off[i]]-1),
-                     cbind(t[vMotionBout_Off[i] ], max(vEventPathLength_mm) ), #vEventPathLength_mm[vMotionBout_Off[i]]+15),
-                     cbind(t[vMotionBout_On[i] ], max(vEventPathLength_mm) ),#vEventPathLength_mm[vMotionBout_On[i]]+15),
-                     cbind(t[vMotionBout_On[i] ], vEventSpeed_smooth[vMotionBout_On[i]]-1)
-                     )
-  }
+    lshadedBout <- list()
+    t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)
+    for (i in 1:NROW(vMotionBout_Off))  
+    {
+    lshadedBout[[i]] <- rbind(
+                       cbind(t[vMotionBout_Off[i] ],vEventSpeed_smooth[vMotionBout_Off[i]]-1),
+                       cbind(t[vMotionBout_Off[i] ], max(vEventPathLength_mm) ), #vEventPathLength_mm[vMotionBout_Off[i]]+15),
+                       cbind(t[vMotionBout_On[i] ], max(vEventPathLength_mm) ),#vEventPathLength_mm[vMotionBout_On[i]]+15),
+                       cbind(t[vMotionBout_On[i] ], vEventSpeed_smooth[vMotionBout_On[i]]-1)
+                       )
+    }
+    
+    ##Plot Displacement and Speed(Scaled)
+    X11()
+    
+    plot(t,vEventPathLength_mm,ylab="mm",xlab="msec",ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
+    lines(t,vEventSpeed_smooth,type='l',col="blue")
+    #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
+    points(t[MoveboutsIdx],vEventSpeed_smooth[MoveboutsIdx],col="black")
+    points(t[MoveboutsIdx_cleaned],vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
+    points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
+    segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
+    points(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off],col="purple",pch=14,lwd=3)
+    points(t[boutEdgesIdx],vEventSpeed_smooth[boutEdgesIdx],col="red",pch=8,lwd=3) 
+    segments(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On]-1,t[vMotionBout_On],vEventPathLength[vMotionBout_On]+15,lwd=0.9,col="green")
+    for (poly in lshadedBout)
+      polygon(poly,density=3,angle=-45) 
+    
+    #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
+    text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+3,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
+    #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
+    
+  } ##If Plot Flag Is Set 
   
-  ##Plot Displacement and Speed(Scaled)
-  X11()
-  
-  plot(t,vEventPathLength_mm,ylab="mm",xlab="msec",ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
-  lines(t,vEventSpeed_smooth,type='l',col="blue")
-  #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
-  points(t[MoveboutsIdx],vEventSpeed_smooth[MoveboutsIdx],col="black")
-  points(t[MoveboutsIdx_cleaned],vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
-  points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
-  segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
-  points(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off],col="purple",pch=14,lwd=3)
-  points(t[boutEdgesIdx],vEventSpeed_smooth[boutEdgesIdx],col="red",pch=8,lwd=3) 
-  segments(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On]-1,t[vMotionBout_On],vEventPathLength[vMotionBout_On]+15,lwd=0.9,col="green")
-  for (poly in lshadedBout)
-    polygon(poly,density=3,angle=-45) 
-  
-  #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
-  text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+3,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
-  #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
   message(paste("Number oF Bouts:",NROW(datMotionBout)))
   #dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
   

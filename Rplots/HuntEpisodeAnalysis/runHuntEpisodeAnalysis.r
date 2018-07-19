@@ -41,134 +41,139 @@ bf_speed <- butter(4, 0.05,type="low");  ##Focus On Low Fq to improve Detection 
 ###
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
-
-idxH <- 18
-expID <- datTrackedEventsRegister[idxH,]$expID
-trackID<- datTrackedEventsRegister[idxH,]$trackID
-eventID <- datTrackedEventsRegister[idxH,]$eventID
-
-PreyIDTarget <- datTrackedEventsRegister[idxH,]$PreyIDTarget
+lMotionBoutDat <- list()
 
 
-datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
-                                               & datHuntEventMergedFrames$trackID==trackID 
-                                               & datHuntEventMergedFrames$eventID==eventID,]
+#idxH <- 20
 
-strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",eventID,"_track",trackID,sep="" )
-#dir.create(strFolderName )
-##Remove NAs
-
-
-lMax <- 55
-lMin <- -20
-
-#spectrum(datRenderHuntEvent$LEyeAngle)
-datRenderHuntEvent$LEyeAngle <- clipEyeRange(datRenderHuntEvent$LEyeAngle,lMin,lMax)
-datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nEyeFilterWidth)
-datRenderHuntEvent$LEyeAngle[is.na(datRenderHuntEvent$LEyeAngle)] <- 0
-#X11()
-#spectrum(datRenderHuntEvent$LEyeAngle)
-datRenderHuntEvent$LEyeAngle <-filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle) # filtfilt(bf_eyes, medianf(datRenderHuntEvent$LEyeAngle,nFrWidth)) #meanf(datHuntEventMergedFrames$LEyeAngle,20)
-#X11()
-#spectrum(datRenderHuntEvent$LEyeAngle)
-
-#X11()
-#lines(medianf(datRenderHuntEvent$LEyeAngle,nFrWidth),col='red')
-#lines(datRenderHuntEvent$LEyeAngle,type='l',col='blue')
-##Replace Tracking Errors (Values set to 180) with previous last known value
-
-lMax <- 15
-lMin <- -50
-datRenderHuntEvent$REyeAngle <- clipEyeRange(datRenderHuntEvent$REyeAngle,lMin,lMax)
-datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nEyeFilterWidth)
-datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
-datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
-#datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
-X11()
-plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-60,60),main="Eye Motion ")
-lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magenta")
-
-
-lMax <- +50
-lMin <- -50
-datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_7,lMin,lMax) )
-datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_6,lMin,lMax) )
-datRenderHuntEvent$DThetaSpine_5 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_5,lMin,lMax) )
-datRenderHuntEvent$DThetaSpine_4 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_4,lMin,lMax))
-datRenderHuntEvent$DThetaSpine_3 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_3,lMin,lMax))
-datRenderHuntEvent$DThetaSpine_2 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_2,lMin,lMax))
-datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_1,lMin,lMax))
-
-rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
-r <- c(rfc(8),"#FF0000");
-
-
-
-## PLAYBACK ####
-        renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
-########################
-
-############ PREY SELECTION #####
-## Begin Data EXtraction ###
-## Remove Multiple Prey Targets ########
-##Get Number oF Records per Prey
-tblPreyRecord <-table(datRenderHuntEvent$PreyID) 
-if (NROW(tblPreyRecord) > 1)
-  warning("Multiple Prey Items Tracked In Hunt Episode-Selecting Longest Track")
-
-##Check If Assigned OtherWise Automatically Select the longest Track
-if (is.na(datTrackedEventsRegister[idxH,]$PreyIDTarget)) 
+for (idxH in 1:NROW(datTrackedEventsRegister))
 {
-  selectedPreyID <- as.numeric(names(which(tblPreyRecord == max(tblPreyRecord))))
-  datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
-}
+  
+  expID <- datTrackedEventsRegister[idxH,]$expID
+  trackID<- datTrackedEventsRegister[idxH,]$trackID
+  eventID <- datTrackedEventsRegister[idxH,]$eventID
+  groupID <- datTrackedEventsRegister[idxH,]$groupID
+  selectedPreyID <- datTrackedEventsRegister[idxH,]$PreyIDTarget
+  
+  message(paste(idxH, ".Process Hunt Event Expid:",expID,"Event:",eventID))
+  
+  datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
+                                                 & datHuntEventMergedFrames$trackID==trackID 
+                                                 & datHuntEventMergedFrames$eventID==eventID,]
+  
+  strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",eventID,"_track",trackID,sep="" )
+  #dir.create(strFolderName )
+  ##Remove NAs
 
-#selectedPreyID <- 5 ##Can Modify Target Here
-##Add PreyTarget ID To Register Save The Prey Target To Register
-if (!any(names(datTrackedEventsRegister) == "PreyIDTarget"))
-  datTrackedEventsRegister$PreyIDTarget <- NA
+  lMax <- 55
+  lMin <- -20
+  #spectrum(datRenderHuntEvent$LEyeAngle)
+  datRenderHuntEvent$LEyeAngle <- clipEyeRange(datRenderHuntEvent$LEyeAngle,lMin,lMax)
+  datRenderHuntEvent$LEyeAngle <-medianf(datRenderHuntEvent$LEyeAngle,nEyeFilterWidth)
+  datRenderHuntEvent$LEyeAngle[is.na(datRenderHuntEvent$LEyeAngle)] <- 0
+  datRenderHuntEvent$LEyeAngle <-filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle) # filtfilt(bf_eyes, medianf(datRenderHuntEvent$LEyeAngle,nFrWidth)) #meanf(datHuntEventMergedFrames$LEyeAngle,20)
+  
+  #X11()
+  #lines(medianf(datRenderHuntEvent$LEyeAngle,nFrWidth),col='red')
+  #lines(datRenderHuntEvent$LEyeAngle,type='l',col='blue')
+  ##Replace Tracking Errors (Values set to 180) with previous last known value
+  
+  lMax <- 15
+  lMin <- -50
+  datRenderHuntEvent$REyeAngle <- clipEyeRange(datRenderHuntEvent$REyeAngle,lMin,lMax)
+  datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nEyeFilterWidth)
+  datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
+  datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
+  #datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
+  
+  
+  
+  lMax <- +50
+  lMin <- -50
+  datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_7,lMin,lMax) )
+  datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_6,lMin,lMax) )
+  datRenderHuntEvent$DThetaSpine_5 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_5,lMin,lMax) )
+  datRenderHuntEvent$DThetaSpine_4 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_4,lMin,lMax))
+  datRenderHuntEvent$DThetaSpine_3 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_3,lMin,lMax))
+  datRenderHuntEvent$DThetaSpine_2 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_2,lMin,lMax))
+  datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_1,lMin,lMax))
+  
+  rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
+  r <- c(rfc(8),"#FF0000");
+  
+  
+  
+  ## PLAYBACK ####
+  #        renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+  ########################
+  
+  ############ PREY SELECTION #####
+  ## Begin Data EXtraction ###
+  ## Remove Multiple Prey Targets ########
+  ##Get Number oF Records per Prey
+  tblPreyRecord <-table(datRenderHuntEvent$PreyID) 
+  if (NROW(tblPreyRecord) > 1)
+    warning("Multiple Prey Items Tracked In Hunt Episode-Selecting Longest Track")
+  
+  
+  ##Add PreyTarget ID To Register Save The Prey Target To Register
+  if (!any(names(datTrackedEventsRegister) == "PreyIDTarget"))
+    datTrackedEventsRegister$PreyIDTarget <- NA
 
-##Save The Selected Prey Item
-if (selectedPreyID != datTrackedEventsRegister[idxH,]$PreyIDTarget)
-{
-  message(paste("Targeted Prey Changed For Hunt Event to ID:",selectedPreyID," - Updating Register...") )
-  datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
-  save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
-}
-################ END OF PREY SELECT / Start Processing ###
+  #selectedPreyID <- max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
+  ##Check If Assigned OtherWise Automatically Select the longest Track
+  if (is.na(datTrackedEventsRegister[idxH,]$PreyIDTarget)) 
+  {
+    selectedPreyID <-  max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
+    datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
+    save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
+  }
+  
+  #
+  ##Save The Selected Prey Item
+  if (selectedPreyID != datTrackedEventsRegister[idxH,]$PreyIDTarget)
+  {
+    message(paste("Targeted Prey Changed For Hunt Event to ID:",selectedPreyID," - Updating Register...") )
+    datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
+    save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
+  }
+  ################ END OF PREY SELECT / Start Processing ###
+  
+  
+  ##Select Prey Specific Subset
+  datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$PreyID == selectedPreyID,] 
+  
+  
+  #### PROCESS BOUTS ###
+  vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
+  vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
+  vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
+  #nNumberOfBouts       <- 
+  dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
+  dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
+  vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+  #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
+  vDistToPrey          <- meanf(sqrt( (datRenderHuntEvent$Prey_X -datRenderHuntEvent$posX )^2 + (datRenderHuntEvent$Prey_Y -datRenderHuntEvent$posY)^2   ),3)
+  vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
+  
+  #speed_Smoothed <- meanf(vEventSpeed,10)
+  ##Replace NA with 0s
+  vEventSpeed[is.na(vEventSpeed)] = 0
+  vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
+  vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+  vEventPathLength <- cumsum(vEventSpeed_smooth)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
+  
+  MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
+  
+  ##Distance To PRey
+  vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth)
+  lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed)
+  rows <- NROW(lMotionBoutDat[[idxH]])
+  lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = rep(idxH,rows),expID=rep(expID,rows),eventID=rep(eventID,rows),groupID=rep(as.character(groupID),rows))
+}  
 
-
-##Select Prey Specific Subset
-datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$PreyID == selectedPreyID,] 
-
-
-#### PROCESS BOUTS ###
-vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
-vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
-vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
-#nNumberOfBouts       <- 
-dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
-dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
-vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
-#vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
-vDistToPrey          <- meanf(sqrt( (datRenderHuntEvent$Prey_X -datRenderHuntEvent$posX )^2 + (datRenderHuntEvent$Prey_Y -datRenderHuntEvent$posY)^2   ),3)
-vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
-
-#speed_Smoothed <- meanf(vEventSpeed,10)
-##Replace NA with 0s
-vEventSpeed[is.na(vEventSpeed)] = 0
-vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
-vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
-vEventPathLength <- cumsum(vEventSpeed_smooth)
-MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
-
-MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
-
-##Distance To PRey
-vDistToPrey_Fixed <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth)
-datEpisodeMotionBout <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed)
-
-
+datEpisodeMotionBout <- lMotionBoutDat[[1]]
 ##On Bout Lengths
 ##Where t=0 is the capture bout, -1 -2 are the steps leading to it
 
@@ -192,6 +197,9 @@ plot(datEpisodeMotionBout[,"vMotionBoutDistanceTravelled_mm"],
      col="red",main="Bout Power",pch=16) ##Take Every Bout Length
 
 
+X11()
+plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-60,60),main="Eye Motion ")
+lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magenta")
 
 ## Plot The Start Stop Motion Bout Binarized Data
 #X11()
@@ -254,5 +262,23 @@ dev.off()
 
 
 
+datMotionBoutCombined <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+ 
+X11()
+plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
+boxplot(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm ~ datMotionBoutCombined$boutRank,main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
+
+X11()
+plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main="Distance Of Bout (power)",ylab="mm")
+boxplot(datMotionBoutCombined$vMotionBoutDistanceTravelled_mm ~ datMotionBoutCombined$boutRank,main="Distance Of Bout (power)",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
+
+
+X11()
+plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDuration,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+boxplot(datMotionBoutCombined$vMotionBoutDuration ~ datMotionBoutCombined$boutRank,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+
+X11()
+plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutIBI,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
 # for (i in 1:20) dev.off()
 
