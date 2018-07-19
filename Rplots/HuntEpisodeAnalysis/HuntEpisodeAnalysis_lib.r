@@ -13,7 +13,7 @@ citation("mclust")
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectMotionBouts <- function(vEventSpeed)
 {
-  prior_factor2 <- 0.05 ## Adds a prior shift in the threshold Of Classification
+  prior_factor2 <- 0.90 ## Adds a prior shift in the threshold Of Classification
   prior_factor1 <- 1.0 ## Adds a prior shift in the threshold Of Classification 
   colClass <- c("#FF0000","#00FF22","#0000FF")
   
@@ -22,7 +22,7 @@ detectMotionBouts <- function(vEventSpeed)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(vEventSpeed ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(3,8,10),shrinkage=0.05 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  fit <- Mclust(vEventSpeed ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.1,0.3,1.5),shrinkage=0.08 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
   #region <- min(NROW(t),NROW(vEventSpeed))
@@ -71,7 +71,7 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth)
 ## Identify Bout Sections and Get Data On Durations etc.
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
 ## 
-calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotRes=FALSE)
+calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,plotRes=FALSE)
 {
   MoveboutsIdx_cleaned <-MoveboutsIdx #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
   
@@ -82,14 +82,16 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotR
   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
   vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
   
-  vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
+  
   #vMotionBout_rle <- rle(vMotionBout)
   
   ##Invert Speed / And Use Peak Finding To detect Bout Edges (Troughs are Peaks in the Inverse image)
-  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/10)
-  vEventAccell_smooth_Onset <- boutEdgesIdx
-  vEventAccell_smooth_Offset <- boutEdgesIdx
-
+  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/25)
+  vEventAccell_smooth_Onset  <- boutEdgesIdx
+  vEventAccell_smooth_Offset <- c(boutEdgesIdx,NROW(vEventSpeed_smooth))
+  vMotionBout[boutEdgesIdx]  <- 0 ##Set Edges As Cut Points
+  
+  vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   #X11()
  #plot(vEventAccell_smooth, type='l', main="Unprocessed Cut Points")
  #points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
@@ -133,7 +135,9 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotR
         TDNearestBout <- -(vMotionBout_Off - vEventAccell_smooth_Offset[idxMaxEndOfBout]) ##Invert Sign so as to detect TDs preceding the end 
         ##Find Which MotionBout Idx is the The Last One
         idxDetectedLastFrameOfBout <- max(which(TDNearestBout == min(TDNearestBout[TDNearestBout>0]) )  ) ##max to pick the last one in case duplicate vMotionBout_Off values
-        vMotionBout_Off[i] <-  vMotionBout_Off[idxDetectedLastFrameOfBout] ##+ min(OffSetTD[OffSetTD > 0  ]) ##Shift |Forward To The End Of The bout
+       # vSpeedHillEdge <- vMotionBout_Off[i] + min(OffSetTD[OffSetTD > 0  ]) ##How Far  is the next Edge
+        ##Choose Closest Either The Last Detected Point Or The End/ Edge Of Speed Hill
+        vMotionBout_Off[i] <-  vMotionBout_Off[idxDetectedLastFrameOfBout] #min(vSpeedHillEdge,vMotionBout_Off[idxDetectedLastFrameOfBout]) ##+ min(OffSetTD[OffSetTD > 0  ]) ##Shift |Forward To The End Of The bout
       }
       
         vMotionBout[vMotionBout_On[i]:(vMotionBout_Off[i]) ] = 1 ##Set As Motion Frames
@@ -149,8 +153,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotR
   
   ##In Case On/Off Motion Becomes COntigious Then RLE will fail to detect it - So Make Sure Edges are there
   #vMotionBout[vMotionBout_On+1] = 1
-  #vMotionBout[vMotionBout_Off] = 0 ##Make Sure Off Remains / For Rle to Work
-  
+  vMotionBout[vMotionBout_Off] = 0 ##Make Sure Off Remains / For Rle to Work
   
   #X11()
   #plot(vEventAccell_smooth,type='l',main="Processed Cut-Points")
@@ -201,6 +204,8 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotR
 ##Make Shaded Polygons
   if (plotRes)
   {
+    
+    
     lshadedBout <- list()
     t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)
     for (i in 1:NROW(vMotionBout_Off))  
@@ -215,7 +220,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotR
     
     ##Plot Displacement and Speed(Scaled)
     X11()
-    
+    layout(matrix(c(1,2,3), 3, 1, byrow = TRUE))
     plot(t,vEventPathLength_mm,ylab="mm",xlab="msec",ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
     lines(t,vEventSpeed_smooth,type='l',col="blue")
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
@@ -233,12 +238,14 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,plotR
     text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+3,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
+    plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',xlab="msec",col="red",main="Tail Motion")
+    plot(t[1:NROW(vDistToPrey)],vDistToPrey*DIM_MMPERPX,type='l',xlab="msec",col="purple",main="Distance To Prey")
   } ##If Plot Flag Is Set 
   
   message(paste("Number oF Bouts:",NROW(datMotionBout)))
-  #dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+ # dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
   
-  #dev.off()
+#  dev.off()
   
   
   ## Plot The Start Stop Motion Bout Binarized Data

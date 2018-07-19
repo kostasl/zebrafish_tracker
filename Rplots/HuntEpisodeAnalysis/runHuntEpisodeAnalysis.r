@@ -35,9 +35,9 @@ load(strDataFileName)
 
 ## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
-bf_tail <- butter(1, 0.2,type="low");
+bf_tail <- butter(1, c(0.01,0.8),type="pass"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
-bf_speed <- butter(4, 0.05,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
+bf_speed <- butter(4, 0.2,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
@@ -46,7 +46,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 1:NROW(datTrackedEventsRegister))
+for (idxH in 20:20)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -165,10 +165,17 @@ for (idxH in 1:NROW(datTrackedEventsRegister))
   MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
   
   MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
+  ## Tail Motion ##
+
+  vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
+  vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
+  vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
+  
   
   ##Distance To PRey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth)
-  lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed)
+  lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed,vTailDispFilt,plotRes = TRUE)
+  
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
 }  
@@ -213,10 +220,6 @@ lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magen
 ## ## Tail Curvature 
 ##Filter The Noise 
 #when apply twice with filtfilt, #results in a 0 phase shift  : W * (Fs/2) == half-amplitude cut-off when combined with filtfilt
-
-vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
-vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
-vTailDispFilt <- filtfilt(bf_tail, vTailDisp)
 
 #X11()
 #layout(matrix(c(1,2), 2, 1, byrow = TRUE))
