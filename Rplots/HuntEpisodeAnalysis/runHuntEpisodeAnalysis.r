@@ -35,9 +35,9 @@ load(strDataFileName)
 
 ## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
-bf_tail <- butter(1, c(0.001,0.1),type="pass");
+bf_tail <- butter(1, 0.2,type="low");
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
-bf_speed <- butter(4, 0.05,type="low");  
+bf_speed <- butter(4, 0.05,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
@@ -46,6 +46,10 @@ idxH <- 20
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
+
+PreyIDTarget <- datTrackedEventsRegister[idxH,]$PreyIDTarget
+
+
 datRenderHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
                                                & datHuntEventMergedFrames$trackID==trackID 
                                                & datHuntEventMergedFrames$eventID==eventID,]
@@ -101,9 +105,10 @@ r <- c(rfc(8),"#FF0000");
 
 
 ## PLAYBACK ####
-#   renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+#        renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
 ########################
 
+############ PREY SELECTION #####
 ## Begin Data EXtraction ###
 ## Remove Multiple Prey Targets ########
 ##Get Number oF Records per Prey
@@ -111,7 +116,25 @@ tblPreyRecord <-table(datRenderHuntEvent$PreyID)
 if (NROW(tblPreyRecord) > 1)
   warning("Multiple Prey Items Tracked In Hunt Episode-Selecting Longest Track")
 
-selectedPreyID <- as.numeric(names(which(tblPreyRecord == max(tblPreyRecord))))
+##Check If Assigned OtherWise Automatically Select the longest Track
+if (is.na(datTrackedEventsRegister[idxH,]$PreyIDTarget)) 
+  selectedPreyID <- as.numeric(names(which(tblPreyRecord == max(tblPreyRecord))))
+
+#selectedPreyID <- 5 ##Can Modify Target Here
+##Add PreyTarget ID To Register Save The Prey Target To Register
+if (!any(names(datTrackedEventsRegister) == "PreyIDTarget"))
+  datTrackedEventsRegister$PreyIDTarget <- NA
+
+##Save The Selected Prey Item
+if (selectedPreyID != datTrackedEventsRegister[idxH,]$PreyIDTarget)
+{
+  message(paste("Targeted Prey Changed For Hunt Event to ID:",selectedPreyID," - Updating Register...") )
+  datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
+  save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
+}
+################ END OF PREY SELECT / Start Processing ###
+
+
 ##Select Prey Specific Subset
 datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$PreyID == selectedPreyID,] 
 
@@ -123,7 +146,7 @@ vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2)*DIM_MMPERPX ## Pat
 #nNumberOfBouts       <- 
 dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
 dframe               <- dframe[dframe > 0]/Fs ##Clear Any possible Nan - and Convert To Time sec  
-vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
 #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
 vDistToPrey          <- meanf(sqrt( (datRenderHuntEvent$Prey_X -datRenderHuntEvent$posX )^2 + (datRenderHuntEvent$Prey_Y -datRenderHuntEvent$posY)^2   ),3)
 vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
@@ -161,7 +184,7 @@ plot(datEpisodeMotionBout[,"vMotionBoutDistanceToPrey_mm"],
      col="red",main="Bout Distance To Prey",pch=16) ##Take Every Bout Length
 
 X11()
-plot(datEpisodeMotionBout[,"vMotionBoutDistanceTravelled"],
+plot(datEpisodeMotionBout[,"vMotionBoutDistanceTravelled_mm"],
      xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,300),
      col="red",main="Bout Power",pch=16) ##Take Every Bout Length
 
