@@ -42,7 +42,7 @@ bf_speed <- butter(4, 0.05,type="low");  ##Focus On Low Fq to improve Detection 
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
 
-idxH <- 20
+idxH <- 30
 expID <- datTrackedEventsRegister[idxH,]$expID
 trackID<- datTrackedEventsRegister[idxH,]$trackID
 eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -118,7 +118,10 @@ if (NROW(tblPreyRecord) > 1)
 
 ##Check If Assigned OtherWise Automatically Select the longest Track
 if (is.na(datTrackedEventsRegister[idxH,]$PreyIDTarget)) 
+{
   selectedPreyID <- as.numeric(names(which(tblPreyRecord == max(tblPreyRecord))))
+  datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
+}
 
 #selectedPreyID <- 5 ##Can Modify Target Here
 ##Add PreyTarget ID To Register Save The Prey Target To Register
@@ -142,10 +145,10 @@ datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$PreyID == selectedPr
 #### PROCESS BOUTS ###
 vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
 vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
-vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2)*DIM_MMPERPX ## Path Length Calculated As Total Displacement
+vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
 #nNumberOfBouts       <- 
 dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
-dframe               <- dframe[dframe > 0]/Fs ##Clear Any possible Nan - and Convert To Time sec  
+dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
 vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
 #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
 vDistToPrey          <- meanf(sqrt( (datRenderHuntEvent$Prey_X -datRenderHuntEvent$posX )^2 + (datRenderHuntEvent$Prey_Y -datRenderHuntEvent$posY)^2   ),3)
@@ -180,12 +183,12 @@ legend(1,400,c("Motion","Pause" ),col=c("red","blue"),pch=c(16,21) )
 
 X11()
 plot(datEpisodeMotionBout[,"vMotionBoutDistanceToPrey_mm"],
-     xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,5),
+     xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,3),
      col="red",main="Bout Distance To Prey",pch=16) ##Take Every Bout Length
 
 X11()
 plot(datEpisodeMotionBout[,"vMotionBoutDistanceTravelled_mm"],
-     xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,300),
+     xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,2),
      col="red",main="Bout Power",pch=16) ##Take Every Bout Length
 
 

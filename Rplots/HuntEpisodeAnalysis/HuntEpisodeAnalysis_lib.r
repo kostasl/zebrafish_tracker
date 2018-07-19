@@ -176,13 +176,13 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   vMotionBout_Off <- which(vMotionBout_OnOffDetect == -1)+1
   vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,2,-2 )]/Fs
   
-  
+  vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
   boutSeq <- seq(NROW(vMotionBoutIBI),1,-1 ) 
   
   ## TODO FIx these
   vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
-  vMotionBoutDistanceTravelled_mm <- (vEventPathLength[vMotionBout_Off[1:iPairs]]-vEventPathLength[vMotionBout_On[1:iPairs]])*DIM_MMPERPX ##The Power of A Bout can be measured by distance Travelled
+  vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
   
   ##Reverse Order 
   vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
@@ -198,7 +198,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   
   #### PLOT DEBUG RESULTS ###
 ##Make Shaded Polygons
-  vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
+  
   lshadedBout <- list()
   for (i in 1:NROW(vMotionBout_Off))  
   {
@@ -211,7 +211,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey)
   }
   ##Plot Displacement and Speed(Scaled)
   X11()
-  plot(vEventPathLength_mm,ylab="mm/sec",ylim=c(-3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
+  plot(vEventPathLength_mm,ylab="mm/sec",ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
   lines(vEventSpeed_smooth,type='l',col="blue")
   #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
   points(MoveboutsIdx,vEventSpeed_smooth[MoveboutsIdx],col="black")
