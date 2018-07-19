@@ -30,6 +30,7 @@ pieChartLabelledEvents <- function(tblRes,GroupID)
   
 }
 
+##Show Results comparing Success only of Identified Hunt Events that tracked Prey
 pieChartLabelledSuccessVsFails <- function(tblRes,GroupID)
 {
   
@@ -38,8 +39,8 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID)
   DLRes=c(sum(tblRes[c(3,12),GroupID]) ,sum(tblRes[c(4,10,11),GroupID] ) ) 
   #NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
   #LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
-  
-  nLabelledDL <- sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+  ##Here We Condition on the Fact that these were Hunt Events Tracking Prey / 
+  nLabelledDL <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
   #nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
   #nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
   

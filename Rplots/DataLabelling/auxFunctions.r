@@ -18,7 +18,7 @@ strDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ##On Which To Add
 datHuntLabelledEventsTarget <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 tblResT <- table(convertToScoreLabel(datHuntLabelledEventsTarget$huntScore),datHuntLabelledEventsTarget$groupID)
 
-strDataFileName <-paste("setn-12-HuntEvents-SB-ALL_13-07-18",sep="") ##From Which To Obtain New Labelled HuntEvent records
+strDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ##From Which To Obtain New Labelled HuntEvent records
 datHuntLabelledEventsSource <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 tblResS2 <- table(convertToScoreLabel(datHuntLabelledEventsSource$huntScore),datHuntLabelledEventsSource$groupID)
 
