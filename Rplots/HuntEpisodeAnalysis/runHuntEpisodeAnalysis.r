@@ -37,7 +37,7 @@ load(strDataFileName)
 Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass <- butter(4, c(0.01,0.3),type="pass"); ##Remove DC
-bf_tailClass2 <- butter(4, 0.1,type="low"); ##Remove DC
+bf_tailClass2 <- butter(4, 0.01,type="low"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
 bf_speed <- butter(4, 0.025,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
@@ -48,7 +48,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 1:26)#NROW(datTrackedEventsRegister)
+for (idxH in 10:16)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -176,10 +176,18 @@ for (idxH in 1:26)#NROW(datTrackedEventsRegister)
   MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,vTailDispFilt)
   MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
   
-  
+  ## Detect Tail Motion Bouts
+  vTailActivity <- rep(0,NROW(vTailDispFilt))
+  vTailActivity[vTailDispFilt>5] <- 1
+  #vTailActivity[vTailDispFilt <=2] <- 0
+  X11()
+  plot(vTailDispFilt,type='l')
+  points(which(vTailActivity==1),vTailDispFilt[which(vTailActivity==1)])
+  #points(vTailActivity)
   ##Distance To PRey
   ##Length Of Vector Determines Analysis Range For Motion Bout 
-  
+  MoveboutsIdx_cleaned <- which(vTailActivity==1)
+    
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
   regionToAnalyse       <- min(which(vDistToPrey_Fixed == min(vDistToPrey_Fixed))+200,NROW(vEventSpeed_smooth)) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth,regionToAnalyse)
