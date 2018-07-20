@@ -22,7 +22,7 @@ detectMotionBouts <- function(vEventSpeed)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(vEventSpeed ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.1,0.3,1.5),shrinkage=0.08 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  fit <- Mclust(vEventSpeed ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.1,0.3,1.5),shrinkage=0.02 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
   #region <- min(NROW(t),NROW(vEventSpeed))
@@ -46,18 +46,31 @@ detectMotionBouts <- function(vEventSpeed)
 ##
 interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth)
 {
-  ##Calc Speed - And Use it To Merge The Missing Values 
-  vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
+  recLength <- NROW(vEventSpeed_smooth)
+  
+  vDistToPreyInt <- rep(NA,recLength) ##Expand Dist To Prey To Cover Whole Motion Record
+  vDistToPreyInt[1:NROW(vDistToPrey)] <-vDistToPrey ## ##Place Known Part of the vector
+  
+    ##Calc Speed - And Use it To Merge The Missing Values 
+  vSpeedToPrey         <- c(diff(vDistToPreyInt,lag=1,differences=1),NA)
+  
+  vSpeedToPrey[is.na(vSpeedToPrey)] <- vEventSpeed_smooth[is.na(vSpeedToPrey)] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
   
   ## Interpolate Missing Values from Fish Speed - Assume Fish Is moving to Prey ##
   ##Estimate Initial DIstance From Prey Onto Which We Add the integral of Speed, By Looking At Initial PreyDist and adding any fish displacemnt to this in case The initial dist Record Is NA
-  vDisplacementToPrey <- (cumsum(vSpeedToPrey[!is.na(vDistToPrey)]) ) ##But diff and integration Caused a shift
-  vDisplacementToPrey[9:(NROW(vDisplacementToPrey))] <- vDisplacementToPrey[1:(NROW(vDisplacementToPrey)-8)] ##Fix Time Shift
+  vDistToPreyInt[!is.na(vDistToPreyInt)] <- (cumsum(vSpeedToPrey[!is.na(vDistToPreyInt)]) ) ##But diff and integration Caused a shift
+  
+  vDistToPreyInt[9:(NROW(vDistToPreyInt))] <- vDistToPreyInt[1:(NROW(vDistToPreyInt)-8)] ##Fix Time Shift
   ##Compare Mean Distance Between them - Only Where Orig. PreyDist Is not NA - To obtain Integral Initial Constant (Starting Position)
-  InitDistance             <- mean(vDistToPrey[!is.na(vDistToPrey)]-vDisplacementToPrey[!is.na(vDistToPrey)],na.rm = TRUE )  ##vDistToPrey[!is.na(vDistToPrey)][1] + sum(vEventSpeed_smooth[(1:which(!is.na(vDistToPrey))[1])])
-  ##Add The Missing Speed Values From The fish Speed, Assumes Prey Remains Fixed And Fish Moves towards Prey
-  vSpeedToPrey[is.na(vSpeedToPrey)] <- -vEventSpeed_smooth[is.na(vSpeedToPrey)] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
-  vDistToPrey_Fixed <- abs(InitDistance +  vDisplacementToPrey)# (cumsum(vSpeedToPrey))) ## From Initial Distance Integrate the Displacents / need -Ve Convert To Increasing Distance
+  InitDistance             <- mean(vDistToPrey[!is.na(vDistToPrey)]-vDistToPreyInt[!is.na(vDistToPrey)],na.rm = TRUE )  ##vDistToPrey[!is.na(vDistToPrey)][1] + sum(vEventSpeed_smooth[(1:which(!is.na(vDistToPrey))[1])])
+  
+  #Add The Missing Speed Values From The fish Speed, Assumes Prey Remains Fixed And Fish Moves towards Prey
+  #SpeedToPrey[is.na(vSpeedToPrey)] <- vEventSpeed_smooth[is.na(vSpeedToPrey)] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
+
+  #vDistToPreyInt[is.na(vDistToPreyInt)] <- (cumsum(vSpeedToPrey[is.na(vDistToPreyInt)]) ) ##Add The Uknown Bit Using THE Fish's Speed and assuming the Prey Position Remains Fixed
+  vDistToPreyInt <- (cumsum(vSpeedToPrey) ) ##Add The Uknown Bit Using THE Fish's Speed and assuming the Prey Position Remains Fixed
+  
+  vDistToPrey_Fixed <- InitDistance +  vDistToPreyInt# (cumsum(vSpeedToPrey))) ## From Initial Distance Integrate the Displacents / need -Ve Convert To Increasing Distance
   
   
   #X11() ##Compare Estimated To Recorded Prey Distance
@@ -70,7 +83,7 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth)
 
 ## Identify Bout Sections and Get Data On Durations etc.
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
-## 
+## Note: Incomplete Bouts At the end of the trajectory will be discarted  
 calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,plotRes=FALSE)
 {
   MoveboutsIdx_cleaned <-MoveboutsIdx #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
@@ -86,16 +99,16 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
   #vMotionBout_rle <- rle(vMotionBout)
   
   ##Invert Speed / And Use Peak Finding To detect Bout Edges (Troughs are Peaks in the Inverse image)
-  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/25)
+  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/10)
   vEventAccell_smooth_Onset  <- boutEdgesIdx
   vEventAccell_smooth_Offset <- c(boutEdgesIdx,NROW(vEventSpeed_smooth))
   vMotionBout[boutEdgesIdx]  <- 0 ##Set Edges As Cut Points
   
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   #X11()
- #plot(vEventAccell_smooth, type='l', main="Unprocessed Cut Points")
- #points(vEventAccell_smooth_Onset,vEventAccell_smooth[vEventAccell_smooth_Onset])
- #points(vEventAccell_smooth_Offset,vEventAccell_smooth[vEventAccell_smooth_Offset],pch=6)
+ #plot(vEventSpeed_smooth, type='l', main="Unprocessed Cut Points")
+ #points(vEventAccell_smooth_Onset,vEventSpeed_smooth[vEventAccell_smooth_Onset])
+ #points(vEventAccell_smooth_Offset,vEventSpeed_smooth[vEventAccell_smooth_Offset],pch=6)
   
   
   ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change

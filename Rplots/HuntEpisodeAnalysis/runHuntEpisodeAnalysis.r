@@ -141,7 +141,7 @@ for (idxH in 20:20)#NROW(datTrackedEventsRegister)
   
   
   ##Select Prey Specific Subset
-  datRenderHuntEvent <- datRenderHuntEvent[datRenderHuntEvent$PreyID == selectedPreyID,] 
+  datRenderHuntEventVsPrey <- datRenderHuntEvent[datRenderHuntEvent$PreyID == selectedPreyID,] 
   
   
   #### PROCESS BOUTS ###
@@ -153,7 +153,7 @@ for (idxH in 20:20)#NROW(datTrackedEventsRegister)
   dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
   vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
   #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
-  vDistToPrey          <- meanf(sqrt( (datRenderHuntEvent$Prey_X -datRenderHuntEvent$posX )^2 + (datRenderHuntEvent$Prey_Y -datRenderHuntEvent$posY)^2   ),3)
+  vDistToPrey          <- meanf(sqrt( (datRenderHuntEventVsPrey$Prey_X -datRenderHuntEventVsPrey$posX )^2 + (datRenderHuntEventVsPrey$Prey_Y - datRenderHuntEventVsPrey$posY)^2   ),3)
   vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
   
   #speed_Smoothed <- meanf(vEventSpeed,10)
@@ -263,29 +263,28 @@ dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsDistance_exp",expID
 dev.off()
 ###################################################
 
+# 
+# 
+# datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+# datMotionBoutCombinedAll$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombinedAll$groupID]
+# 
+# datMotionBoutCombined <-datMotionBoutCombinedAll# datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == "DL", ]
+# X11()
+# plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
+# boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
+# 
+# X11()
+# plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main="Distance Of Bout (power)",ylab="mm")
+# boxplot(datMotionBoutCombined$vMotionBoutDistanceTravelled_mm ~ datMotionBoutCombined$boutRank,main="Distance Of Bout (power)",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
+# 
+# 
+# X11()
+# plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDuration,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+# boxplot(datMotionBoutCombined$vMotionBoutDuration ~ datMotionBoutCombined$boutRank,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+# 
+# X11()
+# plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutIBI,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+# boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+# # for (i in 1:20) dev.off()
+# 
 
-
-datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
-
-datMotionBoutCombinedAll$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombinedAll$groupID]
-
-datMotionBoutCombined <-datMotionBoutCombinedAll# datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == "DL", ]
-X11()
-plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
-boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
-
-X11()
-plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main="Distance Of Bout (power)",ylab="mm")
-boxplot(datMotionBoutCombined$vMotionBoutDistanceTravelled_mm ~ datMotionBoutCombined$boutRank,main="Distance Of Bout (power)",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
-
-
-X11()
-plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDuration,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
-boxplot(datMotionBoutCombined$vMotionBoutDuration ~ datMotionBoutCombined$boutRank,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
-
-X11()
-plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutIBI,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
-boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
-# for (i in 1:20) dev.off()
-
-RegistarIdx
