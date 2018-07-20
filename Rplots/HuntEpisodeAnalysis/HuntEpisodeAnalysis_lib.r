@@ -18,8 +18,7 @@ detectMotionBouts <- function(vEventSpeed)
   colClass <- c("#FF0000","#00FF22","#0000FF")
   
   #t <- datRenderHuntEvent$frameN
-  
-  #BIC <- mclustBIC(dEventSpeed)
+   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   fit <- Mclust(vEventSpeed ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.01,0.05,5),shrinkage=0.001 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
@@ -42,19 +41,70 @@ detectMotionBouts <- function(vEventSpeed)
   
 }
 
-## Distance To Prey Handling  -- Fixing missing Values By Interpolation Using Fish Motion##
-##
-interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth)
+
+##Clusters Fish Speed Measurements into Bout And Non Bout
+##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
+detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
 {
-  recLength <- NROW(vEventSpeed_smooth)
+  prior_factor2 <- 0.90 ## Adds a prior shift in the threshold Of Classification
+  prior_factor1 <- 1.0 ## Adds a prior shift in the threshold Of Classification 
+  colClass <- c("#FF0000","#04A022","#0000FF")
+  
+  nRec <- min(NROW(vTailDispFilt),NROW(vEventSpeed))
+  ##Fix Length Differences
+  pvEventSpeed <-  vEventSpeed_smooth[1:nRec]
+  pvTailDispFilt <-  abs(vTailDispFilt[1:nRec])
+  #t <- datRenderHuntEvent$frameN
+  
+  #X11();plot(pvEventSpeed,pvTailDispFilt,type='p')
+  
+  xy <- cbind(pvEventSpeed,pvTailDispFilt)
+  #X11();plot(pvEventSpeed,type='p')
+  #BIC <- mclustBIC(dEventSpeed)
+  
+  ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
+  fit <- Mclust(xy ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.01,0.05,5),shrinkage=0.001 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  summary(fit)
+  
+  #X11()
+  #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+  #rug(vEventSpeed)
+  
+  #X11()
+  
+  #plot(pvEventSpeed[1:nRec],type='l',col=colClass[1])
+  #points(which(boutClass == 3), pvEventSpeed[boutClass == 3],type='p',col=colClass[2])
+  
+  ##Find Which Cluster Contains the Highest Peaks
+  boutClass <- fit$classification
+  clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+  
+  boutCluster <- which(clusterActivity == max(clusterActivity))
+  #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
+  ## Add Prior Bias to Selects from Clusters To The 
+  return (which(fit$classification == boutCluster ) )
+  #return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
+  
+}
+
+## Distance To Prey Handling  -- Fixing missing Values By Interpolation Using Fish Motion##
+## Can Extend Beyond Last Frame Of Where Prey Was Last Seen , By X Frames
+interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = NA)
+{
+  if (!is.na(frameRegion))
+    recLength <- frameRegion
+  else
+    recLength <- NROW(vDistToPrey) 
+  
+  stopifnot(recLength <= NROW(vEventSpeed_smooth)) ##Check For Param Error
   
   vDistToPreyInt <- rep(NA,recLength) ##Expand Dist To Prey To Cover Whole Motion Record
-  vDistToPreyInt[1:NROW(vDistToPrey)] <-vDistToPrey ## ##Place Known Part of the vector
+  vDistToPreyInt[1:recLength] <-vDistToPrey[1:recLength] ## ##Place Known Part of the vector
   
     ##Calc Speed - And Use it To Merge The Missing Values 
   vSpeedToPrey         <- c(diff(vDistToPreyInt,lag=1,differences=1),NA)
   
-  vSpeedToPrey[is.na(vSpeedToPrey)] <- vEventSpeed_smooth[is.na(vSpeedToPrey)] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
+  vSpeedToPrey[is.na(vSpeedToPrey)] <- vEventSpeed_smooth[which(is.na(vSpeedToPrey))] ##Complete The Missing Speed Record To Prey By Using ThE fish Speed as estimate
   
   ## Interpolate Missing Values from Fish Speed - Assume Fish Is moving to Prey ##
   ##Estimate Initial DIstance From Prey Onto Which We Add the integral of Speed, By Looking At Initial PreyDist and adding any fish displacemnt to this in case The initial dist Record Is NA
@@ -99,7 +149,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
   #vMotionBout_rle <- rle(vMotionBout)
   
   ##Invert Speed / And Use Peak Finding To detect Bout Edges (Troughs are Peaks in the Inverse image)
-  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/5)
+  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/2)
   vEventAccell_smooth_Onset  <- boutEdgesIdx
   vEventAccell_smooth_Offset <- c(boutEdgesIdx,NROW(vEventSpeed_smooth))
   vMotionBout[boutEdgesIdx]  <- 0 ##Set Edges As Cut Points
