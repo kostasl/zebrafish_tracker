@@ -36,7 +36,8 @@ load(strDataFileName)
 ## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
-bf_tailClass <- butter(1, c(0.01,0.025),type="pass"); ##Remove DC
+bf_tailClass <- butter(4, c(0.01,0.5),type="pass"); ##Remove DC
+bf_tailClass2 <- butter(2, 0.05,type="low"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
 bf_speed <- butter(4, 0.025,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
@@ -47,7 +48,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 16:16)#NROW(datTrackedEventsRegister)
+for (idxH in 1:26)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -160,8 +161,9 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   ## Tail Motion ##
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
-  vTailDispFilt <- filtfilt(bf_tailClass, abs(vTailDisp)) ##Heavily Filtered and Used For Classifying Bouts
+  vTailDispFilt <- filtfilt(bf_tailClass2,abs(filtfilt(bf_tailClass, (vTailDisp) ) )) ##Heavily Filtered and Used For Classifying Bouts
   
+  #plot(vTailDispFilt,type='l')
     
   #speed_Smoothed <- meanf(vEventSpeed,10)
   ##Replace NA with 0s
@@ -178,8 +180,8 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   ##Distance To PRey
   ##Length Of Vector Determines Analysis Range For Motion Bout 
   
-  vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth)
-  regionToAnalyse       <- which(vDistToPrey_Fixed == min(vDistToPrey_Fixed))+200 ##Set To Up To The Minimum Distance From Prey
+  vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
+  regionToAnalyse       <- min(which(vDistToPrey_Fixed == min(vDistToPrey_Fixed))+200,NROW(vEventSpeed_smooth)) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth,regionToAnalyse)
   lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed,vTailDisp,plotRes = TRUE)
   
@@ -191,29 +193,29 @@ datEpisodeMotionBout <- lMotionBoutDat[[1]]
 ##On Bout Lengths
 ##Where t=0 is the capture bout, -1 -2 are the steps leading to it
 
-
-## Plot Durations of Pause/Go
-X11()
-plot(datEpisodeMotionBout[,"vMotionBoutDuration"],
-     xlab="Bout",ylab="msec",xlim=c(0,NROW(datEpisodeMotionBout) ),ylim=c(0,500),
-     col="red",main="Bout Duration",pch=16) ##Take Every Bout Length
-points(datEpisodeMotionBout[,"vMotionBoutIBI"],col="blue",pch=21) ##Take every period between / Inter Bout Interval
-legend(1,400,c("Motion","Pause" ),col=c("red","blue"),pch=c(16,21) )
-
-X11()
-plot(datEpisodeMotionBout[,"vMotionBoutDistanceToPrey_mm"],
-     xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,3),
-     col="red",main="Bout Distance To Prey",pch=16) ##Take Every Bout Length
-
-X11()
-plot(datEpisodeMotionBout[,"vMotionBoutDistanceTravelled_mm"],
-     xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,2),
-     col="red",main="Bout Power",pch=16) ##Take Every Bout Length
-
-
-X11()
-plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-60,60),main="Eye Motion ")
-lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magenta")
+# 
+# ## Plot Durations of Pause/Go
+# X11()
+# plot(datEpisodeMotionBout[,"vMotionBoutDuration"],
+#      xlab="Bout",ylab="msec",xlim=c(0,NROW(datEpisodeMotionBout) ),ylim=c(0,500),
+#      col="red",main="Bout Duration",pch=16) ##Take Every Bout Length
+# points(datEpisodeMotionBout[,"vMotionBoutIBI"],col="blue",pch=21) ##Take every period between / Inter Bout Interval
+# legend(1,400,c("Motion","Pause" ),col=c("red","blue"),pch=c(16,21) )
+# 
+# X11()
+# plot(datEpisodeMotionBout[,"vMotionBoutDistanceToPrey_mm"],
+#      xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,3),
+#      col="red",main="Bout Distance To Prey",pch=16) ##Take Every Bout Length
+# 
+# X11()
+# plot(datEpisodeMotionBout[,"vMotionBoutDistanceTravelled_mm"],
+#      xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,2),
+#      col="red",main="Bout Power",pch=16) ##Take Every Bout Length
+# 
+# 
+# X11()
+# plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-60,60),main="Eye Motion ")
+# lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magenta")
 
 ## Plot The Start Stop Motion Bout Binarized Data
 #X11()
@@ -255,43 +257,45 @@ lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magen
 #lines(datRenderHuntEvent$DThetaSpine_7,type='l',col=r[7])
 
 
+# 
+# ###########  Plot Polar Angle to Prey ##############
+# X11()
+# plot.new()
+# polarPlotAngleToPrey(datRenderHuntEvent)
+# dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsTime_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+# dev.off()
+# 
+# X11()
+# plot.new()
+# polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
+# dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsDistance_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+# dev.off()
+# ###################################################
 
-###########  Plot Polar Angle to Prey ##############
+
+
+datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+#datMotionBoutCombinedAll$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombinedAll$groupID]
+datMotionBoutCombined <-datMotionBoutCombinedAll#
+#datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == "DL", ] 
+
 X11()
-plot.new()
-polarPlotAngleToPrey(datRenderHuntEvent)
-dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsTime_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
-dev.off()
+plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
+boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
 
 X11()
-plot.new()
-polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
-dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsDistance_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
-dev.off()
-###################################################
+plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main="Distance Of Bout (power)",ylab="mm")
+boxplot(datMotionBoutCombined$vMotionBoutDistanceTravelled_mm ~
+datMotionBoutCombined$boutRank,main="Distance Of Bout (power)",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
 
-# 
-# 
-# datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
-# datMotionBoutCombinedAll$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombinedAll$groupID]
-# 
-# datMotionBoutCombined <-datMotionBoutCombinedAll# datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == "DL", ]
-# X11()
-# plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
-# boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
-# 
-# X11()
-# plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main="Distance Of Bout (power)",ylab="mm")
-# boxplot(datMotionBoutCombined$vMotionBoutDistanceTravelled_mm ~ datMotionBoutCombined$boutRank,main="Distance Of Bout (power)",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
-# 
-# 
-# X11()
-# plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDuration,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
-# boxplot(datMotionBoutCombined$vMotionBoutDuration ~ datMotionBoutCombined$boutRank,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
-# 
-# X11()
-# plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutIBI,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
-# boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
-# # for (i in 1:20) dev.off()
-# 
+
+X11()
+plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDuration,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+boxplot(datMotionBoutCombined$vMotionBoutDuration ~ datMotionBoutCombined$boutRank,main=" Bout Duration",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)")
+
+X11()
+plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutIBI,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture -Backwards)")
+boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)") 
+# for (i in1:20) #dev.off()
+
 

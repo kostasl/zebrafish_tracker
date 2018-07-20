@@ -63,12 +63,13 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(xy ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.01,0.05,5),shrinkage=0.001 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  fit <- Mclust(xy ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.1,1),c(0.3,5),c(0.4,15)),shrinkage=0.1 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
   #X11()
   #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  #rug(vEventSpeed)
+  #rug(xy)
   
   #X11()
   
@@ -78,6 +79,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   ##Find Which Cluster Contains the Highest Peaks
   boutClass <- fit$classification
   clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+  #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
   
   boutCluster <- which(clusterActivity == max(clusterActivity))
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
@@ -149,7 +151,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
   #vMotionBout_rle <- rle(vMotionBout)
   
   ##Invert Speed / And Use Peak Finding To detect Bout Edges (Troughs are Peaks in the Inverse image)
-  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/2)
+  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/5)
   vEventAccell_smooth_Onset  <- boutEdgesIdx
   vEventAccell_smooth_Offset <- c(boutEdgesIdx,NROW(vEventSpeed_smooth))
   vMotionBout[boutEdgesIdx]  <- 0 ##Set Edges As Cut Points
@@ -187,7 +189,13 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
       ##Shift To Correct Onset Of Speed Increase / Denoting Where Bout Actually Began ##FIX ONSETS 
         ###Leave Out For Now
        if (NROW( (OnSetTD[OnSetTD > 0  ]) )>0) ##If Start Of Accellaration For this Bout Can Be Found / Fix It otherwise Leave it alone
-        vMotionBout_On[i] <-  vMotionBout_On[i] - min(OnSetTD[OnSetTD > 0  ]) 
+       {
+        idxMinStartOfBout <- which(OnSetTD == min(OnSetTD[OnSetTD > 0  ]))
+        TDNearestBout <- (vMotionBout_On - vEventAccell_smooth_Onset[idxMinStartOfBout]) ##Invert Sign so as to detect TDs preceding the end 
+        idxDetectedFirstFrameOfBout <- max(which(TDNearestBout == min(TDNearestBout[TDNearestBout>0]) )  ) ##max to pick the last one in case duplicate vMotionBout_Off values
+        #vMotionBout_On[i] <-  vMotionBout_On[i] - min(OnSetTD[OnSetTD > 0  ])
+        vMotionBout_On[i] <-  vMotionBout_On[idxDetectedFirstFrameOfBout]
+       }
       
       ##FIX OFFSET to The Last MotionBoutIdx Detected Before the next BoutStart (where Decellaration Ends and A new One Begins)
       OffSetTD <- vEventAccell_smooth_Offset[!is.na(vEventAccell_smooth_Offset)] - vMotionBout_Off[i]  
@@ -282,6 +290,8 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
     }
     
     ##Plot Displacement and Speed(Scaled)
+    vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
+                              
     X11()
     layout(matrix(c(1,2,3), 3, 1, byrow = TRUE))
     plot(t,vEventPathLength_mm,ylab="mm",xlab="msec",ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
@@ -302,6 +312,8 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
     plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',xlab="msec",col="red",main="Tail Motion")
+    lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black" )
+    
     plot(t[1:NROW(vDistToPrey)],vDistToPrey*DIM_MMPERPX,type='l',xlab="msec",col="purple",main="Distance To Prey")
   } ##If Plot Flag Is Set 
   
