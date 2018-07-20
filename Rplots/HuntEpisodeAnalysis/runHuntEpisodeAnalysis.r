@@ -36,8 +36,8 @@ load(strDataFileName)
 ## Setup Filters ## Can Check Bands with freqz(bf_speed)
 Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
-bf_tailClass <- butter(4, c(0.01,0.5),type="pass"); ##Remove DC
-bf_tailClass2 <- butter(2, 0.05,type="low"); ##Remove DC
+bf_tailClass <- butter(4, c(0.01,0.3),type="pass"); ##Remove DC
+bf_tailClass2 <- butter(4, 0.1,type="low"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
 bf_speed <- butter(4, 0.025,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
