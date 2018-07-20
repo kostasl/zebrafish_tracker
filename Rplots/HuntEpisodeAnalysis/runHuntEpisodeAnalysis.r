@@ -173,7 +173,7 @@ for (idxH in 1:26)#NROW(datTrackedEventsRegister)
   vEventPathLength <- cumsum(vEventSpeed_smooth)
   
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
-  MoveboutsIdx <- detectMotionBouts2(vEventSpeed,vTailDispFilt)
+  MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,vTailDispFilt)
   MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
   
   
