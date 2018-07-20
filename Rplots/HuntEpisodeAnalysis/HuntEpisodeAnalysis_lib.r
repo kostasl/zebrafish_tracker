@@ -22,7 +22,7 @@ detectMotionBouts <- function(vEventSpeed)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(vEventSpeed ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.1,0.3,1.5),shrinkage=0.02 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  fit <- Mclust(vEventSpeed ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.01,0.05,5),shrinkage=0.001 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
   #region <- min(NROW(t),NROW(vEventSpeed))
@@ -99,7 +99,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
   #vMotionBout_rle <- rle(vMotionBout)
   
   ##Invert Speed / And Use Peak Finding To detect Bout Edges (Troughs are Peaks in the Inverse image)
-  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/10)
+  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/5)
   vEventAccell_smooth_Onset  <- boutEdgesIdx
   vEventAccell_smooth_Offset <- c(boutEdgesIdx,NROW(vEventSpeed_smooth))
   vMotionBout[boutEdgesIdx]  <- 0 ##Set Edges As Cut Points
@@ -217,7 +217,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
 ##Make Shaded Polygons
   if (plotRes)
   {
-    
+    vEventSpeed_smooth <- vEventSpeed_smooth*5
     
     lshadedBout <- list()
     t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)

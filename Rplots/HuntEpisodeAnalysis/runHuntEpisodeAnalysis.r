@@ -37,7 +37,7 @@ load(strDataFileName)
 Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.01,0.8),type="pass"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
-bf_speed <- butter(4, 0.2,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
+bf_speed <- butter(4, 0.025,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
