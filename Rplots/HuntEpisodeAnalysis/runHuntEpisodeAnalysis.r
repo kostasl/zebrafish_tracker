@@ -14,6 +14,8 @@ library(signal)
 library(MASS)
 library(mclust,quietly = TRUE)
 
+require(Rwave)
+
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
@@ -174,9 +176,9 @@ for (idxH in 26:26)#NROW(datTrackedEventsRegister)
   plot(spy~spx,xlab="frequency",ylab="spectral density",type='l',xlim=c(0,60) ) 
   dev.off()
   
-  require(Rwave)
-  require(lattice)
-  require(raster)
+ 
+  #require(lattice)
+  #require(raster)
   #source("mk.cwt.r")
   #tmp<-mk.cwt(w,noctave = floor(log2(length(w)))-1,nvoice=10)
   X11()
@@ -190,7 +192,7 @@ for (idxH in 26:26)#NROW(datTrackedEventsRegister)
   #w= w + sin(2*pi*128*t)*exp(-(t-.55)^2/.001)
   #w= w + sin(2*pi*64*t)*exp(-(t-.75)^2/.001)
   #w = ts(w,deltat=1/Fs)
-  #plot(w,type='l')
+  plot(vTailDisp,type='l')
    
   w.cwt <- cwt(vTailDisp,noctave=nOctaves,nvoice=nVoices,plot=TRUE,twoD=TRUE,w0=2*pi)
   
