@@ -37,7 +37,7 @@ load(strDataFileName)
 Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass <- butter(4, c(0.01,0.3),type="pass"); ##Remove DC
-bf_tailClass2 <- butter(4, 0.01,type="low"); ##Remove DC
+bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
 bf_speed <- butter(4, 0.025,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
@@ -48,7 +48,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 10:16)#NROW(datTrackedEventsRegister)
+for (idxH in 26:26)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -90,8 +90,8 @@ for (idxH in 10:16)#NROW(datTrackedEventsRegister)
   
   
   
-  lMax <- +55
-  lMin <- -55
+  lMax <- +75
+  lMin <- -75
   datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_7,lMin,lMax) )
   datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_6,lMin,lMax) )
   datRenderHuntEvent$DThetaSpine_5 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_5,lMin,lMax) )
@@ -162,9 +162,55 @@ for (idxH in 10:16)#NROW(datTrackedEventsRegister)
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
   vTailDispFilt <- filtfilt(bf_tailClass2,abs(filtfilt(bf_tailClass, (vTailDisp) ) )) ##Heavily Filtered and Used For Classifying Bouts
+  X11()
+  plot(vTailDispFilt,type='l')
   
-  #plot(vTailDispFilt,type='l')
-    
+  ##Plot Tail Spectral Density
+  vTailDisp.spec <- spectrum(vTailDisp,log="no",span=10,plot=FALSE,method="pgram")
+  spx <- vTailDisp.spec$freq*Fs
+  spy <- 2*vTailDisp.spec$spec #We should also multiply the spectral density by 2 so that the area under the periodogram actually equals the variance   of the time series
+  png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  
+  plot(spy~spx,xlab="frequency",ylab="spectral density",type='l',xlim=c(0,60) ) 
+  dev.off()
+  
+  require(Rwave)
+  require(lattice)
+  require(raster)
+  #source("mk.cwt.r")
+  #tmp<-mk.cwt(w,noctave = floor(log2(length(w)))-1,nvoice=10)
+  X11()
+  nVoices <- 10
+  nOctaves <- 8
+  a0 <- 2^(1/nVoices)
+  
+  ##Sample Input Signal
+  #t = seq(0,1,len=Fs)
+  #w = 2 * sin(2*pi*16*t)*exp(-(t-.25)^2/.001)
+  #w= w + sin(2*pi*128*t)*exp(-(t-.55)^2/.001)
+  #w= w + sin(2*pi*64*t)*exp(-(t-.75)^2/.001)
+  #w = ts(w,deltat=1/Fs)
+  #plot(w,type='l')
+   
+  w.cwt <- cwt(vTailDisp,noctave=nOctaves,nvoice=nVoices,plot=TRUE,twoD=TRUE,w0=2*pi)
+  
+  #For example, assume you are using the CWT and you set your base to s0=21/12.
+  #To attach physical significance to that scale, you must multiply by the sampling interval Δt, 
+  #so a scale vector covering approximately four octaves with the sampling interval taken into account is sj0Δt    j=1,2,⋯48. 
+  #Note that the sampling interval multiplies the scales, it is not in the exponent. For discrete wavelet transforms the base scale is always 2.
+  scales <- a0^seq(to=nVoices,by=-1,from=nVoices*nOctaves)*1/Fs
+  Fa <- 1 ## Morlet Centre Frequency
+  Frq <- Fa/(scales )
+  T = cbind(scale=scales*(1/Fs), Frq, Period = 1./Frq)
+  coefSq <- Mod(w.cwt)^2
+  #X11()
+  #plot(raster((  (vTailDisp.cwt)*1/Fs ) ), )
+         #print(plot.cwt(tmp,xlab="time (units of sampling interval)"))
+  image(x=(1:NROW(coefSq)),y=Frq,z=coefSq[,NROW(Frq):1],useRaster=FALSE ,main="Frequency Content Of TailBeat",ylim=c(0,50))
+  #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
+  
+  
+  
   #speed_Smoothed <- meanf(vEventSpeed,10)
   ##Replace NA with 0s
   vEventSpeed[is.na(vEventSpeed)] = 0

@@ -8,6 +8,24 @@ library(mclust,quietly = TRUE)
 
 citation("mclust")
 
+## \param Fc Centre Frequency For Wavelet Function (ie morlet)
+#//DELTA: sampling period
+#Returns F: corresponding frequencies for the given scales
+scal2frq <- function(X,Fc,DELTA)
+{
+  #//wname: wavelet function name
+  
+
+  #//Description
+  #//Scales to Frequencies
+  #//Examples
+  #// // Set sampling period and wavelet name.
+  #// delta = 0.1; wname = 'coif3';
+  #// // Define scales.
+  F <- Fc/(X*DELTA)
+  return()
+}
+
 
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
