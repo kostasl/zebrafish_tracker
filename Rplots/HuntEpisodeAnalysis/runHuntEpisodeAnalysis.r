@@ -50,7 +50,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 16:16)#NROW(datTrackedEventsRegister)
+for (idxH in 20:20)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -164,20 +164,18 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
   vTailDispFilt <- filtfilt(bf_tailClass2,abs(filtfilt(bf_tailClass, (vTailDisp) ) )) ##Heavily Filtered and Used For Classifying Bouts
-  X11()
-  plot((1000*1:NROW(coefSq)/Fs),vTailDisp,type='l')
+
+  
+  #X11()
+  #plot((1000*1:NROW(vTailDisp)/Fs),vTailDisp,type='l')
   
   ##Plot Tail Spectral Density
-  png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  png(filename=paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
   plotTailSpectrum(vTailDisp)
-  
   dev.off()
   
   #tmp<-mk.cwt(w,noctave = floor(log2(length(w)))-1,nvoice=10)
   
-
- 
-
   #speed_Smoothed <- meanf(vEventSpeed,10)
   ##Replace NA with 0s
   vEventSpeed[is.na(vEventSpeed)] = 0
@@ -194,7 +192,7 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   #plot(vTailDisp,type='l')
   ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
   # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
-  lwlt <- getPowerSpectrumInTime(wT,Fs)
+  lwlt <- getPowerSpectrumInTime(vTailDisp,Fs)
   
   
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
@@ -206,21 +204,32 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   vTailActivity <- rep(0,NROW(vTailDispFilt))
   vTailActivity[vTailDispFilt>5] <- 1
   #vTailActivity[vTailDispFilt <=2] <- 0
-  X11()
-  plot(vTailDispFilt,type='l')
-  points(which(vTailActivity==1),vTailDispFilt[which(vTailActivity==1)])
+  
+  
+  #  plot(vTailDispFilt,type='l')
+  #  points(which(vTailActivity==1),vTailDispFilt[which(vTailActivity==1)])
+  
   #points(vTailActivity)
   ##Distance To PRey
   ##Length Of Vector Determines Analysis Range For Motion Bout 
   #MoveboutsIdx_cleaned <- which(vTailActivity==1)
 
   ###PLot Event Detection Summary
+  #
+  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),paper = "a4" );
   X11()
-  layout(matrix(c(1,2,3,4), 4, 1, byrow = TRUE))
-  
+  layout(matrix(c(1,2,3,4,5), 5, 1, byrow = TRUE))
+    
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vTailDisp,regionToAnalyse,plotRes = TRUE)
+    plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
     plotTailPowerSpectrumInTime(lwlt)
-  
+    t <- seq(1:NROW(vDistToPrey_Fixed_FullRange))/(Fs/1000) ##Time Vector
+    plot(t,vDistToPrey_Fixed_FullRange*DIM_MMPERPX,type='l',
+         xlab="(msec)",
+         ylab="(mm)",
+         col="purple",main="Distance To Prey")
+    
+  #dev.off()
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
 } ###END OF EACH Hunt Episode Loop 

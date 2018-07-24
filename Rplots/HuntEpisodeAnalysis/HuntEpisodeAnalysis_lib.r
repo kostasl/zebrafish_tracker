@@ -57,13 +57,13 @@ getPowerSpectrumInTime <- function(w,Fs)
   w.coefSq <- Mod(w.cwt)^2 #Power
   
   ###Make Vector Of Maximum Power-Fq Per Time Unit
-  vFqMed <- rep(0,NROW(coefSq))
-  for (i in 1:NROW(coefSq) )
+  vFqMed <- rep(0,NROW(w.coefSq))
+  for (i in 1:NROW(w.coefSq) )
   {
-    idxDomFq <- which(coefSq[i,NROW(Frq):1] == max(coefSq[i,NROW(Frq):1]))
+    idxDomFq <- which(w.coefSq[i,NROW(Frq):1] == max(w.coefSq[i,NROW(Frq):1]))
     vFqMed[i] <-Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
-  #X11();plot(vFqMed,type='l',ylim=c(0,70))
+  #X11();
   
   w.FqMod <-vFqMed #
   
@@ -190,7 +190,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
 interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = NA)
 {
   if (!is.na(frameRegion))
-    recLength <- frameRegion
+    recLength <- NROW(frameRegion)
   else
     recLength <- NROW(vDistToPrey) 
   
@@ -390,7 +390,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
     vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
                               
     plot(t,vEventPathLength_mm,ylab="mm",
-         #xlab="msec",
+         xlab="msec",
          ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
     lines(t,vEventSpeed_smooth,type='l',col="blue")
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
@@ -409,13 +409,10 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
     plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
-         #xlab="msec",
+         xlab="msec",
          col="red",main="Tail Motion")
     lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black" )
     
-    plot(t[1:NROW(vDistToPrey)],vDistToPrey*DIM_MMPERPX,type='l',
-         #xlab="msec",
-         col="purple",main="Distance To Prey")
   } ##If Plot Flag Is Set 
   
   message(paste("Number oF Bouts:",NROW(datMotionBout)))

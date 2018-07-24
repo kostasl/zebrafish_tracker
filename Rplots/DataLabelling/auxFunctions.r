@@ -50,6 +50,20 @@ saveRDS(datHuntLabelledEvents,file=paste(strDatDir,"/LabelledSet/",strOutDataFil
 ####### #############################
 #######
 
-
+###Use it To Locate One Of the Detail Retracked HuntEvents In the Labelled Group
+findLabelledEvent(EventRegisterRec)
+{
+  strDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ##On Which To Add To
+  datLabelledHuntEventAllGroups <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
+  
+  
+  
+  recs<- datLabelledHuntEventAllGroups[as.character(datLabelledHuntEventAllGroups$groupID) == as.character(EventRegisterRec$groupID) &
+                                  as.character(datLabelledHuntEventAllGroups$eventID) == as.character(EventRegisterRec$eventID) &
+                                  as.character(datLabelledHuntEventAllGroups$expID) == as.character(EventRegisterRec$expID)
+                                ,]
+  
+  row.names(recs)
+}
 
 
