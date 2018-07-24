@@ -42,6 +42,13 @@ plotTailSpectrum <- function(w)
 ## modal Frequencies (w.FqMod) used to detect tail beat frequency
 getPowerSpectrumInTime <- function(w,Fs)
 {
+  ##Can Test Wavelet With Artificial Signal Sample Input Signal
+  #t = seq(0,1,len=Fs)
+  #w = 2 * sin(2*pi*16*t)*exp(-(t-.25)^2/.001)
+  #w= w + sin(2*pi*128*t)*exp(-(t-.55)^2/.001)
+  #w= w + sin(2*pi*64*t)*exp(-(t-.75)^2/.001)
+  #w = ts(w,deltat=1/Fs)
+  
   w.Fs <- Fs
   w.nVoices <- 8
   w.nOctaves <- 32
@@ -84,9 +91,12 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 
   collist<-c("#053061","#2166AC","#4393C3","#92C5DE","#D1E5F0","#F7F7F7","#FDDBC7","#F4A582","#D6604D","#B2182B","#67001F")
   ColorRamp<-colorRampPalette(collist)(10000)
-  image(x=(1000*1:NROW(lwlt$cwtpower)/lwlt$Fs),y=Frq,z=lwlt$cwtpower[,NROW(Frq):1],useRaster=FALSE 
+  image(x=(1000*1:NROW(lwlt$cwtpower)/lwlt$Fs),y=Frq,z=lwlt$cwtpower[,NROW(Frq):1]
+        ,useRaster=FALSE
         ,main="Frequency Content Of TailBeat"
-        ,ylim=c(0,160)
+        ,xlab="Time (msec)"
+        ,ylab ="Beat Frequency (Hz)"
+        ,ylim=c(0,60)
         ,col=ColorRamp
   )
   #contour(coefSq,add=T)
@@ -222,9 +232,10 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = 
 ## Identify Bout Sections and Get Data On Durations etc.
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
 ## Note: Incomplete Bouts At the end of the trajectory will be discarted  
-calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,plotRes=FALSE)
+## regionToAnalyse - Sequence of Idx On Which To Obtain Bout Motion Data - Usually Set from 1st to last point of prey capture for a specific Prey Item
+calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
 {
-  MoveboutsIdx_cleaned <-MoveboutsIdx #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
+  MoveboutsIdx_cleaned <- MoveboutsIdx[MoveboutsIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
   
   meanBoutSpeed <- median(vEventSpeed_smooth[MoveboutsIdx_cleaned])
   
@@ -378,9 +389,9 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
     ##Plot Displacement and Speed(Scaled)
     vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
                               
-    X11()
-    layout(matrix(c(1,2,3), 3, 1, byrow = TRUE))
-    plot(t,vEventPathLength_mm,ylab="mm",xlab="msec",ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
+    plot(t,vEventPathLength_mm,ylab="mm",
+         #xlab="msec",
+         ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
     lines(t,vEventSpeed_smooth,type='l',col="blue")
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
     points(t[MoveboutsIdx],vEventSpeed_smooth[MoveboutsIdx],col="black")
@@ -397,10 +408,14 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
     text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+3,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
-    plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',xlab="msec",col="red",main="Tail Motion")
+    plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
+         #xlab="msec",
+         col="red",main="Tail Motion")
     lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black" )
     
-    plot(t[1:NROW(vDistToPrey)],vDistToPrey*DIM_MMPERPX,type='l',xlab="msec",col="purple",main="Distance To Prey")
+    plot(t[1:NROW(vDistToPrey)],vDistToPrey*DIM_MMPERPX,type='l',
+         #xlab="msec",
+         col="purple",main="Distance To Prey")
   } ##If Plot Flag Is Set 
   
   message(paste("Number oF Bouts:",NROW(datMotionBout)))

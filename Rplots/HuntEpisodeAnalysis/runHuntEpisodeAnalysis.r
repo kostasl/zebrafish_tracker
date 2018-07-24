@@ -29,7 +29,7 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 #    for (i in 1:40) dev.off()
 
 #
-############# LOAD AND PLAYBACK OF HUNT EVENTS ####
+############# Analysis AND PLAYBACK OF HUNT EVENTS ####
 load(strDataFileName)
 ##Test  PlayBack Plot Hunt Event###  
 ##Make an Updated list of ReTracked Hunt Events that have been imported
@@ -168,65 +168,16 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   plot((1000*1:NROW(coefSq)/Fs),vTailDisp,type='l')
   
   ##Plot Tail Spectral Density
-  vTailDisp.spec <- spectrum(vTailDisp,log="no",span=10,plot=FALSE,method="pgram")
-  spx <- vTailDisp.spec$freq*Fs
-  spy <- 2*vTailDisp.spec$spec #We should also multiply the spectral density by 2 so that the area under the periodogram actually equals the variance   of the time series
-  #png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  plotTailSpectrum(vTailDisp)
   
-  plot(spy~spx,xlab="frequency",ylab="spectral density",type='l',xlim=c(0,60) ) 
-  #dev.off()
+  dev.off()
   
   #tmp<-mk.cwt(w,noctave = floor(log2(length(w)))-1,nvoice=10)
-  X11()
-  nVoices <- 8
-  nOctaves <- 32
-  a0 <- 2^(1/nVoices)
   
-  ##Sample Input Signal
-  #t = seq(0,1,len=Fs)
-  #w = 2 * sin(2*pi*16*t)*exp(-(t-.25)^2/.001)
-  #w= w + sin(2*pi*128*t)*exp(-(t-.55)^2/.001)
-  #w= w + sin(2*pi*64*t)*exp(-(t-.75)^2/.001)
-  #w = ts(w,deltat=1/Fs)
-  #plot(vTailDisp,type='l')
-  w <- vTailDisp 
-  w.spec <- spectrum(w,log="no",span=10,plot=TRUE,method="pgram")
-  spx <- w.spec$freq*Fs
-  spy <- 2*w.spec$spec #We should also multiply the spectral density by 2 so that the area under the periodogram actually equals the variance   of the time series
-  #png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
-  
-  plot(spy~spx,xlab="frequency",ylab="spectral density",type='l',xlim=c(0,60) ) 
-  
-  
-  w.cwt <- cwt(w,noctave=nOctaves,nvoice=nVoices,plot=TRUE,twoD=TRUE,w0=2*pi)
-  
+
  
-  scales <- a0^seq(to=1,by=-1,from=nVoices*nOctaves)*1/Fs
-  Fa <- 1/2 ## Morlet Centre Frequency is 1/2 when w0=2*pi
-  Frq <- Fa/(scales )
-  Frequencies = cbind(scale=scales*(1/Fs), Frq, Period = 1./Frq)
-  coefSq <- Mod(w.cwt)^2
-  #
-  #plot(raster((  (vTailDisp.cwt)*1/Fs ) ), )
-         #print(plot.cwt(tmp,xlab="time (units of sampling interval)"))
-  X11()
-  collist<-c("#053061","#2166AC","#4393C3","#92C5DE","#D1E5F0","#F7F7F7","#FDDBC7","#F4A582","#D6604D","#B2182B","#67001F")
-  ColorRamp<-colorRampPalette(collist)(10000)
-  image(x=(1000*1:NROW(coefSq)/Fs),y=Frq,z=coefSq[,NROW(Frq):1],useRaster=FALSE 
-        ,main="Frequency Content Of TailBeat"
-        ,ylim=c(0,160)
-        ,col=ColorRamp
-        )
-  #contour(coefSq,add=T)
-  #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
-  
-  vFqMed <- rep(0,NROW(coefSq))
-  for (i in 1:NROW(coefSq) )
-  {
-    idxDomFq <- which(coefSq[i,NROW(Frq):1] == max(coefSq[i,NROW(Frq):1]))
-    vFqMed[i] <-Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
-  }
-  X11();plot(vFqMed,type='l',ylim=c(0,70))
+
   #speed_Smoothed <- meanf(vEventSpeed,10)
   ##Replace NA with 0s
   vEventSpeed[is.na(vEventSpeed)] = 0
@@ -234,8 +185,21 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
   vEventPathLength <- cumsum(vEventSpeed_smooth)
   
+  
+  vDistToPrey_Fixed_FullRange      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
+  ##Find Region Of Interest For Analysis Of Bouts
+  regionToAnalyse       <-seq(1,min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange))+10,NROW(vEventSpeed_smooth))) ##Set To Up To The Minimum Distance From Prey
+  vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
+  
+  #plot(vTailDisp,type='l')
+  ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
+  # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
+  lwlt <- getPowerSpectrumInTime(wT,Fs)
+  
+  
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
-  MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,vFqMed)
+  #### Cluster Tail Motion Wtih Fish Speed - Such As to Identify Motion Bouts Idx 
+  MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,lwlt$freqMode)
   MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
   
   ## Detect Tail Motion Bouts
@@ -249,11 +213,13 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   ##Distance To PRey
   ##Length Of Vector Determines Analysis Range For Motion Bout 
   #MoveboutsIdx_cleaned <- which(vTailActivity==1)
-    
-  vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
-  regionToAnalyse       <- min(which(vDistToPrey_Fixed == min(vDistToPrey_Fixed))+200,NROW(vEventSpeed_smooth)) ##Set To Up To The Minimum Distance From Prey
-  vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey,vEventSpeed_smooth,regionToAnalyse)
-  lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed,vTailDisp,plotRes = TRUE)
+
+  ###PLot Event Detection Summary
+  X11()
+  layout(matrix(c(1,2,3,4), 4, 1, byrow = TRUE))
+  
+    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vTailDisp,regionToAnalyse,plotRes = TRUE)
+    plotTailPowerSpectrumInTime(lwlt)
   
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
