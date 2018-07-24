@@ -161,7 +161,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(xy ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.15,1),c(0.10,5)),shrinkage=0.1 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  fit <- Mclust(xy ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.15,1),c(0.5,5)),shrinkage=0.1 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
