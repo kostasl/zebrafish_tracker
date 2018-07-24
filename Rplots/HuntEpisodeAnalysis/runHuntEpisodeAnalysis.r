@@ -186,7 +186,7 @@ for (idxH in 20:20)#NROW(datTrackedEventsRegister)
   
   vDistToPrey_Fixed_FullRange      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
   ##Find Region Of Interest For Analysis Of Bouts
-  regionToAnalyse       <-seq(1,min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange))+10,NROW(vEventSpeed_smooth))) ##Set To Up To The Minimum Distance From Prey
+  regionToAnalyse       <-seq(1,min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange))+200,NROW(vEventSpeed_smooth))) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
   #plot(vTailDisp,type='l')
