@@ -50,7 +50,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 26:26)#NROW(datTrackedEventsRegister)
+for (idxH in 16:16)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -160,7 +160,7 @@ for (idxH in 26:26)#NROW(datTrackedEventsRegister)
   vDistToPrey          <- meanf(sqrt( (datRenderHuntEventVsPrey$Prey_X -datRenderHuntEventVsPrey$posX )^2 + (datRenderHuntEventVsPrey$Prey_Y - datRenderHuntEventVsPrey$posY)^2   ),3)
   vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
 
-  ## Tail Motion ##
+  ## Tail Motion ####
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
   vTailDispFilt <- filtfilt(bf_tailClass2,abs(filtfilt(bf_tailClass, (vTailDisp) ) )) ##Heavily Filtered and Used For Classifying Bouts
@@ -171,19 +171,15 @@ for (idxH in 26:26)#NROW(datTrackedEventsRegister)
   vTailDisp.spec <- spectrum(vTailDisp,log="no",span=10,plot=FALSE,method="pgram")
   spx <- vTailDisp.spec$freq*Fs
   spy <- 2*vTailDisp.spec$spec #We should also multiply the spectral density by 2 so that the area under the periodogram actually equals the variance   of the time series
-  png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  #png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
   
   plot(spy~spx,xlab="frequency",ylab="spectral density",type='l',xlim=c(0,60) ) 
-  dev.off()
+  #dev.off()
   
- 
-  #require(lattice)
-  #require(raster)
-  #source("mk.cwt.r")
   #tmp<-mk.cwt(w,noctave = floor(log2(length(w)))-1,nvoice=10)
   X11()
-  nVoices <- 10
-  nOctaves <- 8
+  nVoices <- 8
+  nOctaves <- 32
   a0 <- 2^(1/nVoices)
   
   ##Sample Input Signal
@@ -192,27 +188,41 @@ for (idxH in 26:26)#NROW(datTrackedEventsRegister)
   #w= w + sin(2*pi*128*t)*exp(-(t-.55)^2/.001)
   #w= w + sin(2*pi*64*t)*exp(-(t-.75)^2/.001)
   #w = ts(w,deltat=1/Fs)
-  plot(vTailDisp,type='l')
-   
-  w.cwt <- cwt(vTailDisp,noctave=nOctaves,nvoice=nVoices,plot=TRUE,twoD=TRUE,w0=2*pi)
+  #plot(vTailDisp,type='l')
+  w <- vTailDisp 
+  w.spec <- spectrum(w,log="no",span=10,plot=TRUE,method="pgram")
+  spx <- w.spec$freq*Fs
+  spy <- 2*w.spec$spec #We should also multiply the spectral density by 2 so that the area under the periodogram actually equals the variance   of the time series
+  #png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  
+  plot(spy~spx,xlab="frequency",ylab="spectral density",type='l',xlim=c(0,60) ) 
+  
+  
+  w.cwt <- cwt(w,noctave=nOctaves,nvoice=nVoices,plot=TRUE,twoD=TRUE,w0=2*pi)
   
   #For example, assume you are using the CWT and you set your base to s0=21/12.
   #To attach physical significance to that scale, you must multiply by the sampling interval Δt, 
   #so a scale vector covering approximately four octaves with the sampling interval taken into account is sj0Δt    j=1,2,⋯48. 
   #Note that the sampling interval multiplies the scales, it is not in the exponent. For discrete wavelet transforms the base scale is always 2.
-  scales <- a0^seq(to=nVoices,by=-1,from=nVoices*nOctaves)*1/Fs
-  Fa <- 1 ## Morlet Centre Frequency
+  scales <- a0^seq(to=1,by=-1,from=nVoices*nOctaves)*1/Fs
+  Fa <- 1/2 ## Morlet Centre Frequency is 1/2 when w0=2*pi
   Frq <- Fa/(scales )
-  T = cbind(scale=scales*(1/Fs), Frq, Period = 1./Frq)
+  Frequencies = cbind(scale=scales*(1/Fs), Frq, Period = 1./Frq)
   coefSq <- Mod(w.cwt)^2
-  #X11()
+  #
   #plot(raster((  (vTailDisp.cwt)*1/Fs ) ), )
          #print(plot.cwt(tmp,xlab="time (units of sampling interval)"))
-  image(x=(1:NROW(coefSq)),y=Frq,z=coefSq[,NROW(Frq):1],useRaster=FALSE ,main="Frequency Content Of TailBeat",ylim=c(0,50))
+  X11()
+  image(x=(1000*1:NROW(coefSq)/Fs),y=Frq,z=coefSq[,NROW(Frq):1],useRaster=FALSE ,main="Frequency Content Of TailBeat",ylim=c(0,160))
   #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
   
-  
-  
+  vFqMed <- rep(0,NROW(coefSq))
+  for (i in 1:NROW(coefSq) )
+  {
+    idxDomFq <- which(coefSq[i,NROW(Frq):1] == max(coefSq[i,NROW(Frq):1]))
+    vFqMed[i] <-Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+  }
+  X11();plot(vFqMed,type='l')
   #speed_Smoothed <- meanf(vEventSpeed,10)
   ##Replace NA with 0s
   vEventSpeed[is.na(vEventSpeed)] = 0
@@ -221,7 +231,7 @@ for (idxH in 26:26)#NROW(datTrackedEventsRegister)
   vEventPathLength <- cumsum(vEventSpeed_smooth)
   
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
-  MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,vTailDispFilt)
+  MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,vFqMed)
   MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
   
   ## Detect Tail Motion Bouts
@@ -234,7 +244,7 @@ for (idxH in 26:26)#NROW(datTrackedEventsRegister)
   #points(vTailActivity)
   ##Distance To PRey
   ##Length Of Vector Determines Analysis Range For Motion Bout 
-  MoveboutsIdx_cleaned <- which(vTailActivity==1)
+  #MoveboutsIdx_cleaned <- which(vTailActivity==1)
     
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
   regionToAnalyse       <- min(which(vDistToPrey_Fixed == min(vDistToPrey_Fixed))+200,NROW(vEventSpeed_smooth)) ##Set To Up To The Minimum Distance From Prey
@@ -243,7 +253,7 @@ for (idxH in 26:26)#NROW(datTrackedEventsRegister)
   
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
-}  
+} ###END OF EACH Hunt Episode Loop 
 
 datEpisodeMotionBout <- lMotionBoutDat[[1]]
 ##On Bout Lengths
