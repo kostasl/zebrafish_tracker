@@ -165,7 +165,7 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
   vTailDispFilt <- filtfilt(bf_tailClass2,abs(filtfilt(bf_tailClass, (vTailDisp) ) )) ##Heavily Filtered and Used For Classifying Bouts
   X11()
-  plot(vTailDispFilt,type='l')
+  plot((1000*1:NROW(coefSq)/Fs),vTailDisp,type='l')
   
   ##Plot Tail Spectral Density
   vTailDisp.spec <- spectrum(vTailDisp,log="no",span=10,plot=FALSE,method="pgram")
@@ -200,10 +200,7 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   
   w.cwt <- cwt(w,noctave=nOctaves,nvoice=nVoices,plot=TRUE,twoD=TRUE,w0=2*pi)
   
-  #For example, assume you are using the CWT and you set your base to s0=21/12.
-  #To attach physical significance to that scale, you must multiply by the sampling interval Δt, 
-  #so a scale vector covering approximately four octaves with the sampling interval taken into account is sj0Δt    j=1,2,⋯48. 
-  #Note that the sampling interval multiplies the scales, it is not in the exponent. For discrete wavelet transforms the base scale is always 2.
+ 
   scales <- a0^seq(to=1,by=-1,from=nVoices*nOctaves)*1/Fs
   Fa <- 1/2 ## Morlet Centre Frequency is 1/2 when w0=2*pi
   Frq <- Fa/(scales )
@@ -213,7 +210,14 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
   #plot(raster((  (vTailDisp.cwt)*1/Fs ) ), )
          #print(plot.cwt(tmp,xlab="time (units of sampling interval)"))
   X11()
-  image(x=(1000*1:NROW(coefSq)/Fs),y=Frq,z=coefSq[,NROW(Frq):1],useRaster=FALSE ,main="Frequency Content Of TailBeat",ylim=c(0,160))
+  collist<-c("#053061","#2166AC","#4393C3","#92C5DE","#D1E5F0","#F7F7F7","#FDDBC7","#F4A582","#D6604D","#B2182B","#67001F")
+  ColorRamp<-colorRampPalette(collist)(10000)
+  image(x=(1000*1:NROW(coefSq)/Fs),y=Frq,z=coefSq[,NROW(Frq):1],useRaster=FALSE 
+        ,main="Frequency Content Of TailBeat"
+        ,ylim=c(0,160)
+        ,col=ColorRamp
+        )
+  #contour(coefSq,add=T)
   #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
   
   vFqMed <- rep(0,NROW(coefSq))
@@ -222,7 +226,7 @@ for (idxH in 16:16)#NROW(datTrackedEventsRegister)
     idxDomFq <- which(coefSq[i,NROW(Frq):1] == max(coefSq[i,NROW(Frq):1]))
     vFqMed[i] <-Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
-  X11();plot(vFqMed,type='l')
+  X11();plot(vFqMed,type='l',ylim=c(0,70))
   #speed_Smoothed <- meanf(vEventSpeed,10)
   ##Replace NA with 0s
   vEventSpeed[is.na(vEventSpeed)] = 0

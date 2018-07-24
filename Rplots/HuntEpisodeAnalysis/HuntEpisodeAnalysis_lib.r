@@ -8,24 +8,92 @@ library(mclust,quietly = TRUE)
 
 citation("mclust")
 
-## \param Fc Centre Frequency For Wavelet Function (ie morlet)
-#//DELTA: sampling period
-#Returns F: corresponding frequencies for the given scales
-scal2frq <- function(X,Fc,DELTA)
+## 
+#Returns F: corresponding frequencies for the constracuted wavelet scales given #Octaves and Voices
+#Fc Assumes Centre Frequency For Wavelet Function (ie morlet)
+getfrqscales <- function(nVoices,nOctaves,Fs,w0)
 {
-  #//wname: wavelet function name
+  a0 <- 2^(1/nVoices)
   
+  #For example, assume you are using the CWT and you set your base to s0=21/12.
+  #To attach physical significance to that scale, you must multiply by the sampling interval Δt, 
+  #so a scale vector covering approximately four octaves with the sampling interval taken into account is sj_0 Δt j=1,2,..48. 
+  #Note that the sampling interval multiplies the scales, it is not in the exponent. For discrete wavelet transforms the base scale is always 2.
+  scales <- a0^seq(to=1,by=-1,from=nVoices*nOctaves)*1/Fs
+  Fc <- pi/w0 ## Morlet Centre Frequency is 1/2 when w0=2*pi
+  Frq <- Fa/(scales )
 
-  #//Description
-  #//Scales to Frequencies
-  #//Examples
-  #// // Set sampling period and wavelet name.
-  #// delta = 0.1; wname = 'coif3';
-  #// // Define scales.
-  F <- Fc/(X*DELTA)
-  return()
+  return(Frq)
 }
 
+plotTailSpectrum <- function(w)
+{
+  w.spec <- spectrum(w,log="no",span=10,plot=TRUE,method="pgram")
+  spx <- w.spec$freq*Fs
+  spy <- 2*w.spec$spec #We should also multiply the spectral density by 2 so that the area under the periodogram actually equals the variance   of the time series
+  #png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  
+  plot(spy~spx,xlab="frequency",ylab="spectral density",type='l',xlim=c(0,60) ) 
+}
+
+## Uses Wavelets to obtain the power Fq Spectrum of the tail beat in time
+## w input wave 
+## returns the original object w, augmented with w.cwt w.coefSq (Power) etc.
+## modal Frequencies (w.FqMod) used to detect tail beat frequency
+getPowerSpectrumInTime <- function(w,Fs)
+{
+  w.Fs <- Fs
+  w.nVoices <- 8
+  w.nOctaves <- 32
+  w.W0 <- 2*pi
+  w.cwt <- cwt(w,noctave=w.nOctaves,nvoice=w.nVoices,plot=FALSE,twoD=TRUE,w0=w.W0)
+  w.coefSq <- Mod(w.cwt)^2 #Power
+  
+  ###Make Vector Of Maximum Power-Fq Per Time Unit
+  vFqMed <- rep(0,NROW(coefSq))
+  for (i in 1:NROW(coefSq) )
+  {
+    idxDomFq <- which(coefSq[i,NROW(Frq):1] == max(coefSq[i,NROW(Frq):1]))
+    vFqMed[i] <-Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+  }
+  #X11();plot(vFqMed,type='l',ylim=c(0,70))
+  
+  w.FqMod <-vFqMed #
+  
+  return (list(wavedata=w,nVoices=w.nVoices,nOctaves=w.nOctaves ,MorletFrequency=w.W0, cwt=w.cwt,cwtpower=w.coefSq,freqMode=w.FqMod,Fs=w.Fs) )
+}
+
+
+## w <- Object containing Filtered Tail Segment motion (Usually the Delta angles of last 2 segments combined )
+##     w.cwt <- The Continuous Wavelet Transform 
+#     w.nVoices
+#     w.nOctaves
+## returns
+plotTailPowerSpectrumInTime <- function(lwlt)
+{
+  
+  #scales <- a0^seq(to=1,by=-1,from=nVoices*nOctaves)*1/Fs
+  #Fa <- 1/2 ## Morlet Centre Frequency is 1/2 when w0=2*pi
+  #Frq <- Fa/(scales )
+  #Frequencies = cbind(scale=scales*(1/Fs), Frq, Period = 1./Frq)
+  
+  Frq <- getfrqscales(lwlt$nVoices,lwlt$nOctaves,lwlt$Fs,lwlt$W0)
+  #
+  #plot(raster((  (vTailDisp.cwt)*1/Fs ) ), )
+  #print(plot.cwt(tmp,xlab="time (units of sampling interval)"))
+
+  collist<-c("#053061","#2166AC","#4393C3","#92C5DE","#D1E5F0","#F7F7F7","#FDDBC7","#F4A582","#D6604D","#B2182B","#67001F")
+  ColorRamp<-colorRampPalette(collist)(10000)
+  image(x=(1000*1:NROW(lwlt$cwtpower)/lwlt$Fs),y=Frq,z=lwlt$cwtpower[,NROW(Frq):1],useRaster=FALSE 
+        ,main="Frequency Content Of TailBeat"
+        ,ylim=c(0,160)
+        ,col=ColorRamp
+  )
+  #contour(coefSq,add=T)
+  #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
+  
+  
+}
 
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
