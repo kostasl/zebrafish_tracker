@@ -106,7 +106,7 @@ for (idxH in 15:15)#NROW(datTrackedEventsRegister)
   
   
   ## PLAYBACK ####
-  #        renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+   #       renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
   ########################
   
   ############ PREY SELECTION #####
@@ -219,9 +219,9 @@ for (idxH in 15:15)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
-  pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
-  #X11()
-  par(mar=c(4,4,0.5,0.5))
+  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  X11()
+  par(mar=c(4,4,1.5,1.5))
   
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
@@ -234,16 +234,21 @@ for (idxH in 15:15)#NROW(datTrackedEventsRegister)
          col="blue",main=" Angle Displacement")
     ##Tail Fq Mode
     #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
+    #X11()
     plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
          xlab="(msec)",
          ylab="(mm)",
-         col="purple",main="Distance To Prey")
+         col="purple",main="Distance To Prey",lwd=2,ylim=c(0,5))
+    axis(side = 2,col="purple",cex=1.2,lwd=2)
+    
     ##Add Eye Angles  ##
     par(new = T)
-    axis(side = 4)
-    mtext(side = 4, line = 3, 'Angle (Deg)')
-    lines(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],col="red")
-    lines(t,datRenderHuntEvent$LEyeAngle[1:NROW(t)],col="blue")
+    par(mar=c(4,4,2,2))
+    plot(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],axes=F,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(-50,50))
+    axis(side = 4,col="red")
+    mtext(side = 4, line = 3, 'Eye Angle (Deg)')
+    
+    lines(t,datRenderHuntEvent$LEyeAngle[1:NROW(t)],axes=F,col="blue",type='l',xlab=NA,ylab=NA)
     
     
     plotTailPowerSpectrumInTime(lwlt)
@@ -253,7 +258,7 @@ for (idxH in 15:15)#NROW(datTrackedEventsRegister)
     polarPlotAngleToPrey(datRenderHuntEvent)
     
     plotTailSpectrum(vTailDisp)
-  dev.off()
+  #dev.off()
   
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
