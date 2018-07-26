@@ -168,9 +168,9 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
-  X11()
-plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
- rug(xy)
+#  X11()
+#plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+# rug(xy)
   
   #X11()
   
@@ -201,7 +201,7 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = 
   else
     recLength <- NROW(vDistToPrey) 
   
-  stopifnot(recLength <= NROW(vEventSpeed_smooth)) ##Check For Param Error
+ # stopifnot(recLength <= NROW(vEventSpeed_smooth)) ##Check For Param Error
   
   vDistToPreyInt <- rep(NA,recLength) ##Expand Dist To Prey To Cover Whole Motion Record
   vDistToPreyInt[1:recLength] <-vDistToPrey[1:recLength] ## ##Place Known Part of the vector
@@ -270,7 +270,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
   ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
   vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
   
-  stopifnot(NROW(vMotionBout_On) > 0) ##No Bouts Detected
+ # stopifnot(NROW(vMotionBout_On) > 0) ##No Bouts Detected
   
   ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
   vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] 

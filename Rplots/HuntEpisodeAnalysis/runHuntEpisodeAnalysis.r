@@ -20,14 +20,13 @@ source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 
-
 strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
 #    for (i in 1:40) dev.off()
 
 #
-############# Analysis AND PLAYBACK OF HUNT EVENTS ####
+############# Analysis AND REPLAY OF HUNT EVENTS ####
 load(strDataFileName)
 ##Test  PlayBack Plot Hunt Event###  
 ##Make an Updated list of ReTracked Hunt Events that have been imported
@@ -47,8 +46,8 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-
-for (idxH in 19:19)#NROW(datTrackedEventsRegister)
+idTo <- NROW(datTrackedEventsRegister)
+for (idxH in 32:idTo)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -90,6 +89,7 @@ for (idxH in 19:19)#NROW(datTrackedEventsRegister)
   
   
   
+  
   lMax <- +75
   lMin <- -75
   datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_7,lMin,lMax) )
@@ -106,7 +106,7 @@ for (idxH in 19:19)#NROW(datTrackedEventsRegister)
   
   
   ## PLAYBACK ####
-   #       renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+  #       renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
   ########################
   
   ############ PREY SELECTION #####
@@ -166,7 +166,8 @@ for (idxH in 19:19)#NROW(datTrackedEventsRegister)
   ## Tail Motion ####
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
-  vTailDispFilt <- filtfilt(bf_tailClass2,abs(filtfilt(bf_tailClass, (vTailDisp) ) )) ##Heavily Filtered and Used For Classifying Bouts
+  vTailDisp <- filtfilt(bf_tailClass, (vTailDisp))
+  vTailDispFilt <- filtfilt(bf_tailClass2,abs( vTailDisp) )  ##Heavily Filtered and Used For Classifying Bouts
 
   
   #X11()
@@ -189,7 +190,10 @@ for (idxH in 19:19)#NROW(datTrackedEventsRegister)
   
   vDistToPrey_Fixed_FullRange      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
   ##Find Region Of Interest For Analysis Of Bouts
-  regionToAnalyse       <-seq(1,min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange))+200,NROW(vEventSpeed_smooth))) ##Set To Up To The Minimum Distance From Prey
+  regionToAnalyse       <-seq(1,
+                              min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
+                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+200
+                              ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
   #plot(vTailDisp,type='l')
@@ -219,8 +223,8 @@ for (idxH in 19:19)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
-  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
-  X11()
+  pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  #X11()
   par(mar=c(4,4,1.5,1.5))
   
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
@@ -247,18 +251,13 @@ for (idxH in 19:19)#NROW(datTrackedEventsRegister)
     plot(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],axes=F,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(-50,50))
     axis(side = 4,col="red")
     mtext(side = 4, line = 3, 'Eye Angle (Deg)')
-    
     lines(t,datRenderHuntEvent$LEyeAngle[1:NROW(t)],axes=F,col="blue",type='l',xlab=NA,ylab=NA)
     
-    
     plotTailPowerSpectrumInTime(lwlt)
-    
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
-    #plot.new();
     polarPlotAngleToPrey(datRenderHuntEvent)
-    
-    plotTailSpectrum(vTailDisp)
-  #dev.off()
+    plotTailSpectrum(vTailDisp)##Tail Spectrum
+  dev.off()
   
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
