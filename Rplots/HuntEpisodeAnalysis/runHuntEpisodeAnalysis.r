@@ -190,8 +190,9 @@ for (idxH in 32:idTo)#NROW(datTrackedEventsRegister)
   
   vDistToPrey_Fixed_FullRange      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
   ##Find Region Of Interest For Analysis Of Bouts
+  ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
   regionToAnalyse       <-seq(1,
-                              min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
+                              max(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
                                     max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+200
                               ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
