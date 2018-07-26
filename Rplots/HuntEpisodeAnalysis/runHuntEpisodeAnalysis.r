@@ -48,7 +48,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 16:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
+for (idxH in 15:15)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -238,6 +238,14 @@ for (idxH in 16:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
          xlab="(msec)",
          ylab="(mm)",
          col="purple",main="Distance To Prey")
+    ##Add Eye Angles  ##
+    par(new = T)
+    axis(side = 4)
+    mtext(side = 4, line = 3, 'Angle (Deg)')
+    lines(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],col="red")
+    lines(t,datRenderHuntEvent$LEyeAngle[1:NROW(t)],col="blue")
+    
+    
     plotTailPowerSpectrumInTime(lwlt)
     
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
