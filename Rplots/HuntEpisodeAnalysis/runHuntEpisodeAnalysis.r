@@ -48,7 +48,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 16:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
+for (idxH in 10:10)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -106,7 +106,7 @@ for (idxH in 16:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
   
   
   ## PLAYBACK ####
-  #        renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+          renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
   ########################
   
   ############ PREY SELECTION #####
