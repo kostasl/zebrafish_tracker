@@ -21,7 +21,7 @@ getfrqscales <- function(nVoices,nOctaves,Fs,w0)
   #Note that the sampling interval multiplies the scales, it is not in the exponent. For discrete wavelet transforms the base scale is always 2.
   scales <- a0^seq(to=1,by=-1,from=nVoices*nOctaves)*1/Fs
   Fc <- pi/w0 ## Morlet Centre Frequency is 1/2 when w0=2*pi
-  Frq <- Fa/(scales )
+  Frq <- Fc/(scales )
 
   return(Frq)
 }
@@ -55,19 +55,21 @@ getPowerSpectrumInTime <- function(w,Fs)
   w.W0 <- 2*pi
   w.cwt <- cwt(w,noctave=w.nOctaves,nvoice=w.nVoices,plot=FALSE,twoD=TRUE,w0=w.W0)
   w.coefSq <- Mod(w.cwt)^2 #Power
+
+  w.Frq <- getfrqscales(w.nVoices,w.nOctaves,w.Fs,w.W0)
   
   ###Make Vector Of Maximum Power-Fq Per Time Unit
   vFqMed <- rep(0,NROW(w.coefSq))
   for (i in 1:NROW(w.coefSq) )
   {
-    idxDomFq <- which(w.coefSq[i,NROW(Frq):1] == max(w.coefSq[i,NROW(Frq):1]))
-    vFqMed[i] <-Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+    idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
+    vFqMed[i] <- w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
   #X11();
   
   w.FqMod <-vFqMed #
   
-  return (list(wavedata=w,nVoices=w.nVoices,nOctaves=w.nOctaves ,MorletFrequency=w.W0, cwt=w.cwt,cwtpower=w.coefSq,freqMode=w.FqMod,Fs=w.Fs) )
+  return (list(wavedata=w,nVoices=w.nVoices,nOctaves=w.nOctaves ,MorletFrequency=w.W0, cwt=w.cwt,cwtpower=w.coefSq,Frq=w.Frq,freqMode=w.FqMod,Fs=w.Fs) )
 }
 
 
@@ -84,7 +86,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
   #Frq <- Fa/(scales )
   #Frequencies = cbind(scale=scales*(1/Fs), Frq, Period = 1./Frq)
   
-  Frq <- getfrqscales(lwlt$nVoices,lwlt$nOctaves,lwlt$Fs,lwlt$W0)
+  Frq <- lwlt$Frq
   #
   #plot(raster((  (vTailDisp.cwt)*1/Fs ) ), )
   #print(plot.cwt(tmp,xlab="time (units of sampling interval)"))
@@ -148,7 +150,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   
   nRec <- min(NROW(vTailDispFilt),NROW(vEventSpeed))
   ##Fix Length Differences
-  pvEventSpeed <-  vEventSpeed_smooth[1:nRec]
+  pvEventSpeed <-  vEventSpeed[1:nRec]
   pvTailDispFilt <-  abs(vTailDispFilt[1:nRec])
   #t <- datRenderHuntEvent$frameN
   
@@ -159,13 +161,14 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(xy ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.1,1),c(0.2,1),c(0.3,5)),shrinkage=0.2 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  fit <- Mclust(xy ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.15,1),c(0.5,5)),shrinkage=0.1 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+
   #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
-  #X11()
-  #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  #rug(xy)
+ # X11()
+ #  plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+ # rug(xy)
   
   #X11()
   
