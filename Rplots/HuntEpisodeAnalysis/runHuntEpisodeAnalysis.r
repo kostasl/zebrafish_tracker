@@ -46,8 +46,8 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <- NROW(datTrackedEventsRegister)
-for (idxH in 32:idTo)#NROW(datTrackedEventsRegister)
+idTo <- 44#NROW(datTrackedEventsRegister)
+for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -224,14 +224,14 @@ for (idxH in 32:idTo)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
-  pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
-  #X11()
+  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  X11()
   par(mar=c(4,4,1.5,1.5))
   
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
   
-    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vTailDisp,regionToAnalyse,plotRes = TRUE)
+    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vTailDisp,regionToAnalyse,plotRes = TRUE)
     ##Change If Fish Heading
     plot(t,vAngleDisplacement[1:NROW(t)],type='l',
          xlab="(msec)",
@@ -258,7 +258,9 @@ for (idxH in 32:idTo)#NROW(datTrackedEventsRegister)
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
     polarPlotAngleToPrey(datRenderHuntEvent)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
-  dev.off()
+  #dev.off()
+  X11()
+  plot(t,lwlt$freqMode[1:NROW(t)],type='l')
   
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
