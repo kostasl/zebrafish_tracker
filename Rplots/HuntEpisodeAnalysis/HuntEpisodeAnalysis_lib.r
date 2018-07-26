@@ -161,14 +161,16 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(xy ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.15,1),c(0.5,5)),shrinkage=0.1 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  #fit <- Mclust(xy ,G=4, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,1),c(0.1,1),c(0.01,15),c(0.3,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
 
+  fit <- Mclust(xy ,G=2, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  
   #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
- # X11()
- #  plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
- # rug(xy)
+  X11()
+plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+ rug(xy)
   
   #X11()
   
@@ -177,7 +179,9 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   
   ##Find Which Cluster Contains the Highest Peaks
   boutClass <- fit$classification
-  clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+  clusterActivity <- vector()
+  for (i in unique(boutClass))
+    clusterActivity[i] <- mean(pvEventSpeed[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
   #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
   
   boutCluster <- which(clusterActivity == max(clusterActivity))
@@ -375,7 +379,7 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
 ##Make Shaded Polygons
   if (plotRes)
   {
-    vEventSpeed_smooth <- vEventSpeed_smooth*5
+    #vEventSpeed_smooth <- vEventSpeed_smooth*5
     
     lshadedBout <- list()
     t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)
@@ -395,7 +399,12 @@ calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTail
     plot(t,vEventPathLength_mm,ylab="mm",
          xlab="msec",
          ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
-    lines(t,vEventSpeed_smooth,type='l',col="blue")
+    par(new=T) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
+    par(mar=c(4,4,2,2))
+    plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue")
+    axis(side = 4,col="blue")
+    mtext(side = 4, line = 3, 'Speed (mm/sec)')
+    
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
     points(t[MoveboutsIdx],vEventSpeed_smooth[MoveboutsIdx],col="black")
     points(t[MoveboutsIdx_cleaned],vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
