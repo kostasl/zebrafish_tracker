@@ -24,8 +24,6 @@ source("plotTrackScatterAndDensities.r")
 strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
-
-
 #    for (i in 1:40) dev.off()
 
 #
@@ -50,7 +48,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 20:25)#NROW(datTrackedEventsRegister)
+for (idxH in 20:20)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -152,10 +150,15 @@ for (idxH in 20:25)#NROW(datTrackedEventsRegister)
   vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
   vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
   vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
+  
+  vDeltaBodyAngle      <- diffPolar(datRenderHuntEvent$BodyAngle) #(  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+  vAngleDisplacement   <- cumsum(vDeltaBodyAngle)
   #nNumberOfBouts       <- 
   dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
   dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
   vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+  
+  
   #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
   vDistToPrey          <- meanf(sqrt( (datRenderHuntEventVsPrey$Prey_X -datRenderHuntEventVsPrey$posX )^2 + (datRenderHuntEventVsPrey$Prey_Y - datRenderHuntEventVsPrey$posY)^2   ),3)
   vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
@@ -216,20 +219,29 @@ for (idxH in 20:25)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
-  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),paper = "a4" );
+  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),paper = "a4",onefile = TRUE );
   X11()
   layout(matrix(c(1,2,3,4,5), 5, 1, byrow = TRUE))
     
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vTailDisp,regionToAnalyse,plotRes = TRUE)
-    plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
+    ##Change If Fish Heading
+    plot(t,vAngleDisplacement[1:NROW(t)],type='l',
+         xlab="(msec)",
+         ylab="Degrees",
+         col="blue",main=" Angle Displacement")
+    ##Tail Fq Mode
+    #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
     plotTailPowerSpectrumInTime(lwlt)
+    
     t <- seq(1:NROW(vDistToPrey_Fixed_FullRange))/(Fs/1000) ##Time Vector
     plot(t,vDistToPrey_Fixed_FullRange*DIM_MMPERPX,type='l',
          xlab="(msec)",
          ylab="(mm)",
          col="purple",main="Distance To Prey")
+
     
-  #dev.off()
+    
+  dev.off()
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
 } ###END OF EACH Hunt Episode Loop 
