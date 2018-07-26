@@ -20,6 +20,30 @@ wrapAngle <- function(x)
   return(res)
 }
 
+##Calculates Change In Degree Angle assumes Circle Of 0-360 Degrees
+##Acounts For Circular Nature In THe ANgles going -360 To +360
+##Polar Diff   
+diffPolar <- function(X)
+{
+  X <-  X %% 360 
+  # X[X < 0] <- X[X < 0] + 360
+  
+  
+  Y <- rep(0,NROW(X))
+  for (i in 2:NROW(X) )
+  {
+    Y[i]<- X[i]-X[i-1]
+    
+    if (Y[i] > 180) ##Replace with Closest Distance Around Circle
+      Y[i] <- X[i]-X[i-1] - 360
+    
+    if (Y[i] < -180)
+      Y[i] <- X[i] - X[i-1] + 360
+  }
+  
+  return(Y)
+}
+
 
 ##Fixes Lost Tracking / and Out of Range values by Filling In Gaps with Last known good Value 
 clipEyeRange <- function(vEyeAngle,lMin,lMax)
