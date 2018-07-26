@@ -48,7 +48,7 @@ lMotionBoutDat <- list()
 
 #idxH <- 20
 
-for (idxH in 20:20)#NROW(datTrackedEventsRegister)
+for (idxH in 20:25)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -221,8 +221,10 @@ for (idxH in 20:20)#NROW(datTrackedEventsRegister)
   #
   #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),paper = "a4",onefile = TRUE );
   X11()
-  layout(matrix(c(1,2,3,4,5), 5, 1, byrow = TRUE))
-    
+  par(mar=c(2,2,2,2)+0.1)
+  layout(matrix(c(1,6,2,6,3,7,4,7,5,7), 5, 2, byrow = TRUE))
+    t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
+  
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vTailDisp,regionToAnalyse,plotRes = TRUE)
     ##Change If Fish Heading
     plot(t,vAngleDisplacement[1:NROW(t)],type='l',
@@ -233,15 +235,19 @@ for (idxH in 20:20)#NROW(datTrackedEventsRegister)
     #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
     plotTailPowerSpectrumInTime(lwlt)
     
-    t <- seq(1:NROW(vDistToPrey_Fixed_FullRange))/(Fs/1000) ##Time Vector
-    plot(t,vDistToPrey_Fixed_FullRange*DIM_MMPERPX,type='l',
+    plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
          xlab="(msec)",
          ylab="(mm)",
          col="purple",main="Distance To Prey")
 
     
+    polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
+    #plot.new();
+    polarPlotAngleToPrey(datRenderHuntEvent)
     
-  dev.off()
+    
+    
+  #dev.off()
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
 } ###END OF EACH Hunt Episode Loop 
@@ -328,7 +334,6 @@ datEpisodeMotionBout <- lMotionBoutDat[[1]]
 # dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsDistance_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
 # dev.off()
 # ###################################################
-
 
 
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )

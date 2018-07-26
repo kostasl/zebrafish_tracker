@@ -319,12 +319,14 @@ polarPlotAngleToPrey <- function(datRenderHuntEvent)
 {
 ### Plot Relative Angle To Each Prey ###
 vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
-Range <- ((max(datRenderHuntEvent$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
+
+Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
 relAngle <- list()
 
 
-txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))
+txtW <- -0.2# strwidth(parse(text=paste("270", "^o ", sep="")))
 plot(1,type='n',xlim=c(-(Range+txtW),(Range+txtW)) ,ylim=c(-(Range+txtW),(Range+txtW) ),main="Angle to Prey Over Time ")
+
 
 #display.brewer.all() to see avaulable options
 Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
@@ -380,7 +382,8 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent)
   Range <- 80 ##300 Pixels Around the prey
   relAngle <- list()
   
-  txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))
+  #txtW <- strwidth(parse(text=paste("270", "^o ", sep=""))) ##Override as it fails When In Layout Mode
+  txtW <- -0.2# strwidth(parse(text=paste("270", "^o ", sep="")))
   plot(1,type='n',xlim=c(-(Range+4*txtW),(Range+4*txtW)) ,ylim=c(-(Range+4*txtW),(Range+4*txtW) ),main="Angle to Prey Vs Distance ")
   
   #display.brewer.all() to see avaulable options
