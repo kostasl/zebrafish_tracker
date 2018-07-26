@@ -173,9 +173,9 @@ for (idxH in 20:25)#NROW(datTrackedEventsRegister)
   #plot((1000*1:NROW(vTailDisp)/Fs),vTailDisp,type='l')
   
   ##Plot Tail Spectral Density
-  png(filename=paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
-  plotTailSpectrum(vTailDisp)
-  dev.off()
+  #png(filename=paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+  
+  #dev.off()
   
   #tmp<-mk.cwt(w,noctave = floor(log2(length(w)))-1,nvoice=10)
   
@@ -219,10 +219,11 @@ for (idxH in 20:25)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
-  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),paper = "a4",onefile = TRUE );
-  X11()
-  par(mar=c(2,2,2,2)+0.1)
-  layout(matrix(c(1,6,2,6,3,7,4,7,5,7), 5, 2, byrow = TRUE))
+  pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  #X11()
+  par(mar=c(4,4,0.5,0.5))
+  
+  layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
   
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vTailDisp,regionToAnalyse,plotRes = TRUE)
@@ -233,21 +234,19 @@ for (idxH in 20:25)#NROW(datTrackedEventsRegister)
          col="blue",main=" Angle Displacement")
     ##Tail Fq Mode
     #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
-    plotTailPowerSpectrumInTime(lwlt)
-    
     plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
          xlab="(msec)",
          ylab="(mm)",
          col="purple",main="Distance To Prey")
-
+    plotTailPowerSpectrumInTime(lwlt)
     
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
     #plot.new();
     polarPlotAngleToPrey(datRenderHuntEvent)
     
-    
-    
-  #dev.off()
+    plotTailSpectrum(vTailDisp)
+  dev.off()
+  
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
 } ###END OF EACH Hunt Episode Loop 

@@ -28,7 +28,7 @@ getfrqscales <- function(nVoices,nOctaves,Fs,w0)
 
 plotTailSpectrum <- function(w)
 {
-  w.spec <- spectrum(w,log="no",span=10,plot=TRUE,method="pgram")
+  w.spec <- spectrum(w,log="no",span=10,plot=FALSE,method="pgram")
   spx <- w.spec$freq*Fs
   spy <- 2*w.spec$spec #We should also multiply the spectral density by 2 so that the area under the periodogram actually equals the variance   of the time series
   #png(filename=paste(strPlotExportPath,"/TailSpectrum_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
