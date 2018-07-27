@@ -28,7 +28,7 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 #
 ############# Analysis AND REPLAY OF HUNT EVENTS ####
 load(strDataFileName)
-##Test  PlayBack Plot Hunt Event###  
+
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
 
@@ -121,13 +121,17 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
   ##Add PreyTarget ID To Register Save The Prey Target To Register
   if (!any(names(datTrackedEventsRegister) == "PreyIDTarget"))
     datTrackedEventsRegister$PreyIDTarget <- NA
-
+  if (!any(names(datTrackedEventsRegister) == "startFrame"))
+    datTrackedEventsRegister$startFrame <- NA
+  
+  
   #selectedPreyID <- max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
   ##Check If Assigned OtherWise Automatically Select the longest Track
   if (is.na(datTrackedEventsRegister[idxH,]$PreyIDTarget)) 
   {
     selectedPreyID <-  max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
     datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
+    datTrackedEventsRegister[idxH,]$startFrame <- min(datRenderHuntEvent$frameN)
     save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
   }
   
@@ -245,8 +249,8 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
     par(new = F)
     plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
          xlab="(msec)",
-         ylab="(mm)",
-         col="purple",main="Distance To Prey",lwd=2,ylim=c(0,5))
+         ylab="Distance (mm)",
+         col="purple",main="Motion Relative Prey and Eye Angles",lwd=2,ylim=c(0,5))
     axis(side = 2,col="purple",cex=1.2,lwd=2)
     
     ##Add Eye Angles  ##
@@ -254,7 +258,7 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
     par(mar=c(4,4,2,2))
     plot(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],axes=F,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(-55,55))
     axis(side = 4,col="red")
-    mtext(side = 4, line = 3, 'Eye Angle (Deg)')
+    mtext(side = 4, line = 3, 'Angles (Deg)')
     lines(t,datRenderHuntEvent$LEyeAngle[1:NROW(t)],axes=F,col="blue",type='l',xlab=NA,ylab=NA)
     
     ##Add Angle To Prey OnTop Of Eye Angles##
@@ -266,7 +270,7 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
     {
       n<-n+1; lines((vAngleToPrey[1:NROW(t),1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAngleToPrey[1:NROW(t),2],type='l',col=colR[n],xlab=NA,ylab=NA)
     }
-    legend(max(t)-420,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(lAngleToPrey)) ) ,fill=c("purple","red","blue",colR),cex=0.7 )
+    legend(max(t)-420,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(lAngleToPrey)) ) ,fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
     ###
     plotTailPowerSpectrumInTime(lwlt)
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
