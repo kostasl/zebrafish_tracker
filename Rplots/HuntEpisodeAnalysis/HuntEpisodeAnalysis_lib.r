@@ -195,7 +195,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  fit <- Mclust(xy ,G=5, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.1,20),c(0.15,3),c(0.25,10),c(0.15,25)),shrinkage=0.1 ) )  
+  fit <- Mclust(xy ,G=6, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01,0.1),c(0.1,5),c(0.1,10),c(0.3,15),c(0.3,20),c(0.3,25)),shrinkage=0.1 ) )  
 
   #fit <- Mclust(xy ,G=2, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   
@@ -219,7 +219,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
   
   #boutCluster <- which(clusterActivity == max(clusterActivity))
-  boutCluster <- c(which(rank(clusterActivity) == 5 ),which(rank(clusterActivity) == 4 ),which(rank(clusterActivity) == 3 ))   
+  boutCluster <- c(which(rank(clusterActivity) == 6 ),which(rank(clusterActivity) == 5 ),which(rank(clusterActivity) == 4 ),which(rank(clusterActivity) == 4 ))   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   ## Add Prior Bias to Selects from Clusters To The 
   return (which(fit$classification %in% boutCluster ) )
@@ -287,9 +287,6 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   vMotionBout <- vEventSpeed_smooth
   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
   vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
- ##Make Initial Cut So 1st & Last Frame Is always a pause
-  vMotionBout[1] <- 0
-  vMotionBout[NROW(vMotionBout)] <- 0
   
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   ##Detect Speed Minima
@@ -309,7 +306,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   ## Take InterBoutIntervals in msec from Last to first - 
   vMotionBout_rle <- rle(vMotionBout)
   ##Filter Out Small Bouts/Pauses -
-  idxShort <- which(vMotionBout_rle$lengths < 2)
+  idxShort <- which(vMotionBout_rle$lengths < MIN_BOUT_DURATION)
   for (jj in idxShort)
   {
     ##Fill In this Gap
@@ -323,12 +320,17 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
       vMotionBout[idxMotionStart:idxMotionEnd] <- 1 ##Replace short Pause with Motion
     
   }
+  ##Make Initial Cut So 1st & Last Frame Is always a pause
+  vMotionBout[1] <- 0
+  vMotionBout[NROW(vMotionBout)] <- 0
+  
   ##Redo Fixed Binary Vector
   vMotionBout_rle <- rle(vMotionBout)
-  
+
+    
   lastBout <- max(which(vMotionBout_rle$values == 1))
   firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1)) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
-  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,1,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
   ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1

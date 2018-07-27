@@ -7,6 +7,9 @@
 ## * Gaussian Mixt. Clusters are used to Identify Bout from Speeds, however the BoutOnset-Offset Is then Fixed To Identify When Speed Ramps Up , 
 ## and final decelpartion is used to obtain  more accurate estimates of BoutDurations-
 ## * The Distance to Prey Is calculated But Also Interpolated using Fish Displacement where there are missing values - 
+## \Notes:
+## Can use findLabelledEvent( datTrackedEventsRegister[IDXOFHUNT,]) to locate which HuntEvent is associated from the Labelled Set Record, And Retrack it by running 
+## main_LabellingBlind.r and providing the row.name as ID 
 #####
 
 
@@ -38,7 +41,7 @@ bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass <- butter(4, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
-bf_speed <- butter(4, 0.02,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
+bf_speed <- butter(4, 0.04,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
@@ -46,8 +49,8 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <-  NROW(datTrackedEventsRegister)
-for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
+idTo <- 41#NROW(datTrackedEventsRegister)
+for (idxH in 41:idTo)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -105,8 +108,8 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
 
     
   
-  ## PLAYBACK ####
-  #       renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
+  ##PLAYB ACK ####
+   #      renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
   ########################
   
   ############ PREY SELECTION #####
@@ -131,7 +134,8 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
   {
     selectedPreyID <-  max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
     datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
-    datTrackedEventsRegister[idxH,]$startFrame <- min(datRenderHuntEvent$frameN)
+    datTrackedEventsRegister[idxH,]$PreyCount    <- NROW(tblPreyRecord)
+    datTrackedEventsRegister[idxH,]$startFrame   <- min(datRenderHuntEvent$frameN)
     save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
   }
   
@@ -284,7 +288,7 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
       l <- min(NROW(t),NROW(vAngleToPrey))
       n<-n+1; lines((vAngleToPrey[1:l,1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAngleToPrey[1:l,2],type='l',col=colR[n],xlab=NA,ylab=NA)
     }
-    legend(max(t)-420,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(lAngleToPrey)) ) ,fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
+    legend(max(t)-720,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(lAngleToPrey)) ) ,fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
     ###
     plotTailPowerSpectrumInTime(lwlt)
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
@@ -292,14 +296,21 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
   dev.off() 
   ##END OF PLOT
-    
+  
+  ##Calc Angle To Prey Per Bout
+  vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]
+  
+  ##Exclude Idx of Bouts for Which We do not have an angle
+  BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey[[1]] ) ]
+  vAnglesAtOnset <- vAngleToPrey[[1]][BoutOnsetWithinRange,2]
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,
+                                  AngleToPrey = vAnglesAtOnset,
                                   RegistarIdx = as.numeric(rep(idxH,rows)),
                                   expID=as.numeric(rep(expID,rows)),
                                   eventID=as.numeric(rep(eventID,rows)),
                                   groupID=rep((groupID) ,rows),
-                                  PreyCount <- rep(NROW(tblPreyRecord),rows))
+                                  PreyCount = rep(NROW(tblPreyRecord),rows))
 } ###END OF EACH Hunt Episode Loop 
 
 datEpisodeMotionBout <- lMotionBoutDat[[1]]
@@ -355,7 +366,6 @@ datEpisodeMotionBout <- lMotionBoutDat[[1]]
 
 #X11()
 #plot(abs(vEventSpeed_smooth[1:llRange]) , abs(vTailDisp[1:llRange]) , type="p")
-
 #lines(vTailDir,type='l',col="green")
 ##END OF CURVATURE ##
 
@@ -370,22 +380,36 @@ datEpisodeMotionBout <- lMotionBoutDat[[1]]
 #lines(datRenderHuntEvent$DThetaSpine_7,type='l',col=r[7])
 
 
-# 
-# ###########  Plot Polar Angle to Prey ##############
-# X11()
-# plot.new()
-# polarPlotAngleToPrey(datRenderHuntEvent)
-# dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsTime_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
-# dev.off()
-# 
-# X11()
-# plot.new()
-# polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
-# dev.copy(png,filename=paste(strPlotExportPath,"/AngleToPreyVsDistance_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
-# dev.off()
-# ###################################################
+# ###  AnALYSIS #XXX
+##Make Vector Of Number oF Bouts Vs Distance
+lBoutsVsPreyDistance <- list()
+for (rec in lMotionBoutDat)
+{
+  if (is.null(rec)) next;
+  ##Take Distance of the 1st bout Detected (which has the largest #Rank (1 Last, N first))
+  lBoutsVsPreyDistance[[rec[1,"RegistarIdx"]]] <- list(nBouts=max(rec[,"boutSeq"]),
+                                                       Distance= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBoutDistanceToPrey_mm"]),
+                                                       Angle= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"AngleToPrey"]))
+}
+
+datBoutVsPreyDistance <-  data.frame( do.call(rbind,lBoutsVsPreyDistance ) )
+X11()
+plot(datBoutVsPreyDistance$nBouts,datBoutVsPreyDistance$Distance,
+     main = "Initial distance to Prey Vs Bouts Performed",
+     ylab="Distance to Prey  (mm)",
+     xlab="Number of Tracking Movements",
+     ylim=c(0,6),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )))
+
+X11()
+plot(datBoutVsPreyDistance$nBouts,datBoutVsPreyDistance$Angle,
+     main = "Initial Bearing to Prey Vs Bouts Performed",
+     ylab="Angle to Prey  (mm)",
+     xlab="Number of Tracking Movements",
+     ylim=c(-180,180),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )))
 
 
+### Box Plots Per Bout ##
+####Select Subset Of Data To Analyse
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
 #datMotionBoutCombinedAll$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombinedAll$groupID]
 datMotionBoutCombined <-datMotionBoutCombinedAll#
@@ -394,6 +418,15 @@ datMotionBoutCombined <-datMotionBoutCombinedAll#
 X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
 boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
+
+
+X11()
+boxplot(as.numeric(datMotionBoutCombined$AngleToPrey) ~ as.numeric(datMotionBoutCombined$boutRank),
+        main="Bearing To Prey",
+        ylab="(Deg)",
+        xlab="Bout Sequence (From Capture - Backwards)",
+        ylim=c(-180,180))
+
 
 X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main="Distance Of Bout (power)",ylab="mm")
