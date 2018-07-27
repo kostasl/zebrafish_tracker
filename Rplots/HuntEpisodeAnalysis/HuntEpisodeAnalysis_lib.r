@@ -63,7 +63,7 @@ getPowerSpectrumInTime <- function(w,Fs)
   for (i in 1:NROW(w.coefSq) )
   {
     idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
-    vFqMed[i] <- sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+    vFqMed[i] <- sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
   #X11();
   
@@ -139,7 +139,40 @@ detectMotionBouts <- function(vEventSpeed)
   
 }
 
-
+detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
+{
+  
+  nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
+  ##Fix Length Differences
+  pvEventSpeed <-  abs(vTurnSpeed[1:nRec])
+  pvTailDispFilt <-  abs(vTailDispFilt[1:nRec])
+  #t <- datRenderHuntEvent$frameN
+  
+  #X11();plot(pvEventSpeed,pvTailDispFilt,type='p')
+  
+  xy <- cbind(pvEventSpeed,pvTailDispFilt)
+  #X11();plot(pvEventSpeed,type='p')
+  #BIC <- mclustBIC(dEventSpeed)
+  
+  ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
+  ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  fit <- Mclust(xy ,G=4, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.05,20),c(0.5,15),c(1.5,20)),shrinkage=0.1 ) )  
+  summary(fit)
+  
+  boutClass <- fit$classification
+  clusterActivity <- vector()
+  for (i in unique(boutClass))
+    clusterActivity[i] <- mean(pvEventSpeed[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+  #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
+  
+  #boutCluster <- which(clusterActivity == max(clusterActivity))
+  boutCluster <- c(which(rank(clusterActivity) == 4 )) #,which(rank(clusterActivity) == 3 )   
+  #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
+  ## Add Prior Bias to Selects from Clusters To The 
+  return (which(fit$classification %in% boutCluster ) )
+  
+  
+}
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
@@ -470,7 +503,9 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   vMotionBout <- vEventSpeed_smooth
   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
   vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
-
+ ##Make Initial Cut So 1st Frame Is always a pause
+  vMotionBout[1] <- 0
+  
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   ##Detect Speed Minima
   boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/5)
@@ -489,8 +524,8 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   ## Take InterBoutIntervals in msec from Last to first - 
   vMotionBout_rle <- rle(vMotionBout)
   lastBout <- max(which(vMotionBout_rle$values == 1))
-  firstBout <- min(which(vMotionBout_rle$values[2:lastBout] == 1)+1) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
-  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,1,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1)) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
+  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
   ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
@@ -510,7 +545,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   vMotionBoutDistanceTravelled_mm <- vMotionBoutDistanceTravelled_mm[boutSeq]
   
   ##Check for Errors
-  #stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )###Check End With  Pause Not A bout
+  stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )###Check End With  Pause Not A bout
   stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
   
   ##Combine and Return

@@ -46,8 +46,8 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <- 44#NROW(datTrackedEventsRegister)
-for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
+idTo <- 1#NROW(datTrackedEventsRegister)
+for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -87,7 +87,7 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
   datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
   #datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
   ##Vector Of Vergence Angle
-  vEyeV <- datRenderHuntEvent$REyeAngle - datRenderHuntEvent$LEyeAngle
+  vEyeV <- datRenderHuntEvent$LEyeAngle-datRenderHuntEvent$REyeAngle
   
 
   ##Fix Angle Circular Distances by DiffPolar Fix on Displacement and then Integrate back to Obtain fixed Angles  
@@ -155,16 +155,18 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
   vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
   vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
   
-  vDeltaBodyAngle      <- diffPolar(datRenderHuntEvent$BodyAngle) #(  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
-  vAngleDisplacement   <- cumsum(vDeltaBodyAngle)
-  
   
   #nNumberOfBouts       <- 
   dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
   dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
   vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
   
-  
+
+  vDeltaBodyAngle      <- diffPolar(datRenderHuntEvent$BodyAngle) #(  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+  vTurnSpeed           <- filtfilt(bf_speed, meanf(vDeltaBodyAngle/dframe,3))
+  vAngleDisplacement   <- cumsum(vDeltaBodyAngle)
+
+    
   #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
   vDistToPrey          <- meanf(sqrt( (datRenderHuntEventVsPrey$Prey_X -datRenderHuntEventVsPrey$posX )^2 + (datRenderHuntEventVsPrey$Prey_Y - datRenderHuntEventVsPrey$posY)^2   ),3)
   vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
@@ -211,8 +213,14 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
   
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
   #### Cluster Tail Motion Wtih Fish Speed - Such As to Identify Motion Bouts Idx 
+  #vMotionSpeed <- vEventSpeed_smooth + vTurnSpeed
   MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,lwlt$freqMode)
-  MoveboutsIdx_cleaned <- MoveboutsIdx# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
+  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
+  MoveboutsIdx_cleaned <- TurnboutsIdx #c(MoveboutsIdx,TurnboutsIdx)# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
+  MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
+  ##Append The MoveBoutsIdx
+  MoveboutsIdx_cleaned <- c(MoveboutsIdx_cleaned[!is.na(MoveboutsIdx_cleaned)],MoveboutsIdx)
+  
   
   ## Detect Tail Motion Bouts
   vTailActivity <- rep(0,NROW(vTailDispFilt))
@@ -268,7 +276,8 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
     n<-0
     for (vAngleToPrey in lAngleToPrey)
     {
-      n<-n+1; lines((vAngleToPrey[1:NROW(t),1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAngleToPrey[1:NROW(t),2],type='l',col=colR[n],xlab=NA,ylab=NA)
+      l <- min(NROW(t),NROW(vAngleToPrey))
+      n<-n+1; lines((vAngleToPrey[1:l,1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAngleToPrey[1:l,2],type='l',col=colR[n],xlab=NA,ylab=NA)
     }
     legend(max(t)-420,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(lAngleToPrey)) ) ,fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
     ###
@@ -277,9 +286,7 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
     polarPlotAngleToPrey(datRenderHuntEvent)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
   #dev.off()
-  X11()
-  plot(t,lwlt$freqMode[1:NROW(t)],type='l')
-  
+    
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
 } ###END OF EACH Hunt Episode Loop 
