@@ -89,21 +89,21 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
   ##Vector Of Vergence Angle
   vEyeV <- datRenderHuntEvent$REyeAngle - datRenderHuntEvent$LEyeAngle
   
-  
-  lMax <- +75
-  lMin <- -75
-  datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_7,lMin,lMax) )
-  datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_6,lMin,lMax) )
-  datRenderHuntEvent$DThetaSpine_5 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_5,lMin,lMax) )
-  datRenderHuntEvent$DThetaSpine_4 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_4,lMin,lMax))
-  datRenderHuntEvent$DThetaSpine_3 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_3,lMin,lMax))
-  datRenderHuntEvent$DThetaSpine_2 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_2,lMin,lMax))
-  datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, clipEyeRange(datRenderHuntEvent$DThetaSpine_1,lMin,lMax))
+
+  ##Fix Angle Circular Distances by DiffPolar Fix on Displacement and then Integrate back to Obtain fixed Angles  
+  lMax <- +75; lMin <- -75 ;
+  datRenderHuntEvent$DThetaSpine_7 <- filtfilt(bf_tail, cumsum(diffPolar( datRenderHuntEvent$DThetaSpine_7))+datRenderHuntEvent$DThetaSpine_7[1]  )
+  datRenderHuntEvent$DThetaSpine_6 <- filtfilt(bf_tail, cumsum(diffPolar( datRenderHuntEvent$DThetaSpine_6))+datRenderHuntEvent$DThetaSpine_6[1] )
+  datRenderHuntEvent$DThetaSpine_5 <- filtfilt(bf_tail, cumsum(diffPolar( datRenderHuntEvent$DThetaSpine_5))+datRenderHuntEvent$DThetaSpine_5[1]  )
+  datRenderHuntEvent$DThetaSpine_4 <- filtfilt(bf_tail, cumsum(diffPolar( datRenderHuntEvent$DThetaSpine_4))+datRenderHuntEvent$DThetaSpine_4[1] )
+  datRenderHuntEvent$DThetaSpine_3 <- filtfilt(bf_tail, cumsum(diffPolar( datRenderHuntEvent$DThetaSpine_3))+datRenderHuntEvent$DThetaSpine_3[1] )
+  datRenderHuntEvent$DThetaSpine_2 <- filtfilt(bf_tail, cumsum(diffPolar( datRenderHuntEvent$DThetaSpine_2))+datRenderHuntEvent$DThetaSpine_2[1] )
+  datRenderHuntEvent$DThetaSpine_1 <- filtfilt(bf_tail, cumsum(diffPolar( datRenderHuntEvent$DThetaSpine_1))+datRenderHuntEvent$DThetaSpine_1[1] )
   
   rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
   r <- c(rfc(8),"#FF0000");
-  
-  
+
+    
   
   ## PLAYBACK ####
   #       renderHuntEventPlayback(datRenderHuntEvent,speed=1) #saveToFolder =  strFolderName
@@ -199,7 +199,7 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
   ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
   regionToAnalyse       <-seq(1,
                               max(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
-                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+200
+                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+50
                               ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
@@ -391,5 +391,16 @@ X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutIBI,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture -Backwards)")
 boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,main=" Inter Bout Intervals ",ylab="msec",xlab="Bout Sequence (From Capture - Backwards)") 
 # for (i in1:20) #dev.off()
+
+
+##Plot Tail
+#X11()
+#plot(datRenderHuntEvent$DThetaSpine_1 ,type='l',col=r[1])
+#lines(datRenderHuntEvent$DThetaSpine_2 ,type='l',col=r[2])
+#lines(datRenderHuntEvent$DThetaSpine_3 ,type='l',col=r[3])
+#lines(datRenderHuntEvent$DThetaSpine_4 ,type='l',col=r[4])
+#lines(datRenderHuntEvent$DThetaSpine_5 ,type='l',col=r[5])
+#lines(datRenderHuntEvent$DThetaSpine_6 ,type='l',col=r[6])
+#lines(datRenderHuntEvent$DThetaSpine_7 ,type='l',col=r[7])
 
 
