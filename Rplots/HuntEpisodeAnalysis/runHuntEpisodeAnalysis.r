@@ -38,7 +38,7 @@ bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass <- butter(4, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
-bf_speed <- butter(4, 0.025,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
+bf_speed <- butter(4, 0.02,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
 nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
 
@@ -46,7 +46,7 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <- 1#NROW(datTrackedEventsRegister)
+idTo <- 1 #NROW(datTrackedEventsRegister)
 for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
 {
   
@@ -238,8 +238,8 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
-  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
-  X11()
+  pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  #X11()
   par(mar=c(4,4,1.5,1.5))
   
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
@@ -251,6 +251,11 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
          xlab="(msec)",
          ylab="Degrees",
          col="blue",main=" Angle Displacement")
+    lines(t,cumsum(vTurnSpeed)[1:NROW(t)],type='l',lwd=2,
+         xlab=NA,
+         ylab=NA,
+         col="blue4")
+    
     ##Tail Fq Mode
     #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
     #X11()
@@ -285,7 +290,7 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
     polarPlotAngleToPrey(datRenderHuntEvent)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
-  #dev.off()
+  dev.off()
     
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )

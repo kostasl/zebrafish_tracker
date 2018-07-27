@@ -287,8 +287,9 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   vMotionBout <- vEventSpeed_smooth
   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
   vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
- ##Make Initial Cut So 1st Frame Is always a pause
+ ##Make Initial Cut So 1st & Last Frame Is always a pause
   vMotionBout[1] <- 0
+  vMotionBout[NROW(vMotionBout)] <- 0
   
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   ##Detect Speed Minima
@@ -309,7 +310,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   vMotionBout_rle <- rle(vMotionBout)
   lastBout <- max(which(vMotionBout_rle$values == 1))
   firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1)) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
-  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
   ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
@@ -329,7 +330,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   vMotionBoutDistanceTravelled_mm <- vMotionBoutDistanceTravelled_mm[boutSeq]
   
   ##Check for Errors
-  stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )###Check End With  Pause Not A bout
+  #stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )###Check End With  Pause Not A bout
   stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
   
   ##Combine and Return
@@ -356,13 +357,13 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
     
     ##Plot Displacement and Speed(Scaled)
     vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
-    
+    ymax <- 15 #max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])
     plot(t,vEventPathLength_mm,ylab="mm",
          xlab="msec",
-         ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
+         ylim=c(-0.3, ymax  ),type='l',lwd=3) ##PLot Total Displacemnt over time
     par(new=T) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     par(mar=c(4,4,2,2))
-    plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue")
+    plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,1.5))
     axis(side = 4,col="blue")
     mtext(side = 4, line = 3, 'Speed (mm/sec)')
     
@@ -378,7 +379,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
       polygon(poly,density=3,angle=-45) 
     
     #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
-    text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+3,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
+    text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+0.1,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
     plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
