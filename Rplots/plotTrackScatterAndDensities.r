@@ -315,6 +315,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
 
 
 ## PLot The Relative Angle Of Fish Bearing to Prey Over Time On  a Polar Plot - For Each Prey Of this Hunt Event
+## \returns the relative Angle Of Each Prey To The Fish;s Heading
 polarPlotAngleToPrey <- function(datRenderHuntEvent)
 {
 ### Plot Relative Angle To Each Prey ###
@@ -330,8 +331,8 @@ plot(1,type='n',xlim=c(-(Range+txtW),(Range+txtW)) ,ylim=c(-(Range+txtW),(Range+
 
 #display.brewer.all() to see avaulable options
 Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
-
   colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
+
   n <- 0
   for (f in vTrackedPreyIDs)
   {
@@ -368,8 +369,42 @@ Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
     text((Range+txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,(Range+txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col="blue",cex=0.8)
   }
   
+return (relAngle)
 }
 
+## Returns A list of vectors showing bearing Angle To Each Prey 
+calcRelativeAngleToPrey <- function(datRenderHuntEvent)
+{
+  
+  ### Plot Relative Angle To Each Prey ###
+  vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
+  
+  Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
+  relAngle <- list()
+  
+  n <- 0
+  for (f in vTrackedPreyIDs)
+  {
+    n<-n+1
+    #message(f)
+  
+    if (is.na(f))
+      next
+    
+    datRenderPrey <- datRenderHuntEvent[datRenderHuntEvent$PreyID == f,]
+    ##Atan2 returns -180 to 180, so 1st add 180 to convert to 360, then sub the fishBody Angle, then Mod 360 to wrap in 360deg circle, then sub 180 to convert to -180 to 180 relative to fish heading angles
+    ##dd Time Base As frame Number on First Column
+    relAngle[[as.character(f)]]  <- cbind(datRenderPrey$frameN, 
+                                      ( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+                                    )
+  }
+    #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
+    
+    ##Convert Frames To Seconds
+
+  return (relAngle)
+  
+}
 #
 
 ## PLot The Relative Angle Of Fish Bearing to Prey Over Distance to Prey as a Polar Plot

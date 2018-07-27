@@ -86,8 +86,8 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
   datRenderHuntEvent$REyeAngle[is.na(datRenderHuntEvent$REyeAngle)] <- 0
   datRenderHuntEvent$REyeAngle <- filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
   #datRenderHuntEvent$REyeAngle <-medianf(datRenderHuntEvent$REyeAngle,nFrWidth)
-  
-  
+  ##Vector Of Vergence Angle
+  vEyeV <- datRenderHuntEvent$REyeAngle - datRenderHuntEvent$LEyeAngle
   
   
   lMax <- +75
@@ -153,6 +153,8 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
   
   vDeltaBodyAngle      <- diffPolar(datRenderHuntEvent$BodyAngle) #(  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
   vAngleDisplacement   <- cumsum(vDeltaBodyAngle)
+  
+  
   #nNumberOfBouts       <- 
   dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
   dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
@@ -240,6 +242,7 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
     ##Tail Fq Mode
     #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
     #X11()
+    par(new = F)
     plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
          xlab="(msec)",
          ylab="(mm)",
@@ -249,11 +252,22 @@ for (idxH in 44:idTo)#NROW(datTrackedEventsRegister)
     ##Add Eye Angles  ##
     par(new = T)
     par(mar=c(4,4,2,2))
-    plot(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],axes=F,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(-50,50))
+    plot(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],axes=F,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(-55,55))
     axis(side = 4,col="red")
     mtext(side = 4, line = 3, 'Eye Angle (Deg)')
     lines(t,datRenderHuntEvent$LEyeAngle[1:NROW(t)],axes=F,col="blue",type='l',xlab=NA,ylab=NA)
     
+    ##Add Angle To Prey OnTop Of Eye Angles##
+    Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
+    colR <- c(Polarrfc(NROW(tblPreyRecord) ) ,"#FF0000");
+    lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
+    n<-0
+    for (vAngleToPrey in lAngleToPrey)
+    {
+      n<-n+1; lines((vAngleToPrey[1:NROW(t),1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAngleToPrey[1:NROW(t),2],type='l',col=colR[n],xlab=NA,ylab=NA)
+    }
+    legend(max(t)-420,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(lAngleToPrey)) ) ,fill=c("purple","red","blue",colR),cex=0.7 )
+    ###
     plotTailPowerSpectrumInTime(lwlt)
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
     polarPlotAngleToPrey(datRenderHuntEvent)
