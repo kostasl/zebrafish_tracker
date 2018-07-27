@@ -49,8 +49,8 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <- 43#NROW(datTrackedEventsRegister)
-for (idxH in 41:idTo)#NROW(datTrackedEventsRegister)
+idTo <- NROW(datTrackedEventsRegister)
+for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
