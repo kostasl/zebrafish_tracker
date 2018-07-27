@@ -271,222 +271,6 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = 
   return(vDistToPrey_Fixed)
 }
 
-## Identify Bout Sections and Get Data On Durations etc.
-##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
-## Note: Incomplete Bouts At the end of the trajectory will be discarted  
-## regionToAnalyse - Sequence of Idx On Which To Obtain Bout Motion Data - Usually Set from 1st to last point of prey capture for a specific Prey Item
-calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
-{
-  MoveboutsIdx_cleaned <- MoveboutsIdx[MoveboutsIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
-  
-  meanBoutSpeed <- median(vEventSpeed_smooth[MoveboutsIdx_cleaned])
-  
-  ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
-  vMotionBout <- vEventSpeed_smooth
-  vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
-  vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
-  
-  
-  #vMotionBout_rle <- rle(vMotionBout)
-  
-  ##Invert Speed / And Use Peak Finding To detect Bout Edges (Troughs are Peaks in the Inverse image)
-  boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/5)
-  vEventAccell_smooth_Onset  <- boutEdgesIdx
-  vEventAccell_smooth_Offset <- c(boutEdgesIdx,NROW(vEventSpeed_smooth))
-  #vMotionBout[boutEdgesIdx]  <- 0 ##Set Edges As Cut Points XX
-  
-  vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
-  #X11()
- #plot(vEventSpeed_smooth, type='l', main="Unprocessed Cut Points")
- #points(vEventAccell_smooth_Onset,vEventSpeed_smooth[vEventAccell_smooth_Onset])
- #points(vEventAccell_smooth_Offset,vEventSpeed_smooth[vEventAccell_smooth_Offset],pch=6)
-  
-  
-  ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
-  vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
-  
- # stopifnot(NROW(vMotionBout_On) > 0) ##No Bouts Detected
-  
-  ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
-  vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] 
-  iPairs <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
-  
-  ##Fix Detected Bout Points-
-  ##Remove The Motion Regions Where A Peak Was not detected / Only Keep The Bouts with Peaks
-  ## Shift the time of Bout to the edges where Start is on the rising foot of speed and stop are on the closest falling foot (This produces dublicates that are removed later)
-  
-  vMotionBout[1:length(vMotionBout)] = 0 ##Reset / Remove All Identified Movement
-  for (i in 1:iPairs)
-  {
-    ###Motion Interval belongs to a detect bout(peak)  // Set Frame Indicators vMotionBout To Show Bout Frames
-    if (any( MoveboutsIdx_cleaned >= vMotionBout_On[i] & MoveboutsIdx_cleaned < vMotionBout_Off[i] ) == TRUE)
-    { 
-      ##Fix Bout Onset Using Accelleration To Detect When Bout Actually Began
-      ##Find Closest Speed Onset
-      ##Calculate TimeDiff Between Detected BoutOnset And Actual Accelleration Onsets - Find the Onset Preceding the Detected Bout 
-      OnSetTD <- vMotionBout_On[i] - vEventAccell_smooth_Onset[!is.na(vEventAccell_smooth_Onset)]
-      ##Shift To Correct Onset Of Speed Increase / Denoting Where Bout Actually Began ##FIX ONSETS 
-        ###Leave Out For Now
-       if (NROW( (OnSetTD[OnSetTD > 0  ]) )>0) ##If Start Of Accellaration For this Bout Can Be Found / Fix It otherwise Leave it alone
-       {
-        idxMinStartOfBout <- which(OnSetTD == min(OnSetTD[OnSetTD > 0  ]))
-        TDNearestBout <- (vMotionBout_On - vEventAccell_smooth_Onset[idxMinStartOfBout]) ##Invert Sign so as to detect TDs preceding the end 
-        idxDetectedFirstFrameOfBout <- max(which(TDNearestBout == min(TDNearestBout[TDNearestBout>0]) )  ) ##max to pick the last one in case duplicate vMotionBout_Off values
-        #vMotionBout_On[i] <-  vMotionBout_On[i] - min(OnSetTD[OnSetTD > 0  ])
-        vMotionBout_On[i] <-  vMotionBout_On[idxDetectedFirstFrameOfBout]
-       }
-      
-      ##FIX OFFSET to The Last MotionBoutIdx Detected Before the next BoutStart (where Decellaration Ends and A new One Begins)
-      OffSetTD <- vEventAccell_smooth_Offset[!is.na(vEventAccell_smooth_Offset)] - vMotionBout_Off[i]  
-      if (NROW(OffSetTD[OffSetTD > 0  ]) > 0) ##If An Offset Can Be Found (Last Bout Maybe Runs Beyond Tracking Record)
-      { ##Find Last Detected Point In bout
-        idxMaxEndOfBout <- which(OffSetTD == min(OffSetTD[OffSetTD > 0  ]))
-        ##Last Detected Frame Before End is:
-        TDNearestBout <- -(vMotionBout_Off - vEventAccell_smooth_Offset[idxMaxEndOfBout]) ##Invert Sign so as to detect TDs preceding the end 
-        ##Find Which MotionBout Idx is the The Last One
-        idxDetectedLastFrameOfBout <- max(which(TDNearestBout == min(TDNearestBout[TDNearestBout>0]) )  ) ##max to pick the last one in case duplicate vMotionBout_Off values
-       # vSpeedHillEdge <- vMotionBout_Off[i] + min(OffSetTD[OffSetTD > 0  ]) ##How Far  is the next Edge
-        ##Choose Closest Either The Last Detected Point Or The End/ Edge Of Speed Hill
-        vMotionBout_Off[i] <-  vMotionBout_Off[idxDetectedLastFrameOfBout] #min(vSpeedHillEdge,vMotionBout_Off[idxDetectedLastFrameOfBout]) ##+ min(OffSetTD[OffSetTD > 0  ]) ##Shift |Forward To The End Of The bout
-      }
-      
-        vMotionBout[vMotionBout_On[i]:(vMotionBout_Off[i]) ] = 1 ##Set As Motion Frames
-    }
-    else
-    {##Remove the Ones That Do not Have a peak In them
-      vMotionBout_On[i] = NA 
-      vMotionBout_Off[i] = NA
-    }
-    
-    
-  } ###For Each Pair Of On-Off MotionBout 
-  
-  ##In Case On/Off Motion Becomes COntigious Then RLE will fail to detect it - So Make Sure Edges are there
-  #vMotionBout[vMotionBout_On+1] = 1
-  vMotionBout[vMotionBout_Off] = 0 ##Make Sure Off Remains / For Rle to Work
-  
-  #X11()
-  #plot(vEventAccell_smooth,type='l',main="Processed Cut-Points")
-  #points(vMotionBout_On,vEventAccell_smooth[vMotionBout_On])
-  #points(vMotionBout_Off,vEventAccell_smooth[vMotionBout_Off],pch=6)
-  
-  
-  ##Get Bout Statistics #### NOt Used / Replaced##
-  #vMotionBoutDuration_msec <- vMotionBout_Off[1:iPairs]-vMotionBout_On[1:iPairs]
-  #vMotionBoutDuration_msec <- 1000*vMotionBoutDuration_msec[!is.na(vMotionBoutDuration_msec)]/Fs
-  #vMotionBoutIntervals_msec <- 1000*(vMotionBout_On[3:(iPairs)] - vMotionBout_Off[2:(iPairs-1)])/Fs
-  ############################
-  
-  
-  ## Get Bout Statistics Again Now Using Run Length Encoding Method 
-  ## Take InterBoutIntervals in msec from Last to first - 
-  vMotionBout_rle <- rle(vMotionBout)
-  lastBout <- max(which(vMotionBout_rle$values == 1))
-  firstBout <- min(which(vMotionBout_rle$values[2:lastBout] == 1)+1) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
-  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,1,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
-  ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
-  vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
-  vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
-  vMotionBout_Off <- which(vMotionBout_OnOffDetect == -1)+1
-  vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,2,-2 )]/Fs
-  
-  vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
-  ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
-  boutSeq <- seq(NROW(vMotionBoutIBI),1,-1 ) 
-  boutRank <- seq(1,NROW(vMotionBoutIBI),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
-  ## TODO FIx these
-  vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
-  vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
-  
-  ##Reverse Order 
-  vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
-  vMotionBoutDistanceTravelled_mm <- vMotionBoutDistanceTravelled_mm[boutSeq]
-  
-  ##Check for Errors
-  stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )
-  stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
-  
-  ##Combine and Return
-  datMotionBout <- cbind(boutSeq,boutRank,vMotionBout_On,vMotionBout_Off,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm) ##Make Data Frame
-  
-  
-  #### PLOT DEBUG RESULTS ###
-##Make Shaded Polygons
-  if (plotRes)
-  {
-    #vEventSpeed_smooth <- vEventSpeed_smooth*5
-    
-    lshadedBout <- list()
-    t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)
-    for (i in 1:NROW(vMotionBout_Off))  
-    {
-    lshadedBout[[i]] <- rbind(
-                       cbind(t[vMotionBout_Off[i] ],vEventSpeed_smooth[vMotionBout_Off[i]]-1),
-                       cbind(t[vMotionBout_Off[i] ], max(vEventPathLength_mm) ), #vEventPathLength_mm[vMotionBout_Off[i]]+15),
-                       cbind(t[vMotionBout_On[i] ], max(vEventPathLength_mm) ),#vEventPathLength_mm[vMotionBout_On[i]]+15),
-                       cbind(t[vMotionBout_On[i] ], vEventSpeed_smooth[vMotionBout_On[i]]-1)
-                       )
-    }
-    
-    ##Plot Displacement and Speed(Scaled)
-    vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
-                              
-    plot(t,vEventPathLength_mm,ylab="mm",
-         xlab="msec",
-         ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
-    par(new=T) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
-    par(mar=c(4,4,2,2))
-    plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue")
-    axis(side = 4,col="blue")
-    mtext(side = 4, line = 3, 'Speed (mm/sec)')
-    
-    #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
-    points(t[MoveboutsIdx],vEventSpeed_smooth[MoveboutsIdx],col="black")
-    points(t[MoveboutsIdx_cleaned],vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
-    points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
-    segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
-    points(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off],col="purple",pch=14,lwd=3)
-    points(t[boutEdgesIdx],vEventSpeed_smooth[boutEdgesIdx],col="red",pch=8,lwd=3) 
-    segments(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On]-1,t[vMotionBout_On],vEventPathLength[vMotionBout_On]+15,lwd=0.9,col="green")
-    for (poly in lshadedBout)
-      polygon(poly,density=3,angle=-45) 
-    
-    #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
-    text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+3,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
-    #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
-    
-    plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
-         xlab="msec",
-         col="red",main="Tail Motion")
-    lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black" )
-    
-  } ##If Plot Flag Is Set 
-  
-  message(paste("Number oF Bouts:",NROW(datMotionBout)))
- # dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
-  
-#  dev.off()
-  
-  
-  ## Plot The Start Stop Motion Bout Binarized Data
-  #vMotionBout[is.na(vMotionBout)] <- 0
-  #vMotionBout_On[is.na(vMotionBout_On)] <- 0
-  #vMotionBout_Off[is.na(vMotionBout_Off)] <- 0
- 
-   #X11()
-  #plot(vMotionBout,type='p',xlim=c(0,max(vMotionBout_Off) )  )
-  #plot(MoveboutsIdx_cleaned,vMotionBout[MoveboutsIdx_cleaned],col="red",type='p')
-  #segments(seq(1:NROW(vMotionBout)),vMotionBout,seq(1:NROW(vMotionBout)),vMotionBout+0.04,lwd=0.2)
-  
-  #points(vMotionBout_On,vMotionBout[vMotionBout_On],col="green",pch=2,cex=2) ##On
-  #points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="purple",pch=13,cex=2)##Off
-  
-  
-  return(datMotionBout)
-}
-######################################## END OF V1 #############
-
-
 
 ##############################
 ## Identify Bout Sections and Get Data On Durations etc.
@@ -610,4 +394,224 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
 
   return(datMotionBout)
 }
+
+
+
+
+######################OLD CODE ####################
+# 
+# ## Identify Bout Sections and Get Data On Durations etc.
+# ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
+# ## Note: Incomplete Bouts At the end of the trajectory will be discarted  
+# ## regionToAnalyse - Sequence of Idx On Which To Obtain Bout Motion Data - Usually Set from 1st to last point of prey capture for a specific Prey Item
+# calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
+# {
+#   MoveboutsIdx_cleaned <- MoveboutsIdx[MoveboutsIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
+#   
+#   meanBoutSpeed <- median(vEventSpeed_smooth[MoveboutsIdx_cleaned])
+#   
+#   ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
+#   vMotionBout <- vEventSpeed_smooth
+#   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
+#   vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
+#   
+#   
+#   #vMotionBout_rle <- rle(vMotionBout)
+#   
+#   ##Invert Speed / And Use Peak Finding To detect Bout Edges (Troughs are Peaks in the Inverse image)
+#   boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/5)
+#   vEventAccell_smooth_Onset  <- boutEdgesIdx
+#   vEventAccell_smooth_Offset <- c(boutEdgesIdx,NROW(vEventSpeed_smooth))
+#   #vMotionBout[boutEdgesIdx]  <- 0 ##Set Edges As Cut Points XX
+#   
+#   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
+#   #X11()
+#   #plot(vEventSpeed_smooth, type='l', main="Unprocessed Cut Points")
+#   #points(vEventAccell_smooth_Onset,vEventSpeed_smooth[vEventAccell_smooth_Onset])
+#   #points(vEventAccell_smooth_Offset,vEventSpeed_smooth[vEventAccell_smooth_Offset],pch=6)
+#   
+#   
+#   ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
+#   vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
+#   
+#   # stopifnot(NROW(vMotionBout_On) > 0) ##No Bouts Detected
+#   
+#   ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
+#   vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] 
+#   iPairs <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
+#   
+#   ##Fix Detected Bout Points-
+#   ##Remove The Motion Regions Where A Peak Was not detected / Only Keep The Bouts with Peaks
+#   ## Shift the time of Bout to the edges where Start is on the rising foot of speed and stop are on the closest falling foot (This produces dublicates that are removed later)
+#   
+#   vMotionBout[1:length(vMotionBout)] = 0 ##Reset / Remove All Identified Movement
+#   for (i in 1:iPairs)
+#   {
+#     ###Motion Interval belongs to a detect bout(peak)  // Set Frame Indicators vMotionBout To Show Bout Frames
+#     if (any( MoveboutsIdx_cleaned >= vMotionBout_On[i] & MoveboutsIdx_cleaned < vMotionBout_Off[i] ) == TRUE)
+#     { 
+#       ##Fix Bout Onset Using Accelleration To Detect When Bout Actually Began
+#       ##Find Closest Speed Onset
+#       ##Calculate TimeDiff Between Detected BoutOnset And Actual Accelleration Onsets - Find the Onset Preceding the Detected Bout 
+#       OnSetTD <- vMotionBout_On[i] - vEventAccell_smooth_Onset[!is.na(vEventAccell_smooth_Onset)]
+#       ##Shift To Correct Onset Of Speed Increase / Denoting Where Bout Actually Began ##FIX ONSETS 
+#       ###Leave Out For Now
+#       if (NROW( (OnSetTD[OnSetTD > 0  ]) )>0) ##If Start Of Accellaration For this Bout Can Be Found / Fix It otherwise Leave it alone
+#       {
+#         idxMinStartOfBout <- which(OnSetTD == min(OnSetTD[OnSetTD > 0  ]))
+#         TDNearestBout <- (vMotionBout_On - vEventAccell_smooth_Onset[idxMinStartOfBout]) ##Invert Sign so as to detect TDs preceding the end 
+#         idxDetectedFirstFrameOfBout <- max(which(TDNearestBout == min(TDNearestBout[TDNearestBout>0]) )  ) ##max to pick the last one in case duplicate vMotionBout_Off values
+#         #vMotionBout_On[i] <-  vMotionBout_On[i] - min(OnSetTD[OnSetTD > 0  ])
+#         vMotionBout_On[i] <-  vMotionBout_On[idxDetectedFirstFrameOfBout]
+#       }
+#       
+#       ##FIX OFFSET to The Last MotionBoutIdx Detected Before the next BoutStart (where Decellaration Ends and A new One Begins)
+#       OffSetTD <- vEventAccell_smooth_Offset[!is.na(vEventAccell_smooth_Offset)] - vMotionBout_Off[i]  
+#       if (NROW(OffSetTD[OffSetTD > 0  ]) > 0) ##If An Offset Can Be Found (Last Bout Maybe Runs Beyond Tracking Record)
+#       { ##Find Last Detected Point In bout
+#         idxMaxEndOfBout <- which(OffSetTD == min(OffSetTD[OffSetTD > 0  ]))
+#         ##Last Detected Frame Before End is:
+#         TDNearestBout <- -(vMotionBout_Off - vEventAccell_smooth_Offset[idxMaxEndOfBout]) ##Invert Sign so as to detect TDs preceding the end 
+#         ##Find Which MotionBout Idx is the The Last One
+#         idxDetectedLastFrameOfBout <- max(which(TDNearestBout == min(TDNearestBout[TDNearestBout>0]) )  ) ##max to pick the last one in case duplicate vMotionBout_Off values
+#         # vSpeedHillEdge <- vMotionBout_Off[i] + min(OffSetTD[OffSetTD > 0  ]) ##How Far  is the next Edge
+#         ##Choose Closest Either The Last Detected Point Or The End/ Edge Of Speed Hill
+#         vMotionBout_Off[i] <-  vMotionBout_Off[idxDetectedLastFrameOfBout] #min(vSpeedHillEdge,vMotionBout_Off[idxDetectedLastFrameOfBout]) ##+ min(OffSetTD[OffSetTD > 0  ]) ##Shift |Forward To The End Of The bout
+#       }
+#       
+#       vMotionBout[vMotionBout_On[i]:(vMotionBout_Off[i]) ] = 1 ##Set As Motion Frames
+#     }
+#     else
+#     {##Remove the Ones That Do not Have a peak In them
+#       vMotionBout_On[i] = NA 
+#       vMotionBout_Off[i] = NA
+#     }
+#     
+#     
+#   } ###For Each Pair Of On-Off MotionBout 
+#   
+#   ##In Case On/Off Motion Becomes COntigious Then RLE will fail to detect it - So Make Sure Edges are there
+#   #vMotionBout[vMotionBout_On+1] = 1
+#   vMotionBout[vMotionBout_Off] = 0 ##Make Sure Off Remains / For Rle to Work
+#   
+#   #X11()
+#   #plot(vEventAccell_smooth,type='l',main="Processed Cut-Points")
+#   #points(vMotionBout_On,vEventAccell_smooth[vMotionBout_On])
+#   #points(vMotionBout_Off,vEventAccell_smooth[vMotionBout_Off],pch=6)
+#   
+#   
+#   ##Get Bout Statistics #### NOt Used / Replaced##
+#   #vMotionBoutDuration_msec <- vMotionBout_Off[1:iPairs]-vMotionBout_On[1:iPairs]
+#   #vMotionBoutDuration_msec <- 1000*vMotionBoutDuration_msec[!is.na(vMotionBoutDuration_msec)]/Fs
+#   #vMotionBoutIntervals_msec <- 1000*(vMotionBout_On[3:(iPairs)] - vMotionBout_Off[2:(iPairs-1)])/Fs
+#   ############################
+#   
+#   
+#   ## Get Bout Statistics Again Now Using Run Length Encoding Method 
+#   ## Take InterBoutIntervals in msec from Last to first - 
+#   vMotionBout_rle <- rle(vMotionBout)
+#   lastBout <- max(which(vMotionBout_rle$values == 1))
+#   firstBout <- min(which(vMotionBout_rle$values[2:lastBout] == 1)+1) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
+#   vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,1,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+#   ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
+#   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
+#   vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
+#   vMotionBout_Off <- which(vMotionBout_OnOffDetect == -1)+1
+#   vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,2,-2 )]/Fs
+#   
+#   vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
+#   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
+#   boutSeq <- seq(NROW(vMotionBoutIBI),1,-1 ) 
+#   boutRank <- seq(1,NROW(vMotionBoutIBI),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
+#   ## TODO FIx these
+#   vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
+#   vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
+#   
+#   ##Reverse Order 
+#   vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
+#   vMotionBoutDistanceTravelled_mm <- vMotionBoutDistanceTravelled_mm[boutSeq]
+#   
+#   ##Check for Errors
+#   stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )
+#   stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
+#   
+#   ##Combine and Return
+#   datMotionBout <- cbind(boutSeq,boutRank,vMotionBout_On,vMotionBout_Off,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm) ##Make Data Frame
+#   
+#   
+#   #### PLOT DEBUG RESULTS ###
+#   ##Make Shaded Polygons
+#   if (plotRes)
+#   {
+#     #vEventSpeed_smooth <- vEventSpeed_smooth*5
+#     
+#     lshadedBout <- list()
+#     t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)
+#     for (i in 1:NROW(vMotionBout_Off))  
+#     {
+#       lshadedBout[[i]] <- rbind(
+#         cbind(t[vMotionBout_Off[i] ],vEventSpeed_smooth[vMotionBout_Off[i]]-1),
+#         cbind(t[vMotionBout_Off[i] ], max(vEventPathLength_mm) ), #vEventPathLength_mm[vMotionBout_Off[i]]+15),
+#         cbind(t[vMotionBout_On[i] ], max(vEventPathLength_mm) ),#vEventPathLength_mm[vMotionBout_On[i]]+15),
+#         cbind(t[vMotionBout_On[i] ], vEventSpeed_smooth[vMotionBout_On[i]]-1)
+#       )
+#     }
+#     
+#     ##Plot Displacement and Speed(Scaled)
+#     vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
+#     
+#     plot(t,vEventPathLength_mm,ylab="mm",
+#          xlab="msec",
+#          ylim=c(-0.3,max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])  ),type='l',lwd=3) ##PLot Total Displacemnt over time
+#     par(new=T) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
+#     par(mar=c(4,4,2,2))
+#     plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue")
+#     axis(side = 4,col="blue")
+#     mtext(side = 4, line = 3, 'Speed (mm/sec)')
+#     
+#     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
+#     points(t[MoveboutsIdx],vEventSpeed_smooth[MoveboutsIdx],col="black")
+#     points(t[MoveboutsIdx_cleaned],vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
+#     points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
+#     segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
+#     points(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off],col="purple",pch=14,lwd=3)
+#     points(t[boutEdgesIdx],vEventSpeed_smooth[boutEdgesIdx],col="red",pch=8,lwd=3) 
+#     segments(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On]-1,t[vMotionBout_On],vEventPathLength[vMotionBout_On]+15,lwd=0.9,col="green")
+#     for (poly in lshadedBout)
+#       polygon(poly,density=3,angle=-45) 
+#     
+#     #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
+#     text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+3,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
+#     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
+#     
+#     plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
+#          xlab="msec",
+#          col="red",main="Tail Motion")
+#     lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black" )
+#     
+#   } ##If Plot Flag Is Set 
+#   
+#   message(paste("Number oF Bouts:",NROW(datMotionBout)))
+#   # dev.copy(png,filename=paste(strPlotExportPath,"/Movement-Bout_exp",expID,"_event",eventID,"_track",trackID,".png",sep="") );
+#   
+#   #  dev.off()
+#   
+#   
+#   ## Plot The Start Stop Motion Bout Binarized Data
+#   #vMotionBout[is.na(vMotionBout)] <- 0
+#   #vMotionBout_On[is.na(vMotionBout_On)] <- 0
+#   #vMotionBout_Off[is.na(vMotionBout_Off)] <- 0
+#   
+#   #X11()
+#   #plot(vMotionBout,type='p',xlim=c(0,max(vMotionBout_Off) )  )
+#   #plot(MoveboutsIdx_cleaned,vMotionBout[MoveboutsIdx_cleaned],col="red",type='p')
+#   #segments(seq(1:NROW(vMotionBout)),vMotionBout,seq(1:NROW(vMotionBout)),vMotionBout+0.04,lwd=0.2)
+#   
+#   #points(vMotionBout_On,vMotionBout[vMotionBout_On],col="green",pch=2,cex=2) ##On
+#   #points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="purple",pch=13,cex=2)##Off
+#   
+#   
+#   return(datMotionBout)
+# }
+######################################## END OF V1 #############
 
