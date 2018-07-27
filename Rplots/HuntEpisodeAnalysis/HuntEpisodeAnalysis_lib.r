@@ -308,6 +308,24 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   ## Get Bout Statistics Again Now Using Run Length Encoding Method 
   ## Take InterBoutIntervals in msec from Last to first - 
   vMotionBout_rle <- rle(vMotionBout)
+  ##Filter Out Small Bouts/Pauses -
+  idxShort <- which(vMotionBout_rle$lengths < 2)
+  for (jj in idxShort)
+  {
+    ##Fill In this Gap
+    idxMotionStart <- sum(vMotionBout_rle$length[1:(jj-1)])
+    idxMotionEnd <- idxMotionStart + vMotionBout_rle$length[jj]
+    
+    if( vMotionBout_rle$values[jj] == 1) # If this is a Motion
+      vMotionBout[idxMotionStart:idxMotionEnd] <- 0 ##Replace short motion with Pause
+
+    if( vMotionBout_rle$values[jj] == 0) # If this is a Motion
+      vMotionBout[idxMotionStart:idxMotionEnd] <- 1 ##Replace short Pause with Motion
+    
+  }
+  ##Redo Fixed Binary Vector
+  vMotionBout_rle <- rle(vMotionBout)
+  
   lastBout <- max(which(vMotionBout_rle$values == 1))
   firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1)) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
   vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
@@ -379,7 +397,8 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
       polygon(poly,density=3,angle=-45) 
     
     #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
-    text(t[round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)],max(vEventSpeed_smooth)+0.1,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
+    pkPt <- round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)
+    text(t[pkPt],vEventSpeed_smooth[pkPt]+0.1,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
     plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',

@@ -46,7 +46,7 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <- 1 #NROW(datTrackedEventsRegister)
+idTo <-  NROW(datTrackedEventsRegister)
 for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
 {
   
@@ -201,7 +201,7 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
   ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
   regionToAnalyse       <-seq(1,
                               max(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
-                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+50
+                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+150
                               ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
@@ -290,10 +290,16 @@ for (idxH in 1:idTo)#NROW(datTrackedEventsRegister)
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
     polarPlotAngleToPrey(datRenderHuntEvent)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
-  dev.off()
+  dev.off() 
+  ##END OF PLOT
     
   rows <- NROW(lMotionBoutDat[[idxH]])
-  lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,RegistarIdx = as.numeric(rep(idxH,rows)),expID=as.numeric(rep(expID,rows)),eventID=as.numeric(rep(eventID,rows)),groupID=rep((groupID) ,rows) )
+  lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,
+                                  RegistarIdx = as.numeric(rep(idxH,rows)),
+                                  expID=as.numeric(rep(expID,rows)),
+                                  eventID=as.numeric(rep(eventID,rows)),
+                                  groupID=rep((groupID) ,rows),
+                                  PreyCount <- rep(NROW(tblPreyRecord),rows))
 } ###END OF EACH Hunt Episode Loop 
 
 datEpisodeMotionBout <- lMotionBoutDat[[1]]
