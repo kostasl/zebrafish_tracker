@@ -63,12 +63,14 @@ getPowerSpectrumInTime <- function(w,Fs)
   for (i in 1:NROW(w.coefSq) )
   {
     idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
-    vFqMed[i] <- sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+    FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-5)  )
+    vFqMed[i] <- w.Frq[FqRank]/5 # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
   #X11();
   
   w.FqMod <-vFqMed #
-  
+ # X11()
+#  plot(vFqMed)
   return (list(wavedata=w,nVoices=w.nVoices,nOctaves=w.nOctaves ,MorletFrequency=w.W0, cwt=w.cwt,cwtpower=w.coefSq,Frq=w.Frq,freqMode=w.FqMod,Fs=w.Fs) )
 }
 
@@ -195,7 +197,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  fit <- Mclust(xy ,G=6, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01,0.1),c(0.1,5),c(0.1,10),c(0.3,15),c(0.3,20),c(0.3,25)),shrinkage=0.1 ) )  
+  fit <- Mclust(xy ,G=6, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01,0.1),c(0.1,5),c(0.1,10),c(0.2,15),c(0.4,20),c(1.5,25)),shrinkage=0.1 ) )  
 
   #fit <- Mclust(xy ,G=2, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   

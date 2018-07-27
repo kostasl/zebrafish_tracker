@@ -49,7 +49,7 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <- 41#NROW(datTrackedEventsRegister)
+idTo <- 43#NROW(datTrackedEventsRegister)
 for (idxH in 41:idTo)#NROW(datTrackedEventsRegister)
 {
   
@@ -260,8 +260,7 @@ for (idxH in 41:idTo)#NROW(datTrackedEventsRegister)
          ylab=NA,
          col="blue4")
     
-    ##Tail Fq Mode
-    #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
+    
     #X11()
     par(new = F)
     plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
@@ -294,9 +293,14 @@ for (idxH in 41:idTo)#NROW(datTrackedEventsRegister)
     polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
     polarPlotAngleToPrey(datRenderHuntEvent)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
+    
+    
   dev.off() 
   ##END OF PLOT
   
+  ##Tail Fq Mode
+  X11()
+  plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   ##Calc Angle To Prey Per Bout
   vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]
   
