@@ -15,6 +15,8 @@ citation("mclust")
 filterEyeTailNoise <- function(datFishMotion)
 {
   
+  if (NROW(datFishMotion) < 2)
+    return(datFishMotion)
   #dir.create(strFolderName )
   ##Remove NAs
 
@@ -299,7 +301,7 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = 
   ##Estimate Initial DIstance From Prey Onto Which We Add the integral of Speed, By Looking At Initial PreyDist and adding any fish displacemnt to this in case The initial dist Record Is NA
   vDistToPreyInt[!is.na(vDistToPreyInt)] <- (cumsum(vSpeedToPrey[!is.na(vDistToPreyInt)]) ) ##But diff and integration Caused a shift
   
-  vDistToPreyInt[9:(NROW(vDistToPreyInt))] <- vDistToPreyInt[1:(NROW(vDistToPreyInt)-8)] ##Fix Time Shift
+  vDistToPreyInt[9:(NROW(vDistToPreyInt))] <- vDistToPreyInt[1:(NROW(vDistToPreyInt)-min(8,NROW(vDistToPreyInt)) )] ##Fix Time Shift - If NROW > 8
   ##Compare Mean Distance Between them - Only Where Orig. PreyDist Is not NA - To obtain Integral Initial Constant (Starting Position)
   InitDistance             <- mean(vDistToPrey[!is.na(vDistToPrey)]-vDistToPreyInt[!is.na(vDistToPrey)],na.rm = TRUE )  ##vDistToPrey[!is.na(vDistToPrey)][1] + sum(vEventSpeed_smooth[(1:which(!is.na(vDistToPrey))[1])])
   

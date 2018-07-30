@@ -55,8 +55,8 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <- 40#NROW(datTrackedEventsRegister)
-for (idxH in 40:idTo)#NROW(datTrackedEventsRegister)
+idTo <- NROW(datTrackedEventsRegister)
+for (idxH in 11:idTo)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -89,18 +89,21 @@ for (idxH in 40:idTo)#NROW(datTrackedEventsRegister)
   message("Filtering Fish Motion (on all PreyID replicates)...")
   ldatFish <- list()
   for (p in names(tblPreyRecord))
-    ldatFish[[p]] <- filterEyeTailNoise(datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == p,])
+  {
+    message(p)
+    ldatFish[[as.character(p)]] <- filterEyeTailNoise(datPlaybackHuntEvent[!is.na(datPlaybackHuntEvent$PreyID) 
+                                                                           & datPlaybackHuntEvent$PreyID == p,])
+  }
+  ldatFish[["NA"]] <- filterEyeTailNoise(datPlaybackHuntEvent[is.na(datPlaybackHuntEvent$PreyID) ,])
   
   ##Recombine the datframes Split By PreyID
   datPlaybackHuntEvent <- do.call(rbind,ldatFish)
   
   
- # X11();plot(datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == 18,]$frameN,datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == 18,]$REyeAngle)
-#  lines(datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == 19,]$frameN,datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == 19,]$REyeAngle)
+  ##PLAYBACK ####
+  #     renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1) #saveToFolder =  strFolderName
+  ########################
   
-  ##Select Prey Specific Subset
-  datFishMotionVsTargetPrey <- ldatFish[[as.character(selectedPreyID)]] #datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == ,] 
-  datRenderHuntEvent <- datFishMotionVsTargetPrey
   
   ##Add PreyTarget ID To Register Save The Prey Target To Register
   if (!any(names(datTrackedEventsRegister) == "PreyIDTarget"))
@@ -130,6 +133,11 @@ for (idxH in 40:idTo)#NROW(datTrackedEventsRegister)
   }
   ################ END OF PREY SELECT / Start Processing ###
   
+  
+  ## Select Prey Specific Subset
+  datFishMotionVsTargetPrey <- ldatFish[[as.character(selectedPreyID)]] #datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == ,] 
+  datRenderHuntEvent <- datFishMotionVsTargetPrey
+  
   ### Filter / Process Motion Variables - Noise Removal / 
   #datFishMotionVsTargetPrey <- filterEyeTailNoise(datFishMotionVsTargetPrey)
   ##
@@ -138,10 +146,6 @@ for (idxH in 40:idTo)#NROW(datTrackedEventsRegister)
   
   
     
-  
-  ##PLAYBACK ####
-   #     renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1) #saveToFolder =  strFolderName
-  ########################
   
   
   #### PROCESS BOUTS ###
@@ -168,7 +172,7 @@ for (idxH in 40:idTo)#NROW(datTrackedEventsRegister)
   ## Tail Motion ####
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
-  vTailDisp <- filtfilt(bf_tailClass, (vTailDisp))
+  vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
   vTailDispFilt <- filtfilt(bf_tailClass2,abs( vTailDisp) )  ##Heavily Filtered and Used For Classifying Bouts
 
   
@@ -289,8 +293,8 @@ for (idxH in 40:idTo)#NROW(datTrackedEventsRegister)
   ##END OF PLOT
   
   ##Tail Fq Mode
-  X11()
-  plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
+  #X11()
+  #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
   ##Calc Angle To Prey Per Bout
   vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]

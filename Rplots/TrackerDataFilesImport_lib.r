@@ -26,10 +26,16 @@ wrapAngle <- function(x)
 diffPolar <- function(X)
 {
   X <-  X %% 360 
+  Y <- rep(0,NROW(X))
   # X[X < 0] <- X[X < 0] + 360
   
+  if (NROW(X) < 2 )
+  {
+    warning("Empty Vector to DiffPolar")
+    return (Y)
+  }
   
-  Y <- rep(0,NROW(X))
+  
   for (i in 2:NROW(X) )
   {
     ##Skip NA
@@ -52,7 +58,13 @@ diffPolar <- function(X)
 ##Fixes Lost Tracking / and Out of Range values by Filling In Gaps with Last known good Value 
 clipEyeRange <- function(vEyeAngle,lMin,lMax)
 {
-  for (e in 2:NROW(vEyeAngle))
+  if (NROW(vEyeAngle) < 2)
+    return(NA)
+  
+  ##Min Idx TO Start fROM IS 2 
+  idxStart <- max(  min(which(!is.na(vEyeAngle) )   ),2)
+    
+  for (e in idxStart:NROW(vEyeAngle))
   {
     
     if (is.na(vEyeAngle[e])) 
