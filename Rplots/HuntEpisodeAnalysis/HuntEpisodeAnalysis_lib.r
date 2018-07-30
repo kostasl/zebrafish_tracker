@@ -112,8 +112,8 @@ getPowerSpectrumInTime <- function(w,Fs)
   for (i in 1:NROW(w.coefSq) )
   {
     idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
-    FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-5)  )
-    vFqMed[i] <- w.Frq[FqRank]/5 # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+    FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-3)  )
+    vFqMed[i] <- w.Frq[FqRank]/3 # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
   #X11();
   
@@ -246,7 +246,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  fit <- Mclust(xy ,G=6, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01,0.1),c(0.1,5),c(0.1,10),c(0.2,15),c(0.4,20),c(1.5,25)),shrinkage=0.1 ) )  
+  fit <- Mclust(xy ,G=6, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01,0.1),c(0.01,5),c(0.05,5),c(0.02,2),c(0.4,20),c(1.5,25)),shrinkage=0.1 ) )  
 
   #fit <- Mclust(xy ,G=2, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   
@@ -266,11 +266,11 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   boutClass <- fit$classification
   clusterActivity <- vector()
   for (i in unique(boutClass))
-    clusterActivity[i] <- mean(pvEventSpeed[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+    clusterActivity[i] <- max(pvEventSpeed[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
   #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
   
   #boutCluster <- which(clusterActivity == max(clusterActivity))
-  boutCluster <- c(which(rank(clusterActivity) == 6 ),which(rank(clusterActivity) == 5 ),which(rank(clusterActivity) == 4 ),which(rank(clusterActivity) == 4 ))   
+  boutCluster <- c(which(rank(clusterActivity) == 6 ),which(rank(clusterActivity) == 5 ),which(rank(clusterActivity) == 3 ),which(rank(clusterActivity) == 2 ))   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   ## Add Prior Bias to Selects from Clusters To The 
   return (which(fit$classification %in% boutCluster ) )

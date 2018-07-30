@@ -55,8 +55,15 @@ lMotionBoutDat <- list()
 
 
 #idxH <- 20
-idTo <- NROW(datTrackedEventsRegister)
-for (idxH in 11:idTo)#NROW(datTrackedEventsRegister)
+idTo <- 12#NROW(datTrackedEventsRegister)
+
+
+idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
+idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
+idxTestSet = c(14)
+
+
+for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -166,7 +173,7 @@ for (idxH in 11:idTo)#NROW(datTrackedEventsRegister)
 
     
   #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
-  vDistToPrey          <- meanf(sqrt( (datRenderHuntEventVsPrey$Prey_X -datRenderHuntEventVsPrey$posX )^2 + (datRenderHuntEventVsPrey$Prey_Y - datRenderHuntEventVsPrey$posY)^2   ),3)
+  vDistToPrey          <- meanf(sqrt( (datFishMotionVsTargetPrey$Prey_X -datFishMotionVsTargetPrey$posX )^2 + (datFishMotionVsTargetPrey$Prey_Y - datFishMotionVsTargetPrey$posY)^2   ),3)
   vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
 
   ## Tail Motion ####
@@ -238,7 +245,7 @@ for (idxH in 11:idTo)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
- # pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
   X11()
   par(mar=c(4,4,1.5,1.5))
   
@@ -293,8 +300,8 @@ for (idxH in 11:idTo)#NROW(datTrackedEventsRegister)
   ##END OF PLOT
   
   ##Tail Fq Mode
-  #X11()
-  #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
+  X11()
+  plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
   ##Calc Angle To Prey Per Bout
   vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]
