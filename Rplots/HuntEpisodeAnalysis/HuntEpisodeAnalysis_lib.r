@@ -8,6 +8,53 @@ library(mclust,quietly = TRUE)
 
 citation("mclust")
 
+## Processes The Noise IN the recorded Frames of Fish#'s Eye and Tail Motion
+##Filters Fish Records - For Each Prey ID Separatelly
+## As Each Row Should Contain a unique fish snapshot and not Repeats for each separate Prey Item - Ie A frame associated with a single preyID
+## returns the original data frame, now with L/R Eye angles and tail motion having been filtered
+filterEyeTailNoise <- function(datFishMotion)
+{
+  
+  #dir.create(strFolderName )
+  ##Remove NAs
+
+    lMax <- 55
+    lMin <- -20
+    #spectrum(datFishMotion$LEyeAngle)
+    datFishMotion$LEyeAngle <- clipEyeRange(datFishMotion$LEyeAngle,lMin,lMax)
+    datFishMotion$LEyeAngle <-medianf(datFishMotion$LEyeAngle,nEyeFilterWidth)
+    datFishMotion$LEyeAngle[is.na(datFishMotion$LEyeAngle)] <- 0
+    datFishMotion$LEyeAngle <-filtfilt(bf_eyes,datFishMotion$LEyeAngle) # filtfilt(bf_eyes, medianf(datFishMotion$LEyeAngle,nFrWidth)) #meanf(datHuntEventMergedFrames$LEyeAngle,20)
+    
+    #X11()
+    #lines(medianf(datFishMotion$LEyeAngle,nFrWidth),col='red')
+    #lines(datFishMotion$LEyeAngle,type='l',col='blue')
+    ##Replace Tracking Errors (Values set to 180) with previous last known value
+    
+    lMax <- 15
+    lMin <- -50
+    datFishMotion$REyeAngle <- clipEyeRange(datFishMotion$REyeAngle,lMin,lMax)
+    datFishMotion$REyeAngle <-medianf(datFishMotion$REyeAngle,nEyeFilterWidth)
+    datFishMotion$REyeAngle[is.na(datFishMotion$REyeAngle)] <- 0
+    datFishMotion$REyeAngle <- filtfilt(bf_eyes,datFishMotion$REyeAngle  ) #meanf(datHuntEventMergedFrames$REyeAngle,20)
+    #datFishMotion$REyeAngle <-medianf(datFishMotion$REyeAngle,nFrWidth)
+  
+    
+    ##Fix Angle Circular Distances by DiffPolar Fix on Displacement and then Integrate back to Obtain fixed Angles  
+    lMax <- +75; lMin <- -75 ;
+    datFishMotion$DThetaSpine_7 <- filtfilt(bf_tail, cumsum(diffPolar( datFishMotion$DThetaSpine_7))+datFishMotion$DThetaSpine_7[1]  )
+    datFishMotion$DThetaSpine_6 <- filtfilt(bf_tail, cumsum(diffPolar( datFishMotion$DThetaSpine_6))+datFishMotion$DThetaSpine_6[1] )
+    datFishMotion$DThetaSpine_5 <- filtfilt(bf_tail, cumsum(diffPolar( datFishMotion$DThetaSpine_5))+datFishMotion$DThetaSpine_5[1]  )
+    datFishMotion$DThetaSpine_4 <- filtfilt(bf_tail, cumsum(diffPolar( datFishMotion$DThetaSpine_4))+datFishMotion$DThetaSpine_4[1] )
+    datFishMotion$DThetaSpine_3 <- filtfilt(bf_tail, cumsum(diffPolar( datFishMotion$DThetaSpine_3))+datFishMotion$DThetaSpine_3[1] )
+    datFishMotion$DThetaSpine_2 <- filtfilt(bf_tail, cumsum(diffPolar( datFishMotion$DThetaSpine_2))+datFishMotion$DThetaSpine_2[1] )
+    datFishMotion$DThetaSpine_1 <- filtfilt(bf_tail, cumsum(diffPolar( datFishMotion$DThetaSpine_1))+datFishMotion$DThetaSpine_1[1] )
+
+  
+  return(datFishMotion)
+}
+
+
 ## 
 #Returns F: corresponding frequencies for the constracuted wavelet scales given #Octaves and Voices
 #Fc Assumes Centre Frequency For Wavelet Function (ie morlet)
@@ -332,17 +379,20 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
     
   lastBout <- max(which(vMotionBout_rle$values == 1))
   firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1)) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
-  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,1,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  ##Add One Since IBI count is 1 less than the bout count
+  vMotionBoutIBI <- c(vMotionBoutIBI,NA)
+  
   ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
   vMotionBout_Off <- which(vMotionBout_OnOffDetect == -1)+1
-  vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,2,-2 )]/Fs
+  vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs
   
   vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
-  boutSeq <- seq(NROW(vMotionBoutIBI),1,-1 ) 
-  boutRank <- seq(1,NROW(vMotionBoutIBI),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
+  boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)
+  boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
   ## TODO FIx these
   vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
   vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
@@ -383,7 +433,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
     plot(t,vEventPathLength_mm,ylab="mm",
          xlab="msec",
          ylim=c(-0.3, ymax  ),type='l',lwd=3) ##PLot Total Displacemnt over time
-    par(new=T) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
+    par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     par(mar=c(4,4,2,2))
     plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,1.5))
     axis(side = 4,col="blue")

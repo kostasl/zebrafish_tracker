@@ -155,7 +155,7 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
 
 
 ##Test  PlayBack Plot Hunt Event###
-renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolder=NA)
+renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=1,saveToFolder=NA)
 {
 
   #datHuntEventMergedFrames$LEyeAngle <- meanf(datHuntEventMergedFrames$LEyeAngle,20)
@@ -181,11 +181,13 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
   Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
   
   
-  datHuntEventMergedFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$posX < frameWidth & datRenderHuntEvent$posY < frameHeight & !is.na(datHuntEventMergedFrames$frameN) ,]
+  datHuntEventMergedFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$posX < frameWidth &
+                                                         datHuntEventMergedFrames$posY < frameHeight & 
+                                                         !is.na(datHuntEventMergedFrames$frameN) ,]
  
   X11() ##Show On Screen
-  startFrame <- min(datHuntEventMergedFrames$frameN)
-  endFrame <- max(datHuntEventMergedFrames$frameN)
+  startFrame <- min(datHuntEventMergedFrames$frameN,na.rm =TRUE)
+  endFrame <- max(datHuntEventMergedFrames$frameN,na.rm =TRUE)
 
   for (i in seq(startFrame,endFrame,speed) )
   {
@@ -203,11 +205,13 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
       lastFrame <- max(datFishFrames$frameN)
      
     
-    preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == lastFrame,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
+    #preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == lastFrame,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
     ##Now Isolate Fish Rec, Focus on Single Prey Item
     if (!is.na(preyTargetID))
       datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
     
+    ##Filter The Fish Motion In the Subset PreyID Selection
+    #datFishFrames <- filterEyeTailNoise(datFishFrames)
     recLastFishFrame <- datFishFrames[datFishFrames$frameN == lastFrame,]
     
     
@@ -281,7 +285,7 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,speed=1,saveToFolde
     
     
     ##Draw Frame Number
-    text(X_FRAME[1] + 30,frameHeight-10,labels=paste("#",i,round(1000* (i-startFrame)/(Fs)),"msec" ) ,col="darkblue",cex=0.7)
+    text(X_FRAME[1] + 30,frameHeight-10,labels=paste("#",i-startFrame,round( (i-startFrame)/(Fs/1000)),"msec" ) ,col="darkblue",cex=0.7)
     
     colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
     ###Draw Prey

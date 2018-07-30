@@ -32,6 +32,10 @@ diffPolar <- function(X)
   Y <- rep(0,NROW(X))
   for (i in 2:NROW(X) )
   {
+    ##Skip NA
+    if (is.na(X[i]) | is.na(X[i-1]) )
+      next
+
     Y[i]<- X[i]-X[i-1]
     
     if (Y[i] > 180) ##Replace with Closest Distance Around Circle
