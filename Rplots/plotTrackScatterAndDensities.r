@@ -325,7 +325,9 @@ polarPlotAngleToPrey <- function(datRenderHuntEvent)
 ### Plot Relative Angle To Each Prey ###
 vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
 
-Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
+Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) 
+           - min(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) ) / G_APPROXFPS)+1
+
 relAngle <- list()
 
 
@@ -355,7 +357,7 @@ Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
     
     ##Convert Frames To Seconds
     
-    d <- (datRenderPrey$frameN-min(datRenderHuntEvent$frameN)) / G_APPROXFPS
+    d <- (datRenderPrey$frameN-min(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN)) / G_APPROXFPS
     x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",col=colR[n])

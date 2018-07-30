@@ -280,8 +280,8 @@ for (idxH in 40:idTo)#NROW(datTrackedEventsRegister)
     legend(max(t)-720,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(lAngleToPrey)) ) ,fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
     ###
     plotTailPowerSpectrumInTime(lwlt)
-    polarPlotAngleToPreyVsDistance(datRenderHuntEvent)
-    polarPlotAngleToPrey(datRenderHuntEvent)
+    polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent)
+    polarPlotAngleToPrey(datPlaybackHuntEvent)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
     
     
