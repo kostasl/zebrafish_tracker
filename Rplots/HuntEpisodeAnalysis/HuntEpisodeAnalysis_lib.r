@@ -97,7 +97,7 @@ getPowerSpectrumInTime <- function(w,Fs)
   #w= w + sin(2*pi*128*t)*exp(-(t-.55)^2/.001)
   #w= w + sin(2*pi*64*t)*exp(-(t-.75)^2/.001)
   #w = ts(w,deltat=1/Fs)
-  N_MODESAMPLES <- 40
+  N_MODESAMPLES <- 20
   w.Fs <- Fs
   w.nVoices <- 12
   w.nOctaves <- 32
@@ -114,7 +114,7 @@ getPowerSpectrumInTime <- function(w,Fs)
     ##Where is the Max Power at Each TimeStep?
     idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
     FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-N_MODESAMPLES)  )
-    vFqMed[i] <- mean(w.Frq[FqRank]) # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+    vFqMed[i] <- median(w.Frq[FqRank]) # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
 
   
@@ -226,7 +226,7 @@ detectMotionBouts <- function(vEventSpeed)
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectTailBouts <- function(vTailMotionFq)
 {
-  nNumberOfComponents = 4
+  nNumberOfComponents = 7
   nSelectComponents = 2
   colClass <- c("#FF0000","#04A022","#0000FF")
   

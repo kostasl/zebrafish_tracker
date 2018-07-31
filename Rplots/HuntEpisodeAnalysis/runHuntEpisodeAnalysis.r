@@ -60,10 +60,10 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = 26#(1:NROW(datTrackedEventsRegister))
+idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -161,11 +161,11 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   #nNumberOfBouts       <- 
   dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
   dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
-  vEventSpeed          <- meanf(vDeltaDisplacement/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+  vEventSpeed          <- meanf(vDeltaDisplacement/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
   
 
   vDeltaBodyAngle      <- diffPolar(datRenderHuntEvent$BodyAngle) #(  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
-  vTurnSpeed           <- meanf(vDeltaBodyAngle[1:NROW(dframe)]/dframe,3)
+  vTurnSpeed           <- meanf(vDeltaBodyAngle[1:NROW(dframe)]/dframe,5)
   vAngleDisplacement   <- cumsum(vDeltaBodyAngle)
 
     
@@ -214,29 +214,28 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
   lwlt <- getPowerSpectrumInTime(vTailDisp,Fs)
   
-  TurnboutsIdx <- NA
-  MoveboutsIdx <- NA
-  TailboutsIdx <- NA
   
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
   #### Cluster Tail Motion Wtih Fish Speed - Such As to Identify Motion Bouts Idx 
   #vMotionSpeed <- vEventSpeed_smooth + vTurnSpeed
   #MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,lwlt$freqMode)
+
+  ########## BOUT DETECTION #################
+  TurnboutsIdx <- NA
+  MoveboutsIdx <- NA
+  TailboutsIdx <- NA
+  
   MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
-  
   
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
   ##Score Detected Frames On Overlapping Detectors
   tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
   
-  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>0]))
+  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>1]))
   
-  ## Detect Tail Motion Bouts
-  #vTailActivity <- rep(0,NROW(vTailDispFilt))
-  #vTailActivity[vTailDispFilt>5] <- 1
-  #vTailActivity[vTailDispFilt <=2] <- 0
+  #######################
   
   
   #  plot(vTailDispFilt,type='l')
