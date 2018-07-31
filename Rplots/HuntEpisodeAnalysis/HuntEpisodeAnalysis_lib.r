@@ -163,7 +163,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectMotionBouts <- function(vEventSpeed)
 {
-  nNumberOfComponents = 15
+  nNumberOfComponents = 17
   nSelectComponents = 7
   colClass <- c("#FF0000","#04A022","#0000FF")
   
@@ -180,7 +180,7 @@ detectMotionBouts <- function(vEventSpeed)
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #modelNames = "EII"
-  fit <- Mclust(x ,G=nNumberOfComponents,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
   #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   
@@ -370,6 +370,10 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
   vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
   
+  ##Make Initial Cut So There is always a Bout On/Off 1st & Last Frame Is always a pause
+  vMotionBout[1] <- 0
+  vMotionBout[NROW(vMotionBout)] <- 0
+  
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
   ##Detect Speed Minima
   boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/5)
@@ -377,13 +381,16 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   
   ##Bout On Points Are Found At the OnSet Of the Rise/ inflexion Point - Look for Previous derivative /Accelleration change
   vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
-  
-  ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
+
+  if (NROW(vMotionBout_On) == 1)
+    warning("No Bout Onset Detected")
+    
+
   vMotionBout_Off <- which(vMotionBout_OnOffDetect[vMotionBout_On[1]:length(vMotionBout_OnOffDetect)] == -1)+vMotionBout_On[1] 
   iPairs <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
-  
-  
-  
+
+      
+  ##Ignore An Odd, Off Event Before An On Event, (ie start from after the 1st on event)
   ## Get Bout Statistics Again Now Using Run Length Encoding Method 
   ## Take InterBoutIntervals in msec from Last to first - 
   vMotionBout_rle <- rle(vMotionBout)
@@ -412,7 +419,10 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
     
   lastBout <- max(which(vMotionBout_rle$values == 1))
   firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1)) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
-  vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  if (lastBout > firstBout) ##If More than One Bout Exists
+    vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  else
+    vMotionBoutIBI <- 1
   ##Add One Since IBI count is 1 less than the bout count
   vMotionBoutIBI <- c(vMotionBoutIBI,NA)
   
