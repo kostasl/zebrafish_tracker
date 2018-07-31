@@ -44,7 +44,7 @@ datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Proc
 ## Setup Filters ## Can Check Bands with freqz(bf_speed) ## These are used in filterEyeTailNoise 
 Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
-bf_tailClass <- butter(4, c(0.01,0.3),type="pass"); ##Remove DC
+bf_tailClass <- butter(4, c(0.01,0.35),type="pass"); ##Remove DC
 bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
 bf_eyes <- butter(4, 0.025,type="low",plane="z");
 bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
@@ -60,7 +60,7 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = 3#(1:NROW(datTrackedEventsRegister))
+idxTestSet = 26#(1:NROW(datTrackedEventsRegister))
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -203,7 +203,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   vDistToPrey_Fixed_FullRange      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
   ##Find Region Of Interest For Analysis Of Bouts
   ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
-  regionToAnalyse       <-seq(1,
+  regionToAnalyse       <-seq(min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )-50,
                               max(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
                                     max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+150
                               ) ##Set To Up To The Minimum Distance From Prey
@@ -214,32 +214,28 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
   lwlt <- getPowerSpectrumInTime(vTailDisp,Fs)
   
-  TurnboutsIdx <- 0
-  MoveboutsIdx <- 0
-  TailboutsIdx <- 0
+  TurnboutsIdx <- NA
+  MoveboutsIdx <- NA
+  TailboutsIdx <- NA
   
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
   #### Cluster Tail Motion Wtih Fish Speed - Such As to Identify Motion Bouts Idx 
   #vMotionSpeed <- vEventSpeed_smooth + vTurnSpeed
   #MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,lwlt$freqMode)
-  #MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
-  #TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
+  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
   
-  MoveboutsIdx_cleaned <- unique(c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx ))
-  #MoveboutsIdx_cleaned <- TurnboutsIdx #c(MoveboutsIdx,TurnboutsIdx)# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
-  #MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
-  #MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% TailboutsIdx] <-  NA
-  ##Append The TailBoutsIdx
-  #MoveboutsIdx_cleaned <- c(MoveboutsIdx_cleaned[!is.na(MoveboutsIdx_cleaned)],TailboutsIdx)
-  #MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
-  ##Append The MoveBoutsIdx
-  MoveboutsIdx_cleaned <- c(MoveboutsIdx_cleaned[!is.na(MoveboutsIdx_cleaned)],MoveboutsIdx)
   
+  MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
+  ##Score Detected Frames On Overlapping Detectors
+  tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
+  
+  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>0]))
   
   ## Detect Tail Motion Bouts
-  vTailActivity <- rep(0,NROW(vTailDispFilt))
-  vTailActivity[vTailDispFilt>5] <- 1
+  #vTailActivity <- rep(0,NROW(vTailDispFilt))
+  #vTailActivity[vTailDispFilt>5] <- 1
   #vTailActivity[vTailDispFilt <=2] <- 0
   
   
@@ -308,8 +304,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   ##END OF PLOT
   
   ##Tail Fq Mode
-  X11()
-  plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
+  #X11()
+  #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
   ##Calc Angle To Prey Per Bout
   vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]

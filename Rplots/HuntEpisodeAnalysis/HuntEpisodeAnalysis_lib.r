@@ -97,7 +97,7 @@ getPowerSpectrumInTime <- function(w,Fs)
   #w= w + sin(2*pi*128*t)*exp(-(t-.55)^2/.001)
   #w= w + sin(2*pi*64*t)*exp(-(t-.75)^2/.001)
   #w = ts(w,deltat=1/Fs)
-  N_MODESAMPLES <- 30
+  N_MODESAMPLES <- 40
   w.Fs <- Fs
   w.nVoices <- 12
   w.nOctaves <- 32
@@ -114,13 +114,13 @@ getPowerSpectrumInTime <- function(w,Fs)
     ##Where is the Max Power at Each TimeStep?
     idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
     FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-N_MODESAMPLES)  )
-    vFqMed[i] <- median(w.Frq[FqRank]) # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+    vFqMed[i] <- mean(w.Frq[FqRank]) # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
-  X11();
+
   
   w.FqMod <-vFqMed #
  # X11()
-  plot(vFqMed)
+#  plot(vFqMed,type='l')
   return (list(wavedata=w,nVoices=w.nVoices,nOctaves=w.nOctaves ,MorletFrequency=w.W0, cwt=w.cwt,cwtpower=w.coefSq,Frq=w.Frq,freqMode=w.FqMod,Fs=w.Fs) )
 }
 
@@ -226,8 +226,8 @@ detectMotionBouts <- function(vEventSpeed)
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectTailBouts <- function(vTailMotionFq)
 {
-  nNumberOfComponents = 10
-  nSelectComponents = 4
+  nNumberOfComponents = 4
+  nSelectComponents = 2
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vTailMotionFq)
@@ -237,9 +237,15 @@ detectTailBouts <- function(vTailMotionFq)
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #modelNames = "EII"
   ###I can test For Possibility Of Clustering With G=n using mclustBIC returnCodes - When 0 Its succesfull
-  #fitBIC <- mclustBIC(x ,G=1:(3*nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(5),c(10),c(20),c(40),c(8.5)) ,shrinkage=0.1 ) )
-  #message(attr(fitBIC,"returnCodes"))
+  fitBIC <- mclustBIC(x ,G=1:(nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(5),c(10),c(20),c(40),c(8.5)) ,shrinkage=0.1 ) )
+  
   #plot(fitBIC)
+  ##Select Largest Number Of Components That does not Crash !
+  message(attr(fitBIC,"returnCodes"))
+  
+  nNumberOfComponents <- max(which(attr(fitBIC,"returnCodes")[,2] == 0))
+  nSelectComponents <- round(nNumberOfComponents/2)
+  message(paste("Setting TailClust Comp. to N:",nNumberOfComponents,"Select n:",nSelectComponents) )
   
   fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "E",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
@@ -247,6 +253,10 @@ detectTailBouts <- function(vTailMotionFq)
   
   #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
+  
+  
+  X11()
+  plot(x, main="", xlab="",type="l")
   
   #  X11()
   #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
@@ -264,9 +274,8 @@ detectTailBouts <- function(vTailMotionFq)
   ##Select the Top nSelectComponents of clusterActivity
   boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ))   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
-  ## Add Prior Bias to Selects from Clusters To The 
+  
   return (which(fit$classification %in% boutCluster ) )
-  #return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
   
 }
 
@@ -473,30 +482,45 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   ##Redo Fixed Binary Vector
   vMotionBout_rle <- rle(vMotionBout)
 
-    
-  lastBout <- max(which(vMotionBout_rle$values == 1))
-  firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1)) ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
-  if (lastBout > firstBout) ##If More than One Bout Exists
-    vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  if (NROW(vMotionBout_rle$values[vMotionBout_rle$values == 1]) == 0)
+  {
+    lastBout <- 0
+    firstBout <- 0
+  }
   else
-    vMotionBoutIBI <- 1
+  {
+    lastBout <- max(which(vMotionBout_rle$values == 1))
+    firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1))
+  }
+  
+  vMotionBoutDuration <- NA
+  vMotionBoutIBI <- NA
+  vMotionBoutDistanceToPrey_mm <-NA
+  vMotionBoutDistanceTravelled_mm <-NA
+  vMotionBout_On <-NA
+  vMotionBout_Off <-NA
+  vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
+  ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
+  if (lastBout > firstBout) ##If More than One Bout Exists
+  {
+    vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+    ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
+    vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
+    vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
+    vMotionBout_Off <- which(vMotionBout_OnOffDetect == -1)+1
+    vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs
+    
+    vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
+    vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
+    
+  
+  }
   ##Add One Since IBI count is 1 less than the bout count
   vMotionBoutIBI <- c(vMotionBoutIBI,NA)
   
-  ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
-  vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
-  vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
-  vMotionBout_Off <- which(vMotionBout_OnOffDetect == -1)+1
-  vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs
-  
-  vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
   boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)
   boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
-  ## TODO FIx these
-  vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
-  vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
-  
   ##Reverse Order 
   vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
   vMotionBoutDistanceTravelled_mm <- vMotionBoutDistanceTravelled_mm[boutSeq]
