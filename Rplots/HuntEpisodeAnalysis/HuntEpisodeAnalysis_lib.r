@@ -164,7 +164,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 detectMotionBouts <- function(vEventSpeed)
 {
   nNumberOfComponents = 17
-  nSelectComponents = 7
+  nSelectComponents = 6
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
@@ -196,6 +196,50 @@ detectMotionBouts <- function(vEventSpeed)
   #plot(pvEventSpeed[1:nRec],type='l',col=colClass[1])
   #points(which(boutClass == 3), pvEventSpeed[boutClass == 3],type='p',col=colClass[2])
   
+  ##Find Which Cluster Contains the Highest Peaks
+  boutClass <- fit$classification
+  clusterActivity <- vector()
+  for (i in unique(boutClass))
+    clusterActivity[i] <- max(x[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+  #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
+  
+  clusterActivity[is.na(clusterActivity)] <- 0
+  #boutCluster <- which(clusterActivity == max(clusterActivity))
+  ##Select the Top nSelectComponents of clusterActivity
+  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ))   
+  #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
+  ## Add Prior Bias to Selects from Clusters To The 
+  return (which(fit$classification %in% boutCluster ) )
+  #return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
+  
+}
+
+
+##Clusters Fish Speed Measurements into Bout And Non Bout
+##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
+detectTailBouts <- function(vTailMotionFq)
+{
+  nNumberOfComponents = 5
+  nSelectComponents = 1
+  colClass <- c("#FF0000","#04A022","#0000FF")
+  
+  nRec <- NROW(vTailMotionFq)
+  ##Fix Length Differences
+  x  <-  vTailMotionFq[1:nRec]
+  ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
+  ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  #modelNames = "EII"
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
+  # "VVV" check out doc mclustModelNames
+  #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  
+  #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  summary(fit)
+  
+  #  X11()
+  #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
+  # rug(xy)
+
   ##Find Which Cluster Contains the Highest Peaks
   boutClass <- fit$classification
   clusterActivity <- vector()
@@ -372,6 +416,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   
   ##Make Initial Cut So There is always a Bout On/Off 1st & Last Frame Is always a pause
   vMotionBout[1] <- 0
+  vMotionBout[2] <- 1
   vMotionBout[NROW(vMotionBout)] <- 0
   
   vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout

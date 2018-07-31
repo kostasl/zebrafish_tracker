@@ -60,7 +60,7 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = 3
+idxTestSet = 3#(1:NROW(datTrackedEventsRegister))
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -214,14 +214,22 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
   lwlt <- getPowerSpectrumInTime(vTailDisp,Fs)
   
+  TurnboutsIdx <- 0
+  MoveboutsIdx <- 0
+  TailboutsIdx <- 0
   
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
   #### Cluster Tail Motion Wtih Fish Speed - Such As to Identify Motion Bouts Idx 
   #vMotionSpeed <- vEventSpeed_smooth + vTurnSpeed
   #MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,lwlt$freqMode)
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
+  #MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
+  TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   #TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
   MoveboutsIdx_cleaned <- TurnboutsIdx #c(MoveboutsIdx,TurnboutsIdx)# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
+  MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
+  MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% TailboutsIdx] <-  NA
+  ##Append The TailBoutsIdx
+  MoveboutsIdx_cleaned <- c(MoveboutsIdx_cleaned[!is.na(MoveboutsIdx_cleaned)],TailboutsIdx)
   MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
   ##Append The MoveBoutsIdx
   MoveboutsIdx_cleaned <- c(MoveboutsIdx_cleaned[!is.na(MoveboutsIdx_cleaned)],MoveboutsIdx)
