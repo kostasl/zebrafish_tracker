@@ -163,8 +163,8 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectMotionBouts <- function(vEventSpeed)
 {
-  nNumberOfComponents = 20
-  nSelectComponents = 9
+  nNumberOfComponents = 15
+  nSelectComponents = 7
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
@@ -203,6 +203,7 @@ detectMotionBouts <- function(vEventSpeed)
     clusterActivity[i] <- max(x[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
   #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
   
+  clusterActivity[is.na(clusterActivity)] <- 0
   #boutCluster <- which(clusterActivity == max(clusterActivity))
   ##Select the Top nSelectComponents of clusterActivity
   boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ))   

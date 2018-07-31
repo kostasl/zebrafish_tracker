@@ -60,7 +60,7 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = c(12)
+idxTestSet = 3
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -298,8 +298,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   ##END OF PLOT
   
   ##Tail Fq Mode
-  X11()
-  plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
+  #X11()
+  #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
   ##Calc Angle To Prey Per Bout
   vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]
