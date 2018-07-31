@@ -255,8 +255,8 @@ detectTailBouts <- function(vTailMotionFq)
   summary(fit)
   
   
-  X11()
-  plot(x, main="", xlab="",type="l")
+  #X11()
+  #plot(x, main="", xlab="",type="l")
   
   #  X11()
   #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
