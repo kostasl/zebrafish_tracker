@@ -113,8 +113,8 @@ getPowerSpectrumInTime <- function(w,Fs)
   {
     ##Where is the Max Power at Each TimeStep?
     idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
-    FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-3)  )
-    vFqMed[i] <- w.Frq[FqRank]/3 # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+    FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-20)  )
+    vFqMed[i] <- median(w.Frq[FqRank]) # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
   #X11();
   
@@ -180,6 +180,13 @@ detectMotionBouts <- function(vEventSpeed)
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #modelNames = "EII"
+  
+  
+  #fitBIC <- mclustBIC(x ,G=1:(2*nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)) ,shrinkage=0.1 ) )
+  #message(attr(fitBIC,"returnCodes"))
+  #plot(fitBIC)
+  
+  
   fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
   #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
@@ -219,8 +226,8 @@ detectMotionBouts <- function(vEventSpeed)
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectTailBouts <- function(vTailMotionFq)
 {
-  nNumberOfComponents = 5
-  nSelectComponents = 1
+  nNumberOfComponents = 10
+  nSelectComponents = 4
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vTailMotionFq)
@@ -229,7 +236,12 @@ detectTailBouts <- function(vTailMotionFq)
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #modelNames = "EII"
-  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
+  ###I can test For Possibility Of Clustering With G=n using mclustBIC returnCodes - When 0 Its succesfull
+  #fitBIC <- mclustBIC(x ,G=1:(3*nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(5),c(10),c(20),c(40),c(8.5)) ,shrinkage=0.1 ) )
+  #message(attr(fitBIC,"returnCodes"))
+  #plot(fitBIC)
+  
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "E",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
   #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   

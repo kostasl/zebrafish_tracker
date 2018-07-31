@@ -225,12 +225,14 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   #TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
-  MoveboutsIdx_cleaned <- TurnboutsIdx #c(MoveboutsIdx,TurnboutsIdx)# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
-  MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
-  MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% TailboutsIdx] <-  NA
+  
+  MoveboutsIdx_cleaned <- unique(c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx ))
+  #MoveboutsIdx_cleaned <- TurnboutsIdx #c(MoveboutsIdx,TurnboutsIdx)# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
+  #MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
+  #MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% TailboutsIdx] <-  NA
   ##Append The TailBoutsIdx
-  MoveboutsIdx_cleaned <- c(MoveboutsIdx_cleaned[!is.na(MoveboutsIdx_cleaned)],TailboutsIdx)
-  MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
+  #MoveboutsIdx_cleaned <- c(MoveboutsIdx_cleaned[!is.na(MoveboutsIdx_cleaned)],TailboutsIdx)
+  #MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
   ##Append The MoveBoutsIdx
   MoveboutsIdx_cleaned <- c(MoveboutsIdx_cleaned[!is.na(MoveboutsIdx_cleaned)],MoveboutsIdx)
   
@@ -306,8 +308,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   ##END OF PLOT
   
   ##Tail Fq Mode
-  #X11()
-  #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
+  X11()
+  plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
   ##Calc Angle To Prey Per Bout
   vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]
