@@ -97,7 +97,7 @@ getPowerSpectrumInTime <- function(w,Fs)
   #w= w + sin(2*pi*128*t)*exp(-(t-.55)^2/.001)
   #w= w + sin(2*pi*64*t)*exp(-(t-.75)^2/.001)
   #w = ts(w,deltat=1/Fs)
-  
+  N_MODESAMPLES <- 30
   w.Fs <- Fs
   w.nVoices <- 12
   w.nOctaves <- 32
@@ -113,14 +113,14 @@ getPowerSpectrumInTime <- function(w,Fs)
   {
     ##Where is the Max Power at Each TimeStep?
     idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
-    FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-20)  )
+    FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-N_MODESAMPLES)  )
     vFqMed[i] <- median(w.Frq[FqRank]) # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
   }
-  #X11();
+  X11();
   
   w.FqMod <-vFqMed #
  # X11()
-#  plot(vFqMed)
+  plot(vFqMed)
   return (list(wavedata=w,nVoices=w.nVoices,nOctaves=w.nOctaves ,MorletFrequency=w.W0, cwt=w.cwt,cwtpower=w.coefSq,Frq=w.Frq,freqMode=w.FqMod,Fs=w.Fs) )
 }
 
