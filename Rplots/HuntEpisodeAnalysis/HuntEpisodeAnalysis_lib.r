@@ -99,7 +99,7 @@ getPowerSpectrumInTime <- function(w,Fs)
   #w = ts(w,deltat=1/Fs)
   
   w.Fs <- Fs
-  w.nVoices <- 8
+  w.nVoices <- 12
   w.nOctaves <- 32
   w.W0 <- 2*pi
   w.cwt <- cwt(w,noctave=w.nOctaves,nvoice=w.nVoices,plot=FALSE,twoD=TRUE,w0=w.W0)
@@ -111,6 +111,7 @@ getPowerSpectrumInTime <- function(w,Fs)
   vFqMed <- rep(0,NROW(w.coefSq))
   for (i in 1:NROW(w.coefSq) )
   {
+    ##Where is the Max Power at Each TimeStep?
     idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
     FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-3)  )
     vFqMed[i] <- w.Frq[FqRank]/3 # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
@@ -162,30 +163,52 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectMotionBouts <- function(vEventSpeed)
 {
-  prior_factor2 <- 0.90 ## Adds a prior shift in the threshold Of Classification
-  prior_factor1 <- 1.0 ## Adds a prior shift in the threshold Of Classification 
-  colClass <- c("#FF0000","#00FF22","#0000FF")
+  nNumberOfComponents = 20
+  nSelectComponents = 9
+  colClass <- c("#FF0000","#04A022","#0000FF")
   
+  nRec <- NROW(vEventSpeed)
+  ##Fix Length Differences
+  x  <-  vEventSpeed[1:nRec]
   #t <- datRenderHuntEvent$frameN
-   #BIC <- mclustBIC(dEventSpeed)
+  
+  #X11();plot(pvEventSpeed,pvTailDispFilt,type='p')
+  
+  #X11();plot(pvEventSpeed,type='p')
+  #BIC <- mclustBIC(dEventSpeed)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  fit <- Mclust(vEventSpeed ,G=3, prior =  priorControl(functionName="defaultPrior", mean=c(0.01,0.05,5),shrinkage=0.001 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  #modelNames = "EII"
+  fit <- Mclust(x ,G=nNumberOfComponents,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
+  # "VVV" check out doc mclustModelNames
+  #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
+  
+  #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   summary(fit)
   
-  #region <- min(NROW(t),NROW(vEventSpeed))
-  #X11()
+  #  X11()
   #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  #rug(vEventSpeed)
+  # rug(xy)
   
   #X11()
-  #boutClass <- fit$classification
-  #plot(dEventSpeed[1:region],type='l',col=colClass[1])
-  #points(which(boutClass == 2), dEventSpeed[boutClass == 2],type='p',col=colClass[2])
-
+  
+  #plot(pvEventSpeed[1:nRec],type='l',col=colClass[1])
+  #points(which(boutClass == 3), pvEventSpeed[boutClass == 3],type='p',col=colClass[2])
+  
+  ##Find Which Cluster Contains the Highest Peaks
+  boutClass <- fit$classification
+  clusterActivity <- vector()
+  for (i in unique(boutClass))
+    clusterActivity[i] <- max(x[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+  #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
+  
+  #boutCluster <- which(clusterActivity == max(clusterActivity))
+  ##Select the Top nSelectComponents of clusterActivity
+  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ))   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   ## Add Prior Bias to Selects from Clusters To The 
-  return (which(fit$classification == 3 ) )
+  return (which(fit$classification %in% boutCluster ) )
   #return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
   
 }
@@ -210,7 +233,7 @@ detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
   
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  fit <- Mclust(xy ,G=nNumberOfComponents, prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.05,20),c(1.5,15),c(2.5,20)),shrinkage=0.1 ) )  
+  fit <- Mclust(xy ,G=nNumberOfComponents,modelNames = "VII", prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.05,20),c(1.5,15),c(2.5,20)),shrinkage=0.1 ) )  
   summary(fit)
   
   boutClass <- fit$classification
@@ -252,7 +275,7 @@ detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #modelNames = "EII"
-  fit <- Mclust(xy ,G=nNumberOfComponents,modelNames = "EII",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01,0.1),c(0.01,5),c(0.05,5),c(0.02,2),c(0.4,20),c(1.5,25)),shrinkage=0.1 ) )  
+  fit <- Mclust(xy ,G=nNumberOfComponents,modelNames = "VII",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01,0.1),c(0.01,5),c(0.05,5),c(0.02,2),c(0.4,20),c(1.5,25)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
   #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   

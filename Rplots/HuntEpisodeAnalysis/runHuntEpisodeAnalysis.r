@@ -151,10 +151,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   ##Vector Of Vergence Angle
   vEyeV <- datFishMotionVsTargetPrey$LEyeAngle-datFishMotionVsTargetPrey$REyeAngle
   
-  
-    
-  
-  
+
   #### PROCESS BOUTS ###
   vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
   vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
@@ -221,8 +218,9 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
   #### Cluster Tail Motion Wtih Fish Speed - Such As to Identify Motion Bouts Idx 
   #vMotionSpeed <- vEventSpeed_smooth + vTurnSpeed
-  MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,lwlt$freqMode)
-  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
+  #MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,lwlt$freqMode)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
+  #TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
   MoveboutsIdx_cleaned <- TurnboutsIdx #c(MoveboutsIdx,TurnboutsIdx)# which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   ) #MoveboutsIdx# 
   MoveboutsIdx_cleaned[MoveboutsIdx_cleaned %in% MoveboutsIdx] <-  NA
   ##Append The MoveBoutsIdx
