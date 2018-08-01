@@ -424,7 +424,7 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = 
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
 ## Note: Incomplete Bouts At the end of the trajectory will be discarted  
 ## regionToAnalyse - Sequence of Idx On Which To Obtain Bout Motion Data - Usually Set from 1st to last point of prey capture for a specific Prey Item
-calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
+calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBearingToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
 {
   MoveboutsIdx_cleaned <- MoveboutsIdx[MoveboutsIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
   
@@ -497,8 +497,10 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   vMotionBoutIBI <- NA
   vMotionBoutDistanceToPrey_mm <-NA
   vMotionBoutDistanceTravelled_mm <-NA
+  vTurnBoutAngle <- NA
   vMotionBout_On <-NA
   vMotionBout_Off <-NA
+  
   vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
   ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
   if (lastBout > firstBout) ##If More than One Bout Exists
@@ -512,7 +514,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
     
     vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
     vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
-    
+    vTurnBoutAngle                  <- (vBearingToPrey[vMotionBout_Off[1:iPairs]]-vBearingToPrey[vMotionBout_On[1:iPairs]])
   
   }
   ##Add One Since IBI count is 1 less than the bout count
@@ -521,16 +523,21 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTai
   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
   boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)
   boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
+  
   ##Reverse Order 
   vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
   vMotionBoutDistanceTravelled_mm <- vMotionBoutDistanceTravelled_mm[boutSeq]
+  vTurnBoutAngle <- vTurnBoutAngle[boutSeq]
   
   ##Check for Errors
   #stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )###Check End With  Pause Not A bout
   stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
   
   ##Combine and Return
-  datMotionBout <- cbind(boutSeq,boutRank,vMotionBout_On,vMotionBout_Off,vMotionBoutIBI,vMotionBoutDuration,vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm) ##Make Data Frame
+  datMotionBout <- cbind(boutSeq,boutRank,vMotionBout_On,vMotionBout_Off,
+                         vMotionBoutIBI,vMotionBoutDuration,
+                         vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm,
+                         vTurnBoutAngle) ##Make Data Frame
   
   
   #### PLOT DEBUG RESULTS ###

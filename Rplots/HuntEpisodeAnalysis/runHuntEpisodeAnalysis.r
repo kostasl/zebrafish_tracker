@@ -31,7 +31,7 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
 
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
-r <- c(rfc(8),"#FF0000");
+r <- c(rfc(11),"#FF0000");
 
 
 #
@@ -63,7 +63,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -172,7 +172,9 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
   vDistToPrey          <- meanf(sqrt( (datFishMotionVsTargetPrey$Prey_X -datFishMotionVsTargetPrey$posX )^2 + (datFishMotionVsTargetPrey$Prey_Y - datFishMotionVsTargetPrey$posY)^2   ),3)
   vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
-
+  lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
+  vAngleToPrey <- lAngleToPrey[[1]]
+  
   ## Tail Motion ####
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
@@ -256,7 +258,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
   
-    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vTailDisp,regionToAnalyse,plotRes = TRUE)
+    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vAngleToPrey,vTailDisp,regionToAnalyse,plotRes = TRUE)
     ##Change If Fish Heading
     plot(t,vAngleDisplacement[1:NROW(t)],type='l',
          xlab="(msec)",
@@ -285,7 +287,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
     ##Add Angle To Prey OnTop Of Eye Angles##
     Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
     colR <- c(Polarrfc(NROW(tblPreyRecord) ) ,"#FF0000");
-    lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
+    
     n<-0
     for (vAngleToPrey in lAngleToPrey)
     {
@@ -312,10 +314,14 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   ##Exclude Idx of Bouts for Which We do not have an angle
   BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey[[1]] ) ]
+  BoutOffsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_Off"][ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] < NROW(vAngleToPrey[[1]] ) ]
   vAnglesAtOnset <- vAngleToPrey[[1]][BoutOnsetWithinRange,2]
+  vAnglesAtOffset <- vAngleToPrey[[1]][BoutOffsetWithinRange,2]
+  
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,
-                                  AngleToPrey = vAnglesAtOnset,
+                                  OnSetAngleToPrey = vAnglesAtOnset,
+                                  OffSetAngleToPrey = vAnglesAtOffset,
                                   RegistarIdx = as.numeric(rep(idxH,rows)),
                                   expID=as.numeric(rep(expID,rows)),
                                   eventID=as.numeric(rep(eventID,rows)),
@@ -399,7 +405,7 @@ for (rec in lMotionBoutDat)
   ##Take Distance of the 1st bout Detected (which has the largest #Rank (1 Last, N first))
   lBoutsVsPreyDistance[[rec[1,"RegistarIdx"]]] <- list(nBouts=max(rec[,"boutSeq"]),
                                                        Distance= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBoutDistanceToPrey_mm"]),
-                                                       Angle= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"AngleToPrey"]))
+                                                       Angle= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"OnSetAngleToPrey"]))
 }
 
 datBoutVsPreyDistance <-  data.frame( do.call(rbind,lBoutsVsPreyDistance ) )
@@ -417,13 +423,24 @@ plot(datBoutVsPreyDistance$nBouts,datBoutVsPreyDistance$Angle,
      xlab="Number of Tracking Movements",
      ylim=c(-180,180),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )))
 
-
 ### Box Plots Per Bout ##
 ####Select Subset Of Data To Analyse
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
 #datMotionBoutCombinedAll$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombinedAll$groupID]
 datMotionBoutCombined <-datMotionBoutCombinedAll#
 #datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == "DL", ] 
+##Turns Vs Bearing To Prey
+##Add Angle To Prey OnTop Of Eye Angles##
+Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Accent')));
+colR <- c("#000000",Polarrfc(max(datMotionBoutCombinedAll$boutRank) ) ,"#FF0000");
+
+X11()
+plot(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
+     main="Turn Size Vs Bearing To Prey",xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-60,60),
+     ylim=c(-60,60),col=colR[datMotionBoutCombinedAll$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+segments(0,-60,0,60) ##Draw 0 Vertical Line
+segments(-60,0,60,0)
+segments(-60,-60,60,60,lwd=2)
 
 X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
@@ -431,7 +448,7 @@ boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.nume
 
 
 X11()
-boxplot(as.numeric(datMotionBoutCombined$AngleToPrey) ~ as.numeric(datMotionBoutCombined$boutRank),
+boxplot(as.numeric(datMotionBoutCombined$OnSetAngleToPrey) ~ as.numeric(datMotionBoutCombined$boutRank),
         main="Bearing To Prey",
         ylab="(Deg)",
         xlab="Bout Sequence (From Capture - Backwards)",
