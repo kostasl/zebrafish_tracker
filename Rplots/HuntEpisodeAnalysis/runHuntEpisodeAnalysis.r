@@ -46,10 +46,10 @@ Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass <- butter(4, c(0.01,0.35),type="pass"); ##Remove DC
 bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
-bf_eyes <- butter(4, 0.025,type="low",plane="z");
+bf_eyes <- butter(4, 0.35,type="low",plane="z");
 bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
-nEyeFilterWidth <- nFrWidth*8 ##For Median Filtering
+nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering
 
 lMotionBoutDat <- list()
 
@@ -63,7 +63,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -204,9 +204,9 @@ for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
   ##Find Region Of Interest For Analysis Of Bouts
   ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
   regionToAnalyse       <-seq(min( c( which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) ,
-                                  which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -100,
+                                  which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -190,
                               max(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
-                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+150
+                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+100
                               ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   

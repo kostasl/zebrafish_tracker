@@ -187,8 +187,10 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
  
   X11() ##Show On Screen
   startFrame <- min(datHuntEventMergedFrames$frameN,na.rm =TRUE)
-  endFrame <- max(datHuntEventMergedFrames$frameN,na.rm =TRUE)
-
+  endFrame   <- max(datHuntEventMergedFrames$frameN,na.rm =TRUE)
+  vPreyFrameN   <- datHuntEventMergedFrames[datHuntEventMergedFrames$PreyID == preyTargetID ,]$frameN
+  lastPreyFrame <- max(vPreyFrameN[!is.na(vPreyFrameN)])
+  
   for (i in seq(startFrame,endFrame,speed) )
   {
     
@@ -197,22 +199,34 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
     ## Thus When Rendering the fish Choose one of the food items that appears in the current frame range
     
     
+    
     datFishFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN %in% tR,] ##in Range
     vTrackedPreyIDs <- unique(datFishFrames$PreyID)
     
     lastFrame <- i
+    ##If this specific Frame Does not Exist In the Dat, Then Take The Last One within Range
     if (NROW(datFishFrames[datFishFrames$frameN == i,]) < 1)
       lastFrame <- max(datFishFrames$frameN)
      
     
-    #preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == lastFrame,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
-    ##Now Isolate Fish Rec, Focus on Single Prey Item
-    if (!is.na(preyTargetID))
-      datFishFrames <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
-    
     ##Filter The Fish Motion In the Subset PreyID Selection
     #datFishFrames <- filterEyeTailNoise(datFishFrames)
     recLastFishFrame <- datFishFrames[datFishFrames$frameN == lastFrame,]
+    
+    ##There Could Be Multiple With Thaty Frame N - Isolate Single Record ##
+    if (NROW(recLastFishFrame) > 1)
+    {
+      if (is.na(preyTargetID) )
+        #if (NROW(datFishFrames[datFishFrames$frameN == lastFrame & !is.na(datFishFrames$PreyID),]))
+        preyTargetID <- min(c(datFishFrames[datFishFrames$frameN == lastFrame,]$PreyID ) ) ##Choose A Prey ID found on the Last Frame The max Id F
+      
+      
+        recLastFishFrame <- datFishFrames[datFishFrames$PreyID == preyTargetID ,]
+    }
+    ##Now Isolate Fish Rec, Focus on Single Prey Item
+    
+
+
     
     
     posX = recLastFishFrame$posX
