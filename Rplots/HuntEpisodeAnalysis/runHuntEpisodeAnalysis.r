@@ -57,13 +57,13 @@ lMotionBoutDat <- list()
 #idxH <- 20
 idTo <- 12#NROW(datTrackedEventsRegister)
 
-
+idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -436,7 +436,8 @@ colR <- c("#000000",Polarrfc(max(datMotionBoutCombinedAll$boutRank) ) ,"#FF0000"
 
 X11()
 plot(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
-     main="Turn Size Vs Bearing To Prey",xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-60,60),
+     main=paste("Turn Size Vs Bearing To Prey G",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)] ),
+     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-60,60),
      ylim=c(-60,60),col=colR[datMotionBoutCombinedAll$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
 segments(0,-60,0,60) ##Draw 0 Vertical Line
 segments(-60,0,60,0)
