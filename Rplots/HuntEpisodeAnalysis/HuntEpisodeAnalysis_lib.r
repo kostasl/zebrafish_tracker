@@ -164,14 +164,13 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 detectMotionBouts <- function(vEventSpeed)
 {
   nNumberOfComponents = 17
-  nSelectComponents = 6
+  nSelectComponents = 7
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
   ##Fix Length Differences
   x  <-  vEventSpeed[1:nRec]
   #t <- datRenderHuntEvent$frameN
-  
   #X11();plot(pvEventSpeed,pvTailDispFilt,type='p')
   
   #X11();plot(pvEventSpeed,type='p')
@@ -499,17 +498,17 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
   ## Take InterBoutIntervals in msec from Last to first - 
   vMotionBout_rle <- rle(vMotionBout)
   ##Filter Out Small Bouts/Pauses -
-  idxShort <- which(vMotionBout_rle$lengths < MIN_BOUT_DURATION)
+  idxShort <- which(vMotionBout_rle$lengths < max(MIN_BOUT_DURATION,MIN_BOUT_PAUSE) )
   for (jj in idxShort)
   {
     ##Fill In this Gap
     idxMotionStart <- sum(vMotionBout_rle$length[1:(jj-1)])
     idxMotionEnd <- idxMotionStart + vMotionBout_rle$length[jj]
     
-    if( vMotionBout_rle$values[jj] == 1) # If this is a Motion
+    if( vMotionBout_rle$values[jj] == 1 &  vMotionBout_rle$lengths[jj] < MIN_BOUT_DURATION) # If this is a Motion
       vMotionBout[idxMotionStart:idxMotionEnd] <- 0 ##Replace short motion with Pause
 
-    if( vMotionBout_rle$values[jj] == 0) # If this is a Motion
+    if( vMotionBout_rle$values[jj] == 0 &  vMotionBout_rle$lengths[jj] < MIN_BOUT_PAUSE) # If this is a pause
       vMotionBout[idxMotionStart:idxMotionEnd] <- 1 ##Replace short Pause with Motion
     
   }
