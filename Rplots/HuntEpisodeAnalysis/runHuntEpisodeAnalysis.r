@@ -60,7 +60,7 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
+idxTestSet = 16#(1:NROW(datTrackedEventsRegister))
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -313,9 +313,9 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
   
-  ##Exclude Idx of Bouts for Which We do not have an angle
-  BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey ) ]
-  BoutOffsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_Off"][ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] < NROW(vAngleToPrey ) ]
+  ##Exclude Idx of Bouts for Which We do not have an angle -Make Vectors In the Right Sequence 
+  BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey ) ][lMotionBoutDat[[idxH]][,"boutSeq"]]
+  BoutOffsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_Off"][ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] < NROW(vAngleToPrey ) ][lMotionBoutDat[[idxH]][,"boutSeq"]]
   vAnglesAtOnset <- vAngleToPrey[BoutOnsetWithinRange ,2]
   vAnglesAtOffset <- vAngleToPrey[BoutOffsetWithinRange,2]
   
