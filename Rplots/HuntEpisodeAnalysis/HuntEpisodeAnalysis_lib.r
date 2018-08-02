@@ -419,6 +419,44 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = 
 }
 
 
+
+## Returns A list of vectors showing bearing Angle To Each Prey 
+calcRelativeAngleToPrey <- function(datRenderHuntEvent)
+{
+  
+  ### Plot Relative Angle To Each Prey ###
+  vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
+  
+  
+  Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
+  relAngle <- list()
+  
+  n <- 0
+  for (f in vTrackedPreyIDs)
+  {
+    n<-n+1
+    #message(f)
+    
+    if (is.na(f))
+      next
+    
+    datRenderPrey <- datRenderHuntEvent[datRenderHuntEvent$PreyID == f,]
+    ##Atan2 returns -180 to 180, so 1st add 180 to convert to 360, then sub the fishBody Angle, then Mod 360 to wrap in 360deg circle, then sub 180 to convert to -180 to 180 relative to fish heading angles
+    ##dd Time Base As frame Number on First Column
+    relAngle[[as.character(f)]]  <- cbind(datRenderPrey$frameN, 
+                                          ( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+    )
+  }
+  #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
+  
+  ##Convert Frames To Seconds
+  
+  return (relAngle)
+  
+}
+#
+
+
 ##############################
 ## Identify Bout Sections and Get Data On Durations etc.
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
