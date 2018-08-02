@@ -552,7 +552,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
     
     vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
     vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs] ] - vEventPathLength_mm[vMotionBout_On[1:iPairs] ]) ##The Power of A Bout can be measured by distance Travelled
-    vTurnBoutAngle                  <- (vBearingToPrey[[1]][vMotionBout_Off[1:iPairs],2] - vBearingToPrey[[1]][vMotionBout_On[1:iPairs],2])
+    vTurnBoutAngle                  <- (vBearingToPrey[vMotionBout_Off[1:iPairs],2] - vBearingToPrey[vMotionBout_On[1:iPairs],2])
     
     
     

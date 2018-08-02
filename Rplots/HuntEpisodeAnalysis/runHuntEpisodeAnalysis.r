@@ -175,8 +175,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
   
   ##Calc Angle To Prey Per Bout
-  vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]
-  
+  vAngleToPrey <- data.frame(lAngleToPrey[as.character(selectedPreyID)])
+  names(vAngleToPrey) = c("frameN","AngleToPrey")
   ## Tail Motion ####
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
@@ -208,7 +208,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   ##Find Region Of Interest For Analysis Of Bouts
   ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
   regionToAnalyse       <-seq(min( c( which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) ,
-                                  which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -190,
+                                  which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -10,
                               max(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
                                     max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+100
                               ) ##Set To Up To The Minimum Distance From Prey
@@ -435,14 +435,26 @@ datMotionBoutCombined <-datMotionBoutCombinedAll#
 Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Accent')));
 colR <- c("#000000",Polarrfc(max(datMotionBoutCombinedAll$boutRank) ) ,"#FF0000");
 
+####### PLOT Tunring Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well?
 X11()
 plot(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
      main=paste("Turn Size Vs Bearing To Prey G",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)] ),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-60,60),
      ylim=c(-60,60),col=colR[datMotionBoutCombinedAll$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
-segments(0,-60,0,60) ##Draw 0 Vertical Line
-segments(-60,0,60,0)
-segments(-60,-60,60,60,lwd=2)
+##Draw 0 Vertical Line
+segments(0,-60,0,60); segments(-60,0,60,0); segments(-60,-60,60,60,lwd=2);
+##Plot arrows showing Bout Turns Connecting Bouts From Same Experiment
+for (expID in unique(datMotionBoutCombinedAll$expID) ) 
+{
+  datExp <- datMotionBoutCombinedAll[datMotionBoutCombinedAll$expID ==expID, ]
+  for (ii in max(datExp$boutSeq):2) ##Draw Arrows Showing Sequence Of Bouts
+    arrows(x0=datExp[ii,]$OnSetAngleToPrey, y0= datExp[ii,]$OnSetAngleToPrey-datExp[ii,]$OffSetAngleToPrey ,
+          x1=datExp[ii-1,]$OnSetAngleToPrey, y1=datExp[ii-1,]$OnSetAngleToPrey-datExp[ii-1,]$OffSetAngleToPrey,
+          length = 0.1)
+  
+}
+################# #### # ##  ## #
+
 
 X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")

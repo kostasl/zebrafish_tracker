@@ -395,10 +395,8 @@ return (relAngle)
 ## Returns A list of vectors showing bearing Angle To Each Prey 
 calcRelativeAngleToPrey <- function(datRenderHuntEvent)
 {
-  
   ### Plot Relative Angle To Each Prey ###
   vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
-  
   
   Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
   relAngle <- list()
@@ -422,9 +420,7 @@ calcRelativeAngleToPrey <- function(datRenderHuntEvent)
     #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
     
     ##Convert Frames To Seconds
-
   return (relAngle)
-  
 }
 #
 
