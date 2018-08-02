@@ -63,7 +63,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -173,7 +173,9 @@ for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
   vDistToPrey          <- meanf(sqrt( (datFishMotionVsTargetPrey$Prey_X -datFishMotionVsTargetPrey$posX )^2 + (datFishMotionVsTargetPrey$Prey_Y - datFishMotionVsTargetPrey$posY)^2   ),3)
   vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
   lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
-  vAngleToPrey <- lAngleToPrey[[1]]
+  
+  ##Calc Angle To Prey Per Bout
+  vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]
   
   ## Tail Motion ####
   vTailDir <-  datRenderHuntEvent$DThetaSpine_1 +  datRenderHuntEvent$DThetaSpine_2 + datRenderHuntEvent$DThetaSpine_3 + datRenderHuntEvent$DThetaSpine_4 + datRenderHuntEvent$DThetaSpine_5 + datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7
@@ -309,14 +311,12 @@ for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
   #X11()
   #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
-  ##Calc Angle To Prey Per Bout
-  vAngleToPrey <- lAngleToPrey[as.character(selectedPreyID)]
   
   ##Exclude Idx of Bouts for Which We do not have an angle
   BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey[[1]] ) ]
   BoutOffsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_Off"][ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] < NROW(vAngleToPrey[[1]] ) ]
-  vAnglesAtOnset <- vAngleToPrey[[1]][BoutOnsetWithinRange,2]
-  vAnglesAtOffset <- vAngleToPrey[[1]][BoutOffsetWithinRange,2]
+  vAnglesAtOnset <- vAngleToPrey[BoutOnsetWithinRange,2]
+  vAnglesAtOffset <- vAngleToPrey[BoutOffsetWithinRange,2]
   
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,

@@ -513,9 +513,11 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
     vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs
     
     vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
-    vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
-    vTurnBoutAngle                  <- (vBearingToPrey[vMotionBout_Off[1:iPairs]]-vBearingToPrey[vMotionBout_On[1:iPairs]])
-  
+    vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs] ] - vEventPathLength_mm[vMotionBout_On[1:iPairs] ]) ##The Power of A Bout can be measured by distance Travelled
+    vTurnBoutAngle                  <- (vBearingToPrey[[1]][vMotionBout_Off[1:iPairs],2] - vBearingToPrey[[1]][vMotionBout_On[1:iPairs],2])
+    
+    
+    
   }
   ##Add One Since IBI count is 1 less than the bout count
   vMotionBoutIBI <- c(vMotionBoutIBI,NA)
