@@ -291,12 +291,13 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
     colR <- c(Polarrfc(NROW(tblPreyRecord) ) ,"#FF0000");
     
     n<-0
-    for (vAngleToPrey in lAngleToPrey)
+    for (vAToPrey in lAngleToPrey)
     {
-      l <- min(NROW(t),NROW(vAngleToPrey))
-      n<-n+1; lines((vAngleToPrey[1:l,1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAngleToPrey[1:l,2],type='l',col=colR[n],xlab=NA,ylab=NA)
+      l <- min(NROW(t),NROW(vAToPrey))
+      n<-n+1; lines((vAToPrey[1:l,1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAToPrey[1:l,2],type='l',col=colR[n],xlab=NA,ylab=NA)
     }
-    legend(max(t)-720,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(lAngleToPrey)) ) ,fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
+    legend(max(t)-720,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(vAToPrey)) ) ,
+           fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
     ###
     plotTailPowerSpectrumInTime(lwlt)
     polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent)
@@ -313,9 +314,9 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   
   ##Exclude Idx of Bouts for Which We do not have an angle
-  BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey[[1]] ) ]
-  BoutOffsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_Off"][ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] < NROW(vAngleToPrey[[1]] ) ]
-  vAnglesAtOnset <- vAngleToPrey[BoutOnsetWithinRange,2]
+  BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey ) ]
+  BoutOffsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_Off"][ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] < NROW(vAngleToPrey ) ]
+  vAnglesAtOnset <- vAngleToPrey[BoutOnsetWithinRange ,2]
   vAnglesAtOffset <- vAngleToPrey[BoutOffsetWithinRange,2]
   
   rows <- NROW(lMotionBoutDat[[idxH]])
