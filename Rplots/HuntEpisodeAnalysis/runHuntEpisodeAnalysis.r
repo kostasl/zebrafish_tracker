@@ -24,6 +24,7 @@ source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 
 strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
+
 strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
@@ -63,7 +64,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 16#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -430,17 +431,23 @@ datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
 datMotionBoutCombined <-datMotionBoutCombinedAll#
 #datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == "DL", ] 
 ##Turns Vs Bearing To Prey
+
+
+####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well?
 ##Add Angle To Prey OnTop Of Eye Angles##
 Polarrfc <- colorRampPalette(rev(brewer.pal(12,'Blues')));
 colR <- c("#000000",Polarrfc(max(datMotionBoutCombinedAll$boutRank) ) ,"#FF0000");
 ncolBands <- NROW(colR)
-####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well?
 #X11()
 pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithBoutSeq_",groupID,".pdf",sep=""))
 plot(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
      main=paste("Turn Size Vs Bearing To Prey ",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)], "+ Bout Number" ),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-60,60),
      ylim=c(-60,60),col=colR[datMotionBoutCombinedAll$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+##Punctuate 1st Turn To Prey
+points(datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OnSetAngleToPrey,
+       datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OffSetAngleToPrey,
+       pch=9)
 points(1:ncolBands,rep(-60, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
 text(-3,-57,labels = paste(min(datMotionBoutCombinedAll$boutRank) ,"#" )  ) ##Heatmap range min
 text(ncolBands+4,-57,labels = paste(max(datMotionBoutCombinedAll$boutRank) ,"#" )  )
