@@ -30,7 +30,8 @@ G_MIN_BOUTSPEED          <- 0.05 ##px/frame - Need to be above to be considered 
 PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
-MIN_BOUT_DURATION        <- 10
+MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
+MIN_BOUT_PAUSE           <- 15
 
 ####################
 

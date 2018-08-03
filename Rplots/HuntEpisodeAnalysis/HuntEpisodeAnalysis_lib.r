@@ -164,14 +164,13 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 detectMotionBouts <- function(vEventSpeed)
 {
   nNumberOfComponents = 17
-  nSelectComponents = 6
+  nSelectComponents = 8
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
   ##Fix Length Differences
   x  <-  vEventSpeed[1:nRec]
   #t <- datRenderHuntEvent$frameN
-  
   #X11();plot(pvEventSpeed,pvTailDispFilt,type='p')
   
   #X11();plot(pvEventSpeed,type='p')
@@ -282,7 +281,7 @@ detectTailBouts <- function(vTailMotionFq)
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
   nNumberOfComponents = 8
-  nSelectComponents = 3
+  nSelectComponents = 4
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
@@ -419,6 +418,44 @@ interpolateDistToPrey <- function(vDistToPrey,vEventSpeed_smooth, frameRegion = 
 }
 
 
+
+## Returns A list of vectors showing bearing Angle To Each Prey 
+calcRelativeAngleToPrey <- function(datRenderHuntEvent)
+{
+  
+  ### Plot Relative Angle To Each Prey ###
+  vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
+  
+  
+  Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
+  relAngle <- list()
+  
+  n <- 0
+  for (f in vTrackedPreyIDs)
+  {
+    n<-n+1
+    #message(f)
+    
+    if (is.na(f))
+      next
+    
+    datRenderPrey <- datRenderHuntEvent[datRenderHuntEvent$PreyID == f,]
+    ##Atan2 returns -180 to 180, so 1st add 180 to convert to 360, then sub the fishBody Angle, then Mod 360 to wrap in 360deg circle, then sub 180 to convert to -180 to 180 relative to fish heading angles
+    ##dd Time Base As frame Number on First Column
+    relAngle[[as.character(f)]]  <- cbind(datRenderPrey$frameN, 
+                                          ( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+    )
+  }
+  #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
+  
+  ##Convert Frames To Seconds
+  
+  return (relAngle)
+  
+}
+#
+
+
 ##############################
 ## Identify Bout Sections and Get Data On Durations etc.
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
@@ -461,17 +498,17 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
   ## Take InterBoutIntervals in msec from Last to first - 
   vMotionBout_rle <- rle(vMotionBout)
   ##Filter Out Small Bouts/Pauses -
-  idxShort <- which(vMotionBout_rle$lengths < MIN_BOUT_DURATION)
+  idxShort <- which(vMotionBout_rle$lengths < max(MIN_BOUT_DURATION,MIN_BOUT_PAUSE) )
   for (jj in idxShort)
   {
     ##Fill In this Gap
     idxMotionStart <- sum(vMotionBout_rle$length[1:(jj-1)])
     idxMotionEnd <- idxMotionStart + vMotionBout_rle$length[jj]
     
-    if( vMotionBout_rle$values[jj] == 1) # If this is a Motion
+    if( vMotionBout_rle$values[jj] == 1 &  vMotionBout_rle$lengths[jj] < MIN_BOUT_DURATION) # If this is a Motion
       vMotionBout[idxMotionStart:idxMotionEnd] <- 0 ##Replace short motion with Pause
 
-    if( vMotionBout_rle$values[jj] == 0) # If this is a Motion
+    if( vMotionBout_rle$values[jj] == 0 &  vMotionBout_rle$lengths[jj] < MIN_BOUT_PAUSE) # If this is a pause
       vMotionBout[idxMotionStart:idxMotionEnd] <- 1 ##Replace short Pause with Motion
     
   }
@@ -513,9 +550,11 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
     vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs
     
     vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
-    vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs]]-vEventPathLength_mm[vMotionBout_On[1:iPairs]]) ##The Power of A Bout can be measured by distance Travelled
-    vTurnBoutAngle                  <- (vBearingToPrey[vMotionBout_Off[1:iPairs]]-vBearingToPrey[vMotionBout_On[1:iPairs]])
-  
+    vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs] ] - vEventPathLength_mm[vMotionBout_On[1:iPairs] ]) ##The Power of A Bout can be measured by distance Travelled
+    vTurnBoutAngle                  <- (vBearingToPrey[vMotionBout_Off[1:iPairs],2] - vBearingToPrey[vMotionBout_On[1:iPairs],2])
+    
+    
+    
   }
   ##Add One Since IBI count is 1 less than the bout count
   vMotionBoutIBI <- c(vMotionBoutIBI,NA)
