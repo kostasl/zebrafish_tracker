@@ -164,7 +164,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 detectMotionBouts <- function(vEventSpeed)
 {
   nNumberOfComponents = 17
-  nSelectComponents = 7
+  nSelectComponents = 8
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
@@ -281,7 +281,7 @@ detectTailBouts <- function(vTailMotionFq)
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
   nNumberOfComponents = 8
-  nSelectComponents = 3
+  nSelectComponents = 4
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
