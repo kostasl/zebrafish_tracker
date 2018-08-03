@@ -61,10 +61,10 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = 16#(1:NROW(datTrackedEventsRegister))
+idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -108,7 +108,7 @@ for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
   datPlaybackHuntEvent <- do.call(rbind,ldatFish)
   
   
-  ##PLAYBACK ####
+  ## PLAYBACK ####
   #     renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1) #saveToFolder =  strFolderName
   ########################
   
@@ -208,9 +208,9 @@ for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
   vDistToPrey_Fixed_FullRange      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
   ##Find Region Of Interest For Analysis Of Bouts
   ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
-  regionToAnalyse       <-seq(min( c( which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) ,
-                                  which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -50,
-                              max(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
+  ## which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) , which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -50,
+  regionToAnalyse       <-seq(min( c( which(vEyeV > G_THRESHUNTVERGENCEANGLE) ) ) - 50,
+                              min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
                                     max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+100
                               ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
@@ -253,8 +253,8 @@ for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
-  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
-  X11()
+  pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  #X11()
   par(mar=c(4,4,1.5,1.5))
   
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
@@ -305,7 +305,7 @@ for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
     
     
-  #dev.off() 
+  dev.off() 
   ##END OF PLOT
   
   ##Tail Fq Mode
@@ -442,17 +442,19 @@ ncolBands <- NROW(colR)
 pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithBoutSeq_",groupID,".pdf",sep=""))
 plot(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
      main=paste("Turn Size Vs Bearing To Prey ",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)], "+ Bout Number" ),
-     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-60,60),
-     ylim=c(-60,60),col=colR[datMotionBoutCombinedAll$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-90,90),
+     ylim=c(-90,90),col=colR[datMotionBoutCombinedAll$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
 ##Punctuate 1st Turn To Prey
-points(datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OnSetAngleToPrey,
-       datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OffSetAngleToPrey,
+datFirstBoutPoints <- cbind(boutSeq = datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OnSetAngleToPrey,Turn= datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OffSetAngleToPrey
+                            ,RegistarIdx=datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$RegistarIdx)
+points(datFirstBoutPoints[,1],
+       datFirstBoutPoints[,2],
        pch=9)
-points(1:ncolBands,rep(-60, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
-text(-3,-57,labels = paste(min(datMotionBoutCombinedAll$boutRank) ,"#" )  ) ##Heatmap range min
-text(ncolBands+4,-57,labels = paste(max(datMotionBoutCombinedAll$boutRank) ,"#" )  )
+points(1:ncolBands,rep(-90, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
+text(-3,-87,labels = paste(min(datMotionBoutCombinedAll$boutRank) ,"#" )  ) ##Heatmap range min
+text(ncolBands+4,-87,labels = paste(max(datMotionBoutCombinedAll$boutRank) ,"#" )  )
 ##Draw 0 Vertical Line
-segments(0,-60,0,60); segments(-60,0,60,0); segments(-60,-60,60,60,lwd=2);
+segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=2);
 ## Plot arrows showing Bout Turns Connecting Bouts From Same Experiment
 #for (expID in unique(datMotionBoutCombinedAll$expID) ) 
 #{
@@ -486,17 +488,17 @@ colR <- c(Polarrfc( ncolBands ));
 pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithPreyDist_",groupID,".pdf",sep=""))
 plot(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
      main=paste("Turn Size Vs Bearing To Prey ",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)]," + Distance" ),
-     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-60,60),
-     ylim=c(-60,60),col=colR[vcolIdx] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
-points(1:ncolBands,rep(-60, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
+     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-90,90),
+     ylim=c(-90,90),col=colR[vcolIdx] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+points(1:ncolBands,rep(-90, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
 text(-3,-57,labels = paste(min(vUniqDist)/10,"mm" )  ) ##Heatmap range min
 text(ncolBands+4,-57,labels = paste(maxDistanceToPrey/10,"mm" )  )
 points(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
      main=paste("Turn Size Vs Bearing To Prey G",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)] ),
-     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-60,60),
-     ylim=c(-60,60),col="Black" ,pch=16,cex=0.2) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-90,90),
+     ylim=c(-90,90),col="Black" ,pch=16,cex=0.2) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
 ##Draw 0 Vertical Line
-segments(0,-60,0,60); segments(-60,0,60,0); segments(-60,-60,60,60,lwd=2);
+segments(0,-90,0,90); segments(-90,0,  90,0); segments(-90,-90,90,90,lwd=2);
 
 #dev.copy(pdf,file= paste(strPlotExportPath,"/BoutTurnsToPreyWithPreyDist_",groupID,".pdf",sep=""))
 dev.off()
