@@ -52,7 +52,8 @@ bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection 
 ###
 nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering
 
-lMotionBoutDat <- list()
+if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
+  lMotionBoutDat <<- list() ##Declared In Global Env
 
 
 #idxH <- 20
@@ -64,7 +65,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -321,108 +322,104 @@ for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
   
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,
-                                  OnSetAngleToPrey = vAnglesAtOnset,
-                                  OffSetAngleToPrey = vAnglesAtOffset,
+                                  OnSetAngleToPrey = vAnglesAtOnset[lMotionBoutDat[[idxH]][,"boutSeq"]], ##Reverse THe Order Of Appearance Before Col. Bind
+                                  OffSetAngleToPrey = vAnglesAtOffset[lMotionBoutDat[[idxH]][,"boutSeq"]],
                                   RegistarIdx = as.numeric(rep(idxH,rows)),
                                   expID=as.numeric(rep(expID,rows)),
                                   eventID=as.numeric(rep(eventID,rows)),
-                                  groupID=rep((groupID) ,rows),
+                                  groupID=rep(as.character(groupID) ,rows),
                                   PreyCount = rep(NROW(tblPreyRecord),rows))
 } ###END OF EACH Hunt Episode Loop 
 
 datEpisodeMotionBout <- lMotionBoutDat[[1]]
 ##On Bout Lengths
-##Where t=0 is the capture bout, -1 -2 are the steps leading to it
-
-# 
-# ## Plot Durations of Pause/Go
-# X11()
-# plot(datEpisodeMotionBout[,"vMotionBoutDuration"],
-#      xlab="Bout",ylab="msec",xlim=c(0,NROW(datEpisodeMotionBout) ),ylim=c(0,500),
-#      col="red",main="Bout Duration",pch=16) ##Take Every Bout Length
-# points(datEpisodeMotionBout[,"vMotionBoutIBI"],col="blue",pch=21) ##Take every period between / Inter Bout Interval
-# legend(1,400,c("Motion","Pause" ),col=c("red","blue"),pch=c(16,21) )
-# 
-# X11()
-# plot(datEpisodeMotionBout[,"vMotionBoutDistanceToPrey_mm"],
-#      xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,3),
-#      col="red",main="Bout Distance To Prey",pch=16) ##Take Every Bout Length
-# 
-# X11()
-# plot(datEpisodeMotionBout[,"vMotionBoutDistanceTravelled_mm"],
-#      xlab="Bout",ylab="mm",xlim=c(0,NROW(datEpisodeMotionBout)),ylim=c(0,2),
-#      col="red",main="Bout Power",pch=16) ##Take Every Bout Length
-# 
-# 
-# X11()
-# plot(datRenderHuntEvent$frameN,datRenderHuntEvent$LEyeAngle,type='l',col="blue",ylim=c(-60,60),main="Eye Motion ")
-# lines(datRenderHuntEvent$frameN,datRenderHuntEvent$REyeAngle,type='l',col="magenta")
-
-## Plot The Start Stop Motion Bout Binarized Data
-#X11()
-#plot(vMotionBout,type='p')
-#points(MoveboutsIdx_cleaned,vMotionBout[MoveboutsIdx_cleaned],col="red")
-#points(vMotionBout_On,vMotionBout[vMotionBout_On],col="green",pch=7) ##On
-#points(vMotionBout_Off,vMotionBout[vMotionBout_Off],col="yellow",pch=21)##Off
-
-######### END OF PROCESS BOUT #########
-
-## ## Tail Curvature 
-##Filter The Noise 
-#when apply twice with filtfilt, #results in a 0 phase shift  : W * (Fs/2) == half-amplitude cut-off when combined with filtfilt
-
-#X11()
-#layout(matrix(c(1,2), 2, 1, byrow = TRUE))
-#plot(vTailDisp,type="l")
-#lines(vEventSpeed_smooth*50,type='l',col="blue")
-##plot Correlation Of Tail Movement To speed 
-#corr_speedVsTail <- ccf(abs(vTailDisp),vEventSpeed_smooth,type="correlation",plot=TRUE)
-
-#llRange <- min(NROW(abs(vEventSpeed_smooth)),NROW(abs(vTailDisp))) 
-#cor_TailToSpeed <- cov(abs(vTailDisp[1:llRange]),vEventSpeed_smooth[1:llRange])
-
-#X11()
-#plot(abs(vEventSpeed_smooth[1:llRange]) , abs(vTailDisp[1:llRange]) , type="p")
-#lines(vTailDir,type='l',col="green")
-##END OF CURVATURE ##
-
-##Plot Tail Segments Displacements #
-#X11()
-#plot(datRenderHuntEvent$DThetaSpine_1,type='l',col=r[1])
-#lines(datRenderHuntEvent$DThetaSpine_2,type='l',col=r[2])
-#lines(datRenderHuntEvent$DThetaSpine_3,type='l',col=r[3])
-#lines(datRenderHuntEvent$DThetaSpine_4,type='l',col=r[4])
-#lines(datRenderHuntEvent$DThetaSpine_5,type='l',col=r[5])
-#lines(datRenderHuntEvent$DThetaSpine_6,type='l',col=r[6])
-#lines(datRenderHuntEvent$DThetaSpine_7,type='l',col=r[7])
-
+##Where Seq is the order Of Occurance, While Rank denotes our custom Ordering From Captcha backwards
 
 # ###  AnALYSIS #XXX
 ##Make Vector Of Number oF Bouts Vs Distance
-lBoutsVsPreyDistance <- list()
+lBoutInfoPerEvent <- list()
 for (rec in lMotionBoutDat)
 {
   if (is.null(rec)) next;
-  ##Take Distance of the 1st bout Detected (which has the largest #Rank (1 Last, N first))
-  lBoutsVsPreyDistance[[rec[1,"RegistarIdx"]]] <- list(nBouts=max(rec[,"boutSeq"]),
+  ##Take Distance of the 1st bout Detected (which has the largest #Rank (1 First Bout, N Last/Capture Bout))
+  lBoutInfoPerEvent[[rec[1,"RegistarIdx"]]] <- list(nBouts=as.numeric(max(rec[,"boutSeq"])),
                                                        Distance= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBoutDistanceToPrey_mm"]),
-                                                       Angle= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"OnSetAngleToPrey"]))
+                                                       Angle= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"OnSetAngleToPrey"]), ##
+                                                       groupID = as.character(datTrackedEventsRegister[ as.numeric(rec[1,"RegistarIdx"]),"groupID" ]),
+                                                       Duration= as.numeric(rec[rec[,"boutRank"] == min(rec[,"boutRank"]),"vMotionBout_Off"]) - as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBout_On"])
+                                                       )
 }
 
-datBoutVsPreyDistance <-  data.frame( do.call(rbind,lBoutsVsPreyDistance ) )
-X11()
+datBoutVsPreyDistance <-  data.frame( do.call(rbind,lBoutInfoPerEvent ) )
+datBoutVsPreyDistance[datBoutVsPreyDistance$groupID == as.character(groupID),] ##Select Group For Analysis / Plotting
+
+###Distance ColourRing 
+##Calculate Colour Idx For Each Of the Distances - Based on ncolBands
+vUniqDist <- unique(round(unlist(datBoutVsPreyDistance$Distance)*10))
+ncolBands <- 15
+vcolIdx <-  vector() ; ##Distances Rounded / Indexed 
+vdistToPrey <- round(unlist(datBoutVsPreyDistance$Distance)*10)
+maxDistanceToPrey <- 50
+vdistToPrey[vdistToPrey>maxDistanceToPrey] <- maxDistanceToPrey
+vcolBands <- seq(min(vUniqDist),maxDistanceToPrey,length.out = ncolBands) 
+for (j in 1:NROW(unlist(datBoutVsPreyDistance$Distance))) 
+  vcolIdx[j] <- min(which(vcolBands >=  vdistToPrey[j] ))
+
+# ) 
+######Plot Turn Angle Vs Bearing - With DISTANCE Colour Code
+Polarrfc <- colorRampPalette(rev(brewer.pal(15,'Spectral')));
+colR <- c(Polarrfc( ncolBands ));
+####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well?
+
+
+
+#X11()
+pdf(file= paste(strPlotExportPath,"/DistanceVsBoutCount_",groupID,".pdf",sep=""))
 plot(datBoutVsPreyDistance$nBouts,datBoutVsPreyDistance$Distance,
-     main = "Initial distance to Prey Vs Bouts Performed",
+     main = paste("Initial distance to Prey Vs Bouts Performed",unique(datBoutVsPreyDistance$groupID)  ) ,
      ylab="Distance to Prey  (mm)",
      xlab="Number of Tracking Movements",
-     ylim=c(0,6),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )))
+     ylim=c(0,6),
+     xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )),
+     col=colR[vcolIdx],
+     pch=19
+     )
+dev.off()
 
-X11()
+
+pdf(file= paste(strPlotExportPath,"/BearingVsBoutCount_",groupID,".pdf",sep=""))
 plot(datBoutVsPreyDistance$nBouts,datBoutVsPreyDistance$Angle,
-     main = "Initial Bearing to Prey Vs Bouts Performed",
+     main = paste("Initial Bearing to Prey Vs Bouts Performed",unique(datBoutVsPreyDistance$groupID)  ) ,
      ylab="Angle to Prey  (mm)",
      xlab="Number of Tracking Movements",
-     ylim=c(-180,180),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )))
+     ylim=c(-180,180),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )),
+     col=colR[vcolIdx],
+     pch=19)
+
+dev.off()
+
+#X11()
+pdf(file= paste(strPlotExportPath,"/DurationVsBoutCount_",groupID,".pdf",sep=""))
+plot(unlist(datBoutVsPreyDistance$nBouts),1000*unlist(datBoutVsPreyDistance$Duration)/Fs,
+     main = paste("Duration Of Hunt Event Vs Bouts Performed ",unique(datBoutVsPreyDistance$groupID)  )  ,
+     ylab="Time  (msec)",
+     xlab="Number of Tracking Movements",
+     ylim=c(0,5000),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )),
+     col=colR[vcolIdx],
+     pch=19)
+dev.off()
+
+pdf(file= paste(strPlotExportPath,"/DurationVsDistance_",groupID,".pdf",sep=""))
+plot(unlist(datBoutVsPreyDistance$Distance),1000*unlist(datBoutVsPreyDistance$Duration)/Fs,
+     main = paste("Duration Of Hunt Event Vs Distance ",unique(datBoutVsPreyDistance$groupID) )  ,
+     ylab="Time  (msec)",
+     xlab="Distance (mm)",
+     ylim=c(0,5000),xlim=c(0,6),
+     col=colR[vcolIdx],
+     pch=19)
+
+dev.off()
+
 
 ### Box Plots Per Bout ##
 ####Select Subset Of Data To Analyse
