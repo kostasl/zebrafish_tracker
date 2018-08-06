@@ -65,7 +65,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -327,7 +327,7 @@ for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
                                   RegistarIdx = as.numeric(rep(idxH,rows)),
                                   expID=as.numeric(rep(expID,rows)),
                                   eventID=as.numeric(rep(eventID,rows)),
-                                  groupID=rep(as.character(groupID) ,rows),
+                                  groupID=rep((groupID) ,rows), ##as.character
                                   PreyCount = rep(NROW(tblPreyRecord),rows))
 } ###END OF EACH Hunt Episode Loop 
 
@@ -345,13 +345,13 @@ for (rec in lMotionBoutDat)
   lBoutInfoPerEvent[[rec[1,"RegistarIdx"]]] <- list(nBouts=as.numeric(max(rec[,"boutSeq"])),
                                                        Distance= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBoutDistanceToPrey_mm"]),
                                                        Angle= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"OnSetAngleToPrey"]), ##
-                                                       groupID = as.character(datTrackedEventsRegister[ as.numeric(rec[1,"RegistarIdx"]),"groupID" ]),
+                                                       groupID = (datTrackedEventsRegister[ as.numeric(rec[1,"RegistarIdx"]),"groupID" ]),
                                                        Duration= as.numeric(rec[rec[,"boutRank"] == min(rec[,"boutRank"]),"vMotionBout_Off"]) - as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBout_On"])
                                                        )
 }
 
 datBoutVsPreyDistance <-  data.frame( do.call(rbind,lBoutInfoPerEvent ) )
-datBoutVsPreyDistance[datBoutVsPreyDistance$groupID == as.character(groupID),] ##Select Group For Analysis / Plotting
+datBoutVsPreyDistance[datBoutVsPreyDistance$groupID == (groupID),] ##Select Group For Analysis / Plotting
 
 ###Distance ColourRing 
 ##Calculate Colour Idx For Each Of the Distances - Based on ncolBands
@@ -424,38 +424,39 @@ dev.off()
 ### Box Plots Per Bout ##
 ####Select Subset Of Data To Analyse
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
-#datMotionBoutCombinedAll$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombinedAll$groupID]
-datMotionBoutCombined <-datMotionBoutCombinedAll#
-#datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == "DL", ] 
+#datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
+datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #
+datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
+datMotionBoutCombined$vMotionBoutDistanceToPrey_mm <- as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm)
 ##Turns Vs Bearing To Prey
 
 
 ####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well?
 ##Add Angle To Prey OnTop Of Eye Angles##
 Polarrfc <- colorRampPalette(rev(brewer.pal(12,'Blues')));
-colR <- c("#000000",Polarrfc(max(datMotionBoutCombinedAll$boutRank) ) ,"#FF0000");
+colR <- c("#000000",Polarrfc(max(datMotionBoutCombined$boutRank) ) ,"#FF0000");
 ncolBands <- NROW(colR)
 #X11()
 pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithBoutSeq_",groupID,".pdf",sep=""))
-plot(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
-     main=paste("Turn Size Vs Bearing To Prey ",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)], "+ Bout Number" ),
+plot(datMotionBoutCombined$OnSetAngleToPrey,datMotionBoutCombined$OnSetAngleToPrey-datMotionBoutCombined$OffSetAngleToPrey,
+     main=paste("Turn Size Vs Bearing To Prey ",levels(groupID)[unique(datMotionBoutCombined$groupID)], "+ Bout Number" ),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-90,90),
-     ylim=c(-90,90),col=colR[datMotionBoutCombinedAll$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+     ylim=c(-90,90),col=colR[datMotionBoutCombined$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
 ##Punctuate 1st Turn To Prey
-datFirstBoutPoints <- cbind(boutSeq = datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OnSetAngleToPrey,Turn= datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$OffSetAngleToPrey
-                            ,RegistarIdx=datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutSeq == 1,]$RegistarIdx)
+datFirstBoutPoints <- cbind(boutSeq = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey,Turn= datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
+                            ,RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$RegistarIdx)
 points(datFirstBoutPoints[,1],
        datFirstBoutPoints[,2],
        pch=9)
 points(1:ncolBands,rep(-90, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
-text(-3,-87,labels = paste(min(datMotionBoutCombinedAll$boutRank) ,"#" )  ) ##Heatmap range min
-text(ncolBands+4,-87,labels = paste(max(datMotionBoutCombinedAll$boutRank) ,"#" )  )
+text(-3,-87,labels = paste(min(datMotionBoutCombined$boutRank) ,"#" )  ) ##Heatmap range min
+text(ncolBands+4,-87,labels = paste(max(datMotionBoutCombined$boutRank) ,"#" )  )
 ##Draw 0 Vertical Line
 segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=2);
 ## Plot arrows showing Bout Turns Connecting Bouts From Same Experiment
-#for (expID in unique(datMotionBoutCombinedAll$expID) ) 
+#for (expID in unique(datMotionBoutCombined$expID) ) 
 #{
-#  datExp <- datMotionBoutCombinedAll[datMotionBoutCombinedAll$expID ==expID, ]
+#  datExp <- datMotionBoutCombined[datMotionBoutCombined$expID ==expID, ]
 #  for (ii in max(datExp$boutSeq):2) ##Draw Arrows Showing Sequence Of Bouts
 #    arrows(x0=datExp[ii,]$OnSetAngleToPrey, y0= datExp[ii,]$OnSetAngleToPrey-datExp[ii,]$OffSetAngleToPrey ,
 #          x1=datExp[ii-1,]$OnSetAngleToPrey, y1=datExp[ii-1,]$OnSetAngleToPrey-datExp[ii-1,]$OffSetAngleToPrey,
@@ -465,14 +466,14 @@ segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=2);
 dev.off()
 
 ##Calculate Colour Idx For Each Of the Distances - Based on ncolBands
-vUniqDist <- unique(round(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm*10))
+vUniqDist <- unique(round(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm*10))
 ncolBands <- 15
 vcolIdx <-  vector() ; ##Distances Rounded / Indexed 
-vdistToPrey <- round(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm*10)
+vdistToPrey <- round(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm*10)
 maxDistanceToPrey <- 50
 vdistToPrey[vdistToPrey>maxDistanceToPrey] <- maxDistanceToPrey
 vcolBands <- seq(min(vUniqDist),maxDistanceToPrey,length.out = ncolBands) 
-for (j in 1:NROW(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm)) 
+for (j in 1:NROW(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm)) 
   vcolIdx[j] <- min(which(vcolBands >  vdistToPrey[j] ))
 
 # ) 
@@ -483,15 +484,15 @@ colR <- c(Polarrfc( ncolBands ));
 
 #X11()
 pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithPreyDist_",groupID,".pdf",sep=""))
-plot(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
-     main=paste("Turn Size Vs Bearing To Prey ",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)]," + Distance" ),
+plot(datMotionBoutCombined$OnSetAngleToPrey,datMotionBoutCombined$OnSetAngleToPrey-datMotionBoutCombined$OffSetAngleToPrey,
+     main=paste("Turn Size Vs Bearing To Prey ",levels(groupID)[unique(datMotionBoutCombined$groupID)]," + Distance" ),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-90,90),
      ylim=c(-90,90),col=colR[vcolIdx] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
 points(1:ncolBands,rep(-90, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
 text(-3,-57,labels = paste(min(vUniqDist)/10,"mm" )  ) ##Heatmap range min
 text(ncolBands+4,-57,labels = paste(maxDistanceToPrey/10,"mm" )  )
-points(datMotionBoutCombinedAll$OnSetAngleToPrey,datMotionBoutCombinedAll$OnSetAngleToPrey-datMotionBoutCombinedAll$OffSetAngleToPrey,
-     main=paste("Turn Size Vs Bearing To Prey G",levels(groupID)[unique(datMotionBoutCombinedAll$groupID)] ),
+points(datMotionBoutCombined$OnSetAngleToPrey,datMotionBoutCombined$OnSetAngleToPrey-datMotionBoutCombined$OffSetAngleToPrey,
+     main=paste("Turn Size Vs Bearing To Prey G",levels(groupID)[unique(datMotionBoutCombined$groupID)] ),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-90,90),
      ylim=c(-90,90),col="Black" ,pch=16,cex=0.2) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
 ##Draw 0 Vertical Line
@@ -503,8 +504,8 @@ dev.off()
 
 
 X11()
-plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm")
-boxplot(as.numeric(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm) ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
+plot(as.numeric(datMotionBoutCombined$boutRank),datMotionBoutCombined$vMotionBoutDistanceToPrey_mm,main="Distance From Prey",ylab="mm",xlab="Bout Number")
+boxplot(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm ~ as.numeric(datMotionBoutCombined$boutRank),main="Distance From Prey",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
 
 
 X11()
@@ -517,8 +518,7 @@ boxplot(as.numeric(datMotionBoutCombined$OnSetAngleToPrey) ~ as.numeric(datMotio
 
 X11()
 plot(datMotionBoutCombined$boutRank,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main="Distance Of Bout (power)",ylab="mm")
-boxplot(datMotionBoutCombined$vMotionBoutDistanceTravelled_mm ~
-datMotionBoutCombined$boutRank,main="Distance Of Bout (power)",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
+boxplot(datMotionBoutCombined$vMotionBoutDistanceTravelled_mm ~datMotionBoutCombined$boutRank,main="Distance Of Bout (power)",ylab="mm",xlab="Bout Sequence (From Capture - Backwards)")
 
 
 X11()
