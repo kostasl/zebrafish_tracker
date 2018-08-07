@@ -40,7 +40,8 @@ r <- c(rfc(11),"#FF0000");
 ############# Analysis AND REPLAY OF HUNT EVENTS ####
 load(strDataFileName)
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
-lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+remove(lMotionBoutDat)
+#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
@@ -68,7 +69,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 28#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -316,22 +317,40 @@ for (idxH in idxDLSet)#NROW(datTrackedEventsRegister)
   #X11()
   #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
-  
   ##Exclude Idx of Bouts for Which We do not have an angle -Make Vectors In the Right Sequence 
   BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey ) ][lMotionBoutDat[[idxH]][,"boutSeq"]]
   BoutOffsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_Off"][ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] < NROW(vAngleToPrey ) ][lMotionBoutDat[[idxH]][,"boutSeq"]]
   vAnglesAtOnset <- vAngleToPrey[BoutOnsetWithinRange ,2]
   vAnglesAtOffset <- vAngleToPrey[BoutOffsetWithinRange,2]
   
+  ##Measure Change In Prey Angle During IBI
+  vDeltaPreyAngle <- c(NA, ##First Bout Does not have an IBI nor a IBIAngleChange
+                       vAngleToPrey[BoutOnsetWithinRange[2:(NROW(BoutOnsetWithinRange))],2] - vAngleToPrey[BoutOffsetWithinRange[1:(NROW(BoutOffsetWithinRange)-1)],2]
+  )
+  
+  ##More Accuratelly Measure Angular Path Length Of Prey Angle Between Bouts - During the pause - Not Just the Difference Between Start-End Angle
+  vBearingToPreyPath <- vector()
+  for (p in 1:(NROW(BoutOffsetWithinRange)-1) )
+  {
+    vBearingToPrey <- vAngleToPrey[BoutOffsetWithinRange[p]:BoutOnsetWithinRange[p+1],2] 
+    vBearingToPreyPath[p] <- sqrt(sum(diff(vBearingToPrey)^2)) ##Length of Path that the Prey Angle takes in the TimeFrame of the IBI
+  }
+    
+  dBearingToPrey <- vAngleToPrey[BoutOffsetWithinRange[1:(NROW(BoutOffsetWithinRange)-1)],2]
+  vPreyAnglePathLength <- c(NA,vBearingToPreyPath)
+  
   rows <- NROW(lMotionBoutDat[[idxH]])
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,
-                                  OnSetAngleToPrey = vAnglesAtOnset[lMotionBoutDat[[idxH]][,"boutSeq"]], ##Reverse THe Order Of Appearance Before Col. Bind
-                                  OffSetAngleToPrey = vAnglesAtOffset[lMotionBoutDat[[idxH]][,"boutSeq"]],
-                                  RegistarIdx = as.numeric(rep(idxH,rows)),
-                                  expID=as.numeric(rep(expID,rows)),
-                                  eventID=as.numeric(rep(eventID,rows)),
-                                  groupID=rep((groupID) ,rows), ##as.character
-                                  PreyCount = rep(NROW(tblPreyRecord),rows))
+                                  OnSetAngleToPrey      = vAnglesAtOnset[lMotionBoutDat[[idxH]][,"boutSeq"]], ##Reverse THe Order Of Appearance Before Col. Bind
+                                  OffSetAngleToPrey     = vAnglesAtOffset[lMotionBoutDat[[idxH]][,"boutSeq"]],
+                                  IBIAngleToPreyChange  = vDeltaPreyAngle[lMotionBoutDat[[idxH]][,"boutSeq"]],
+                                  IBIAngleToPreyLength  = vPreyAnglePathLength[lMotionBoutDat[[idxH]][,"boutSeq"]],
+                                  RegistarIdx           = as.numeric(rep(idxH,rows)),
+                                  expID                 = as.numeric(rep(expID,rows)),
+                                  eventID               = as.numeric(rep(eventID,rows)),
+                                  groupID               = rep((groupID) ,rows), ##as.character
+                                  PreyCount             = rep(NROW(tblPreyRecord),rows)
+                                  )
 } ###END OF EACH Hunt Episode Loop 
 
 saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData",".rds",sep="") ) #Processed Registry on which we add )
@@ -550,6 +569,7 @@ plot(datMotionBoutCombined$vMotionBoutIBI,datMotionBoutCombined$vTurnBoutAngle,m
      xlab="IBI (msec)")
 dev.off()
 
+# IBI VS NEXT Bout Power
 ##What is the relationship Between the Length Of Pause (IBI) and the Power of the next Bout
 X11()
 plot(datMotionBoutCombined$vMotionBoutIBI,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main=" Interbout Interval Vs Next Bout Distance Travelled ",
@@ -566,8 +586,26 @@ points((1:ncolBands)*3 + 300,rep(5, ncolBands), col=colR[1:ncolBands],pch=15) ##
 text(300,5.2,labels = paste(min(vUniqDist)/10,"mm" )  ) ##Heatmap range min
 text(ncolBands*3+300,5.2,labels = paste(maxDistanceToPrey/10,"mm" )  )
 
+# IBI VS Prey Angle Change
+X11()
+plot(datMotionBoutCombined$vMotionBoutIBI,abs(datMotionBoutCombined$IBIAngleToPreyChange)/(datMotionBoutCombined$vMotionBoutIBI/1000),main=" IBI Vs Prey AngularSpeed During Interval ",
+     ylab=" Angular Speed of Bearing-to-Prey during Interval (deg/sec)",
+     xlab="IBI (msec)",pch=19,
+     col=colR[vcolIdx],
+     ylim=c(0,200)
+) ##Distinguise The Captcha Strikes
+##Distinguise The Captcha Strikes
+points(datMotionBoutCombined[datMotionBoutCombined$boutRank == 1, ]$vMotionBoutIBI,
+       abs(datMotionBoutCombined[datMotionBoutCombined$boutRank == 1, ]$IBIAngleToPreyChange)/(datMotionBoutCombined[datMotionBoutCombined$boutRank == 1, ]$vMotionBoutIBI/1000),
+       pch=9,
+       col="red",
+       ylim=c(0,200)
+)
 
-dev.off()
+
+
+
+#dev.off()
 
 X11()
 ##How does IBI change With Bouts as the fish approaches the Prey?
