@@ -1,4 +1,4 @@
-
+source("labelHuntEvents.r")
 ### Auxilliary functions involving Labelling data on hunt events / And Merging Of Ongoing Labelling records ###  #
 ###
 ##   Can COMPARE Two Labelling Sets Using : ########
@@ -18,7 +18,7 @@ strDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ##On Which To Add
 datHuntLabelledEventsTarget <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 tblResT <- table(convertToScoreLabel(datHuntLabelledEventsTarget$huntScore),datHuntLabelledEventsTarget$groupID)
 
-strDataFileName <-paste("setn-12-HuntEvents-SB-ALL_27-07-18",sep="") ##From Which To Obtain New Labelled HuntEvent records
+strDataFileName <-paste("setn-12-HuntEvents-SB-ALL_06-08-18",sep="") ##From Which To Obtain New Labelled HuntEvent records
 datHuntLabelledEventsSource <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 tblResS2 <- table(convertToScoreLabel(datHuntLabelledEventsSource$huntScore),datHuntLabelledEventsSource$groupID)
 
