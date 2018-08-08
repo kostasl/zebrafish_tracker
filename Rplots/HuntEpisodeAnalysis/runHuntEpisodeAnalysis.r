@@ -375,7 +375,6 @@ for (rec in lMotionBoutDat)
 
 groupID <- which(levels(datTrackedEventsRegister$groupID) == "NL")
 
-
 datBoutVsPreyDistance <-  data.frame( do.call(rbind,lBoutInfoPerEvent ) )
 datBoutVsPreyDistance[datBoutVsPreyDistance$groupID == (groupID),] ##Select Group For Analysis / Plotting
 
@@ -577,7 +576,8 @@ dev.off()
 
 # IBI VS NEXT Bout Power
 ##What is the relationship Between the Length Of Pause (IBI) and the Power of the next Bout
-X11()
+#X11()
+pdf(file= paste(strPlotExportPath,"/IBIVsNextBoutTravel_",strGroupID,".pdf",sep=""))
 plot(datMotionBoutCombined$vMotionBoutIBI,datMotionBoutCombined$vMotionBoutDistanceTravelled_mm,main=" Interbout Interval Vs Next Bout Distance Travelled ",
      ylab="Distance Travelled By Next Bout(mm)",
      xlab="IBI (msec)",pch=19,
@@ -591,11 +591,11 @@ points(datMotionBoutCombined[datMotionBoutCombined$boutRank == 1, ]$vMotionBoutI
 points((1:ncolBands)*3 + 300,rep(5, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
 text(300,5.2,labels = paste(min(vUniqDist)/10,"mm" )  ) ##Heatmap range min
 text(ncolBands*3+300,5.2,labels = paste(maxDistanceToPrey/10,"mm" )  )
+dev.off()
 
 # IBI VS Prey Angle Change
 X11()
-
-plot(datMotionBoutCombined$vMotionBoutIBI,abs(datMotionBoutCombined$IBIAngleToPreyChange)/(datMotionBoutCombined$vMotionBoutIBI/1000),main=" IBI Vs Prey AngularSpeed During Interval ",
+plot(datMotionBoutCombined$vMotionBoutIBI,abs(datMotionBoutCombined$IBIAngleToPreyChange)/(datMotionBoutCombined$vMotionBoutIBI/1000),main=" IBI Vs Prey Angle During Interval ",
      ylab=" Angular Speed of Bearing-to-Prey during Interval (deg/sec)",
      xlab="IBI (msec)",pch=19,
      col=colR[vcolIdx],
