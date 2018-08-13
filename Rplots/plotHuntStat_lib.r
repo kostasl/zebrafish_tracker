@@ -23,7 +23,7 @@ pieChartLabelledEvents <- function(tblRes,GroupID)
   
   
   pie(DLRes , labels = paste(""," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=2.8,cex.main=2.8,clockwise = TRUE,
-      main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[c(1)]) ),
+      main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[c(1),GroupID]) ),
       radius=1.0,col=colourH) 
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
   #pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
@@ -51,7 +51,7 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID)
   
   
   pie(DLRes , labels = paste(""," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=3.8,cex.main=3.8,clockwise = TRUE,
-      main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[c(1)]) ),
+      main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
       radius=1.0,col=colourH) 
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
   #pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)

@@ -1,6 +1,7 @@
 source("DataLabelling/labelHuntEvents.r")
 ### Auxilliary functions involving Labelling data on hunt events / And Merging Of Ongoing Labelling records ###  #
 ###
+
 ##   Can COMPARE Two Labelling Sets Using : ########
 huntComp <- compareLabelledEvents(datHuntLabelledEventsSB,datHuntLabelledEventsSB2)
 huntComp$huntScore <- convertToScoreLabel(huntComp$huntScore) ##Convert to Labels
@@ -18,12 +19,22 @@ strDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ##On Which To Add
 datHuntLabelledEventsTarget <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 tblResT <- table(convertToScoreLabel(datHuntLabelledEventsTarget$huntScore),datHuntLabelledEventsTarget$groupID)
 
-strDataFileName <-paste("setn-12-HuntEvents-SB-ALL_08-08-18",sep="") ##From Which To Obtain New Labelled HuntEvent records
+strDataFileName <-paste("setn-12-HuntEvents-SB-ALL_13-08-18",sep="") ##From Which To Obtain New Labelled HuntEvent records
 datHuntLabelledEventsSource <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 tblResS2 <- table(convertToScoreLabel(datHuntLabelledEventsSource$huntScore),datHuntLabelledEventsSource$groupID)
 
 ## Do Merging and return New merged data Frame
 datHuntLabelledEvents <- digestHuntLabels(datHuntLabelledEventsTarget,datHuntLabelledEventsSource)
+
+
+### Once some events get labelled their FrameRange May Change and So Cannot Be Matched by digest -
+#Assume Row Names Have been Retained - Merge Unlabelled Using Row Names 
+unlabelledRows <- row.names(datHuntLabelledEventsTarget[convertToScoreLabel(datHuntLabelledEventsTarget$huntScore) == "UnLabelled", ])
+datHuntLabelledEvents[unlabelledRows,"huntScore"] <- datHuntLabelledEventsSource[unlabelledRows,]$huntScore
+
+NARows <- row.names(datHuntLabelledEventsTarget[convertToScoreLabel(datHuntLabelledEventsTarget$huntScore) == "NA", ])
+datHuntLabelledEvents[NARows,"huntScore"] <- datHuntLabelledEventsSource[NARows,]$huntScore
+##Show Summary Of Labelling
 tblResM <- table(convertToScoreLabel(datHuntLabelledEvents$huntScore),datHuntLabelledEvents$groupID)
 
 ## Check For Diferences ##
@@ -34,7 +45,7 @@ huntCompM$huntScore <- convertToScoreLabel(huntCompM$huntScore) ##Convert to Lab
 huntCompM$huntScoreB <- convertToScoreLabel(huntCompM$huntScoreB)
 ##List the Labelled Records where the Labels do not Agree
 datDiff <- huntCompM[huntCompM$huntScore != huntCompM$huntScoreB 
-          & huntCompM$huntScore != "UnLabelled"
+          #& huntCompM$huntScore != "UnLabelled"
           & !is.na(huntCompM$huntScore)
           & !is.na(huntCompM$huntScoreB),]
 
@@ -50,7 +61,7 @@ saveRDS(datHuntLabelledEvents,file=paste(strDatDir,"/LabelledSet/",strOutDataFil
 ####### #############################
 #######
 
-## PATCH DATASET ###
+## PATCH DATASET / Found Error with Dublicate ExpID ###
 ##13-08-18 Found Issue With Dublicate ExpID - Patch Code to Fix Issue:
 strProcDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
 message(paste(" Loading Hunt Event List to Patcg... "))
@@ -65,6 +76,20 @@ saveRDS(datHuntLabelledEventsSB,file=paste(strDatDir,"/LabelledSet/",strOutDataF
 
 ########## END OF PATCH ##########
 
+### APPEND  Latest Detected Events To Labelled Dataset and Save On New File set14
+lastDEvents <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$dataSetID %in% c(17,18),]
+
+datHuntLabelledEventsM <- rbind(datHuntLabelledEvents,lastDEvents[ lastDEvents$groupID %in% c("NL","LL","DL") ,])
+datHuntLabelledEventsM$expID <- as.numeric(as.character( datHuntLabelledEventsM$expID) )
+datHuntLabelledEventsM[datHuntLabelledEventsM$expID == 3871 & datHuntLabelledEventsM$groupID == "DL",]$expID <- 3881
+
+##Check Table Summary of Labels
+tblResM2 <- table(convertToScoreLabel(datHuntLabelledEventsM$huntScore),datHuntLabelledEventsM$groupID)
+
+# Save On NEW File ##
+strOutDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
+saveRDS(datHuntLabelledEventsM,file=paste(strDatDir,"/LabelledSet/",strOutDataFileName,".rds",sep="" ))
+#############
 
 ###Use it To Locate One Of the Detail Retracked HuntEvents In the Labelled Group
 findLabelledEvent <- function (EventRegisterRec)

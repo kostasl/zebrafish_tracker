@@ -25,4 +25,4 @@ vScoreIdx <- ((datFishSuccessRate[,"Success"]-datFishSuccessRate[,"Fails"])/(dat
 vScoreIdx[is.nan(vScoreIdx) ] <- 0
 
 ##How Many Fish From Each Group Have A Score Higher Than :
-table(datFishSuccessRate[datFishSuccessRate$Success > 7, ]$groupID )
+tblSuccessDist <- table(datFishSuccessRate[datFishSuccessRate$Success > 0, ]$groupID,datFishSuccessRate[datFishSuccessRate$Success > 0, ]$Success )

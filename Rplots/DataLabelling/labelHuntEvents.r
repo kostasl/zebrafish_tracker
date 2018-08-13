@@ -321,7 +321,7 @@ compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
     
   }
   
-  message(paste( " There were MultimatchCollisions:",nMultiCollision, " and Not Matched events:",nNonMatch ) ) 
+  message(paste( " There were Multimatch (1 A -> MultiB) Collisions:",nMultiCollision, " and Not Matched events:",nNonMatch ) ) 
   
   return(datHuntEventComp)
   
@@ -347,9 +347,9 @@ digestHuntLabels <- function(datTarget,datSource)
   
   huntComp <- compareLabelledEvents(datTarget,datSource)
   
-  ##Find which labels are new  - where the scores Differ and the Target Event List has these events unlabelled
+  ##Find which labels are new  - where the scores Differ and the Target Event List has these events unlabelled / OR / NA
   datNewLabels <- huntComp[huntComp$huntScore != huntComp$huntScoreB & !is.na(huntComp$huntScoreB) & !is.na(huntComp$huntScore) 
-                            & convertToScoreLabel(huntComp$huntScore)=="UnLabelled",] ##Bring Out The labelled Mismatches##Compare:
+                            & (convertToScoreLabel(huntComp$huntScore)=="UnLabelled" | convertToScoreLabel(huntComp$huntScore)=="NA"),] ##Bring Out The labelled Mismatches##Compare:
   
   rowIDs <- row.names(datNewLabels) ## Get ID to match records between datasets
   ##Transfer Label And Start End Frame
