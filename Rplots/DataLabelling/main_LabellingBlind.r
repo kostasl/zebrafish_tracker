@@ -122,6 +122,7 @@ datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strP
  ##<- datHuntEvent
 groupsList <- c("DL","NL","LL") ##unique(datHuntEventAllGroupToLabel$groupID)
 str_FilterLabel <- "UnLabelled"
+#str_FilterLabel <- "NA"
 ##Select Randomly From THe Already Labelled Set ##
 ##Main Sample Loop
 Keyc <- 'n'
@@ -137,6 +138,8 @@ while (Keyc != 'q')
   idx <- NA
   TargetLabels <- vHuntEventLabels
   
+  #message(gc)
+  
   if (Keyc == 'n')
   {
     ##Choose From THe Set Of Videos Already Labelled From Another User (Kostasl) So as to Verify The Label # Sample Only From THose ExpID that have not been already verified
@@ -144,7 +147,7 @@ while (Keyc != 'q')
     #                                           & (datHuntEventAllGroupToValidate$expID %in% datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$huntScore == TargetLabel,]$expID ),]
     
     datHuntEventPool <- datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0 & datHuntEventAllGroupToLabel$groupID == gc,]
-    datHuntEventPool <- datHuntEventPool[ datHuntEventPool$huntScore == TargetLabel,]
+    datHuntEventPool <- datHuntEventPool[ datHuntEventPool$huntScore == TargetLabel ,] #& is.na(datHuntEventPool$markTracked)
     expID <- sample(datHuntEventPool$expID,1)
     datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
     eventID <- sample(datHuntEventPool$eventID,1)
