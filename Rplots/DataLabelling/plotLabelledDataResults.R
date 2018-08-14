@@ -71,3 +71,26 @@ legend(-1.40,1.0,legend=c("Fail","Success"),
 
 dev.off()
 
+
+## PLOT SCATTER Of Success Vs Fail For Each Group 
+strPlotName = paste(strPlotExportPath,"/HuntLabelsSuccessVsFailScatter-SB.pdf",sep="")
+pdf(strPlotName,width=8,height=8,title="Labelled Success Vs Fails Hunt Events For Each Fish ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+
+  strProcDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
+  strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
+#strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
+  message(paste(" Loading Hunt Event List to Analyse... "))
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+  datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+  datFishSuccessRate <- getHuntSuccessPerFish(getHuntSuccessPerFish)
+###PLOT
+  layout()
+  plot(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Success,
+     pch=16,main="Hunt performance per fish",
+     xlab="#Capture Failures",ylab="#Capture Success")
+  points(datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Success,pch=2)
+  points(datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$Success,pch=4)
+  legend("topleft",legend=c("LL","NL","DL"), pch=c(16,2,4))
+  
+dev.off()
+
