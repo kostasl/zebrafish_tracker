@@ -63,7 +63,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 16#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -252,8 +252,8 @@ for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
 
   ###PLot Event Detection Summary
   #
-  #pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
-  X11()
+  pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  #X11()
   par(mar=c(4,4,1.5,1.5))
   
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
@@ -302,15 +302,13 @@ for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
     polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent)
     polarPlotAngleToPrey(datPlaybackHuntEvent)
     plotTailSpectrum(vTailDisp)##Tail Spectrum
-    
-    
-  #dev.off() 
+
+  dev.off() 
   ##END OF PLOT
   
   ##Tail Fq Mode
   #X11()
   #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
-  
   
   ##Exclude Idx of Bouts for Which We do not have an angle -Make Vectors In the Right Sequence 
   BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey ) ][lMotionBoutDat[[idxH]][,"boutSeq"]]

@@ -11,7 +11,6 @@
 ##  925/2769 <- Weird Tail Motin
 library(tools)
 library("MASS");
-#library(data.table) ##Required for rBindList
 #library(hexbin)
 
 ##FIX 4443 to fail with strike

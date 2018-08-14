@@ -152,10 +152,10 @@ cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template 
 ltROIlist vRoi;
 //
 
-cv::Point ptROI1 = cv::Point(gFishBoundBoxSize+1,gFishBoundBoxSize);
-cv::Point ptROI2 = cv::Point(640-gFishBoundBoxSize,gFishBoundBoxSize);
-cv::Point ptROI3 = cv::Point(640-gFishBoundBoxSize,512-gFishBoundBoxSize);
-cv::Point ptROI4 = cv::Point(gFishBoundBoxSize+1,512-gFishBoundBoxSize);
+cv::Point ptROI1 = cv::Point(gFishBoundBoxSize/2+1,gFishBoundBoxSize/2);
+cv::Point ptROI2 = cv::Point(640-gFishBoundBoxSize/2,gFishBoundBoxSize/2);
+cv::Point ptROI3 = cv::Point(640-gFishBoundBoxSize/2,512-gFishBoundBoxSize/2);
+cv::Point ptROI4 = cv::Point(gFishBoundBoxSize/2+1,512-gFishBoundBoxSize/2);
 
 
 
