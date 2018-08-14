@@ -65,7 +65,6 @@ G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
 G_MIN_BOUTSPEED          <- 0.05 ##px/frame - Need to be above to be considered A Motion Bout
 PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
-
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
 
 
@@ -113,7 +112,7 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 ##Load The List To process
 
 #strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
-strProcDataFileName <- paste("setn12-HuntEvents-SB-Updated",sep="") ##To Which To Save After Loading
+strProcDataFileName <- paste("setn14-HuntEventsFixExpID-SB-Updated",sep="") ##To Which To Save After Loading
 
 #strProcDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... "))
@@ -122,6 +121,7 @@ datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strP
  ##<- datHuntEvent
 groupsList <- c("DL","NL","LL") ##unique(datHuntEventAllGroupToLabel$groupID)
 str_FilterLabel <- "UnLabelled"
+#str_FilterLabel <- "NA"
 ##Select Randomly From THe Already Labelled Set ##
 ##Main Sample Loop
 Keyc <- 'n'
@@ -137,6 +137,8 @@ while (Keyc != 'q')
   idx <- NA
   TargetLabels <- vHuntEventLabels
   
+  #message(gc)
+  
   if (Keyc == 'n')
   {
     ##Choose From THe Set Of Videos Already Labelled From Another User (Kostasl) So as to Verify The Label # Sample Only From THose ExpID that have not been already verified
@@ -144,7 +146,7 @@ while (Keyc != 'q')
     #                                           & (datHuntEventAllGroupToValidate$expID %in% datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$huntScore == TargetLabel,]$expID ),]
     
     datHuntEventPool <- datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0 & datHuntEventAllGroupToLabel$groupID == gc,]
-    datHuntEventPool <- datHuntEventPool[ datHuntEventPool$huntScore == TargetLabel,]
+    datHuntEventPool <- datHuntEventPool[ datHuntEventPool$huntScore == TargetLabel ,] #& is.na(datHuntEventPool$markTracked)
     expID <- sample(datHuntEventPool$expID,1)
     datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
     eventID <- sample(datHuntEventPool$eventID,1)

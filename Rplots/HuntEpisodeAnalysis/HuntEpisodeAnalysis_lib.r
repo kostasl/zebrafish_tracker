@@ -164,7 +164,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 detectMotionBouts <- function(vEventSpeed)
 {
   nNumberOfComponents = 17
-  nSelectComponents = 7
+  nSelectComponents = 8
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
@@ -281,7 +281,7 @@ detectTailBouts <- function(vTailMotionFq)
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
   nNumberOfComponents = 8
-  nSelectComponents = 3
+  nSelectComponents = 4
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
@@ -567,7 +567,8 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
   vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
   vMotionBoutDistanceTravelled_mm <- vMotionBoutDistanceTravelled_mm[boutSeq]
   vTurnBoutAngle <- vTurnBoutAngle[boutSeq]
-  
+  vMotionBout_On <- vMotionBout_On[boutSeq]
+  vMotionBout_Off <- vMotionBout_Off[boutSeq]
   ##Check for Errors
   #stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )###Check End With  Pause Not A bout
   stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
