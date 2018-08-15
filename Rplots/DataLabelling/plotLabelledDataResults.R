@@ -5,7 +5,7 @@ source("plotHuntStat_lib.r")
 ## We can update To The Latest DataLabelling by running auxFunctions 
 ## digestHuntLabels(datHuntLabelledEventsTarget,datHuntLabelledEventsSource)
 ############# PLOT LABELLED RESULTS ##########
-strProcDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
+strProcDataFileName <-paste("setn14-HuntEventsFixExpID-SB-Updated",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
@@ -76,21 +76,26 @@ dev.off()
 strPlotName = paste(strPlotExportPath,"/HuntLabelsSuccessVsFailScatter-SB.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Labelled Success Vs Fails Hunt Events For Each Fish ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 
+colourD <- c("#0303E6AA","#03B303FF","#E60303AA")
+colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
+
   strProcDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
   strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
   message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
   datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-  datFishSuccessRate <- getHuntSuccessPerFish(getHuntSuccessPerFish)
+  datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 ###PLOT
-  layout()
-  plot(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Success,
-     pch=16,main="Hunt performance per fish",
-     xlab="#Capture Failures",ylab="#Capture Success")
-  points(datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Success,pch=2)
-  points(datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$Success,pch=4)
-  legend("topleft",legend=c("LL","NL","DL"), pch=c(16,2,4))
+  #layout()
+  plot(datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$Success,
+     pch=16,col=colourD[1],
+     main="Hunt performance per larva",
+     xlab="#Capture Failures",
+     ylab="#Capture Success",ylim=c(0,max(datFishSuccessRate$Success)+1) )  
+  points(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Success,pch=2,col=colourD[2])
+  points(datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Success,pch=4,col=colourD[3])
+  legend("topleft",legend=c("DL","LL","NL"), pch=c(16,2,4),col=colourL)
   
 dev.off()
 

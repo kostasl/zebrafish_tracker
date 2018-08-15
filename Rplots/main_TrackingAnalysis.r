@@ -80,7 +80,7 @@ source("HuntingEventAnalysis.r")
 
 source("TrajectoryAnalysis.r")
 
-source("labelHuntEvents.r")
+source("DataLabelling/labelHuntEvents_lib.r")
 ########
 
 strDataSetDirectories <- paste(strTrackInputPath, list(
@@ -170,7 +170,7 @@ source("plotHuntStat.r")
 ###
 source("plotMotionStat.r")
 
-  source("labelHuntEvents.r") ##Library 
+  source("DataLabelling/labelHuntEvents_lib.r")
   source("DataLabelling/main_LabellingBlind.r")
 
 

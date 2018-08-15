@@ -22,7 +22,7 @@ require(Rwave)
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
-source("DataLabelling/labelHuntEvents.r") ##for convertToScoreLabel
+source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 
 strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
 

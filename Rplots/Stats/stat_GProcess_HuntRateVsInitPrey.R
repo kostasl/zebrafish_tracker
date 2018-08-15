@@ -4,11 +4,11 @@
 ##
 
 
-source("TrackerDataFilesImport.r")
+source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
-source("HuntingEventAnalysis.r")
+source("HuntingEventAnalysis_lib.r")
 
-source("DataLabelling/labelHuntEvents.r")
+source("DataLabelling/labelHuntEvents_lib.r")
 ### GP Process Estimation Of Hunt Rate Vs Prey Density Using Bayesian Inference Model
 myplot_res<- function(ind,qq=0.05){
   

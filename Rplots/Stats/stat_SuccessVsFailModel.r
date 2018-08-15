@@ -1,4 +1,6 @@
 ## stat Model Success Vs Failure
+source("TrackerDataFilesImport_lib.r")
+source("DataLabelling/labelHuntEvents_lib.r")
 
 model1="model {
          
@@ -44,22 +46,33 @@ m=jags.model(file=strModelName,data=datatest);
 update(m,burn_in)
 draw=jags.samples(m,steps,thin=thin,variable.names=varnames1)
 
-X11()
-colourH <- c("#0303E633","#03B30333","#E6030333")
-for(i in 1:3) hist(draw$q[i,,1],breaks=seq(0,0.5,0.01),col=colourH[i],add=!(i==1))
-legend("topright", legend=strGroups,fill=colourH)
 
+#######PLOT RESULTS
 X11()
-for(i in 1:3) hist(draw$lambda[i,,1],breaks=seq(5,20,0.2),col=colourH[i],add=!(i==1))
-legend("topright", legend=strGroups,fill=colourH)
+colourH <- c("#0303E663","#03B30363","#E6030363")
+colourD <- c("#0303E623","#03B30323","#E6030323")
+colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
+#for(i in 1:3) hist(draw$q[i,,1],breaks=seq(0,0.5,0.01),col=colourH[i],add=!(i==1))
+#legend("topright", legend=strGroups,fill=colourL)
+
+#X11()
+#for(i in 1:3) hist(draw$lambda[i,,1],breaks=seq(5,20,0.2),col=colourH[i],add=!(i==1))
+#legend("topright", legend=strGroups,fill=colourL)
 
 ##Density in 2D of Success Vs Fail
-X11()
-plot(draw$q[1,,1], draw$lambda[1,,1],col=colourH[1])
-plot(draw$q[1,,1], draw$lambda[1,,1],col=colourH[1],ylim=c(5,20),xlim=c(0,0.5),pch=19)
-points(draw$q[2,,1], draw$lambda[2,,1],col=colourH[2],ylim=c(5,20),xlim=c(0,0.5),pch=19)
-points(draw$q[3,,1], draw$lambda[3,,1],col=colourH[3],ylim=c(5,20),xlim=c(0,0.5),pch=19)
-legend("topright", legend=strGroups,fill=colourH)
+#X11()
+
+strPlotName = paste(strPlotExportPath,"/stat_HuntRateAndEfficiencyEstimation.pdf",sep="")
+pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of success, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+
+  plot(draw$q[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=c(5,16),xlim=c(0,0.5),pch=19,
+       main="Bayesian Estimation for Hunt Rate and Efficiency",
+       xlab="Probability of Success q",
+       ylab=(expression(paste("Hunt Rate ",lambda ) ) )  ) #paste("Hunt Rate", )
+  points(draw$q[2,,1], draw$lambda[2,,1],col=colourD[2],ylim=c(5,16),xlim=c(0,0.5),pch=19)
+  points(draw$q[3,,1], draw$lambda[3,,1],col=colourD[3],ylim=c(5,16),xlim=c(0,0.5),pch=19)
+  legend("topright", legend=strGroups,fill=colourL)
+dev.off()
 #hist(draw$q[1,,1],breaks=seq(0,30,length=100),col=colourH[1])
 #hist(drawNL$q[1,,1],breaks=seq(0,30,length=100),add=T,col=colourH[2])
 #hist(drawDL$q[1,,1],breaks=seq(0,30,length=100),add=T,col=colourH[3])
