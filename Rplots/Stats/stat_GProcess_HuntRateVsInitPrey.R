@@ -8,7 +8,7 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
-source("DataLabelling/labelHuntEvents_lib.r")
+#source("DataLabelling/labelHuntEvents_lib.r")
 ### GP Process Estimation Of Hunt Rate Vs Prey Density Using Bayesian Inference Model
 myplot_res<- function(ind,qq=0.05){
   
@@ -132,6 +132,13 @@ modelGPFixedRho="model {
 #datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
 
 
+strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
+#strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
+message(paste(" Loading Hunt Event List to Analyse... "))
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSB)
+
 ## Get Event Counts Within Range ##
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
 datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE) )
@@ -230,7 +237,7 @@ drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
 drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
-strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateUnlabelledT30V50VsPrey_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
+strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateLabelledT30V50VsPrey_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 myplot_res(100)
 dev.off()

@@ -59,7 +59,7 @@ strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##
 ####################
 #source("TrackerDataFilesImport.r")
 ### Hunting Episode Analysis ####
-source("HuntingEventAnalysis.r")
+source("HuntingEventAnalysis_lib.r")
 
 source("TrajectoryAnalysis.r")
 
@@ -227,29 +227,45 @@ nFailDL <- tblDLStat[[4]]+tblDLStat[[5]]+tblDLStat[[10]]+tblDLStat[[11]]
 nSuccessDL <- tblDLStat[[3]]+tblDLStat[[12]]
 ###
 
+############## DO HUNT STAT ##########
+### Hunting Episode Analysis ####
+source("HuntingEventAnalysis_lib.r")
+
+
+#strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+strProcDataFileName <- paste("setn14-HuntEventsFixExpID-SB-Updated",sep="") ##To Which To Save After Loading
+#strProcDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
+message(paste(" Loading Hunt Event List to Process... "))
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntEvent <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+##<- datHuntEvent
+
 
 ######## CALC Stat On Hunt Events ######
 ## Re-process Hunt Stat On Modified Events
 lHuntStat <- list()
 groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
-strCondTags <- names(groupsrcdatList)
+strCondTags <- c("DL","LL","NL")#names(groupsrcdatList)
 for (i in strCondTags)
 {
   message(paste("#### ProcessGroup ",i," ###############"))
-  strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
-  message(paste(" Loading Hunt Events: ",strDataFileName))
+  #strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
+  #message(paste(" Loading Hunt Events: ",strDataFileName))
   ##ExPORT 
-  load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+  #load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
   
-  datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12),labels=vHuntEventLabels )##Set To NoTHuntMode
+  #datHuntEvent$huntScore <- convertToScoreLabel(datHuntEvent$huntScore) #factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12),labels=vHuntEventLabels )##Set To NoTHuntMode
   ##Filter Hunt Events ##
-  datHuntEventFilt <- datHuntEvent[datHuntEvent$huntScore != which(levels(huntLabels) == "NA") &
-                                   datHuntEvent$huntScore != which(levels(huntLabels) == "Not_HuntMode/Delete") &
-                                   datHuntEvent$huntScore != which(levels(huntLabels) == "Out_Of_Range") & 
-                                   datHuntEvent$huntScore != which(levels(huntLabels) == "Duplicate/Overlapping") |
-                                   datHuntEvent$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
+  datHuntEventFilt <- datHuntEvent[datHuntEvent$groupID == i,]
   
+  datHuntEventFilt <- datHuntEventFilt[
+                        datHuntEventFilt$huntScore != which(levels(huntLabels) == "NA") &
+                        datHuntEventFilt$huntScore != which(levels(huntLabels) == "Not_HuntMode/Delete") &
+                        datHuntEventFilt$huntScore != which(levels(huntLabels) == "Out_Of_Range") & 
+                        datHuntEventFilt$huntScore != which(levels(huntLabels) == "Duplicate/Overlapping") |
+                        datHuntEventFilt$eventID   == 0, ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
   
+  datHuntEventFilt <- datHuntEventFilt[!is.na(datHuntEventFilt$groupID),]
   lHuntStat[[i]] <- calcHuntStat3(datHuntEventFilt)
 }
 
