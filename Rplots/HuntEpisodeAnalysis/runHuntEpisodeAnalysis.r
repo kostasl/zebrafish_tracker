@@ -41,7 +41,7 @@ r <- c(rfc(11),"#FF0000");
 load(strDataFileName)
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
-#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
@@ -352,7 +352,7 @@ for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
                                   )
 } ###END OF EACH Hunt Episode Loop 
 
-saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData",".rds",sep="") ) #Processed Registry on which we add )
+#saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData",".rds",sep="") ) #Processed Registry on which we add )
 datEpisodeMotionBout <- lMotionBoutDat[[1]]
 ##On Bout Lengths
 ##Where Seq is the order Of Occurance, While Rank denotes our custom Ordering From Captcha backwards
@@ -372,10 +372,10 @@ for (rec in lMotionBoutDat)
                                                        )
 }
 
-groupID <- which(levels(datTrackedEventsRegister$groupID) == "NL")
+#groupID <- which(levels(datTrackedEventsRegister$groupID) == "NL")
 
 datBoutVsPreyDistance <-  data.frame( do.call(rbind,lBoutInfoPerEvent ) )
-datBoutVsPreyDistance[datBoutVsPreyDistance$groupID == (groupID),] ##Select Group For Analysis / Plotting
+#datBoutVsPreyDistance[datBoutVsPreyDistance$groupID == (groupID),] ##Select Group For Analysis / Plotting
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)[unlist(unique(datBoutVsPreyDistance$groupID))] 
 
@@ -395,32 +395,34 @@ for (j in 1:NROW(unlist(datBoutVsPreyDistance$Distance)))
 ######Plot Turn Angle Vs Bearing - With DISTANCE Colour Code
 Polarrfc <- colorRampPalette(rev(brewer.pal(15,'Spectral')));
 colR <- c(Polarrfc( ncolBands ));
+colL <- c("blue","green","red") ##Colour Label
+pchL <- c(19,24,23)
 ####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well?
 
 
 
-#X11()
-pdf(file= paste(strPlotExportPath,"/DistanceVsBoutCount_",strGroupID,".pdf",sep=""))
+X11()
+#pdf(file= paste(strPlotExportPath,"/DistanceVsBoutCount_",strGroupID,".pdf",sep="",collapse="-"))
 plot(datBoutVsPreyDistance$nBouts,datBoutVsPreyDistance$Distance,
-     main = paste("Initial distance to Prey Vs Bouts Performed",unique(datBoutVsPreyDistance$groupID)  ) ,
+     main = paste("Initial distance to Prey Vs Bouts Performed",strGroupID,collapse=","  ) ,
      ylab="Distance to Prey  (mm)",
      xlab="Number of Tracking Movements",
      ylim=c(0,6),
      xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )),
-     col=colR[vcolIdx],
-     pch=19
+     col=colL[as.numeric(datBoutVsPreyDistance$groupID)],
+     pch=pchR[as.numeric(datBoutVsPreyDistance$groupID)]
      )
-dev.off()
+#dev.off()
 
 
-pdf(file= paste(strPlotExportPath,"/BearingVsBoutCount_",strGroupID,".pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/BearingVsBoutCount_",strGroupID,".pdf",sep="",collapse="-" ))
 plot(datBoutVsPreyDistance$nBouts,datBoutVsPreyDistance$Angle,
-     main = paste("Initial Bearing to Prey Vs Bouts Performed",strGroupID ) ,
+     main = paste("Initial Bearing to Prey Vs Bouts Performed",strGroupID,collapse="," ) ,
      ylab="Angle to Prey  (mm)",
      xlab="Number of Tracking Movements",
      ylim=c(-180,180),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )),
      col=colR[vcolIdx],
-     pch=19)
+     pch=pchR[as.numeric(datBoutVsPreyDistance$groupID)])
 
 dev.off()
 
