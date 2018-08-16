@@ -80,6 +80,7 @@ pdf(strPlotName,width=8,height=8,title="Labelled Success Vs Fails Hunt Events Fo
 
 colourD <- c("#0303E6AA","#03B303FF","#E60303AA")
 colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
+pchL <- c(16,2,4)
 
   strProcDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
   strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
@@ -91,13 +92,13 @@ colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
 ###PLOT
   #layout()
   plot(datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$Success,
-     pch=16,col=colourD[1],
+     pch=pchL[1],col=colourD[1],
      main="Hunt performance per larva",
      xlab="#Capture Failures",
      ylab="#Capture Success",ylim=c(0,max(datFishSuccessRate$Success)+1) )  
-  points(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Success,pch=2,col=colourD[2])
-  points(datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Success,pch=4,col=colourD[3])
-  legend("topleft",legend=c("DL","LL","NL"), pch=c(16,2,4),col=colourL)
+  points(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Success,pch=pchL[2],col=colourD[2])
+  points(datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Fails,datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$Success,pch=pchL[3],col=colourD[3])
+  legend("topleft",legend=c("DL","LL","NL"), pch=pchL,col=colourL)
   
 dev.off()
 
