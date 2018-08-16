@@ -10,10 +10,12 @@ strProcDataFileName <-paste("setn14-HuntEventsFixExpID-SB-Updated",sep="") ## La
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+datHuntLabelledEventsSB <- datHuntLabelledEventsSB[datHuntLabelledEventsSB$eventID != 0,]
 tblResSB <- table(convertToScoreLabel(datHuntLabelledEventsSB$huntScore),datHuntLabelledEventsSB$groupID)
 ##Load My KL Labelled File
 strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##This is the KL labelled data set
 datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+datHuntLabelledEventsKL <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$eventID != 0,]
 tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHuntLabelledEventsKL$groupID)
 
 

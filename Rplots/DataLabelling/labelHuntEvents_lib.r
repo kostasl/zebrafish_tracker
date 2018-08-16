@@ -360,5 +360,20 @@ digestHuntLabels <- function(datTarget,datSource)
   return(datTarget)
 }
 
-
+### Makes Data frame With Number of Success Vs Failures From Labelled DatHuntEvent
+function(datHuntLabelledEvents)
+{
+  #datHuntLabelledEvents <- datHuntLabelledEvents[datHuntLabelledEvents$eventID != 0,] ##Exclude the Artificial Event 0 Used such that all ExpID are In the DatHuntEvent
+  tblResSB <- table(convertToScoreLabel(datHuntLabelledEvents$huntScore),datHuntLabelledEvents$groupID)
+  tblFishScores <- table(datHuntLabelledEvents$expID, convertToScoreLabel(datHuntLabelledEvents$huntScore) )
+  tblFishScoresLabelled<- tblFishScores[tblFishScores[,1] < 2, ] ##Pick Only THose ExpId (Fish) Whose Labelling Has (almost!) Finished
+  datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,3]+tblFishScoresLabelled[,12],
+                                          "Fails"= tblFishScoresLabelled[,4]+tblFishScoresLabelled[,10]+tblFishScoresLabelled[,11],
+                                          "groupID"=NA) ) #
+  for (e in row.names(tblFishScoresLabelled) )
+    datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )
+  
+  return (datFishSuccessRate)
+  
+}
 

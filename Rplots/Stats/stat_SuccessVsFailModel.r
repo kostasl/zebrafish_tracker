@@ -1,4 +1,7 @@
-## stat Model Success Vs Failure
+## stat Model Success Vs Failure - Plots Distribution For HuntRate and Success Rate
+# Makes A model Assuming Poisson Rate lambda and Hunt Success Probability q
+# Note: We can exclude the fish that produced no events when excluding eventID == 0- 
+
 source("TrackerDataFilesImport_lib.r")
 source("DataLabelling/labelHuntEvents_lib.r")
 
@@ -21,7 +24,9 @@ message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
-datFishSuccessRate <- getHuntSuccessPerFish(getHuntSuccessPerFish)
+##We Can Choose To Exclude The Fish That Produced No Hunting Events
+datHuntLabelledEventsSB <- datHuntLabelledEventsSB[datHuntLabelledEventsSB$eventID != 0,]
+datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 datFishSuccessRate$groupID <- factor(datFishSuccessRate$groupID)
 strGroups <-levels(datFishSuccessRate$groupID)
 
@@ -48,7 +53,7 @@ draw=jags.samples(m,steps,thin=thin,variable.names=varnames1)
 
 
 #######PLOT RESULTS
-X11()
+#X11()
 colourH <- c("#0303E663","#03B30363","#E6030363")
 colourD <- c("#0303E623","#03B30323","#E6030323")
 colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
