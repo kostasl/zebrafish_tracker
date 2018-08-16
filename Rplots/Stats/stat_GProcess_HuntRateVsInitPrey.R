@@ -132,12 +132,18 @@ modelGPFixedRho="model {
 #datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
 
 
-strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
+strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated-Merged"
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-datHuntStat <- makeHuntStat(datHuntLabelledEventsSB)
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged)
+
+##Add The Empty Test Conditions
+#strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
+#datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#datHuntStatE <- makeHuntStat(datHuntLabelledEventsKL)
+#datHuntLabelledEventsKLEmpty <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$groupID %in% c("DE","LE","NE"),]
 
 ## Get Event Counts Within Range ##
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
