@@ -42,6 +42,7 @@ load(strDataFileName)
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+bSaveNewMotionData <- FALSE ##Overwrite the lMotionBoutDatFile
 
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
@@ -114,7 +115,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   
   ## PLAYBACK ####
-  #     renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1) #saveToFolder =  strFolderName
+  #   renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1) #saveToFolder =  strFolderName
   ########################
   
   
@@ -216,7 +217,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   ## which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) , which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -50,
   regionToAnalyse       <-seq(min( c( which(vEyeV > G_THRESHUNTVERGENCEANGLE) ) ) - 50,
                               min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
-                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+100
+                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+20
                               ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
@@ -245,7 +246,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>1]))
   
-  #######################
+  # # # # # # # # # # # # # ## # ## # # # # # 
   
   
   #  plot(vTailDispFilt,type='l')
@@ -256,7 +257,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   ##Length Of Vector Determines Analysis Range For Motion Bout 
   #MoveboutsIdx_cleaned <- which(vTailActivity==1)
 
-  ###PLot Event Detection Summary
+  ################  PLot Event Detection Summary #################
   #
   pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
   #X11()
@@ -352,12 +353,14 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
                                   )
 } ###END OF EACH Hunt Episode Loop 
 
-saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData",".rds",sep="") ) #Processed Registry on which we add )
-datEpisodeMotionBout <- lMotionBoutDat[[1]]
-##On Bout Lengths
-##Where Seq is the order Of Occurance, While Rank denotes our custom Ordering From Captcha backwards
+########## SAVE Processed Hunt Events ###########
+if (bSaveNewMotionData)
+  saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData",".rds",sep="") ) #Processed Registry on which we add )
+#datEpisodeMotionBout <- lMotionBoutDat[[1]]
 
-# ###  AnALYSIS #XXX
+##On Bout Lengths ##Where Seq is the order Of Occurance, While Rank denotes our custom Ordering From Captcha backwards
+
+######### AnALYSIS OF Hunt Event Data ##############
 ##Make Vector Of Number oF Bouts Vs Distance
 lBoutInfoPerEvent <- list()
 for (rec in lMotionBoutDat)
@@ -379,7 +382,7 @@ datBoutVsPreyDistance <-  data.frame( do.call(rbind,lBoutInfoPerEvent ) )
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)[unlist(unique(datBoutVsPreyDistance$groupID))] 
 
-###Distance ColourRing 
+### Distance ColourRing ##
 ##Calculate Colour Idx For Each Of the Distances - Based on ncolBands
 vUniqDist <- unique(round(unlist(datBoutVsPreyDistance$Distance)*10))
 ncolBands <- 15
@@ -461,23 +464,23 @@ dev.off()
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
 #datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
 
-
-
-####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well?
+####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well ###############################
 ##Add Angle To Prey OnTop Of Eye Angles##
-Polarrfc <- colorRampPalette(rev(brewer.pal(12,'Blues')));
-colR <- c("#000000",Polarrfc(max(datMotionBoutCombined$boutRank) ) ,"#FF0000");
-ncolBands <- NROW(colR)
+Polarrfc <- colorRampPalette(rev(brewer.pal(9,'Blues')));
 #X11()
+colR <- c("#000000",Polarrfc(max(datMotionBoutCombinedAll$boutRank) ) ,"#FF0000"); ##Make Colour Range for Seq
+ncolBands <- NROW(colR)
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
-
+###### PLOT BOUTTURN Vs Prey Angle Coloured with BOUTSEQ ################
 for (gp in strGroupID)
 {
   groupID <- which(levels(datTrackedEventsRegister$groupID) == gp)
-  
+
+    
   datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm <- as.numeric(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm)
-  datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #
+  datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #Select Group
+  
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
   
   
@@ -485,10 +488,12 @@ for (gp in strGroupID)
   plot(datMotionBoutCombined$OnSetAngleToPrey,datMotionBoutCombined$OnSetAngleToPrey-datMotionBoutCombined$OffSetAngleToPrey,
      main=paste("Turn Size Vs Bearing To Prey ",gp, "+ Bout Number" ),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-100,100),
-     ylim=c(-100,100),col=colR[datMotionBoutCombined$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+     ylim=c(-100,100),
+     col=colR[datMotionBoutCombined$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
   ##Punctuate 1st Turn To Prey
-  datFirstBoutPoints <- cbind(boutSeq = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey,Turn= datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
-                            ,RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$RegistarIdx)
+  datFirstBoutPoints <- cbind(boutSeq = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey,
+                              Turn= datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
+                            , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$RegistarIdx)
   points(datFirstBoutPoints[,1],
          datFirstBoutPoints[,2],
          pch=9)
@@ -506,11 +511,11 @@ for (gp in strGroupID)
   #          x1=datExp[ii-1,]$OnSetAngleToPrey, y1=datExp[ii-1,]$OnSetAngleToPrey-datExp[ii-1,]$OffSetAngleToPrey,
   #          length = 0.1)
   #}
-  #####
   dev.off()
 }
 
-##Calculate Colour Idx For Each Of the Distances - Based on ncolBands
+######## Make Colour Idx For Each Of the Distances - Based on ncolBands #######
+##
 vUniqDist <- unique(round(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm*10))
 ncolBands <- 15
 vcolIdx <-  vector() ; ##Distances Rounded / Indexed 
@@ -521,11 +526,10 @@ vcolBands <- seq(min(vUniqDist),maxDistanceToPrey,length.out = ncolBands)
 for (j in 1:NROW(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm)) 
   vcolIdx[j] <- min(which(vcolBands >  vdistToPrey[j] ))
 
-# ) 
-######Plot Turn Angle Vs Bearing - With DISTANCE Colour Code
+
 Polarrfc <- colorRampPalette(rev(brewer.pal(15,'Spectral')));
 colR <- c(Polarrfc( ncolBands ));
-####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well?
+
 
 #X11()
 pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithPreyDist_",strGroupID,".pdf",sep=""))
@@ -547,6 +551,44 @@ text(ncolBands+4,-87,labels = paste(maxDistanceToPrey/10,"mm" )  )
 #dev.copy(pdf,file= paste(strPlotExportPath,"/BoutTurnsToPreyWithPreyDist_",groupID,".pdf",sep=""))
 dev.off()
 ################# #### # ##  ## #
+
+######  BOUTS Distribute Between Turn Bouts / Translation Bouts #############
+## Note Point Where Translation?motion Is Measured Is nOt the Centre Of Rotation, so a turn causes apparent motion too.
+## Exclude Strike Bouts ##
+for (gp in strGroupID)
+{
+  groupID <- which(levels(datTrackedEventsRegister$groupID) == gp)
+  X11()
+  #pdf(file= paste(strPlotExportPath,"/BoutRotationVsTranslation_",gp,".pdf",sep=""))
+  Polarrfc <- colorRampPalette(rev(brewer.pal(9,'Blues')));
+  colR <- c("#000000",Polarrfc(max(datMotionBoutCombinedAll$boutRank)-2 ) ,"#FF0000"); ##Make Colour Range for Seq
+  ncolBands <- NROW(colR)
+  
+  datMotionBoutFiltered <- datMotionBoutCombinedAll[datMotionBoutCombinedAll$boutRank > 1 & ##Exclude Strike Bout (Last One)
+                                                    #  datMotionBoutCombinedAll$boutSeq > 1 & ##Exclude 1st Turn To Prey
+                                                   datMotionBoutCombinedAll$groupID == groupID,]
+  plot(datMotionBoutFiltered$vMotionBoutDistanceTravelled_mm,datMotionBoutFiltered$vTurnBoutAngle,
+       main=paste(" Bout Translation Vs Bout Rotation ",gp),
+       ylab="Turn Angle (deg)",
+      xlab="Distance Travelled (mm)", 
+      xlim=c(0,2),
+      ylim=c(-90,90),
+      #col=colR[vcolIdx]
+      col= colR[datMotionBoutFiltered$boutSeq],  #colourL[as.numeric(datBoutVsPreyDistance$groupID)],
+      pch= pchL[as.numeric(datMotionBoutFiltered$groupID)]
+  ) ##Distinguise The Captcha Strikes
+  
+  labelY <- -50
+  points(1:ncolBands/100,rep(labelY, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
+  text(0.01,labelY-4,labels = paste(min(datMotionBoutFiltered$boutRank) ,"#" )  ) ##Heatmap range min
+  text((ncolBands+4)/100,labelY-4,labels = paste(max(datMotionBoutFiltered$boutRank) ,"#" )  )
+  
+  #dev.off()
+} ##End oF For Each Group
+
+#### 
+
+
 
 
 X11()
@@ -582,6 +624,8 @@ boxplot(datMotionBoutCombined$vMotionBoutDuration ~ datMotionBoutCombined$boutRa
         xlab="Bout Sequence (From Capture - Backwards)")
 
 #
+
+
 
 ##What is the relationship between IBI and the next turn Angle?
 pdf(file= paste(strPlotExportPath,"/IBIVsTurnAngle_",strGroupID,".pdf",sep=""))

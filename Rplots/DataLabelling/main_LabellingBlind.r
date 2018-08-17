@@ -220,5 +220,7 @@ lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$Hun
 ######## CALC Stat On Hunt Events ######
 ## Re-process Hunt Stat On Modified Events
 #source("HuntingEventAnalysis.r")
-
 ################
+
+## Events Of Super Hunters 
+datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$expID == 3541 & datHuntEventAllGroupToLabel$huntScore == 2,]

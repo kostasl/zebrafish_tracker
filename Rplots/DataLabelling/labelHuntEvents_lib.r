@@ -361,7 +361,7 @@ digestHuntLabels <- function(datTarget,datSource)
 }
 
 ### Makes Data frame With Number of Success Vs Failures From Labelled DatHuntEvent
-function(datHuntLabelledEvents)
+getHuntSuccessPerFish <- function(datHuntLabelledEvents)
 {
   #datHuntLabelledEvents <- datHuntLabelledEvents[datHuntLabelledEvents$eventID != 0,] ##Exclude the Artificial Event 0 Used such that all ExpID are In the DatHuntEvent
   tblResSB <- table(convertToScoreLabel(datHuntLabelledEvents$huntScore),datHuntLabelledEvents$groupID)

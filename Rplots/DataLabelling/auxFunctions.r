@@ -92,7 +92,9 @@ strOutDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
 saveRDS(datHuntLabelledEventsM,file=paste(strDatDir,"/LabelledSet/",strOutDataFileName,".rds",sep="" ))
 #############
 
-###Use it To Locate One Of the Detail Retracked HuntEvents In the Labelled Group
+### FIND a HUNT Event Record in the Labelled Events from the HuntAnalusis Register -
+## Use it To Locate One Of the Detail Retracked HuntEvents In the Labelled Group
+## You can the Use mainLabellingBlind, and give the rowID so as to replay the Video in the tracker
 findLabelledEvent <- function (EventRegisterRec)
 {
   strDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ##On Which To Add To
