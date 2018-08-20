@@ -461,7 +461,7 @@ calcRelativeAngleToPrey <- function(datRenderHuntEvent)
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
 ## Note: Incomplete Bouts At the end of the trajectory will be discarted  
 ## regionToAnalyse - Sequence of Idx On Which To Obtain Bout Motion Data - Usually Set from 1st to last point of prey capture for a specific Prey Item
-calcMotionBoutInfo2 <- function(ActivityboutIdx,TailboutsIdx,vEventSpeed_smooth,vDistToPrey,vBearingToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
+calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,vDistToPrey,vBearingToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
 {
   ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
   
@@ -613,6 +613,8 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TailboutsIdx,vEventSpeed_smooth,
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
     points(t[ActivityboutIdx],vEventSpeed_smooth[ActivityboutIdx],col="black")
     points(t[ActivityboutIdx_cleaned],vEventSpeed_smooth[ActivityboutIdx_cleaned],col="red")
+    points(t[TurnboutsIdx],vEventSpeed_smooth[TurnboutsIdx],col="darkblue",pch=19,cex=0.5) ##SHow Detected Turn Idxs
+    
     points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
     segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
     points(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off],col="purple",pch=14,lwd=3)

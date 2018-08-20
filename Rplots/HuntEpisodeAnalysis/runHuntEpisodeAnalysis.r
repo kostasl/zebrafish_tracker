@@ -70,7 +70,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = 16#(1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -212,14 +212,6 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
   
   vDistToPrey_Fixed_FullRange      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
-  ##Find Region Of Interest For Analysis Of Bouts
-  ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
-  ## which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) , which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -50,
-  regionToAnalyse       <-seq(min( c( which(vEyeV > G_THRESHUNTVERGENCEANGLE) ) ) - 50,
-                              min(which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
-                                    max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  )+20
-                              ) ##Set To Up To The Minimum Distance From Prey
-  vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
   #plot(vTailDisp,type='l')
   ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
@@ -248,7 +240,29 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   # # # # # # # # # # # # # ## # ## # # # # # 
   
+  ##Find Region Of Interest For Analysis Of Bouts
+  ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
+  ## which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) , which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -50,
   
+  ##Analyse from 1st Turn (assume Towardsprey) that is near the eye Vergence time point 
+  startFrame <- which(vEyeV > G_THRESHUNTVERGENCEANGLE) -50 ##Start from point little earlier than Eye V
+  if (NROW(TurnboutsIdx) > 3) ##If Turns Have been detected then Use 1st Turn Near eye V as startFrame for Analysis
+  {
+    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ))]-50 ##Take 1st turn to prey Close to Eye V
+  }else
+    message("Warning: No TurnBouts Detected")
+    
+  
+  regionToAnalyse       <-seq(min( c(startFrame  ) ) , #
+                              min(
+                                which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
+                                max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  
+                              )+20
+  ) ##Set To Up To The Minimum Distance From Prey
+  vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
+  
+  
+    
   #  plot(vTailDispFilt,type='l')
   #  points(which(vTailActivity==1),vTailDispFilt[which(vTailActivity==1)])
   
@@ -266,7 +280,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
   
-    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,TailboutsIdx,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vAngleToPrey,vTailDisp,regionToAnalyse,plotRes = TRUE)
+    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,TurnboutsIdx,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vAngleToPrey,vTailDisp,regionToAnalyse,plotRes = TRUE)
     ##Change If Fish Heading
     plot(t,vAngleDisplacement[1:NROW(t)],type='l',
          xlab="(msec)",
