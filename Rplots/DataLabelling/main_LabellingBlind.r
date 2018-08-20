@@ -223,4 +223,5 @@ lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$Hun
 ################
 
 ## Events Of Super Hunters 
+message("Super Hunters List:")
 datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$expID == 3541 & datHuntEventAllGroupToLabel$huntScore == 2,]

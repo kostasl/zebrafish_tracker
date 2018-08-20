@@ -7,7 +7,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 
 message(paste(" Loading Hunt Event List to Validate... "))
 #strDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
-strDataFileName <-paste("setn14-HuntEventsFixExpID-SB-Updated",sep="") ##To Which To Save After Loading
+strDataFileName <-paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
 datHuntEventAllGroupToValidate <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
  
 groupsList <- unique(datHuntEventAllGroupToValidate$groupID)
@@ -21,11 +21,13 @@ for (g in vHuntEventLabels )
   l=l+1
 }
 
-TargetLabel <- as.numeric(readline(prompt="### Key In A Number For Which Label You want to see:"))
+TargetGroups <- c("NL")
+TargetLabel <- as.numeric(readline("### Key In A Number For Which Label You want to see:"))
 #TargetLabel = which(vHuntEventLabels == vHuntEventLabels[Keyc])-1;
 #gc <- sample(groupsList,1)
 datHuntEventPool <- datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$huntScore == TargetLabel &
-                                                     datHuntEventAllGroupToValidate$eventID != 0 &
+                                                     datHuntEventAllGroupToValidate$eventID != 0 & 
+                                                     datHuntEventAllGroupToValidate$groupID %in% TargetGroups &
                                                      is.na(datHuntEventAllGroupToValidate$markTracked),]
 expID <- sample(datHuntEventPool$expID,1)
 datHuntEventPool <- datHuntEventPool[as.character(datHuntEventPool$expID) == expID ,]
