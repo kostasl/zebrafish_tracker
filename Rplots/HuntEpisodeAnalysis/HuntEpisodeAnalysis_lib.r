@@ -461,16 +461,16 @@ calcRelativeAngleToPrey <- function(datRenderHuntEvent)
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
 ## Note: Incomplete Bouts At the end of the trajectory will be discarted  
 ## regionToAnalyse - Sequence of Idx On Which To Obtain Bout Motion Data - Usually Set from 1st to last point of prey capture for a specific Prey Item
-calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBearingToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
+calcMotionBoutInfo2 <- function(ActivityboutIdx,TailboutsIdx,vEventSpeed_smooth,vDistToPrey,vBearingToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
 {
-  MoveboutsIdx_cleaned <- MoveboutsIdx[MoveboutsIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
+  ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
   
-  meanBoutSpeed <- median(vEventSpeed_smooth[MoveboutsIdx_cleaned])
+  meanBoutSpeed <- median(vEventSpeed_smooth[ActivityboutIdx_cleaned])
   
   ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
   vMotionBout <- vEventSpeed_smooth
   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
-  vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
+  vMotionBout[ ActivityboutIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
   
   ##Make Initial Cut So There is always a Bout On/Off 1st & Last Frame Is always a pause
   vMotionBout[1] <- 0
@@ -611,8 +611,8 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
     mtext(side = 4, line = 3, 'Speed (mm/sec)')
     
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
-    points(t[MoveboutsIdx],vEventSpeed_smooth[MoveboutsIdx],col="black")
-    points(t[MoveboutsIdx_cleaned],vEventSpeed_smooth[MoveboutsIdx_cleaned],col="red")
+    points(t[ActivityboutIdx],vEventSpeed_smooth[ActivityboutIdx],col="black")
+    points(t[ActivityboutIdx_cleaned],vEventSpeed_smooth[ActivityboutIdx_cleaned],col="red")
     points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
     segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
     points(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off],col="purple",pch=14,lwd=3)
@@ -649,16 +649,16 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
 # ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
 # ## Note: Incomplete Bouts At the end of the trajectory will be discarted  
 # ## regionToAnalyse - Sequence of Idx On Which To Obtain Bout Motion Data - Usually Set from 1st to last point of prey capture for a specific Prey Item
-# calcMotionBoutInfo <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
+# calcMotionBoutInfo <- function(ActivityboutIdx,vEventSpeed_smooth,vDistToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
 # {
-#   MoveboutsIdx_cleaned <- MoveboutsIdx[MoveboutsIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
+#   ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
 #   
-#   meanBoutSpeed <- median(vEventSpeed_smooth[MoveboutsIdx_cleaned])
+#   meanBoutSpeed <- median(vEventSpeed_smooth[ActivityboutIdx_cleaned])
 #   
 #   ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
 #   vMotionBout <- vEventSpeed_smooth
 #   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
-#   vMotionBout[ MoveboutsIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
+#   vMotionBout[ ActivityboutIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
 #   
 #   
 #   #vMotionBout_rle <- rle(vMotionBout)
@@ -693,7 +693,7 @@ calcMotionBoutInfo2 <- function(MoveboutsIdx,vEventSpeed_smooth,vDistToPrey,vBea
 #   for (i in 1:iPairs)
 #   {
 #     ###Motion Interval belongs to a detect bout(peak)  // Set Frame Indicators vMotionBout To Show Bout Frames
-#     if (any( MoveboutsIdx_cleaned >= vMotionBout_On[i] & MoveboutsIdx_cleaned < vMotionBout_Off[i] ) == TRUE)
+#     if (any( ActivityboutIdx_cleaned >= vMotionBout_On[i] & ActivityboutIdx_cleaned < vMotionBout_Off[i] ) == TRUE)
 #     { 
 #       ##Fix Bout Onset Using Accelleration To Detect When Bout Actually Began
 #       ##Find Closest Speed Onset
