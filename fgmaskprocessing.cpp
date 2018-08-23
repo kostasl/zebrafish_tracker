@@ -166,26 +166,24 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
                 window_main.nFrame = nFrame; //Update Window
                 window_main.tickProgress();
 
+/// Ignore ROI When Modelling BG//
+//                ///Make Global Roi on 1st frame if it doesn't prexist
+//                if (vRoi.size() == 0)
+//                {
+//                    ptROI2.x = frame.cols/2;
+//                    ptROI2.y = gszTemplateImg.height/3;
+//                //Add Global Roi - Center - Radius
+//                    ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
+//                    addROI(newROI);
 
-                ///Make Global Roi on 1st frame if it doesn't prexist
-                if (vRoi.size() == 0)
-                {
-                    ptROI2.x = frame.cols/2;
-                    ptROI2.y = gszTemplateImg.height/3;
-                //Add Global Roi - Center - Radius
-                    ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
-                    addROI(newROI);
-
-                    //Check If FG Mask Has Been Created - And Make A new One
-                    if (bgMask.cols == 0)
-                    {
+//                    Check If FG Mask Has Been Created - And Make A new One
+                   if (bgMask.cols == 0)
+                   {
                         bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
                         // Add Roi To Mask Otherwise Make On Based oN ROI
-                        cv::circle(bgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
-                    }
-                }
-
-
+//                        cv::circle(bgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
+                   }
+//                }
                 if (bgAcc.empty()) //Make EMpty Mask
                     bgAcc = cv::Mat::zeros(frame.rows,frame.cols,CV_32FC(bgMask.channels()));
 
@@ -747,7 +745,7 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
     //DEBUG //
     //cv::imshow("fishMask",fgFishMask);
 
-    pwindow_main->showVideoFrame(fgFishMask,nFrame);
+    pwindow_main->showVideoFrame(bgAcc,nFrame);
     //cv::imshow("Accumulated Bg Model",bgAcc);
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);

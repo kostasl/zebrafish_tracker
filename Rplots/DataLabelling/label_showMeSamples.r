@@ -21,7 +21,7 @@ for (g in vHuntEventLabels )
   l=l+1
 }
 
-TargetGroups <- c("NL")
+TargetGroups <- c("LL")
 TargetLabel <- as.numeric(readline("### Key In A Number For Which Label You want to see:"))
 #TargetLabel = which(vHuntEventLabels == vHuntEventLabels[Keyc])-1;
 #gc <- sample(groupsList,1)

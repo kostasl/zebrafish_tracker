@@ -67,10 +67,10 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = 16#(1:NROW(datTrackedEventsRegister))
+idxTestSet = (1:NROW(datTrackedEventsRegister))
 
 
-for (idxH in idxLLSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
