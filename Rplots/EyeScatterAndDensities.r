@@ -24,24 +24,30 @@ histj<- function(x,y,x.breaks,y.breaks){
 hbinRL = list();
 idx = 1;
 
-
+TotalprocDatFrames <- 0 ##Running Sum of all frames
 for (i in vexpID)
 {
   print(i)  
+  
   datLarvalAllFrames <- datAllGroupFrames[datAllGroupFrames$expID == i 
-                                          #&datAllGroupFrames$REyeAngle > -G_THRESHCLIPEYEDATA &
-                                            #datAllGroupFrames$REyeAngle <  G_THRESHCLIPEYEDATA & 
-                                            #datAllGroupFrames$LEyeAngle > -G_THRESHCLIPEYEDATA &
-                                            #datAllGroupFrames$LEyeAngle <  G_THRESHCLIPEYEDATA
+                                          &datAllGroupFrames$REyeAngle > -G_THRESHCLIPEYEDATA &
+                                          datAllGroupFrames$REyeAngle <  G_THRESHCLIPEYEDATA & 
+                                          datAllGroupFrames$LEyeAngle > -G_THRESHCLIPEYEDATA &
+                                          datAllGroupFrames$LEyeAngle <  G_THRESHCLIPEYEDATA
                                             ,]
+  
+  procDatFrames <- NROW(datLarvalAllFrames$frameN)
+  if (procDatFrames < 10)
+    next
+  
   lMax <- G_THRESHCLIPEYEDATA ##Min Max Angle Allowed For Each Eye
-  lMin <- -20
+  lMin <- -G_THRESHCLIPEYEDATA
   
   datLarvalAllFrames$LEyeAngle <-medianf(datLarvalAllFrames$LEyeAngle,nEyeFilterWidth)
   datLarvalAllFrames$LEyeAngle <- clipEyeRange(datLarvalAllFrames$LEyeAngle,lMin,lMax)
   datLarvalAllFrames[is.na(datLarvalAllFrames$LEyeAngle),"LEyeAngle"] <- G_THRESHCLIPEYEDATA
   
-  lMax <- 20
+  lMax <- G_THRESHCLIPEYEDATA
   lMin <- -G_THRESHCLIPEYEDATA
   
 
@@ -55,9 +61,11 @@ for (i in vexpID)
   ## Eye Trajectory Scatter Plot For all events from This Larva ##
   pdf(strScatterplotFileName,width=8,height=8)
   sampleSize= length(unique(datLarvalAllFrames$fileIdx));
-  procDatFrames <- length(datLarvalAllFrames$frameN)
+ 
+  TotalprocDatFrames = TotalprocDatFrames+procDatFrames
+  
   plot(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,cex=.1,xlim=c(-50,20),ylim=c(-40,60))
-  title(paste(strCond,"R-L Eye Density lID=",i," #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
+  title(paste(strCond,"R-L Eye Density lID=",i," #n=", sampleSize, " T:",round(procDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
   dev.off();
   
   hR <- hist(datLarvalAllFrames$REyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA-1,G_THRESHCLIPEYEDATA+1,length=60), plot=F)
@@ -98,8 +106,8 @@ for (i in vexpID)
   #   
   #   dev.off()
   # }
-    idx <-idx+1;
-  
+  idx <-idx+1;
+    
 } ##For Each Exp ID
 
 
@@ -110,8 +118,9 @@ strDensityplotFileName <- paste(strPlotExportPath,"/binDensity/EyeAngleDensity-B
 pdf(strDensityplotFileName,width=8,height=8)
 sampleSize  <- length(vexpID) #Number of Larvae Used 
 hotMap <- c(rfHot(sampleSize),"#FF0000");
-image((-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),hGroupbinDensity,axes=TRUE,col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
-title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
+image((-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),hGroupbinDensity,axes=TRUE,
+      col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
+title(paste(strCond,"R-L Eye Density #n=", sampleSize,  " T:",round(TotalprocDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
 #dev.copy(jpeg,filename=paste(strDensityplotFileName,"-plot.jpg"));
 dev.off()
 ###
@@ -120,7 +129,7 @@ dev.off()
  strDensityplotFileName <- paste(strPlotExportPath,"/densities/EyeAngleDensity-Set-",strCond,".pdf",collapse=NULL,sep="");
  pdf(strDensityplotFileName,width=8,height=8)
 
-
+procDatFrames <- NROW(datAllGroupFrames)
 datAllGroupFrames$LEyeAngle <- clipEyeRange(datAllGroupFrames$LEyeAngle,lMin,lMax)
 datAllGroupFrames$LEyeAngle <-medianf(datAllGroupFrames$LEyeAngle,nEyeFilterWidth)
 
@@ -139,11 +148,11 @@ if (bw==0)
 }
  eGroupDens <- kde2d(datAllGroupFrames$REyeAngle,datAllGroupFrames$LEyeAngle,h=bw, n=60, 
                      lims=c(range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA)) ) 
- 
+ #(-lMax:lMin),(-lMin:lMax)
 hotMap <- c(rfHot(20),"#FF0000");
 image(eGroupDens,col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
 sampleSize  <- length(vexpID) #Number of Larvae Used 
-title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
+title(paste(strCond,"R-L Eye Density #n=", sampleSize,  " T:",round(procDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
 dev.off()
 ################################
 

@@ -63,7 +63,11 @@ clipEyeRange <- function(vEyeAngle,lMin,lMax)
   
   ##Min Idx TO Start fROM IS 2 
   idxStart <- max(  min(which(!is.na(vEyeAngle) )   ),2)
-
+  ##Check for Errors, Occuring when all values are NA (usually a very short vector)!
+  if (is.infinite(idxStart))
+    return(vEyeAngle)
+  
+  ##Check  Value Before the start one- As it will be propagated forward when values are missing
   if (is.na(vEyeAngle[idxStart-1])) 
     vEyeAngle[idxStart-1] <- lMin
 
