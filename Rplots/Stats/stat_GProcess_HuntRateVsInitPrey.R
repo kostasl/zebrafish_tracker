@@ -13,12 +13,13 @@ source("HuntingEventAnalysis_lib.r")
 myplot_res<- function(ind,qq=0.05){
   
   xplotLim <- c(0,60)
-  
+  yplotLim <- c(0,100)
   plot(foodlevelsLL,countsLL,col=colourP[1],
        main = "GP Regression Of HuntRate Vs Initial Prey Count ",
        ylab="Number of Hunt Events",
        xlab="Initial Tracker-Estimated Prey Count",
        xlim = xplotLim,
+       ylim = yplotLim,
        pch=16,
        sub=paste("GP tau:",format(mean(drawLL$tau),digits=4 ),
                  "rho:",format(mean(drawLL$rho),digits=4 ) )  
