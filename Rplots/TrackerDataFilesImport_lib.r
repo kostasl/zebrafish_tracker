@@ -63,16 +63,28 @@ clipEyeRange <- function(vEyeAngle,lMin,lMax)
   
   ##Min Idx TO Start fROM IS 2 
   idxStart <- max(  min(which(!is.na(vEyeAngle) )   ),2)
-    
+
+  if (is.na(vEyeAngle[idxStart-1])) 
+    vEyeAngle[idxStart-1] <- lMin
+
+  if (vEyeAngle[idxStart-1] > lMax  ) 
+    vEyeAngle[idxStart-1] <- lMax
+
+  if (vEyeAngle[idxStart-1] < lMin  ) 
+    vEyeAngle[idxStart-1] <- lMin
+  
+  
   for (e in idxStart:NROW(vEyeAngle))
   {
     
+      
     if (is.na(vEyeAngle[e])) 
       vEyeAngle[e] <- vEyeAngle[e-1]
-    
+
     if (vEyeAngle[e] == 180)
       vEyeAngle[e] <- vEyeAngle[e-1]
     
+    #print(vEyeAngle[e])
     if (vEyeAngle[e] > lMax)
       vEyeAngle[e] <- vEyeAngle[e-1]
     

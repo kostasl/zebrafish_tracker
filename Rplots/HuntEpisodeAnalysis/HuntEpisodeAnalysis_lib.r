@@ -33,8 +33,8 @@ filterEyeTailNoise <- function(datFishMotion)
     #lines(datFishMotion$LEyeAngle,type='l',col='blue')
     ##Replace Tracking Errors (Values set to 180) with previous last known value
     
-    lMax <- 15
-    lMin <- -50
+    lMax <- 20
+    lMin <- -55
     datFishMotion$REyeAngle <- clipEyeRange(datFishMotion$REyeAngle,lMin,lMax)
     datFishMotion$REyeAngle <-medianf(datFishMotion$REyeAngle,nEyeFilterWidth)
     datFishMotion$REyeAngle[is.na(datFishMotion$REyeAngle)] <- 0

@@ -55,7 +55,7 @@ bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
 bf_eyes <- butter(4, 0.35,type="low",plane="z");
 bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 ###
-nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering
+#nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering ##moved to main
 
 if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
   lMotionBoutDat <<- list() ##Declared In Global Env

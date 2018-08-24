@@ -7,6 +7,9 @@
 #  error("EyeScatteAndDensities Expects filtereddatAllFrames data frame")
 #}
 # [[Hello Palette]]
+
+source("TrackerDataFilesImport_lib.r") ##For clip Eye Range
+
 rfHot <- colorRampPalette(rev(brewer.pal(11,'Spectral')));
 
 histj<- function(x,y,x.breaks,y.breaks){
@@ -20,12 +23,34 @@ histj<- function(x,y,x.breaks,y.breaks){
 
 hbinRL = list();
 idx = 1;
+
+
 for (i in vexpID)
 {
   print(i)  
-  datLarvalAllFrames <- datAllGroupFrames[datAllGroupFrames$expID == i & datAllGroupFrames$REyeAngle > -G_THRESHCLIPEYEDATA & datAllGroupFrames$REyeAngle <  G_THRESHCLIPEYEDATA & datAllGroupFrames$LEyeAngle > -G_THRESHCLIPEYEDATA & datAllGroupFrames$LEyeAngle <  G_THRESHCLIPEYEDATA,]
-  strScatterplotFileName <- paste("plots/scatter/EyeAngleScatter-Set-",strCond,"-lID_",i,".pdf",collapse=NULL);
-  strDensityplotFileName <- paste("plots/densities/EyeAngleDensity-Set-",strCond,"-lID_",i,".pdf",collapse=NULL);
+  datLarvalAllFrames <- datAllGroupFrames[datAllGroupFrames$expID == i 
+                                          #&datAllGroupFrames$REyeAngle > -G_THRESHCLIPEYEDATA &
+                                            #datAllGroupFrames$REyeAngle <  G_THRESHCLIPEYEDATA & 
+                                            #datAllGroupFrames$LEyeAngle > -G_THRESHCLIPEYEDATA &
+                                            #datAllGroupFrames$LEyeAngle <  G_THRESHCLIPEYEDATA
+                                            ,]
+  lMax <- G_THRESHCLIPEYEDATA ##Min Max Angle Allowed For Each Eye
+  lMin <- -20
+  
+  datLarvalAllFrames$LEyeAngle <-medianf(datLarvalAllFrames$LEyeAngle,nEyeFilterWidth)
+  datLarvalAllFrames$LEyeAngle <- clipEyeRange(datLarvalAllFrames$LEyeAngle,lMin,lMax)
+  datLarvalAllFrames[is.na(datLarvalAllFrames$LEyeAngle),"LEyeAngle"] <- G_THRESHCLIPEYEDATA
+  
+  lMax <- 20
+  lMin <- -G_THRESHCLIPEYEDATA
+  
+
+  datLarvalAllFrames$REyeAngle <-medianf(datLarvalAllFrames$REyeAngle,nEyeFilterWidth)
+  datLarvalAllFrames$REyeAngle <- clipEyeRange(datLarvalAllFrames$REyeAngle,lMin,lMax)
+  datLarvalAllFrames[is.na(datLarvalAllFrames$REyeAngle),"REyeAngle"] <- G_THRESHCLIPEYEDATA
+  
+  strScatterplotFileName <- paste(strPlotExportPath,"/scatter/EyeAngleScatter-Set-",strCond,"-lID_",i,".pdf",collapse=NULL,sep="");
+  strDensityplotFileName <- paste(strPlotExportPath,"/densities/EyeAngleDensity-Set-",strCond,"-lID_",i,".pdf",collapse=NULL,sep="");
   
   ## Eye Trajectory Scatter Plot For all events from This Larva ##
   pdf(strScatterplotFileName,width=8,height=8)
@@ -35,8 +60,8 @@ for (i in vexpID)
   title(paste(strCond,"R-L Eye Density lID=",i," #n=", sampleSize, " #F:",procDatFrames),collapse=NULL);
   dev.off();
   
-  hR <- hist(datLarvalAllFrames$REyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA,length=60), plot=F)
-  hL <- hist(datLarvalAllFrames$LEyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA,length=60), plot=F)
+  hR <- hist(datLarvalAllFrames$REyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA-1,G_THRESHCLIPEYEDATA+1,length=60), plot=F)
+  hL <- hist(datLarvalAllFrames$LEyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA-1,G_THRESHCLIPEYEDATA+1,length=60), plot=F)
   ##Do Binarized Histogram Add Each LArva In the group To A list of matrices
   hbinRL[[idx]] <- histj(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA))
   
@@ -75,13 +100,13 @@ for (i in vexpID)
   # }
     idx <-idx+1;
   
-}
+} ##For Each Exp ID
 
 
 ###### BINARIZED HISTOGRAM PER GROUP ###
 ## Now Sum All LArva Binarized Response and Display Heat Map
 hGroupbinDensity <- Reduce('+', hbinRL)
-strDensityplotFileName <- paste("plots/binDensity/EyeAngleDensity-BINSet-",strCond,".pdf",collapse=NULL,sep="");
+strDensityplotFileName <- paste(strPlotExportPath,"/binDensity/EyeAngleDensity-BINSet-",strCond,".pdf",collapse=NULL,sep="");
 pdf(strDensityplotFileName,width=8,height=8)
 sampleSize  <- length(vexpID) #Number of Larvae Used 
 hotMap <- c(rfHot(sampleSize),"#FF0000");
@@ -91,11 +116,20 @@ title(paste(strCond,"R-L Eye Density #n=", sampleSize, " #F:",procDatFrames),col
 dev.off()
 ###
 
-#### Eye Density Whole Group #####
- strDensityplotFileName <- paste("plots/densities/EyeAngleDensity-Set-",strCond,".pdf",collapse=NULL);
+#### Eye Density - With Frequencies Over the whole Group #####
+ strDensityplotFileName <- paste(strPlotExportPath,"/densities/EyeAngleDensity-Set-",strCond,".pdf",collapse=NULL,sep="");
  pdf(strDensityplotFileName,width=8,height=8)
 
-bw <- bandwidth.nrd(datLarvalAllFrames$REyeAngle)
+
+datAllGroupFrames$LEyeAngle <- clipEyeRange(datAllGroupFrames$LEyeAngle,lMin,lMax)
+datAllGroupFrames$LEyeAngle <-medianf(datAllGroupFrames$LEyeAngle,nEyeFilterWidth)
+
+datAllGroupFrames$REyeAngle <- clipEyeRange(datAllGroupFrames$REyeAngle,lMin,lMax)
+datAllGroupFrames$REyeAngle <-medianf(datAllGroupFrames$REyeAngle,nEyeFilterWidth)
+datAllGroupFrames[is.na(datAllGroupFrames$LEyeAngle),"LEyeAngle"] <- 0
+datAllGroupFrames[is.na(datAllGroupFrames$REyeAngle),"REyeAngle"] <- 0
+
+bw <- bandwidth.nrd(datAllGroupFrames[!is.na(datAllGroupFrames$LEyeAngle),"LEyeAngle"])
    
 bw <- ifelse(is.na(bw),0,bw)
  message(paste("kde BWdth:",bw));
@@ -103,7 +137,7 @@ if (bw==0)
 {    bw <- 1.2
  message(paste("**Warning changed kde BWdth to fixed value -> ",bw));
 }
- eGroupDens <- kde2d(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,h=bw, n=60, 
+ eGroupDens <- kde2d(datAllGroupFrames$REyeAngle,datAllGroupFrames$LEyeAngle,h=bw, n=60, 
                      lims=c(range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA)) ) 
  
 hotMap <- c(rfHot(20),"#FF0000");
