@@ -1,7 +1,10 @@
 
-### This File Generates the Gaussian Processs Plot with the correct uncesrtainty region 
+###  Estimates the hidden function of Hunt Rate Vs Prey Desnsity for each group - Uses Non-parametric Gaussian Process with Bayesian Inference
+### This File Generates the Gaussian Processs Plot with the correct uncesrtainty region ##
 ###
-##
+## 24/08/2018 Recalculated after Adding the D19 Set (Unlabelled Yet)- With the Experimental Repetitions of LL - 
+## Note : I fix some obvious tracker Overestimates of Prey Density in
+## the Empty Groups by caping to max 5 Prey (In reality these are debri sitting on the bottom of the dish)
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
@@ -13,7 +16,7 @@ source("HuntingEventAnalysis_lib.r")
 myplot_res<- function(ind,qq=0.05){
   
   xplotLim <- c(0,60)
-  yplotLim <- c(0,100)
+  yplotLim <- c(0,80)
   plot(foodlevelsLL,countsLL,col=colourP[1],
        main = "GP Regression Of HuntRate Vs Initial Prey Count ",
        ylab="Number of Hunt Events",
@@ -25,7 +28,7 @@ myplot_res<- function(ind,qq=0.05){
                  "rho:",format(mean(drawLL$rho),digits=4 ) )  
        )
   
-  legend(45,45,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
+  legend("topright",legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
   
   points(foodlevelsNL,countsNL,col=colourP[2],pch=16,xlim = xplotLim)
   points(foodlevelsDL,countsDL,col=colourP[3],pch=16,xlim = xplotLim)
@@ -150,6 +153,7 @@ datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged)
 ## Get Event Counts Within Range ##
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
 datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE) )
+datHuntVsPreyLE[datHuntVsPreyLE[,1] > 5,1] <- 5
 datHuntVsPreyL <- rbind(datHuntVsPreyLL,datHuntVsPreyLE)
 
 datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]),]
@@ -157,6 +161,7 @@ datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]),]
 
 datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL) )
 datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE) )
+datHuntVsPreyNE[datHuntVsPreyNE[,1] > 5,1] <- 5
 datHuntVsPreyN <- rbind(datHuntVsPreyNL,datHuntVsPreyNE)
 
 datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]),]
@@ -164,13 +169,14 @@ datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]),]
 
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL) )
 datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE) )
+datHuntVsPreyDE[datHuntVsPreyDE[,1] > 5,1] <- 5 ##Cap 
 datHuntVsPreyD <- rbind(datHuntVsPreyDL,datHuntVsPreyDE)
 ##Remove NA 
 datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),]
 
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,120)
+preyCntRange <- c(0,320)
 colourH <- c(rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.01,0.01,0.9,0.8),rgb(0.00,0.00,0.0,1.0))
 colourP <- c(rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,1.0))
 colourR <- c(rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.01,0.01,0.9,0.4),rgb(0.00,0.00,0.0,1.0))
@@ -247,10 +253,10 @@ drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
 strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateLabelledT30V50VsPrey_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
-myplot_res(100)
+myplot_res(1000)
 dev.off()
 
 
 X11()
-myplot_res(100)
+myplot_res(1000)
 
