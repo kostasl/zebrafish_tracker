@@ -3,7 +3,7 @@
 ###
 ##
 
-
+source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
@@ -131,12 +131,13 @@ modelGPFixedRho="model {
 #datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 #datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
 
-
-strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated-Merged" ##Has the Empty-Test Condition Fish Too (unlabelled)
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
+#strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated-Merged" ##Has the Empty-Test Condition Fish Too (unlabelled)
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
+
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged)
 
 ##Add The Empty Test Conditions

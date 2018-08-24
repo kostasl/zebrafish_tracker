@@ -21,8 +21,8 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
 DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
 G_APPROXFPS              <- 420
-G_THRESHUNTANGLE         <- 19 #Define Min Angle Both Eyes need for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
+G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
@@ -88,8 +88,8 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                               "/Tracked26-10-17/",
                               "/Tracked02-11-17/",##MDataset 3 -NOTE: Does not Larva ID on File Name 
                               "Tracked08-11-17/", #4 350fps - Missing a condition WTDryFed3Roti - So removed One Set Larva of Data from other conditions to balance the dataset
-                              "/Tracked16-11-17/",#5 400fps - Strict Timer Dataset
-                              "/Tracked30-11-17/",#6 420fps ## Most Simular - Start ANalysis From here
+                              "/Tracked16-11-17/",#5 400fps - Strict Timer Dataset -  ANalysis Starts From here ***
+                              "/Tracked30-11-17/",#6 420fps ## Most Simular 
                               "/Tracked07-12-17/",#7
                               "/Tracked14-12-17/",#8
                               "Tracked21-12-17/", # 9
@@ -101,7 +101,8 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                               "/Tracked15-02-18/",#15
                               "/Tracked22-02-18/",#16
                               "/Tracked_07-06-18/",##Dataset 17 
-                              "/Tracked14-06-18/"##Dataset n 
+                              "/Tracked14-06-18/",##Dataset 18
+                              "/Tracked_21-08-18/"##Dataset 19
                               ),sep="/")
 ##Add Source Directory
 
@@ -129,7 +130,7 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
-  firstDataSet = NROW(strDataSetDirectories)-13
+  firstDataSet = NROW(strDataSetDirectories)-14
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   ##oad Frames and HuntStats
@@ -177,7 +178,7 @@ source("plotMotionStat.r")
   
   ######## CALC Stat On Hunt Events ######
 ## Re-process Hunt Stat On Modified Events
-source("HuntingEventAnalysis.r")
+source("HuntingEventAnalysis_lib.r")
   ##Assumes datHuntEvent contains all groups
  datHuntStat <- makeHuntStat(datHuntEvent)  
 #  

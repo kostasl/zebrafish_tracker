@@ -86,7 +86,8 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                               "/Tracked15-02-18/",
                               "/Tracked22-02-18/",
                               "/Tracked_07-06-18/",##Dataset 17 
-                              "/Tracked14-06-18/"##Dataset n ##Dataset n 
+                              "/Tracked14-06-18/",##Dataset 18
+                              "/Tracked_21-08-18/"##Dataset n ##Dataset n 
                               ),sep="/")
 ##Add Source Directory
 strCondR  <- "*.csv"; 

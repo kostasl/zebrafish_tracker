@@ -92,6 +92,34 @@ strOutDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
 saveRDS(datHuntLabelledEventsM,file=paste(strDatDir,"/LabelledSet/",strOutDataFileName,".rds",sep="" ))
 #############
 
+## 24/08/18 IMPORT NEW DATASET HUNT EVENTS ONTO LABELLED SET #####
+##### Here I also Import / REPLACE - EMPTY Test Condition Records after I made HuntEvent Detection Stricter  ###
+
+#strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
+strProcDataFileName <- paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
+strMergedDataFileName <- paste("setn15-HuntEvents-SB-Updated-Merged",sep="") ##To Which To Save After Loading
+#strProcDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
+message(paste(" Loading Original Labelled Hunt Event List to Process... "))
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+## Subset The Ones We Will Keep
+datHuntEventLiveOnly <- datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$groupID %in% c("LL","DL","NL"),]
+
+message(paste(" Loading Hunt Event List From Empty Test Condition (LE,DE,NE) to Process... "))
+strProcDataFileName <- paste("setn15-D6-5-HuntEvents-Merged",sep="") ##To Which To Save After Loading
+datHuntEventAllGroupToImport <- readRDS(file=paste(strDatDir,"/",strProcDataFileName,".rds",sep="" ))
+##There Will Be Fields Missing - Correct
+message("Check  For Missing Fields")
+names(datHuntEventAllGroupToImport) 
+names(datHuntEventLiveOnly)
+datHuntEventAllMerged <- rbind(datHuntEventLiveOnly,datHuntEventAllGroupToImport)
+message("Write Merged Data Having Both Labelled And New Dataset Events")
+strfile <- paste(strDatDir,"/",strMergedDataFileName,".rds",sep="" )
+saveRDS(datHuntEventAllMerged,file=strfile )
+message(strfile)
+############ END OF IMPORT NEW DATASET HUNT EVENTS ONTO LABELEED SET ### 
+
 ### FIND a HUNT Event Record in the Labelled Events from the HuntAnalusis Register -
 ## Use it To Locate One Of the Detail Retracked HuntEvents In the Labelled Group
 ## You can the Use mainLabellingBlind, and give the rowID so as to replay the Video in the tracker
@@ -116,5 +144,6 @@ findLabelledEvent <- function (EventRegisterRec)
   
   return(recs)
 }
+
 
 
