@@ -127,14 +127,6 @@ while (Keyc != 'q')
     
     datHuntEventPool <- datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0 & datHuntEventAllGroupToLabel$groupID == gc,]
     datHuntEventPool <- datHuntEventPool[ datHuntEventPool$huntScore == TargetLabel,]
-    if (NROW(datHuntEventPool)  == 0)
-    {
-      message( paste("Finished with Hunt Events for group with label ",TargetLabels[TargetLabel], ". Try Again") )
-      groupsList <- groupsList[which(groupsList != gc)]
-      next
-    }
-    
-    
     expID <- resample(datHuntEventPool$expID,1)
     datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
     eventID <- resample(c(datHuntEventPool$eventID),1)
@@ -173,9 +165,9 @@ while (Keyc != 'q')
   
   
 }
-tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$huntScore),datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$groupID)
-write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary-SB.csv",sep="") )
 
+tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel$huntScore),datHuntEventAllGroupToLabel$groupID)
+write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary-SB.csv",sep="") )
 
 lLabelSummary <- list()
 nLabelledDL <- sum(tblRes[2:13,"DL"])
@@ -188,4 +180,86 @@ lLabelSummary$HuntEventCount <- list(DL=nLabelledDL,LL=nLabelledLL,NL=nLabelledN
 lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),"DL"]),LL=sum(tblRes[c(3,12),"LL"]),NL=sum(tblRes[c(3,12),"NL"]) )
 lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$HuntEventCount$DL,LL=lLabelSummary$Success$LL/lLabelSummary$HuntEventCount$LL,NL=lLabelSummary$Success$NL/lLabelSummary$HuntEventCount$NL )
 
+##   Can COMPARE Two Labelling Sets Using : ########
+#huntComp <- compareLabelledEvents(datHuntEventsSB,datHuntEventsKL)
+#huntComp$huntScore <- convertToScoreLabel(huntComp$huntScore) ##Convert to Labels
+#huntComp$huntScoreB <- convertToScoreLabel(huntComp$huntScoreB)
+#huntComp[huntComp$huntScore != huntComp$huntScoreB & huntComp$huntScore != "UnLabelled",] ##Bring Out The labelled Mismatches
+##Compare:
+#tblLabelCompare <- table(huntComp$huntScore, huntComp$huntScoreB) ##COlumns is HuntEventB scores
+#write.csv(tblLabelCompare,file=paste(strDatDir,"/LabelledSet/","tblCompareLabellingSummary.csv",sep="") )
+##########################
+####
+
+# 
+# 
+# ########################################## SUMMARY OF LABELLING #####################
+# ##How to Summarize Success / Fail Scores :
+# gc <- "LL"
+# strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
+# load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+# datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
+# message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
+# tblLLStat <- table(datHuntEvent$huntScore)
+# write.csv(tblLLStat,file="tbLLHuntLabelStat.csv")
+# 
+# nFailLL <- tblLLStat[[4]]+tblLLStat[[5]]+tblLLStat[[10]]+tblLLStat[[11]]
+# nSuccessLL <- tblLLStat[[3]]+tblLLStat[[12]]
+# 
+# 
+# gc <- "NL"
+# strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
+# load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+# datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
+# message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
+# tblNLStat <- table(datHuntEvent$huntScore)
+# write.csv(tblNLStat,file="tbNLHuntLabelStat.csv")
+# 
+# nFailNL <- tblNLStat[[4]]+tblNLStat[[5]]+tblNLStat[[10]]+tblNLStat[[11]]
+# nSuccessNL <- tblNLStat[[3]]+tblNLStat[[12]]
+# 
+# 
+# gc <- "DL"
+# strDataFileName <- paste("setn",NROW(dataSetsToProcess),"HuntEvents",gc,sep="-") ##To Which To Save After Loading
+# load(file=paste(strDatDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+# datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)##Set To NoTHuntMode
+# message(paste(NROW(datHuntEvent[datHuntEvent$huntScore != "UnLabelled",]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
+# tblDLStat <- table(datHuntEvent$huntScore)
+# write.csv(tblDLStat,file="tbDLHuntLabelStat.csv")
+# 
+# nFailDL <- tblDLStat[[4]]+tblDLStat[[5]]+tblDLStat[[10]]+tblDLStat[[11]]
+# nSuccessDL <- tblDLStat[[3]]+tblDLStat[[12]]
+# 
+# message(paste("Rates:",nSuccessLL/nFailLL,nSuccessNL/nFailNL,nSuccessDL/nFailDL,sep="  "))
+# ###
+# 
+# 
+# ######## CALC Stat On Hunt Events ######
+# ## Re-process Hunt Stat On Modified Events
+# source("HuntingEventAnalysis.r")
+# lHuntStat <- list()
+# groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
+# strCondTags <- names(groupsrcdatList)
+# for (i in strCondTags)
+# {
+#   message(paste("#### ProcessGroup ",i," ###############"))
+#   strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
+#   message(paste(" Loading Hunt Events: ",strDataFileName))
+#   ##ExPORT 
+#   load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+#   
+#   datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+#   ##Filter Hunt Events ##
+#   datHuntEventFilt <- datHuntEvent[datHuntEvent$huntScore != "NA" &
+#                                    datHuntEvent$huntScore != "Not_HuntMode/Delete" &
+#                                    datHuntEvent$huntScore != "Out_Of_Range" & 
+#                                    datHuntEvent$huntScore != "Duplicate/Overlapping" &
+#                                    datHuntEvent$huntScore != "Near-Hunt State" |
+#                                    datHuntEvent$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
+#   
+#   
+#   lHuntStat[[i]] <- calcHuntStat3(datHuntEventFilt)
+# }
+# 
+# datHuntStat = do.call(rbind,lHuntStat)#
 # ################
