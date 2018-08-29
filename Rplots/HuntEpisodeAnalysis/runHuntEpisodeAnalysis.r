@@ -41,7 +41,7 @@ r <- c(rfc(11),"#FF0000");
 load(strDataFileName)
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
-#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 bSaveNewMotionData <- FALSE ##Overwrite the lMotionBoutDatFile
 
 ##Make an Updated list of ReTracked Hunt Events that have been imported
@@ -67,7 +67,7 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = (1:NROW(datTrackedEventsRegister))
+idxTestSet = 16#(1:NROW(datTrackedEventsRegister))
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -115,7 +115,10 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   
   ## PLAYBACK ####
-  #   renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1) #saveToFolder =  strFolderName
+     renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1,saveToFolder =  strFolderName)# ,saveToFolder =  strFolderName#saveToFolder =  strFolderName
+  ##Make Videos With FFMPEG :
+  #ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
+  #ffmpeg  -start_number 5419 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=400 -pix_fmt yuv420p -c:a copy renderedHuntEvent4041_event13_track4.mp4
   ########################
   
   

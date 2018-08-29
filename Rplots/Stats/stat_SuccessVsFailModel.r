@@ -4,11 +4,11 @@
 
 source("TrackerDataFilesImport_lib.r")
 source("DataLabelling/labelHuntEvents_lib.r")
-
+##wiki suggest gamma prior for lambda
 model1="model {
          
          for(i in 1:3) {
-             lambda[i] ~ dexp(1)
+             lambda[i] ~ dexp(1) 
              q[i] ~ dbeta(1,1)
          }
 
@@ -18,14 +18,16 @@ model1="model {
          }
 }"
 
-strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
+#strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged"
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
 ##We Can Choose To Exclude The Fish That Produced No Hunting Events
-datHuntLabelledEventsSB <- datHuntLabelledEventsSB[datHuntLabelledEventsSB$eventID != 0,]
+datHuntLabelledEventsSB <- datHuntLabelledEventsSB[datHuntLabelledEventsSB$eventID != 0 &
+                                                     datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL") ,]
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 datFishSuccessRate$groupID <- factor(datFishSuccessRate$groupID)
 strGroups <-levels(datFishSuccessRate$groupID)
@@ -67,7 +69,7 @@ colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
 ##Density in 2D of Success Vs Fail
 #X11()
 
-strPlotName = paste(strPlotExportPath,"/stat_HuntRateAndEfficiencyEstimation.pdf",sep="")
+strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of success, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 
   plot(draw$q[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=c(5,16),xlim=c(0,0.5),pch=19,
