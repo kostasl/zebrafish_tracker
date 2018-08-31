@@ -371,8 +371,11 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
   tblResSB <- table(convertToScoreLabel(datHuntLabelledEvents$huntScore),datHuntLabelledEvents$groupID)
   tblFishScores <- table(datHuntLabelledEvents$expID, convertToScoreLabel(datHuntLabelledEvents$huntScore) )
   tblFishScoresLabelled<- tblFishScores[tblFishScores[,1] < 2, ] ##Pick Only THose ExpId (Fish) Whose Labelling Has (almost!) Finished
+  ##Choose The Columns With the Scores Of Interest Success 3, Success-SpitBackOut 12 etc
+  ##No_Targer is Column 5
   datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,3]+tblFishScoresLabelled[,12],
                                           "Fails"= tblFishScoresLabelled[,4]+tblFishScoresLabelled[,10]+tblFishScoresLabelled[,11],
+                                          "HuntEvents"= rowSums(tblFishScoresLabelled[,c(3,12,4,10,11,5)]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
                                           "groupID"=NA) ) #
   for (e in row.names(tblFishScoresLabelled) )
     datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )
