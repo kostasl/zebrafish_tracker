@@ -363,8 +363,7 @@ void MainWindow::fishvalueChanged(int i)
     qDebug() << "fish SpinBox gave " << i;
     LogEvent(QString("Changed Fish BG Threshold:") + QString::number(i));
     g_Segthresh = i;
-    g_SegFoodThesMax = i;
-}
+ }
 
 void MainWindow::maxEllipseSizevalueChanged(int i)
 {
