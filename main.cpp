@@ -3302,8 +3302,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
               /// Set Detected Eyes Back to Fish Features
-              ///  Print Out Values
+              ///  Print Out Values -
               /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
+              /// \todo Move this to specialized Function Like @renderFrameText
               ss.str(""); //Empty String
               ss.precision(3);
               if (vell.size() > 0)

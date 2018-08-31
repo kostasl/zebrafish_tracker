@@ -72,8 +72,6 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
 ##Add Source Directory
 strCondR  <- "*.csv"; 
 
-##For Safe Sampling Of Vectors Of Size 1
-resample <- function(x, ...) x[sample.int(length(x), ...)]
 
 ### Set Colour Pallette Size from List Of Datasets
 G_DATASETPALLETSIZE = NROW(strDataSetDirectories)

@@ -3,6 +3,10 @@
 ## Kostas Lagogiagiannis 2018 Jan
 ## Run The tracker Specifically on video frames isolating the Hunt Events - let the user label if the event was succesful or not
 
+
+##For Safe Sampling Of Vectors Of Size 1
+resample <- function(x, ...) x[sample.int(length(x), ...)]
+
 ##To Execute The QT tracker application We may need to give the QT library Path - (xcb error)
 #Sys.setenv(LD_LIBR4ARY_PATH="/home/kostasl/Qt/5.9.2/gcc_64/lib/" )
 ##Check If Qt Is already Added To Exec Path
