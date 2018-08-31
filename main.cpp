@@ -882,7 +882,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         if (bTrackFood)
         {
 
-            processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+            processFoodBlobs(fgFoodMask,frame_gray, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
 
             //If A fish Is Detected Then Draw Its tracks
@@ -2173,7 +2173,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 /// \return
 /// \note Draws Blue circle around food blob, with relative size
 ///
-int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
+int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
 {
 
     std::vector<cv::KeyPoint> keypoints;
@@ -2192,13 +2192,13 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     params.filterByColor        = false;
     params.filterByConvexity    = false;
 
-    //params.maxThreshold = 16;
-    //params.minThreshold = 8;
-    //params.thresholdStep = 2;
+    params.maxThreshold = g_SegFoodThesMax; //Use this Scanning to detect smaller Food Items
+    params.minThreshold = g_SegFoodThesMin;
+    params.thresholdStep = 2;
 
     // Filter by Area.
     params.filterByArea = true;
-    params.minArea = 1;
+    params.minArea = 0;
     params.maxArea = gthres_maxfoodblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
@@ -2216,8 +2216,8 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
 
     //\todo - Memory Crash Here - double free corruption
 
-    assert(maskimg.depth() == CV_8U);
-    detector->detect( maskimg, keypoints); //frameMask
+    assert(frame_grey.depth() == CV_8U);
+    detector->detect( frame_grey, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required

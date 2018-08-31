@@ -56,6 +56,9 @@ extern const  int nTemplatesToLoad; //Number of Templates To Load Into Cache - T
 
 ///Segmentation Params
 extern int g_Segthresh; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+extern int g_SegFoodThesMax; //Scan Thresholds to detect Food items in
+extern int g_SegFoodThesMin;
+
 extern int g_SegInnerthreshMult; //Image Threshold for Inner FIsh Features //Deprecated
 extern int g_BGthresh; //BG threshold segmentation
 extern int gi_ThresholdMatching; /// Minimum Score to accept that a contour has been found
