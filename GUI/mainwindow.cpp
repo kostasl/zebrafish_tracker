@@ -17,6 +17,7 @@ extern bool bDraggingTemplateCentre;
 extern bool bStartFrameChanged;
 extern bool bBlindSourceTracking;// Do Not Show File Names
 extern int g_Segthresh;
+extern int g_SegFoodThesMax; //Food Segmentation Threshold
 extern int gthresEyeSeg;
 extern int gi_maxEllipseMajor;
 extern int gi_minEllipseMajor;
@@ -104,6 +105,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->checkBoxGPU->setChecked(bUseGPU);
     this->ui->checkBoxMOG->setChecked(bUseBGModelling);
     this->ui->checkBoxNoiseFilter->setChecked(bRemovePixelNoise);
+    this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
+    this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
 
     createSpinBoxes();
     nFrame = 0;
@@ -136,9 +139,9 @@ void MainWindow::createSpinBoxes()
     this->ui->spinBoxMaxEllipse->setValue(gi_maxEllipseMajor);
 
 
-    this->ui->spinBoxSpineSegSize->installEventFilter(this);
-    this->ui->spinBoxSpineSegSize->setRange(2,20);
-    this->ui->spinBoxSpineSegSize->setValue(gFishTailSpineSegmentLength);
+//    this->ui->spinBoxSpineSegSize->installEventFilter(this);
+//    this->ui->spinBoxSpineSegSize->setRange(2,20);
+//    this->ui->spinBoxSpineSegSize->setValue(gFishTailSpineSegmentLength);
 
     //These spinBoxes Use Slots For Events
     this->ui->spinBoxTemplateThres->setValue(gTemplateMatchThreshold*100.0);
@@ -165,10 +168,10 @@ void MainWindow::createSpinBoxes()
                      this,
                      SLOT(fishvalueChanged(int)));
 
-    QObject::connect(this->ui->spinBoxSpineSegSize,
-                     SIGNAL(valueChanged(int)),
-                     this,
-                     SLOT(tailSizevalueChanged(int)));
+//    QObject::connect(this->ui->spinBoxSpineSegSize,
+//                     SIGNAL(valueChanged(int)),
+//                     this,
+//                     SLOT(tailSizevalueChanged(int)));
 
 
     QObject::connect(this->ui->spinBoxMinEllipse,
@@ -345,13 +348,6 @@ void MainWindow::showCVimg(cv::Mat& img)
 }
 
 
-void MainWindow::tailSizevalueChanged(int i)
-{
-    qDebug() << "Tails SpinBox gave " << i;
-    LogEvent(QString("Tail Segment Size changed:") + QString::number(i));
-    gFishTailSpineSegmentLength = i;
-}
-
 void MainWindow::eyevalueChanged(int i)
 {
     //qDebug() << "Eye SpinBox gave " << i;
@@ -367,6 +363,7 @@ void MainWindow::fishvalueChanged(int i)
     qDebug() << "fish SpinBox gave " << i;
     LogEvent(QString("Changed Fish BG Threshold:") + QString::number(i));
     g_Segthresh = i;
+    g_SegFoodThesMax = i;
 }
 
 void MainWindow::maxEllipseSizevalueChanged(int i)
@@ -986,3 +983,32 @@ void MainWindow::on_checkBoxNoiseFilter_toggled(bool checked)
 //        else
 //            LogEvent("[info] Pixel Noise Filtering is ON");
 //}
+
+//Set New Minimum Thrshold Scan range for Food Segmentation
+void MainWindow::on_spinBoxFoodThresMin_valueChanged(int arg1)
+{
+    g_SegFoodThesMin = arg1;
+}
+
+void MainWindow::on_spinBoxFoodThresMax_valueChanged(int arg1)
+{
+    g_SegFoodThesMax = arg1;
+}
+
+void MainWindow::on_spinBoxSpineSegSize_valueChanged(int arg1)
+{
+    tailSizevalueChanged(arg1);
+}
+void MainWindow::tailSizevalueChanged(int i)
+{
+    qDebug() << "Tails SpinBox gave " << i;
+    LogEvent(QString("Tail Segment Size changed:") + QString::number(i));
+    gFishTailSpineSegmentLength = i;
+
+}
+
+
+void MainWindow::on_spinBoxFoodThresMin_editingFinished()
+{
+
+}

@@ -151,11 +151,11 @@ cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template 
 
 ltROIlist vRoi;
 //
-
-cv::Point ptROI1 = cv::Point(gFishBoundBoxSize/2+1,gFishBoundBoxSize/2);
-cv::Point ptROI2 = cv::Point(640-gFishBoundBoxSize/2,gFishBoundBoxSize/2);
-cv::Point ptROI3 = cv::Point(640-gFishBoundBoxSize/2,512-gFishBoundBoxSize/2);
-cv::Point ptROI4 = cv::Point(gFishBoundBoxSize/2+1,512-gFishBoundBoxSize/2);
+//Rect Roi Keep Away from L-R Edges to Avoid Tracking IR lightRing Edges
+cv::Point ptROI1 = cv::Point(gFishBoundBoxSize*2+1,gFishBoundBoxSize/2);
+cv::Point ptROI2 = cv::Point(640-gFishBoundBoxSize*2,gFishBoundBoxSize/2);
+cv::Point ptROI3 = cv::Point(640-gFishBoundBoxSize*2,512-gFishBoundBoxSize/2);
+cv::Point ptROI4 = cv::Point(gFishBoundBoxSize*2+1,512-gFishBoundBoxSize/2);
 
 
 
@@ -882,7 +882,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         if (bTrackFood)
         {
 
-            processFoodBlobs(fgFoodMask,frame_gray, outframe , ptFoodblobs); //Use Just The Mask
+            processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
 
             //If A fish Is Detected Then Draw Its tracks
@@ -2194,7 +2194,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 
     params.maxThreshold = g_SegFoodThesMax; //Use this Scanning to detect smaller Food Items
     params.minThreshold = g_SegFoodThesMin;
-    params.thresholdStep = 2;
+    params.thresholdStep = 1;
 
     // Filter by Area.
     params.filterByArea = true;
