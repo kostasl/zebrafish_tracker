@@ -35,7 +35,11 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(11),"#FF0000");
 
-
+##For the 3 Groups 
+colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
+colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points]
+colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
+pchL <- c(16,2,4)
 #
 ############# Analysis AND REPLAY OF HUNT EVENTS ####
 load(strDataFileName)
@@ -489,18 +493,18 @@ colR <- c("#000000",Polarrfc(max(datMotionBoutCombinedAll$boutRank) ) ,"#FF0000"
 ncolBands <- NROW(colR)
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
+lFirstBoutPoints <- list() ##Add Dataframes Of 1st bout Turns for Each Group
 ###### PLOT BOUTTURN Vs Prey Angle Coloured with BOUTSEQ ################
 for (gp in strGroupID)
 {
   groupID <- which(levels(datTrackedEventsRegister$groupID) == gp)
 
-    
   datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm <- as.numeric(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm)
   datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #Select Group
   
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
   ##Punctuate 1st Turn To Prey
-  datFirstBoutPoints <- cbind(boutSeq = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey,
+  lFirstBoutPoints[[gp]] <- cbind(boutSeq = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey,
                               Turn= datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
                               , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$RegistarIdx)
   
@@ -511,14 +515,15 @@ for (gp in strGroupID)
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-100,100),
      ylim=c(-100,100),
      col=colR[datMotionBoutCombined$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
-  points(datFirstBoutPoints[,1],
-         datFirstBoutPoints[,2],
+  points(lFirstBoutPoints[[gp]][,1],
+         lFirstBoutPoints[[gp]][,2],
          pch=9)
   points(1:ncolBands,rep(-90, ncolBands), col=colR[1:ncolBands],pch=15) ##Add Legend Head Map
   text(-3,-87,labels = paste(min(datMotionBoutCombined$boutRank) ,"#" )  ) ##Heatmap range min
   text(ncolBands+4,-87,labels = paste(max(datMotionBoutCombined$boutRank) ,"#" )  )
   ##Draw 0 Vertical Line
   segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=2);
+  dev.off()
   ## Plot arrows showing Bout Turns Connecting Bouts From Same Experiment
   #for (expID in unique(datMotionBoutCombined$expID) ) 
   #{
@@ -528,9 +533,32 @@ for (gp in strGroupID)
   #          x1=datExp[ii-1,]$OnSetAngleToPrey, y1=datExp[ii-1,]$OnSetAngleToPrey-datExp[ii-1,]$OffSetAngleToPrey,
   #          length = 0.1)
   #}
-  dev.off()
+
+
 }
 
+
+### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
+
+pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All.pdf",sep=""))
+#X11()
+  plot(lFirstBoutPoints[["DL"]][,1], lFirstBoutPoints[["DL"]][,2],
+     main=paste("Turn Size Vs Bearing To Prey ", sep=""),
+     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-100,100),
+     ylim=c(-100,100),
+     col=colourP[1] ,pch=pchL[1]) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+  ##Draw 0 Vertical Line
+  segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=1,lty=2);
+  abline(lm(lFirstBoutPoints[["DL"]][,2] ~ lFirstBoutPoints[["DL"]][,1]),col=colourH[1],lwd=2.0) ##Fit Line / Regression
+  ##LL
+  points(lFirstBoutPoints[["LL"]][,1], lFirstBoutPoints[["LL"]][,2],pch=pchL[2],col=colourP[2])
+  abline(lm(lFirstBoutPoints[["LL"]][,2] ~ lFirstBoutPoints[["LL"]][,1]),col=colourH[2],lwd=2.0)
+  ##NL
+  points(lFirstBoutPoints[["NL"]][,1], lFirstBoutPoints[["NL"]][,2],pch=pchL[3],col=colourP[3])
+  abline(lm(lFirstBoutPoints[["NL"]][,2] ~ lFirstBoutPoints[["NL"]][,1]),col=colourH[3],lwd=2.0)
+  legend("topleft",legend=c("DL","LL","NL"), pch=pchL,col=colourL)
+
+dev.off()
 ######## Make Colour Idx For Each Of the Distances - Based on ncolBands #######
 ##
 vUniqDist <- unique(round(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm*10))
