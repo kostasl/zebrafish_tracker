@@ -150,6 +150,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
         ,main="Frequency Content Of TailBeat"
         ,xlab="Time (msec)"
         ,ylab ="Beat Frequency (Hz)"
+        ,cex.lab = 1.5
         ,ylim=c(0,60)
         ,col=ColorRamp
   )
@@ -164,7 +165,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 detectMotionBouts <- function(vEventSpeed)
 {
   nNumberOfComponents = 17
-  nSelectComponents = 8
+  nSelectComponents = 5##7
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
@@ -543,6 +544,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   if (lastBout > firstBout) ##If More than One Bout Exists
   {
     vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+  }
     ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
     vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
     vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
@@ -552,16 +554,18 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
     vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs] ] - vEventPathLength_mm[vMotionBout_On[1:iPairs] ]) ##The Power of A Bout can be measured by distance Travelled
     vTurnBoutAngle                  <- (vBearingToPrey[vMotionBout_Off[1:iPairs],2] - vBearingToPrey[vMotionBout_On[1:iPairs],2])
-    
-    
-    
-  }
+  
+  
   ##Add One Since IBI count is 1 less than the bout count
   vMotionBoutIBI <- c(vMotionBoutIBI,NA)
   
   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
   boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)
   boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
+  turnSeq <- rep(0,NROW(vMotionBoutDuration))   ##Empty Vector Of Indicating The Number of Turns that have occured up to a Bout
+  ## Make Turn Sequence
+  turnSeq[which(abs(vTurnBoutAngle) > 3)]      <- 1 ## Set Indicator That Bout Had  a turn in it - Set min Threshold 3 degrees
+  turnSeq <- cumsum(turnSeq) ## Create Turn "Counter"/Sequence by summing turn indicators
   
   ##Reverse Order 
   vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
@@ -569,15 +573,17 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   vTurnBoutAngle <- vTurnBoutAngle[boutSeq]
   vMotionBout_On <- vMotionBout_On[boutSeq]
   vMotionBout_Off <- vMotionBout_Off[boutSeq]
+  turnSeq <- turnSeq[boutSeq]
   ##Check for Errors
   #stopifnot(vMotionBout_rle$values[NROW(vMotionBout_rle$lengths)] == 0 )###Check End With  Pause Not A bout
   stopifnot(vMotionBout_rle$values[firstBout+1] == 0 ) ##THe INitial vMotionBoutIBI Is not Actually A pause interval , but belongs to motion!
-  
+
+    
   ##Combine and Return
   datMotionBout <- cbind(boutSeq,boutRank,vMotionBout_On,vMotionBout_Off,
                          vMotionBoutIBI,vMotionBoutDuration,
                          vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm,
-                         vTurnBoutAngle) ##Make Data Frame
+                         vTurnBoutAngle,turnSeq) ##Make Data Frame
   
   
   #### PLOT DEBUG RESULTS ###
@@ -601,19 +607,22 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     ##Plot Displacement and Speed(Scaled)
     vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
     ymax <- 15 #max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])
-    plot(t,vEventPathLength_mm,ylab="mm",
-         xlab="msec",
+    plot(t,vEventPathLength_mm,
+         main="Bout detection",
+         ylab="mm",
+         xlab="", #"msec",
+         cex.lab = 1.5,
          ylim=c(-0.3, ymax  ),type='l',lwd=3) ##PLot Total Displacemnt over time
     par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     par(mar=c(4,4,2,2))
     plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,1.5))
     axis(side = 4,col="blue")
-    mtext(side = 4, line = 3, 'Speed (mm/sec)')
+    mtext(side = 4, line = 2, 'Speed (mm/sec)')
     
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
-    points(t[ActivityboutIdx],vEventSpeed_smooth[ActivityboutIdx],col="black")
+    points(t[ActivityboutIdx],vEventSpeed_smooth[ActivityboutIdx],col="grey",cex=1.1)
     points(t[ActivityboutIdx_cleaned],vEventSpeed_smooth[ActivityboutIdx_cleaned],col="red")
-    points(t[TurnboutsIdx],vEventSpeed_smooth[TurnboutsIdx],col="darkblue",pch=19,cex=0.5) ##SHow Detected Turn Idxs
+    points(t[TurnboutsIdx],vEventSpeed_smooth[TurnboutsIdx],col="darkblue",pch=19,cex=0.4) ##SHow Detected Turn Idxs
     
     points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
     segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
@@ -625,11 +634,11 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     
     #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
     pkPt <- round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)
-    text(t[pkPt],vEventSpeed_smooth[pkPt]+0.1,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
+    text(t[pkPt],vEventSpeed_smooth[pkPt]+0.5,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
     plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
-         xlab="msec",
+         xlab="", # "msec",
          col="red",main="Tail Motion")
     lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black" )
     

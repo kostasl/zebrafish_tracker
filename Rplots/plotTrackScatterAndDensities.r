@@ -174,8 +174,8 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
   ##Eye Distance taken By Bianco As 453mum, ie 0.5mm , take tracker
   EyeDist = 0.4/DIM_MMPERPX ##From Head Centre
   BodyArrowLength = 13
-  LEyecolour = "#0C0CFF8A"
-  REyecolour = "#FF00008A"
+  LEyecolour = "#0C0CFF2A"
+  REyecolour = "#FF00002A"
 
   #display.brewer.all() to see avaulable options
   Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
@@ -313,16 +313,16 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
       if (NROW(lastPreyFrame$Prey_X) > 0 )
       {
         
-        points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=16,cex=lastPreyFrame$Prey_Radius/5)
+        points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=16,cex=lastPreyFrame$Prey_Radius/2)
         lines(rangePreyFrame$Prey_X,frameWidth-rangePreyFrame$Prey_Y,col="red")
-        text(lastPreyFrame$Prey_X+5,frameWidth-lastPreyFrame$Prey_Y+10,labels=f,col="darkred",cex=0.5)
+        text(lastPreyFrame$Prey_X+5,frameWidth-lastPreyFrame$Prey_Y+10,labels=f,col="darkred",cex=0.8)
       }
     }
     
     dev.flush()
     if (!is.na(saveToFolder) )
     {
-      dev.copy(png,filename=paste(saveToFolder,"/",sprintf("%05d", i) ,".png",sep=""), bg="white" );
+      dev.copy(jpeg,filename=paste(saveToFolder,"/",sprintf("%05d", i) ,".jpg",sep=""), bg="white" ,quality=80);
       dev.off ();
     }
     

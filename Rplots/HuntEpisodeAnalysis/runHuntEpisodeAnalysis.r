@@ -29,8 +29,8 @@ strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RDat
 strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
+G_THRESHUNTVERGENCEANGLE <- 40 ##Redifine Here Over main_Tracking - Make it looser so to detect 1st turn to Prey
 #    for (i in 1:40) dev.off()
-
 
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(11),"#FF0000");
@@ -71,7 +71,7 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = 16#(1:NROW(datTrackedEventsRegister))
+idxTestSet = (1:NROW(datTrackedEventsRegister)) #c(96,74)
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -102,6 +102,11 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   tblPreyRecord <-table(datPlaybackHuntEvent$PreyID) 
   if (NROW(tblPreyRecord) > 1)
     warning("Multiple Prey Items Tracked In Hunt Episode-Selecting Longest Track")
+  if (NROW(tblPreyRecord) < 1)
+  {
+    warning(paste(" Skipping No Prey ID for " ,expID,"_event",eventID,"_track",trackID, sep="" )  ) 
+    next
+  }
   
   ##### FILTERS #######
   message("Filtering Fish Motion (on all PreyID replicates)...")
@@ -119,7 +124,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   
   ## PLAYBACK ####
-     renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# ,saveToFolder =  strFolderName#saveToFolder =  strFolderName
+  #   renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1,saveToFolder =  strFolderName)# ,saveToFolder =  strFolderName#saveToFolder =  strFolderName
   ##Make Videos With FFMPEG :
   #ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
   #ffmpeg  -start_number 5419 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=400 -pix_fmt yuv420p -c:a copy renderedHuntEvent4041_event13_track4.mp4
@@ -138,9 +143,11 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   if (is.na(datTrackedEventsRegister[idxH,]$PreyIDTarget)) 
   {
     selectedPreyID <-  max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
+    if (!is.numeric( selectedPreyID) | is.infinite( selectedPreyID)   )
+      stop("Error on setting selectedPreyID automatically ")
     datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
     datTrackedEventsRegister[idxH,]$PreyCount    <- NROW(tblPreyRecord)
-    datTrackedEventsRegister[idxH,]$startFrame   <- min(datRenderHuntEvent$frameN)
+    datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
     saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) ##Save With Dataset Idx Identifier
   }
   
@@ -286,11 +293,11 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
-  
+
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,TurnboutsIdx,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vAngleToPrey,vTailDisp,regionToAnalyse,plotRes = TRUE)
     ##Change If Fish Heading
     plot(t,vAngleDisplacement[1:NROW(t)],type='l',
-         xlab="(msec)",
+         xlab= "",#"(msec)",
          ylab="Degrees",
          col="blue",main=" Angle Displacement")
     lines(t,cumsum(vTurnSpeed)[1:NROW(t)],type='l',lwd=2,
@@ -373,6 +380,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
                                   PreyCount             = rep(NROW(tblPreyRecord),rows)
                                   )
 } ###END OF EACH Hunt Episode Loop 
+
+
 
 ########## SAVE Processed Hunt Events ###########
 if (bSaveNewMotionData)
@@ -504,9 +513,9 @@ for (gp in strGroupID)
   
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
   ##Punctuate 1st Turn To Prey
-  lFirstBoutPoints[[gp]] <- cbind(boutSeq = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey,
-                              Turn= datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OnSetAngleToPrey-datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
-                              , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1,]$RegistarIdx)
+  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 ,]$OnSetAngleToPrey,
+                              Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1,]$OffSetAngleToPrey
+                              , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 ,]$RegistarIdx)
   
   
   pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithBoutSeq_",gp,".pdf",sep=""))
@@ -539,7 +548,7 @@ for (gp in strGroupID)
 
 
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
-
+### Here We Need To Detect The 1st Turn To Prey , Not Just 1st Bout
 pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All.pdf",sep=""))
 #X11()
   plot(lFirstBoutPoints[["DL"]][,1], lFirstBoutPoints[["DL"]][,2],
@@ -549,16 +558,19 @@ pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All.pdf"
      col=colourP[1] ,pch=pchL[1]) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
   ##Draw 0 Vertical Line
   segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=1,lty=2);
-  abline(lm(lFirstBoutPoints[["DL"]][,2] ~ lFirstBoutPoints[["DL"]][,1]),col=colourH[1],lwd=2.0) ##Fit Line / Regression
+  abline(lm(lFirstBoutPoints[["DL"]][,2] ~ lFirstBoutPoints[["DL"]][,1]),col=colourH[1],lwd=3.0) ##Fit Line / Regression
   ##LL
   points(lFirstBoutPoints[["LL"]][,1], lFirstBoutPoints[["LL"]][,2],pch=pchL[2],col=colourP[2])
-  abline(lm(lFirstBoutPoints[["LL"]][,2] ~ lFirstBoutPoints[["LL"]][,1]),col=colourH[2],lwd=2.0)
+  abline(lm(lFirstBoutPoints[["LL"]][,2] ~ lFirstBoutPoints[["LL"]][,1]),col=colourH[2],lwd=3.0)
   ##NL
   points(lFirstBoutPoints[["NL"]][,1], lFirstBoutPoints[["NL"]][,2],pch=pchL[3],col=colourP[3])
-  abline(lm(lFirstBoutPoints[["NL"]][,2] ~ lFirstBoutPoints[["NL"]][,1]),col=colourH[3],lwd=2.0)
-  legend("topleft",legend=c("DL","LL","NL"), pch=pchL,col=colourL)
+  abline(lm(lFirstBoutPoints[["NL"]][,2] ~ lFirstBoutPoints[["NL"]][,1]),col=colourH[3],lwd=3.0)
+  legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         , pch=pchL,col=colourL)
 
 dev.off()
+
+
 ######## Make Colour Idx For Each Of the Distances - Based on ncolBands #######
 ##
 vUniqDist <- unique(round(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm*10))
