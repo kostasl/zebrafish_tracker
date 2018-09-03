@@ -1,11 +1,8 @@
-
-###  Estimates the hidden function of Turn Vs Bearing To Prey  - Uses Non-parametric Gaussian Process with Bayesian Inference
+##3-09-2018
+###  Estimates the hidden function of Turn Vs Bearing To Prey  - 
+## Tried both a Non-parametric Gaussian Process with Bayesian Inference (Failed) But Also a simple Linear Model
 ## Requires the lFirstBoutPoints list of dataframes - which is constucted in 
-### This File Generates the Gaussian Processs Plot with the correct uncesrtainty region ##
-###
-## 24/08/2018 Recalculated after Adding the D19 Set (Unlabelled Yet)- With the Experimental Repetitions of LL - 
-## Note : I fix some obvious tracker Overestimates of Prey Density in
-## the Empty Groups by caping to max 5 Prey (In reality these are debri sitting on the bottom of the dish)
+
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
@@ -89,6 +86,27 @@ rho ~ dunif(0,rhoMax)
 
 }"
 
+#+ beta[3]*turn[i]
+
+modelLin <- "model{
+
+  # Likelihood
+  for(i in 1:N){
+    turn[i]   ~ dnorm(mu[i],inv.var)
+    mu[i] <- beta[1] + beta[2]*bearing[i] 
+  }
+
+  # Prior for beta
+  for(j in 1:2){
+    beta[j] ~ dnorm(0,0.0001)
+  }
+
+  # Prior for the inverse variance
+  inv.var   ~ dgamma(0.01, 0.01)
+  sigma     <- 1/sqrt(inv.var)
+
+}"
+
 
 ####Select Subset Of Data To Analyse
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
@@ -138,8 +156,8 @@ colourH <- c(rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.01,0.01,0.9,0.8
 colourP <- c(rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,1.0))
 colourR <- c(rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.01,0.01,0.9,0.4),rgb(0.00,0.00,0.0,1.0))
 ##Thse RC params Work Well to Smooth LF And NF
-tauRangeA =1 #10000
-rhoMaxA = 0.008
+tauRangeA =100000 #10000
+rhoMaxA = 1000
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
@@ -177,11 +195,12 @@ dataNL=list(turn=turnsNL,bearing=turnsNL,N=nDatNL,tauRange=tauRangeA,rhoMax=rhoM
 dataDL=list(turn=turnsDL,bearing=bearingDL,N=nDatDL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
 
 varnames=c("tau","rho","alpha","lambda")
-
+varnames=c("beta","sigma")
 
 library(rjags)
 fileConn=file("model.tmp")
-writeLines(modelGPV1,fileConn);
+#writeLines(modelGPV1,fileConn);
+writeLines(modelLin,fileConn);
 close(fileConn)
 
 mLL=jags.model(file="model.tmp",data=dataLL);
@@ -200,6 +219,38 @@ myplot_res(1000)
 dev.off()
 
 
-X11()
+
+hist(drawLL$beta[2,,1],breaks=seq(0,2,length=100),col=colourH[1],xlim=c(-1,15),
+     #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
+     xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
+hist(drawNL2$q[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
+hist(drawDL2$q[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,15))
+
 myplot_res(1000)
 
+X11()
+hist(drawLL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[1],xlim=c(0.9,1.1),
+     #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
+     xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
+
+hist(drawNL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[2],xlim=c(0.9,1.1),add=T  )
+
+
+X11()
+hist(drawLL$beta[2,,1])
+
+ind = 100
+muLL=mean(drawLL$beta[,(steps-ind):steps,1][2,])
+muNL=mean(drawNL$beta[,(steps-ind):steps,1][2,])
+sig=mean(drawLL$sigma[,(steps-ind):steps,1])
+
+##Plot Densities Summary
+sampLL <- coda.samples(mLL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
+sampNL <- coda.samples(mNL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
+sampDL <- coda.samples(mDL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
+X11()
+plot(sampLL,main="LL")
+X11()
+plot(sampNL,main="NL")
+X11()
+plot(sampDL,main="DL")

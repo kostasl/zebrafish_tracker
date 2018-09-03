@@ -166,7 +166,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 detectMotionBouts <- function(vEventSpeed)
 {
   nNumberOfComponents = 17
-  nSelectComponents = 5##7
+  nSelectComponents = 7##5##7
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
