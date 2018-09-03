@@ -16,9 +16,10 @@ source("HuntingEventAnalysis_lib.r")
 ### GP Process Estimation Of Hunt Rate Vs Prey Density Using Bayesian Inference Model
 myplot_res<- function(ind,qq=0.05){
   
+  
   xplotLim <- c(-100,100)
   yplotLim <- c(-100,100)
-  plot(foodlevelsLL,countsLL,col=colourP[1],
+  plot(bearingLL,turnsLL,col=colourP[1],
        main = "GP Regression Of Turn Vs Bearing To Prey ",
        ylab="Turn To Prey",
        xlab="Bearing To Prey",
@@ -31,25 +32,25 @@ myplot_res<- function(ind,qq=0.05){
   
   legend("topright",legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
   
-  points(foodlevelsNL,countsNL,col=colourP[2],pch=16,xlim = xplotLim)
-  points(foodlevelsDL,countsDL,col=colourP[3],pch=16,xlim = xplotLim)
+  points(bearingNL,turnsNL,col=colourP[2],pch=16,xlim = xplotLim)
+  points(bearingDL,turnsDL,col=colourP[3],pch=16,xlim = xplotLim)
   
   muLL=apply(drawLL$lambda[,(steps-ind):steps,1],1,mean)
   muNL=apply(drawNL$lambda[,(steps-ind):steps,1],1,mean)
   muDL=apply(drawDL$lambda[,(steps-ind):steps,1],1,mean)
   
-  lines(foodlevelsLL,muLL,col=colourH[1],lwd=4,xlim = xplotLim)
-  lines(foodlevelsNL,muNL,col=colourH[2],lwd=4,xlim = xplotLim)
-  lines(foodlevelsDL,muDL,col=colourH[3],lwd=4,xlim = xplotLim)
+  lines(bearingLL,muLL,col=colourH[1],lwd=4,xlim = xplotLim)
+  lines(bearingNL,muNL,col=colourH[2],lwd=4,xlim = xplotLim)
+  lines(bearingDL,muDL,col=colourH[3],lwd=4,xlim = xplotLim)
   
   band=apply(drawLL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
-  polygon(c(foodlevelsLL,rev(foodlevelsLL)),c(band[1,],rev(band[2,])),col=colourR[1])
+  polygon(c(bearingLL,rev(bearingLL)),c(band[1,],rev(band[2,])),col=colourR[1])
   
   band=apply(drawNL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
-  polygon(c(foodlevelsNL,rev(foodlevelsNL)),c(band[1,],rev(band[2,])),col=colourR[2])
+  polygon(c(bearingNL,rev(bearingNL)),c(band[1,],rev(band[2,])),col=colourR[2])
   
   band=apply(drawDL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
-  polygon(c(foodlevelsDL,rev(foodlevelsDL)),c(band[1,],rev(band[2,])),col=colourR[3])
+  polygon(c(bearingDL,rev(bearingDL)),c(band[1,],rev(band[2,])),col=colourR[3])
   
 }
 
@@ -137,8 +138,8 @@ colourH <- c(rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.01,0.01,0.9,0.8
 colourP <- c(rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,1.0))
 colourR <- c(rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.01,0.01,0.9,0.4),rgb(0.00,0.00,0.0,1.0))
 ##Thse RC params Work Well to Smooth LF And NF
-tauRangeA =50 #10000
-rhoMaxA = 0.8
+tauRangeA =1 #10000
+rhoMaxA = 0.008
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
@@ -150,11 +151,6 @@ thin=1;
 nDatLL <- NROW(datTurnVsPreyLL)
 nDatNL <- NROW(datTurnVsPreyNL)
 nDatDL <- NROW(datTurnVsPreyDL)
-
-
-dataLL2=list(n=nDatLL,N=length(nDatLL),turn=as.integer(nFoodLL2) );
-dataNL2=list(n=nDatNL,N=length(nDatNL),turn=as.integer(nFoodNL2) ) ;
-dataDL2=list(n=nDatDL,N=length(nDatDL),turn=as.integer(datHuntVsPreyN[,2]) ) ;
 
 ##Order Data in Bearing Sequence 
 bearingLL=datTurnVsPreyLL[,1]
@@ -191,7 +187,7 @@ close(fileConn)
 mLL=jags.model(file="model.tmp",data=dataLL);
 mNL=jags.model(file="model.tmp",data=dataNL);
 mDL=jags.model(file="model.tmp",data=dataDL);
-update(mLL,burn_in);#update(mNL,burn_in);update(mDL,burn_in)
+#update(mLL,burn_in);update(mNL,burn_in);update(mDL,burn_in)
 
 
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
