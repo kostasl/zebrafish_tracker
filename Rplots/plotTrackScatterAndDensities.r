@@ -471,12 +471,12 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent)
     {
       lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col="blue")
       txtW <- strwidth(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
-      text(i*cos(pi/180 * 0 )+txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="")   ,col="blue",cex=0.7)
+      text(i*cos(pi/180 * 0 )-txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="")   ,col="blue",cex=0.7)
     }
     
     lines(c(0,0),c(0,Range+Range/30) ,col="blue") 
     txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/2
-    text((Range+txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,(Range+txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col="blue",cex=0.8)
+    text((Range-txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,(Range-txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col="blue",cex=0.8)
   }
   
 }

@@ -8,6 +8,7 @@ library(mclust,quietly = TRUE)
 
 citation("mclust")
 
+
 ## Processes The Noise IN the recorded Frames of Fish#'s Eye and Tail Motion
 ##Filters Fish Records - For Each Prey ID Separatelly
 ## As Each Row Should Contain a unique fish snapshot and not Repeats for each separate Prey Item - Ie A frame associated with a single preyID
@@ -564,7 +565,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
   turnSeq <- rep(0,NROW(vMotionBoutDuration))   ##Empty Vector Of Indicating The Number of Turns that have occured up to a Bout
   ## Make Turn Sequence
-  turnSeq[which(abs(vTurnBoutAngle) > 3)]      <- 1 ## Set Indicator That Bout Had  a turn in it - Set min Threshold 3 degrees
+  turnSeq[which(abs(vTurnBoutAngle) >= G_MIN_TURNBOUT_ANGLE )]      <- 1 ## Set Indicator That Bout Had  a turn in it - 
   turnSeq <- cumsum(turnSeq) ## Create Turn "Counter"/Sequence by summing turn indicators
   
   ##Reverse Order 

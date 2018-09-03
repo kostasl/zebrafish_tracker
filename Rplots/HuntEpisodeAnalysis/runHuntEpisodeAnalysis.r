@@ -10,6 +10,8 @@
 ## \Notes:
 ## Can use findLabelledEvent( datTrackedEventsRegister[IDXOFHUNT,]) to locate which HuntEvent is associated from the Labelled Set Record, And Retrack it by running 
 ## main_LabellingBlind.r and providing the row.name as ID 
+
+### TODO 1st Turn To Prey Detection Needs checking/fixing, 
 #####
 
 
@@ -71,7 +73,7 @@ idTo <- 12#NROW(datTrackedEventsRegister)
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = (1:NROW(datTrackedEventsRegister)) #c(96,74)
+idxTestSet =(1:NROW(datTrackedEventsRegister)) #c(96,74)
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -88,9 +90,6 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   datPlaybackHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
                                                  & datHuntEventMergedFrames$trackID==trackID 
                                                  & datHuntEventMergedFrames$eventID==eventID,]
-  
-  
-  
   
   
   strFolderName <- paste( strPlotExportPath,"/renderedHuntEvent",expID,"_event",eventID,"_track",trackID,sep="" )
@@ -330,7 +329,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
       l <- min(NROW(t),NROW(vAToPrey))
       n<-n+1; lines((vAToPrey[1:l,1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAToPrey[1:l,2],type='l',col=colR[n],xlab=NA,ylab=NA)
     }
-    legend(max(t)-720,55,c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(vAToPrey)) ) ,
+    legend("bottomleft",c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(vAToPrey)) ) ,
            fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
     ###
     plotTailPowerSpectrumInTime(lwlt)
@@ -512,15 +511,19 @@ for (gp in strGroupID)
   datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #Select Group
   
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
-  ##Punctuate 1st Turn To Prey
-  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 ,]$OnSetAngleToPrey,
-                              Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1,]$OffSetAngleToPrey
-                              , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 ,]$RegistarIdx)
+  ## Punctuate 1st Turn To Prey
+  #lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
+  #                            Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
+  #                            , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
+  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
+                                  Turn= datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
+                                  , RegistarIdx=datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
+  
   
   
   pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithBoutSeq_",gp,".pdf",sep=""))
   plot(datMotionBoutCombined$OnSetAngleToPrey,datMotionBoutCombined$OnSetAngleToPrey-datMotionBoutCombined$OffSetAngleToPrey,
-     main=paste("Turn Size Vs Bearing To Prey ",gp, " (l=",NROW(unique(datMotionBoutCombined$expID)),",n=",NROW(datFirstBoutPoints),")",sep="" ),
+     main=paste("Turn Size Vs Bearing To Prey ",gp, " (l=",NROW(unique(datMotionBoutCombined$expID)),",n=",NROW((datMotionBoutCombined$expID)),")",sep="" ),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-100,100),
      ylim=c(-100,100),
      col=colR[datMotionBoutCombined$boutSeq] ,pch=19) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
@@ -559,16 +562,23 @@ pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All.pdf"
   ##Draw 0 Vertical Line
   segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=1,lty=2);
   abline(lm(lFirstBoutPoints[["DL"]][,2] ~ lFirstBoutPoints[["DL"]][,1]),col=colourH[1],lwd=3.0) ##Fit Line / Regression
+  #abline( lsfit(lFirstBoutPoints[["DL"]][,2], lFirstBoutPoints[["DL"]][,1] ) ,col=colourH[1],lwd=2.0)
   ##LL
   points(lFirstBoutPoints[["LL"]][,1], lFirstBoutPoints[["LL"]][,2],pch=pchL[2],col=colourP[2])
   abline(lm(lFirstBoutPoints[["LL"]][,2] ~ lFirstBoutPoints[["LL"]][,1]),col=colourH[2],lwd=3.0)
+  #abline(lsfit(lFirstBoutPoints[["LL"]][,2], lFirstBoutPoints[["LL"]][,1] ) ,col=colourH[2],lwd=2.0)
   ##NL
   points(lFirstBoutPoints[["NL"]][,1], lFirstBoutPoints[["NL"]][,2],pch=pchL[3],col=colourP[3])
   abline(lm(lFirstBoutPoints[["NL"]][,2] ~ lFirstBoutPoints[["NL"]][,1]),col=colourH[3],lwd=3.0)
+  #abline( lsfit(lFirstBoutPoints[["NL"]][,2], lFirstBoutPoints[["NL"]][,1] ) ,col=colourH[3],lwd=2.0)
   legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
          , pch=pchL,col=colourL)
 
 dev.off()
+
+
+
+plot(lFirstBoutPoints[["NL"]][,1], lFirstBoutPoints[["NL"]][,2],pch=pchL[3],col=colourP[3]);
 
 
 ######## Make Colour Idx For Each Of the Distances - Based on ncolBands #######
