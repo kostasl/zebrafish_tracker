@@ -151,11 +151,11 @@ cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template 
 
 ltROIlist vRoi;
 //
-
-cv::Point ptROI1 = cv::Point(gFishBoundBoxSize/2+1,gFishBoundBoxSize/2);
-cv::Point ptROI2 = cv::Point(640-gFishBoundBoxSize/2,gFishBoundBoxSize/2);
-cv::Point ptROI3 = cv::Point(640-gFishBoundBoxSize/2,512-gFishBoundBoxSize/2);
-cv::Point ptROI4 = cv::Point(gFishBoundBoxSize/2+1,512-gFishBoundBoxSize/2);
+//Rect Roi Keep Away from L-R Edges to Avoid Tracking IR lightRing Edges
+cv::Point ptROI1 = cv::Point(gFishBoundBoxSize*2+1,gFishBoundBoxSize/2);
+cv::Point ptROI2 = cv::Point(640-gFishBoundBoxSize*2,gFishBoundBoxSize/2);
+cv::Point ptROI3 = cv::Point(640-gFishBoundBoxSize*2,512-gFishBoundBoxSize/2);
+cv::Point ptROI4 = cv::Point(gFishBoundBoxSize*2+1,512-gFishBoundBoxSize/2);
 
 
 
@@ -882,7 +882,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         if (bTrackFood)
         {
 
-            processFoodBlobs(fgFoodMask,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+            processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
 
             //If A fish Is Detected Then Draw Its tracks
@@ -2173,7 +2173,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 /// \return
 /// \note Draws Blue circle around food blob, with relative size
 ///
-int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
+int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
 {
 
     std::vector<cv::KeyPoint> keypoints;
@@ -2192,13 +2192,13 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
     params.filterByColor        = false;
     params.filterByConvexity    = false;
 
-    //params.maxThreshold = 16;
-    //params.minThreshold = 8;
-    //params.thresholdStep = 2;
+    params.maxThreshold = g_SegFoodThesMax; //Use this Scanning to detect smaller Food Items
+    params.minThreshold = g_SegFoodThesMin;
+    params.thresholdStep = 1;
 
     // Filter by Area.
     params.filterByArea = true;
-    params.minArea = 1;
+    params.minArea = 0;
     params.maxArea = gthres_maxfoodblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
@@ -2216,8 +2216,8 @@ int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameO
 
     //\todo - Memory Crash Here - double free corruption
 
-    assert(maskimg.depth() == CV_8U);
-    detector->detect( maskimg, keypoints); //frameMask
+    assert(frame_grey.depth() == CV_8U);
+    detector->detect( frame_grey, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
@@ -3302,8 +3302,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
               /// Set Detected Eyes Back to Fish Features
-              ///  Print Out Values
+              ///  Print Out Values -
               /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
+              /// \todo Move this to specialized Function Like @renderFrameText
               ss.str(""); //Empty String
               ss.precision(3);
               if (vell.size() > 0)

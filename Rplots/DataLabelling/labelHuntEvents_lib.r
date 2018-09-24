@@ -3,6 +3,10 @@
 ## Kostas Lagogiagiannis 2018 Jan
 ## Run The tracker Specifically on video frames isolating the Hunt Events - let the user label if the event was succesful or not
 
+
+##For Safe Sampling Of Vectors Of Size 1
+resample <- function(x, ...) x[sample.int(length(x), ...)]
+
 ##To Execute The QT tracker application We may need to give the QT library Path - (xcb error)
 #Sys.setenv(LD_LIBR4ARY_PATH="/home/kostasl/Qt/5.9.2/gcc_64/lib/" )
 ##Check If Qt Is already Added To Exec Path
@@ -81,7 +85,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       stop(paste("Could not find video file: ",strVideoFile ) )
     
     
-    message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame) )
+    message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame, "ExpID:",rec$expID ) )
     ##--
     strArgs = paste("--HideDataSource=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
     #message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
@@ -104,7 +108,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       
       setLabel <- factor(x=rec$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )
       message(paste("### Event's ", row.names(rec) , " Current Label is :",setLabel," ####" ) )
-      #message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
+      message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
       
       
       for (g in levels(huntLabels) )
@@ -367,8 +371,11 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
   tblResSB <- table(convertToScoreLabel(datHuntLabelledEvents$huntScore),datHuntLabelledEvents$groupID)
   tblFishScores <- table(datHuntLabelledEvents$expID, convertToScoreLabel(datHuntLabelledEvents$huntScore) )
   tblFishScoresLabelled<- tblFishScores[tblFishScores[,1] < 2, ] ##Pick Only THose ExpId (Fish) Whose Labelling Has (almost!) Finished
+  ##Choose The Columns With the Scores Of Interest Success 3, Success-SpitBackOut 12 etc
+  ##No_Targer is Column 5
   datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,3]+tblFishScoresLabelled[,12],
                                           "Fails"= tblFishScoresLabelled[,4]+tblFishScoresLabelled[,10]+tblFishScoresLabelled[,11],
+                                          "HuntEvents"= rowSums(tblFishScoresLabelled[,c(3,12,4,10,11,5)]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
                                           "groupID"=NA) ) #
   for (e in row.names(tblFishScoresLabelled) )
     datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )

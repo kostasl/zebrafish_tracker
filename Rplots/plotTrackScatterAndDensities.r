@@ -174,8 +174,8 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
   ##Eye Distance taken By Bianco As 453mum, ie 0.5mm , take tracker
   EyeDist = 0.4/DIM_MMPERPX ##From Head Centre
   BodyArrowLength = 13
-  LEyecolour = "#0C0CFF8A"
-  REyecolour = "#FF00008A"
+  LEyecolour = "#0C0CFF2A"
+  REyecolour = "#FF00002A"
 
   #display.brewer.all() to see avaulable options
   Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
@@ -313,16 +313,16 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
       if (NROW(lastPreyFrame$Prey_X) > 0 )
       {
         
-        points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=16,cex=lastPreyFrame$Prey_Radius/5)
+        points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=16,cex=lastPreyFrame$Prey_Radius/2)
         lines(rangePreyFrame$Prey_X,frameWidth-rangePreyFrame$Prey_Y,col="red")
-        text(lastPreyFrame$Prey_X+5,frameWidth-lastPreyFrame$Prey_Y+10,labels=f,col="darkred",cex=0.5)
+        text(lastPreyFrame$Prey_X+5,frameWidth-lastPreyFrame$Prey_Y+10,labels=f,col="darkred",cex=0.8)
       }
     }
     
     dev.flush()
     if (!is.na(saveToFolder) )
     {
-      dev.copy(png,filename=paste(saveToFolder,"/",sprintf("%05d", i) ,".png",sep=""), bg="white" );
+      dev.copy(jpeg,filename=paste(saveToFolder,"/",sprintf("%05d", i) ,".jpg",sep=""), bg="white" ,quality=80);
       dev.off ();
     }
     
@@ -471,12 +471,12 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent)
     {
       lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col="blue")
       txtW <- strwidth(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
-      text(i*cos(pi/180 * 0 )+txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="")   ,col="blue",cex=0.7)
+      text(i*cos(pi/180 * 0 )-txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="")   ,col="blue",cex=0.7)
     }
     
     lines(c(0,0),c(0,Range+Range/30) ,col="blue") 
     txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/2
-    text((Range+txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,(Range+txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col="blue",cex=0.8)
+    text((Range-txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,(Range-txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col="blue",cex=0.8)
   }
   
 }

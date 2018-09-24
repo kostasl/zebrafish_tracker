@@ -102,6 +102,14 @@ private slots:
 
     void on_checkBoxNoiseFilter_toggled(bool checked);
 
+    void on_spinBoxFoodThresMin_editingFinished();
+
+    void on_spinBoxSpineSegSize_valueChanged(int arg1);
+
+    void on_spinBoxFoodThresMin_valueChanged(int arg1);
+
+    void on_spinBoxFoodThresMax_valueChanged(int arg1);
+
 private:
     Ui::MainWindow      *ui;
 
