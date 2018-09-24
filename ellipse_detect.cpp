@@ -1,5 +1,5 @@
 ///*
-/// Implements Algorithm based on A NEW EFFICIENT ELLIPSE DETECTION METHOD,  2002
+/// Implements Algorithm based on A NEW EFFICIENT ELLIPSE DETECTION METHOD, Yonghong Xie   ,IEEE, 2002
 ///
 /// (1) Store all edge pixels in a one dimensional array.
 /// (2) Clear the accumulator array .
