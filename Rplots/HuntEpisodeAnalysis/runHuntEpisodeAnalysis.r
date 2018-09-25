@@ -68,12 +68,12 @@ if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
 
 
 #idxH <- 20
-idTo <- 12#NROW(datTrackedEventsRegister)
+idTo <- 20#NROW(datTrackedEventsRegister)
 
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet =(1:NROW(datTrackedEventsRegister)) #c(96,74)
+idxTestSet =(15:idTo) #c(96,74)
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -397,10 +397,10 @@ for (rec in lMotionBoutDat)
   if (is.null(rec)) next;
   ##Take Distance of the 1st bout Detected (which has the largest #Rank (1 First Bout, N Last/Capture Bout))
   lBoutInfoPerEvent[[rec[1,"RegistarIdx"]]] <- list(nBouts=as.numeric(max(rec[,"boutSeq"])),
-                                                       Distance= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBoutDistanceToPrey_mm"]),
-                                                       Angle= as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"OnSetAngleToPrey"]), ##
+                                                       Distance= unique(as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBoutDistanceToPrey_mm"])),
+                                                       Angle= unique(as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"OnSetAngleToPrey"])), ##
                                                        groupID = (datTrackedEventsRegister[ as.numeric(rec[1,"RegistarIdx"]),"groupID" ]),
-                                                       Duration= as.numeric(rec[rec[,"boutRank"] == min(rec[,"boutRank"]),"vMotionBout_Off"]) - as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBout_On"])
+                                                       Duration= unique(as.numeric(rec[rec[,"boutRank"] == min(rec[,"boutRank"]),"vMotionBout_Off"]) - as.numeric(rec[rec[,"boutRank"] == max(rec[,"boutRank"]),"vMotionBout_On"]))
                                                        )
 }
 
@@ -433,9 +433,10 @@ pchL <-c(16,2,4)
 
 
 
-#X11()
+
 pdf(file= paste(strPlotExportPath,"/DistanceVsBoutCount_",paste(strGroupID,collapse="-" ),".pdf",sep="",collapse="-"))
-plot(datBoutVsPreyDistance$nBouts,datBoutVsPreyDistance$Distance,
+X11()
+plot(unlist(datBoutVsPreyDistance$nBouts),unlist(datBoutVsPreyDistance$Distance),
      main = paste("Initial distance to Prey Vs Bouts Performed",paste(strGroupID,collapse="," ) ) ,
      ylab="Distance to Prey  (mm)",
      xlab="Number of Tracking Movements",
@@ -448,8 +449,10 @@ legend("topleft",legend=c("DL","LL","NL"), pch=pchL,col=colourL)
 dev.off()
 
 pdf(file= paste(strPlotExportPath,"/BearingVsBoutCount_",paste(strGroupID,collapse="-"),".pdf",sep=""))
+
 X11()
-plot(datBoutVsPreyDistance$nBouts,ifelse(is.na(datBoutVsPreyDistance$Angle),0,datBoutVsPreyDistance$Angle),
+datBoutAngle <- unlist(datBoutVsPreyDistance$Angle)
+plot(unlist(datBoutVsPreyDistance$nBouts),ifelse(is.na(datBoutAngle),0,datBoutAngle),
      main = paste("Initial Bearing to Prey Vs Bouts Performed",paste(strGroupID,collapse=",") ) ,
      ylab="Angle to Prey  (mm)",
      xlab="Number of Tracking Movements",
