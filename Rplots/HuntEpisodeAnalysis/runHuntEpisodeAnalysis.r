@@ -73,7 +73,7 @@ idTo <- 20#NROW(datTrackedEventsRegister)
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet =(15:idTo) #c(96,74)
+idxTestSet = c(idxDLSet,idxNLSet,idxLLSet) #c(96,74)
 
 
 for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
@@ -243,6 +243,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
+  
   TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
   
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
@@ -518,12 +519,13 @@ for (gp in strGroupID)
   #lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
   #                            Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
   #                            , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
-  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
-                                  Turn= datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
-                                  , RegistarIdx=datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
+  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 ,]$OnSetAngleToPrey,
+                                  Turn= datMotionBoutCombined[ datMotionBoutCombined$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[ datMotionBoutCombined$turnSeq == 1,]$OffSetAngleToPrey
+                                  , RegistarIdx=datMotionBoutCombined[ datMotionBoutCombined$turnSeq == 1 ,]$RegistarIdx)
   
   
-  
+  ##Searching 
+  #unlist(lFirstBoutPoints[[gp]][ lFirstBoutPoints[[gp]][,"Turn"] < 10,])
   pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyWithBoutSeq_",gp,".pdf",sep=""))
   plot(datMotionBoutCombined$OnSetAngleToPrey,datMotionBoutCombined$OnSetAngleToPrey-datMotionBoutCombined$OffSetAngleToPrey,
      main=paste("Turn Size Vs Bearing To Prey ",gp, " (l=",NROW(unique(datMotionBoutCombined$expID)),",n=",NROW((datMotionBoutCombined$expID)),")",sep="" ),
