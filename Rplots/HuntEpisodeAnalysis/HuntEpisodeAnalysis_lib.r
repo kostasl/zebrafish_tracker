@@ -284,7 +284,7 @@ detectTailBouts <- function(vTailMotionFq)
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
   nNumberOfComponents = 8
-  nSelectComponents = 2
+  nSelectComponents = 4
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
@@ -578,12 +578,16 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   turnCount <- 0
   for (tidx in 1:NROW(vMotionBout_On) ) 
   {
+    turnSeq[tidx] <- 0
+    
     if ( any( vTurnBout[vMotionBout_On[tidx]:vMotionBout_Off[tidx] ] > 0) ) 
     {
 #      message( paste(tidx," has turn") )
       turnCount <- turnCount + 1
+      turnSeq[tidx] <- turnCount
     }
-    turnSeq[tidx] <- turnCount
+      
+    
   }
   
   
