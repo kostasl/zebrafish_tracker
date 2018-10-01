@@ -283,8 +283,8 @@ detectTailBouts <- function(vTailMotionFq)
 ## Notes: Converted To Use 1Dim only Turnspeed to Detect Turns / Can use Tail Motion but I was getting False Positives when combined
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
-  nNumberOfComponents = 8
-  nSelectComponents = 4
+  nNumberOfComponents = 13
+  nSelectComponents = 2
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
@@ -303,7 +303,7 @@ detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #fit <- Mclust(xy ,G=nNumberOfComponents,modelNames = "VII", prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.05,20),c(1.5,15),c(2.5,20)),shrinkage=0.1 ) )
-  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V", prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05),c(0.05),c(5.5),c(10.5),14,20,30,18),shrinkage=0.1 ) )  
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V", prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.03),c(0.05),c(0.5),0.8,1,1.5,3),shrinkage=0.1 ) )  
   summary(fit)
   
   boutClass <- fit$classification
@@ -541,6 +541,13 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     firstBout <- min(which(vMotionBout_rle$values[1:lastBout] == 1))
   }
   
+  if (lastBout < 1)
+  {
+    warning(paste("No Bouts Detected for idx:") )
+    return (NA)
+  }
+  
+  
   vMotionBoutDuration <- NA
   vMotionBoutIBI <- NA
   vMotionBoutDistanceToPrey_mm <-NA
@@ -565,7 +572,8 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs] ] - vEventPathLength_mm[vMotionBout_On[1:iPairs] ]) ##The Power of A Bout can be measured by distance Travelled
     vTurnBoutAngle                  <- (vBearingToPrey[vMotionBout_Off[1:iPairs],2] - vBearingToPrey[vMotionBout_On[1:iPairs],2])
   
-  
+
+    
   ##Add One Since IBI count is 1 less than the bout count
   vMotionBoutIBI <- c(vMotionBoutIBI,NA)
   

@@ -76,7 +76,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = c(idxDLSet,idxNLSet,idxLLSet) #c(96,74)
 
 
-for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
+for (idxH in idxNLSet)#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -123,7 +123,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   
   
   ## PLAYBACK ####
-  #   renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
+  # renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
   ##Make Videos With FFMPEG :
   #ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
   #ffmpeg  -start_number 5419 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=400 -pix_fmt yuv420p -c:a copy renderedHuntEvent4041_event13_track4.mp4
@@ -259,19 +259,28 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   ## which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) , which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -50,
   
   ##Analyse from 1st Turn (assume Towardsprey) that is near the eye Vergence time point 
-  startFrame <- which(vEyeV > G_THRESHUNTVERGENCEANGLE) -50 ##Start from point little earlier than Eye V
+  startFrame <-NA
   if (NROW(TurnboutsIdx) > 3) ##If Turns Have been detected then Use 1st Turn Near eye V as startFrame for Analysis
   {
-    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ))]-50 ##Take 1st turn to prey Close to Eye V
-  }else
-    message("Warning: No TurnBouts Detected")
+    ##Take 1st turn to prey Close to Eye V
+    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
+  }
+  
+  if (is.na(startFrame))
+  {
+    startFrame <- which(vEyeV > G_THRESHUNTVERGENCEANGLE) -50 ##Start from point little earlier than Eye V
+    message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
+  }
+    
+  
+   
     
   
   regionToAnalyse       <-seq(min( c(startFrame  ) ) , #
                               min(
                                 which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
                                 max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  
-                              )+20
+                              ) + 20
   ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
@@ -295,6 +304,12 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
 
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,TurnboutsIdx,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vAngleToPrey,vTailDisp,regionToAnalyse,plotRes = TRUE)
+    
+    if (is.na( lMotionBoutDat[[idxH]] ) )
+    {
+      warning(paste("No Bouts detected for idxH:",idxH ) ) 
+      next
+    }
     ##Change If Fish Heading
     plot(t,vAngleDisplacement[1:NROW(t)],type='l',
          xlab= "",#"(msec)",
