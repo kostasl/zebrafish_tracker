@@ -123,13 +123,14 @@ for (gp in strGroupID)
   datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #Select Group
   
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
+  datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) > abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
   ## Punctuate 1st Turn To Prey
   #lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
   #                            Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
   #                            , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
-  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
-                                  Turn= datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
-                                  , RegistarIdx=datMotionBoutCombined[ datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
+  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
+                                  Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
+                                  , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx)
 }
   
 
@@ -219,12 +220,12 @@ myplot_res(1000)
 dev.off()
 
 
-
-hist(drawLL$beta[2,,1],breaks=seq(0,2,length=100),col=colourH[1],xlim=c(-1,15),
+X11()
+hist(drawLL$beta[2,,1],breaks=seq(0,1,length=100),col=colourH[1],xlim=c(-1,1),
      #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
      xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
-hist(drawNL2$q[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
-hist(drawDL2$q[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,15))
+hist(drawNL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
+hist(drawDL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,15))
 
 myplot_res(1000)
 
@@ -232,6 +233,7 @@ X11()
 hist(drawLL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[1],xlim=c(0.9,1.1),
      #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
      xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
+
 
 hist(drawNL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[2],xlim=c(0.9,1.1),add=T  )
 

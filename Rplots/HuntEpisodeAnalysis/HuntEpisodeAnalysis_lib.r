@@ -284,7 +284,7 @@ detectTailBouts <- function(vTailMotionFq)
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
   nNumberOfComponents = 13
-  nSelectComponents = 2
+  nSelectComponents = 5
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
@@ -590,9 +590,13 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     
     if ( any( vTurnBout[vMotionBout_On[tidx]:vMotionBout_Off[tidx] ] > 0) ) 
     {
-#      message( paste(tidx," has turn") )
-      turnCount <- turnCount + 1
-      turnSeq[tidx] <- turnCount
+      ##Only score those that are towards Prey 
+      if ( abs( vBearingToPrey[vMotionBout_Off[tidx],2] )  < abs(vBearingToPrey[vMotionBout_On[tidx],2] )  )
+      {
+  #      message( paste(tidx," has turn") )
+        turnCount <- turnCount + 1
+        turnSeq[tidx] <- turnCount
+      }
     }
       
     
