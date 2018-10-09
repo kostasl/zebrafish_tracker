@@ -120,12 +120,13 @@ modelLin2 <- "model {
 
 
 ####Select Subset Of Data To Analyse
-datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
 lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 
-lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+
 strGroupID <- levels(datTrackedEventsRegister$groupID)
 for (gp in strGroupID)
 {
@@ -167,11 +168,13 @@ datTurnVsPreyDL <- cbind(lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , as.numeric(l
 datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]),]
 
 
-### Cut And Examine The data Where There Are Between L and M rotifers Initially
-colourH <- c(rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.01,0.01,0.9,0.8),rgb(0.00,0.00,0.0,1.0))
-colourP <- c(rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,1.0))
-colourR <- c(rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.01,0.01,0.9,0.4),rgb(0.00,0.00,0.0,1.0))
-##Thse RC params Work Well to Smooth LF And NF
+##For the 3 Groups 
+colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
+colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points]
+colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
+pchL <- c(16,2,4)
+#
+#Thse RC params Work Well to Smooth LF And NF
 tauRangeA =100000 #10000
 rhoMaxA = 1000
 Noise = 1 ##The Gaussian Noise Term
@@ -206,8 +209,8 @@ bearingDL=bearingDL[ordDL]
 turnsDL=datTurnVsPreyDL[,2][ordDL]
 
 
-dataLL=list(turn=turnsLL,bearing=turnsLL,N=nDatLL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
-dataNL=list(turn=turnsNL,bearing=turnsNL,N=nDatNL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
+dataLL=list(turn=turnsLL,bearing=bearingLL,N=nDatLL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
+dataNL=list(turn=turnsNL,bearing=bearingNL,N=nDatNL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
 dataDL=list(turn=turnsDL,bearing=bearingDL,N=nDatDL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
 
 varnames=c("tau","rho","alpha","lambda")
@@ -236,7 +239,7 @@ dev.off()
 
 
 X11()
-hist(drawLL$beta[2,,1],breaks=seq(0,1,length=100),col=colourH[1],xlim=c(-1,1),
+hist(drawLL$beta[1,,1],breaks=seq(0.91,1.15,length=00),col=colourH[1],
      #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
      xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
 hist(drawNL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
@@ -257,9 +260,72 @@ X11()
 hist(drawLL$beta[2,,1])
 
 ind = 100
-muLL=mean(drawLL$beta[,(steps-ind):steps,1][2,])
-muNL=mean(drawNL$beta[,(steps-ind):steps,1][2,])
+##Save the Mean Slope and intercept
+##quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2]
+muLLa=mean(drawLL$beta[,(steps-ind):steps,1][1,]) 
+muLLb=mean(drawLL$beta[,(steps-ind):steps,1][2,])
+muNLa=mean(drawNL$beta[,(steps-ind):steps,1][1,])
+muNLb=mean(drawNL$beta[,(steps-ind):steps,1][2,])
+muDLa=mean(drawDL$beta[,(steps-ind):steps,1][1,])
+muDLb=mean(drawDL$beta[,(steps-ind):steps,1][2,])
 sig=mean(drawLL$sigma[,(steps-ind):steps,1])
+###Plot Density of Slope
+dLLb<-density(drawLL$beta[,(steps-ind):steps,1][2,])
+dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,])
+dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,])
+
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_densityolinregressionslope.pdf",sep=""))
+plot(dDLb,col=colourH[1],xlim=c(0.5,1.2),lwd=3,lty=1,ylim=c(0,20),main="Density Inference of Turn-To-Prey Slope ")
+lines(dLLb,col=colourH[2],xlim=c(0.5,1.2),lwd=3,lty=2)
+lines(dNLb,col=colourH[3],xlim=c(0.5,1.2),lwd=3,lty=3)
+legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       ,fill=colourL,lty=c(1,2,3))
+dev.off()
+
+### PLot Scatter with regression lines with Conf intervals##
+#X11()
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_TurnToPrey_LinearRegression.pdf",sep=""))
+plot(lFirstBoutPoints[["DL"]][,1], lFirstBoutPoints[["DL"]][,2],
+     main=paste("Turn Size Vs Bearing To Prey ", sep=""),
+     xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-100,100),
+     ylim=c(-100,100),
+     col=colourP[1] ,pch=pchL[1]) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+##Draw 0 Vertical Line
+segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=1,lty=2);
+#text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
+abline(lm(lFirstBoutPoints[["DL"]][,2] ~ lFirstBoutPoints[["DL"]][,1]),col=colourH[4],lwd=1.0) ##Fit Line / Regression
+abline(a=muDLa,b=muDLb,col=colourH[1],lwd=1.5) ##Fit Line / Regression
+abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[1],lwd=4.0) ##Fit Line / Regression
+abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[1],lwd=4.0) ##Fit Line / Regression
+
+#abline( lsfit(lFirstBoutPoints[["DL"]][,2], lFirstBoutPoints[["DL"]][,1] ) ,col=colourH[1],lwd=2.0)
+##LL
+points(lFirstBoutPoints[["LL"]][,1], lFirstBoutPoints[["LL"]][,2],pch=pchL[2],col=colourP[2])
+#text(lFirstBoutPoints[["LL"]][,1]+2,lFirstBoutPoints[["LL"]][,2]+5,labels=lFirstBoutPoints[["LL"]][,3],cex=0.8,col="darkgreen")
+abline(lm(lFirstBoutPoints[["LL"]][,2] ~ lFirstBoutPoints[["LL"]][,1]),col=colourH[4],lwd=1.0)
+abline(a=muLLa,b=muLLb,col=colourH[2],lwd=1.5) ##Fit Line / Regression
+abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[2],lwd=4.0) ##Fit Line / Regression
+abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[2],lwd=4.0) ##Fit Line / Regression
+
+#abline(lsfit(lFirstBoutPoints[["LL"]][,2], lFirstBoutPoints[["LL"]][,1] ) ,col=colourH[2],lwd=2.0)
+##NL
+points(lFirstBoutPoints[["NL"]][,1], lFirstBoutPoints[["NL"]][,2],pch=pchL[3],col=colourP[3])
+#text(lFirstBoutPoints[["NL"]][,1]+2,lFirstBoutPoints[["NL"]][,2]+5,labels=lFirstBoutPoints[["NL"]][,3],cex=0.8,col="darkred")
+abline(lm(lFirstBoutPoints[["NL"]][,2] ~ lFirstBoutPoints[["NL"]][,1]),col=colourH[4],lwd=1.0)
+abline(a=muNLa,b=muNLb,col=colourH[3],lwd=1.5) ##Fit Line / Regression
+abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[3],lwd=4.0) ##Fit Line / Regression
+abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[3],lwd=4.0) ##Fit Line / Regression
+#abline( lsfit(lFirstBoutPoints[["NL"]][,2], lFirstBoutPoints[["NL"]][,1] ) ,col=colourH[3],lwd=2.0)
+legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       , pch=pchL,col=colourL)
+
+dev.off()
+
+
+
+
 
 ##Plot Densities Summary
 sampLL <- coda.samples(mLL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")

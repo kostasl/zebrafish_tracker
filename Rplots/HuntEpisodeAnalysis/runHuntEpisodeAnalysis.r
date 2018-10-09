@@ -581,7 +581,7 @@ for (gp in strGroupID)
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
 ### Here We Need To Detect The 1st Turn To Prey , Not Just 1st Bout
 pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All2.pdf",sep=""))
-#X11()
+X11()
   plot(lFirstBoutPoints[["DL"]][,1], lFirstBoutPoints[["DL"]][,2],
      main=paste("Turn Size Vs Bearing To Prey ", sep=""),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-100,100),
