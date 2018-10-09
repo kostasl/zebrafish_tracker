@@ -107,6 +107,17 @@ modelLin <- "model{
 
 }"
 
+modelLin2 <- "model {
+	for (i in 1:N){
+		turn[i] ~ dnorm(turn.hat[i], tau)
+		turn.hat[i] <- beta[1] + beta[2] * bearing[i]
+	}
+	beta[1] ~ dnorm(0, .0001)
+	beta[2] ~ dnorm(0, .0001)
+	tau <- pow(sigma, -2)
+	sigma ~ dunif(0, 100)
+}"
+
 
 ####Select Subset Of Data To Analyse
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
@@ -114,7 +125,8 @@ datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Proc
 remove(lMotionBoutDat)
 lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 
-
+lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+strGroupID <- levels(datTrackedEventsRegister$groupID)
 for (gp in strGroupID)
 {
   groupID <- which(levels(datTrackedEventsRegister$groupID) == gp)
@@ -123,7 +135,8 @@ for (gp in strGroupID)
   datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #Select Group
   
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
-  datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) > abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
+  datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) >= abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
+  datMotionBoutTurnToPrey <- datMotionBoutTurnToPrey[!is.na(datMotionBoutTurnToPrey$RegistarIdx),]
   ## Punctuate 1st Turn To Prey
   #lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
   #                            Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
@@ -131,6 +144,8 @@ for (gp in strGroupID)
   lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
                                   Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
                                   , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx)
+  
+  
 }
   
 
@@ -251,8 +266,8 @@ sampLL <- coda.samples(mLL,                      variable.names=c("beta","sigma"
 sampNL <- coda.samples(mNL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
 sampDL <- coda.samples(mDL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
 X11()
-plot(sampLL,main="LL")
+plot(sampLL)
 X11()
-plot(sampNL,main="NL")
+plot(sampNL)
 X11()
 plot(sampDL,main="DL")

@@ -21,7 +21,7 @@ library(mclust,quietly = TRUE)
 
 require(Rwave)
 
-source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
+#source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
@@ -76,7 +76,7 @@ idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = c(idxDLSet,idxNLSet,idxLLSet) #c(96,74)
 
 
-for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
+for (idxH in 1:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -303,7 +303,13 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister)
   layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
 
-    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,TurnboutsIdx,vEventSpeed_smooth,vDistToPrey_Fixed_FullRange,vAngleToPrey,vTailDisp,regionToAnalyse,plotRes = TRUE)
+    lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,
+                                                   TurnboutsIdx,
+                                                   vEventSpeed_smooth,
+                                                   vDistToPrey_Fixed_FullRange,
+                                                   vAngleToPrey,
+                                                   vTailDisp,
+                                                   regionToAnalyse,plotRes = TRUE)
     
     if (is.na( lMotionBoutDat[[idxH]] ) )
     {
@@ -530,7 +536,8 @@ for (gp in strGroupID)
   datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #Select Group
   
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
-  datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) > abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
+  datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) >= abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
+  datMotionBoutTurnToPrey <- datMotionBoutTurnToPrey[!is.na(datMotionBoutTurnToPrey$RegistarIdx),]
   ## Punctuate 1st Turn To Prey
   #lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
   #                            Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
@@ -573,7 +580,7 @@ for (gp in strGroupID)
 
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
 ### Here We Need To Detect The 1st Turn To Prey , Not Just 1st Bout
-pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All2.pdf",sep=""))
 #X11()
   plot(lFirstBoutPoints[["DL"]][,1], lFirstBoutPoints[["DL"]][,2],
      main=paste("Turn Size Vs Bearing To Prey ", sep=""),
