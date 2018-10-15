@@ -406,10 +406,14 @@ for (idxH in idxLLSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRe
                                   )
   
   ## Eye Angle Vs Distance ##
+  rows <- NROW(datRenderHuntEvent$LEyeAngle[regionToAnalyse ])
   lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[regionToAnalyse ],
                                  REyeAngle=datRenderHuntEvent$REyeAngle[regionToAnalyse],
                                  DistToPrey=vDistToPrey_Fixed_FullRange[regionToAnalyse]*DIM_MMPERPX,
-                                 RegistarIdx           = as.numeric(rep(idxH,rows))
+                                 RegistarIdx           = as.numeric(rep(idxH,rows)),
+                                 expID                 = as.numeric(rep(expID,rows)),
+                                 eventID               = as.numeric(rep(eventID,rows)),
+                                 groupID               = rep((groupID) ,rows) ##as.character
                                 )
   
 } ###END OF EACH Hunt Episode Loop 
