@@ -1,5 +1,5 @@
 ##3-09-2018
-###  Estimates the hidden function of Turn Vs Bearing To Prey  - 
+###  Estimates the hidden function of Turn Vs Bearing To Prey - Linear Regression gives pdf of slope param.  - 
 ## Tried both a Non-parametric Gaussian Process with Bayesian Inference (Failed) But Also a simple Linear Model
 ## Requires the lFirstBoutPoints list of dataframes - which is constucted in 
 

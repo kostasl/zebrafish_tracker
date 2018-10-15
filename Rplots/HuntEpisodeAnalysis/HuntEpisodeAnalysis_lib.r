@@ -581,6 +581,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)
   boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
   turnSeq <- rep(0,NROW(vMotionBoutDuration))   ##Empty Vector Of Indicating The Number of Turns that have occured up to a Bout
+  ## TURN TO PREY SEQUENCE NUMBERING 
   ## Assign A TurnSequence Number to Each Detected Bout / Used to Select 1 turn to prey etc..
   ## Go through Each MotionBout and Check If Turns Detected within Each Bout / Then Increment Counter
   turnCount <- 0
@@ -595,7 +596,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
       {
         if ( abs( vBearingToPrey[vMotionBout_Off[tidx],2] )  < abs(vBearingToPrey[vMotionBout_On[tidx],2] )  )
         {
-          message( paste(tidx," has turn") )
+          message( paste(tidx," has turn towards prey") )
           turnCount <- turnCount + 1
           turnSeq[tidx] <- turnCount
         }

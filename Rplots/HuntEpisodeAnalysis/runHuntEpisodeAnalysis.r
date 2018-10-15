@@ -48,7 +48,7 @@ load(strDataFileName)
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
 lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
-bSaveNewMotionData <- TRUE ##Overwrite the lMotionBoutDatFile
+bSaveNewMotionData <- FALSE ##Overwrite the lMotionBoutDatFile
 
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
@@ -67,16 +67,20 @@ if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
   lMotionBoutDat <<- list() ##Declared In Global Env
 
 
+if (!exists("lEyeMotionDat" ,envir = globalenv(),mode="list"))
+  lEyeMotionDat <<- list() ##Declared In Global Env
+
+
 #idxH <- 20
 idTo <- 20#NROW(datTrackedEventsRegister)
 
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = c(idxDLSet,idxNLSet,idxLLSet) #c(96,74)
+idxTestSet = c(16,17)# c(idxDLSet,idxNLSet,idxLLSet) #c(96,74) ##Issue with IDS when not put in groupID correct order
 
 
-for (idxH in 1:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
+for (idxH in idxLLSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -372,7 +376,7 @@ for (idxH in 1:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
   vAnglesAtOnset <- vAngleToPrey[BoutOnsetWithinRange ,2]
   vAnglesAtOffset <- vAngleToPrey[BoutOffsetWithinRange,2]
   
-  ##Measure Change In Prey Angle During IBI
+  ## Measure Change In Prey Angle During IBI
   vDeltaPreyAngle <- c(NA, ##First Bout Does not have an IBI nor a IBIAngleChange
                        vAngleToPrey[BoutOnsetWithinRange[2:(NROW(BoutOnsetWithinRange))],2] - vAngleToPrey[BoutOffsetWithinRange[1:(NROW(BoutOffsetWithinRange)-1)],2]
   )
@@ -400,6 +404,14 @@ for (idxH in 1:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
                                   groupID               = rep((groupID) ,rows), ##as.character
                                   PreyCount             = rep(NROW(tblPreyRecord),rows)
                                   )
+  
+  ## Eye Angle Vs Distance ##
+  lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[regionToAnalyse ],
+                                 REyeAngle=datRenderHuntEvent$REyeAngle[regionToAnalyse],
+                                 DistToPrey=vDistToPrey_Fixed_FullRange[regionToAnalyse]*DIM_MMPERPX,
+                                 RegistarIdx           = as.numeric(rep(idxH,rows))
+                                )
+  
 } ###END OF EACH Hunt Episode Loop 
 
 
@@ -408,6 +420,91 @@ for (idxH in 1:NROW(datTrackedEventsRegister))#NROW(datTrackedEventsRegister)
 if (bSaveNewMotionData)
   saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData",".rds",sep="") ) #Processed Registry on which we add )
 #datEpisodeMotionBout <- lMotionBoutDat[[1]]
+
+
+########## SAVE Processed Hunt Events ###########
+if (bSaveNewMotionData)
+  saveRDS(lEyeMotionDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData",".rds",sep="") ) #Processed Registry on which we add )
+#datEpisodeMotionBout <- lMotionBoutDat[[1]]
+
+## Make Distance Vs Eye Angle Vectors ##
+## PLOT EYE Vs Distance ##
+lEyeLDistMatrix <- list()
+nBreaks <- 50
+maxDist <- 5 #5mm Range
+stepDist <- maxDist/nBreaks
+vDist <- seq(0,to=maxDist,by=stepDist)
+for (strGroup in strGroupID)
+{
+  mrow <- 1
+  lEyeLDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  for (recE in lEyeMotionDat)
+  {
+    if (is.null(recE))
+      next()
+    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
+    if (as.character(groupID) != strGroup )
+      next()
+    ##Go through Each distance and record Eye Angle
+    for (d in 0:nBreaks)
+    {
+      recLEye <- recE[ recE[,"DistToPrey"] > d*stepDist & recE[,"DistToPrey"] <= (d+1)*stepDist ,"LEyeAngle"]
+      if (any(is.nan(recLEye)))
+        stop("Nan In Eye Angle")
+      if (NROW(recLEye) > 0)
+        lEyeLDistMatrix[[strGroup]][mrow,d] <- mean(recLEye,na.rm=TRUE )##Pick the mean value
+      else
+        lEyeLDistMatrix[[strGroup]][mrow,d] <- NA
+    } ##For each Distance In Vector
+    
+    mrow <- mrow + 1
+  } ##For each EyeData Rec
+}
+
+plot(lEyeLDistMatrix[["LL"]][1,] ,type="l")
+
+## PLOT EYE Vs Distance ##
+nlimit <- 3
+n<- 0
+for (strGroup in strGroupID)
+{
+  plot(0, 0 ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4),main=paste("Left Eye Vs Dist To Prey ",strGroup) )
+  for (recE in lEyeMotionDat)
+  {
+    if (is.null(recE))
+      next()
+    
+    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
+    if (as.character(groupID) != strGroup )
+      next()
+    
+    if (n > nlimit)
+      break
+    #lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
+    lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
+    n <- n + 1
+  }
+  
+}
+
+
+## PLOT EYE Vs Distance ##
+for (strGroup in strGroupID)
+{
+  plot(0, 0 ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4),main=paste("Right Eye Vs Dist To Prey ",strGroup) )
+  for (recE in lEyeMotionDat)
+  {
+    if (is.null(recE))
+      next()
+    
+    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
+    if (as.character(groupID) != strGroup )
+      next()
+    #lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
+    lines(recE[,"DistToPrey"], -1*recE[,"REyeAngle"] ,type="l",col="red",ylim=c(0,45),xlim=c(0,4))
+  }
+}
+##On Bout Leng
 
 ##On Bout Lengths ##Where Seq is the order Of Occurance, While Rank denotes our custom Ordering From Captcha backwards
 
