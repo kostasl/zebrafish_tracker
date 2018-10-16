@@ -54,7 +54,7 @@ modelExp  <- "model{
   for(i in 1:N){
     ##Make indicator if hunt event is within sampled Range 
     #if (u1 < distP[i]  & distP[i] < u0) {
-    s[i] <- step(u1 - distP[i])*step(u0-distP[i]  ) 
+    s[i] <- step( distP[i]-u1)*step(u0-distP[i]  ) 
 
     phi_hat[i] <- phi_0 + s[i] * phi_max* (1-exp(-lambda*(distMax[i] - distP[i] ) )) 
     phi[i] ~ dnorm(phi_hat[i],sigma[s[i]+1] ) ##choose sigma 
@@ -101,16 +101,27 @@ datREyePointsLL <- datREyePointsLL[!is.na(datLEyePointsLL[,2]),]
 
 
 datLEyePointsNL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$LEyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey) )
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey),
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPreyInit ))
 datREyePointsNL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$REyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey) )
-datREyePointsNL <- datREyePointsNL[!is.na(datREyePointsNL[,2]),]
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey),
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPreyInit ))
+
+datLEyePointsNL <- datLEyePointsNL[!is.na(datLEyePointsNL[,2]),]
+datREyePointsNL <- datREyePointsNL[!is.na(datLEyePointsNL[,2]),]
+
+
+
 
 datLEyePointsDL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$LEyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey) )
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey),
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPreyInit ))
 datREyePointsDL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$REyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey) )
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey),
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPreyInit ))
 
+datLEyePointsNL <- datLEyePointsNL[!is.na(datLEyePointsNL[,2]),]
+datREyePointsNL <- datREyePointsNL[!is.na(datLEyePointsNL[,2]),]
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
@@ -133,11 +144,13 @@ nDatDL <- NROW(datLEyePointsDL)
 
 vsamples <- sample (nDatLL,size=10000)
 dataLL=list(phi=datLEyePointsLL[vsamples,1],distP=datLEyePointsLL[vsamples,2],N=NROW(vsamples),distMax=datLEyePointsLL[vsamples,3] );
-dataNL=list(phi=datLEyePointsNL[,1],distP=datLEyePointsNL[,2],N=nDatNL);
-dataDL=list(phi=datLEyePointsDL[,1],distP=datLEyePointsDL[,2],N=nDatDL);
+vsamples <- sample (nDatLL,size=10000)
+dataNL=list(phi=datLEyePointsNL[vsamples,1],distP=datLEyePointsNL[vsamples,2],N=NROW(vsamples),distMax=datLEyePointsNL[vsamples,3] );
+vsamples <- sample (nDatLL,size=10000)
+dataDL=list(phi=datLEyePointsDL[vsamples,1],distP=datLEyePointsDL[vsamples,2],N=NROW(vsamples),distMax=datLEyePointsDL[vsamples,3] );
 
 
-varnames=c("u0","u1","phi_0","phi_max","lambda","sigma")
+varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","s")
 
 library(rjags)
 fileConn=file("model.tmp")
@@ -171,8 +184,8 @@ hist(drawLL$lambda[1,,1],breaks=100,col=colourH[1],
 X11()
 vX <- seq(0,5,by=0.01)
 vY <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
-vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- median(drawLL$lambda+quantile(drawLL$sigma[1,,1])[4])*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
-vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- median(drawLL$lambda-+quantile(drawLL$sigma[1,,1])[2])*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
+vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-quantile(drawLL$lambda[1,,1])[4]*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
+vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- quantile(drawLL$lambda[1,,1])[2]*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
 plot(dataLL$distP,dataLL$phi,pch=20,xlim=c(0,5),ylim=c(0,55))
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
 lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
@@ -188,17 +201,20 @@ hist(drawLL$sigma[1,,1],breaks=100,col=colourH[1],
 
 
 X11()
+hist(drawLL$lambda[1,,1])
+
+
+X11()
 hist(drawLL$phi_max[1,,1])
 
 X11()
 hist(drawLL$phi_0[1,,1])
 
 X11()
-hist(drawLL$u0[1,,1],breaks=100)
-
+hist(drawLL$u0[1,,1],breaks=100,xlim=c(0,5))
 
 X11()
-hist(drawLL$u1[1,,1],breaks=100)
+hist(drawLL$u1[1,,1],breaks=100,xlim=c(0,5))
 
 hist(drawNL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
 hist(drawDL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,15))
