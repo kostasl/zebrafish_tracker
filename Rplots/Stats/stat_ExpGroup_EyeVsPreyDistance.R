@@ -8,40 +8,6 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
-modelGPV1="model {
-  # Likelihood
-
-for(i in 1:N){
-  turn[i] ~ dnorm(lambda[i],eps)
-  #n[i] ~ dpois(lambda[i])
-}
-
-eps~dexp(10)
-lambda ~ dmnorm(Mu, Sigma.inv)
-#n ~ dmnorm(Mu, Sigma.inv)
-Sigma.inv <- inverse(Sigma)
-
-# Set up mean and covariance matrix
-for(i in 1:N) {
-  Mu[i] <- alpha
-  Sigma[i,i] <- pow(tau, 2)+pow(tau0,2)
-
-  for(j in (i+1):N) {
-    Sigma[i,j] <- pow(tau,2) * exp( - rho * pow(bearing[i] - bearing[j], 2) )
-    Sigma[j,i] <- Sigma[i,j]
-  }
-}
-
-alpha ~ dnorm(0,1e-4)T(0,) 
-#tau ~ dnorm(tauRange,1e-1)T(0,)
-#rho = rhoMax
-
-tau0 ~ dgamma(tauRange,0.2) 
-tau  ~ dgamma(tauRange,0.2) 
-rho ~ dunif(0,rhoMax)
-
-}"
-
 #+ beta[3]*turn[i]
 
 modelLin <- "model{
@@ -78,6 +44,13 @@ modelLin2 <- "model {
 ## Regression of an exponential Function for Eye Distance
 modelExp  <- "model{
 
+
+  phi_0 ~ dnorm(10,2) # Idle Eye Position
+  phi_max ~ dnorm(35,5) # Max Eye Vergence Angle
+  lambda ~ dgamma(0.01, 0.01) # RiseRate of Eye Vs Prey Distance
+  u1 ~ dunif(0, 4) ## End Hunt Distance - Close
+  u0 ~ dunif(u1, 5) ##Start Hunt Distance -Far 
+
   # Likelihood
   for(i in 1:N){
     ##Make indicator if hunt event is within sampled Range 
@@ -85,7 +58,7 @@ modelExp  <- "model{
     s[i] <- step(u1 - distP[i])*step(distP[i] - u0) 
 
     phi_hat[i] <- phi_0 + s[i] * phi_max* (1-exp(-lambda*distP[i])) 
-    phi[i] ~ dnorm(phi_hat[i],sigma[s+1])
+    phi[i] ~ dnorm(phi_hat[i],sigma[s[i]+1])
 
   }
 
@@ -94,11 +67,6 @@ modelExp  <- "model{
     sigma[j] ~ dgamma(0.01, 0.01) ##Draw 
   }
 
-  phi_0 ~ dnorm(10,2) # Idle Eye Position
-  phi_max ~ dnorm(35,5) # Max Eye Vergence Angle
-  lambda ~ dgamma(0.01, 0.01) # RiseRate of Eye Vs Prey Distance
-  u1 ~ dunif(0, 4) ## End Hunt Distance - Close
-  u0 ~ dunif(u1, 5) ##Start Hunt Distance -Far 
 }"
 
 ####Select Subset Of Data To Analyse
@@ -123,13 +91,15 @@ datLEyePointsLL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID
                          as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey) )
 datREyePointsLL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$REyeAngle,
                          as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey) )
-#datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]),]
+datLEyePointsLL <- datLEyePointsLL[!is.na(datLEyePointsLL[,2]),]
+datREyePointsLL <- datREyePointsLL[!is.na(datLEyePointsLL[,2]),]
 
 
 datLEyePointsNL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$LEyeAngle,
                          as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey) )
 datREyePointsNL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$REyeAngle,
                          as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey) )
+datREyePointsNL <- datREyePointsNL[!is.na(datREyePointsNL[,2]),]
 
 datLEyePointsDL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$LEyeAngle,
                          as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey) )
@@ -144,10 +114,6 @@ colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4
 pchL <- c(16,2,4)
 #
 #Thse RC params Work Well to Smooth LF And NF
-tauRangeA =100000 #10000
-rhoMaxA = 1000
-Noise = 1 ##The Gaussian Noise Term
-
 burn_in=10;
 steps=1000;
 thin=1;
@@ -158,7 +124,9 @@ nDatLL <- NROW(datLEyePointsLL)
 nDatNL <- NROW(datLEyePointsNL)
 nDatDL <- NROW(datLEyePointsDL)
 
-dataLL=list(phi=datLEyePointsLL[,1],distP=datLEyePointsLL[,2],N=nDatLL);
+##Test limit data
+nDatLL <- 5000
+dataLL=list(phi=datLEyePointsLL[1:nDatLL,1],distP=datLEyePointsLL[1:nDatLL,2],N=nDatLL);
 dataNL=list(phi=datLEyePointsNL[,1],distP=datLEyePointsNL[,2],N=nDatNL);
 dataDL=list(phi=datLEyePointsDL[,1],distP=datLEyePointsDL[,2],N=nDatDL);
 
@@ -179,6 +147,7 @@ mDL=jags.model(file="model.tmp",data=dataDL);
 
 
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
+
 drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
 drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
