@@ -366,6 +366,7 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
       eventID = as.numeric(brokenname[[1]][length(brokenname[[1]])-2]);
       trackID = as.integer( gsub("[^0-9]","",brokenname[[1]][length(brokenname[[1]])])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
       
+
       ##Extract Larva ID - Identifies larva in group across food condition - ie which larva in Empty group is the same one in the fed group
       #NOTE: Only Available In files names of more Recent Experiments
       larvaID <- as.integer( gsub("[^0-9]","",brokenname[[1]][length(brokenname[[1]])-4]) )
@@ -421,7 +422,7 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
           datProcessed[[procDatIdx]] = data.frame(Prey_X= medianf(datPreyTracks$Centroid_X,nFrWidth),
                                                   Prey_Y= medianf(datPreyTracks$Centroid_Y,nFrWidth),
                                                   Prey_Radius= medianf(datPreyTracks$Radius,nFrWidth),
-                                                  frameN=datPreyTracks$FrameN,
+                                                  frameN=as.numeric(datPreyTracks$FrameN),
                                                   inactiveFrames = datPreyTracks$InactiveFrames,
                                                   ROI = datPreyTracks$ROI,
                                                   fileIdx=rep(j,Nn),
@@ -482,7 +483,8 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
   message("#### Loading Food Data Complete -Return Data.frame###")
   message(paste("Total Usable Data files Count :",  procDatIdx, " total Frames :",procDatFrames));
   
-  
+  datAllFrames$frameN       <- as.numeric(datAllFrames$frameN) ##Convert to number so all leading zeros on frameN are ignored
+  datHuntEventFrames$frameN <- as.numeric(datHuntEventFrames$frameN)
   # Merge two data frames by ID
   datMergedFrames <- merge(x=datHuntEventFrames,y=datAllFrames,by=intersect(names(datHuntEventFrames), names(datAllFrames)),all.x = TRUE )  ## Works like inner join, can set all.x so its a left outer join
   

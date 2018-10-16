@@ -21,7 +21,7 @@ library(mclust,quietly = TRUE)
 
 require(Rwave)
 
-#source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
+source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
@@ -63,6 +63,10 @@ bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection 
 ###
 #nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering ##moved to main
 
+remove(lMotionBoutDat)
+remove(lEyeMotionDat)
+
+
 if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
   lMotionBoutDat <<- list() ##Declared In Global Env
 
@@ -70,17 +74,16 @@ if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
 if (!exists("lEyeMotionDat" ,envir = globalenv(),mode="list"))
   lEyeMotionDat <<- list() ##Declared In Global Env
 
-
 #idxH <- 20
 idTo <- 20#NROW(datTrackedEventsRegister)
 
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
 idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
-idxTestSet = c(16,17)# c(idxDLSet,idxNLSet,idxLLSet) #c(96,74) ##Issue with IDS when not put in groupID correct order
+idxTestSet = c(idxDLSet,idxLLSet,idxNLSet)  #c(16,17)# #c(96,74) ##Issue with IDS when not put in groupID correct order
 
 
-for (idxH in idxLLSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
   
   expID <- datTrackedEventsRegister[idxH,]$expID
@@ -147,7 +150,10 @@ for (idxH in idxLLSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRe
   {
     selectedPreyID <-  max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
     if (!is.numeric( selectedPreyID) | is.infinite( selectedPreyID)   )
+    {
       stop("Error on setting selectedPreyID automatically ")
+      next()
+    }
     datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
     datTrackedEventsRegister[idxH,]$PreyCount    <- NROW(tblPreyRecord)
     datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
@@ -410,6 +416,7 @@ for (idxH in idxLLSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRe
   lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[regionToAnalyse ],
                                  REyeAngle=datRenderHuntEvent$REyeAngle[regionToAnalyse],
                                  DistToPrey=vDistToPrey_Fixed_FullRange[regionToAnalyse]*DIM_MMPERPX,
+                                 DistToPreyInit=vDistToPrey_Fixed_FullRange[regionToAnalyse[min(which(regionToAnalyse > 0) ) ]]*DIM_MMPERPX,
                                  RegistarIdx           = as.numeric(rep(idxH,rows)),
                                  expID                 = as.numeric(rep(expID,rows)),
                                  eventID               = as.numeric(rep(eventID,rows)),

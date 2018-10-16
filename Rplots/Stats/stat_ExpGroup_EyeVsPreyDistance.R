@@ -43,22 +43,20 @@ modelLin2 <- "model {
 ##The Eye Angle Vs Distance Model
 ## Regression of an exponential Function for Eye Distance
 modelExp  <- "model{
-
-
   phi_0 ~ dnorm(10,2) # Idle Eye Position
   phi_max ~ dnorm(35,5) # Max Eye Vergence Angle
-  lambda ~ dgamma(0.01, 0.01) # RiseRate of Eye Vs Prey Distance
-  u1 ~ dunif(0, 4) ## End Hunt Distance - Close
+  lambda ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+  u1 ~ dunif(0, 4) ## End Hunt Distance - Close to prey
   u0 ~ dunif(u1, 5) ##Start Hunt Distance -Far 
-
+  
   # Likelihood
   for(i in 1:N){
     ##Make indicator if hunt event is within sampled Range 
     #if (u1 < distP[i]  & distP[i] < u0) {
     s[i] <- step(u1 - distP[i])*step(distP[i] - u0) 
 
-    phi_hat[i] <- phi_0 + s[i] * phi_max* (1-exp(-lambda*distP[i])) 
-    phi[i] ~ dnorm(phi_hat[i],sigma[s[i]+1])
+    phi_hat[i] <- phi_0 + s[i] * phi_max* (1-exp(-lambda*(distMax[i] - distP[i] ) )) 
+    phi[i] ~ dnorm(phi_hat[i],sigma[s[i]+1]) ##choose sigma 
 
   }
 
@@ -71,8 +69,10 @@ modelExp  <- "model{
 
 ####Select Subset Of Data To Analyse
 
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
+message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
-remove(lMotionBoutDat)
+
 lEyeMotionDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData.rds",sep="") ) #Processed Registry on which we add )
 
 datEyeVsPreyCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
@@ -88,9 +88,12 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 
 ## Get Event Counts Within Range ##
 datLEyePointsLL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$LEyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey) )
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey),
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPreyInit ))
 datREyePointsLL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$REyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey) )
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey),
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPreyInit ))
+
 datLEyePointsLL <- datLEyePointsLL[!is.na(datLEyePointsLL[,2]),]
 datREyePointsLL <- datREyePointsLL[!is.na(datLEyePointsLL[,2]),]
 
@@ -115,7 +118,7 @@ pchL <- c(16,2,4)
 #
 #Thse RC params Work Well to Smooth LF And NF
 burn_in=10;
-steps=1000;
+steps=5000;
 thin=1;
 
 
@@ -125,14 +128,14 @@ nDatNL <- NROW(datLEyePointsNL)
 nDatDL <- NROW(datLEyePointsDL)
 
 ##Test limit data
-nDatLL <- 5000
-dataLL=list(phi=datLEyePointsLL[1:nDatLL,1],distP=datLEyePointsLL[1:nDatLL,2],N=nDatLL);
+
+vsamples <- sample (nDatLL,size=2000)
+dataLL=list(phi=datLEyePointsLL[vsamples,1],distP=datLEyePointsLL[vsamples,2],N=NROW(vsamples),distMax=datLEyePointsLL[vsamples,3] );
 dataNL=list(phi=datLEyePointsNL[,1],distP=datLEyePointsNL[,2],N=nDatNL);
 dataDL=list(phi=datLEyePointsDL[,1],distP=datLEyePointsDL[,2],N=nDatDL);
 
 
 varnames=c("u0","u1","phi_0","phi_max","lambda","sigma")
-
 
 library(rjags)
 fileConn=file("model.tmp")
@@ -141,6 +144,7 @@ writeLines(modelExp,fileConn);
 close(fileConn)
 
 mLL=jags.model(file="model.tmp",data=dataLL);
+
 mNL=jags.model(file="model.tmp",data=dataNL);
 mDL=jags.model(file="model.tmp",data=dataDL);
 #update(mLL,burn_in);update(mNL,burn_in);update(mDL,burn_in)
@@ -158,16 +162,42 @@ dev.off()
 
 
 X11()
-hist(drawLL$beta[1,,1],breaks=seq(0.91,1.15,length=00),col=colourH[1],
-     #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
-     xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
+hist(drawLL$lambda[1,,1],breaks=100,col=colourH[1],
+     xlab=paste("Turn to Prey Bearing "),main=paste("Slope ") )
+
+## Plot the infered function
+X11()
+plot((seq(0,5,by=0.01)), mean(drawLL$phi_max )*(1-exp(- mean(drawLL$lambda)*(5-seq(0,5,by=0.01)) )) 
+      ,type="l")
+
+X11()
+hist(drawLL$sigma[2,,1],breaks=100,col=colourH[1],
+     xlab=paste(""),main=paste("During hunt Sigma  ") )
+
+X11()
+hist(drawLL$sigma[1,,1],breaks=100,col=colourH[1],
+     xlab=paste(" "),main=paste("Outside hunt Sigma ") )
+
+
+X11()
+hist(drawLL$phi_max[1,,1])
+
+X11()
+hist(drawLL$phi_0[1,,1])
+
+X11()
+hist(drawLL$u0[1,,1],breaks=100)
+
+
+X11()
+hist(drawLL$u1[1,,1],breaks=100)
+
 hist(drawNL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
 hist(drawDL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,15))
 
-myplot_res(1000)
 
 X11()
-hist(drawLL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[1],xlim=c(0.9,1.1),
+hist(drawLL$u0[1,,1],breaks=seq(0.9,1.1,length=100),col=colourH[1],xlim=c(0.9,1.1),
      #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
      xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
 
@@ -247,7 +277,7 @@ dev.off()
 
 
 ##Plot Densities Summary
-sampLL <- coda.samples(mLL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
+sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=20000, progress.bar="none")
 sampNL <- coda.samples(mNL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
 sampDL <- coda.samples(mDL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
 X11()
