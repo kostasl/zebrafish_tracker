@@ -81,12 +81,10 @@ modelExp  <- "model{
   # Likelihood
   for(i in 1:N){
     ##Make indicator if hunt event is within sampled Range 
-    if (u1 <= distP[i]  & distP[i] <= u0) {
-      s <- 1 }
-    else { 
-      s <- 0 }
+    #if (u1 < distP[i]  & distP[i] < u0) {
+    s[i] <- step(u1 - distP[i])*step(distP[i] - u0) 
 
-    phi_hat <- phi_0 + s * phi_max* (1-exp(-lambda*distP[i])) 
+    phi_hat <- phi_0 + s[i] * phi_max* (1-exp(-lambda*distP[i])) 
     phi[i] ~ dnorm(phi_hat,sigma[s+1])
 
   }
@@ -112,27 +110,7 @@ lEyeMotionDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionD
 datEyeVsPreyCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
-for (gp in strGroupID)
-{
-  groupID <- which(levels(datTrackedEventsRegister$groupID) == gp)
-  
-  datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm <- as.numeric(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm)
-  datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #Select Group
-  
-  datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
-  datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) >= abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
-  datMotionBoutTurnToPrey <- datMotionBoutTurnToPrey[!is.na(datMotionBoutTurnToPrey$RegistarIdx),]
-  ## Punctuate 1st Turn To Prey
-  #lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
-  #                            Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
-  #                            , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
-  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
-                                  Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
-                                  , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx)
-  
-  
-}
-  
+
 
 ##Add The Empty Test Conditions
 #strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
@@ -141,15 +119,22 @@ for (gp in strGroupID)
 #datHuntLabelledEventsKLEmpty <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$groupID %in% c("DE","LE","NE"),]
 
 ## Get Event Counts Within Range ##
-datTurnVsPreyLL <- cbind(lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$LL[,"Turn"]) )
-datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]),]
+datLEyePointsLL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$LEyeAngle,
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey) )
+datREyePointsLL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$REyeAngle,
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey) )
+#datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]),]
 
 
-datTurnVsPreyNL <- cbind(lFirstBoutPoints$NL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$NL[,"Turn"]) )
-datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]),]
+datLEyePointsNL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$LEyeAngle,
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey) )
+datREyePointsNL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$REyeAngle,
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey) )
 
-datTurnVsPreyDL <- cbind(lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$DL[,"Turn"]) )
-datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]),]
+datLEyePointsDL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$LEyeAngle,
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey) )
+datREyePointsDL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$REyeAngle,
+                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey) )
 
 
 ##For the 3 Groups 
@@ -169,41 +154,22 @@ thin=1;
 
 
 ##Larva Event Counts Slice
-nDatLL <- NROW(datTurnVsPreyLL)
-nDatNL <- NROW(datTurnVsPreyNL)
-nDatDL <- NROW(datTurnVsPreyDL)
+nDatLL <- NROW(datLEyePointsLL)
+nDatNL <- NROW(datLEyePointsNL)
+nDatDL <- NROW(datLEyePointsDL)
 
-##Order Data in Bearing Sequence 
-bearingLL=datTurnVsPreyLL[,1]
-ordLL=order(bearingLL)
-bearingLL=bearingLL[ordLL]
-turnsLL=datTurnVsPreyLL[,2][ordLL]
-
-##Order Data in Bearing Sequence 
-bearingNL=datTurnVsPreyNL[,1]
-ordNL=order(bearingNL)
-bearingNL=bearingNL[ordNL]
-turnsNL=datTurnVsPreyNL[,2][ordNL]
+dataLL=list(phi=datLEyePointsLL[,1],distP=datLEyePointsLL[,2],N=nDatLL);
+dataNL=list(phi=datLEyePointsNL[,1],distP=datLEyePointsNL[,2],N=nDatNL);
+dataDL=list(phi=datLEyePointsDL[,1],distP=datLEyePointsDL[,2],N=nDatDL);
 
 
-##Order Data in Bearing Sequence 
-bearingDL=datTurnVsPreyDL[,1]
-ordDL=order(bearingDL)
-bearingDL=bearingDL[ordDL]
-turnsDL=datTurnVsPreyDL[,2][ordDL]
+varnames=c("u0","u1","phi_0","phi_max","lambda","sigma")
 
-
-dataLL=list(turn=turnsLL,bearing=bearingLL,N=nDatLL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
-dataNL=list(turn=turnsNL,bearing=bearingNL,N=nDatNL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
-dataDL=list(turn=turnsDL,bearing=bearingDL,N=nDatDL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
-
-varnames=c("tau","rho","alpha","lambda")
-varnames=c("beta","sigma")
 
 library(rjags)
 fileConn=file("model.tmp")
 #writeLines(modelGPV1,fileConn);
-writeLines(modelLin,fileConn);
+writeLines(modelExp,fileConn);
 close(fileConn)
 
 mLL=jags.model(file="model.tmp",data=dataLL);
