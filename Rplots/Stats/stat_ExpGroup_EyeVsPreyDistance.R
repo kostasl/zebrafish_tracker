@@ -57,14 +57,14 @@ modelExp  <- "model{
     s[i] <- step(u1 - distP[i])*step(u0-distP[i]  ) 
 
     phi_hat[i] <- phi_0 + s[i] * phi_max* (1-exp(-lambda*(distMax[i] - distP[i] ) )) 
-    phi[i] ~ dnorm(phi_hat[i],pow(sigma[s[i]+1],-2) ) ##choose sigma 
+    phi[i] ~ dnorm(phi_hat[i],sigma[s[i]+1] ) ##choose sigma 
 
   }
 
   # Prior Sigma On Eye Angle when  In Or Out of hunt region 
   for(j in 1:2){
-    
-    sigma[j] ~ 1/sqrt(dgamma(0.01, 0.01)) ##Draw 
+    #inv.var[j] ~ dgamma(0.01, 0.01)  ##Prior for inverse variance
+    sigma[j] ~ dgamma(0.01, 0.01) ##Draw 
   }
 
 }"
@@ -72,7 +72,7 @@ modelExp  <- "model{
 ####Select Subset Of Data To Analyse
 
 strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
-message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
+message(paste(" Importing Retracked HuntEvents from:",strRegisterDataFileName))
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 
 lEyeMotionDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData.rds",sep="") ) #Processed Registry on which we add )
@@ -119,8 +119,8 @@ colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4
 pchL <- c(16,2,4)
 #
 #Thse RC params Work Well to Smooth LF And NF
-burn_in=10;
-steps=10000;
+burn_in=100;
+steps=6000;
 thin=2;
 
 
