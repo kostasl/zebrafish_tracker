@@ -44,25 +44,27 @@ modelLin2 <- "model {
 ## Regression of an exponential Function for Eye Distance
 modelExp  <- "model{
   phi_0 ~ dnorm(10,2) # Idle Eye Position
-  phi_max ~ dnorm(35,5) # Max Eye Vergence Angle
+  phi_max ~ dnorm(15,5) # Max Eye Vergence Angle
   lambda ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
-  u1 ~ dunif(0, 4) ## End Hunt Distance - Close to prey
-  u0 ~ dunif(u1, 5) ##Start Hunt Distance -Far 
+  limDist <- max(distMax)
+  u1 ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
+  u0 ~ dunif(u1, limDist) ##Start Hunt Distance -Far 
   
   # Likelihood
   for(i in 1:N){
     ##Make indicator if hunt event is within sampled Range 
     #if (u1 < distP[i]  & distP[i] < u0) {
-    s[i] <- step(u1 - distP[i])*step(distP[i] - u0) 
+    s[i] <- step(u1 - distP[i])*step(u0-distP[i]  ) 
 
     phi_hat[i] <- phi_0 + s[i] * phi_max* (1-exp(-lambda*(distMax[i] - distP[i] ) )) 
-    phi[i] ~ dnorm(phi_hat[i],sigma[s[i]+1]) ##choose sigma 
+    phi[i] ~ dnorm(phi_hat[i],pow(sigma[s[i]+1],-2) ) ##choose sigma 
 
   }
 
   # Prior Sigma On Eye Angle when  In Or Out of hunt region 
   for(j in 1:2){
-    sigma[j] ~ dgamma(0.01, 0.01) ##Draw 
+    
+    sigma[j] ~ 1/sqrt(dgamma(0.01, 0.01)) ##Draw 
   }
 
 }"
@@ -118,8 +120,8 @@ pchL <- c(16,2,4)
 #
 #Thse RC params Work Well to Smooth LF And NF
 burn_in=10;
-steps=5000;
-thin=1;
+steps=10000;
+thin=2;
 
 
 ##Larva Event Counts Slice
@@ -129,7 +131,7 @@ nDatDL <- NROW(datLEyePointsDL)
 
 ##Test limit data
 
-vsamples <- sample (nDatLL,size=2000)
+vsamples <- sample (nDatLL,size=10000)
 dataLL=list(phi=datLEyePointsLL[vsamples,1],distP=datLEyePointsLL[vsamples,2],N=NROW(vsamples),distMax=datLEyePointsLL[vsamples,3] );
 dataNL=list(phi=datLEyePointsNL[,1],distP=datLEyePointsNL[,2],N=nDatNL);
 dataDL=list(phi=datLEyePointsDL[,1],distP=datLEyePointsDL[,2],N=nDatDL);
@@ -167,11 +169,17 @@ hist(drawLL$lambda[1,,1],breaks=100,col=colourH[1],
 
 ## Plot the infered function
 X11()
-plot((seq(0,5,by=0.01)), mean(drawLL$phi_max )*(1-exp(- mean(drawLL$lambda)*(5-seq(0,5,by=0.01)) )) 
-      ,type="l")
+vX <- seq(0,5,by=0.01)
+vY <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
+vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- median(drawLL$lambda+quantile(drawLL$sigma[1,,1])[4])*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
+vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- median(drawLL$lambda-+quantile(drawLL$sigma[1,,1])[2])*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
+plot(dataLL$distP,dataLL$phi,pch=20,xlim=c(0,5),ylim=c(0,55))
+lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
+lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
 
 X11()
-hist(drawLL$sigma[2,,1],breaks=100,col=colourH[1],
+hist(drawLL$sigma[2,,1],breaks=10000,xlim=c(0,2),col=colourH[1],
      xlab=paste(""),main=paste("During hunt Sigma  ") )
 
 X11()
