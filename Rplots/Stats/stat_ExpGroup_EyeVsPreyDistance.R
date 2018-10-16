@@ -84,8 +84,8 @@ modelExp  <- "model{
     #if (u1 < distP[i]  & distP[i] < u0) {
     s[i] <- step(u1 - distP[i])*step(distP[i] - u0) 
 
-    phi_hat <- phi_0 + s[i] * phi_max* (1-exp(-lambda*distP[i])) 
-    phi[i] ~ dnorm(phi_hat,sigma[s+1])
+    phi_hat[i] <- phi_0 + s[i] * phi_max* (1-exp(-lambda*distP[i])) 
+    phi[i] ~ dnorm(phi_hat[i],sigma[s+1])
 
   }
 
