@@ -120,8 +120,8 @@ datREyePointsDL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID
                          as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey),
                          as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPreyInit ))
 
-datLEyePointsNL <- datLEyePointsNL[!is.na(datLEyePointsNL[,2]),]
-datREyePointsNL <- datREyePointsNL[!is.na(datLEyePointsNL[,2]),]
+datLEyePointsDL <- datLEyePointsDL[!is.na(datLEyePointsDL[,2]),]
+datREyePointsDL <- datREyePointsDL[!is.na(datLEyePointsDL[,2]),]
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
@@ -131,8 +131,8 @@ pchL <- c(16,2,4)
 #
 #Thse RC params Work Well to Smooth LF And NF
 burn_in=100;
-steps=6000;
-thin=2;
+steps=4000;
+thin=1;
 
 
 ##Larva Event Counts Slice
@@ -142,12 +142,12 @@ nDatDL <- NROW(datLEyePointsDL)
 
 ##Test limit data
 
-vsamples <- sample (nDatLL,size=10000)
-dataLL=list(phi=datLEyePointsLL[vsamples,1],distP=datLEyePointsLL[vsamples,2],N=NROW(vsamples),distMax=datLEyePointsLL[vsamples,3] );
-vsamples <- sample (nDatLL,size=10000)
-dataNL=list(phi=datLEyePointsNL[vsamples,1],distP=datLEyePointsNL[vsamples,2],N=NROW(vsamples),distMax=datLEyePointsNL[vsamples,3] );
-vsamples <- sample (nDatLL,size=10000)
-dataDL=list(phi=datLEyePointsDL[vsamples,1],distP=datLEyePointsDL[vsamples,2],N=NROW(vsamples),distMax=datLEyePointsDL[vsamples,3] );
+vsamplesLL <- sample (nDatLL,size=25000)
+dataLL=list(phi=datLEyePointsLL[vsamplesLL,1],distP=datLEyePointsLL[vsamplesLL,2],N=NROW(vsamplesLL),distMax=datLEyePointsLL[vsamplesLL,3] );
+vsamplesNL <- sample (nDatNL,size=25000)
+dataNL=list(phi=datLEyePointsNL[vsamplesNL,1],distP=datLEyePointsNL[vsamplesNL,2],N=NROW(vsamplesNL),distMax=datLEyePointsNL[vsamplesNL,3] );
+vsamplesDL <- sample (nDatDL,size=25000)
+dataDL=list(phi=datLEyePointsDL[vsamplesDL,1],distP=datLEyePointsDL[vsamplesDL,2],N=NROW(vsamplesDL),distMax=datLEyePointsDL[vsamplesDL,3] );
 
 
 varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","s")
@@ -159,37 +159,87 @@ writeLines(modelExp,fileConn);
 close(fileConn)
 
 mLL=jags.model(file="model.tmp",data=dataLL);
-
-mNL=jags.model(file="model.tmp",data=dataNL);
-mDL=jags.model(file="model.tmp",data=dataDL);
 #update(mLL,burn_in);update(mNL,burn_in);update(mDL,burn_in)
-
-
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 
-drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
-drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
-
-strPlotName <-  paste(strPlotExportPath,"/stat_TurnVsBearing_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
-pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
-myplot_res(1000)
-dev.off()
-
-
-X11()
-hist(drawLL$lambda[1,,1],breaks=100,col=colourH[1],
-     xlab=paste("Turn to Prey Bearing "),main=paste("Slope ") )
-
 ## Plot the infered function
-X11()
+#X11()
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep=""))
 vX <- seq(0,5,by=0.01)
-vY <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
-vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-quantile(drawLL$lambda[1,,1])[4]*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
-vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- quantile(drawLL$lambda[1,,1])[2]*( mean(datLEyePointsLL[vsamples,3]) - (vX) ) ) )
-plot(dataLL$distP,dataLL$phi,pch=20,xlim=c(0,5),ylim=c(0,55))
+vY <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
+vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-quantile(drawLL$lambda[1,,1])[4]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
+vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- quantile(drawLL$lambda[1,,1])[2]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
+plot(dataLL$distP,dataLL$phi,pch=20,xlim=c(0,5),ylim=c(0,55),main="LL")
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
 lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
 lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+dev.off()
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_LL_E.pdf",sep=""))
+hist(drawLL$lambda[1,,1],main="LL")
+dev.off()
+########################
+## NL ###
+mNL=jags.model(file="model.tmp",data=dataNL);
+drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
+
+## Plot the infered function NL
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_NL_E.pdf",sep=""))
+#X11()
+vX <- seq(0,5,by=0.01)
+vY <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(-  median(drawNL$lambda)*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
+vY_u <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(-quantile(drawNL$lambda[1,,1])[4]*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
+vY_l <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(- quantile(drawNL$lambda[1,,1])[2]*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
+plot(dataNL$distP,dataNL$phi,pch=20,xlim=c(0,5),ylim=c(0,55),main="NL")
+lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
+lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+dev.off()
+
+X11()
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_NL_E.pdf",sep=""))
+hist(drawNL$lambda[1,,1],main="NL")
+dev.off()
+
+X11()
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_StartEnd_u0_NL_E.pdf",sep=""))
+hist(drawNL$u1[1,,1],breaks=50,xlim=c(0,7),col="red")
+hist(drawNL$u0[1,,1],breaks=50,xlim=c(0,7),add=TRUE,col="red")
+dev.off()
+
+############
+### DL ###
+mDL=jags.model(file="model.tmp",data=dataDL);
+drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
+
+
+# Plot the infered function DL
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_DL_E.pdf",sep=""))
+#X11()
+vX <- seq(0,5,by=0.01)
+vY <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(-  median(drawDL$lambda)*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
+vY_u <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(-quantile(drawDL$lambda[1,,1])[4]*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
+vY_l <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(- quantile(drawDL$lambda[1,,1])[2]*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
+plot(dataDL$distP,dataDL$phi,pch=20,xlim=c(0,6),ylim=c(0,55),main="DL")
+lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
+lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+dev.off()
+#X11()
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_DL_E.pdf",sep=""))
+hist(drawDL$lambda[1,,1],main="DL")
+dev.off()
+
+X11()
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_StartEnd_u0_DL_E.pdf",sep=""))
+hist(drawDL$u1[1,,1],breaks=50,xlim=c(0,7),col="red")
+hist(drawDL$u0[1,,1],breaks=50,xlim=c(0,7),add=TRUE,col="red")
+dev.off()
+
+
+
 
 X11()
 hist(drawLL$sigma[2,,1],breaks=10000,xlim=c(0,2),col=colourH[1],
@@ -201,10 +251,6 @@ hist(drawLL$sigma[1,,1],breaks=100,col=colourH[1],
 
 
 X11()
-hist(drawLL$lambda[1,,1])
-
-
-X11()
 hist(drawLL$phi_max[1,,1])
 
 X11()
@@ -212,25 +258,33 @@ hist(drawLL$phi_0[1,,1])
 
 X11()
 hist(drawLL$u0[1,,1],breaks=100,xlim=c(0,5))
+hist(drawNL$u0[1,,1],breaks=100,xlim=c(0,5),add=TRUE)
+hist(drawDL$u0[1,,1],breaks=100,xlim=c(0,5),add=TRUE)
 
 X11()
-hist(drawLL$u1[1,,1],breaks=100,xlim=c(0,5))
+hist(drawLL$u1[1,,1],breaks=50,xlim=c(0,5))
+hist(drawNL$u1[1,,1],breaks=50,xlim=c(0,5),add=TRUE,col="red")
+hist(drawDL$u1[1,,1],breaks=50,xlim=c(0,5),col="blue",add=TRUE)
+#########
 
-hist(drawNL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
-hist(drawDL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,15))
 
+## Plot the infered function DL
 
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_DL.pdf",sep=""))
 X11()
-hist(drawLL$u0[1,,1],breaks=seq(0.9,1.1,length=100),col=colourH[1],xlim=c(0.9,1.1),
-     #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
-     xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
-
-
-hist(drawNL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[2],xlim=c(0.9,1.1),add=T  )
-
-
+vX <- seq(0,5,by=0.01)
+vY <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(-  median(drawDL$lambda)*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
+vY_u <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(-quantile(drawDL$lambda[1,,1])[4]*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
+vY_l <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(- quantile(drawDL$lambda[1,,1])[2]*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
+plot(dataDL$distP,dataDL$phi,pch=20,xlim=c(0,6),ylim=c(0,55),main="DL")
+lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
+lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+dev.off()
 X11()
-hist(drawLL$beta[2,,1])
+hist(drawDL$lambda[1,,1],main="DL")
+
+
 
 ind = 100
 ##Save the Mean Slope and intercept
