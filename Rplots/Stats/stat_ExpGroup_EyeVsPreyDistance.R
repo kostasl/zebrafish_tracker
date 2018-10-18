@@ -92,7 +92,7 @@ ldatsubSet <-list()
 lRegIdx[["LL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),"RegistarIdx"])
 ## Get Event Counts Within Range ##
 ldatsubSet[["LL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL") &
-                                    datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["LL"]][1],]
+                                    datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["LL"]],]
 datLEyePointsLL <- cbind(ldatsubSet[["LL"]]$LEyeAngle,
                          as.numeric(ldatsubSet[["LL"]]$DistToPrey),
                          as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
@@ -115,7 +115,7 @@ datVEyePointsLL <- datVEyePointsLL[!is.na(datVEyePointsLL[,2]),]
 lRegIdx[["NL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),"RegistarIdx"])
 ## Get Event Counts Within Range ##
 ldatsubSet[["NL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL") &
-                                                datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["NL"]][1],]
+                                                datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["NL"]],]
 
 datLEyePointsNL <- cbind(ldatsubSet[["NL"]]$LEyeAngle,
                          as.numeric(ldatsubSet[["NL"]]$DistToPrey),
@@ -140,7 +140,7 @@ datVEyePointsNL <- datVEyePointsNL[!is.na(datVEyePointsNL[,2]),]
 lRegIdx[["DL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),"RegistarIdx"])
 ## Get Event Counts Within Range ##
 ldatsubSet[["DL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL") &
-                                                datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["DL"]][1],]
+                                                datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["DL"]],]
 
 datLEyePointsDL <- cbind(ldatsubSet[["DL"]]$LEyeAngle,
                          as.numeric(ldatsubSet[["DL"]]$DistToPrey),
@@ -162,7 +162,7 @@ datVEyePointsDL <- datVEyePointsDL[!is.na(datVEyePointsDL[,2]),]
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
-colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points]
+colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
 colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
 pchL <- c(16,2,4)
 #
@@ -199,6 +199,11 @@ mLL=jags.model(file="model.tmp",data=dataLL);
 #update(mLL,burn_in);update(mNL,burn_in);update(mDL,burn_in)
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 
+
+## compute 2D kernel density, see MASS book, pp. 130-131
+nlevels <- 11
+z <- kde2d(dataLL$distP, dataLL$phi, n=30)
+
 ## Plot the infered function
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep=""))
@@ -206,7 +211,8 @@ vX <- seq(0,5,by=0.01)
 vY <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
 vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-quantile(drawLL$lambda[1,,1])[4]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
 vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- quantile(drawLL$lambda[1,,1])[2]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
-plot(dataLL$distP,dataLL$phi,pch=20,xlim=c(0,5),ylim=c(0,55),main="LL")
+plot(dataLL$distP,dataLL$phi,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[2],col=colourP[2],cex=0.5)
+contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
 lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
 lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
@@ -223,13 +229,18 @@ drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
 
 ## Plot the infered function NL
 
+## compute 2D kernel density, see MASS book, pp. 130-131
+nlevels <- 11
+z <- kde2d(dataNL$distP, dataNL$phi, n=30)
+
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_NL_E.pdf",sep=""))
 X11()
 vX <- seq(0,5,by=0.01)
 vY <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(-  median(drawNL$lambda)*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
 vY_u <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(-quantile(drawNL$lambda[1,,1])[4]*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
 vY_l <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(- quantile(drawNL$lambda[1,,1])[2]*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
-plot(dataNL$distP,dataNL$phi,pch=20,xlim=c(0,5),ylim=c(0,80),main="NL")
+plot(dataNL$distP,dataNL$phi,pch=20,xlim=c(0,5),ylim=c(0,80),main="NL",col=colourP[3])
+contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
 lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
 lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
@@ -254,13 +265,18 @@ drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
 # Plot the infered function DL
 
+## compute 2D kernel density, see MASS book, pp. 130-131
+nlevels <- 11
+z <- kde2d(dataDL$distP, dataDL$phi, n=30)
+
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_DL_E.pdf",sep=""))
 X11()
 vX <- seq(0,5,by=0.01)
 vY <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(-  median(drawDL$lambda)*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
 vY_u <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(-quantile(drawDL$lambda[1,,1])[4]*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
 vY_l <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(- quantile(drawDL$lambda[1,,1])[2]*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
-plot(dataDL$distP,dataDL$phi,pch=20,xlim=c(0,6),ylim=c(0,80),main="DL")
+plot(dataDL$distP,dataDL$phi,pch=20,xlim=c(0,6),ylim=c(0,80),main="DL",col=colourP[1])
+contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
 lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
 lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)

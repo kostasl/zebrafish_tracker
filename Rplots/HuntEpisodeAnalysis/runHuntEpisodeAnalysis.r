@@ -290,8 +290,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
                               min(
                                 which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
                                 max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  
-                              ) + 20
-  ) ##Set To Up To The Minimum Distance From Prey
+                                ) + 20
+                              ) ##Set To Up To The Minimum Distance From Prey
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
   
@@ -412,7 +412,9 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
                                   )
   
   ## Eye Angle Vs Distance ##
-  rows <- NROW(datRenderHuntEvent$LEyeAngle[regionToAnalyse ])
+  ##Exclude the capture bout / attack / by excluding the last bout (which is 1st item on Motion Bout list <=> rank 1)
+  regionToAnalyse <- regionToAnalyse[ regionToAnalyse <= lMotionBoutDat[[idxH]][1,"vMotionBout_On"] ] 
+  rows <- NROW(datRenderHuntEvent$LEyeAngle[regionToAnalyse])
   lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[regionToAnalyse ],
                                  REyeAngle=datRenderHuntEvent$REyeAngle[regionToAnalyse],
                                  DistToPrey=vDistToPrey_Fixed_FullRange[regionToAnalyse]*DIM_MMPERPX,
@@ -423,6 +425,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
                                  groupID               = rep((groupID) ,rows) ##as.character
                                 )
   
+  #X11();plot(1000*(1:NROW(lEyeMotionDat[[idxH]][,"LEyeAngle"]))/G_APPROXFPS ,lEyeMotionDat[[idxH]][,"LEyeAngle"] )
 } ###END OF EACH Hunt Episode Loop 
 
 
