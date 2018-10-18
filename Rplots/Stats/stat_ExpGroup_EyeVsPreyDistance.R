@@ -87,41 +87,59 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 #datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 #datHuntStatE <- makeHuntStat(datHuntLabelledEventsKL)
 #datHuntLabelledEventsKLEmpty <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$groupID %in% c("DE","LE","NE"),]
-
+lRegIdx <- list()
+ldatsubSet <-list()
+lRegIdx[["LL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),"RegistarIdx"])
 ## Get Event Counts Within Range ##
-datLEyePointsLL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$LEyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey),
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPreyInit ))
-datREyePointsLL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$REyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPrey),
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),]$DistToPreyInit ))
+ldatsubSet[["LL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL") &
+                                    datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["LL"]][1],]
+datLEyePointsLL <- cbind(ldatsubSet[["LL"]]$LEyeAngle,
+                         as.numeric(ldatsubSet[["LL"]]$DistToPrey),
+                         as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
+                         ldatsubSet[["LL"]]$RegistarIdx)
+datREyePointsLL <- cbind(dldatsubSet[["LL"]]$REyeAngle,
+                         as.numeric(ldatsubSet[["LL"]]$DistToPrey),
+                         as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
+                         ldatsubSet[["LL"]]$RegistarIdx)
 
 datLEyePointsLL <- datLEyePointsLL[!is.na(datLEyePointsLL[,2]),]
 datREyePointsLL <- datREyePointsLL[!is.na(datLEyePointsLL[,2]),]
 
 
-datLEyePointsNL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$LEyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey),
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPreyInit ))
-datREyePointsNL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$REyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPrey),
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),]$DistToPreyInit ))
+lRegIdx[["NL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),"RegistarIdx"])
+## Get Event Counts Within Range ##
+ldatsubSet[["NL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL") &
+                                                datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["NL"]][1],]
 
+datLEyePointsNL <- cbind(ldatsubSet[["NL"]]$LEyeAngle,
+                         as.numeric(ldatsubSet[["NL"]]$DistToPrey),
+                         as.numeric(ldatsubSet[["NL"]]$DistToPreyInit ),
+                         ldatsubSet[["NL"]]$RegistarIdx)
+datREyePointsNL <- cbind(dldatsubSet[["NL"]]$REyeAngle,
+                         as.numeric(ldatsubSet[["NL"]]$DistToPrey),
+                         as.numeric(ldatsubSet[["NL"]]$DistToPreyInit ),
+                         ldatsubSet[["NL"]]$RegistarIdx)
 datLEyePointsNL <- datLEyePointsNL[!is.na(datLEyePointsNL[,2]),]
 datREyePointsNL <- datREyePointsNL[!is.na(datLEyePointsNL[,2]),]
 
 
 
+lRegIdx[["DL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),"RegistarIdx"])
+## Get Event Counts Within Range ##
+ldatsubSet[["DL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL") &
+                                                datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["DL"]][1],]
 
-datLEyePointsDL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$LEyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey),
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPreyInit ))
-datREyePointsDL <- cbind(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$REyeAngle,
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPrey),
-                         as.numeric(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),]$DistToPreyInit ))
-
+datLEyePointsDL <- cbind(ldatsubSet[["DL"]]$LEyeAngle,
+                         as.numeric(ldatsubSet[["DL"]]$DistToPrey),
+                         as.numeric(ldatsubSet[["DL"]]$DistToPreyInit ),
+                         ldatsubSet[["DL"]]$RegistarIdx)
+datREyePointsDL <- cbind(ldatsubSet[["DL"]]$REyeAngle,
+                         as.numeric(ldatsubSet[["DL"]]$DistToPrey),
+                         as.numeric(ldatsubSet[["DL"]]$DistToPreyInit ),
+                         ldatsubSet[["DL"]]$RegistarIdx)
 datLEyePointsDL <- datLEyePointsDL[!is.na(datLEyePointsDL[,2]),]
 datREyePointsDL <- datREyePointsDL[!is.na(datLEyePointsDL[,2]),]
+
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
@@ -142,11 +160,11 @@ nDatDL <- NROW(datLEyePointsDL)
 
 ##Test limit data
 
-vsamplesLL <- sample (nDatLL,size=25000)
+vsamplesLL <- sample (nDatLL,size=nDatLL)
 dataLL=list(phi=datLEyePointsLL[vsamplesLL,1],distP=datLEyePointsLL[vsamplesLL,2],N=NROW(vsamplesLL),distMax=datLEyePointsLL[vsamplesLL,3] );
-vsamplesNL <- sample (nDatNL,size=25000)
+vsamplesNL <- sample (nDatNL,size=nDatNL)
 dataNL=list(phi=datLEyePointsNL[vsamplesNL,1],distP=datLEyePointsNL[vsamplesNL,2],N=NROW(vsamplesNL),distMax=datLEyePointsNL[vsamplesNL,3] );
-vsamplesDL <- sample (nDatDL,size=25000)
+vsamplesDL <- sample (nDatDL,size=nDatDL)
 dataDL=list(phi=datLEyePointsDL[vsamplesDL,1],distP=datLEyePointsDL[vsamplesDL,2],N=NROW(vsamplesDL),distMax=datLEyePointsDL[vsamplesDL,3] );
 
 
@@ -163,8 +181,8 @@ mLL=jags.model(file="model.tmp",data=dataLL);
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 
 ## Plot the infered function
-#X11()
-pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep=""))
+X11()
+#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep=""))
 vX <- seq(0,5,by=0.01)
 vY <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
 vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-quantile(drawLL$lambda[1,,1])[4]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
@@ -173,11 +191,12 @@ plot(dataLL$distP,dataLL$phi,pch=20,xlim=c(0,5),ylim=c(0,55),main="LL")
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
 lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
 lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
-dev.off()
+#dev.off()
 
-pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_LL_E.pdf",sep=""))
+#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_LL_E.pdf",sep=""))
+X11()
 hist(drawLL$lambda[1,,1],main="LL")
-dev.off()
+#dev.off()
 ########################
 ## NL ###
 mNL=jags.model(file="model.tmp",data=dataNL);
@@ -185,8 +204,8 @@ drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
 
 ## Plot the infered function NL
 
-pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_NL_E.pdf",sep=""))
-#X11()
+#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_NL_E.pdf",sep=""))
+X11()
 vX <- seq(0,5,by=0.01)
 vY <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(-  median(drawNL$lambda)*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
 vY_u <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(-quantile(drawNL$lambda[1,,1])[4]*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
@@ -195,12 +214,12 @@ plot(dataNL$distP,dataNL$phi,pch=20,xlim=c(0,5),ylim=c(0,55),main="NL")
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
 lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
 lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
-dev.off()
+#dev.off()
 
 X11()
-pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_NL_E.pdf",sep=""))
+#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_NL_E.pdf",sep=""))
 hist(drawNL$lambda[1,,1],main="NL")
-dev.off()
+#dev.off()
 
 X11()
 pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_StartEnd_u0_NL_E.pdf",sep=""))
