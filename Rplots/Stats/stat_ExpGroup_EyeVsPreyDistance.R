@@ -201,8 +201,8 @@ drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 
 
 ## compute 2D kernel density, see MASS book, pp. 130-131
-nlevels <- 11
-z <- kde2d(dataLL$distP, dataLL$phi, n=30)
+nlevels <- 12
+z <- kde2d(dataLL$distP, dataLL$phi, n=80)
 
 ## Plot the infered function
 X11()
@@ -230,8 +230,8 @@ drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
 ## Plot the infered function NL
 
 ## compute 2D kernel density, see MASS book, pp. 130-131
-nlevels <- 11
-z <- kde2d(dataNL$distP, dataNL$phi, n=30)
+nlevels <- 12
+z <- kde2d(dataNL$distP, dataNL$phi, n=80)
 
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_NL_E.pdf",sep=""))
 X11()
@@ -266,8 +266,8 @@ drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 # Plot the infered function DL
 
 ## compute 2D kernel density, see MASS book, pp. 130-131
-nlevels <- 11
-z <- kde2d(dataDL$distP, dataDL$phi, n=30)
+nlevels <- 12
+z <- kde2d(dataDL$distP, dataDL$phi, n=80)
 
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_DL_E.pdf",sep=""))
 X11()
