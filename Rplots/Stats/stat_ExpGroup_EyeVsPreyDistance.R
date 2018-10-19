@@ -125,94 +125,51 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 #datHuntLabelledEventsKLEmpty <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$groupID %in% c("DE","LE","NE"),]
 lRegIdx <- list()
 ldatsubSet <-list()
-lRegIdx[["LL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),"RegistarIdx"])
+
 ## Get Event Counts Within Range ##
-ldatREyePointsLL <- list()
-ldatLEyePointsLL <- list()
-ldatVEyePointsLL <- list()
-lnDatLL          <- list()
+ldatREyePoints <- list()
+ldatLEyePoints <- list()
+ldatVEyePoints <- list()
+lnDat          <- list()
 
 ##Do all this processing to add a sequence index To The hunt Event + make vergence angle INdex 
-for (h in 1:NROW(lRegIdx[["LL"]]) )
-{
-  ldatsubSet[["LL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL") &
-                                      datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["LL"]][h],]
-  ldatLEyePointsLL[[h]] <- cbind(ldatsubSet[["LL"]]$LEyeAngle,
-                           as.numeric(ldatsubSet[["LL"]]$DistToPrey),
-                           as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
-                           ldatsubSet[["LL"]]$RegistarIdx,
-                           h)
+for (g in strGroupID) {
+  lRegIdx[[g]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g),"RegistarIdx"])
+  ldatLEyePoints[[g]] <- list()
   
-  ldatREyePointsLL[[h]] <- cbind(ldatsubSet[["LL"]]$REyeAngle,
-                           as.numeric(ldatsubSet[["LL"]]$DistToPrey),
-                           as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
-                           ldatsubSet[["LL"]]$RegistarIdx,
-                           h)
-  
-  ldatVEyePointsLL[[h]] <- cbind(vAngle=ldatsubSet[["LL"]]$LEyeAngle-ldatsubSet[["LL"]]$REyeAngle,
-                           distToPrey=as.numeric(ldatsubSet[["LL"]]$DistToPrey),
-                           initDistToPrey=as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
-                           RegistarIdx=ldatsubSet[["LL"]]$RegistarIdx,
-                           seqIdx=h)
-  
-  ldatLEyePointsLL[[h]] <- ldatLEyePointsLL[[h]][!is.na(ldatLEyePointsLL[[h]][,2]),]
-  ldatREyePointsLL[[h]] <- ldatREyePointsLL[[h]][!is.na(ldatREyePointsLL[[h]][,2]),]
-  ldatVEyePointsLL[[h]] <- ldatVEyePointsLL[[h]][!is.na(ldatVEyePointsLL[[h]][,2]),]
-  
-  nDatLL[[h]] <- NROW(ldatVEyePointsLL[[h]]) ##Not Used Anymore
+  for (h in 1:NROW(lRegIdx[[g]]) )
+  {
+    ldatsubSet[[g]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g) &
+                                        datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[[g]][h],]
+    
+    ldatLEyePoints[[g]][[h]] <- cbind(ldatsubSet[[g]]$LEyeAngle,
+                             as.numeric(ldatsubSet[[g]]$DistToPrey),
+                             as.numeric(ldatsubSet[[g]]$DistToPreyInit ),
+                             ldatsubSet[[g]]$RegistarIdx,
+                             h)
+    
+    ldatREyePoints[[g]][[h]] <- cbind(ldatsubSet[[g]]$REyeAngle,
+                             as.numeric(ldatsubSet[[g]]$DistToPrey),
+                             as.numeric(ldatsubSet[[g]]$DistToPreyInit ),
+                             ldatsubSet[[g]]$RegistarIdx,
+                             h)
+    
+    ldatVEyePoints[[g]][[h]] <- cbind(vAngle=ldatsubSet[[g]]$LEyeAngle-ldatsubSet[[g]]$REyeAngle,
+                             distToPrey=as.numeric(ldatsubSet[[g]]$DistToPrey),
+                             initDistToPrey=as.numeric(ldatsubSet[[g]]$DistToPreyInit ),
+                             RegistarIdx=ldatsubSet[[g]]$RegistarIdx,
+                             seqIdx=h)
+    
+    ldatLEyePoints[[g]][[h]] <- ldatLEyePoints[[g]][[h]][!is.na(ldatLEyePoints[[g]][[h]][,2]),]
+    ldatREyePoints[[g]][[h]] <- ldatREyePoints[[g]][[h]][!is.na(ldatREyePoints[[g]][[h]][,2]),]
+    ldatVEyePoints[[g]][[h]] <- ldatVEyePoints[[g]][[h]][!is.na(ldatVEyePoints[[g]][[h]][,2]),]
+    
+    lnDat[[g]][[h]] <- NROW(ldatLEyePoints[[g]][[h]]) ##Not Used Anymore
+  }
 }
-
-datVEyePointsLL <- data.frame( do.call(rbind,ldatVEyePointsLL ) ) 
-
-
-lRegIdx[["NL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),"RegistarIdx"])
-## Get Event Counts Within Range ##
-ldatsubSet[["NL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL") &
-                                                datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["NL"]],]
-vSeqIdx <- which(lRegIdx[["NL"]][lRegIdx[["NL"]] == ldatsubSet[["NL"]]$RegistarIdx  ]    ) 
-
-datLEyePointsNL <- cbind(ldatsubSet[["NL"]]$LEyeAngle,
-                         as.numeric(ldatsubSet[["NL"]]$DistToPrey),
-                         as.numeric(ldatsubSet[["NL"]]$DistToPreyInit ),
-                          
-                         )
-datREyePointsNL <- cbind(ldatsubSet[["NL"]]$REyeAngle,
-                         as.numeric(ldatsubSet[["NL"]]$DistToPrey),
-                         as.numeric(ldatsubSet[["NL"]]$DistToPreyInit ),
-                         ldatsubSet[["NL"]]$RegistarIdx)
-datVEyePointsNL <- cbind(ldatsubSet[["NL"]]$LEyeAngle-ldatsubSet[["NL"]]$REyeAngle,
-                         as.numeric(ldatsubSet[["NL"]]$DistToPrey),
-                         as.numeric(ldatsubSet[["NL"]]$DistToPreyInit ),
-                         ldatsubSet[["NL"]]$RegistarIdx)
-
-
-datLEyePointsNL <- datLEyePointsNL[!is.na(datLEyePointsNL[,2]),]
-datREyePointsNL <- datREyePointsNL[!is.na(datREyePointsNL[,2]),]
-datVEyePointsNL <- datVEyePointsNL[!is.na(datVEyePointsNL[,2]),]
-
-
-
-lRegIdx[["DL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL"),"RegistarIdx"])
-## Get Event Counts Within Range ##
-ldatsubSet[["DL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "DL") &
-                                                datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["DL"]],]
-
-datLEyePointsDL <- cbind(ldatsubSet[["DL"]]$LEyeAngle,
-                         as.numeric(ldatsubSet[["DL"]]$DistToPrey),
-                         as.numeric(ldatsubSet[["DL"]]$DistToPreyInit ),
-                         ldatsubSet[["DL"]]$RegistarIdx)
-datREyePointsDL <- cbind(ldatsubSet[["DL"]]$REyeAngle,
-                         as.numeric(ldatsubSet[["DL"]]$DistToPrey),
-                         as.numeric(ldatsubSet[["DL"]]$DistToPreyInit ),
-                         ldatsubSet[["DL"]]$RegistarIdx)
-datVEyePointsDL <- cbind(ldatsubSet[["DL"]]$LEyeAngle-ldatsubSet[["DL"]]$REyeAngle,
-                         as.numeric(ldatsubSet[["DL"]]$DistToPrey),
-                         as.numeric(ldatsubSet[["DL"]]$DistToPreyInit ),
-                         ldatsubSet[["DL"]]$RegistarIdx)
-
-datLEyePointsDL <- datLEyePointsDL[!is.na(datLEyePointsDL[,2]),]
-datREyePointsDL <- datREyePointsDL[!is.na(datREyePointsDL[,2]),]
-datVEyePointsDL <- datVEyePointsDL[!is.na(datVEyePointsDL[,2]),]
+datVEyePointsLL <- data.frame( do.call(rbind,ldatVEyePoints[["LL"]] ) ) 
+datVEyePointsNL <- data.frame( do.call(rbind,ldatVEyePoints[["NL"]] ) ) 
+datVEyePointsDL <- data.frame( do.call(rbind,ldatVEyePoints[["DL"]] ) ) 
 
 
 ##For the 3 Groups 
@@ -228,28 +185,41 @@ thin=1;
 
 
 ##Larva Event Counts Slice
-
+nDatLL <- NROW(datVEyePointsLL)
 nDatNL <- NROW(datVEyePointsNL)
 nDatDL <- NROW(datVEyePointsDL)
 
 ##Test limit data
-
-#vsamplesLL <- sample (nDatLL,size=nDatLL)
-#dataLL=list(phi=datVEyePointsLL[vsamplesLL,1],distP=datVEyePointsLL[vsamplesLL,2],N=NROW(vsamplesLL),distMax=datVEyePointsLL[vsamplesLL,3] );
-#vsamplesNL <- sample (nDatNL,size=nDatNL)
-#dataNL=list(phi=datVEyePointsNL[vsamplesNL,1],distP=datVEyePointsNL[vsamplesNL,2],N=NROW(vsamplesNL),distMax=datVEyePointsNL[vsamplesNL,3] );
-#vsamplesDL <- sample (nDatDL,size=nDatDL)
-#dataDL=list(phi=datVEyePointsDL[vsamplesDL,1],distP=datVEyePointsDL[vsamplesDL,2],N=NROW(vsamplesDL),distMax=datVEyePointsDL[vsamplesDL,3] );
 ## Subset Dat For Speed
-datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% c(1,2),] 
+datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% c(1:10),] 
 dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
             distP=datVEyePointsLL_Sub$distToPrey ,
             N=NROW(datVEyePointsLL_Sub),
             distMax=datVEyePointsLL_Sub$initDistToPrey,
             hidx=datVEyePointsLL_Sub$seqIdx );
 
-varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","s")
 
+##Test limit data
+## Subset Dat For Speed
+datVEyePointsNL_Sub <- datVEyePointsNL[datVEyePointsNL$seqIdx %in% c(1:10),] 
+dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
+            distP=datVEyePointsNL_Sub$distToPrey ,
+            N=NROW(datVEyePointsNL_Sub),
+            distMax=datVEyePointsNL_Sub$initDistToPrey,
+            hidx=datVEyePointsNL_Sub$seqIdx );
+
+##Test limit data
+## Subset Dat For Speed
+datVEyePointsDL_Sub <- datVEyePointsDL[datVEyePointsDL$seqIdx %in% c(1:10),] 
+dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
+            distP=datVEyePointsDL_Sub$distToPrey ,
+            N=NROW(datVEyePointsDL_Sub),
+            distMax=datVEyePointsDL_Sub$initDistToPrey,
+            hidx=datVEyePointsDL_Sub$seqIdx );
+
+
+
+varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","s")
 
 
 library(rjags)
@@ -283,7 +253,7 @@ lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
 
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_LL_E.pdf",sep=""))
 X11()
-hist(drawLL$lambda[1,,1],main="LL")
+hist(drawLL$lambda[,,],main="LL")
 #dev.off()
 ########################
 ## NL ###
