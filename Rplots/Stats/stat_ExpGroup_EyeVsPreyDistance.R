@@ -76,34 +76,33 @@ modelExp  <- "model{
 ## H : Number of Hunt Events in Data
 ## N : vector of number of points in Hunt Event
 modelExpInd  <- "model{
-for (h in 1:H)
-{
-  phi_0[h] ~ dnorm(10,2) # Idle Eye Position
-  phi_max[h] ~ dnorm(15,5) # Max Eye Vergence Angle
-  lambda[h] ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
-  limDist[h] <- max(distMax)
-  u1[h] ~ dunif(0, limDist[h]) ## End Hunt Distance - Close to prey
-  u0[h] ~ dunif(u1, limDist[h]) ##Start Hunt Distance -Far 
-  
-  # Likelihood
-  for(i in 1:N[h]){
+  ##Prior
+  limDist <- max(distMax)
+
+  # Priors 
+  for(i in 1:max(hidx) ) {
+    phi_0[i] ~ dnorm(10,2) # Idle Eye Position
+    phi_max[i] ~ dnorm(15,5) # Max Eye Vergence Angle
+    lambda[i] ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+    u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
+    u0[i] ~ dunif(u1[i], limDist) ##Start Hunt Distance -Far 
+
+  # Sigma On Eye Angle when  In Or Out of hunt region 
+   for(j in 1:2){
+    sigma[i,j] ~ dgamma(0.01, 0.01) ##Draw 
+    }
+  }
+
+  # Likelihood / Separate for each Hunt Event
+  for(i in 1:N){
   ##Make indicator if hunt event is within sampled Range 
-  #if (u1[h] < distP[h,i]  & distP[h,i] < u0) {
-  s[h,i] <- step( distP[h,i]-u1)*step(u0[h]-distP[h,i]  ) 
+  #if (u1[hidx[i]] < distP[i]  & distP[i] < u0) 
+  s[hidx[i],i] <- step( distP[i]-u1[hidx[i]])*step(u0[ hidx[i] ] - distP[i]  ) 
   
-  phi_hat[h,i] <- phi_0[h] + s[h,i] * phi_max[h]* (1-exp(-lambda[h]*(distMax[h,i] - distP[h,i] ) )) 
-  phi[h,i] ~ dnorm(phi_hat[h,i],sigma[s[h,i]+1] ) ##choose sigma 
-  
+  phi_hat[ hidx[i],i] <- phi_0[hidx[i]] + s[hidx[i],i] * phi_max[hidx[i]]* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
+  phi[i] ~ dnorm( phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
   }
-  
-  # Prior Sigma On Eye Angle when  In Or Out of hunt region 
-  for(j in 1:2){
-  #inv.var[j] ~ dgamma(0.01, 0.01)  ##Prior for inverse variance
-  sigma[h,j] ~ dgamma(0.01, 0.01) ##Draw 
-  }
-}##For Each Hunt Event
-  
-  }"
+}"
 
 
 ####Select Subset Of Data To Analyse
@@ -128,44 +127,55 @@ lRegIdx <- list()
 ldatsubSet <-list()
 lRegIdx[["LL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL"),"RegistarIdx"])
 ## Get Event Counts Within Range ##
-datREyePointsLL <- list()
-datLEyePointsLL <- list()
-datVEyePointsLL <- list()
-nDatLL          <- list()
+ldatREyePointsLL <- list()
+ldatLEyePointsLL <- list()
+ldatVEyePointsLL <- list()
+lnDatLL          <- list()
 
+##Do all this processing to add a sequence index To The hunt Event + make vergence angle INdex 
 for (h in 1:NROW(lRegIdx[["LL"]]) )
 {
   ldatsubSet[["LL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "LL") &
                                       datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["LL"]][h],]
-  datLEyePointsLL[[h]] <- cbind(ldatsubSet[["LL"]]$LEyeAngle,
+  ldatLEyePointsLL[[h]] <- cbind(ldatsubSet[["LL"]]$LEyeAngle,
                            as.numeric(ldatsubSet[["LL"]]$DistToPrey),
                            as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
-                           ldatsubSet[["LL"]]$RegistarIdx)
-  datREyePointsLL[[h]] <- cbind(ldatsubSet[["LL"]]$REyeAngle,
-                           as.numeric(ldatsubSet[["LL"]]$DistToPrey),
-                           as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
-                           ldatsubSet[["LL"]]$RegistarIdx)
-  datVEyePointsLL[[h]] <- cbind(ldatsubSet[["LL"]]$LEyeAngle-ldatsubSet[["LL"]]$REyeAngle,
-                           as.numeric(ldatsubSet[["LL"]]$DistToPrey),
-                           as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
-                           ldatsubSet[["LL"]]$RegistarIdx)
+                           ldatsubSet[["LL"]]$RegistarIdx,
+                           h)
   
-  datLEyePointsLL[[h]] <- datLEyePointsLL[[h]][!is.na(datLEyePointsLL[[h]][,2]),]
-  datREyePointsLL[[h]] <- datREyePointsLL[[h]][!is.na(datREyePointsLL[[h]][,2]),]
-  datVEyePointsLL[[h]] <- datVEyePointsLL[[h]][!is.na(datVEyePointsLL[[h]][,2]),]
+  ldatREyePointsLL[[h]] <- cbind(ldatsubSet[["LL"]]$REyeAngle,
+                           as.numeric(ldatsubSet[["LL"]]$DistToPrey),
+                           as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
+                           ldatsubSet[["LL"]]$RegistarIdx,
+                           h)
   
-  nDatLL[[h]] <- NROW(datVEyePointsLL[[h]])
+  ldatVEyePointsLL[[h]] <- cbind(vAngle=ldatsubSet[["LL"]]$LEyeAngle-ldatsubSet[["LL"]]$REyeAngle,
+                           distToPrey=as.numeric(ldatsubSet[["LL"]]$DistToPrey),
+                           initDistToPrey=as.numeric(ldatsubSet[["LL"]]$DistToPreyInit ),
+                           RegistarIdx=ldatsubSet[["LL"]]$RegistarIdx,
+                           seqIdx=h)
+  
+  ldatLEyePointsLL[[h]] <- ldatLEyePointsLL[[h]][!is.na(ldatLEyePointsLL[[h]][,2]),]
+  ldatREyePointsLL[[h]] <- ldatREyePointsLL[[h]][!is.na(ldatREyePointsLL[[h]][,2]),]
+  ldatVEyePointsLL[[h]] <- ldatVEyePointsLL[[h]][!is.na(ldatVEyePointsLL[[h]][,2]),]
+  
+  nDatLL[[h]] <- NROW(ldatVEyePointsLL[[h]]) ##Not Used Anymore
 }
+
+datVEyePointsLL <- data.frame( do.call(rbind,ldatVEyePointsLL ) ) 
+
 
 lRegIdx[["NL"]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL"),"RegistarIdx"])
 ## Get Event Counts Within Range ##
 ldatsubSet[["NL"]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == "NL") &
                                                 datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[["NL"]],]
+vSeqIdx <- which(lRegIdx[["NL"]][lRegIdx[["NL"]] == ldatsubSet[["NL"]]$RegistarIdx  ]    ) 
 
 datLEyePointsNL <- cbind(ldatsubSet[["NL"]]$LEyeAngle,
                          as.numeric(ldatsubSet[["NL"]]$DistToPrey),
                          as.numeric(ldatsubSet[["NL"]]$DistToPreyInit ),
-                         ldatsubSet[["NL"]]$RegistarIdx)
+                          
+                         )
 datREyePointsNL <- cbind(ldatsubSet[["NL"]]$REyeAngle,
                          as.numeric(ldatsubSet[["NL"]]$DistToPrey),
                          as.numeric(ldatsubSet[["NL"]]$DistToPreyInit ),
@@ -230,15 +240,22 @@ nDatDL <- NROW(datVEyePointsDL)
 #dataNL=list(phi=datVEyePointsNL[vsamplesNL,1],distP=datVEyePointsNL[vsamplesNL,2],N=NROW(vsamplesNL),distMax=datVEyePointsNL[vsamplesNL,3] );
 #vsamplesDL <- sample (nDatDL,size=nDatDL)
 #dataDL=list(phi=datVEyePointsDL[vsamplesDL,1],distP=datVEyePointsDL[vsamplesDL,2],N=NROW(vsamplesDL),distMax=datVEyePointsDL[vsamplesDL,3] );
-
-dataLL=list(phi=datVEyePointsLL[vsamplesLL,1],distP=datVEyePointsLL[vsamplesLL,2],N=NROW(vsamplesLL),distMax=datVEyePointsLL[vsamplesLL,3] );
+## Subset Dat For Speed
+datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% c(1,2),] 
+dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
+            distP=datVEyePointsLL_Sub$distToPrey ,
+            N=NROW(datVEyePointsLL_Sub),
+            distMax=datVEyePointsLL_Sub$initDistToPrey,
+            hidx=datVEyePointsLL_Sub$seqIdx );
 
 varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","s")
+
+
 
 library(rjags)
 fileConn=file("model.tmp")
 #writeLines(modelGPV1,fileConn);
-writeLines(modelExp,fileConn);
+writeLines(modelExpInd,fileConn);
 close(fileConn)
 
 mLL=jags.model(file="model.tmp",data=dataLL);
@@ -464,3 +481,45 @@ X11()
 plot(sampNL)
 X11()
 plot(sampDL,main="DL")
+
+
+
+
+
+
+
+
+
+
+
+## N : vector of number of points in Hunt Event
+modelExpInd  <- "model{
+##Prior
+
+# Prior Sigma On Eye Angle when  In Or Out of hunt region 
+for(i in 1:max(hidx)) {
+for(j in 1:2){
+#inv.var[j] ~ dgamma(0.01, 0.01)  ##Prior for inverse variance
+sigma[i,j] ~ dgamma(0.01, 0.01) ##Draw 
+}
+}
+
+# Likelihood / Separate for each Hunt Event
+for(i in 1:N){
+phi_0[hidx[i]] ~ dnorm(10,2) # Idle Eye Position
+phi_max[hidx[i]] ~ dnorm(15,5) # Max Eye Vergence Angle
+lambda[hidx[i]] ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+limDist[hidx[i]] <- max(distMax)
+u1[hidx[i]] ~ dunif(0, limDist[hidx[i]]) ## End Hunt Distance - Close to prey
+u0[hidx[i]] ~ dunif(u1, limDist[hidx[i]]) ##Start Hunt Distance -Far 
+
+
+##Make indicator if hunt event is within sampled Range 
+#if (u1[hidx[i]] < distP[i]  & distP[i] < u0) 
+s[hidx[i],i] <- step( distP[i]-u1[hidx[i]])*step(u0[ hidx[i] ]-distP[i]  ) 
+
+phi_hat[hidx[i],i] <- phi_0[hidx[i]] + s[hidx[i],i] * phi_max[hidx[i]]* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
+phi[hidx[i],i] ~ dnorm( phi_hat[hidx[i],i], sigma[s[hidx[i],i]+1] ) ##choose sigma 
+
+}"
+
