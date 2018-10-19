@@ -81,8 +81,8 @@ modelExpInd  <- "model{
 
   # Priors 
   for(i in 1:max(hidx) ) {
-    phi_0[i] ~ dnorm(10,2) # Idle Eye Position
-    phi_max[i] ~ dnorm(15,5) # Max Eye Vergence Angle
+    phi_0[i] ~ dnorm(5,2) # Idle Eye Position
+    phi_max[i] ~ dnorm(40,5) # Max Eye Vergence Angle
     lambda[i] ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
     u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
     u0[i] ~ dunif(u1[i], limDist) ##Start Hunt Distance -Far 
@@ -97,10 +97,17 @@ modelExpInd  <- "model{
   for(i in 1:N){
   ##Make indicator if hunt event is within sampled Range 
   #if (u1[hidx[i]] < distP[i]  & distP[i] < u0) 
-  s[hidx[i],i] <- step( distP[i]-u1[hidx[i]])*step(u0[ hidx[i] ] - distP[i]  ) 
+  s[hidx[i],i] <- step( distP[i]-u1[hidx[i]])*step(u0[ hidx[i] ] - distP[i]  )   
   
-  phi_hat[ hidx[i],i] <- phi_0[hidx[i]] + s[hidx[i],i] * phi_max[hidx[i]]* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
-  phi[i] ~ dnorm( phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
+  #phi_hat[ hidx[i],i] <- step(2*s[hidx[i],i]-1)*phi_0[hidx[i]] + s[hidx[i],i]*(phi_max[hidx[i]])* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
+  phi_hat[ hidx[i],i] <- (phi_max[hidx[i]])* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
+  phi[i] ~ dnorm(phi_0[hidx[i]]+phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
+
+#phi[i] ~ dnorm( step( 2*s[hidx[i],i] -1)*phi_0[hidx[i]] + s[hidx[i],i]*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma
+#phi[i] ~ dnorm( step(phi_hat[ hidx[i],i] < 40)*phi_max[hidx[i]] +step(phi_hat[ hidx[i],i] >= 40)*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
+  
+
+##step(phi_hat[ hidx[i],i] < 40)*phi_0[hidx[i]] + step(phi_hat[ hidx[i],i] >= 40)*
   }
 }"
 
@@ -180,7 +187,7 @@ pchL <- c(16,2,4)
 #
 #Thse RC params Work Well to Smooth LF And NF
 burn_in=100;
-steps=4000;
+steps=1000;
 thin=1;
 
 
@@ -191,7 +198,7 @@ nDatDL <- NROW(datVEyePointsDL)
 
 ##Test limit data
 ## Subset Dat For Speed
-datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% c(1:10),] 
+datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% c(3),] 
 dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
             distP=datVEyePointsLL_Sub$distToPrey ,
             N=NROW(datVEyePointsLL_Sub),
@@ -232,28 +239,46 @@ mLL=jags.model(file="model.tmp",data=dataLL);
 #update(mLL,burn_in);update(mNL,burn_in);update(mDL,burn_in)
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 
-
 ## compute 2D kernel density, see MASS book, pp. 130-131
 nlevels <- 12
 z <- kde2d(dataLL$distP, dataLL$phi, n=80)
 
 ## Plot the infered function
+datVEyePointsLL_SubP <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% c(3),] 
 X11()
-#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep=""))
+#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep="")) quantile(drawLL$phi_0[,,])[4] 
 vX <- seq(0,5,by=0.01)
-vY <- median(drawLL$phi_0[,,] ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
-vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-quantile(drawLL$lambda[,,])[4]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
-vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- quantile(drawLL$lambda[,,])[2]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
+vY <-    mean(drawLL$phi_0[3] )+ ( mean(drawLL$phi_max[3] ) )*(1-exp(-  mean(drawLL$lambda[,,])*( mean(drawLL$u0[3,,] ) - (vX) ) ) ) # 
+vY_u <-  quantile(drawLL$phi_0[3])[4]+(quantile(drawLL$phi_max[3])[4])*(1-exp(-quantile(drawLL$lambda[,,])[4]*( quantile(drawLL$u0)[4] - (vX) ) ) )
+vY_l <-  quantile(drawLL$phi_0[3])[2]+quantile(drawLL$phi_max[3])[2]*(1-exp(- quantile(drawLL$lambda[,,])[2]*( quantile(drawLL$u0)[2] - (vX) ) ) )
 plot(dataLL$distP,dataLL$phi,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[2],col=colourP[2],cex=0.5)
+points(datVEyePointsLL_SubP$distToPrey,datVEyePointsLL_SubP$vAngle,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[2],cex=0.5)
 contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
-lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
-lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
-lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
+lines( vX ,vY,xlim=c(0,5),ylim=c(0,80),type="l",col="red",lwd=3)
+lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,80),type="l",col="blue",lwd=2)
+lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,80),type="l",col="blue",lwd=2)
 #dev.off()
 
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_LL_E.pdf",sep=""))
 X11()
 hist(drawLL$lambda[,,],main="LL")
+
+X11()
+hist(drawLL$phi_max[3,,],main="LL")
+#plot(drawLL$phi_max[3,,])
+
+X11()
+hist(drawLL$phi_0[,,],main="LL")
+X11()
+hist(drawLL$sigma[,,],main="LL")
+
+
+
+X11()
+#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_StartEnd_u0_NL_E.pdf",sep=""))
+hist(drawLL$u1[,,],breaks=50,xlim=c(0,7),col=colourH[2])
+hist(drawLL$u0[,,],breaks=50,xlim=c(0,7),add=TRUE,col=colourH[2])
+
 #dev.off()
 ########################
 ## NL ###
@@ -270,8 +295,8 @@ z <- kde2d(dataNL$distP, dataNL$phi, n=80)
 X11()
 vX <- seq(0,5,by=0.01)
 vY <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(-  median(drawNL$lambda)*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
-vY_u <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(-quantile(drawNL$lambda[1,,1])[4]*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
-vY_l <- median(drawNL$phi_0 ) + median(drawNL$phi_max )*(1-exp(- quantile(drawNL$lambda[1,,1])[2]*( mean(datLEyePointsNL[vsamplesNL,3]) - (vX) ) ) )
+vY_u <- quantile(drawNL$phi_0[,,])[4] + quantile(drawNL$phi_max[,,])[4]*(1-exp(-quantile(drawNL$lambda[,,])[4]*( mean(datLEyePointsNL[vsamplesLL,3]) - (vX) ) ) )
+vY_l <-  quantile(drawNL$phi_0[,,])[2] + quantile(drawNL$phi_max[,,])[2]*(1-exp(- quantile(drawNL$lambda[,,])[2]*( mean(datLEyePointsL[vsamplesLL,3]) - (vX) ) ) )
 plot(dataNL$distP,dataNL$phi,pch=20,xlim=c(0,5),ylim=c(0,80),main="NL",col=colourP[3])
 contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
@@ -492,4 +517,151 @@ phi_hat[hidx[i],i] <- phi_0[hidx[i]] + s[hidx[i],i] * phi_max[hidx[i]]* (1-exp(-
 phi[hidx[i],i] ~ dnorm( phi_hat[hidx[i],i], sigma[s[hidx[i],i]+1] ) ##choose sigma 
 
 }"
+
+
+# 
+# 
+# # Step 1
+# # Reading the the data
+# FathersLoveData <- read.csv("C:/Users/zzo1/Dropbox/PBnRTutorial/lovedata.csv")
+# # Visual check data of the data
+# head(FathersLoveData) 
+# # the unnamed column shows the row number: each participant's data corresponds to one row
+# # Y1-Y4 are the love scores for each person
+# # 'Positivity' shows the positivity categories: 1: low, 2: medium, 3: high
+# # X1 takes value 1 for low positivity, otherwise 0
+# # X2 takes value 1 for high positivity, otherwise 0
+# 
+# # Checking the number of rows (i.e., 2nd dimension) of `FathersLoveData' data 
+# N <- dim(FathersLoveData)[1] # count number of rows to get number of subjects
+# # Creating a matrix with only the love scores: Y1-Y4 (columns 1-4):
+# # We `unlist' all N rows of selected columns 1:4 from the data set, 
+# # then we transform these values into numeric entries of a matrix
+# data <- matrix(as.numeric(unlist(FathersLoveData[,1:4])), nrow = N)
+# # Creating a variable that saves the number of time points
+# nrT <- 4
+# # Saving X1 and X2 as separate variables (same unlisting etc. as explained above)
+# grouping <- matrix(as.numeric(unlist(FathersLoveData[,6:7])), nrow = N)
+# X1 <- grouping[,1] # 1 when person had low positivity before baby
+# X2 <- grouping[,2] # 1 when person had high positivity before baby
+# # Creating a time vector for the measurement waves
+# time <- c(-3, 3, 9, 36) # time vector (T) based on the time of the measurements
+# # Now we have all the data needed to be passed to JAGS
+# # Creating a list of all the variables that we created above
+# jagsData <- list("Y"=data,"X1"=X1,"X2"=X2,"N"=N,"nrT"=nrT,"time"=time)
+# 
+# # Step 2
+# LinearGrowthCurve = cat("
+#                         model {
+#                         # Starting loop over participants
+#                         for (i in 1:N) { 
+#                         # Starting loop over measurement occasions
+#                         eps[i,1] <- Y[i, 1] - (betas[i,1] + betas[i,2]*time[1])
+#                         Y[i, 1] ~ dnorm(betas[i,1] + betas[i,2]*time[1], precAC)
+#                         for (t in 2:nrT) {  
+#                         # The likelihood function, corresponding to Equation 1:
+#                         
+#                         eps[i,t] <- Y[i,t] - (betas[i,1] + betas[i,2]*time[t] + acorr*eps[i,t-1])
+#                         Y[i, t] ~ dnorm(betas[i,1] + betas[i,2]*time[t] + acorr*eps[i,t-1], precAC)} 
+#                         # end of loop for the observations
+#                         
+#                         # Describing the level-2 bivariate distribution of intercepts and slopes
+#                         betas[i,1:2] ~ dmnorm(Level2MeanVector[i,1:2], interpersonPrecisionMatrix[1:2,1:2])
+#                         # The mean of the intercept is modeled as a function of positivity group membership
+#                         Level2MeanVector[i,1] <- MedPInt + betaLowPInt*X1[i] + betaHighPInt*X2[i]
+#                         Level2MeanVector[i,2] <- MedPSlope + betaLowPSlope*X1[i] + betaHighPSlope*X2[i]
+#                         } # end of loop for persons
+#                         # Specifying priors  distributions
+#                         MedPInt ~ dnorm(0, 0.01)
+#                         MedPSlope ~ dnorm(0, 0.01)
+#                         betaLowPInt ~ dnorm(0, 0.01)
+#                         betaHighPInt ~ dnorm(0, 0.01)
+#                         betaLowPSlope ~ dnorm(0, 0.01)
+#                         betaHighPSlope ~ dnorm(0, 0.01)
+#                         
+#                         sd1 ~ dunif(0, 100)
+#                         precAC <- 1/pow(sd1,2)*(1-acorr*acorr)
+#                         acorr ~ dunif(-1,1)
+#                         
+#                         sdIntercept  ~ dunif(0, 100)
+#                         sdSlope  ~ dunif(0, 100)
+#                         corrIntSlope ~ dunif(-1, 1)
+#                         # Transforming model parameters
+#                         ## Defining the elements of the level-2 covariance matrix
+#                         interpersonCovMatrix[1,1] <- sdIntercept * sdIntercept
+#                         interpersonCovMatrix[2,2] <- sdSlope * sdSlope
+#                         interpersonCovMatrix[1,2] <- corrIntSlope * sdIntercept* sdSlope
+#                         interpersonCovMatrix[2,1] <- interpersonCovMatrix[1,2]
+#                         ## Taking the inverse of the covariance to get the precision matrix
+#                         interpersonPrecisionMatrix <- inverse(interpersonCovMatrix)
+#                         ## Creating a variables representing
+#                         ### low positivity intercept
+#                         LowPInt <- MedPInt + betaLowPInt 
+#                         ### high positivity intercept
+#                         HighPInt <- MedPInt + betaHighPInt 
+#                         ### low positivity slope
+#                         LowPSlope <- MedPSlope + betaLowPSlope
+#                         ### high positivity slope
+#                         HighPSlope <- MedPSlope + betaHighPSlope
+#                         ### contrasts terms between high-low, medium-low, high-medium intercepts and slopes
+#                         HighLowPInt <- HighPInt - LowPInt
+#                         MedLowPInt <- MedPInt - LowPInt
+#                         HighMedPInt <- HighPInt - MedPInt
+#                         HighLowPSlope <- HighPSlope- LowPSlope
+#                         MedLowPSlope <- MedPSlope - LowPSlope
+#                         HighMedPSlope <- HighPSlope - MedPSlope
+#                         }
+#                         ",file = "GCM.txt")
+# 
+# 
+# # Step 3
+# # Collecting the model parameters of interest
+# parameters  <- c("MedPSlope","betaLowPInt",
+#                  "betaHighPInt","betaLowPSlope", 
+#                  "betaHighPSlope", "MedPInt", 
+#                  "sdIntercept", "sdSlope", 
+#                  "corrIntSlope", "betas",
+#                  "LowPInt","HighPInt","LowPSlope", "HighPSlope",
+#                  "HighLowPInt","HighMedPInt","MedLowPInt",
+#                  "HighLowPSlope","HighMedPSlope","MedLowPSlope",
+#                  "acorr", "sd1")
+# # Sampler settings
+# adaptation  <- 2000 # Number of steps to "tune" the samplers
+# chains  <- 6    # Re-start the exploration "chains" number of times
+# #  with different starting values
+# burnin  <- 1000 # Number of steps to get rid of the influence of initial values
+# # Define the number of samples drawn from the posterior in each chain
+# thinning <- 20
+# postSamples <- 60000
+# nrOfIter <- ceiling((postSamples * thinning)/chains)
+# 
+# 
+# fixedinits<- list(list(.RNG.seed=5,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=6,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=7,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=8,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=9,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=10,.RNG.name="base::Mersenne-Twister"))
+# 
+# # Step 4
+# # loading the rjags package
+# library(rjags)            
+# # creating JAGS model object
+# jagsModel<-jags.model("GCM.txt",data=jagsData,n.chains=chains,n.adapt=adaptation,inits=fixedinits)
+# # running burn-in iterations
+# update(jagsModel,n.iter=burnin)
+# # drawing posterior samples
+# codaSamples<-coda.samples(jagsModel,variable.names=parameters,thin = thinning, n.iter=nrOfIter,seed=5)
+# 
+# source("C:/Users/zzo1/Dropbox/PBnRTutorial/posteriorSummaryStats.R")
+# # Part 1: Check convergence
+# resulttable <- summarizePost(codaSamples)
+# saveNonConverged <- resulttable[resulttable$RHAT>1.1,]
+# if (nrow(saveNonConverged) == 0){
+#   print("Convergence criterion was met for every parameter.")
+# }else{ 
+#   print("Not converged parameter(s):")
+#   show(saveNonConverged)
+# }
+# # Part 2: Display summary statistics for selected parameters (regexp)
+# show(summarizePost(codaSamples, filters =  c("^Med","^Low","^High","^sd","^corr", "sd1", "acorr"))) 
+# 
+# save.image(sprintf("GCMPBnR%s.Rdata", Sys.Date()))
+# 
+
 
