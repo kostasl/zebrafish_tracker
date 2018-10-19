@@ -23,7 +23,6 @@ source("plotTrackScatterAndDensities.r")
 #################IMPORT HuntEvent TRACKER FILES # source Tracker Data Files############################### 
 ##OutPutFIleName
 strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
-strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
 message(paste(" Importing to:",strDataFileName))
 
 
@@ -62,7 +61,6 @@ lHuntEventTRACKSfileSrc <- list()
   names(datTrackedEventsRegister) <- c("expID","eventID","trackID","groupID")
   
   save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
-  saveRDS(datTrackedEventsRegister,strRegisterDataFileName) ## THis is the Processed Register File On 
   # #### END OF IMPORT HUNT EVENT TRACKER DATA ############
    
 ##Save the File Sources and all The Frames Combined - Just In case there are loading Problems Of the Individual RData files from each set

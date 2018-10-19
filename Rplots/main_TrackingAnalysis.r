@@ -66,7 +66,7 @@ strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat
 strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
 strPlotExportPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
 
-## Laptop
+## Laptop ##
 setwd("~/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
 strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
