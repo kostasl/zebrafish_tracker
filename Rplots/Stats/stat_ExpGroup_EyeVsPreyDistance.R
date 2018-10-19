@@ -2,7 +2,7 @@
 ### Model how Eye Angle reports distance from prey 
 ## Used to compare differences in distance estimation between rearing groups 
 
-
+##Model Each Hunt Event Individually / And obtain Group Statistic and Regresion of eye vergence vs Distance To Prey
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
@@ -271,9 +271,9 @@ z <- kde2d(dataLL$distP, dataLL$phi, n=80)
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep=""))
 vX <- seq(0,5,by=0.01)
-vY <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
-vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-quantile(drawLL$lambda[1,,1])[4]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
-vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- quantile(drawLL$lambda[1,,1])[2]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
+vY <- median(drawLL$phi_0[,,] ) + median(drawLL$phi_max )*(1-exp(-  median(drawLL$lambda)*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
+vY_u <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(-quantile(drawLL$lambda[,,])[4]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
+vY_l <- median(drawLL$phi_0 ) + median(drawLL$phi_max )*(1-exp(- quantile(drawLL$lambda[,,])[2]*( mean(datLEyePointsLL[vsamplesLL,3]) - (vX) ) ) )
 plot(dataLL$distP,dataLL$phi,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[2],col=colourP[2],cex=0.5)
 contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
