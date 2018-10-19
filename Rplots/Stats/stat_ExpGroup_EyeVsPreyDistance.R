@@ -101,7 +101,7 @@ modelExpInd  <- "model{
   
   #phi_hat[ hidx[i],i] <- step(2*s[hidx[i],i]-1)*phi_0[hidx[i]] + s[hidx[i],i]*(phi_max[hidx[i]])* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
   phi_hat[ hidx[i],i] <- (phi_max[hidx[i]])* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
-  phi[i] ~ dnorm(phi_0[hidx[i]]+phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
+  phi[i] ~ dnorm(phi_0[hidx[i]]+s[hidx[i],i]*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
 
 #phi[i] ~ dnorm( step( 2*s[hidx[i],i] -1)*phi_0[hidx[i]] + s[hidx[i],i]*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma
 #phi[i] ~ dnorm( step(phi_hat[ hidx[i],i] < 40)*phi_max[hidx[i]] +step(phi_hat[ hidx[i],i] >= 40)*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
@@ -248,9 +248,9 @@ datVEyePointsLL_SubP <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% c(3),]
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep="")) quantile(drawLL$phi_0[,,])[4] 
 vX <- seq(0,5,by=0.01)
-vY <-    mean(drawLL$phi_0[3] )+ ( mean(drawLL$phi_max[3] ) )*(1-exp(-  mean(drawLL$lambda[,,])*( mean(drawLL$u0[3,,] ) - (vX) ) ) ) # 
-vY_u <-  quantile(drawLL$phi_0[3])[4]+(quantile(drawLL$phi_max[3])[4])*(1-exp(-quantile(drawLL$lambda[,,])[4]*( quantile(drawLL$u0)[4] - (vX) ) ) )
-vY_l <-  quantile(drawLL$phi_0[3])[2]+quantile(drawLL$phi_max[3])[2]*(1-exp(- quantile(drawLL$lambda[,,])[2]*( quantile(drawLL$u0)[2] - (vX) ) ) )
+vY <-    mean(drawLL$phi_0[3] )+ ( mean(drawLL$phi_max[3] ) )*(1-exp(-  mean(drawLL$lambda[3,,])*( mean(drawLL$u0[3,,] ) - (vX) ) ) ) # 
+vY_u <-  quantile(drawLL$phi_0[3])[4]+(quantile(drawLL$phi_max[3])[4])*(1-exp(-quantile(drawLL$lambda[,,])[4]*( quantile(drawLL$u0[3])[4] - (vX) ) ) )
+vY_l <-  quantile(drawLL$phi_0[3])[2]+quantile(drawLL$phi_max[3])[2]*(1-exp(- quantile(drawLL$lambda[,,])[2]*( quantile(drawLL$u0[3])[2] - (vX) ) ) )
 plot(dataLL$distP,dataLL$phi,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[2],col=colourP[2],cex=0.5)
 points(datVEyePointsLL_SubP$distToPrey,datVEyePointsLL_SubP$vAngle,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[2],cex=0.5)
 contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
@@ -277,7 +277,7 @@ hist(drawLL$sigma[,,],main="LL")
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_StartEnd_u0_NL_E.pdf",sep=""))
 hist(drawLL$u1[,,],breaks=50,xlim=c(0,7),col=colourH[2])
-hist(drawLL$u0[,,],breaks=50,xlim=c(0,7),add=TRUE,col=colourH[2])
+hist(drawLL$u0[3,,],breaks=50,xlim=c(0,7),add=TRUE,col=colourH[2])
 
 #dev.off()
 ########################
