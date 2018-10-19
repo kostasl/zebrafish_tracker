@@ -295,13 +295,13 @@ nlevels <- 12
 z <- kde2d(dataNL$distP, dataNL$phi, n=80)
 
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_NL_E.pdf",sep=""))
-datVEyePointsNL_SubP <- datVEyePointsNL[datVEyePointsLL$seqIdx %in% c(3),] 
+datVEyePointsNL_SubP <- datVEyePointsNL[datVEyePointsLL$seqIdx %in% vsampleP[1],] 
 vsampleP <- unique(datVEyePointsNL_Sub$seqIdx)
 X11()
 vX <- seq(0,5,by=0.01)
 vY <-    mean(drawNL$phi_0[vsampleP] )+ ( mean(drawNL$phi_max[vsampleP] ) )*(1-exp(-  mean(drawNL$lambda[vsampleP] )*( mean(drawNL$u0[vsampleP] ) - (vX) ) ) ) # 
-vY_u <-  quantile(drawNL$phi_0)[4]+(quantile(drawNL$phi_max[vsampleP])[4])*(1-exp(-quantile(drawNL$lambda[vsampleP])[4]*( quantile(drawNL$u0[vsampleP])[4] - (vX) ) ) )
-vY_l <-  quantile(drawNL$phi_0)[2]+quantile(drawNL$phi_max[vsampleP])[2]*(1-exp(- quantile(drawNL$lambda[vsampleP])[2]*( quantile(drawNL$u0[vsampleP])[2] - (vX) ) ) )
+vY_u <-  quantile(drawNL$phi_0[vsampleP])[4]+(quantile(drawNL$phi_max[vsampleP])[4])*(1-exp(-quantile(drawNL$lambda[vsampleP])[4]*( quantile(drawNL$u0[vsampleP])[4] - (vX) ) ) )
+vY_l <-  quantile(drawNL$phi_0[vsampleP])[2]+quantile(drawNL$phi_max[vsampleP])[2]*(1-exp(- quantile(drawNL$lambda[vsampleP])[2]*( quantile(drawNL$u0[vsampleP])[2] - (vX) ) ) )
 plot(dataNL$distP,dataNL$phi,pch=21,xlim=c(0,5),ylim=c(0,80),main="NL", bg=colourP[3],col=colourP[3],cex=0.5)
 points(datVEyePointsNL_SubP$distToPrey,datVEyePointsNL_SubP$vAngle,pch=21,xlim=c(0,5),ylim=c(0,80),main="NL", bg=colourP[4],col=colourP[3],cex=0.5)
 contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
