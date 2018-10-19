@@ -140,7 +140,7 @@ ldatVEyePoints <- list()
 lnDat          <- list()
 
 ##Do all this processing to add a sequence index To The hunt Event + make vergence angle INdex 
-for (g in ) {
+for (g in strGroupID) {
   lRegIdx[[g]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g),"RegistarIdx"])
   ldatLEyePoints[[g]] <- list()
   
@@ -198,7 +198,7 @@ nDatDL <- NROW(datVEyePointsDL)
 
 ##Test limit data
 ## Subset Dat For Speed
-datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% sample(NROW(lRegIdx[["LL"]]),5) ,] #
+datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% sample(NROW(lRegIdx[["LL"]]),3) ,] #
 dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
             distP=datVEyePointsLL_Sub$distToPrey ,
             N=NROW(datVEyePointsLL_Sub),
@@ -246,7 +246,7 @@ nlevels <- 12
 z <- kde2d(dataLL$distP, dataLL$phi, n=80)
 
 ## Plot the infered function
-datVEyePointsLL_SubP <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% c(3),] 
+datVEyePointsLL_SubP <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% vsampleP[1],] 
 vsampleP <- unique(datVEyePointsLL_Sub$seqIdx)
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_E.pdf",sep="")) quantile(drawLL$phi_0[,,])[4] 
@@ -255,7 +255,7 @@ vY <-    mean(drawLL$phi_0[vsampleP] )+ ( mean(drawLL$phi_max[vsampleP] ) )*(1-e
 vY_u <-  quantile(drawLL$phi_0[vsampleP])[4]+(quantile(drawLL$phi_max[vsampleP])[4])*(1-exp(-quantile(drawLL$lambda[vsampleP])[4]*( quantile(drawLL$u0[vsampleP])[4] - (vX) ) ) )
 vY_l <-  quantile(drawLL$phi_0[vsampleP])[2]+quantile(drawLL$phi_max[vsampleP])[2]*(1-exp(- quantile(drawLL$lambda[vsampleP])[2]*( quantile(drawLL$u0[vsampleP])[2] - (vX) ) ) )
 plot(dataLL$distP,dataLL$phi,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[2],col=colourP[2],cex=0.5)
-points(datVEyePointsLL_SubP$distToPrey,datVEyePointsLL_SubP$vAngle,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[2],cex=0.5)
+#points(datVEyePointsLL_SubP$distToPrey,datVEyePointsLL_SubP$vAngle,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[2],cex=0.5)
 contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
 lines( vX ,vY,xlim=c(0,5),ylim=c(0,80),type="l",col="red",lwd=3)
 lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,80),type="l",col="blue",lwd=2)
@@ -280,7 +280,7 @@ hist(drawLL$sigma[,,],main="LL")
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_StartEnd_u0_NL_E.pdf",sep=""))
 hist(drawLL$u1[,,],breaks=50,xlim=c(0,7),col=colourH[2])
-hist(drawLL$u0[3,,],breaks=50,xlim=c(0,7),add=TRUE,col=colourH[2])
+hist(drawLL$u0[,,],breaks=50,xlim=c(0,7),add=TRUE,col=colourH[2])
 
 #dev.off()
 ########################
