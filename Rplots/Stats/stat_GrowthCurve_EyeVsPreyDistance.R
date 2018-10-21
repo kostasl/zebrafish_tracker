@@ -111,6 +111,35 @@ modelExpInd  <- "model{
   }
 }"
 
+##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
+modelGCInd  <- "model
+{
+  for( i in 1 : N ) {
+    phi[i] ~ dnorm(phi_hat[ hidx[i],i], sigma[hidx[i],1] )
+    phi_hat[ hidx[i],i] <- phi_0[hidx[i]] - lambda[ hidx[i] ] * pow(gamma[hidx[i]],distMax[i] - distP[i] )   
+  }
+ 
+ ## Priors
+ for(i in 1:max(hidx) ) { 
+    phi_0[i] ~ dnorm(0.0, 1.0E-6)I(0,) # Idle Eye Position
+    phi_max[i] ~ dnorm(40,5) # Max Eye Vergence Angle
+    lambda[i] ~ dnorm(0.0, 1.0E-6)I(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+    gamma[i] ~ dunif(0.5, 1.0)
+    u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
+    u0[i] ~ dunif(u1[i], limDist) ##Start Hunt Distance -Far 
+    U3[i] <- logit(gamma[i])   
+
+  # Sigma On Eye Angle when  In Or Out of hunt region 
+   for(j in 1:2){
+    sigma[i,j] ~ dgamma(0.001, 0.001) ##Draw 
+    }
+  }
+
+  
+  tau ~ dgamma(0.001, 0.001)
+  sigma <- 1 / sqrt(tau)
+  
+}"
 
 ####Select Subset Of Data To Analyse
 
