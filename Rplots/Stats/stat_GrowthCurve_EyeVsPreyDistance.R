@@ -111,22 +111,59 @@ modelExpInd  <- "model{
   }
 }"
 
+plotExpRes <- function (drawS,dataSubset){
+  ## compute 2D kernel density, see MASS book, pp. 130-131
+  max_x <- 5
+  nlevels <- 12
+  
+  if (is.na(n))
+    n <- NROW(dataSubset)
+  
+  vsampleP <- sample(unique(dataSubset$hidx),n)
+  vsub <- which (dataSubset$hidx %in% vsampleP)
+  
+  z <- kde2d(dataSubset$distP, dataSubset$phi, n=80)
+  
+  plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main="L", bg=colourP[2],col=colourP[1],cex=0.5)
+  #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
+  contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+
+  vX  <- seq(0,max_x,by=0.01)
+  for (pp in vsampleP)
+  {
+    #vY  <-    (drawS$phi_0[pp] ) - ( (drawS$lambda[pp]))*(((drawS$gamma[pp])^( (drawS$u0[pp] ) - (vX) ) ) ) # 
+    vY  <-    (drawS$phi_0[pp] )+ ( (drawS$phi_max[pp] +40 ) )*(1-exp(- (drawS$lambda[pp])*( (drawS$u0[pp] ) - (vX) ) ) ) #   
+    vY_u <-  quantile(drawS$phi_0[pp])[4]+(quantile(drawS$phi_max[pp])[4])*(1-exp(-quantile(drawS$lambda[pp])[4]*( quantile(drawS$u0[pp])[4] - (vX) ) ) )
+    vY_l <-  quantile(drawS$phi_0[pp])[2]+quantile(drawS$phi_max[pp])[2]*(1-exp(- quantile(drawS$lambda[pp])[2]*( quantile(drawS$u0[pp])[2] - (vX) ) ) )
+    lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="red",lwd=2)
+    lines( vX ,vY_u,xlim=c(0,max_x),ylim=c(0,80),type="l",col="blue",lwd=1)
+    lines( vX ,vY_l,xlim=c(0,max_x),ylim=c(0,80),type="l",col="blue",lwd=1)
+  }
+  
+}
+
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
 modelGCInd  <- "model
 {
+
   for( i in 1 : N ) {
+   #s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step(u0[ hidx[i] ] - distP[i]  ) * step(u0[ hidx[i] ] - distP[i]  )
+    phi_hat[ hidx[i],i] <- phi_0[hidx[i]] -   lambda[ hidx[i] ] * pow(gamma[hidx[i]],u0[ hidx[i] ] - distP[i] )   
+
     phi[i] ~ dnorm(phi_hat[ hidx[i],i], sigma[hidx[i],1] )
-    phi_hat[ hidx[i],i] <- phi_0[hidx[i]] - lambda[ hidx[i] ] * pow(gamma[hidx[i]],distMax[i] - distP[i] )   
   }
  
+  
  ## Priors
+limDist <- max(distMax)
  for(i in 1:max(hidx) ) { 
     phi_0[i] ~ dnorm(0.0, 1.0E-6)I(0,) # Idle Eye Position
     phi_max[i] ~ dnorm(40,5) # Max Eye Vergence Angle
     lambda[i] ~ dnorm(0.0, 1.0E-6)I(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
     gamma[i] ~ dunif(0.5, 1.0)
     u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
-    u0[i] ~ dunif(u1[i], limDist) ##Start Hunt Distance -Far 
+    u0[i] ~ dunif(u1[i], 2*limDist) ##Start Hunt Distance -Far 
+    #u0[i] ~ dnorm(distMax[i],1.0)
     U3[i] <- logit(gamma[i])   
 
   # Sigma On Eye Angle when  In Or Out of hunt region 
@@ -136,10 +173,60 @@ modelGCInd  <- "model
   }
 
   
-  tau ~ dgamma(0.001, 0.001)
-  sigma <- 1 / sqrt(tau)
+  
+  #sigma <- 1 / sqrt(tau)
   
 }"
+  
+  
+plotGCRes <- function (drawS,dataSubset,n=NA){
+  
+  ## compute 2D kernel density, see MASS book, pp. 130-131
+    max_x <- 5
+    nlevels <- 12
+    
+    if (is.na(n))
+      n <- NROW(dataSubset)
+
+    vsampleP <- sample(unique(dataSubset$hidx),n)
+    
+    z <- kde2d(dataSubset$distP, dataSubset$phi, n=80)
+  
+    #X11()
+    plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main="L", bg=colourP[2],col=colourP[1],cex=0.5)
+    #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
+    contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+
+    ##plot individual Curve Fits
+    for (pp in vsampleP)
+    {
+      #phi_0[hidx[i]] - lambda[ hidx[i] ] * pow(gamma[hidx[i]],distMax[i] - distP[i] )   
+      vX  <- seq(0,drawS$u0[pp],by=0.01)
+      vY  <-    (drawS$phi_0[pp] ) - ( (drawS$lambda[pp]))*(((drawS$gamma[pp])^( drawS$u0[pp] - (vX) ) ) ) #
+      vY_l  <- vY - rep(drawS$sigma[pp,1,1,],NROW(vY) )
+      vY_u  <- vY + rep(drawS$sigma[pp,1,1,],NROW(vY) )
+      #lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="red",lwd=2)
+      
+      vPP <- which (dataSubset$hidx == pp)
+      points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
+      
+      X11()
+      plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
+      lines( vX ,vY,type="l",col=colourR[3],lwd=2)
+      lines( vX ,vY_l,type="l",col=colourR[4],lwd=1)
+      lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
+    }
+    ## Plot The Mean Curve of the selected subset of curves
+    vX  <- seq(0,max(drawS$u0[vsampleP]),by=0.01)
+    vY  <-    median(drawS$phi_0[vsampleP] ) - ( median(drawS$lambda[vsampleP]))*((median(drawS$gamma[vsampleP])^( median(drawS$u0[vsampleP] ) - (vX) ) ) ) # 
+    vY_u <-  quantile(drawS$phi_0[vsampleP])[4]-(quantile(drawS$lambda[vsampleP])[4])*((quantile(drawS$gamma[vsampleP])[4]^( quantile(drawS$u0[vsampleP])[4] - (vX) ) ) )
+    vY_l <-  quantile(drawS$phi_0[vsampleP])[2]-(quantile(drawS$lambda[vsampleP])[2])*((quantile(drawS$gamma[vsampleP])[2]^( quantile(drawS$u0[vsampleP])[2] - (vX) ) ) )
+    lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="black",lwd=3)
+    lines( vX ,vY_u,xlim=c(0,max_x),ylim=c(0,80),type="l",col="blue",lwd=0.2)
+    lines( vX ,vY_l,xlim=c(0,max_x),ylim=c(0,80),type="l",col="blue",lwd=0.2)
+    
+    
+}
 
 ####Select Subset Of Data To Analyse
 
@@ -230,7 +317,7 @@ nDatDL <- NROW(datVEyePointsDL)
 
 ##Test limit data
 ## Subset Dat For Speed
-datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*0.7) ,] #
+datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*0.3) ,] #
 dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
             distP=datVEyePointsLL_Sub$distToPrey ,
             N=NROW(datVEyePointsLL_Sub),
@@ -242,7 +329,7 @@ dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
 ## Subset Dat For Speed
 
 
-datVEyePointsNL_Sub <- datVEyePointsNL[datVEyePointsNL$seqIdx %in% sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*0.7),] 
+datVEyePointsNL_Sub <- datVEyePointsNL[datVEyePointsNL$seqIdx %in% sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*0.3),] 
 dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
             distP=datVEyePointsNL_Sub$distToPrey ,
             N=NROW(datVEyePointsNL_Sub),
@@ -251,7 +338,7 @@ dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
 
 ##Test limit data
 ## Subset Dat For Speed
-datVEyePointsDL_Sub <- datVEyePointsDL[datVEyePointsDL$seqIdx %in% sample(NROW(lRegIdx[["DL"]]),NROW(lRegIdx[["DL"]])*0.7),] 
+datVEyePointsDL_Sub <- datVEyePointsDL[datVEyePointsDL$seqIdx %in% sample(NROW(lRegIdx[["DL"]]),NROW(lRegIdx[["DL"]])*0.3),] 
 dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
             distP=datVEyePointsDL_Sub$distToPrey ,
             N=NROW(datVEyePointsDL_Sub),
@@ -260,27 +347,35 @@ dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
 
 
 
-varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","s")
+varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","gamma","s")
 
 
 library(rjags)
 fileConn=file("model.tmp")
 #writeLines(modelGPV1,fileConn);
-writeLines(modelExpInd,fileConn);
+writeLines(modelGCInd,fileConn);
 close(fileConn)
 
 mLL=jags.model(file="model.tmp",data=dataLL);
-update(mLL,burn_in);#update(mNL,burn_in);update(mDL,burn_in)
+#update(mLL,burn_in);#update(mNL,burn_in);update(mDL,burn_in)
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
 
+
+X11()
+plotGCRes(drawLL,dataLL)
+plotExpRes(drawLL,dataLL)
+
+
 ## compute 2D kernel density, see MASS book, pp. 130-131
+## Plot the infered function
+vsampleP <- unique(datVEyePointsLL_Sub$seqIdx)
+datVEyePointsLL_SubP <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% vsampleP[1],] 
+
+
 nlevels <- 12
 z <- kde2d(dataLL$distP, dataLL$phi, n=80)
 
-## Plot the infered function
-datVEyePointsLL_SubP <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% vsampleP[1],] 
-vsampleP <- unique(datVEyePointsLL_Sub$seqIdx)
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_F.pdf",sep="")) quantile(drawLL$phi_0[,,])[4] 
 vX <- seq(0,5,by=0.01)
@@ -298,6 +393,9 @@ lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,80),type="l",col="blue",lwd=2)
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_LL_E.pdf",sep=""))
 X11()
 hist(drawLL$lambda[,,],main="LL")
+X11()
+hist(drawLL$gamma[,,],main="LL")
+
 
 X11()
 hist(drawLL$phi_max[3,,],main="LL")
