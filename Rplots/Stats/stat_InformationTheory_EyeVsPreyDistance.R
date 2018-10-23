@@ -140,9 +140,9 @@ text(mp,y=c(-0.3,-0.3,-0.3),labels=strGroupID , xpd = TRUE, col = "black")
 
 
 ## Mutual Information ##
-binLLphiVsDist <- discretize2d(dataLL$phi, dataLL$distP, numBins1=80, numBins2=10,r1=c(0,80),r2=c(0,2))
-binNLphiVsDist <- discretize2d(dataNL$phi, dataNL$distP, numBins1=80, numBins2=10,r1=c(0,80),r2=c(0,2))
-binDLphiVsDist <- discretize2d(dataDL$phi, dataDL$distP, numBins1=80, numBins2=10,r1=c(0,80),r2=c(0,2))
+binLLphiVsDist <- discretize2d(dataLL$phi, dataLL$distP, numBins1=80, numBins2=10,r1=c(0,80),r2=c(0.5,2))
+binNLphiVsDist <- discretize2d(dataNL$phi, dataNL$distP, numBins1=80, numBins2=10,r1=c(0,80),r2=c(0.5,2))
+binDLphiVsDist <- discretize2d(dataDL$phi, dataDL$distP, numBins1=80, numBins2=10,r1=c(0,80),r2=c(0.5,2))
 
 ## Joint Entropy
 H12_LL = entropy(binLLphiVsDist,unit="log2" )

@@ -16,72 +16,7 @@ source("HuntingEventAnalysis_lib.r")
 ## Independently , and obtaining statistics over params of each fit
 ## H : Number of Hunt Events in Data
 ## N : vector of number of points in Hunt Event
-modelExpInd  <- "model{
-  ##Prior
-  limDist <- max(distMax)
 
-  # Priors / Independent for each event 
-  for(i in 1:max(hidx) ) { 
-    phi_0[i] ~ dnorm(5,2) # Idle Eye Position
-    phi_max[i] ~ dnorm(40,5) # Max Eye Vergence Angle
-    lambda[i] ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
-    u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
-    u0[i] ~ dunif(u1[i], limDist) ##Start Hunt Distance -Far 
-
-  # Sigma On Eye Angle when  In Or Out of hunt region 
-   for(j in 1:2){
-    sigma[i,j] ~ dgamma(0.01, 0.01) ##Draw 
-    }
-  }
-
-  # Likelihood / Separate for each Hunt Event
-  for(i in 1:N){
-  ##Make indicator if hunt event is within sampled Range 
-  #if (u1[hidx[i]] < distP[i]  & distP[i] < u0) 
-  s[hidx[i],i] <- step( distP[i]-u1[hidx[i]])*step(u0[ hidx[i] ] - distP[i]  )   
-  
-  #phi_hat[ hidx[i],i] <- step(2*s[hidx[i],i]-1)*phi_0[hidx[i]] + s[hidx[i],i]*(phi_max[hidx[i]])* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
-  phi_hat[ hidx[i],i] <- (phi_max[hidx[i]]-40)* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
-  phi[i] ~ dnorm(phi_0[hidx[i]]+s[hidx[i],i]*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
-
-#phi[i] ~ dnorm( step( 2*s[hidx[i],i] -1)*phi_0[hidx[i]] + s[hidx[i],i]*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma
-#phi[i] ~ dnorm( step(phi_hat[ hidx[i],i] < 40)*phi_max[hidx[i]] +step(phi_hat[ hidx[i],i] >= 35)*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
-  
-
-##step(phi_hat[ hidx[i],i] < 40)*phi_0[hidx[i]] + step(phi_hat[ hidx[i],i] >= 40)*
-  }
-}"
-
-plotExpRes <- function (drawS,dataSubset){
-  ## compute 2D kernel density, see MASS book, pp. 130-131
-  max_x <- 5
-  nlevels <- 12
-  
-  if (is.na(n))
-    n <- NROW(dataSubset)
-  
-  vsampleP <- sample(unique(dataSubset$hidx),n)
-  vsub <- which (dataSubset$hidx %in% vsampleP)
-  
-  z <- kde2d(dataSubset$distP, dataSubset$phi, n=80)
-  
-  plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main="L", bg=colourP[2],col=colourP[1],cex=0.5)
-  #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
-  contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
-
-  vX  <- seq(0,max_x,by=0.01)
-  for (pp in vsampleP)
-  {
-    #vY  <-    (drawS$phi_0[pp] ) - ( (drawS$lambda[pp]))*(((drawS$gamma[pp])^( (drawS$u0[pp] ) - (vX) ) ) ) # 
-    vY  <-    (drawS$phi_0[pp] )+ ( (drawS$phi_max[pp] +40 ) )*(1-exp(- (drawS$lambda[pp])*( (drawS$u0[pp] ) - (vX) ) ) ) #   
-    vY_u <-  quantile(drawS$phi_0[pp])[4]+(quantile(drawS$phi_max[pp])[4])*(1-exp(-quantile(drawS$lambda[pp])[4]*( quantile(drawS$u0[pp])[4] - (vX) ) ) )
-    vY_l <-  quantile(drawS$phi_0[pp])[2]+quantile(drawS$phi_max[pp])[2]*(1-exp(- quantile(drawS$lambda[pp])[2]*( quantile(drawS$u0[pp])[2] - (vX) ) ) )
-    lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="red",lwd=2)
-    lines( vX ,vY_u,xlim=c(0,max_x),ylim=c(0,80),type="l",col="blue",lwd=1)
-    lines( vX ,vY_l,xlim=c(0,max_x),ylim=c(0,80),type="l",col="blue",lwd=1)
-  }
-  
-}
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
 modelGCInd  <- "model
@@ -137,7 +72,9 @@ plotGCRes <- function (drawS,dataSubset,n=NA,groupID){
     z <- kde2d(dataSubset$distP, dataSubset$phi, n=80)
   
    # X11()
-    plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main=strGroupID[groupID], bg=colourP[2],col=colourP[1],cex=0.5)
+    plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(30,80),main=paste("Growth Curve Fit To Eye Vergence",strGroupID[groupID]),
+         xlab="Distance from Prey (mm)",ylab="Eye Vergence (deg)",
+         bg=colourP[groupID],col="#FFFFFFCC",cex=0.5)
     #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
     contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
     ## Plot The Mean Curve of the selected subset of curves
@@ -149,10 +86,11 @@ plotGCRes <- function (drawS,dataSubset,n=NA,groupID){
     
     #vY_u <-  quantile(drawS$phi_0[vsampleP])[4]-(quantile(drawS$lambda[vsampleP])[4])*((quantile(drawS$gamma[vsampleP])[4]^( quantile(drawS$u0[vsampleP])[4] - (vX) ) ) )
     #vY_l <-  quantile(drawS$phi_0[vsampleP])[2]-(quantile(drawS$lambda[vsampleP])[2])*((quantile(drawS$gamma[vsampleP])[2]^( quantile(drawS$u0[vsampleP])[2] - (vX) ) ) )
-    lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="black",lwd=3)
-    lines( vX ,vY_u,xlim=c(0,max_x),ylim=c(0,80),type="l",col="green",lwd=0.5)
-    lines( vX ,vY_l,xlim=c(0,max_x),ylim=c(0,80),type="l",col="green",lwd=0.5)
+    lines( vX ,vY,xlim=c(0,max_x),type="l",col="black",lwd=3)
+    lines( vX ,vY_u,xlim=c(0,max_x),type="l",col="black",lwd=0.5)
+    lines( vX ,vY_l,xlim=c(0,max_x),type="l",col="black",lwd=0.5)
     
+    dev.off()
     
     ##plot individual Curve Fits
     for (pp in vsampleP)
@@ -172,8 +110,7 @@ plotGCRes <- function (drawS,dataSubset,n=NA,groupID){
       #lines( vX ,vY,type="l",col=colourR[3],lwd=2)
       #lines( vX ,vY_l,type="l",col=colourR[4],lwd=1)
       #lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
-      
-      
+
       pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_GC_",pp,".pdf",sep="")) 
       plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),main=paste(strGroupID[groupID],pp), bg=colourP[groupID],col=colourP[groupID],cex=0.5)
       lines( vX ,vY,type="l",col=colourR[3],lwd=2)
@@ -227,7 +164,7 @@ for (g in strGroupID) {
   {
     ldatsubSet[[g]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g) &
                                         datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[[g]][h] & 
-                                        (datEyeVsPreyCombinedAll$LEyeAngle-datEyeVsPreyCombinedAll$REyeAngle) > G_THRESHUNTVERGENCEANGLE ,]  ##Filter Out Non Hunting Eye Points
+                                        (datEyeVsPreyCombinedAll$LEyeAngle-datEyeVsPreyCombinedAll$REyeAngle) > 40 ,]  ##Filter Out Non Hunting Eye Points
     
     ldatsubSet[[g]] <- ldatsubSet[[g]][sample(NROW(ldatsubSet[[g]]),sampleFraction*NROW(ldatsubSet[[g]] ) ) ,] ##Sample Points 
     
@@ -325,67 +262,10 @@ drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
 
 
-X11()
+pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GC_Group_LL.pdf",sep=""))
 plotGCRes(drawLL,dataLL,groupID=2)
-plotExpRes(drawLL,dataLL)
-
-## INFORMATION MEASURES Check How Phi V Angle Distribution Differs between groups
-X11()
-hist(dataLL$phi,col=colourR[2],main="Phi Data")
-hist(dataNL$phi,col=colourR[3],add=TRUE)
-hist(dataDL$phi,main="LL",col=colourR[1],add=TRUE)
-
-binLLphi = discretize(dataLL$phi, numBins=80, r=c(0,80))
-binNLphi = discretize(dataNL$phi, numBins=80, r=c(0,80))
-binDLphi = discretize(dataDL$phi, numBins=80, r=c(0,80))
-entropy(binLLphi) # 
-entropy(binNLphi) # 
-entropy(binDLphi) # 
-
-## Mutual Information ##
-binLLphiVsDist <- discretize2d(dataLL$phi, dataLL$distP, numBins1=80, numBins2=10)
-binNLphiVsDist <- discretize2d(dataNL$phi, dataNL$distP, numBins1=80, numBins2=10)
-binDLphiVsDist <- discretize2d(dataDL$phi, dataDL$distP, numBins1=80, numBins2=10)
-
-H12_LL = entropy(binLLphiVsDist )
-H12_NL = entropy(binNLphiVsDist )
-H12_DL = entropy(binDLphiVsDist )
-##Plot Mutual Information
-mp <- barplot(c(H12_DL,H12_LL,H12_NL),col=colourR,xlab="Group ",
-              main=expression(paste("Mutual information on prey distance and eye vergence" ) ),sub=expression(paste("Resolution: ", Phi,": 1 deg, Distance : 0.5mm" ) ) ,
-              ylab="(bits)", ylim=c(0,6) ) #legend.text = strGroupID
-text(mp,y=c(-0.3,-0.3,-0.3),labels=strGroupID , xpd = TRUE, col = "black")
-
-dLLphi<-density(dataLL$phi)
-dDLphi<-density(dataDL$phi)
-dNLphi<-density(dataNL$phi)
-
-X11()
-plot(dLLphi,col=colourR[2],type="l",lwd=3,ylim=c(0,0.1) )
-lines(dNLphi,col=colourR[3],lwd=3)
-lines(dDLphi,col=colourR[1],lwd=3)
-
-## Entropy ##
-#if you use this package please cite: Jean Hausser and Korbinian Strimmer. 2009. Entropy inference
-#and the James-Stein estimator, with application to nonlinear gene association networks.  J. Mach.
-#Learn.  Res.10:  1469-1484.  Available online fromhttp://jmlr.csail.mit.edu/papers/v10/  hausser09a.html.
-library("entropy")
-# sample from continuous uniform distribution
-x1 = runif(10000)
-X11()
-hist(x1, xlim=c(0,1), freq=FALSE)
-# discretize into 10 categories
-y1 = discretize(x1, numBins=10, r=c(0,1))
-# compute entropy from counts
-entropy(y1) # empirical estimate near theoretical maximu
-log(10)
-
-#discretize2d(x1, x2, numBins1=10, numBins2=10)
-
-# sample from a non-uniform distribution
-X11()
-hist(x2, xlim=c(0,1), freq=FALSE)
-# discretize into 10 categories and estimate entropy
+dev.off()
+#plotExpRes(drawLL,dataLL)
 
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_LL_E.pdf",sep=""))
 X11()
@@ -419,7 +299,7 @@ hist(drawLL$sigma[,1,,],main="LL")
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_StartEnd_u0_NL_E.pdf",sep=""))
 hist(drawLL$u1[,,],breaks=50,xlim=c(0,7),col=colourH[2])
-hist(drawLL$u0[,,],breaks=50,xlim=c(0,7),add=TRUE,col=colourH[2])
+hist(drawLL$u0[,,],breaks=50,xlim=c(0,7),add=TRUE,col=colourH[4])
 
 #dev.off()
 ########################
