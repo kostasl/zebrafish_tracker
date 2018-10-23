@@ -8,93 +8,113 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
+##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
+modelGCSigmoidInd  <- "model
+{
+  
+  for( i in 1 : N ) {
+   s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )             #*step(u0[ hidx[i] ] - distP[i]  ) 
+   phi_hat[ hidx[i],i] <-  phi_0[hidx[i]] + (1 + exp( -lambda[ hidx[i] ]*( ( distP[i]  - u0[ hidx[i] ]  ) ) )/(phi_max[hidx[i]] - phi_0[hidx[i]] )
 
-
-##The Eye Angle Vs Distance Model
-## Regression of an exponential Function for EyeAngle Vs Distance Fitting Each Hunt Event
-## Independently , and obtaining statistics over params of each fit
-## H : Number of Hunt Events in Data
-## N : vector of number of points in Hunt Event
-modelExpInd  <- "model{
-  ##Prior
+   phi[i] ~ dnorm(  s[hidx[i],i]*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] )
+  }
+  
+  
+  ## Priors
   limDist <- max(distMax)
-
-  # Priors / Independent for each event 
   for(i in 1:max(hidx) ) { 
-    phi_0[i] ~ dnorm(5,2) # Idle Eye Position
-    phi_max[i] ~ dnorm(60,20) # Max Eye Vergence Angle
-    lambda[i] ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
-    u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
-    u0[i] ~ dunif(1, limDist) ##Start Hunt Distance -Far 
-
+  phi_0[i] ~ dnorm(0.0, 1.0E-6)I(0,) # Idle Eye Position
+  phi_max[i] ~ dnorm(40,5) # Max Eye Vergence Angle
+  lambda[i] ~ dnorm(0.0, 1.0E-6)I(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+  gamma[i] ~ dunif(0.5, 1.0)
+  u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
+  u0[i] ~ dunif(0, limDist) ##Start Hunt Distance -Far 
+  #u0[i] ~ dnorm(distMax[i],1.0)
+  U3[i] <- logit(gamma[i])   
+  
   # Sigma On Eye Angle when  In Or Out of hunt region 
-   for(j in 1:2){
-    sigma[i,j] ~ dgamma(0.01, 0.01) ##Draw 
-    }
+  for(j in 1:2){
+  sigma[i,j] ~ dgamma(0.001, 0.001) ##Draw 
   }
-
-  # Likelihood / Separate for each Hunt Event
-  for(i in 1:N){
-  ##Make indicator if hunt event is within sampled Range 
-  #if (u1[hidx[i]] < distP[i]  & distP[i] < u0) 
-  s[hidx[i],i] <- step( distP[i]-u1[hidx[i]]) #*step(u0[ hidx[i] ] - distP[i]  )   
-
-  phi_hat[ hidx[i],i] <- (phi_max[hidx[i]] - phi_0[hidx[i]])* (1 - exp( -lambda[ hidx[i] ]*( u0[ hidx[i] ]- distP[i] ) ) ) 
-  phi[i] ~ dnorm(phi_0[hidx[i]]+s[hidx[i],i]*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
-
-#phi_hat[ hidx[i],i] <- step(2*s[hidx[i],i]-1)*phi_0[hidx[i]] + s[hidx[i],i]*(phi_max[hidx[i]])* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
-#phi[i] ~ dnorm( step( 2*s[hidx[i],i] -1)*phi_0[hidx[i]] + s[hidx[i],i]*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma
-#phi[i] ~ dnorm( step(phi_hat[ hidx[i],i] < 40)*phi_max[hidx[i]] +step(phi_hat[ hidx[i],i] >= 35)*phi_hat[ hidx[i],i], sigma[hidx[i],s[hidx[i],i]+1] ) ##choose sigma 
+  }
   
-
-##step(phi_hat[ hidx[i],i] < 40)*phi_0[hidx[i]] + step(phi_hat[ hidx[i],i] >= 40)*
-  }
+  
+  
+  #sigma <- 1 / sqrt(tau)
+  
 }"
-
-
-
-## Plot The Inferened Exponantial Curves / Group and individual
-plotExpRes <- function (drawS,dataSubset,n=NA,groupID){
-  ## compute 2D kernel density, see MASS book, pp. 130-131
-  max_x <- 5
-  nlevels <- 12
-  
-  if (is.na(n))
-    n <- NROW(unique(dataSubset$hidx) )
-  
-  vsampleP <- sample(unique(dataSubset$hidx),n)
-  vsub <- which (dataSubset$hidx %in% vsampleP)
-  
-  z <- kde2d(dataSubset$distP, dataSubset$phi, n=80)
-  
-  plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main=strGroupID[groupID], bg=colourP[2],col=colourP[1],cex=0.5)
-  #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
-  contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
   
   
-  
-  for (pp in vsampleP)
-  {
-    vX  <- seq(drawS$u1[pp],drawS$u0[pp],by=0.01)
-    vX_l <- seq(quantile(drawS$u1[pp,,])[2],quantile(drawS$u0[pp,,])[2],by=0.01)
-    #vY  <-    (drawS$phi_0[pp] ) - ( (drawS$lambda[pp]))*(((drawS$gamma[pp])^( (drawS$u0[pp] ) - (vX) ) ) ) # 
-    vY  <-    (drawS$phi_0[pp] )+ ( (drawS$phi_max[pp]-drawS$phi_0[pp]  ) )*(1-exp(- (drawS$lambda[pp])*( (drawS$u0[pp] ) - (vX) ) ) ) #   
-    vY_u <-  quantile(drawS$phi_0[pp,,])[4]+(quantile(drawS$phi_max[pp,,])[4] - quantile(drawS$phi_0[pp,,])[4]) *(1-exp(-quantile(drawS$lambda[pp,,])[4]*( quantile(drawS$u0[pp,,])[4] - (vX) ) ) )
-    vY_l <-  quantile(drawS$phi_0[pp,,])[2]+ ( quantile(drawS$phi_max[pp,,])[2] - quantile(drawS$phi_0[pp,,])[2] )*(1-exp(- quantile(drawS$lambda[pp,,])[2]*( quantile(drawS$u0[pp,,])[2] - (vX) ) ) )
-    lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="red",lwd=2,sub=paste(strGroupID[groupID],pp))
-    lines( vX ,vY_u,xlim=c(0,max_x),ylim=c(0,80),type="l",col="blue",lwd=1)
-    lines( vX ,vY_l,xlim=c(0,max_x),ylim=c(0,80),type="l",col="blue",lwd=1)
+  plotGCSig <- function (drawS,dataSubset,n=NA){
     
-    ## Fit Using STD nls
-    #pp1 <- which (dataSubset$hidx %in% pp)
-    #x<- dataSubset$distP[pp1]
-    #y<- dataSubset$phi[pp1]
-    #nlm2 <- nls(y ~ (phi0 + (phimax-phi0)*(1-exp(-lambda*(u0-x))) ), start=c(phi0=1,phimax=50, lambda=0.5, u0=3))
+    ## compute 2D kernel density, see MASS book, pp. 130-131
+    max_x <- 5
+    nlevels <- 12
     
+    if (is.na(n))
+      n <- NROW(unique(dataSubset$hidx))
+    
+    vsampleP <- sample(unique(dataSubset$hidx),n)
+    vsub <- which (dataSubset$hidx %in% vsampleP)
+    
+    z <- kde2d(dataSubset$distP, dataSubset$phi, n=80)
+    
+    # X11()
+    plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main="L", bg=colourP[2],col=colourP[1],cex=0.5)
+    #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
+    contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+    ## Plot The Mean Curve of the selected subset of curves
+    vX  <- seq(0,max_x,by=0.01)##max(drawS$u0[vsampleP])
+    ##  (phi_max[hidx[i]] - phi_0[hidx[i]] )/(1-exp(-lambda[ hidx[i] ]*(u0[ hidx[i] ]  - distP[i] ) ))
+    vY  <-    median(drawS$phi_0[vsampleP] )  +  (1+exp( -median(drawS$lambda[vsampleP] )  *(median(drawS$u0[vsampleP])  - (vX)  ) ) )/( median(drawS$phi_max[vsampleP] ) - median(drawS$phi_0[vsampleP] ) ) 
+    ## gamma quantiles 
+    vY_u <- 0# median(drawS$phi_0[vsampleP])-(median(drawS$lambda[vsampleP]))*((quantile(drawS$gamma[vsampleP])[4]^( median(drawS$u0[vsampleP]) - (vX) ) ) )
+    vY_l <- 0# median(drawS$phi_0[vsampleP])-(median(drawS$lambda[vsampleP]))*((quantile(drawS$gamma[vsampleP])[2]^( median(drawS$u0[vsampleP]) - (vX) ) ) )
+    
+    #vY_u <-  quantile(drawS$phi_0[vsampleP])[4]-(quantile(drawS$lambda[vsampleP])[4])*((quantile(drawS$gamma[vsampleP])[4]^( quantile(drawS$u0[vsampleP])[4] - (vX) ) ) )
+    #vY_l <-  quantile(drawS$phi_0[vsampleP])[2]-(quantile(drawS$lambda[vsampleP])[2])*((quantile(drawS$gamma[vsampleP])[2]^( quantile(drawS$u0[vsampleP])[2] - (vX) ) ) )
+    lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="black",lwd=3)
+    lines( vX ,vY_u,xlim=c(0,max_x),ylim=c(0,80),type="l",col="green",lwd=0.5)
+    lines( vX ,vY_l,xlim=c(0,max_x),ylim=c(0,80),type="l",col="green",lwd=0.5)
+    
+    
+    ##plot individual Curve Fits
+    for (pp in vsampleP)
+    {
+      #phi_0[hidx[i]] - lambda[ hidx[i] ] * pow(gamma[hidx[i]],distMax[i] - distP[i] )   
+      vX  <- seq(0,5,by=0.01)
+      vY    <-  drawS$phi_0[pp] + ( (drawS$phi_max[pp] ) - drawS$phi_0[pp]  ) / (1+exp( -(drawS$lambda[pp] )  *((drawS$u0[pp])  - (max_x-vX)  ) ) ) 
+      #vY    <- (drawS$phi_0[pp] ) - ( (drawS$lambda[pp]))*(((drawS$gamma[pp])^( drawS$u0[pp] - (vX) ) ) ) #
+      vY_l  <- quantile(drawS$phi_0[pp,,])[2]   - ( (drawS$lambda[pp]) )*((( quantile(drawS$gamma[pp,,])[2] )^( quantile(drawS$u0[pp,,])[2] - (max_x-vX) ) ) ) #
+      vY_u  <- quantile(drawS$phi_0[pp,,])[4]   - ( (drawS$lambda[pp]) )*((( quantile(drawS$gamma[pp,,])[4] )^( quantile(drawS$u0[pp,,])[4] - (max_x-vX) ) ) ) #
+      
+      #vY_l  <- quantile(drawS$phi_0[pp,,])[1]   - ( quantile (drawS$lambda[pp])[1] )*((( quantile(drawS$gamma[pp,,])[1] )^( quantile(drawS$u0[pp])[1] - (vX) ) ) ) #
+      #vY_u  <- quantile(drawS$phi_0[pp,,])[5]   - (quantile (drawS$lambda[pp,,])[5])*((( quantile(drawS$gamma[pp,,])[5] )^( quantile(drawS$u0[pp,,])[5] - (vX) ) ) ) #
+      
+      
+      vPP <- which (dataSubset$hidx == pp)
+      points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
+      lines( vX ,vY,type="l",col=colourR[3],lwd=2)
+      lines( vX ,vY_l,type="l",col=colourR[4],lwd=1)
+      lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
+      
+      
+      #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_GC_",pp,".pdf",sep="")) 
+      X11()
+      plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
+      lines( vX ,vY,type="l",col=colourR[3],lwd=2)
+      lines( vX ,vY_l,type="l",col=colourR[4],lwd=1)
+      lines( vX ,vY_u,type="l",col=colourR[1],lwd=1)
+      #dev.off()
+    }
     
   }
   
-}
+  
+
+
+
+
 
 ####Select Subset Of Data To Analyse
 
@@ -122,7 +142,7 @@ ldatREyePoints <- list()
 ldatLEyePoints <- list()
 ldatVEyePoints <- list()
 lnDat          <- list()
-sampleFraction  <- 0.3
+sampleFraction  <- 0.25
 ##Do all this processing to add a sequence index To The hunt Event + make vergence angle INdex 
 for (g in strGroupID) {
   lRegIdx[[g]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g),"RegistarIdx"])
@@ -131,7 +151,7 @@ for (g in strGroupID) {
   for (h in 1:NROW(lRegIdx[[g]]) )
   {
     ldatsubSet[[g]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g) &
-                                        datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[[g]][h] ,]  
+                                        datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[[g]][h],]  
     
     ldatsubSet[[g]] <- ldatsubSet[[g]][sample(NROW(ldatsubSet[[g]]),sampleFraction*NROW(ldatsubSet[[g]] ) ) ,] ##Sample Points 
     
@@ -171,8 +191,8 @@ colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5
 colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
 pchL <- c(16,2,4)
 #
-#Thse RC params Work Well to Smooth LF And NF
-burn_in=100;
+#These RC params Work Well to Smooth LF And NF
+burn_in=1000;
 steps=1000;
 thin=1;
 
@@ -184,7 +204,7 @@ nDatDL <- NROW(datVEyePointsDL)
 
 ##Test limit data
 ## Subset Dat For Speed
-datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*0.4) ,] #
+datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*0.3) ,] #
 dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
             distP=datVEyePointsLL_Sub$distToPrey ,
             N=NROW(datVEyePointsLL_Sub),
@@ -196,7 +216,7 @@ dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
 ## Subset Dat For Speed
 
 
-datVEyePointsNL_Sub <- datVEyePointsNL[datVEyePointsNL$seqIdx %in% sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*1),] 
+datVEyePointsNL_Sub <- datVEyePointsNL[datVEyePointsNL$seqIdx %in% sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*0.6),] 
 dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
             distP=datVEyePointsNL_Sub$distToPrey ,
             N=NROW(datVEyePointsNL_Sub),
@@ -205,7 +225,7 @@ dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
 
 ##Test limit data
 ## Subset Dat For Speed
-datVEyePointsDL_Sub <- datVEyePointsDL[datVEyePointsDL$seqIdx %in% sample(NROW(lRegIdx[["DL"]]),NROW(lRegIdx[["DL"]])*0.7),] 
+datVEyePointsDL_Sub <- datVEyePointsDL[datVEyePointsDL$seqIdx %in% sample(NROW(lRegIdx[["DL"]]),NROW(lRegIdx[["DL"]])*0.6),] 
 dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
             distP=datVEyePointsDL_Sub$distToPrey ,
             N=NROW(datVEyePointsDL_Sub),
@@ -214,32 +234,35 @@ dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
 
 
 
-varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","s")
+varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","gamma","s")
 
 
 library(rjags)
-fileConn=file("model.tmp")
+fileConn=file("modelSig.tmp")
 #writeLines(modelGPV1,fileConn);
-writeLines(modelExpInd,fileConn);
+writeLines(modelGCSigmoidInd,fileConn);
 close(fileConn)
 
-mLL=jags.model(file="model.tmp",data=dataLL);
+mLL=jags.model(file="modelSig.tmp",data=dataLL);
 update(mLL,burn_in);#update(mNL,burn_in);update(mDL,burn_in)
 drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
 
-X11();plotExpRes(drawLL,dataLL,n=1,groupID = 2)
 
 X11()
-plotExpRes(drawLL,dataLL,groupID = 2)
+plotGCSig(drawLL,dataLL)
+plotExpRes(drawLL,dataLL)
+
 
 ## compute 2D kernel density, see MASS book, pp. 130-131
+## Plot the infered function
+vsampleP <- unique(datVEyePointsLL_Sub$seqIdx)
+datVEyePointsLL_SubP <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% vsampleP[1],] 
+
+
 nlevels <- 12
 z <- kde2d(dataLL$distP, dataLL$phi, n=80)
 
-## Plot the infered function
-datVEyePointsLL_SubP <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% vsampleP[1],] 
-vsampleP <- unique(datVEyePointsLL_Sub$seqIdx)
 X11()
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_LL_F.pdf",sep="")) quantile(drawLL$phi_0[,,])[4] 
 vX <- seq(0,5,by=0.01)
@@ -257,6 +280,9 @@ lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,80),type="l",col="blue",lwd=2)
 #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_LL_E.pdf",sep=""))
 X11()
 hist(drawLL$lambda[,,],main="LL")
+X11()
+hist(drawLL$gamma[,,],main="LL")
+
 
 X11()
 hist(drawLL$phi_max[3,,],main="LL")
