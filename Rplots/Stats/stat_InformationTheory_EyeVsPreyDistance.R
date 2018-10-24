@@ -130,6 +130,14 @@ binLLphi = discretize(dataLL$phi, numBins=60, r=c(20,80))
 binNLphi = discretize(dataNL$phi, numBins=60, r=c(20,80))
 binDLphi = discretize(dataDL$phi, numBins=60, r=c(20,80))
 
+
+
+## Entropy ##
+#if you use this package please cite: Jean Hausser and Korbinian Strimmer. 2009. Entropy inference
+#and the James-Stein estimator, with application to nonlinear gene association networks.  J. Mach.
+#Learn.  Res.10:  1469-1484.  Available online fromhttp://jmlr.csail.mit.edu/papers/v10/  hausser09a.html.
+library("entropy")
+
 KL.empirical(binNLphi,binLLphi,unit="log2")
 
 
@@ -179,11 +187,6 @@ H1_DL+H2_DL-H12_DL # mutual entropy
 
 
 
-## Entropy ##
-#if you use this package please cite: Jean Hausser and Korbinian Strimmer. 2009. Entropy inference
-#and the James-Stein estimator, with application to nonlinear gene association networks.  J. Mach.
-#Learn.  Res.10:  1469-1484.  Available online fromhttp://jmlr.csail.mit.edu/papers/v10/  hausser09a.html.
-library("entropy")
 # sample from continuous uniform distribution
 x1 = runif(10000)
 X11()
