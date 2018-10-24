@@ -1,4 +1,4 @@
-##24-10-2018 - Fitting a sigmoid to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
+## 24-10-2018 - Fitting a sigmoid to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
 ### Model To Detect Onset Of Vergence And Compare HuntOnset To Distance From Prey Among Groups
 ### 20 points Padding is added before the furthest point, making Phi Vergence angle 0, such that lowest V angle Of Sigmoid sits low.
 ## Produces a plot comparing onset distance (τ) , with no striking distance shown actually LL seems to be a proader density
@@ -16,20 +16,20 @@ modelGCSigmoidInd  <- "model
 {
   
   for( i in 1 : N ) {
-  #s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step( phi_max[hidx[i]] - phi_0[hidx[i]] ) #step(u0[ hidx[i] ] - distP[i]  )  
-  phi_hat[ hidx[i],i] <-  phi_0 +   (phi_max[hidx[i]] - phi_0)/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
+   #s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step( phi_max[hidx[i]] - phi_0[hidx[i]] ) #step(u0[ hidx[i] ] - distP[i]  )  
+   phi_hat[ hidx[i],i] <-  phi_0 +   (phi_max[hidx[i]] - phi_0)/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
   
-  phi[i] ~ dnorm( phi_hat[ hidx[i],i], sigma[hidx[i],1] ) #s[hidx[i],i]+1
+   phi[i] ~ dnorm( phi_hat[ hidx[i],i], sigma[hidx[i],1] ) #s[hidx[i],i]+1
   }
   
   
   ## Priors
   limDist <- max(distMax)
-  phi_0 ~ dnorm(5.0, 1.0E-6)I(0,max(phi_max[]) ) # Idle Eye Position
+  phi_0 ~ dnorm(3.0, 1)I(0,max(phi_max[]) ) # Idle Eye Position
   
   for(i in 1:max(hidx) ) { 
   
-  phi_max[i] ~ dnorm(65,40) ##I(0,100) # Max Eye Vergence Angle
+  phi_max[i] ~ dnorm(65,1) ##I(0,100) # Max Eye Vergence Angle
   lambda[i] ~ dnorm(100.0, 50)I(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
   #gamma[i] ~ dunif(0.5, 1.0)
   u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
@@ -37,7 +37,7 @@ modelGCSigmoidInd  <- "model
   tau[i] ~ dnorm(distMax[i], 1) ##inflexion point, sample from where furthest point of Hunt event is found
   
   #u0[i] ~ dnorm(distMax[i],1.0)
-  U3[i] <- logit(gamma[i])   
+  #U3[i] <- logit(gamma[i])   
   
   # Sigma On Eye Angle when  In Or Out of hunt region 
   for(j in 1:2){
@@ -242,7 +242,7 @@ modelGCSigmoidInd  <- "model
   #
   #These RC params Work Well to Smooth LF And NF
   burn_in=100;
-  steps=5000;
+  steps=10000;
   thin=10;
   
   dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
@@ -286,7 +286,7 @@ modelGCSigmoidInd  <- "model
   
   
   
-  varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","gamma","s","tau")
+  varnames=c("u0","u1","phi_0","phi_max","lambda","sigma","s","tau") #"gamma"
   
   
   library(rjags)
@@ -346,3 +346,6 @@ modelGCSigmoidInd  <- "model
   lines(dDLphi,col=colourH[1],lwd=2)
   legend("topright",legend =  strGroupID,fill=colourH)
   dev.off()
+  
+  save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep="") )
+             
