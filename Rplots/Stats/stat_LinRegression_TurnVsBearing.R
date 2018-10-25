@@ -3,7 +3,6 @@
 ## Tried both a Non-parametric Gaussian Process with Bayesian Inference (Failed) But Also a simple Linear Model
 ## Requires the lFirstBoutPoints list of dataframes - which is constucted in 
 
-
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
@@ -51,43 +50,7 @@ myplot_res<- function(ind,qq=0.05){
   
 }
 
-
-modelGPV1="model {
-  # Likelihood
-
-for(i in 1:N){
-  turn[i] ~ dnorm(lambda[i],eps)
-  #n[i] ~ dpois(lambda[i])
-}
-
-eps~dexp(10)
-lambda ~ dmnorm(Mu, Sigma.inv)
-#n ~ dmnorm(Mu, Sigma.inv)
-Sigma.inv <- inverse(Sigma)
-
-# Set up mean and covariance matrix
-for(i in 1:N) {
-  Mu[i] <- alpha
-  Sigma[i,i] <- pow(tau, 2)+pow(tau0,2)
-
-  for(j in (i+1):N) {
-    Sigma[i,j] <- pow(tau,2) * exp( - rho * pow(bearing[i] - bearing[j], 2) )
-    Sigma[j,i] <- Sigma[i,j]
-  }
-}
-
-alpha ~ dnorm(0,1e-4)T(0,) 
-#tau ~ dnorm(tauRange,1e-1)T(0,)
-#rho = rhoMax
-
-tau0 ~ dgamma(tauRange,0.2) 
-tau  ~ dgamma(tauRange,0.2) 
-rho ~ dunif(0,rhoMax)
-
-}"
-
-#+ beta[3]*turn[i]
-
+## This Is the Linear Regression Model Used
 modelLin <- "model{
 
   # Likelihood
@@ -106,18 +69,6 @@ modelLin <- "model{
   sigma     <- 1/sqrt(inv.var)
 
 }"
-
-modelLin2 <- "model {
-	for (i in 1:N){
-		turn[i] ~ dnorm(turn.hat[i], tau)
-		turn.hat[i] <- beta[1] + beta[2] * bearing[i]
-	}
-	beta[1] ~ dnorm(0, .0001)
-	beta[2] ~ dnorm(0, .0001)
-	tau <- pow(sigma, -2)
-	sigma ~ dunif(0, 100)
-}"
-
 
 ####Select Subset Of Data To Analyse
 
@@ -328,12 +279,63 @@ dev.off()
 
 
 ##Plot Densities Summary
-sampLL <- coda.samples(mLL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
-sampNL <- coda.samples(mNL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
-sampDL <- coda.samples(mDL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
-X11()
-plot(sampLL)
-X11()
-plot(sampNL)
-X11()
-plot(sampDL,main="DL")
+#sampLL <- coda.samples(mLL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
+#sampNL <- coda.samples(mNL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
+#sampDL <- coda.samples(mDL,                      variable.names=c("beta","sigma"),                      n.iter=20000, progress.bar="none")
+#X11()
+#plot(sampLL)
+#X11()
+#plot(sampNL)
+#X11()
+#plot(sampDL,main="DL")
+
+
+
+# 
+# modelGPV1="model {
+#   # Likelihood
+# 
+# for(i in 1:N){
+#   turn[i] ~ dnorm(lambda[i],eps)
+#   #n[i] ~ dpois(lambda[i])
+# }
+# 
+# eps~dexp(10)
+# lambda ~ dmnorm(Mu, Sigma.inv)
+# #n ~ dmnorm(Mu, Sigma.inv)
+# Sigma.inv <- inverse(Sigma)
+# 
+# # Set up mean and covariance matrix
+# for(i in 1:N) {
+#   Mu[i] <- alpha
+#   Sigma[i,i] <- pow(tau, 2)+pow(tau0,2)
+# 
+#   for(j in (i+1):N) {
+#     Sigma[i,j] <- pow(tau,2) * exp( - rho * pow(bearing[i] - bearing[j], 2) )
+#     Sigma[j,i] <- Sigma[i,j]
+#   }
+# }
+# 
+# alpha ~ dnorm(0,1e-4)T(0,) 
+# #tau ~ dnorm(tauRange,1e-1)T(0,)
+# #rho = rhoMax
+# 
+# tau0 ~ dgamma(tauRange,0.2) 
+# tau  ~ dgamma(tauRange,0.2) 
+# rho ~ dunif(0,rhoMax)
+# 
+# }"
+
+#+ beta[3]*turn[i]
+
+
+#modelLin2 <- "model {
+#	for (i in 1:N){
+# 		turn[i] ~ dnorm(turn.hat[i], tau)
+# 		turn.hat[i] <- beta[1] + beta[2] * bearing[i]
+# 	}
+# 	beta[1] ~ dnorm(0, .0001)
+# 	beta[2] ~ dnorm(0, .0001)
+# 	tau <- pow(sigma, -2)
+# 	sigma ~ dunif(0, 100)
+# }"
