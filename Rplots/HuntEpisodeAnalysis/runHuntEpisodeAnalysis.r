@@ -413,16 +413,23 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   
   ## Eye Angle Vs Distance ##
   ##Exclude the capture bout / attack / by excluding the last bout (which is 1st item on Motion Bout list <=> rank 1)
-  regionToAnalyse <- regionToAnalyse[ regionToAnalyse <= lMotionBoutDat[[idxH]][1,"vMotionBout_On"] ] 
-  rows <- NROW(datRenderHuntEvent$LEyeAngle[regionToAnalyse])
-  lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[regionToAnalyse ],
-                                 REyeAngle=datRenderHuntEvent$REyeAngle[regionToAnalyse],
-                                 DistToPrey=vDistToPrey_Fixed_FullRange[regionToAnalyse]*DIM_MMPERPX,
-                                 DistToPreyInit=vDistToPrey_Fixed_FullRange[regionToAnalyse[min(which(regionToAnalyse > 0) ) ]]*DIM_MMPERPX,
+  EyeRegionToExtract <- c( max(0,startFrame-300), max(regionToAnalyse[ regionToAnalyse <= lMotionBoutDat[[idxH]][1,"vMotionBout_On"] ]) )
+  bCaptureStrike <- 0
+  
+  ##If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
+  if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 2.0) 
+    bCaptureStrike <- 1 ##Set Flag
+  rows <- NROW(datRenderHuntEvent$LEyeAngle[EyeRegionToExtract])
+  
+  lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[EyeRegionToExtract ],
+                                 REyeAngle=datRenderHuntEvent$REyeAngle[EyeRegionToExtract],
+                                 DistToPrey=vDistToPrey_Fixed_FullRange[EyeRegionToExtract]*DIM_MMPERPX,
+                                 DistToPreyInit=vDistToPrey_Fixed_FullRange[regionToAnalyse[min(which(EyeRegionToExtract > 0) ) ]]*DIM_MMPERPX,
                                  RegistarIdx           = as.numeric(rep(idxH,rows)),
                                  expID                 = as.numeric(rep(expID,rows)),
                                  eventID               = as.numeric(rep(eventID,rows)),
-                                 groupID               = rep((groupID) ,rows) ##as.character
+                                 groupID               = rep((groupID) ,rows), ##as.character
+                                 doesCaptureStrike     = rep((bCaptureStrike) ,rows) ##Add A flag on record to say this Hunt event includes a capture strike
                                 )
   
   #X11();plot(1000*(1:NROW(lEyeMotionDat[[idxH]][,"LEyeAngle"]))/G_APPROXFPS ,lEyeMotionDat[[idxH]][,"LEyeAngle"] )

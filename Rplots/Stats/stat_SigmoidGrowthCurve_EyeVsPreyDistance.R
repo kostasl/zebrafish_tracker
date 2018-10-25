@@ -1,8 +1,9 @@
-## 24-10-2018 - Fitting a sigmoid to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
+##  24-10-2018 - Estimates Vergence OnSet Distance - 
+### Fitting a sigmoid to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
 ### Model To Detect Onset Of Vergence And Compare HuntOnset To Distance From Prey Among Groups
 ### 20 points Padding is added before the furthest point, making Phi Vergence angle 0, such that lowest V angle Of Sigmoid sits low.
 ## Produces a plot comparing onset distance (τ) , with no striking distance shown actually LL seems to be a proader density
-
+##
 
 
 ##Model Each Hunt Event Individually / And obtain Group Statistic and Regresion of eye vergence vs Distance To Prey
@@ -344,7 +345,9 @@ modelGCSigmoidInd  <- "model
   plot(dLLphi,col=colourH[2],type="l",lwd=2,ylim=c(0,1.0),main="Vergence Onset Vs Distance",xlab=expression(paste(" ",tau, " (mm)" ) ) )
   lines(dNLphi,col=colourH[3],lwd=2)
   lines(dDLphi,col=colourH[1],lwd=2)
-  legend("topright",legend =  strGroupID,fill=colourH)
+  #legend("topright",legend =  strGroupID,fill=colourH)
+  legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(lnDat[["DL"]]),NROW(lnDat[["LL"]]) ,NROW(lnDat[["NL"]]) ) )
+         ,fill=colourH,lty=c(1,2,3))
   dev.off()
   
   save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep="") )
