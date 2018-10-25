@@ -48,7 +48,7 @@ load(strDataFileName)
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
 lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
-bSaveNewMotionData <- FALSE ##Overwrite the lMotionBoutDatFile
+bSaveNewMotionData <- TRUE ##Overwrite the lMotionBoutDatFile
 
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
@@ -413,18 +413,18 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   
   ## Eye Angle Vs Distance ##
   ##Exclude the capture bout / attack / by excluding the last bout (which is 1st item on Motion Bout list <=> rank 1)
-  EyeRegionToExtract <- c( max(0,startFrame-300), max(regionToAnalyse[ regionToAnalyse <= lMotionBoutDat[[idxH]][1,"vMotionBout_On"] ]) )
+  EyeRegionToExtract <- seq( max(1,startFrame-1200), max(regionToAnalyse[ regionToAnalyse <= lMotionBoutDat[[idxH]][1,"vMotionBout_On"] ]) )
   bCaptureStrike <- 0
   
   ##If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
-  if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 2.0) 
+  if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
     bCaptureStrike <- 1 ##Set Flag
   rows <- NROW(datRenderHuntEvent$LEyeAngle[EyeRegionToExtract])
   
   lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[EyeRegionToExtract ],
                                  REyeAngle=datRenderHuntEvent$REyeAngle[EyeRegionToExtract],
                                  DistToPrey=vDistToPrey_Fixed_FullRange[EyeRegionToExtract]*DIM_MMPERPX,
-                                 DistToPreyInit=vDistToPrey_Fixed_FullRange[regionToAnalyse[min(which(EyeRegionToExtract > 0) ) ]]*DIM_MMPERPX,
+                                 DistToPreyInit= vDistToPrey_Fixed_FullRange[EyeRegionToExtract[min(which(EyeRegionToExtract > 0) ) ]]*DIM_MMPERPX,
                                  RegistarIdx           = as.numeric(rep(idxH,rows)),
                                  expID                 = as.numeric(rep(expID,rows)),
                                  eventID               = as.numeric(rep(eventID,rows)),

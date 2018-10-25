@@ -14,6 +14,8 @@ datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Proc
 
 lEyeMotionDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData.rds",sep="") ) #Processed Registry on which we add )
 
+#for (i in 1:NROW(lEyeMotionDat))   print(paste(i,NCOL(lEyeMotionDat[[i]])) ) ##Check Column Numbers Consistent
+
 datEyeVsPreyCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)

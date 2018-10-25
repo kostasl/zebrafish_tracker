@@ -18,7 +18,7 @@ modelGCSigmoidInd  <- "model
   
   for( i in 1 : N ) {
    #s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step( phi_max[hidx[i]] - phi_0[hidx[i]] ) #step(u0[ hidx[i] ] - distP[i]  )  
-   phi_hat[ hidx[i],i] <-  phi_0 +   (phi_max[hidx[i]] - phi_0)/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
+   phi_hat[ hidx[i],i] <-  phi_0[ hidx[i] ] +   (phi_max[hidx[i]] - phi_0[ hidx[i] ])/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
   
    phi[i] ~ dnorm( phi_hat[ hidx[i],i], sigma[hidx[i],1] ) #s[hidx[i],i]+1
   }
@@ -26,11 +26,11 @@ modelGCSigmoidInd  <- "model
   
   ## Priors
   limDist <- max(distMax)
-  phi_0 ~ dnorm(3.0, 1)I(0,max(phi_max[]) ) # Idle Eye Position
+
   
   for(i in 1:max(hidx) ) { 
-  
-  phi_max[i] ~ dnorm(65,1) ##I(0,100) # Max Eye Vergence Angle
+    phi_0[i] ~ dnorm(3.0, 1)I(0,max(phi_max[]) ) # Idle Eye Position
+  phi_max[i] ~ dnorm(65,0.1) ##I(0,100) # Max Eye Vergence Angle
   lambda[i] ~ dnorm(100.0, 50)I(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
   #gamma[i] ~ dunif(0.5, 1.0)
   u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
@@ -77,7 +77,7 @@ modelGCSigmoidInd  <- "model
     ##  (phi_max[hidx[i]] - phi_0[hidx[i]] )/(1-exp(-lambda[ hidx[i] ]*(u0[ hidx[i] ]  - distP[i] ) ))
     etau    <- mean(tail(drawS$tau[vsampleP],n=100))
     ephimax <- mean(tail(drawS$phi_max[vsampleP],n=100))
-    ephi0   <- mean(tail(drawS$phi_0,n=100))
+    ephi0   <- mean(tail(drawS$phi_0[vsampleP],n=100))
     elambda <- mean(tail(drawS$lambda[vsampleP],n=100))
     
     vY  <-    ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
@@ -155,6 +155,8 @@ modelGCSigmoidInd  <- "model
   
   datEyeVsPreyCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
   
+  datEyeVsPreyCombinedAll <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$doesCaptureStrike == 1,] # Select The Ones With a strike Capture
+  
   strGroupID <- levels(datTrackedEventsRegister$groupID)
   
   
@@ -182,7 +184,7 @@ modelGCSigmoidInd  <- "model
     for (h in 1:NROW(lRegIdx[[g]]) )
     {
       ldatsubSet[[g]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g) &
-                                                   datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[[g]][h],]  
+                                                   datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[[g]][h] ,]  ##Select THe Ones With Capture
       
       ldatsubSet[[g]] <- ldatsubSet[[g]][sample(NROW(ldatsubSet[[g]]),sampleFraction*NROW(ldatsubSet[[g]] ) ) ,] ##Sample Points 
       
@@ -198,20 +200,6 @@ modelGCSigmoidInd  <- "model
                                         ldatsubSet[[g]]$RegistarIdx,
                                         h)
       
-      
-      ##Augment with Idle phi entries for this hunt Event- to go up to 6 mm - 0 
-      missingRegion <- 6 - head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1) 
-      npad <- 20
-      
-      if (missingRegion > 0)
-      {
-        datpadding <- cbind(vAngle=rep(0,npad),
-                            distToPrey = seq(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),6,length=npad),
-                            initDistToPrey = rep(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),npad),
-                            RegistarIdx = rep(head(as.numeric(ldatsubSet[[g]]$RegistarIdx ),n=1),npad),
-                            seqIdx = h)
-      }
-      
       ##Make Data      
       ldatVEyePoints[[g]][[h]] <- cbind(
         vAngle=ldatsubSet[[g]]$LEyeAngle-ldatsubSet[[g]]$REyeAngle,
@@ -220,7 +208,25 @@ modelGCSigmoidInd  <- "model
         RegistarIdx=ldatsubSet[[g]]$RegistarIdx,
         seqIdx=h)
       
-      ldatVEyePoints[[g]][[h]] <- rbind(ldatVEyePoints[[g]][[h]],datpadding)
+      
+      ##Augment with Idle phi entries for this hunt Event- to go up to 6 mm - 0 
+      missingRegion <- 6 - head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1) 
+      npad <- 20
+
+            
+      if (missingRegion > 0)
+      {
+        datpadding <- cbind(vAngle=rep(0,npad),
+                            distToPrey = seq(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),6,length=npad),
+                            initDistToPrey = rep(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),npad),
+                            RegistarIdx = rep(head(as.numeric(ldatsubSet[[g]]$RegistarIdx ),n=1),npad),
+                            seqIdx = h)
+        
+ #        ldatVEyePoints[[g]][[h]] <- rbind(ldatVEyePoints[[g]][[h]],datpadding) ##Add The Zero Phi Data
+      }
+      
+      
+      
       
       #ldatLEyePoints[[g]][[h]] <- ldatLEyePoints[[g]][[h]][!is.na(ldatLEyePoints[[g]][[h]][,2]),]
       #ldatREyePoints[[g]][[h]] <- ldatREyePoints[[g]][[h]][!is.na(ldatREyePoints[[g]][[h]][,2]),]
@@ -228,8 +234,9 @@ modelGCSigmoidInd  <- "model
       
       lnDat[[g]][[h]] <- NROW(ldatLEyePoints[[g]][[h]]) ##Not Used Anymore
       lnMaxDistanceToPrey[[g]][[h]] <- as.numeric(head(ldatsubSet[[g]]$DistToPreyInit,1)  ) ##Hold Unique Value Of Max Distance To Prey
-    }
-  }
+    } ##For Each Hunt Event
+
+  } ##For Each Group[]
   datVEyePointsLL <- data.frame( do.call(rbind,ldatVEyePoints[["LL"]] ) ) 
   datVEyePointsNL <- data.frame( do.call(rbind,ldatVEyePoints[["NL"]] ) ) 
   datVEyePointsDL <- data.frame( do.call(rbind,ldatVEyePoints[["DL"]] ) ) 
