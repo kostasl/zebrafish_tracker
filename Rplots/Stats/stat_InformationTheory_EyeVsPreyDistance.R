@@ -1,10 +1,78 @@
 ## 23-10-2018
 ### Consider Information content in eye vergence on the distance to prey
+## We use Model and the sampled parameter values to obtain an estimate of the mean 
+##  information content in each hunt episode 
+## We calculate the mutual information using P(Phi | X), assuming X is uniform
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
+
+
+#### CalcInformation ##
+load(paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep=""))
+
+
+#library("entropy")
+## Estimate Response Based On Model's mean response ## 
+phi_hat <- function(x,Ulist){
+  return(Ulist$phi_0  
+         +(Ulist$phi_max - Ulist$phi_0)/( 1 + exp( -Ulist$gamma*( Ulist$tau - x)  ) )
+         +Ulist$C*exp(Ulist$lambda*( Ulist$tau - x)) )
+}
+
+#Returns the FrequenciesAround mean (phihat)
+phiDens <- function(phi,x,Ulist)
+{
+### Gaussian around mean response  ###
+  return( dnorm(phi,mean=phi_hat(x,Ulist),sd=Ulist$sigma ) ) 
+}
+
+##
+## Calc Info In single Sample & Hunt Event
+InfoCalc <- function(DistMin,DistMax,Ulist)
+{
+  PhiRange <- seq(0,90,1)
+  DistRange <- seq(DistMin,DistMax,0.1)
+  
+  #Generates a list with all possible pairs of in the range of Phi And Distance X 
+  Grid <- expand.grid(PhiRange,DistRange)
+  PVec=rep(0,NROW(Grid)) 
+  ##Calc Density for all input Space
+  for (i in 1:NROW(Grid) )
+  {
+    PVec[i] <- phiDens(Grid[i,1],Grid[i,2],Ulist)
+  }
+  ##Normalize to Probability
+  PVec=PVec/sum(PVec)
+  
+  # Convert Pvec to a matrix / 
+  PMatrix=matrix(PVec,nrow=length(PhiRange),ncol=length(DistRange),byrow = FALSE)
+  
+  ##Image shows a transpose Of the PMatrix, - In reality Rows contain Phi, and Cols are X 
+  image(PMatrix,x=PhiRange,y=DistRange)
+  MargVec=rowSums(PMatrix) ### Marginalize across X to obtain P(Response/Phi)
+  
+  Iloc=PMatrix/MargVec*length(DistRange) ##Information On Local x/For Each X - Assume X is unif. and so Prob[X]=1/Length(X)
+  
+  ###row sum
+  sel=PMatrix>0
+  #INFO=sums(PMatrix[sel]*log2(Iloc[sel]) )
+  ### Return Marginals I_xPhi  
+  INFO=colSums(PMatrix*log2(Iloc) )
+  return(INFO)
+}s
+
+calcInfoOfHuntEvent <- function(drawS)
+{
+  NSamples <-100
+  NHuntEvents <
+  Ulist <- list(phi_0=2,phi_max=35,gamma=100,tau=2,lambda=2,C=1,sigma=3)
+  vPPhiPerX <- InfoCalc(DistMin = 0.5,DistMax = 4,Ulist = Ulist)
+  plot(vPPhiPerX)
+  ##Next Is integrate Over sampled points, and Make Ii hidx matrix 
+}
 
 
 ####Select Subset Of Data To Analyse
@@ -131,7 +199,6 @@ lines(dDLphi,col=colourR[1],lwd=3)
 binLLphi = discretize(dataLL$phi, numBins=60, r=c(20,80))
 binNLphi = discretize(dataNL$phi, numBins=60, r=c(20,80))
 binDLphi = discretize(dataDL$phi, numBins=60, r=c(20,80))
-
 
 
 ## Entropy ##
