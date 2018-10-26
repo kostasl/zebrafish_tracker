@@ -64,10 +64,44 @@ InfoCalc <- function(DistMin,DistMax,Ulist)
   return(INFO)
 }s
 
-calcInfoOfHuntEvent <- function(drawS)
+calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA)
 {
-  NSamples <-100
-  NHuntEvents <
+  NSamples <-10
+  NHuntEvents <- NROW(unique(dataSubset$hidx) )
+  
+  if (is.na(n))
+    n <- NROW(unique(dataSubset$hidx))
+  
+  vsampleP <- sample(NHuntEvents,n)
+  vsub <- which (dataSubset$hidx %in% vsampleP)
+  
+  mInfMatrix <- matrix(nrow=NSamples,ncol=NROW(vsampleP) )
+  
+  for (h in vsampleP)
+  {
+    vphi_0_sub <- tail(drawS$phi_0[h,,],n=NSamples)
+    vphi_max_sub <- tail(drawS$phi_max[h,,],n=NSamples)
+    vgamma_sub <- tail(drawS$gamma[h,,],n=NSamples)
+    vlambda_sub <- tail(drawS$lambda[h,,],n=NSamples)
+    vtau_sub   <- tail(drawS$tau[h,,],n=NSamples)
+    vsigma_sub <- tail(drawS$sigma[h,,],n=NSamples)
+    vC_sub  <- tail(drawS$C[h,,],n=NSamples)
+    
+    lPlist <- list()
+    for (i in 1:NSamples)
+    {
+      lPlist[[i]] <- list(phi_0=vphi_0_sub[i],phi_max=vphi_max_sub[i], gamma= vgamma_sub[i],
+                    tau=vtau_sub[i],
+                    lambda=vlambda_sub[i], 
+                    C=vC_sub[i], sigma=vsigma_sub[i] )
+      
+      ##Information Is in The Sum / Marginal Across X ##
+      vPPhiPerX <- InfoCalc(DistMin = 0.5,DistMax = 4,Ulist = lPlist[[i]])
+      
+      mInfMatrix[h,i] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
+    } 
+    
+  }##For Each Hunt Event   
   Ulist <- list(phi_0=2,phi_max=35,gamma=100,tau=2,lambda=2,C=1,sigma=3)
   vPPhiPerX <- InfoCalc(DistMin = 0.5,DistMax = 4,Ulist = Ulist)
   plot(vPPhiPerX)

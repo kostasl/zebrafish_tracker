@@ -17,7 +17,7 @@ modelGCSigmoidInd  <- "model
 {
 
   for( i in 1 : N ) {  
-   phi_hat_sigmoid[hidx[i],i] <- phi_0[hidx[i]]  
+   phi_hat[hidx[i],i] <- phi_0[hidx[i]]  
                                 +(phi_max[hidx[i]] - phi_0[ hidx[i] ])/( 1 + exp( -gamma[hidx[i]]*( ( tau[ hidx[i] ] - distP[i]) ) ) )
                                 +exp(lambda[hidx[i]]*( tau[ hidx[i] ] - distP[i]))
    phi[i] ~ dnorm( phi_hat[ hidx[i],i], sigma_inv[hidx[i]] ) 
@@ -29,17 +29,17 @@ modelGCSigmoidInd  <- "model
 
   for(i in 1:max(hidx) ) {
 
-    phi_max[i] ~ dnorm(65,1e-3) ##I(0,100) # Max Eye Vergence Angle
-    phi_0[i] ~ dnorm(1.0, 1e-3)I(0,phi_max[i]) # Idle Eye Position
+    phi_max[i] ~ dnorm(65,1e-3)I(phi_0[i],) # Max Eye Vergence Angle
+    phi_0[i] ~ dnorm(1.0, 1e-3)I(0,) # Idle Eye Position
   
-    gamma[i] ~ dnorm(100.0,10 )I(10,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+    gamma[i] ~ dnorm(100.0,5 )I(1,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
     lambda[i] ~ dgamma(1, 1)
-    tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
+    tau[i] ~ dnorm(limDist, 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
 
   # Sigma On Eye Angle when  In Or Out of hunt region 
   
     sigma_inv[i] ~ dgamma(0.001, 0.001) ##Draw 
-  
+    #sigma[i] <- 1/sqrt(sigma_inv[i])
   }
   
   
@@ -244,10 +244,10 @@ modelGCSigmoidInd  <- "model
   #
   #These RC params Work Well to Smooth LF And NF
   burn_in=100;
-  steps=10000;
+  steps=1000;
   thin=10;
   
-  dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
+  dataFrac <- 0.2 ##Fraction Of Hunt Episodes to Include in DataSet
   
   ##Larva Event Counts Slice
   nDatLL <- NROW(datVEyePointsLL)
