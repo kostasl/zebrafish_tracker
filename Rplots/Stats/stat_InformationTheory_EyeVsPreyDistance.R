@@ -11,7 +11,7 @@ source("HuntingEventAnalysis_lib.r")
 
 
 #### CalcInformation ##
-#load(paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep=""))
+load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt.RData",sep=""))
 
 
 #library("entropy")
@@ -26,7 +26,7 @@ phi_hat <- function(x,Ulist){
 phiDens <- function(phi,x,Ulist)
 {
 ### Gaussian around mean response  ###
-  return( dnorm(phi,mean=phi_hat(x,Ulist),sd=(Ulist$sigma)  ) ) 
+  return( dnorm(phi,mean=phi_hat(x,Ulist),sd=Ulist$sigma   ) ) #sqrt()
 }
 
 ##
@@ -60,7 +60,7 @@ InfoCalc <- function(DistRange,Ulist)
   sel=PMatrix>0
   #INFO=sums(PMatrix[sel]*log2(Iloc[sel]) )
   ### Return Marginals I_xPhi  
-  INFO=colSums(PMatrix*log2(Iloc) )
+  INFO=colSums(PMatrix*log2(Iloc),na.rm=TRUE )
   return(INFO)
 }
 
@@ -72,7 +72,7 @@ InfoCalc <- function(DistRange,Ulist)
 calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
 {
   DistMin = 0.5
-  DistMax =  5
+  DistMax =  3
   ##Assume X distance is encoded using 5 bits
   DistRange <- seq(DistMin,DistMax, (DistMax-DistMin )/(2^5-1)  )
   
@@ -91,6 +91,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   hCnt <- 0
   for (h in vsampleP)
   {
+    print(h)
     hCnt <- hCnt + 1
     vphi_0_sub <- tail(drawS$phi_0[h,,],n=NSamples)
     vphi_max_sub <- tail(drawS$phi_max[h,,],n=NSamples)
@@ -116,6 +117,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
     lPlist <- list()
     for (i in 1:NSamples)
     {
+      
       lPlist[[i]] <- list(phi_0=vphi_0_sub[i],phi_max=vphi_max_sub[i], gamma= vgamma_sub[i],
                     tau=vtau_sub[i],
                     lambda=vlambda_sub[i], 
