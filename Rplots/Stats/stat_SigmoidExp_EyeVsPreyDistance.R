@@ -1,8 +1,9 @@
 ##  24-10-2018 - Estimates Vergence OnSet Distance - 
-### Fitting a sigmoid to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
-### Model To Detect Onset Of Vergence And Compare HuntOnset To Distance From Prey Among Groups
-### 20 points Padding is added before the furthest point, making Phi Vergence angle 0, such that lowest V angle Of Sigmoid sits low.
+### Fitting a sigmoid and Exp to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
+## Assumes A slow and Fast Muscle Action
+### Model fits Eye Vergence / Detecting Onset And Rate Of Converge In the Near Prey Region/After Vergence 
 ## Produces a plot comparing onset distance (τ) , with no striking distance shown actually LL seems to be a proader density
+### Note : 20 points Padding is added before the furthest point, making Phi Vergence angle 0, such that lowest V angle Of Sigmoid sits low.
 ##
 
 
@@ -12,40 +13,69 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
+#
+#These RC params Work Well to Smooth LF And NF
+burn_in=100;
+steps=5000;
+thin=2;
+
+dataFrac <- 0.5 ##Fraction Of Hunt Episodes to Include in DataSet
+sampleFraction  <- 0.35 ##Fraction of Points to Use from Each Hunt Episode's data
+
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
 modelGCSigmoidInd  <- "model
 {
+  
+  for( i in 1 : N ) {
+   phi_hat[ hidx[i],i] <-  phi_0[ hidx[i] ] +   (phi_max[hidx[i]] - phi_0[ hidx[i] ])/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
 
-  for( i in 1 : N ) {  
-   phi_hat[hidx[i],i] <- phi_0[hidx[i]]  
-                                +(phi_max[hidx[i]] - phi_0[ hidx[i] ])/( 1 + exp( -gamma[hidx[i]]*( ( tau[ hidx[i] ] - distP[i]) ) ) )
-                                +exp(lambda[hidx[i]]*( tau[ hidx[i] ] - distP[i]))
-   phi[i] ~ dnorm( phi_hat[ hidx[i],i], sigma_inv[hidx[i]] ) 
+   ###OUT Set Region Of Exp Growth Model ##
+   # s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step( tau[ hidx[i] ] -distP[i] )     # step( phi_max[hidx[i]] - phi_0[hidx[i]] ) #step(u0[ hidx[i] ] - distP[i]  )  
+   
+   ## Define Exp Growth Model 
+   phi_exp[ hidx[i],i] <- alpha[hidx[i]]*exp( gamma[ hidx[i] ]* ( tau[ hidx[i] ] -  distP[i]))
+   
+   ### Conditionally Include the exp Model
+   phi[i] ~ dnorm(phi_exp[ hidx[i],i]  + phi_hat[ hidx[i],i]  , var_inv[hidx[i]] ) #s[hidx[i],i]+1 
+   
+
   }
   
   
   ## Priors
   limDist <- max(distMax)
 
-  for(i in 1:max(hidx) ) {
-
-    phi_max[i] ~ dnorm(65,1e-3)I(phi_0[i],) # Max Eye Vergence Angle
-    phi_0[i] ~ dnorm(1.0, 1e-3)I(0,) # Idle Eye Position
   
-    gamma[i] ~ dnorm(100.0,5 )I(1,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
-    lambda[i] ~ dgamma(1, 1)
-    tau[i] ~ dnorm(limDist, 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
-
-  # Sigma On Eye Angle when  In Or Out of hunt region 
+  for(i in 1:max(hidx) ) { 
+      phi_0[i] ~ dnorm(0.01, 1e-3)I(0,mean(phi_max[]) ) # Idle Eye Position
+    phi_max[i] ~ dnorm(65,1e-3) ##I(0,100) # Max Eye Vergence Angle
+    lambda[i] ~ dnorm(100.0, 1e-2)I(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+    gamma[i] ~ dgamma(1, 1) #dnorm(0.5, 1e-3)I(0,)  # dunif(0.5, 0.000001)
+    alpha[i] ~ dunif(1,3)
+    tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
+    var_inv[i] ~ dgamma(0.001, 0.001)I(0.001,) ##Draw   ##Precision
+    
+    sigma[i] <- 1 / (var_inv[ i])    
+    
+    #u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
+    #u0[i] ~ dunif(u1[i], limDist) ##Start Hunt Distance -Far
   
-    sigma_inv[i] ~ dgamma(0.001, 0.001) ##Draw 
-    #sigma[i] <- 1/sqrt(sigma_inv[i])
+    #u0[i] ~ dnorm(distMax[i],1.0)
+    #U3[i] <- logit(gamma[i])   
+    # Sigma On Eye Angle when  In Or Out of hunt region 
+    #for(j in 1:2){
+    #}
+
+
   }
+  
+  
+  
   
   
 }"
   
-  
+  ## plot( exp(0.1*(-vx+80))+  10 + (90-10)/(1+exp(-100*(60-vx) ))   ,ylim=c(0,400))
   plotGCSig <- function (drawS,dataSubset,n=NA,groupID){
     
     ## compute 2D kernel density, see MASS book, pp. 130-131
@@ -61,7 +91,8 @@ modelGCSigmoidInd  <- "model
     z <- kde2d(dataSubset$distP, dataSubset$phi, n=80)
     
     # X11()
-    plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main=paste("Sigmoid fit to eye vergence onset",
+    
+    plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main=paste("Model fit to eye vergence Vs Distance ",
                                                                                                     strGroupID[groupID] ), bg=colourP[groupID],col="#FFFFFFAA",cex=0.5)
     #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
     contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
@@ -72,15 +103,16 @@ modelGCSigmoidInd  <- "model
     ephimax <- mean(tail(drawS$phi_max[vsampleP],n=100))
     ephi0   <- mean(tail(drawS$phi_0[vsampleP],n=100))
     elambda <- mean(tail(drawS$lambda[vsampleP],n=100))
-    egamma <- mean(tail(drawS$gamma[vsampleP],n=100))
+    egamma  <- mean(tail(drawS$gamma[vsampleP],n=100))
+    ealpha  <- mean(tail(drawS$alpha[vsampleP],n=100))
     
-    vY  <-    ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) +  
+    vY  <-    ealpha*exp(egamma*(etau-vX) ) + ephi0 + (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
     
     etau <- quantile((drawS$tau[vsampleP]))[2]
-    vY_l  <-   ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
+    vY_l  <-  ealpha*exp(egamma*(etau-vX) )+  ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
     
     etau <- quantile((drawS$tau[vsampleP]))[4]
-    vY_u  <-   ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
+    vY_u  <-  ealpha*exp(egamma*(etau-vX) )+  ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
     
     
     #vY_u <-  quantile(drawS$phi_0[vsampleP])[4]-(quantile(drawS$lambda[vsampleP])[4])*((quantile(drawS$gamma[vsampleP])[4]^( quantile(drawS$u0[vsampleP])[4] - (vX) ) ) )
@@ -96,42 +128,36 @@ modelGCSigmoidInd  <- "model
     {
       #phi_0[hidx[i]] - lambda[ hidx[i] ] * pow(gamma[hidx[i]],distMax[i] - distP[i] )   
       vX  <- seq(0,5,by=0.01)
-      etau <- drawS$tau[pp]
-      ephimax <- drawS$phi_max[pp] 
-      ephi0 <- drawS$phi_0[pp]
-      elambda <- drawS$lambda[pp]
-      vY  <-    ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
-      
-      #elambda <- quantile(tail(drawS$lambda[pp,,],n=300))[2]
-      etau <- quantile(tail(drawS$tau[pp,,],n=300))[2]
-      #ephimax <- quantile(tail(drawS$phi_max[pp,,],n=300))[2]
-      #ephi0 <- quantile(tail(drawS$phi_0[pp,,],n=300))[2]
-      #vY    <- (drawS$phi_0[pp] ) - ( (drawS$lambda[pp]))*(((drawS$gamma[pp])^( drawS$u0[pp] - (vX) ) ) ) #
-      vY_l  <-   ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
-      
-      #elambda <- quantile(tail(drawS$lambda[pp,,],n=300))[4]
-      etau <- quantile(tail(drawS$tau[pp,,],n=300))[4]
-      #ephimax <- quantile(tail(drawS$phi_max[pp,,],n=300))[4]
-      #ephi0 <- quantile(tail(drawS$phi_0[pp,,],n=300))[4]
-      
-      vY_u  <-   ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
-      
-      #vY_l  <- quantile(drawS$phi_0[pp,,])[1]   - ( quantile (drawS$lambda[pp])[1] )*((( quantile(drawS$gamma[pp,,])[1] )^( quantile(drawS$u0[pp])[1] - (vX) ) ) ) #
-      #vY_u  <- quantile(drawS$phi_0[pp,,])[5]   - (quantile (drawS$lambda[pp,,])[5])*((( quantile(drawS$gamma[pp,,])[5] )^( quantile(drawS$u0[pp,,])[5] - (vX) ) ) ) #
-      
-      vPP <- which (dataSubset$hidx == pp)
-      
-      pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
+
       #      #X11()
+      vPP <- which (dataSubset$hidx == pp)
+      pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
       plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),main=paste(strGroupID[groupID],pp), bg=colourP[2],col=colourP[1],cex=0.5)
-      #      #points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
-      lines( vX ,vY,type="l",col=colourR[3],lwd=2)
-      lines( vX ,vY_l,type="l",col=colourR[4],lwd=1)
-      lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
+
+      etau    <- (tail(drawS$tau[pp,,],n=100))
+      ephimax <- (tail(drawS$phi_max[pp,,],n=100))
+      ephi0   <- (tail(drawS$phi_0[pp,,],n=100))
+      elambda <- (tail(drawS$lambda[pp,,],n=100))
+      egamma  <- (tail(drawS$gamma[pp,,],n=100))
+      ealpha  <- (tail(drawS$alpha[pp,,],n=100))
+
+      ## Draw The 100 Variotons before the fit converged      
+      for (k in 1:NROW(etau) )
+      {
+        vY  <-  ealpha[k]*exp(egamma[k]*(etau[k]-vX) )+ ephi0[k]   +  (ephimax[k] -ephi0[k]  )/(1+exp( -(elambda[k]   *(etau[k] -vX )   ) ) ) 
+
+        #vY_l  <- quantile(drawS$phi_0[pp,,])[1]   - ( quantile (drawS$lambda[pp])[1] )*((( quantile(drawS$gamma[pp,,])[1] )^( quantile(drawS$u0[pp])[1] - (vX) ) ) ) #
+        #vY_u  <- quantile(drawS$phi_0[pp,,])[5]   - (quantile (drawS$lambda[pp,,])[5])*((( quantile(drawS$gamma[pp,,])[5] )^( quantile(drawS$u0[pp,,])[5] - (vX) ) ) ) #
+        #      #points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
+        lines( vX ,vY,type="l",col=colourR[3],lwd=1)
+#        lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
+      }
+      
       dev.off()
-    }
     
-  }
+  } ##For Each Sampled Hunt Event 
+    
+}##END oF Function 
   
   
   
@@ -168,7 +194,7 @@ modelGCSigmoidInd  <- "model
   ldatVEyePoints <- list()
   lnDat          <- list()
   lnMaxDistanceToPrey <- list()
-  sampleFraction  <- 0.25
+  
   ##Do all this processing to add a sequence index To The hunt Event + make vergence angle INdex 
   for (g in strGroupID) {
     lRegIdx[[g]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g),"RegistarIdx"])
@@ -205,18 +231,18 @@ modelGCSigmoidInd  <- "model
       
       ##Augment with Idle phi entries for this hunt Event- to go up to 6 mm - 0 
       missingRegion <- 6 - head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1) 
-      npad <- 20
+      npad <- 60
 
             
       if (missingRegion > 0)
       {
-        datpadding <- cbind(vAngle=rep(0,npad),
+        datpadding <- cbind(vAngle=rep( max(0.1,min(ldatVEyePoints[[g]][[h]][,"vAngle"]))  ,npad),
                             distToPrey = seq(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),6,length=npad),
                             initDistToPrey = rep(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),npad),
                             RegistarIdx = rep(head(as.numeric(ldatsubSet[[g]]$RegistarIdx ),n=1),npad),
                             seqIdx = h)
         
- #        ldatVEyePoints[[g]][[h]] <- rbind(ldatVEyePoints[[g]][[h]],datpadding) ##Add The Zero Phi Data
+         ldatVEyePoints[[g]][[h]] <- rbind(ldatVEyePoints[[g]][[h]],datpadding) ##Add The Zero Phi Data
       }
       
       
@@ -239,15 +265,10 @@ modelGCSigmoidInd  <- "model
   ##For the 3 Groups 
   colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
   colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
-  colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
+  colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.3),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
   pchL <- c(16,2,4)
-  #
-  #These RC params Work Well to Smooth LF And NF
-  burn_in=100;
-  steps=1000;
-  thin=10;
   
-  dataFrac <- 0.2 ##Fraction Of Hunt Episodes to Include in DataSet
+  
   
   ##Larva Event Counts Slice
   nDatLL <- NROW(datVEyePointsLL)
@@ -288,7 +309,7 @@ modelGCSigmoidInd  <- "model
   
   
   
-  varnames=c("phi_0","phi_max","lambda","gamma","sigma_inv","tau","C") #"gamma"
+  varnames=c("phi_0","phi_max","lambda","gamma","sigma","alpha","tau") #"gamma"
   
   
   library(rjags)
@@ -303,7 +324,7 @@ modelGCSigmoidInd  <- "model
   #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
   
   #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL_B.pdf",sep="")) 
   plotGCSig(drawLL,dataLL,n=NA,groupID=2)
   #dev.off()
   #plotExpRes(drawLL,dataLL)
@@ -352,61 +373,5 @@ modelGCSigmoidInd  <- "model
   dev.off()
   
   save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep="") )
-  
-  #### CalcInformation ##
-  load(paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep=""))
-  
-  
-  #library("entropy")
-  
-  phi_hat <- function(x,Ulist){
-    return(Ulist$phi_0  
-          +(Ulist$phi_max - Ulist$phi_0)/( 1 + exp( -Ulist$gamma*( Ulist$tau - x)  ) )
-          +Ulist$C*exp(Ulist$lambda*( Ulist$tau - x)) )
-  }
-  
-  #Returns the FrequenciesAround mean (phihat)
-  phiDens <- function(phi,x,Ulist)
-  {
-  
-    return( dnorm(phi,mean=phi_hat(x,Ulist),sd=Ulist$sigma ) ) 
-  }
-  
-  ##
-  ## Calc Info In single Sample & Hunt Event
-  InfoCalc <- function(DistMin,DistMax,Ulist)
-  {
-    PhiRange <- seq(0,90,1)
-    DistRange <- seq(DistMin,DistMax,0.1)
-    
-    Grid <- expand.grid(PhiRange,DistRange)
-    PVec=rep(0,NROW(Grid))
-    
-    for (i in 1:NROW(Grid) )
-    {
-      PVec[i] <- phiDens(Grid[i,1],Grid[i,2],Ulist)
-    }
-    
-    PVec=PVec/sum(PVec)
-    
-    # Convert Pvec to a matrix 
-    PMatrix=matrix(PVec,length(PhiRange),length(DistRange))
-    
-    image(PMatrix)
-    MargVec=rowSums(PMatrix) ### Marginalize to obtain P(Response/Phi)
-    Iloc=PMatrix/MargVec*length(DistRange) ##Information On Local x/For Each X - Assume X is unif. and so Prob[X]=1/Length(X)
-    ###row sum
-    sel=PMatrix>0
-    #INFO=sums(PMatrix[sel]*log2(Iloc[sel]) )
-    INFO=colSums(PMatrix*log2(Iloc) )
-    return(INFO)
-  }
-    
-  calcInfoOfHuntEvent <- function(drawLL)
-  {
-    Ulist <- list(phi_0=2,phi_max=35,gamma=100,tau=2,lambda=2,C=1,sigma=3)
-    plot(InfoCalc(DistMin = 0.5,DistMax = 4,Ulist = Ulist))
-    
-    ##Next Is integrate Over sampled points, and Make Ii hidx matrix 
-  }
-  
+       
+  save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt.RData",sep=""))      

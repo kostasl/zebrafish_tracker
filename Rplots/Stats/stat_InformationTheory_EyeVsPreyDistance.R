@@ -18,8 +18,8 @@ load(paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep="
 ## Estimate Response Based On Model's mean response ## 
 phi_hat <- function(x,Ulist){
   return(Ulist$phi_0  
-         +(Ulist$phi_max - Ulist$phi_0)/( 1 + exp( -Ulist$gamma*( Ulist$tau - x)  ) )
-         +Ulist$C*exp(Ulist$lambda*( Ulist$tau - x)) )
+         +(Ulist$phi_max - Ulist$phi_0)/( 1 + exp( -Ulist$lambda*( Ulist$tau - x)  ) )
+         +Ulist$C*exp(Ulist$gamma*( Ulist$tau - x)) )
 }
 
 #Returns the FrequenciesAround mean (phihat)
@@ -31,10 +31,10 @@ phiDens <- function(phi,x,Ulist)
 
 ##
 ## Calc Info In single Sample & Hunt Event
-InfoCalc <- function(DistMin,DistMax,Ulist)
+InfoCalc <- function(DistRange,Ulist)
 {
-  PhiRange <- seq(0,90,1)
-  DistRange <- seq(DistMin,DistMax,0.1)
+  PhiRange <- seq(0,100,1) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+  
   
   #Generates a list with all possible pairs of in the range of Phi And Distance X 
   Grid <- expand.grid(PhiRange,DistRange)
@@ -51,7 +51,7 @@ InfoCalc <- function(DistMin,DistMax,Ulist)
   PMatrix=matrix(PVec,nrow=length(PhiRange),ncol=length(DistRange),byrow = FALSE)
   
   ##Image shows a transpose Of the PMatrix, - In reality Rows contain Phi, and Cols are X 
-  image(PMatrix,x=PhiRange,y=DistRange)
+  #image(t(PMatrix),y=PhiRange,x=DistRange)
   MargVec=rowSums(PMatrix) ### Marginalize across X to obtain P(Response/Phi)
   
   Iloc=PMatrix/MargVec*length(DistRange) ##Information On Local x/For Each X - Assume X is unif. and so Prob[X]=1/Length(X)
@@ -64,8 +64,18 @@ InfoCalc <- function(DistMin,DistMax,Ulist)
   return(INFO)
 }
 
-calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA)
+
+## Calculates Mutual Information X to Phi 
+##  Fitted Function instances for each Hunt event
+##  Assume distance is encoded in Dx steps, in N bits
+## Returns a matrix Giving N Inf. Measures for each Hunt event
+calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
 {
+  DistMin = 0.5
+  DistMax =  5
+  ##Assume X distance is encoded using 5 bits
+  DistRange <- seq(DistMin,DistMax, (DistMax-DistMin )/(2^5-1)  )
+  
   NSamples <-10
   NHuntEvents <- NROW(unique(dataSubset$hidx) )
   
@@ -75,17 +85,33 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA)
   vsampleP <- sample(unique(dataSubset$hidx),n)
   vsub <- which (dataSubset$hidx %in% vsampleP)
   
-  mInfMatrix <- matrix(nrow=NSamples,ncol=NROW(vsampleP) )
   
+  
+  mInfMatrix <- matrix(nrow=NSamples,ncol=NROW(vsampleP) )
+  hCnt <- 0
   for (h in vsampleP)
   {
+    hCnt <- hCnt + 1
     vphi_0_sub <- tail(drawS$phi_0[h,,],n=NSamples)
     vphi_max_sub <- tail(drawS$phi_max[h,,],n=NSamples)
     vgamma_sub <- tail(drawS$gamma[h,,],n=NSamples)
     vlambda_sub <- tail(drawS$lambda[h,,],n=NSamples)
     vtau_sub   <- tail(drawS$tau[h,,],n=NSamples)
     vsigma_sub <- tail(drawS$sigma[h,,],n=NSamples)
-    #vC_sub  <- tail(drawS$C[h,,],n=NSamples)
+    valpha_sub <- tail(drawS$alpha[h,,],n=NSamples)
+    
+    
+    vPP <- which (dataSubset$hidx == h)
+    #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
+    pdf(file= paste(strPlotExportPath,"/stat/stat_InfMeasure_EyeVsDistance_",strGroupID[groupID],"_SigExo_",h,".pdf",sep="")) 
+    par(mar = c(5,5,2,5))
+    plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),main=paste(strGroupID[groupID],h), 
+         bg=colourP[2],col=colourP[1],
+         cex=0.5,
+         xlab="Distance From Prey",ylab=expression(paste(Phi)) )  
+    ##Plot The Fitted Function
+    vY  <-  mean(valpha_sub)*exp(mean(vgamma_sub)*( mean(vtau_sub)-DistRange) )+ mean(vphi_0_sub)   +  ( mean(vphi_max_sub) - mean(vphi_0_sub)  )/(1+exp( -( mean(vlambda_sub)   *( mean(vtau_sub) -DistRange )   ) ) ) 
+    lines( DistRange ,vY,type="l",col=colourR[3],lwd=3)
     
     lPlist <- list()
     for (i in 1:NSamples)
@@ -93,20 +119,31 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA)
       lPlist[[i]] <- list(phi_0=vphi_0_sub[i],phi_max=vphi_max_sub[i], gamma= vgamma_sub[i],
                     tau=vtau_sub[i],
                     lambda=vlambda_sub[i], 
-                    C=1 #vC_sub[i]
+                    C=valpha_sub[i] #vC_sub[i]
                     , sigma=vsigma_sub[i] )
       
       ##Information Is in The Sum / Marginal Across X ##
-      vPPhiPerX <- InfoCalc(DistMin = 0.5,DistMax =  lPlist[[i]]$tau,Ulist = lPlist[[i]])
+      ##Keep Distance Fixed accross so we are comparing against the same amount of information baseline, 
+      ## from which mutual inf gives us the reduction in uncertainty
+      ## Ex. We need log2(NROW(DistRange)) of bits to encode distance at the res. defined in DistRange
       
-      mInfMatrix[h,i] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
+      
+      vPPhiPerX <- InfoCalc(DistRange,Ulist = lPlist[[i]]) ##Get MutInf Per X
+      ##Plot The Information Content Of The fitted Function ##
+      par(new=T) 
+      plot(DistRange,vPPhiPerX,ylim=c(0,0.5),axes=F,type="l", xlab=NA, ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+      
+      mInfMatrix[i,hCnt] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
     } 
     
+    axis(side=4)
+    mtext(side = 4, line = 3, 'Mutual information (bits)')
+    dev.off()
   }##For Each Hunt Event   
-  Ulist <- list(phi_0=2,phi_max=35,gamma=100,tau=2,lambda=2,C=1,sigma=3)
-  vPPhiPerX <- InfoCalc(DistMin = 0.5,DistMax = 4,Ulist = Ulist)
-  plot(vPPhiPerX)
+  
+  
   ##Next Is integrate Over sampled points, and Make Ii hidx matrix 
+  return(mInfMatrix)
 }
 
 
