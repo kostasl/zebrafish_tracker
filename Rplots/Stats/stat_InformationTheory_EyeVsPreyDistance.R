@@ -11,7 +11,7 @@ source("HuntingEventAnalysis_lib.r")
 
 
 #### CalcInformation ##
-load(paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep=""))
+#load(paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep=""))
 
 
 #library("entropy")
@@ -26,7 +26,7 @@ phi_hat <- function(x,Ulist){
 phiDens <- function(phi,x,Ulist)
 {
 ### Gaussian around mean response  ###
-  return( dnorm(phi,mean=phi_hat(x,Ulist),sd=Ulist$sigma ) ) 
+  return( dnorm(phi,mean=phi_hat(x,Ulist),sd=(Ulist$sigma)  ) ) 
 }
 
 ##
@@ -131,7 +131,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
       vPPhiPerX <- InfoCalc(DistRange,Ulist = lPlist[[i]]) ##Get MutInf Per X
       ##Plot The Information Content Of The fitted Function ##
       par(new=T) 
-      plot(DistRange,vPPhiPerX,ylim=c(0,0.5),axes=F,type="l", xlab=NA, ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+      plot(DistRange,vPPhiPerX,ylim=c(0,0.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19, xlab=NA, ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
       
       mInfMatrix[i,hCnt] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
     } 

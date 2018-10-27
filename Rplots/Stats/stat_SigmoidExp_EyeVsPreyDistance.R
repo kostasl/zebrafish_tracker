@@ -19,8 +19,8 @@ burn_in=100;
 steps=5000;
 thin=2;
 
-dataFrac <- 0.5 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.35 ##Fraction of Points to Use from Each Hunt Episode's data
+dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
+sampleFraction  <- 0.4 ##Fraction of Points to Use from Each Hunt Episode's data
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
 modelGCSigmoidInd  <- "model
@@ -55,7 +55,7 @@ modelGCSigmoidInd  <- "model
     tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
     var_inv[i] ~ dgamma(0.001, 0.001)I(0.001,) ##Draw   ##Precision
     
-    sigma[i] <- 1 / (var_inv[ i])    
+    sigma[i] <- 1 / sqrt(var_inv[ i])    
     
     #u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
     #u0[i] ~ dunif(u1[i], limDist) ##Start Hunt Distance -Far
@@ -372,6 +372,8 @@ modelGCSigmoidInd  <- "model
          ,fill=colourH,lty=c(1,2,3))
   dev.off()
   
+  save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt.RData",sep=""))      
+  
+  ##Save All  
   save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep="") )
        
-  save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt.RData",sep=""))      
