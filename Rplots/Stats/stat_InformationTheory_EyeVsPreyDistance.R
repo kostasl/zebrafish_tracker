@@ -76,7 +76,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   ##Assume X distance is encoded using 5 bits
   DistRange <- seq(DistMin,DistMax, (DistMax-DistMin )/(2^5-1)  )
   
-  NSamples <-10
+  NSamples <-50
   NHuntEvents <- NROW(unique(dataSubset$hidx) )
   
   if (is.na(n))
@@ -106,7 +106,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
     #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
     pdf(file= paste(strPlotExportPath,"/stat/stat_InfMeasure_EyeVsDistance_",strGroupID[groupID],"_SigExo_",h,".pdf",sep="")) 
     par(mar = c(5,5,2,5))
-    plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),main=paste(strGroupID[groupID],h), 
+    plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,max(DistRange)),ylim=c(0,90),main=paste(strGroupID[groupID],h), 
          bg=colourP[2],col=colourP[1],
          cex=0.5,
          xlab="Distance From Prey",ylab=expression(paste(Phi)) )  
@@ -148,6 +148,13 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   return(mInfMatrix)
 }
 
+## Sample Matrices Of Information ##
+mInfMatrixLL <- calcInfoOfHuntEvent(drawLL,dataLL,groupID=2)
+mInfMatrixNL <- calcInfoOfHuntEvent(drawNL,dataNL,groupID=3)
+mInfMatrixDL <- calcInfoOfHuntEvent(drawDL,dataDL,groupID=1)
+
+
+save(mInfMatrixLL,mInfMatrixNL,mInfMatrixDL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit.RData",sep=""))      
 
 ####Select Subset Of Data To Analyse
 strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
