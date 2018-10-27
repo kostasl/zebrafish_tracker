@@ -288,7 +288,7 @@ modelGCSigmoidInd  <- "model
   
   
   
-  varnames=c("phi_0","phi_max","lambda","gamma","sigma_inv","tau") #"gamma"
+  varnames=c("phi_0","phi_max","lambda","gamma","sigma_inv","tau","C") #"gamma"
   
   
   library(rjags)
