@@ -13,6 +13,17 @@ source("HuntingEventAnalysis_lib.r")
 #### CalcInformation ##
 load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt.RData",sep=""))
 
+## Can Load Last Inf Matrix 
+load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))
+          
+
+
+##For the 3 Groups 
+colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
+colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
+colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
+pchL <- c(16,2,4)
+ltL <-  c(1,2,3) ##line Types
 
 #library("entropy")
 ## Estimate Response Based On Model's mean response ## 
@@ -79,10 +90,15 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   NSamples <-250
   NHuntEvents <- NROW(unique(dataSubset$hidx) )
   
-  if (is.na(n))
-    n <- NROW(unique(dataSubset$hidx))
+  vsampleP <- unique(dataSubset$hidx)
   
-  vsampleP <- sample(unique(dataSubset$hidx),n)
+  if (is.na(n))
+  {
+    n <- NROW(unique(dataSubset$hidx))
+    vsampleP <- sample(unique(dataSubset$hidx),n)
+  }
+  
+  
   vsub <- which (dataSubset$hidx %in% vsampleP)
   
   
@@ -133,7 +149,8 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
       vPPhiPerX <- InfoCalc(DistRange,Ulist = lPlist[[i]]) ##Get MutInf Per X
       ##Plot The Information Content Of The fitted Function ##
       par(new=T) 
-      plot(DistRange,vPPhiPerX,ylim=c(0,0.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19, xlab=NA, ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+      plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19, xlab=NA, ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+      lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l", xlab=NA, ylab=NA )
       
       mInfMatrix[i,hCnt] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
     } 
@@ -149,17 +166,47 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
 }
 
 
+
 ## Sample Matrices Of Information ##
 mInfMatrixLL <- calcInfoOfHuntEvent(drawLL,dataLL,groupID=2)
 mInfMatrixNL <- calcInfoOfHuntEvent(drawNL,dataNL,groupID=3)
 mInfMatrixDL <- calcInfoOfHuntEvent(drawDL,dataDL,groupID=1)
 
 X11()
-hist(mInfMatrixLL,col=colourH[2],xlim=c(0,3))
+hist(mInfMatrixLL,col=colourH[2],xlim=c(0,3),breaks = seq(0,3,1/20))
 X11()
-hist(mInfMatrixDL,col=colourH[1],xlim=c(0,3))
+hist(mInfMatrixDL,col=colourH[1],xlim=c(0,3),breaks = seq(0,3,1/20))
 X11()
-hist(mInfMatrixNL,col=colourH[3],xlim=c(0,3))
+hist(mInfMatrixNL,col=colourH[3],xlim=c(0,3),breaks = seq(0,3,1/20))
+
+### Plot CDF ###
+## Match the N 
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF.pdf",sep=""))
+subset_mInfMatrixLL <- mInfMatrixLL[,sample(1:58,58)]
+plot(ecdf(mInfMatrixDL),col=colourH[1],main="Information In Eye Vergence CDF",
+     xlab="Information (bits) ",lty=1,lwd=2)
+plot(ecdf(subset_mInfMatrixLL),col=colourH[2],add=T,lty=2,lwd=2)
+plot(ecdf(mInfMatrixNL),col=colourH[3],add=T,lty=3,lwd=2)
+legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NCOL(subset_mInfMatrixLL) ,NCOL(mInfMatrixNL) ) ) 
+       ,col=colourH,lty=c(1,2,3),lwd=2)
+dev.off()
+
+
+##Plot Density 
+dLLphi<-density(mInfMatrixLL)
+dDLphi<-density(mInfMatrixDL)
+dNLphi<-density(mInfMatrixNL)
+
+#X11()
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_Density.pdf",sep=""))
+plot(dLLphi,col=colourH[2],type="l",lwd=3,lty=2,
+     ylim=c(0,2),main="Mutual Information Distance to Eye Vergence ",
+     xlab=expression(paste(" (bits)" ) ) )
+lines(dNLphi,col=colourH[3],lwd=3,lty=3)
+lines(dDLphi,col=colourH[1],lwd=3,lty=1)
+legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NCOL(subset_mInfMatrixLL) ,NCOL(mInfMatrixNL) ) ) 
+       ,col=colourH,lty=c(1,2,3),lwd=2)
+dev.off()
 
 save(mInfMatrixLL,mInfMatrixNL,mInfMatrixDL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))      
 
@@ -233,12 +280,6 @@ datVEyePointsLL <- data.frame( do.call(rbind,ldatVEyePoints[["LL"]] ) )
 datVEyePointsNL <- data.frame( do.call(rbind,ldatVEyePoints[["NL"]] ) ) 
 datVEyePointsDL <- data.frame( do.call(rbind,ldatVEyePoints[["DL"]] ) ) 
 
-
-##For the 3 Groups 
-colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
-colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
-colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
-pchL <- c(16,2,4)
 
 ##Larva Event Counts Slice
 nDatLL <- NROW(datVEyePointsLL)
@@ -420,123 +461,14 @@ hist(drawNL$u1[1,,1],breaks=50,xlim=c(0,7),col="red")
 hist(drawNL$u0[1,,1],breaks=50,xlim=c(0,7),add=TRUE,col="red")
 #dev.off()
 
-############
-### DL ###
-mDL=jags.model(file="model.tmp",data=dataDL);
-drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
 
-
-X11()
-#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_NL_F.pdf",sep=""))
-plotGCRes(drawDL,dataDL,groupID=1)
-#dev.off()
-
-
-# Plot the infered function DL
-
-## compute 2D kernel density, see MASS book, pp. 130-131
-nlevels <- 12
-z <- kde2d(dataDL$distP, dataDL$phi, n=80)
-
-#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_DL_E.pdf",sep=""))
-#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_DL_F.pdf",sep="")) ## quantile(drawLL$phi_0[,,])[4] 
-X11()
-plot(dataDL$distP,dataDL$phi,pch=21,xlim=c(0,5),ylim=c(0,80),main="DL", bg=colourP[2],col=colourP[1],cex=0.5)
-points(datVEyePointsDL_SubP$distToPrey,datVEyePointsDL_SubP$vAngle,pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
-contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
-
-vX  <- seq(0,5,by=0.01)
-for (pp in vsampleP)
-{
-  vY  <-    (drawDL$phi_0[pp] )+ ( (drawDL$phi_max[pp] +40 ) )*(1-exp(- (drawDL$lambda[pp])*( (drawDL$u0[pp] ) - (vX) ) ) ) # 
-  vY_u <-  quantile(drawDL$phi_0[pp])[4]+(quantile(drawDL$phi_max[pp])[4])*(1-exp(-quantile(drawDL$lambda[pp])[4]*( quantile(drawDL$u0[pp])[4] - (vX) ) ) )
-  vY_l <-  quantile(drawDL$phi_0[pp])[2]+quantile(drawDL$phi_max[pp])[2]*(1-exp(- quantile(drawDL$lambda[pp])[2]*( quantile(drawDL$u0[pp])[2] - (vX) ) ) )
-  lines( vX ,vY,xlim=c(0,5),ylim=c(0,80),type="l",col="red",lwd=2)
-  lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,80),type="l",col="blue",lwd=1)
-  lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,80),type="l",col="blue",lwd=1)
-}
-
-dev.off()
-
-X11()
-#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_Rate_lambda_DL_E.pdf",sep=""))
-hist(drawDL$lambda[1,,1],main="DL")
-#dev.off()
-
-X11()
-#pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_StartEnd_u0_DL_E.pdf",sep=""))
-hist(drawDL$u1[1,,1],breaks=50,xlim=c(0,7),col="red")
-hist(drawDL$u0[1,,1],breaks=50,xlim=c(0,7),add=TRUE,col="red")
-#dev.off()
-
-
-
-
-X11()
-hist(drawLL$sigma[2,,1],breaks=10000,xlim=c(0,2),col=colourH[1],
-     xlab=paste(""),main=paste("During hunt Sigma  ") )
-
-X11()
-hist(drawLL$sigma[1,,1],breaks=100,col=colourH[1],
-     xlab=paste(" "),main=paste("Outside hunt Sigma ") )
-
-
-X11()
-hist(drawLL$phi_max[1,,1])
-
-X11()
-hist(drawLL$phi_0[1,,1])
-
-X11()
-hist(drawLL$u0[1,,1],breaks=100,xlim=c(0,5))
-hist(drawNL$u0[1,,1],breaks=100,xlim=c(0,5),add=TRUE)
-hist(drawDL$u0[1,,1],breaks=100,xlim=c(0,5),add=TRUE)
-
-X11()
-hist(drawLL$u1[1,,1],breaks=50,xlim=c(0,5))
-hist(drawNL$u1[1,,1],breaks=50,xlim=c(0,5),add=TRUE,col="red")
-hist(drawDL$u1[1,,1],breaks=50,xlim=c(0,5),col="blue",add=TRUE)
-#########
-
-
-## Plot the infered function DL
-
-pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_DL.pdf",sep=""))
-X11()
-vX <- seq(0,5,by=0.01)
-vY <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(-  median(drawDL$lambda)*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
-vY_u <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(-quantile(drawDL$lambda[1,,1])[4]*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
-vY_l <- median(drawDL$phi_0 ) + median(drawDL$phi_max )*(1-exp(- quantile(drawDL$lambda[1,,1])[2]*( mean(datLEyePointsDL[vsamplesDL,3]) - (vX) ) ) )
-plot(dataDL$distP,dataDL$phi,pch=20,xlim=c(0,6),ylim=c(0,55),main="DL")
-lines( vX ,vY,xlim=c(0,5),ylim=c(0,55),type="l",col="red",lwd=3)
-lines( vX ,vY_u,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
-lines( vX ,vY_l,xlim=c(0,5),ylim=c(0,55),type="l",col="blue",lwd=2)
-dev.off()
-X11()
-hist(drawDL$lambda[1,,1],main="DL")
-
-
-
-ind = 100
-##Save the Mean Slope and intercept
-##quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2]
-muLLa=mean(drawLL$beta[,(steps-ind):steps,1][1,]) 
-muLLb=mean(drawLL$beta[,(steps-ind):steps,1][2,])
-muNLa=mean(drawNL$beta[,(steps-ind):steps,1][1,])
-muNLb=mean(drawNL$beta[,(steps-ind):steps,1][2,])
-muDLa=mean(drawDL$beta[,(steps-ind):steps,1][1,])
-muDLb=mean(drawDL$beta[,(steps-ind):steps,1][2,])
-sig=mean(drawLL$sigma[,(steps-ind):steps,1])
-###Plot Density of Slope
-dLLb<-density(drawLL$beta[,(steps-ind):steps,1][2,])
-dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,])
-dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,])
 
 
 pdf(file= paste(strPlotExportPath,"/stat/stat_densityolinregressionslope.pdf",sep=""))
 plot(dDLb,col=colourH[1],xlim=c(0.5,1.2),lwd=3,lty=1,ylim=c(0,20),main="Density Inference of Turn-To-Prey Slope ")
 lines(dLLb,col=colourH[2],xlim=c(0.5,1.2),lwd=3,lty=2)
+
 lines(dNLb,col=colourH[3],xlim=c(0.5,1.2),lwd=3,lty=3)
 legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        ,fill=colourL,lty=c(1,2,3))
