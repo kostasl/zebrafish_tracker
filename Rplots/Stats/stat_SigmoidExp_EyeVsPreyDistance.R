@@ -16,11 +16,11 @@ source("HuntingEventAnalysis_lib.r")
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=100;
-steps=1000;
+steps=2500;
 thin=2;
 
-dataFrac <- 0.5 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.3 ##Fraction of Points to Use from Each Hunt Episode's data
+dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
+sampleFraction  <- 0.43 ##Fraction of Points to Use from Each Hunt Episode's data
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
 modelGCSigmoidInd  <- "model
@@ -47,9 +47,9 @@ modelGCSigmoidInd  <- "model
 
   
   for(i in 1:max(hidx) ) { 
-      phi_0[i] ~ dnorm(0.01, 1e-3)I(0,mean(phi_max[]) ) # Idle Eye Position
     phi_max[i] ~ dnorm(65,1e-3) ##I(0,100) # Max Eye Vergence Angle
-    lambda[i] ~ dnorm(100.0, 1e-2)I(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+    phi_0[i] ~ dnorm(0.05, 1e-3)T(0,max(phi_max[]))  # Idle Eye Position
+    lambda[i] ~ dnorm(100.0, 1e-2)T(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
     gamma[i] ~ dgamma(1, 1) #dnorm(0.5, 1e-3)I(0,)  # dunif(0.5, 0.000001)
     alpha[i] ~ dunif(1,3)
     tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
@@ -283,7 +283,8 @@ modelGCSigmoidInd  <- "model
               distP=datVEyePointsLL_Sub$distToPrey ,
               N=NROW(datVEyePointsLL_Sub),
               distMax=lnMaxDistanceToPrey[["LL"]], #Put All distances in So We can Ref By Index #datVEyePointsLL_Sub$initDistToPrey,
-              hidx=datVEyePointsLL_Sub$seqIdx );
+              hidx=datVEyePointsLL_Sub$seqIdx,
+              RegistrarIdx=datVEyePointsLL_Sub$RegistarIdx);
   
   
   ##Test limit data
@@ -295,7 +296,8 @@ modelGCSigmoidInd  <- "model
               distP=datVEyePointsNL_Sub$distToPrey ,
               N=NROW(datVEyePointsNL_Sub),
               distMax=lnMaxDistanceToPrey[["NL"]],#datVEyePointsNL_Sub$initDistToPrey,
-              hidx=datVEyePointsNL_Sub$seqIdx );
+              hidx=datVEyePointsNL_Sub$seqIdx,
+              RegistrarIdx=datVEyePointsNL_Sub$RegistarIdx);
   
   ##Test limit data
   ## Subset Dat For Speed
@@ -305,7 +307,8 @@ modelGCSigmoidInd  <- "model
               distP=datVEyePointsDL_Sub$distToPrey ,
               N=NROW(datVEyePointsDL_Sub),
               distMax=lnMaxDistanceToPrey[["DL"]],
-              hidx=datVEyePointsDL_Sub$seqIdx );
+              hidx=datVEyePointsDL_Sub$seqIdx,
+              RegistrarIdx=datVEyePointsDL_Sub$RegistarIdx);
   
   
   
@@ -324,7 +327,7 @@ modelGCSigmoidInd  <- "model
   #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
   
   #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL_B.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL_C.pdf",sep="")) 
   plotGCSig(drawLL,dataLL,n=NA,groupID=2)
   #dev.off()
   #plotExpRes(drawLL,dataLL)
@@ -340,7 +343,7 @@ modelGCSigmoidInd  <- "model
   drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
   
   #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_NL.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_NL_C.pdf",sep="")) 
   plotGCSig(drawNL,dataNL,n=NA,groupID=3)
   #dev.off()
   ############
@@ -350,7 +353,7 @@ modelGCSigmoidInd  <- "model
   drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
   
   #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_DL.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_DL_C.pdf",sep="")) 
   plotGCSig(drawDL,dataDL,n=NA,groupID=1)
   #dev.off()
   
@@ -362,7 +365,7 @@ modelGCSigmoidInd  <- "model
   dNLphi<-density(drawNL$tau)
   
   #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_CompareOnset_tau.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_CompareOnset_tau2.pdf",sep="")) 
   #X11()
   plot(dLLphi,col=colourH[2],type="l",lwd=2,ylim=c(0,1.0),main="Vergence Onset Vs Distance",xlab=expression(paste(" ",tau, " (mm)" ) ) )
   lines(dNLphi,col=colourH[3],lwd=2)
@@ -372,8 +375,8 @@ modelGCSigmoidInd  <- "model
          ,fill=colourH,lty=c(1,2,3))
   dev.off()
   
-  save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt.RData",sep=""))      
+  save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt2.RData",sep=""))      
   
   ##Save All  
-  save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit.RData",sep="") )
+  save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit2.RData",sep="") )
        

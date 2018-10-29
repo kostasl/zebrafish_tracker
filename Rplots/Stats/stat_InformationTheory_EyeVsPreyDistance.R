@@ -11,7 +11,7 @@ source("HuntingEventAnalysis_lib.r")
 
 
 #### CalcInformation ##
-load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt.RData",sep=""))
+load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt2.RData",sep=""))
 
 ## Can Load Last Inf Matrix 
 load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))
@@ -20,8 +20,8 @@ load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
-colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
-colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
+colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.20,0.40,0.5,1.0)) ##points DL,LL,NL
+colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,0.3)) ##Region (Transparency)
 pchL <- c(16,2,4)
 ltL <-  c(1,2,3) ##line Types
 
@@ -104,11 +104,14 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   
   
   mInfMatrix <- matrix(nrow=NSamples,ncol=NROW(vsampleP) )
+  vsampleRegisterIdx <- vector()
   hCnt <- 0
   for (h in vsampleP)
   {
     print(h)
     hCnt <- hCnt + 1
+    vsampleRegisterIdx[hCnt] <- tail(drawS$RegistrarIdx[h,,],n=1) ##Save the Registry Idx So we can refer back to which Fish This belongs to 
+    
     vphi_0_sub <- tail(drawS$phi_0[h,,],n=NSamples)
     vphi_max_sub <- tail(drawS$phi_max[h,,],n=NSamples)
     vgamma_sub <- tail(drawS$gamma[h,,],n=NSamples)
@@ -116,6 +119,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
     vtau_sub   <- tail(drawS$tau[h,,],n=NSamples)
     vsigma_sub <- tail(drawS$sigma[h,,],n=NSamples)
     valpha_sub <- tail(drawS$alpha[h,,],n=NSamples)
+    
     
     
     vPP <- which (dataSubset$hidx == h)
@@ -149,8 +153,9 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
       vPPhiPerX <- InfoCalc(DistRange,Ulist = lPlist[[i]]) ##Get MutInf Per X
       ##Plot The Information Content Of The fitted Function ##
       par(new=T) 
-      plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19, xlab=NA, ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
-      lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l", xlab=NA, ylab=NA )
+      plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19,col=colourP[4], xlab=NA,
+           ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+      lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l",col=colourR[4], xlab=NA, ylab=NA )
       
       mInfMatrix[i,hCnt] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
     } 
@@ -162,6 +167,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   
   
   ##Next Is integrate Over sampled points, and Make Ii hidx matrix 
+  lInfoMatStruct <- list(infoMatrix=mInfMatrix,vsampleRegisterIdx=vsampleRegisterIdx,vsamplePSeqIdx=)
   return(mInfMatrix)
 }
 
@@ -179,15 +185,24 @@ hist(mInfMatrixDL,col=colourH[1],xlim=c(0,3),breaks = seq(0,3,1/20))
 X11()
 hist(mInfMatrixNL,col=colourH[3],xlim=c(0,3),breaks = seq(0,3,1/20))
 
+
+X11()
+hist(colMeans(mInfMatrixLL),col=colourH[2],xlim=c(0,3),breaks = seq(0,3,1/20),main="mean Inf Per Event ")
+X11()
+hist(colMeans(mInfMatrixDL),col=colourH[1],xlim=c(0,3),breaks = seq(0,3,1/20))
+X11()
+hist(colMeans(mInfMatrixNL),col=colourH[3],xlim=c(0,3),breaks = seq(0,3,1/20))
+
+
 ### Plot CDF ###
 ## Match the N 
 pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF.pdf",sep=""))
 subset_mInfMatrixLL <- mInfMatrixLL[,sample(1:58,58)]
 plot(ecdf(mInfMatrixDL),col=colourH[1],main="Information In Eye Vergence CDF",
-     xlab="Information (bits) ",lty=1,lwd=2)
-plot(ecdf(subset_mInfMatrixLL),col=colourH[2],add=T,lty=2,lwd=2)
+     xlab="Information (bits) ",lty=1,lwd=2,xlim=c(0,2.5))
+plot(ecdf(mInfMatrixLL),col=colourH[2],add=T,lty=2,lwd=2)
 plot(ecdf(mInfMatrixNL),col=colourH[3],add=T,lty=3,lwd=2)
-legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NCOL(subset_mInfMatrixLL) ,NCOL(mInfMatrixNL) ) ) 
+legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NCOL(mInfMatrixLL) ,NCOL(mInfMatrixNL) ) ) 
        ,col=colourH,lty=c(1,2,3),lwd=2)
 dev.off()
 
