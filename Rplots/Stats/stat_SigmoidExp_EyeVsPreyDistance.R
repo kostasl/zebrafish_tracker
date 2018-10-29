@@ -78,6 +78,7 @@ modelGCSigmoidInd  <- "model
   ## plot( exp(0.1*(-vx+80))+  10 + (90-10)/(1+exp(-100*(60-vx) ))   ,ylim=c(0,400))
   plotGCSig <- function (drawS,dataSubset,n=NA,groupID){
     
+    bPlotIndividualEvents <- FALSE
     ## compute 2D kernel density, see MASS book, pp. 130-131
     max_x <- 7
     nlevels <- 12
@@ -92,8 +93,11 @@ modelGCSigmoidInd  <- "model
     
     # X11()
     
-    plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),main=paste("Model fit to eye vergence Vs Distance ",
-                                                                                                    strGroupID[groupID] ), bg=colourP[groupID],col="#FFFFFFAA",cex=0.5)
+    plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),
+         main=paste("Model Fit : Eye Vergence Vs Distance Data ",strGroupID[groupID]),
+                    ylab=expression(paste("Eye Vergence ",Phi," (degrees)") ),
+                    xlab=expression(paste("Distance from Prey (mm)") ),
+                     bg=colourP[groupID],col="#FFFFFFAA",cex=0.5)
     #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
     contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
     ## Plot The Mean Curve of the selected subset of curves
@@ -123,6 +127,8 @@ modelGCSigmoidInd  <- "model
     
     dev.off()
     
+    if (!bPlotIndividualEvents)
+    return(NA)
     ##plot individual Curve Fits
     for (pp in vsampleP)
     {
@@ -324,7 +330,7 @@ modelGCSigmoidInd  <- "model
   #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
   
   #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL_B.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL.pdf",sep="")) 
   plotGCSig(drawLL,dataLL,n=NA,groupID=2)
   #dev.off()
   #plotExpRes(drawLL,dataLL)
