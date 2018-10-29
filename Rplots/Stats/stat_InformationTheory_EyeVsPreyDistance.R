@@ -11,17 +11,22 @@ source("HuntingEventAnalysis_lib.r")
 
 
 #### CalcInformation ##
-load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt.RData",sep=""))
+load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt2.RData",sep=""))
 
 ## Can Load Last Inf Matrix 
 load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))
           
 
+####Select Subset Of Data To Analyse
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
+message(paste(" Importing Retracked HuntEvents from:",strRegisterDataFileName))
+datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
+
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
-colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
-colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
+colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.20,0.40,0.5,1.0)) ##points DL,LL,NL
+colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,0.3)) ##Region (Transparency)
 pchL <- c(16,2,4)
 ltL <-  c(1,2,3) ##line Types
 
@@ -104,11 +109,14 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   
   
   mInfMatrix <- matrix(nrow=NSamples,ncol=NROW(vsampleP) )
+  vsampleRegisterIdx <- vector()
   hCnt <- 0
   for (h in vsampleP)
   {
     print(h)
     hCnt <- hCnt + 1
+    vsampleRegisterIdx[hCnt] <- tail(drawS$RegistrarIdx[h,,],n=1) ##Save the Registry Idx So we can refer back to which Fish This belongs to 
+    
     vphi_0_sub <- tail(drawS$phi_0[h,,],n=NSamples)
     vphi_max_sub <- tail(drawS$phi_max[h,,],n=NSamples)
     vgamma_sub <- tail(drawS$gamma[h,,],n=NSamples)
@@ -116,6 +124,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
     vtau_sub   <- tail(drawS$tau[h,,],n=NSamples)
     vsigma_sub <- tail(drawS$sigma[h,,],n=NSamples)
     valpha_sub <- tail(drawS$alpha[h,,],n=NSamples)
+    
     
     
     vPP <- which (dataSubset$hidx == h)
@@ -149,8 +158,9 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
       vPPhiPerX <- InfoCalc(DistRange,Ulist = lPlist[[i]]) ##Get MutInf Per X
       ##Plot The Information Content Of The fitted Function ##
       par(new=T) 
-      plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19, xlab=NA, ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
-      lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l", xlab=NA, ylab=NA )
+      plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19,col=colourP[4], xlab=NA,
+           ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+      lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l",col=colourR[4], xlab=NA, ylab=NA )
       
       mInfMatrix[i,hCnt] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
     } 
@@ -162,15 +172,21 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   
   
   ##Next Is integrate Over sampled points, and Make Ii hidx matrix 
+  lInfoMatStruct <- list(infoMatrix=mInfMatrix,vsampleRegisterIdx=vsampleRegisterIdx,vsamplePSeqIdx=vsampleP)
   return(mInfMatrix)
 }
 
 
 
-## Sample Matrices Of Information ##
-mInfMatrixLL <- calcInfoOfHuntEvent(drawLL,dataLL,groupID=2)
-mInfMatrixNL <- calcInfoOfHuntEvent(drawNL,dataNL,groupID=3)
-mInfMatrixDL <- calcInfoOfHuntEvent(drawDL,dataDL,groupID=1)
+## Sample Matrices Of Information / Retursn Struct Containing Mat and Id vectors ##
+lInfStructLL <- calcInfoOfHuntEvent(drawLL,dataLL,groupID=2)
+lInfStructNL <- calcInfoOfHuntEvent(drawNL,dataNL,groupID=3)
+lInfStructDL <- calcInfoOfHuntEvent(drawDL,dataDL,groupID=1)
+
+mInfMatrixLL <- lInfStructLL$infoMatrix
+mInfMatrixNL <- lInfStructNL$infoMatrix
+mInfMatrixDL <- lInfStructDL$infoMatrix
+
 
 X11()
 hist(mInfMatrixLL,col=colourH[2],xlim=c(0,3),breaks = seq(0,3,1/20))
@@ -179,15 +195,24 @@ hist(mInfMatrixDL,col=colourH[1],xlim=c(0,3),breaks = seq(0,3,1/20))
 X11()
 hist(mInfMatrixNL,col=colourH[3],xlim=c(0,3),breaks = seq(0,3,1/20))
 
+
+X11()
+hist(colMeans(mInfMatrixLL),col=colourH[2],xlim=c(0,3),breaks = seq(0,3,1/20),main="mean Inf Per Event ")
+X11()
+hist(colMeans(mInfMatrixDL),col=colourH[1],xlim=c(0,3),breaks = seq(0,3,1/20))
+X11()
+hist(colMeans(mInfMatrixNL),col=colourH[3],xlim=c(0,3),breaks = seq(0,3,1/20))
+
+
 ### Plot CDF ###
 ## Match the N 
 pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF.pdf",sep=""))
 subset_mInfMatrixLL <- mInfMatrixLL[,sample(1:58,58)]
 plot(ecdf(mInfMatrixDL),col=colourH[1],main="Information In Eye Vergence CDF",
-     xlab="Information (bits) ",lty=1,lwd=2)
-plot(ecdf(subset_mInfMatrixLL),col=colourH[2],add=T,lty=2,lwd=2)
+     xlab="Information (bits) ",lty=1,lwd=2,xlim=c(0,2.5))
+plot(ecdf(mInfMatrixLL),col=colourH[2],add=T,lty=2,lwd=2)
 plot(ecdf(mInfMatrixNL),col=colourH[3],add=T,lty=3,lwd=2)
-legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NCOL(subset_mInfMatrixLL) ,NCOL(mInfMatrixNL) ) ) 
+legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NCOL(mInfMatrixLL) ,NCOL(mInfMatrixNL) ) ) 
        ,col=colourH,lty=c(1,2,3),lwd=2)
 dev.off()
 
@@ -208,126 +233,11 @@ legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NC
        ,col=colourH,lty=c(1,2,3),lwd=2)
 dev.off()
 
-save(mInfMatrixLL,mInfMatrixNL,mInfMatrixDL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))      
-
-####Select Subset Of Data To Analyse
-strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
-message(paste(" Importing Retracked HuntEvents from:",strRegisterDataFileName))
-datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
-
-lEyeMotionDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData.rds",sep="") ) #Processed Registry on which we add )
-
-#for (i in 1:NROW(lEyeMotionDat))   print(paste(i,NCOL(lEyeMotionDat[[i]])) ) ##Check Column Numbers Consistent
-
-datEyeVsPreyCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
-
-strGroupID <- levels(datTrackedEventsRegister$groupID)
+save(lInfStructLL,lInfStructDL,lInfStructNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_2.RData",sep=""))      
 
 
-##Add The Empty Test Conditions
-#strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
-#datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-#datHuntStatE <- makeHuntStat(datHuntLabelledEventsKL)
-#datHuntLabelledEventsKLEmpty <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$groupID %in% c("DE","LE","NE"),]
-lRegIdx <- list()
-ldatsubSet <-list()
-
-## Get Event Counts Within Range ##
-ldatREyePoints <- list()
-ldatLEyePoints <- list()
-ldatVEyePoints <- list()
-lnDat          <- list()
-sampleFraction  <- 0.25
-##Do all this processing to add a sequence index To The hunt Event + make vergence angle INdex 
-for (g in strGroupID) {
-  lRegIdx[[g]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g),"RegistarIdx"])
-  ldatLEyePoints[[g]] <- list()
-  
-  for (h in 1:NROW(lRegIdx[[g]]) )
-  {
-    ldatsubSet[[g]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g) &
-                                        datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[[g]][h]  
-                                         ,]  ## #(datEyeVsPreyCombinedAll$LEyeAngle-datEyeVsPreyCombinedAll$REyeAngle) > G_THRESHUNTVERGENCEANGLE Filter Out Non Hunting Eye Points
-    
-    ldatsubSet[[g]] <- ldatsubSet[[g]][sample(NROW(ldatsubSet[[g]]),sampleFraction*NROW(ldatsubSet[[g]] ) ) ,] ##Sample Points 
-    
-    ldatLEyePoints[[g]][[h]] <- cbind(ldatsubSet[[g]]$LEyeAngle,
-                             as.numeric(ldatsubSet[[g]]$DistToPrey),
-                             as.numeric(ldatsubSet[[g]]$DistToPreyInit ),
-                             ldatsubSet[[g]]$RegistarIdx,
-                             h)
-    
-    ldatREyePoints[[g]][[h]] <- cbind(ldatsubSet[[g]]$REyeAngle,
-                             as.numeric(ldatsubSet[[g]]$DistToPrey),
-                             as.numeric(ldatsubSet[[g]]$DistToPreyInit ),
-                             ldatsubSet[[g]]$RegistarIdx,
-                             h)
-    
-    ldatVEyePoints[[g]][[h]] <- cbind(vAngle=ldatsubSet[[g]]$LEyeAngle-ldatsubSet[[g]]$REyeAngle,
-                             distToPrey=as.numeric(ldatsubSet[[g]]$DistToPrey),
-                             initDistToPrey=as.numeric(ldatsubSet[[g]]$DistToPreyInit ),
-                             RegistarIdx=ldatsubSet[[g]]$RegistarIdx,
-                             seqIdx=h)
-    
-    ldatLEyePoints[[g]][[h]] <- ldatLEyePoints[[g]][[h]][!is.na(ldatLEyePoints[[g]][[h]][,2]),]
-    ldatREyePoints[[g]][[h]] <- ldatREyePoints[[g]][[h]][!is.na(ldatREyePoints[[g]][[h]][,2]),]
-    ldatVEyePoints[[g]][[h]] <- ldatVEyePoints[[g]][[h]][!is.na(ldatVEyePoints[[g]][[h]][,2]),]
-    
-    lnDat[[g]][[h]] <- NROW(ldatLEyePoints[[g]][[h]]) ##Not Used Anymore
-  }
-}
-datVEyePointsLL <- data.frame( do.call(rbind,ldatVEyePoints[["LL"]] ) ) 
-datVEyePointsNL <- data.frame( do.call(rbind,ldatVEyePoints[["NL"]] ) ) 
-datVEyePointsDL <- data.frame( do.call(rbind,ldatVEyePoints[["DL"]] ) ) 
 
 
-##Larva Event Counts Slice
-nDatLL <- NROW(datVEyePointsLL)
-nDatNL <- NROW(datVEyePointsNL)
-nDatDL <- NROW(datVEyePointsDL)
-
-##Test limit data
-## Subset Dat 
-datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*1) ,] #
-dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
-            distP=datVEyePointsLL_Sub$distToPrey ,
-            N=NROW(datVEyePointsLL_Sub),
-            distMax=datVEyePointsLL_Sub$initDistToPrey,
-            hidx=datVEyePointsLL_Sub$seqIdx );
-
-
-##Test limit data
-## Subset NL Dat
-datVEyePointsNL_Sub <- datVEyePointsNL[datVEyePointsNL$seqIdx %in% sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*1),] 
-dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
-            distP=datVEyePointsNL_Sub$distToPrey ,
-            N=NROW(datVEyePointsNL_Sub),
-            distMax=datVEyePointsNL_Sub$initDistToPrey,
-            hidx=datVEyePointsNL_Sub$seqIdx );
-
-## Subset DL Dat
-datVEyePointsDL_Sub <- datVEyePointsDL[datVEyePointsDL$seqIdx %in% sample(NROW(lRegIdx[["DL"]]),NROW(lRegIdx[["DL"]])*1),] 
-dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
-            distP=datVEyePointsDL_Sub$distToPrey ,
-            N=NROW(datVEyePointsDL_Sub),
-            distMax=datVEyePointsDL_Sub$initDistToPrey,
-            hidx=datVEyePointsDL_Sub$seqIdx );
-
-
-## INFORMATION MEASURES Check How Phi V Angle Distribution Differs between groups
-## Plot Vergence Angle Distributions/Densities
-dLLphi<-density(dataLL$phi)
-dDLphi<-density(dataDL$phi)
-dNLphi<-density(dataNL$phi)
-
-X11()
-plot(dLLphi,col=colourR[2],type="l",lwd=3,ylim=c(0,0.1),main="Eye Vergence Angle Densities During Hunting",xlab=expression(paste("Eye vergence angle ",Phi, " (deg)" ) ) )
-lines(dNLphi,col=colourR[3],lwd=3)
-lines(dDLphi,col=colourR[1],lwd=3)
-
-binLLphi = discretize(dataLL$phi, numBins=60, r=c(20,80))
-binNLphi = discretize(dataNL$phi, numBins=60, r=c(20,80))
-binDLphi = discretize(dataDL$phi, numBins=60, r=c(20,80))
 
 
 ## Entropy ##
