@@ -16,11 +16,13 @@ source("HuntingEventAnalysis_lib.r")
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=100;
-steps=2500;
-thin=2;
+steps=3500;
+thin=3;
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.43 ##Fraction of Points to Use from Each Hunt Episode's data
+sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
+fitseqNo <- 4
+npad <- 1
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
 modelGCSigmoidInd  <- "model
@@ -48,8 +50,8 @@ modelGCSigmoidInd  <- "model
   
   for(i in 1:max(hidx) ) { 
     phi_max[i] ~ dnorm(65,1e-3) ##I(0,100) # Max Eye Vergence Angle
-    phi_0[i] ~ dnorm(0.05, 1e-3)T(0,max(phi_max[]))  # Idle Eye Position
-    lambda[i] ~ dnorm(100.0, 1e-2)T(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
+    phi_0[i] ~ dnorm(0.01, 1e-3)T(0,max(phi_max[]))  # Idle Eye Position
+    lambda[i] ~ dnorm(100.0, 1e-3)T(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
     gamma[i] ~ dgamma(1, 1) #dnorm(0.5, 1e-3)I(0,)  # dunif(0.5, 0.000001)
     alpha[i] ~ dunif(1,3)
     tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
@@ -237,12 +239,13 @@ modelGCSigmoidInd  <- "model
       
       ##Augment with Idle phi entries for this hunt Event- to go up to 6 mm - 0 
       missingRegion <- 6 - head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1) 
-      npad <- 60
+     
 
             
       if (missingRegion > 0)
       {
-        datpadding <- cbind(vAngle=rep( max(0.1,min(ldatVEyePoints[[g]][[h]][,"vAngle"]))  ,npad),
+        ### Max Angle When Info Is Missing is 10
+        datpadding <- cbind(vAngle=rep( max(0.1,min( c(10,ldatVEyePoints[[g]][[h]][,"vAngle"] ) ) )  ,npad),
                             distToPrey = seq(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),6,length=npad),
                             initDistToPrey = rep(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),npad),
                             RegistarIdx = rep(head(as.numeric(ldatsubSet[[g]]$RegistarIdx ),n=1),npad),
@@ -383,8 +386,8 @@ modelGCSigmoidInd  <- "model
          ,fill=colourH,lty=c(1,2,3))
   dev.off()
   
-  save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt2.RData",sep=""))      
+  save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))      
   
   ##Save All  
-  save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit2.RData",sep="") )
+  save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit3.RData",sep="") )
        

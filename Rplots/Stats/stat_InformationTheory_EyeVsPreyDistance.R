@@ -129,15 +129,15 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
     
     vPP <- which (dataSubset$hidx == h)
     #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
-    pdf(file= paste(strPlotExportPath,"/stat/stat_InfMeasure_EyeVsDistance5mm_",strGroupID[groupID],"_SigExp_",h,".pdf",sep="")) 
-    par(mar = c(5,5,2,5))
-    plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,max(DistRange)),ylim=c(0,90),main=paste(strGroupID[groupID],h), 
-         bg=colourP[2],col=colourP[1],
-         cex=0.5,
-         xlab="Distance From Prey",ylab=expression(paste(Phi)) )  
+    #pdf(file= paste(strPlotExportPath,"/stat/stat_InfMeasure_EyeVsDistance5mm_",strGroupID[groupID],"_SigExp_",h,".pdf",sep="")) 
+    #par(mar = c(5,5,2,5))
+    #plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,max(DistRange)),ylim=c(0,90),main=paste(strGroupID[groupID],h), 
+    #     bg=colourP[2],col=colourP[1],
+    #     cex=0.5,
+    #     xlab="Distance From Prey",ylab=expression(paste(Phi)) )  
     ##Plot The Fitted Function
-    vY  <-  mean(valpha_sub)*exp(mean(vgamma_sub)*( mean(vtau_sub)-DistRange) )+ mean(vphi_0_sub)   +  ( mean(vphi_max_sub) - mean(vphi_0_sub)  )/(1+exp( -( mean(vlambda_sub)   *( mean(vtau_sub) -DistRange )   ) ) ) 
-    lines( DistRange ,vY,type="l",col=colourR[3],lwd=3)
+    #vY  <-  mean(valpha_sub)*exp(mean(vgamma_sub)*( mean(vtau_sub)-DistRange) )+ mean(vphi_0_sub)   +  ( mean(vphi_max_sub) - mean(vphi_0_sub)  )/(1+exp( -( mean(vlambda_sub)   *( mean(vtau_sub) -DistRange )   ) ) ) 
+    #lines( DistRange ,vY,type="l",col=colourR[3],lwd=3)
     
     lPlist <- list()
     for (i in 1:NSamples)
@@ -156,24 +156,25 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
       
       
       vPPhiPerX <- InfoCalc(DistRange,Ulist = lPlist[[i]]) ##Get MutInf Per X
+
       ##Plot The Information Content Of The fitted Function ##
-      par(new=T) 
-      plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19,col=colourP[4], xlab=NA,
-           ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
-      lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l",col=colourR[4], xlab=NA, ylab=NA )
+      #par(new=T) 
+      #  plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19,col=colourP[4], xlab=NA,
+      #       ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+      # lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l",col=colourR[4], xlab=NA, ylab=NA )
       
       mInfMatrix[i,hCnt] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
     } 
     
-    axis(side=4)
-    mtext(side = 4, line = 3, 'Mutual information (bits)')
-    dev.off()
+    #axis(side=4)
+    #mtext(side = 4, line = 3, 'Mutual information (bits)')
+    #dev.off()
   }##For Each Hunt Event   
   
   
   ##Next Is integrate Over sampled points, and Make Ii hidx matrix 
   lInfoMatStruct <- list(infoMatrix=mInfMatrix,vsampleRegisterIdx=vsampleRegisterIdx,vsamplePSeqIdx=vsampleP)
-  return(mInfMatrix)
+  return(lInfoMatStruct)
 }
 
 
@@ -206,7 +207,7 @@ hist(colMeans(mInfMatrixNL),col=colourH[3],xlim=c(0,3),breaks = seq(0,3,1/20))
 
 ### Plot CDF ###
 ## Match the N 
-pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF_3.pdf",sep=""))
 subset_mInfMatrixLL <- mInfMatrixLL[,sample(1:58,58)]
 plot(ecdf(mInfMatrixDL),col=colourH[1],main="Information In Eye Vergence CDF",
      xlab="Information (bits) ",lty=1,lwd=2,xlim=c(0,2.5))
@@ -223,7 +224,7 @@ dDLphi<-density(mInfMatrixDL)
 dNLphi<-density(mInfMatrixNL)
 
 #X11()
-pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_Density.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_Density_3.pdf",sep=""))
 plot(dLLphi,col=colourH[2],type="l",lwd=3,lty=2,
      ylim=c(0,2),main="Mutual Information Distance to Eye Vergence ",
      xlab=expression(paste(" (bits)" ) ) )
@@ -233,7 +234,7 @@ legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NC
        ,col=colourH,lty=c(1,2,3),lwd=2)
 dev.off()
 
-save(lInfStructLL,lInfStructDL,lInfStructNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_2.RData",sep=""))      
+save(lInfStructLL,lInfStructDL,lInfStructNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_3.RData",sep=""))      
 
 
 
