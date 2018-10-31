@@ -11,7 +11,7 @@ source("HuntingEventAnalysis_lib.r")
 
 
 #### CalcInformation ##
-load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt2.RData",sep=""))
+load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_4.RData",sep=""))
 
 ## Can Load Last Inf Matrix 
 load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))
@@ -207,7 +207,7 @@ hist(colMeans(mInfMatrixNL),col=colourH[3],xlim=c(0,3),breaks = seq(0,3,1/20))
 
 ### Plot CDF ###
 ## Match the N 
-pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF_3.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF_4.pdf",sep=""))
 subset_mInfMatrixLL <- mInfMatrixLL[,sample(1:58,58)]
 plot(ecdf(mInfMatrixDL),col=colourH[1],main="Information In Eye Vergence CDF",
      xlab="Information (bits) ",lty=1,lwd=2,xlim=c(0,2.5))
@@ -224,7 +224,7 @@ dDLphi<-density(mInfMatrixDL)
 dNLphi<-density(mInfMatrixNL)
 
 #X11()
-pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_Density_3.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_Density_4.pdf",sep=""))
 plot(dLLphi,col=colourH[2],type="l",lwd=3,lty=2,
      ylim=c(0,2),main="Mutual Information Distance to Eye Vergence ",
      xlab=expression(paste(" (bits)" ) ) )
@@ -234,7 +234,7 @@ legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NC
        ,col=colourH,lty=c(1,2,3),lwd=2)
 dev.off()
 
-save(lInfStructLL,lInfStructDL,lInfStructNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_3.RData",sep=""))      
+save(lInfStructLL,lInfStructDL,lInfStructNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_4.RData",sep=""))      
 
 
 

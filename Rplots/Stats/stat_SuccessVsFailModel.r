@@ -39,6 +39,9 @@ datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 datFishSuccessRate$groupID <- factor(datFishSuccessRate$groupID)
 strGroups <-levels(datFishSuccessRate$groupID)
 
+NRecCount_DL <- table(datFishSuccessRate$groupID)["DL"]
+NRecCount_NL <- table(datFishSuccessRate$groupID)["NL"]
+NRecCount_LL <- table(datFishSuccessRate$groupID)["LL"]
 
 datatest=list(Success=datFishSuccessRate$Success,
               Fail=datFishSuccessRate$Fails,
@@ -81,24 +84,34 @@ colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation_Success.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of success, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 
-  plot(draw$q[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=c(5,26),xlim=c(0,0.5),pch=19,
+nlevels <- 5
+zLL <- kde2d(draw$q[2,,1], draw$lambda[2,,1], n=80)
+zNL <- kde2d(draw$q[3,,1], draw$lambda[3,,1], n=80)
+zDL <- kde2d(draw$q[1,,1], draw$lambda[1,,1], n=80)
+
+
+Range_ylim <- c(5,20)
+  plot(draw$q[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=Range_ylim,xlim=c(0,0.5),pch=19,
        main="Bayesian Estimation for Hunt Rate and Efficiency",
        xlab="Probability of Success q",
        ylab=(expression(paste("Hunt Rate ",lambda ) ) )  ) #paste("Hunt Rate", )
-  points(draw$q[2,,1], draw$lambda[2,,1],col=colourD[2],ylim=c(5,26),xlim=c(0,0.5),pch=19)
-  points(draw$q[3,,1], draw$lambda[3,,1],col=colourD[3],ylim=c(5,26),xlim=c(0,0.5),pch=19)
-  legend("topright", legend=strGroups,fill=colourL)
+  contour(zDL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+  points(draw$q[2,,1], draw$lambda[2,,1],col=colourD[2],ylim=Range_ylim,xlim=c(0.1,0.5),pch=19)
+  contour(zLL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+  points(draw$q[3,,1], draw$lambda[3,,1],col=colourD[3],ylim=Range_ylim,xlim=c(0.1,0.5),pch=19)
+  contour(zNL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+  legend("topright", legend=paste(strGroups," n=",c(NRecCount_DL,NRecCount_LL,NRecCount_NL)),fill=colourL)
 dev.off()
 
 
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation_Fails.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of Engaging with Prey and Failing, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
-plot(draw$p[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=c(5,26),xlim=c(0,1),pch=19,
+plot(draw$p[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=cRange_ylim,xlim=c(0,1),pch=19,
      main="Bayesian Estimation for Hunt Rate and Efficiency (Fails)",
      xlab="Probability of Failing p",
      ylab=(expression(paste("Hunt Rate ",lambda ) ) )  ) #paste("Hunt Rate", )
-points(draw$p[2,,1], draw$lambda[2,,1],col=colourD[2],ylim=c(5,26),xlim=c(0,1),pch=19)
-points(draw$p[3,,1], draw$lambda[3,,1],col=colourD[3],ylim=c(5,26),xlim=c(0,1),pch=19)
+points(draw$p[2,,1], draw$lambda[2,,1],col=colourD[2],ylim=Range_ylim,xlim=c(0.1,1),pch=19)
+points(draw$p[3,,1], draw$lambda[3,,1],col=colourD[3],ylim=Range_ylim,xlim=c(0.1,1),pch=19)
 legend("topright", legend=strGroups,fill=colourL)
 dev.off()
 
