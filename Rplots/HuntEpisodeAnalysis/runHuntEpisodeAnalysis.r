@@ -693,7 +693,11 @@ for (gp in strGroupID)
   #}
 
 
-}
+} ## Go through each group - Extract Firstbout 
+
+##Save List on First Bout Data
+saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData",".rds",sep="") ) #Processed Registry on which we add )
+
 
 
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
@@ -912,7 +916,7 @@ text(ncolBands*3+300,105.2,labels = paste(maxDistanceToPrey/10,"mm" )  )
 dev.off()
 
 
-
+s
 #dev.off()
 
 X11()
@@ -922,16 +926,4 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
          ylab="msec",
          xlab="Bout Sequence (From Capture - Backwards)") 
 # for (i in1:20) #dev.off()
-
-
-##Plot Tail
-#X11()
-#plot(datRenderHuntEvent$DThetaSpine_1 ,type='l',col=r[1])
-#lines(datRenderHuntEvent$DThetaSpine_2 ,type='l',col=r[2])
-#lines(datRenderHuntEvent$DThetaSpine_3 ,type='l',col=r[3])
-#lines(datRenderHuntEvent$DThetaSpine_4 ,type='l',col=r[4])
-#lines(datRenderHuntEvent$DThetaSpine_5 ,type='l',col=r[5])
-#lines(datRenderHuntEvent$DThetaSpine_6 ,type='l',col=r[6])
-#lines(datRenderHuntEvent$DThetaSpine_7 ,type='l',col=r[7])
-
 

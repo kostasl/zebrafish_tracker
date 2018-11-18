@@ -15,12 +15,13 @@ load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOU
 
 ## Can Load Last Inf Matrix 
 load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))
-          
+       
 
-####Select Subset Of Data To Analyse
+#### Load the Tracked Hunts Register ###
 strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
 message(paste(" Importing Retracked HuntEvents from:",strRegisterDataFileName))
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
+
 
 
 ##For the 3 Groups 
@@ -92,7 +93,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   ##Assume X distance is encoded using 5 bits
   DistRange <- seq(DistMin,DistMax, (DistMax-DistMin )/(2^5-1)  )
   
-  NSamples <-250
+  NSamples <-10
   NHuntEvents <- NROW(unique(dataSubset$hidx) )
   
   vsampleP <- unique(dataSubset$hidx)
@@ -115,7 +116,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   {
     print(h)
     hCnt <- hCnt + 1
-    vsampleRegisterIdx[hCnt] <- tail(drawS$RegistrarIdx[h,,],n=1) ##Save the Registry Idx So we can refer back to which Fish This belongs to 
+    vsampleRegisterIdx[hCnt] <- tail(dataSubset$RegistrarIdx[dataSubset$hidx == h ],n=1) ##Save the Registry Idx So we can refer back to which Fish This belongs to 
     
     vphi_0_sub <- tail(drawS$phi_0[h,,],n=NSamples)
     vphi_max_sub <- tail(drawS$phi_max[h,,],n=NSamples)
@@ -235,6 +236,68 @@ legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NC
 dev.off()
 
 save(lInfStructLL,lInfStructDL,lInfStructNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_4.RData",sep=""))      
+
+##########
+####  Examine Correation Of Information Vs Undershooting ###
+
+##Load List the information measured ##
+load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_4.RData",sep=""))
+
+### Load Regression Data ###
+load(paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))
+## Load the First Bout turn data --
+lFirstBoutPoints <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData",".rds",sep="") ) #Processed Registry on which we add )
+
+##Convert to data frame 
+datFirstBouts <- data.frame(do.call(rbind,lFirstBoutPoints )) ##data.frame(lFirstBoutPoints[["LL"]] )
+##Select The First Bout Relevant Records
+datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructLL$vsampleRegisterIdx,]
+##Find Which Matrix Columns contain the inf measures of the Registrar IDx
+vColIdx <- lInfStructLL$vsamplePSeqIdx [ lInfStructLL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
+vInfMeasure <- colMeans(lInfStructLL$infoMatrix[,vColIdx])
+datFirstBoutVsInfLL <-  data.frame(UnderShootAngle=abs( (datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn) ), UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
+
+
+##NL ##
+datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructNL$vsampleRegisterIdx,]
+##Find Which Matrix Columns contain the inf measures of the Registrar IDx
+vColIdx <- lInfStructNL$vsamplePSeqIdx [ lInfStructNL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
+vInfMeasure <- colMeans(lInfStructNL$infoMatrix[,vColIdx])
+datFirstBoutVsInfNL <-  data.frame(UnderShootAngle=(abs(datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn)) , UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
+
+##DL ##
+datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructDL$vsampleRegisterIdx,]
+##Find Which Matrix Columns contain the inf measures of the Registrar IDx
+vColIdx <- lInfStructDL$vsamplePSeqIdx [ lInfStructDL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
+vInfMeasure <- colMeans(lInfStructDL$infoMatrix[,vColIdx])
+datFirstBoutVsInfDL <- data.frame(UnderShootAngle=(abs(datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn) ), UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
+
+## plot Undershot Ratio ###
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio.pdf",sep=""))
+plot(datFirstBoutVsInfLL$UnderShootRatio,datFirstBoutVsInf$MInf,
+     ylim=c(0,2),xlim=c(0,2),xlab=("Turn/Prey Angle"),ylab="mutual Inf in Eye V",
+     main="Information Vs Undershoot ",pch=pchL[2])
+points(datFirstBoutVsInfNL$UnderShootRatio,datFirstBoutVsInfNL$MInf,ylim=c(0,2),xlim=c(0,2),
+       col="red",pch=pchL[3])
+points(datFirstBoutVsInfDL$UnderShootRatio,datFirstBoutVsInfDL$MInf,ylim=c(0,2),xlim=c(0,2),
+       col="blue",pch=pchL[1])
+
+dev.off()
+
+##Plot Vs Undershoot Angle ###
+plot(datFirstBoutVsInfLL$UnderShootAngle,datFirstBoutVsInf$MInf,
+     ylim=c(0,2),xlim=c(-60,60),xlab=("OnSetAngleToPrey - Turn Angle"),ylab="mutual Inf in Eye V",
+     main="Information Vs Undershoot ",pch=pchL[2])
+points(datFirstBoutVsInfNL$UnderShootAngle,datFirstBoutVsInfNL$MInf,ylim=c(0,2),
+       col="red",pch=pchL[3])
+points(datFirstBoutVsInfDL$UnderShootAngle,datFirstBoutVsInfDL$MInf,ylim=c(0,2),
+       col="blue",pch=pchL[1])
+
+
+
+########
+
+
 
 
 
@@ -439,192 +502,5 @@ X11()
 plot(sampNL)
 X11()
 plot(sampDL,main="DL")
-
-
-
-
-
-
-
-
-
-
-
-## N : vector of number of points in Hunt Event
-modelExpInd  <- "model{
-##Prior
-
-# Prior Sigma On Eye Angle when  In Or Out of hunt region 
-for(i in 1:max(hidx)) {
-for(j in 1:2){
-#inv.var[j] ~ dgamma(0.01, 0.01)  ##Prior for inverse variance
-sigma[i,j] ~ dgamma(0.01, 0.01) ##Draw 
-}
-}
-
-# Likelihood / Separate for each Hunt Event
-for(i in 1:N){
-phi_0[hidx[i]] ~ dnorm(10,2) # Idle Eye Position
-phi_max[hidx[i]] ~ dnorm(15,5) # Max Eye Vergence Angle
-lambda[hidx[i]] ~ dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
-limDist[hidx[i]] <- max(distMax)
-u1[hidx[i]] ~ dunif(0, limDist[hidx[i]]) ## End Hunt Distance - Close to prey
-u0[hidx[i]] ~ dunif(u1, limDist[hidx[i]]) ##Start Hunt Distance -Far 
-
-
-##Make indicator if hunt event is within sampled Range 
-#if (u1[hidx[i]] < distP[i]  & distP[i] < u0) 
-s[hidx[i],i] <- step( distP[i]-u1[hidx[i]])*step(u0[ hidx[i] ]-distP[i]  ) 
-
-phi_hat[hidx[i],i] <- phi_0[hidx[i]] + s[hidx[i],i] * phi_max[hidx[i]]* (1-exp(-lambda[ hidx[i] ]*(distMax[i] - distP[i] ) )) 
-phi[hidx[i],i] ~ dnorm( phi_hat[hidx[i],i], sigma[s[hidx[i],i]+1] ) ##choose sigma 
-
-}"
-
-
-# 
-# 
-# # Step 1
-# # Reading the the data
-# FathersLoveData <- read.csv("C:/Users/zzo1/Dropbox/PBnRTutorial/lovedata.csv")
-# # Visual check data of the data
-# head(FathersLoveData) 
-# # the unnamed column shows the row number: each participant's data corresponds to one row
-# # Y1-Y4 are the love scores for each person
-# # 'Positivity' shows the positivity categories: 1: low, 2: medium, 3: high
-# # X1 takes value 1 for low positivity, otherwise 0
-# # X2 takes value 1 for high positivity, otherwise 0
-# 
-# # Checking the number of rows (i.e., 2nd dimension) of `FathersLoveData' data 
-# N <- dim(FathersLoveData)[1] # count number of rows to get number of subjects
-# # Creating a matrix with only the love scores: Y1-Y4 (columns 1-4):
-# # We `unlist' all N rows of selected columns 1:4 from the data set, 
-# # then we transform these values into numeric entries of a matrix
-# data <- matrix(as.numeric(unlist(FathersLoveData[,1:4])), nrow = N)
-# # Creating a variable that saves the number of time points
-# nrT <- 4
-# # Saving X1 and X2 as separate variables (same unlisting etc. as explained above)
-# grouping <- matrix(as.numeric(unlist(FathersLoveData[,6:7])), nrow = N)
-# X1 <- grouping[,1] # 1 when person had low positivity before baby
-# X2 <- grouping[,2] # 1 when person had high positivity before baby
-# # Creating a time vector for the measurement waves
-# time <- c(-3, 3, 9, 36) # time vector (T) based on the time of the measurements
-# # Now we have all the data needed to be passed to JAGS
-# # Creating a list of all the variables that we created above
-# jagsData <- list("Y"=data,"X1"=X1,"X2"=X2,"N"=N,"nrT"=nrT,"time"=time)
-# 
-# # Step 2
-# LinearGrowthCurve = cat("
-#                         model {
-#                         # Starting loop over participants
-#                         for (i in 1:N) { 
-#                         # Starting loop over measurement occasions
-#                         eps[i,1] <- Y[i, 1] - (betas[i,1] + betas[i,2]*time[1])
-#                         Y[i, 1] ~ dnorm(betas[i,1] + betas[i,2]*time[1], precAC)
-#                         for (t in 2:nrT) {  
-#                         # The likelihood function, corresponding to Equation 1:
-#                         
-#                         eps[i,t] <- Y[i,t] - (betas[i,1] + betas[i,2]*time[t] + acorr*eps[i,t-1])
-#                         Y[i, t] ~ dnorm(betas[i,1] + betas[i,2]*time[t] + acorr*eps[i,t-1], precAC)} 
-#                         # end of loop for the observations
-#                         
-#                         # Describing the level-2 bivariate distribution of intercepts and slopes
-#                         betas[i,1:2] ~ dmnorm(Level2MeanVector[i,1:2], interpersonPrecisionMatrix[1:2,1:2])
-#                         # The mean of the intercept is modeled as a function of positivity group membership
-#                         Level2MeanVector[i,1] <- MedPInt + betaLowPInt*X1[i] + betaHighPInt*X2[i]
-#                         Level2MeanVector[i,2] <- MedPSlope + betaLowPSlope*X1[i] + betaHighPSlope*X2[i]
-#                         } # end of loop for persons
-#                         # Specifying priors  distributions
-#                         MedPInt ~ dnorm(0, 0.01)
-#                         MedPSlope ~ dnorm(0, 0.01)
-#                         betaLowPInt ~ dnorm(0, 0.01)
-#                         betaHighPInt ~ dnorm(0, 0.01)
-#                         betaLowPSlope ~ dnorm(0, 0.01)
-#                         betaHighPSlope ~ dnorm(0, 0.01)
-#                         
-#                         sd1 ~ dunif(0, 100)
-#                         precAC <- 1/pow(sd1,2)*(1-acorr*acorr)
-#                         acorr ~ dunif(-1,1)
-#                         
-#                         sdIntercept  ~ dunif(0, 100)
-#                         sdSlope  ~ dunif(0, 100)
-#                         corrIntSlope ~ dunif(-1, 1)
-#                         # Transforming model parameters
-#                         ## Defining the elements of the level-2 covariance matrix
-#                         interpersonCovMatrix[1,1] <- sdIntercept * sdIntercept
-#                         interpersonCovMatrix[2,2] <- sdSlope * sdSlope
-#                         interpersonCovMatrix[1,2] <- corrIntSlope * sdIntercept* sdSlope
-#                         interpersonCovMatrix[2,1] <- interpersonCovMatrix[1,2]
-#                         ## Taking the inverse of the covariance to get the precision matrix
-#                         interpersonPrecisionMatrix <- inverse(interpersonCovMatrix)
-#                         ## Creating a variables representing
-#                         ### low positivity intercept
-#                         LowPInt <- MedPInt + betaLowPInt 
-#                         ### high positivity intercept
-#                         HighPInt <- MedPInt + betaHighPInt 
-#                         ### low positivity slope
-#                         LowPSlope <- MedPSlope + betaLowPSlope
-#                         ### high positivity slope
-#                         HighPSlope <- MedPSlope + betaHighPSlope
-#                         ### contrasts terms between high-low, medium-low, high-medium intercepts and slopes
-#                         HighLowPInt <- HighPInt - LowPInt
-#                         MedLowPInt <- MedPInt - LowPInt
-#                         HighMedPInt <- HighPInt - MedPInt
-#                         HighLowPSlope <- HighPSlope- LowPSlope
-#                         MedLowPSlope <- MedPSlope - LowPSlope
-#                         HighMedPSlope <- HighPSlope - MedPSlope
-#                         }
-#                         ",file = "GCM.txt")
-# 
-# 
-# # Step 3
-# # Collecting the model parameters of interest
-# parameters  <- c("MedPSlope","betaLowPInt",
-#                  "betaHighPInt","betaLowPSlope", 
-#                  "betaHighPSlope", "MedPInt", 
-#                  "sdIntercept", "sdSlope", 
-#                  "corrIntSlope", "betas",
-#                  "LowPInt","HighPInt","LowPSlope", "HighPSlope",
-#                  "HighLowPInt","HighMedPInt","MedLowPInt",
-#                  "HighLowPSlope","HighMedPSlope","MedLowPSlope",
-#                  "acorr", "sd1")
-# # Sampler settings
-# adaptation  <- 2000 # Number of steps to "tune" the samplers
-# chains  <- 6    # Re-start the exploration "chains" number of times
-# #  with different starting values
-# burnin  <- 1000 # Number of steps to get rid of the influence of initial values
-# # Define the number of samples drawn from the posterior in each chain
-# thinning <- 20
-# postSamples <- 60000
-# nrOfIter <- ceiling((postSamples * thinning)/chains)
-# 
-# 
-# fixedinits<- list(list(.RNG.seed=5,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=6,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=7,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=8,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=9,.RNG.name="base::Mersenne-Twister"),list(.RNG.seed=10,.RNG.name="base::Mersenne-Twister"))
-# 
-# # Step 4
-# # loading the rjags package
-# library(rjags)            
-# # creating JAGS model object
-# jagsModel<-jags.model("GCM.txt",data=jagsData,n.chains=chains,n.adapt=adaptation,inits=fixedinits)
-# # running burn-in iterations
-# update(jagsModel,n.iter=burnin)
-# # drawing posterior samples
-# codaSamples<-coda.samples(jagsModel,variable.names=parameters,thin = thinning, n.iter=nrOfIter,seed=5)
-# 
-# source("C:/Users/zzo1/Dropbox/PBnRTutorial/posteriorSummaryStats.R")
-# # Part 1: Check convergence
-# resulttable <- summarizePost(codaSamples)
-# saveNonConverged <- resulttable[resulttable$RHAT>1.1,]
-# if (nrow(saveNonConverged) == 0){
-#   print("Convergence criterion was met for every parameter.")
-# }else{ 
-#   print("Not converged parameter(s):")
-#   show(saveNonConverged)
-# }
-# # Part 2: Display summary statistics for selected parameters (regexp)
-# show(summarizePost(codaSamples, filters =  c("^Med","^Low","^High","^sd","^corr", "sd1", "acorr"))) 
-# 
-# save.image(sprintf("GCMPBnR%s.Rdata", Sys.Date()))
-# 
 
 
