@@ -16,11 +16,12 @@ source("HuntingEventAnalysis_lib.r")
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=100;
-steps=3500;
+steps=5500;
 thin=3;
+nchains <-3
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
+sampleFraction  <- 0.55 ##Fraction of Points to Use from Each Hunt Episode's data
 fitseqNo <- 4
 npad <- 1
 
@@ -49,25 +50,15 @@ modelGCSigmoidInd  <- "model
 
   
   for(i in 1:max(hidx) ) { 
-    phi_max[i] ~ dnorm(65,1e-3) ##I(0,100) # Max Eye Vergence Angle
-    phi_0[i] ~ dnorm(0.01, 1e-3)T(0,max(phi_max[]))  # Idle Eye Position
-    lambda[i] ~ dnorm(100.0, 1e-3)T(0,) #dgamma(1, 1) # RiseRate of Eye Vs Prey Distance
-    gamma[i] ~ dgamma(1, 1) #dnorm(0.5, 1e-3)I(0,)  # dunif(0.5, 0.000001)
+    phi_max[i] ~ dnorm(65,1e-3)T(0,150) ##I(0,100) # Max Eye Vergence Angle
+    phi_0[i] ~ dnorm(0.01, 1e-3)T(0,60)  # Idle Eye Position
+    lambda[i] ~ dgamma(1, 1) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
+    gamma[i] ~ dgamma(1, 1) #dnorm(0.5, 1e-3)I(0,)  # RiseRate of Eye Vs Prey Distance After Sig Rise dunif(0.5, 0.000001)
     alpha[i] ~ dunif(1,3)
     tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
-    var_inv[i] ~ dgamma(0.001, 0.001)I(0.001,) ##Draw   ##Precision
+    var_inv[i] ~ dgamma(0.001, 0.001) ##Draw   ##Precision
     
     sigma[i] <- 1 / sqrt(var_inv[ i])    
-    
-    #u1[i] ~ dunif(0, limDist) ## End Hunt Distance - Close to prey
-    #u0[i] ~ dunif(u1[i], limDist) ##Start Hunt Distance -Far
-  
-    #u0[i] ~ dnorm(distMax[i],1.0)
-    #U3[i] <- logit(gamma[i])   
-    # Sigma On Eye Angle when  In Or Out of hunt region 
-    #for(j in 1:2){
-    #}
-
 
   }
   
@@ -330,7 +321,7 @@ modelGCSigmoidInd  <- "model
   writeLines(modelGCSigmoidInd,fileConn);
   close(fileConn)
   
-  mLL=jags.model(file="modelSig.tmp",data=dataLL);
+  mLL=jags.model(file="modelSig.tmp",n.chains=nchains,data=dataLL);
   update(mLL,burn_in);
   drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
   #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
@@ -349,7 +340,7 @@ modelGCSigmoidInd  <- "model
   #dev.off()
   ########################
   ## NL ###
-  mNL=jags.model(file="modelSig.tmp",data=dataNL);
+  mNL=jags.model(file="modelSig.tmp",n.chains=nchains,data=dataNL);
   update(mNL,burn_in)
   drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
   
@@ -359,7 +350,7 @@ modelGCSigmoidInd  <- "model
   #dev.off()
   ############
   ### DL ###
-  mDL=jags.model(file="modelSig.tmp",data=dataDL);
+  mDL=jags.model(file="modelSig.tmp",n.chains=nchains,data=dataDL);
   update(mDL,burn_in)
   drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
   
@@ -392,3 +383,23 @@ modelGCSigmoidInd  <- "model
   save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit3.RData",sep="") )
        
 ####################
+  
+  ############ Checking Convergence ####
+  ## Compare convergence between the 3 chains for each trace 
+   
+  N <- NROW(drawLL$tau[,1,1])
+  for (idxH in 1:N)
+  {
+    pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_tau",idxH,".pdf",sep="")) 
+    plot(drawLL$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("tau",idxH) )
+    lines(drawLL$tau[idxH,,2],type='l',col="red")
+    lines(drawLL$tau[idxH,,3],type='l',col="blue")
+    dev.off()
+    
+    pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_gamma",idxH,".pdf",sep="")) 
+    plot(drawLL$gamma[idxH,,1],type='l',ylim=c(0,4),main=paste("V rise rate gamma",idxH) )
+    lines(drawLL$gamma[idxH,,2],type='l',col="red")
+    lines(drawLL$gamma[idxH,,3],type='l',col="blue")
+    dev.off()
+    
+  }
