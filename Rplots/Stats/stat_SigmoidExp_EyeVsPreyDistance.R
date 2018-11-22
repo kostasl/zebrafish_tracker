@@ -13,6 +13,14 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
+
+##For the 3 Groups 
+colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
+colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
+colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.3),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
+pchL <- c(16,2,4)
+
+
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=100;
@@ -68,6 +76,38 @@ modelGCSigmoidInd  <- "model
   
 }"
   
+  ## Plot the Eye Vs Distance data points and the regression variations ##
+  plotEyeGCFit <- function(pp,strGroup,dataSubset,drawS)
+  {
+    vX  <- seq(0,5,by=0.01)
+    vPP <- which (dataSubset$hidx == pp)
+    
+    etau    <- (tail(drawS$tau[pp,,],n=100))
+    ephimax <- (tail(drawS$phi_max[pp,,],n=100))
+    ephi0   <- (tail(drawS$phi_0[pp,,],n=100))
+    elambda <- (tail(drawS$lambda[pp,,],n=100))
+    egamma  <- (tail(drawS$gamma[pp,,],n=100))
+    ealpha  <- (tail(drawS$alpha[pp,,],n=100))
+    
+    plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),
+         main=paste(strGroup,pp), bg=colourP[2],col=colourP[1],cex=0.5)
+    ## Draw The 100 Variotons before the fit converged      
+    for (k in 1:NROW(etau) )
+    {
+      vY  <-  ealpha[k]*exp(egamma[k]*(etau[k]-vX) )+ ephi0[k]   +  (ephimax[k] -ephi0[k]  )/(1+exp( -(elambda[k]   *(etau[k] -vX )   ) ) ) 
+      
+      #vY_l  <- quantile(drawS$phi_0[pp,,])[1]   - ( quantile (drawS$lambda[pp])[1] )*((( quantile(drawS$gamma[pp,,])[1] )^( quantile(drawS$u0[pp])[1] - (vX) ) ) ) #
+      #vY_u  <- quantile(drawS$phi_0[pp,,])[5]   - (quantile (drawS$lambda[pp,,])[5])*((( quantile(drawS$gamma[pp,,])[5] )^( quantile(drawS$u0[pp,,])[5] - (vX) ) ) ) #
+      #      #points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
+      lines( vX ,vY,type="l",col=colourR[3],lwd=1)
+      #        lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
+    }
+
+  }
+  
+  
+  
+  ## Plot average regressed function ##
   ## plot( exp(0.1*(-vx+80))+  10 + (90-10)/(1+exp(-100*(60-vx) ))   ,ylim=c(0,400))
   plotGCSig <- function (drawS,dataSubset,n=NA,groupID){
     
@@ -126,39 +166,63 @@ modelGCSigmoidInd  <- "model
     for (pp in vsampleP)
     {
       #phi_0[hidx[i]] - lambda[ hidx[i] ] * pow(gamma[hidx[i]],distMax[i] - distP[i] )   
-      vX  <- seq(0,5,by=0.01)
-
       #      #X11()
-      vPP <- which (dataSubset$hidx == pp)
+
       pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
-      plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),main=paste(strGroupID[groupID],pp), bg=colourP[2],col=colourP[1],cex=0.5)
 
-      etau    <- (tail(drawS$tau[pp,,],n=100))
-      ephimax <- (tail(drawS$phi_max[pp,,],n=100))
-      ephi0   <- (tail(drawS$phi_0[pp,,],n=100))
-      elambda <- (tail(drawS$lambda[pp,,],n=100))
-      egamma  <- (tail(drawS$gamma[pp,,],n=100))
-      ealpha  <- (tail(drawS$alpha[pp,,],n=100))
-
-      ## Draw The 100 Variotons before the fit converged      
-      for (k in 1:NROW(etau) )
-      {
-        vY  <-  ealpha[k]*exp(egamma[k]*(etau[k]-vX) )+ ephi0[k]   +  (ephimax[k] -ephi0[k]  )/(1+exp( -(elambda[k]   *(etau[k] -vX )   ) ) ) 
-
-        #vY_l  <- quantile(drawS$phi_0[pp,,])[1]   - ( quantile (drawS$lambda[pp])[1] )*((( quantile(drawS$gamma[pp,,])[1] )^( quantile(drawS$u0[pp])[1] - (vX) ) ) ) #
-        #vY_u  <- quantile(drawS$phi_0[pp,,])[5]   - (quantile (drawS$lambda[pp,,])[5])*((( quantile(drawS$gamma[pp,,])[5] )^( quantile(drawS$u0[pp,,])[5] - (vX) ) ) ) #
-        #      #points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
-        lines( vX ,vY,type="l",col=colourR[3],lwd=1)
-#        lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
-      }
-      
+      plotEyeGCFit(pp,strGroupID[groupID],dataSubset,drawS)
+    
       dev.off()
     
   } ##For Each Sampled Hunt Event 
     
 }##END oF Function 
   
+plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
+{
   
+  N <- NROW(drawS$tau[,1,1])
+  for (idxH in 1:N)
+  {
+    
+    ## Plot multipage for param convergence ##
+    pdf(onefile=TRUE,file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_",strGroupID,"_",idxH,".pdf",sep="")) 
+    ## plot the regression lines and the data
+    plotEyeGCFit(idxH,strGroupID,dataS,drawS) 
+    
+    plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("tau",idxH) )
+    lines(drawS$tau[idxH,,2],type='l',col="red")
+    lines(drawS$tau[idxH,,3],type='l',col="blue")
+    #dev.off()
+    
+    ##gelmal rubin diag ##
+    print(paste(idxH," :--" )  )
+    chains_tau <- mcmc(drawS$tau[idxH,,],thin=thin)
+    lmcmc_tau <- mcmc.list(chains_tau[,1],chains_tau[,2],chains_tau[,3])
+    gdiag_psrf <- gelman.diag(lmcmc_tau,autoburnin=TRUE )$psrf
+    #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
+    gelman.plot( lmcmc_tau,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
+                 main=paste("tau psrf:", round(gdiag_psrf[1]*100)/100 ) )
+    
+    
+    
+    #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_gamma",idxH,".pdf",sep="")) 
+    plot(drawS$gamma[idxH,,1],type='l',ylim=c(0,4),main=paste("V rise rate gamma",idxH) )
+    lines(drawS$gamma[idxH,,2],type='l',col="red")
+    lines(drawS$gamma[idxH,,3],type='l',col="blue")
+    #dev.off()
+    
+    chains_gamma <- mcmc(drawS$gamma[idxH,,],thin=thin)
+    lmcmc_gamma <- mcmc.list(chains_gamma[,1],chains_gamma[,2],chains_gamma[,3])
+    gdiag_psrf <- gelman.diag(lmcmc_gamma,autoburnin=TRUE )$psrf
+    #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
+    gelman.plot( lmcmc_gamma,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
+                 main=paste("gamma psrf:", round(gdiag_psrf[1]*100)/100 ) )
+    
+    
+    dev.off()
+  }
+}
   
   
   
@@ -261,12 +325,6 @@ modelGCSigmoidInd  <- "model
   datVEyePointsNL <- data.frame( do.call(rbind,ldatVEyePoints[["NL"]] ) ) 
   datVEyePointsDL <- data.frame( do.call(rbind,ldatVEyePoints[["DL"]] ) ) 
   
-  
-  ##For the 3 Groups 
-  colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
-  colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
-  colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.3),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
-  pchL <- c(16,2,4)
   
   
   
@@ -386,20 +444,30 @@ modelGCSigmoidInd  <- "model
   
   ############ Checking Convergence ####
   ## Compare convergence between the 3 chains for each trace 
-   
-  N <- NROW(drawLL$tau[,1,1])
-  for (idxH in 1:N)
-  {
-    pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_tau",idxH,".pdf",sep="")) 
-    plot(drawLL$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("tau",idxH) )
-    lines(drawLL$tau[idxH,,2],type='l',col="red")
-    lines(drawLL$tau[idxH,,3],type='l',col="blue")
-    dev.off()
-    
-    pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_gamma",idxH,".pdf",sep="")) 
-    plot(drawLL$gamma[idxH,,1],type='l',ylim=c(0,4),main=paste("V rise rate gamma",idxH) )
-    lines(drawLL$gamma[idxH,,2],type='l',col="red")
-    lines(drawLL$gamma[idxH,,3],type='l',col="blue")
-    dev.off()
-    
-  }
+  
+  #### CalcInformation ##
+  load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_4.RData",sep=""))
+  
+  idxH <- 1
+  
+  
+  ## The gelman.diag gives you the scale reduction factors for each parameter.
+  ## A factor of 1 means that between variance and within chain variance are equal, larger 
+  # values mean that there is still a notable difference between chains. 
+  
+  dataS <- dataDL
+  drawS <- drawDL
+  strGroupID <- "DL"
+  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+
+  dataS <- dataNL
+  drawS <- drawNL
+  strGroupID <- "NL"
+  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  
+  dataS <- dataLL
+  drawS <- drawLL
+  strGroupID <- "LL"
+  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  
+  
