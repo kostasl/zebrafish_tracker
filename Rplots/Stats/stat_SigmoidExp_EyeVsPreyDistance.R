@@ -23,14 +23,14 @@ pchL <- c(16,2,4)
 
 #
 #These RC params Work Well to Smooth LF And NF
-burn_in=100;
-steps=5500;
+burn_in=1000;
+steps=15000;
 thin=3;
-nchains <-3
+nchains <-4
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.55 ##Fraction of Points to Use from Each Hunt Episode's data
-fitseqNo <- 4
+sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
+fitseqNo <- 5
 npad <- 1
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
@@ -223,7 +223,6 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
     dev.off()
   }
 }
-  
   
   
   
@@ -438,7 +437,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
   save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))      
   
   ##Save All  
-  save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit3.RData",sep="") )
+  save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit",fitseqNo,".RData",sep="") )
        
 ####################
   
