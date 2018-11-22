@@ -44,10 +44,10 @@ colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4
 pchL <- c(16,2,4)
 #
 ############# Analysis AND REPLAY OF HUNT EVENTS ####
-load(strDataFileName)
+load(strDataFileName) ## Load Imported Hunt Event Tracks
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
-lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 bSaveNewMotionData <- TRUE ##Overwrite the lMotionBoutDatFile
 
 ##Make an Updated list of ReTracked Hunt Events that have been imported
@@ -702,8 +702,8 @@ saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
 ### Here We Need To Detect The 1st Turn To Prey , Not Just 1st Bout
-pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All2.pdf",sep=""))
-X11()
+pdf(file= paste(strPlotExportPath,"/BoutTurnsToPreyCompareFirstBoutOnly_All3.pdf",sep=""))
+#X11()
   plot(lFirstBoutPoints[["DL"]][,1], lFirstBoutPoints[["DL"]][,2],
      main=paste("Turn Size Vs Bearing To Prey ", sep=""),
      xlab="Bearing To Prey prior to Bout",ylab="Bearing Change After Bout",xlim=c(-100,100),

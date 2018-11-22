@@ -183,35 +183,11 @@ drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
 drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
-strPlotName <-  paste(strPlotExportPath,"/stat_TurnVsBearing_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
-pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
-myplot_res(1000)
-dev.off()
 
 
-X11()
-hist(drawLL$beta[1,,1],breaks=seq(0.91,1.15,length=00),col=colourH[1],
-     #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
-     xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
-hist(drawNL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
-hist(drawDL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,15))
-
-myplot_res(1000)
-
-X11()
-hist(drawLL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[1],xlim=c(0.9,1.1),
-     #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
-     xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
-
-
-hist(drawNL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[2],xlim=c(0.9,1.1),add=T  )
-
-
-X11()
-hist(drawLL$beta[2,,1])
-
-ind = 100
-##Save the Mean Slope and intercept
+## Plot ### 
+ind = 100 ## Number of last sampled values
+## Save the Mean Slope and intercept
 ##quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2]
 muLLa=mean(drawLL$beta[,(steps-ind):steps,1][1,]) 
 muLLb=mean(drawLL$beta[,(steps-ind):steps,1][2,])
@@ -276,6 +252,33 @@ dev.off()
 
 
 
+
+#strPlotName <-  paste(strPlotExportPath,"/stat_TurnVsBearing_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
+#pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
+#myplot_res(1000)
+#dev.off()
+
+# 
+# X11()
+# hist(drawLL$beta[1,,1],breaks=seq(0.91,1.15,length=00),col=colourH[1],
+#      #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
+#      xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
+# hist(drawNL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[2],xlim=c(5,15))
+# hist(drawDL$beta[1,,1],breaks=seq(0,30,length=200),add=T,col=colourH[3],xlim=c(5,15))
+# 
+# myplot_res(1000)
+# 
+# X11()
+# hist(drawLL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[1],xlim=c(0.9,1.1),
+#      #xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
+#      xlab=expression(paste("Turn to Prey Bearing ",lambda)),main=paste("Slope ") )
+# 
+# 
+# hist(drawNL$beta[2,,1],breaks=seq(0.9,1.1,length=100),col=colourH[2],xlim=c(0.9,1.1),add=T  )
+# 
+# 
+# X11()
+# hist(drawLL$beta[2,,1])
 
 
 ##Plot Densities Summary
