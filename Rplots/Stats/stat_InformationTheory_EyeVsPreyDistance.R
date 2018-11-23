@@ -9,12 +9,13 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
+fitseqNo <- 5
 
 #### CalcInformation ##
-load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_4.RData",sep=""))
+load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep="") )
 
 ## Can Load Last Inf Matrix 
-load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))
+#load(file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit.RData",sep=""))
        
 
 #### Load the Tracked Hunts Register ###
@@ -22,6 +23,9 @@ strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis
 message(paste(" Importing Retracked HuntEvents from:",strRegisterDataFileName))
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 
+strGroupID <- levels(datTrackedEventsRegister$groupID)
+
+NSamples <-10 ## Number of Fit Lines (rows) to add in info matrrix
 
 
 ##For the 3 Groups 
@@ -48,7 +52,7 @@ phiDens <- function(phi,x,Ulist)
 
 ##
 ## Calc Info In single Sample & Hunt Event
-InfoCalc <- function(DistRange,Ulist)
+InfoCalc <- function(DistRange,minDist,maxDist,Ulist)
 {
   PhiRange <- seq(0,100,1) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
   
@@ -76,8 +80,16 @@ InfoCalc <- function(DistRange,Ulist)
   ###row sum
   sel=PMatrix>0
   #INFO=sums(PMatrix[sel]*log2(Iloc[sel]) )
-  ### Return Marginals I_xPhi  
-  INFO=colSums(PMatrix*log2(Iloc),na.rm=TRUE )
+  ### Return Marginals I_xPhi
+  mInfo <- PMatrix*log2(Iloc)
+  
+  ##Calc Marginals only on relevant Region - up to min distance from Target
+  ##Make Binary Array indicating OutOf Bound regions
+  vIntRegion<-as.numeric( DistRange >= minDist)
+  mIntRegion <- t(matrix(vIntRegion,dim(mInfo)[2],dim(mInfo)[1]))
+  
+  INFO=colSums(mInfo*mIntRegion,na.rm=TRUE )
+  
   return(INFO)
 }
 
@@ -88,20 +100,23 @@ InfoCalc <- function(DistRange,Ulist)
 ## Returns a matrix Giving N Inf. Measures for each Hunt event
 calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
 {
+  bPlot <- TRUE
   DistMin = 0.5
   DistMax =  5
   ##Assume X distance is encoded using 5 bits
   DistRange <- seq(DistMin,DistMax, (DistMax-DistMin )/(2^5-1)  )
   
-  NSamples <-10
+ 
   NHuntEvents <- NROW(unique(dataSubset$hidx) )
   
-  vsampleP <- unique(dataSubset$hidx)
+  vRegIdx <- unique(dataSubset$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
+  vsampleP <- unique(dataSubset$hidx) # Obtain the seq id, so we can link to drawSamples
   
   if (is.na(n))
   {
     n <- NROW(unique(dataSubset$hidx))
-    vsampleP <- sample(unique(dataSubset$hidx),n)
+    ##Note:Suffled and so the content of vsampleP maintains the hidx from where we can recover the RegIdx
+    vsampleP <- sample(unique(dataSubset$hidx),n) 
   }
   
   
@@ -111,34 +126,43 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
   
   mInfMatrix <- matrix(nrow=NSamples,ncol=NROW(vsampleP) )
   vsampleRegisterIdx <- vector()
+  
   hCnt <- 0
+  idxChain <- 1
   for (h in vsampleP)
   {
     print(h)
     hCnt <- hCnt + 1
-    vsampleRegisterIdx[hCnt] <- tail(dataSubset$RegistrarIdx[dataSubset$hidx == h ],n=1) ##Save the Registry Idx So we can refer back to which Fish This belongs to 
+    ##Hold RegIDx For This Hunt Event 
+    vsampleRegisterIdx[hCnt] <- vRegIdx[h] ##Save the Registry Idx So we can refer back to which Fish This belongs to 
     
-    vphi_0_sub <- tail(drawS$phi_0[h,,],n=NSamples)
-    vphi_max_sub <- tail(drawS$phi_max[h,,],n=NSamples)
-    vgamma_sub <- tail(drawS$gamma[h,,],n=NSamples)
-    vlambda_sub <- tail(drawS$lambda[h,,],n=NSamples)
-    vtau_sub   <- tail(drawS$tau[h,,],n=NSamples)
-    vsigma_sub <- tail(drawS$sigma[h,,],n=NSamples)
-    valpha_sub <- tail(drawS$alpha[h,,],n=NSamples)
+    vphi_0_sub <- tail(drawS$phi_0[h,,idxChain],n=NSamples)
+    vphi_max_sub <- tail(drawS$phi_max[h,,idxChain],n=NSamples)
+    vgamma_sub <- tail(drawS$gamma[h,,idxChain],n=NSamples)
+    vlambda_sub <- tail(drawS$lambda[h,,idxChain],n=NSamples)
+    vtau_sub   <- tail(drawS$tau[h,,idxChain],n=NSamples)
+    vsigma_sub <- tail(drawS$sigma[h,,idxChain],n=NSamples)
+    valpha_sub <- tail(drawS$alpha[h,,idxChain],n=NSamples)
     
-    
+    ##Use the minimum Distance to prey, to obtain the effective integration Zone That information should be measured from 
+    DistRangeEffective_min <- min(dataSubset$distP[dataSubset$hidx == h])
+    DistRangeEffective_max <- max(dataSubset$distP[dataSubset$hidx == h])
     
     vPP <- which (dataSubset$hidx == h)
     #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
-    #pdf(file= paste(strPlotExportPath,"/stat/stat_InfMeasure_EyeVsDistance5mm_",strGroupID[groupID],"_SigExp_",h,".pdf",sep="")) 
-    #par(mar = c(5,5,2,5))
-    #plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,max(DistRange)),ylim=c(0,90),main=paste(strGroupID[groupID],h), 
-    #     bg=colourP[2],col=colourP[1],
-    #     cex=0.5,
-    #     xlab="Distance From Prey",ylab=expression(paste(Phi)) )  
-    ##Plot The Fitted Function
-    #vY  <-  mean(valpha_sub)*exp(mean(vgamma_sub)*( mean(vtau_sub)-DistRange) )+ mean(vphi_0_sub)   +  ( mean(vphi_max_sub) - mean(vphi_0_sub)  )/(1+exp( -( mean(vlambda_sub)   *( mean(vtau_sub) -DistRange )   ) ) ) 
-    #lines( DistRange ,vY,type="l",col=colourR[3],lwd=3)
+    if (bPlot)
+    {
+      pdf(file= paste(strPlotExportPath,"/stat/stat_InfMeasure_EyeVsDistance5mm_",strGroupID[groupID],"_SigExp_",vRegIdx[h],".pdf",sep="")) 
+      par(mar = c(5,5,2,5))
+      plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,max(DistRange)),ylim=c(0,90),
+           main=paste(strGroupID[groupID],h," (",vRegIdx[h],")") , 
+           bg=colourP[2],col=colourP[1],
+           cex=0.5,
+           xlab="Distance From Prey",ylab=expression(paste(Phi)) )  
+      #Plot The Fitted Function
+      vY  <-  mean(valpha_sub)*exp(mean(vgamma_sub)*( mean(vtau_sub)-DistRange) )+ mean(vphi_0_sub)   +  ( mean(vphi_max_sub) - mean(vphi_0_sub)  )/(1+exp( -( mean(vlambda_sub)   *( mean(vtau_sub) -DistRange )   ) ) ) 
+      lines( DistRange ,vY,type="l",col=colourR[3],lwd=3)
+    }
     
     lPlist <- list()
     for (i in 1:NSamples)
@@ -155,21 +179,26 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
       ## from which mutual inf gives us the reduction in uncertainty
       ## Ex. We need log2(NROW(DistRange)) of bits to encode distance at the res. defined in DistRange
       
-      
-      vPPhiPerX <- InfoCalc(DistRange,Ulist = lPlist[[i]]) ##Get MutInf Per X
+      vPPhiPerX <- InfoCalc(DistRange,DistRangeEffective_min,DistRangeEffective_max,Ulist = lPlist[[i]]) ##Get MutInf Per X
 
       ##Plot The Information Content Of The fitted Function ##
-      #par(new=T) 
-      #  plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19,col=colourP[4], xlab=NA,
-      #       ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
-      # lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l",col=colourR[4], xlab=NA, ylab=NA )
-      
+      if (bPlot)
+      {
+        par(new=T) 
+          plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19,col=colourP[4], xlab=NA,
+               ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+         lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l",col=colourR[4], xlab=NA, ylab=NA )
+      }
+        
       mInfMatrix[i,hCnt] <- sum(vPPhiPerX) ## Mutual Inf Of X and Phi
     } 
     
-    #axis(side=4)
-    #mtext(side = 4, line = 3, 'Mutual information (bits)')
-    #dev.off()
+    if (bPlot)
+    {
+      axis(side=4)
+      mtext(side = 4, line = 3, 'Mutual information (bits)')
+      dev.off()
+    }
   }##For Each Hunt Event   
   
   
@@ -250,42 +279,57 @@ lFirstBoutPoints <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_Fi
 
 ##Convert to data frame 
 datFirstBouts <- data.frame(do.call(rbind,lFirstBoutPoints )) ##data.frame(lFirstBoutPoints[["LL"]] )
-##Select The First Bout Relevant Records
+##Select The First Bout Relevant Records - 
+#Note we are subsetting the events at the intersection of having a 1st bout turn to prey AND a strike to prey
+
+##Make Data Frame For Debug of Events #
+datTrackedEventsRegisterWithFirstBout <- datTrackedEventsRegister[datFirstBouts$RegistarIdx,]
+##Subset the Event We have a first Turn Bout and Have Measured Eye INf (which are filtered for doing a strike attack)
 datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructLL$vsampleRegisterIdx,]
 ##Find Which Matrix Columns contain the inf measures of the Registrar IDx
 vColIdx <- lInfStructLL$vsamplePSeqIdx [ lInfStructLL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
 vInfMeasure <- colMeans(lInfStructLL$infoMatrix[,vColIdx])
-datFirstBoutVsInfLL <-  data.frame(UnderShootAngle=abs( (datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn) ), UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
+datFirstBoutVsInfLL <-  data.frame(RegistarIdx=datBoutSubset$RegistarIdx,hidx=vColIdx, UnderShootAngle=abs( (datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn) ), UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
 
 
 ##NL ##
 datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructNL$vsampleRegisterIdx,]
+stopifnot(unique(datTrackedEventsRegister[lInfStructNL$vsampleRegisterIdx,"groupID"] ) == "NL" )  ##Check for Errors in Reg idx - Group should match registry
 ##Find Which Matrix Columns contain the inf measures of the Registrar IDx
 vColIdx <- lInfStructNL$vsamplePSeqIdx [ lInfStructNL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
 vInfMeasure <- colMeans(lInfStructNL$infoMatrix[,vColIdx])
-datFirstBoutVsInfNL <-  data.frame(UnderShootAngle=(abs(datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn)) , UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
+datFirstBoutVsInfNL <-  data.frame(RegistarIdx=datBoutSubset$RegistarIdx,hidx=vColIdx,UnderShootAngle=(abs(datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn)) , UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
 
 ##DL ##
 datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructDL$vsampleRegisterIdx,]
-##Find Which Matrix Columns contain the inf measures of the Registrar IDx
+##Find Which Matrix Columns contain the inf measures of the Registrar IDx - Associate RgIdx With hidx (the seq numb of precessing the data)
 vColIdx <- lInfStructDL$vsamplePSeqIdx [ lInfStructDL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
 vInfMeasure <- colMeans(lInfStructDL$infoMatrix[,vColIdx])
-datFirstBoutVsInfDL <- data.frame(UnderShootAngle=(abs(datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn) ), UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
+datFirstBoutVsInfDL <- data.frame(RegistarIdx=datBoutSubset$RegistarIdx,hidx=vColIdx,UnderShootAngle=(abs(datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn) ), UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
 
 ## plot Undershot Ratio ###
 pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio.pdf",sep=""))
-plot(datFirstBoutVsInfLL$UnderShootRatio,datFirstBoutVsInf$MInf,
+plot(datFirstBoutVsInfLL$UnderShootRatio,datFirstBoutVsInfLL$MInf,
      ylim=c(0,2),xlim=c(0,2),xlab=("Turn/Prey Angle"),ylab="mutual Inf in Eye V",
-     main="Information Vs Undershoot ",pch=pchL[2])
-points(datFirstBoutVsInfNL$UnderShootRatio,datFirstBoutVsInfNL$MInf,ylim=c(0,2),xlim=c(0,2),
-       col="red",pch=pchL[3])
-points(datFirstBoutVsInfDL$UnderShootRatio,datFirstBoutVsInfDL$MInf,ylim=c(0,2),xlim=c(0,2),
-       col="blue",pch=pchL[1])
+     main="Information Vs Undershoot ",col=colourH[2],pch=pchL[2])
+segments(1,-10,1,20);
 
+text(datFirstBoutVsInfLL$UnderShootRatio*1.01,datFirstBoutVsInfLL$MInf*1.01,datFirstBoutVsInfLL$RegistarIdx,cex=0.7)
+
+points(datFirstBoutVsInfNL$UnderShootRatio,datFirstBoutVsInfNL$MInf,ylim=c(0,2),xlim=c(0,2),
+       col=colourH[3],pch=pchL[3])
+text(datFirstBoutVsInfNL$UnderShootRatio*1.01,datFirstBoutVsInfNL$MInf*1.01,datFirstBoutVsInfNL$RegistarIdx,cex=0.7,col=colourP[3])
+
+points(datFirstBoutVsInfDL$UnderShootRatio,datFirstBoutVsInfDL$MInf,ylim=c(0,2),xlim=c(0,2),
+       col=colourH[1],pch=pchL[1])
+text(datFirstBoutVsInfDL$UnderShootRatio*1.01,datFirstBoutVsInfDL$MInf*1.01,datFirstBoutVsInfDL$RegistarIdx,cex=0.7,col=colourP[1])
+
+legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsInfDL),NROW(datFirstBoutVsInfLL) ,NROW(datFirstBoutVsInfNL) ) ) 
+       ,col=colourH,pch=pchL,lty=c(1,2,3),lwd=2)
 dev.off()
 
 ##Plot Vs Undershoot Angle ###
-plot(datFirstBoutVsInfLL$UnderShootAngle,datFirstBoutVsInf$MInf,
+plot(datFirstBoutVsInfLL$UnderShootAngle,datFirstBoutVsInfLL$MInf,
      ylim=c(0,2),xlim=c(-60,60),xlab=("OnSetAngleToPrey - Turn Angle"),ylab="mutual Inf in Eye V",
      main="Information Vs Undershoot ",pch=pchL[2])
 points(datFirstBoutVsInfNL$UnderShootAngle,datFirstBoutVsInfNL$MInf,ylim=c(0,2),

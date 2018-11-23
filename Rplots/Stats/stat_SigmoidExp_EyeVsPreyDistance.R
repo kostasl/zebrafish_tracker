@@ -12,7 +12,7 @@ source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
-
+library(rjags)
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
@@ -79,6 +79,8 @@ modelGCSigmoidInd  <- "model
   ## Plot the Eye Vs Distance data points and the regression variations ##
   plotEyeGCFit <- function(pp,strGroup,dataSubset,drawS)
   {
+    vRegIdx <- unique(dataSubset$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
+    
     vX  <- seq(0,5,by=0.01)
     vPP <- which (dataSubset$hidx == pp)
     
@@ -90,7 +92,8 @@ modelGCSigmoidInd  <- "model
     ealpha  <- (tail(drawS$alpha[pp,,],n=100))
     
     plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),
-         main=paste(strGroup,pp), bg=colourP[2],col=colourP[1],cex=0.5)
+         main=paste(strGroup,pp," (",vRegIdx[pp],")"), 
+         bg=colourP[2],col=colourP[1],cex=0.5)
     ## Draw The 100 Variotons before the fit converged      
     for (k in 1:NROW(etau) )
     {
@@ -118,6 +121,8 @@ modelGCSigmoidInd  <- "model
     
     if (is.na(n))
       n <- NROW(unique(dataSubset$hidx))
+    
+    vRegIdx <- unique(dataSubset$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
     
     vsampleP <- sample(unique(dataSubset$hidx),n)
     vsub <- which (dataSubset$hidx %in% vsampleP)
@@ -163,12 +168,12 @@ modelGCSigmoidInd  <- "model
     if (!bPlotIndividualEvents)
     return(NA)
     ##plot individual Curve Fits
-    for (pp in vsampleP)
+    for (pp in vsampleP) ##Go through Each hidx 
     {
       #phi_0[hidx[i]] - lambda[ hidx[i] ] * pow(gamma[hidx[i]],distMax[i] - distP[i] )   
       #      #X11()
 
-      pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
+      pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",vRegIdx[pp],".pdf",sep="")) 
 
       plotEyeGCFit(pp,strGroupID[groupID],dataSubset,drawS)
     
@@ -181,16 +186,17 @@ modelGCSigmoidInd  <- "model
 plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
 {
   
+  vRegIdx <- unique(dataS$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
   N <- NROW(drawS$tau[,1,1])
   for (idxH in 1:N)
   {
     
     ## Plot multipage for param convergence ##
-    pdf(onefile=TRUE,file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_",strGroupID,"_",idxH,".pdf",sep="")) 
+    pdf(onefile=TRUE,file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_",strGroupID,"_",vRegIdx[idxH],".pdf",sep="")) 
     ## plot the regression lines and the data
     plotEyeGCFit(idxH,strGroupID,dataS,drawS) 
     
-    plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("tau",idxH) )
+    plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("tau",idxH," (",vRegIdx[idxH],")") )
     lines(drawS$tau[idxH,,2],type='l',col="red")
     lines(drawS$tau[idxH,,3],type='l',col="blue")
     #dev.off()
@@ -207,7 +213,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
     
     
     #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_gamma",idxH,".pdf",sep="")) 
-    plot(drawS$gamma[idxH,,1],type='l',ylim=c(0,4),main=paste("V rise rate gamma",idxH) )
+    plot(drawS$gamma[idxH,,1],type='l',ylim=c(0,4),main=paste("V rise rate gamma ",idxH," (",vRegIdx[idxH],")") )
     lines(drawS$gamma[idxH,,2],type='l',col="red")
     lines(drawS$gamma[idxH,,3],type='l',col="blue")
     #dev.off()
@@ -294,7 +300,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
       ##Augment with Idle phi entries for this hunt Event- to go up to 6 mm - 0 
       missingRegion <- 6 - head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1) 
      
-
+      missingRegion <- 0 ##Do Not Pad The data
             
       if (missingRegion > 0)
       {
@@ -307,8 +313,6 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
         
          ldatVEyePoints[[g]][[h]] <- rbind(ldatVEyePoints[[g]][[h]],datpadding) ##Add The Zero Phi Data
       }
-      
-      
       
       
       #ldatLEyePoints[[g]][[h]] <- ldatLEyePoints[[g]][[h]][!is.na(ldatLEyePoints[[g]][[h]][,2]),]
@@ -340,7 +344,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
               distP=datVEyePointsLL_Sub$distToPrey ,
               N=NROW(datVEyePointsLL_Sub),
               distMax=lnMaxDistanceToPrey[["LL"]], #Put All distances in So We can Ref By Index #datVEyePointsLL_Sub$initDistToPrey,
-              hidx=datVEyePointsLL_Sub$seqIdx,
+              hidx=datVEyePointsLL_Sub$seqIdx, ##Define an idx Key To link to the 
               RegistrarIdx=datVEyePointsLL_Sub$RegistarIdx);
   
   
@@ -372,7 +376,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
   varnames=c("phi_0","phi_max","lambda","gamma","sigma","alpha","tau") #"gamma"
   
   
-  library(rjags)
+  
   fileConn=file("modelSig.tmp")
   #writeLines(modelGPV1,fileConn);
   writeLines(modelGCSigmoidInd,fileConn);
@@ -445,7 +449,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
   ## Compare convergence between the 3 chains for each trace 
   
   #### CalcInformation ##
-  load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_4.RData",sep=""))
+  load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))
   
   idxH <- 1
   

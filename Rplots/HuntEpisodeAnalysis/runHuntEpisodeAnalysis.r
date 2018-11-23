@@ -47,7 +47,7 @@ pchL <- c(16,2,4)
 load(strDataFileName) ## Load Imported Hunt Event Tracks
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
-#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 bSaveNewMotionData <- TRUE ##Overwrite the lMotionBoutDatFile
 
 ##Make an Updated list of ReTracked Hunt Events that have been imported
@@ -254,7 +254,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
-  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode)
+  ##Note that sensitivity of this Determines detection of 1st turn to Prey
+  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode) 
   
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
   ##Score Detected Frames On Overlapping Detectors
