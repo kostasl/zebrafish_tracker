@@ -25,7 +25,7 @@ datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Proc
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
 
-NSamples <-10 ## Number of Fit Lines (rows) to add in info matrrix
+NSamples <-50 ## Number of Fit Lines (rows) to add in info matrrix
 
 
 ##For the 3 Groups 
@@ -148,11 +148,13 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
     DistRangeEffective_min <- min(dataSubset$distP[dataSubset$hidx == h])
     DistRangeEffective_max <- max(dataSubset$distP[dataSubset$hidx == h])
     
+    #DistRangeEffective_min <- 0.6 ##Set to fixed int interval
+    
     vPP <- which (dataSubset$hidx == h)
     #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",pp,".pdf",sep="")) 
     if (bPlot)
     {
-      pdf(file= paste(strPlotExportPath,"/stat/stat_InfMeasure_EyeVsDistance5mm_",strGroupID[groupID],"_SigExp_",vRegIdx[h],".pdf",sep="")) 
+      pdf(file= paste(strPlotExportPath,"/stat/stat_InfMeasure_EyeVsDistance5mm_",strGroupID[groupID],"_SigExp_",vRegIdx[h],"_VarD.pdf",sep="")) 
       par(mar = c(5,5,2,5))
       plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,max(DistRange)),ylim=c(0,90),
            main=paste(strGroupID[groupID],h," (",vRegIdx[h],")") , 
@@ -272,7 +274,7 @@ hist(colMeans(mInfMatrixNL),col=colourH[3],xlim=c(0,3),breaks = seq(0,3,1/20))
 
 ### Plot CDF ###
 ## Match the N 
-pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF_4.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_CDF_VarD.pdf",sep=""))
 subset_mInfMatrixLL <- mInfMatrixLL[,sample(1:58,58)]
 plot(ecdf(mInfMatrixDL),col=colourH[1],main="Information In Eye Vergence CDF",
      xlab="Information (bits) ",lty=1,lwd=2,xlim=c(0,2.5))
@@ -289,7 +291,7 @@ dDLphi<-density(mInfMatrixDL)
 dNLphi<-density(mInfMatrixNL)
 
 #X11()
-pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_Density_4.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfSigmoidExp_EyeVsDistance_Density_VarD.pdf",sep=""))
 plot(dLLphi,col=colourH[2],type="l",lwd=3,lty=2,
      ylim=c(0,2),main="Mutual Information Distance to Eye Vergence ",
      xlab=expression(paste(" (bits)" ) ) )
@@ -299,7 +301,7 @@ legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NCOL(mInfMatrixDL),NC
        ,col=colourH,lty=c(1,2,3),lwd=2)
 dev.off()
 
-save(lInfStructLL,lInfStructDL,lInfStructNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_4.RData",sep=""))      
+save(lInfStructLL,lInfStructDL,lInfStructNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_infoMat_EyeVergenceVsDistance_sigmoidFit5mm-5bit_VarD.RData",sep=""))      
 
 ##########
 ####  Examine Correation Of Information Vs Undershooting ###
@@ -335,7 +337,7 @@ stopifnot(unique(datTrackedEventsRegister[unlist(datFirstBoutVsInfDL$RegistarIdx
 
 
 ## plot Undershot Ratio ###
-pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio_VarD.pdf",sep=""))
 plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf),
      ylim=c(0,2),xlim=c(0,2),
      xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",

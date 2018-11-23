@@ -13,6 +13,7 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 library(rjags)
+library(runjags)
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
@@ -24,7 +25,7 @@ pchL <- c(16,2,4)
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=1000;
-steps=15000;
+steps=12000;
 thin=3;
 nchains <-4
 
@@ -384,7 +385,9 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
   
   mLL=jags.model(file="modelSig.tmp",n.chains=nchains,data=dataLL);
   update(mLL,burn_in);
-  drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
+  #drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
+   resultsLL <- run.jags(mLL,method = "parallel",monitor = varnames,n.chains = nchains,data=dataLL,thin = thin, sample = steps )
+  drawLL
   #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
   
   #X11()
