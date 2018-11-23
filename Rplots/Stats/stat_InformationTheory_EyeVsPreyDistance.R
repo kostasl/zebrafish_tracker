@@ -208,6 +208,41 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
 }
 
 
+##Returns Data frame With Mean Information in EyeVergence Along With Undershoot Ratio For each Tracked Event
+mergeFirstTurnWithInformation <- function(datFirstBouts,lInfStruct)
+{
+  
+  ##Subset the Event We have a first Turn Bout and Have Measured Eye INf (which are filtered for doing a strike attack)
+  datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStruct$vsampleRegisterIdx,]
+  
+  ## Retrieve Turn Bouts in right order to match the information Matric Column Order
+  lboutSet <- list()
+  idx <- 0
+  for (idxR in lInfStruct$vsampleRegisterIdx)
+  {
+    idx <- idx +1
+    if (NROW(datFirstBouts[datFirstBouts$RegistarIdx == idxR, ]) == 0 )
+      next()
+    
+    rec <- datFirstBouts[datFirstBouts$RegistarIdx == idxR, ]
+    vInfMeasure <- mean(lInfStruct$infoMatrix[,idx])
+    
+    lboutSet[[idx]] <- list(RegistarIdx=idxR,hidx= lInfStruct$vsamplePSeqIdx[idx], 
+                            UnderShootAngle=abs( (rec$OnSetAngleToPrey)-abs(rec$Turn) ),
+                            UnderShootRatio = (abs(rec$Turn)/abs(rec$OnSetAngleToPrey) ) ,
+                            MInf=vInfMeasure) 
+  }
+  
+  ##Combine Into A dataframe
+  datFirstBoutVsInf<- data.frame(do.call(rbind,lboutSet ))
+  
+  
+  return(datFirstBoutVsInf)
+}
+
+################# End of Library Functions ##### 
+
+### Begin Script ###
 
 ## Sample Matrices Of Information / Retursn Struct Containing Mat and Id vectors ##
 lInfStructLL <- calcInfoOfHuntEvent(drawLL,dataLL,groupID=2)
@@ -284,45 +319,38 @@ datFirstBouts <- data.frame(do.call(rbind,lFirstBoutPoints )) ##data.frame(lFirs
 
 ##Make Data Frame For Debug of Events #
 datTrackedEventsRegisterWithFirstBout <- datTrackedEventsRegister[datFirstBouts$RegistarIdx,]
-##Subset the Event We have a first Turn Bout and Have Measured Eye INf (which are filtered for doing a strike attack)
-datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructLL$vsampleRegisterIdx,]
-##Find Which Matrix Columns contain the inf measures of the Registrar IDx
-vColIdx <- lInfStructLL$vsamplePSeqIdx [ lInfStructLL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
-vInfMeasure <- colMeans(lInfStructLL$infoMatrix[,vColIdx])
-datFirstBoutVsInfLL <-  data.frame(RegistarIdx=datBoutSubset$RegistarIdx,hidx=vColIdx, UnderShootAngle=abs( (datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn) ), UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
+
+datFirstBoutVsInfLL <- mergeFirstTurnWithInformation(datFirstBouts,lInfStructLL  )
+## Error Check That subset of data using RegIdx Indeed belongs to the intended group
+stopifnot(unique(datTrackedEventsRegister[unlist(datFirstBoutVsInfLL$RegistarIdx),"groupID"]) == "LL" )  ##Check for Errors in Reg idx - Group should match registry
+
+datFirstBoutVsInfNL <- mergeFirstTurnWithInformation(datFirstBouts,lInfStructNL  )
+## Error Check That subset of data using RegIdx Indeed belongs to the intended group
+stopifnot(unique(datTrackedEventsRegister[unlist(datFirstBoutVsInfNL$RegistarIdx),"groupID"]) == "NL" )  ##Check for Errors in Reg idx - Group should match registry
+
+datFirstBoutVsInfDL <- mergeFirstTurnWithInformation(datFirstBouts,lInfStructDL  )
+## Error Check That subset of data using RegIdx Indeed belongs to the intended group
+stopifnot(unique(datTrackedEventsRegister[unlist(datFirstBoutVsInfDL$RegistarIdx),"groupID"]) == "DL" )  ##Check for Errors in Reg idx - Group should match registry
 
 
-##NL ##
-datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructNL$vsampleRegisterIdx,]
-stopifnot(unique(datTrackedEventsRegister[lInfStructNL$vsampleRegisterIdx,"groupID"] ) == "NL" )  ##Check for Errors in Reg idx - Group should match registry
-##Find Which Matrix Columns contain the inf measures of the Registrar IDx
-vColIdx <- lInfStructNL$vsamplePSeqIdx [ lInfStructNL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
-vInfMeasure <- colMeans(lInfStructNL$infoMatrix[,vColIdx])
-datFirstBoutVsInfNL <-  data.frame(RegistarIdx=datBoutSubset$RegistarIdx,hidx=vColIdx,UnderShootAngle=(abs(datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn)) , UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
-
-##DL ##
-datBoutSubset <- datFirstBouts[datFirstBouts$RegistarIdx %in%  lInfStructDL$vsampleRegisterIdx,]
-##Find Which Matrix Columns contain the inf measures of the Registrar IDx - Associate RgIdx With hidx (the seq numb of precessing the data)
-vColIdx <- lInfStructDL$vsamplePSeqIdx [ lInfStructDL$vsampleRegisterIdx %in% datBoutSubset$RegistarIdx ]
-vInfMeasure <- colMeans(lInfStructDL$infoMatrix[,vColIdx])
-datFirstBoutVsInfDL <- data.frame(RegistarIdx=datBoutSubset$RegistarIdx,hidx=vColIdx,UnderShootAngle=(abs(datBoutSubset$OnSetAngleToPrey)-abs(datBoutSubset$Turn) ), UnderShootRatio = (abs(datBoutSubset$Turn)/abs(datBoutSubset$OnSetAngleToPrey) ) , MInf=vInfMeasure) 
 
 ## plot Undershot Ratio ###
 pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio.pdf",sep=""))
-plot(datFirstBoutVsInfLL$UnderShootRatio,datFirstBoutVsInfLL$MInf,
-     ylim=c(0,2),xlim=c(0,2),xlab=("Turn/Prey Angle"),ylab="mutual Inf in Eye V",
+plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf),
+     ylim=c(0,2),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
      main="Information Vs Undershoot ",col=colourH[2],pch=pchL[2])
 segments(1,-10,1,20);
 
-text(datFirstBoutVsInfLL$UnderShootRatio*1.01,datFirstBoutVsInfLL$MInf*1.01,datFirstBoutVsInfLL$RegistarIdx,cex=0.7)
+text(unlist(datFirstBoutVsInfLL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfLL$MInf)*1.01,unlist(datFirstBoutVsInfLL$RegistarIdx),cex=0.7)
 
-points(datFirstBoutVsInfNL$UnderShootRatio,datFirstBoutVsInfNL$MInf,ylim=c(0,2),xlim=c(0,2),
+points(unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfNL$MInf),ylim=c(0,2),xlim=c(0,2),
        col=colourH[3],pch=pchL[3])
-text(datFirstBoutVsInfNL$UnderShootRatio*1.01,datFirstBoutVsInfNL$MInf*1.01,datFirstBoutVsInfNL$RegistarIdx,cex=0.7,col=colourP[3])
+text(unlist(datFirstBoutVsInfNL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfNL$MInf)*1.01,unlist(datFirstBoutVsInfNL$RegistarIdx),cex=0.7,col=colourP[3])
 
-points(datFirstBoutVsInfDL$UnderShootRatio,datFirstBoutVsInfDL$MInf,ylim=c(0,2),xlim=c(0,2),
+points(unlist(datFirstBoutVsInfDL$UnderShootRatio),unlist(datFirstBoutVsInfDL$MInf),ylim=c(0,2),xlim=c(0,2),
        col=colourH[1],pch=pchL[1])
-text(datFirstBoutVsInfDL$UnderShootRatio*1.01,datFirstBoutVsInfDL$MInf*1.01,datFirstBoutVsInfDL$RegistarIdx,cex=0.7,col=colourP[1])
+text(unlist(datFirstBoutVsInfDL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfDL$MInf)*1.01,datFirstBoutVsInfDL$RegistarIdx,cex=0.7,col=colourP[1])
 
 legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsInfDL),NROW(datFirstBoutVsInfLL) ,NROW(datFirstBoutVsInfNL) ) ) 
        ,col=colourH,pch=pchL,lty=c(1,2,3),lwd=2)
