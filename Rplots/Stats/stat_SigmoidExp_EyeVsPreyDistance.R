@@ -26,15 +26,15 @@ pchL <- c(16,2,4)
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=1000;
-steps=12000;
+steps=18000;
 thin=3;
-nchains <-3
-n.cores <- 3
-timings <- vector('numeric', 6)
+nchains <-4
+n.cores <- 6
+timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
-fitseqNo <- 5
+sampleFraction  <- 0.75 ##Fraction of Points to Use from Each Hunt Episode's data
+fitseqNo <- 6
 npad <- 1
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
@@ -450,7 +450,7 @@ modelGCSigmoidInd  <- "model
   save(dataNL,drawNL,mNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_NL",fitseqNo,".RData",sep=""))      
   
   
-  ############
+  ############ D L ######  ##
   ### DL ###
   timer <- proc.time()
   mDL=jags.model(file="modelSig.tmp",
@@ -471,95 +471,104 @@ modelGCSigmoidInd  <- "model
   plotGCSig(drawDL,dataDL,n=NA,groupID=1)
   dev.off()
   
-  
+  ### METHOD 2 - Using RUNJAGS ########
+  ### #### Do it The Parallel Way RUN JAGS ##### ##
   ## Set up a distributed computing cluster with 2 nodes:
-  #library(parallel)
-  #cl <- makeCluster(n.cores)
-  #timer <- proc.time()
-  #resultsLL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
-  #                      monitor = varnames,n.chains = nchains,
-  #                      data=dataLL,thin = thin,
-  #                      sample = steps,
-  #                      inits = initfunct(nchains, NROW(unique(dataLL$hidx) )),
-  #                      cl=cl)
+  library(parallel)
+  library('coda')
   
-  #time.taken <- proc.time() - timer
-  #timings[1] <- time.taken[3]
-  ## Write the current model representation to file:
-  #write.jagsfile(resultsLL, file=paste(strDataExportDir,"/models/model_SigExpLL.txt",sep="" ) )
-  #drawLL
-  #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
+  nchains <- 6
   
-  #X11()
+  cl <- makeCluster(n.cores)
+  timer <- proc.time()
+  resultsLL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
+                        monitor = varnames,n.chains = nchains,
+                        data=dataLL,thin = thin,
+                        sample = steps,
+                        inits = initfunct(nchains, NROW(unique(dataLL$hidx) )),
+                        cl=cl)
   
-  #plotExpRes(drawLL,dataLL)
-  
-  
+  time.taken <- proc.time() - timer
+  timings[1] <- time.taken[3]
+  # Write the current model representation to file:
+  write.jagsfile(resultsLL, file=paste(strDataExportDir,"/models/model_SigExpLL.txt",sep="" ) )
+  mcmcLL.object <- as.mcmc.list(resultsLL)
+  save(dataLL,resultsLL,mcmcLL.object,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_DL",fitseqNo,".RData",sep=""))      
   
   
-  #dev.off()
   
-  
-  #resultsNL <- run.jags(modelGCSigmoidInd,method = "parallel",monitor = varnames,n.chains = nchains,data=dataNL,thin = thin, sample = steps,burnin = burn_in )
-  # steps <- 9000
-  # 
-  # resultsNL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
-  #                       monitor = varnames,n.chains = nchains,
-  #                       data=dataNL,
-  #                       thin = thin,
-  #                       sample = steps,
-  #                       inits = initfunct(nchains, NROW(unique(dataNL$hidx) )),
-  #                       cl=cl)
+  ## NL    RUN JAGS ##
+  timer <- proc.time() 
+  resultsNL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
+                         monitor = varnames,n.chains = nchains,
+                         data=dataNL,
+                         thin = thin,
+                         sample = steps,
+                         inits = initfunct(nchains, NROW(unique(dataNL$hidx) )),
+                         cl=cl)
+  time.taken <- proc.time() - timer
+  timings[2] <- time.taken[3]
   # 
   # # Write the current model representation to file:
-  # write.jagsfile(resultsNL, file=paste(strDataExportDir,"/models/model_SigExpNL.txt",sep="" ) )
-  # 
-  # 
-  #X11()
+   write.jagsfile(resultsNL, file=paste(strDataExportDir,"/models/model_SigExpNL.txt",sep="" ) )
+   mcmcNL.object <- as.mcmc.list(resultsNL)
+   save(dataNL,resultsNL,mcmcNL.object,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_NL",fitseqNo,".RData",sep=""))      
+   
+
+   ### DL RUN JAGS ##
+   timer <- proc.time() 
+   resultsDL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
+                         monitor = varnames,n.chains = nchains,
+                         data=dataDL,
+                         thin = thin,
+                         sample = steps,
+                         inits = initfunct(nchains, NROW(unique(dataDL$hidx) )),
+                         keep.jags.files=paste(strDataExportDir,"/models/model_SigExpDL_results.txt",sep="" ),
+                         cl=cl)
+   time.taken <- proc.time() - timer
+   timings[3] <- time.taken[3]
+   
+  stopCluster(cl)
+  
+   
+  # Write the current model representation to file:
+  write.jagsfile(resultsDL, file=paste(strDataExportDir,"/models/model_SigExpDL.txt",sep="" ) )
+  mcmcDL.object <- as.mcmc.list(resultsDL)
+  save(dataDL,resultsDL,mcmcDL.object,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_DL",fitseqNo,".RData",sep=""))      
+  
+  #######################
+  ########################
   
   
   
   
   
-  # 
-  # resultsDL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
-  #                       monitor = varnames,n.chains = nchains,
-  #                       data=dataDL,
-  #                       thin = thin,
-  #                       sample = steps,
-  #                       inits = initfunct(nchains, NROW(unique(dataDL$hidx) )),
-  #                       keep.jags.files=paste(strDataExportDir,"/models/model_SigExpDL_results.txt",sep="" ),
-  #                       cl=cl)
-  # 
-  # 
-  # ##
-  # stopCluster(cl)
-  # 
-  # 
-  # # Write the current model representation to file:
-  # write.jagsfile(resultsDL, file=paste(strDataExportDir,"/models/model_SigExpDL.txt",sep="" ) )
-  # 
+  ############ Checking Convergence ############
+  ## Compare convergence between the 3 chains for each trace 
   
-  ## Load And RE-run from File ##
-  # ByPass Silly path error for jags file
-  # strWorkD <- getwd()
-  # setwd("/")
-  # #modelLL <- read.jagsfile(file=)
-  # resultsLL <- run.jags(paste(strDataExportDir,"models/model_SigExpLL.txt",sep="" ),
-  #                       data = dataLL,sample=100,adapt = 0,
-  #                       keep.jags.files=paste(strDataExportDir,"/models/model_SigExpDL_results.txt",sep="" ) )
-  # 
-  # resultsNL <- run.jags(paste(strDataExportDir,"/models/model_SigExpNL.txt",sep="" ),sample=100,adapt = 0)
-  # resultsDL <- run.jags(paste(strDataExportDir,"/models/model_SigExpDL.txt",sep="" ),sample=100)
-  # 
-  # 
-  #X11()
+  #### CalcInformation ##
+  load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))
+  idxH <- 1
   
+  ## The gelman.diag gives you the scale reduction factors for each parameter.
+  ## A factor of 1 means that between variance and within chain variance are equal, larger 
+  # values mean that there is still a notable difference between chains. 
   
+  dataS <- dataDL
+  drawS <- drawDL
+  strGroupID <- "DL"
+  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
   
+  dataS <- dataNL
+  drawS <- drawNL
+  strGroupID <- "NL"
+  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
   
-  
-  
+  dataS <- dataLL
+  drawS <- drawLL
+  strGroupID <- "LL"
+  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  ####################
   
   
   
@@ -580,34 +589,22 @@ modelGCSigmoidInd  <- "model
          ,fill=colourH,lty=c(1,2,3))
   dev.off()
   
-  ####################
-  
-  ############ Checking Convergence ####
-  ## Compare convergence between the 3 chains for each trace 
-  
-  #### CalcInformation ##
-  load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))
-  
-  idxH <- 1
+  ###############################################
   
   
-  ## The gelman.diag gives you the scale reduction factors for each parameter.
-  ## A factor of 1 means that between variance and within chain variance are equal, larger 
-  # values mean that there is still a notable difference between chains. 
   
-  dataS <- dataDL
-  drawS <- drawDL
-  strGroupID <- "DL"
-  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
-  
-  dataS <- dataNL
-  drawS <- drawNL
-  strGroupID <- "NL"
-  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
-  
-  dataS <- dataLL
-  drawS <- drawLL
-  strGroupID <- "LL"
-  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
-  
+  ## Load And RE-run from File ##
+  # ByPass Silly path error for jags file
+  # strWorkD <- getwd()
+  # setwd("/")
+  # #modelLL <- read.jagsfile(file=)
+  # resultsLL <- run.jags(paste(strDataExportDir,"models/model_SigExpLL.txt",sep="" ),
+  #                       data = dataLL,sample=100,adapt = 0,
+  #                       keep.jags.files=paste(strDataExportDir,"/models/model_SigExpDL_results.txt",sep="" ) )
+  # 
+  # resultsNL <- run.jags(paste(strDataExportDir,"/models/model_SigExpNL.txt",sep="" ),sample=100,adapt = 0)
+  # resultsDL <- run.jags(paste(strDataExportDir,"/models/model_SigExpDL.txt",sep="" ),sample=100)
+  # 
+  # 
+  #X11()
   
