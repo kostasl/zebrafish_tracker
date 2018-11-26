@@ -15,6 +15,7 @@ source("HuntingEventAnalysis_lib.r")
 library(rjags)
 library(runjags)
 
+
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
 colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points DL,LL,NL
@@ -27,7 +28,9 @@ pchL <- c(16,2,4)
 burn_in=1000;
 steps=12000;
 thin=3;
-nchains <-4
+nchains <-3
+n.cores <- 3
+timings <- vector('numeric', 6)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
 sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
@@ -39,36 +42,36 @@ modelGCSigmoidInd  <- "model
 {
   
   for( i in 1 : N ) {
-   phi_hat[ hidx[i],i] <-  phi_0[ hidx[i] ] +   (phi_max[hidx[i]] - phi_0[ hidx[i] ])/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
-
-   ###OUT Set Region Of Exp Growth Model ##
-   # s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step( tau[ hidx[i] ] -distP[i] )     # step( phi_max[hidx[i]] - phi_0[hidx[i]] ) #step(u0[ hidx[i] ] - distP[i]  )  
-   
-   ## Define Exp Growth Model 
-   phi_exp[ hidx[i],i] <- alpha[hidx[i]]*exp( gamma[ hidx[i] ]* ( tau[ hidx[i] ] -  distP[i]))
-   
-   ### Conditionally Include the exp Model
-   phi[i] ~ dnorm(phi_exp[ hidx[i],i]  + phi_hat[ hidx[i],i]  , var_inv[hidx[i]] ) #s[hidx[i],i]+1 
-   
-
+  phi_hat[ hidx[i],i] <-  phi_0[ hidx[i] ] +   (phi_max[hidx[i]] - phi_0[ hidx[i] ])/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
+  
+  ###OUT Set Region Of Exp Growth Model ##
+  # s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step( tau[ hidx[i] ] -distP[i] )     # step( phi_max[hidx[i]] - phi_0[hidx[i]] ) #step(u0[ hidx[i] ] - distP[i]  )  
+  
+  ## Define Exp Growth Model 
+  phi_exp[ hidx[i],i] <- alpha[hidx[i]]*exp( gamma[ hidx[i] ]* ( tau[ hidx[i] ] -  distP[i]))
+  
+  ### Conditionally Include the exp Model
+  phi[i] ~ dnorm(phi_exp[ hidx[i],i]  + phi_hat[ hidx[i],i]  , var_inv[hidx[i]] ) #s[hidx[i],i]+1 
+  
+  
   }
   
   
   ## Priors
   limDist <- max(distMax)
-
+  
   
   for(i in 1:max(hidx) ) { 
-    phi_max[i] ~ dnorm(65,1e-3)T(0,150) ##I(0,100) # Max Eye Vergence Angle
-    phi_0[i] ~ dnorm(0.01, 1e-3)T(0,60)  # Idle Eye Position
-    lambda[i] ~ dgamma(1, 1) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
-    gamma[i] ~ dgamma(1, 1) #dnorm(0.5, 1e-3)I(0,)  # RiseRate of Eye Vs Prey Distance After Sig Rise dunif(0.5, 0.000001)
-    alpha[i] ~ dunif(1,3)
-    tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
-    var_inv[i] ~ dgamma(0.001, 0.001) ##Draw   ##Precision
-    
-    sigma[i] <- 1 / sqrt(var_inv[ i])    
-
+  phi_max[i] ~ dnorm(65,1e-3)T(0,150) ##I(0,100) # Max Eye Vergence Angle
+  phi_0[i] ~ dnorm(0.01, 1e-3)T(0,60)  # Idle Eye Position
+  lambda[i] ~ dgamma(1, 1) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
+  gamma[i] ~ dgamma(1, 1) #dnorm(0.5, 1e-3)I(0,)  # RiseRate of Eye Vs Prey Distance After Sig Rise dunif(0.5, 0.000001)
+  alpha[i] ~ dunif(1,3)
+  tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
+  var_inv[i] ~ dgamma(0.001, 0.001) ##Draw   ##Precision
+  
+  sigma[i] <- 1 / sqrt(var_inv[ i])    
+  
   }
   
   
@@ -76,6 +79,22 @@ modelGCSigmoidInd  <- "model
   
   
 }"
+  
+  ##Init Vals List -For Run Jags
+  # A list of 8 randomly generated starting values for m:
+  initfunct <- function(nchains,N)
+  {
+    initlist <- replicate(nchains,list(phi_0=c(rnorm(N,10,5)),
+                                       phi_max=rnorm(N,40,5),
+                                       lambda=rgamma(N,1,1),
+                                       gamma=rgamma(N,1,1),
+                                       alpha=runif(N,1,3),
+                                       tau=rnorm(N,2,0.5)  ),
+                          simplify=FALSE)
+    
+    return(initlist)
+  }
+  
   
   ## Plot the Eye Vs Distance data points and the regression variations ##
   plotEyeGCFit <- function(pp,strGroup,dataSubset,drawS)
@@ -106,7 +125,7 @@ modelGCSigmoidInd  <- "model
       lines( vX ,vY,type="l",col=colourR[3],lwd=1)
       #        lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
     }
-
+    
   }
   
   
@@ -134,9 +153,9 @@ modelGCSigmoidInd  <- "model
     
     plot(dataSubset$distP[vsub],dataSubset$phi[vsub],pch=21,xlim=c(0,max_x),ylim=c(0,80),
          main=paste("Model Fit : Eye Vergence Vs Distance Data ",strGroupID[groupID]),
-                    ylab=expression(paste("Eye Vergence ",Phi," (degrees)") ),
-                    xlab=expression(paste("Distance from Prey (mm)") ),
-                     bg=colourP[groupID],col="#FFFFFFAA",cex=0.5)
+         ylab=expression(paste("Eye Vergence ",Phi," (degrees)") ),
+         xlab=expression(paste("Distance from Prey (mm)") ),
+         bg=colourP[groupID],col="#FFFFFFAA",cex=0.5)
     #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
     contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
     ## Plot The Mean Curve of the selected subset of curves
@@ -167,69 +186,69 @@ modelGCSigmoidInd  <- "model
     dev.off()
     
     if (!bPlotIndividualEvents)
-    return(NA)
+      return(NA)
     ##plot individual Curve Fits
     for (pp in vsampleP) ##Go through Each hidx 
     {
       #phi_0[hidx[i]] - lambda[ hidx[i] ] * pow(gamma[hidx[i]],distMax[i] - distP[i] )   
       #      #X11()
-
+      
       pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_",strGroupID[groupID],"_Sigmoid_",vRegIdx[pp],".pdf",sep="")) 
-
+      
       plotEyeGCFit(pp,strGroupID[groupID],dataSubset,drawS)
-    
+      
       dev.off()
+      
+    } ##For Each Sampled Hunt Event 
     
-  } ##For Each Sampled Hunt Event 
-    
-}##END oF Function 
+  }##END oF Function 
   
-plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
-{
-  
-  vRegIdx <- unique(dataS$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
-  N <- NROW(drawS$tau[,1,1])
-  for (idxH in 1:N)
+  plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
   {
     
-    ## Plot multipage for param convergence ##
-    pdf(onefile=TRUE,file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_",strGroupID,"_",vRegIdx[idxH],".pdf",sep="")) 
-    ## plot the regression lines and the data
-    plotEyeGCFit(idxH,strGroupID,dataS,drawS) 
-    
-    plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("tau",idxH," (",vRegIdx[idxH],")") )
-    lines(drawS$tau[idxH,,2],type='l',col="red")
-    lines(drawS$tau[idxH,,3],type='l',col="blue")
-    #dev.off()
-    
-    ##gelmal rubin diag ##
-    print(paste(idxH," :--" )  )
-    chains_tau <- mcmc(drawS$tau[idxH,,],thin=thin)
-    lmcmc_tau <- mcmc.list(chains_tau[,1],chains_tau[,2],chains_tau[,3])
-    gdiag_psrf <- gelman.diag(lmcmc_tau,autoburnin=TRUE )$psrf
-    #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
-    gelman.plot( lmcmc_tau,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
-                 main=paste("tau psrf:", round(gdiag_psrf[1]*100)/100 ) )
-    
-    
-    
-    #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_gamma",idxH,".pdf",sep="")) 
-    plot(drawS$gamma[idxH,,1],type='l',ylim=c(0,4),main=paste("V rise rate gamma ",idxH," (",vRegIdx[idxH],")") )
-    lines(drawS$gamma[idxH,,2],type='l',col="red")
-    lines(drawS$gamma[idxH,,3],type='l',col="blue")
-    #dev.off()
-    
-    chains_gamma <- mcmc(drawS$gamma[idxH,,],thin=thin)
-    lmcmc_gamma <- mcmc.list(chains_gamma[,1],chains_gamma[,2],chains_gamma[,3])
-    gdiag_psrf <- gelman.diag(lmcmc_gamma,autoburnin=TRUE )$psrf
-    #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
-    gelman.plot( lmcmc_gamma,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
-                 main=paste("gamma psrf:", round(gdiag_psrf[1]*100)/100 ) )
-    
-    
-    dev.off()
+    vRegIdx <- unique(dataS$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
+    N <- NROW(drawS$tau[,1,1])
+    for (idxH in 1:N)
+    {
+      
+      ## Plot multipage for param convergence ##
+      pdf(onefile=TRUE,file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_",strGroupID,"_",vRegIdx[idxH],".pdf",sep="")) 
+      ## plot the regression lines and the data
+      plotEyeGCFit(idxH,strGroupID,dataS,drawS) 
+      
+      plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("tau",idxH," (",vRegIdx[idxH],")") )
+      lines(drawS$tau[idxH,,2],type='l',col="red")
+      lines(drawS$tau[idxH,,3],type='l',col="blue")
+      #dev.off()
+      
+      ##gelmal rubin diag ##
+      print(paste(idxH," :--" )  )
+      chains_tau <- mcmc(drawS$tau[idxH,,],thin=thin)
+      lmcmc_tau <- mcmc.list(chains_tau[,1],chains_tau[,2],chains_tau[,3])
+      gdiag_psrf <- gelman.diag(lmcmc_tau,autoburnin=TRUE )$psrf
+      #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
+      gelman.plot( lmcmc_tau,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
+                   main=paste("tau psrf:", round(gdiag_psrf[1]*100)/100 ) )
+      
+      
+      
+      #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_gamma",idxH,".pdf",sep="")) 
+      plot(drawS$gamma[idxH,,1],type='l',ylim=c(0,4),main=paste("V rise rate gamma ",idxH," (",vRegIdx[idxH],")") )
+      lines(drawS$gamma[idxH,,2],type='l',col="red")
+      lines(drawS$gamma[idxH,,3],type='l',col="blue")
+      #dev.off()
+      
+      chains_gamma <- mcmc(drawS$gamma[idxH,,],thin=thin)
+      lmcmc_gamma <- mcmc.list(chains_gamma[,1],chains_gamma[,2],chains_gamma[,3])
+      gdiag_psrf <- gelman.diag(lmcmc_gamma,autoburnin=TRUE )$psrf
+      #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
+      gelman.plot( lmcmc_gamma,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
+                   main=paste("gamma psrf:", round(gdiag_psrf[1]*100)/100 ) )
+      
+      
+      dev.off()
+    }
   }
-}
   
   
   
@@ -300,9 +319,9 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
       
       ##Augment with Idle phi entries for this hunt Event- to go up to 6 mm - 0 
       missingRegion <- 6 - head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1) 
-     
+      
       missingRegion <- 0 ##Do Not Pad The data
-            
+      
       if (missingRegion > 0)
       {
         ### Max Angle When Info Is Missing is 10
@@ -312,7 +331,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
                             RegistarIdx = rep(head(as.numeric(ldatsubSet[[g]]$RegistarIdx ),n=1),npad),
                             seqIdx = h)
         
-         ldatVEyePoints[[g]][[h]] <- rbind(ldatVEyePoints[[g]][[h]],datpadding) ##Add The Zero Phi Data
+        ldatVEyePoints[[g]][[h]] <- rbind(ldatVEyePoints[[g]][[h]],datpadding) ##Add The Zero Phi Data
       }
       
       
@@ -323,7 +342,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
       lnDat[[g]][[h]] <- NROW(ldatLEyePoints[[g]][[h]]) ##Not Used Anymore
       lnMaxDistanceToPrey[[g]][[h]] <- as.numeric(head(ldatsubSet[[g]]$DistToPreyInit,1)  ) ##Hold Unique Value Of Max Distance To Prey
     } ##For Each Hunt Event
-
+    
   } ##For Each Group[]
   datVEyePointsLL <- data.frame( do.call(rbind,ldatVEyePoints[["LL"]] ) ) 
   datVEyePointsNL <- data.frame( do.call(rbind,ldatVEyePoints[["NL"]] ) ) 
@@ -377,51 +396,171 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
   varnames=c("phi_0","phi_max","lambda","gamma","sigma","alpha","tau") #"gamma"
   
   
-  
   fileConn=file("modelSig.tmp")
   #writeLines(modelGPV1,fileConn);
   writeLines(modelGCSigmoidInd,fileConn);
   close(fileConn)
   
-  mLL=jags.model(file="modelSig.tmp",n.chains=nchains,data=dataLL);
-  update(mLL,burn_in);
-  #drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
-   resultsLL <- run.jags(mLL,method = "parallel",monitor = varnames,n.chains = nchains,data=dataLL,thin = thin, sample = steps )
-  drawLL
+  ### SETUP And Run THE LL Model Fit ###
+  timer <- proc.time()
+  mLL=jags.model(file="modelSig.tmp",
+                 n.chains=nchains,
+                 inits= initfunct(nchains, NROW(unique(dataLL$hidx) )),
+                 data=dataLL);
+  
+  #update(mLL,burn_in);
+  
+  drawLL=jags.samples(mLL,
+                      n.iter=steps,
+                      thin=thin,
+                      variable.names=varnames
+  )
+  time.taken <- proc.time() - timer
+  timings[1] <- time.taken[3]
+  
+  
+  ######### SAVE ##
+  save(dataLL,drawLL,mLL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_LL",fitseqNo,".RData",sep=""))      
+  
+  
+  ## Plot The LL Fit ##
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL_C.pdf",sep="")) 
+  plotGCSig(drawLL,dataLL,n=NA,groupID=2)
+  dev.off()
+  
+  
+  ########################  N L  #########
+  ## NL ### 
+  timer <- proc.time()
+  mNL=jags.model(file="modelSig.tmp",
+                 n.chains=nchains,
+                 inits= initfunct(nchains, NROW(unique(dataNL$hidx) )),
+                 data=dataNL);
+  #update(mNL,burn_in)
+  drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
+  time.taken <- proc.time() - timer
+  timings[2] <- time.taken[3]
+  
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_NL_C.pdf",sep="")) 
+  plotGCSig(drawNL,dataNL,n=NA,groupID=3)
+  dev.off()
+  
+  
+  ######### SAVE ##
+  save(dataNL,drawNL,mNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_NL",fitseqNo,".RData",sep=""))      
+  
+  
+  ############
+  ### DL ###
+  timer <- proc.time()
+  mDL=jags.model(file="modelSig.tmp",
+                 n.chains=nchains,
+                 inits= initfunct(nchains, NROW(unique(dataDL$hidx) )),
+                 data=dataDL);
+  #update(mDL,burn_in)
+  drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
+  
+  time.taken <- proc.time() - timer
+  timings[3] <- time.taken[3]
+  
+  
+  ######### SAVE ##
+  save(dataDL,drawDL,mDL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_DL",fitseqNo,".RData",sep=""))      
+  
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_DL_C.pdf",sep="")) 
+  plotGCSig(drawDL,dataDL,n=NA,groupID=1)
+  dev.off()
+  
+  
+  ## Set up a distributed computing cluster with 2 nodes:
+  #library(parallel)
+  #cl <- makeCluster(n.cores)
+  #timer <- proc.time()
+  #resultsLL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
+  #                      monitor = varnames,n.chains = nchains,
+  #                      data=dataLL,thin = thin,
+  #                      sample = steps,
+  #                      inits = initfunct(nchains, NROW(unique(dataLL$hidx) )),
+  #                      cl=cl)
+  
+  #time.taken <- proc.time() - timer
+  #timings[1] <- time.taken[3]
+  ## Write the current model representation to file:
+  #write.jagsfile(resultsLL, file=paste(strDataExportDir,"/models/model_SigExpLL.txt",sep="" ) )
+  #drawLL
   #sampLL <- coda.samples(mLL,                      variable.names=varnames,                      n.iter=steps, progress.bar="none")
   
   #X11()
-
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL_C.pdf",sep="")) 
-
-  plotGCSig(drawLL,dataLL,n=NA,groupID=2)
-  #dev.off()
+  
   #plotExpRes(drawLL,dataLL)
   
   
   
   
   #dev.off()
-  ########################
-  ## NL ###
-  mNL=jags.model(file="modelSig.tmp",n.chains=nchains,data=dataNL);
-  update(mNL,burn_in)
-  drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
   
-  #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_NL_C.pdf",sep="")) 
-  plotGCSig(drawNL,dataNL,n=NA,groupID=3)
-  #dev.off()
-  ############
-  ### DL ###
-  mDL=jags.model(file="modelSig.tmp",n.chains=nchains,data=dataDL);
-  update(mDL,burn_in)
-  drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
   
+  #resultsNL <- run.jags(modelGCSigmoidInd,method = "parallel",monitor = varnames,n.chains = nchains,data=dataNL,thin = thin, sample = steps,burnin = burn_in )
+  # steps <- 9000
+  # 
+  # resultsNL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
+  #                       monitor = varnames,n.chains = nchains,
+  #                       data=dataNL,
+  #                       thin = thin,
+  #                       sample = steps,
+  #                       inits = initfunct(nchains, NROW(unique(dataNL$hidx) )),
+  #                       cl=cl)
+  # 
+  # # Write the current model representation to file:
+  # write.jagsfile(resultsNL, file=paste(strDataExportDir,"/models/model_SigExpNL.txt",sep="" ) )
+  # 
+  # 
   #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_DL_C.pdf",sep="")) 
-  plotGCSig(drawDL,dataDL,n=NA,groupID=1)
-  #dev.off()
+  
+  
+  
+  
+  
+  # 
+  # resultsDL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
+  #                       monitor = varnames,n.chains = nchains,
+  #                       data=dataDL,
+  #                       thin = thin,
+  #                       sample = steps,
+  #                       inits = initfunct(nchains, NROW(unique(dataDL$hidx) )),
+  #                       keep.jags.files=paste(strDataExportDir,"/models/model_SigExpDL_results.txt",sep="" ),
+  #                       cl=cl)
+  # 
+  # 
+  # ##
+  # stopCluster(cl)
+  # 
+  # 
+  # # Write the current model representation to file:
+  # write.jagsfile(resultsDL, file=paste(strDataExportDir,"/models/model_SigExpDL.txt",sep="" ) )
+  # 
+  
+  ## Load And RE-run from File ##
+  # ByPass Silly path error for jags file
+  # strWorkD <- getwd()
+  # setwd("/")
+  # #modelLL <- read.jagsfile(file=)
+  # resultsLL <- run.jags(paste(strDataExportDir,"models/model_SigExpLL.txt",sep="" ),
+  #                       data = dataLL,sample=100,adapt = 0,
+  #                       keep.jags.files=paste(strDataExportDir,"/models/model_SigExpDL_results.txt",sep="" ) )
+  # 
+  # resultsNL <- run.jags(paste(strDataExportDir,"/models/model_SigExpNL.txt",sep="" ),sample=100,adapt = 0)
+  # resultsDL <- run.jags(paste(strDataExportDir,"/models/model_SigExpDL.txt",sep="" ),sample=100)
+  # 
+  # 
+  #X11()
+  
+  
+  
+  
+  
+  
+  
   
   
   ## SHOW Hunt OnSet Densities ###
@@ -441,12 +580,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
          ,fill=colourH,lty=c(1,2,3))
   dev.off()
   
-  save(dataLL,dataDL,dataNL,drawLL,drawDL,drawNL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))      
-  
-  ##Save All  
-  save.image(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit",fitseqNo,".RData",sep="") )
-       
-####################
+  ####################
   
   ############ Checking Convergence ####
   ## Compare convergence between the 3 chains for each trace 
@@ -465,7 +599,7 @@ plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
   drawS <- drawDL
   strGroupID <- "DL"
   plotConvergenceDiagnostics(strGroupID,drawS, dataS)
-
+  
   dataS <- dataNL
   drawS <- drawNL
   strGroupID <- "NL"
