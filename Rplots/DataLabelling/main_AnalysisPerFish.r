@@ -1,7 +1,7 @@
 ### Success Analysis Per Fish - 
 ## Using Labelled Data from SB - with sparse corrections by KL where wrong labels have been spotted
 ### KOstasl 13-08-18
-
+source("DataLabelling/labelHuntEvents_lib.r")
 
 #strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 #strProcDataFileName <- paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
@@ -25,6 +25,12 @@ str_FilterLabel <- "UnLabelled"
 #
 
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
+tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
+
+datFishSuccessRateMerged <- cbind(datFishSuccessRate,markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
+      markTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),2]),
+      notTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),3]))
+names(datFishSuccessRateMerged)[5:7] <- c("markUnTrackable","markTracked","notTracked") ##Set Field Names - notTracked : Have not been detailed retracked yet
 
 vScoreIdx <- ((datFishSuccessRate[,"Success"]-datFishSuccessRate[,"Fails"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
 vScoreIdx[is.nan(vScoreIdx) ] <- 0
