@@ -3,6 +3,7 @@
 
 ## Note, Bouts are given sequence numbers in time of occurance and rank in order going from close to prey capture backwards
 ## Turns towards prey are also marked, and these need to be towards the prey, but also the turn needs to reduce the bearing to prey by at least 10% / Otherwise it is not considered a turn
+
 library(signal)
 library(MASS)
 library(mclust,quietly = TRUE)

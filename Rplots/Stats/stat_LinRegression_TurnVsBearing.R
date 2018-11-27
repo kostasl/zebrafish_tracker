@@ -203,7 +203,9 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,])
 
 
 pdf(file= paste(strPlotExportPath,"/stat/stat_densityolinregressionslope.pdf",sep=""))
-plot(dDLb,col=colourH[1],xlim=c(0.5,1.2),lwd=3,lty=1,ylim=c(0,20),main="Density Inference of Turn-To-Prey Slope ")
+plot(dDLb,col=colourH[1],xlim=c(0.5,1.2),lwd=3,lty=1,ylim=c(0,20),
+     main="Density Inference of Turn-To-Prey Slope ",
+     xlab=expression(paste("slope ",gamma) ) )
 lines(dLLb,col=colourH[2],xlim=c(0.5,1.2),lwd=3,lty=2)
 lines(dNLb,col=colourH[3],xlim=c(0.5,1.2),lwd=3,lty=3)
 legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
