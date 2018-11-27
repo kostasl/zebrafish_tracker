@@ -77,7 +77,7 @@ remove(lMotionBoutDat)
 lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
-
+lFirstBoutPoints <- list() ##Add Dataframes Of 1st bout Turns for Each Group
 strGroupID <- levels(datTrackedEventsRegister$groupID)
 for (gp in strGroupID)
 {
@@ -108,14 +108,14 @@ for (gp in strGroupID)
 #datHuntLabelledEventsKLEmpty <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$groupID %in% c("DE","LE","NE"),]
 
 ## Get Event Counts Within Range ##
-datTurnVsPreyLL <- cbind(lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$LL[,"Turn"]) )
+datTurnVsPreyLL <- cbind(lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$LL[,"Turn"]),lFirstBoutPoints$LL[,"RegistarIdx"] )
 datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]),]
 
 
-datTurnVsPreyNL <- cbind(lFirstBoutPoints$NL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$NL[,"Turn"]) )
+datTurnVsPreyNL <- cbind(lFirstBoutPoints$NL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$NL[,"Turn"]),lFirstBoutPoints$NL[,"RegistarIdx"] )
 datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]),]
 
-datTurnVsPreyDL <- cbind(lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$DL[,"Turn"]) )
+datTurnVsPreyDL <- cbind(lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$DL[,"Turn"]),lFirstBoutPoints$DL[,"RegistarIdx"] )
 datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]),]
 
 

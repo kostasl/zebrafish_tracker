@@ -34,14 +34,6 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 G_THRESHUNTVERGENCEANGLE <- 40 ##Redifine Here Over main_Tracking - Make it looser so to detect 1st turn to Prey
 #    for (i in 1:40) dev.off()
 
-rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
-r <- c(rfc(11),"#FF0000");
-
-##For the 3 Groups 
-colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend
-colourP <- c(rgb(0.01,0.01,0.8,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.8,0.01,0.01,0.5),rgb(0.00,0.00,0.0,1.0)) ##points]
-colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
-pchL <- c(16,2,4)
 #
 ############# Analysis AND REPLAY OF HUNT EVENTS ####
 load(strDataFileName) ## Load Imported Hunt Event Tracks

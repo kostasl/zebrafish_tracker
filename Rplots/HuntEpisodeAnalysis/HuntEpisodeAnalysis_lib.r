@@ -1,5 +1,8 @@
-### Library For Analysis of Hunt Episodes ###
+### Library For for the Analysis of Tracking data in the carefully retracked Hunt Episodes imported ###
+## Smooths eye trajectories, fish speed, detects Bouts, turn events, angles produces a plot containing Detection Points and Motion Relative to Tracked Prey ##
 
+## Note, Bouts are given sequence numbers in time of occurance and rank in order going from close to prey capture backwards
+## Turns towards prey are also marked, and these need to be towards the prey, but also the turn needs to reduce the bearing to prey by at least 10% / Otherwise it is not considered a turn
 library(signal)
 library(MASS)
 library(mclust,quietly = TRUE)
@@ -7,6 +10,7 @@ library(mclust,quietly = TRUE)
 #library(sBIC)
 
 citation("mclust")
+
 
 
 ## Processes The Noise IN the recorded Frames of Fish#'s Eye and Tail Motion
@@ -283,8 +287,8 @@ detectTailBouts <- function(vTailMotionFq)
 ## Notes: Converted To Use 1Dim only Turnspeed to Detect Turns / Can use Tail Motion but I was getting False Positives when combined
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
-  nNumberOfComponents = 13
-  nSelectComponents = 6
+  nNumberOfComponents = 18
+  nSelectComponents = 9
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
@@ -566,7 +570,10 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
     vMotionBout_On <- which(vMotionBout_OnOffDetect == 1)+1
     vMotionBout_Off <- which(vMotionBout_OnOffDetect == -1)+1
-    vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs ##Measure Duration From Lengths Of Active Motion Using RLE flag
+    if ( lastBout > 0    )
+      vMotionBoutDuration <-1000*vMotionBout_rle$lengths[seq(lastBout,firstBout,-2 )]/Fs ##Measure Duration From Lengths Of Active Motion Using RLE flag
+    else
+      vMotionBoutDuration <-1000*vMotionBout_rle$lengths[1]/Fs ##Measure Duration From Lengths Of Active Motion Using RLE flag
     
     vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
     vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs] ] - vEventPathLength_mm[vMotionBout_On[1:iPairs] ]) ##The Power of A Bout can be measured by distance Travelled
@@ -585,26 +592,30 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   ## Assign A TurnSequence Number to Each Detected Bout / Used to Select 1 turn to prey etc..
   ## Go through Each MotionBout and Check If Turns Detected within Each Bout / Then Increment Counter
   turnCount <- 0
-  for (tidx in 1:NROW(vMotionBout_On) ) 
+  
+  if (NROW(vMotionBout_On) > 0)
   {
-    turnSeq[tidx] <- 0
-    
-    if ( any( vTurnBout[vMotionBout_On[tidx]:vMotionBout_Off[tidx] ] > 0) ) 
+    for (tidx in 1:NROW(vMotionBout_On) ) 
     {
-      ##Only score those that are towards Prey / and not NA
-      if (!is.na(vBearingToPrey[vMotionBout_On[tidx],2]) & !is.na(vBearingToPrey[vMotionBout_Off[tidx],2]))
-      {
-        if ( abs( vBearingToPrey[vMotionBout_Off[tidx],2] )  < abs(vBearingToPrey[vMotionBout_On[tidx],2] )  )
-        {
-          message( paste(tidx," has turn towards prey") )
-          turnCount <- turnCount + 1
-          turnSeq[tidx] <- turnCount
-        }
-      }##check for missing values
-    }
+      turnSeq[tidx] <- 0
       
-    
-  }
+      if ( any( vTurnBout[vMotionBout_On[tidx]:vMotionBout_Off[tidx] ] > 0) ) 
+      {
+        ##Only score those that are towards Prey / and not NA
+        if (!is.na(vBearingToPrey[vMotionBout_On[tidx],2]) & !is.na(vBearingToPrey[vMotionBout_Off[tidx],2]))
+        {
+          ##Check That Detected TurnBout Reduces Angle To Prey
+          ##  by at least 10% - Filter Out Non Turn To PRey Items / Tiny Turns before big swing to towards prey
+          if ( abs( vBearingToPrey[vMotionBout_Off[tidx],2] )  < 0.90*abs(vBearingToPrey[vMotionBout_On[tidx],2] )  )
+          {
+            message( paste(tidx," has turn towards prey :", abs(vBearingToPrey[vMotionBout_On[tidx],2]-vBearingToPrey[vMotionBout_Off[tidx],2] )    ) )
+            turnCount <- turnCount + 1
+            turnSeq[tidx] <- turnCount
+          }
+        }##check for missing values
+      }
+    }
+  } ##If motion bout Exists
   
   
   ##Reverse Order 

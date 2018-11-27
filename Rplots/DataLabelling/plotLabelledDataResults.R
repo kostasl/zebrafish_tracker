@@ -81,9 +81,7 @@ dev.off()
 strPlotName = paste(strPlotExportPath,"/HuntLabelsSuccessVsFailScatter-SB.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Labelled Success Vs Fails Hunt Events For Each Fish ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 
-colourD <- c("#0303E6AA","#03B303FF","#E60303AA")
-colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
-pchL <- c(16,2,4)
+
 
   strProcDataFileName <-paste("setn12-HuntEvents-SB-Updated",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
   strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
