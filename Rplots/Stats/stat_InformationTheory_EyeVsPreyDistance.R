@@ -139,8 +139,51 @@ datFirstBoutVsInfDL <- mergeFirstTurnWithInformation(datFirstBouts,lInfStructDL 
 stopifnot(unique(datTrackedEventsRegister[unlist(datFirstBoutVsInfDL$RegistarIdx),"groupID"]) == "DL" )  ##Check for Errors in Reg idx - Group should match registry
 
 
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio_",strTag,".pdf",sep=""))
+plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf),
+     ylim=c(0,2),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
+     main="Information Vs Undershoot ",col=colourH[2],pch=pchL[2])
+segments(1,-10,1,20);
+points(unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfNL$MInf),ylim=c(0,2),xlim=c(0,2),
+       col=colourH[3],pch=pchL[3])
+points(unlist(datFirstBoutVsInfDL$UnderShootRatio),unlist(datFirstBoutVsInfDL$MInf),ylim=c(0,2),xlim=c(0,2),
+       col=colourH[1],pch=pchL[1])
+legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsInfDL),NROW(datFirstBoutVsInfLL) ,NROW(datFirstBoutVsInfNL) ) ) 
+       ,col=colourH,pch=pchL,lty=c(1,2,3),lwd=2)
+dev.off()
 
-## plot Undershot Ratio ###
+## Make Bar plot Of Undershoot Vs Inf - Bin Results
+
+datFirstBoutVsInf <- rbind(datFirstBoutVsInfLL,datFirstBoutVsInfNL,datFirstBoutVsInfDL)
+bins <-  20
+vlevels <- seq(from=1,to=10,by=10/bins)
+vUndershootBin <- cut(unlist(datFirstBoutVsInf$UnderShootRatio),breaks=seq(0.0,2,by=2/bins))
+vInfVsUndershoot <- cbind(datFirstBoutVsInf$MInf,vUndershootBin)
+##Do Mean For Each Level/Bin
+lInfPerUndershoot = list()
+vmeanInf = vector()
+vsdInf = vector()
+idx <- 0
+for (p in vlevels)
+{
+  idx <- idx +1
+  lInfPerUndershoot[[idx]] <- unlist(vInfVsUndershoot[vInfVsUndershoot[,2] == p,1])
+  vmeanInf[idx] <- mean(unlist(vInfVsUndershoot[vInfVsUndershoot[,2] == p,1]))
+  vsdInf[idx]   <- sd(unlist(vInfVsUndershoot[vInfVsUndershoot[,2] == p,1]))
+}
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_boxplot_InfVsUndershoot_AllGroups_",strTag,".pdf",sep=""))
+## Box Plot Results Undershoot Vs Information
+boxplot(unlist(vInfVsUndershoot[,1])~unlist(vInfVsUndershoot[,2]),names=sort(unique(vUndershootBin) ),
+        xlab="Overshoot ratio",
+        ylab="Distance Information (bits)",
+        main="Relating Undershoot to Larva's Ability to Infer Distance  ")
+
+dev.off()
+
+
+## plot Undershot Ratio  - Showing RegisterIDs ###
 pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio_",strTag,"_WithIDs.pdf",sep=""))
 plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf),
      ylim=c(0,2),xlim=c(0,2),
@@ -151,7 +194,6 @@ points(unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfNL$MI
        col=colourH[3],pch=pchL[3])
 points(unlist(datFirstBoutVsInfDL$UnderShootRatio),unlist(datFirstBoutVsInfDL$MInf),ylim=c(0,2),xlim=c(0,2),
        col=colourH[1],pch=pchL[1])
-
 text(unlist(datFirstBoutVsInfNL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfNL$MInf)*1.01,unlist(datFirstBoutVsInfNL$RegistarIdx),cex=0.7,col=colourP[3])
 text(unlist(datFirstBoutVsInfLL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfLL$MInf)*1.01,unlist(datFirstBoutVsInfLL$RegistarIdx),cex=0.7)
 text(unlist(datFirstBoutVsInfDL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfDL$MInf)*1.01,datFirstBoutVsInfDL$RegistarIdx,cex=0.7,col=colourP[1])
