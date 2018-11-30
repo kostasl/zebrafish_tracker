@@ -1316,6 +1316,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     fishModel* pfish = NULL;
 
     fishModels::iterator ft;
+    bool bModelFound;
 
      // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
     for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
@@ -1326,7 +1327,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         cv::Point ptSearch; //Where To Centre The Template Matching Searcrh
         int bestAngle;
         double  maxMatchScore = 0.0;
-        bool bModelFound = false;
+        bModelFound = false;
         int iTemplRow = 0; //Starting Search Point For Template
         int iTemplCol = 0;
 
@@ -1471,7 +1472,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //OtherWise Delete The model?
             //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
-            if (pfish->inactiveFrames > gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
+            //If We found one then Delete the other instances waiting for a match - 1 Fish Tracker
+            if (bModelFound || pfish->inactiveFrames > gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
             {
                 std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
                 ft = vfishmodels.erase(ft);
