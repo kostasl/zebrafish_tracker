@@ -40,7 +40,9 @@
  ///    the evolution of prey Count in time can be observed.
  ///
  /// \bug MOG use under Multi-Processing gives a SegFault in OpenCL - Workaround: Added try block on MOG2, and then flag to switch off OpenCL.
- ///
+ /// \note Cmd line arguments: /zebraprey~_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1
+ ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
+ ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ////////
 
 
@@ -881,7 +883,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         if (bTrackFood)
         {
-
+            cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
             processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
 
@@ -2176,6 +2178,11 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
 {
 
+    cv::Mat frameMasked;
+
+    frame_grey.copyTo(frameMasked,maskimg); // Apply Mask
+
+
     std::vector<cv::KeyPoint> keypoints;
 
 
@@ -2186,7 +2193,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     //circularity of a square is 0.785, and so on.
 
     params.filterByCircularity  = false;
-    params.minCircularity       = 0.8;
+    params.minCircularity       = 0.70;
     params.maxCircularity       = 1.0;
 
     params.filterByColor        = false;
@@ -2194,7 +2201,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 
     params.maxThreshold = g_SegFoodThesMax; //Use this Scanning to detect smaller Food Items
     params.minThreshold = g_SegFoodThesMin;
-    params.thresholdStep = 1;
+    params.thresholdStep = 4;
 
     // Filter by Area.
     params.filterByArea = true;
@@ -2216,8 +2223,8 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 
     //\todo - Memory Crash Here - double free corruption
 
-    assert(frame_grey.depth() == CV_8U);
-    detector->detect( frame_grey, keypoints); //frameMask
+    assert(frameMasked.depth() == CV_8U);
+    detector->detect( frameMasked, keypoints); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
