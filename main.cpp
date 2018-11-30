@@ -107,7 +107,7 @@ QFile outfishdatafile;
 QFile outfooddatafile;
 QString outfilename;
 std::string gstrwinName = "FishFrame";
-QString gstroutDirCSV,gstrvidFilename; //The Output Directory
+QString gstroutDirCSV,gstrinDirVid,gstrvidFilename; //The Output Directory
 
 //Global Matrices Used to show debug images
 cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
@@ -396,9 +396,21 @@ int main(int argc, char *argv[])
 
     QStringList inVidFileNames;
     if (parser.has("invideofile"))
-    {
-        inVidFileNames.append( QString::fromStdString(parser.get<string>("invideofile")) );
+    {   QString fvidFileName = QString::fromStdString( parser.get<string>("invideofile") );
+        QFileInfo ovidfile(fvidFileName ) ;
+
+        if ( ovidfile.absoluteDir().exists()) //Check if vid file exists before appending to list
+            gstrinDirVid = ovidfile.absoluteDir().absolutePath();
+        else
+            gstrinDirVid = gstroutDirCSV; //Set Def. Dir for dialogue to the outDir
+
+        if (ovidfile.exists() && ovidfile.isFile())
+            inVidFileNames.append( fvidFileName );
+
+
+
     }
+
 
     if (parser.has("invideolist"))
     {
@@ -485,7 +497,7 @@ int main(int argc, char *argv[])
 
     //If No video Files have been loaded then Give GUI to User
     if (inVidFileNames.empty())
-            inVidFileNames =QFileDialog::getOpenFileNames(0, "Select videos to Process",gstroutDirCSV.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
+            inVidFileNames =QFileDialog::getOpenFileNames(0, "Select videos to Process",gstrinDirVid.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
 
 
     // get the applications dir pah and expose it to QML
