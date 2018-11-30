@@ -468,7 +468,7 @@ cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv:
 
 //cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
 
-cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_OPEN,kernelOpen,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_CLOSE,kernelOpen,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
 //cv::dilate(outFoodMask,outFoodMask,kernelClose,cv::Point(-1,-1),1);
 

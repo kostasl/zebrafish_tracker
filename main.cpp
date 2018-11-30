@@ -270,6 +270,7 @@ int main(int argc, char *argv[])
     bshowMask = false;
     bTracking = true; //Start By Tracking by default
     bExiting    = false;
+    QStringList inVidFileNames; //List of Video Files to Process
 
     std::ofstream foutLog;//Used for Logging To File
     // Get the rdbuf of clog.
@@ -394,7 +395,10 @@ int main(int argc, char *argv[])
     std::cout << "Csv Output Dir is " << gstroutDirCSV.toStdString()  << "\n " <<std::endl;
 
 
-    QStringList inVidFileNames;
+
+ /// Check if vid file provided in arguments.
+ /// If File exists added to video file list,
+ /// otherwise save directory and open dialogue to choose a file from there
     if (parser.has("invideofile"))
     {   QString fvidFileName = QString::fromStdString( parser.get<string>("invideofile") );
         QFileInfo ovidfile(fvidFileName ) ;
@@ -406,9 +410,6 @@ int main(int argc, char *argv[])
 
         if (ovidfile.exists() && ovidfile.isFile())
             inVidFileNames.append( fvidFileName );
-
-
-
     }
 
 
@@ -895,7 +896,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         if (bTrackFood)
         {
-            cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
+            //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
             processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
 
@@ -911,17 +912,17 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob - Except If Food is being Tracked
                 if (pfood->activeFrames < gcMinFoodModelActiveFrames && (!pfood->isTargeted))
                 {
-                    ++ft;
+                    ++ft; //Item Is not Counted
                     continue;
                 }
 
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 );
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
                 else
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID, CV_FONT_HERSHEY_PLAIN,trackFntScale );
 
                 ++ft;
-                nFood++; //only count the rendered Food Items
+                nFood++; //only count the rendered Food Items ie. Active Ones
             }
 
 
@@ -1374,7 +1375,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                  else //Below Thres Match Score
                  {
                        //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
-                       if (pfish->inactiveFrames > 3)
+                       if (pfish->inactiveFrames > gcMaxFishModelInactiveFrames)
                            iFishAngleOffset = 0;
                          qDebug() << nFrame << " Guessing next TemplCol:" << iFishAngleOffset;
                  }
@@ -1681,7 +1682,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
 
 ///
-/// \brief UpdateFoodModels
+/// \brief UpdateFoodModels A rule based assignment of blob to model - Can be converted to statistical model of assignment
 /// \param maskedImg_gray
 /// \param vfoodmodels
 /// \param foodblobs
@@ -1733,7 +1734,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
             //Penalize no Overlap
              float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
-             pfood->blobMatchScore -=10.0*overlap;
+             pfood->blobMatchScore -=1.0*overlap;
              if (overlap > 0.0)
                     bMatch = true;
 
@@ -1742,6 +1743,10 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
              pfood->blobMatchScore +=fbdist;
              if (fbdist < gMaxClusterRadiusFoodToBlob)
                  bMatch = true;
+             else //Add Score according to broader catchment area
+                if (fbdist < 3*gMaxClusterRadiusFoodToBlob & fbdist > 0)
+                 pfood->blobMatchScore +=3*gMaxClusterRadiusFoodToBlob/(fbdist);
+
              //Rank Up if this food model has been around for a while, instead of newly created one
              if (pfood->activeFrames > gcMinFoodModelActiveFrames )
                  pfood->blobMatchScore += pfood->activeFrames/gcMinFoodModelActiveFrames;

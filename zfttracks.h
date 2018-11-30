@@ -16,7 +16,7 @@
 #define CV_TRACK_RENDER_TO_LOG        0x0010 ///< Print track info to log out. \see cvRenderTrack
 #define CV_TRACK_RENDER_TO_STD        0x0020 ///< Print track info to log out. \see cvRenderTrack
 #define CV_TRACK_RENDER_PATH          0x0100 ///< Draw polyline of track positions \see cvRenderTrack
-
+#define CV_TRACK_RENDER_HIGHLIGHT     0x1000 ///Draw Colour Indicate Highlight
 
 /// \brief Type of identification numbers.
 typedef unsigned int zftID;

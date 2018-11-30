@@ -4,14 +4,14 @@
 
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
-const unsigned int MOGhistory   = 92;//Use 100 frames Distributed across the video length To Find What the BGModel is
+const unsigned int MOGhistory   = 40;//Use 100 frames Distributed across the video length To Find What the BGModel is
 double gdMOGBGRatio       = 0.95; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
 const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
-const double dLearningRateNominal         = 0.00001;
+const double dLearningRateNominal         = 0.001;
 
 
 /// BLOB DETECTION Filters //
@@ -27,7 +27,7 @@ const unsigned int gthres_maxfoodblobarea = 40;
 /// Constants ///
 const int gcMaxFishModelInactiveFrames  = 300; //Number of frames inactive until track is deleted
 const int gcMaxFoodModelInactiveFrames  = 150; //Number of frames inactive (Not Matched to a Blob) until track is deleted
-const int gcMinFoodModelActiveFrames    = 50; //Min Number of consecutive frames it needs to be active  otherwise its deleted
+const int gcMinFoodModelActiveFrames    = 30; //Min Number of consecutive frames it needs to be active  otherwise its deleted
 const int gMaxClusterRadiusFoodToBlob   = 3;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 //const int thDistanceFish                = 250; //NOT USED / Blobs need to overlap Threshold for distance between track (last known point) -to blob assignement
@@ -39,7 +39,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 
 ///Segmentation Params
 int g_Segthresh             = 30; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
-int g_SegFoodThesMin        = 20; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
+int g_SegFoodThesMin        = 25; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
 int g_SegFoodThesMax        = g_Segthresh; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation

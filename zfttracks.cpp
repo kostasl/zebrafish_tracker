@@ -92,6 +92,10 @@ if (h.pointStack.size() > 0)
 
 void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface,float fontScale )
 {
+      cv::Scalar colTxt =  cv::Scalar(0,250,20,50); //Colour
+
+     if (mode & CV_TRACK_RENDER_HIGHLIGHT)
+                colTxt = cv::Scalar(210,250,0,80);
 
      if (mode&CV_TRACK_RENDER_ID)
      {
@@ -99,7 +103,7 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
 //        {
           std::stringstream buffer;
           buffer << track.id;
-          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.boundingBox.tl())+cv::Point(-5,-2),fontface,fontScale, CV_RGB(0,250,0));
+          cv::putText(frameOut, buffer.str().c_str(), (cv::Point)(track.boundingBox.tl())+cv::Point(-5,-2),fontface,fontScale,colTxt);
           //cv::putText(frameOut, buffer.str().c_str(), track.boundingBox.tl(),fontface,fontScale, CV_RGB(10.,220.,0.));
 
      }
