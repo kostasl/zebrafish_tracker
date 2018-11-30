@@ -1335,6 +1335,9 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         /// If No FishModel Is Matched with this Blob, then We Follow Up to Check the template score Of the Blob, before Creating A new Fish Model
         for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
         {
+            if (bModelFound) //Speed Up - Single Fish Mode - So Skip Others If Model Found
+                continue;
+
              pfish = ft->second;
              ///Does this Blob Belong To A Known Fish Model?
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
