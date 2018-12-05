@@ -2614,7 +2614,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
             pfish->zTrack.pointStack.shrink_to_fit(); //Requires this Call of C++ otherwise It Doesnt clear
          }//For eAch Fish
 
-
+        //Regular Timed entry - in the absence of fish
          //If there is are no fish Then Add a regular Entry denoting the number of prey
         if (bTrackFood && vfish.size() == 0 && (frameNumber.toUInt()%gFoodReportInterval == 0 || frameNumber.toUInt()==1))
         {
