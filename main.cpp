@@ -1045,6 +1045,8 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
 
     gfVidfps  = capture.get(CAP_PROP_FPS);
+    gFoodReportInterval = gfVidfps; //Report Food every second
+
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     window_main.setTotalFrames(totFrames);
     window_main.nFrame = nFrame;
@@ -2605,7 +2607,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
                 //+active; ///< Indicates number of frames that has been active from last inactive period.
                 //+ inactive; ///< Indicates number of frames that has been missing.
                 output << frameNumber << "\t" << Vcnt  << "\t" << (*pfish);
-                output << "\t" << vfood.size() << "\n";
+                output << "\t" << foodModel::getActiveFoodCount(vfood) << "\n";
             }
             //Empty Memory Once Logged
             pfish->zTrack.pointStack.clear();
@@ -2623,7 +2625,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
             pNullfish->resetSpine();
 
             output << frameNumber << "\t" << Vcnt  << "\t" << (*pNullfish);
-            output << "\t" << vfood.size() << "\n";
+            output << "\t" << foodModel::getActiveFoodCount(vfood) << "\n";
             delete pNullfish;
         }
 

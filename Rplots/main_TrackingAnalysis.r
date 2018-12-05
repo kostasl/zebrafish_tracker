@@ -57,13 +57,13 @@ pchL <- c(16,2,4) ## The style of bullet used for each group DL, LL, NL
 ## Required Variables - Locations 
 # Home Desktop
 setwd("/home/klagogia1/workspace/zebrafishtrack/Rplots")
-strVideoFilePath  <- "/media/extStore/ExpData/zebrapreyCap/AnalysisSet/"
-strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
-strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
-strTrackInputPath <- "/media/extStore//kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
-strDatDir        <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
-strDataExportDir <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
-strPlotExportPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
+strVideoFilePath  <- "/media/kostasl/ARXEIO1TB/ExpData/zebrapreyCap/AnalysisSet/"
+strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release/" 
+strTrackeroutPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
+strTrackInputPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
+strDatDir        <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
+strDataExportDir <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
+strPlotExportPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
 
 
 ## Office PC
