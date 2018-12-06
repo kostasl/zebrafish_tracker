@@ -12,6 +12,7 @@
 
 static int lastFoodID = 0;
 
+
 foodModel::foodModel()
 {
 lastFoodID++;
@@ -156,6 +157,35 @@ QTextStream& operator<<(QTextStream& out, const foodModels& v)
 
     return out;
 }
+///
+/// \brief getActiveFoodCount Aux. function returning the usuable food count - instead of just the number of instances given by .size()
+/// \param vfoodmodels
+/// \return
+///
+int foodModel::getActiveFoodCount(foodModels& vfoodmodels)
+{
+    int retNfood = 0;
+    foodModels::iterator ft = vfoodmodels.begin();
+
+    while (ft != vfoodmodels.end())
+    {
+        foodModel* pfood = ft->second;
+        assert(pfood);
+
+        // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob - Except If Food is being Tracked
+        if (pfood->activeFrames < gcMinFoodModelActiveFrames && (!pfood->isTargeted))
+        {
+            ++ft; //Item Is not Counted
+            continue;
+        }
+
+        ++ft;
+        retNfood++; //only count the rendered Food Items ie. Active Ones
+    }
+
+return retNfood;
+}
+
 
 
 

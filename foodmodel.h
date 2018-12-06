@@ -16,6 +16,11 @@ extern uint gi_MaxFoodID;
 typedef cv::KeyPoint zfdblob;
 typedef std::vector<zfdblob> zfdblobs;
 
+class foodModel; //fwd definition
+
+typedef std::map<zfdID,foodModel* > foodModels;
+typedef std::pair<zfdID, foodModel* > IDFoodModel;
+
 
 class foodModel
 {
@@ -24,6 +29,8 @@ public:
     foodModel(zfdblob blob,zfdID ID);
     ~foodModel();
     void updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius);
+    static int getActiveFoodCount(foodModels& vfoodmodels);
+
     zfdID ID;
     int ROIID;
     int inactiveFrames; //Count Of Number Of Frames That this model Has not Been Matched To Any Fish
@@ -35,9 +42,6 @@ public:
     unsigned int nLastUpdateFrame; ///<-Holds the frame Number of the last State Update
     bool isTargeted;
 };
-
-typedef std::map<zfdID,foodModel* > foodModels;
-typedef std::pair<zfdID, foodModel* > IDFoodModel;
 
 
 //To Write Selected Food Vector Data To File

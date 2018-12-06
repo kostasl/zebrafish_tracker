@@ -32,7 +32,7 @@ const int gMaxClusterRadiusFoodToBlob   = 3;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 //const int thDistanceFish                = 250; //NOT USED / Blobs need to overlap Threshold for distance between track (last known point) -to blob assignement
 //const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
-const int gFoodReportInterval           = (int)gfVidfps;
+int gFoodReportInterval           = (int)gfVidfps;
 
 const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
