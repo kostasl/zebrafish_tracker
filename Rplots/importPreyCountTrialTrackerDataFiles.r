@@ -1,6 +1,43 @@
 source("TrackerDataFilesImport_lib.r")
 
 
+### [plot the change in rotifer count / normalized to starting values for the data.frame]
+## Assumes datGroupFrames contains frames with rotifer count for one specific group ##
+## call par(new=TRUE) to add plots together ##
+plotPreyCountConsumptionNorm <- function(datGroupFrames)
+{
+  groupID <- which(strGroupID == unique(datGroupFrames$group) )
+  
+  summaryDat <- aggregate(datGroupFrames$PreyCount~datGroupFrames$expID+datGroupFrames$time+datGroupFrames$larvaID,
+                          FUN=median)
+  vLarvaID <- unique(datGroupFrames$larvaID)
+  datConsumption <- summaryDat
+  names(datConsumption) <- c("expID","time","larvaID","PreyCount")
+  lLarvaRec <- list()
+  
+  for (lID in vLarvaID)
+  {
+    LarvaRec <- datConsumption[datConsumption$larvaID == lID ,]
+    InitRec <- LarvaRec[ LarvaRec$time == 0,]
+    normRec <- LarvaRec$PreyCount / InitRec$PreyCount
+    LarvaRec <- cbind(LarvaRec,normRec)
+    
+    lLarvaRec[[lID]] <- LarvaRec
+    
+  }
+  ###[plot results]
+  plot(lLarvaRec[[1]]$time,lLarvaRec[[1]]$normRec,type="l",ylim=c(0,1.1),xlim=c(0,140),
+       xlab="time (min)",ylab="rotifer percentage",col=colourP[groupID],add=T)
+  for (lID in vLarvaID)
+  {
+    lines(lLarvaRec[[lID]]$time,lLarvaRec[[lID]]$normRec,type="l",col=colourP[groupID],
+          ylim=c(0,1.1),xlim=c(0,140))
+    points(lLarvaRec[[lID]]$time,lLarvaRec[[lID]]$normRec,pch=pchL[groupID])
+  }
+  
+  
+} ## end of plot function
+
 
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 
@@ -81,11 +118,11 @@ for ( idxDataSet in 1:length(strDataSetDirectories) )
 #### END OF IMPORT TRACKER DATA ############
 
 ##Save the File Sources and all The Frames Combined - Just In case there are loading Problems Of the Individual RData files from each set
-save(groupsrcdatListPerDataSet,file=paste(strDataExportDir,"/groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
+save(groupsrcdatListPerDataSet,file=paste(strDataExportDir,"/groupsrcdatListPerDataSet",strDataSetIdentifier,"_Ds-",1,"-",idxDataSet,".RData",sep=""))
 
 #datAllFrames <- rbindlist(datAllSets);
 datAllFrames = do.call(rbind,datAllSets);
-save(datAllFrames,file=paste(strDataExportDir,"datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
+save(datAllFrames,file=paste(strDataExportDir,"datAllFrames",strDataSetIdentifier,"_Ds-",1,"-",idxDataSet,".RData",sep=""))
 
 ## SHow/plot Summary ##
 datLL <- datAllFrames[datAllFrames$group=="LL",]
@@ -93,11 +130,19 @@ datNL <- datAllFrames[datAllFrames$group=="NL",]
 summaryDatNL <- aggregate(datNL$PreyCount~datNL$expID+datNL$time+datNL$larvaID,FUN=mean)
 summaryDatLL <- aggregate(datLL$PreyCount~datLL$expID+datLL$time+datLL$larvaID,FUN=mean)
 
+pdf(file= paste(strPlotExportPath,"/ConsumptionSampling_",strDataSetIdentifier,".pdf",sep=""))
 plot(summaryDatNL$`datNL$time`,summaryDatNL$`datNL$PreyCount`,col="red",pch=9,
-     xlab="time (min)",ylab="rotifer count")
+     xlab="time (min)",ylab="rotifer count",main="Consumption Sampling experiment")
 points(summaryDatLL$`datLL$time`,summaryDatLL$`datLL$PreyCount`,col="black",pch=1)
 legend("topright",legend=c("NL","LL"),pch=c(9,1),col=c("red","black") )
+dev.off()
 
-aggregate(datAllFrames[datAllFrames$group=="NL","PreyCount"], 
-          by=list(expID=datAllFrames[datAllFrames$group=="NL","expID"],time=expID=datAllFrames[datAllFrames$group=="NL","time"])
-          ,FUN=mean)
+
+pdf(file= paste(strPlotExportPath,"/ConsumptionSamplingNormalized_",strDataSetIdentifier,".pdf",sep=""))
+plotPreyCountConsumptionNorm(datLL)
+par(new=TRUE)
+plotPreyCountConsumptionNorm(datNL)
+legend("topright",legend=c("NL","LL"),pch=c(pchL[3],pchL[2])) # c(colourH[3],colourH[2])
+par(new=FALSE)
+dev.off()
+
