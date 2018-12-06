@@ -161,7 +161,8 @@ getFileSet <- function(strCondDir,strsrc,strCondR = "*.csv")
 }
 
 ##Load Files To Tracker Data and Filter Them Out##
-importTrackerFilesToFrame <- function(listSrcFiles) {
+## 
+importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
   datProcessed <- list();
   ##CHANGE HASH/ID to select between datasets/groups ##
   strCondTags = names(listSrcFiles);
@@ -185,19 +186,23 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
     ## FOR EACH DATA FIle IN Group - Filter Data And combine into Single DataFrame For Group ##
     for (j in 1:nDat)
     {
-      message(paste(j,". Filtering Data :",  temp[[j]]))
+      message(paste(j,". Filtering Data :",  basename( temp[[j]] ) ) )
       procDatFrames = procDatFrames + length(TrackerData[[i]][[j]]$frameN);
       message(paste("Found #Rec:",  length(TrackerData[[i]][[j]]$frameN) ))
       
-      ##Extract Experiment ID
-      brokenname = strsplit(temp[[j]],"_")
-      expID =  as.numeric(brokenname[[1]][length(brokenname[[1]])-3]);
-      eventID = as.numeric(brokenname[[1]][length(brokenname[[1]])-2]);
-      trackID = as.integer( gsub("[^0-9]","",brokenname[[1]][length(brokenname[[1]])])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
+      ## Extract fields values from filename using function name provided##
+      lNameDat <- do.call(strNameFieldFUN, list(temp[[j]]) )
       
+      
+      
+      ## Save standart expected fields for experiments ##
+      expID <- lNameDat$expID  #as.numeric(brokenname[[1]][length(brokenname[[1]])-3]);
+      eventID <-lNameDat$eventID #   as.numeric(brokenname[[1]][length(brokenname[[1]])-2]);
+      trackID = lNameDat$trackID #as.integer( gsub("[^0-9]","",brokenname[[1]][length(brokenname[[1]])])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
       ##Extract Larva ID - Identifies larva in group across food condition - ie which larva in Empty group is the same one in the fed group
       #NOTE: Only Available In files names of more Recent Experiments
-      larvaID <- as.integer( gsub("[^0-9]","",brokenname[[1]][length(brokenname[[1]])-4]) )
+      larvaID <-lNameDat$larvaID##as.integer( gsub("[^0-9]","",brokenname[[1]][length(brokenname[[1]])-4]) )
+
       if(!is.numeric(larvaID)  ) ##Check As it Could Be missing
       {
         larvaID <- NA
@@ -251,10 +256,10 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 DThetaSpine_7 = TrackerData[[i]][[j]]$DThetaSpine_7, #sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_7,5),wrapAngle),
                                                 frameN=TrackerData[[i]][[j]]$frameN,
                                                 fileIdx=rep(j,Nn),
-                                                expID=rep(expID,Nn),
-                                                eventID=rep(eventID,Nn), ##From Filename - Sequence # of Event captured during recording 
-                                                larvaID=rep(larvaID,Nn), ##As defined in the filename 
-                                                trackID=rep(trackID,Nn), ##The ID given to the pointtrack from the tracker 
+                                                #expID=rep(expID,Nn), ##Now attached via cbind to the lNameDat
+                                                #eventID=rep(eventID,Nn), ##From Filename - Sequence # of Event captured during recording 
+                                                #larvaID=rep(larvaID,Nn), ##As defined in the filename 
+                                                #trackID=rep(trackID,Nn), ##The ID given to the pointtrack from the tracker 
                                                 group=rep(i,Nn),
                                                 trackletID= TrackerData[[i]][[j]]$fishID,
                                                 PreyCount=meanf(TrackerData[[i]][[j]]$RotiferCount,nFrWidth*8),
@@ -262,7 +267,6 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 TailFitError=TrackerData[[i]][[j]]$lastTailFitError,
                                                 templateScore=TrackerData[[i]][[j]]$templateScore
                                                 );
-        
         groupDatIdx = groupDatIdx + 1; ##Count Of Files Containing Data
         
       }   
@@ -284,10 +288,10 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 DThetaSpine_7 = 0,
                                                 frameN=0,
                                                 fileIdx=j,
-                                                expID=expID,
-                                                eventID=eventID,
-                                                larvaID=larvaID,
-                                                trackID=trackID,
+                                                #expID=expID, ##Now attached via cbind to the lNameDat
+                                                #eventID=eventID,
+                                                #larvaID=larvaID,
+                                                #trackID=trackID,
                                                 group=i,
                                                 trackletID=0,
                                                 PreyCount=0,
@@ -295,10 +299,13 @@ importTrackerFilesToFrame <- function(listSrcFiles) {
                                                 TailFitError=0,
                                                 templateScore=0.0
                                                 );
+        
         message(paste("No Data for ΕχpID",expID,"event ",eventID," larva ",larvaID))
         
       }
       
+      ## Attach The FileName extracted Data, to the data frame
+      datProcessed[[procDatIdx]] <- cbind(lNameDat,datProcessed[[procDatIdx]])
       
       
       ## Report NA Values ##
@@ -493,4 +500,37 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
   
   
   
+}
+
+
+#/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
+extractFileNameParams_huntingExp <- function(strFileName)
+{
+  ##Extract Experiment ID
+  basename <- basename(strFileName)
+  brokenname = unlist(strsplit(basename,"_"))
+  expID <-  as.numeric(brokenname[4]);
+  eventID <- as.numeric(brokenname[5]);
+  larvaID <- as.numeric(gsub("[^0-9]","",brokenname[3]) );
+  trackID <- as.integer( gsub("[^0-9]","",brokenname[length(brokenname)])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
+  fps     <- as.integer( gsub("[^0-9]","",brokenname[1])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
+ # timeMin <- as.integer( gsub("[^0-9]","",brokenname[5])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
+  
+  return(list(expID=expID,eventID=eventID,larvaID=larvaID,fps=fps) )
+}
+
+#/// Returns a list of name value pairs extracted from TrackerFile name used for the PreyCount Feeding Assay
+extractFileNameParams_preycountExp <- function(strFileName)
+{
+  ##Extract Experiment ID
+  basename <- basename(strFileName)
+  brokenname = unlist(strsplit(basename,"_"))
+  expID <-  as.numeric(brokenname[6]);
+  eventID <- as.numeric(brokenname[7]);
+  larvaID <- as.numeric(gsub("[^0-9]","",brokenname[4]) );
+  trackID <- as.integer( gsub("[^0-9]","",brokenname[length(brokenname)])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
+  fps     <- as.integer( gsub("[^0-9]","",brokenname[2])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
+  timeMin <- as.integer( gsub("[^0-9]","",brokenname[5])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
+  
+  return(list(expID=expID,eventID=eventID,larvaID=larvaID,trackID=trackID,time=timeMin,fps=fps) )
 }

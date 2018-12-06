@@ -43,6 +43,8 @@
  /// \note Cmd line arguments: /zebraprey~_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
+ ///
+ /// \todo Add Lucas-Kanade tracking of prey motion
  ////////
 
 
@@ -1695,6 +1697,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 /// \param foodblobs
 /// \param nFrame
 /// \param frameOut
+/// \todo Add calcOpticalFlowPyrLK Lucas-Kanard Optic Flow Measurment to estimate food displacement
 void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,cv::Mat& frameOut)
 {
     qfoodModels qfoodrank;
@@ -2244,15 +2247,15 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     // Set up the detector with default parameters.
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
-    //\todo - Memory Crash Here - double free corruption
-
     assert(frameMasked.depth() == CV_8U);
-    detector->detect( frameMasked, keypoints,maskimg); //frameMask
+    //detector->detect( frameMasked, keypoints,maskimg); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
     //for (cv::KeyPoint &kp : keypoints)
     ptFoodblobs.clear();
+    ptFoodblobs.push_back( cv::KeyPoint(50,50,10,1));
+
     for(int i=0;i<keypoints.size();i++)
     {
         cv::KeyPoint kp = keypoints[i];
