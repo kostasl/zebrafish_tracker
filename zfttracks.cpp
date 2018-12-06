@@ -93,9 +93,12 @@ if (h.pointStack.size() > 0)
 void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, unsigned short mode, int fontface,float fontScale )
 {
       cv::Scalar colTxt =  cv::Scalar(0,250,20,50); //Colour
+      cv::Scalar colCircle = cv::Scalar(255,255,0,30);
 
      if (mode & CV_TRACK_RENDER_HIGHLIGHT)
-                colTxt = cv::Scalar(210,250,0,80);
+     {
+       colTxt = cv::Scalar(255,255,0,90);
+     }
 
      if (mode&CV_TRACK_RENDER_ID)
      {
@@ -107,13 +110,17 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
           //cv::putText(frameOut, buffer.str().c_str(), track.boundingBox.tl(),fontface,fontScale, CV_RGB(10.,220.,0.));
 
      }
+    if (mode & CV_TRACK_RENDER_BOUNDING_CIRCLE)
+        cv::circle(frameOut,track.centroid, track.boundingBox.width/2,colCircle,1); //Mark Where Search Is Done
 
-      if (mode&CV_TRACK_RENDER_BOUNDING_BOX)
+
+      if (mode & CV_TRACK_RENDER_BOUNDING_BOX)
+            cv::rectangle(frameOut,track.boundingBox,track.colour);
         //if (track.inactive > 0)
        //   cv::rectangle(frameOut,track.boundingBox,CV_RGB(0., 40., 150.));
        // else
           //cv::rectangle(frameOut,track.boundingBox,CV_RGB(0., 0., 255.));
-            cv::rectangle(frameOut,track.boundingBox,track.colour);
+
 
       if (mode&CV_TRACK_RENDER_TO_LOG)
       {

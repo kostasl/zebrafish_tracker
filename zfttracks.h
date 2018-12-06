@@ -11,12 +11,13 @@
 #include <string>
 #include <QTextStream>
 
-#define CV_TRACK_RENDER_ID            0x0001 ///< Print the ID of each track in the image. \see cvRenderTrack
-#define CV_TRACK_RENDER_BOUNDING_BOX  0x0002 ///< Draw bounding box of each track in the image. \see cvRenderTrack
-#define CV_TRACK_RENDER_TO_LOG        0x0010 ///< Print track info to log out. \see cvRenderTrack
-#define CV_TRACK_RENDER_TO_STD        0x0020 ///< Print track info to log out. \see cvRenderTrack
-#define CV_TRACK_RENDER_PATH          0x0100 ///< Draw polyline of track positions \see cvRenderTrack
-#define CV_TRACK_RENDER_HIGHLIGHT     0x1000 ///Draw Colour Indicate Highlight
+#define CV_TRACK_RENDER_ID              0b00000001 ///< Print the ID of each track in the image. \see cvRenderTrack
+#define CV_TRACK_RENDER_BOUNDING_BOX    0b00000010 ///< Draw bounding box of each track in the image. \see cvRenderTrack
+#define CV_TRACK_RENDER_BOUNDING_CIRCLE 0b00000100 ///< Draw bounding box of each track in the image. \see cvRenderTrack
+#define CV_TRACK_RENDER_TO_LOG          0b00001000 ///< Print track info to log out. \see cvRenderTrack
+#define CV_TRACK_RENDER_TO_STD          0b00010000 ///< Print track info to log out. \see cvRenderTrack
+#define CV_TRACK_RENDER_PATH            0b00100000 ///< Draw polyline of track positions \see cvRenderTrack
+#define CV_TRACK_RENDER_HIGHLIGHT       0b01000000 ///Draw Colour Indicate Highlight
 
 /// \brief Type of identification numbers.
 typedef unsigned int zftID;

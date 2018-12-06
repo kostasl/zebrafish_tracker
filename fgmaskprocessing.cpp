@@ -421,7 +421,8 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
     }
 #else
     cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
-    cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
+    cv::bitwise_or(threshold_output,fgMask_dilate,maskFGImg); //Combine / Additive for FishFG
+
 #endif
 } //If BGModelling
 else //No BG Modelling
@@ -434,6 +435,7 @@ else //No BG Modelling
 #endif
 
     threshold_output.copyTo(maskFGImg);
+    maskFGImg.copyTo(fgMask); //Use the same for Food processing
 }
 
 /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
@@ -470,7 +472,7 @@ cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv:
 
 //cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_CLOSE,kernelOpen,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
-cv::dilate(maskFGImg,outFoodMask,kernelOpen,cv::Point(-1,-1),1);
+cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1); //Dilate
 
 //threshold_output_COMB.copyTo(outFoodMask);
 //outFoodMask = maskFGImg.clone();

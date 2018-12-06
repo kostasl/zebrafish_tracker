@@ -917,7 +917,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 }
 
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
                 else
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID, CV_FONT_HERSHEY_PLAIN,trackFntScale );
 
@@ -1761,7 +1761,6 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
              if  (bMatch)
              {
                  qfoodrank.push(pfood);
-
              }
                //If Yes then assign the food with the overlapping blob the Match Score
                //Some existing food Can be associated with this Blob - As it Overlaps from previous frame
@@ -1800,7 +1799,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     while(ft != vfoodmodels.end() ) //&& vfishmodels.size() > 1
     {
         pfood = ft->second;
-        // Delete If Inactive For Too Long
+        // Delete If Inactive For Too Long and it is Not tracked
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
         if (pfood->inactiveFrames > gcMaxFoodModelInactiveFrames ||
             (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames && (pfood->isTargeted == false))
@@ -2246,7 +2245,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     //\todo - Memory Crash Here - double free corruption
 
     assert(frameMasked.depth() == CV_8U);
-    detector->detect( frameMasked, keypoints); //frameMask
+    detector->detect( frameMasked, keypoints,maskimg); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
@@ -2281,7 +2280,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 
     detector->clear();
 
-    return ptFoodblobs.size();
+    return (int)ptFoodblobs.size();
 
 }
 
