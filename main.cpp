@@ -113,7 +113,7 @@ QString gstroutDirCSV,gstrinDirVid,gstrvidFilename; //The Output Directory
 
 //Global Matrices Used to show debug images
 cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
-cv::Mat gframeCurrent,gframeLast; //Global Var Holding Copy of current and previous frame - usefull for opticflows
+cv::Mat gframeCurrent,gframeLast; //Updated in processVideo Global Var Holding Copy of current and previous frame - usefull for opticflows
 
 //Morphological Kernels
 cv::Mat kernelOpen;
@@ -901,8 +901,10 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         {
             //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
             processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
-            UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
 
+            UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
+            if (nFrame > 30)
+                processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame ); // Use Optic Flow
             //If A fish Is Detected Then Draw Its tracks
             foodModels::iterator ft = vfoodmodels.begin();
             nFood = 0;
@@ -1506,8 +1508,9 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 /// Process Optic Flow of defined food model positions
 /// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
 ///
-int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels )
+int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame )
 {
+    int retCount = 0;
    std::vector<cv::Point2f> vPreyKeypoints_current;
    std::vector<cv::Point2f> vPreyKeypoints_next;
    std::vector<uchar> voutStatus;
@@ -1532,10 +1535,16 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
     {
         if (!voutStatus[i])
             continue; //ignore bad point
-
         // find respective food model, update state
+
+        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next[i];
+        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next[i];
+
+        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,vPreyKeypoints_next[i],nFrame,vfoodmodels[i]->blobMatchScore,vfoodmodels[i]->blobRadius);
+        retCount++;
     }
         //Check if Error
+return retCount;
 }
 
 
