@@ -1521,9 +1521,10 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
    {
        pfood = ft->second;
 
+       vPreyKeypoints_current.push_back( pfood->zTrack.centroid);
    }
     //Calc Optic Flow for each food item
-    cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vPreyKeypoints_current,vPreyKeypoints_next,voutStatus,voutError,cv::Size(9,9),1);
+    cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vPreyKeypoints_current,vPreyKeypoints_next,voutStatus,voutError,cv::Size(3,3),1);
 
     //update food item Location
         //Loop through points
@@ -1532,6 +1533,7 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
         if (!voutStatus[i])
             continue; //ignore bad point
 
+        // find respective food model, update state
     }
         //Check if Error
 }
