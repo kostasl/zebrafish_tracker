@@ -7,6 +7,29 @@ source("TrackerDataFilesImport_lib.r")
 plotPreyCountConsumptionNorm <- function(datGroupFrames)
 {
   groupID <- which(strGroupID == unique(datGroupFrames$group) )
+  lLarvaRec <- getAggregateConsumptionDataList(datGroupFrames)
+  
+  ###[plot results]
+  plot(lLarvaRec[[1]]$time,lLarvaRec[[1]]$normRec,type="l",ylim=c(0,1.1),xlim=c(0,140),
+       xlab="time (min)",ylab="rotifer percentage",
+       main="Normalized Consumption",
+       col=colourP[groupID],add=T)
+  for (lID in vLarvaID)
+  {
+    lines(lLarvaRec[[lID]]$time,lLarvaRec[[lID]]$normRec,type="l",col=colourP[groupID],
+          ylim=c(0,1.1),xlim=c(0,140))
+    points(lLarvaRec[[lID]]$time,lLarvaRec[[lID]]$normRec,pch=pchL[groupID])
+  }
+  
+  
+  
+} ## end of plot function
+
+## Organizes the Data frames from the Consumption experiment on a per larva basis
+### Calculates norm and diff consumption 
+getAggregateConsumptionDataList <- function(datGroupFrames)
+{
+  
   
   summaryDat <- aggregate(datGroupFrames$PreyCount~datGroupFrames$expID+datGroupFrames$time+datGroupFrames$larvaID,
                           FUN=median)
@@ -20,23 +43,38 @@ plotPreyCountConsumptionNorm <- function(datGroupFrames)
     LarvaRec <- datConsumption[datConsumption$larvaID == lID ,]
     InitRec <- LarvaRec[ LarvaRec$time == 0,]
     normRec <- LarvaRec$PreyCount / InitRec$PreyCount
-    LarvaRec <- cbind(LarvaRec,normRec)
+    diffRec <- LarvaRec$PreyCount - InitRec$PreyCount
+    LarvaRec <- cbind(LarvaRec,normRec,diffRec)
     
     lLarvaRec[[lID]] <- LarvaRec
     
   }
-  ###[plot results]
-  plot(lLarvaRec[[1]]$time,lLarvaRec[[1]]$normRec,type="l",ylim=c(0,1.1),xlim=c(0,140),
-       xlab="time (min)",ylab="rotifer percentage",col=colourP[groupID],add=T)
+  
+  return(lLarvaRec)
+}
+
+## Plot the change in rotifer Count
+plotPreyCountConsumptionChange <- function(datGroupFrames)
+{
+  groupID <- which(strGroupID == unique(datGroupFrames$group) )
+  lLarvaRec <- getAggregateConsumptionDataList(datGroupFrames)
+  
+  ###[plot  Change results]
+  plot(lLarvaRec[[1]]$time,lLarvaRec[[1]]$diffRec,type="l",ylim=c(-25,10),xlim=c(0,140),
+       xlab="time (min)",ylab="Change in prey count ",
+       main="Consumption Change",
+       col=colourP[groupID],add=T)
   for (lID in vLarvaID)
   {
-    lines(lLarvaRec[[lID]]$time,lLarvaRec[[lID]]$normRec,type="l",col=colourP[groupID],
+    lines(lLarvaRec[[lID]]$time,lLarvaRec[[lID]]$diffRec,type="l",col=colourP[groupID],
           ylim=c(0,1.1),xlim=c(0,140))
-    points(lLarvaRec[[lID]]$time,lLarvaRec[[lID]]$normRec,pch=pchL[groupID])
+    points(lLarvaRec[[lID]]$time,lLarvaRec[[lID]]$diffRec,pch=pchL[groupID])
   }
   
+
   
-} ## end of plot function
+} ## end of  Changeplot function
+
 
 
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
@@ -137,7 +175,7 @@ points(summaryDatLL$`datLL$time`,summaryDatLL$`datLL$PreyCount`,col="black",pch=
 legend("topright",legend=c("NL","LL"),pch=c(9,1),col=c("red","black") )
 dev.off()
 
-
+### [Plot Normalized Consumption Timeline]
 pdf(file= paste(strPlotExportPath,"/ConsumptionSamplingNormalized_",strDataSetIdentifier,".pdf",sep=""))
 plotPreyCountConsumptionNorm(datLL)
 par(new=TRUE)
@@ -146,3 +184,13 @@ legend("topright",legend=c("NL","LL"),pch=c(pchL[3],pchL[2])) # c(colourH[3],col
 par(new=FALSE)
 dev.off()
 
+
+
+### [Plot Change Consumption Timeline]
+pdf(file= paste(strPlotExportPath,"/ConsumptionSamplingChange_",strDataSetIdentifier,".pdf",sep=""))
+plotPreyCountConsumptionChange(datLL)
+par(new=TRUE)
+plotPreyCountConsumptionChange(datNL)
+legend("topright",legend=c("NL","LL"),pch=c(pchL[3],pchL[2])) # c(colourH[3],colourH[2])
+par(new=FALSE)
+dev.off()
