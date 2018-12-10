@@ -908,14 +908,15 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         {
 
 
+            processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+
             if (nFrame > 100)
                 processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
-            else
+            //else
             //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
-                processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
 
             //cv::drawKeypoints(outframe,ptFoodblobs)
-            cv::drawKeypoints( outframe, ptFoodblobs, outframe, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DEFAULT );
+            cv::drawKeypoints( outframe, ptFoodblobs, outframe, cv::Scalar(20,70,255,60), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame);
 
@@ -940,7 +941,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
                 else
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID, CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_CIRCLE , CV_FONT_HERSHEY_PLAIN,trackFntScale );
 
                 ++ft;
                 nFood++; //only count the rendered Food Items ie. Active Ones
