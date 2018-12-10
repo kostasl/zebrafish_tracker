@@ -203,15 +203,16 @@ bool b1stPointSet;
 bool bMouseLButtonDown;
 //bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
-bool bStoreThisTemplate = false;
-bool bDraggingTemplateCentre = false;
-bool bUseEllipseEdgeFittingMethod =false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+bool bStoreThisTemplate             = false;
+bool bDraggingTemplateCentre        = false;
+bool bUseEllipseEdgeFittingMethod   = false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
 bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
-bool bStartFrameChanged = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
+bool bStartFrameChanged         = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 
-bool bRenderToDisplay = true; ///Updates Screen to User When True
-bool bOffLineTracking = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
-bool bBlindSourceTracking = false; /// Used for Data Labelling, so as to hide the data source/group/condition
+bool bRenderToDisplay           = true; ///Updates Screen to User When True
+bool bDrawFoodBlob              = false; ///Draw circle around identified food blobs (prior to model matching)
+bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
+bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
 bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
 bool bUseBGModelling                    = true; ///Use BG Modelling TO Segment FG Objects
 bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
@@ -805,8 +806,10 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     cv::Mat fgFoodMask;
 
 
-    std::vector<cv::KeyPoint> ptFoodblobs;
-    std::vector<cv::KeyPoint> ptFishblobs;
+    //std::vector<cv::KeyPoint>  ptFoodblobs;
+    //std::vector<cv::KeyPoint> ptFishblobs;
+    zftblobs ptFoodblobs;
+    zftblobs ptFishblobs;
 
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
@@ -849,6 +852,10 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
         else
             frame.copyTo(frame_gray);
+        // Save COpy as Last Frame
+        gframeCurrent.copyTo(gframeLast);
+        frame_gray.copyTo(gframeCurrent); //Copy To global Frame
+
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
         processMasks(frame_gray,bgStaticMask); //Applies MOG if bUseBGModelling is on
@@ -899,12 +906,18 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         if (bTrackFood)
         {
-            //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
-            processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
 
-            UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,outframe);
+
             if (nFrame > 30)
-                processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame ); // Use Optic Flow
+                processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
+            else
+            //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
+                processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+
+
+            UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame);
+
+
             //If A fish Is Detected Then Draw Its tracks
             foodModels::iterator ft = vfoodmodels.begin();
             nFood = 0;
@@ -1176,8 +1189,6 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
                 continue;
         }
 
-        gframeCurrent.copyTo(gframeLast);
-        frame.copyTo(gframeCurrent); //Copy To global Frame
     } //If Not Paused //
 
     //Check If StopFrame Reached And Pause
@@ -1508,11 +1519,15 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 /// Process Optic Flow of defined food model positions
 /// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
 ///
-int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame )
+int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zftblobs& vPreyKeypoints_next )
 {
     int retCount = 0;
-   std::vector<cv::Point2f> vPreyKeypoints_current;
-   std::vector<cv::Point2f> vPreyKeypoints_next;
+   std::vector<cv::Point2f> vptPrey_current;
+   std::vector<cv::Point2f> vptPrey_next;
+
+
+    zftblobs vPreyKeypoints_current;
+    zftblobs vPreyKeypoints_ret;
    std::vector<uchar> voutStatus;
    std::vector<float>    voutError;
 
@@ -1523,27 +1538,37 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
    for ( ft  = vfoodmodels.begin(); ft!=vfoodmodels.end(); ++ft)
    {
        pfood = ft->second;
-
-       vPreyKeypoints_current.push_back( pfood->zTrack.centroid);
+       cv::KeyPoint kptFood(pfood->zTrack.centroid,pfood->zfoodblob.size);
+       vPreyKeypoints_current.push_back(kptFood  );
    }
+
+    cv::KeyPoint::convert(vPreyKeypoints_current,vptPrey_current);
+
     //Calc Optic Flow for each food item
-    cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vPreyKeypoints_current,vPreyKeypoints_next,voutStatus,voutError,cv::Size(3,3),1);
+    cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vptPrey_current,vptPrey_next,voutStatus,voutError,cv::Size(21,21),3);
+
+    cv::KeyPoint::convert(vptPrey_next,vPreyKeypoints_next);
+
+ //   UpdateFoodModels(frame_grey,vfoodmodels,vPreyKeypoints_next,nFrame);
 
     //update food item Location
         //Loop through points
-    for (int i=0;i<(int)vPreyKeypoints_next.size();i++)
+    for (int i=0;i<(int)vPreyKeypoints_ret.size();i++)
     {
-        if (!voutStatus[i])
+        if (!voutStatus.at(i))
             continue; //ignore bad point
-        // find respective food model, update state
+        vPreyKeypoints_next.push_back(vPreyKeypoints_ret.at(i)); //fwd the good ones
+//        // find respective food model, update state
 
-        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next[i];
-        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next[i];
-
-        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,vPreyKeypoints_next[i],nFrame,vfoodmodels[i]->blobMatchScore,vfoodmodels[i]->blobRadius);
-        retCount++;
-    }
-        //Check if Error
+//        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next.at(i);
+//        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next.at(i);
+//        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,
+//                                    vPreyKeypoints_next.at(i),
+//                                    nFrame,vfoodmodels[i]->blobMatchScore,
+//                                    vfoodmodels[i]->blobRadius);
+//        retCount++;
+    } //Check if Error
+//
 return retCount;
 }
 
@@ -1554,9 +1579,9 @@ return retCount;
 /// \param vfoodmodels
 /// \param foodblobs
 /// \param nFrame
-/// \param frameOut
+/// param frameOut (removed) - no drawing should happen here
 /// \todo Add calcOpticalFlowPyrLK Lucas-Kanard Optic Flow Measurment to estimate food displacement
-void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,cv::Mat& frameOut)
+void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame)
 {
     qfoodModels qfoodrank;
     foodModel* pfood = NULL;
@@ -1571,12 +1596,16 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         zfdblob* foodblob = &(*it);
 
         cv::Point centroid = foodblob->pt;
-        cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-5)), max(0,min(maskedImg_gray.rows,centroid.y-5)));
-        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+5)), max(0,min(maskedImg_gray.rows,centroid.y+5)));
-
-        cv::Rect rectFood(pBound1,pBound2);
+        // draw foodblob //
+//        if (bDrawFoodBlob)
+//        { //cv::Mat& frameOut
+        //cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x-5)), max(0,min(maskedImg_gray.rows,centroid.y-5)));
+        //cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+5)), max(0,min(maskedImg_gray.rows,centroid.y+5)));
+        //cv::Rect rectFood(pBound1,pBound2);
         //cv::rectangle(frameOut,rectFood,CV_RGB(10,150,150),1);
-        cv::circle(frameOut,centroid,foodblob->size,CV_RGB(10,150,150),1);
+//            cv::circle(frameOut,centroid,(int)foodblob->size,CV_RGB(10,150,150),1);
+ //       }
+
         // Debug //
 #ifdef _ZTFDEBUG_
         cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
@@ -1602,7 +1631,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
             //Penalize no Overlap
              float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
-             pfood->blobMatchScore -=1.0*overlap;
+             pfood->blobMatchScore -=(int)(1.0*overlap);
              if (overlap > 0.0)
                     bMatch = true;
 
