@@ -908,14 +908,17 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         {
 
 
-            if (nFrame > 30)
+            if (nFrame > 100)
                 processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
             else
             //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
                 processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
 
+            //cv::drawKeypoints(outframe,ptFoodblobs)
+            cv::drawKeypoints( outframe, ptFoodblobs, outframe, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DEFAULT );
 
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame);
+
 
 
             //If A fish Is Detected Then Draw Its tracks
@@ -2135,13 +2138,11 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
     assert(frameMasked.depth() == CV_8U);
-    //detector->detect( frameMasked, keypoints,maskimg); //frameMask
+    detector->detect( frameMasked, keypoints,maskimg); //frameMask
 
 
     //Mask Is Ignored so Custom Solution Required
     //for (cv::KeyPoint &kp : keypoints)
-    ptFoodblobs.clear();
-    ptFoodblobs.push_back( cv::KeyPoint(50,50,10,1));
 
     for(int i=0;i<keypoints.size();i++)
     {
