@@ -94,7 +94,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks); /// Deprecated
 ///Updated Version With Blobs
 void UpdateFishModels(const cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks,unsigned int nFrame,cv::Mat& frameOut);
-void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame); //,cv::Mat& frameOut
+void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew); //,cv::Mat& frameOut
 int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zftblobs& vPreyKeypoints_next  );
 
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
