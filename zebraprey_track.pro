@@ -41,6 +41,7 @@ INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.4.4/include
 ##Figure out VERSION : pkg-config --modversion opencv
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
 
+##LIBS+=-L/home/kostasl/Qt/5.8/gcc_64/lib/ #Compilation At office DEsktop
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.2.0/build/lib
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib -lopencv_dnn -lopencv_ml -lopencv_objdetect -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_viz -lopencv_core
@@ -71,12 +72,6 @@ QMAKE_LFLAGS_RPATH=
 # Default rules for deployment.
 include(deployment.pri)
 
-
-##LIBS+=-L/home/kostasl/Qt/5.8/gcc_64/lib/ #Compilation At office DEsktop
-
-#unix: LIBS += -L$$PWD/../cvblob/build-cvBlobLib-Desktop-Release/ -lcvBlobLib
-#INCLUDEPATH += $$PWD/../cvblob/cvBlob
-#DEPENDPATH += $$PWD/../cvblob/cvBlob
 
 OTHER_FILES += \
     ../cvblob/cvBlob/cvBlobLib.pro.user \
