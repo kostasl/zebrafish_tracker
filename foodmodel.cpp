@@ -22,6 +22,7 @@ blobMatchScore = 0;
 this->ID = lastFoodID;
 ROIID = 0;
 isTargeted = false; //Saves Location To Data File When True
+isNew = true;
 
 }
 
@@ -71,8 +72,18 @@ void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsign
     zTrack.boundingBox.width = 12;
     zTrack.boundingBox.height = 12;
 
+    if (activeFrames > gcMinFoodModelActiveFrames && isNew)
+    {
+        isNew = false; //Having succeded to achieve n consec. active frames this food item is established
+        inactiveFrames = 0; //Reset Counter Of inactive Frames
+    }
+    ///Trick - Update is called when fooditem has been matched, yet we use the
+    /// the update to check if it has been inactive for too long- if found on next frame it will become active again
+    //Although it may have been found here, it is still marked inactive until the next round
+    isActive = (inactiveFrames < gcMaxFoodModelInactiveFrames);
 
-    inactiveFrames = 0;
+    inactiveFrames = 0; //Reset Counter Of inactive Frames
+    this->zTrack.inactive = 0;
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)
     {

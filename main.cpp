@@ -656,7 +656,6 @@ int main(int argc, char *argv[])
     //cvb::cvReleaseBlobs(blobs);
 
 
-
     std::cout << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
     std::clog << "Total processing time : mins " << gTimer.elapsed()/60000.0 << std::endl;
 ///Clean Up //
@@ -909,16 +908,22 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
 
             processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+            UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,true); //Make New Food Models based on identified Blob
 
-            if (nFrame > 100)
+            if (nFrame > gcMinFoodModelActiveFrames*2)
+            {
                 processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
+                UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
+            }
+
+
             //else
             //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
 
             //cv::drawKeypoints(outframe,ptFoodblobs)
             cv::drawKeypoints( outframe, ptFoodblobs, outframe, cv::Scalar(20,70,255,60), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
-            UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame);
+
 
 
 
@@ -932,7 +937,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 assert(pfood);
 
                 // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob - Except If Food is being Tracked
-                if (pfood->activeFrames < gcMinFoodModelActiveFrames && (!pfood->isTargeted))
+                if ( (pfood->isNew) && (!pfood->isTargeted))
                 {
                     ++ft; //Item Is not Counted
                     continue;
@@ -940,9 +945,12 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
-                else
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_CIRCLE , CV_FONT_HERSHEY_PLAIN,trackFntScale );
-
+                else{
+                if (pfood->isActive)
+                        zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_CIRCLE , CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                    else
+                        zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX , CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                 }
                 ++ft;
                 nFood++; //only count the rendered Food Items ie. Active Ones
             }
@@ -1533,6 +1541,7 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
     zftblobs vPreyKeypoints_current;
     zftblobs vPreyKeypoints_ret;
    std::vector<uchar> voutStatus;
+   // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
    std::vector<float>    voutError;
 
    foodModel* pfood = NULL;
@@ -1549,7 +1558,7 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
     cv::KeyPoint::convert(vPreyKeypoints_current,vptPrey_current);
 
     //Calc Optic Flow for each food item
-    cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vptPrey_current,vptPrey_next,voutStatus,voutError,cv::Size(21,21),3);
+    cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vptPrey_current,vptPrey_next,voutStatus,voutError,cv::Size(31,31),2);
 
     cv::KeyPoint::convert(vptPrey_next,vPreyKeypoints_next);
 
@@ -1585,7 +1594,7 @@ return retCount;
 /// \param nFrame
 /// param frameOut (removed) - no drawing should happen here
 /// \todo Add calcOpticalFlowPyrLK Lucas-Kanard Optic Flow Measurment to estimate food displacement
-void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame)
+void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew=true)
 {
     qfoodModels qfoodrank;
     foodModel* pfood = NULL;
@@ -1675,14 +1684,16 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
         }else  ///No Food Model Found for this Blob- Create A new One - Give the blob's the Position //
         {
-            pfoodBest = new foodModel(*foodblob,++gi_MaxFoodID);
+            if (bAllowNew)
+            {
+                pfoodBest = new foodModel(*foodblob,++gi_MaxFoodID);
 
-            vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
-            std::stringstream strmsg;
-            strmsg << "# New foodmodel: " << pfoodBest->ID << " N:" << vfoodmodels.size();
-            std::clog << nFrame << strmsg.str() << std::endl;
-
-            pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,500,foodblob->size);
+                vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
+                std::stringstream strmsg;
+                strmsg << "# New foodmodel: " << pfoodBest->ID << " N:" << vfoodmodels.size();
+                std::clog << nFrame << strmsg.str() << std::endl;
+                pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,500,foodblob->size);
+            } //Make New Food Model If Allowed
         }
 
         clearpq2(qfoodrank);

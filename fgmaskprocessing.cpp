@@ -429,14 +429,18 @@ else //No BG Modelling
 {
     // Use thresh Only to Detect FG Fish Mask Detect
     //Returning The thresholded image is only required when No BGMask Exists
+
+    threshold_output.copyTo(maskFGImg);
+    maskFGImg.copyTo(fgMask); //Use the same for Food processing
+
 #if defined(USE_CUDA)
      if (bUseGPU)
         dframe_thres.download(threshold_output);
 #endif
-
-    threshold_output.copyTo(maskFGImg);
-    maskFGImg.copyTo(fgMask); //Use the same for Food processing
 }
+
+
+//cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1); //Dilate
 
 /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
 //frameImg_gray.copyTo(frameImg_gray,maskFGImg);
@@ -471,8 +475,6 @@ cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv:
 //cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
 
 //cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_CLOSE,kernelOpen,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
-
-cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1); //Dilate
 
 //threshold_output_COMB.copyTo(outFoodMask);
 //outFoodMask = maskFGImg.clone();
@@ -683,7 +685,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
     //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
     //cv::bitwise_or(outFishMask,maskFGImg,maskFGImg);
-    //cv::bitwise_xor(outFishMask,outFoodMask,outFoodMask);
+    cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
     //maskfishOnly.copyTo(maskFGImg);
 
     //threshold_output.copyTo(frameDebugD);
