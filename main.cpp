@@ -1558,7 +1558,7 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
     cv::KeyPoint::convert(vPreyKeypoints_current,vptPrey_current);
 
     //Calc Optic Flow for each food item
-    cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vptPrey_current,vptPrey_next,voutStatus,voutError,cv::Size(21,21),3);
+    cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vptPrey_current,vptPrey_next,voutStatus,voutError,cv::Size(31,31),2);
 
     cv::KeyPoint::convert(vptPrey_next,vPreyKeypoints_next);
 
