@@ -420,7 +420,8 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
         cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
     }
 #else
-    cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
+    //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
+    cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
     cv::bitwise_or(threshold_output,fgMask_dilate,maskFGImg); //Combine / Additive for FishFG
 
 #endif
@@ -439,6 +440,9 @@ else //No BG Modelling
 #endif
 }
 
+maskFGImg.copyTo(outFoodMask);
+
+//cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
 
 //cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1); //Dilate
 
@@ -675,8 +679,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         cv::circle(outFishMask, (ptTail-ptHead)/12+ptTail,4,CV_RGB(255,255,255),cv::FILLED); //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
 
         //Erase Fish From Food Mask Using Smoothed Contour
-        //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
-        //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),3);
+        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
+        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),5);
 
 } //For Each Fish Contour
 
@@ -685,7 +689,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
     //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
     //cv::bitwise_or(outFishMask,maskFGImg,maskFGImg);
-    cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
+    //cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
     //maskfishOnly.copyTo(maskFGImg);
 
     //threshold_output.copyTo(frameDebugD);

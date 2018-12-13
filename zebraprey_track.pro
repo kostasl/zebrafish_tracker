@@ -38,7 +38,6 @@ INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.4.4/include
 ##Note: you can pass multiple items to pkg-config as input, so running
 ##pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3)
 
-#`pkg-config opencv cvblob --cflags`
 ##Figure out VERSION : pkg-config --modversion opencv
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
 
