@@ -41,6 +41,8 @@ public:
     zftTrack zTrack;
     unsigned int nLastUpdateFrame; ///<-Holds the frame Number of the last State Update
     bool isTargeted;
+    bool isActive;
+    bool isNew;
 };
 
 
