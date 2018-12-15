@@ -27,10 +27,10 @@ SOURCES += main.cpp \
     config.cpp
 
 RESOURCES += qml.qrc
-#INCLUDEPATH += /usr/include/opencv
+INCLUDEPATH += `pkg-config opencv --cflags`
 #INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.2.0/include
 #INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.0/include
-INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.4.4/include
+#INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.4.4/include
 #INCLUDEPATH += /usr/include/cvblob
 #INCLUDEPATH += ~/opencv/
 
@@ -38,14 +38,14 @@ INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.4.4/include
 ##Note: you can pass multiple items to pkg-config as input, so running
 ##pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3)
 
-#`pkg-config opencv cvblob --cflags`
+#`pkg-config opencv --cflags`
 ##Figure out VERSION : pkg-config --modversion opencv
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
 
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.2.0/build/lib
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib -lopencv_dnn -lopencv_ml -lopencv_objdetect -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_viz -lopencv_core
-LIBS += -L /home/kostasl/OpenCV/opencv-3.4.4/build/lib  #Home
+#LIBS += -L /home/kostasl/OpenCV/opencv-3.4.4/build/lib  #Home
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.1/build/lib #Office
 LIBS += `pkg-config opencv --libs`
 
