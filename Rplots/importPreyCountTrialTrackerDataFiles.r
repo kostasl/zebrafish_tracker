@@ -1,3 +1,8 @@
+## Author KL Nov. 2018 : Made for the analysis of feeding experiments with MSc. Student Dylan Feldner-Busztin.
+## The experiment has the same rearing conditionas the NF, LF, DF and then takes short videos
+## of 30 sec of individual fish 35mm at different time points 0,30,60,90min checking the rotifer count 
+## as reported in the csv by the tracker .
+
 source("TrackerDataFilesImport_lib.r")
 
 

@@ -364,6 +364,7 @@ digestHuntLabels <- function(datTarget,datSource)
   return(datTarget)
 }
 
+## Analysis of Hunt Success 
 ### Makes Data frame With Number of Success Vs Failures From Labelled DatHuntEvent
 getHuntSuccessPerFish <- function(datHuntLabelledEvents)
 {

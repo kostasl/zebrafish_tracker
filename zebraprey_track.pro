@@ -32,6 +32,9 @@ QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
 PKGCONFIG += opencv #or whatever package here
 
+##pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3)
+#pkg-config --list-all
+
 #INCLUDEPATH += `pkg-config opencv --cflags`
 #INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.2.0/include
 #INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.0/include
@@ -41,7 +44,6 @@ PKGCONFIG += opencv #or whatever package here
 
 #INCLUDEPATH += /home/kostasl/workspace/cvblobLib
 ##Note: you can pass multiple items to pkg-config as input, so running
-##pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3)
 
 ##Figure out VERSION : pkg-config --modversion opencv
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
