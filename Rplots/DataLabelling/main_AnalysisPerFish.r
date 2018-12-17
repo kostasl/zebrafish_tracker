@@ -34,20 +34,45 @@ datFishSuccessRateMerged <- cbind(datFishSuccessRate,markUnTrackable=data.frame(
 
 names(datFishSuccessRateMerged)[5:7] <- c("markUnTrackable","markTracked","notTracked") ##Set Field Names - notTracked : Have not been detailed retracked yet
 
-vScoreIdx <- ((datFishSuccessRate[,"Success"]-datFishSuccessRate[,"Fails"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+vScoreIdx        <- ((datFishSuccessRate[,"Success"]-datFishSuccessRate[,"Fails"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+vEfficiencyRatio <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
 #vScoreIdx[is.nan(vScoreIdx) ] <- 0
-datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx)
+datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx,vEfficiencyRatio)
 
 ## Subset only the active/Larvae - ones that have hunted 
 datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vScoreIdx),]
 
-## Plot Histograp of efficiency ##
+
+## Plot Histogram of efficiency ##
+ptbreaks <- seq(from=0,to=1,by=1/10)
+layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio,col=colourR[1],main=paste("DL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]))
+     ,xlab="",breaks=ptbreaks,ylim=c(0,20))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio,col=colourR[2],main=paste("LL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",])),
+     xlab="",breaks=ptbreaks,ylim=c(0,20))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio,col=colourR[3],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]))
+     ,xlab="Hunt  Efficiency (Success/(Fail+Succ.) )score",breaks=ptbreaks,ylim=c(0,20))
+
+
+## Plot Efficiency  Density 
+densDLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio)
+densNLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio)
+densLLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)
+
+dev.off() ##Clear Old plot
+plot(densLLEffScore,col=colourH[2],main="Hunt efficiency density",type="l",lwd=2,ylim=c(0,2.0))
+lines(densNLEffScore,col=colourH[3],lwd=2)
+lines(densDLEffScore,col=colourH[1],lwd=2,xlab="Hunting efficiency score" )
+
+
+## Plot Histograp of scor/Gaine ##
+
 ptbreaks <- seq(from=-1,to=1,by=2/10)
 layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
 hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx,col=colourR[1],main=paste("DL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]))
      ,xlab="",breaks=ptbreaks,ylim=c(0,20))
 hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx,col=colourR[2],main=paste("LL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",])),
-                                                                                                             xlab="",breaks=ptbreaks,ylim=c(0,20))
+     xlab="",breaks=ptbreaks,ylim=c(0,20))
 hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx,col=colourR[3],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]))
      ,xlab="Hunt efficiency score",breaks=ptbreaks,ylim=c(0,20))
 
@@ -57,9 +82,10 @@ densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID
 densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
 
 dev.off() ##Clear Old plot
-plot(densLLScore,col=colourH[2],main="Hunt efficiency score density",type="l",lwd=2,ylim=c(0,1.0),xlab="" )
+plot(densLLScore,col=colourH[2],main="Hunt score density",
+     xlab="Hunting score  " ,type="l",lwd=2,ylim=c(0,1.0))
 lines(densNLScore,col=colourH[3],lwd=2)
-lines(densDLScore,col=colourH[1],lwd=2,xlab="Hunting efficiency score" )
+lines(densDLScore,col=colourH[1],lwd=2)
 
 
 ##How Many Fish From Each Group Have A Score Higher Than :
