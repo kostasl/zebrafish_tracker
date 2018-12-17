@@ -83,6 +83,7 @@ void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsign
     isActive = (inactiveFrames < gcMaxFoodModelInactiveFrames);
 
     ///Trick 2: Only mark as active if blob size is > 1 , otherwise we may be just tracking pixel flow
+    /// Filter out activity based on optic flow only/where a blob cannot be seen/ but tracking a video pixel nontheless
     if (fblob->size > 1)
         inactiveFrames = 0; //Reset Counter Of inactive Frames
     else {
