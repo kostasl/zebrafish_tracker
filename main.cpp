@@ -1651,11 +1651,11 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
              //Cluster Blobs to one model if within a fixed Radius  That are close
              int fbdist = norm(pfood->zTrack.centroid-foodblob->pt);
              pfood->blobMatchScore +=fbdist;
-             if (fbdist < gMaxClusterRadiusFoodToBlob)
-                 bMatch = true;
-             else //Add Score according to broader catchment area
-                if (fbdist < 3*gMaxClusterRadiusFoodToBlob & fbdist > 0)
-                 pfood->blobMatchScore +=3*gMaxClusterRadiusFoodToBlob/(fbdist);
+             //if (fbdist < gMaxClusterRadiusFoodToBlob) //Skips distance opt. and makes a lot of skipping
+             //    bMatch = true;
+             //else //Add Score according to broader catchment area
+                if (fbdist < 2*gMaxClusterRadiusFoodToBlob & fbdist > 0)
+                 pfood->blobMatchScore +=2*gMaxClusterRadiusFoodToBlob/(fbdist);
 
              //Rank Up if this food model has been around for a while, instead of newly created one
              if (pfood->activeFrames > gcMinFoodModelActiveFrames )
@@ -1678,7 +1678,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         {
             pfoodBest = qfoodrank.top(); //Get Pointer To Best Scoring Food Blob
             //qrank.pop();//Remove From Priority Queue Rank
-            pfoodBest->inactiveFrames   = 0; //Reset Counter
+            //pfoodBest->inactiveFrames   = 0; //Reset Counter
             pfoodBest->activeFrames ++; //Increase Count Of Consecutive Active Frames
             pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,pfoodBest->blobMatchScore,foodblob->size);
 

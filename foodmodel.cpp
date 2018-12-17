@@ -71,7 +71,7 @@ void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsign
     zTrack.boundingBox.y = bcentre.y - 6;
     zTrack.boundingBox.width = 12;
     zTrack.boundingBox.height = 12;
-
+    //Establish stable initial phase before removing new flag
     if (activeFrames > gcMinFoodModelActiveFrames && isNew)
     {
         isNew = false; //Having succeded to achieve n consec. active frames this food item is established
@@ -82,8 +82,13 @@ void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsign
     //Although it may have been found here, it is still marked inactive until the next round
     isActive = (inactiveFrames < gcMaxFoodModelInactiveFrames);
 
-    inactiveFrames = 0; //Reset Counter Of inactive Frames
-    this->zTrack.inactive = 0;
+    ///Trick 2: Only mark as active if blob size is > 1 , otherwise we may be just tracking pixel flow
+    if (fblob->size > 1)
+        inactiveFrames = 0; //Reset Counter Of inactive Frames
+    else {
+        inactiveFrames++;
+    }
+    this->zTrack.inactive = inactiveFrames;
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)
     {
