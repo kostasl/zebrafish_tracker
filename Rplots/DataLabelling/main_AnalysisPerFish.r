@@ -26,17 +26,43 @@ str_FilterLabel <- "UnLabelled"
 
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
 tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
+remove(datFishSuccessRateMerged)
 
-datFishSuccessRateMerged <- cbind(datFishSuccessRate,HuntEfficiency=,markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
+datFishSuccessRateMerged <- cbind(datFishSuccessRate,markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
       markTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),2]),
       notTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),3]))
+
 names(datFishSuccessRateMerged)[5:7] <- c("markUnTrackable","markTracked","notTracked") ##Set Field Names - notTracked : Have not been detailed retracked yet
 
 vScoreIdx <- ((datFishSuccessRate[,"Success"]-datFishSuccessRate[,"Fails"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
-vScoreIdx[is.nan(vScoreIdx) ] <- 0
+#vScoreIdx[is.nan(vScoreIdx) ] <- 0
 datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx)
 
+## Subset only the active/Larvae - ones that have hunted 
+datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vScoreIdx),]
+
+## Plot Histograp of efficiency ##
+ptbreaks <- seq(from=-1,to=1,by=2/10)
+layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx,col=colourR[1],main=paste("DL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]))
+     ,xlab="",breaks=ptbreaks,ylim=c(0,20))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx,col=colourR[2],main=paste("LL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",])),
+                                                                                                             xlab="",breaks=ptbreaks,ylim=c(0,20))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx,col=colourR[3],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]))
+     ,xlab="Hunt efficiency score",breaks=ptbreaks,ylim=c(0,20))
+
+## Plot Density 
+densDLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
+densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
+densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
+
+dev.off() ##Clear Old plot
+plot(densLLScore,col=colourH[2],main="Hunt efficiency score density",type="l",lwd=2,ylim=c(0,1.0),xlab="" )
+lines(densNLScore,col=colourH[3],lwd=2)
+lines(densDLScore,col=colourH[1],lwd=2,xlab="Hunting efficiency score" )
 
 
 ##How Many Fish From Each Group Have A Score Higher Than :
 tblSuccessDist <- table(datFishSuccessRate[datFishSuccessRate$Success > 0, ]$groupID,datFishSuccessRate[datFishSuccessRate$Success > 0, ]$Success )
+
+tblSuccessDist
