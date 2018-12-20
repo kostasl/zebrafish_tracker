@@ -60,7 +60,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       if (!is.na(rec$markTracked))
         if (rec$markTracked == 1 & is.na(idxFilter) )
         {
-          message("Arleady Marked Tracked")
+          message(paste("Already Marked as Tracked ",datHuntEvent$expID,datHuntEvent$eventID,"\n "  ) )
           next ##SKip Record if previously Labelled
         }
     
@@ -81,8 +81,11 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
                                full.names = TRUE, recursive = TRUE,
                                ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
     
+    if (NROW(strVideoFile) == 0)
+      stop(paste("Could not find video file matching,",rec$filenames, " ,in : ",strVideoFilePath ) )
     if (!file.exists(strVideoFile) )
-      stop(paste("Could not find video file: ",strVideoFile ) )
+      stop(paste("Video File ",strVideoFile, "does not exist" ) )
+      
     
     
     message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame, "ExpID:",rec$expID ) )
@@ -377,9 +380,11 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
   ##No_Targer is Column 5
 
   
-  datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,3]+tblFishScoresLabelled[,12],
-                                          "Fails"= tblFishScoresLabelled[,4]+tblFishScoresLabelled[,10]+tblFishScoresLabelled[,11],
-                                          "HuntEvents"= rowSums(tblFishScoresLabelled[,c(3,12,4,10,11,5)]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
+  datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,"Success"]+tblFishScoresLabelled[,"Success-SpitBackOut"],
+                                          "Fails_NS"= tblFishScoresLabelled[,"Fail-No Strike"],
+                                          "Fails_WS"=tblFishScoresLabelled[,"Fail-With Strike"],
+                                          "Fails"= tblFishScoresLabelled[,"Fail"]+tblFishScoresLabelled[,"Fail-No Strike"]+tblFishScoresLabelled[,"Fail-With Strike"],
+                                          "HuntEvents"= rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
                                           "groupID"=NA) ) #
   for (e in row.names(tblFishScoresLabelled) )
     datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )

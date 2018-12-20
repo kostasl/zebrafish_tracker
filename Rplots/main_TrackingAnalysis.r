@@ -56,8 +56,8 @@ pchL <- c(16,2,4) ## The style of bullet used for each group DL, LL, NL
 
 ## Required Variables - Locations 
 # Home Desktop
-setwd("/home/klagogia1/workspace/zebrafishtrack/Rplots")
-strVideoFilePath  <- "/media/kostasl/ARXEIO1TB/ExpData/zebrapreyCap/AnalysisSet/"
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+strVideoFilePath  <- "//mnt/ARXEIO1TB/ExpData/zebrapreyCap/AnalysisSet/"
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release/" 
 strTrackeroutPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
 strTrackInputPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
