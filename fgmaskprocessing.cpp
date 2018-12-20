@@ -223,14 +223,16 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         ///Find Max Value,this should belong to stationary objects, and Use it as a relative measure to detect BG Objects
         cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,0);
 
-        bgMask.convertTo(bgMask,CV_8UC1);
+        bgAcc.convertTo(bgMask,CV_8UC1);
         int thres = cv::threshold(bgMask,bgMask,uiMaxVal*0.05,255,cv::THRESH_BINARY | cv::THRESH_OTSU); //All; Above 33% of Max are Stationary
         pwindow_main->LogEvent("Static Food Mask theshold at " + QString::number(thres));
 
+        if (bStaticAccumulatedBGMaskRemove)
+           cv::imshow("Accumulated BG Model Thresholded",bgMask);
+
+
         cv::morphologyEx(bgMask,bgMask, cv::MORPH_CLOSE, kernelDilateMOGMask,cv::Point(-1,-1),1);
 
-        //if (bStaticAccumulatedBGMaskRemove)
-        //    cv::imshow("Accumulated BG Model",bgMask);
         pwindow_main->showVideoFrame(bgMask,nFrame);
 
 

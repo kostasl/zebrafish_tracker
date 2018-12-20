@@ -4,22 +4,22 @@
 
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 430;
-const unsigned int MOGhistory   = 20;//Use 100 frames Distributed across the video length To Find What the BGModel is
-double gdMOGBGRatio       = 0.95; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
+const unsigned int MOGhistory   = 100;//Use 100 frames Distributed across the video length To Find What the BGModel is
+double gdMOGBGRatio             = 0.75; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
 const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
 const double dLearningRateNominal         = 0.0003;
-double dBGMaskAccumulateSpeed             = 4.0/MOGhistory;
+double dBGMaskAccumulateSpeed             = 1.0/(2.0*MOGhistory);
 
 /// BLOB DETECTION Filters //
 //Area Filters
 const double dMeanBlobArea                    = 100; //Initial Value that will get updated
 const double dVarBlobArea                     = 20;
-const unsigned int gc_fishLength        = 100; //px Length Of Fish
-const unsigned int thresh_fishblobarea  = 350; //Min area above which to Filter The fish blobs
+const unsigned int gc_fishLength            = 100; //px Length Of Fish
+const unsigned int thresh_fishblobarea      = 350; //Min area above which to Filter The fish blobs
 const unsigned int thresh_maxfishblobarea = 2250; //Min area above which to Filter The fish blobs
 const unsigned int gthres_maxfoodblobarea = 40;
 

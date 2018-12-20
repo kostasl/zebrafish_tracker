@@ -858,7 +858,6 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
         /// \brief processMasks
-
         processMasks(frame_gray,bgStaticMask); //Applies MOG if bUseBGModelling is on
 
         enhanceMask(frame_gray,bgStaticMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
