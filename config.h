@@ -24,12 +24,14 @@ extern float gfVidfps;
 extern const  unsigned int MOGhistory;//Use 100 frames Distributed across the video length To Find What the BGModel is
 extern double gdMOGBGRatio; ///If a foreground pixel keeps semi-extern const ant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
+
+
 //Processing Loop delay
 extern uint cFrameDelayms;
 
 extern const  double dLearningRate; //Learning Rate During Initial BG Modelling done over MOGhistory frames
 extern const  double dLearningRateNominal;
-
+extern double dBGMaskAccumulateSpeed;
 
 /// BLOB DETECTION Filters //
 //Area Filters

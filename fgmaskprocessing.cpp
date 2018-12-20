@@ -34,6 +34,7 @@ extern cv::Mat kernelDilateMOGMask;
 extern cv::Mat kernelOpenfish;
 extern cv::Point gptHead; ///\todo remove this global var hack
 
+extern double dBGMaskAccumulateSpeed;
 // Gaussian Curve Smoothing Kernels For fish Contour//
 extern std::vector<double> gGaussian,dgGaussian,d2gGaussian; //These Are init. in main
 
@@ -185,7 +186,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
                    }
 //                }
                 if (bgAcc.empty()) //Make EMpty Mask
-                    bgAcc = cv::Mat::zeros(frame.rows,frame.cols,CV_32FC(bgMask.channels()));
+                    bgAcc = cv::Mat::zeros(frame.rows,frame.cols,CV_32FC(bgMask.channels()) ); //AccumWeight Result needs to be CV_32FC
 
                 frame.copyTo(frame,bgMask);
                 cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
@@ -218,12 +219,15 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         //Remove Low Values
         double uiMaxVal,uiMinVal;
-
-        //Find Max Value,this should belong to stationary objects, and Use it as a relative measure to detect BG Objects
+        // Threshold Accumulated Mask For Stationary Objects
+        ///Find Max Value,this should belong to stationary objects, and Use it as a relative measure to detect BG Objects
         cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,0);
-        cv::threshold(bgAcc,bgMask,uiMaxVal*0.05,255,cv::THRESH_BINARY); //All; Above 5% of Max are Stationary
 
         bgMask.convertTo(bgMask,CV_8UC1);
+        int thres = cv::threshold(bgMask,bgMask,uiMaxVal*0.05,255,cv::THRESH_BINARY | cv::THRESH_OTSU); //All; Above 33% of Max are Stationary
+        pwindow_main->LogEvent("Static Food Mask theshold at " + QString::number(thres));
+
+        cv::morphologyEx(bgMask,bgMask, cv::MORPH_CLOSE, kernelDilateMOGMask,cv::Point(-1,-1),1);
 
         //if (bStaticAccumulatedBGMaskRemove)
         //    cv::imshow("Accumulated BG Model",bgMask);
@@ -251,7 +255,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 /// \param frame_gray //Current greyScale Frame - Noise May be Removed If filtering Is Set To On
 /// \param bgStaticMaskInOut The mask provided to processFrame, Includes Static Objects and ROI Region
 ///
-void processMasks(cv::Mat& frame_gray,cv::Mat& bgStaticMaskInOut)
+void processMasks(cv::Mat& frame_gray,cv::Mat& bgMaskInOut)
 {
  cv::Mat fgMask;
 
@@ -320,16 +324,20 @@ void processMasks(cv::Mat& frame_gray,cv::Mat& bgStaticMaskInOut)
       if (bUseBGModelling)
       {
         //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
-        if (bStaticAccumulatedBGMaskRemove && !bgStaticMaskInOut.empty() )//Although bgMask Init To zero, it may appear empty here!
+        if (bStaticAccumulatedBGMaskRemove && !bgMaskInOut.empty() )//Although bgMask Init To zero, it may appear empty here!
         {
            //cv::bitwise_not(fgMask,fgMask);
-            //gbMask Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
-           cv::bitwise_and(bgStaticMaskInOut,fgMask,bgStaticMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
+            //bgMaskInOut Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
 
+            if (bshowMask)
+                cv::imshow("StaticMask",bgMaskInOut);
+
+           cv::bitwise_and(bgMaskInOut,fgMask,bgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
         }else
-            fgMask.copyTo(bgStaticMaskInOut);
+            fgMask.copyTo(bgMaskInOut);
        }
       //NO FGMask As No Dynamic (MOG) Model Exists so simply Return the Static Mask
+
 
 
 } //END PROCESSMASKS
@@ -424,6 +432,7 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
     cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
     cv::bitwise_or(threshold_output,fgMask_dilate,maskFGImg); //Combine / Additive for FishFG
 
+
 #endif
 } //If BGModelling
 else //No BG Modelling
@@ -439,8 +448,8 @@ else //No BG Modelling
         dframe_thres.download(threshold_output);
 #endif
 }
-
-maskFGImg.copyTo(outFoodMask);
+//Mask Out Stationary Points
+maskFGImg.copyTo(outFoodMask,fgMask);
 
 //cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
 
@@ -720,7 +729,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
 
 ///
-/// \brief updateBGFrame Update BG model for a fixed number of frames
+/// \brief updateBGFrame Update BG model for a fixed number of frames / Construct Accumulated Model
 /// \param frame
 /// \param fgMask
 /// \param nFrame
@@ -743,17 +752,20 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
    // cv::equalizeHist( frame, frame );
 
     processMasks(frameImg_gray,bgMask); //Applies MOG if bUseBGModelling is on
+ ///Enhance Ma
     enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
-
+    //Accumulate things that look like food / so we can isolate the stationary ones
+    cv::accumulateWeighted(fgFoodMask,bgAcc,dBGMaskAccumulateSpeed);
     //Also Learn A pic of the stable features - Found In FoodMask - ie Fish Removed
-    cv::accumulateWeighted(fgFoodMask,bgAcc,0.001);
+
 
     //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
     //DEBUG //
-    //cv::imshow("fishMask",fgFishMask);
+    cv::imshow("foodMask",fgFoodMask);
+    bgAcc.convertTo(bgMask, CV_8U);
 
-    pwindow_main->showVideoFrame(bgAcc,nFrame);
+    pwindow_main->showVideoFrame(bgMask,nFrame);
     //cv::imshow("Accumulated Bg Model",bgAcc);
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);

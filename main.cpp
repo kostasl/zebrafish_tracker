@@ -857,7 +857,10 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
+        /// \brief processMasks
+
         processMasks(frame_gray,bgStaticMask); //Applies MOG if bUseBGModelling is on
+
         enhanceMask(frame_gray,bgStaticMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         /// //
 
@@ -1231,7 +1234,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
        bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
     }
     //Combine Roi Mask With BgAccumulated Mask
-    cv::bitwise_or(bgROIMask,bgMask,bgMaskWithRoi);
+    cv::bitwise_and(bgROIMask,bgMask,bgMaskWithRoi);
 
 
 
