@@ -39,7 +39,9 @@ eventID <-resample(datHuntEventPool$eventID,1)
 datHuntEventPool <- labelHuntEvents(datHuntEventAllGroupToValidate,
                                     strDataFileName,strVideoFilePath,
                                     strTrackerPath,strTrackeroutPath,
-                                    convertToScoreLabel(TargetLabel),expID,eventID)
+                                    convertToScoreLabel(TargetLabel),expID,eventID,
+                                    idxFilter=NA,
+                                    bskipMarked = FALSE)
 
 
 # 

@@ -227,7 +227,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         int thres = cv::threshold(bgMask,bgMask,uiMaxVal*0.05,255,cv::THRESH_BINARY | cv::THRESH_OTSU); //All; Above 33% of Max are Stationary
         pwindow_main->LogEvent("Static Food Mask theshold at " + QString::number(thres));
 
-        if (bStaticAccumulatedBGMaskRemove)
+        if (bStaticAccumulatedBGMaskRemove & bshowMask)
            cv::imshow("Accumulated BG Model Thresholded",bgMask);
 
 
@@ -764,7 +764,7 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
     //dblRatioPxChanged = (double)cv::countNonZero(fgMask)/(double)fgMask.size().area();
 
     //DEBUG //
-    cv::imshow("foodMask",fgFoodMask);
+    //cv::imshow("foodMask",fgFoodMask);
     bgAcc.convertTo(bgMask, CV_8U);
 
     pwindow_main->showVideoFrame(bgMask,nFrame);
