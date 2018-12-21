@@ -222,7 +222,10 @@ double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,
      {
         ret = sgn*0.5;
         dvarSpineSeg += ret;
-        outspline[0].spineSegLength = dvarSpineSeg;
+
+        if (dvarSpineSeg < this->c_MaxSpineLengthLimit)
+            outspline[0].spineSegLength = dvarSpineSeg;
+
 
     }
     else //Index > 2 is spine Angles
