@@ -1011,6 +1011,15 @@ void MainWindow::tailSizevalueChanged(int i)
     qDebug() << "Tails SpinBox gave " << i;
     LogEvent(QString("Tail Segment Size changed:") + QString::number(i));
     gFishTailSpineSegmentLength = i;
+    //Update All fish Model's spine Length
+    fishModels::iterator ft = vfishmodels.begin();
+    while (ft != vfishmodels.end() ) //Render All Fish
+    {
+        fishModel* pfish = ft->second;
+        pfish->c_spineSegL = i;
+
+        ++ft;
+    }
 
 }
 

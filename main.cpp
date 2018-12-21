@@ -230,6 +230,9 @@ bool bUseHistEqualization                 = false; //To enhance to contrast in E
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
 
+uint uiStartFrame = 1;
+uint uiStopFrame = 0;
+
 
 void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = IMREAD_COLOR)
 {
@@ -621,8 +624,8 @@ int main(int argc, char *argv[])
     try{
 
         //app.exec();
-        unsigned int uiStartFrame = parser.get<uint>("startframe");
-        unsigned int uiStopFrame = parser.get<uint>("stopframe");
+        uiStartFrame = parser.get<uint>("startframe");
+        uiStopFrame = parser.get<uint>("stopframe");
         std::clog << gTimer.elapsed()/60000.0 << " >>> Start frame: " << uiStartFrame << " StopFrame: " << uiStopFrame << " <<<<<<<<<"  << std::endl;
         trackVideofiles(window_main,gstroutDirCSV,inVidFileNames,uiStartFrame,uiStopFrame);
 
@@ -3320,7 +3323,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
                /// Optionally Check For Errors Using Spine to Contour Fitting Periodically//
 #ifdef _USEPERIODICSPINETOCONTOUR_TEST
-               if ( (pwindow_main->nFrame % (uint)gfVidfps/2) == 0)
+               if (pwindow_main->nFrame == uiStartFrame || (pwindow_main->nFrame % (uint)gfVidfps/2) == 0)
                {
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)
