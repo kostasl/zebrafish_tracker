@@ -30,6 +30,7 @@ const int gcMaxFoodModelInactiveFrames  = gfVidfps; //Number of frames inactive 
 const int gcMinFoodModelActiveFrames    = 30; //Min Number of consecutive frames it needs to be active  otherwise its deleted
 const int gMaxClusterRadiusFoodToBlob   = 6;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
+const int gc_FishTailSpineSegmentLength_init = 9;
 //const int thDistanceFish                = 250; //NOT USED / Blobs need to overlap Threshold for distance between track (last known point) -to blob assignement
 //const int thDistanceFood                = 4; //Threshold for distance between track-to blob assignement
 int gFoodReportInterval           = (int)gfVidfps;
@@ -55,7 +56,9 @@ int gthresEyeSeg                = 135; //Threshold For Eye Segmentation In Isola
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 24; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
-int gFishTailSpineSegmentLength     = 10;
+int gFishTailSpineSegmentLength     = gc_FishTailSpineSegmentLength_init;
+
+
 
 int gFitTailIntensityScanAngleDeg   = 60; //
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;

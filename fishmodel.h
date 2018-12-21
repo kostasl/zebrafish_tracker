@@ -94,6 +94,7 @@ public:
   double getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn);///
   //double fitSpineToContour(std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
   double fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
+  double fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour);
   void fitSpineToIntensity(cv::Mat &imgframeIn,int c_tailscanAngle); //Uses Image Intensity Local Max to fit spline
   void GioGet_tailSpine(cv::Mat &src, cv::Point2i start, cv::Point2d tgt_start, int step_size, std::vector<cv::Point2i>& anchor_pts);
 
@@ -147,7 +148,7 @@ public:
   static const int c_spinePoints   = ZTF_TAILSPINECOUNT; //\todo fix compilation Problems with Including COnfig.h
   static const int c_spineParamCnt = c_spinePoints+3; //Parametrization of Spline with : 1st,2nd being root node: x0,y0 and 3rd:spineSegLength
 
-  const double c_fitErrorPerContourPoint = 1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
+  const double c_fitErrorPerContourPoint = 60; //Max Error Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
   const double c_MaxSpineLengthLimit = 20;//1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
 private:
 

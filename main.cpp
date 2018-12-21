@@ -3311,7 +3311,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 #ifdef _USEFITSPINETOCONTOUR
                int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                if (idxFish>=0)
-                fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                fish->fitSpineToContour2(maskedImg_gray,contours_body,0,idxFish);
 #endif
 
                /// Main Method Uses Pixel Intensity //
@@ -3320,13 +3320,14 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
                /// Optionally Check For Errors Using Spine to Contour Fitting Periodically//
 #ifdef _USEPERIODICSPINETOCONTOUR_TEST
-               if ( (pwindow_main->nFrame % (uint)gfVidfps) == 0)
+               if ( (pwindow_main->nFrame % (uint)gfVidfps/2) == 0)
                {
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)
                    {
-                        double err_sp0 = fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                        double err_sp0 = fish->fitSpineToContour2(maskedImg_gray,contours_body,0,idxFish);
                    }
+                   gFishTailSpineSegmentLength <- fish->c_spineSegL;
                    pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                    qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
 
@@ -3337,8 +3338,14 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                /// \todo Make this parameter threshold formal
                if (abs(fish->lastTailFitError) > fish->c_fitErrorPerContourPoint)
                {
+                   gFishTailSpineSegmentLength = gc_FishTailSpineSegmentLength_init;
+                   fish->c_spineSegL = gFishTailSpineSegmentLength ;
+                   pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                    fish->resetSpine(); //No Solution Found So Reset
                    pwindow_main->LogEvent(QString("[warning] Reset Spine. lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
+                   int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                   double err_sp0 = fish->fitSpineToContour2(maskedImg_gray,contours_body,0,idxFish);
+                   pwindow_main->LogEvent(QString("[info] new lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
 
                }
 

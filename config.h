@@ -6,7 +6,7 @@
 #include <cmath>
 
 #define ZTF_FISHCONTOURSIZE          55
-#define ZTF_TAILFITMAXITERATIONS     10 //For Spine To Contour Tail Fitting
+#define ZTF_TAILFITMAXITERATIONS     20 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #if defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
     #define USE_CUDA
@@ -52,6 +52,7 @@ extern const  int thActive;// Deprecated If a track becomes inactive but it has 
 extern const  int thDistanceFish; //Threshold for distance between track-to blob assignement
 //extern const  int thDistanceFood; //Threshold for distance between track-to blob assignement
 extern int gFoodReportInterval;
+extern const int gc_FishTailSpineSegmentLength_init;
 
 extern const  int nTemplatesToLoad; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
