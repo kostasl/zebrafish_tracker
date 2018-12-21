@@ -221,7 +221,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         double uiMaxVal,uiMinVal;
         // Threshold Accumulated Mask For Stationary Objects
         ///Find Max Value,this should belong to stationary objects, and Use it as a relative measure to detect BG Objects
-        cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,0);
+        cv::minMaxLoc(bgAcc,&uiMinVal,&uiMaxVal,0,nullptr);
 
         bgAcc.convertTo(bgMask,CV_8UC1);
         int thres = cv::threshold(bgMask,bgMask,uiMaxVal*0.05,255,cv::THRESH_BINARY | cv::THRESH_OTSU); //All; Above 33% of Max are Stationary
@@ -431,8 +431,9 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
     }
 #else
     //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
-    cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
-    cv::bitwise_or(threshold_output,fgMask_dilate,maskFGImg); //Combine / Additive for FishFG
+    //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+
+    cv::bitwise_or(threshold_output,fgMask,maskFGImg); //Combine / Additive for FishFG
 
 
 #endif

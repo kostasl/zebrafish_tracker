@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
         "{startpaused P | 0  | Start tracking Paused On 1st Frame/Need to Run Manually}"
         "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
-        "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
+        "{ModelBG b | 0  | Learn and Substract Stationary Objects from Foreground mask}"
         "{BGThreshold bgthres | 30  | Absolute grey value used to segment BG (g_Segthresh)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
@@ -613,7 +613,7 @@ int main(int argc, char *argv[])
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
-    kernelDilateMOGMask = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(7,7),cv::Point(-1,-1));
+    kernelDilateMOGMask = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
     kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
 
@@ -912,7 +912,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,true); //Make New Food Models based on identified Blob
 
-            if (nFrame > gcMinFoodModelActiveFrames*2)
+            if (nFrame > gcMinFoodModelActiveFrames)
             {
                 processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
                 UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
@@ -1560,7 +1560,7 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
     cv::KeyPoint::convert(vPreyKeypoints_current,vptPrey_current);
 
     //Calc Optic Flow for each food item
-    if (vptPrey_current.size() > 0)
+    if (vptPrey_current.size() > 0 && !frame_grey_prev.empty())
         cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vptPrey_current,vptPrey_next,voutStatus,voutError,cv::Size(31,31),2);
 
     cv::KeyPoint::convert(vptPrey_next,vPreyKeypoints_next);
@@ -1711,9 +1711,10 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         pfood = ft->second;
         // Delete If Inactive For Too Long and it is Not tracked
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
-        if (pfood->inactiveFrames > gcMaxFoodModelInactiveFrames ||
-            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames && (pfood->isTargeted == false))
-            ) //Check If it Timed Out / Then Delete
+        if ((pfood->inactiveFrames > gcMaxFoodModelInactiveFrames ||
+            (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames))
+             && (pfood->isTargeted == false)
+            ) //Check If it Timed Out and Not Tracked/ Then Delete
         {
             ft = vfoodmodels.erase(ft);
             std::clog << nFrame << "# Delete foodmodel: " << pfood->ID << " N:" << vfoodmodels.size() << std::endl;
