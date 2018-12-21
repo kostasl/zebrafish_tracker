@@ -3325,7 +3325,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
                /// Optionally Check For Errors Using Spine to Contour Fitting Periodically//
 #ifdef _USEPERIODICSPINETOCONTOUR_TEST
-               if (pwindow_main->nFrame == uiStartFrame || (pwindow_main->nFrame % (uint)gfVidfps/2) == 0)
+               if (pwindow_main->nFrame == uiStartFrame || (pwindow_main->nFrame % ((uint)gfVidfps/3) ) == 0)
                {
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)
