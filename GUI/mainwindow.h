@@ -38,6 +38,7 @@ public:
     void saveTemplateImage(cv::Mat& templ);
     void tickProgress();
     void setTotalFrames(uint FrameCount);
+    void UpdateTailSegSizeSpinBox(float fTailSize);
     void LogEvent(QString strMessage);
     unsigned int nFrame = 0;
     unsigned int nTotalFrameCount = 0;

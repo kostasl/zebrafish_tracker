@@ -1830,7 +1830,8 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
              {
                  fishModel* fish = (*it).second;
                    //Let ReleaseTracks Handle This
-                  fish->resetSpine();
+                 fish->c_spineSegL = gFishTailSpineSegmentLength;
+                 fish->resetSpine();
              }
              //ReleaseFishModels(vfishmodels);
     }
@@ -3325,9 +3326,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                    if (idxFish>=0)
                    {
                         double err_sp0 = fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
-                        double err_sp1 = fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
                    }
-
+                   pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                    qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
 
                }

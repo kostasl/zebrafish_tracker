@@ -219,7 +219,7 @@ double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,
         outspline[0].y -= ret;
     }//Recalc all positions with new spine Length then vary segment size,
     else if (idxparam == 2)
-        {
+     {
         ret = sgn*0.5;
         dvarSpineSeg += ret;
         outspline[0].spineSegLength = dvarSpineSeg;

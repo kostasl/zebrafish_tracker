@@ -984,6 +984,14 @@ void MainWindow::on_checkBoxNoiseFilter_toggled(bool checked)
 //}
 
 //Set New Minimum Thrshold Scan range for Food Segmentation
+
+//Main Loop Calls this to update The GUI SpinBox on current fitted Spine Size
+void MainWindow::UpdateTailSegSizeSpinBox(float fTailSize)
+{
+    this->ui->spinBoxSpineSegSize->setValue(fTailSize);
+
+}
+
 void MainWindow::on_spinBoxFoodThresMin_valueChanged(int arg1)
 {
     g_SegFoodThesMin = arg1;
