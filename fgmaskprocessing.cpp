@@ -257,7 +257,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 /// \param frame_gray //Current greyScale Frame - Noise May be Removed If filtering Is Set To On
 /// \param bgStaticMaskInOut The mask provided to processFrame, Includes Static Objects and ROI Region
 ///
-void processMasks(cv::Mat& frame_gray,cv::Mat& bgMaskInOut)
+void processMasks(cv::Mat& frame_gray,cv::Mat& bgMaskInOut,double dLearningRate)
 {
  cv::Mat fgMask;
 
@@ -275,7 +275,7 @@ void processMasks(cv::Mat& frame_gray,cv::Mat& bgMaskInOut)
              if (bUseBGModelling)
              {
                  try{
-                        pMOG2->apply(dframe_gray,dframe_mask,dLearningRateNominal);
+                        pMOG2->apply(dframe_gray,dframe_mask,dLearningRate);
                     dframe_mask.download(fgMask);
                  }catch(...)
                  {
@@ -291,7 +291,7 @@ void processMasks(cv::Mat& frame_gray,cv::Mat& bgMaskInOut)
              if (bUseBGModelling)
              {
                try{
-                   pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+                   pMOG2->apply(frame_gray,fgMask,dLearningRate);
                }catch(...)
                {
                    std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
@@ -308,7 +308,7 @@ void processMasks(cv::Mat& frame_gray,cv::Mat& bgMaskInOut)
       if (bUseBGModelling)
       {
         try{
-            pMOG2->apply(frame_gray,fgMask,dLearningRateNominal);
+            pMOG2->apply(frame_gray,fgMask,dLearningRate);
             //
         }catch(...)
         {
@@ -340,7 +340,7 @@ void processMasks(cv::Mat& frame_gray,cv::Mat& bgMaskInOut)
        }
       //NO FGMask As No Dynamic (MOG) Model Exists so simply Return the Static Mask
 
-
+cv::imshow("MOGMask",fgMask);
 
 } //END PROCESSMASKS
 
@@ -688,7 +688,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //Draw New Smoothed One
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
 
-        cv::circle(outFishMask, (ptTail-ptHead)/12+ptTail,4,CV_RGB(255,255,255),cv::FILLED); //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
+         //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
+        cv::circle(outFishMask, (ptTail-ptHead)/30+ptTail,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Erase Fish From Food Mask Using Smoothed Contour
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
@@ -732,7 +733,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
 
 ///
-/// \brief updateBGFrame Update BG model for a fixed number of frames / Construct Accumulated Model
+/// \brief updateBGFrame Update BG model for a fixed number of frames / Construct Accumulated Model -
+/// \callergraph getBGModelFromVideo
 /// \param frame
 /// \param fgMask
 /// \param nFrame
@@ -740,7 +742,6 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 ///
 bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,uint MOGhistory)
 {
-
 
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
@@ -753,8 +754,8 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
     cv::Mat bgMask,fgFishMask,fgFoodMask;
 
    // cv::equalizeHist( frame, frame );
-
-    processMasks(frameImg_gray,bgMask); //Applies MOG if bUseBGModelling is on
+    //Update MOG,filter pixel noise and Combine Static Mask
+    processMasks(frameImg_gray,bgMask,dLearningRate); //Applies MOG if bUseBGModelling is on
  ///Enhance Ma
     enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
     //Accumulate things that look like food / so we can isolate the stationary ones

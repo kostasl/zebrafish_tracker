@@ -29,6 +29,7 @@ typedef struct
     float x;
     float y; ///Position of Joint In Global Coordinates
     float angleRad;/// In Rads
+    float spineSegLength;/// In pixels Float
 } splineKnotf;
 
 typedef std::vector<splineKnotf> t_fishspline;
@@ -142,11 +143,11 @@ public:
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-  int c_spineSegL;
+  double c_spineSegL; //FloatPoint so variational approach works
   static const int c_spinePoints   = ZTF_TAILSPINECOUNT; //\todo fix compilation Problems with Including COnfig.h
-  static const int c_spineParamCnt = c_spinePoints+2;
+  static const int c_spineParamCnt = c_spinePoints+3; //Parametrization of Spline with : 1st,2nd being root node: x0,y0 and 3rd:spineSegLength
 
-  const double c_fitErrorPerContourPoint = 1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
+  const double c_fitErrorPerContourPoint = 10;//1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
 
 private:
 

@@ -858,7 +858,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
         /// \brief processMasks
-        processMasks(frame_gray,bgStaticMask); //Applies MOG if bUseBGModelling is on
+        processMasks(frame_gray,bgStaticMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
 
         enhanceMask(frame_gray,bgStaticMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         /// //
@@ -3323,9 +3323,13 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                {
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)
-                        fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                   {
+                        double err_sp0 = fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                        double err_sp1 = fish->fitSpineToContour(maskedImg_gray,contours_body,0,idxFish);
+                   }
 
                    qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
+
                }
 
                //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient

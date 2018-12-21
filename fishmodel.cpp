@@ -135,7 +135,7 @@ void fishModel::resetSpine()
             this->bearingRads += 2.0*CV_PI;
 
             sp.angleRad    = (this->bearingRads)-CV_PI ; //  //Spine Looks In Opposite Direction
-
+            sp.spineSegLength = c_spineSegL;    //Default Size
             if (sp.angleRad < 0)
                 sp.angleRad += 2.0*CV_PI;
         //else
@@ -179,12 +179,14 @@ void fishModel::calcSpline(t_fishspline& outspline)
 
     //this->spline.clear();
     //this->spline.push_back(this->coreTriangle[2]);
+    double dspineSegL =  outspline[0].spineSegLength;
 
     for (int i=1;i<c_spinePoints;i++)
     {
 
-       outspline[i].x = outspline[i-1].x + ((double)c_spineSegL)*sin(outspline[i-1].angleRad);
-       outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*cos(outspline[i-1].angleRad);
+       outspline[i].x = outspline[i-1].x + (dspineSegL)*sin(outspline[i-1].angleRad);
+       outspline[i].y = outspline[i-1].y - (dspineSegL)*cos(outspline[i-1].angleRad);
+       outspline[i].spineSegLength = dspineSegL;
        assert(!std::isnan(outspline[i].y) && !std::isnan(outspline[i].x));
        assert(!std::isnan(outspline[i].angleRad));
     }
@@ -199,24 +201,34 @@ void fishModel::calcSpline(t_fishspline& outspline)
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn)
 {
     const double dAngleStep = sgn*CV_PI/36.0;
+    double dvarSpineSeg = (double)inspline[0].spineSegLength;
     double ret = 0.0;
     outspline = inspline;
 
-    //If idxparam = 0 or 1 then we are varying initial Spline Point
-    if (idxparam == 0) //x0, y0 params
+    //If idxparam = 1,2 then we are varying initial Spline Point x0, y0 params
+    if (idxparam == 0)
     {
         ret = sgn*0.05;
         outspline[0].x -= ret;
+
+
 
     }else if (idxparam == 1)
     {
         ret = sgn*0.05;
         outspline[0].y -= ret;
+    }//Recalc all positions with new spine Length then vary segment size,
+    else if (idxparam == 2)
+        {
+        ret = sgn*0.5;
+        dvarSpineSeg += ret;
+        outspline[0].spineSegLength = dvarSpineSeg;
 
-    }else //Index > 1 is spine Angles
+    }
+    else //Index > 2 is spine Angles
     {
-        outspline[idxparam-2].angleRad += dAngleStep;// Angle variation for this theta
-        ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
+        outspline[idxparam-3].angleRad += dAngleStep;// Angle variation for this theta
+        ret = dAngleStep*dvarSpineSeg+cos(dAngleStep)*dvarSpineSeg; //rTheta
     }
 
     //Readjust xi,yi (In variational terms calc x_i = f(q1,q2,q3..), y_i = f(q1,q2,q3..)
@@ -243,6 +255,7 @@ void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outp
     //outparams[1] = inspline[0].y;
     outparams.push_back(inspline[0].x);
     outparams.push_back(inspline[0].y);
+    outparams.push_back(inspline[0].spineSegLength); //Assume same Length Across Spine, given by 1st knot
     for (int i=0;i<(c_spinePoints);i++)
     {
         outparams.push_back(inspline[i].angleRad);
@@ -262,14 +275,20 @@ void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outp
 /// \brief Modifies a Spline according to Cspace params
 void fishModel::setSplineParams(t_fishspline& inspline,std::vector<double>& inparams)
 {
+    double dvarSpineSegLength;
     for (int i=0;i<(c_spineParamCnt);i++)
     {
         if (i==0)
             inspline[0].x = inparams[0];
         if (i==1)
             inspline[0].y = inparams[1];
-        if (i>1)
-            inspline[i-2].angleRad = inparams[i]; //Param 3 is actually 1st spine knot's angle
+        if (i==2) //Segment Size
+        {
+            dvarSpineSegLength = inparams[2];
+            inspline[0].spineSegLength = dvarSpineSegLength;
+        }
+        if (i>2)
+            inspline[i-3].angleRad = inparams[i]; //Param 3 is actually 1st spine knot's angle
     }
 
     //Readjust xi,yi (In variational terms calc x_i = f(q1,q2,q3..), y_i = f(q1,q2,q3..)
@@ -285,9 +304,12 @@ float fishModel::vergenceAngle()
 /// \brief Implements spine Curve function by combining piecewise elements
 cv::Point2f fishModel::getPointAlongSpline(float z,t_fishspline& pspline)
 {
-    const float spineLength = this->c_spineSegL*pspline.size(); //The fitted Spine's lentgh is fixed
-    int idx = z/this->c_spineSegL; //Find knot index which is contains point
-    double segLen = z - idx*this->c_spineSegL;  //Modulo Find length input var along a linear segment
+    //const float spineLength = this->c_spineSegL*pspline.size(); //The fitted Spine's lentgh is fixed
+    const float spineSegLength = pspline[0].spineSegLength;
+    const float spineLength = spineSegLength*pspline.size(); //The fitted Spine's lentgh is fixed
+
+    int idx = z/spineSegLength; //Find knot index which is contains point
+    double segLen = z - idx*spineSegLength;  //Modulo Find length input var along a linear segment
 
     if (idx > (pspline.size()-1)) //If Input Exceeds Spine Length
         return  cv::Point2f(pspline[pspline.size()-1].x,pspline[pspline.size()-1].y);
@@ -311,7 +333,8 @@ cv::Point2f fishModel::getPointAlongSpline(float z,t_fishspline& pspline)
 double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 {
 
-    const int spineLength = this->c_spineSegL*pspline.size(); //The fitted Spine's lentgh is fixed
+    //const int spineLength = this->c_spineSegL*pspline.size(); //The fitted Spine's lentgh is fixed
+    const int spineLength = pspline[0].spineSegLength*pspline.size(); //The fitted Spine's varies
     const double dCStep = 0.3; //Step size on when searching along Spine Curve for closest Point (Foot Point )tk
 
     int idxNear = 0;
@@ -368,7 +391,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->bearingRads   =  Angle*CV_PI/180.0;
     this->ptRotCentre    = bcentre;
     this->zfishBlob      = *fblob;
-    this->c_spineSegL   = SpineSegLength;
+    //this->c_spineSegL   = SpineSegLength;
     this->zTrack.pointStack.push_back(bcentre);
     this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
@@ -567,6 +590,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
 
         this->spline            = tmpspline;
+        this->c_spineSegL       = tmpspline[0].spineSegLength;
         this->lastTailFitError = dDifffitPtError_total/c_spinePoints;
 
 
