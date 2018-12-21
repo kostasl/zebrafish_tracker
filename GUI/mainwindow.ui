@@ -233,7 +233,7 @@
       <rect>
        <x>0</x>
        <y>290</y>
-       <width>61</width>
+       <width>71</width>
        <height>26</height>
       </rect>
      </property>
@@ -247,6 +247,9 @@
       <number>20</number>
      </property>
      <property name="value">
+      <number>10</number>
+     </property>
+     <property name="displayIntegerBase">
       <number>10</number>
      </property>
     </widget>
@@ -567,7 +570,7 @@
      <x>0</x>
      <y>0</y>
      <width>855</width>
-     <height>23</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

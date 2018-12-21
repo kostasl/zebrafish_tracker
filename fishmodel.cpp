@@ -1044,6 +1044,7 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
        out << "\t" << Rad2Deg*( h.spline[i-1].angleRad - h.spline[i].angleRad);
 
     }
+     out << "\t" << h.c_spineSegL;
      out << "\t" << h.templateScore;
      out << "\t" << h.lastTailFitError;
      out << "\t" << h.leftEye.fitscore;

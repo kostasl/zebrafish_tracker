@@ -56,7 +56,7 @@ public slots:
     void textEdited(const QString);
     void fishvalueChanged(int i);
     void eyevalueChanged(int i);
-    void tailSizevalueChanged(int i);
+    void tailSizevalueChanged(float i);
     void maxEllipseSizevalueChanged(int i);
     void minEllipseSizevalueChanged(int i);
 
@@ -110,6 +110,7 @@ private slots:
     void on_spinBoxFoodThresMin_valueChanged(int arg1);
 
     void on_spinBoxFoodThresMax_valueChanged(int arg1);
+
 
 private:
     Ui::MainWindow      *ui;

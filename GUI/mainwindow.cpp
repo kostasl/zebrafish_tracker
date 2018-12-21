@@ -1006,7 +1006,7 @@ void MainWindow::on_spinBoxSpineSegSize_valueChanged(int arg1)
 {
     tailSizevalueChanged(arg1);
 }
-void MainWindow::tailSizevalueChanged(int i)
+void MainWindow::tailSizevalueChanged(float i)
 {
     qDebug() << "Tails SpinBox gave " << i;
     LogEvent(QString("Tail Segment Size changed:") + QString::number(i));

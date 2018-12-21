@@ -44,7 +44,8 @@
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
- /// \todo Add Lucas-Kanade tracking of prey motion
+ /// \todo Add Lucas-Kanade tracking of prey motion X
+ /// \todo Add Tail Spine Length Variational to detect fish length.
  ////////
 
 
@@ -2354,6 +2355,7 @@ void writeFishDataCSVHeader(QFile& data)
     for (int i=1;i<gFishTailSpineSegmentCount;i++)
         output <<  "DThetaSpine_" << i << "\t";
 
+    output << " tailSegmentLength";
     output << " templateScore";
     output << "\t lastTailFitError";
     output << "\t lEyeFitScore";
