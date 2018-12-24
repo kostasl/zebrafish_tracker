@@ -6,7 +6,7 @@
 #include <cmath>
 
 #define ZTF_FISHCONTOURSIZE          55
-#define ZTF_TAILFITMAXITERATIONS     20 //For Spine To Contour Tail Fitting
+#define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #if defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
     #define USE_CUDA
