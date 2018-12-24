@@ -228,7 +228,7 @@
       <number>200000</number>
      </property>
     </widget>
-    <widget class="QSpinBox" name="spinBoxSpineSegSize">
+    <widget class="QDoubleSpinBox" name="doubleSpinBoxSpineSegSize">
      <property name="geometry">
       <rect>
        <x>0</x>
@@ -239,18 +239,6 @@
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::PlusMinus</enum>
-     </property>
-     <property name="minimum">
-      <number>2</number>
-     </property>
-     <property name="maximum">
-      <number>20</number>
-     </property>
-     <property name="value">
-      <number>10</number>
-     </property>
-     <property name="displayIntegerBase">
-      <number>10</number>
      </property>
     </widget>
     <widget class="QLabel" name="label">
@@ -324,7 +312,7 @@
     <widget class="QLabel" name="label_6">
      <property name="geometry">
       <rect>
-       <x>120</x>
+       <x>80</x>
        <y>290</y>
        <width>131</width>
        <height>20</height>
@@ -334,7 +322,7 @@
       <string>Length of each Spine segment in pixels</string>
      </property>
      <property name="text">
-      <string>Tail </string>
+      <string>Tail Segment</string>
      </property>
     </widget>
     <widget class="QSpinBox" name="spinBoxTemplateThres">
@@ -415,14 +403,14 @@
     <widget class="QLabel" name="label_MOGBGRatio">
      <property name="geometry">
       <rect>
-       <x>120</x>
+       <x>70</x>
        <y>250</y>
        <width>101</width>
        <height>21</height>
       </rect>
      </property>
      <property name="text">
-      <string> % BG</string>
+      <string> MOG BG  %</string>
      </property>
     </widget>
     <widget class="QCheckBox" name="checkBoxNoiseFilter">

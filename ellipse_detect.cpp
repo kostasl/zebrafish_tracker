@@ -501,14 +501,13 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
 }
 
 ///
-/// \brief detectEllipses - Detects Eyes - Used oN Head Isolated Image
+/// \brief detectEllipses - Upsamples image Detects Eyes - Used oN Head Isolated Image
 /// \param pimgIn
 /// \param imgEdge
-/// \param imgOut
 /// \param angleDeg
 /// \param vellipses
-/// \param outHeadFrameProc
-/// \param outHeadFrameMonitor //Image TO report Back Underlying Process of segmentation
+/// \param outHeadFrameMonitor //Image TO report Back Underlying Process of segmentation / The Edge Detection
+/// \param outHeadFrameProc //The Head Image with the Ellipses drawn
 /// \return
 ///
 int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameMonitor,cv::Mat& outHeadFrameProc)

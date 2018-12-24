@@ -988,7 +988,9 @@ void MainWindow::on_checkBoxNoiseFilter_toggled(bool checked)
 //Main Loop Calls this to update The GUI SpinBox on current fitted Spine Size
 void MainWindow::UpdateTailSegSizeSpinBox(float fTailSize)
 {
-    this->ui->spinBoxSpineSegSize->setValue(fTailSize);
+    this->ui->doubleSpinBoxSpineSegSize->blockSignals(true);  //Don't fire change Event (avoid implicit conv to int)
+    this->ui->doubleSpinBoxSpineSegSize->setValue(fTailSize);
+    this->ui->doubleSpinBoxSpineSegSize->blockSignals(false);  //Don't fire change Event (avoid implicit conv to int)
 
 }
 
@@ -1027,4 +1029,9 @@ void MainWindow::tailSizevalueChanged(float i)
 void MainWindow::on_spinBoxFoodThresMin_editingFinished()
 {
 
+}
+
+void MainWindow::on_doubleSpinBoxSpineSegSize_valueChanged(double arg1)
+{
+    tailSizevalueChanged(arg1);
 }

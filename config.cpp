@@ -78,3 +78,4 @@ int iFishAngleOffset   = 0;
 ///Global Variables
  double sigma = 3.0;
  int M = round((3.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+

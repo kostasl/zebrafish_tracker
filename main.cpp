@@ -163,7 +163,8 @@ cv::Point ptROI2 = cv::Point(640-gFishBoundBoxSize*2,gFishBoundBoxSize/2);
 cv::Point ptROI3 = cv::Point(640-gFishBoundBoxSize*2,512-gFishBoundBoxSize/2);
 cv::Point ptROI4 = cv::Point(gFishBoundBoxSize*2+1,512-gFishBoundBoxSize/2);
 
-
+//For Inset Pasting
+cv::Rect rect_pasteregion;
 
 //Structures to hold blobs & Tracks
 //cvb::CvTracks fishtracks;
@@ -604,9 +605,16 @@ int main(int argc, char *argv[])
 
         addTemplateToCache(gLastfishimg_template,gFishTemplateCache,idxTempl); //Increments Index
     }
+
+    // Set Template Size
     gszTemplateImg.width = gLastfishimg_template.size().width; //Save TO Global Size Variable
     gszTemplateImg.height = gLastfishimg_template.size().height; //Save TO Global Size Variable
 
+    // Set Paster Region for Inset Image
+    rect_pasteregion.x = (640-gszTemplateImg.width*2);
+    rect_pasteregion.y = 0;
+    rect_pasteregion.width = gszTemplateImg.width*2; //For the upsampled image
+    rect_pasteregion.height = gszTemplateImg.height*2;
 
     int ifileCount = loadTemplatesFromDirectory(gstroutDirCSV + QString("/templates/"));
     pwindow_main->nFrame = 1;
@@ -803,7 +811,10 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
     return istartFrame;
 }
 
-void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStaticMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead)
+
+/// \brief
+///
+void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStaticMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHeadEyeDetected,cv::Mat& frameHead)
 {
     cv::Mat frame_gray,fgFishMask,fgFishImgMasked;
     cv::Mat fgFoodMask;
@@ -833,7 +844,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     //OPEN CV 2.4
     // dLearningRate is now Nominal value
 
-      frame.copyTo(outframe); //Make Replicate On which we draw output
+     // frame.copyTo(outframe); //Make Replicate On which we draw output
 
 
     ///DRAW ROI
@@ -904,7 +915,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         if (nLarva > 0)
             //An Image Of the Full Fish Is best In this Case
             //Do Not Use Masked Fish Image For Spine Fitting
-            detectZfishFeatures(window_main, frame_gray,outframe,frameHead,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+            detectZfishFeatures(window_main, frame_gray,outframe,frameHead,outframeHeadEyeDetected,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -951,6 +962,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
+
                 else{
                 if (pfood->isActive)
                         zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_CIRCLE , CV_FONT_HERSHEY_PLAIN,trackFntScale );
@@ -967,6 +979,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
     } //If Tracking
 
+
     //fishbodycontours.clear();
     //fishbodyhierarchy.clear();
     //Save to Disk
@@ -974,7 +987,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     ///
     /// \brief drawFrameText
     if (bRenderToDisplay)
+    {
         drawFrameText(window_main,nFrame,nLarva,nFood,outframe);
+
+
+    }
 
     if (bshowMask && bTracking)
         cv::imshow("Isolated Fish",fgFishImgMasked);
@@ -1047,7 +1064,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     QElapsedTimer otLastUpdate; //Time Since Last Progress Report
     otLastUpdate.start();
     //Speed that stationary objects are removed
-    cv::Mat frame,outframe,outframeHead,bgROIMask,bgMaskWithRoi;
+    cv::Mat frame,outframe,outframeHeadEyeDetect,outframeHead,bgROIMask,bgMaskWithRoi;
     unsigned int nFrame = 0;
     unsigned int nErrorFrames = 0;
     outframeHead = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
@@ -1236,17 +1253,33 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
     {
        bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
     }
+
+    //Blank Drawing Canvas for output - We then Blend with original Image
+    outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
+
     //Combine Roi Mask With BgAccumulated Mask
     cv::bitwise_and(bgROIMask,bgMask,bgMaskWithRoi);
 
 
 
 
-
         //Pass Processed bgMask which Is then passed on to enhanceMask
-        processFrame(window_main,frame,bgMaskWithRoi,nFrame,outframe,outframeHead);
+    processFrame(window_main,frame,bgMaskWithRoi,nFrame,outframe,outframeHeadEyeDetect,outframeHead);
+
+        double alpha = 0.5;
         if (bRenderToDisplay)
         {
+            cv::addWeighted(frame,1.0,outframe,1.0-alpha,0.0,outframe);
+
+            ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
+            rect_pasteregion.width = outframeHeadEyeDetect.cols;
+            rect_pasteregion.height = outframeHeadEyeDetect.rows;
+            if (outframeHeadEyeDetect.u)
+              outframeHeadEyeDetect.copyTo(outframe(rect_pasteregion) ) ;
+
+            cv::imshow("headDetect",outframeHeadEyeDetect);
+
+
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
             window_main.showInsetimg(outframeHead);
         }
@@ -3008,10 +3041,11 @@ return iminIdx;
 /// \brief detectZfishFeatures - Used to create geometric representations of main zebrafish Features : Eyes, Body, tail
 /// these are saved as point arrays on which angles and other measurements can be obtained
 /// \param maskedGrayImg - IMage Masked so only fish is being shown Showing
+/// \param imgFishHeadSeg initialized canvas for head
 /// \return
 ///
 /// // \todo Optimize by re using fish contours already obtained in enhance fish mask
-void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& imgFishHeadSeg, cv::Mat& maskedfishImg_gray, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
+void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& imgFishHeadSeg,cv::Mat& outimgFishHeadProcessed, cv::Mat& maskedfishImg_gray, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
 
@@ -3218,6 +3252,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
               /// EYE DETECTION Report Results to Output Frame //
+              /// Returns imgFishHeadProcessed Upsampled with ellipses drawns
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
               std::stringstream ss;
 
@@ -3232,17 +3267,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                 //std::clog << ss.str() << std::endl;
             }
 
-
-              ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
-              cv::Rect rpasteregion(fullImgOut.cols-imgFishHeadProcessed.cols,0,imgFishHeadProcessed.cols,imgFishHeadProcessed.rows );
-              //  show_histogram("HeadHist",imgFishHead);
+              //Copy Detected Ellipse Frame To The Output Frame
               if (imgFishHeadProcessed.u)
-                imgFishHeadProcessed.copyTo(fullImgOut(rpasteregion));
-
-              //headImgOut = imgFishHeadSeg.clone(); //Return As INdividual Image Too which is then Shown On GUI Graphics Object
-              //imgFishHeadSeg.copy
-              //imgFishHeadSeg.release(); //Decrement Ref Counter
-
+                  imgFishHeadProcessed.copyTo(outimgFishHeadProcessed);
 
               /// Set Detected Eyes Back to Fish Features
               ///  Print Out Values -
@@ -3256,7 +3283,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   fish->leftEye           = lEye;
                   fish->leftEyeTheta      = lEye.rectEllipse.angle;
                   ss << "L:" << fish->leftEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }else
               { //Set To Not detected
                   ss << "L Eye Detection Error - Check Threshold";
@@ -3276,7 +3303,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                 fish->rightEye          = rEye;
                 fish->rightEyeTheta     = rEye.rectEllipse.angle;
                 ss << "R:"  << fish->rightEyeTheta;
-                cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }else
               { //Set To Not detected
                   ss << "R Eye Detection Error - Check Threshold";
@@ -3294,7 +3321,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   ss.str(""); //Empty String
                   ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rpasteregion.br().x-75,rpasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
                   fish->nFailedEyeDetectionCount = 0; //Reset Error Count
               }
 

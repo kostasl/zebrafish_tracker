@@ -112,6 +112,8 @@ private slots:
     void on_spinBoxFoodThresMax_valueChanged(int arg1);
 
 
+    void on_doubleSpinBoxSpineSegSize_valueChanged(double arg1);
+
 private:
     Ui::MainWindow      *ui;
 
