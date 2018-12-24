@@ -1277,7 +1277,7 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
             if (outframeHeadEyeDetect.u)
               outframeHeadEyeDetect.copyTo(outframe(rect_pasteregion) ) ;
 
-            cv::imshow("headDetect",outframeHeadEyeDetect);
+//            cv::imshow("headDetect",outframeHeadEyeDetect);
 
 
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
