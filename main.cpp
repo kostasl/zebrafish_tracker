@@ -3345,13 +3345,12 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                 fish->fitSpineToContour2(maskedImg_gray,contours_body,0,idxFish);
 #endif
 
-               /// Main Method Uses Pixel Intensity //
-               fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
-               fish->drawSpine(fullImgOut);
 
-               /// Optionally Check For Errors Using Spine to Contour Fitting Periodically//
+
+               /// Use Contour Variational Fitting to distance from spine - Adjusts spine segment length to tail contour length
+               /// \note If done on all frames is converges on Local Minima where the tail is fit in the body contour.
 #ifdef _USEPERIODICSPINETOCONTOUR_TEST
-               if (pwindow_main->nFrame == uiStartFrame || (pwindow_main->nFrame % ((uint)gfVidfps/3) ) == 0)
+               if (pwindow_main->nFrame == uiStartFrame || (pwindow_main->nFrame % ((uint)gfVidfps/4) ) == 0)
                {
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)
@@ -3363,6 +3362,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                    qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
 
                }
+               /// Main Method Uses Pixel Intensity //
+               fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
+               fish->drawSpine(fullImgOut);
 
                //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
                //Best To reset Spine and Start Over Next Time
