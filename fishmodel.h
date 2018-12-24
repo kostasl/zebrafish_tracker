@@ -148,7 +148,7 @@ public:
   static const int c_spinePoints   = ZTF_TAILSPINECOUNT; //\todo fix compilation Problems with Including COnfig.h
   static const int c_spineParamCnt = c_spinePoints+3; //Parametrization of Spline with : 1st,2nd being root node: x0,y0 and 3rd:spineSegLength
 
-  const double c_fitErrorPerContourPoint = 1.0; //Max Error Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
+  const double c_fitErrorPerContourPoint = 2.5; //Max Error Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
   const double c_MaxSpineLengthLimit = 20;//1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
 private:
 

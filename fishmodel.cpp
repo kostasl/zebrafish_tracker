@@ -678,9 +678,9 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
     while (cntpass < gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
     {
         //Converged But Error Is still Large per Countour Point Then Jolt
-        if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > 10) //Time Out Convergece Count
+        if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > c_fitErrorPerContourPoint) //Time Out Convergece Count
         {
-            cntStuck++;
+           cntStuck++;
            dVarScale = -dVarScale*1.0; //*1.2
         }
         else
@@ -690,7 +690,7 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
         }
 
         //Check For Ealy Convergence And Stop Early
-        if (std::abs(dDifffitPtError_total) < 0.06 && dfitPtError_total/contour.size() <= 8) //Time Out Convergece Count
+        if (std::abs(dDifffitPtError_total) <= c_fitErrorPerContourPoint) //Time Out Convergece Count
         {
             cntSolved++;
             //dVarScale = dVarScale*0.93;
