@@ -552,8 +552,8 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
 
         //If curve is empty then  Small Area Contour will be skipped
 
-        //Skip Very Small Curves
-        if (curve.size() < gcFishContourSize)
+        ///Skip Very Small Curves
+        if (curve.size() < gcFishContourSize/2)
             continue;
 
         assert(M % 2 == 1); //M is an odd number

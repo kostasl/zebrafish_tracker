@@ -3345,12 +3345,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                 fish->fitSpineToContour2(maskedImg_gray,contours_body,0,idxFish);
 #endif
 
-
-
                /// Use Contour Variational Fitting to distance from spine - Adjusts spine segment length to tail contour length
                /// \note If done on all frames is converges on Local Minima where the tail is fit in the body contour.
 #ifdef _USEPERIODICSPINETOCONTOUR_TEST
-               if (pwindow_main->nFrame == uiStartFrame || (pwindow_main->nFrame % 1  ) == 0)//((uint)gfVidfps/4)
+               if (pwindow_main->nFrame == uiStartFrame || (pwindow_main->nFrame % 4  ) == 0)//((uint)gfVidfps/4)
                {
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)
@@ -3360,10 +3358,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                    gFishTailSpineSegmentLength <- fish->c_spineSegL;
                    pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                    //qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
-
                }
                /// Main Method Uses Pixel Intensity //
-               //fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
+               fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
                fish->drawSpine(fullImgOut);
 
                //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
@@ -3382,9 +3379,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 //                   int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
 //                   double err_sp0 = fish->fitSpineToContour2(maskedImg_gray,contours_body,0,idxFish);
 //                   pwindow_main->LogEvent(QString("[info] new lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
-
                }
-
 #endif
 
 
