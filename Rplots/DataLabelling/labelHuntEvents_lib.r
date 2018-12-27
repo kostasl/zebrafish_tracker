@@ -105,15 +105,16 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame, "ExpID:",rec$expID ) )
     ##--
-    strArgs = paste("--HideDataSource=1 --ModelBG=1 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    strArgs = paste("--HideDataSource=0 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
     message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
     if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
       stop(paste("Tracker software not found in :",strTrackerPath ))
     
-    execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout="") ##,stderr = TRUE
+    execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=FALSE,stderr = FALSE) ##
     
     ## execres contains all of the stdout - so cant be used for exit code
-    stopifnot(execres == 0 ) ##Stop If Application Exit Status is not success
+    if (execres != 0)
+      stop(execres) ##Stop If Application Exit Status is not success
     ##Show Labels And Ask Uset input after video is examined
     Keyc = 1000 ##Start With Out Of Range Value
     failInputCount = 0

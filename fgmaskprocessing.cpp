@@ -340,7 +340,7 @@ void processMasks(cv::Mat& frame_gray,cv::Mat& bgMaskInOut,double dLearningRate)
        }
       //NO FGMask As No Dynamic (MOG) Model Exists so simply Return the Static Mask
 
-      if (bshowMask)
+      if (bshowMask && !fgMask.empty())
         cv::imshow("MOGMask",fgMask);
 
 } //END PROCESSMASKS
