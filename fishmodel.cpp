@@ -520,7 +520,8 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
             //Distance to closest Contour Edge, +ve inside, 0 on edge -ve outside
             // Invert so minimum is at centre of contour
             dResiduals[i] = -pointPolygonTest(contour, cv::Point2f(tmpspline[i].x,tmpspline[i].y), true );
-
+            //Add Extra Grad Info/Cost for small segLength / thus pulling to longer spine length
+            dResiduals[i] -= (0.5)*c_MaxSpineLengthLimit/tmpspline[i].spineSegLength;
            // double penalty = dResiduals[i]*0.10; //Calc Scaled Penalty
            // for (int s=0;s<tmpspline.size();s++)
            // {
