@@ -227,7 +227,7 @@ bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Sca
 bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
 bool bUseGPU                              = false;
 bool bUseOpenCL                           = true;
-bool bUseHistEqualization                 = false; //To enhance to contrast in Eye Ellipse detection
+bool bUseHistEqualization                 = true; //To enhance to contrast in Eye Ellipse detection
 /// \todo Make this path relative or embed resource
 //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
 string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
@@ -354,6 +354,8 @@ int main(int argc, char *argv[])
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
         "{EnableCUDA cuda | 0  | Use CUDA for MOG, and mask processing - if available  }"
         "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
+        "{EyeHistEqualization histEq | 0  | Use hist. equalization to enhance eye detection contrast  }"
+
         ;
 
 //
@@ -487,6 +489,9 @@ int main(int argc, char *argv[])
 
     if (parser.has("HideDataSource"))
            bBlindSourceTracking = (parser.get<int>("HideDataSource") == 1)?true:false;
+
+    if (parser.has("EyeHistEqualization"))
+        bUseHistEqualization = (parser.get<int>("EyeHistEqualization") == 1)?true:false;
 
     ///Disable OPENCL in case SEG Fault is hit - usually from MOG when running multiple tracker processes
     if (parser.has("DisableOpenCL"))

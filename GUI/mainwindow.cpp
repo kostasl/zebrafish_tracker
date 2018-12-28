@@ -34,6 +34,7 @@ extern bool bRecordToFile;
 extern bool bRemovePixelNoise;
 extern bool bUseBGModelling;
 extern bool bUseGPU;
+extern bool bUseHistEqualization; //For eye Segmentation
 
 
 bool bSceneMouseLButtonDown;
@@ -107,6 +108,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->checkBoxNoiseFilter->setChecked(bRemovePixelNoise);
     this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
+
+    this->ui->checkBoxGPU->setChecked(bUseHistEqualization);
 
     createSpinBoxes();
     nFrame = 0;
@@ -1034,4 +1037,9 @@ void MainWindow::on_spinBoxFoodThresMin_editingFinished()
 void MainWindow::on_doubleSpinBoxSpineSegSize_valueChanged(double arg1)
 {
     tailSizevalueChanged(arg1);
+}
+
+void MainWindow::on_checkBoxHistEqualizer_clicked(bool checked)
+{
+    bUseHistEqualization = checked;
 }

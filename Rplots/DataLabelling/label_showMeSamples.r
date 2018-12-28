@@ -2,7 +2,6 @@
 ## The Tracked files are then imported and combined in runimportHuntEventAnalysisDataFiles.r
 ##
 
-
 source("DataLabelling/labelHuntEvents_lib.r")
 
 message(paste(" Loading Hunt Event List to Validate... "))

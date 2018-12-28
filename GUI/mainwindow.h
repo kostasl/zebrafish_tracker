@@ -114,6 +114,8 @@ private slots:
 
     void on_doubleSpinBoxSpineSegSize_valueChanged(double arg1);
 
+    void on_checkBoxHistEqualizer_clicked(bool checked);
+
 private:
     Ui::MainWindow      *ui;
 
