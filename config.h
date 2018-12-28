@@ -92,6 +92,8 @@ extern int iLastKnownGoodTemplateRow;
 extern int iFishAngleOffset; //Manual User Corrected Fish Angle added to detected one
 //using namespace std;
 
+extern int iEyeMaskSepWidth; //Line width separating the eyes in the Head Image
+
 ///Global Variables
 extern double sigma ;
 extern int M ; //Gaussian Kernel Size

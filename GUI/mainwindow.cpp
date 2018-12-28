@@ -109,7 +109,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
 
-    this->ui->checkBoxGPU->setChecked(bUseHistEqualization);
+    this->ui->checkBoxHistEqualizer->setChecked(bUseHistEqualization);
 
     createSpinBoxes();
     nFrame = 0;

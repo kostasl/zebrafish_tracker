@@ -3286,6 +3286,9 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
                   fish->leftEye           = lEye;
                   fish->leftEyeTheta      = lEye.rectEllipse.angle;
+                  if (fish->leftEyeTheta > 90)
+                       fish->leftEyeTheta      = lEye.rectEllipse.angle-90;
+
                   ss << "L:" << fish->leftEyeTheta;
                   cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }else
@@ -3306,6 +3309,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                 tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
                 fish->rightEye          = rEye;
                 fish->rightEyeTheta     = rEye.rectEllipse.angle;
+                if (fish->rightEyeTheta < -90)
+                     fish->rightEyeTheta      = rEye.rectEllipse.angle+90;
                 ss << "R:"  << fish->rightEyeTheta;
                 cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }else
