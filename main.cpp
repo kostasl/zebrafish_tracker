@@ -2166,8 +2166,8 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     //a circle has a circularity of 1,
     //circularity of a square is 0.785, and so on.
 
-    params.filterByCircularity  = false;
-    params.minCircularity       = 0.70;
+    params.filterByCircularity  = true;
+    params.minCircularity       = 0.60;
     params.maxCircularity       = 1.0;
 
     params.filterByColor        = false;

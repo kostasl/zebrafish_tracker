@@ -692,9 +692,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
         cv::circle(outFishMask, (ptTail-ptHead)/30+ptTail,4,CV_RGB(255,255,255),cv::FILLED);
 
-        //Erase Fish From Food Mask Using Smoothed Contour
+        //Erase a thin Fish From Food Mask Using Smoothed Contour
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
-        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),5);
+        //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),5);
 
 } //For Each Fish Contour
 
