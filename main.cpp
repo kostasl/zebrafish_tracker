@@ -3290,7 +3290,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   if (fish->leftEyeTheta > 90)
                        fish->leftEyeTheta      = lEye.rectEllipse.angle-90;
                   if (fish->leftEyeTheta < -30)
-                       fish->leftEyeTheta      = 90+lEye.rectEllipse.angle;
+                       fish->leftEyeTheta      = lEye.rectEllipse.angle+90;
 
                   ss << "L:" << fish->leftEyeTheta;
                   cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
@@ -3316,7 +3316,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                 if (fish->rightEyeTheta < -90)
                      fish->rightEyeTheta      = rEye.rectEllipse.angle+90;
                 if (fish->rightEyeTheta > 30)
-                     fish->rightEyeTheta      = 90-rEye.rectEllipse.angle;
+                     fish->rightEyeTheta      = rEye.rectEllipse.angle-90;
 
                 ss << "R:"  << fish->rightEyeTheta;
                 cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );

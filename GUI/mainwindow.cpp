@@ -106,8 +106,6 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->checkBoxGPU->setChecked(bUseGPU);
     this->ui->checkBoxMOG->setChecked(bUseBGModelling);
     this->ui->checkBoxNoiseFilter->setChecked(bRemovePixelNoise);
-    this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
-    this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
 
     this->ui->checkBoxHistEqualizer->setChecked(bUseHistEqualization);
 
@@ -121,8 +119,11 @@ void MainWindow::createSpinBoxes()
     this->ui->spinBoxFrame->installEventFilter(this);
 
     this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
-    this->ui->spinBoxEyeThres->setRange(-100,400); //-Ve Values Allow for lowering Avg Threshold
+    this->ui->spinBoxEyeThres->setRange(-500,500); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gthresEyeSeg);
+
+    this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
+    this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
 
 
 

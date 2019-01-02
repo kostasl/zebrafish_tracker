@@ -453,7 +453,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 ///
 int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal)
 {
-        const int isampleN = 10;
+        const int isampleN = EYE_SEG_SAMPLE_POINTS_COUNT;
         const int voffset = giHeadIsolationMaskVOffset+1;
 
         int iThresEyeSeg = 0;
@@ -466,7 +466,7 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
 
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         //Crash Here Stack
-        cv::ellipse2Poly(ptcenter, cv::Size(voffset/2,voffset*0.9), 0, 185,345 , 1, ellipseSample_pts);
+        cv::ellipse2Poly(ptcenter, cv::Size(voffset/2,voffset*0.9), 0, 175,365 , 1, ellipseSample_pts);
         for (int i=0;i<ellipseSample_pts.size();i++)
         {
             //iThresEyeSeg += imgUpsampled_gray.at<uchar>(ellipse_pts[i]);
@@ -831,7 +831,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         rEll.rectEllipse.points(featurePnts);
 
 
-        ///Draw Left Eye Rectangle
+        ///Draw Right Eye Rectangle
         for (int j=0; j<4;j++) //Rectangle Eye
                cv::line(img_colour,featurePnts[j],featurePnts[(j+1)%4] ,CV_RGB(130,10,10),1);
 
