@@ -466,15 +466,15 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
 
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         //Crash Here Stack
-        cv::ellipse2Poly(ptcenter, cv::Size(voffset*2,voffset), 0, 205,325 , 1, ellipseSample_pts);
+        cv::ellipse2Poly(ptcenter, cv::Size(voffset/2,voffset*0.9), 0, 185,345 , 1, ellipseSample_pts);
         for (int i=0;i<ellipseSample_pts.size();i++)
         {
             //iThresEyeSeg += imgUpsampled_gray.at<uchar>(ellipse_pts[i]);
             ellipseSample_pts[i].x = std::max(1,std::min(pimgIn.cols,ellipseSample_pts[i].x));
             ellipseSample_pts[i].y = std::max(1,std::min(pimgIn.rows,ellipseSample_pts[i].y));
 
-            assert(ellipseSample_pts[i].x >= 0 && ellipseSample_pts[i].x < pimgIn.cols);
-            assert(ellipseSample_pts[i].y >= 0 && ellipseSample_pts[i].y < pimgIn.rows);
+            assert(ellipseSample_pts[i].x >= 0 && ellipseSample_pts[i].x <= pimgIn.cols);
+            assert(ellipseSample_pts[i].y >= 0 && ellipseSample_pts[i].y <= pimgIn.rows);
             uchar val = pimgIn.at<uchar>(ellipseSample_pts[i]);
             eyeSegMaxHeap.push(val);
 
@@ -540,7 +540,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
 
     int lengthLine = 13;
-    cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/2+7);
+    cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
 
     /*ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y/2; //y=0 is the top left corner
@@ -563,7 +563,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::Rect rRightMask(imgUpsampled_gray.cols/2,0,imgUpsampled_gray.cols,imgUpsampled_gray.rows);
     cv::Mat imgEyeDiscover = imgUpsampled_gray.clone();
     // Make Body Mask For bOth //
-    cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3*giHeadIsolationMaskVOffset,CV_RGB(0,250,50),CV_FILLED); //Mask Body
+    cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),giHeadIsolationMaskVOffset,CV_RGB(0,250,50),CV_FILLED); //Mask Body
 
     ///COVER Right Eye - Find Left EYE //
     cv::Mat imgEyeCover = imgEyeDiscover.clone();
@@ -617,7 +617,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     /// Show Masks with nominal width//
     cv::line(imgUpsampled_gray,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,250,50),1);//Split Eyes iEyeMaskSepWidth
-    cv::circle(imgUpsampled_gray,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3.5*giHeadIsolationMaskVOffset+2,CV_RGB(0,250,50),1); //Mask Body
+    cv::circle(imgUpsampled_gray,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),giHeadIsolationMaskVOffset,CV_RGB(0,250,50),1); //Mask Body
 
 
     // Do Thresholding Of Masked Image to Obtain Segmented Eyes //
@@ -632,7 +632,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     //Separate Eyes Mask
     //Add Thick Mid line to erase inner Eye Edges and artefacts
     cv::line(imgEdge_local,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),iEyeMaskSepWidth);//Split Eyes
-    cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),3.5*giHeadIsolationMaskVOffset+2,CV_RGB(0,0,0),-1); //Mask Body
+    cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),giHeadIsolationMaskVOffset,CV_RGB(0,0,0),-1); //Mask Body
 
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 

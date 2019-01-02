@@ -178,13 +178,13 @@
       <enum>QAbstractSpinBox::PlusMinus</enum>
      </property>
      <property name="minimum">
-      <number>-200</number>
+      <number>-300</number>
      </property>
      <property name="maximum">
-      <number>200</number>
+      <number>300</number>
      </property>
      <property name="singleStep">
-      <number>1</number>
+      <number>5</number>
      </property>
     </widget>
     <widget class="QSpinBox" name="spinBoxMinEllipse">
