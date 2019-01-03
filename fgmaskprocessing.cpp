@@ -686,14 +686,16 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
         // they should still fall within contour - )
 
-        //Draw New Smoothed One
-        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED);
+        ///\bug can get freezing / long pauses on drawContours for unknown reasons.
 
+        //Draw New Smoothed One - the idx should be the last one in the vector
+        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED); //
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
         cv::circle(outFishMask, (ptTail-ptHead)/30+ptTail,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Erase a thin Fish From Food Mask Using Smoothed Contour
-        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
+        /// Removed - Due to Freezing and artifacts on head appearing as food
+        //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED); //
         //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),5);
 
 } //For Each Fish Contour

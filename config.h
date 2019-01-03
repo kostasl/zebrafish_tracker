@@ -5,7 +5,7 @@
 #include <string>
 #include <cmath>
 
-#define ZTF_FISHCONTOURSIZE          105
+#define ZTF_FISHCONTOURSIZE          90
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #define EYE_SEG_SAMPLE_POINTS_COUNT 20
