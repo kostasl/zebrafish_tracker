@@ -22,7 +22,7 @@ source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 #################IMPORT HuntEvent TRACKER FILES # source Tracker Data Files############################### 
 ##OutPutFIleName
-strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
+strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_SetB",".RData",sep="") ##To Which To Save After Loading
 message(paste(" Importing to:",strDataFileName))
 
 
@@ -38,15 +38,15 @@ lHuntEventTRACKSfileSrc <- list()
   lHuntEventTRACKSfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
   lHuntEventFOODfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
   
-  lHuntEventTRACKSfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-DryFed-Live")
-  lHuntEventFOODfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-DryFed-Live")
+  #lHuntEventTRACKSfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-DryFed-Live")
+  #lHuntEventFOODfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-DryFed-Live")
   
   lHuntEventTRACKSfileSrc[["NL"]] <- list(getFileSet("NotFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-NotFed-Live")
   lHuntEventFOODfileSrc[["NL"]] <- list(getFileSet("NotFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-NotFed-Live")
   
   
   ##RUN IMPORT FUNCTION
-  datHuntEventFrames <-importTrackerFilesToFrame(lHuntEventTRACKSfileSrc)
+  datHuntEventFrames <-importTrackerFilesToFrame(lHuntEventTRACKSfileSrc,"extractFileNameParams_huntingExp")
   ##Clean Out Non (Fish) Tracks -  Dublicates - Use Template Score TO detect Irrelevant Tracks
   datHuntEventFrames <- datHuntEventFrames[datHuntEventFrames$templateScore > 0.70,] 
   ## IMport Food Tracks And Merge With Fish Tracks In Hunt Events # Found in TrackerDataFilesImport_lib

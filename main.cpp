@@ -2396,7 +2396,7 @@ void writeFishDataCSVHeader(QFile& data)
         output <<  "DThetaSpine_" << i << "\t";
 
     output << " tailSegmentLength";
-    output << " templateScore";
+    output << "\t templateScore";
     output << "\t lastTailFitError";
     output << "\t lEyeFitScore";
     output << "\t rEyeFitScore";

@@ -502,7 +502,7 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
   
 }
 
-
+##Aux Functions used for importing data from CSV Files - Processes file name :
 #/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
 extractFileNameParams_huntingExp <- function(strFileName)
 {
