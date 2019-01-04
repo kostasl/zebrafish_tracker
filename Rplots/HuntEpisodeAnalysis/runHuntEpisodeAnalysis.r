@@ -53,8 +53,10 @@ Fs <- 430; #sampling rate
 bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass <- butter(4, c(0.01,0.35),type="pass"); ##Remove DC
 bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
+
 bf_eyes <- butter(4, 0.35,type="low",plane="z");
 bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
+bf_tailSegSize <- butter(4, 0.03,type="low"); ## Tail Segmemt Size iF Used to Estimate Pitch - Stiking Upwards
 ###
 #nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering ##moved to main
 
@@ -207,8 +209,10 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
   vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
   vTailDispFilt <- filtfilt(bf_tailClass2,abs( vTailDisp) )  ##Heavily Filtered and Used For Classifying Bouts
-
-  
+  vTailSegSize <- filtfilt(bf_tailSegSize, datRenderHuntEvent$TailSegLength) ##Filter Fast Tail Size Fluctuations
+  ##Remove Out Of Range Values Clip to +- 1SD ## Set to Mean Value
+  vTailSegSize[vTailSegSize < (mean(vTailSegSize)-2*sd(vTailSegSize) ) ] <- mean(vTailSegSize)-sd(vTailSegSize)
+  vTailSegSize[vTailSegSize > (mean(vTailSegSize)+2*sd(vTailSegSize) ) ] <- mean(vTailSegSize)+sd(vTailSegSize)
   #X11()
   #plot((1000*1:NROW(vTailDisp)/Fs),vTailDisp,type='l')
   
@@ -413,9 +417,12 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   bCaptureStrike <- 0
   
   ##If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
+  ## TODO Change this to a velocity Estimate for capture strike
   if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
     bCaptureStrike <- 1 ##Set Flag
   rows <- NROW(datRenderHuntEvent$LEyeAngle[EyeRegionToExtract])
+  
+  ##Estimate Pitch From Length Changes
   
   lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[EyeRegionToExtract ],
                                  REyeAngle=datRenderHuntEvent$REyeAngle[EyeRegionToExtract],
@@ -571,7 +578,7 @@ pchL <-c(16,2,4)
 
 
 pdf(file= paste(strPlotExportPath,"/DistanceVsBoutCount_",paste(strGroupID,collapse="-" ),".pdf",sep="",collapse="-"))
-X11()
+#X11()
 plot(unlist(datBoutVsPreyDistance$nBouts),unlist(datBoutVsPreyDistance$Distance),
      main = paste("Initial distance to Prey Vs Bouts Performed",paste(strGroupID,collapse="," ) ) ,
      ylab="Distance to Prey  (mm)",
@@ -586,7 +593,7 @@ dev.off()
 
 pdf(file= paste(strPlotExportPath,"/BearingVsBoutCount_",paste(strGroupID,collapse="-"),".pdf",sep=""))
 
-X11()
+#X11()
 datBoutAngle <- unlist(datBoutVsPreyDistance$Angle)
 plot(unlist(datBoutVsPreyDistance$nBouts),ifelse(is.na(datBoutAngle),0,datBoutAngle),
      main = paste("Initial Bearing to Prey Vs Bouts Performed",paste(strGroupID,collapse=",") ) ,

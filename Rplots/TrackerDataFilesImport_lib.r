@@ -210,7 +210,7 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
       }
        
       #Filter Out Empty Files - ones with less than 300 frames ( ~1 sec of data )
-      if (!is.numeric(expID) | !is.numeric(eventID) | is.na(expID) | is.na(eventID)  ) 
+      if (!is.numeric(expID) | !is.numeric(eventID) | is.na(expID) | is.na(eventID) | is.null(trackID)   ) 
       {
         #expID <- j
         #message(paste("Auto Set To expID:",expID))
@@ -219,6 +219,7 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
 
       stopifnot(!is.na(expID))
       stopifnot(!is.na(eventID))
+      stopifnot(!is.na(trackID))
       
       ##FILTER Out NA values - Set to 0
       #message(NROW(TrackerData[[i]][[j]][is.na(TrackerData[[i]][[j]]$EyeLDeg),]))
@@ -237,6 +238,13 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
         warning(paste("EyeRDeg NA Values in procDatIdx:",procDatIdx,  temp[[j]]))
       }
       
+      vTailSegmentLength <- vector()
+      if ("tailSegmentLength" %in% names(TrackerData[[i]][[j]]))
+        vTailSegmentLength <- TrackerData[[i]][[j]]$tailSegmentLength
+      else
+        warning("Missing tailSegmentLength field, perhaps these track files from older tracker version.");
+      
+      
       
       if ( length(TrackerData[[i]][[j]]$frameN) > 1  )
       {       
@@ -246,6 +254,7 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
                                                 posX = TrackerData[[i]][[j]]$Centroid_X,
                                                 posY =TrackerData[[i]][[j]]$Centroid_Y,
                                                 BodyAngle = TrackerData[[i]][[j]]$AngleDeg,
+                                                TailSegLength = vTailSegmentLength,
                                                 ThetaSpine_0 = TrackerData[[i]][[j]]$ThetaSpine_0, ## Angle of 1st Spine Tail Seg on Global Coordinates
                                                 DThetaSpine_1 = TrackerData[[i]][[j]]$DThetaSpine_1,#sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_1,5),wrapAngle) , ##Relative Angle Diff Between Next 2nd Tail Seg And The 1st one / Call wrap to wrap DAngle between -180 to 180
                                                 DThetaSpine_2 = TrackerData[[i]][[j]]$DThetaSpine_2, #sapply(medianf(TrackerData[[i]][[j]]$DThetaSpine_2,5),wrapAngle), ##Consecutive Angle diffs
@@ -278,6 +287,7 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
                                                 posX = 0,
                                                 posY = 0,
                                                 BodyAngle = 0,
+                                                TailSegLength = 0,
                                                 ThetaSpine_0 = 0, ## Angle of 1st Spine Tail Seg
                                                 DThetaSpine_1 = 0, ##Relative Angle Diff Between Next 2nd Tail Seg And The 1st one
                                                 DThetaSpine_2 = 0, ##Consecutive Angle diffs
@@ -516,7 +526,7 @@ extractFileNameParams_huntingExp <- function(strFileName)
   fps     <- as.integer( gsub("[^0-9]","",brokenname[1])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
  # timeMin <- as.integer( gsub("[^0-9]","",brokenname[5])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
   
-  return(list(expID=expID,eventID=eventID,larvaID=larvaID,fps=fps) )
+  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps) )
 }
 
 #/// Returns a list of name value pairs extracted from TrackerFile name used for the PreyCount Feeding Assay
