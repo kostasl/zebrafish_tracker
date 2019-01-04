@@ -10,25 +10,28 @@
 ## \Notes:
 ## Can use findLabelledEvent( datTrackedEventsRegister[IDXOFHUNT,]) to locate which HuntEvent is associated from the Labelled Set Record, And Retrack it by running 
 ## main_LabellingBlind.r and providing the row.name as ID 
+##Requires :@
+# install.packages("signal"))
+# install.packages("mclust")
+# install.packages("Rwave")
 
 ### TODO 1st Turn To Prey Detection Needs checking/fixing, 
 #####
 
-
 library(signal)
 library(MASS)
-library(mclust,quietly = TRUE)
+library(mclust,quietly = TRUE) 
 
-require(Rwave)
+require(Rwave) 
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 
-strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
+strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_SetB",".RData",sep="") ##To Which To Save After Loading
 
-strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetB",".rds",sep="") #Processed Registry on which we add 
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
 G_THRESHUNTVERGENCEANGLE <- 40 ##Redifine Here Over main_Tracking - Make it looser so to detect 1st turn to Prey
@@ -587,7 +590,7 @@ X11()
 datBoutAngle <- unlist(datBoutVsPreyDistance$Angle)
 plot(unlist(datBoutVsPreyDistance$nBouts),ifelse(is.na(datBoutAngle),0,datBoutAngle),
      main = paste("Initial Bearing to Prey Vs Bouts Performed",paste(strGroupID,collapse=",") ) ,
-     ylab="Angle to Prey  (mm)",
+     ylab="Angle to Prey  (deg)",
      xlab="Number of Tracking Movements",
      ylim=c(-180,180),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )),
      #col=colR[vcolIdx],
