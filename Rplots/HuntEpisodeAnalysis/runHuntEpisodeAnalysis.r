@@ -45,6 +45,8 @@ remove(lMotionBoutDat)
 lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
 bSaveNewMotionData <- TRUE ##Overwrite the lMotionBoutDatFile
 
+strGroupID <- levels(datTrackedEventsRegister$groupID)
+
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
 
@@ -920,7 +922,6 @@ text(ncolBands*3+300,105.2,labels = paste(maxDistanceToPrey/10,"mm" )  )
 dev.off()
 
 
-s
 #dev.off()
 
 X11()
