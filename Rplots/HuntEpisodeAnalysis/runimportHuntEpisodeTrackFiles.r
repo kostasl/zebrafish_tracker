@@ -22,7 +22,8 @@ source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 #################IMPORT HuntEvent TRACKER FILES # source Tracker Data Files############################### 
 ##OutPutFIleName
-strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis",".RData",sep="") ##To Which To Save After Loading
+strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_SetB",".RData",sep="") ##To Which To Save After Loading
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetB",".rds",sep="") #Processed Registry on which to Save Imported HuntEvents List
 message(paste(" Importing to:",strDataFileName))
 
 
@@ -38,15 +39,15 @@ lHuntEventTRACKSfileSrc <- list()
   lHuntEventTRACKSfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
   lHuntEventFOODfileSrc[["LL"]] <- list(getFileSet("LiveFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
   
-  lHuntEventTRACKSfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-DryFed-Live")
-  lHuntEventFOODfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-DryFed-Live")
+  #lHuntEventTRACKSfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-DryFed-Live")
+  #lHuntEventFOODfileSrc[["DL"]] <- list(getFileSet("DryFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-DryFed-Live")
   
   lHuntEventTRACKSfileSrc[["NL"]] <- list(getFileSet("NotFed/Live",strTrackeroutPath,"tracks"),"-HuntEvent-NotFed-Live")
   lHuntEventFOODfileSrc[["NL"]] <- list(getFileSet("NotFed/Live",strTrackeroutPath,"food"),"-HuntEventFood-NotFed-Live")
   
   
   ##RUN IMPORT FUNCTION
-  datHuntEventFrames <-importTrackerFilesToFrame(lHuntEventTRACKSfileSrc)
+  datHuntEventFrames <-importTrackerFilesToFrame(lHuntEventTRACKSfileSrc,"extractFileNameParams_huntingExp")
   ##Clean Out Non (Fish) Tracks -  Dublicates - Use Template Score TO detect Irrelevant Tracks
   datHuntEventFrames <- datHuntEventFrames[datHuntEventFrames$templateScore > 0.70,] 
   ## IMport Food Tracks And Merge With Fish Tracks In Hunt Events # Found in TrackerDataFilesImport_lib
@@ -62,7 +63,8 @@ lHuntEventTRACKSfileSrc <- list()
   
   save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier
   # #### END OF IMPORT HUNT EVENT TRACKER DATA ############
-   
+  saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) ##Save With Dataset Idx Identifier 
+  
 ##Save the File Sources and all The Frames Combined - Just In case there are loading Problems Of the Individual RData files from each set
   #save(lHuntEventFOODfileSrc,file=paste(strDataExportDir,"/filesrcHuntEventsFoodTracks.RData",sep=""))
   #save(lHuntEventTRACKSfileSrc,file=paste(strDataExportDir,"/filesrcHuntEventsFishTracks.RData",sep=""))

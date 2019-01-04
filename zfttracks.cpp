@@ -97,7 +97,7 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
 
      if (mode & CV_TRACK_RENDER_HIGHLIGHT)
      {
-       colTxt = cv::Scalar(255,255,0,90);
+       colTxt = CV_RGB(240,210,10);//cv::Scalar(255,255,0,90);
      }
 
      if (mode&CV_TRACK_RENDER_ID)
@@ -111,7 +111,7 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
 
      }
     if (mode & CV_TRACK_RENDER_BOUNDING_CIRCLE)
-        cv::circle(frameOut,track.centroid, track.boundingBox.width/2,colCircle,1); //Mark Where Search Is Done
+        cv::circle(frameOut,track.centroid, track.boundingBox.width/2,track.colour,1); //Mark Where Search Is Done
 
 
       if (mode & CV_TRACK_RENDER_BOUNDING_BOX)

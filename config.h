@@ -5,9 +5,11 @@
 #include <string>
 #include <cmath>
 
-#define ZTF_FISHCONTOURSIZE          55
-#define ZTF_TAILFITMAXITERATIONS     10 //For Spine To Contour Tail Fitting
+#define ZTF_FISHCONTOURSIZE          90
+#define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
+#define EYE_SEG_SAMPLE_POINTS_COUNT 20
+
 #if defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
     #define USE_CUDA
 #else
@@ -24,12 +26,14 @@ extern float gfVidfps;
 extern const  unsigned int MOGhistory;//Use 100 frames Distributed across the video length To Find What the BGModel is
 extern double gdMOGBGRatio; ///If a foreground pixel keeps semi-extern const ant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
+
+
 //Processing Loop delay
 extern uint cFrameDelayms;
 
 extern const  double dLearningRate; //Learning Rate During Initial BG Modelling done over MOGhistory frames
 extern const  double dLearningRateNominal;
-
+extern double dBGMaskAccumulateSpeed;
 
 /// BLOB DETECTION Filters //
 //Area Filters
@@ -50,6 +54,7 @@ extern const  int thActive;// Deprecated If a track becomes inactive but it has 
 extern const  int thDistanceFish; //Threshold for distance between track-to blob assignement
 //extern const  int thDistanceFood; //Threshold for distance between track-to blob assignement
 extern int gFoodReportInterval;
+extern const int gc_FishTailSpineSegmentLength_init;
 
 extern const  int nTemplatesToLoad; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
 
@@ -88,6 +93,8 @@ extern double gTemplateMatchThreshold; //If not higher than 0.9 The fish body ca
 extern int iLastKnownGoodTemplateRow;
 extern int iFishAngleOffset; //Manual User Corrected Fish Angle added to detected one
 //using namespace std;
+
+extern int iEyeMaskSepWidth; //Line width separating the eyes in the Head Image
 
 ///Global Variables
 extern double sigma ;

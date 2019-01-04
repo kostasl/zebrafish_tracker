@@ -38,6 +38,7 @@ public:
     void saveTemplateImage(cv::Mat& templ);
     void tickProgress();
     void setTotalFrames(uint FrameCount);
+    void UpdateTailSegSizeSpinBox(float fTailSize);
     void LogEvent(QString strMessage);
     unsigned int nFrame = 0;
     unsigned int nTotalFrameCount = 0;
@@ -55,7 +56,7 @@ public slots:
     void textEdited(const QString);
     void fishvalueChanged(int i);
     void eyevalueChanged(int i);
-    void tailSizevalueChanged(int i);
+    void tailSizevalueChanged(float i);
     void maxEllipseSizevalueChanged(int i);
     void minEllipseSizevalueChanged(int i);
 
@@ -109,6 +110,11 @@ private slots:
     void on_spinBoxFoodThresMin_valueChanged(int arg1);
 
     void on_spinBoxFoodThresMax_valueChanged(int arg1);
+
+
+    void on_doubleSpinBoxSpineSegSize_valueChanged(double arg1);
+
+    void on_checkBoxHistEqualizer_clicked(bool checked);
 
 private:
     Ui::MainWindow      *ui;

@@ -101,10 +101,14 @@ void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsign
         //this->zTrack.inactive++;
     }
 
+
+   static cv::Scalar colHighlight =  cv::Scalar(0,250,20,50); //Colour
+   static cv::Scalar colPlain = cv::Scalar(255,255,0,30);
+
     if (isTargeted )
         zTrack.colour = CV_RGB(240,210,10); //YelloW For Tracking
     else
-        zTrack.colour = CV_RGB(0,200,10);
+        zTrack.colour = colPlain; //CV_RGB(0,200,10);
 
  //cv::Scalar(0,120,200)
 

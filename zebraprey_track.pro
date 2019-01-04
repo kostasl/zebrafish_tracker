@@ -38,7 +38,7 @@ PKGCONFIG += opencv #or whatever package here
 #INCLUDEPATH += `pkg-config opencv --cflags`
 #INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.2.0/include
 #INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.0/include
-#INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.4.4/include
+#INCLUDEPATH += /media/kostasl/D445GB_ext4/opt/OpenCV/opencv-3.4.4/include
 #INCLUDEPATH += /usr/include/cvblob
 #INCLUDEPATH += ~/opencv/
 
@@ -52,7 +52,7 @@ PKGCONFIG += opencv #or whatever package here
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.2.0/build/lib
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib -lopencv_dnn -lopencv_ml -lopencv_objdetect -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_viz -lopencv_core
-#LIBS += -L /home/kostasl/OpenCV/opencv-3.4.4/build/lib  #Home
+#LIBS += -L /media/kostasl/D445GB_ext4/opt/OpenCV/opencv-3.4.4/build/lib  #Home
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.1/build/lib #Office
 #LIBS += `pkg-config opencv --libs`
 
@@ -63,7 +63,7 @@ QMAKE_CFLAGS += -rdynamic
 ##QML_IMPORT_PATH =
 ##
 ##Assume Libs are copied with the package into
-#QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
+QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.11.1/gcc_64/lib/ ##Office
 #QMAKE_LFLAGS += -Wl,--rpath=/media/extStore/opt/Qt3.0.1/5.9.2/gcc_64/lib/ #Home
 #QMAKE_LFLAGS += -Wl,--rpath=/opt/Qt/5.9/5.9/gcc_64/lib/ #Home

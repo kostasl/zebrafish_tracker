@@ -2,7 +2,6 @@
 ## The Tracked files are then imported and combined in runimportHuntEventAnalysisDataFiles.r
 ##
 
-
 source("DataLabelling/labelHuntEvents_lib.r")
 
 message(paste(" Loading Hunt Event List to Validate... "))
@@ -39,7 +38,9 @@ eventID <-resample(datHuntEventPool$eventID,1)
 datHuntEventPool <- labelHuntEvents(datHuntEventAllGroupToValidate,
                                     strDataFileName,strVideoFilePath,
                                     strTrackerPath,strTrackeroutPath,
-                                    convertToScoreLabel(TargetLabel),expID,eventID)
+                                    convertToScoreLabel(TargetLabel),expID,eventID,
+                                    idxFilter=NA,
+                                    bskipMarked = FALSE)
 
 
 # 

@@ -14,26 +14,41 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
 {
   Sys.setenv(LD_LIBRARY_PATH="")
   #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"",sep=":" ) ) 
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.12.0/gcc_64/lib/",sep=":" ) ) ##Home PC/
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) ####Office
+  #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.12.0/gcc_64/lib/",sep=":" ) ) ##Home PC/
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) ##Home PC/
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/media/kostasl/D445GB_ext4/opt/Qt3.0.1/5.10.0/gcc_64/lib/",sep=":" ) ) ##Home PC - OpenCV QT5 lib link/
+  
+  #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) ####Office
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/usr/lib/x86_64-linux-gnu/",sep=":" ) )
+  
+  Sys.setenv(DISPLAY=":0")
+  Sys.setenv(PATH="/opt/Qt/5.11.1/gcc_64/bin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
+  Sys.setenv(QT_DIR="/opt/Qt/5.11.1/gcc_64")
+  Sys.setenv(XDG_DATA_DIRS="/usr/share/ubuntu:/usr/local/share:/usr/share:/var/lib/snapd/desktop")
+  Sys.setenv(XDG_RUNTIME_DIR="/run/user/1000")
+
 }
 
 vHuntEventLabels <- c("UnLabelled","NA","Success","Fail","No_Target","Not_HuntMode/Delete","Escape","Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike",
                       "Success-SpitBackOut",
-                      "Debri-Triggered","Near-Hunt State")
+                      "Debri-Triggered","Near-Hunt State","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach")
 
 convertToScoreLabel <- function (huntScore) { 
-  return (factor(x=huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels ) )
+  return (factor(x=huntScore,levels=seq(0,NROW(vHuntEventLabels)-1),labels=vHuntEventLabels ) )
 }
 
 huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
 
 
-labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath,factorLabelFilter,ExpIDFilter,EventIDFilter,idxFilter=NA)
+### Used for running the tracker to score Hunt events, or to retrack a hunt event in supervised mode ##
+### The retracked event are then used for analysis of sensorimotor differences/eye vergence information 
+## Menu allows for events to be marked as tracked to avoid dublicates by  setting the param bskipMarked = TRUE  
+
+labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath,factorLabelFilter,ExpIDFilter,EventIDFilter,idxFilter=NA,bskipMarked = TRUE)
 {
   message(paste(NROW(datHuntEvent[datHuntEvent$huntScore >0,]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
-  nLabelledSuccess <- NROW(datHuntEvent[datHuntEvent$huntScore == which(levels(huntLabels) == "Success") | datHuntEvent$huntScore == which(levels(huntLabels) == "Success-SpitBackOut"),])
+  ##nLabelledSuccess <- NROW(datHuntEvent[datHuntEvent$huntScore == which(levels(huntLabels) == "Success") | datHuntEvent$huntScore == which(levels(huntLabels) == "Success-SpitBackOut"),])
+  nLabelledSuccess <- NROW(datHuntEvent[grepl("Success",as.character(convertToScoreLabel(datHuntEvent$huntScore) ) ) ,])
   if (is.na(idxFilter))
   {
     nEventsToLabel <- NROW(datHuntEvent[datHuntEvent$expID   == ExpIDFilter &
@@ -55,19 +70,20 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     rec <- datHuntEvent[i,] 
     
     
-    ##Added Later To Struct Is  A Flag that a Hunt Event Has been Retracked - adding the food target
-    if (any(names(datHuntEvent)=="markTracked")  ) ##This Marks Videos that have been Labelled and Retracked For anal
-      if (!is.na(rec$markTracked))
-        if (rec$markTracked == 1 & is.na(idxFilter) )
-        {
-          message("Arleady Marked Tracked")
-          next ##SKip Record if previously Labelled
-        }
-    
     ##A Noddy  Way of selecting Records
     if (!(convertToScoreLabel(rec$huntScore) %in% factorLabelFilter) | rec$expID != ExpIDFilter | rec$eventID != EventIDFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
       next ##SKip Record if previously Labelled
     
+    ##Added Later To Struct Is  A Flag that a Hunt Event Has been Retracked - adding the food target
+    if (any(names(datHuntEvent)=="markTracked")  ) ##This Marks Videos that have been Labelled and Retracked For anal
+      if (!is.na(rec$markTracked))
+        if (rec$markTracked != 0 & is.na(idxFilter) ) ##Both Untrackable and Marked Tracked
+        {
+          message(paste("Already Marked as Tracked ",datHuntEvent$expID,datHuntEvent$eventID,"\n "  ) )
+          if (bskipMarked == TRUE)
+            next ##SKip Record if previously Labelled
+        }
+   
     
     ##For Larva That Did not register any sufficient Hunting Events -  An Empty Record has been added To Acknowledge 
     if (rec$eventID == 0 & rec$huntScore == 0)
@@ -81,18 +97,25 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
                                full.names = TRUE, recursive = TRUE,
                                ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
     
+    if (NROW(strVideoFile) == 0)
+      stop(paste("Could not find video file matching,",rec$filenames, " ,in : ",strVideoFilePath ) )
     if (!file.exists(strVideoFile) )
-      stop(paste("Could not find video file: ",strVideoFile ) )
+      stop(paste("Video File ",strVideoFile, "does not exist" ) )
+      
     
     
     message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame, "ExpID:",rec$expID ) )
     ##--
-    strArgs = paste("--HideDataSource=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
-    #message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
-    execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout="",stderr=TRUE)
+    strArgs = paste("--HideDataSource=0 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
+    if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
+      stop(paste("Tracker software not found in :",strTrackerPath ))
+    
+    execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=FALSE,stderr = FALSE) ##
     
     ## execres contains all of the stdout - so cant be used for exit code
-    #stopifnot(execres == 0 ) ##Stop If Application Exit Status is not success
+    if (execres != 0)
+      stop(execres) ##Stop If Application Exit Status is not success
     ##Show Labels And Ask Uset input after video is examined
     Keyc = 1000 ##Start With Out Of Range Value
     failInputCount = 0
@@ -106,7 +129,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     {
       l <- 0
       
-      setLabel <- factor(x=rec$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )
+      setLabel <- factor(x=rec$huntScore,levels=seq(0,NROW(vHuntEventLabels)-1),labels=vHuntEventLabels )
       message(paste("### Event's ", row.names(rec) , " Current Label is :",setLabel," ####" ) )
       message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
       
@@ -212,15 +235,15 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     message(datHuntEvent[i,"huntScore"])
     
     
-    if (rec$huntScore == (which(levels(huntLabels)=="Success")-1) )
+    if (grepl("Success", as.character (convertToScoreLabel(rec$huntScore)))  )
     {
       message("~Mark Succesfull")
     }
-    if (rec$huntScore == 0 || rec$huntScore == (which(levels(huntLabels)=="NA")-1) )
+    if (rec$huntScore == 0 || grepl("NA", as.character (convertToScoreLabel(rec$huntScore)))  )
     {
       message("~Leave Unlabelled")
     }
-    if (rec$huntScore == (which(levels(huntLabels)=="Fail")-1) )
+    if (grepl("Fail", as.character (convertToScoreLabel(rec$huntScore))) )
     {
       message("~Failed To Capture Prey")
     }
@@ -377,9 +400,11 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
   ##No_Targer is Column 5
 
   
-  datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,3]+tblFishScoresLabelled[,12],
-                                          "Fails"= tblFishScoresLabelled[,4]+tblFishScoresLabelled[,10]+tblFishScoresLabelled[,11],
-                                          "HuntEvents"= rowSums(tblFishScoresLabelled[,c(3,12,4,10,11,5)]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
+  datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,"Success"]+tblFishScoresLabelled[,"Success-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnStrike"]+tblFishScoresLabelled[,"Success-OnStrike-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnApproach"],
+                                          "Fails_NS"= tblFishScoresLabelled[,"Fail-No Strike"],
+                                          "Fails_WS"=tblFishScoresLabelled[,"Fail-With Strike"],
+                                          "Fails"= tblFishScoresLabelled[,"Fail"]+tblFishScoresLabelled[,"Fail-No Strike"]+tblFishScoresLabelled[,"Fail-With Strike"],
+                                          "HuntEvents"= rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
                                           "groupID"=NA) ) #
   for (e in row.names(tblFishScoresLabelled) )
     datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )

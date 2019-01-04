@@ -73,7 +73,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFile,QStringL
 /// \fn processFrame - Process blob morphology, Extract features tracks
 ///
 //void processFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHead);
-void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& frameHead);
+void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHeadEyeDetected,cv::Mat& frameHead);
 void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,cv::Mat& outframe);
 //bool updateBGFrame(cv::Mat& frame,cv::Mat& fgMask, unsigned int nFrame);
 
@@ -86,7 +86,7 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
 /// \param Mask with Fish oNly FG
 /// \param main inner and extrernal fish Contours for each fish
 /// \param 1 level hierarchy of contours (outer inner)
-void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
+void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& headImgOut,cv::Mat& outheadImgOutProcessed, cv::Mat& maskfishFGImg, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body);
 ///
 /// \brief UpdateFishModels Use Tracks  to update persistent fishModels
 /// \param vfishmodels

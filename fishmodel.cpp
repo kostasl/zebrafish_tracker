@@ -33,7 +33,7 @@ fishModel::fishModel()
         zTrack.id   = this->ID;
         zTrack.colour = CV_RGB(255,0,0);
         leftEyeTheta = 180; //In Degrees - A Value that looks wrong to show its not initialized
-        rightEyeTheta = 180; //In Degrees
+        rightEyeTheta         = 180; //In Degrees
         c_spineSegL           = gFishTailSpineSegmentLength;
 }
 
@@ -135,7 +135,7 @@ void fishModel::resetSpine()
             this->bearingRads += 2.0*CV_PI;
 
             sp.angleRad    = (this->bearingRads)-CV_PI ; //  //Spine Looks In Opposite Direction
-
+            sp.spineSegLength = c_spineSegL;    //Default Size
             if (sp.angleRad < 0)
                 sp.angleRad += 2.0*CV_PI;
         //else
@@ -179,12 +179,14 @@ void fishModel::calcSpline(t_fishspline& outspline)
 
     //this->spline.clear();
     //this->spline.push_back(this->coreTriangle[2]);
+    double dspineSegL =  outspline[0].spineSegLength;
 
     for (int i=1;i<c_spinePoints;i++)
     {
 
-       outspline[i].x = outspline[i-1].x + ((double)c_spineSegL)*sin(outspline[i-1].angleRad);
-       outspline[i].y = outspline[i-1].y - ((double)c_spineSegL)*cos(outspline[i-1].angleRad);
+       outspline[i].x = outspline[i-1].x + (dspineSegL)*sin(outspline[i-1].angleRad);
+       outspline[i].y = outspline[i-1].y - (dspineSegL)*cos(outspline[i-1].angleRad);
+       outspline[i].spineSegLength = dspineSegL;
        assert(!std::isnan(outspline[i].y) && !std::isnan(outspline[i].x));
        assert(!std::isnan(outspline[i].angleRad));
     }
@@ -198,25 +200,36 @@ void fishModel::calcSpline(t_fishspline& outspline)
 /// \return distance of variation in Config space
 double fishModel::getdeltaSpline(t_fishspline inspline, t_fishspline& outspline,int idxparam,double sgn)
 {
-    const double dAngleStep = sgn*CV_PI/36.0;
+    const double dAngleStep = -sgn*CV_PI/80.0;
+    double dvarSpineSeg = (double)inspline[0].spineSegLength;
     double ret = 0.0;
     outspline = inspline;
 
-    //If idxparam = 0 or 1 then we are varying initial Spline Point
-    if (idxparam == 0) //x0, y0 params
+    //If idxparam = 1,2 then we are varying initial Spline Point x0, y0 params
+    if (idxparam == 0)
     {
-        ret = sgn*0.05;
+        ret = sgn*0.5;
         outspline[0].x -= ret;
-
     }else if (idxparam == 1)
     {
-        ret = sgn*0.05;
+        ret = sgn*0.5;
         outspline[0].y -= ret;
+    }// segment size,
+    else if (idxparam == 2)
+     {
 
-    }else //Index > 1 is spine Angles
+      //  if (dvarSpineSeg < this->c_MaxSpineLengthLimit)
+       ret = sgn*0.3;
+      //  else
+      //      ret = sgn*0.0000001; //Stop
+
+        dvarSpineSeg += ret;
+        outspline[0].spineSegLength = dvarSpineSeg;
+    }
+    else //Index > 2 is spine Angles
     {
-        outspline[idxparam-2].angleRad += dAngleStep;// Angle variation for this theta
-        ret = dAngleStep*this->c_spineSegL+cos(dAngleStep)*this->c_spineSegL; //rTheta
+        outspline[idxparam-3].angleRad += dAngleStep;// Angle variation for this theta
+        ret = dAngleStep*dvarSpineSeg+cos(dAngleStep)*dvarSpineSeg; //rTheta
     }
 
     //Readjust xi,yi (In variational terms calc x_i = f(q1,q2,q3..), y_i = f(q1,q2,q3..)
@@ -243,6 +256,7 @@ void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outp
     //outparams[1] = inspline[0].y;
     outparams.push_back(inspline[0].x);
     outparams.push_back(inspline[0].y);
+    outparams.push_back(inspline[0].spineSegLength); //Assume same Length Across Spine, given by 1st knot
     for (int i=0;i<(c_spinePoints);i++)
     {
         outparams.push_back(inspline[i].angleRad);
@@ -262,14 +276,20 @@ void fishModel::getSplineParams(t_fishspline& inspline,std::vector<double>& outp
 /// \brief Modifies a Spline according to Cspace params
 void fishModel::setSplineParams(t_fishspline& inspline,std::vector<double>& inparams)
 {
+    double dvarSpineSegLength;
     for (int i=0;i<(c_spineParamCnt);i++)
     {
         if (i==0)
             inspline[0].x = inparams[0];
         if (i==1)
             inspline[0].y = inparams[1];
-        if (i>1)
-            inspline[i-2].angleRad = inparams[i]; //Param 3 is actually 1st spine knot's angle
+        if (i==2) //Segment Size
+        {
+            dvarSpineSegLength = inparams[2];
+            inspline[0].spineSegLength = dvarSpineSegLength;
+        }
+        if (i>2)
+            inspline[i-3].angleRad = inparams[i]; //Param 3 is actually 1st spine knot's angle
     }
 
     //Readjust xi,yi (In variational terms calc x_i = f(q1,q2,q3..), y_i = f(q1,q2,q3..)
@@ -285,9 +305,12 @@ float fishModel::vergenceAngle()
 /// \brief Implements spine Curve function by combining piecewise elements
 cv::Point2f fishModel::getPointAlongSpline(float z,t_fishspline& pspline)
 {
-    const float spineLength = this->c_spineSegL*pspline.size(); //The fitted Spine's lentgh is fixed
-    int idx = z/this->c_spineSegL; //Find knot index which is contains point
-    double segLen = z - idx*this->c_spineSegL;  //Modulo Find length input var along a linear segment
+    //const float spineLength = this->c_spineSegL*pspline.size(); //The fitted Spine's lentgh is fixed
+    const float spineSegLength = pspline[0].spineSegLength;
+    const float spineLength = spineSegLength*pspline.size(); //The fitted Spine's lentgh is fixed
+
+    int idx = z/spineSegLength; //Find knot index which is contains point
+    double segLen = z - idx*spineSegLength;  //Modulo Find length input var along a linear segment
 
     if (idx > (pspline.size()-1)) //If Input Exceeds Spine Length
         return  cv::Point2f(pspline[pspline.size()-1].x,pspline[pspline.size()-1].y);
@@ -311,15 +334,17 @@ cv::Point2f fishModel::getPointAlongSpline(float z,t_fishspline& pspline)
 double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 {
 
-    const int spineLength = this->c_spineSegL*pspline.size(); //The fitted Spine's lentgh is fixed
+    //const int spineLength = this->c_spineSegL*pspline.size(); //The fitted Spine's lentgh is fixed
+    const int spineLength = pspline[0].spineSegLength*pspline.size(); //The fitted Spine's varies
     const double dCStep = 0.3; //Step size on when searching along Spine Curve for closest Point (Foot Point )tk
 
     int idxNear = 0;
+    //Take Spine  Point From Body / Set As foot point
     cv::Point2f ptFoot = cv::Point2f(pspline[idxNear].x,pspline[idxNear].y);
     //double distX = pow(ptsrc.x-ptFoot.x,2);
     //double distY = pow(ptsrc.y-ptFoot.y,2);
     double mindist;// = sqrt(distX + distY);
-    mindist= cv::norm(ptsrc-ptFoot);
+    mindist= cv::norm(ptsrc-ptFoot); //Start from Foot / Body Point look for point closer than this
     double dist = mindist;
 
     float fScanC = 0.0;
@@ -368,7 +393,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->bearingRads   =  Angle*CV_PI/180.0;
     this->ptRotCentre    = bcentre;
     this->zfishBlob      = *fblob;
-    this->c_spineSegL   = SpineSegLength;
+    //this->c_spineSegL   = SpineSegLength;
     this->zTrack.pointStack.push_back(bcentre);
     this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
@@ -402,26 +427,20 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 }
 
 
-///
-/// \brief fishModel::fitSpineToContour / Least squares fit of constrained spline model with params x0,yo, and theta_i-n
-///
-/// \param contours_body
-/// \param idxInnerContour
-/// \param idxOuterContour
-/// \warning uses arbitrary constants for detecting fit error or convergence
-/// \return fitness error score
-///
-double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
+/// \brief Revised fitSpineContour , V2- Faster as it focuses/iterates around the spine points not the contour points
+///  and uses the OpenCV pointPolygonTest to measure point distance to contour.
+/// \param contours_body Fish Body Contour
+/// \param frameImg_grey
+double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     static const int cntParam = this->c_spineParamCnt;
-    static const int gcFishContourSize = ZTF_FISHCONTOURSIZE+1;//Fixed PLus 1 tail Point
+    static const int cFitSpinePointsCount = ZTF_TAILSPINECOUNT;//
 
     //Parameter Found By Experience for current size fish
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
 
     //Run Until Convergence Error is below threshold - Or Change is too small
 
-    assert(contours_body.size() >= idxOuterContour && contours_body[idxOuterContour].size() == gcFishContourSize);
     ///Compute Error terms for all data points/obtain local quadratic approx of fsd
     //For each contour Point
     std::vector<cv::Point> contour = contours_body[idxOuterContour];
@@ -436,8 +455,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
     double dTemp = 1.0; //Anealling Temperature
     /// \todo Optimize - Make Fish Contour Size Fixed - Then Allocate this as a buffer on the heap and reuse
-    static double dJacobian[gcFishContourSize][cntParam];//Vector of \nabla d for error functions
-    memset(dJacobian,0.0,gcFishContourSize*(cntParam)*sizeof(double));
+    static double dJacobian[cFitSpinePointsCount][cntParam];//Vector of \nabla d for error functions
+    memset(dJacobian,0.0,cFitSpinePointsCount*(cntParam)*sizeof(double));
 
     static double dGradf[cntParam];//Vector of Grad F per param
     memset(dGradf,0.0,cntParam*sizeof(double));
@@ -445,8 +464,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     static double dGradi[cntParam];//Vector of Grad Intensity per SPine POint param
     memset(dGradi,0.0,cntParam*sizeof(double));
 
-    static double dResiduals[gcFishContourSize];//Vector of \nabla d for error functions
-    memset(dResiduals,0.0,gcFishContourSize*sizeof(double));
+    static double dResiduals[cFitSpinePointsCount];//Vector of \nabla d for error functions
+    memset(dResiduals,0.0,cFitSpinePointsCount*sizeof(double));
 
     int cntpass     = 0;
     int cntStuck    = 0; //Number of Cycles solution has converge to an unnacceptable solution
@@ -456,10 +475,10 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     while (cntpass < gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
     {
         //Converged But Error Is still Large per Countour Point Then Jolt
-        if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > 10) //Time Out Convergece Count
+        if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > c_fitErrorPerContourPoint) //Time Out Convergece Count
         {
-            cntStuck++;
-            dVarScale = dVarScale*1.12;
+           cntStuck++;
+           dVarScale = -dVarScale*1.0; //*1.2
         }
         else
         {
@@ -468,7 +487,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
         }
 
         //Check For Ealy Convergence And Stop Early
-        if (std::abs(dDifffitPtError_total) < 0.06 && dfitPtError_total/contour.size() <= 8) //Time Out Convergece Count
+        if (std::abs(dDifffitPtError_total) <= c_fitErrorPerContourPoint) //Time Out Convergece Count
         {
             cntSolved++;
             //dVarScale = dVarScale*0.93;
@@ -494,10 +513,22 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
         double dq,ds; //Variation In Space And Score Variation
         //For Each Contour Point
-        for (uint i=0;i<gcFishContourSize;i+=1) //For Each Data point make a row in Jacobian
+       ///\todo invert the problem, go through each spine point and check against contour
+        for (uint i=1;i<cFitSpinePointsCount;i+=1) //For Each Data point make a row in Jacobian
         {
-            dResiduals[i] = distancePointToSpline((cv::Point2f)contour[i],tmpspline);
-
+            //dResiduals[i] = distancePointToSpline((cv::Point2f)contour[i],tmpspline);
+            //Distance to closest Contour Edge, +ve inside, 0 on edge -ve outside
+            // Invert so minimum is at centre of contour
+            dResiduals[i] = -pointPolygonTest(contour, cv::Point2f(tmpspline[i].x,tmpspline[i].y), true );
+            //Add Extra Grad Info/Cost for small segLength / thus pulling to longer spine length
+            dResiduals[i] -= (0.5)*c_MaxSpineLengthLimit/tmpspline[i].spineSegLength;
+           // double penalty = dResiduals[i]*0.10; //Calc Scaled Penalty
+           // for (int s=0;s<tmpspline.size();s++)
+           // {
+           //     int pptTest = pointPolygonTest(contour, cv::Point2f(tmpspline[s].x,tmpspline[s].y), false );
+           //     if (pptTest < 0 ) //if spine point is outside contour then increase residuals
+           //         dResiduals[i] += penalty;
+            //}
             dfitPtError_total       +=dResiduals[i];
 
             //Add Variation dx to each param and calc derivative
@@ -507,12 +538,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
                 dq = getdeltaSpline(tmpspline,dsSpline,k,dVarScale); //Return param variation
                 // dsSpline residual of variation spline
-                ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline);
-                //dsSpline.clear();
-                //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
-                //ds += distancePointToSpline((cv::Point2f)contour[i],dsSpline); // Add df dsSpline residual of variation spline
-
-                //if (dq > 0.0)
+                ds = -pointPolygonTest(contour, cv::Point2f(dsSpline[i].x,dsSpline[i].y), true );
                 {
                     dJacobian[i][k] = (ds-dResiduals[i])/(dq);
                     //Got towards smaller Distance
@@ -524,33 +550,38 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
         }//Loop Through All Contour (Data points)
 
-        //Now Using Intensity Specific Algorithm
+//        //Now Using Intensity Specific Algorithm
 //        ///Add Gradient Of Intensity - GradNow - GradVs - Spine Point Struct indexes Range from 0 To SpinePointCount
-//        for (int k=2;k < cntParam; k++)
+//        calcSpline(tmpspline);
+//        for (int k=1;k < cFitSpinePointsCount; k++)
 //        {
+//            //Get Variation Of Spine Point
+//            dq = getdeltaSpline(tmpspline,dsSpline,k+2,0.8); //Return Angle param variation
+//            calcSpline(dsSpline); //Calc Position Of Next Spine Point Based On Angle Of Preceding one
 
-//            float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y));
-//            float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k-2].x,dsSpline[k-2].y));
-//            double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
-//            //Go Towards Higher INtensity Pixels
+//            float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k].x,tmpspline[k].y));
+//            float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k].x,dsSpline[k].y));
 //            dGradi[k]           += (pxi1 - pxi0)/dq;
+/////       double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
 //        }
 
         std::vector<double> cparams(c_spineParamCnt);
+        //Recover Params from tmp Spline
         getSplineParams(tmpspline,cparams);
         assert(cparams.size() == c_spineParamCnt);
 
-        ///modify CSpace Params with gradient descent
-        for (int i=0;i<cntParam;i++)
+        //Pass and modify CSpace Params with gradient descent
+        cparams[2] -= 0.001*dGradf[2]; //- 0.0001*dGradi[2];
+        for (int i=3;i<cntParam;i++)
         {   //Go Down Distance to Contour And Up Intensity Gradient
-            cparams[i] -= 0.01*dGradf[i] - 0.01*dGradi[i];
+            cparams[i] += 0.01*dGradf[i];// -  0.01*dGradi[i];
+
 #ifdef _ZTFDEBUG_
             qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.005*dGradi[i];
 #endif
         }
-        ///Modify Spline - ie move closer
+        // Adapt spline Using the modified Params that follow the contour distance gradient
         setSplineParams(tmpspline,cparams);
-
 
         dDifffitPtError_total = dfitPtError_total - dfitPtError_total_last; //Total Residual /Error Measure Change
 
@@ -567,7 +598,8 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
 
         this->spline            = tmpspline;
-        this->lastTailFitError = dDifffitPtError_total/c_spinePoints;
+        this->c_spineSegL       = tmpspline[0].spineSegLength;
+        this->lastTailFitError = dfitPtError_total/c_spinePoints;
 
 
 #ifdef _ZTFDEBUG_
@@ -586,9 +618,10 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 #endif
 ///    End Debug ///
 
-    return dDifffitPtError_total;
+    return dfitPtError_total; //Return Total Fit Error
    // qDebug() << "D err:" << dDifffitPtError_total;
 }
+
 
 
 void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
@@ -672,6 +705,11 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 2, ellipse_pts);
 
+        if (ellipse_pts.size() ==0)
+        {
+            qDebug() << "fitSpineToIntensity: Failed empty ellipse2Poly";
+            continue;
+        }
         ///Calculate Moment of inertia Sum m theta along arc
         pxValMax                = 0;
         uint iTailArcMoment     = 0;
@@ -816,6 +854,7 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
        out << "\t" << Rad2Deg*( h.spline[i-1].angleRad - h.spline[i].angleRad);
 
     }
+     out << "\t" << h.c_spineSegL;
      out << "\t" << h.templateScore;
      out << "\t" << h.lastTailFitError;
      out << "\t" << h.leftEye.fitscore;
@@ -831,4 +870,203 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
 
 
 
+
+
+
+///
+/// \brief fishModel::fitSpineToContour / Least squares fit of constrained spline model with params x0,yo, and theta_i-n
+///
+/// \param contours_body
+/// \param idxInnerContour
+/// \param idxOuterContour
+/// \warning uses arbitrary constants for detecting fit error or convergence
+/// \return fitness error score
+///
+double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
+{
+    static const int cntParam = this->c_spineParamCnt;
+    static const int gcFishContourSize = ZTF_FISHCONTOURSIZE+1;//Fixed PLus 1 tail Point
+
+    //Parameter Found By Experience for current size fish
+    ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
+
+    //Run Until Convergence Error is below threshold - Or Change is too small
+
+    assert(contours_body.size() >= idxOuterContour && contours_body[idxOuterContour].size() == gcFishContourSize);
+    ///Compute Error terms for all data points/obtain local quadratic approx of fsd
+    //For each contour Point
+    std::vector<cv::Point> contour = contours_body[idxOuterContour];
+    t_fishspline tmpspline = this->spline;
+    t_fishspline dsSpline; //Variational Spline
+
+    //Measure squared Distance error to closest Curve(spline) Point
+        //Add to total error
+    double dfitPtError_total = 10000.0;
+    double dfitPtError_total_last = 0.0;
+    double dDifffitPtError_total = 1000.0;
+
+    double dTemp = 1.0; //Anealling Temperature
+    /// \todo Optimize - Make Fish Contour Size Fixed - Then Allocate this as a buffer on the heap and reuse
+    static double dJacobian[gcFishContourSize][cntParam];//Vector of \nabla d for error functions
+    memset(dJacobian,0.0,gcFishContourSize*(cntParam)*sizeof(double));
+
+    static double dGradf[cntParam];//Vector of Grad F per param
+    memset(dGradf,0.0,cntParam*sizeof(double));
+
+    static double dGradi[cntParam];//Vector of Grad Intensity per SPine POint param
+    memset(dGradi,0.0,cntParam*sizeof(double));
+
+    static double dResiduals[gcFishContourSize];//Vector of \nabla d for error functions
+    memset(dResiduals,0.0,gcFishContourSize*sizeof(double));
+
+    int cntpass     = 0;
+    int cntStuck    = 0; //Number of Cycles solution has converge to an unnacceptable solution
+    int cntSolved   = 0; //Number of Cycles Solution Is acceptable
+    double dVarScale    = 1.0;
+    //Do A number of Passes Before  Convergence //&& (dfitPtError_total/contour.size() > 8)
+    while (cntpass < gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
+    {
+        //Converged But Error Is still Large per Countour Point Then Jolt
+        if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > 10) //Time Out Convergece Count
+        {
+            cntStuck++;
+           dVarScale = -dVarScale*1.0; //*1.2
+        }
+        else
+        {
+            cntStuck    = 0;
+            dVarScale   = 1.0;
+        }
+
+        //Check For Ealy Convergence And Stop Early
+        if (std::abs(dDifffitPtError_total) < 0.06 && dfitPtError_total/contour.size() <= 8) //Time Out Convergece Count
+        {
+            cntSolved++;
+            //dVarScale = dVarScale*0.93;
+        }
+        else
+        {
+            cntSolved   = 0;
+            dVarScale   = 1.0;
+        }
+
+
+        //Reset Grad INfo - Start Pass From Last Point
+        memset(dGradi,0.0,cntParam*sizeof(double));
+        memset(dGradf,0.0,cntParam*sizeof(double));
+
+        cntpass++;
+        ///For Annealing
+        dTemp = (double)cntpass/gMaxFitIterations;
+        //Prob Of Acceptance P = exp(-(sn-s)/T) >= drand
+        ///
+        dfitPtError_total_last  = dfitPtError_total;
+        dfitPtError_total       = 0.0; //Reset
+
+        double dq,ds; //Variation In Space And Score Variation
+        //For Each Contour Point
+       ///\todo invert the problem, go through each spine point and check against contour
+        for (uint i=0;i<gcFishContourSize;i+=1) //For Each Data point make a row in Jacobian
+        {
+            dResiduals[i] = distancePointToSpline((cv::Point2f)contour[i],tmpspline);
+           // double penalty = dResiduals[i]*0.10; //Calc Scaled Penalty
+           // for (int s=0;s<tmpspline.size();s++)
+           // {
+           //     int pptTest = pointPolygonTest(contour, cv::Point2f(tmpspline[s].x,tmpspline[s].y), false );
+           //     if (pptTest < 0 ) //if spine point is outside contour then increase residuals
+           //         dResiduals[i] += penalty;
+            //}
+            dfitPtError_total       +=dResiduals[i];
+
+            //Add Variation dx to each param and calc derivative
+            //Start from param idx 2 thus skipping the 1st point(root ) position and only do angle variations
+            for (int k=2;k < cntParam; k++)
+            {   /// \note using only +ve dx variations and not -dx - In this C space Ds magnitude should be symmetrical to dq anyway
+
+                dq = getdeltaSpline(tmpspline,dsSpline,k,dVarScale); //Return param variation
+                // dsSpline residual of variation spline
+                ds = distancePointToSpline((cv::Point2f)contour[i],dsSpline);
+                //dsSpline.clear();
+                //getdeltaSpline(tmpspline,dsSpline,k,-0.25) ; //add dx
+                //ds += distancePointToSpline((cv::Point2f)contour[i],dsSpline); // Add df dsSpline residual of variation spline
+
+                //if (dq > 0.0)
+                {
+                    dJacobian[i][k] = (ds-dResiduals[i])/(dq);
+                    //Got towards smaller Distance
+                    dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
+                }
+
+
+            }
+
+        }//Loop Through All Contour (Data points)
+
+        //Now Using Intensity Specific Algorithm
+//        ///Add Gradient Of Intensity - GradNow - GradVs - Spine Point Struct indexes Range from 0 To SpinePointCount
+//        for (int k=2;k < cntParam; k++)
+//        {
+
+//            float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y));
+//            float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k-2].x,dsSpline[k-2].y));
+//            double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
+//            //Go Towards Higher INtensity Pixels
+//            dGradi[k]           += (pxi1 - pxi0)/dq;
+//        }
+
+        std::vector<double> cparams(c_spineParamCnt);
+        getSplineParams(tmpspline,cparams);
+        assert(cparams.size() == c_spineParamCnt);
+
+        ///modify CSpace Params with gradient descent
+        //cparams[2] -= 0.001*dGradf[2] - 0.01*dGradi[2];
+        for (int i=0;i<cntParam;i++)
+        {   //Go Down Distance to Contour And Up Intensity Gradient
+            cparams[i] -= 0.01*dGradf[i] - 0.01*dGradi[i];
+#ifdef _ZTFDEBUG_
+            qDebug() << "lamda GradF_"<< i << "-:" << 0.01*dGradf[i] << " GradI:" << 0.005*dGradi[i];
+#endif
+        }
+        ///Modify Spline - ie move closer
+        setSplineParams(tmpspline,cparams);
+
+
+        dDifffitPtError_total = dfitPtError_total - dfitPtError_total_last; //Total Residual /Error Measure Change
+
+        //if (dfitPtError_total > 1000)
+            //this->resetSpine(); //Start over
+
+
+    }//While Error Change Is larger Than
+
+#ifdef _ZTFDEBUG_
+    qDebug() << "ID:" <<  this->ID << cntpass << " EChange:" << dDifffitPtError_total;
+#endif
+
+
+
+        this->spline            = tmpspline;
+        this->c_spineSegL       = tmpspline[0].spineSegLength;
+        this->lastTailFitError = dfitPtError_total/c_spinePoints;
+
+
+#ifdef _ZTFDEBUG_
+        qDebug() << "Converged in n: " << cntpass;
+#endif
+
+
+///  DEBUG ///
+#ifdef _ZTFDEBUG_
+    for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
+    {
+        cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
+    }
+    cv::drawContours(frameDebugC,contours_body,idxOuterContour,CV_RGB(200,20,20),1);
+
+#endif
+///    End Debug ///
+
+    return dfitPtError_total; //Return Total Fit Error
+   // qDebug() << "D err:" << dDifffitPtError_total;
+}
 

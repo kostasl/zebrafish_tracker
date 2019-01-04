@@ -34,6 +34,7 @@ extern bool bRecordToFile;
 extern bool bRemovePixelNoise;
 extern bool bUseBGModelling;
 extern bool bUseGPU;
+extern bool bUseHistEqualization; //For eye Segmentation
 
 
 bool bSceneMouseLButtonDown;
@@ -105,8 +106,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->checkBoxGPU->setChecked(bUseGPU);
     this->ui->checkBoxMOG->setChecked(bUseBGModelling);
     this->ui->checkBoxNoiseFilter->setChecked(bRemovePixelNoise);
-    this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
-    this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
+
+    this->ui->checkBoxHistEqualizer->setChecked(bUseHistEqualization);
 
     createSpinBoxes();
     nFrame = 0;
@@ -118,8 +119,11 @@ void MainWindow::createSpinBoxes()
     this->ui->spinBoxFrame->installEventFilter(this);
 
     this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
-    this->ui->spinBoxEyeThres->setRange(-100,400); //-Ve Values Allow for lowering Avg Threshold
+    this->ui->spinBoxEyeThres->setRange(-500,500); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gthresEyeSeg);
+
+    this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
+    this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
 
 
 
@@ -363,6 +367,7 @@ void MainWindow::fishvalueChanged(int i)
     qDebug() << "fish SpinBox gave " << i;
     LogEvent(QString("Changed Fish BG Threshold:") + QString::number(i));
     g_Segthresh = i;
+
  }
 
 void MainWindow::maxEllipseSizevalueChanged(int i)
@@ -984,6 +989,16 @@ void MainWindow::on_checkBoxNoiseFilter_toggled(bool checked)
 //}
 
 //Set New Minimum Thrshold Scan range for Food Segmentation
+
+//Main Loop Calls this to update The GUI SpinBox on current fitted Spine Size
+void MainWindow::UpdateTailSegSizeSpinBox(float fTailSize)
+{
+    this->ui->doubleSpinBoxSpineSegSize->blockSignals(true);  //Don't fire change Event (avoid implicit conv to int)
+    this->ui->doubleSpinBoxSpineSegSize->setValue(fTailSize);
+    this->ui->doubleSpinBoxSpineSegSize->blockSignals(false);  //Don't fire change Event (avoid implicit conv to int)
+
+}
+
 void MainWindow::on_spinBoxFoodThresMin_valueChanged(int arg1)
 {
     g_SegFoodThesMin = arg1;
@@ -998,11 +1013,20 @@ void MainWindow::on_spinBoxSpineSegSize_valueChanged(int arg1)
 {
     tailSizevalueChanged(arg1);
 }
-void MainWindow::tailSizevalueChanged(int i)
+void MainWindow::tailSizevalueChanged(float i)
 {
     qDebug() << "Tails SpinBox gave " << i;
     LogEvent(QString("Tail Segment Size changed:") + QString::number(i));
     gFishTailSpineSegmentLength = i;
+    //Update All fish Model's spine Length
+    fishModels::iterator ft = vfishmodels.begin();
+    while (ft != vfishmodels.end() ) //Render All Fish
+    {
+        fishModel* pfish = ft->second;
+        pfish->c_spineSegL = i;
+
+        ++ft;
+    }
 
 }
 
@@ -1010,4 +1034,14 @@ void MainWindow::tailSizevalueChanged(int i)
 void MainWindow::on_spinBoxFoodThresMin_editingFinished()
 {
 
+}
+
+void MainWindow::on_doubleSpinBoxSpineSegSize_valueChanged(double arg1)
+{
+    tailSizevalueChanged(arg1);
+}
+
+void MainWindow::on_checkBoxHistEqualizer_clicked(bool checked)
+{
+    bUseHistEqualization = checked;
 }

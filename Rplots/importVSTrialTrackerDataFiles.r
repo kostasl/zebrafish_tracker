@@ -22,7 +22,7 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   strDataFileNameRDS <- paste(strDataExportDir,"/setn1_Dataset_", strDataSetIdentifier,".rds",sep="") ##To Which To Save After Loading
   message(paste(" Importing to:",strDataFileName))
   ##RUN IMPORT FUNCTION
-  datAllFrames <-importTrackerFilesToFrame(groupsrcdatList)
+  datAllFrames <-importTrackerFilesToFrame(groupsrcdatList,"extractFileNameParams_huntingExp") ##2nd param is funct. to extract data from filename
   datAllFrames$dataSet <- idxDataSet ##Identify DataSet
   
   datAllSets[[n]] <- datAllFrames
