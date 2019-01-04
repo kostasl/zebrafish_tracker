@@ -87,16 +87,20 @@ cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == 
 
 dev.off() ##Clear Old plot
  plot(densLLScore,col=colourH[2],main="Hunt Power",
-      xlab=expression(S^2/(S+F),paste("")) ,type="l",lwd=2,ylim=c(0,0.7))
+      xlab=expression(S^2/(S+F),paste("")) ,type="l",lwd=2,pch=pchL[2],ylim=c(0,0.7))
  lines(densNLScore,col=colourH[3],lwd=2)
- lines(densDLScore,col=colourH[1],lwd=2)
+ lines(densDLScore,col=colourH[1],lwd=2,pch=pchL[3])
  legend("topright",legend=paste(c("DL #","LL #","NL #"),c(densDLScore$n,densLLScore$n,densNLScore$n) ),fill = colourH)
 
 ## Plot CDF ##
-plot(cdfDLScore,lty=2,lwd=1,col=colourH[1],xlim=c(0,12),xlab=expression(S^2/(S+F),paste("")) )
-plot(cdfLLScore,add=T,lty=1,lwd=2,col=colourH[2])
-plot(cdfNLScore,add=T,lty=1,lwd=2,col=colourH[3])
-legend("bottomright",legend=paste(c("DL #","LL #","NL #"),c(densDLScore$n,densLLScore$n,densNLScore$n) ),fill = colourH)
+pdf(file= paste(strPlotExportPath,"/stat/efficiency/ecdf_huntpower.pdf",sep=""))
+  plot(cdfDLScore,lty=2,lwd=1,col=colourH[1],cex.axis=1.3,xlim=c(0,12),pch=pchL[1],ylim=c(0.001,1.01),
+       main="Hunting power ECDF",ylab="",
+     xlab=expression(N[S]^2/(N[S]+N[F]),paste("")) )
+  plot(cdfLLScore,add=T,lty=1,lwd=2,col=colourH[2],pch=pchL[2],ylim=c(0,1.01))
+  plot(cdfNLScore,add=T,lty=1,lwd=2,col=colourH[3],pch=pchL[3],ylim=c(0,1.01))
+  legend("bottomright",legend=paste(c("DL #","LL #","NL #"),c(densDLScore$n,densLLScore$n,densNLScore$n) ),col = colourH,pch=pchL)
+dev.off()
 
 ## Motivation
 densDLMotivation <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$Success+datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$Fails)
@@ -108,15 +112,10 @@ lines(densNLMotivation,col=colourH[3],lwd=2)
 lines(densDLMotivation,col=colourH[1],lwd=2)
 legend("topright",legend=paste(c("DL #","LL #","NL #"),c(densDLMotivation$n,densLLMotivation$n,densNLMotivation$n) ),fill = colourH)
 
-
-hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$Success+datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$Fails,breaks=30)
-hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$Success+datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$Fails,breaks=30)
-hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$Success+datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$Fails,breaks=30)
-
 ##How Many Fish From Each Group Have A Score Higher Than :
 tblSuccessDist <- table(datFishSuccessRate[datFishSuccessRate$Success > 0, ]$groupID,datFishSuccessRate[datFishSuccessRate$Success > 0, ]$Success )
 
-
+## Examine Table of Hunt Power
 table(datFishSuccessRateActive[datFishSuccessRateActive$vEfficiencyRatio > 0.0,]$groupID,
       round(datFishSuccessRateActive[datFishSuccessRateActive$vEfficiencyRatio > 0.0,]$Success*datFishSuccessRateActive[datFishSuccessRateActive$vEfficiencyRatio > 0.0,]$vEfficiencyRatio*10)/10 )
 

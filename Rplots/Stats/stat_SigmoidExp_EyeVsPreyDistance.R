@@ -252,6 +252,77 @@ modelGCSigmoidInd  <- "model
   
   
   
+  #This function converts an mcmc list correctly into an mcarray (It may not be needed).
+  `as.mcmc.list.mcarray` <-
+    function (x, ...) 
+    {
+      if (is.null(dim(x)) || is.null(names(dim(x)))) {
+        NextMethod()
+      }
+      xdim <- dim(x)
+      ndim <- length(xdim)
+      dn <- names(xdim)
+      which.iter <- which(dn == "iteration")
+      if (length(which.iter) != 1) {
+        stop("Bad iteration dimension in mcarray")
+      }
+      which.chain <- which(dn == "chain")
+      if (length(which.chain) > 1) {
+        stop("Bad chain dimension in mcarray")
+      }
+      niter <- xdim[which.iter]
+      if (length(which.chain) == 0) {
+        perm <- c(which.iter,(1:ndim)[-which.iter])
+        x <- matrix(aperm(x, perm), nrow = niter)
+        ans <- mcmc.list(mcmc(x))
+      }
+      else {
+        nchain <- xdim[which.chain]
+        ans <- vector("list", nchain)
+        len <- prod(xdim[-which.chain])
+        perm <- c(which.iter, (1:ndim)[-c(which.iter, which.chain)], 
+                  which.chain)
+        x <- aperm(x, perm)
+        for (i in 1:nchain) {
+          ans[[i]] <- mcmc(matrix(x[1:len + (i - 1) * len], nrow = niter))
+        }
+        ans <- mcmc.list(ans)
+      }
+      return(ans)
+    }
+  environment(as.mcmc.list.mcarray)<-environment(rjags:::as.mcmc.list.mcarray) #coda 
+  
+  as.mcarray.mcmc.list <- function(x){
+    var.index <- dimnames(x[[1]])[[2]]
+    vars <- strsplit(var.index,"\\[|\\]|,")
+    var.names <- sapply(vars,function(xx)xx[1])
+    var.names <- rle(var.names)
+    start <- c(1,cumsum(var.names$lengths)+1)
+    start <- start[-length(start)] # remove last one
+    stopat <- c(cumsum(var.names$lengths))
+    var.dims <- sapply(vars,function(xx)length(xx))-1
+    var.dims <- var.dims[start]
+    chain.length = dim(x[[1]])[1]
+    result <- list()
+    
+    for (i in 1:length(start)){
+      tmp <- switch(var.dims[i]+1,
+                    array(c(x[[1]][,start[i]],x[[2]][,start[i]],x[[3]][,start[i]]),
+                          dim=c(1,chain.length,3)),
+                    aperm(array(c(x[[1]][,start[i]:stopat[i]],x[[2]][,start[i]:stopat[3]],x[[1]][,start[i]:stopat[i]]),
+                                dim=c(chain.length,var.names$length[i],3)),c(2,1,3)),
+                    aperm(array(c(x[[1]][,start[i]:stopat[i]],x[[2]][,start[i]:stopat[3]],x[[1]][,start[i]:stopat[i]]),
+                                dim=c(chain.length,as.numeric(vars[[stopat[i]]][2:3]),3)),c(2,3,1,4)))
+      class(tmp)<- "mcarray"
+      names(dim(tmp)) <- switch(var.dims[i]+1,
+                                c("","iteration","chain"),
+                                c("","iteration","chain"),
+                                c("","","iteration","chain"))
+      result[[var.names$values[i]]] <- tmp
+    }
+    return(result)
+  }
+  
   
   ####Select Subset Of Data To Analyse
   
@@ -547,7 +618,10 @@ modelGCSigmoidInd  <- "model
   ## Compare convergence between the 3 chains for each trace 
   
   #### CalcInformation ##
-  load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))
+  #load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJAgsOUt_",fitseqNo,".RData",sep=""))
+  
+  load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_DL",fitseqNo,".RData",sep=""))      
+  
   idxH <- 1
   
   ## The gelman.diag gives you the scale reduction factors for each parameter.
