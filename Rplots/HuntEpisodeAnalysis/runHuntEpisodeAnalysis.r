@@ -221,7 +221,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   ## We can estimate a eye Angle Correction Factor due to tile as atan(tan(thetaV)*(vTailSegSize)/max(vTailSegSize) )
   vPitchEstimate <- acos((vTailSegSize)/max(vTailSegSize))*180/pi ##Estimate Pitch Assuming maxTailSeg Represents Level Fish
   vDPitchEstimate <- (-asin(diff(vTailSegSize)/max(vTailSegSize)) )*180/pi ##Change in Pitch
-  vEyeVPitchCorrected <- atan( tan( (pi/180) * vEyeV/2)/(max(vTailSegSize)/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
+  vEyeVPitchCorrected <- 2*atan( tan( (pi/180) * vEyeV/2)/(max(vTailSegSize)/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
   #X11()
   #plot((1000*1:NROW(vTailDisp)/Fs),vTailDisp,type='l')
   
@@ -358,10 +358,13 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
     ##Add Eye Angles  ##
     par(new = TRUE )
     par(mar=c(4,4,2,2))
-    plot(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],axes=F,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(-55,55))
+    plot(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],axes=F,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(-55,85))
     axis(side = 4,col="red")
     mtext(side = 4, line = 3, 'Angles (Deg)')
     lines(t,datRenderHuntEvent$LEyeAngle[1:NROW(t)],axes=F,col="blue",type='l',xlab=NA,ylab=NA)
+    lines(t,vEyeVPitchCorrected[1:NROW(t)],axes=F,col=rfc(11)[1],type='l',xlab=NA,ylab=NA,lwd=2,lty=4)
+    lines(t,vEyeV[1:NROW(t)],axes=F,col=rfc(11)[3],type='l',xlab=NA,ylab=NA,lwd=2,lty=4)
+    
     
     ##Add Angle To Prey OnTop Of Eye Angles##
     Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
@@ -442,7 +445,7 @@ if (vEventSpeed_smooth[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
                                  REyeAngle=datRenderHuntEvent$REyeAngle[EyeRegionToExtract],
                                  PitchEstimate=vPitchEstimate,
                                  PitchEstimateChange=vDPitchEstimate,
-                                 EyeVPitchCorrection=vEyeVPitchCorrection,
+                                 EyeVPitchCorrected=vEyeVPitchCorrected,
                                  DistToPrey=vDistToPrey_Fixed_FullRange[EyeRegionToExtract]*DIM_MMPERPX,
                                  DistToPreyInit= vDistToPrey_Fixed_FullRange[EyeRegionToExtract[min(which(EyeRegionToExtract > 0) ) ]]*DIM_MMPERPX,
                                  RegistarIdx           = as.numeric(rep(idxH,rows)),
