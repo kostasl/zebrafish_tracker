@@ -58,7 +58,7 @@ bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
 
 bf_eyes <- butter(4, 0.35,type="low",plane="z");
 bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
-bf_tailSegSize <- butter(4, 0.03,type="low"); ## Tail Segmemt Size iF Used to Estimate Pitch - Stiking Upwards
+bf_tailSegSize <- butter(4, 0.02,type="low"); ## Tail Segmemt Size iF Used to Estimate Pitch - Stiking Upwards
 ###
 #nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering ##moved to main
 
@@ -213,8 +213,15 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   vTailDispFilt <- filtfilt(bf_tailClass2,abs( vTailDisp) )  ##Heavily Filtered and Used For Classifying Bouts
   vTailSegSize <- filtfilt(bf_tailSegSize, datRenderHuntEvent$TailSegLength) ##Filter Fast Tail Size Fluctuations
   ##Remove Out Of Range Values Clip to +- 1SD ## Set to Mean Value
-  vTailSegSize[vTailSegSize < (mean(vTailSegSize)-2*sd(vTailSegSize) ) ] <- mean(vTailSegSize)-sd(vTailSegSize)
-  vTailSegSize[vTailSegSize > (mean(vTailSegSize)+2*sd(vTailSegSize) ) ] <- mean(vTailSegSize)+sd(vTailSegSize)
+  vTailSegSize[vTailSegSize < (mean(vTailSegSize)-1.5*sd(vTailSegSize) ) ] <- mean(vTailSegSize)-1.5*sd(vTailSegSize)
+  vTailSegSize[vTailSegSize > (mean(vTailSegSize)+1.5*sd(vTailSegSize) ) ] <- mean(vTailSegSize)+1.5*sd(vTailSegSize)
+  
+  #vDPitchEstimate <- -(1/max(vTailSegSize))*asin((vTailSegSize)/max(vTailSegSize))*180/pi ##Estimate The Angle looking Upwards (towards the surface) of the larvae
+  ##Change in Pitch Angle acos() 
+  ## We can estimate a eye Angle Correction Factor due to tile as atan(tan(thetaV)*(vTailSegSize)/max(vTailSegSize) )
+  vPitchEstimate <- acos((vTailSegSize)/max(vTailSegSize))*180/pi ##Estimate Pitch Assuming maxTailSeg Represents Level Fish
+  vDPitchEstimate <- (-asin(diff(vTailSegSize)/max(vTailSegSize)) )*180/pi ##Change in Pitch
+  vEyeVPitchCorrected <- atan( tan( (pi/180) * vEyeV/2)/(max(vTailSegSize)/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
   #X11()
   #plot((1000*1:NROW(vTailDisp)/Fs),vTailDisp,type='l')
   
@@ -333,10 +340,13 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
          xlab= "",#"(msec)",
          ylab="Degrees",
          col="blue",main=" Angle Displacement")
-    lines(t,cumsum(vTurnSpeed)[1:NROW(t)],type='l',lwd=2,
+    lines(t,cumsum(vTurnSpeed)[1:NROW(t)],type='l',lwd=2,lty=1,
          xlab=NA,
          ylab=NA,
          col="blue4")
+    ###Change In Pitch (Upwards Tilt)
+    lines(t,vPitchEstimate[1:NROW(t)],type='l',lwd=2,col='purple',lty=5) ##Convert to Pitch Change
+    legend("bottomright",legend=c("turn","pitch"),fill=c("blue4","purple"),lty=c(1,5) )
     
     par(new = FALSE)
     plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
@@ -372,7 +382,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
     plotTailSpectrum(vTailDisp)##Tail Spectrum
 
   dev.off() 
-  ##END OF PLOT
+  ## END OF SUMMARY HUNT EVENT PLOT ##
   
   ##Tail Fq Mode
   #X11()
@@ -420,15 +430,19 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   
   ##If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
   ## TODO Change this to a velocity Estimate for capture strike
-  if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
+  ##if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
+if (vEventSpeed_smooth[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
     bCaptureStrike <- 1 ##Set Flag
+  
   rows <- NROW(datRenderHuntEvent$LEyeAngle[EyeRegionToExtract])
   
   ##Estimate Pitch From Length Changes
   
   lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[EyeRegionToExtract ],
                                  REyeAngle=datRenderHuntEvent$REyeAngle[EyeRegionToExtract],
-                                 PitchEstimate=acos(vTailSegSize/max(vTailSegSize))*180/pi,
+                                 PitchEstimate=vPitchEstimate,
+                                 PitchEstimateChange=vDPitchEstimate,
+                                 EyeVPitchCorrection=vEyeVPitchCorrection,
                                  DistToPrey=vDistToPrey_Fixed_FullRange[EyeRegionToExtract]*DIM_MMPERPX,
                                  DistToPreyInit= vDistToPrey_Fixed_FullRange[EyeRegionToExtract[min(which(EyeRegionToExtract > 0) ) ]]*DIM_MMPERPX,
                                  RegistarIdx           = as.numeric(rep(idxH,rows)),
