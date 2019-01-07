@@ -27,8 +27,12 @@ TargetLabel <- as.numeric(readline("### Key In A Number For Which Label You want
 #gc <- sample(groupsList,1)
 datHuntEventPool <- datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$huntScore == TargetLabel &
                                                      datHuntEventAllGroupToValidate$eventID != 0 & 
-                                                     datHuntEventAllGroupToValidate$groupID %in% TargetGroups &
-                                                     is.na(datHuntEventAllGroupToValidate$markTracked),]
+                                                     datHuntEventAllGroupToValidate$groupID %in% TargetGroups 
+                                                   ,] ##&is.na(datHuntEventAllGroupToValidate$markTracked)
+
+if (NROW(datHuntEventPool) == 0)
+  stop("No Hunt records with that label were found")
+
 expID <- sample(datHuntEventPool$expID,1)
 datHuntEventPool <- datHuntEventPool[as.character(datHuntEventPool$expID) == expID ,]
 #datHuntEventPool <- datHuntEventPool[as.character(datHuntEventPool$eventID) == eventID ,]
