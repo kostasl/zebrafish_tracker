@@ -83,7 +83,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameMonitor,cv::Mat& outHeadFrameProc);
 // Uses Sampling around an arc below the eyes to determine Appropriate Eye Segmentation theshold (Max N values are used)
 //int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts);
-int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal);
+std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal);
 void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint);
 void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);
 

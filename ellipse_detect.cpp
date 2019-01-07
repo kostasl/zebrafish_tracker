@@ -324,9 +324,12 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
                 if (b > 1)
                 {
                     //Make A "weighted" Band Of width 3
-                    accumulator[b-1]+=1;
+                    //accumulator[b-2]+=1;
+                    accumulator[b-1]+=2;
                     accumulator[b]  +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    accumulator[b+1]+=1; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    accumulator[b+1]+=2; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    //accumulator[b+2]+=1; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head
 //                    double ellArea = M_PI*b*a;
 //                    int iellArea = 0;
@@ -442,7 +445,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 }
 
 ///
-/// \brief getEyeSegThreshold Samples all  points all arc in ellipseSample_pts and obtains median value
+/// \brief getEyeSegThreshold Samples all  points all arc in ellipseSample_pts and 3 values starting median intensity and moving up
 ///  //Deprecated : Uses a heap to samples the N most intense Pixels in an arc below the estimated position of the eyes given the
 /// upsampled head image
 /// \param pimgIn //Upsampled Grey Scale HEad Image
@@ -450,9 +453,9 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 /// \param ellipseSample_pts //Holds the Drawn Arc Points around the last spine Point
 /// \param minVal - The min Intensity Value Sampled
 /// \param maxVal - The min Intensity Value Sampled
-/// \return Grey threshold for Eye Segmentation (median value of sampled points)
+/// \return list Grey thresholds for Eye Segmentation (around median value of sampled points)
 ///
-int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal)
+std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal)
 {
         const int isampleN = EYE_SEG_SAMPLE_POINTS_COUNT;
         const int voffset = giHeadIsolationMaskVOffset+1;
@@ -465,6 +468,7 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
         //Top Element is the highest intensity
         //std::priority_queue<int,std::vector<int>> eyeSegMaxHeap;
         std::vector<int> veyeSegSamples(ellipseSample_pts.size());
+        std::vector<int> vretThresholds;
 
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(ptcenter, cv::Size(voffset/2,voffset*0.9), 0, 175,365 , 1, ellipseSample_pts);
@@ -487,11 +491,11 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
                 maxVal = val;
         }
 
-        /// Get the mean range of the Highest intensity pixels
+        /// Using the Heap - Get the mean range of the Highest intensity pixels
         // Add the Manual Entry And Divide to Get Mean Value
         //for (int i=0;i<isampleN && (eyeSegMaxHeap.size() > 0) ;i++)
         //{//Withdraw N values
-            //iThresEyeSeg  += eyeSegMaxHeap.top();//For Mean Value
+        //    iThresEyeSeg  += eyeSegMaxHeap.top();//For Mean Value
          //   eyeSegMaxHeap.pop();
         //}
         //Eye Segmentation is above the Nth highest value
@@ -500,21 +504,33 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
         //Get Mean Value
         //iThresEyeSeg = (iThresEyeSeg+gthresEyeSeg)/(isampleN+1);
 
-        //Get Approx Median Value
+        //Get 3 values starting from Approx Median Value moving up the intensity
         std::sort(veyeSegSamples.begin(),veyeSegSamples.end());
-        int idx = veyeSegSamples.size()/2 + gthresEyeSeg;
+
+        int idx = veyeSegSamples.size()*0.85 + gthresEyeSeg;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
+        iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
+        vretThresholds.push_back(iThresEyeSeg);
 
-        iThresEyeSeg = veyeSegSamples[idx];
+        idx = veyeSegSamples.size()*0.65 + gthresEyeSeg;
+        idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
+        iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
+        vretThresholds.push_back(iThresEyeSeg);
 
+        idx = veyeSegSamples.size()*0.50 + gthresEyeSeg;
+        idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
+        iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
+         vretThresholds.push_back(iThresEyeSeg);
 
 
         //Constaint Limit of Eye Seg Threshold and return
-    return std::min(std::max(3,iThresEyeSeg),255);
+    return vretThresholds;
 }
 
 ///
 /// \brief detectEllipses - Upsamples image Detects Eyes - Used oN Head Isolated Image
+///         Uses multiple thresholds to segment eyes and create egdes image.
+/// These edges are passed to the detectEllipse for detecting left and right eye -separate calls and are made isolating each eye
 /// \param pimgIn
 /// \param vellipses
 /// \param outHeadFrameMonitor Image TO report Back Underlying Process of segmentation / The Edge Detection
@@ -606,13 +622,14 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
      cv::equalizeHist(imgUpsampled_gray, imgUpsampled_gray);
 
     /// Estimate Eye Segmentation threshold from sample points in Image
-    int iThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
+    std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
-    //int ilFloodSeed=imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
+    int ilFloodSeed=imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
     //int irFloodSeed=imgUpsampled_gray.at<uchar>(ptREyeMid)+1;
     //int stepL = (ilFloodSeed - ilFloodRange)/gi_minEllipseMajor;
     //int stepR = (irFloodSeed - ilFloodRange)/gi_minEllipseMajor;
     //Assist by Filling Holes IN Eye Shape - Use Fill
+   // cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0);
     //cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(2*(ilFloodRange+1)-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),CV_FLOODFILL_FIXED_RANGE);
     //cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(2*(ilFloodRange+1)-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),CV_FLOODFILL_FIXED_RANGE);
 //    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(ilFloodSeed)/10),cv::Scalar(abs(ilFloodSeed)/10),CV_FLOODFILL_FIXED_RANGE);
@@ -633,14 +650,20 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     cv::circle(imgUpsampled_gray,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),giHeadIsolationMaskVOffset,CV_RGB(0,250,50),1); //Mask Body
 
 
-    // Do Thresholding Of Masked Image to Obtain Segmented Eyes //
-    cv::threshold(imgUpsampled_gray, imgIn_thres,iThresEyeSeg,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    // Do Multiple Thresholding Of Masked Image to Obtain Segmented Eyes //
+    cv::Mat imgIn_thres2;
+    cv::Mat imgIn_thres3,imgFishHead_Lapl2,imgFishHead_Lapl3;
+    cv::threshold(imgUpsampled_gray, imgIn_thres,viThresEyeSeg[0],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgUpsampled_gray, imgIn_thres2,viThresEyeSeg[1],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgUpsampled_gray, imgIn_thres3,viThresEyeSeg[2],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
 
     //Try Laplacian CV_8U
+    //cv::GaussianBlur(imgIn_thres,imgIn_thres,cv::Size(3,3),3,3);
     cv::Laplacian(imgIn_thres,imgFishHead_Lapl,imgIn_thres.type(),1);
-
-    imgFishHead_Lapl.copyTo(imgEdge_local);
-
+    cv::Laplacian(imgIn_thres2,imgFishHead_Lapl2,imgIn_thres.type(),1);
+    cv::Laplacian(imgIn_thres3,imgFishHead_Lapl3,imgIn_thres.type(),1);
+    //imgFishHead_Lapl.copyTo(imgEdge_local);
+    imgEdge_local = imgFishHead_Lapl + imgFishHead_Lapl2 + imgFishHead_Lapl3;
 
     //Separate Eyes Mask
     //Add Thick Mid line to erase inner Eye Edges and artefacts
@@ -739,12 +762,12 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
 
     ///Store Left Eye And Draw Detected Ellipsoid
-    if (qEllipsoids.size() > 0)
+    while (qEllipsoids.size() > 0)
     {
         //Pick Best Match For this Eye from to of Priority List
         lEll = qEllipsoids.top();
         //Draw it
-        drawEllipse(img_colour,lEll);
+        //drawEllipse(img_colour,lEll);
 
         //Store it To Output Vector
         vellipses.push_back(lEll);
@@ -832,10 +855,10 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     }
 
     // Check If Found and Draw R Eye //
-    if (qEllipsoids.size() > 0)
+    while (qEllipsoids.size() > 0)
     {
         rEll = qEllipsoids.top();
-        drawEllipse(img_colour,rEll);
+        //drawEllipse(img_colour,rEll);
         //Store it To Output Vector
         vellipses.push_back(rEll);
         ret++;

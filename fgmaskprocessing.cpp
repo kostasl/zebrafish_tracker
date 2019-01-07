@@ -719,13 +719,14 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             if (bUseGPU) dframe_thres.download(threshold_output);
         #endif
 
-       cv::imshow("Threshold Out",threshold_output);
-       //if (!outFoodMask.empty())
-       //cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
+       if (outFoodMask.empty())
+           cv::threshold( frameImg_gray, outFoodMask, g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
-        cv::imshow("Fish Mask",outFishMask);
-        if (!fgMask.empty())
-            cv::imshow("BG Model",fgMask);
+       cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
+       cv::imshow("Threshold Out",threshold_output);
+       cv::imshow("Fish Mask",outFishMask);
+       if (!fgMask.empty())
+           cv::imshow("BG Model",fgMask);
 
 
     }
