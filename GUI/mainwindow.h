@@ -116,6 +116,8 @@ private slots:
 
     void on_checkBoxHistEqualizer_clicked(bool checked);
 
+    void on_checkBoxMOG_stateChanged(int arg1);
+
 private:
     Ui::MainWindow      *ui;
 

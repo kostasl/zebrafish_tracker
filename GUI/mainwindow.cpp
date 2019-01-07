@@ -1045,3 +1045,8 @@ void MainWindow::on_checkBoxHistEqualizer_clicked(bool checked)
 {
     bUseHistEqualization = checked;
 }
+
+void MainWindow::on_checkBoxMOG_stateChanged(int arg1)
+{
+
+}

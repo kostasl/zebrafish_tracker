@@ -435,6 +435,8 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
     //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
     cv::bitwise_or(threshold_output,fgMask,maskFGImg); //Combine / Additive for FishFG
+    //Mask Out Stationary Points - Since We Are Using MOG
+    maskFGImg.copyTo(outFoodMask);
 
 
 #endif
@@ -452,8 +454,8 @@ else //No BG Modelling
         dframe_thres.download(threshold_output);
 #endif
 }
-//Mask Out Stationary Points
-maskFGImg.copyTo(outFoodMask,fgMask);
+
+
 
 //cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
 
@@ -717,10 +719,11 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             if (bUseGPU) dframe_thres.download(threshold_output);
         #endif
 
-           cv::imshow("Threshold Out",threshold_output);
+       cv::imshow("Threshold Out",threshold_output);
+       //if (!outFoodMask.empty())
+       //cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
 
         cv::imshow("Fish Mask",outFishMask);
-        cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
         if (!fgMask.empty())
             cv::imshow("BG Model",fgMask);
 

@@ -2157,8 +2157,10 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     //g_SegFoodThesMax = g_Segthresh*1.25; //Set to current Seg Thresh
     //g_SegFoodThesMin = g_Segthresh*0.80;
 
-    frame_grey.copyTo(frameMasked,maskimg); // Apply Mask
-
+    if (!maskimg.empty())
+        frame_grey.copyTo(frameMasked,maskimg); // Do not Apply Mask
+    else
+        frame_grey.copyTo(frameMasked);
 
     std::vector<cv::KeyPoint> keypoints;
 
