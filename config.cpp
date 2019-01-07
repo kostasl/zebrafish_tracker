@@ -21,7 +21,7 @@ const double dVarBlobArea                     = 20;
 const unsigned int gc_fishLength            = 100; //px Length Of Fish
 const unsigned int thresh_fishblobarea      = 350; //Min area above which to Filter The fish blobs
 const unsigned int thresh_maxfishblobarea = 2550; //Min area above which to Filter The fish blobs
-const unsigned int gthres_maxfoodblobarea = 60;
+const unsigned int gthres_maxfoodblobarea = thresh_fishblobarea/3;
 
 
 /// Constants ///

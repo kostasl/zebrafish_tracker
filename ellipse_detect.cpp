@@ -442,14 +442,15 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 }
 
 ///
-/// \brief getEyeSegThreshold Samples the N most intense Pixels in an arc below the estimated position of the eyes given the
+/// \brief getEyeSegThreshold Samples all  points all arc in ellipseSample_pts and obtains median value
+///  //Deprecated : Uses a heap to samples the N most intense Pixels in an arc below the estimated position of the eyes given the
 /// upsampled head image
 /// \param pimgIn //Upsampled Grey Scale HEad Image
 /// \param ptcenter //Center Of Head Image around which to estimate Eye Position
 /// \param ellipseSample_pts //Holds the Drawn Arc Points around the last spine Point
 /// \param minVal - The min Intensity Value Sampled
 /// \param maxVal - The min Intensity Value Sampled
-/// \return Grey threshold for Eye Segmentation
+/// \return Grey threshold for Eye Segmentation (median value of sampled points)
 ///
 int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal)
 {
@@ -461,11 +462,11 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
         maxVal = 0;
 
         //std::vector<cv::Point> ellipse_pts;
-        std::priority_queue<int,std::vector<int>> eyeSegMaxHeap;
-
+        //Top Element is the highest intensity
+        //std::priority_queue<int,std::vector<int>> eyeSegMaxHeap;
+        std::vector<int> veyeSegSamples(ellipseSample_pts.size());
 
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
-        //Crash Here Stack
         cv::ellipse2Poly(ptcenter, cv::Size(voffset/2,voffset*0.9), 0, 175,365 , 1, ellipseSample_pts);
         for (int i=0;i<ellipseSample_pts.size();i++)
         {
@@ -476,7 +477,8 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
             assert(ellipseSample_pts[i].x >= 0 && ellipseSample_pts[i].x <= pimgIn.cols);
             assert(ellipseSample_pts[i].y >= 0 && ellipseSample_pts[i].y <= pimgIn.rows);
             uchar val = pimgIn.at<uchar>(ellipseSample_pts[i]);
-            eyeSegMaxHeap.push(val);
+            //eyeSegMaxHeap.push(val);
+            veyeSegSamples.push_back(val);
 
             if (val < minVal && val > 0)
                 minVal = val;
@@ -485,18 +487,29 @@ int getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Poin
                 maxVal = val;
         }
 
-        for (int i=0;i<isampleN;i++)
-        {//Withdraw To N values
-            iThresEyeSeg  += eyeSegMaxHeap.top();
-            eyeSegMaxHeap.pop();
-        }
+        /// Get the mean range of the Highest intensity pixels
+        // Add the Manual Entry And Divide to Get Mean Value
+        //for (int i=0;i<isampleN && (eyeSegMaxHeap.size() > 0) ;i++)
+        //{//Withdraw N values
+            //iThresEyeSeg  += eyeSegMaxHeap.top();//For Mean Value
+         //   eyeSegMaxHeap.pop();
+        //}
+        //Eye Segmentation is above the Nth highest value
+        //iThresEyeSeg  = eyeSegMaxHeap.top()+gthresEyeSeg;
 
-        //Add the Manual Entry And Divide to Get Mean Value
-        iThresEyeSeg = (iThresEyeSeg+gthresEyeSeg)/(isampleN+1);
+        //Get Mean Value
+        //iThresEyeSeg = (iThresEyeSeg+gthresEyeSeg)/(isampleN+1);
+
+        //Get Approx Median Value
+        std::sort(veyeSegSamples.begin(),veyeSegSamples.end());
+        int idx = veyeSegSamples.size()/2 + gthresEyeSeg;
+        idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
+
+        iThresEyeSeg = veyeSegSamples[idx];
 
 
 
-
+        //Constaint Limit of Eye Seg Threshold and return
     return std::min(std::max(3,iThresEyeSeg),255);
 }
 
@@ -553,7 +566,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
     ptREyeMid.x = std::max(1,std::min(imgUpsampled_gray.cols,(int)ptREyeMid.x));
     ptREyeMid.y = std::max(1,std::min(imgUpsampled_gray.rows,(int)ptREyeMid.y));
     */
-    cv::GaussianBlur(imgUpsampled_gray,imgUpsampled_gray,cv::Size(3,3),3,3);
+    //cv::GaussianBlur(imgUpsampled_gray,imgUpsampled_gray,cv::Size(5,5),3,3);
 
 
     // Locate Eye Points //

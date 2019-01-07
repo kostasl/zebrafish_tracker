@@ -2153,8 +2153,9 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 {
 
     cv::Mat frameMasked;
-    g_SegFoodThesMax = g_Segthresh*1.25; //Set to current Seg Thresh
-    g_SegFoodThesMin = g_Segthresh*0.80;
+    //Thresholds Set By Gui
+    //g_SegFoodThesMax = g_Segthresh*1.25; //Set to current Seg Thresh
+    //g_SegFoodThesMin = g_Segthresh*0.80;
 
     frame_grey.copyTo(frameMasked,maskimg); // Apply Mask
 
