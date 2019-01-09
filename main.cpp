@@ -719,7 +719,7 @@ int main(int argc, char *argv[])
 unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStringList invideonames,unsigned int istartFrame = 0,unsigned int istopFrame = 0)
 {
     cv::Mat fgMask;
-    cv::Mat bgMask;
+    cv::Mat bgStaticMask;
 
     QString invideoname = "*.mp4";
     QString nextvideoname;
@@ -770,8 +770,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
        if ((bUseBGModelling && gbUpdateBGModel) || (bUseBGModelling && gbUpdateBGModelOnAllVids) )
        {
-            getBGModelFromVideo(bgMask, window_main,invideoname,outfilename,MOGhistory);
-            cv::bitwise_not ( bgMask, bgMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
+            getBGModelFromVideo(bgStaticMask, window_main,invideoname,outfilename,MOGhistory);
+            cv::bitwise_not ( bgStaticMask, bgStaticMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
 
             //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
             if (compString(invideoname,nextvideoname) < 3 && !gbUpdateBGModelOnAllVids)
@@ -796,7 +796,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
         //cv::destroyWindow("Accumulated BG Model");
 
         //Can Return 0 If DataFile Already Exists and bSkipExisting is true
-        uint ret = processVideo(bgMask,window_main,invideoname,outfishdatafile,istartFrame,istopFrame);
+        uint ret = processVideo(bgStaticMask,window_main,invideoname,outfishdatafile,istartFrame,istopFrame);
 
         if (ret == 0)
             window_main.LogEvent(" [Error] Could not open Video file for last video");
@@ -821,7 +821,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 ///
 void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStaticMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHeadEyeDetected,cv::Mat& frameHead)
 {
-    cv::Mat frame_gray,fgFishMask,fgFishImgMasked;
+    cv::Mat frame_gray,fgMask,fgFishMask,fgFishImgMasked;
     cv::Mat fgFoodMask;
 
 
@@ -878,7 +878,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
         /// \brief processMasks
-        processMasks(frame_gray,bgStaticMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
+        processMasks(frame_gray,bgStaticMask,fgMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
 
         enhanceMask(frame_gray,bgStaticMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         /// //
@@ -1063,7 +1063,7 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
 // Process Larva video, removing BG, detecting moving larva- Setting the learning rate will change the time required
 // to remove a pupa from the scene -
 //
-unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString videoFilename, QFile& outdatafile, unsigned int startFrameCount,unsigned int stopFrame=0)
+unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QString videoFilename, QFile& outdatafile, unsigned int startFrameCount,unsigned int stopFrame=0)
 {
 
     QElapsedTimer otLastUpdate; //Time Since Last Progress Report
@@ -1103,7 +1103,10 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
 
 
     gfVidfps  = capture.get(CAP_PROP_FPS);
-    gFoodReportInterval = gfVidfps; //Report Food every second
+
+    gcMaxFoodModelInactiveFrames  = gfVidfps; //Number of frames inactive (Not Matched to a Blob) until track is deleted
+    gcMinFoodModelActiveFrames    = gfVidfps/10;
+    gFoodReportInterval           = gfVidfps; //Report Food every second
 
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     window_main.setTotalFrames(totFrames);
@@ -1254,16 +1257,16 @@ unsigned int processVideo(cv::Mat& bgMask, MainWindow& window_main, QString vide
         vRoi.at(0).drawMask(bgROIMask);
     }
 
-    if (bgMask.cols == 0)
+    if (bgStaticMask.cols == 0)
     {
-       bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+       bgStaticMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
     }
 
     //Blank Drawing Canvas for output - We then Blend with original Image
     outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
 
     //Combine Roi Mask With BgAccumulated Mask
-    cv::bitwise_and(bgROIMask,bgMask,bgMaskWithRoi);
+    cv::bitwise_and(bgROIMask,bgStaticMask,bgMaskWithRoi);
 
 
 
@@ -1684,30 +1687,35 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
              pfood->blobMatchScore = 0;//Reset So We Can Rank this Match
              //Add points as each condition is met
              //Is it the same
-             pfood->blobMatchScore += pfood->zfoodblob.size - foodblob->size;
+             pfood->blobMatchScore += abs(pfood->zfoodblob.size - foodblob->size);
 
-            //Penalize no Overlap
+            //Bonus For Overlap
              float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
-             pfood->blobMatchScore -=(int)(1.0*overlap);
-             if (overlap > 0.0)
-                    bMatch = true;
 
-             //Cluster Blobs to one model if within a fixed Radius  That are close
-             int fbdist = norm(pfood->zTrack.centroid-foodblob->pt);
-             pfood->blobMatchScore +=fbdist;
-             //if (fbdist < gMaxClusterRadiusFoodToBlob) //Skips distance opt. and makes a lot of skipping
-             //    bMatch = true;
-             //else //Add Score according to broader catchment area
-                if (fbdist < 2*gMaxClusterRadiusFoodToBlob & fbdist > 0)
-                 pfood->blobMatchScore +=2*gMaxClusterRadiusFoodToBlob/(fbdist);
+             if (overlap > 0.0)
+             {
+                pfood->blobMatchScore +=(int)(100.0*overlap);
+                bMatch = true;
+             }
+
+                 //Cluster Blobs to one model if within a fixed Radius  That are close
+             float fbdist = norm(pfood->zTrack.centroid-foodblob->pt);
+                 //pfood->blobMatchScore +=fbdist;
+
+                 //if (fbdist < gMaxClusterRadiusFoodToBlob) //Skips distance opt. and makes a lot of skipping
+                 //    bMatch = true;
+                 //else //Add Score according to broader catchment area
+             if (fbdist < 20.0*gMaxClusterRadiusFoodToBlob & fbdist > 0)
+                 pfood->blobMatchScore +=20.0*gMaxClusterRadiusFoodToBlob/(fbdist);
+
 
              //Rank Up if this food model has been around for a while, instead of newly created one
-             if (pfood->activeFrames > gcMinFoodModelActiveFrames )
-                 pfood->blobMatchScore += pfood->activeFrames/gcMinFoodModelActiveFrames;
+            // if (pfood->activeFrames > gcMinFoodModelActiveFrames )
+            //     pfood->blobMatchScore += pfood->activeFrames/gcMinFoodModelActiveFrames;
 
 
              //Consider only Food Models Within Region Of Blob
-             if  (bMatch)
+            // if  (bMatch)
              {
                  qfoodrank.push(pfood);
              }

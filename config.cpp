@@ -25,9 +25,9 @@ const unsigned int gthres_maxfoodblobarea = thresh_fishblobarea/3;
 
 
 /// Constants ///
-const int gcMaxFishModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
-const int gcMaxFoodModelInactiveFrames  = gfVidfps; //Number of frames inactive (Not Matched to a Blob) until track is deleted
-const int gcMinFoodModelActiveFrames    = 30; //Min Number of consecutive frames it needs to be active  otherwise its deleted
+int gcMaxFishModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
+int gcMaxFoodModelInactiveFrames  = gfVidfps; //Number of frames inactive (Not Matched to a Blob) until track is deleted
+int gcMinFoodModelActiveFrames    = gfVidfps/10; //Min Number of consecutive frames it needs to be active  otherwise its deleted
 const int gMaxClusterRadiusFoodToBlob   = 6;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 const int gc_FishTailSpineSegmentLength_init = 9;
@@ -41,7 +41,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 ///Segmentation Params
 int g_Segthresh             = 30; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
 int g_SegFoodThesMin        = 25; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
-int g_SegFoodThesMax        = g_Segthresh; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
+int g_SegFoodThesMax        = g_Segthresh+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found

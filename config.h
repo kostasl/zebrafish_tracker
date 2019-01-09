@@ -46,9 +46,9 @@ extern const  unsigned int gthres_maxfoodblobarea;
 
 
 /// extern const ants ///
-extern const  int gcMaxFishModelInactiveFrames; //Number of frames inactive until track is deleted
-extern const  int gcMaxFoodModelInactiveFrames; //Number of frames inactive (Not Matched to a Blob) until track is deleted
-extern const  int gcMinFoodModelActiveFrames; //Min Number of consecutive frames it needs to be active  otherwise its deleted
+extern int gcMaxFishModelInactiveFrames; //Number of frames inactive until track is deleted
+extern int gcMaxFoodModelInactiveFrames; //Number of frames inactive (Not Matched to a Blob) until track is deleted
+extern int gcMinFoodModelActiveFrames; //Min Number of consecutive frames it needs to be active  otherwise its deleted
 extern const  int gMaxClusterRadiusFoodToBlob;
 extern const  int thActive;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
 extern const  int thDistanceFish; //Threshold for distance between track-to blob assignement

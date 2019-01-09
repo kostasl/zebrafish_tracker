@@ -621,7 +621,7 @@ plot(unlist(datBoutVsPreyDistance$nBouts),ifelse(is.na(datBoutAngle),0,datBoutAn
      main = paste("Initial Bearing to Prey Vs Bouts Performed",paste(strGroupID,collapse=",") ) ,
      ylab="Angle to Prey  (deg)",
      xlab="Number of Tracking Movements",
-     ylim=c(-180,180),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )),
+     ylim=c(-80,80),xlim=c(0,max(unlist(datBoutVsPreyDistance$nBouts) )),
      #col=colR[vcolIdx],
      col=colourL[as.numeric(datBoutVsPreyDistance$groupID)],
      pch=pchL[as.numeric(datBoutVsPreyDistance$groupID)])
@@ -846,11 +846,16 @@ boxplot(datMotionBoutCombined$vMotionBoutDistanceToPrey_mm ~ as.numeric(datMotio
 
 
 X11()
-boxplot(as.numeric(datMotionBoutCombined$OnSetAngleToPrey) ~ as.numeric(datMotionBoutCombined$boutRank),
-        main=paste("Bearing To Prey",strGroupID),
-        ylab="(Deg)",
-        xlab="Bout Sequence (From Capture - Backwards)",
-        ylim=c(-180,180))
+layout(matrix( c(1,2,3), 3, 1,byrow=TRUE ) ) 
+for (i in 1:NROW(strGroupID) )
+{
+  
+  boxplot(as.numeric(datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID==i,]$OnSetAngleToPrey) ~ as.numeric(datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID==i,]$boutRank),
+          main=paste("Bearing To Prey",strGroupID[i]),
+          ylab="(Deg)",
+          xlab="Bout Sequence (From Capture - Backwards)",
+          ylim=c(-80,80))
+}
 
 
 X11()
