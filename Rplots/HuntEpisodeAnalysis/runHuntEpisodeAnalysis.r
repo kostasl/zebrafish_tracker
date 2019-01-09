@@ -129,7 +129,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   
   
   ## PLAYBACK ####
-  # renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
+  ## renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
   ##Make Videos With FFMPEG :
   #ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
   #ffmpeg  -start_number 5419 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=400 -pix_fmt yuv420p -c:a copy renderedHuntEvent4041_event13_track4.mp4
@@ -236,6 +236,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   ##Replace NA with 0s
   vEventSpeed[is.na(vEventSpeed)] = 0
   vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
+  vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
   vEventPathLength <- cumsum(vEventSpeed_smooth)
   
@@ -259,7 +260,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth,0.01)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
@@ -268,9 +269,10 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
   ##Score Detected Frames On Overlapping Detectors
   tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
+  ##Select Bouts Based On Score. ex. score >= 3 means it Exceeds Speed+Tail Motion+Turn+Tail Motion Thresholds
+  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=G_MIN_BOUTSCORE]))
   
-  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>1]))
-  
+  stopifnot(NROW(MoveboutsIdx_cleaned) > 0 )
   # # # # # # # # # # # # # ## # ## # # # # # 
   
   ##Find Region Of Interest For Analysis Of Bouts

@@ -26,15 +26,15 @@ G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
-G_MIN_BOUTSPEED          <- 0.05 ##px/frame - Need to be above to be considered A Motion Bout
-G_THRES_CAPTURE_SPEED    <- 0.5 ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
+G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
+G_THRES_CAPTURE_SPEED    <- 0.8 ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
 PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 G_MIN_TURNBOUT_ANGLE     <- 10 ##
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
 nEyeFilterWidth          <- nFrWidth*6
 MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
 MIN_BOUT_PAUSE           <- 15
-
+G_MIN_BOUTSCORE          <- 2
 
 ####################
 
@@ -71,12 +71,12 @@ strPlotExportPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/ze
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
-strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
+strTrackeroutPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Success/"
 #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
-strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Where to source the Tracker csv files from
-strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
-strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
-strPlotExportPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
+strTrackInputPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData" ##Where to source the Tracker csv files from
+strDatDir        <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
+strDataExportDir <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
+strPlotExportPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
 
 ## Laptop ##
 setwd("~/workspace/zebrafishtrack/Rplots")

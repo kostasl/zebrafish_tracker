@@ -167,11 +167,11 @@ plotTailPowerSpectrumInTime <- function(lwlt)
 }
 
 ##Clusters Fish Speed Measurements into Bout And Non Bout
-##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
-detectMotionBouts <- function(vEventSpeed)
+##Use multiple components #17, and select top 6 active ones whose activity is above minMotionSpeed
+detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
 {
   nNumberOfComponents = 17
-  nSelectComponents = 7##5##7
+  nSelectComponents = 6##5##7
   colClass <- c("#FF0000","#04A022","#0000FF")
   
   nRec <- NROW(vEventSpeed)
@@ -193,7 +193,7 @@ detectMotionBouts <- function(vEventSpeed)
   #plot(fitBIC)
   
   
-  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.02),c(0.03),c(0.04),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
   #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   
@@ -219,7 +219,8 @@ detectMotionBouts <- function(vEventSpeed)
   clusterActivity[is.na(clusterActivity)] <- 0
   #boutCluster <- which(clusterActivity == max(clusterActivity))
   ##Select the Top nSelectComponents of clusterActivity
-  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ))   
+  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) & 
+                           clusterActivity > minMotionSpeed) )   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   ## Add Prior Bias to Selects from Clusters To The 
   return (which(fit$classification %in% boutCluster ) )
