@@ -160,8 +160,8 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
                    continue;
                }
             }
-            else //Frame Grabbed - Process It
-            {
+            else {//Frame Grabbed - Process It
+
                 //Get Frame Position From Vid Sam
                 nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
                 window_main.nFrame = nFrame; //Update Window
@@ -250,7 +250,10 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
  cv::Mat threshold_output;
 
 
+ //If We are during the Static Mask Accumulation phase ie (fgStaticMaskIn.type() !=  CV_8U) then Produce the Threshold Image
+ cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
+///The CUDA code below Needs to Be Revised
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
          if (bUseGPU)
          {
@@ -315,47 +318,40 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
 
       if (bUseBGModelling) //MOG Mask Exists
       {
+            //No Static Mask - But Combine With threshold So MOG Ghosts Are Erased
+            cv::bitwise_and(fgMOGMask,threshold_output,fgMOGMask);
             //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
             if (bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
             {
               //  cv::bitwise_or(threshold_output,fgMask,maskFGImg); //Combine / Additive for FishFG
                   cv::bitwise_and(fgStaticMaskIn,fgMOGMask,fgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
-            }else
-                  //No Static Mask / Just Copy MOG to output
-                  fgMOGMask.copyTo(fgMaskInOut);
+            }else //Missing Static Mask So just return MOG & Threshold
+              fgMOGMask.copyTo(fgMaskInOut);
 
        }else{  // No MOG Mask Exists so simply Use thresh Only to Detect FG Fish Mask Detect
-
-          //##CUDA For Dilate And Threshold
-          #if defined(USE_CUDA)
-           if (bUseGPU)           {
-              cv::cuda::threshold(dframe_gray,dframe_thres,g_Segthresh,max_thresh,cv::THRESH_BINARY);
-           }else
-              cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-          #else
-              cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-          #endif
 
           //Returning The thresholded image is only required when No BGMask Exists
          if (bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)
             cv::bitwise_and(fgStaticMaskIn,threshold_output,fgMaskInOut);
-         else //No Static Mask THere
+         else //No Static Mask here so return the thresholded one
              threshold_output.copyTo(fgMaskInOut);
-
-
       } //Threshold Only Available
 
-      //NO FGMask As No Dynamic (MOG) Model Exists so simply Return the Static Mask
+
+      //Add Purely Thresholded Mask Where Fish Is
+      //fishModel* pfish = NULL;
+      //fishModels::iterator ft;
+      // for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+      //{
+      //}
 
 
-
-      if (bshowMask && !fgStaticMaskIn.empty())
-          cv::imshow("StaticMask",fgStaticMaskIn);
-
+     if (bshowMask && !fgStaticMaskIn.empty())
+        cv::imshow("StaticMask",fgStaticMaskIn);
       if (bshowMask && !fgMOGMask.empty())
         cv::imshow("MOGMask",fgMOGMask);
      if (bshowMask && !threshold_output.empty())
-      cv::imshow("Threshold Out",threshold_output);
+        cv::imshow("Threshold Out",threshold_output);
 
 } //END PROCESSMASKS
 
@@ -687,9 +683,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
         cv::circle(outFishMask, (ptTail-ptHead)/30+ptTail,4,CV_RGB(255,255,255),cv::FILLED);
 
-        //Erase a thin Fish From Food Mask Using Smoothed Contour
-        /// Removed - Due to Freezing and artifacts on head appearing as food
-        //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED); //
+        //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
+        ///Can Freezing and artifacts on head appearing as food
+        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),cv::FILLED); //
         //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),5);
 
 } //For Each Fish Contour
@@ -757,6 +753,7 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
  ///Enhance Ma
     enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
     //Accumulate things that look like food / so we can isolate the stationary ones
+    cv::threshold( frameImg_gray, bgMask, g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
     cv::accumulateWeighted(bgMask,bgAcc,dBGMaskAccumulateSpeed);
     //Also Learn A pic of the stable features - Found In FoodMask - ie Fish Removed
 

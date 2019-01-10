@@ -10,9 +10,9 @@ double gdMOGBGRatio             = 0.75; ///If a foreground pixel keeps semi-cons
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
-const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling done over MOGhistory frames
+const double dLearningRate                = 1.0/(4.0*MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
 const double dLearningRateNominal         = 0.0003;
-double dBGMaskAccumulateSpeed             = 1.0/(2.0*MOGhistory);
+double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
 /// BLOB DETECTION Filters //
 //Area Filters
