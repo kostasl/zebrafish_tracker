@@ -1648,8 +1648,10 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
     foodModels::iterator ft;
 
+    if (bPaused )
+        return;
 
-    /// Assign Blobs To Food Models //
+        /// Assign Blobs To Food Models //
      // Look through Blobs find Respective food model attached or Create New Food Model if missing
     for (zfdblobs::iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
     {
@@ -1681,43 +1683,45 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
              //Skip This food Model if it Has Already Been Assigned on this
              // Frame Unless We Paused And Stuck on the same Frame
-             if ((nFrame - pfood->nLastUpdateFrame)==0 && bPaused == false)
+             if ((nFrame - pfood->nLastUpdateFrame)==0)
                 continue;
 
              pfood->blobMatchScore = 0;//Reset So We Can Rank this Match
 
-             //Add points as each condition is met
+             //Remove From Score If Sizes Differ
              //Is it the same
-             //pfood->blobMatchScore += abs(pfood->zfoodblob.size - foodblob->size);
+             pfood->blobMatchScore -= 10.0*abs(pfood->zfoodblob.size - foodblob->size);
 
             //Bonus For Overlap
              float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
 
-            // if (overlap > 0.0)
-            // {
-            //    pfood->blobMatchScore +=(int)(100.0*overlap);
-            //    bMatch = true;
-            // }
+            if (overlap > 0.0)
+             {
+                pfood->blobMatchScore +=(int)(100.0*overlap);
+                //bMatch = true;
+             }
 
                  //Cluster Blobs to one model if within a fixed Radius  That are close
              float fbdist = norm(pfood->zTrack.centroid-foodblob->pt);
                  //pfood->blobMatchScore +=fbdist;
 
-                 if (fbdist < gMaxClusterRadiusFoodToBlob) //Skips distance opt. and makes a lot of skipping
-                     pfood->blobMatchScore +=1000;
+             if (fbdist < gMaxClusterRadiusFoodToBlob) //Skips distance opt. and makes a lot of skipping
+                     pfood->blobMatchScore +=20;
                  //    bMatch = true;
                  //else //Add Score according to broader catchment area
-             if (fbdist < 20.0*gMaxClusterRadiusFoodToBlob & fbdist > 0)
-                 pfood->blobMatchScore +=20.0*gMaxClusterRadiusFoodToBlob/(fbdist);
+             if (fbdist < 10.0*gMaxClusterRadiusFoodToBlob & fbdist > 0)
+                 pfood->blobMatchScore +=10.0*gMaxClusterRadiusFoodToBlob/(fbdist);
 
 
              //Rank Up if this food model has been around for a while, instead of newly created one
-            // if (pfood->activeFrames > gcMinFoodModelActiveFrames )
-            //     pfood->blobMatchScore += pfood->activeFrames/gcMinFoodModelActiveFrames;
+             if (pfood->activeFrames > gcMinFoodModelActiveFrames )
+                 pfood->blobMatchScore += pfood->activeFrames/gcMinFoodModelActiveFrames;
 
 
-             //Consider only Food Models Within Region Of Blob
-            // if  (bMatch)
+             //If No Limit is set For adding THen assignment is forced to best match for each blob
+             //and once a food is taken it is not available for the other blobs - SO this is not an optimal method - but a quick one
+             bMatch = pfood->blobMatchScore > 150;
+             if  (bMatch)
              {
                  qfoodrank.push(pfood);
              }
@@ -1738,10 +1742,11 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
         }else  ///No Food Model Found for this Blob- Create A new One - Give the blob's the Position //
         {
+            bAllowNew = vfoodmodels.size() < 150;
             if (bAllowNew)
             {
                 pfoodBest = new foodModel(*foodblob,++gi_MaxFoodID);
-
+                pfoodBest->blobMatchScore = 0;
                 vfoodmodels.insert(IDFoodModel(pfoodBest->ID,pfoodBest));
                 std::stringstream strmsg;
                 strmsg << "# New foodmodel: " << pfoodBest->ID << " N:" << vfoodmodels.size();
@@ -1777,7 +1782,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         {//If this Model Has not Been Used Here
             if (pfood->nLastUpdateFrame-nFrame > 1)
             {
-                pfood->activeFrames = 0; //Reset Count Of Consecutive Active Frames
+                //pfood->activeFrames = 0; //Reset Count Of Consecutive Active Frames
                 pfood->inactiveFrames ++; //Increment Time This Model Has Not Been Active
             }
         }
