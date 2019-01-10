@@ -239,12 +239,17 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
 ///
 /// \brief processMasks Can Filter Pixel noise from frame_gray, Adds the BGModel Mask to a static mask, Can use Noise filtering to improve FG segmentation
+/// Combines Static Mask With MOG Mask before returning bgMaskInOut
 /// \param frame_gray //Current greyScale Frame - Noise May be Removed If filtering Is Set To On
 /// \param bgStaticMaskInOut The mask provided to processFrame, Includes Static Objects and ROI Region
 ///
-void processMasks(cv::Mat& frame_gray,cv::Mat bgStaticMaskIn,cv::Mat& bgMaskInOut,double dLearningRate)
+void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskInOut,double dLearningRate)
 {
- cv::Mat fgMask;
+ const int max_thresh = 255;
+ cv::Mat fgMOGMask;
+ cv::Mat threshold_output;
+
+
 
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
          if (bUseGPU)
@@ -288,12 +293,12 @@ void processMasks(cv::Mat& frame_gray,cv::Mat bgStaticMaskIn,cv::Mat& bgMaskInOu
          }
 #else //NO GPU VERSION
       if (bRemovePixelNoise)
-              cv::fastNlMeansDenoising(frame_gray, frame_gray,2.0,7, 21);
+              cv::fastNlMeansDenoising(frameImg_gray, frameImg_gray,2.0,7, 21);
             //Check If BG Ratio Changed
       if (bUseBGModelling)
       {
         try{
-            pMOG2->apply(frame_gray,fgMask,dLearningRate);
+            pMOG2->apply(frameImg_gray,fgMOGMask,dLearningRate);
             //
         }catch(...)
         {
@@ -308,25 +313,49 @@ void processMasks(cv::Mat& frame_gray,cv::Mat bgStaticMaskIn,cv::Mat& bgMaskInOu
       }//BGModel
 #endif
 
-      if (bUseBGModelling)
+      if (bUseBGModelling) //MOG Mask Exists
       {
-        //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
-        if (bStaticAccumulatedBGMaskRemove && !bgStaticMaskIn.empty() )//Although bgMask Init To zero, it may appear empty here!
-        {
-           //cv::bitwise_not(fgMask,fgMask);
-            //bgMaskInOut Is Inverted Already So It Is The Accumulated FGMASK, and fgMask is the MOG Mask
-            if (bshowMask)
-                cv::imshow("StaticMask",bgStaticMaskIn);
+            //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
+            if (bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
+            {
+              //  cv::bitwise_or(threshold_output,fgMask,maskFGImg); //Combine / Additive for FishFG
+                  cv::bitwise_and(fgStaticMaskIn,fgMOGMask,fgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
+            }else
+                  //No Static Mask / Just Copy MOG to output
+                  fgMOGMask.copyTo(fgMaskInOut);
 
-          if (bgStaticMaskIn.type() == CV_8U )
-                cv::bitwise_and(bgStaticMaskIn,fgMask,bgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
-        }else
-            fgMask.copyTo(bgMaskInOut);
-       }
+       }else{  // No MOG Mask Exists so simply Use thresh Only to Detect FG Fish Mask Detect
+
+          //##CUDA For Dilate And Threshold
+          #if defined(USE_CUDA)
+           if (bUseGPU)           {
+              cv::cuda::threshold(dframe_gray,dframe_thres,g_Segthresh,max_thresh,cv::THRESH_BINARY);
+           }else
+              cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+          #else
+              cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+          #endif
+
+          //Returning The thresholded image is only required when No BGMask Exists
+         if (bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)
+            cv::bitwise_and(fgStaticMaskIn,threshold_output,fgMaskInOut);
+         else //No Static Mask THere
+             threshold_output.copyTo(fgMaskInOut);
+
+
+      } //Threshold Only Available
+
       //NO FGMask As No Dynamic (MOG) Model Exists so simply Return the Static Mask
 
-      if (bshowMask && !fgMask.empty())
-        cv::imshow("MOGMask",fgMask);
+
+
+      if (bshowMask && !fgStaticMaskIn.empty())
+          cv::imshow("StaticMask",fgStaticMaskIn);
+
+      if (bshowMask && !fgMOGMask.empty())
+        cv::imshow("MOGMask",fgMOGMask);
+     if (bshowMask && !threshold_output.empty())
+      cv::imshow("Threshold Out",threshold_output);
 
 } //END PROCESSMASKS
 
@@ -347,7 +376,6 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
 
 int max_thresh = 255;
 cv::Mat frameImg_gray;
-cv::Mat threshold_output;
 cv::Mat threshold_output_COMB;
 cv::Mat maskFGImg; //The FG Mask - After Combining Threshold Detection
 
@@ -361,8 +389,7 @@ std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
 //cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
 //////jOIN bLOB Do Close : erode(dilate())
 //cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
-/////Remove Speckles // Should leave fish INtact
-//cv::filterSpeckles(maskFGImg,0,3,2 );
+
 /////////// MOG Mask Is not Used Currently //
 
 
@@ -386,18 +413,6 @@ frameImg.copyTo(frameImg_gray); //Its Grey Anyway
 
 outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
 
-//##CUDA For Dilate And Threshold
-#if defined(USE_CUDA)
- if (bUseGPU)
- {
-    cv::cuda::threshold(dframe_gray,dframe_thres,g_Segthresh,max_thresh,cv::THRESH_BINARY);
- }
- else
-    cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-#else
-    cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-#endif
-
 
 //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
 if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
@@ -413,31 +428,27 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
     }else
     {
         cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
-        cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
+        //cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
     }
 #else
     //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
-    //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+    cv::morphologyEx(fgMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
-    cv::bitwise_or(threshold_output,fgMask,maskFGImg); //Combine / Additive for FishFG
-    //Mask Out Stationary Points - Since We Are Using MOG
-    fgMask.copyTo(outFoodMask);
+    fgMask.copyTo(maskFGImg);
 
 
 #endif
 } //If BGModelling
 else //No BG Modelling
 {
-    // Use thresh Only to Detect FG Fish Mask Detect
-    //Returning The thresholded image is only required when No BGMask Exists
 
-    threshold_output.copyTo(maskFGImg);
-    maskFGImg.copyTo(fgMask); //Use the same for Food processing
+   fgMask.copyTo(maskFGImg); //Use the same for Food processing
 
-#if defined(USE_CUDA)
-     if (bUseGPU)
-        dframe_thres.download(threshold_output);
-#endif
+// Move this to process mask
+//#if defined(USE_CUDA)
+//     if (bUseGPU)
+//        dframe_thres.download(threshold_output);
+//#endif
 }
 
 
@@ -475,14 +486,10 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 //Make Food Mask OUt Of FG Model /After Removing Noise
-
 //cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
-
 //cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_CLOSE,kernelOpen,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
-
 //threshold_output_COMB.copyTo(outFoodMask);
 //outFoodMask = maskFGImg.clone();
-
 //cv::bitwise_and(outFoodMask,maskFGImg,outFoodMask); //Remove Regions OUtside ROI
 //std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
 
@@ -708,7 +715,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
            cv::threshold( frameImg_gray, outFoodMask, g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
        cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
-       cv::imshow("Threshold Out",threshold_output);
+
        cv::imshow("Fish Mask",outFishMask);
        if (!fgMask.empty())
            cv::imshow("BG Model",fgMask);
@@ -717,10 +724,9 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
     }
 
     // Release Should is done automatically anyway
-    threshold_output.release();
     threshold_output_COMB.release();
-   // maskfishOnly.release();
-    //threshold_output_H.release();
+
+
 }
 
 

@@ -880,7 +880,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         /// \brief processMasks
         processMasks(frame_gray,bgStaticMask,fgMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
 
-        enhanceMask(frame_gray,bgStaticMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+        enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
         /// //
 
         if (bApplyFishMaskBeforeFeatureDetection)
@@ -1685,24 +1685,26 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
                 continue;
 
              pfood->blobMatchScore = 0;//Reset So We Can Rank this Match
+
              //Add points as each condition is met
              //Is it the same
-             pfood->blobMatchScore += abs(pfood->zfoodblob.size - foodblob->size);
+             //pfood->blobMatchScore += abs(pfood->zfoodblob.size - foodblob->size);
 
             //Bonus For Overlap
              float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
 
-             if (overlap > 0.0)
-             {
-                pfood->blobMatchScore +=(int)(100.0*overlap);
-                bMatch = true;
-             }
+            // if (overlap > 0.0)
+            // {
+            //    pfood->blobMatchScore +=(int)(100.0*overlap);
+            //    bMatch = true;
+            // }
 
                  //Cluster Blobs to one model if within a fixed Radius  That are close
              float fbdist = norm(pfood->zTrack.centroid-foodblob->pt);
                  //pfood->blobMatchScore +=fbdist;
 
-                 //if (fbdist < gMaxClusterRadiusFoodToBlob) //Skips distance opt. and makes a lot of skipping
+                 if (fbdist < gMaxClusterRadiusFoodToBlob) //Skips distance opt. and makes a lot of skipping
+                     pfood->blobMatchScore +=1000;
                  //    bMatch = true;
                  //else //Add Score according to broader catchment area
              if (fbdist < 20.0*gMaxClusterRadiusFoodToBlob & fbdist > 0)
