@@ -319,7 +319,8 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
       if (bUseBGModelling) //MOG Mask Exists
       {
             //No Static Mask - But Combine With threshold So MOG Ghosts Are Erased
-            cv::bitwise_and(fgMOGMask,threshold_output,fgMOGMask);
+          \ ///TODO make into and mask , and isolate threshold mask around fish
+            cv::bitwise_or(fgMOGMask,threshold_output,fgMOGMask);
             //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
             if (bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
             {
