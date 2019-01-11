@@ -1883,20 +1883,13 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
     ///Sort Score Vector And Assign Pairs ///
    std::sort(vPairScores.begin(),vPairScores.end() );
-    int iMatchCount =0;
+   int iMatchCount =0;
    zfdblob foodblobMatched;
     //Start from Top Score And Assign pairs by rank
    std::vector<foodBlobMatch>::iterator it = vPairScores.begin();
    while( it!=vPairScores.end())
    {
         foodBlobMatch pair = (*it);
-
-        //Skip Paired Up Items
-        if ((pair.pFoodObject->nLastUpdateFrame - nFrame) == 0 )
-        {
-            ++it;
-            continue;
-        }
 
         /// Check if Blob Has Already been taken out And Matched //
         bool blobAvailable = false; //Flag If this Blob Has been Preivously Matched to A food (Ie Used)
@@ -1905,18 +1898,28 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         {
             zfdblob* foodblob = &(*ft);
 
-            ///Remove Paired Blob From Available Blobs - So we Can detect the unmatched Ones
+            ///Find Paired Blob From Available Blobs - If There then Still Available
+            /// So we Can detect the unmatched Ones
             if ( cv::norm(foodblob->pt - pair.pFoodBlob->pt ) < 0.3 )
             {
                 //Keep a copy before deleting
                 foodblobMatched = *foodblob;
-                ft = foodblobs.erase(ft);
                 blobAvailable = true;
+                break; //Found Blob -> Exit Loop
             }
             else
                 ++ft;
-        }//Loop And Erase Used Blob
+        }//Loop And Find Used Blob
 
+        if (bPaused && blobAvailable) //Need to Clear List If Paused
+            ft = foodblobs.erase(ft); //Erase Blob From Available List
+
+        //Skip Paired Up FoodObject Items
+        if ((pair.pFoodObject->nLastUpdateFrame - nFrame) == 0 )
+        {
+            ++it;
+            continue;
+        }
 
         if (blobAvailable)
         {
@@ -1924,7 +1927,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             pair.pFoodObject->activeFrames ++; //Increase Count Of Consecutive Active Frames
             pair.pFoodObject->updateState(foodblobMatched,0, foodblobMatched.pt,nFrame, pair.score,foodblobMatched.size);
             iMatchCount++;
-
+            ft = foodblobs.erase(ft); //Erase Blob From Available List
         }
 
 
@@ -1932,7 +1935,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
        ++it;
    }//Loop Through Pairs And MAtch Food To Blob
 
-qDebug() << "Matched " << iMatchCount;
+//qDebug() << "Matched " << iMatchCount;
 
     /// Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
     //If There Are more Blobs Remaining
@@ -1940,13 +1943,19 @@ qDebug() << "Matched " << iMatchCount;
     if (bAllowNew)
     {
         zfdblob* foodblob= &foodblobs[0]; //Take the 1st one Available And Make A food Model For it
-        pfood = new foodModel(*foodblob ,++gi_MaxFoodID);
-        pfood->blobMatchScore = 0;
-        vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
-        std::stringstream strmsg;
-        strmsg << "# New foodmodel: " << pfood->ID << " N:" << vfoodmodels.size();
-        std::clog << nFrame << strmsg.str() << std::endl;
-        pfood->updateState(*foodblob,0,foodblob->pt,nFrame,500,foodblob->size);
+        pfood = pwindow_main->getFoodItemAtLocation(foodblob->pt);
+        if (!pfood) //IF no dublicate Item there, then make new
+        {
+            pfood = new foodModel(*foodblob ,++gi_MaxFoodID);
+            pfood->blobMatchScore = 0;
+            vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
+            std::stringstream strmsg;
+            strmsg << "# New foodmodel: " << pfood->ID << " N:" << vfoodmodels.size();
+            std::clog << nFrame << strmsg.str() << std::endl;
+            pfood->updateState(*foodblob,0,foodblob->pt,nFrame,500,foodblob->size);
+        }else
+            qDebug() << "Dublicate food location for ID: " << pfood->ID ;
+
     } //Make New Food Model If Allowed
 
 
@@ -1958,6 +1967,7 @@ qDebug() << "Matched " << iMatchCount;
         // Delete If Inactive For Too Long and it is Not tracked
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
         if ((!pfood->isActive
+             && !pfood->isNew
              || pfood->inactiveFrames > gcMaxFoodModelInactiveFrames
              || (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames/4))
              && (pfood->isTargeted == false)
