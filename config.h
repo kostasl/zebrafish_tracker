@@ -19,6 +19,7 @@
 #undef  USE_CUDA_FOR_TEMPLATE_MATCHING //Can Be Very Slow When Using Current Algorithm for searching through Cache
 #define TEMPLATE_COL_SEARCH_REGION  15 //Optimization How Far to Search Along Col in the Cache From the Starting POint
 
+#define G_MAX_FOOD_BLOB_LIMIT = 150
 
 
 /// VIDEO AND BACKGROUND PROCESSING //

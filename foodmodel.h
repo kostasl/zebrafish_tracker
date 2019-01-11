@@ -28,7 +28,7 @@ public:
     foodModel();
     foodModel(zfdblob blob,zfdID ID);
     ~foodModel();
-    void updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius);
+    void updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius);
     static int getActiveFoodCount(foodModels& vfoodmodels);
 
     zfdID ID;

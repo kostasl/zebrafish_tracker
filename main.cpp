@@ -632,7 +632,7 @@ int main(int argc, char *argv[])
     kernelOpen      = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
     kernelDilateMOGMask = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
-    kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
+    kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
 
 
     try{
@@ -778,6 +778,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
                 gbUpdateBGModel = false; //Turn Off BG Updates
 
        }
+
         //Next File Is Different Experiment, Update The BG
        if (compString(invideoname,nextvideoname) > 2  )
            gbUpdateBGModel = true;
@@ -1251,15 +1252,15 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
     nErrorFrames = 0;
 
+    //Redraw ROI Mask
     if (bROIChanged)
     {
         bgROIMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
         vRoi.at(0).drawMask(bgROIMask);
     }
-
-    if (bgStaticMask.cols == 0)
-    {
-       bgStaticMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+    //If No Mask Exist Then Make A blank Full On One
+    if (bgStaticMask.cols == 0)  {
+       bgStaticMask = cv::Mat::ones(frame.rows,frame.cols,CV_8UC1);
     }
 
     //Blank Drawing Canvas for output - We then Blend with original Image
@@ -1641,15 +1642,14 @@ return retCount;
 /// \param nFrame
 /// param frameOut (removed) - no drawing should happen here
 /// \todo Add calcOpticalFlowPyrLK Lucas-Kanard Optic Flow Measurment to estimate food displacement
-void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew=true)
+void UpdateFoodModels_basic(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew=true)
 {
     qfoodModels qfoodrank;
     foodModel* pfood = NULL;
 
     foodModels::iterator ft;
 
-    if (bPaused )
-        return;
+
 
         /// Assign Blobs To Food Models //
      // Look through Blobs find Respective food model attached or Create New Food Model if missing
@@ -1683,7 +1683,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
              //Skip This food Model if it Has Already Been Assigned on this
              // Frame Unless We Paused And Stuck on the same Frame
-             if ((nFrame - pfood->nLastUpdateFrame)==0)
+             if ((nFrame - pfood->nLastUpdateFrame)==0  || !pfood->isActive || bPaused )
                 continue;
 
              pfood->blobMatchScore = 0;//Reset So We Can Rank this Match
@@ -1698,7 +1698,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             if (overlap > 0.0)
              {
                 pfood->blobMatchScore +=(int)(100.0*overlap);
-                //bMatch = true;
+                bMatch = true;
              }
 
                  //Cluster Blobs to one model if within a fixed Radius  That are close
@@ -1738,11 +1738,11 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             //qrank.pop();//Remove From Priority Queue Rank
             //pfoodBest->inactiveFrames   = 0; //Reset Counter
             pfoodBest->activeFrames ++; //Increase Count Of Consecutive Active Frames
-            pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,pfoodBest->blobMatchScore,foodblob->size);
+            pfoodBest->updateState(*foodblob,0,foodblob->pt,nFrame,pfoodBest->blobMatchScore,foodblob->size);
 
         }else  ///No Food Model Found for this Blob- Create A new One - Give the blob's the Position //
         {
-            bAllowNew = vfoodmodels.size() < 150;
+            bAllowNew = vfoodmodels.size() < 2;
             if (bAllowNew)
             {
                 pfoodBest = new foodModel(*foodblob,++gi_MaxFoodID);
@@ -1751,7 +1751,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
                 std::stringstream strmsg;
                 strmsg << "# New foodmodel: " << pfoodBest->ID << " N:" << vfoodmodels.size();
                 std::clog << nFrame << strmsg.str() << std::endl;
-                pfoodBest->updateState(foodblob,0,foodblob->pt,nFrame,500,foodblob->size);
+                pfoodBest->updateState(*foodblob,0,foodblob->pt,nFrame,500,foodblob->size);
             } //Make New Food Model If Allowed
         }
 
@@ -1769,6 +1769,197 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
         if ((pfood->inactiveFrames > gcMaxFoodModelInactiveFrames ||
             (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames))
+             && (pfood->isTargeted == false)
+            ) //Check If it Timed Out and Not Tracked/ Then Delete
+        {
+            ft = vfoodmodels.erase(ft);
+            std::clog << nFrame << "# Delete foodmodel: " << pfood->ID << " N:" << vfoodmodels.size() << std::endl;
+            delete(pfood);
+
+            continue;
+        }
+        else //INcrease Inactive Frame Count For this Food Model
+        {//If this Model Has not Been Used Here
+            if (pfood->nLastUpdateFrame-nFrame > 1)
+            {
+                //pfood->activeFrames = 0; //Reset Count Of Consecutive Active Frames
+                pfood->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+            }
+        }
+
+        ++ft; //Increment Iterator
+    } //Loop To Delete Inactive FoodModels
+
+
+
+} //UpdateFoodModels //
+
+///
+/// \brief The foodBlobMatch struct used to hold the score when matching blob to food item.
+/// It allows score vector to be sorted
+///
+struct foodBlobMatch
+{
+    int score;
+    foodModel* pFoodObject;
+    zfdblob*   pFoodBlob;
+
+    foodBlobMatch(foodModel* pFood,  zfdblob* pBlob,int inscore) : pFoodObject(pFood), pFoodBlob(pBlob),score(inscore) {}
+
+    bool operator < (const foodBlobMatch& pair) const
+    {
+        return (score > pair.score);
+    }
+};
+
+
+///
+/// \brief UpdateFoodModels A rule based assignment of blob to model - Can be converted to statistical model of assignment
+/// \param maskedImg_gray
+/// \param vfoodmodels
+/// \param foodblobs
+/// \param nFrame
+/// param frameOut (removed) - no drawing should happen here
+/// \todo Add calcOpticalFlowPyrLK Lucas-Kanard Optic Flow Measurment to estimate food displacement
+void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew=true)
+{
+    qfoodModels qfoodrank;
+    foodModel* pfood = NULL;
+
+    foodModels::iterator ft;
+    //Make Triplet of Score, and foodModel, zfdBlob
+    std::vector<foodBlobMatch> vPairScores;
+
+    //static const int nfoodBlobs  = G_MAX_FOOD_BLOB_LIMIT;
+    //static const int nfoodObjects = G_MAX_FOOD_BLOB_LIMIT;
+    //Make score Array blobsXFoodModels - Fixed Size
+    //static double dFoodScoreToBlob[nfoodBlobs][nfoodObjects];//Vector of \nabla d for error functions
+    //memset(dFoodScoreToBlob,0.0,nfoodBlobs*nfoodObjects*sizeof(double));
+
+    int bIdx,fIdx;
+
+        /// Assign Blobs To Food Models //
+     // Look through Blobs find Respective food model attached or Create New Food Model if missing
+    bIdx = 0;
+    for (zfdblobs::iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
+    {
+        zfdblob* foodblob  = &(*it);
+        cv::Point centroid = foodblob->pt;
+
+        fIdx = 0;
+
+        //Score Distance To Each Food
+        for ( ft  = vfoodmodels.begin(); ft!=vfoodmodels.end(); ++ft)
+        {
+             pfood = ft->second;
+            pfood->blobMatchScore = 0;//Reset So We Can Rank this Match
+            int iMatchScore = 0;
+
+            float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
+            float fbdist = norm(pfood->zTrack.centroid-foodblob->pt);
+
+            //Penalize Distance
+            iMatchScore -= 10.0*fbdist;
+
+            //Penalize Size Mismatch
+            //iMatchScore -= 10.0*abs(pfood->zfoodblob.size - foodblob->size);
+            //Bonus For Overlap
+            if (overlap > 0.0)
+                iMatchScore +=(int)(100.0*overlap);
+
+            foodBlobMatch pBlobScore(pfood,foodblob,iMatchScore);
+            vPairScores.push_back(pBlobScore); //Append Pair Score to vector
+
+            fIdx++;
+         } // Loop Through Food Models
+
+        bIdx++;
+
+
+        //Safety Net
+       // if (vPairScores.size() > 1000)
+        //    break;
+    } // Loop Through BLOBS
+
+    ///Sort Score Vector And Assign Pairs ///
+   std::sort(vPairScores.begin(),vPairScores.end() );
+    int iMatchCount =0;
+   zfdblob foodblobMatched;
+    //Start from Top Score And Assign pairs by rank
+   std::vector<foodBlobMatch>::iterator it = vPairScores.begin();
+   while( it!=vPairScores.end())
+   {
+        foodBlobMatch pair = (*it);
+
+        //Skip Paired Up Items
+        if ((pair.pFoodObject->nLastUpdateFrame - nFrame) == 0 )
+        {
+            ++it;
+            continue;
+        }
+
+        /// Check if Blob Has Already been taken out And Matched //
+        bool blobAvailable = false; //Flag If this Blob Has been Preivously Matched to A food (Ie Used)
+        zfdblobs::iterator ft = foodblobs.begin();
+        while(ft != foodblobs.end() )
+        {
+            zfdblob* foodblob = &(*ft);
+
+            ///Remove Paired Blob From Available Blobs - So we Can detect the unmatched Ones
+            if ( cv::norm(foodblob->pt - pair.pFoodBlob->pt ) < 0.3 )
+            {
+                //Keep a copy before deleting
+                foodblobMatched = *foodblob;
+                ft = foodblobs.erase(ft);
+                blobAvailable = true;
+            }
+            else
+                ++ft;
+        }//Loop And Erase Used Blob
+
+
+        if (blobAvailable)
+        {
+            // Update Food Item Based oN best Blob Match
+            pair.pFoodObject->activeFrames ++; //Increase Count Of Consecutive Active Frames
+            pair.pFoodObject->updateState(foodblobMatched,0, foodblobMatched.pt,nFrame, pair.score,foodblobMatched.size);
+            iMatchCount++;
+
+        }
+
+
+
+       ++it;
+   }//Loop Through Pairs And MAtch Food To Blob
+
+qDebug() << "Matched " << iMatchCount;
+
+    /// Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
+    //If There Are more Blobs Remaining
+    bAllowNew = foodblobs.size() > 1 && (vfoodmodels.size() < 150);
+    if (bAllowNew)
+    {
+        zfdblob* foodblob= &foodblobs[0]; //Take the 1st one Available And Make A food Model For it
+        pfood = new foodModel(*foodblob ,++gi_MaxFoodID);
+        pfood->blobMatchScore = 0;
+        vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
+        std::stringstream strmsg;
+        strmsg << "# New foodmodel: " << pfood->ID << " N:" << vfoodmodels.size();
+        std::clog << nFrame << strmsg.str() << std::endl;
+        pfood->updateState(*foodblob,0,foodblob->pt,nFrame,500,foodblob->size);
+    } //Make New Food Model If Allowed
+
+
+    ///Delete All Inactive Food Models
+    ft = vfoodmodels.begin();
+    while(ft != vfoodmodels.end() ) //&& vfishmodels.size() > 1
+    {
+        pfood = ft->second;
+        // Delete If Inactive For Too Long and it is Not tracked
+        //Delete If Not Active for Long Enough between inactive periods / Track Unstable
+        if ((!pfood->isActive
+             || pfood->inactiveFrames > gcMaxFoodModelInactiveFrames
+             || (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames/4))
              && (pfood->isTargeted == false)
             ) //Check If it Timed Out and Not Tracked/ Then Delete
         {
@@ -2247,7 +2438,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
     //frame.copyTo(frameOut,maskimg); //mask Source Image
-    //cv::drawKeypoints( frameOut, ptFoodblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DEFAULT );
+    cv::drawKeypoints( frameOut, ptFoodblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DEFAULT );
 
 
     detector->clear();

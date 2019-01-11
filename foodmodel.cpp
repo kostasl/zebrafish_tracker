@@ -57,14 +57,14 @@ foodModel::~foodModel()
 
 }
 
-void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius)
+void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius)
 {
 
     blobMatchScore = matchScore;
     nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
-    this->zfoodblob      = *fblob;
+    this->zfoodblob      = fblob;
     this->zTrack.pointStack.push_back(bcentre);
-    this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
+    this->zTrack.effectiveDisplacement = cv::norm(fblob.pt-this->zTrack.centroid);
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
     this->blobRadius = szradius;
     zTrack.boundingBox.x = bcentre.x - 6;
@@ -84,11 +84,11 @@ void foodModel::updateState(zfdblob* fblob,int Angle, cv::Point2f bcentre,unsign
 
     ///Trick 2: Only mark as active if blob size is > 1 , otherwise we may be just tracking pixel flow
     /// Filter out activity based on optic flow only/where a blob cannot be seen/ but tracking a video pixel nontheless
-    if (fblob->size > 1)
-        inactiveFrames = 0; //Reset Counter Of inactive Frames
-    else {
-        inactiveFrames++;
-    }
+   // if (fblob.size > 1)
+   //     inactiveFrames = 0; //Reset Counter Of inactive Frames
+   // else {
+    //    inactiveFrames++;
+   // }
     this->zTrack.inactive = inactiveFrames;
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)

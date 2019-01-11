@@ -30,8 +30,10 @@
 
 extern int g_Segthresh;
 extern cv::Mat kernelOpen;
+extern cv::Mat kernelClose;
 extern cv::Mat kernelDilateMOGMask;
 extern cv::Mat kernelOpenfish;
+
 extern cv::Point gptHead; ///\todo remove this global var hack
 
 extern double dBGMaskAccumulateSpeed;
@@ -128,7 +130,6 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
             std::cerr <<  gTimer.elapsed()/60000.0 << " Unable to open video file: " << videoFilename.toStdString() << std::endl;
             std::exit(EXIT_FAILURE);
         }
-
 
         //Get Length of Video
         uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
@@ -427,20 +428,24 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
         cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
         //cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
     }
+
 #else
     //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
+    //BG Model Exists So Use it For Food Mask
     cv::morphologyEx(fgMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
     fgMask.copyTo(maskFGImg);
-
-
 #endif
 } //If BGModelling
 else //No BG Modelling
 {
+   //fgMask.copyTo(maskFGImg); //Use the same for Food processing
+   cv::threshold( frameImg_gray, outFoodMask, g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+   cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
-   fgMask.copyTo(maskFGImg); //Use the same for Food processing
-
+   //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
+   cv::morphologyEx(fgMask,maskFGImg,cv::MORPH_CLOSE,kernelClose,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+//
 // Move this to process mask
 //#if defined(USE_CUDA)
 //     if (bUseGPU)
@@ -483,12 +488,7 @@ std::vector<cv::Vec4i> fishbodyhierarchy;
 cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 //Make Food Mask OUt Of FG Model /After Removing Noise
-//cv::erode(maskFGImg,maskFGImg,kernelClose,cv::Point(-1,-1),1);
-//cv::morphologyEx(maskFGImg,outFoodMask,cv::MORPH_CLOSE,kernelOpen,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
-//threshold_output_COMB.copyTo(outFoodMask);
-//outFoodMask = maskFGImg.clone();
-//cv::bitwise_and(outFoodMask,maskFGImg,outFoodMask); //Remove Regions OUtside ROI
-//std::vector< std::vector<cv::Point> > fishbodyContour_smooth;
+
 
 ///Draw Only the largest contours that should belong to fish
 /// \todo Other Match Shapes Could be used here
@@ -708,11 +708,10 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             if (bUseGPU) dframe_thres.download(threshold_output);
         #endif
 
-       if (outFoodMask.empty())
-           cv::threshold( frameImg_gray, outFoodMask, g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
        cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
-
+       maskFGImg.convertTo(maskFGImg, outFoodMask.type());
+       cv::imshow("MorphMask Source",maskFGImg);
        cv::imshow("Fish Mask",outFishMask);
        if (!fgMask.empty())
            cv::imshow("BG Model",fgMask);

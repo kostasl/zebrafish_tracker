@@ -268,6 +268,31 @@ void MainWindow::LogEvent(QString strMessage)
     }
 }
 
+
+///
+/// \brief getFoodItemAtLocation Return Pointer to 1st food item found at clicked (mouse) location
+/// \param ptLocation
+/// \return
+///
+foodModel* MainWindow::getFoodItemAtLocation(cv::Point ptLocation)
+{
+    foodModel* rfood = NULL;
+
+    ///Check First if Clicking On Food Item
+    for (foodModels::iterator it=vfoodmodels.begin(); it!=vfoodmodels.end(); ++it)
+    {
+
+        foodModel* pfood = (*it).second;
+        if (pfood->zTrack.boundingBox.contains(ptLocation) ) //Clicked On Fish Box
+        //if (cv::norm((cv::Point) food->zTrack.centroid - ptMouse) < 5 ) //Clicked On Fish Box
+        {
+            rfood = pfood; //Found and return clicked Food Item
+        }
+    }
+    return rfood;
+}
+
+
 void MainWindow::showInsetimg(cv::Mat& img)
 {
 
@@ -286,6 +311,7 @@ void MainWindow::showInsetimg(cv::Mat& img)
    // this->ui->graphicsViewHead->show();
 
 }
+
 
 void MainWindow::showInsetTemplateimg(cv::Mat& img)
 {
@@ -502,6 +528,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
     }
 
+
+
+
     if (event->type() == QEvent::GraphicsSceneMousePress)
     {
         mousePressEvent(dynamic_cast<QGraphicsSceneMouseEvent*> (event));
@@ -705,9 +734,23 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     }
     else
     {
-        //bPaused = true;
-        bSceneMouseLButtonDown = true;
-        qDebug() << "Mouse Down";
+        if (mouseEvent->buttons() == Qt::LeftButton)
+            bSceneMouseLButtonDown = true;
+
+        if (mouseEvent->buttons() == Qt::RightButton){
+            foodModel* food = getFoodItemAtLocation(ptMouse);
+            if (food) //Only delete non targeted item
+                if (!food->isTargeted)
+                {
+                    food->inactiveFrames = gcMaxFoodModelInactiveFrames+1;
+                    food->isActive = false;
+                    LogEvent("[info] Clicked to deactivate Food Item");
+                }
+        }
+
+            //Delete Food item
+
+        //qDebug() << "Mouse Down";
 
     }
 
@@ -754,8 +797,9 @@ void MainWindow::mouseReleaseEvent( QGraphicsSceneMouseEvent * mouseEvent )
     ptDrag = 0; //Empty the Dragged Point Pointer
 
     //bDraggingTemplateCentre = false;
-    qDebug() << "Mouse Up";
+    //qDebug() << "Mouse Up";
 }
+
 
 ///
 /// \brief MainWindow::mouseDblClickEvent Start Dragging Bounding Box Of Fish
@@ -772,46 +816,48 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
     // get the scene pos in the item's local coordinate space
     QPointF ptImg = item->mapFromScene(ptSceneclick);
 
-    cv::Point ptMouse(ptImg.x(),ptImg.y());
+    cv::Point ptMouse((int)ptImg.x(),(int)ptImg.y());
+    bool bFoodItemClicked = false;
+    foodModel* food = getFoodItemAtLocation(ptMouse);
 
-    ///Check First if Clicking On Food Item
-    for (foodModels::iterator it=vfoodmodels.begin(); it!=vfoodmodels.end(); ++it)
+    if (food && mouseEvent->buttons() == Qt::LeftButton)
+    {
+        bFoodItemClicked = true;
+        // Make Targeted
+        if (!food->isTargeted)
+        {
+            food->isTargeted = true;
+            qDebug() << "Food Targetting On  x: " << ptMouse.x << " y:" << ptMouse.y;
+            LogEvent("[info] Begin Tracking Food Item");
+            return;
+        }else
+        {
+           LogEvent("[info] END Tracking Food Item");
+            food->isTargeted = false;
+        }
+    }
+
+
+    // If No Food Item Found At Location
+    // Start Dragging Of Fish Template
+    if (!bFoodItemClicked)
     {
 
-        foodModel* food = (*it).second;
-        if (food->zTrack.boundingBox.contains(ptMouse) ) //Clicked On Fish Box
-        //if (cv::norm((cv::Point) food->zTrack.centroid - ptMouse) < 5 ) //Clicked On Fish Box
+        for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
         {
-            // Make Targeted
-            if (!food->isTargeted)
+
+            fishModel* fish = (*it).second;
+            if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
             {
-                food->isTargeted = true;
-                qDebug() << "Food Targetting On  x: " << ptMouse.x << " y:" << ptMouse.y;
-                LogEvent("[info] Begin Tracking Food Item");
-                return;
-            }else
-            {
-               LogEvent("[info] END Tracking Food Item");
-                food->isTargeted = false;
+                bDraggingTemplateCentre = true;
+                LogEvent("[info] Adjust Template from position ON- Start Dragging");
+                //this->statusBar()->set
+                qDebug() << "Start Dragging Fish Bound from position x: " << ptMouse.x << " y:" << ptMouse.y;
+
             }
-
         }
     }
 
-
-    for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
-    {
-
-        fishModel* fish = (*it).second;
-        if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
-        {
-            bDraggingTemplateCentre = true;
-            LogEvent("[info] Adjust Template from position ON- Start Dragging");
-            //this->statusBar()->set
-            qDebug() << "Start Dragging Fish Bound from position x: " << ptMouse.x << " y:" << ptMouse.y;
-
-        }
-    }
 
 
 
