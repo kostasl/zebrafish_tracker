@@ -944,7 +944,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
 
             //cv::drawKeypoints(outframe,ptFoodblobs)
-            cv::drawKeypoints( outframe, ptFoodblobs, outframe, cv::Scalar(20,70,255,60), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+            if (ptFoodblobs.size() >0)
+                cv::drawKeypoints( outframe, ptFoodblobs, outframe, cv::Scalar(20,70,255,60), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
 
 
@@ -1829,7 +1830,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     foodModels::iterator ft;
     //Make Triplet of Score, and foodModel, zfdBlob
     std::vector<foodBlobMatch> vPairScores;
-
+    zfdblobs vfoodblobs_spare; //A copy of foodblobs from which we delete the blobs that we match to food objects
     //static const int nfoodBlobs  = G_MAX_FOOD_BLOB_LIMIT;
     //static const int nfoodObjects = G_MAX_FOOD_BLOB_LIMIT;
     //Make score Array blobsXFoodModels - Fixed Size
@@ -1844,7 +1845,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     for (zfdblobs::iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
     {
         zfdblob* foodblob  = &(*it);
-        cv::Point centroid = foodblob->pt;
+        cv::Point2f ptblobCentroid = foodblob->pt;
 
         fIdx = 0;
 
@@ -1852,23 +1853,28 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         for ( ft  = vfoodmodels.begin(); ft!=vfoodmodels.end(); ++ft)
         {
              pfood = ft->second;
-            pfood->blobMatchScore = 0;//Reset So We Can Rank this Match
-            int iMatchScore = 0;
+            pfood->blobMatchScore = 0 ;
+            cv::Point2f ptfoodCentroid = pfood->zfoodblob.pt;
+
+            int iMatchScore = gMaxClusterRadiusFoodToBlob; //Reset to 5So We Can Rank this Match
 
             float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
-            float fbdist = norm(pfood->zTrack.centroid-foodblob->pt);
+            float fbdist = norm(ptfoodCentroid-ptblobCentroid);
 
             //Penalize Distance
-            iMatchScore -= 10.0*fbdist;
+            iMatchScore -= 1.0*fbdist;
 
             //Penalize Size Mismatch
             //iMatchScore -= 10.0*abs(pfood->zfoodblob.size - foodblob->size);
             //Bonus For Overlap
             if (overlap > 0.0)
-                iMatchScore +=(int)(100.0*overlap);
+                iMatchScore +=(int)(10.0*overlap);
 
-            foodBlobMatch pBlobScore(pfood,foodblob,iMatchScore);
-            vPairScores.push_back(pBlobScore); //Append Pair Score to vector
+            if (iMatchScore > 0)
+            {
+                foodBlobMatch pBlobScore(pfood,foodblob,iMatchScore);
+                vPairScores.push_back(pBlobScore); //Append Pair Score to vector
+            }
 
             fIdx++;
          } // Loop Through Food Models
@@ -1885,6 +1891,10 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
    std::sort(vPairScores.begin(),vPairScores.end() );
    int iMatchCount =0;
    zfdblob foodblobMatched;
+
+   //Make A copy of the Blob vector So we do not Mess up the Pair.blob pointers
+   vfoodblobs_spare = foodblobs;
+
     //Start from Top Score And Assign pairs by rank
    std::vector<foodBlobMatch>::iterator it = vPairScores.begin();
    while( it!=vPairScores.end())
@@ -1893,13 +1903,17 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
         /// Check if Blob Has Already been taken out And Matched //
         bool blobAvailable = false; //Flag If this Blob Has been Preivously Matched to A food (Ie Used)
-        zfdblobs::iterator ft = foodblobs.begin();
-        while(ft != foodblobs.end() )
+        bool blobConsumed = false; //Flag If this Blob Has Now been and should be deleted
+
+
+        zfdblobs::iterator ft = vfoodblobs_spare.begin();
+        while(ft != vfoodblobs_spare.end() )
         {
             zfdblob* foodblob = &(*ft);
 
             ///Find Paired Blob From Available Blobs - If There then Still Available
             /// So we Can detect the unmatched Ones
+
             if ( cv::norm(foodblob->pt - pair.pFoodBlob->pt ) < 0.3 )
             {
                 //Keep a copy before deleting
@@ -1911,25 +1925,30 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
                 ++ft;
         }//Loop And Find Used Blob
 
-        if (bPaused && blobAvailable) //Need to Clear List If Paused
-            ft = foodblobs.erase(ft); //Erase Blob From Available List
-
-        //Skip Paired Up FoodObject Items
-        if ((pair.pFoodObject->nLastUpdateFrame - nFrame) == 0 )
-        {
-            ++it;
-            continue;
+        //Candidate Pair Points to Blob Which is not Available anymore
+        if (!blobAvailable)
+        {   ++it;
+            continue; //Check next Pair
         }
 
-        if (blobAvailable)
+        //Blob Appears avail BUT it has already
+        // been matched to this food (Can Happen if paused) -> REMOVE from the avail list
+        if (blobAvailable && cv::norm(pair.pFoodObject->zfoodblob.pt - foodblobMatched.pt ) < 0.3) //Need to Clear List If Paused
+            blobConsumed = true;
+
+        //Skip Paired Up FoodObject Items
+        if (blobAvailable && (pair.pFoodObject->nLastUpdateFrame - nFrame) > 0 )
         {
             // Update Food Item Based oN best Blob Match
             pair.pFoodObject->activeFrames ++; //Increase Count Of Consecutive Active Frames
             pair.pFoodObject->updateState(foodblobMatched,0, foodblobMatched.pt,nFrame, pair.score,foodblobMatched.size);
             iMatchCount++;
-            ft = foodblobs.erase(ft); //Erase Blob From Available List
+            blobConsumed = true;
         }
 
+        //Deleting Blobs Invalidates the next Pointer Pairs! So do not alter the vector Just yet!
+        if (blobConsumed) //Erase Matched Blob From Available List - This can happen when Paused
+            ft = vfoodblobs_spare.erase(ft);
 
 
        ++it;
@@ -1939,11 +1958,11 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
     /// Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
     //If There Are more Blobs Remaining
-    bAllowNew = foodblobs.size() > 1 && (vfoodmodels.size() < 150);
+    bAllowNew = vfoodblobs_spare.size() > 1 && (vfoodmodels.size() < 150);
     if (bAllowNew)
     {
-        zfdblob* foodblob= &foodblobs[0]; //Take the 1st one Available And Make A food Model For it
-        pfood = pwindow_main->getFoodItemAtLocation(foodblob->pt);
+        zfdblob* foodblob= &vfoodblobs_spare[0]; //Take the 1st one Available And Make A food Model For it
+        pfood = pwindow_main->getFoodItemAtLocation(foodblob->pt); //Check for dublicated
         if (!pfood) //IF no dublicate Item there, then make new
         {
             pfood = new foodModel(*foodblob ,++gi_MaxFoodID);

@@ -283,8 +283,8 @@ foodModel* MainWindow::getFoodItemAtLocation(cv::Point ptLocation)
     {
 
         foodModel* pfood = (*it).second;
-        if (pfood->zTrack.boundingBox.contains(ptLocation) ) //Clicked On Fish Box
-        //if (cv::norm((cv::Point) food->zTrack.centroid - ptMouse) < 5 ) //Clicked On Fish Box
+        //if (pfood->zTrack.boundingBox.contains(ptLocation) ) //Clicked On Fish Box
+        if (cv::norm(pfood->zfoodblob.pt - (cv::Point2f)ptLocation) < gMaxClusterRadiusFoodToBlob ) //Clicked On Fish Box
         {
             rfood = pfood; //Found and return clicked Food Item
         }
