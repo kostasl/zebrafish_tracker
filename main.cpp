@@ -1080,10 +1080,11 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     QElapsedTimer otLastUpdate; //Time Since Last Progress Report
     otLastUpdate.start();
     //Speed that stationary objects are removed
-    cv::Mat frame,outframe,outframeHeadEyeDetect,outframeHead,bgROIMask,bgMaskWithRoi;
-    unsigned int nFrame = 0;
-    unsigned int nErrorFrames = 0;
-    outframeHead = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
+    cv::Mat frame,outframe,outframeHeadEyeDetect,outframeHead; //bgROIMask,bgMaskWithRoi
+    outframeHead                = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
+
+    unsigned int nFrame         = 0;
+    unsigned int nErrorFrames   = 0;
 
     QString frameNumberString;
     //?Replicate FG Mask to method specific
@@ -1271,10 +1272,8 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
 
 
-
-
         //Pass Processed bgMask which Is then passed on to enhanceMask
-    processFrame(window_main,frame,bgMaskWithRoi,nFrame,outframe,outframeHeadEyeDetect,outframeHead);
+    processFrame(window_main,frame,bgStaticMask,nFrame,outframe,outframeHeadEyeDetect,outframeHead);
 
         double alpha = 0.5;
         if (bRenderToDisplay)

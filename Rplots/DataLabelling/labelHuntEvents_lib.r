@@ -111,7 +111,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
       stop(paste("Tracker software not found in :",strTrackerPath ))
     
-    execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stderr =TRUE) ## stdout=FALSE stderr = FALSE
+    execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=FALSE,stderr =FALSE) ## stdout=FALSE stderr = FALSE
     
     ## execres contains all of the stdout - so cant be used for exit code
     if (execres != 0)
