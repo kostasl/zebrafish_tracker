@@ -26,7 +26,7 @@ const unsigned int gthres_maxfoodblobarea = thresh_fishblobarea/3;
 
 /// Constants ///
 int gcMaxFishModelInactiveFrames  = 150; //Number of frames inactive until track is deleted
-int gcMaxFoodModelInactiveFrames  = gfVidfps; //Number of frames inactive (Not Matched to a Blob) until track is deleted
+int gcMaxFoodModelInactiveFrames  = gfVidfps*2; //Number of frames inactive (Not Matched to a Blob) until track is deleted
 int gcMinFoodModelActiveFrames    = gfVidfps/10; //Min Number of consecutive frames it needs to be active  otherwise its deleted
 const int gMaxClusterRadiusFoodToBlob   = 6;
 const int thActive                      = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
@@ -60,7 +60,7 @@ int gFishTailSpineSegmentLength     = gc_FishTailSpineSegmentLength_init;
 
 
 
-int gFitTailIntensityScanAngleDeg   = 60; //
+int gFitTailIntensityScanAngleDeg   = 40; //
 const int gFishTailSpineSegmentCount= ZTF_TAILSPINECOUNT;
 const int gcFishContourSize         = ZTF_FISHCONTOURSIZE;
 const int gMaxFitIterations         = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
