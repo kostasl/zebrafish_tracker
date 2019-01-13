@@ -708,7 +708,6 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             if (bUseGPU) dframe_thres.download(threshold_output);
         #endif
 
-
        cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
        maskFGImg.convertTo(maskFGImg, outFoodMask.type());
        cv::imshow("MorphMask Source",maskFGImg);
