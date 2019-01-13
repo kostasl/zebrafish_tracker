@@ -823,7 +823,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStaticMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHeadEyeDetected,cv::Mat& frameHead)
 {
     cv::Mat frame_gray,fgMask,fgFishMask,fgFishImgMasked;
-    cv::Mat fgFoodMask;
+    cv::Mat fgFoodMask,bgROIMask;
 
 
     //std::vector<cv::KeyPoint>  ptFoodblobs;
@@ -857,6 +857,13 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     if (bRenderToDisplay)
         drawAllROI(outframe);
 
+    //Redraw ROI Mask
+    if (bROIChanged)
+    {
+        bgROIMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+        vRoi.at(0).drawMask(bgROIMask);
+    }
+
 
     //lplframe = frameMasked; //Convert to legacy format
 
@@ -877,11 +884,17 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         frame_gray.copyTo(gframeCurrent); //Copy To global Frame
 
 
+
         /// DO BG-FG SEGMENTATION MASKING and processing///
         /// \brief processMasks
         processMasks(frame_gray,bgStaticMask,fgMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+
+        //Combine Roi Mask Only For The foodMask
+        cv::bitwise_and(bgROIMask,fgFoodMask,fgFoodMask);
+
+
         /// //
 
         if (bApplyFishMaskBeforeFeatureDetection)
@@ -928,8 +941,6 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         if (bTrackFood)
         {
-
-
             processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,true); //Make New Food Models based on identified Blob
 
@@ -938,7 +949,6 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
                 UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
             }
-
 
             //else
             //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
@@ -950,8 +960,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
 
 
-
-            //If A fish Is Detected Then Draw Its tracks
+            ///Draw Food Tracks
             foodModels::iterator ft = vfoodmodels.begin();
             nFood = 0;
             while (ft != vfoodmodels.end() && bRenderToDisplay)
@@ -1253,12 +1262,6 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
     nErrorFrames = 0;
 
-    //Redraw ROI Mask
-    if (bROIChanged)
-    {
-        bgROIMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
-        vRoi.at(0).drawMask(bgROIMask);
-    }
     //If No Mask Exist Then Make A blank Full On One
     if (bgStaticMask.cols == 0)  {
        bgStaticMask = cv::Mat::ones(frame.rows,frame.cols,CV_8UC1);
@@ -1266,9 +1269,6 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
     //Blank Drawing Canvas for output - We then Blend with original Image
     outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
-
-    //Combine Roi Mask With BgAccumulated Mask
-    cv::bitwise_and(bgROIMask,bgStaticMask,bgMaskWithRoi);
 
 
 
@@ -1803,9 +1803,8 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 //qDebug() << "Matched " << iMatchCount;
 
     /// Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
-    //If There Are more Blobs Remaining
-    bAllowNew = vfoodblobs_spare.size() > 1 && (vfoodmodels.size() < 150);
-    if (bAllowNew)
+    //If There Are more Blobs Remaining / New Objects Allowed (Currently OFF for OpticFlow, and we are below the Count Limit
+    if (bAllowNew && (vfoodblobs_spare.size() > 1) && (vfoodmodels.size() < gi_FoodModelNumberLimit) )
     {
         zfdblob* foodblob= &vfoodblobs_spare[0]; //Take the 1st one Available And Make A food Model For it
         pfood = pwindow_main->getFoodItemAtLocation(foodblob->pt); //Check for dublicated

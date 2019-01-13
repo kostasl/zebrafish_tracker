@@ -45,6 +45,7 @@ int g_SegFoodThesMax        = g_Segthresh+5; //Up thres Scan For Food Detection 
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation
 int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
+int gi_FoodModelNumberLimit = 250; /// Maximum Number of Food Objects /Prey To track
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 
 int gi_CannyThres           = 150;
