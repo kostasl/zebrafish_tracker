@@ -81,10 +81,14 @@ idxNLSet <- which(datTrackedEventsRegister$groupID == "NL")
 idxLLSet <- which(datTrackedEventsRegister$groupID == "LL")
 idxTestSet = c(idxDLSet,idxLLSet,idxNLSet)  #c(16,17)# #c(96,74) ##Issue with IDS when not put in groupID correct order
 
+cnt = 0
 
-for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+
+for (idxH in idxLLSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
-  
+
+  cnt  = cnt + 1
+  message(paste("######### Processing ",cnt," ######") )
   expID <- datTrackedEventsRegister[idxH,]$expID
   trackID<- datTrackedEventsRegister[idxH,]$trackID
   eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -118,7 +122,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   ldatFish <- list()
   for (p in names(tblPreyRecord))
   {
-    message(p)
+    #message(p)
     ldatFish[[as.character(p)]] <- filterEyeTailNoise(datPlaybackHuntEvent[!is.na(datPlaybackHuntEvent$PreyID) 
                                                                            & datPlaybackHuntEvent$PreyID == p,])
   }
@@ -128,8 +132,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   datPlaybackHuntEvent <- do.call(rbind,ldatFish)
   
   
-  ## PLAYBACK ####
-  ## renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
+  ###### CARTOON PLAYBACK ######
+   renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
   ##Make Videos With FFMPEG :
   #ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
   #ffmpeg  -start_number 5419 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=400 -pix_fmt yuv420p -c:a copy renderedHuntEvent4041_event13_track4.mp4
@@ -142,6 +146,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   if (!any(names(datTrackedEventsRegister) == "startFrame"))
     datTrackedEventsRegister$startFrame <- NA
   
+  ##Set To 1st Frame In Hunt Event
+  datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
   
   #selectedPreyID <- max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
   ##Check If Assigned OtherWise Automatically Select the longest Track
@@ -155,7 +161,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
     }
     datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
     datTrackedEventsRegister[idxH,]$PreyCount    <- NROW(tblPreyRecord)
-    datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
+    #datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
     saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) ##Save With Dataset Idx Identifier
   }
   
@@ -172,7 +178,8 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   
   ## Select Prey Specific Subset
   datFishMotionVsTargetPrey <- ldatFish[[as.character(selectedPreyID)]] #datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == ,] 
-  datRenderHuntEvent <- datFishMotionVsTargetPrey
+  ##datRenderHuntEvent <- datFishMotionVsTargetPrey
+  datRenderHuntEvent <- datPlaybackHuntEvent
   
   ### Filter / Process Motion Variables - Noise Removal / 
   #datFishMotionVsTargetPrey <- filterEyeTailNoise(datFishMotionVsTargetPrey)
@@ -334,7 +341,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
     
     if (is.na( lMotionBoutDat[[idxH]] ) )
     {
-      warning(paste("No Bouts detected for idxH:",idxH ) ) 
+      stop(paste("*** No Bouts detected for idxH:",idxH ) ) 
       next
     }
     ##Change If Fish Heading
@@ -416,6 +423,7 @@ for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEvents
   vPreyAnglePathLength <- c(NA,vBearingToPreyPath)
   
   rows <- NROW(lMotionBoutDat[[idxH]])
+  stopifnot(rows > 0)
   lMotionBoutDat[[idxH]] <- cbind(lMotionBoutDat[[idxH]] ,
                                   OnSetAngleToPrey      = vAnglesAtOnset[lMotionBoutDat[[idxH]][,"boutSeq"]], ##Reverse THe Order Of Appearance Before Col. Bind
                                   OffSetAngleToPrey     = vAnglesAtOffset[lMotionBoutDat[[idxH]][,"boutSeq"]],
@@ -461,7 +469,6 @@ if (vEventSpeed_smooth[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
 } ###END OF EACH Hunt Episode Loop 
 
 
-
 ########## SAVE Processed Hunt Events ###########
 if (bSaveNewMotionData)
   saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData",".rds",sep="") ) #Processed Registry on which we add )
@@ -472,6 +479,26 @@ if (bSaveNewMotionData)
 if (bSaveNewMotionData)
   saveRDS(lEyeMotionDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData",".rds",sep="") ) #Processed Registry on which we add )
 #datEpisodeMotionBout <- lMotionBoutDat[[1]]
+
+ ############# VERIFY ###
+####Select Subset Of Data To Analyse
+datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+#datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
+
+##Check If all where processed
+message(" Huntevent Processing Summary #EventInRegistry/#EventsProcessed")
+for (gp in strGroupID)
+{
+  message(paste(gp , " did ",NROW(unique(datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == which(strGroupID == gp),]$RegistarIdx)), "/",NROW(datTrackedEventsRegister[datTrackedEventsRegister$groupID == gp,] ) ) )
+  idxReg <- as.numeric( rownames(datTrackedEventsRegister[datTrackedEventsRegister$groupID == gp,]) ) 
+  idxProc <- unique(datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == which(strGroupID == gp),]$RegistarIdx)
+  message(paste("Missing Reg Idxs:",paste(list(idxReg[!(idxReg %in% idxProc)]), sep="," ) ) )
+  
+}
+
+       
+
+
 
 ## Make Distance Vs Eye Angle Vectors ##
 ## PLOT EYE Vs Distance ##
@@ -657,9 +684,7 @@ dev.off()
 
 ##       Turns Vs Bearing To Prey ########### 
 
-####Select Subset Of Data To Analyse
-datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
-#datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
+
 
 ####### PLOT Turning Bout Vs Bearing TO Prey - Does the animal estimate turn amount Well ###############################
 ##Add Angle To Prey OnTop Of Eye Angles##

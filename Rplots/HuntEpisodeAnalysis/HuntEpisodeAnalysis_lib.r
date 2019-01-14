@@ -550,7 +550,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   if (lastBout < 1)
   {
     warning(paste("No Bouts Detected for idx:") )
-   # return (NA)
+    return (NA)
   }
   
   

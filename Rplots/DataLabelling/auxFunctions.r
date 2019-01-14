@@ -135,13 +135,15 @@ findLabelledEvent <- function (EventRegisterRec)
   
   datLabelledHuntEventAllGroups <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
   
-  
+  if (is.na(EventRegisterRec$startFrame))
+      warning("Missing startFrame from Event Register")
   
   
   recs<- datLabelledHuntEventAllGroups[as.character(datLabelledHuntEventAllGroups$groupID) == as.character(EventRegisterRec$groupID) &
                                   as.character(datLabelledHuntEventAllGroups$eventID) == as.character(EventRegisterRec$eventID) &
                                   as.character(datLabelledHuntEventAllGroups$expID) == as.character(EventRegisterRec$expID)
                                 ,]
+  
   ##If Start Frame Is there - Check For Closest Match 
   if (any(names(EventRegisterRec) == "startFrame"))
   {
