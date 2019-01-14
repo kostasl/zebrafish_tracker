@@ -84,7 +84,7 @@ idxTestSet = c(idxDLSet,idxLLSet,idxNLSet)  #c(16,17)# #c(96,74) ##Issue with ID
 cnt = 0
 
 
-for (idxH in idxLLSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
 
   cnt  = cnt + 1
@@ -133,7 +133,7 @@ for (idxH in idxLLSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRe
   
   
   ###### CARTOON PLAYBACK ######
-   renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
+  ## renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
   ##Make Videos With FFMPEG :
   #ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
   #ffmpeg  -start_number 5419 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=400 -pix_fmt yuv420p -c:a copy renderedHuntEvent4041_event13_track4.mp4

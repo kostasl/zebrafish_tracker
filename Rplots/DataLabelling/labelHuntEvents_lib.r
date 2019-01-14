@@ -31,7 +31,9 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
 
 vHuntEventLabels <- c("UnLabelled","NA","Success","Fail","No_Target","Not_HuntMode/Delete","Escape","Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike",
                       "Success-SpitBackOut",
-                      "Debri-Triggered","Near-Hunt State","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach")
+                      "Debri-Triggered","Near-Hunt State","Success-OnStrike","Success-OnStrike-SpitBackOut",
+                      "Success-OnApproach" ##For Ones that either do not strike but simply push on to the prey, or those that strike but only capture prey after and not during the strike (Denotes lesser ability to judge distance)
+                      )
 
 convertToScoreLabel <- function (huntScore) { 
   return (factor(x=huntScore,levels=seq(0,NROW(vHuntEventLabels)-1),labels=vHuntEventLabels ) )
@@ -111,7 +113,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
       stop(paste("Tracker software not found in :",strTrackerPath ))
     
-    execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=FALSE,stderr =FALSE) ## stdout=FALSE stderr = FALSE
+    execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=NULL,stderr =NULL) ## stdout=FALSE stderr = FALSE
     
     ## execres contains all of the stdout - so cant be used for exit code
     if (execres != 0)
