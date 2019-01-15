@@ -1,4 +1,7 @@
+## Konstantinos Lagogiannis 2018
+## TODO Add Auto Success Label detect with datHuntEvent[grepl("Success",as.character(convertToScoreLabel(datHuntEvent$huntScore) ) ) ,]
 ###Plot Labelled Results ##
+
 source("plotHuntStat_lib.r")
 
 source("DataLabelling/labelHuntEvents_lib.r")
@@ -8,6 +11,8 @@ source("DataLabelling/labelHuntEvents_lib.r")
 ############# PLOT LABELLED RESULTS ##########
 #strProcDataFileName <-paste("setn14-HuntEventsFixExpID-SB-Updated",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
+
+
 
 strProcDataFileName <-paste("setn15-HuntEvents-SB-Updated-Merged",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
 message(paste(" Loading Hunt Event List to Process... "))
