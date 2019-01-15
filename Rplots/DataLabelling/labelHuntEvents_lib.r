@@ -32,7 +32,8 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
 vHuntEventLabels <- c("UnLabelled","NA","Success","Fail","No_Target","Not_HuntMode/Delete","Escape","Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike",
                       "Success-SpitBackOut",
                       "Debri-Triggered","Near-Hunt State","Success-OnStrike","Success-OnStrike-SpitBackOut",
-                      "Success-OnApproach" ##For Ones that either do not strike but simply push on to the prey, or those that strike but only capture prey after and not during the strike (Denotes lesser ability to judge distance)
+                      "Success-OnApproach", ##For Ones that either do not strike but simply push on to the prey, 
+                      "Success-OnApproach-AfterStrike" #or those that strike but only capture prey after and not during the strike (Denotes lesser ability to judge distance)
                       )
 
 convertToScoreLabel <- function (huntScore) { 
@@ -50,6 +51,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
 {
   message(paste(NROW(datHuntEvent[datHuntEvent$huntScore >0,]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
   ##nLabelledSuccess <- NROW(datHuntEvent[datHuntEvent$huntScore == which(levels(huntLabels) == "Success") | datHuntEvent$huntScore == which(levels(huntLabels) == "Success-SpitBackOut"),])
+  ## Detect Labels with Success In the Name -
   nLabelledSuccess <- NROW(datHuntEvent[grepl("Success",as.character(convertToScoreLabel(datHuntEvent$huntScore) ) ) ,])
   if (is.na(idxFilter))
   {
@@ -402,11 +404,11 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
   ##No_Targer is Column 5
 
   
-  datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,"Success"]+tblFishScoresLabelled[,"Success-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnStrike"]+tblFishScoresLabelled[,"Success-OnStrike-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnApproach"],
+  datFishSuccessRate <- data.frame( cbind("Success" = tblFishScoresLabelled[,"Success"]+tblFishScoresLabelled[,"Success-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnStrike"]+tblFishScoresLabelled[,"Success-OnStrike-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnApproach"] +tblFishScoresLabelled[,"Success-OnApproach-AfterStrike"],
                                           "Fails_NS"= tblFishScoresLabelled[,"Fail-No Strike"],
                                           "Fails_WS"=tblFishScoresLabelled[,"Fail-With Strike"],
                                           "Fails"= tblFishScoresLabelled[,"Fail"]+tblFishScoresLabelled[,"Fail-No Strike"]+tblFishScoresLabelled[,"Fail-With Strike"],
-                                          "HuntEvents"= rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
+                                          "HuntEvents"= rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
                                           "groupID"=NA) ) #
   for (e in row.names(tblFishScoresLabelled) )
     datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )

@@ -423,8 +423,7 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
         gpu_DilateFilter->apply(dframe_mask,dframe_mask); //Use Global GPU Mat to run dilation
         cv::cuda::bitwise_and(dframe_mask,dframe_thres,dframe_mask);
         dframe_mask.download(maskFGImg); //Transfer processed Mask Back To CPU Memory
-    }else
-    {
+    }else {
         cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
         //cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
     }
