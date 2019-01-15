@@ -80,7 +80,7 @@ void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
     ///Trick - Update is called when fooditem has been matched, yet we use the
     /// the update to check if it has been inactive for too long- if found on next frame it will become active again
     //Although it may have been found here, it is still marked inactive until the next round
-    isActive = (inactiveFrames < gcMaxFoodModelInactiveFrames);
+    isActive = (inactiveFrames < gcMaxFoodModelInactiveFrames) && !isNew;
 
     ///Trick 2: Only mark as active if blob size is > 1 , otherwise we may be just tracking pixel flow
     /// Filter out activity based on optic flow only/where a blob cannot be seen/ but tracking a video pixel nontheless

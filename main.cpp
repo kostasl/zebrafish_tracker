@@ -199,6 +199,7 @@ bool bStartPaused;
 bool bExiting;
 bool bTracking;
 bool bTrackFood    = true;
+bool bTrackFish    = true;
 bool bRecordToFile = true;
 bool bSaveImages   = false;
 bool b1stPointSet;
@@ -355,7 +356,7 @@ int main(int argc, char *argv[])
         "{EnableCUDA cuda | 0  | Use CUDA for MOG, and mask processing - if available  }"
         "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
         "{EyeHistEqualization histEq | 0  | Use hist. equalization to enhance eye detection contrast  }"
-
+         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
         ;
 
 //
@@ -461,6 +462,9 @@ int main(int argc, char *argv[])
          std::cerr.rdbuf(foutLog.rdbuf());
     }
 
+    // Read In Flag To enable Fish Tracking / FishBlob Processing
+    if (parser.has("TrackFish"))
+        bTrackFish = (parser.get<int>("TrackFish") == 1)?true:false;
 
     //Check If We Are BG Modelling / BEst to switch off when Labelling Hunting Events
     if (parser.has("ModelBG"))
@@ -771,6 +775,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        if ((bUseBGModelling && gbUpdateBGModel) || (bUseBGModelling && gbUpdateBGModelOnAllVids) )
        {
             getBGModelFromVideo(bgStaticMask, window_main,invideoname,outfilename,MOGhistory);
+            cv::dilate(bgStaticMask,bgStaticMask,kernelDilateMOGMask,cv::Point(-1,-1),2);
+            cv::morphologyEx(bgStaticMask,bgStaticMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),4); //
             cv::bitwise_not ( bgStaticMask, bgStaticMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
 
             //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
@@ -910,28 +916,30 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
         processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
-        nLarva = ptFishblobs.size();
-
 
         ///Update Fish Models Against Image and Tracks - Obtain Bearing Angle Using Template
         //Can Use Fish Masked - But Templates Dont Include The masking
         //UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
-        UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
-        //If A fish Is Detected Then Draw Its tracks
-        fishModels::iterator ft = vfishmodels.begin();
-
-        while (ft != vfishmodels.end() && bRenderToDisplay) //Render All Fish
+        if (bTrackFish)
         {
-            fishModel* pfish = ft->second;
-            assert(pfish);
-            zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,trackFntScale+0.2 );
-            ++ft;
+            UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
+            //If A fish Is Detected Then Draw Its tracks
+            fishModels::iterator ft = vfishmodels.begin();
+            while (ft != vfishmodels.end() && bRenderToDisplay) //Render All Fish
+            {
+                fishModel* pfish = ft->second;
+                assert(pfish);
+                zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,trackFntScale+0.2 );
+                ++ft;
+            }
         }
+
+        nLarva = vfishmodels.size();
 
         ///\todo Keep A Global List of all tracks?
 
         /// Isolate Head, Get Eye models, and Get and draw Spine model
-        if (nLarva > 0)
+        if (nLarva > 0 &&  (bTrackFish))
             //An Image Of the Full Fish Is best In this Case
             //Do Not Use Masked Fish Image For Spine Fitting
             detectZfishFeatures(window_main, frame_gray,outframe,frameHead,outframeHeadEyeDetected,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
@@ -981,12 +989,15 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
                 else{
                 if (pfood->isActive)
+                {
+                        nFood++; //only count the rendered Food Items ie. Active Ones
                         zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_CIRCLE , CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                }
                     else
                         zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX , CV_FONT_HERSHEY_PLAIN,trackFntScale );
                  }
                 ++ft;
-                nFood++; //only count the rendered Food Items ie. Active Ones
+
             }
 
 
@@ -1006,12 +1017,10 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     {
         drawFrameText(window_main,nFrame,nLarva,nFood,outframe);
 
-
     }
 
     if (bshowMask && bTracking)
         cv::imshow("Isolated Fish",fgFishImgMasked);
-
 
     fgFishImgMasked.release();
     fgFishMask.release();
@@ -1046,16 +1055,16 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
     static double vm, rss;
 
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
-               CV_RGB(10,10,10), -1);
+               CV_RGB(10,10,10), CV_FILLED,LINE_8);
     cv::putText(outframe, frameNumberString.toStdString(),  cv::Point(15, 15),
-            trackFnt, trackFntScale ,  CV_RGB(250,250,0));
+            trackFnt, trackFntScale ,  CV_RGB(150,80,50));
 
     //Count on Original Frame
     std::stringstream strCount;
     strCount << "Nf:" << (nLarva) << " Nr:" << nFood;
-    cv::rectangle(outframe, cv::Point(10, 25), cv::Point(80,45),  CV_RGB(10,10,10), -1);
+    cv::rectangle(outframe, cv::Point(10, 25), cv::Point(80,45),  CV_RGB(10,10,10), CV_FILLED);
     cv::putText(outframe, strCount.str(), cv::Point(15, 38),
-           trackFnt, trackFntScale ,  CV_RGB(250,250,0));
+           trackFnt, trackFntScale ,  CV_RGB(150,80,50));
 
 /*
  *     //Report Time

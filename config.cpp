@@ -11,7 +11,7 @@ double gdMOGBGRatio             = 0.75; ///If a foreground pixel keeps semi-cons
 uint cFrameDelayms              = 1;
 
 const double dLearningRate                = 1.0/(4.0*MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
-const double dLearningRateNominal         = 0.0003;
+const double dLearningRateNominal         = 0.001;
 double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
 /// BLOB DETECTION Filters //
@@ -40,7 +40,7 @@ const int nTemplatesToLoad  = 19; //Number of Templates To Load Into Cache - The
 
 ///Segmentation Params
 int g_Segthresh             = 30; //Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
-int g_SegFoodThesMin        = 25; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
+int g_SegFoodThesMin        = 21; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
 int g_SegFoodThesMax        = g_Segthresh+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
 int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
 int g_BGthresh              = 10; //BG threshold segmentation

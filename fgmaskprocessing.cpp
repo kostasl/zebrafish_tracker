@@ -430,9 +430,10 @@ if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So R
     }
 
 #else
-    //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
+
+    //cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1);
     //BG Model Exists So Use it For Food Mask
-    cv::morphologyEx(fgMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+    cv::morphologyEx(fgMask,outFoodMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //
 
     fgMask.copyTo(maskFGImg);
 #endif
