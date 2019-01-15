@@ -11,9 +11,10 @@ strDataFileName <-paste("setn15-HuntEvents-SB-Updated-Merged",sep="") ##To Which
 datHuntEventAllGroupToValidate <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
  
 groupsList <- unique(datHuntEventAllGroupToValidate$groupID)
+TargetGroups <- "DL" #c("LL","DL","NL")
 
 ###  SHOW ME SAMPLES ## 
-vHuntEventLabels
+#vHuntEventLabels
 l=0
 for (g in vHuntEventLabels )
 {
@@ -21,7 +22,6 @@ for (g in vHuntEventLabels )
   l=l+1
 }
 
-TargetGroups <- "DL" #c("LL","DL","NL")
 TargetLabel <- as.numeric(readline("### Key In A Number For Which Label You want to see:"))
 #TargetLabel = which(vHuntEventLabels == vHuntEventLabels[Keyc])-1;
 #gc <- sample(groupsList,1)
