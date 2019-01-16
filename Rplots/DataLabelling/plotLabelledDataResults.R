@@ -14,18 +14,26 @@ source("DataLabelling/labelHuntEvents_lib.r")
 
 
 
+### This is the Currently Used Labelled File - Updated and Verified Success
 strProcDataFileName <-paste("setn15-HuntEvents-SB-Updated-Merged",sep="") ## Latest Updated HuntEvent Labelled data that integrates new COming Labels
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 datHuntLabelledEventsSB <- datHuntLabelledEventsSB[datHuntLabelledEventsSB$eventID != 0,]
 tblResSB <- table(convertToScoreLabel(datHuntLabelledEventsSB$huntScore),datHuntLabelledEventsSB$groupID)
-##Load My KL Labelled File
+
+
+
+##Load My partially labeled  (KL) Labelled data Merged  
 strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##This is the KL labelled data set
 datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 datHuntLabelledEventsKL <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$eventID != 0,]
 tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHuntLabelledEventsKL$groupID)
 
+
+## Find Tbl Indexes Indicating Success 
+tblIdxSuccess <- which (grepl("Success",row.names(tblResSB) ) ) 
+tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) ) 
 
 ###Label Summary  /No Target/Escapes /Success / Fail
 

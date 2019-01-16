@@ -108,14 +108,18 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      ###                                              ######
         ### Process Speed/ Extract Bouts Via Peak Speed    ####
 	      ###                                              ######
+	      
+	      ## TODO Add The Butterworth Filters Here filters ## 
 	      dEventSpeed_smooth   <- meanf(dEventSpeed,20)
 	      dEventSpeed_smooth[is.na(dEventSpeed_smooth)] = 0 ##Remove NA
+	      
 	      ### FInd Peaks In Speed to Identify Bouts
 	      MoveboutsIdx <- find_peaks(dEventSpeed_smooth,25)
 	      ##Reject Peaks Below Half An SD Peak Value - So As to Choose Only Significant Bout Movements # That Are Above the Minimum Speed to Consider As Bout
 	      MoveboutsIdx_cleaned <- MoveboutsIdx[which(dEventSpeed_smooth[MoveboutsIdx] > sd(dEventSpeed_smooth[MoveboutsIdx])/2 
 	                                                 & dEventSpeed_smooth[MoveboutsIdx] > G_MIN_BOUTSPEED   )  ]
 	      
+	      ## MOTION  BOUT Detection ##########
 	      #nNumberOfBouts       <- length(MoveboutsIdx_cleaned)
 	      #### Identify Bouts, Count, Duration 
 	      ###Binarize , Use indicator function 1/0 for frames where Motion Occurs
@@ -136,10 +140,14 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      {
 	        warning(paste("Motion Bout End Point not identified, removing Bout") )
 	      }
+	   
 	      
 	      nNumberOfBouts <- min(length(vMotionBout_On),length(vMotionBout_Off)) ##We can Only compare paired events, so remove an odd On Or Off Trailing Event
-	      ##Remove The Motion Regions Where A Peak Was not detected / Only Keep The Bouts with Peaks 
-	      vMotionBout[1:length(vMotionBout)] =0 ##Reset / Remove All Identified Movement 
+	   
+	      
+	         ##Remove The Motion Regions Where A Peak Was not detected / Only Keep The Bouts with Peaks 
+	      vMotionBout[1:length(vMotionBout)] =0 ##Reset / Remove All Identified Movement
+	      
 	      for (i in 1:nNumberOfBouts)
 	      {
 	        if (nNumberOfBouts == 0)
@@ -156,9 +164,13 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      }
 	      vMotionBoutDuration <- vMotionBout_Off[1:nNumberOfBouts]-vMotionBout_On[1:nNumberOfBouts]
 	      vMotionBoutDuration <- vMotionBoutDuration[!is.na(vMotionBoutDuration)]
-	      
+	      ##### END OF MOTION BOUTS ###
 	     
+	      ## TODO TAIL Info ##
 	      
+	      ####
+	      
+	      ### MOTION Path Statistic ###
 	      dEventTotalDistance       <- sum(vEventPathLength,na.rm=TRUE)
 	      ##Straight Line From start to end 
 	      dShortestPathDisplacement <- sqrt(((datEventFrames[1,]$posX-datEventFrames[NROW(datEventFrames),]$posX)^2+(datEventFrames[1,]$posY-datEventFrames[NROW(datEventFrames),]$posY)^2 ))
@@ -185,7 +197,8 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      lTEventSpeed[[k]]        <- dEventSpeed
 	      lTEventSinuosity[[k]]    <- dEventSinuosity
 
-  }##For each Event Of this Larva    
+	      
+  }## For each Event Of this Larva    
     
       nTotalFrames <- nTotalFrames + nLarvalAnalysedFrames
     
