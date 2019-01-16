@@ -120,6 +120,7 @@ datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]),]
 datTurnVsPreyDL <- cbind(lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$DL[,"Turn"]),lFirstBoutPoints$DL[,"RegistarIdx"] )
 datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]),]
 
+##Outlier datTurnVsPreyDL[13,] <- NA
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend

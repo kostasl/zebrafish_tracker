@@ -166,8 +166,8 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       ##Add Copy of this Event
       if (Keyc == 's')## Unlabelled - Such that we can split / add new Hunting Event
       {
-        
-        break
+        message(paste(Keyc,"~Save And Move To next *") ) 
+        break ##Exit Menu Loop , Save Record And Move on to next
       }
       
       if (Keyc == 'm') 
@@ -175,7 +175,8 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
         message(paste(Keyc,"~ Hunt Event ",i," Marked As Tracked for Detailed Analysis ~") )
         rec$markTracked <- 1 ##Reduntant But Here for consistency
         datHuntEvent[i,"markTracked"] <- 1
-        break; ##Stop Menu Loop
+        ##Do not End Menu Loop Here / Allow for more tags on event
+        ##break; ##Stop Menu Loop
         
       }
       
@@ -184,21 +185,24 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
         message(paste(Keyc,"~ Hunt Event ",i," Marked As *UnTrackable* for Detailed Analysis ~") )
         rec$markTracked <- -1 ##Reduntant But Here for consistency
         datHuntEvent[i,"markTracked"] <- -1
-        break; ##Stop Menu Loop
+        ##Do not End Menu Loop Here
+        ##break; ##Stop Menu Loop
         
       }
       
       
       if (Keyc == 'c') 
       {
-        message(paste(Keyc,"~End Label Process Here") )
-        rec$huntScore <- 0
-        return(datHuntEvent)
+        message(paste(Keyc,"~End Label Process Here ") )
+        ##rec$huntScore <- 0
+        break ## c will be captured from Next Loop and Funct will return after save
+        #return(datHuntEvent)
         
       }
       if (!is.na(as.numeric(Keyc)))
       {
         rec$huntScore <- as.numeric(Keyc) ##factor(levels(huntLabels)[as.numeric(c)]
+        datHuntEvent[i,"huntScore"]  <- rec$huntScore
       }
       ##Fix Frame Range Manually
       if (Keyc == 'f')
@@ -228,9 +232,10 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
         next
       }
       
+      ##Do not break From Menu Until s / Next is pressed
       ##User Has selected Label? Then Break From menu loop
-      if (!is.na(factor(levels(huntLabels)[as.numeric(Keyc)+1] ) ) )
-        break
+      #if (!is.na(factor(levels(huntLabels)[as.numeric(Keyc)+1] ) ) )
+      #  break
       
     } ##End Menu Loop
     
@@ -258,19 +263,8 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       next ##Skip To Next
     }
     
-    if (Keyc == 'c')  ##Stop Event Loop Here if c was pressed
-    {
-      message(" Stop Labelling Loop Here " )
-      return(datHuntEvent)
-      #break
-    }
-    else
-      message(paste(levels(huntLabels)[as.numeric(Keyc)+1] , "-Proceeding to Next Video.") )
-    
-    #####################################################################################################
+    ##########################################################################################
     ##### Save With Dataset Idx Identifier On Every Labelling As An Error Could Lose Everything  ########
-    
-    
     save(datHuntEvent,file=paste(strDatDir,"/LabelledSet/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
     saveRDS(datHuntEvent,file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
     
@@ -291,15 +285,28 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     # }
     ###########################################################################################
     
+    ### CHECK for EXIT LOOP ###
+    if (Keyc == 'c')  ##Stop Event Loop Here if c was pressed
+    {
+      message(" Stop Labelling Loop Here " )
+      ##return(datHuntEvent)
+      break 
+    }
+    else
+      message(paste(levels(huntLabels)[as.numeric(Keyc)+1] , "-Proceeding to Next Video.") )
+    
+    ###########
+    
   } ## For Each Hunt Event Detected - 
   
   ##Return Modified Data Frame
+  
   return(datHuntEvent)
   
 }
 
 
-## Takes two labelled HuntEvent dataframes, and attempts to match the identified events between 
+## Takes two labelled HuntEvent dataframes, and attemcpts to match the identified events between 
 ## the two and combines them in a new dataframe adding the score, start and end frames From B -
 ## only where a one to one matching is possible
 compareLabelledEvents <- function(datHuntEventA,datHuntEventB)
