@@ -150,7 +150,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       l=l+1
       message(paste("n"," Add New Unlabelled Dublicate event",sep="-"))
       l=l+1
-      message(paste("s"," Skip and proceeed to next",sep="-"))
+      message(paste("s"," NEXT - save and proceeed ",sep="-"))
       l=l+1
       message(paste("m"," Mark As Tracked (HuntEvent) ",sep="-"))
       l=l+1
