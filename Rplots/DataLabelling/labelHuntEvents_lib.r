@@ -46,7 +46,7 @@ huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10
 ### Used for running the tracker to score Hunt events, or to retrack a hunt event in supervised mode ##
 ### The retracked event are then used for analysis of sensorimotor differences/eye vergence information 
 ## Menu allows for events to be marked as tracked to avoid dublicates by  setting the param bskipMarked = TRUE  
-
+## Meny made to stick to same event until User picks c to stop, or s to move to next event
 labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath,factorLabelFilter,ExpIDFilter,EventIDFilter,idxFilter=NA,bskipMarked = TRUE)
 {
   message(paste(NROW(datHuntEvent[datHuntEvent$huntScore >0,]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
