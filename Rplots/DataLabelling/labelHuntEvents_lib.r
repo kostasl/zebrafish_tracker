@@ -260,7 +260,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     if (Keyc == 's')
     {
       message(" SKIP, and label next one " )
-      next ##Skip To Next
+     # next ##Skip To Next ##Loop Will complete and move to next event
     }
     
     ##########################################################################################
