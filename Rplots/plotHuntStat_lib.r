@@ -1,42 +1,55 @@
 ### Library Functions For Plotting Hunt Statistics ###
 
 
-pieChartLabelledEvents <- function(tblRes,GroupID)
+pieChartLabelledEvents <- function(tblRes,GroupID,colourL=NA)
 {
   
   
-  
+  ## Find Tbl Indexes Indicating Success 
+  tblIdxSuccess <- which (grepl("Success",row.names(tblRes) ) ) 
+  tblIdxFail <- which (grepl("Fail",row.names(tblRes) ) ) 
+  tblidxValidHuntEvents <- c(6,7,tblIdxSuccess,tblIdxFail)
+  #
   ##Summarize COmbine Labels ###
-  # Success Together, And Fails Together
-  DLRes=c(sum(tblRes[c(3,12),GroupID]) ,sum(tblRes[c(4,10,11),GroupID]),sum(tblRes[c(5),GroupID]),sum(tblRes[c(7),GroupID]))
+  # Success Together, And Fails Together, A No-Target and and Escape separatelly
+  #DLRes=c(sum(tblRes[c(3,12),GroupID]) ,sum(tblRes[c(4,10,11),GroupID]),sum(tblRes[c(5),GroupID]),sum(tblRes[c(7),GroupID]))
+  
+  DLRes=c(sum(tblRes[tblIdxSuccess,GroupID]) ,sum(tblRes[tblIdxFail,GroupID]),sum(tblRes[c(5),GroupID]),sum(tblRes[c(7),GroupID]))
+  
   #NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
   #LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
   
-  nLabelledDL <- sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+  #nLabelledDL <- sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
   #nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
   #nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
+  nLabelledDL <- sum(tblRes[tblidxValidHuntEvents,GroupID])
   
   ScoreLabels <- c("Success","Fail","No Target","Escape")
   
   rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
-  colourH <- c(rfc(NROW(ScoreLabels)),"#FF0000");
+  if (is.na(colourL))
+    colourL <- c(rfc(NROW(ScoreLabels)),"#FF0000");
   
   
-  pie(DLRes , labels = paste(""," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=2.8,cex.main=2.8,clockwise = TRUE,
+  pie(DLRes , labels = paste(""," ",round((DLRes/nLabelledDL)*100),"%",sep=""),cex=2.8,cex.main=2.8,clockwise = TRUE,
       main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[c(1),GroupID]) ),
-      radius=1.0,col=colourH) 
+      radius=1.0,col=colourL) 
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
   #pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
   
 }
 
 ##Show Results comparing Success only of Identified Hunt Events that tracked Prey
-pieChartLabelledSuccessVsFails <- function(tblRes,GroupID)
+pieChartLabelledSuccessVsFails <- function(tblRes,GroupID,colourL=NA)
 {
+  ## Find Tbl Indexes Indicating Success 
+  tblIdxSuccess <- which (grepl("Success",row.names(tblRes) ) ) 
+  tblIdxFail <- which (grepl("Fail",row.names(tblRes) ) ) 
+  tblidxValidHuntEvents <- c(6,7,tblIdxSuccess,tblIdxFail)
   
   ##Summarize COmbine Labels ###
   # Success Together, And Fails Together
-  DLRes=c(sum(tblRes[c(3,12),GroupID]) ,sum(tblRes[c(4,10,11),GroupID] ) ) 
+  DLRes=c(sum(tblRes[tblIdxSuccess,GroupID]) ,sum(tblRes[tblIdxFail,GroupID] ) ) 
   #NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
   #LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
   ##Here We Condition on the Fact that these were Hunt Events Tracking Prey / 
@@ -47,12 +60,12 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID)
   ScoreLabels <- c("Success","Fail")
   
   rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
-  colourH <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+  if (is.na(colourL))
+  colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
   
-  
-  pie(DLRes , labels = paste(""," %",round((DLRes/nLabelledDL)*100)/100,sep=""),cex=3.8,cex.main=3.8,clockwise = TRUE,
+  pie(DLRes , labels = paste("","",round((DLRes/nLabelledDL)*100),"%",sep=""),cex=3.8,cex.main=3.8,clockwise = TRUE,
       main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
-      radius=1.0,col=colourH) 
+      radius=1.0,col=colourL) 
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
   #pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
   

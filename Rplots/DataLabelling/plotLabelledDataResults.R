@@ -47,19 +47,19 @@ pdf(strPlotName,width=16,height=8,title="Summary Of Manual Hunt Event Labelling 
 layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
 #layout(matrix(c(1,2,3), 2, 3, byrow = TRUE))
 ScoreLabels <- c("Success","Fail","No Target","Escape")
-colourH <-   c(rfc(NROW(ScoreLabels)),"#FF0000");
-pieChartLabelledEvents(tblResSB,"DL") #pieChartLabelledEvents(tblResSB,"DL")
-pieChartLabelledEvents(tblResSB,"NL")
-pieChartLabelledEvents(tblResSB,"LL")
+colourL <-   c(rfc(NROW(ScoreLabels)),"#FF0000");
+pieChartLabelledEvents(tblResSB,"DL",colourL) #pieChartLabelledEvents(tblResSB,"DL")
+pieChartLabelledEvents(tblResSB,"NL",colourL)
+pieChartLabelledEvents(tblResSB,"LL",colourL)
 text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
-pieChartLabelledEvents(tblResKL,"DL") #pieChartLabelledEvents(tblResSB,"DL")
-pieChartLabelledEvents(tblResKL,"NL")
-pieChartLabelledEvents(tblResKL,"LL")
+pieChartLabelledEvents(tblResKL,"DL",colourL) #pieChartLabelledEvents(tblResSB,"DL")
+pieChartLabelledEvents(tblResKL,"NL",colourL)
+pieChartLabelledEvents(tblResKL,"LL",colourL)
 text(x=1.4,y=0.8,labels = "KL",cex=1.5)
 
 legend(-1.55,0.2,legend=ScoreLabels,
-       fill=colourH,
-       col = colourH,
+       fill=colourL,
+       col = colourL,
        bg = "white",cex=1.0,
        merge=FALSE,horiz=FALSE)
 
@@ -71,19 +71,19 @@ strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSuccessSummary-SB.pdf
 pdf(strPlotName,width=29,height=8,title="Summary Of Manual Hunt Event Labelling Conditioning On Prey Tracking Being On",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 #layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
 layout(matrix(c(1,2,3), 2, 3, byrow = TRUE))
-colourH <-  c("#B3B3B3","#66C2A5") #c(rfc(NROW(ScoreLabels)),"#FF0000");
-pieChartLabelledSuccessVsFails(tblResSB,"DL") #pieChartLabelledEvents(tblResSB,"DL")
-pieChartLabelledSuccessVsFails(tblResSB,"NL")
-pieChartLabelledSuccessVsFails(tblResSB,"LL")
+colourL <-  c("#B3B3B3","#66C2A5") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+pieChartLabelledSuccessVsFails(tblResSB,"DL",colourL) #pieChartLabelledEvents(tblResSB,"DL")
+pieChartLabelledSuccessVsFails(tblResSB,"NL",colourL)
+pieChartLabelledSuccessVsFails(tblResSB,"LL",colourL)
 text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
 # pieChartLabelledEvents(tblResKL,"DL")
 # pieChartLabelledEvents(tblResKL,"NL")
 # pieChartLabelledEvents(tblResKL,"LL")
 # text(x=1.4,y=-0.8,labels = "KL",cex=1.5)
 #plot.new()
-legend(-1.40,1.0,legend=c("Fail","Success"),
-       fill=colourH,
-       col = colourH,
+legend("bottomright",legend=c("Fail","Success"),
+       fill=colourL,
+       col = colourL,
        bg = "white",cex=3.0,
        merge=FALSE,horiz=FALSE)
 
