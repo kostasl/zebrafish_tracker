@@ -280,7 +280,7 @@ getParams <- function(data,a0=1,b0=1,sigma0=1){
 ##Marginal Likelyhood 
 MarginalLikelihood <- function(MLParams,a0,b0)
 {
-  return (1/(2*pi)^(MLParams$n/2))* sqrt( det(diag(sigma0,2))/det( MLParams$lambda))*b0/MLParams$b*gamma(MLParams$a)/gamma(a0)
+  return (1/(2*pi)^(MLParams$n/2))* sqrt( det(diag(sigma0,2))/det( MLParams$lambda))*(b0/MLParams$b)*(gamma(MLParams$a)/gamma(a0))
 }
 
 b0=1
@@ -307,7 +307,7 @@ ML_DLLL <- MarginalLikelihood(MLparamsDLLL,a0,b0)
 # A value of K > 1 means that M1 is more strongly supported by the data under consideration than M2.
 ML_DL*ML_NL/(ML_NLDL)
 
-##
+## Check For COmparing DL LL 
 ML_DL*ML_LL/(ML_DLLL)
 
 mean(dataDL$turn/dataDL$bearing)
