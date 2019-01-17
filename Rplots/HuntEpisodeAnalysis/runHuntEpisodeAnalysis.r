@@ -84,7 +84,7 @@ idxTestSet = c(idxDLSet,idxLLSet,idxNLSet)  #c(16,17)# #c(96,74) ##Issue with ID
 cnt = 0
 
 
-for (idxH in idxTestSet)#NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
 
   cnt  = cnt + 1
@@ -485,6 +485,7 @@ if (bSaveNewMotionData)
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
 #datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
 
+### CHECK Process ##
 ##Check If all where processed
 message(" Huntevent Processing Summary #EventInRegistry/#EventsProcessed")
 for (gp in strGroupID)

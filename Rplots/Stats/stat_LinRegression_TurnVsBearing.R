@@ -134,7 +134,7 @@ rhoMaxA = 1000
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
-steps=1000;
+steps=100000;
 thin=1;
 
 
@@ -189,7 +189,7 @@ drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
 
 ## Plot ### 
-ind = 100 ## Number of last sampled values
+ind = 10000 ## Number of last sampled values
 ## Save the Mean Slope and intercept
 ##quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2]
 muLLa=mean(drawLL$beta[,(steps-ind):steps,1][1,]) 
@@ -257,6 +257,61 @@ dev.off()
 
 
 
+### Model Evidence ### 
+## Compare Likelyhoods between models for undershooting (linear slope fit) 
+## Establish if DryFed Data Belong to NF rather then LF
+## 
+## This was given by Giovanni , based on model evidence formula (see wikipedia Bayesian linear regression)
+getParams <- function(data,a0=1,b0=1,sigma0=1){
+  n=nrow(data)
+  y=data[,2]
+  X=cbind(1,data[,1])
+  Lambda0 = diag(sigma0,2)
+  Lambda  = t(X)%*%X+Lambda0 
+  beta_hat = solve(t(X)%*%X)%*%t(X)%*%y
+  mu0 = c(1,0)               
+  mu  = solve(t(X)%*%X+Lambda0)%*%(t(X)%*%X%*%beta_hat+Lambda0%*%mu0)
+  a=a0+n/2                           
+  b=b0+0.5*(t(y)%*%y+t(mu0)%*%Lambda0%*%mu0-t(mu)%*%Lambda%*%mu)
+  
+  return(list(n=n,a=a,b=b,mu=mu,lambda=Lambda))  
+}
+
+##Marginal Likelyhood 
+MarginalLikelihood <- function(MLParams,a0,b0)
+{
+  return (1/(2*pi)^(MLParams$n/2))* sqrt( det(diag(sigma0,2))/det( MLParams$lambda))*b0/MLParams$b*gamma(MLParams$a)/gamma(a0)
+}
+
+b0=1
+a0=1
+MLparamsLL <- getParams( cbind(dataLL$turn,dataLL$bearing),a0,b0 )
+MLparamsDL <- getParams( cbind(dataDL$turn,dataDL$bearing),a0,b0 )
+MLparamsNL <- getParams( cbind(dataNL$turn,dataNL$bearing),a0,b0 )
+
+dataNLDL <- rbind(cbind(dataNL$turn,dataNL$bearing),cbind(dataDL$turn,dataDL$bearing))
+MLparamsNLDL <- getParams( dataNLDL,a0,b0 )
+
+dataDLLL <- rbind(cbind(dataDL$turn,dataDL$bearing),cbind(dataLL$turn,dataLL$bearing))
+MLparamsDLLL <- getParams( dataDLLL,a0,b0 )
+
+
+ML_LL <- MarginalLikelihood(MLparamsLL,a0,b0)
+ML_DL <- MarginalLikelihood(MLparamsDL,a0,b0)
+ML_NL <- MarginalLikelihood(MLparamsNL,a0,b0)
+ML_NLDL <- MarginalLikelihood(MLparamsNLDL,a0,b0)
+ML_DLLL <- MarginalLikelihood(MLparamsDLLL,a0,b0)
+
+
+##Now Compare ##
+# A value of K > 1 means that M1 is more strongly supported by the data under consideration than M2.
+ML_DL*ML_NL/(ML_NLDL)
+
+##
+ML_DL*ML_LL/(ML_DLLL)
+
+mean(dataDL$turn/dataDL$bearing)
+mean(dataNL$turn/dataNL$bearing)
 
 #strPlotName <-  paste(strPlotExportPath,"/stat_TurnVsBearing_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
 #pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 

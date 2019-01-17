@@ -20,18 +20,17 @@ wrapAngle <- function(x)
   return(res)
 }
 
+
+##Polar Diff   
 ##Calculates Change In Degree Angle assumes Circle Of 0-360 Degrees
 ##Acounts For Circular Nature In THe ANgles going -360 To +360
-##Polar Diff   
 diffPolar <- function(X)
 {
   ##Normalize to 360 degree circle
   X <-  X %% 360 
 
-  ## Make Rotation Directions the same - convert to + by adding 360 to -ve angles
-  X[X < 0] <- X[X < 0] + 360
-  
   Y <- rep(0,NROW(X))
+  ## Make Rotation Directions the same - convert to + by adding 360 to -ve angles
   # X[X < 0] <- X[X < 0] + 360
   
   if (NROW(X) < 2 )
