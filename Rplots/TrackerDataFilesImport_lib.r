@@ -25,7 +25,12 @@ wrapAngle <- function(x)
 ##Polar Diff   
 diffPolar <- function(X)
 {
+  ##Normalize to 360 degree circle
   X <-  X %% 360 
+
+  ## Make Rotation Directions the same - convert to + by adding 360 to -ve angles
+  X[X < 0] <- X[X < 0] + 360
+  
   Y <- rep(0,NROW(X))
   # X[X < 0] <- X[X < 0] + 360
   
@@ -42,6 +47,7 @@ diffPolar <- function(X)
     if (is.na(X[i]) | is.na(X[i-1]) )
       next
 
+    ### Check if Comparing Across 360 Boundary
     Y[i]<- X[i]-X[i-1]
     
     if (Y[i] > 180) ##Replace with Closest Distance Around Circle
