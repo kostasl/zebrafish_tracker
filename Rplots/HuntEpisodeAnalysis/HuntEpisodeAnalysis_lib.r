@@ -279,7 +279,7 @@ detectTailBouts <- function(vTailMotionFq)
   clusterActivity[is.na(clusterActivity)] <- 0
   #boutCluster <- which(clusterActivity == max(clusterActivity))
   ##Select the Top nSelectComponents of clusterActivity
-  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ))   
+  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ) )   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   
   return (which(fit$classification %in% boutCluster ) )
@@ -287,11 +287,15 @@ detectTailBouts <- function(vTailMotionFq)
 }
 
 ## Notes: Converted To Use 1Dim only Turnspeed to Detect Turns / Can use Tail Motion but I was getting False Positives when combined
-detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
+detectTurnBouts <- function(vTurnSpeed,vTailDispFilt,minTurnSpeed=NA)
 {
-  nNumberOfComponents = 18
-  nSelectComponents = 9
+  vTurnSpeed <- abs(vTurnSpeed)
+  nNumberOfComponents = round( (max(vTurnSpeed)-min(vTurnSpeed))/1 )
+  nSelectComponents = round(nNumberOfComponents*0.85)
   
+  ##Fetch Heurestic Threshold 
+  if (is.na(minTurnSpeed))
+    minTurnSpeed <- mean(abs(vTurnSpeed))
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
   ##Fix Length Differences
@@ -309,17 +313,20 @@ detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #fit <- Mclust(xy ,G=nNumberOfComponents,modelNames = "VII", prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.05,20),c(1.5,15),c(2.5,20)),shrinkage=0.1 ) )
-  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V", prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.03),c(0.05),c(0.5),0.8,1,1.5,3),shrinkage=0.1 ) )  
+  priorMu <- seq(min(vTurnSpeed),max(vTurnSpeed),1)
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V", prior =  priorControl(functionName="defaultPrior", mean=  priorMu ,shrinkage=0.1 ) )  
   summary(fit)
   
   boutClass <- fit$classification
   clusterActivity <- vector()
   for (i in unique(boutClass))
-    clusterActivity[i] <- max(pvEventSpeed[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+    clusterActivity[i] <- max( pvEventSpeed[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
   #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
   
   #boutCluster <- which(clusterActivity == max(clusterActivity))
-  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ))   
+  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) & 
+                           clusterActivity > minTurnSpeed) )   
+  
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   ## Add Prior Bias to Selects from Clusters To The 
   return (which(fit$classification %in% boutCluster ) )
@@ -590,7 +597,6 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)
   boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
   turnSeq <- rep(0,NROW(vMotionBoutDuration))   ##Empty Vector Of Indicating The Number of Turns that have occured up to a Bout
-  turnRank <- rep(0,NROW(vMotionBoutDuration))   ##SCore Turns Based on their Size towards turn to prey- ie the largest turn towards prey gets to be ranked #1
   ## TURN TO PREY SEQUENCE NUMBERING 
   ## Assign A TurnSequence Number to Each Detected Bout / Used to Select 1 turn to prey etc..
   ## Go through Each MotionBout and Check If Turns Detected within Each Bout / Then Increment Counter
@@ -615,14 +621,9 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
             turnCount <- turnCount + 1
             turnSeq[tidx] <- turnCount
           }
-        } ##check for missing values in Bearing To Prey
-      
-      } ##If Turn Angle is Above 0
-      
-    }##For Each Motion Bout
-    
-    ## Now Rank turns By Size 
-    # turnRank abs(vBearingToPrey[vMotionBout_On,2]-vBearingToPrey[vMotionBout_Off,2] )  
+        }##check for missing values
+      }
+    }
   } ##If motion bout Exists
   
   

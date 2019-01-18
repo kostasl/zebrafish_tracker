@@ -267,17 +267,17 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth,0.01)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth,0.15)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
-  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode) 
+  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode,0.2) 
   
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
   ##Score Detected Frames On Overlapping Detectors
   tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
   ##Select Bouts Based On Score. ex. score >= 3 means it Exceeds Speed+Tail Motion+Turn+Tail Motion Thresholds
-  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=G_MIN_BOUTSCORE]))
+  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>G_MIN_BOUTSCORE]))
   
   stopifnot(NROW(MoveboutsIdx_cleaned) > 0 )
   # # # # # # # # # # # # # ## # ## # # # # # 
@@ -288,15 +288,16 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   
   ##Analyse from 1st Turn (assume Towardsprey) that is near the eye Vergence time point 
   startFrame <-NA
-  if (NROW(TurnboutsIdx) > 3) ##If Turns Have been detected then Use 1st Turn Near eye V as startFrame for Analysis
-  {
-    ##Take 1st turn to prey Close to Eye V
-    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
-  }
+#  if (NROW(TurnboutsIdx) > 3) ##If Turns Have been detected then Use 1st Turn Near eye V as startFrame for Analysis
+#  {
+#    ##Take 1st turn to prey Close to Eye V
+#    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
+#  }
+  
   
   if (is.na(startFrame))
   {
-    startFrame <- which(vEyeV > G_THRESHUNTVERGENCEANGLE) -50 ##Start from point little earlier than Eye V
+    startFrame <- max(1,min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -50) )##Start from point little earlier than Eye V
     message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
   }
     
@@ -337,21 +338,27 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
                                                    vAngleToPrey,
                                                    vTailDisp,
                                                    regionToAnalyse,plotRes = TRUE)
-    
+    datMotionBout = data.frame( lMotionBoutDat[[idxH]]  )
     if (is.na( lMotionBoutDat[[idxH]] ) )
     {
       stop(paste("*** No Bouts detected for idxH:",idxH ) ) 
       next
     }
     ##Change If Fish Heading
-    plot(t,vAngleDisplacement[1:NROW(t)],type='l',
+    plot(t,vAngleDisplacement[1:NROW(t)],type='l',ylim=c(-60,60),
          xlab= "",#"(msec)",
          ylab="Degrees",
          col="blue",main=" Angle Displacement")
+    ## Note First Turn To Prey On Plot  ##
+    tFirstTurnToPreyS <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
+    tFirstTurnToPreyE <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
+    points(t[tFirstTurnToPreyS], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red")
+    points(t[tFirstTurnToPreyE], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black")
     lines(t,cumsum(vTurnSpeed)[1:NROW(t)],type='l',lwd=2,lty=1,
          xlab=NA,
          ylab=NA,
          col="blue4")
+    
     ###Change In Pitch (Upwards Tilt)
     lines(t,vPitchEstimate[1:NROW(t)],type='l',lwd=2,col='purple',lty=5) ##Convert to Pitch Change
     legend("bottomright",legend=c("turn","pitch"),fill=c("blue4","purple"),lty=c(1,5) )
