@@ -8,6 +8,10 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
+
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetB",".rds",sep="") #Processed Registry on which we add 
+
+
 #source("DataLabelling/labelHuntEvents_lib.r")
 ### GP Process Estimation Of Hunt Rate Vs Prey Density Using Bayesian Inference Model
 myplot_res<- function(ind,qq=0.05){
@@ -257,6 +261,14 @@ dev.off()
 
 
 
+### Plot Undershoot Raw Data
+hist(dataLL$turn/dataLL$bearing)
+
+hist(dataNL$turn/dataNL$bearing)
+
+hist(dataDL$turn/dataDL$bearing)
+
+
 ### Model Evidence ### 
 ## Compare Likelyhoods between models for undershooting (linear slope fit) 
 ## Establish if DryFed Data Belong to NF rather then LF
@@ -268,7 +280,7 @@ getParams <- function(data,a0=1,b0=1,sigma0=1){
   X=cbind(1,data[,1])
   Lambda0 = diag(sigma0,2)
   Lambda  = t(X)%*%X+Lambda0 
-  beta_hat = solve(t(X)%*%X)%*%t(X)%*%y
+  beta_hat = solve(t(X)%*%X) %*%t(X)%*%y
   mu0 = c(1,0)               
   mu  = solve(t(X)%*%X+Lambda0)%*%(t(X)%*%X%*%beta_hat+Lambda0%*%mu0)
   a=a0+n/2                           
@@ -283,7 +295,7 @@ MarginalLikelihood <- function(MLParams,a0,b0)
   return (1/(2*pi)^(MLParams$n/2))* sqrt( det(diag(sigma0,2))/det( MLParams$lambda))*(b0/MLParams$b)*(gamma(MLParams$a)/gamma(a0))
 }
 
-b0=1
+b0=0.2
 a0=1
 MLparamsLL <- getParams( cbind(dataLL$turn,dataLL$bearing),a0,b0 )
 MLparamsDL <- getParams( cbind(dataDL$turn,dataDL$bearing),a0,b0 )
@@ -295,20 +307,23 @@ MLparamsNLDL <- getParams( dataNLDL,a0,b0 )
 dataDLLL <- rbind(cbind(dataDL$turn,dataDL$bearing),cbind(dataLL$turn,dataLL$bearing))
 MLparamsDLLL <- getParams( dataDLLL,a0,b0 )
 
-
+## Calcilate Probability of Model Given Data
 ML_LL <- MarginalLikelihood(MLparamsLL,a0,b0)
 ML_DL <- MarginalLikelihood(MLparamsDL,a0,b0)
 ML_NL <- MarginalLikelihood(MLparamsNL,a0,b0)
 ML_NLDL <- MarginalLikelihood(MLparamsNLDL,a0,b0)
 ML_DLLL <- MarginalLikelihood(MLparamsDLLL,a0,b0)
 
-
 ##Now Compare ##
 # A value of K > 1 means that M1 is more strongly supported by the data under consideration than M2.
-ML_DL*ML_NL/(ML_NLDL)
+ML_DL*ML_NL/(ML_NLDL) ## This is equal to 1 
+ML_NL/(ML_NLDL)
+ML_DL/(ML_NLDL)
 
 ## Check For COmparing DL LL 
 ML_DL*ML_LL/(ML_DLLL)
+ML_LL/(ML_DLLL)
+ML_DL/(ML_DLLL)
 
 mean(dataDL$turn/dataDL$bearing)
 mean(dataNL$turn/dataNL$bearing)
