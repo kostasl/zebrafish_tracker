@@ -290,7 +290,7 @@ detectTailBouts <- function(vTailMotionFq)
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
   nNumberOfComponents = 18
-  nSelectComponents = 4
+  nSelectComponents = 9
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))

@@ -5,6 +5,10 @@
 ## Establish if DryFed Data Belong to NF rather then LF
 ## 
 ## This was given by Giovanni , based on model evidence formula (see wikipedia Bayesian linear regression)
+## install.packages("invgamma")
+## install.packages("mvtnorm") for the multivariate gaussian
+library(invgamma)
+library(mvtnorm)
 
 ##Load Data (See stat_LinRegression_TurnVsBearing)
 
@@ -14,12 +18,12 @@ hist(dataNL$turn/dataNL$bearing)
 hist(dataDL$turn/dataDL$bearing)
 
 ##Synthetic - TEst Data
-x=seq(-65,65,1)
+x=seq(-65,65,3)
 c11=0.5
-c12=0.95
+c12=0.99
 c13=14 ##SD
 c21=0.5
-c22=0.75
+c22=0.60
 c23=14 ##SED
 
 test_data1=cbind(x,c11+c12*x+rnorm(length(x),sd=c13))
@@ -30,11 +34,10 @@ plot(test_data1,ylim=c(-70,70),xlim=c(-70,70) )
 points(test_data2,col="red")
 ###
 
-getParams <- function(data,a0=1,b0=1,sigma0=1){
+getParams <- function(data,a0=1,b0=1,Lambda0=lambda0){
   n=nrow(data)
   y=data[,2]
   X=cbind(1,data[,1])
-  Lambda0 = diag(sigma0,2)
   Lambda  = t(X)%*%X+Lambda0
   beta_hat = solve(t(X)%*%X)%*%t(X)%*%y
   mu0 = c(1,0)
@@ -42,13 +45,31 @@ getParams <- function(data,a0=1,b0=1,sigma0=1){
   a=a0+n/2
   b=b0+0.5*(t(y)%*%y+t(mu0)%*%Lambda0%*%mu0-t(mu)%*%Lambda%*%mu)
   
-  return(list(n=n,a0=a0,b0=b0,sigma0=sigma0,a=a,b=b,mu=mu,lambda=Lambda))
+  return(list(n=n,a0=a0,b0=b0,lambda0=Lambda0,a=a,b=b,mu=mu,lambda=Lambda))
 }
 
 logML <- function(par){
-  res=-par$n/2*log(2*pi)+0.5*log(det(diag(par$sigma0,2))/det( par$lambda)) + par$a0*log(par$b0) - par$a*log(par$b) + lgamma(par$a) - lgamma(par$a0)
+  res=-par$n/2*log(2*pi)+0.5*log(det(par$lambda0)/det( par$lambda)) + par$a0*log(par$b0) - par$a*log(par$b) + lgamma(par$a) - lgamma(par$a0)
   return(res)
 }
+
+DrawPostParams<- function(par){
+  s2=rinvgamma(1,par$a,par$b)
+  beta=rmvnorm(n=1,mean=par$mu,sigma=s2*solve(par$lambda))
+  return(list(s2,beta))
+}
+
+genManyPar <- function(par,n=100){
+  plot(cbind(dataLL$turn,dataLL$bearing),ylim=c(-70,70),xlim=c(-70,70) )
+  
+  x=seq(-70,70,.2)
+  #plot(NA,xlim=range(x),ylim=range(x),type='n')
+  for(i in 1:n){
+    l=DrawPostParams(par)
+    lines(x,l[[2]][1]+x*l[[2]][2])
+  }
+}
+
 
 ## Example ##
 p1=getParams(test_data1); lML1=logML(p1)
@@ -58,12 +79,20 @@ p3=getParams(test_data3); lML3=logML(p3)
 ## -ve is interpreted as common model best describes these
 logR=(lML1+lML2)-lML3
 
-##On to the real Data 
-b0=1
-a0=1
-MLparamsLL <- getParams( cbind(dataLL$turn,dataLL$bearing),a0,b0 )
-MLparamsDL <- getParams( cbind(dataDL$turn,dataDL$bearing),a0,b0 )
-MLparamsNL <- getParams( cbind(dataNL$turn,dataNL$bearing),a0,b0 )
+##On to the real Data - PRIORS Are very important 
+## in managing to separate te 2 cases where a common source exists and 
+## Priors plot(r,dinvgamma(r, 15, 1290))
+
+a0=15
+b0=1300
+sigma0 = 100;
+##This is inverse Variance
+lambda0 = matrix(c(sigma0*10000,0,0,sigma0),2,2)
+
+
+MLparamsLL <- getParams( cbind(dataLL$turn,dataLL$bearing),a0,b0,lambda0 )
+MLparamsDL <- getParams( cbind(dataDL$turn,dataDL$bearing),a0,b0,lambda0 )
+MLparamsNL <- getParams( cbind(dataNL$turn,dataNL$bearing),a0,b0,lambda0 )
 
 dataNLDL <- rbind(cbind(dataNL$turn,dataNL$bearing),cbind(dataDL$turn,dataDL$bearing))
 MLparamsNLDL <- getParams( dataNLDL,a0,b0 )
@@ -95,6 +124,22 @@ logR_LLDL=(logML_DL+logML_LL)-logML_DLLL
 logR_LLNL=(logML_NL+logML_LL)-logML_LLNL
 
 
+genManyPar(MLparamsLL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ####### OLD ###
 getParams_old <- function(data,a0=1,b0=1,sigma0=1){
@@ -117,7 +162,6 @@ MarginalLikelihood <- function(MLParams,a0,b0)
 {
   return (1/(2*pi)^(MLParams$n/2))* sqrt( det(diag(sigma0,2))/det( MLParams$lambda))*((b0^a0)/(MLParams$b^MLParams$a)) *(gamma(MLParams$a)/gamma(a
 }
-
 
 
 b0=1
@@ -152,3 +196,16 @@ ML_DL/(ML_DLLL)
 
 mean(dataDL$turn/dataDL$bearing)
 mean(dataNL$turn/dataNL$bearing)
+
+
+
+cov0=matrix(c(1,0,0,1),2,2);
+mynorm <- function(x,y,cov) { 
+  return(exp(-0.5/100.*(x*(cov[1,1]*x+cov[1,2]*y)+y*(cov[2,1]*x+cov[2,2]*y))))
+}
+
+x0=seq(-10,10,0.2);
+y0=seq(-10,10,0.2);
+u=outer(x0,y0,mynorm,cov=matrix(c(2,1,1,2)*10,2,2));
+plot(x0,u[50,],type='l')
+

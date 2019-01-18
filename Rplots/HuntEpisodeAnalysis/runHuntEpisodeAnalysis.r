@@ -302,7 +302,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     
    
   
-  regionToAnalyse       <-seq(min( c(startFrame  ) ) , #
+  regionToAnalyse       <-seq(max( c(startFrame,1  ) ) , #
                               min(
                                 which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
                                 max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  
