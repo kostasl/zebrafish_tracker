@@ -110,7 +110,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   ##Get Number oF Records per Prey
   tblPreyRecord <-table(datPlaybackHuntEvent$PreyID) 
   if (NROW(tblPreyRecord) > 1)
-    warning("Multiple Prey Items Tracked In Hunt Episode-Selecting Longest Track")
+    stop("Multiple Prey Items Tracked In Hunt Episode-/ Auto Selecting Longest Track is OFF - Need to Manually Join Prey Tracks - Stop Here")
   if (NROW(tblPreyRecord) < 1)
   {
     warning(paste(" Skipping No Prey ID for " ,expID,"_event",eventID,"_track",trackID, sep="" )  ) 
@@ -300,9 +300,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
   }
     
-  
    
-    
   
   regionToAnalyse       <-seq(min( c(startFrame  ) ) , #
                               min(
@@ -310,6 +308,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
                                 max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  
                                 ) + 20
                               ) ##Set To Up To The Minimum Distance From Prey
+  
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   
   
@@ -490,9 +489,14 @@ datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
 message(" Huntevent Processing Summary #EventInRegistry/#EventsProcessed")
 for (gp in strGroupID)
 {
-  message(paste(gp , " did ",NROW(unique(datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == which(strGroupID == gp),]$RegistarIdx)), "/",NROW(datTrackedEventsRegister[datTrackedEventsRegister$groupID == gp,] ) ) )
-  idxReg <- as.numeric( rownames(datTrackedEventsRegister[datTrackedEventsRegister$groupID == gp,]) ) 
   idxProc <- unique(datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == which(strGroupID == gp),]$RegistarIdx)
+  idxReg <- as.numeric( rownames(datTrackedEventsRegister[datTrackedEventsRegister$groupID == gp,]) ) 
+  
+  message(paste(gp , " did ",
+                NROW(idxProc),
+                "/",NROW(idxReg ) ) )
+  
+  
   message(paste("Missing Reg Idxs:",paste(list(idxReg[!(idxReg %in% idxProc)]), sep="," ) ) )
   
 }

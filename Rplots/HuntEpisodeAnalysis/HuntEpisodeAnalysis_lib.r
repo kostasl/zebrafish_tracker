@@ -290,7 +290,7 @@ detectTailBouts <- function(vTailMotionFq)
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt)
 {
   nNumberOfComponents = 18
-  nSelectComponents = 9
+  nSelectComponents = 4
   
   
   nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
@@ -590,6 +590,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)
   boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
   turnSeq <- rep(0,NROW(vMotionBoutDuration))   ##Empty Vector Of Indicating The Number of Turns that have occured up to a Bout
+  turnRank <- rep(0,NROW(vMotionBoutDuration))   ##SCore Turns Based on their Size towards turn to prey- ie the largest turn towards prey gets to be ranked #1
   ## TURN TO PREY SEQUENCE NUMBERING 
   ## Assign A TurnSequence Number to Each Detected Bout / Used to Select 1 turn to prey etc..
   ## Go through Each MotionBout and Check If Turns Detected within Each Bout / Then Increment Counter
@@ -614,9 +615,14 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
             turnCount <- turnCount + 1
             turnSeq[tidx] <- turnCount
           }
-        }##check for missing values
-      }
-    }
+        } ##check for missing values in Bearing To Prey
+      
+      } ##If Turn Angle is Above 0
+      
+    }##For Each Motion Bout
+    
+    ## Now Rank turns By Size 
+    # turnRank abs(vBearingToPrey[vMotionBout_On,2]-vBearingToPrey[vMotionBout_Off,2] )  
   } ##If motion bout Exists
   
   
