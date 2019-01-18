@@ -6,23 +6,27 @@
 ## 
 ## This was given by Giovanni , based on model evidence formula (see wikipedia Bayesian linear regression)
 
+##Load Data (See stat_LinRegression_TurnVsBearing)
+
 ### Plot Undershoot Raw Data
 hist(dataLL$turn/dataLL$bearing)
 hist(dataNL$turn/dataNL$bearing)
 hist(dataDL$turn/dataDL$bearing)
 
 ##Synthetic - TEst Data
-x=seq(-10,10,0.1)
+x=seq(-65,65,1)
 c11=0.5
-c12=0.75
+c12=0.95
+c13=14 ##SD
 c21=0.5
-c22=2.95
+c22=0.75
+c23=14 ##SED
 
-test_data1=cbind(x,c11+c12*x+rnorm(length(x)))
-test_data2=cbind(x,c21+c22*x+rnorm(length(x)))
+test_data1=cbind(x,c11+c12*x+rnorm(length(x),sd=c13))
+test_data2=cbind(x,c21+c22*x+rnorm(length(x),sd=c23))
 test_data3=rbind(test_data1,test_data2)
 
-plot(test_data1)
+plot(test_data1,ylim=c(-70,70),xlim=c(-70,70) )
 points(test_data2,col="red")
 ###
 
@@ -54,7 +58,7 @@ p3=getParams(test_data3); lML3=logML(p3)
 ## -ve is interpreted as common model best describes these
 logR=(lML1+lML2)-lML3
 
-
+##On to the real Data 
 b0=1
 a0=1
 MLparamsLL <- getParams( cbind(dataLL$turn,dataLL$bearing),a0,b0 )
@@ -70,6 +74,10 @@ MLparamsDLLL <- getParams( dataDLLL,a0,b0 )
 dataLLNL <- rbind(cbind(dataNL$turn,dataNL$bearing),cbind(dataLL$turn,dataLL$bearing))
 MLparamsLLNL <- getParams( dataLLNL,a0,b0 )
 
+###Plot Lines
+plot(cbind(dataLL$turn,dataLL$bearing))
+points(cbind(dataNL$turn,dataNL$bearing),col="red")
+points(cbind(dataDL$turn,dataDL$bearing),col="blue")
 
 ## Calcilate Probability of Model Given Data
 logML_LL <- logML(MLparamsLL)

@@ -286,14 +286,14 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     ###########################################################################################
     
     ### CHECK for EXIT LOOP ###
-    if (Keyc == 'c')  ##Stop Event Loop Here if c was pressed
+    if (Keyc == 'c' | Keyc == 'q')  ##Stop Event Loop Here if c was pressed
     {
       message(" Stop Labelling Loop Here " )
       ##return(datHuntEvent)
       break 
     }
     else
-      message(paste(levels(huntLabels)[as.numeric(Keyc)+1] , "-Proceeding to Next Video.") )
+      message(paste(ifelse(is.numeric(Keyc),levels(huntLabels)[as.numeric(Keyc)+1], Keyc  ) , "- Selected.") )
     
     ###########
     
