@@ -1,17 +1,37 @@
 ### Model Comparison ###
-
+## Kostas Lagogiannis 2019
 ### Model Evidence - Using a Baysian Factor #comparison## 
 ## The Prior is  very imporrtant 
-## Compare Likelyhoods between models for undershooting (linear slope fit) 
-## Establish if DryFed Data Belong to NF rather then LF
+## Compare Likelyhoods between models for undershooting (linear slope fit)  
+## Establish if LF fit model is separate to  DF And NF, while NF and DF are actually from the same  underlying process - 
+## Thus show for which prior assumptions we can take NF and DF to be the same while LF fish behave differently
 ## 
-## This was given by Giovanni , based on model evidence formula (see wikipedia Bayesian linear regression)
+## This was shown to me by  by Giovanni 16-18 jan 2019, based on model evidence formula (see wikipedia Bayesian linear regression 
+## https://en.wikipedia.org/wiki/Bayesian_linear_regression)
+
+## Needs Packages  ##
 ## install.packages("invgamma")
 ## install.packages("mvtnorm") for the multivariate gaussian
 library(invgamma)
 library(mvtnorm)
 
 ##Load Data (See stat_LinRegression_TurnVsBearing)
+lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData",".rds",sep="") ) #Processed Registry on which we add )
+
+## Get Event Counts Within Range ##
+datTurnVsPreyLL <- cbind(lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$LL[,"Turn"]),lFirstBoutPoints$LL[,"RegistarIdx"] )
+datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]),]
+datTurnVsPreyNL <- cbind(lFirstBoutPoints$NL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$NL[,"Turn"]),lFirstBoutPoints$NL[,"RegistarIdx"] )
+datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]),]
+datTurnVsPreyDL <- cbind(lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$DL[,"Turn"]),lFirstBoutPoints$DL[,"RegistarIdx"] )
+datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]),]
+nDatLL <- NROW(datTurnVsPreyLL)
+nDatNL <- NROW(datTurnVsPreyNL)
+nDatDL <- NROW(datTurnVsPreyDL)
+
+dataLL=list(turn=turnsLL,bearing=bearingLL,N=nDatLL);
+dataNL=list(turn=turnsNL,bearing=bearingNL,N=nDatNL);
+dataDL=list(turn=turnsDL,bearing=bearingDL,N=nDatDL);
 
 ###
 
@@ -94,13 +114,16 @@ logR=(lML1+lML2)-lML3
 ## in managing to separate te 2 cases where a common source exists and 
 ## Priors plot(r,dinvgamma(r, 15, 1290))
 
-a0=15
-b0=1300
+a0=10 
+b0=1000
 sigma0 = 10;
-##This is inverse Variance
+##This is inverse Variance prior
 #lambda0 = matrix(c(sigma0*10000,0,0,sigma0),2,2)
 lambda0 = matrix(c(sigma0*1,0,0,sigma0),2,2)
 
+## Plot Prior 
+r <- seq(0,300,1)
+plot(r,dinvgamma(r, a0, b0))
 
 ##DATA Combinations ##
 datLL <- cbind(dataLL$turn,dataLL$bearing)
