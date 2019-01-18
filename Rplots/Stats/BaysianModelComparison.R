@@ -29,9 +29,9 @@ nDatLL <- NROW(datTurnVsPreyLL)
 nDatNL <- NROW(datTurnVsPreyNL)
 nDatDL <- NROW(datTurnVsPreyDL)
 
-dataLL=list(turn=turnsLL,bearing=bearingLL,N=nDatLL);
-dataNL=list(turn=turnsNL,bearing=bearingNL,N=nDatNL);
-dataDL=list(turn=turnsDL,bearing=bearingDL,N=nDatDL);
+dataLL=list(turn=datTurnVsPreyLL[,2],bearing=datTurnVsPreyLL[,1],N=nDatLL);
+dataNL=list(turn=datTurnVsPreyNL[,2],bearing=datTurnVsPreyNL[,1],N=nDatNL);
+dataDL=list(turn=datTurnVsPreyDL[,2],bearing=datTurnVsPreyDL[,1],N=nDatDL);
 
 ###
 
@@ -114,14 +114,14 @@ logR=(lML1+lML2)-lML3
 ## in managing to separate te 2 cases where a common source exists and 
 ## Priors plot(r,dinvgamma(r, 15, 1290))
 
-a0=10 
-b0=1000
-sigma0 = 10;
+a0=350 
+b0=25555
+sigma0 = 100;
 ##This is inverse Variance prior
 #lambda0 = matrix(c(sigma0*10000,0,0,sigma0),2,2)
 lambda0 = matrix(c(sigma0*1,0,0,sigma0),2,2)
 
-## Plot Prior 
+## Plot Prior on Variance 
 r <- seq(0,300,1)
 plot(r,dinvgamma(r, a0, b0))
 
