@@ -109,8 +109,9 @@ genManyPar(p3)
 ## +ve means they are from separate Sources
 ## -ve is interpreted as common model best describes these
 logR=(lML1+lML2)-lML3
+#######################
 
-##On to the rREAL Data - PRIORS Are very important 
+##On to the **REAL** Data - PRIORS Are very important 
 ## in managing to separate te 2 cases where a common source exists and 
 ## Priors plot(r,dinvgamma(r, 15, 1290))
 
