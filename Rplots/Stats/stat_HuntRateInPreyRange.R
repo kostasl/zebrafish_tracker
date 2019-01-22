@@ -66,7 +66,7 @@ datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),]
 
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,10)
+preyCntRange <- c(0,1)
 
 ##Larva Event Counts Slice
 datSliceLL <- datHuntVsPreyL[datHuntVsPreyL[,1] >= preyCntRange[1] & datHuntVsPreyL[,1] <= preyCntRange[2],2 ]
@@ -109,9 +109,8 @@ drawDL2=jags.samples(mDL2,steps,thin=thin,variable.names=varnames1)
 
 ##q[idx,sampleID,chainID]
 ##PLot The Param Mean Distributions
-#strPlotName <- paste("plots/stat_HuntEventRateParamPreyRange",preyCntRange[1],preyCntRange[2], ".pdf",sep="-")
-#pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
-X11()
+strPlotName <- paste(strPlotExportPath,"/stat/stat_HuntEventRateParamPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
+pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
 
 hist(drawLL2$q[1,,1],breaks=seq(0,15,length=100),col=colourH[1],xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
 hist(drawNL2$q[1,,1],breaks=seq(0,15,length=100),add=T,col=colourH[2])
@@ -119,27 +118,9 @@ hist(drawDL2$q[1,,1],breaks=seq(0,15,length=100),add=T,col=colourH[3])
 
 legend("topright",legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
 
-#dev.off()
+dev.off()
 ##hist(drawLL$qq[1,,1],breaks=seq(0,50,length=100))
 ##hist(drawNL$qq[1,,1],breaks=seq(0,50,length=100),add=T,col=rgb(1,0,0,.4))
 ##hist(drawDL$qq[1,,1],breaks=seq(0,50,length=100),add=T,col=rgb(0,1,0,.4))
 
 ### Do Linear Rate Vs Prey Model Plot -- Add Quantile Plots of Uncertainty in Parameters##
-X11()
-strDensityplotFileName <- paste("plots/stat_HuntRateVsInitPreyCountModel.pdf",collapse=NULL,sep="");
-#pdf(strDensityplotFileName,width=8,height=8)
-
-ind=length(drawLL2$mu[1,,])
-food_level = seq(0,80,0.2)
-
-mu=apply(drawLL2$mu[,(ind-1000):ind,],1,mean)
-qmu1 = drawLL2$mu[1,(ind-1000):ind,]
-qmu2 = drawLL2$mu[2,(ind-1000):ind,]
-lowup=matrix(NA,2,length(food_level))
-for(i in 1:length(food_level)){
-  lowup[,i]=quantile(qmu1+qmu2*food_level[i],probs=c(0.05,0.95))
-}
-plot(food_level,mu[1]+mu[2]*food_level,main="Hunt Rate Estimation Vs Initial Prey Count",ylim=c(0,40),t='l',col=colourH[1],cex=6.5,lwd=4)
-polygon(c(food_level,rev(food_level)),c(lowup[1,],rev(lowup[2,])),ylim=c(0,40),col=colourH[1],cex=6.5)
-
-points(dataLL2$food,dataLL2$n,col=colourH[4] ,t='p')
