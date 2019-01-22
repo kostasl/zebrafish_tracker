@@ -9,6 +9,8 @@ n[j] ~ dpois(q[j])
 }
 }"
 
+
+### Model Group Hunt Rate ###
 modelG="model { 
 q ~ dnorm(15,0.0001)T(0,400)
 

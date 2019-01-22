@@ -90,7 +90,7 @@ zNL <- kde2d(draw$q[3,,1], draw$lambda[3,,1], n=80)
 zDL <- kde2d(draw$q[1,,1], draw$lambda[1,,1], n=80)
 
 
-Range_ylim <- c(5,20)
+Range_ylim <- c(7,17)
   plot(draw$q[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=Range_ylim,xlim=c(0,0.5),pch=19,
        main="Bayesian Estimation for Hunt Rate and Efficiency",
        xlab="Probability of Success q",
@@ -106,7 +106,7 @@ dev.off()
 
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation_Fails.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of Engaging with Prey and Failing, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
-plot(draw$p[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=cRange_ylim,xlim=c(0,1),pch=19,
+plot(draw$p[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=Range_ylim,xlim=c(0,1),pch=19,
      main="Bayesian Estimation for Hunt Rate and Efficiency (Fails)",
      xlab="Probability of Failing p",
      ylab=(expression(paste("Hunt Rate ",lambda ) ) )  ) #paste("Hunt Rate", )
