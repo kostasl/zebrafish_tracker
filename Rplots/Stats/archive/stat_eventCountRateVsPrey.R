@@ -146,9 +146,9 @@ steps=100000;
 thin=2;
 
 library(rjags)
-strModelName = "modelGPL.tmp"
+strModelName = "modelI.tmp"
 fileConn=file(strModelName)
-writeLines(modelGPL,fileConn);
+writeLines(modelI,fileConn);
 close(fileConn)
 
 mLL2=jags.model(file=strModelName,data=dataLL2);

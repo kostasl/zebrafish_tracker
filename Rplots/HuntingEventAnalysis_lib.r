@@ -370,7 +370,11 @@ calcHuntStat3 <- function(datHuntEvent)
 {
   
   message(paste("##V3 Calculate Hunting Statitistics for Group ",unique(datHuntEvent$groupID), " ##" ) )
-  
+  if (NROW(datHuntEvent[is.na(datHuntEvent$groupID) ,] ) > 0 )
+  {
+    warning("calcHuntStat3: NA found in datHuntEvent GroupID - NA rows removed")
+    datHuntEvent <- datHuntEvent[!is.na(datHuntEvent$groupID) ,]
+  } 
   stopifnot(length(unique(datHuntEvent$groupID) ) ==1 ) ##Only One Condition Should Be analysed at a time - OtherWise LarvaID may mix results between conditions 
   ## Redo Factor On Subset Of Data - Excluding any ExpID that do not belong Here
   datHuntEvent$expID <- factor(datHuntEvent$expID) 

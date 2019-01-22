@@ -5,7 +5,7 @@
 ## This may suggest that either A mistake occured on the 08-02-2018 NF fish, 
 ## or that our Poisson Single rate prior is wrong   ## 
 
-
+## Group Hunt Rate Modelling 
 modelG="model { 
 q ~ dnorm(15,0.0001)T(0,400)
 
