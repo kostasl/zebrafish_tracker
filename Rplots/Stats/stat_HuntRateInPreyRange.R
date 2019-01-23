@@ -1,4 +1,7 @@
 ### Makes Bayssian inference on  hunt events rate - within a given rannge of prey counts##
+## Used to plot spontaneous eye vergence events count in the Empty Test conditions ##
+### TODO Also Plot Duration Of Eye Vergence Frames ###
+
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
@@ -46,21 +49,21 @@ datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged)
 ## Get Event Counts Within Range ##
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
 datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE) )
-datHuntVsPreyL <- rbind(datHuntVsPreyLL,datHuntVsPreyLE)
+datHuntVsPreyL <- datHuntVsPreyLE#rbind(datHuntVsPreyLL,datHuntVsPreyLE)
 
 datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]),]
 
 
 datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL) )
 datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE) )
-datHuntVsPreyN <- rbind(datHuntVsPreyNL,datHuntVsPreyNE)
+datHuntVsPreyN <- datHuntVsPreyNE #rbind(datHuntVsPreyNL,datHuntVsPreyNE)
 
 datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]),]
 
 
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL) )
 datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE) )
-datHuntVsPreyD <- rbind(datHuntVsPreyDL,datHuntVsPreyDE)
+datHuntVsPreyD <-datHuntVsPreyDE #rbind(datHuntVsPreyDL,datHuntVsPreyDE)
 ##Remove NA 
 datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),]
 
@@ -87,6 +90,7 @@ dataDL2=list(n=nDL2,NTOT=length(nDL2),food=as.integer(datHuntVsPreyD[,1]));
 varnames1=c("n","q")
 burn_in=1000;
 steps=100000;
+plotsamples = 10000
 thin=2;
 
 library(rjags)
@@ -107,18 +111,50 @@ drawLL2=jags.samples(mLL2,steps,thin=thin,variable.names=varnames1)
 drawNL2=jags.samples(mNL2,steps,thin=thin,variable.names=varnames1)
 drawDL2=jags.samples(mDL2,steps,thin=thin,variable.names=varnames1)
 
+
+
 ##q[idx,sampleID,chainID]
 ##PLot The Param Mean Distributions
 strPlotName <- paste(strPlotExportPath,"/stat/stat_HuntEventRateParamPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
 
-hist(drawLL2$q[1,,1],breaks=seq(0,15,length=100),col=colourH[1],xlab="Hunt Rate Parameter",main=paste("Comparison using Poisson fit, to H.Events with  (",preyCntRange[1],"-",preyCntRange[2],") prey") )
-hist(drawNL2$q[1,,1],breaks=seq(0,15,length=100),add=T,col=colourH[2])
-hist(drawDL2$q[1,,1],breaks=seq(0,15,length=100),add=T,col=colourH[3])
+hist(tail(drawLL2$q[1,,1],plotsamples),breaks=seq(0,15,length=100),col=colourH[1],xlab=" Event Rate (r)",
+     main=paste("Spontaneous Eye Vergence Events")) #(",preyCntRange[1],"-",preyCntRange[2],") prey")
+hist(tail(drawNL2$q[1,,1],plotsamples),breaks=seq(0,15,length=100),add=T,col=colourH[2])
+hist(tail(drawDL2$q[1,,1],plotsamples),breaks=seq(0,15,length=100),add=T,col=colourH[3])
 
-legend("topright",legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
+legend("topright",legend = c(paste("LF #",nDatLL),paste("NF #",nDatNL),paste("DF #",nDatDL)),fill=colourH)
 
 dev.off()
+
+
+#### Plot Density ###
+###Plot Density of Slope
+dLLb<-density(tail(drawLL2$q[,,1],plotsamples)   )
+dNLb<-density(tail(drawNL2$q[,,1] ,plotsamples)   )
+dDLb<-density(tail(drawDL2$q[,,1],plotsamples)  )
+
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_HuntEventDensityPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep=""))
+plot(dDLb,col=colourL[1],lwd=3,lty=1, xlim=c(0.1,10), ylim=c(0,2),
+     main="Rate of Spontaneous Eye Vergence Events ",
+     xlab=expression(paste("Rate  ",lambda) ) )
+lines(dLLb,col=colourL[2],xlim=c(0.5,1.2),lwd=3,lty=2)
+lines(dNLb,col=colourL[3],xlim=c(0.5,1.2),lwd=3,lty=3)
+
+legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(nDatDL,nDatLL ,nDatNL ) )
+       ,fill=colourL,lty=c(1,2,3))
+dev.off()
+
+
+#### Also Plot Duration Of Eye Vergence Frames ###
+
+
+
+
+
+
+
 ##hist(drawLL$qq[1,,1],breaks=seq(0,50,length=100))
 ##hist(drawNL$qq[1,,1],breaks=seq(0,50,length=100),add=T,col=rgb(1,0,0,.4))
 ##hist(drawDL$qq[1,,1],breaks=seq(0,50,length=100),add=T,col=rgb(0,1,0,.4))

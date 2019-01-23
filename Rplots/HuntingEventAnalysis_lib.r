@@ -76,6 +76,7 @@ loadHuntEvents <- function(strCondTags,dataSetsToProcess)
 ######################################################### EXTRACT HUNTING EVENTS ##################################
 ##Focus on extracting and Identifying Hunting events - Eye Vergence
 ##Return list of HuntEvents / With start and End Frame / and Video FileName
+## TODO : Add Hysterisis in the ON/Off of Eye Vergence Event Detection
 detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
 {
   message("## Extract Hunting Events For Group ##")
