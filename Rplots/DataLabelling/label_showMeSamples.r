@@ -21,7 +21,7 @@ for (g in vHuntEventLabels )
   l=l+1
 }
 
-TargetGroups <- "LL" #c("LL","DL","NL")
+TargetGroups <- "NL" #c("LL","DL","NL")
 TargetLabel <- as.numeric(readline("### Key In A Number For Which Label You want to see:"))
 #TargetLabel = which(vHuntEventLabels == vHuntEventLabels[Keyc])-1;
 #gc <- sample(groupsList,1)
@@ -46,5 +46,8 @@ datHuntEventPool <- labelHuntEvents(datHuntEventAllGroupToValidate,
                                     idxFilter=NA,
                                     bskipMarked = FALSE)
 
+### Summarize Label Occupancies 
+tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$eventID != 0,]$huntScore),datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$eventID != 0,]$groupID)
+tblRes
 #579/2017
 # 

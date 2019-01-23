@@ -290,7 +290,7 @@ detectTailBouts <- function(vTailMotionFq)
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt,minTurnSpeed=NA)
 {
   vTurnSpeed <- abs(vTurnSpeed)
-  nNumberOfComponents = round( (max(vTurnSpeed)-min(vTurnSpeed))/1 )
+  nNumberOfComponents = max(3,round( (max(vTurnSpeed)-min(vTurnSpeed))/1 ))
   nSelectComponents = round(nNumberOfComponents*0.85)
   
   ##Fetch Heurestic Threshold 
