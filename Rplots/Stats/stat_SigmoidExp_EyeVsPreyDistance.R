@@ -36,7 +36,7 @@ timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
 sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
-fitseqNo <- 7
+fitseqNo <- 8
 npad <- 1
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
