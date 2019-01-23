@@ -49,6 +49,11 @@ huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10
 ## Meny made to stick to same event until User picks c to stop, or s to move to next event
 labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTrackerPath,strTrackOutputPath,factorLabelFilter,ExpIDFilter,EventIDFilter,idxFilter=NA,bskipMarked = TRUE)
 {
+  
+  ##Save Backup Of Records
+  saveRDS(datHuntEvent,file=paste(strDatDir,"/LabelledSet/",strDataFileName,"_backup.rds",sep="" )) ##Save With Dataset Idx Identifier
+  message(paste("Saved Backup :",strDatDir,"/LabelledSet/",strDataFileName,"_backup.rds",sep="" ) )
+  
   message(paste(NROW(datHuntEvent[datHuntEvent$huntScore >0,]),"/",NROW(datHuntEvent), " Data has already been labelled" ) )
   ##nLabelledSuccess <- NROW(datHuntEvent[datHuntEvent$huntScore == which(levels(huntLabels) == "Success") | datHuntEvent$huntScore == which(levels(huntLabels) == "Success-SpitBackOut"),])
   ## Detect Labels with Success In the Name -
@@ -267,6 +272,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     ##### Save With Dataset Idx Identifier On Every Labelling As An Error Could Lose Everything  ########
     save(datHuntEvent,file=paste(strDatDir,"/LabelledSet/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
     saveRDS(datHuntEvent,file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
+
     
     strOutFileName <- paste(strDatDir,"/LabelledSet/",strDataFileName,"-updates.csv",sep="")
     message(paste("Data Updated *",strOutFileName,sep="" ))

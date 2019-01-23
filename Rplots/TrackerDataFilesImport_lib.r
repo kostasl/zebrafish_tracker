@@ -166,24 +166,32 @@ getFileSet <- function(strCondDir,strsrc,strCondR = "*.csv")
 }
 
 ##Load Files To Tracker Data and Filter Them Out##
-## 
+##  Uses list HasNames as GroupIDs 
+## Uses 3rd List field as a Tag for the Import group (To signify a used defined  grouping of the huntevents ex. success/Fail )
 importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
   datProcessed <- list();
   ##CHANGE HASH/ID to select between datasets/groups ##
   strCondTags = names(listSrcFiles);
   
-  
   procDatIdx = 1;
   groupDatIdx = 1;
   for (i in strCondTags)
   {
-    message(paste("#### Load Data Files Of Group ",i," ###############"))
+    
     
     TrackerData <- list();	
     subsetDat = listSrcFiles[[i]];
     temp <-  unlist(subsetDat[1])
+    groupTag <- lHuntEventTRACKSfileSrc[[i]][2] ## Extract the User definedImport Tag, and Add to data frame
     TrackerData[[i]] = lapply(temp, read.delim)
     nDat = length(TrackerData[[i]])
+    
+    if (nDat >0)
+      message(paste("#### Load Data Files Of Group ",i,groupTag," ###############"))
+    else    {
+      message(paste("#### No Data Files Found for Group ",i,groupTag," ###############"))
+      next()
+    }
     
     
     groupDatIdx = 0;
@@ -208,6 +216,9 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
       #NOTE: Only Available In files names of more Recent Experiments
       larvaID <-lNameDat$larvaID##as.integer( gsub("[^0-9]","",brokenname[[1]][length(brokenname[[1]])-4]) )
 
+      #Add Extra ImportTag Used Defined Field To Discriminate Files-
+      lNameDat$importTag <- unlist(groupTag)
+      
       if(!is.numeric(larvaID)  ) ##Check As it Could Be missing
       {
         larvaID <- NA
@@ -274,7 +285,7 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
                                                 #eventID=rep(eventID,Nn), ##From Filename - Sequence # of Event captured during recording 
                                                 #larvaID=rep(larvaID,Nn), ##As defined in the filename 
                                                 #trackID=rep(trackID,Nn), ##The ID given to the pointtrack from the tracker 
-                                                group=rep(i,Nn),
+                                                fileGroup=rep(i,Nn),
                                                 trackletID= TrackerData[[i]][[j]]$fishID,
                                                 PreyCount=meanf(TrackerData[[i]][[j]]$RotiferCount,nFrWidth*8),
                                                 countEyeErrors=TrackerData[[i]][[j]]$nFailedEyeDetectionCount,
@@ -307,7 +318,7 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
                                                 #eventID=eventID,
                                                 #larvaID=larvaID,
                                                 #trackID=trackID,
-                                                group=i,
+                                                fileGroup=i,
                                                 trackletID=0,
                                                 PreyCount=0,
                                                 countEyeErrors=0,
@@ -364,14 +375,22 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
   groupDatIdx = 0;
   for (i in strCondTags)
   {
-    message(paste("#### Load Prey Track Files Of Group ",i," ###############"))
     
     TrackerData <- list();	
     subsetDat = listSrcFoodFiles[[i]];
     temp <-  unlist(subsetDat[1])
+    groupTag <- listSrcFoodFiles[[i]][2]
     TrackerData[[i]] = lapply(temp, read.delim)
     nDat = length(TrackerData[[i]])
 
+    if (nDat >0)
+      message(paste("#### Load Prey Files Of Group ",i,groupTag," ###############"))
+    else    {
+      message(paste("#### No Prey Files Found for Group ",i,groupTag," ###############"))
+      next()
+    }
+    
+    
     groupDatIdx = 0;
     procDatFrames = 0;
     ## FOR EACH DATA FIle IN Group - Filter Data And combine into Single DataFrame For Group ##
@@ -453,7 +472,7 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
                                                   larvaID=rep(larvaID,Nn),
                                                   trackID=rep(trackID,Nn),
                                                   PreyID =datPreyTracks$FoodID,
-                                                  group=rep(i,Nn)
+                                                  fileGroup=rep(i,Nn)
           );
           
           groupDatIdx = groupDatIdx + 1; ##Count Of Files Containing Data
@@ -474,7 +493,7 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
                                                   larvaID=larvaID,
                                                   trackID=trackID,
                                                   PreyID = NA,
-                                                  group=i
+                                                  fileGroup=i
           );
           message(paste("No  Prey Track Data for ΕχpID",expID,"event ",eventID," larva ",larvaID, " TrackNo",trackID))
           
@@ -531,7 +550,21 @@ extractFileNameParams_huntingExp <- function(strFileName)
   fps     <- as.integer( gsub("[^0-9]","",brokenname[1])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
  # timeMin <- as.integer( gsub("[^0-9]","",brokenname[5])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
   
-  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps) )
+  ##Figure Out Group Id from File Name
+  strGroupID <- "NA"
+  if (grepl("LiveFed",basename) )
+    strGroupID <- "L"
+  if (grepl("DryFed",basename) )
+    strGroupID <- "D"
+  if (grepl("NotFed",basename) )
+    strGroupID <- "N"
+  
+  if (grepl("Empty",basename) ) ##If File Name Contains "Empty" then fix tag to signify Empty Or Roti test condition
+    strGroupID <- paste(strGroupID,"E",sep="")
+  else
+    strGroupID <- paste(strGroupID,"L",sep="")
+  
+  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID) )
 }
 
 #/// Returns a list of name value pairs extracted from TrackerFile name used for the PreyCount Feeding Assay
@@ -547,5 +580,19 @@ extractFileNameParams_preycountExp <- function(strFileName)
   fps     <- as.integer( gsub("[^0-9]","",brokenname[2])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
   timeMin <- as.integer( gsub("[^0-9]","",brokenname[5])  ) ##Extract the Track Sequence In The filename Given Automatically By the tracker , when a file already exists
   
-  return(list(expID=expID,eventID=eventID,larvaID=larvaID,trackID=trackID,time=timeMin,fps=fps) )
+  strGroupID <- "NA"
+  
+  if (grepl("LiveFed",basename) )
+    strGroupID <- "L"
+  if (grepl("DryFed",basename) )
+    strGroupID <- "D"
+  if (grepl("NotFed",basename) )
+    strGroupID <- "N"
+  
+  if (grepl("Empty",basename) ) ##If File Name Contains "Empty" then fix tag to signify Empty Or Roti test condition
+    strGroupID <- paste(strGroupID,"E",sep="")
+  else
+    strGroupID <- paste(strGroupID,"L",sep="")
+  
+  return(list(expID=expID,eventID=eventID,larvaID=larvaID,trackID=trackID,time=timeMin,fps=fps,groupID=strGroupID) )
 }

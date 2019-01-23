@@ -60,7 +60,7 @@ pchL <- c(16,2,4) ## The style of bullet used for each group DL, LL, NL
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "//mnt/ARXEIO1TB/ExpData/zebrapreyCap/AnalysisSet/"
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Qt_5_11_1-Release/" 
-strTrackeroutPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Success/"
+strTrackeroutPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
 strTrackInputPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
 strDatDir        <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
 strDataExportDir <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
@@ -71,7 +71,7 @@ strPlotExportPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/ze
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
-strTrackeroutPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Success/"
+strTrackeroutPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
 #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
 strTrackInputPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData" ##Where to source the Tracker csv files from
 strDatDir        <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
@@ -82,7 +82,7 @@ strPlotExportPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrac
 setwd("~/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
 strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
-strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
+strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
 strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
 strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
 strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"

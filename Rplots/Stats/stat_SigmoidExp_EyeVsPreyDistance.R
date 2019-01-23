@@ -1,7 +1,8 @@
-##  24-10-2018 - Estimates Vergence OnSet Distance - 
-### Fitting a sigmoid and Exp to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
+##  24-10-2018 - ## Estimates Vergence OnSet Distance - 
+# Best model for Eye Vergence vs Distance Regression 
+## Fitting a sigmoid and Exp to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
 ## Assumes A slow and Fast Muscle Action
-### Model fits Eye Vergence / Detecting Onset And Rate Of Converge In the Near Prey Region/After Vergence 
+## Model fits Eye Vergence / Detecting Onset And Rate Of Converge In the Near Prey Region/After Vergence 
 ## Produces a plot comparing onset distance (τ) , with no striking distance shown actually LL seems to be a proader density
 ### Note : 20 points Padding is added before the furthest point, making Phi Vergence angle 0, such that lowest V angle Of Sigmoid sits low.
 ##
@@ -28,7 +29,7 @@ pchL <- c(16,2,4)
 burn_in=1000;
 steps=18000;
 thin=3;
-nchains <-4
+nchains <-3
 n.cores <- 6
 timings <- vector('numeric', 3)
 
@@ -326,7 +327,7 @@ modelGCSigmoidInd  <- "model
   
   ####Select Subset Of Data To Analyse
   
-  strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register",".rds",sep="") #Processed Registry on which we add 
+  strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetB",".rds",sep="") #Processed Registry on which we add 
   message(paste(" Importing Retracked HuntEvents from:",strRegisterDataFileName))
   datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
   
@@ -334,7 +335,7 @@ modelGCSigmoidInd  <- "model
   
   datEyeVsPreyCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
   
-  datEyeVsPreyCombinedAll <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$doesCaptureStrike == 1,] # Select The Ones With a strike Capture
+  ##datEyeVsPreyCombinedAll <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$doesCaptureStrike == 1,] # Select The Ones With a strike Capture
   
   strGroupID <- levels(datTrackedEventsRegister$groupID)
   
@@ -500,7 +501,7 @@ modelGCSigmoidInd  <- "model
   dev.off()
   
   
-  ########################  N L  #########
+  ########################  NL  #########
   ## NL ### 
   timer <- proc.time()
   mNL=jags.model(file="modelSig.tmp",
