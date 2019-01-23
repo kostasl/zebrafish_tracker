@@ -206,8 +206,6 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
       ## Extract fields values from filename using function name provided##
       lNameDat <- do.call(strNameFieldFUN, list(temp[[j]]) )
       
-      
-      
       ## Save standart expected fields for experiments ##
       expID <- lNameDat$expID  #as.numeric(brokenname[[1]][length(brokenname[[1]])-3]);
       eventID <-lNameDat$eventID #   as.numeric(brokenname[[1]][length(brokenname[[1]])-2]);

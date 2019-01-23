@@ -36,38 +36,42 @@ lHuntEventTRACKSfileSrc <- list()
   #lHuntEventTRACKSfileSrc[["LE"]] <- list(getFileSet("LiveFed/Empty/",strTrackeroutPath,"tracks"),"-HuntEvent-LiveFed-Empty")
   #lHuntEventFOODfileSrc[["LE"]] <- list(getFileSet("LiveFed/Empty/",strTrackeroutPath,"food"),"-HuntEventFood-LiveFed-Empty")
 
-  lHuntEventTRACKSfileSrc[["LLS"]] <- list(getFileSet("LiveFed/Success",strTrackeroutPath,"tracks"),"LF")
-  lHuntEventFOODfileSrc[["LLS"]] <- list(getFileSet("LiveFed/Success",strTrackeroutPath,"food"),"LF")
+  lHuntEventTRACKSfileSrc[["LLS"]] <- list(getFileSet("LiveFed/Success",strTrackeroutPath,"tracks"),"S")
+  lHuntEventFOODfileSrc[["LLS"]] <- list(getFileSet("LiveFed/Success",strTrackeroutPath,"food"),"S")
 
-  lHuntEventTRACKSfileSrc[["LLF"]] <- list(getFileSet("LiveFed/Fail",strTrackeroutPath,"tracks"),"LF")
-  lHuntEventFOODfileSrc[["LLF"]] <- list(getFileSet("LiveFed/Fail",strTrackeroutPath,"food"),"LF")
+  lHuntEventTRACKSfileSrc[["LLF"]] <- list(getFileSet("LiveFed/Fail",strTrackeroutPath,"tracks"),"F")
+  lHuntEventFOODfileSrc[["LLF"]] <- list(getFileSet("LiveFed/Fail",strTrackeroutPath,"food"),"F")
   
-  lHuntEventTRACKSfileSrc[["DLS"]] <- list(getFileSet("DryFed/Success",strTrackeroutPath,"tracks"),"DF")
-  lHuntEventFOODfileSrc[["DLS"]] <- list(getFileSet("DryFed/Success",strTrackeroutPath,"food"),"DF")
+  lHuntEventTRACKSfileSrc[["DLS"]] <- list(getFileSet("DryFed/Success",strTrackeroutPath,"tracks"),"S")
+  lHuntEventFOODfileSrc[["DLS"]] <- list(getFileSet("DryFed/Success",strTrackeroutPath,"food"),"S")
   
-  lHuntEventTRACKSfileSrc[["DLF"]] <- list(getFileSet("DryFed/Fail",strTrackeroutPath,"tracks"),"DF")
-  lHuntEventFOODfileSrc[["DLF"]] <- list(getFileSet("DryFed/Fail",strTrackeroutPath,"food"),"DF")
+  lHuntEventTRACKSfileSrc[["DLF"]] <- list(getFileSet("DryFed/Fail",strTrackeroutPath,"tracks"),"F")
+  lHuntEventFOODfileSrc[["DLF"]] <- list(getFileSet("DryFed/Fail",strTrackeroutPath,"food"),"F")
   
-  lHuntEventTRACKSfileSrc[["NLS"]] <- list(getFileSet("NotFed/Success",strTrackeroutPath,"tracks"),"NF")
-  lHuntEventFOODfileSrc[["NLS"]] <- list(getFileSet("NotFed/Success",strTrackeroutPath,"food"),"NF")
+  lHuntEventTRACKSfileSrc[["NLS"]] <- list(getFileSet("NotFed/Success",strTrackeroutPath,"tracks"),"S")
+  lHuntEventFOODfileSrc[["NLS"]] <- list(getFileSet("NotFed/Success",strTrackeroutPath,"food"),"S")
 
-  lHuntEventTRACKSfileSrc[["NLF"]] <- list(getFileSet("NotFed/Fail",strTrackeroutPath,"tracks"),"NF")
-  lHuntEventFOODfileSrc[["NLF"]] <- list(getFileSet("NotFed/Fail",strTrackeroutPath,"food"),"NF")
+  lHuntEventTRACKSfileSrc[["NLF"]] <- list(getFileSet("NotFed/Fail",strTrackeroutPath,"tracks"),"F")
+  lHuntEventFOODfileSrc[["NLF"]] <- list(getFileSet("NotFed/Fail",strTrackeroutPath,"food"),"F")
   
   
   ##RUN IMPORT FUNCTION
-  datHuntEventFrames <-importTrackerFilesToFrame(lHuntEventTRACKSfileSrc,"extractFileNameParams_huntingExp")
+  datHuntEventFrames       <- importTrackerFilesToFrame(lHuntEventTRACKSfileSrc,"extractFileNameParams_huntingExp")
   ##Clean Out Non (Fish) Tracks -  Dublicates - Use Template Score TO detect Irrelevant Tracks
-  datHuntEventFrames <- datHuntEventFrames[datHuntEventFrames$templateScore > 0.70,] 
+  datHuntEventFrames       <- datHuntEventFrames[datHuntEventFrames$templateScore > 0.70,] 
   ## IMport Food Tracks And Merge With Fish Tracks In Hunt Events # Found in TrackerDataFilesImport_lib
-  datHuntEventMergedFrames<- mergeFoodTrackerFilesToFrame(lHuntEventFOODfileSrc,datHuntEventFrames) ##Load Food Tracking Files And Attach Data On Respective Hunt Event Frames.
+  datHuntEventMergedFrames <- mergeFoodTrackerFilesToFrame(lHuntEventFOODfileSrc,datHuntEventFrames) ##Load Food Tracking Files And Attach Data On Respective Hunt Event Frames.
   #datHuntEventFrames$dataSet <- idxDataSet ##Identify DataSet
   
   ##CHeck If Exp Ids not found 
   stopifnot(NROW(datHuntEventFrames[which(is.na(datHuntEventFrames$expID)), ]) == 0)
   
   #Make an Updated list of ReTracked Hunt Events that have been imported
-  datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID,datHuntEventMergedFrames$groupID,as.character(datHuntEventMergedFrames$group) ) ))
+  datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,
+                                                      datHuntEventMergedFrames$eventID,
+                                                      datHuntEventMergedFrames$trackID,
+                                                      as.character(datHuntEventMergedFrames$groupID),
+                                                      as.character(datHuntEventMergedFrames$group) ) ))
   names(datTrackedEventsRegister) <- c("expID","eventID","trackID","groupID","ImportTag")
   
   save(datHuntEventMergedFrames,datTrackedEventsRegister,lHuntEventTRACKSfileSrc,lHuntEventFOODfileSrc,file=strDataFileName) ##Save With Dataset Idx Identifier

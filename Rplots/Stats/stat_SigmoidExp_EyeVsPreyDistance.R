@@ -5,8 +5,9 @@
 ## Model fits Eye Vergence / Detecting Onset And Rate Of Converge In the Near Prey Region/After Vergence 
 ## Produces a plot comparing onset distance (τ) , with no striking distance shown actually LL seems to be a proader density
 ### Note : 20 points Padding is added before the furthest point, making Phi Vergence angle 0, such that lowest V angle Of Sigmoid sits low.
-##
-
+### Requires : kde2d from MASS Package
+library("MASS");
+library(RColorBrewer);
 
 ##Model Each Hunt Event Individually / And obtain Group Statistic and Regresion of eye vergence vs Distance To Prey
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
@@ -34,8 +35,8 @@ n.cores <- 6
 timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.75 ##Fraction of Points to Use from Each Hunt Episode's data
-fitseqNo <- 6
+sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
+fitseqNo <- 7
 npad <- 1
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
@@ -533,8 +534,8 @@ modelGCSigmoidInd  <- "model
   drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
   
   time.taken <- proc.time() - timer
-  timings[3] <- time.taken[3]
-  
+  timings[3] <- (time.taken[3]/60) ##Mins
+  message( paste("Processing Mins:",timings[3] ) )
   
   ######### SAVE ##
   save(dataDL,drawDL,mDL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_DL",fitseqNo,".RData",sep=""))      
