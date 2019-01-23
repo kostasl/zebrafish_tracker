@@ -50,7 +50,7 @@ getParams <- function(data,a0=1,b0=1,Lambda0=lambda0){
 }
 
 logML <- function(par){
-  res=-par$n/2*log(2*pi)+0.5*log(det(par$lambda0)/det( par$lambda)) + par$a0*log(par$b0) - par$a*log(par$b) + lgamma(par$a) - lgamma(par$a0)
+  res=-par$n/2*log(2*pi)+0.5*log(det( par$lambda)/det(par$lambda0)) + par$a0*log(par$b0) - par$a*log(par$b) + lgamma(par$a) - lgamma(par$a0)
   return(res)
 }
 
@@ -69,7 +69,7 @@ genManyPar <- function(par,n=100){
   }
 }
 
-a0=15
+a0=10
 b0=1300
 sigma0 = 100;
 ##This is inverse Variance
@@ -115,9 +115,9 @@ logR=(lML1+lML2)-lML3
 ## in managing to separate te 2 cases where a common source exists and 
 ## Priors plot(r,dinvgamma(r, 15, 1290))
 
-a0=350 
-b0=25555
-sigma0 = 100;
+a0=10 
+b0=1025
+sigma0 = 1000;
 ##This is inverse Variance prior
 #lambda0 = matrix(c(sigma0*10000,0,0,sigma0),2,2)
 lambda0 = matrix(c(sigma0*1,0,0,sigma0),2,2)
