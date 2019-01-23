@@ -33,7 +33,7 @@ G_MIN_TURNBOUT_ANGLE     <- 10 ##
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
 nEyeFilterWidth          <- nFrWidth*6
 MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
-MIN_BOUT_PAUSE           <- 15
+MIN_BOUT_PAUSE           <- 5
 G_MIN_BOUTSCORE          <- 2
 
 ####################
