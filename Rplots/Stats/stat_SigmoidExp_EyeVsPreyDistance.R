@@ -34,7 +34,7 @@ timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
 sampleFraction  <- 0.75 ##Fraction of Points to Use from Each Hunt Episode's data
-fitseqNo <- 6
+fitseqNo <- 8
 npad <- 1
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
@@ -95,11 +95,18 @@ modelGCSigmoidInd  <- "model
     return(initlist)
   }
   
+  ## Implements Regressed Function, evaluated at vX points given the array of parameters
+  eyeVregressor <- function(params,vX)
+  {
+    return(vY  <-  params$ealpha*exp(params$egamma*(params$etau-vX) )+ params$ephi0   +  (params$ephimax -params$ephi0  )/(1+exp( -(params$elambda   *(params$etau -vX )   ) ) ) )
+  }
   
   ## Plot the Eye Vs Distance data points and the regression variations ##
+  ## Returns Mean Square Error R^2 ## 
   plotEyeGCFit <- function(pp,strGroup,dataSubset,drawS)
   {
     vRegIdx <- unique(dataSubset$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
+    vSqError <- vector()
     
     vX  <- seq(0,5,by=0.01)
     vPP <- which (dataSubset$hidx == pp)
@@ -114,18 +121,32 @@ modelGCSigmoidInd  <- "model
     plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),
          main=paste(strGroup,pp," (",vRegIdx[pp],")"), 
          bg=colourP[2],col=colourP[1],cex=0.5)
+     
+  
+    
     ## Draw The 100 Variotons before the fit converged      
     for (k in 1:NROW(etau) )
     {
-      vY  <-  ealpha[k]*exp(egamma[k]*(etau[k]-vX) )+ ephi0[k]   +  (ephimax[k] -ephi0[k]  )/(1+exp( -(elambda[k]   *(etau[k] -vX )   ) ) ) 
-      
+      params <- list(etau    = etau[k],
+                     ephimax = ephimax[k],
+                     ephi0   = ephi0[k],
+                     elambda = elambda[k],
+                     egamma  = egamma[k],
+                     ealpha  = ealpha[k]
+                    )
+      #vY  <-  ealpha[k]*exp(egamma[k]*(etau[k]-vX) )+ ephi0[k]   +  (ephimax[k] -ephi0[k]  )/(1+exp( -(elambda[k]   *(etau[k] -vX )   ) ) ) 
+      vY          <- eyeVregressor(params,vX)
+      ## Obtain Regressor Y at Data points X, and Measure Error To Actual Eye Vergence Data point at X
+      vRError     <- sum( (eyeVregressor(params,dataSubset$distP[vPP])-dataSubset$phi[vPP])  ^2 ) / NROW(dataSubset$phi[vPP])
+      vSqError[k] <- vRError
       #vY_l  <- quantile(drawS$phi_0[pp,,])[1]   - ( quantile (drawS$lambda[pp])[1] )*((( quantile(drawS$gamma[pp,,])[1] )^( quantile(drawS$u0[pp])[1] - (vX) ) ) ) #
       #vY_u  <- quantile(drawS$phi_0[pp,,])[5]   - (quantile (drawS$lambda[pp,,])[5])*((( quantile(drawS$gamma[pp,,])[5] )^( quantile(drawS$u0[pp,,])[5] - (vX) ) ) ) #
       #      #points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
       lines( vX ,vY,type="l",col=colourR[3],lwd=1)
       #        lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
     }
-    
+   
+    return(vSqError) 
   }
   
   
@@ -209,13 +230,14 @@ modelGCSigmoidInd  <- "model
     lFitScores <- list()
     vRegIdx <- unique(dataS$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
     N <- NROW(drawS$tau[,1,1])
+    vSqError <- 0
     for (idxH in 1:N)
     {
       
       ## Plot multipage for param convergence ##
       pdf(onefile=TRUE,file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_",strGroupID,"_",vRegIdx[idxH],".pdf",sep="")) 
       ## plot the regression lines and the data
-      plotEyeGCFit(idxH,strGroupID,dataS,drawS) 
+      vSqError <- plotEyeGCFit(idxH,strGroupID,dataS,drawS) 
       
       plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("Chains of tau",idxH," (",vRegIdx[idxH],")") )
       lines(drawS$tau[idxH,,2],type='l',col="red")
@@ -265,7 +287,8 @@ modelGCSigmoidInd  <- "model
       lFitScores[[idxH]] <- list(sampleIdx=idxH,RegistryIdx=vRegIdx[idxH],
                                  gammaPsrf=round(gammadiag_psrf[1]*100)/100,
                                  tauPsrf=round(taugdiag_psrf[1]*100)/100,
-                                 lambdaPsrf=round(lambdadiag_psrf[1]*100)/100)
+                                 lambdaPsrf=round(lambdadiag_psrf[1]*100)/100,
+                                 sqFitError = vSqError)
       dev.off()
     }
     
