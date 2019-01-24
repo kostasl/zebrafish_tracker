@@ -1,13 +1,11 @@
-##  24-10-2018 - ## Estimates Vergence OnSet Distance - 
-# Best model for Eye Vergence vs Distance Regression 
-## Fitting a sigmoid and Exp to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
+##  24-10-2018 - Estimates Vergence OnSet Distance - 
+### Fitting a sigmoid and Exp to the eye Vergence Data of Retracked Hunt Events (The same ones that we used to show the underhooting)
 ## Assumes A slow and Fast Muscle Action
-## Model fits Eye Vergence / Detecting Onset And Rate Of Converge In the Near Prey Region/After Vergence 
+### Model fits Eye Vergence / Detecting Onset And Rate Of Converge In the Near Prey Region/After Vergence 
 ## Produces a plot comparing onset distance (τ) , with no striking distance shown actually LL seems to be a proader density
 ### Note : 20 points Padding is added before the furthest point, making Phi Vergence angle 0, such that lowest V angle Of Sigmoid sits low.
-### Requires : kde2d from MASS Package
-library("MASS");
-library(RColorBrewer);
+##
+
 
 ##Model Each Hunt Event Individually / And obtain Group Statistic and Regresion of eye vergence vs Distance To Prey
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
@@ -35,8 +33,8 @@ n.cores <- 6
 timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
-fitseqNo <- 8
+sampleFraction  <- 0.75 ##Fraction of Points to Use from Each Hunt Episode's data
+fitseqNo <- 6
 npad <- 1
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
@@ -208,6 +206,7 @@ modelGCSigmoidInd  <- "model
   plotConvergenceDiagnostics <- function(strGroupID,drawS,dataS)
   {
     
+    lFitScores <- list()
     vRegIdx <- unique(dataS$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
     N <- NROW(drawS$tau[,1,1])
     for (idxH in 1:N)
@@ -218,19 +217,20 @@ modelGCSigmoidInd  <- "model
       ## plot the regression lines and the data
       plotEyeGCFit(idxH,strGroupID,dataS,drawS) 
       
-      plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("tau",idxH," (",vRegIdx[idxH],")") )
+      plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("Chains of tau",idxH," (",vRegIdx[idxH],")") )
       lines(drawS$tau[idxH,,2],type='l',col="red")
       lines(drawS$tau[idxH,,3],type='l',col="blue")
       #dev.off()
+      
       
       ##gelmal rubin diag ##
       print(paste(idxH," :--" )  )
       chains_tau <- mcmc(drawS$tau[idxH,,],thin=thin)
       lmcmc_tau <- mcmc.list(chains_tau[,1],chains_tau[,2],chains_tau[,3])
-      gdiag_psrf <- gelman.diag(lmcmc_tau,autoburnin=TRUE )$psrf
+      taugdiag_psrf <- gelman.diag(lmcmc_tau,autoburnin=TRUE )$psrf
       #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
       gelman.plot( lmcmc_tau,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
-                   main=paste("tau psrf:", round(gdiag_psrf[1]*100)/100 ) )
+                   main=paste("tau psrf:", round(taugdiag_psrf[1]*100)/100 ) )
       
       
       
@@ -242,14 +242,34 @@ modelGCSigmoidInd  <- "model
       
       chains_gamma <- mcmc(drawS$gamma[idxH,,],thin=thin)
       lmcmc_gamma <- mcmc.list(chains_gamma[,1],chains_gamma[,2],chains_gamma[,3])
-      gdiag_psrf <- gelman.diag(lmcmc_gamma,autoburnin=TRUE )$psrf
+      gammadiag_psrf <- gelman.diag(lmcmc_gamma,autoburnin=TRUE )$psrf
       #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
       gelman.plot( lmcmc_gamma,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
-                   main=paste("gamma psrf:", round(gdiag_psrf[1]*100)/100 ) )
+                   main=paste("gamma psrf:", round(gammadiag_psrf[1]*100)/100 ) )
+      
+      ### LAMBDA ###
+      plot(drawS$lambda[idxH,,1],type='l',ylim=c(0,max(drawS$lambda[idxH,,])+1),main=paste("Chains of lambda",idxH," (",vRegIdx[idxH],")") )
+      lines(drawS$lambda[idxH,,2],type='l',col="red")
+      lines(drawS$lambda[idxH,,3],type='l',col="blue")
       
       
+      chains_lambda <- mcmc(drawS$lambda[idxH,,],thin=thin)
+      lmcmc_lambda <- mcmc.list(chains_lambda[,1],chains_lambda[,2],chains_lambda[,3])
+      lambdadiag_psrf <- gelman.diag(lmcmc_lambda,autoburnin=TRUE )$psrf
+      #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_gelman_SigExpFit_gamma",idxH,".pdf",sep="")) 
+      gelman.plot( lmcmc_lambda,autoburnin=TRUE,max.bins=100, ylim=c(0.99,1.5),
+                   main=paste("lambda psrf:", round(lambdadiag_psrf[1]*100)/100 ) )
+      
+      
+      
+      lFitScores[[idxH]] <- list(sampleIdx=idxH,RegistryIdx=vRegIdx[idxH],
+                                 gammaPsrf=round(gammadiag_psrf[1]*100)/100,
+                                 tauPsrf=round(taugdiag_psrf[1]*100)/100,
+                                 lambdaPsrf=round(lambdadiag_psrf[1]*100)/100)
       dev.off()
     }
+    
+    return(lFitScores)
   }
   
   
@@ -474,6 +494,7 @@ modelGCSigmoidInd  <- "model
   writeLines(modelGCSigmoidInd,fileConn);
   close(fileConn)
   
+  ### RUN METHOD 1 - CLASSIC RJAGS SAMPLES ###
   ### SETUP And Run THE LL Model Fit ###
   timer <- proc.time()
   mLL=jags.model(file="modelSig.tmp",
@@ -497,12 +518,12 @@ modelGCSigmoidInd  <- "model
   
   
   ## Plot The LL Fit ##
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL_C.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_LL_C-",fitseqNo,".pdf",sep="")) 
   plotGCSig(drawLL,dataLL,n=NA,groupID=2)
   dev.off()
   
   
-  ########################  NL  #########
+  ########################  N L  #########
   ## NL ### 
   timer <- proc.time()
   mNL=jags.model(file="modelSig.tmp",
@@ -514,7 +535,7 @@ modelGCSigmoidInd  <- "model
   time.taken <- proc.time() - timer
   timings[2] <- time.taken[3]
   
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_NL_C.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_NL_C-",fitseqNo,".pdf",sep="")) 
   plotGCSig(drawNL,dataNL,n=NA,groupID=3)
   dev.off()
   
@@ -534,15 +555,17 @@ modelGCSigmoidInd  <- "model
   drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
   
   time.taken <- proc.time() - timer
-  timings[3] <- (time.taken[3]/60) ##Mins
-  message( paste("Processing Mins:",timings[3] ) )
+  timings[3] <- time.taken[3]
+  
   
   ######### SAVE ##
   save(dataDL,drawDL,mDL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_DL",fitseqNo,".RData",sep=""))      
   
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_DL_C.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_GroupSigmoidFit_DL_C-",fitseqNo,".pdf",sep="")) 
   plotGCSig(drawDL,dataDL,n=NA,groupID=1)
   dev.off()
+  
+  
   
   ### METHOD 2 - Using RUNJAGS ########
   ### #### Do it The Parallel Way RUN JAGS ##### ##
@@ -633,17 +656,19 @@ modelGCSigmoidInd  <- "model
   dataS <- dataDL
   drawS <- drawDL
   strGroupID <- "DL"
-  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  lFitScores_DL <- plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  datFitScores_DL <- data.frame(do.call(rbind,lFitScores_DL))
   
   dataS <- dataNL
   drawS <- drawNL
   strGroupID <- "NL"
-  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  lFitScores_NL <- plotConvergenceDiagnostics(strGroupID,drawS, dataS)
   
   dataS <- dataLL
   drawS <- drawLL
   strGroupID <- "LL"
-  plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  lFitScores_LL <- plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  datFitScores_LL <- data.frame(do.call(rbind,lFitScores_LL))
   ####################
   
   
