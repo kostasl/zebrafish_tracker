@@ -33,8 +33,8 @@ n.cores <- 6
 timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.75 ##Fraction of Points to Use from Each Hunt Episode's data
-fitseqNo <- 8
+sampleFraction  <- 0.60 ##Fraction of Points to Use from Each Hunt Episode's data
+fitseqNo <- 9
 npad <- 1
 
 ##THe Growth Model : Carlin and Gelfand (1991) present a nonconjugate Bayesian analysis of the following data set from Ratkowsky (1983):
@@ -153,7 +153,8 @@ modelGCSigmoidInd  <- "model
   
   ## Plot average regressed function ##
   ## plot( exp(0.1*(-vx+80))+  10 + (90-10)/(1+exp(-100*(60-vx) ))   ,ylim=c(0,400))
-  plotGCSig <- function (drawS,dataSubset,n=NA,groupID){
+  plotGCSig <- function (drawS,dataSubset,n=NA,groupID,nPlotPoints=50){
+    
     
     bPlotIndividualEvents <- FALSE
     ## compute 2D kernel density, see MASS book, pp. 130-131
@@ -176,35 +177,54 @@ modelGCSigmoidInd  <- "model
          main=paste("Model Fit : Eye Vergence Vs Distance Data ",strGroupID[groupID]),
          ylab=expression(paste("Eye Vergence ",Phi," (degrees)") ),
          xlab=expression(paste("Distance from Prey (mm)") ),
-         bg=colourP[groupID],col="#FFFFFFAA",cex=0.5)
+         bg=colourR[groupID],col="#FFFFFFAA",cex=0.5)
     #points(dataSubset$distToPrey[vsub],dataSubset$vAngle[vsub],pch=21,xlim=c(0,5),ylim=c(0,80),main="LL", bg=colourP[4],col=colourP[1],cex=0.5)
     contour(z, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
     ## Plot The Mean Curve of the selected subset of curves
     vX  <- seq(0,max_x,by=0.01)##max(drawS$u0[vsampleP])
     ##  (phi_max[hidx[i]] - phi_0[hidx[i]] )/(1-exp(-lambda[ hidx[i] ]*(u0[ hidx[i] ]  - distP[i] ) ))
-    etau    <- mean(tail(drawS$tau[vsampleP],n=100))
-    ephimax <- mean(tail(drawS$phi_max[vsampleP],n=100))
-    ephi0   <- mean(tail(drawS$phi_0[vsampleP],n=100))
-    elambda <- mean(tail(drawS$lambda[vsampleP],n=100))
-    egamma  <- mean(tail(drawS$gamma[vsampleP],n=100))
-    ealpha  <- mean(tail(drawS$alpha[vsampleP],n=100))
     
-    vY  <-    ealpha*exp(egamma*(etau-vX) ) + ephi0 + (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
-    
-    etau <- quantile((drawS$tau[vsampleP]))[2]
-    vY_l  <-  ealpha*exp(egamma*(etau-vX) )+  ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
-    
-    etau <- quantile((drawS$tau[vsampleP]))[4]
-    vY_u  <-  ealpha*exp(egamma*(etau-vX) )+  ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
-    
-    
-    #vY_u <-  quantile(drawS$phi_0[vsampleP])[4]-(quantile(drawS$lambda[vsampleP])[4])*((quantile(drawS$gamma[vsampleP])[4]^( quantile(drawS$u0[vsampleP])[4] - (vX) ) ) )
-    #vY_l <-  quantile(drawS$phi_0[vsampleP])[2]-(quantile(drawS$lambda[vsampleP])[2])*((quantile(drawS$gamma[vsampleP])[2]^( quantile(drawS$u0[vsampleP])[2] - (vX) ) ) )
-    lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="black",lwd=3)
-    lines( vX ,vY_u,xlim=c(0,max_x),ylim=c(0,80),type="l",col="red",lwd=0.5)
-    lines( vX ,vY_l,xlim=c(0,max_x),ylim=c(0,80),type="l",col="red",lwd=0.5)
-    
+    etau    <- (tail(drawS$tau[vsampleP,1,1],n=nPlotPoints))
+    ephimax <- (tail(drawS$phi_max[vsampleP,1,1],n=nPlotPoints))
+    ephi0   <- (tail(drawS$phi_0[vsampleP,1,1],n=nPlotPoints))
+    elambda <- (tail(drawS$lambda[vsampleP,1,1],n=nPlotPoints))
+    egamma  <- (tail(drawS$gamma[vsampleP,1,1],n=nPlotPoints))
+    ealpha  <- (tail(drawS$alpha[vsampleP,1,1],n=nPlotPoints))
+    ## Draw The 100 Variotons before the fit converged      
+    for (k in 1:NROW(etau) )
+    {
+      params <- list(etau    = etau[k],
+                     ephimax = ephimax[k],
+                     ephi0   = ephi0[k],
+                     elambda = elambda[k],
+                     egamma  = egamma[k],
+                     ealpha  = ealpha[k]
+                    )
+      #vY  <-  ealpha[k]*exp(egamma[k]*(etau[k]-vX) )+ ephi0[k]   +  (ephimax[k] -ephi0[k]  )/(1+exp( -(elambda[k]   *(etau[k] -vX )   ) ) ) 
+      vY          <- eyeVregressor(params,vX)
+      ## Obtain Regressor Y at Data points X, and Measure Error To Actual Eye Vergence Data point at X
+      lines( vX ,vY,type="l",col=colourL[3],lwd=1)
+      #        lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
+    }
     dev.off()
+    # 
+    # 
+    # vY  <-    ealpha*exp(egamma*(etau-vX) ) + ephi0 + (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
+    # 
+    # etau <- quantile((drawS$tau[vsampleP]))[2]
+    # vY_l  <-  ealpha*exp(egamma*(etau-vX) )+  ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
+    # 
+    # etau <- quantile((drawS$tau[vsampleP]))[4]
+    # vY_u  <-  ealpha*exp(egamma*(etau-vX) )+  ephi0   +  (ephimax -ephi0  )/(1+exp( -(elambda )  *(etau -(vX)   ) ) ) 
+    # 
+    # 
+    # #vY_u <-  quantile(drawS$phi_0[vsampleP])[4]-(quantile(drawS$lambda[vsampleP])[4])*((quantile(drawS$gamma[vsampleP])[4]^( quantile(drawS$u0[vsampleP])[4] - (vX) ) ) )
+    # #vY_l <-  quantile(drawS$phi_0[vsampleP])[2]-(quantile(drawS$lambda[vsampleP])[2])*((quantile(drawS$gamma[vsampleP])[2]^( quantile(drawS$u0[vsampleP])[2] - (vX) ) ) )
+    # lines( vX ,vY,xlim=c(0,max_x),ylim=c(0,80),type="l",col="black",lwd=3)
+    # lines( vX ,vY_u,xlim=c(0,max_x),ylim=c(0,80),type="l",col="red",lwd=0.5)
+    # lines( vX ,vY_l,xlim=c(0,max_x),ylim=c(0,80),type="l",col="red",lwd=0.5)
+    # 
+    
     
     if (!bPlotIndividualEvents)
       return(NA)
@@ -288,7 +308,8 @@ modelGCSigmoidInd  <- "model
                                  gammaPsrf=round(gammadiag_psrf[1]*100)/100,
                                  tauPsrf=round(taugdiag_psrf[1]*100)/100,
                                  lambdaPsrf=round(lambdadiag_psrf[1]*100)/100,
-                                 sqFitError = vSqError)
+                                 meansqFitError = mean(vSqError),
+                                 sdsqFitError = sd(vSqError))
       dev.off()
     }
     
