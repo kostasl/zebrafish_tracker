@@ -19,16 +19,16 @@ library(runjags)
 
 #
 #These RC params Work Well to Smooth LF And NF
-burn_in=1000;
-steps=30000;
+burn_in=100;
+steps=3000;
 thin=3;
 nchains <-3
 n.cores <- 6
 timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
-fitseqNo <- 10
+sampleFraction  <- 0.75 ##Fraction of Points to Use from Each Hunt Episode's data
+fitseqNo <- 11
 npad <- 1
 
 
@@ -72,6 +72,7 @@ pchL <- c(16,2,4)
   ##Do all this processing to add a sequence index To The hunt Event + make vergence angle INdex 
   for (g in strGroupID) {
     lRegIdx[[g]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g),"RegistarIdx"])
+   
     ldatLEyePoints[[g]] <- list()
     
     ##Take Each Hunting Event of Group And Select a Subset of the records. add to dataStruct List which will be fed to Model
@@ -110,8 +111,8 @@ pchL <- c(16,2,4)
       
       if (missingRegion > 0)
       {
-        ### Max Angle When Info Is Missing is 10
-        datpadding <- cbind(vAngle=rep( max(0.1,min( c(10,ldatVEyePoints[[g]][[h]][,"vAngle"] ) ) )  ,npad),
+        ### Max Angle When Info Is Missing is 20
+        datpadding <- cbind(vAngle=rep( max(0.1,min( c(20,ldatVEyePoints[[g]][[h]][,"vAngle"] ) ) )  ,npad),
                             distToPrey = seq(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),6,length=npad),
                             initDistToPrey = rep(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),npad),
                             RegistarIdx = rep(head(as.numeric(ldatsubSet[[g]]$RegistarIdx ),n=1),npad),
@@ -135,48 +136,42 @@ pchL <- c(16,2,4)
   datVEyePointsDL <- data.frame( do.call(rbind,ldatVEyePoints[["DL"]] ) ) 
   
   
-  
-  
-  ##Larva Event Counts Slice
-  nDatLL <- NROW(datVEyePointsLL)
-  nDatNL <- NROW(datVEyePointsNL)
-  nDatDL <- NROW(datVEyePointsDL)
-  
-  ##Test limit data
-  ## Subset Dat For Speed
-  vsubIdx <- sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*dataFrac)
-  datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$seqIdx %in% vsubIdx ,] #
+  ##SUBSET LL Filter Out Relevant Trajectories for Regression  #
+  ## Best to focus on those that can fit the regressor ##
+  vsubIdx <- c(135,140)
+  ## OR Simply Subset Dat For Speed
+  #vsubIdx <- sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*dataFrac)
+
+  datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$RegistarIdx %in% vsubIdx ,] #
   dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
               distP=datVEyePointsLL_Sub$distToPrey ,
               N=NROW(datVEyePointsLL_Sub),
               distMax=lnMaxDistanceToPrey[["LL"]], #Put All distances in So We can Ref By Index #datVEyePointsLL_Sub$initDistToPrey,
-              hidx=datVEyePointsLL_Sub$seqIdx, ##Define an idx Key To link to the 
+              ##Define an idx Key To link to the priors for each Eye Trajectory 
+              hidx=as.numeric(factor(datVEyePointsLL_Sub$seqIdx)), ##Fix Seq to be 1...N over subset of data, 
               RegistrarIdx=datVEyePointsLL_Sub$RegistarIdx);
   
   
-  ##Test limit data
-  ## Subset Dat For Speed
   
+  ## NL  Subset Data ## 
   vsubIdx <-sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*dataFrac)
   datVEyePointsNL_Sub <- datVEyePointsNL[datVEyePointsNL$seqIdx %in% vsubIdx,] 
   dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
               distP=datVEyePointsNL_Sub$distToPrey ,
               N=NROW(datVEyePointsNL_Sub),
               distMax=lnMaxDistanceToPrey[["NL"]],#datVEyePointsNL_Sub$initDistToPrey,
-              hidx=datVEyePointsNL_Sub$seqIdx,
+              hidx=as.numeric(factor(datVEyePointsNL_Sub$seqIdx)),
               RegistrarIdx=datVEyePointsNL_Sub$RegistarIdx);
   
-  ##Test limit data
-  ## Subset Dat For Speed
+  ## DL SubSet Data
   vsubIdx <-sample(NROW(lRegIdx[["DL"]]),NROW(lRegIdx[["DL"]])*dataFrac)
   datVEyePointsDL_Sub <- datVEyePointsDL[datVEyePointsDL$seqIdx %in% vsubIdx ,] 
   dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
               distP=datVEyePointsDL_Sub$distToPrey ,
               N=NROW(datVEyePointsDL_Sub),
               distMax=lnMaxDistanceToPrey[["DL"]],
-              hidx=datVEyePointsDL_Sub$seqIdx,
+              hidx=as.numeric(factor(datVEyePointsDL_Sub$seqIdx)), ## Trick to reassign seq numbers of data subset
               RegistrarIdx=datVEyePointsDL_Sub$RegistarIdx);
-  
   
   
   varnames=c("phi_0","phi_max","lambda","gamma","sigma","alpha","tau") #"gamma"
@@ -192,7 +187,7 @@ pchL <- c(16,2,4)
   timer <- proc.time()
   mLL=jags.model(file="modelSig.tmp",
                  n.chains=nchains,
-                 inits= initfunct(nchains, NROW(unique(dataLL$hidx) )),
+                 inits= initfunct(nchains, max(unique(dataLL$hidx) )),
                  data=dataLL);
   
   #update(mLL,burn_in);
@@ -362,6 +357,9 @@ pchL <- c(16,2,4)
   strGroupID <- "LL"
   lFitScores_LL <- plotConvergenceDiagnostics(strGroupID,drawS, dataS)
   datFitScores_LL <- data.frame(do.call(rbind,lFitScores_LL))
+  
+  mErrorThres <- median(unlist(datFitScores_LL$meansqFitError) )
+  datFitScores_LL[datFitScores_LL$meansqFitError < mErrorThres,]
   ####################
   
   

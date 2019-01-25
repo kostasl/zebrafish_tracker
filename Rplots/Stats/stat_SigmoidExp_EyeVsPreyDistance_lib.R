@@ -4,17 +4,16 @@ modelGCSigmoidInd  <- "model
 {
   
   for( i in 1 : N ) {
-  phi_hat[ hidx[i],i] <-  phi_0[ hidx[i] ] +   (phi_max[hidx[i]] - phi_0[ hidx[i] ])/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
+    phi_hat[ hidx[i],i] <-  phi_0[ hidx[i] ] +   (phi_max[hidx[i]] - phi_0[ hidx[i] ])/( 1 + exp( -lambda[ hidx[i] ]*( ( tau[ hidx[i] ] - distP[i]    ) ) ) )
   
-  ###OUT Set Region Of Exp Growth Model ##
-  # s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step( tau[ hidx[i] ] -distP[i] )     # step( phi_max[hidx[i]] - phi_0[hidx[i]] ) #step(u0[ hidx[i] ] - distP[i]  )  
+    ###OUT Set Region Of Exp Growth Model ##
+    # s[hidx[i],i] <- step( distP[i] - u1[hidx[i]] )*step( tau[ hidx[i] ] -distP[i] )     # step( phi_max[hidx[i]] - phi_0[hidx[i]] ) #step(u0[ hidx[i] ] - distP[i]  )  
   
-  ## Define Exp Growth Model 
-  phi_exp[ hidx[i],i] <- alpha[hidx[i]]*exp( gamma[ hidx[i] ]* ( tau[ hidx[i] ] -  distP[i]))
+    ## Define Exp Growth Model 
+    phi_exp[ hidx[i],i] <- alpha[hidx[i]]*exp( gamma[ hidx[i] ]* ( tau[ hidx[i] ] -  distP[i]))
   
-  ### Conditionally Include the exp Model
-  phi[i] ~ dnorm(phi_exp[ hidx[i],i]  + phi_hat[ hidx[i],i]  , var_inv[hidx[i]] ) #s[hidx[i],i]+1 
-  
+    ### Conditionally Include the exp Model
+    phi[i] ~ dnorm(phi_exp[ hidx[i],i]  + phi_hat[ hidx[i],i]  , var_inv[hidx[i]] ) #s[hidx[i],i]+1 
   
   }
   
@@ -24,15 +23,15 @@ modelGCSigmoidInd  <- "model
   
   
   for(i in 1:max(hidx) ) { 
-  phi_max[i] ~ dnorm(65,1e-3)T(0,150) ##I(0,100) # Max Eye Vergence Angle
-  phi_0[i] ~ dnorm(0.01, 1e-3)T(0,60)  # Idle Eye Position
-  lambda[i] ~ dgamma(1, 1) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
-  gamma[i] ~ dgamma(1, 1) #dnorm(0.5, 1e-3)I(0,)  # RiseRate of Eye Vs Prey Distance After Sig Rise dunif(0.5, 0.000001)
-  alpha[i] ~ dunif(1,3)
-  tau[i] ~ dnorm(distMax[i], 1e-2) ##inflexion point, sample from where furthest point of Hunt event is found
-  var_inv[i] ~ dgamma(0.001, 0.001) ##Draw   ##Precision
+    phi_max[i] ~ dnorm(65,1e-3)T(0,150) ##I(0,100) # Max Eye Vergence Angle
+    phi_0[i] ~ dnorm(0.01, 1e-3)T(0,60)  # Idle Eye Position
+    lambda[i] ~ dgamma(100, 1) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
+    gamma[i] ~ dgamma(1, 0.5) #dnorm(0.5, 1e-3)I(0,)  # RiseRate of Eye Vs Prey Distance After Sig Rise dunif(0.5, 0.000001)
+    alpha[i] ~ dunif(1,3)
+    tau[i] ~ dnorm(distMax[i], 1e-1) ##inflexion point, sample from where furthest point of Hunt event is found
+    var_inv[i] ~ dgamma(0.001, 0.001) ##Draw   ##Precision
   
-  sigma[i] <- 1 / sqrt(var_inv[ i])    
+    sigma[i] <- 1 / sqrt(var_inv[ i])    
   
   }
   
@@ -44,11 +43,12 @@ modelGCSigmoidInd  <- "model
   
   ##Init Vals List -For Run Jags
   # A list of 8 randomly generated starting values for m:
+  
   initfunct <- function(nchains,N)
   {
     initlist <- replicate(nchains,list(phi_0=c(rnorm(N,10,5)),
                                        phi_max=rnorm(N,40,5),
-                                       lambda=rgamma(N,1,1),
+                                       lambda=rgamma(N,100,1), ## Sigmoid Rise Rate
                                        gamma=rgamma(N,1,1),
                                        alpha=runif(N,1,3),
                                        tau=rnorm(N,2,0.5)  ),
@@ -228,7 +228,7 @@ modelGCSigmoidInd  <- "model
       
       
       ##gelmal rubin diag ##
-      print(paste(idxH," :--" )  )
+      print(paste(idxH,". E[R^2] error:",mean(vSqError) )  )
       chains_tau <- mcmc(drawS$tau[idxH,,],thin=thin)
       lmcmc_tau <- mcmc.list(chains_tau[,1],chains_tau[,2],chains_tau[,3])
       taugdiag_psrf <- gelman.diag(lmcmc_tau,autoburnin=TRUE )$psrf
