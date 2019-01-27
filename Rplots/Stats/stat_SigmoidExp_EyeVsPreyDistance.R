@@ -19,15 +19,15 @@ library(runjags)
 
 #
 #These RC params Work Well to Smooth LF And NF
-burn_in=100;
-steps=3000;
+burn_in=1000;
+steps=15000;
 thin=3;
 nchains <-3
 n.cores <- 6
 timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.75 ##Fraction of Points to Use from Each Hunt Episode's data
+sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
 fitseqNo <- 11
 npad <- 1
 
@@ -68,7 +68,7 @@ pchL <- c(16,2,4)
   ldatVEyePoints <- list()
   lnDat          <- list()
   lnMaxDistanceToPrey <- list()
-  
+  lnInitPhi <- list() ##For Passing Prior for phi0
   ##Do all this processing to add a sequence index To The hunt Event + make vergence angle INdex 
   for (g in strGroupID) {
     lRegIdx[[g]] <- unique(datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g),"RegistarIdx"])
@@ -80,8 +80,11 @@ pchL <- c(16,2,4)
     {
       ldatsubSet[[g]] <- datEyeVsPreyCombinedAll[datEyeVsPreyCombinedAll$groupID == which(strGroupID == g) &
                                                    datEyeVsPreyCombinedAll$RegistarIdx %in% lRegIdx[[g]][h] ,]  ##Select THe Ones With Capture
+      ## Get Initial Eye V - Phi 0 
+      recPhi0 <- head(ldatsubSet[[g]][ldatsubSet[[g]]$DistToPrey == ldatsubSet[[g]]$DistToPreyInit, ],1)
       
-      ldatsubSet[[g]] <- ldatsubSet[[g]][sample(NROW(ldatsubSet[[g]]),sampleFraction*NROW(ldatsubSet[[g]] ) ) ,] ##Sample Points 
+      
+      ldatsubSet[[g]] <- ldatsubSet[[g]][sample(NROW(ldatsubSet[[g]]),sampleFraction*NROW(ldatsubSet[[g]] ) ) ,] ##SubSample Points 
       
       ldatLEyePoints[[g]][[h]] <- cbind(ldatsubSet[[g]]$LEyeAngle,
                                         as.numeric(ldatsubSet[[g]]$DistToPrey),
@@ -100,6 +103,7 @@ pchL <- c(16,2,4)
         vAngle=ldatsubSet[[g]]$LEyeAngle-ldatsubSet[[g]]$REyeAngle,
         distToPrey=as.numeric(ldatsubSet[[g]]$DistToPrey),
         initDistToPrey=as.numeric(ldatsubSet[[g]]$DistToPreyInit ),
+        initVAngle=min(recPhi0$LEyeAngle-recPhi0$REyeAngle) ,
         RegistarIdx=ldatsubSet[[g]]$RegistarIdx,
         seqIdx=h)
       
@@ -115,6 +119,7 @@ pchL <- c(16,2,4)
         datpadding <- cbind(vAngle=rep( max(0.1,min( c(20,ldatVEyePoints[[g]][[h]][,"vAngle"] ) ) )  ,npad),
                             distToPrey = seq(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),6,length=npad),
                             initDistToPrey = rep(head(as.numeric(ldatsubSet[[g]]$DistToPreyInit ),n=1),npad),
+                            initVAngle = rep( ldatVEyePoints[[g]][[h]][,"initVAngle"] ,npad),
                             RegistarIdx = rep(head(as.numeric(ldatsubSet[[g]]$RegistarIdx ),n=1),npad),
                             seqIdx = h)
         
@@ -128,6 +133,7 @@ pchL <- c(16,2,4)
       
       lnDat[[g]][[h]] <- NROW(ldatLEyePoints[[g]][[h]]) ##Not Used Anymore
       lnMaxDistanceToPrey[[g]][[h]] <- as.numeric(head(ldatsubSet[[g]]$DistToPreyInit,1)  ) ##Hold Unique Value Of Max Distance To Prey
+      #lnInitPhi[[g]][[h]] <- as.numeric(head(ldatVEyePoints[[g]]$initVAngle,1)  ) ##Hold Unique Value Of Max Distance To Prey
     } ##For Each Hunt Event
     
   } ##For Each Group[]
@@ -138,15 +144,16 @@ pchL <- c(16,2,4)
   
   ##SUBSET LL Filter Out Relevant Trajectories for Regression  #
   ## Best to focus on those that can fit the regressor ##
-  vsubIdx <- c(135,140)
+  vExcludesubIdx <- c(168,61) ##Ones that do not fit
   ## OR Simply Subset Dat For Speed
   #vsubIdx <- sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*dataFrac)
 
-  datVEyePointsLL_Sub <- datVEyePointsLL[datVEyePointsLL$RegistarIdx %in% vsubIdx ,] #
+  datVEyePointsLL_Sub <- datVEyePointsLL[!(datVEyePointsLL$RegistarIdx %in% vExcludesubIdx ),] #
   dataLL=list(phi=datVEyePointsLL_Sub$vAngle,
               distP=datVEyePointsLL_Sub$distToPrey ,
               N=NROW(datVEyePointsLL_Sub),
-              distMax=lnMaxDistanceToPrey[["LL"]], #Put All distances in So We can Ref By Index #datVEyePointsLL_Sub$initDistToPrey,
+              distMax=lnMaxDistanceToPrey[["LL"]][unique(datVEyePointsLL_Sub$seqIdx)],##Re arrange the MaxDistances vector to the subset  ##lnMaxDistanceToPrey[["LL"]], #Put All distances in So We can Ref By Index #datVEyePointsLL_Sub$initDistToPrey,
+              initPhi=unique(datVEyePointsLL_Sub$initVAngle),##Assumes Unique preserves order of rec appearance (seqIdx) ##Re arrange the MaxDistances vector to the subset  ##lnMaxDistanceToPrey[["LL"]], #Put All distances in So We can Ref By Index #datVEyePointsLL_Sub$initDistToPrey,
               ##Define an idx Key To link to the priors for each Eye Trajectory 
               hidx=as.numeric(factor(datVEyePointsLL_Sub$seqIdx)), ##Fix Seq to be 1...N over subset of data, 
               RegistrarIdx=datVEyePointsLL_Sub$RegistarIdx);
@@ -159,7 +166,8 @@ pchL <- c(16,2,4)
   dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
               distP=datVEyePointsNL_Sub$distToPrey ,
               N=NROW(datVEyePointsNL_Sub),
-              distMax=lnMaxDistanceToPrey[["NL"]],#datVEyePointsNL_Sub$initDistToPrey,
+              distMax=lnMaxDistanceToPrey[["NL"]][unique(datVEyePointsNL_Sub$seqIdx)],#datVEyePointsNL_Sub$initDistToPrey,
+              initPhi=unique(datVEyePointsNL_Sub$initVAngle),##Assumes Unique preserves order of rec appearance (seqIdx) ##Re arrange the MaxDistances vector to the subset  ##lnMaxDistanceToPrey[["LL"]], #Put All distances in So We can Ref By Index #datVEyePointsLL_Sub$initDistToPrey,
               hidx=as.numeric(factor(datVEyePointsNL_Sub$seqIdx)),
               RegistrarIdx=datVEyePointsNL_Sub$RegistarIdx);
   
@@ -169,7 +177,8 @@ pchL <- c(16,2,4)
   dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
               distP=datVEyePointsDL_Sub$distToPrey ,
               N=NROW(datVEyePointsDL_Sub),
-              distMax=lnMaxDistanceToPrey[["DL"]],
+              distMax=lnMaxDistanceToPrey[["DL"]][unique(datVEyePointsDL_Sub$seqIdx)],
+              initPhi=unique(datVEyePointsDL_Sub$initVAngle),##Assumes Unique preserves order of rec appearance (seqIdx) ##Re arrange the MaxDistances vector to the subset  ##lnMaxDistanceToPrey[["LL"]], #Put All distances in So We can Ref By Index #datVEyePointsLL_Sub$initDistToPrey,
               hidx=as.numeric(factor(datVEyePointsDL_Sub$seqIdx)), ## Trick to reassign seq numbers of data subset
               RegistrarIdx=datVEyePointsDL_Sub$RegistarIdx);
   
@@ -198,7 +207,7 @@ pchL <- c(16,2,4)
                       variable.names=varnames
   )
   time.taken <- proc.time() - timer
-  timings[1] <- time.taken[3]
+  timings[1] <- time.taken[3]/60
   
   
   ######### SAVE ##
