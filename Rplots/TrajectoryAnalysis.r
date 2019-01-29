@@ -15,10 +15,10 @@ source("TrackerDataFilesImport_lib.r")
 
 calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 {
-  message("##Start Trajectory Analysis For Group##")
-  lGroupMotion    <- list()
-  lTEventDisplacement  <-list() ##Event Trajectory  Path Length
-  lTEventSpeed         <-list() ##Event Trajectory  Speed
+  message("## Start Trajectory Analysis For Group ##")
+  lGroupMotion         <- list()
+  lTEventDisplacement  <- list() ##Event Trajectory  Path Length
+  lTEventSpeed         <- list() ##Event Trajectory  Speed
   lTEventSinuosity     <- list()
 
   idx             <- 0

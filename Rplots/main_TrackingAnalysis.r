@@ -39,7 +39,7 @@ G_MIN_BOUTSCORE          <- 2
 ####################
 
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
-r <- c(rfc(11),"#FF0000");
+r <- c(rfc(7),"#FF0000");
 
 ##For the 3 Groups 
 colourH <- c(rgb(0.01,0.01,0.9,0.8),rgb(0.01,0.7,0.01,0.8),rgb(0.9,0.01,0.01,0.8),rgb(0.00,0.00,0.0,1.0)) ##Legend

@@ -20,14 +20,14 @@ library(runjags)
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=1000;
-steps=15000;
+steps=10000;
 thin=3;
 nchains <-3
 n.cores <- 6
 timings <- vector('numeric', 3)
 
 dataFrac <- 1.0 ##Fraction Of Hunt Episodes to Include in DataSet
-sampleFraction  <- 0.65 ##Fraction of Points to Use from Each Hunt Episode's data
+sampleFraction  <- 0.75 ##Fraction of Points to Use from Each Hunt Episode's data
 fitseqNo <- 11
 npad <- 1
 
@@ -144,7 +144,9 @@ pchL <- c(16,2,4)
   
   ##SUBSET LL Filter Out Relevant Trajectories for Regression  #
   ## Best to focus on those that can fit the regressor ##
-  vExcludesubIdx <- c(168,61) ##Ones that do not fit
+  vIdxExcludeAllExcept <-  unique(datVEyePointsLL[!(datVEyePointsLL$RegistarIdx %in% c(169,165)),]$RegistarIdx)  ##Ones that do not fit
+  ##Exclude the ones Marked as unsuitable for the regressor
+  vExcludesubIdx <- c(134,95,85,57,42,168,61) # 141
   ## OR Simply Subset Dat For Speed
   #vsubIdx <- sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*dataFrac)
 
@@ -161,8 +163,13 @@ pchL <- c(16,2,4)
   
   
   ## NL  Subset Data ## 
-  vsubIdx <-sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*dataFrac)
-  datVEyePointsNL_Sub <- datVEyePointsNL[datVEyePointsNL$seqIdx %in% vsubIdx,] 
+  #vsubIdx <-sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*dataFrac)
+  vIdxExcludeAllExcept <-  unique(datVEyePointsLL[!(datVEyePointsLL$RegistarIdx %in% c(154,152,130,104)),]$RegistarIdx)  ##Ones that do not fit
+  ##Exclude the ones Marked as unsuitable for the regressor
+  vExcludesubIdx <- c(147,112,111,109,100,98,44,26,22,20,19,13,12,11,10) 
+  ## OR Simply Subset Dat For Speed
+  #vsubIdx <- sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*dataFrac)
+  datVEyePointsNL_Sub <- datVEyePointsNL[!(datVEyePointsNL$RegistarIdx %in% vExcludesubIdx ),] #
   dataNL=list(phi=datVEyePointsNL_Sub$vAngle,
               distP=datVEyePointsNL_Sub$distToPrey ,
               N=NROW(datVEyePointsNL_Sub),
@@ -172,8 +179,13 @@ pchL <- c(16,2,4)
               RegistrarIdx=datVEyePointsNL_Sub$RegistarIdx);
   
   ## DL SubSet Data
-  vsubIdx <-sample(NROW(lRegIdx[["DL"]]),NROW(lRegIdx[["DL"]])*dataFrac)
-  datVEyePointsDL_Sub <- datVEyePointsDL[datVEyePointsDL$seqIdx %in% vsubIdx ,] 
+  #vsubIdx <-sample(NROW(lRegIdx[["DL"]]),NROW(lRegIdx[["DL"]])*dataFrac)
+  vIdxExcludeAllExcept <-  unique(datVEyePointsLL[!(datVEyePointsLL$RegistarIdx %in% c(164,162,132,128)),]$RegistarIdx)  ##Ones that do not fit
+  ##Exclude the ones Marked as unsuitable for the regressor
+  vExcludesubIdx <- c(159,144,129,121,120,56,48,41,40,25,7)
+  ## OR Simply Subset Dat For Speed
+  #vsubIdx <- sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*dataFrac)
+  datVEyePointsDL_Sub <- datVEyePointsDL[!(datVEyePointsDL$RegistarIdx %in% vExcludesubIdx ),] #
   dataDL=list(phi=datVEyePointsDL_Sub$vAngle,
               distP=datVEyePointsDL_Sub$distToPrey ,
               N=NROW(datVEyePointsDL_Sub),
@@ -184,8 +196,6 @@ pchL <- c(16,2,4)
   
   
   varnames=c("phi_0","phi_max","lambda","gamma","sigma","alpha","tau") #"gamma"
-  
-  
   fileConn=file("modelSig.tmp")
   #writeLines(modelGPV1,fileConn);
   writeLines(modelGCSigmoidInd,fileConn);
@@ -270,7 +280,7 @@ pchL <- c(16,2,4)
   library(parallel)
   library('coda')
   
-  nchains <- 6
+  nchains <- 5
   
   cl <- makeCluster(n.cores)
   timer <- proc.time()

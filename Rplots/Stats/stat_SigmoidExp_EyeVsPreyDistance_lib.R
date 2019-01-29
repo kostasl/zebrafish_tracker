@@ -23,15 +23,15 @@ modelGCSigmoidInd  <- "model
   
   
   for(i in 1:max(hidx) ) { 
-    phi_max[i] ~ dnorm(45,5)T(0,150) ##I(0,100) # Max Eye Vergence Angle
-    phi_0[i] ~ dnorm(initPhi[i], 1)T(0,60)  # Idle Eye Position
-    lambda[i] ~ dgamma(100, 1)T(5,250) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
+    phi_max[i] ~ dnorm(initPhi[i]+40,1)T(initPhi[i],150) ##I(0,100) # Max Eye Vergence Angle
+    phi_0[i] ~ dnorm(initPhi[i], 1)T(-10,60)  # Idle Eye Position
+    lambda[i] ~ dgamma(10, 1)T(5,250) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
     gamma[i] ~ dgamma(1, 0.5) #dnorm(0.5, 1e-3)I(0,)  # RiseRate of Eye Vs Prey Distance After Sig Rise dunif(0.5, 0.000001)
     alpha[i] ~ dunif(1,3)
-    tau[i] ~ dnorm(distMax[i], 1e-3) ##inflexion point, sample from where furthest point of Hunt event is found
-    var_inv[i] ~ dgamma(0.001, 0.001) ##Draw   ##Precision
-  
-    sigma[i] <- 1 / sqrt(var_inv[ i])    
+    tau[i] ~ dnorm(distMax[i], 1e-3)T(0.1,6) ##inflexion point, sample from where furthest point of Hunt event is found
+    sigma[i] ~ dgamma(100,20) # #1 / sqrt(var_inv[ i])    
+    
+    var_inv[i] <- pow(sigma[i],-2) # ##Draw   ##Precision
   
   }
   
@@ -70,44 +70,47 @@ modelGCSigmoidInd  <- "model
     vRegIdx <- unique(dataSubset$RegistrarIdx) ##Get Vector Of RegIdx That Associate with the sample Sequence
     vSqError <- vector()
     
-    vX  <- seq(0,5,by=0.01)
+    vX  <- seq(0,6,by=0.1)
     vPP <- which (dataSubset$hidx == pp)
     
-    etau    <- (tail(drawS$tau[pp,,],n=100))
-    ephimax <- (tail(drawS$phi_max[pp,,],n=100))
-    ephi0   <- (tail(drawS$phi_0[pp,,],n=100))
-    elambda <- (tail(drawS$lambda[pp,,],n=100))
-    egamma  <- (tail(drawS$gamma[pp,,],n=100))
-    ealpha  <- (tail(drawS$alpha[pp,,],n=100))
+    etau    <- (tail(drawS$tau[pp,,],n=50))
+    ephimax <- (tail(drawS$phi_max[pp,,],n=50))
+    ephi0   <- (tail(drawS$phi_0[pp,,],n=50))
+    elambda <- (tail(drawS$lambda[pp,,],n=50))
+    egamma  <- (tail(drawS$gamma[pp,,],n=50))
+    ealpha  <- (tail(drawS$alpha[pp,,],n=50))
     
-    plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(0,85),
+    plot(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,6),ylim=c(0,85),
          main=paste(strGroup,pp," (",vRegIdx[pp],")"), 
          bg=colourP[2],col=colourP[1],cex=0.5)
     
     
     
     ## Draw The 100 Variotons before the fit converged      
-    for (k in 1:NROW(etau) )
+    for (c in 1:NROW( etau[1,]) ) ##For Each Chain
     {
-      params <- list(etau    = etau[k],
-                     ephimax = ephimax[k],
-                     ephi0   = ephi0[k],
-                     elambda = elambda[k],
-                     egamma  = egamma[k],
-                     ealpha  = ealpha[k]
-      )
-      #vY  <-  ealpha[k]*exp(egamma[k]*(etau[k]-vX) )+ ephi0[k]   +  (ephimax[k] -ephi0[k]  )/(1+exp( -(elambda[k]   *(etau[k] -vX )   ) ) ) 
-      vY          <- eyeVregressor(params,vX)
-      ## Obtain Regressor Y at Data points X, and Measure Error To Actual Eye Vergence Data point at X
-      vRError     <- sum( (eyeVregressor(params,dataSubset$distP[vPP])-dataSubset$phi[vPP])  ^2 ) / NROW(dataSubset$phi[vPP])
-      vSqError[k] <- vRError
-      #vY_l  <- quantile(drawS$phi_0[pp,,])[1]   - ( quantile (drawS$lambda[pp])[1] )*((( quantile(drawS$gamma[pp,,])[1] )^( quantile(drawS$u0[pp])[1] - (vX) ) ) ) #
-      #vY_u  <- quantile(drawS$phi_0[pp,,])[5]   - (quantile (drawS$lambda[pp,,])[5])*((( quantile(drawS$gamma[pp,,])[5] )^( quantile(drawS$u0[pp,,])[5] - (vX) ) ) ) #
-      #      #points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
-      lines( vX ,vY,type="l",col=colourR[3],lwd=1)
-      #        lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
+      for (k in 1:NROW(etau) )
+      {
+        params <- list(etau    = etau[k,c],
+                       ephimax = ephimax[k,c],
+                       ephi0   = ephi0[k,c],
+                       elambda = elambda[k,c],
+                       egamma  = egamma[k,c],
+                       ealpha  = ealpha[k,c]
+        )
+        #vY  <-  ealpha[k]*exp(egamma[k]*(etau[k]-vX) )+ ephi0[k]   +  (ephimax[k] -ephi0[k]  )/(1+exp( -(elambda[k]   *(etau[k] -vX )   ) ) ) 
+        vY          <- eyeVregressor(params,vX)
+        ## Obtain Regressor Y at Data points X, and Measure Error To Actual Eye Vergence Data point at X
+        vRError     <- sum( (eyeVregressor(params,dataSubset$distP[vPP])-dataSubset$phi[vPP])  ^2 ) / NROW(dataSubset$phi[vPP])
+        vSqError[k] <- vRError
+        #vY_l  <- quantile(drawS$phi_0[pp,,])[1]   - ( quantile (drawS$lambda[pp])[1] )*((( quantile(drawS$gamma[pp,,])[1] )^( quantile(drawS$u0[pp])[1] - (vX) ) ) ) #
+        #vY_u  <- quantile(drawS$phi_0[pp,,])[5]   - (quantile (drawS$lambda[pp,,])[5])*((( quantile(drawS$gamma[pp,,])[5] )^( quantile(drawS$u0[pp,,])[5] - (vX) ) ) ) #
+        #      #points(dataSubset$distP[vPP],dataSubset$phi[vPP],pch=19,xlim=c(0,5),ylim=c(-85,85),main=paste("L",pp), bg=colourP[2],col=colourP[1],cex=0.5)
+        lines( vX ,vY,type="l",col=r[c],lwd=1)
+        #        lines( vX ,vY_u,type="l",col=colourR[4],lwd=1)
+      }
     }
-    
+      
     return(vSqError) 
   }
   
@@ -221,7 +224,7 @@ modelGCSigmoidInd  <- "model
       ## plot the regression lines and the data
       vSqError <- plotEyeGCFit(idxH,strGroupID,dataS,drawS) 
       
-      plot(drawS$tau[idxH,,1],type='l',ylim=c(0,4),main=paste("Chains of tau",idxH," (",vRegIdx[idxH],")") )
+      plot(drawS$tau[idxH,,1],type='l',ylim=c(0,7),main=paste("Chains of tau",idxH," (",vRegIdx[idxH],")") )
       lines(drawS$tau[idxH,,2],type='l',col="red")
       lines(drawS$tau[idxH,,3],type='l',col="blue")
       #dev.off()
@@ -239,7 +242,7 @@ modelGCSigmoidInd  <- "model
       
       
       #pdf(file= paste(strPlotExportPath,"/stat/diag/stat_SigExpFit_gamma",idxH,".pdf",sep="")) 
-      plot(drawS$gamma[idxH,,1],type='l',ylim=c(0,4),main=paste("V rise rate gamma ",idxH," (",vRegIdx[idxH],")") )
+      plot(drawS$gamma[idxH,,1],type='l',ylim=c(0,range(drawS$gamma)[2]),main=paste("V rise rate gamma ",idxH," (",vRegIdx[idxH],")") )
       lines(drawS$gamma[idxH,,2],type='l',col="red")
       lines(drawS$gamma[idxH,,3],type='l',col="blue")
       #dev.off()
