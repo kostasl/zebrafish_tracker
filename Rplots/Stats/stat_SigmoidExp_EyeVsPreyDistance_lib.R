@@ -25,7 +25,7 @@ modelGCSigmoidInd  <- "model
   for(i in 1:max(hidx) ) { 
     phi_max[i] ~ dnorm(initPhi[i]+40,1)T(initPhi[i],150) ##I(0,100) # Max Eye Vergence Angle
     phi_0[i] ~ dnorm(initPhi[i], 1)T(-10,60)  # Idle Eye Position
-    lambda[i] ~ dgamma(10, 1)T(5,250) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
+    lambda[i] ~ dgamma(7, 0.3)T(5,250) #dnorm(100.0, 1e-3)T(0,) # RiseRate of Eye Vs Prey Distance Sigmoid
     gamma[i] ~ dgamma(1, 0.5) #dnorm(0.5, 1e-3)I(0,)  # RiseRate of Eye Vs Prey Distance After Sig Rise dunif(0.5, 0.000001)
     alpha[i] ~ dunif(1,3)
     tau[i] ~ dnorm(distMax[i], 1e-3)T(0.1,6) ##inflexion point, sample from where furthest point of Hunt event is found
@@ -34,7 +34,6 @@ modelGCSigmoidInd  <- "model
     var_inv[i] <- pow(sigma[i],-2) # ##Draw   ##Precision
   
   }
-  
   
   
   
@@ -48,8 +47,8 @@ modelGCSigmoidInd  <- "model
   {
     initlist <- replicate(nchains,list(phi_0=c(rnorm(N,15,5)), ##Base Line Vergence Prior to HuntOn
                                        phi_max=rnorm(N,70,5),
-                                       lambda=rgamma(N,100,1), ## Sigmoid Rise Rate
-                                       gamma=rgamma(N,1,1), ## Exp Near Prey Rise Rate
+                                       lambda=rgamma(N,7,0.3), ## Sigmoid Rise Rate
+                                       gamma=rgamma(N,1,0.5), ## Exp Near Prey Rise Rate
                                        alpha=runif(N,1,3),
                                        tau=rnorm(N,2,0.5)  ),
                           simplify=FALSE)

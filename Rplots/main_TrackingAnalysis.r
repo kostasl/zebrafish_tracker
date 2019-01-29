@@ -144,12 +144,15 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
-  firstDataSet = NROW(strDataSetDirectories)-14
+  firstDataSet = NROW(strDataSetDirectories)-2
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
-  ##oad Frames and HuntStats
+  ##oad Frames and HuntStats ##
+  ##Warning : Merging is memory intensive
   source("loadAllDataSets.r")
-
+  ## Best to Load  a merged file datAllFrames instead :
+  load(paste(strDatDir,"setn3_Datasets_Tracked_07-06-18-Tracked_21-08-18.RData",sep="/"))
+  
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)

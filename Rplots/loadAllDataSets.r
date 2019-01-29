@@ -39,6 +39,20 @@ message(paste("Done Loading All datasets. Now Merging... ",dataSetsToProcess[1],
 
 #### Need to Filter Out Empty Entries in the List before binding otherwise R session crashes with mem. violation (Issue #2340)
 datAllFrames = do.call(rbind,datAllSets);
+
+
+## Save the aggregated DAta file ##
+
+strDataSetIdentifierFirst <- strsplit(strDataSetDirectories[[head(dataSetsToProcess,1)]],"/")
+strDataSetIdentifierFirst <- strDataSetIdentifierFirst[[1]][[ length(strDataSetIdentifierFirst[[1]]) ]]
+strDataSetIdentifier <- strsplit(strDataSetDirectories[[tail(dataSetsToProcess,1)]],"/")
+strDataSetIdentifier <- strDataSetIdentifier[[1]][[ length(strDataSetIdentifier[[1]]) ]]
+strDataFileName <- paste("setn",NROW(dataSetsToProcess),"_Datasets_", strDataSetIdentifierFirst ,"-",strDataSetIdentifier,".RData",sep="") ##To Which To Save After Loading
+save(datAllFrames,file=paste(strDatDir,strDataFileName,sep="/"))
+
+
+message(paste("Saved Merged files to:",strDatDir,strDataFileName) )
+
 #datAllFrames <- rbindlist(lapply(datAllSets,alloc.col) ) 
 #datAllFrames <- rbindlist(datAllSets)
 #datAllFrames <- mapply(c,datAllSets)

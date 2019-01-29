@@ -18,7 +18,7 @@
 ### TODO 1st Turn To Prey Detection Needs checking/fixing, 
 #####
 
-library(signal)
+
 library(MASS)
 library(mclust,quietly = TRUE) 
 
@@ -50,15 +50,6 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 ##Make an Updated list of ReTracked Hunt Events that have been imported
 # datTrackedEventsRegister <- data.frame(unique(cbind(datHuntEventMergedFrames$expID,datHuntEventMergedFrames$eventID,datHuntEventMergedFrames$trackID) ))
 
-## Setup Filters ## Can Check Bands with freqz(bf_speed) ## These are used in filterEyeTailNoise 
-Fs <- 430; #sampling rate
-bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
-bf_tailClass <- butter(4, c(0.01,0.35),type="pass"); ##Remove DC
-bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
-
-bf_eyes <- butter(4, 0.35,type="low",plane="z");
-bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
-bf_tailSegSize <- butter(4, 0.02,type="low"); ## Tail Segmemt Size iF Used to Estimate Pitch - Stiking Upwards
 ###
 #nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering ##moved to main
 

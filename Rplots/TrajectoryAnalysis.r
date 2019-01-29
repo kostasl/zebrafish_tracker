@@ -12,6 +12,56 @@
 #################
 
 source("TrackerDataFilesImport_lib.r")
+source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r") ##For Filter Initialization
+
+##Provide a data structure with organized processed data extracted from each Recording Event
+calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
+{
+  message(paste("## Calculate Speed Statistics for each event in dataFrame  ##" ) )
+  idx <- 1
+  lEventSpeed <- list()
+  ## For Each Exp
+  for (e in vexpID)
+  {
+    stopifnot(is.numeric(e) & e > 0)
+    
+    vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
+   ##For Each Event
+   for (v in  vEventID)
+   {
+     message(paste("ExpID:",e,"EventID:",v ) )
+    datRecordingEvent <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == v,]
+    ##Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
+    #### PROCESS BOUTS ###
+    vDeltaXFrames        <- diff(datRecordingEvent$posX,lag=1,differences=1)
+    vDeltaYFrames        <- diff(datRecordingEvent$posY,lag=1,differences=1)
+    vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
+  
+  
+    #nNumberOfBouts       <- 
+    dframe               <- diff(datRecordingEvent$frameN,lag=1,differences=1)
+    dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
+    vEventSpeed          <- meanf(vDeltaDisplacement/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+    
+    vEventSpeed[is.na(vEventSpeed)] = 0
+    vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
+    vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
+    vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+    vEventPathDisplacement_mm <- cumsum(vEventSpeed_smooth)*DIM_MMPERPX
+    ##Plot Displacement Vs Time in Sec
+    #plot(cumsum(dframe)/G_APPROXFPS,vEventPathDisplacement_mm,col="red")
+    ##TODO - obtain Actual FPS of each DAtaset
+    lEventSpeed[[idx]] <- list(expID=e,eventID=v,Duration_sec=sum(dframe)/G_APPROXFPS,Length_mm=max(vEventPathDisplacement_mm)) #density(vEventSpeed_smooth,from=0,to=1,kernel="gaussian")
+    idx <- idx + 1
+   }
+    ##END For Each Event
+  ##END For Each Exp
+  }
+  datEventSpeed <- data.frame(do.call(rbind,lEventSpeed))
+  
+  return(datEventSpeed )
+  
+}
 
 calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 {
@@ -282,7 +332,7 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
   ###############################################
   ### Collect LArva Stats to Make GROUP Stats ##
   ##############################################
-  datGroupMotion = do.call(rbind,lGroupMotion)
+  datGroupMotion = (do.call(rbind,lGroupMotion)) ##data.frame
 #  datGroupHunting = as.data.frame(lGroupHunting)
   #vDisplacements = as.vector(do.call(rbind,lapply(datGroupMotion,"[[,","vDisplacements")))
   vDataSetID            <- unlist(datGroupMotion[,"dataSetID"])
@@ -354,7 +404,9 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
     }
   ##Exp ID LookUp Table So Ican locate the same larva Across Empty->Live Condition
   ## 
-  datLT <- data.frame(cbind(larvaID=levels(datGroupMotion$larvaID)[datGroupMotion$larvaID],expID=levels(datGroupMotion$expID)[datGroupMotion$expID],dataSetID=levels(datGroupMotion$dataSetID)[datGroupMotion$dataSetID]))
+  datLT <- data.frame(cbind(larvaID=levels(unlist(datGroupMotion$larvaID) )[unlist(datGroupMotion$larvaID)],
+                            expID=levels(unlist(datGroupMotion$expID) )[unlist(datGroupMotion$expID)],
+                            dataSetID=levels(unlist(datGroupMotion$dataSetID) )[unlist(datGroupMotion$dataSetID )]))
   udatLT <- unique(datLT)
   
   

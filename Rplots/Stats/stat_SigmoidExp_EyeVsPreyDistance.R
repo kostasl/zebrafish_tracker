@@ -20,9 +20,9 @@ library(runjags)
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=1000;
-steps=10000;
+steps=12000;
 thin=3;
-nchains <-3
+nchains <-5
 n.cores <- 6
 timings <- vector('numeric', 3)
 
@@ -166,7 +166,7 @@ pchL <- c(16,2,4)
   #vsubIdx <-sample(NROW(lRegIdx[["NL"]]),NROW(lRegIdx[["NL"]])*dataFrac)
   vIdxExcludeAllExcept <-  unique(datVEyePointsLL[!(datVEyePointsLL$RegistarIdx %in% c(154,152,130,104)),]$RegistarIdx)  ##Ones that do not fit
   ##Exclude the ones Marked as unsuitable for the regressor
-  vExcludesubIdx <- c(147,112,111,109,100,98,44,26,22,20,19,13,12,11,10) 
+  vExcludesubIdx <- c(147,112,111,109,100,98,44,26,22,20,19,13,12,11,10,152,99) 
   ## OR Simply Subset Dat For Speed
   #vsubIdx <- sample(NROW(lRegIdx[["LL"]]),NROW(lRegIdx[["LL"]])*dataFrac)
   datVEyePointsNL_Sub <- datVEyePointsNL[!(datVEyePointsNL$RegistarIdx %in% vExcludesubIdx ),] #
@@ -281,7 +281,7 @@ pchL <- c(16,2,4)
   library('coda')
   
   nchains <- 5
-  
+  n.cores <- nchains
   cl <- makeCluster(n.cores)
   timer <- proc.time()
   resultsLL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
@@ -296,11 +296,13 @@ pchL <- c(16,2,4)
   # Write the current model representation to file:
   write.jagsfile(resultsLL, file=paste(strDataExportDir,"/models/model_SigExpLL.txt",sep="" ) )
   mcmcLL.object <- as.mcmc.list(resultsLL)
-  save(dataLL,resultsLL,mcmcLL.object,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_DL",fitseqNo,".RData",sep=""))      
+  save(dataLL,resultsLL,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_LL",fitseqNo,"-Parallel.RData",sep=""))      
   
+  stopCluster(cl)
   
   
   ## NL    RUN JAGS ##
+  cl <- makeCluster(n.cores)
   timer <- proc.time() 
   resultsNL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
                          monitor = varnames,n.chains = nchains,
@@ -314,11 +316,12 @@ pchL <- c(16,2,4)
   # 
   # # Write the current model representation to file:
    write.jagsfile(resultsNL, file=paste(strDataExportDir,"/models/model_SigExpNL.txt",sep="" ) )
+   save(dataNL,resultsNL,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_NL",fitseqNo,"-Parallel.RData",sep=""))      
    mcmcNL.object <- as.mcmc.list(resultsNL)
-   save(dataNL,resultsNL,mcmcNL.object,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_NL",fitseqNo,".RData",sep=""))      
-   
+   stopCluster(cl)
 
    ### DL RUN JAGS ##
+   cl <- makeCluster(n.cores)
    timer <- proc.time() 
    resultsDL <- run.jags(modelGCSigmoidInd,method = "rjparallel",
                          monitor = varnames,n.chains = nchains,
@@ -326,19 +329,16 @@ pchL <- c(16,2,4)
                          thin = thin,
                          sample = steps,
                          inits = initfunct(nchains, NROW(unique(dataDL$hidx) )),
-                         keep.jags.files=paste(strDataExportDir,"/models/model_SigExpDL_results.txt",sep="" ),
                          cl=cl)
    time.taken <- proc.time() - timer
    timings[3] <- time.taken[3]
    
   stopCluster(cl)
   
-   
   # Write the current model representation to file:
   write.jagsfile(resultsDL, file=paste(strDataExportDir,"/models/model_SigExpDL.txt",sep="" ) )
+  save(dataDL,resultsDL,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_DL",fitseqNo,"-Parallel.RData",sep=""))      
   mcmcDL.object <- as.mcmc.list(resultsDL)
-  save(dataDL,resultsDL,mcmcDL.object,timings,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RunJags_DL",fitseqNo,".RData",sep=""))      
-  
   #######################
   ########################
   
@@ -370,6 +370,7 @@ pchL <- c(16,2,4)
   drawS <- drawNL
   strGroupID <- "NL"
   lFitScores_NL <- plotConvergenceDiagnostics(strGroupID,drawS, dataS)
+  datFitScores_NL <- data.frame(do.call(rbind,lFitScores_NL))
   
   dataS <- dataLL
   drawS <- drawLL

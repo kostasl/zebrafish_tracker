@@ -14,6 +14,16 @@ citation("mclust")
 
 
 
+## Setup Filters ## Can Check Bands with freqz(bf_speed) ## These are used in filterEyeTailNoise 
+Fs <- 430; #sampling rate
+bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
+bf_tailClass <- butter(4, c(0.01,0.35),type="pass"); ##Remove DC
+bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
+
+bf_eyes <- butter(4, 0.35,type="low",plane="z");
+bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
+bf_tailSegSize <- butter(4, 0.02,type="low"); ## Tail Segmemt Size iF Used to Estimate Pitch - Stiking Upwards
+
 ## Processes The Noise IN the recorded Frames of Fish#'s Eye and Tail Motion
 ##Filters Fish Records - For Each Prey ID Separatelly
 ## As Each Row Should Contain a unique fish snapshot and not Repeats for each separate Prey Item - Ie A frame associated with a single preyID
