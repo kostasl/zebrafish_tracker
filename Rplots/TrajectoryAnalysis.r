@@ -32,27 +32,34 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
      message(paste("ExpID:",e,"EventID:",v ) )
     datRecordingEvent <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == v,]
     ##Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
-    #### PROCESS BOUTS ###
-    vDeltaXFrames        <- diff(datRecordingEvent$posX,lag=1,differences=1)
-    vDeltaYFrames        <- diff(datRecordingEvent$posY,lag=1,differences=1)
-    vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
-  
-  
-    #nNumberOfBouts       <- 
-    dframe               <- diff(datRecordingEvent$frameN,lag=1,differences=1)
-    dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
-    vEventSpeed          <- meanf(vDeltaDisplacement/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+    #### PROCESS TrackLets ###
+    vTracklets <- unique(datRecordingEvent$trackletID)
+    for (t in vTracklets)
+    {
+      if (t == 0) ##Periodic FoodDensity Recording /. Not A tracklet
+        next()
+      datRecordingEvent    <- datRecordingEvent[datRecordingEvent$trackletID == t,]
+      vDeltaXFrames        <- diff(datRecordingEvent$posX,lag=1,differences=1)
+      vDeltaYFrames        <- diff(datRecordingEvent$posY,lag=1,differences=1)
+      vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
     
-    vEventSpeed[is.na(vEventSpeed)] = 0
-    vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
-    vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
-    vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
-    vEventPathDisplacement_mm <- cumsum(vEventSpeed_smooth)*DIM_MMPERPX
-    ##Plot Displacement Vs Time in Sec
-    #plot(cumsum(dframe)/G_APPROXFPS,vEventPathDisplacement_mm,col="red")
-    ##TODO - obtain Actual FPS of each DAtaset
-    lEventSpeed[[idx]] <- list(expID=e,eventID=v,Duration_sec=sum(dframe)/G_APPROXFPS,Length_mm=max(vEventPathDisplacement_mm)) #density(vEventSpeed_smooth,from=0,to=1,kernel="gaussian")
-    idx <- idx + 1
+    
+      #nNumberOfBouts       <- 
+      dframe               <- diff(datRecordingEvent$frameN,lag=1,differences=1)
+      dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
+      vEventSpeed          <- meanf(vDeltaDisplacement/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+      
+      vEventSpeed[is.na(vEventSpeed)] = 0
+      vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
+      vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
+      vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+      vEventPathDisplacement_mm <- cumsum(vEventSpeed_smooth)*DIM_MMPERPX
+      ##Plot Displacement Vs Time in Sec
+      #plot(cumsum(dframe)/G_APPROXFPS,vEventPathDisplacement_mm,col="red")
+      ##TODO - obtain Actual FPS of each DAtaset
+      lEventSpeed[[idx]] <- list(groupID=unique(datRecordingEvent$groupID),expID=e,eventID=v,trackletID=t,Duration_sec=sum(dframe)/G_APPROXFPS,Length_mm=max(vEventPathDisplacement_mm)) #density(vEventSpeed_smooth,from=0,to=1,kernel="gaussian")
+      idx <- idx + 1
+    }##For Each Tracklet
    }
     ##END For Each Event
   ##END For Each Exp
