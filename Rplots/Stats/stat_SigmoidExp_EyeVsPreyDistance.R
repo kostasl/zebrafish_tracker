@@ -264,7 +264,6 @@ pchL <- c(16,2,4)
   time.taken <- proc.time() - timer
   timings[3] <- time.taken[3]
   
-  
   ######### SAVE ##
   save(dataDL,drawDL,mDL,file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_DL",fitseqNo,".RData",sep=""))      
   
