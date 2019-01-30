@@ -15,6 +15,7 @@ extern cv::Size gszTemplateImg;
 
 fishModel::fishModel()
 {
+        bearingAngle                = 0.0;
         lastTailFitError            = 0.0;
         templateScore               = 0.0;
         nFailedEyeDetectionCount    = 0;
@@ -32,7 +33,7 @@ fishModel::fishModel()
         this->ID    = 0;
         zTrack.id   = this->ID;
         zTrack.colour = CV_RGB(255,0,0);
-        leftEyeTheta = 180; //In Degrees - A Value that looks wrong to show its not initialized
+        leftEyeTheta          = 180; //In Degrees - A Value that looks wrong to show its not initialized
         rightEyeTheta         = 180; //In Degrees
         c_spineSegL           = gFishTailSpineSegmentLength;
 }

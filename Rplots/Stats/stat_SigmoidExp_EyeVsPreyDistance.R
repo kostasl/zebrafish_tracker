@@ -20,9 +20,9 @@ library(runjags)
 #
 #These RC params Work Well to Smooth LF And NF
 burn_in=1000;
-steps=12000;
+steps=10000;
 thin=3;
-nchains <-5
+nchains <-3
 n.cores <- 6
 timings <- vector('numeric', 3)
 

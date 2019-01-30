@@ -3,9 +3,10 @@
 /// \date Jun 2018
 /// \author Konstantinos Lagogiannis
 /// \version 1.0
-/// \brief Video Analysis software to track zebrafish behaviour from images obtained at high frame rates (>350fps) using darkfield IR illumination(IR light-ring) on a 35mm petridish containing a single animal.
+/// \brief Video Analysis software to track zebrafish behaviour from images obtained at high frame rates (>350fps) using darkfield IR
+///  illumination(IR light-ring) on a 35mm petridish containing a single animal.
 ///
-/// \remark
+/// \note
 ///     * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
  ///    * The green box defines the region over which the larvae are counted-tracked and recorded to file.
  ///    * Once the video begins to show, use to left mouse clicks to define a new region in the image over which you want to count the larvae.
@@ -14,16 +15,18 @@
  ///    * 2 Left Clicks to define the 2 points of region-of interest for tracking.
  ///    * m to show the masked image of the larva against BG.
  ///    * t Start Tracking
+ ///    * f toggle food tracking
  ///    * p to Pause
  ///    * r to UnPause/Run
  ///    * D to delete currently used template from cache
+ ///    * R reset fish Spline
+ ///    * W Toggle output to CSV file writing
  ///    * T to save current tracked region as new template
  ///    * q Exit Quit application
  ///*
- ///* \note  Changing ROI hits SEG. FAULTs in update tracks of the library. So I made setting of ROI only once.
- ///* The Area is locked after t is pressed to start tracking. Still it fails even if I do it through cropping the images.
- ///* So I reverted to not tracking - as the code does not work well - I am recording blobs For now
  ///*
+
+ ///
  ///*  Dependencies : opencv3 (W/O CUDA ) QT5
  ///*
  /// \details
@@ -33,19 +36,21 @@
  ///   * track blobs of different class (food/fish) separatelly so tracks do not interfere
   ///  * Second method of Ellipsoid fitting, using a fast algorithm on edge points
   ///  * Changes template Match region, wide for new blobs, narrow for known fish - Can track at 50fps (06/2018)
+  ///  * Combines blob tracking with optic flow at the point of food particle (using Lucas-Kanade) to improve track of prey motion near fish
+  ///  * Tail spine is tracking with both, sequential intensity scanning and a variational approach on fitting smoothed fish contour angle and length (estimates fish's tail size)
  ///
- ///   \remark
+ ///  \remark OutputFiles
  ///  Data processing:
  ///  * Added Record of Food Count at regular intervals on each video in case, so that even if no fish is being tracked ROI
- ///    the evolution of prey Count in time can be observed.
+ ///    the evolution of prey Count in time can be observed. saveTracks outputs a count of prey numbers at a regular interval 1sec, it shows up with fishID 0
  ///
+  ///
  /// \bug MOG use under Multi-Processing gives a SegFault in OpenCL - Workaround: Added try block on MOG2, and then flag to switch off OpenCL.
  /// \note Cmd line arguments: /zebraprey~_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
- /// \todo Add Lucas-Kanade tracking of prey motion X
- /// \todo Add Tail Spine Length Variational to detect fish length.
+ /// \todo (completed)
  ////////
 
 
@@ -2664,7 +2669,6 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
             //make Null Fish
             fishModel* pNullfish = new fishModel();
             pNullfish->ID          = 0;
-            pNullfish->bearingRads = 0.0;
             pNullfish->resetSpine();
 
             output << frameNumber << "\t" << Vcnt  << "\t" << (*pNullfish);
