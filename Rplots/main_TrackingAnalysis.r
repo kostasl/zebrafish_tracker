@@ -73,7 +73,7 @@ strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/"
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
 strTrackeroutPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
 #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
-strTrackInputPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData" ##Where to source the Tracker csv files from
+strTrackInputPath <- "/media/LinuxDat/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
 strDatDir        <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
 strDataExportDir <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
 strPlotExportPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
@@ -136,7 +136,7 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
   lastDataSet = NROW(strDataSetDirectories)
-  firstDataSet = lastDataSet 
+  firstDataSet = lastDataSet -14
   source("runimportTrackerDataFiles.r") 
 
 ###### END OF IMPORT TRACKER DATA ############
@@ -144,14 +144,14 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
-  firstDataSet = NROW(strDataSetDirectories)-2
+  firstDataSet = NROW(strDataSetDirectories)-14
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
-  ##oad Frames and HuntStats ##
+  ##Load All Tracked Frames into datAllFrames data frame ##
   ##Warning : Merging is memory intensive
-  source("loadAllDataSets.r")
+  #source("loadAllDataSets.r")
   ## Best to Load  a merged file datAllFrames instead :
-  load(paste(strDatDir,"setn3_Datasets_Tracked_07-06-18-Tracked_21-08-18.RData",sep="/"))
+  load(paste(strDatDir,"setn15_Datasets_Tracked16-11-17-Tracked_21-08-18.RData",sep="/"))
   
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]

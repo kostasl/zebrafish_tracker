@@ -255,8 +255,10 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
       vTailSegmentLength <- vector()
       if ("tailSegmentLength" %in% names(TrackerData[[i]][[j]]))
         vTailSegmentLength <- TrackerData[[i]][[j]]$tailSegmentLength
-      else
+      else{
+        vTailSegmentLength <- rep(0,NROW(TrackerData[[i]][[j]]$EyeLDeg)) ##Set As 0 All Over
         warning("Missing tailSegmentLength field, perhaps these track files from older tracker version.");
+      }
       
       
       
