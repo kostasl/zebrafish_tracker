@@ -39,6 +39,19 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
       if (t == 0) ##Periodic FoodDensity Recording /. Not A tracklet
         next()
       datRecordingEvent    <- datRecordingEvent[datRecordingEvent$trackletID == t,]
+      ###No Record
+      if (NROW(datRecordingEvent )< 3 )
+      {
+        warning("Tracklet too short")
+        lEventSpeed[[idx]] <- list(groupID=unique(datRecordingEvent$groupID),
+                                   expID=e,eventID=v,
+                                   trackletID=t,
+                                   Duration_sec=0,
+                                   Length_mm=0) #density(vEventSpeed_smooth,from=0,to=1,kernel="gaussian")
+        idx <- idx + 1
+        
+        next()
+      }
       vDeltaXFrames        <- diff(datRecordingEvent$posX,lag=1,differences=1)
       vDeltaYFrames        <- diff(datRecordingEvent$posY,lag=1,differences=1)
       vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
@@ -59,6 +72,7 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
       ##TODO - obtain Actual FPS of each DAtaset
       lEventSpeed[[idx]] <- list(groupID=unique(datRecordingEvent$groupID),expID=e,eventID=v,trackletID=t,Duration_sec=sum(dframe)/G_APPROXFPS,Length_mm=max(vEventPathDisplacement_mm)) #density(vEventSpeed_smooth,from=0,to=1,kernel="gaussian")
       idx <- idx + 1
+      
     }##For Each Tracklet
    }
     ##END For Each Event
