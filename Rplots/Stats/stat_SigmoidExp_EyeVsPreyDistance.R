@@ -382,25 +382,88 @@ pchL <- c(16,2,4)
   ####################
   
   
+  ### List of Good Fit RegIdxs 
+  vRegIdxGoodFit_LL <- c(3,4,5,23,18,29,30,31,37,38,49,50,53,54,58,62,66,68,69,70,74,75,76,77,79,83,84,94,113,114,133,135,137,138,139,140,155,165,166,167,169)
+  vRegIdxGoodFit_DL <- c(1,2,8,14,16,17,18,24,27,55,65,72,73,78,80,86,118,119,127,128,131,145,157,158)
+  vRegIdxGoodFit_NL <- c(15,21,32,33,34,35,36,39,45,46,60,81,87,88,89,93,101,102,103,104,105,107,108,110,115,116,123,124,125,126,130,143,148,149,150,151)
+  ## Now Translate to dataIdx which We use to locate the  samples in the drawStructure
+  vRegIdx <- unique(dataLL$RegistrarIdx)
+  vIdxGoodFit_LL <- which(vRegIdx %in% vRegIdxGoodFit_LL)
   
+  vRegIdx <- unique(dataDL$RegistrarIdx)
+  vIdxGoodFit_DL <- which(vRegIdx %in% vRegIdxGoodFit_DL)
+  
+  vRegIdx <- unique(dataNL$RegistrarIdx)
+  vIdxGoodFit_NL <- which(vRegIdx %in% vRegIdxGoodFit_NL)
+  
+  ### Examine Differences In Statistics of Curves
   ## SHOW Hunt OnSet Densities ###
   ## Plot Vergence Angle Distributions/Densities
-  dLLphi<-density(drawLL$tau)
-  dDLphi<-density(drawDL$tau)
-  dNLphi<-density(drawNL$tau)
+  
+   
+  chain <-1 ##Which Chain To Draw The stats from 
+
+  ### Compare Mean Onset Distance Tau 
+  cdf_NL <- ecdf(unlist(drawNL$tau[vIdxGoodFit_NL,,chain]))
+  cdf_DL <- ecdf(unlist(drawDL$tau[vIdxGoodFit_DL,,chain]))
+  cdf_LL <-  ecdf(unlist(drawLL$tau[vIdxGoodFit_LL,,chain]))
+  plot(cdf_NL,col=colourR[3],main="Onset Distance")  
+  lines(cdf_DL,col=colourR[1])
+  lines(cdf_LL,col=colourR[2])
+  
+  
+  dLLphi<-density(unlist(drawLL$tau[vIdxGoodFit_LL,,chain]))
+  dDLphi<-density(unlist(drawDL$tau[vIdxGoodFit_DL,,chain]))
+  dNLphi<-density(unlist(drawNL$tau[vIdxGoodFit_NL,,chain]))
+
   
   #X11()
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_CompareOnset_tau2.pdf",sep="")) 
+  #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_CompareOnset_tau2.pdf",sep="")) 
   #X11()
   plot(dLLphi,col=colourH[2],type="l",lwd=2,ylim=c(0,1.0),main="Vergence Onset Vs Distance",xlab=expression(paste(" ",tau, " (mm)" ) ) )
   lines(dNLphi,col=colourH[3],lwd=2)
   lines(dDLphi,col=colourH[1],lwd=2)
   #legend("topright",legend =  strGroupID,fill=colourH)
-  legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(lnDat[["DL"]]),NROW(lnDat[["LL"]]) ,NROW(lnDat[["NL"]]) ) )
+  legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(vIdxGoodFit_DL),NROW(vIdxGoodFit_LL) ,NROW(vIdxGoodFit_NL) ) )
          ,fill=colourH,lty=c(1,2,3))
   dev.off()
   
-  ###############################################
+  ############################################### ##
+  ## Compare V Rise Rate after Vergences  Gamma  ###
+  cdf_NL <- ecdf(unlist(drawNL$gamma[vIdxGoodFit_NL,,chain]))
+  cdf_DL <- ecdf(unlist(drawDL$gamma[vIdxGoodFit_DL,,chain]))
+  cdf_LL <-  ecdf(unlist(drawLL$gamma[vIdxGoodFit_LL,,chain]))
+  
+  ## Show Shift in Higher Rates Using CDF 
+  ## Here NF seems to Lead the race, LF only wins by small margin
+  plot(cdf_NL,col=colourR[3],main="gamma  Exp Rise Rate")  
+  lines(cdf_DL,col=colourR[1])
+  lines(cdf_LL,col=colourR[2])
+  
+    
+  dLLphi<-density(unlist(drawLL$gamma[vIdxGoodFit_LL,,chain]))
+  dDLphi<-density(unlist(drawDL$gamma[vIdxGoodFit_DL,,chain]))
+  dNLphi<-density(unlist(drawNL$gamma[vIdxGoodFit_NL,,chain]))
+  
+  plot(dLLphi,col=colourH[2],type="l",lwd=2,ylim=c(0,1.0),main="Vergence Onset Vs Distance",xlab=expression(paste(" ",gamma, " ()" ) ) )
+  lines(dNLphi,col=colourH[3],lwd=2)
+  lines(dDLphi,col=colourH[1],lwd=2)
+  #legend("topright",legend =  strGroupID,fill=colourH)
+  legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(vIdxGoodFit_DL),NROW(vIdxGoodFit_LL) ,NROW(vIdxGoodFit_NL) ) )
+         ,fill=colourH,lty=c(1,2,3))
+  
+ ###
+  ## Compare V Rise Rate after Vergences  Gamma  ###
+  cdf_NL <- ecdf(unlist(drawNL$lambda[vIdxGoodFit_NL,,chain]))
+  cdf_DL <- ecdf(unlist(drawDL$lambda[vIdxGoodFit_DL,,chain]))
+  cdf_LL <-  ecdf(unlist(drawLL$lambda[vIdxGoodFit_LL,,chain]))
+  
+  ## Show Shift in Higher Rates Using CDF 
+  ## Here NF seems to Lead the race, LF only wins by small margin
+  plot(cdf_NL,col=colourR[3],main="lambda Hunting Onset Rise Rate")  
+  lines(cdf_DL,col=colourR[1])
+  lines(cdf_LL,col=colourR[2])
+  
   
   
   
