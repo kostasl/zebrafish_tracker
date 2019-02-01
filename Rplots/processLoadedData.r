@@ -3,8 +3,9 @@
 source("HuntingEventAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
 
-lHuntStat <- list();
-lMotionStat <- list();
+lTrackletStat <- list();
+lHuntStat     <- list();
+lMotionStat   <- list();
 
 
 ### TRAJECTORIES Indicating Hunting  - With distinct colour for each larva ####
@@ -34,49 +35,20 @@ for (i in strCondTags)
   ##Combine Hunting Events across fish in this Condition In One
   #datHuntEvent = do.call(rbind,lHuntStat[[i]]$vHuntingEventsList )
   
+  lTrackletStat[[i]] <- calcRecordingEventSpeed(datAllGroupFrames,vexpID,idxDataSet)
+  
   ## Extract Hunting Events From Data
-  datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,dataSetsToProcess)
-  lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vexpID,dataSetsToProcess)
+  #lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vexpID,dataSetsToProcess)
+
+  #datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,dataSetsToProcess)
+  #writeHuntEventToFile(datHuntEvent,dataSetsToProcess,groupsrcdatListPerDataSet)
   
-  lHuntStat[[i]] <- calcHuntStat3(datHuntEvent)
+  #lHuntStat[[i]] <- calcHuntStat3(datHuntEvent)
+  #stopifnot(length(lHuntStat[[i]]$vHLarvaEventCount) > 0)
   
-  stopifnot(length(lHuntStat[[i]]$vHLarvaEventCount) > 0)
   ##Reconstruct DataSet File List - So As to link fileIdx To Files
   #filelist <- getFileSet("LiveFed/Empty/",strDataSetDirectories[[idxDataSet]])
   #filelist <-  
-  
-  
-  if (NROW(datHuntEvent) > 0 )
-  {
-    message("Writing Hunting Data...")
-    ## Recover The File names from fileIdxs
-    ## Run It for Each DataSet Idx - Not Sure Of Better Way extracting the relevant filelist
-    datHuntEvent$filenames = "." ##Create Field
-    for (d in idxDataSet)
-    {
-      
-      ##Get Files Used for This DataSet, and this Condition
-      filelist <- getVideofilePath(unlist(groupsrcdatListPerDataSet[d][[1]][[i]][[1]]),strVideoFilePath)
-      
-      ##Set File Name
-      
-      datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$filenames <- filelist[ datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$fileIdx ]
-    }
-    
-    strDataFileName <- paste("setn",NROW(dataSetsToProcess),"-D",dataSetsToProcess[1],"-",dataSetsToProcess[NROW(dataSetsToProcess)],"-HuntEvents-",i,sep="") ##To Which To Save After Loading
-    
-    write.csv(datHuntEvent,file=paste(strDataExportDir,"/",strDataFileName,".csv",sep="" ) , row.names=FALSE ) 
-    ###Save Hunt Event Data Frame
-    
-    message(paste(" Exporting to:",strDataFileName))
-    ##ExPORT 
-    datHuntEvent$groupID = i
-    save(datHuntEvent,file=paste(strDataExportDir,"/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-    saveRDS(datHuntEvent,file=paste(strDataExportDir,"/",strDataFileName,".rds",sep="" )) ##So It can be loaded into a custom Named Structure
-    
-  }else{
-    message("No Hunting Event to write!")
-  }
   
   
 } ##Process Stat For Each Condition / Write Hunting Events

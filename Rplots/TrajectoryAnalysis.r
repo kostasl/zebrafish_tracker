@@ -24,13 +24,17 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
   for (e in vexpID)
   {
     stopifnot(is.numeric(e) & e > 0)
-    
     vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
-   ##For Each Event
+    ##For Each Event
    for (v in  vEventID)
    {
-     message(paste("ExpID:",e,"EventID:",v ) )
     datRecordingEvent <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == v,]
+    
+    meanfps <-  unique(datRecordingEvent$fps)
+    groupID <- unique(datRecordingEvent$groupID)
+    
+    message(paste("ExpID:",e,"EventID:",v,"fps:",meanfps ) )
+    
     ##Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
     #### PROCESS TrackLets ###
     vTracklets <- unique(datRecordingEvent$trackletID)
@@ -43,7 +47,7 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
       if (NROW(datRecordingEvent )< 3 )
       {
         warning("Tracklet too short")
-        lEventSpeed[[idx]] <- list(groupID=unique(datRecordingEvent$groupID),
+        lEventSpeed[[idx]] <- list(groupID=groupID,
                                    expID=e,eventID=v,
                                    trackletID=t,
                                    Duration_sec=0,
@@ -70,7 +74,12 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
       ##Plot Displacement Vs Time in Sec
       #plot(cumsum(dframe)/G_APPROXFPS,vEventPathDisplacement_mm,col="red")
       ##TODO - obtain Actual FPS of each DAtaset
-      lEventSpeed[[idx]] <- list(groupID=unique(datRecordingEvent$groupID),expID=e,eventID=v,trackletID=t,Duration_sec=sum(dframe)/G_APPROXFPS,Length_mm=max(vEventPathDisplacement_mm)) #density(vEventSpeed_smooth,from=0,to=1,kernel="gaussian")
+      lEventSpeed[[idx]] <- list(groupID=groupID,
+                                 expID=e,
+                                 eventID=v,
+                                 trackletID=t,
+                                 Duration_sec=sum(dframe)/meanfps,
+                                 Length_mm=max(vEventPathDisplacement_mm)) #density(vEventSpeed_smooth,from=0,to=1,kernel="gaussian")
       idx <- idx + 1
       
     }##For Each Tracklet
