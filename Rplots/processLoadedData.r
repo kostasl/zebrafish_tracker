@@ -65,3 +65,11 @@ save(datHuntStat, file=paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D
 save(datMotionStat, file=paste(strDataExportDir,"/","setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datMotionStat.RData",sep=""))
 
 
+### Examine Activity Between Groups  ##
+vPathLengthPerLarva_LE <- tapply(unlist(lTrackletStat[["LE"]]$Length_mm),unlist(lTrackletStat[["LE"]]$expID),sum)
+vPathLengthPerLarva_DE <- tapply(unlist(lTrackletStat[["DE"]]$Length_mm),unlist(lTrackletStat[["DE"]]$expID),sum)
+vPathLengthPerLarva_NE <- tapply(unlist(lTrackletStat[["NE"]]$Length_mm),unlist(lTrackletStat[["NE"]]$expID),sum)
+
+hist(vPathLengthPerLarva_LE,breaks=100,lim=c(0,100),col=colourR[[2]]  )
+hist(vPathLengthPerLarva_DE,breaks=100,lim=c(0,100),add=T,col=colourR[[1]]  )
+hist(vPathLengthPerLarva_NE,breaks=100,lim=c(0,100),add=T,col=colourR[[3]] )

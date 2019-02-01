@@ -67,7 +67,7 @@ strDataExportDir <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/ze
 strPlotExportPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
 
 
-## Office PC
+## Office PC ##
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
