@@ -464,7 +464,32 @@ pchL <- c(16,2,4)
   lines(cdf_DL,col=colourR[1])
   lines(cdf_LL,col=colourR[2])
   
+  #############
+  ## Compare Max V Angle  ###
+  cdf_NL <- ecdf(unlist(drawNL$phi_max[vIdxGoodFit_NL,,chain]))
+  cdf_DL <- ecdf(unlist(drawDL$phi_max[vIdxGoodFit_DL,,chain]))
+  cdf_LL <-  ecdf(unlist(drawLL$phi_max[vIdxGoodFit_LL,,chain]))
   
+  ## Show Shift in Angles Rates Using CDF 
+  ## Here NF seems to Lead the race, LF only wins by small margin
+  plot(cdf_NL,col=colourR[3],main="Phi max Angle")  
+  lines(cdf_DL,col=colourR[1])
+  lines(cdf_LL,col=colourR[2])
+  
+  #############
+  ## Compare Max V Angle  ###
+  cdf_NL <- ecdf(unlist(drawNL$phi_0 [vIdxGoodFit_NL,,chain]))
+  cdf_DL <- ecdf(unlist(drawDL$phi_0[vIdxGoodFit_DL,,chain]))
+  cdf_LL <-  ecdf(unlist(drawLL$phi_0[vIdxGoodFit_LL,,chain]))
+  
+  ## Show Shift in Angles Rates Using CDF 
+  ## Here NF seems to Lead the race, LF only wins by small margin
+  plot(cdf_NL,col=colourR[3],main="Phi 0 Angle")  
+  lines(cdf_DL,col=colourR[1])
+  lines(cdf_LL,col=colourR[2])
+  
+  
+    
   
   
   ## Load And RE-run from File ##
