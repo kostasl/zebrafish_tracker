@@ -122,9 +122,9 @@ sigma0 = 1000;
 #lambda0 = matrix(c(sigma0*10000,0,0,sigma0),2,2)
 lambda0 = matrix(c(sigma0*1,0,0,sigma0),2,2)
 
-## Plot Prior on Variance 
-r <- seq(0,300,1)
-plot(r,dinvgamma(r, a0, b0))
+## Plot Prior Variance 
+r <- seq(0,300,1) 
+plot(r,dinvgamma(r, a0, b0),main="Prior for variance (Inverse Gamma)",type="l")
 
 ##DATA Combinations ##
 datLL <- cbind(dataLL$turn,dataLL$bearing)
@@ -140,18 +140,6 @@ MLparamsNL <- getParams( datNL,a0,b0,lambda0 )
 MLparamsNLDL <- getParams( dataNLDL,a0,b0 )
 MLparamsDLLL <- getParams( dataDLLL,a0,b0 )
 MLparamsLLNL <- getParams( dataLLNL,a0,b0 )
-
-###Plot Lines
-plot(datLL,col="green")
-par(col="green")
-genManyPar(MLparamsLL)
-
-points(datNL,col="red")
-par(col="red")
-genManyPar(MLparamsNL)
-points(datDL,col="blue")
-par(col="blue")
-genManyPar(MLparamsDL)
 
 
 ## Calcilate Probability of Model Given Data
@@ -170,12 +158,43 @@ logR_DLNL=(logML_DL+logML_NL)-logML_NLDL
 logR_LLDL=(logML_DL+logML_LL)-logML_DLLL
 logR_LLNL=(logML_NL+logML_LL)-logML_LLNL
 
+strComparisonTxt <- (paste("k-factor comparison\n LL Vs DL:", prettyNum(logR_LLDL ),ifelse(logR_LLDL < 0," Common ","Separate"),
+                           "\n LL vs NL:",prettyNum(logR_LLNL),ifelse(logR_LLNL < 0," Common ","Separate") ,
+                           " \n DL vs NL:",prettyNum(logR_DLNL), ifelse(logR_DLNL < 0," Common ","Separate") )  )
+
+
+
 message(paste("a0:",a0,"b0:",b0,"sigma0:",sigma0))
-message(paste(" LL Vs DL:", logR_LLDL,ifelse(logR_LLDL < 0," Common Model","Separate"),
-              "\n LL vs NL:",logR_LLNL,ifelse(logR_LLNL < 0," Common Model","Separate") ,
-              "\n DL vs NL",logR_DLNL, ifelse(logR_DLNL < 0," Common Model","Separate") )  )
+message(strComparisonTxt)
+###Plot Lines
 
+## Plot The LL Fit ##
+pdf(file= paste(strPlotExportPath,"/stat/BaysianModelComparison-kfactor-",".pdf",sep="")) 
 
+plot(datLL,col="green",
+     main="Baysian Model  comparison",
+     sub="",
+     xlab="\n \n \n Bearing To Prey prior to Bout",
+     ylab="First Turn To Prey",xlim=c(-80,80))
+par(col="green")
+genManyPar(MLparamsLL)
+points(datNL,col="red")
+par(col="red")
+genManyPar(MLparamsNL)
+points(datDL,col="blue")
+par(col="blue")
+genManyPar(MLparamsDL)
+legend("topleft",
+       legend=c(
+         paste("DL M.LogP:", prettyNum(logML_DL,digits=5) ) ,
+         paste("LL M.LogP:", prettyNum(logML_LL,digits=5) ) ,
+         paste("NL M.LogP:",prettyNum(logML_NL,digits=5))  ) , fill=colourL )
+text(40,-50,strComparisonTxt)
+
+## Variance Prior
+plot(r,dinvgamma(r, a0, b0),main="Prior for variance (Inverse Gamma)",type="l")
+
+dev.off()
 
 ### Plot Undershoot Raw Data
 hist(dataLL$turn/dataLL$bearing)
