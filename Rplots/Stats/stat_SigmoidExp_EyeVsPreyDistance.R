@@ -348,9 +348,9 @@ pchL <- c(16,2,4)
   ## Compare convergence between the 3 chains for each trace 
   
   #### LOAD MCMC Data CalcInformation ##
-  #load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_LL",fitseqNo,".RData",sep=""))
-  #load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_NL",fitseqNo,".RData",sep=""))
-  #load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_DL",fitseqNo,".RData",sep=""))
+load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_LL",fitseqNo,".RData",sep=""))
+load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_NL",fitseqNo,".RData",sep=""))
+load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_DL",fitseqNo,".RData",sep=""))
   
   
   idxH <- 1
@@ -407,9 +407,6 @@ pchL <- c(16,2,4)
   cdf_NL <- ecdf(unlist(drawNL$tau[vIdxGoodFit_NL,,chain]))
   cdf_DL <- ecdf(unlist(drawDL$tau[vIdxGoodFit_DL,,chain]))
   cdf_LL <-  ecdf(unlist(drawLL$tau[vIdxGoodFit_LL,,chain]))
-  plot(cdf_NL,col=colourR[3],main="Onset Distance")  
-  lines(cdf_DL,col=colourR[1])
-  lines(cdf_LL,col=colourR[2])
   
   
   dLLphi<-density(unlist(drawLL$tau[vIdxGoodFit_LL,,chain]))
@@ -418,14 +415,23 @@ pchL <- c(16,2,4)
 
   
   #X11()
-  #pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_CompareOnset_tau2.pdf",sep="")) 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_CompareOnset_tau2.pdf",sep=""),onefile=TRUE ) 
   #X11()
-  plot(dLLphi,col=colourH[2],type="l",lwd=2,ylim=c(0,1.0),main="Vergence Onset Vs Distance",xlab=expression(paste(" ",tau, " (mm)" ) ) )
+  plot(dLLphi,col=colourH[2],
+       type="l",
+       lwd=2,ylim=c(0,2.0),
+       main="Vergence Onset densities",xlab=expression(paste(" ",tau, " (mm)" ) ) )
   lines(dNLphi,col=colourH[3],lwd=2)
   lines(dDLphi,col=colourH[1],lwd=2)
   #legend("topright",legend =  strGroupID,fill=colourH)
   legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(vIdxGoodFit_DL),NROW(vIdxGoodFit_LL) ,NROW(vIdxGoodFit_NL) ) )
          ,fill=colourH,lty=c(1,2,3))
+  ###CDF Plot
+  plot(cdf_NL,col=colourR[3],main="Onset Distance CDF")  
+  lines(cdf_DL,col=colourR[1])
+  lines(cdf_LL,col=colourR[2])
+  
+  
   dev.off()
   
   ############################################### ##
@@ -434,24 +440,40 @@ pchL <- c(16,2,4)
   cdf_DL <- ecdf(unlist(drawDL$gamma[vIdxGoodFit_DL,,chain]))
   cdf_LL <-  ecdf(unlist(drawLL$gamma[vIdxGoodFit_LL,,chain]))
   
+    
+  dLLphi<-density(unlist(drawLL$gamma[vIdxGoodFit_LL,,chain]))
+  dDLphi<-density(unlist(drawDL$gamma[vIdxGoodFit_DL,,chain]))
+  dNLphi<-density(unlist(drawNL$gamma[vIdxGoodFit_NL,,chain]))
+  
+  ### Plot Gamma ###
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_CompareVRiseRate_gamma2.pdf",sep=""),onefile=TRUE ) 
+  plot(dLLphi,col=colourH[2],type="l",lwd=2,
+       ylim=c(0,1.5),main="Vergence Rise (Gamma) ",xlab=expression(paste(" ",gamma, " ()" ) ) )
+  lines(dNLphi,col=colourH[3],lwd=2)
+  lines(dDLphi,col=colourH[1],lwd=2)
+  
+    #legend("topright",legend =  strGroupID,fill=colourH)
+  legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(vIdxGoodFit_DL),NROW(vIdxGoodFit_LL) ,NROW(vIdxGoodFit_NL) ) )
+         ,fill=colourH,lty=c(1,2,3))
+  
   ## Show Shift in Higher Rates Using CDF 
   ## Here NF seems to Lead the race, LF only wins by small margin
   plot(cdf_NL,col=colourR[3],main="gamma  Exp Rise Rate")  
   lines(cdf_DL,col=colourR[1])
   lines(cdf_LL,col=colourR[2])
   
+  dev.off()
+  
+  ### PLot Gamma Vs Tau ###
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_gammaVStau.pdf",sep=""),onefile=TRUE ) 
+  
+  plot(unlist(drawLL$tau[vIdxGoodFit_LL,,chain]) , unlist(drawLL$gamma[vIdxGoodFit_LL,,chain]),col=colourR[2],
+       main="Vergence rate (gamma) vs Onset distance tau ",
+       xlab="distance (mm)",ylab="Rise rate (gamma)")  
+  points(unlist(drawDL$tau[vIdxGoodFit_DL,,chain]), unlist(drawDL$gamma[vIdxGoodFit_DL,,chain]),col=colourR[1])  
+  points(unlist(drawNL$tau[vIdxGoodFit_NL,,chain]), unlist(drawNL$gamma[vIdxGoodFit_NL,,chain]),col=colourR[3])  
+  dev.off()
     
-  dLLphi<-density(unlist(drawLL$gamma[vIdxGoodFit_LL,,chain]))
-  dDLphi<-density(unlist(drawDL$gamma[vIdxGoodFit_DL,,chain]))
-  dNLphi<-density(unlist(drawNL$gamma[vIdxGoodFit_NL,,chain]))
-  
-  plot(dLLphi,col=colourH[2],type="l",lwd=2,ylim=c(0,1.0),main="Vergence Onset Vs Distance",xlab=expression(paste(" ",gamma, " ()" ) ) )
-  lines(dNLphi,col=colourH[3],lwd=2)
-  lines(dDLphi,col=colourH[1],lwd=2)
-  #legend("topright",legend =  strGroupID,fill=colourH)
-  legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(vIdxGoodFit_DL),NROW(vIdxGoodFit_LL) ,NROW(vIdxGoodFit_NL) ) )
-         ,fill=colourH,lty=c(1,2,3))
-  
  ###
   ## Compare V Rise Rate after Vergences  Gamma  ###
   cdf_NL <- ecdf(unlist(drawNL$lambda[vIdxGoodFit_NL,,chain]))
