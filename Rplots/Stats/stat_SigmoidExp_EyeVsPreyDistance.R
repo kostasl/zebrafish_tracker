@@ -383,6 +383,7 @@ load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_D
   
   
   ### List of Good Fit RegIdxs 
+  N <- NROW(drawLL$tau[1,,chain]) ##Take A count of total Samples
   vRegIdxGoodFit_LL <- c(3,4,5,23,18,29,30,31,37,38,49,50,53,54,58,62,66,68,69,70,74,75,76,77,79,83,84,94,113,114,133,135,137,138,139,140,155,165,166,167,169)
   vRegIdxGoodFit_DL <- c(1,2,8,14,16,17,18,24,27,55,65,72,73,78,80,86,118,119,127,128,131,145,157,158)
   vRegIdxGoodFit_NL <- c(15,21,32,33,34,35,36,39,45,46,60,81,87,88,89,93,101,102,103,104,105,107,108,110,115,116,123,124,125,126,130,143,148,149,150,151)
@@ -399,8 +400,6 @@ load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_D
   ### Examine Differences In Statistics of Curves
   ## SHOW Hunt OnSet Densities ###
   ## Plot Vergence Angle Distributions/Densities
-  
-   
   chain <-1 ##Which Chain To Draw The stats from 
 
   ### Compare Mean Onset Distance Tau 
@@ -463,17 +462,21 @@ load(file=paste(strDataExportDir,"/stat_EyeVergenceVsDistance_sigmoidFit_RJags_D
   lines(cdf_LL,col=colourR[2])
   
   dev.off()
+
+  ##### Vergence RISE GAMMA Vs Onset Distance ####
+  ####  2D PLot Gamma Vs Tau                  ###
+  chain <-1 ##Which Chain To Draw The stats from 
+  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_gammaVStau.pdf",sep=""), onefile=TRUE ) 
   
-  ### PLot Gamma Vs Tau ###
-  pdf(file= paste(strPlotExportPath,"/stat/stat_EyeVsDistance_SigmoidFit_gammaVStau.pdf",sep=""),onefile=TRUE ) 
-  
-  plot(unlist(drawLL$tau[vIdxGoodFit_LL,,chain]) , unlist(drawLL$gamma[vIdxGoodFit_LL,,chain]),col=colourR[2],
+  plot(unlist(drawLL$tau[vIdxGoodFit_LL,(N-1000):N,chain]) , unlist(drawLL$gamma[vIdxGoodFit_LL,(N-1000):N,chain]),
+       xlim=c(0.5,6),
+       pch=pchL[2],col=colourR[2],
        main="Vergence rate (gamma) vs Onset distance tau ",
        xlab="distance (mm)",ylab="Rise rate (gamma)")  
-  points(unlist(drawDL$tau[vIdxGoodFit_DL,,chain]), unlist(drawDL$gamma[vIdxGoodFit_DL,,chain]),col=colourR[1])  
-  points(unlist(drawNL$tau[vIdxGoodFit_NL,,chain]), unlist(drawNL$gamma[vIdxGoodFit_NL,,chain]),col=colourR[3])  
+  points(unlist(drawDL$tau[vIdxGoodFit_DL,(N-1000):N,chain]), unlist(drawDL$gamma[vIdxGoodFit_DL,(N-1000):N,chain]),pch=pchL[1],col=colourR[1])  
+  points(unlist(drawNL$tau[vIdxGoodFit_NL,(N-1000):N,chain]), unlist(drawNL$gamma[vIdxGoodFit_NL,(N-1000):N,chain]),pch=pchL[3],col=colourR[3])  
   dev.off()
-    
+
  ###
   ## Compare V Rise Rate after Vergences  Gamma  ###
   cdf_NL <- ecdf(unlist(drawNL$lambda[vIdxGoodFit_NL,,chain]))

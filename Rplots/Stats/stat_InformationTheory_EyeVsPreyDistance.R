@@ -10,7 +10,7 @@ source("TrackerDataFilesImport_lib.r")
 source("HuntingEventAnalysis_lib.r")
 source("Stats/stat_InformationTheory_EyeVsPreyDistance_lib.R")
 
-fitseqNo <- 5
+fitseqNo <- 11
 strTag <- "VarD" ##Str Appended to output to indicate calc Conditions : VarD : variable integral period depending on hunt event strike distance, FixD : All inf integrated until 0.6mm from prey
 
 #### CalcInformation ##
@@ -138,7 +138,9 @@ datFirstBoutVsInfDL <- mergeFirstTurnWithInformation(datFirstBouts,lInfStructDL 
 ## Error Check That subset of data using RegIdx Indeed belongs to the intended group
 stopifnot(unique(datTrackedEventsRegister[unlist(datFirstBoutVsInfDL$RegistarIdx),"groupID"]) == "DL" )  ##Check for Errors in Reg idx - Group should match registry
 
+datVerifyNL <- cbind(lInfStructNL$vsampleRegisterIdx, unique(dataNL$RegistrarIdx)[ lInfStructNL$vsamplePSeqIdx])
 
+### Plot Information Vs Undershoot Ratio ####
 pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio_",strTag,".pdf",sep=""))
 plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf),
      ylim=c(0,2),xlim=c(0,2),
@@ -153,8 +155,166 @@ legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsIn
        ,col=colourH,pch=pchL,lty=c(1,2,3),lwd=2)
 dev.off()
 
-## Make Bar plot Of Undershoot Vs Inf - Bin Results
 
+## plot Undershot Ratio  - Showing RegisterIDs ###
+##dataLL$distMax[ lInfStructDL$vsamplePSeqIdx]
+## Verification that distMax from Data belongs to the same event in lInfStructNL example : 
+## 
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio_",strTag,"_WithIDs.pdf",sep=""))
+plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf),
+     ylim=c(0,2),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
+     main="Information Vs Undershoot ",col=colourH[2],pch=pchL[2])
+segments(1,-10,1,20);
+points(unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfNL$MInf),ylim=c(0,2),xlim=c(0,2),
+       col=colourH[3],pch=pchL[3])
+points(unlist(datFirstBoutVsInfDL$UnderShootRatio),unlist(datFirstBoutVsInfDL$MInf),ylim=c(0,2),xlim=c(0,2),
+       col=colourH[1],pch=pchL[1])
+text(unlist(datFirstBoutVsInfNL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfNL$MInf)*1.01,unlist(datFirstBoutVsInfNL$RegistarIdx),cex=0.7,col=colourP[3])
+text(unlist(datFirstBoutVsInfLL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfLL$MInf)*1.01,unlist(datFirstBoutVsInfLL$RegistarIdx),cex=0.7)
+text(unlist(datFirstBoutVsInfDL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfDL$MInf)*1.01,datFirstBoutVsInfDL$RegistarIdx,cex=0.7,col=colourP[1])
+
+legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsInfDL),NROW(datFirstBoutVsInfLL) ,NROW(datFirstBoutVsInfNL) ) ) 
+       ,col=colourH,pch=pchL,lty=c(1,2,3),lwd=2)
+dev.off()
+
+## Plot UNDERSHOOT With ONSET Distance Information ####
+##Make Colour Map Normalized from 0mm to 5mm 
+rfcDark <- colorRampPalette(rev(brewer.pal(8,'YlOrRd')));
+colMap5mm <- rfcDark(61)
+distOnSet_NL <-  ( as.numeric(prettyNum( unlist( dataNL$distMax[ lInfStructNL$vsamplePSeqIdx]), digits=3) ) )
+colMap5mm_NL <- colMap5mm[ (distOnSet_NL *10 ) ]
+distOnSet_DL <- as.numeric(prettyNum( unlist( dataDL$distMax[ lInfStructDL$vsamplePSeqIdx]), digits=3) ) 
+colMap5mm_DL <- colMap5mm[ (distOnSet_DL  *10 ) ]
+distOnSet_LL <- as.numeric(prettyNum( unlist( dataLL$distMax[ lInfStructLL$vsamplePSeqIdx]), digits=3) ) 
+colMap5mm_LL <- colMap5mm[ distOnset_LL*10  ]
+
+#par(bg = "white")
+#par(fg = "black")
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatioAndDistance_",strTag,"_LF.pdf",sep=""))
+plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf),
+     ylim=c(0,2),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
+     main="Information Vs Undershoot LF",bg="black",col=colMap5mm_LL,pch=17)
+text(1.5,1.8,"0mm"); text(2.0,1.8,"6mm")
+points(seq(1.5,2.0,(2.0-1.5)/( NROW(colMap5mm)-1)  ),rep(1.7,NROW(colMap5mm)),       pch=15,col=colMap5mm )
+points(unlist(datFirstBoutVsInfLL$UnderShootRatio), unlist(datFirstBoutVsInfLL$MInf), pch= 2)
+segments(1,-10,1,20);
+plot(distOnset_LL,unlist(datFirstBoutVsInfLL$MInf),
+     xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+     xlim=c(0,6),ylim=c(0,2),
+     main="Information Vs Onset Distance ",bg="black",col=colMap5mm_LL,pch=17) #col=colMap5mm_LL
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatioAndDistance_",strTag,"_NF.pdf",sep=""))
+plot(unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfNL$MInf),
+     ylim=c(0,2),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
+     main="Information Vs Undershoot NF",bg="black",col=colMap5mm_LL,pch=17)
+text(1.5,1.8,"0mm"); text(2.0,1.8,"6mm")
+points(seq(1.5,2.0,(2.0-1.5)/( NROW(colMap5mm)-1)  ),rep(1.7,NROW(colMap5mm)),pch=15,col=colMap5mm )
+points(unlist(datFirstBoutVsInfNL$UnderShootRatio), unlist(datFirstBoutVsInfNL$MInf), pch= 2)
+segments(1,-10,1,20);
+##2nd Page plot
+plot(distOnSet_NL,unlist(datFirstBoutVsInfNL$MInf),
+     xlim=c(0,6),ylim=c(0,2),
+     xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+     main="Information Vs Onset Distance ",bg="black",col=colMap5mm_NL,pch=15) # colMap5mm_NL
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatioAndDistance_",strTag,"_DF.pdf",sep=""))
+plot(unlist(datFirstBoutVsInfDL$UnderShootRatio),unlist(datFirstBoutVsInfDL$MInf),
+     ylim=c(0,2),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
+     main="Information Vs Undershoot DF",bg="black",col=colMap5mm_LL,pch=17)
+text(1.5,1.8,"0mm"); text(2.0,1.8,"6mm")
+points(seq(1.5,2.0,(2.0-1.5)/( NROW(colMap5mm)-1)  ),rep(1.7,NROW(colMap5mm)),pch=15,col=colMap5mm )
+points(unlist(datFirstBoutVsInfDL$UnderShootRatio), unlist(datFirstBoutVsInfDL$MInf), pch= 2)
+segments(1,-10,1,20);
+##2nd Page plot
+plot(distOnSet_DL,unlist(datFirstBoutVsInfDL$MInf),
+     xlim=c(0,6),ylim=c(0,2),
+     xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+     main="Information Vs Onset Distance ",bg="black",col=colMap5mm_DL ,pch=19)#colMap5mm_DL
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatioAndDistanceNorm_",strTag,"_LF.pdf",sep=""))
+plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf)/(distOnset_LL),
+     ylim=c(0,1),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
+     main="Information/mm Vs Undershoot LF",bg="black",col=colMap5mm_LL,pch=17)
+text(1.5,0.87,"0mm"); text(2.0,0.87,"6mm")
+points(seq(1.5,2.0,(2.0-1.5)/( NROW(colMap5mm)-1)  ),rep(0.8,NROW(colMap5mm)),pch=15,col=colMap5mm )
+points(unlist(datFirstBoutVsInfLL$UnderShootRatio), unlist(datFirstBoutVsInfLL$MInf)/(distOnset_LL), pch= 2)
+segments(1,-10,1,20);
+plot(distOnset_LL,unlist(datFirstBoutVsInfLL$MInf),
+     xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+     xlim=c(0,6),ylim=c(0,2),
+     main="Information Vs Onset Distance ",bg="black",col=colMap5mm_LL,pch=17) #col=colMap5mm_LL
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatioAndDistanceNorm_",strTag,"_DF.pdf",sep=""))
+plot(unlist(datFirstBoutVsInfDL$UnderShootRatio),unlist(datFirstBoutVsInfDL$MInf)/(distOnSet_DL),
+     ylim=c(0,1),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
+     main="Information/mm Vs Undershoot DF",bg="black",col=colMap5mm_LL,pch=17)
+text(1.5,0.87,"0mm"); text(2.0,0.87,"6mm")
+points(seq(1.5,2.0,(2.0-1.5)/( NROW(colMap5mm)-1)  ),rep(0.8,NROW(colMap5mm)),pch=15,col=colMap5mm )
+points(unlist(datFirstBoutVsInfDL$UnderShootRatio), unlist(datFirstBoutVsInfDL$MInf)/(distOnSet_DL), pch= 2)
+segments(1,-10,1,20);
+##2nd Page plot
+plot(distOnSet_DL,unlist(datFirstBoutVsInfDL$MInf),
+       xlim=c(0,6),ylim=c(0,2),
+       xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+       main="Information Vs Onset Distance ",bg="black",col=colMap5mm_DL ,pch=19)#colMap5mm_DL
+dev.off()
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatioAndDistanceNorm_",strTag,"_NF.pdf",sep=""))
+plot(unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfNL$MInf)/(distOnSet_NL),
+     ylim=c(0,1),xlim=c(0,2),
+     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
+     main="Information/mm Vs Undershoot NF ",bg="black",col=colMap5mm_LL,pch=17)
+text(1.5,0.87,"0mm"); text(2.0,0.87,"6mm")
+points(seq(1.5,2.0,(2.0-1.5)/( NROW(colMap5mm)-1)  ),rep(0.8,NROW(colMap5mm)),pch=15,col=colMap5mm )
+points(unlist(datFirstBoutVsInfNL$UnderShootRatio), unlist(datFirstBoutVsInfNL$MInf)/(distOnSet_NL), pch= 2)
+segments(1,-10,1,20);
+##2nd Page plot
+plot(distOnSet_NL,unlist(datFirstBoutVsInfNL$MInf),
+       xlim=c(0,6),ylim=c(0,2),
+       xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+       main="Information Vs Onset Distance ",bg="black",col=colMap5mm_NL,pch=15) # colMap5mm_NL
+dev.off()
+
+### Inf Vs DISTANCE Plot All Groups 
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsDistance_",strTag,"_All.pdf",sep=""))
+plot(distOnset_LL,unlist(datFirstBoutVsInfLL$MInf),
+     xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+     xlim=c(0,6),ylim=c(0,2),
+     main="Information Vs Onset Distance ",bg="black",col=colourP[2],pch=17) #col=colMap5mm_LL
+
+points(distOnSet_DL,unlist(datFirstBoutVsInfDL$MInf),
+       xlim=c(0,6),ylim=c(0,2),
+       xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+       main="Information Vs Onset Distance ",bg="black",col=colourP[1] ,pch=19)#colMap5mm_DL
+
+points(distOnSet_NL,unlist(datFirstBoutVsInfNL$MInf),
+       xlim=c(0,6),ylim=c(0,2),
+       xlab=( expression(paste(tau," Onset distance ") )  ),ylab="mutual Inf in Eye V",
+       main="Information Vs Onset Distance ",bg="black",col=colourP[3],pch=15) # colMap5mm_NL
+legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsInfDL),NROW(datFirstBoutVsInfLL) ,NROW(datFirstBoutVsInfNL) ) ) 
+       ,col=colourP,pch=c(19,17,15),lty=c(1,2,3),lwd=2)
+dev.off()
+
+
+
+
+
+## Make Bar plot Of Undershoot Vs Inf - Bin Results
 datFirstBoutVsInf <- rbind(datFirstBoutVsInfLL,datFirstBoutVsInfNL,datFirstBoutVsInfDL)
 bins <-  20
 vlevels <- seq(from=1,to=10,by=10/bins)
@@ -182,25 +342,6 @@ boxplot(unlist(vInfVsUndershoot[,1])~unlist(vInfVsUndershoot[,2]),names=sort(uni
 
 dev.off()
 
-
-## plot Undershot Ratio  - Showing RegisterIDs ###
-pdf(file= paste(strPlotExportPath,"/stat/stat_InfVsTurnRatio_",strTag,"_WithIDs.pdf",sep=""))
-plot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfLL$MInf),
-     ylim=c(0,2),xlim=c(0,2),
-     xlab=( expression(paste(Phi,"/",theta," Turn Ratio  ") )  ),ylab="mutual Inf in Eye V",
-     main="Information Vs Undershoot ",col=colourH[2],pch=pchL[2])
-segments(1,-10,1,20);
-points(unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfNL$MInf),ylim=c(0,2),xlim=c(0,2),
-       col=colourH[3],pch=pchL[3])
-points(unlist(datFirstBoutVsInfDL$UnderShootRatio),unlist(datFirstBoutVsInfDL$MInf),ylim=c(0,2),xlim=c(0,2),
-       col=colourH[1],pch=pchL[1])
-text(unlist(datFirstBoutVsInfNL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfNL$MInf)*1.01,unlist(datFirstBoutVsInfNL$RegistarIdx),cex=0.7,col=colourP[3])
-text(unlist(datFirstBoutVsInfLL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfLL$MInf)*1.01,unlist(datFirstBoutVsInfLL$RegistarIdx),cex=0.7)
-text(unlist(datFirstBoutVsInfDL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfDL$MInf)*1.01,datFirstBoutVsInfDL$RegistarIdx,cex=0.7,col=colourP[1])
-
-legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsInfDL),NROW(datFirstBoutVsInfLL) ,NROW(datFirstBoutVsInfNL) ) ) 
-       ,col=colourH,pch=pchL,lty=c(1,2,3),lwd=2)
-dev.off()
 
 ##Plot Vs Undershoot Angle ###
 plot(datFirstBoutVsInfLL$UnderShootAngle,datFirstBoutVsInfLL$MInf,
