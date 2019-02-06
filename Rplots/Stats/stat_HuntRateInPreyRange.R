@@ -1,5 +1,5 @@
-### Makes Bayssian inference on  hunt events rate - within a given rannge of prey counts##
-## Used to plot spontaneous eye vergence events count in the Empty Test conditions ##
+### Makes Bayssian inference on  hunt events rate - within a given rannge of prey counts ##
+## Used to plot spontaneous eye vergence events count in the EMPTY Test conditions ##
 ### TODO Also Plot Duration Of Eye Vergence Frames ###
 
 
@@ -46,23 +46,25 @@ datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",st
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged)
 
 
-## Get Event Counts Within Range ##
-datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL) )
-datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE) )
+## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##
+
+datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ) )
+datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ) )
 datHuntVsPreyL <- datHuntVsPreyLE#rbind(datHuntVsPreyLL,datHuntVsPreyLE)
 
 datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]),]
 
 
-datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL) )
-datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE) )
+datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NL ) )
+datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NE ) )
+                         
 datHuntVsPreyN <- datHuntVsPreyNE #rbind(datHuntVsPreyNL,datHuntVsPreyNE)
 
 datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]),]
 
 
-datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL) )
-datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE) )
+datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DL ) )
+datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DE ) )
 datHuntVsPreyD <-datHuntVsPreyDE #rbind(datHuntVsPreyDL,datHuntVsPreyDE)
 ##Remove NA 
 datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),]
@@ -115,7 +117,7 @@ drawDL2=jags.samples(mDL2,steps,thin=thin,variable.names=varnames1)
 
 ##q[idx,sampleID,chainID]
 ##PLot The Param Mean Distributions
-strPlotName <- paste(strPlotExportPath,"/stat/stat_HuntEventRateParamPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
+strPlotName <- paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventRateParamPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
 
 hist(tail(drawLL2$q[1,,1],plotsamples),breaks=seq(0,15,length=100),col=colourH[1],xlab=" Event Rate (r)",
@@ -135,25 +137,38 @@ dNLb<-density(tail(drawNL2$q[,,1] ,plotsamples)   )
 dDLb<-density(tail(drawDL2$q[,,1],plotsamples)  )
 
 
-pdf(file= paste(strPlotExportPath,"/stat/stat_HuntEventDensityPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDensityPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep=""))
 plot(dDLb,col=colourL[1],lwd=3,lty=1, xlim=c(0.1,10), ylim=c(0,2),
      main="Rate of Spontaneous Eye Vergence Events ",
      xlab=expression(paste("Rate  ",lambda) ) )
 lines(dLLb,col=colourL[2],xlim=c(0.5,1.2),lwd=3,lty=2)
 lines(dNLb,col=colourL[3],xlim=c(0.5,1.2),lwd=3,lty=3)
 
-legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(nDatDL,nDatLL ,nDatNL ) )
+legend("topleft",legend=paste(c("DF #","LF #","NF #"),c(nDatDL,nDatLL ,nDatNL ) )
        ,fill=colourL,lty=c(1,2,3))
 dev.off()
 
-
+##Raw Histograms
+pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
+layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
+hist(datHuntVsPreyL[,2],breaks=seq(0,35,3),col=colourR[2],main="LE",xlab="",ylim=c(0,50))
+hist(datHuntVsPreyN[,2],breaks=seq(0,35,3),col=colourR[3],main="NE",xlab="",ylim=c(0,50))
+hist(datHuntVsPreyD[,2],breaks=seq(0,35,3),col=colourR[1],main="DE",xlab="# Eye Vergence Events ",ylim=c(0,50))
+dev.off()
 #### Also Plot Duration Of Eye Vergence Frames ###
 
 
+##Raw Histograms
+pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDuration",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
+layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
+hist(datHuntVsPreyL[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[2],main="LE",xlab="",ylim=c(0,50))
+hist(datHuntVsPreyN[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[3],main="NE",xlab="",ylim=c(0,50))
+hist(datHuntVsPreyD[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[1],main="DE",xlab="# Eye Vergence Events ",ylim=c(0,50))
+dev.off()
+#### Also Plo
 
-
-
-
+boxplot(datHuntVsPreyL[,3]/G_APPROXFPS,datHuntVsPreyD[,3]/G_APPROXFPS,datHuntVsPreyN[,3]/G_APPROXFPS,
+        main="Spontaneous Hunt Events Duration per Larva ",notch=TRUE,names=c("LE","DE","NE"), ylab="(sec)" )
 
 ##hist(drawLL$qq[1,,1],breaks=seq(0,50,length=100))
 ##hist(drawNL$qq[1,,1],breaks=seq(0,50,length=100),add=T,col=rgb(1,0,0,.4))

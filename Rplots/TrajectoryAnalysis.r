@@ -31,7 +31,7 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
     datRecordingEvent <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == v,]
     
     meanfps <-  unique(datRecordingEvent$fps)
-    groupID <- unique(datRecordingEvent$groupID)
+    groupID <- as.character(unique(datRecordingEvent$groupID) )
     
     message(paste("ExpID:",e,"EventID:",v,"fps:",meanfps ) )
     

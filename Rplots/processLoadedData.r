@@ -36,7 +36,8 @@ for (i in strCondTags)
   #datHuntEvent = do.call(rbind,lHuntStat[[i]]$vHuntingEventsList )
   
   lTrackletStat[[i]] <- calcRecordingEventSpeed(datAllGroupFrames,vexpID,idxDataSet)
-  
+
+  ## DISABLED as these are not being used Anymore ##  
   ## Extract Hunting Events From Data
   #lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vexpID,dataSetsToProcess)
 
@@ -48,7 +49,7 @@ for (i in strCondTags)
   
   ##Reconstruct DataSet File List - So As to link fileIdx To Files
   #filelist <- getFileSet("LiveFed/Empty/",strDataSetDirectories[[idxDataSet]])
-  #filelist <-  
+  
   
   
 } ##Process Stat For Each Condition / Write Hunting Events
@@ -57,19 +58,33 @@ for (i in strCondTags)
 ## Hunt Statistics Summary - Combine Rows ##
 datHuntStat = do.call(rbind,lHuntStat)#
 datMotionStat = do.call(rbind,lMotionStat)
-
+datTrackletStat = data.frame(do.call(rbind,lTrackletStat))
 #datHuntStat <- rbindlist(lHuntStat)
 #datMotionStat <-rbindlist(lMotionStat)
 #Data Exported In One Dir -> strDataExportDir, and read from another - so as to Avoid accidental Overwrites
+save(datTrackletStat,lTrackletStat,file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep="")) 
+
 save(datHuntStat, file=paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datHuntStat.RData",sep=""))
 save(datMotionStat, file=paste(strDataExportDir,"/","setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datMotionStat.RData",sep=""))
 
+## Track Lengths ##
+datTrackletStat_filt <- datTrackletStat[datTrackletStat$Length_mm < 200,]
+boxplot(unlist(Length_mm) ~ unlist(groupID),data=datTrackletStat_filt, notch = TRUE)
 
 ### Examine Activity Between Groups  ##
 vPathLengthPerLarva_LE <- tapply(unlist(lTrackletStat[["LE"]]$Length_mm),unlist(lTrackletStat[["LE"]]$expID),sum)
 vPathLengthPerLarva_DE <- tapply(unlist(lTrackletStat[["DE"]]$Length_mm),unlist(lTrackletStat[["DE"]]$expID),sum)
 vPathLengthPerLarva_NE <- tapply(unlist(lTrackletStat[["NE"]]$Length_mm),unlist(lTrackletStat[["NE"]]$expID),sum)
+vPathLengthPerLarva_LL <- tapply(unlist(lTrackletStat[["LL"]]$Length_mm),unlist(lTrackletStat[["LL"]]$expID),sum)
+vPathLengthPerLarva_DL <- tapply(unlist(lTrackletStat[["DL"]]$Length_mm),unlist(lTrackletStat[["DL"]]$expID),sum)
+vPathLengthPerLarva_NL <- tapply(unlist(lTrackletStat[["NL"]]$Length_mm),unlist(lTrackletStat[["NL"]]$expID),sum)
 
-hist(vPathLengthPerLarva_LE,breaks=100,lim=c(0,100),col=colourR[[2]]  )
-hist(vPathLengthPerLarva_DE,breaks=100,lim=c(0,100),add=T,col=colourR[[1]]  )
-hist(vPathLengthPerLarva_NE,breaks=100,lim=c(0,100),add=T,col=colourR[[3]] )
+## Empty Test - Path Length per larva
+pdf(file= paste(strPlotExportPath,"/boxplot_totalPathLengthPerGroup.pdf",sep=""),onefile=TRUE ) 
+boxplot(vPathLengthPerLarva_LE,vPathLengthPerLarva_DE,vPathLengthPerLarva_NE,
+        vPathLengthPerLarva_LL,vPathLengthPerLarva_DL,vPathLengthPerLarva_NL,
+        ylim=c(0,10000),notch = TRUE,main="Total Path Length Per Larva  ",
+        ylab="mm",xlab="",
+        show.names=TRUE,names=c("LE","DE","NE","LL","DL","NL"),col=c(colourR[2],colourR[1],colourR[3] ) )
+dev.off()
+

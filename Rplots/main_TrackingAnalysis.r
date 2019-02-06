@@ -153,6 +153,7 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
   ## Best to Load  a merged file datAllFrames instead :
   load(paste(strDatDir,"datAllFrames_Ds-5-19.RData",sep="/"))
   load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
+  load(file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
