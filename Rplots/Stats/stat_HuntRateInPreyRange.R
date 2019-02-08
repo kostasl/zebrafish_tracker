@@ -225,8 +225,6 @@ hist(datHuntVsPreyD[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[1],main="DE",
 dev.off()
 #### Also Plo
 
-boxplot(datHuntVsPreyL[,3]/G_APPROXFPS,datHuntVsPreyD[,3]/G_APPROXFPS,datHuntVsPreyN[,3]/G_APPROXFPS,
-        main="Spontaneous Hunt Events Duration per Larva ",notch=TRUE,names=c("LE","DE","NE"), ylab="(sec)" )
 
 ####### Function Returns Hunt Event Durations for Group ID, excluding events 0 (Food Count Event) 
 getdatHuntDuration <- function(strGroupID)
@@ -353,7 +351,7 @@ pdf(strPlotName,width=16,height=10,title="Comparing the Duration of spontaneous 
 
 
 Plim <- max( round(range(datHDuration_L[,1])[2] ),round(range(datHDuration_D[,1])[2] ),round(range(datHDuration_N[,1])[2] ))*1.1   
-layout(matrix(c(1,2,3,4,4,4), 3,2, byrow = FALSE))
+layout(matrix(c(1,2,3,4,4,5), 3,2, byrow = FALSE))
 plotDurationDensityFitComparison(datHDuration_L,drawDurL,colourH[2],Plim,10) #colourR[2]
 legend("topright",legend=paste(c("Empirical Density ","Baysian Gamma Fit","Histogram ") )
        ,pch=c(NA,NA,21),lwd=c(2,1,2),lty=c(2,1,NA),col=c("black",colourL[2],colourH[4]) )
@@ -369,6 +367,9 @@ points(drawDurN$r[,(steps/thin-ns):(steps/thin),],drawDurN$s[,(steps/thin-ns):(s
 
 legend("topright",legend=paste(c("DF #","LF #","NF #"),c(nDatDF,nDatLF ,nDatNF ) )
        ,pch=16,col=colourL)
+##Box plot
+boxplot(datHuntVsPreyL[,3]/G_APPROXFPS,datHuntVsPreyD[,3]/G_APPROXFPS,datHuntVsPreyN[,3]/G_APPROXFPS,
+        main="Hunt Duration per Larva ",notch=TRUE,names=c("LE","DE","NE"),ylim=c(0,20), ylab="(sec)" )
 
 dev.off()
 
