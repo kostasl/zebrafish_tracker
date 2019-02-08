@@ -78,7 +78,7 @@ fromchain=1000
 #nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
 #nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
 
-colourH <- c(rgb(0.01,0.7,0.01,0.2),rgb(0.9,0.01,0.01,0.2),rgb(0.01,0.01,0.9,0.2),rgb(0.00,0.00,0.0,1.0))
+colourH <- c(rgb(0.01,0.7,0.01,0.01),rgb(0.9,0.01,0.01,0.01),rgb(0.01,0.01,0.9,0.01),rgb(0.00,0.00,0.0,1.0))
 
 strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 
@@ -99,18 +99,18 @@ datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_filtered)
 ## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ) )
 datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ) )
-datHuntVsPreyL <- datHuntVsPreyLL#rbind(datHuntVsPreyLL,datHuntVsPreyLE)
+datHuntVsPreyL <- datHuntVsPreyLE#rbind(datHuntVsPreyLL,datHuntVsPreyLE)
 datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]),]
 
 
 datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NL ) )
 datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NE ) )
-datHuntVsPreyN <- datHuntVsPreyNL #rbind(datHuntVsPreyNL,datHuntVsPreyNE)
+datHuntVsPreyN <- datHuntVsPreyNE #rbind(datHuntVsPreyNL,datHuntVsPreyNE)
 datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]),]
 
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DL ) )
 datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DE ) )
-datHuntVsPreyD <-datHuntVsPreyDL #rbind(datHuntVsPreyDL,datHuntVsPreyDE)
+datHuntVsPreyD <-datHuntVsPreyDE #rbind(datHuntVsPreyDL,datHuntVsPreyDE)
 datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]),] ##Remove NA 
 
 
@@ -200,11 +200,14 @@ x <- seq(0,Plim,1)
 N <- 1000
 dev.off()
 
+##Show Alignment with Empirical Distribution
 hist(datHuntVsPreyL[,2],breaks=seq(0,Plim,1),col=colourR[2],main="LE",xlab="",xlim=c(0,Plim),ylim=c(0,50))
 for (r in tail(drawLL2$q[,,1],N))
   lines(x,100*dexp(x,r),type="p",pch=16,cex=0.4,main="LE",xlim=c(0,Plim),col=colourR[2] ) 
+hist(datHuntVsPreyD[,2],breaks=seq(0,Plim,1),col=colourR[1],main="DE",xlab="",xlim=c(0,Plim),ylim=c(0,50))
 for (r in tail(drawDL2$q[,,1],N))
   lines(x,100*dexp(x,r),type="p",pch=16,cex=0.4,main="LE",xlim=c(0,Plim),col=colourR[1] ) 
+hist(datHuntVsPreyN[,2],breaks=seq(0,Plim,1),col=colourR[3],main="NE",xlab="",xlim=c(0,Plim),ylim=c(0,50))
 for (r in tail(drawNL2$q[,,1],N))
   lines(x,100*dexp(x,r),type="p",pch=16,cex=0.4,main="NE",xlim=c(0,Plim),col=colourR[3] ) 
 
@@ -249,6 +252,10 @@ datHDuration_LE <- getdatHuntDuration("LE")
 datHDuration_NE <- getdatHuntDuration("NE")
 datHDuration_DE <- getdatHuntDuration("DE")
 
+datHDuration_L <- datHDuration_LE
+datHDuration_N <- datHDuration_NE
+datHDuration_D <- datHDuration_DE
+
 ## Plot Histogram Of Durations in approx SEC
 pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDuration",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
 layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
@@ -278,23 +285,87 @@ update(mDurLE,burn_in)
 update(mDurNE,burn_in)
 update(mDurDE,burn_in)
 
-drawDurLE=jags.samples(mDurLE,steps,thin=thin,variable.names=varnames1)
-drawDurNE=jags.samples(mDurNE,steps,thin=thin,variable.names=varnames1)
-drawDurDE=jags.samples(mDurDE,steps,thin=thin,variable.names=varnames1)
+drawDurL=jags.samples(mDurLE,steps,thin=thin,variable.names=varnames1)
+drawDurN=jags.samples(mDurNE,steps,thin=thin,variable.names=varnames1)
+drawDurD=jags.samples(mDurDE,steps,thin=thin,variable.names=varnames1)
 
-hist(drawDurLE$r,xlim=c(0,0.01))
-hist(drawDurNE$r,xlim=c(0,0.01))
-hist(drawDurDE$r,xlim=c(0,0.01))
+hist(drawDurL$r,xlim=c(0,0.01))
+hist(drawDurN$r,xlim=c(0,0.01))
+hist(drawDurD$r,xlim=c(0,0.01))
 
-layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
-plot(drawDurLE$r,drawDurLE$s,xlim=c(0,0.01),ylim=c(0,8))
-plot(drawDurNE$r,drawDurNE$s,xlim=c(0,0.01),ylim=c(0,8))
-plot(drawDurDE$r,drawDurDE$s,xlim=c(0,0.01),ylim=c(0,8))
 
-x <- seq(0,2700,1)
+######## Plot Comparison Of Duration Data ##########
+##Now Plot Infered Distributions
+
+dev.off()
+
+
+
+#### Plot Density ###
+###Plot Density of Slope
+
+## Combines a the Gamma Fit distributions with a histogram and an empirical density estimate of the data (with a given BW)
+## datHDuration the raw Duration Dataframe, drawDur the MCMC Sampled values for the gamma distr. params
+## The histogram is scaled down fit the range of 
+plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,nplotSamples)
+{
+    XLim <- 6
+    
+    x <- seq(0,HLim,1) ##In Seconds
+    N <- 1000
+    
+    
+    densDur<-density(datHDuration[,1],bw=pBW)   
+    histDur <- hist(datHDuration[,1]/G_APPROXFPS,breaks=seq(0,HLim/G_APPROXFPS,0.1),plot=FALSE)
+    
+    
+    YScale <- range(densDur$y)[2]*1.05
+    hist_scale <- max(histDur$counts)/YScale ##Scale Histogram Relative To Density Peak
+    YLim <- 0.0015
+    
+    par(cex.lab = 1.1)
+    par(cex = 0.8)
+    par(cex.axis = 1.1)
+    
+    par(mar = c(5,5,2,5))
+    plot(densDur$x/G_APPROXFPS, densDur$y,type='l',xlim=c(0,XLim),ylim=c(0,YLim),lty=2,lwd=4,ylab=NA,xlab=NA)
+    
+    
+    pBW <- 120 ## Estimation BandWidth
+    ## Live Fed
+    for (c in 1:NROW(drawDur$r[1,1,]) )
+      for (i in (NROW(drawDur$r[,,c])-nplotSamples):NROW(drawDur$r[,,c]) )
+        lines(x/G_APPROXFPS,dgamma(x,rate=drawDur$r[,i,c],shape=drawDur$s[,i,c]),type="p",pch=16,cex=1.4,xlim=c(0,XLim),ylim=c(0,YLim), col=lcolour ) 
+  
+    par(new=T)
+    plot(histDur$breaks[1:NROW(histDur$counts)],histDur$counts, axes=F, xlab=NA, ylab=NA,cex=1.1,
+         xlim=c(0.0,XLim),ylim=c(0,max(histDur$counts)*1.10 ) ,lwd=3)
+    axis(side = 4)
+    mtext(side = 4, line = 2.1, 'Counts')
+    mtext(side = 2, line = 2.1, 'P(s)')
+
+  
+  
+  
+}
+
+### Make Plot Of Histograms and Gamma Fit 
+Plim <- max( round(range(datHDuration_L[,1])[2] ),round(range(datHDuration_D[,1])[2] ),round(range(datHDuration_N[,1])[2] ))*1.1   
+layout(matrix(c(1,2,3,4,4,4), 3,2, byrow = FALSE))
+plotDurationDensityFitComparison(datHDuration_L,drawDurL,colourH[2],Plim,10) #colourR[2]
+plotDurationDensityFitComparison(datHDuration_D,drawDurD,colourH[1],Plim,10)
+plotDurationDensityFitComparison(datHDuration_N,drawDurN,colourH[3],Plim,10)
+#plotDurationDensityFitComparison(datHDuration_N,drawDurN,colourH[3],Plim,10) ## Plot Distrib Of Params
+
+
+### Fix This To Display Inferred distribution
+
 ns <- 1000
-layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
-plot(x/G_APPROXFPS,dgamma(x,rate=drawDurLE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurLE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="LE",xlim=c(0,6),col=colourR[2] ) 
-#hist(drawDurLE$d/G_APPROXFPS,breaks=100,xlim=c(0,6))
-points(x/G_APPROXFPS,dgamma(x,rate=drawDurDE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurDE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="DE",xlim=c(0,6),col=colourR[1] ) 
-points(x/G_APPROXFPS,dgamma(x,rate=drawDurNE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurNE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="NE",xlim=c(0,6),col=colourR[3] ) 
+#layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
+plot(drawDurLE$r[,(steps/thin-ns):(steps/thin),],drawDurLE$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[2],xlim=c(0,0.01),ylim=c(0,6),
+     xlab="Rate Parameter",ylab="Shape Parameter") 
+points(drawDurDE$r[,(steps/thin-ns):(steps/thin),],drawDurDE$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[1] ) 
+points(drawDurNE$r[,(steps/thin-ns):(steps/thin),],drawDurNE$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[3],xlim=c(0,0.05) ) 
+
+#points(x/G_APPROXFPS,dgamma(x,rate=drawDurDE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurDE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="DE",xlim=c(0,6),col=colourR[1] ) 
+#points(x/G_APPROXFPS,dgamma(x,rate=drawDurNE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurNE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="NE",xlim=c(0,6),col=colourR[3] ) 
