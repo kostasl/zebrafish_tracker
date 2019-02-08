@@ -78,7 +78,7 @@ fromchain=1000
 #nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
 #nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
 
-colourH <- c(rgb(0.01,0.7,0.01,0.01),rgb(0.9,0.01,0.01,0.01),rgb(0.01,0.01,0.9,0.01),rgb(0.00,0.00,0.0,1.0))
+colourH <- c(rgb(0.9,0.01,0.01,0.01),rgb(0.01,0.7,0.01,0.01),rgb(0.01,0.01,0.9,0.01),rgb(0.00,0.00,0.0,1.0))
 
 strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 
@@ -339,33 +339,38 @@ plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,n
   
     par(new=T)
     plot(histDur$breaks[1:NROW(histDur$counts)],histDur$counts, axes=F, xlab=NA, ylab=NA,cex=1.1,
-         xlim=c(0.0,XLim),ylim=c(0,max(histDur$counts)*1.10 ) ,lwd=3)
+         xlim=c(0.0,XLim),ylim=c(0,max(histDur$counts)*1.10 ) ,lwd=2,pch=21,col="#000000CC")
     axis(side = 4)
     mtext(side = 4, line = 2.1, 'Counts')
     mtext(side = 2, line = 2.1, 'P(s)')
 
   
-  
-  
-}
+} ##Plot Function
 
 ### Make Plot Of Histograms and Gamma Fit 
+strPlotName <- paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDuration_p",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
+pdf(strPlotName,width=16,height=10,title="Comparing the Duration of spontaneous hunt events " ) 
+
+
 Plim <- max( round(range(datHDuration_L[,1])[2] ),round(range(datHDuration_D[,1])[2] ),round(range(datHDuration_N[,1])[2] ))*1.1   
 layout(matrix(c(1,2,3,4,4,4), 3,2, byrow = FALSE))
 plotDurationDensityFitComparison(datHDuration_L,drawDurL,colourH[2],Plim,10) #colourR[2]
+legend("topright",legend=paste(c("Empirical Density ","Baysian Gamma Fit","Histogram ") )
+       ,pch=c(NA,NA,21),lwd=c(2,1,2),lty=c(2,1,NA),col=c("black",colourL[2],colourH[4]) )
+
 plotDurationDensityFitComparison(datHDuration_D,drawDurD,colourH[1],Plim,10)
 plotDurationDensityFitComparison(datHDuration_N,drawDurN,colourH[3],Plim,10)
-#plotDurationDensityFitComparison(datHDuration_N,drawDurN,colourH[3],Plim,10) ## Plot Distrib Of Params
-
-
-### Fix This To Display Inferred distribution
-
-ns <- 1000
-#layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
-plot(drawDurLE$r[,(steps/thin-ns):(steps/thin),],drawDurLE$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[2],xlim=c(0,0.01),ylim=c(0,6),
+ ## Plot Distrib Of Params
+ns <- 200
+plot(drawDurL$r[,(steps/thin-ns):(steps/thin),],drawDurL$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[2],xlim=c(0,0.01),ylim=c(0,6),
      xlab="Rate Parameter",ylab="Shape Parameter") 
-points(drawDurDE$r[,(steps/thin-ns):(steps/thin),],drawDurDE$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[1] ) 
-points(drawDurNE$r[,(steps/thin-ns):(steps/thin),],drawDurNE$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[3],xlim=c(0,0.05) ) 
+points(drawDurD$r[,(steps/thin-ns):(steps/thin),],drawDurD$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[1] ) 
+points(drawDurN$r[,(steps/thin-ns):(steps/thin),],drawDurN$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[3] ) 
+
+legend("topright",legend=paste(c("DF #","LF #","NF #"),c(nDatDF,nDatLF ,nDatNF ) )
+       ,pch=16,col=colourL)
+
+dev.off()
 
 #points(x/G_APPROXFPS,dgamma(x,rate=drawDurDE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurDE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="DE",xlim=c(0,6),col=colourR[1] ) 
 #points(x/G_APPROXFPS,dgamma(x,rate=drawDurNE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurNE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="NE",xlim=c(0,6),col=colourR[3] ) 
