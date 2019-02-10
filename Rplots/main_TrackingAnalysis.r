@@ -48,7 +48,8 @@ colourR <- c(rgb(0.01,0.01,0.9,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.9,0.01,0.01,0.4
 colourD <- c("#0303E6AA","#03B303FF","#E60303AA")
 colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
 
-pchL <- c(16,2,4) ## The style of bullet used for each group DL, LL, NL
+pchL <- c(16,17,4) ## The style of bullet used for each group DL, LL, NL
+lineTypeL <- c(2,1,3) ## The style of bullet used for each group DL, LL, NL
 
 
 

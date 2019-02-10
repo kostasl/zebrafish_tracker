@@ -7,6 +7,7 @@
 # 
 ### TODO Also Plot Duration Of Eye Vergence Frames ###
 
+library(fitdistrplus)
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
@@ -28,6 +29,7 @@ n[j] ~ dpois(q[j])
 modelGEventRatePois="model { 
 q ~ dnorm(15,0.0001)T(0,400)
 
+
 for(j in 1:NTOT){
 n[j] ~ dpois(q)
 }
@@ -39,7 +41,9 @@ modelGEventRateExp="model {
 q ~ dnorm(10,0.0001)T(0,100)
 
 for(j in 1:NTOT){
-n[j] ~ dexp(q)
+  n[j] ~  dexp(q)
+
+
 }
 
 
@@ -57,9 +61,10 @@ close(fileConn)
 modelGEventDuration="model { 
 s ~ dnorm(5,0.0001)T(0,100)
 r ~ dnorm(5,0.0001)T(0,100)
+alpha ~ dnorm(5,0.0001)T(0,100)
 
 for(j in 1:NTOT){
-d[j] ~ dgamma(s,r)
+d[j] ~ alpha*dgamma(s,r)
 }
 
 }"
@@ -72,13 +77,109 @@ close(fileConn)
 
 
 
+
+## Combines a the Gamma Fit distributions with a histogram and an empirical density estimate of the data (with a given BW)
+## datHDuration the raw Duration Dataframe, drawDur the MCMC Sampled values for the gamma distr. params
+## The histogram is scaled down fit the range of 
+plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,nplotSamples)
+{
+  XLim <- 6
+  
+  x <- seq(0,HLim,1) ##In Seconds
+  N <- 1000
+  
+  
+  densDur<-density(datHDuration[,1],bw=pBW)   
+  histDur <- hist(datHDuration[,1]/G_APPROXFPS,breaks=seq(0,HLim/G_APPROXFPS,0.1),plot=FALSE)
+  
+  
+  YScale <- range(densDur$y)[2]*1.05
+  hist_scale <- max(histDur$counts)/YScale ##Scale Histogram Relative To Density Peak
+  YLim <- 0.0015
+  
+  par(cex.lab = 1.1)
+  par(cex = 0.8)
+  par(cex.axis = 1.1)
+  
+  par(mar = c(5,5,2,5))
+  plot(densDur$x/G_APPROXFPS, densDur$y,type='l',xlim=c(0,XLim),ylim=c(0,YLim),lty=2,lwd=4,ylab=NA,xlab=NA)
+  
+  
+  pBW <- 120 ## Estimation BandWidth
+  ## Live Fed
+  for (c in 1:NROW(drawDur$r[1,1,]) )
+    for (i in (NROW(drawDur$r[,,c])-nplotSamples):NROW(drawDur$r[,,c]) )
+      lines(x/G_APPROXFPS,dgamma(x,rate=drawDur$r[,i,c],shape=drawDur$s[,i,c]),type="p",pch=16,cex=1.4,xlim=c(0,XLim),ylim=c(0,YLim), col=lcolour ) 
+  
+  par(new=T)
+  plot(histDur$breaks[1:NROW(histDur$counts)],histDur$counts, axes=F, xlab=NA, ylab=NA,cex=1.1,
+       xlim=c(0.0,XLim),ylim=c(0,max(histDur$counts)*1.10 ) ,lwd=2,pch=21,col="#000000CC")
+  axis(side = 4)
+  mtext(side = 4, line = 2.1, 'Counts')
+  mtext(side = 2, line = 2.1, 'P(s)')
+  
+  
+} ##Plot Function
+
+
+## Compare Model TO Data Using CDF ##
+plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples,newPlot = FALSE)
+{
+  XLim <- 15
+  x <- seq(0,Plim,0.5)
+
+  cdfD_N <- ecdf(datHEventCount[,2])
+
+  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",cex=1.5,cex.lab=1.5,add=newPlot)
+  ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
+  for (c in 1:NROW(drawHEvent$q[1,1,])) {
+    cdfM <- ecdf(  rexp( nplotSamples,tail(drawHEvent$q[,,],nplotSamples )   ))
+    plot(cdfM,xlim=c(0,XLim),col=lcolour,add=TRUE,lty=lty)
+  }
+  
+  #axis(side = 4)
+  #mtext(side = 4, line = 2.1, 'Counts')
+}
+
+
+## Plot the Histogram, Empirical Density And Regressor Fit For A group Showing DENSITY VS Histogram #
+plotEventCountDistribution_hist <- function(datHEventCount,drawHEvent,lcolour,HLim,nplotSamples)
+{
+  XLim <- 15
+  x <- seq(0,Plim,0.1)
+  N <- nplotSamples
+  pBW <-1.2
+  
+  
+  densHEventS <-density(datHEventCount[,2],bw=pBW)   
+  histHEvent <- hist(datHEventCount[,2],breaks=seq(0,Plim,1),plot=FALSE)
+  
+  YLim <- 0.25 ##range(densHEventS$y)[2]*1.05
+  par(mar = c(5,5,2,5))
+  
+  plot(densHEventS$x, densHEventS$y,type='l',xlim=c(0,XLim),ylim=c(0,YLim*1.20),xlab=NA, ylab=NA,lty=2,lwd=4)
+  for (c in 1:NROW(drawHEvent$q[1,1,])) 
+    for (r in (NROW(drawHEvent$q[,,c])-N):NROW(drawHEvent$q[,,c]))
+      lines(x,dexp(x,rate=drawHEvent$q[,r,c] ),type="l",pch=16,cex=0.4,xlim=c(0,HLim),col=lcolour) 
+  
+  par(new=T)
+
+  plot(histHEvent$breaks[1:NROW(histHEvent$counts)],histHEvent$counts, cex=1.1,ylab=NA,xlab=NA,axes=F,
+       xlim=c(0.0,XLim),ylim=c(0,30 ) ,lwd=2,pch=21,col="#000000CC")
+  
+  axis(side = 4)
+  mtext(side = 4, line = 2.1, 'Counts')
+  mtext(side = 2, line = 2.1, 'P(s)')
+  
+}
+
 fromchain=1000
 
 #nLL1=read.table("Stats/mcmc/testLL.dat")$Freq
 #nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
 #nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
 
-colourH <- c(rgb(0.9,0.01,0.01,0.01),rgb(0.01,0.7,0.01,0.01),rgb(0.01,0.01,0.9,0.01),rgb(0.00,0.00,0.0,1.0))
+colourH <- c(rgb(0.9,0.01,0.01,0.9),rgb(0.01,0.7,0.01,0.9),rgb(0.01,0.01,0.9,0.9),rgb(0.00,0.00,0.0,1.0))
 
 strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 
@@ -152,66 +253,64 @@ drawNL2=jags.samples(mNL2,steps,thin=thin,variable.names=varnames1)
 drawDL2=jags.samples(mDL2,steps,thin=thin,variable.names=varnames1)
 
 
+#### DEBUG CODE - Fitting An EXP Distribution TEST ###
+f1N <- fitdist( datHuntVsPreyN[,2],"exp")
+f1L <- fitdist( datHuntVsPreyL[,2],"exp")
+f1D <- fitdist( datHuntVsPreyD[,2],"exp")
+plot(f1N) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+##### ### 
+
+
+#### Plot Density ###
+###Plot Density of Slope
+## Comprehensive Plot On Number of Hunt Events
+pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
+##Now Plot Infered Distributions
+Plim <- max(range(datHuntVsPreyL[,2])[2],range(datHuntVsPreyD[,2])[2],range(datHuntVsPreyN[,2])[2])
+x <- seq(0,Plim,0.1)
+
+##Show Alignment with Empirical Distribution of HuntEvent Numbers
+## Number of Hunt Events Per Larva
+plotsamples <- 7000
+layout(matrix(c(1,1,2,3), 2,2, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.2,1,1))
+plotEventCountDistribution_cdf(datHuntVsPreyN,drawNL2,colourH[1],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
+plotEventCountDistribution_cdf(datHuntVsPreyL,drawLL2,colourH[2],pchL[2],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
+plotEventCountDistribution_cdf(datHuntVsPreyD,drawDL2,colourH[3],pchL[3],lineTypeL[3],Plim,plotsamples,newPlot=TRUE  )
+mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
+mtext(side = 2,cex=0.8, line = 2.2, " P(x < N) ")
+legend("bottomright",legend = c(paste("NF #",nDatNF ),paste("LF #",nDatLF) ,paste("DF #",nDatDF) ) ,
+       col=colourH,pch=pchL,lty=lineTypeL,lwd=3,cex=1.2)
+
+
+## Compare Distrib Of Model Params ##
+densHEventSampled_L <-density(drawLL2$q[1,,]);densHEventSampled_D <-density(drawDL2$q[1,,]);densHEventSampled_N <-density(drawNL2$q[1,,])   
+
+plot(densHEventSampled_N$x, densHEventSampled_N$y,type='l',xlim=c(0,0.5),ylim=c(0,15),lty=lineTypeL[1],col=colourL[3],lwd=4,ylab=NA,xlab=NA)
+lines(densHEventSampled_L$x, densHEventSampled_L$y,type='l',xlim=c(0,0.5),ylim=c(0,15),lty=lineTypeL[2],col=colourL[2],lwd=4,ylab=NA,xlab=NA)
+lines(densHEventSampled_D$x, densHEventSampled_D$y,type='l',xlim=c(0,0.5),ylim=c(0,15),lty=lineTypeL[3],col=colourL[1],lwd=4,ylab=NA,xlab=NA)
+mtext(side = 1,cex=0.8, line =2.2, expression(paste("Rate Parameter (",lambda,") ") ) )
+mtext(side = 2,cex=0.8, line =2.2, "Hunt Event Counts (N)")
+##BoxPlot
+boxplot(datHuntVsPreyL[,2] ,datHuntVsPreyD[,2],datHuntVsPreyN[,2],
+        main=NA,notch=TRUE,names=c("LE","DE","NE"),ylim=c(0,15)  )
+mtext(side = 2,cex=0.8, line =2.2, "Hunt Event Counts (N)")
+
+dev.off()
+
+
+
 
 ##q[idx,sampleID,chainID]
 ##PLot The Param Mean Distributions
 strPlotName <- paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventRateParamPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Number of Prey In Live Test Conditions") 
 
-hist(tail(drawLL2$q[1,,1],plotsamples),breaks=seq(0,1,length=100),col=colourH[1],xlab=" Event Rate (r)",
-     main=paste("Spontaneous Eye Vergence Events")) #(",preyCntRange[1],"-",preyCntRange[2],") prey")
-hist(tail(drawNL2$q[1,,1],plotsamples),breaks=seq(0,1,length=100),add=T,col=colourH[2])
-hist(tail(drawDL2$q[1,,1],plotsamples),breaks=seq(0,1,length=100),add=T,col=colourH[3])
 
 legend("topright",legend = c(paste("LF #",nDatLF),paste("NF #",nDatNF),paste("DF #",nDatDF)),fill=colourH)
 
 dev.off()
-
-
-#### Plot Density ###
-###Plot Density of Slope
-dLLb<-density(tail(drawLL2$q[,,1],plotsamples)   )
-dNLb<-density(tail(drawNL2$q[,,1] ,plotsamples)   )
-dDLb<-density(tail(drawDL2$q[,,1],plotsamples)  )
-
-
-pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDensityPreyRange",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep=""))
-plot(dDLb,col=colourL[1],lwd=3,lty=1, xlim=c(0.1,10), ylim=c(0,2),
-     main="Rate of Spontaneous Eye Vergence Events ",
-     xlab=expression(paste("Rate  ",lambda) ) )
-lines(dLLb,col=colourL[2],xlim=c(0.5,1.2),lwd=3,lty=2)
-lines(dNLb,col=colourL[3],xlim=c(0.5,1.2),lwd=3,lty=3)
-
-legend("topleft",legend=paste(c("DF #","LF #","NF #"),c(nDatDF,nDatLF ,nDatNF ) )
-       ,fill=colourL,lty=c(1,2,3))
-dev.off()
-
-##Raw Histograms
-pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
-layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
-Plim <- max(range(datHuntVsPreyL[,2])[2],range(datHuntVsPreyD[,2])[2],range(datHuntVsPreyN[,2])[2])
-hist(datHuntVsPreyL[,2],breaks=seq(0,Plim,1),col=colourR[2],main="LE",xlab="",xlim=c(0,Plim),ylim=c(0,20))
-hist(datHuntVsPreyN[,2],breaks=seq(0,Plim,1),col=colourR[3],main="NE",xlab="",xlim=c(0,Plim),ylim=c(0,20))
-hist(datHuntVsPreyD[,2],breaks=seq(0,Plim,1),col=colourR[1],main="DE",xlab="# Eye Vergence Events ",xlim=c(0,Plim),ylim=c(0,20))
-dev.off()
-
-##Now Plot Infered Distributions
-x <- seq(0,Plim,1)
-N <- 1000
-dev.off()
-
-##Show Alignment with Empirical Distribution
-hist(datHuntVsPreyL[,2],breaks=seq(0,Plim,1),col=colourR[2],main="LE",xlab="",xlim=c(0,Plim),ylim=c(0,50))
-for (r in tail(drawLL2$q[,,1],N))
-  lines(x,100*dexp(x,r),type="p",pch=16,cex=0.4,main="LE",xlim=c(0,Plim),col=colourR[2] ) 
-hist(datHuntVsPreyD[,2],breaks=seq(0,Plim,1),col=colourR[1],main="DE",xlab="",xlim=c(0,Plim),ylim=c(0,50))
-for (r in tail(drawDL2$q[,,1],N))
-  lines(x,100*dexp(x,r),type="p",pch=16,cex=0.4,main="LE",xlim=c(0,Plim),col=colourR[1] ) 
-hist(datHuntVsPreyN[,2],breaks=seq(0,Plim,1),col=colourR[3],main="NE",xlab="",xlim=c(0,Plim),ylim=c(0,50))
-for (r in tail(drawNL2$q[,,1],N))
-  lines(x,100*dexp(x,r),type="p",pch=16,cex=0.4,main="NE",xlim=c(0,Plim),col=colourR[3] ) 
-
-
 
 #### Also Plot Duration Of Eye Vergence Frames ###
 ###### Hunt Event Duration ############
@@ -268,7 +367,7 @@ dev.off()
 
 ## Baysian Inference Fiting a Gamma distribution to the Hunt Event Duration Data ##
 ##Setup Data Structure To Pass To RJAgs
-varnames1=c("d","s","r")
+varnames1=c("d","s","r","alpha")
 burn_in=1000;
 steps=10000;
 plotsamples = 2000
@@ -305,49 +404,6 @@ dev.off()
 
 #### Plot Density ###
 ###Plot Density of Slope
-
-## Combines a the Gamma Fit distributions with a histogram and an empirical density estimate of the data (with a given BW)
-## datHDuration the raw Duration Dataframe, drawDur the MCMC Sampled values for the gamma distr. params
-## The histogram is scaled down fit the range of 
-plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,nplotSamples)
-{
-    XLim <- 6
-    
-    x <- seq(0,HLim,1) ##In Seconds
-    N <- 1000
-    
-    
-    densDur<-density(datHDuration[,1],bw=pBW)   
-    histDur <- hist(datHDuration[,1]/G_APPROXFPS,breaks=seq(0,HLim/G_APPROXFPS,0.1),plot=FALSE)
-    
-    
-    YScale <- range(densDur$y)[2]*1.05
-    hist_scale <- max(histDur$counts)/YScale ##Scale Histogram Relative To Density Peak
-    YLim <- 0.0015
-    
-    par(cex.lab = 1.1)
-    par(cex = 0.8)
-    par(cex.axis = 1.1)
-    
-    par(mar = c(5,5,2,5))
-    plot(densDur$x/G_APPROXFPS, densDur$y,type='l',xlim=c(0,XLim),ylim=c(0,YLim),lty=2,lwd=4,ylab=NA,xlab=NA)
-    
-    
-    pBW <- 120 ## Estimation BandWidth
-    ## Live Fed
-    for (c in 1:NROW(drawDur$r[1,1,]) )
-      for (i in (NROW(drawDur$r[,,c])-nplotSamples):NROW(drawDur$r[,,c]) )
-        lines(x/G_APPROXFPS,dgamma(x,rate=drawDur$r[,i,c],shape=drawDur$s[,i,c]),type="p",pch=16,cex=1.4,xlim=c(0,XLim),ylim=c(0,YLim), col=lcolour ) 
-  
-    par(new=T)
-    plot(histDur$breaks[1:NROW(histDur$counts)],histDur$counts, axes=F, xlab=NA, ylab=NA,cex=1.1,
-         xlim=c(0.0,XLim),ylim=c(0,max(histDur$counts)*1.10 ) ,lwd=2,pch=21,col="#000000CC")
-    axis(side = 4)
-    mtext(side = 4, line = 2.1, 'Counts')
-    mtext(side = 2, line = 2.1, 'P(s)')
-
-  
-} ##Plot Function
 
 ### Make Plot Of Histograms and Gamma Fit 
 strPlotName <- paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDuration_p",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
