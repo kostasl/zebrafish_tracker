@@ -125,12 +125,12 @@ plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,n
 ## Compare Model TO Data Using CDF ##
 plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples,newPlot = FALSE)
 {
-  XLim <- 15
+  XLim <- 20
   x <- seq(0,Plim,0.5)
 
   cdfD_N <- ecdf(datHEventCount[,2])
 
-  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",cex=1.5,cex.lab=1.5,add=newPlot)
+  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),cex=1.5,cex.lab=1.5,add=!newPlot)
   ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
     cdfM <- ecdf(  rexp( nplotSamples,tail(drawHEvent$q[,,],nplotSamples )   ))
@@ -261,28 +261,26 @@ plot(f1N) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
 ##### ### 
 
 
-#### Plot Density ###
-###Plot Density of Slope
+#### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
 pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
 ##Now Plot Infered Distributions
 Plim <- max(range(datHuntVsPreyL[,2])[2],range(datHuntVsPreyD[,2])[2],range(datHuntVsPreyN[,2])[2])
 x <- seq(0,Plim,0.1)
-
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
 plotsamples <- 7000
-layout(matrix(c(1,1,2,3), 2,2, byrow = FALSE))
+layout(matrix(c(1,2,3,4,5,5), 3,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.2,1,1))
-plotEventCountDistribution_cdf(datHuntVsPreyN,drawNL2,colourH[1],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
+par(mar = c(3.9,3.01,1,1))
+plotEventCountDistribution_cdf(datHuntVsPreyN,drawNL2,colourH[1],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
+legend("bottomright",legend = c(paste("Empirical NF #",nDatNF ),paste("Model Sampled ")), col=colourH[1], pch=c(pchL[1],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyL,drawLL2,colourH[2],pchL[2],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
+legend("bottomright",legend = c(paste("Empirical LF #",nDatLF ),paste("Model Sampled ")), col=colourH[2], pch=c(pchL[2],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyD,drawDL2,colourH[3],pchL[3],lineTypeL[3],Plim,plotsamples,newPlot=TRUE  )
+legend("bottomright",legend = c(paste("Empirical DF #",nDatDF ),paste("Model Sampled ")), col=colourH[3], pch=c(pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
-mtext(side = 2,cex=0.8, line = 2.2, " P(x < N) ")
-legend("bottomright",legend = c(paste("NF #",nDatNF ),paste("LF #",nDatLF) ,paste("DF #",nDatDF) ) ,
-       col=colourH,pch=pchL,lty=lineTypeL,lwd=3,cex=1.2)
-
+mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
 
 ## Compare Distrib Of Model Params ##
 densHEventSampled_L <-density(drawLL2$q[1,,]);densHEventSampled_D <-density(drawDL2$q[1,,]);densHEventSampled_N <-density(drawNL2$q[1,,])   
@@ -292,13 +290,15 @@ lines(densHEventSampled_L$x, densHEventSampled_L$y,type='l',xlim=c(0,0.5),ylim=c
 lines(densHEventSampled_D$x, densHEventSampled_D$y,type='l',xlim=c(0,0.5),ylim=c(0,15),lty=lineTypeL[3],col=colourL[1],lwd=4,ylab=NA,xlab=NA)
 mtext(side = 1,cex=0.8, line =2.2, expression(paste("Rate Parameter (",lambda,") ") ) )
 mtext(side = 2,cex=0.8, line =2.2, "Hunt Event Counts (N)")
+legend("topleft",legend = c(paste("NF " ),paste("LF ") ,paste("DF ") ) ,
+       col=colourH,lty=lineTypeL,lwd=3,seg.len=3,cex=1.1)
 ##BoxPlot
-boxplot(datHuntVsPreyL[,2] ,datHuntVsPreyD[,2],datHuntVsPreyN[,2],
-        main=NA,notch=TRUE,names=c("LE","DE","NE"),ylim=c(0,15)  )
+boxplot(datHuntVsPreyN[,2],datHuntVsPreyL[,2] ,datHuntVsPreyD[,2],
+        main=NA,notch=TRUE,col=colourH,names=c("NE","LE","DE"),ylim=c(0,15)  )
 mtext(side = 2,cex=0.8, line =2.2, "Hunt Event Counts (N)")
 
-dev.off()
-
+dev.off() 
+##################
 
 
 
