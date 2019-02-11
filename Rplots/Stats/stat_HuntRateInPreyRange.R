@@ -49,6 +49,18 @@ for(j in 1:NTOT){
 
 }"
 
+##For a Changing Rate
+modelGEventRateWeib="model { 
+q ~ dnorm(10,0.0001)T(0,100)
+
+for(j in 1:NTOT){
+  n[j] ~  dweib(q,rate,shape)
+
+}
+}"
+
+
+
 
 
 library(rjags)
