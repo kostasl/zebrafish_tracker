@@ -27,7 +27,7 @@ n[j] ~ dpois(q[j])
 }"
 
 modelGEventRatePois="model { 
-q ~ dnorm(15,0.0001)T(0,400)
+q ~ dgamma(1,0.001)
 
 
 for(j in 1:NTOT){
@@ -38,37 +38,45 @@ n[j] ~ dpois(q)
 }"
 
 modelGEventRateExp="model { 
-q ~ dnorm(10,0.0001)T(0,100)
+q ~ dgamma(1,0.2) #SHape , Rate
 
 for(j in 1:NTOT){
   n[j] ~  dexp(q)
 
 
 }
-
-
 }"
 
-##For a Changing Rate
+##For a Changing Rate in Low/ High Regime - 
 modelGEventRateWeib="model { 
 q ~ dnorm(10,0.0001)T(0,100)
 
 for(j in 1:NTOT){
   n[j] ~  dweib(q,rate,shape)
-
-}
+  }
 }"
 
 
+## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
+## Give geometric
+modelGEventRateGeom="model { 
+q ~ dunif(0.0,1)
+
+for(j in 1:NTOT){
+  n[j] ~  dnegbin(q,1) ##R=1 for Geometric
+  }
+}"
 
 
 
 library(rjags)
 strModelName = "modelGroupEventRate.tmp"
 fileConn=file(strModelName)
-writeLines(modelGEventRateExp,fileConn);
+writeLines(modelGEventRateGeom,fileConn);
 close(fileConn)
 
+
+#####
 ##Models Each Larva in the population of group Individually 
 modelGEventDuration="model { 
 
@@ -141,20 +149,26 @@ plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,n
 ## Compare Model TO Data Using CDF ##
 plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples,newPlot = FALSE)
 {
-  XLim <- 80
-  x <- seq(0,Plim,0.5)
+  XLim <- 30
+  x <- seq(0,XLim,1)
 
   cdfD_N <- ecdf(datHEventCount[,2])
 
-  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),cex=1.5,cex.lab=1.5,add=!newPlot)
+  plot(cdfD_N(x),col=lcolour,pch=16,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=1.5,cex.lab=1.5,add=!newPlot)
   ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
-    cdfM <- ecdf(  rexp( nplotSamples,tail(drawHEvent$q[,,c],nplotSamples )   ))
-    plot(cdfM,xlim=c(0,XLim),col=lcolour,add=TRUE,lty=lty)
+    for (q in  tail(drawHEvent$q[,,c],nplotSamples) )
+    {
+      cdfM <- dnbinom(x,size=1,prob=q)##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      lines(cumsum(cdfM),col=lcolour,lty=lty) #add=TRUE,
+    }
   }
-  
+  points(cdfD_N(x),col=colourH[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=1.5,cex.lab=1.5,add=TRUE)
   #axis(side = 4)
   #mtext(side = 4, line = 2.1, 'Counts')
+  ### Draw Distribution oF Hunt Rates - 
+  ##(z= p/(1-p))
+  hist( (1-tail(drawHEvent$q[,,c],nplotSamples))/tail(drawHEvent$q[,,c],nplotSamples)  )
 }
 
 
@@ -217,18 +231,18 @@ datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_filtered)
 ## Added Larva ID to Check for Correlation Through Time of Day - Surrogate as LarvaID;s increased through the day of the experiment from 1-4
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ),datHuntStat[,"vIDLookupTable"]$LL$larvaID )
 datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ),datHuntStat[,"vIDLookupTable"]$LE$larvaID  )
-datHuntVsPreyL <- datHuntVsPreyLL#rbind(datHuntVsPreyLL,datHuntVsPreyLE)
+datHuntVsPreyL <- datHuntVsPreyLE#rbind(datHuntVsPreyLL,datHuntVsPreyLE)
 datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]) & datHuntVsPreyL[,2] < 25,]
 
 
 datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NL),datHuntStat[,"vIDLookupTable"]$NL$larvaID )
 datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NE),datHuntStat[,"vIDLookupTable"]$NE$larvaID  )
-datHuntVsPreyN <- datHuntVsPreyNL #rbind(datHuntVsPreyNL,datHuntVsPreyNE)
+datHuntVsPreyN <- datHuntVsPreyNE #rbind(datHuntVsPreyNL,datHuntVsPreyNE)
 datHuntVsPreyN <- datHuntVsPreyN[!is.na(datHuntVsPreyN[,1]) & datHuntVsPreyN[,2] < 25,]
 
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DL ),datHuntStat[,"vIDLookupTable"]$DL$larvaID  )
 datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DE ),datHuntStat[,"vIDLookupTable"]$DE$larvaID  )
-datHuntVsPreyD <-datHuntVsPreyDL #rbind(datHuntVsPreyDL,datHuntVsPreyDE)
+datHuntVsPreyD <-datHuntVsPreyDE #rbind(datHuntVsPreyDL,datHuntVsPreyDE)
 datHuntVsPreyD <- datHuntVsPreyD[!is.na(datHuntVsPreyD[,1]) & datHuntVsPreyD[,2] < 25,] ##Remove NA And High Fliers
 
 ## Check Number of Hunt Events For A LarvaID 
@@ -281,14 +295,19 @@ drawDL2=jags.samples(mDL2,steps,thin=thin,variable.names=varnames1)
 #### DEBUG CODE - Fitting An EXP Distribution TEST ###
 f1L <- fitdist( datHuntVsPreyL[,2],"exp")
 plot(f1L,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f1D <- fitdist( datHuntVsPreyD[,2],"exp");plot(f1D,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f1N <- fitdist( datHuntVsPreyN[,2],"exp");plot(f1N,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f1D <- fitdist( datHuntVsPreyD[,2],"exp");
+plot(f1D,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f1N <- fitdist( datHuntVsPreyN[,2],"exp");
+plot(f1N,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
 
 ##### ### 
-f2N <- fitdist( datHuntVsPreyN[,2],"weibull")
-plot(f2N,sub="Weibull") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f2L <- fitdist( datHuntVsPreyL[,2],"weibull",lower = c(0, 0),start = list(scale = 1, shape = 1))
-plot(f2L,sub="Weibull") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f2D <- fitdist( datHuntVsPreyD[,2],"nbinom",lower = c(0, 0))
+plot(f2D) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+
+f2N <- fitdist( datHuntVsPreyN[,2],"nbinom",lower = c(0, 0)) ##,start = list(scale = 1, shape = 1)
+plot(f2N) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f2L <- fitdist( datHuntVsPreyL[,2],"nbinom",lower = c(0, 0)) #,start = list(scale = 1, shape = 1)
+plot(f2L) #,start = list(scale = 1, shape = 1) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
 
 ##
 
@@ -301,10 +320,14 @@ Plim <- max(range(datHuntVsPreyL[,2])[2],range(datHuntVsPreyD[,2])[2],range(datH
 x <- seq(0,Plim,0.1)
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
-plotsamples <- 7000
+plotsamples <- 70
 layout(matrix(c(1,2,3,4,5,5), 3,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,3.01,1,1))
+lineTypeL[1] <- 1
+pchL[1] <- 21
+pchL[2] <- 21
+pchL[3] <- 21
 plotEventCountDistribution_cdf(datHuntVsPreyN,drawNL2,colourH[1],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
 legend("bottomright",legend = c(paste("Empirical NF #",nDatNF ),paste("Model Sampled ")), col=colourH[1], pch=c(pchL[1],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyL,drawLL2,colourH[2],pchL[2],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
