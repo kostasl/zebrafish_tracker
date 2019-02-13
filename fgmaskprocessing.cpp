@@ -526,7 +526,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
             {
                 ltROI iroi = (ltROI)(*it);
                 //Keypoint is in ROI so Add To Masked
-                if (iroi.contains(centroid))
+                if (iroi.contains(centroid,gszTemplateImg.width))
                 {
                      curve = fishbodycontours[kk];
                      vFilteredFishbodycontours.push_back(curve);

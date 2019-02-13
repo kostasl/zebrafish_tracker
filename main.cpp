@@ -1539,7 +1539,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
             {
                 ltROI iroi = (ltROI)(*it);
-                if (!iroi.contains(pfishBest->ptRotCentre))
+                if (!iroi.contains(pfishBest->ptRotCentre,pfishBest->bodyRotBound.size.width+pfishBest->bodyRotBound.size.height ))
                 {
                     qfishrank.pop();
                     pfishBest =0;
@@ -1569,7 +1569,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //If We found one then Delete the other instances waiting for a match - 1 Fish Tracker
             if (bModelFound || pfish->inactiveFrames > gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
             {
-                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
+                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << "Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
                 ft = vfishmodels.erase(ft);
                 delete(pfish);
                 continue;
@@ -2213,7 +2213,8 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
             ltROI iroi = (ltROI)(*it);
             RoiID++;
             //Keypoint is in ROI so Add To Masked
-            if (iroi.contains(kp.pt,gszTemplateImg.height+gszTemplateImg.width ))
+
+            if (iroi.contains(kp.pt,gszTemplateImg.width ))
                      ptFishblobs.push_back(kp);
 
             //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
