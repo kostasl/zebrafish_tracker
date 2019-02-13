@@ -16,6 +16,18 @@ library("MASS");
 rm("temp","subsetDat","TrackerData","frameNAll");
 
 
+####################
+##Convert RGB Values To HEX Colour Val.
+col2hex <- function(rgbcol) {
+  colPal <- vector()
+  
+  for (j in 1:NCOL(rgbcol))
+  {
+    
+    colPal[j] <- rgb(rgbcol["red",j],rgbcol["green",j],rgbcol["blue",j],rgbcol["alpha",j],maxColorValue = 255)
+  }
+  return(colPal)
+}
 
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
@@ -36,14 +48,20 @@ MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
 MIN_BOUT_PAUSE           <- 5
 G_MIN_BOUTSCORE          <- 2
 
-####################
+
 
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(7),"#FF0000");
-
+pairedPalette <- col2rgb(brewer.pal(6,"Paired"),alpha = 1)
 ##For the 3 Groups 
 ###  NF, LF, DF , Black Colouring 
-colourH <- c(rgb(0.9,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ##Legend
+pairedPalette["alpha",1:6] <- 150 ##Opacity
+colourLegE <- col2hex(pairedPalette[,c(5,3,1)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
+colourLegL <- col2hex(pairedPalette[,c(6,4,2)]) ##Transparent For MCMC Samples (Live)
+pairedPalette["alpha",1:6] <- 30 ##Opacity
+colourHE <- col2hex(pairedPalette[,c(5,3,1)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
+colourHL <- col2hex(pairedPalette[,c(6,4,2)]) ##Transparent For MCMC Samples (Live)
+colourH <- colourHL
 colourP <- c(rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,1.0)) ##points]
 colourR <- c(rgb(0.9,0.01,0.01,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.01,0.01,0.9,0.4),rgb(0.00,0.00,0.0,1.0)) ##Region (Transparency)
 colourD <- c("#E60303AA","#03B303FF","#0303E6AA")
