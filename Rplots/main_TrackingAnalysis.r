@@ -141,16 +141,13 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
 ##Add Source Directory
 
 
-
-strCondR  <- "*.csv"; 
-
-#display.brewer.all() to see avaulable options
-rfc <- colorRampPalette(rev(brewer.pal(11,'Set3')));
-r <- c(rfc(30),"#FF0000");
-
 ### Set Colour Pallette Size from List Of Datasets
 G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
 rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
+
+strCondR  <- "*.csv"; 
+#display.brewer.all() to see avaulable options
+
 
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData

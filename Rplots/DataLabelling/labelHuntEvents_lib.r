@@ -18,7 +18,7 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) ##Home PC/
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/media/kostasl/D445GB_ext4/opt/Qt3.0.1/5.10.0/gcc_64/lib/",sep=":" ) ) ##Home PC - OpenCV QT5 lib link/
   
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) ####Office
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) #### Office
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/usr/lib/x86_64-linux-gnu/",sep=":" ) )
   
   Sys.setenv(DISPLAY=":0")

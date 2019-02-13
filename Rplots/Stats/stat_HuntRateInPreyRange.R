@@ -187,10 +187,10 @@ plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpc
   plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=1.5,cex.lab=1.5,add=!newPlot)
   ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
-    for (q in  tail(drawHEvent$q[,,c],nplotSamples) )
+    for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
     {
-      cdfM <- dnbinom(x,size=1,prob=q)##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
-      lines(cumsum(cdfM),col=lcolour,lty=lty) #add=TRUE,
+      cdfM <- dnbinom(x,size=drawHEvent$r[,j,c],prob=  drawHEvent$q[,j,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      lines(x,cumsum(cdfM),col=lcolour,lty=lty) #add=TRUE,
     }
   }
   plot(cdfD_N,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=1.5,cex.lab=1.5,add=TRUE)
@@ -319,7 +319,7 @@ Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(da
 x <- seq(0,Plim,0.1)
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
-plotsamples <- 70
+plotsamples <- 200
 layout(matrix(c(1,2,3,4,5,6), 3,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,3.01,1,1))
@@ -328,37 +328,42 @@ plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineT
 plotEventCountDistribution_cdf(datHuntVsPreyNL,drawNL2,colourHL[1],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
 legend("bottomright",legend = c(paste("Data NE #",NROW(datHuntVsPreyNE) ),paste("Model NE "),
                                 paste("Data NL #",NROW(datHuntVsPreyNL) ),paste("Model NL ")), 
-       col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+       col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyLE,drawLE2,colourHE[2],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyLL,drawLL2,colourHL[2],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
 legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
                                 paste("Data LL #",NROW(datHuntVsPreyLL) ),paste("Model LL ")), 
-      col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+      col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE  )
 plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE  )
 legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyLE) ),paste("Model DE "),
                                 paste("Data DL #",NROW(datHuntVsPreyLL) ),paste("Model DL ")), 
-       col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+       col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
 mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
 
 ## Compare Distrib Of Model Params ##
 schain <- 1:3
-Ylim <- 50 
+Ylim <- 3 
 pBW <- 0.001
-densHEventSampled_LL <-density(drawLL2$q[1,,schain],bw=pBW);densHEventSampled_DL <-density(drawDL2$q[1,,schain],bw=pBW);densHEventSampled_NL <-density(drawNL2$q[1,,schain],bw=pBW)
-densHEventSampled_LE <-density(drawLL2$q[1,,schain],bw=pBW);densHEventSampled_DE <-density(drawDL2$q[1,,schain],bw=pBW);densHEventSampled_NE <-density(drawNL2$q[1,,schain],bw=pBW)   
+#densHEventSampled_LL <-density(drawLL2$q[1,,schain],bw=pBW);densHEventSampled_DL <-density(drawDL2$q[1,,schain],bw=pBW);densHEventSampled_NL <-density(drawNL2$q[1,,schain],bw=pBW)
+#densHEventSampled_LE <-density(drawLL2$q[1,,schain],bw=pBW);densHEventSampled_DE <-density(drawDL2$q[1,,schain],bw=pBW);densHEventSampled_NE <-density(drawNL2$q[1,,schain],bw=pBW)   
 
-plot(densHEventSampled_NL$x, densHEventSampled_NL$y,type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourL[1],lwd=4,ylab=NA,xlab=NA)
-lines(densHEventSampled_LL$x, densHEventSampled_LL$y,type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[2],col=colourL[2],lwd=4,ylab=NA,xlab=NA)
-lines(densHEventSampled_DL$x, densHEventSampled_DL$y,type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[3],col=colourL[3],lwd=4,ylab=NA,xlab=NA)
+plot(tail(drawLL2$q[,,schain],plotsamples), tail(drawLL2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegL[2],cex=1.5,lwd=4,ylab=NA,xlab=NA)
+points(tail(drawNL2$q[,,schain],plotsamples), tail(drawNL2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA)
+points(tail(drawDL2$q[,,schain],plotsamples), tail(drawDL2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegL[3],lwd=4,ylab=NA,xlab=NA)
+
+points(tail(drawLE2$q[,,schain],plotsamples), tail(drawNE2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegE[2],lwd=4,ylab=NA,xlab=NA)
+points(tail(drawNE2$q[,,schain],plotsamples), tail(drawNE2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegE[1],lwd=4,ylab=NA,xlab=NA)
+points(tail(drawDE2$q[,,schain],plotsamples), tail(drawDE2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegE[3],lwd=4,ylab=NA,xlab=NA)
+
 mtext(side = 1,cex=0.8, line =2.2, expression(paste("Model  Parameter (p",") ") ) )
 mtext(side = 2,cex=0.8, line =2.2, paste("Density Bw:",densHEventSampled_LL$bw))
 legend("topright",legend = c(paste("NF " ),paste("LF ") ,paste("DF ") ) ,
-       col=colourL,lty=lineTypeL,lwd=3,seg.len=3,cex=1.1)
+       col=colourL,lty=c(NA),pch=pchL[1],lwd=1,seg.len=1,cex=1.0)
 
 ### Draw Distribution oF Hunt Rates - 
-##(z= p/(1-p))
+## for the exp draw (z= p/(1-p))
 densHEventHuntRate_LE <-density((1-tail(drawLE2$q[,,schain],nplotSamples))/tail(drawLE2$q[,,schain],nplotSamples));
 densHEventHuntRate_DE <- density((1-tail(drawDE2$q[,,schain],nplotSamples))/tail(drawDE2$q[,,schain],nplotSamples));   
 densHEventHuntRate_NE <- density((1-tail(drawNE2$q[,,schain],nplotSamples))/tail(drawNE2$q[,,schain],nplotSamples));   
@@ -377,6 +382,22 @@ mtext(side = 2,cex=0.8, line =2.2, "Hunt Event Counts (N)")
 
 dev.off() 
 ################## ############# ### # # 
+
+
+# ## Compare Distrib Of Model Params ##
+# schain <- 1:3
+# Ylim <- 50 
+# pBW <- 0.001
+# densHEventSampled_LL <-density(drawLL2$q[1,,schain],bw=pBW);densHEventSampled_DL <-density(drawDL2$q[1,,schain],bw=pBW);densHEventSampled_NL <-density(drawNL2$q[1,,schain],bw=pBW)
+# densHEventSampled_LE <-density(drawLL2$q[1,,schain],bw=pBW);densHEventSampled_DE <-density(drawDL2$q[1,,schain],bw=pBW);densHEventSampled_NE <-density(drawNL2$q[1,,schain],bw=pBW)   
+# 
+# plot(densHEventSampled_NL$x, densHEventSampled_NL$y,type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourL[1],lwd=4,ylab=NA,xlab=NA)
+# lines(densHEventSampled_LL$x, densHEventSampled_LL$y,type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[2],col=colourL[2],lwd=4,ylab=NA,xlab=NA)
+# lines(densHEventSampled_DL$x, densHEventSampled_DL$y,type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[3],col=colourL[3],lwd=4,ylab=NA,xlab=NA)
+# mtext(side = 1,cex=0.8, line =2.2, expression(paste("Model  Parameter (p",") ") ) )
+# mtext(side = 2,cex=0.8, line =2.2, paste("Density Bw:",densHEventSampled_LL$bw))
+# legend("topright",legend = c(paste("NF " ),paste("LF ") ,paste("DF ") ) ,
+#        col=colourL,lty=lineTypeL,lwd=3,seg.len=3,cex=1.1)
 
 
 ############## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ########################

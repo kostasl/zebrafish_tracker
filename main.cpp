@@ -26,7 +26,7 @@
  ///*
  ///*
 
- ///
+///
  ///*  Dependencies : opencv3 (W/O CUDA ) QT5
  ///*
  /// \details
@@ -50,6 +50,7 @@
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
+ /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
  /// \todo (completed)
  ////////
 
@@ -375,7 +376,7 @@ int main(int argc, char *argv[])
     ssMsg<<"(note: output folder is automatically generated when absent)"<<std::endl;
     ssMsg << "Example: \n  Use checkFilesProcessed.sh script to generate list of videos to processes then execute as : " << std::endl;
     ssMsg << "./zebrafish_track -f=VidFilesToProcessSplit1.txt -o=/media/kostasl/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/Tracked30-11-17/" << std::endl;
-
+    ssMsg << "-Make Sure QT can be found : use export LD_LIBRARY_PATH= path to Qt/5.11.1/gcc_64/lib/  " << std::endl;
     parser.about(ssMsg.str() );
 
     if (parser.has("help"))
@@ -1558,8 +1559,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
     {
         pfish = ft->second;
-
-        if (pfishBest != pfish && pfishBest != 0)
+        // If this is not the Best One
+        if (pfishBest != pfish ) //&& pfishBest != 0
         {
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
             //OtherWise Delete The model?
@@ -1573,9 +1574,9 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 delete(pfish);
                 continue;
             }else
-            {
-                pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
-            }
+            // Fish Model Has not Been Matched / Increment Time This Model Has Not Been Active
+                 pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+
         }
         ++ft; //Increment Iterator
     } //Loop To Delete Other FishModels
@@ -2212,7 +2213,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
             ltROI iroi = (ltROI)(*it);
             RoiID++;
             //Keypoint is in ROI so Add To Masked
-            if (iroi.contains(kp.pt))
+            if (iroi.contains(kp.pt,gszTemplateImg.height+gszTemplateImg.width ))
                      ptFishblobs.push_back(kp);
 
             //int maskVal=(int)gframeMask.at<uchar>(kp.pt);

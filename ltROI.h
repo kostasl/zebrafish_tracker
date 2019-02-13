@@ -110,16 +110,19 @@ public:
 
     }
 
-   bool contains(cv::Point pt)
+
+ // Check If In Point Is Within ROI - Assuming Certain Size So as to Make A soft Boundary
+   bool contains(cv::Point pt,double objSize = 1)
     {
         if (mType == RoiType::Circle)
-            return (cv::norm(pt - centre) < radius);
+            return (cv::norm(pt - centre) <= (radius+objSize));
 
-        if (mType == RoiType::Polygon)
-            return (cv::pointPolygonTest(vPoints,pt,false)== 1);
+        if (mType == RoiType::Polygon) //Check Distance On OUtside Is greater Than Obj Size - Only when objSize Param Is > 1
+            return (cv::pointPolygonTest(vPoints,pt,(objSize > 1)) > -objSize );
 
         return false;
     }
+
 
     bool operator ==(const tRoi& c2)
     {
