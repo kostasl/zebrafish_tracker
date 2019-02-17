@@ -197,8 +197,13 @@ plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpc
   #axis(side = 4)
   #mtext(side = 4, line = 2.1, 'Counts')
   ### Draw Distribution oF Hunt Rates - 
+  ## For Poisson- gamma mixture we recover Gamma Params from nbinomial as shape r>shape r and scale theta:(1-p)/p
+  
+  ##For the EXP Mixture with Poisson The Exp Rate was recovered as :
   ##(z= p/(1-p))
 #  hist( (1-tail(drawHEvent$q[,,c],nplotSamples))/tail(drawHEvent$q[,,c],nplotSamples)  )
+  
+  
 }
 
 
@@ -232,7 +237,25 @@ plotEventCountDistribution_hist <- function(datHEventCount,drawHEvent,lcolour,HL
   mtext(side = 2, line = 2.1, 'P(s)')
   
 }
+## Plots The Spontaneous and Invoked Hunt Rates, Inferred via the gamma given by the -ve binomial
+plotGammaHuntRates <- function(x,HEventHuntGammaShape,HEventHuntGammaRate,lcolour,plotsamples,bnewPlot=FALSE)
+{
+  schain <- 1:3
+  if (bnewPlot)
+    plot(x,dgamma(x,rate=HEventHuntGammaShape[1,1],HEventHuntGammaRate[1,1]),main="",xlab=NA,ylab=NA,
+       xlim=c(0,40),ylim=c(0,0.8),col=lcolour)
 
+  for (c in schain)
+  {
+    for (i in 1:plotsamples)
+    {
+      lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[1],lwd=1, lty=1)
+      #lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[2],lwd=3,lty=3)
+    }
+  }
+}
+  
+  
 fromchain=1000
 
 #nLL1=read.table("Stats/mcmc/testLL.dat")$Freq
@@ -258,25 +281,26 @@ datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_filtered)
 ## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##
 ## Added Larva ID to Check for Correlation Through Time of Day - Surrogate as LarvaID;s increased through the day of the experiment from 1-4
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ),datHuntStat[,"vIDLookupTable"]$LL$larvaID )
+datHuntVsPreyLL <- datHuntVsPreyLL[!is.na(datHuntVsPreyLL[,1]) ,]
 datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ),datHuntStat[,"vIDLookupTable"]$LE$larvaID  )
-datHuntVsPreyL <- datHuntVsPreyLL#rbind(datHuntVsPreyLL,datHuntVsPreyLE)
-datHuntVsPreyL <- datHuntVsPreyL[!is.na(datHuntVsPreyL[,1]) & datHuntVsPreyL[,2] < 25,]
+datHuntVsPreyLE <- datHuntVsPreyLE[!is.na(datHuntVsPreyLE[,1]) ,]
+
 
 
 datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NL),datHuntStat[,"vIDLookupTable"]$NL$larvaID )
-datHuntVsPreyNL <- datHuntVsPreyNL[!is.na(datHuntVsPreyN[,1]) & datHuntVsPreyNL[,2] < 25,]
+datHuntVsPreyNL <- datHuntVsPreyNL[!is.na(datHuntVsPreyNL[,1]) ,]
 datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NE),datHuntStat[,"vIDLookupTable"]$NE$larvaID  )
-datHuntVsPreyNE <- datHuntVsPreyNE[!is.na(datHuntVsPreyN[,1]) & datHuntVsPreyNE[,2] < 25,]
+datHuntVsPreyNE <- datHuntVsPreyNE[!is.na(datHuntVsPreyNE[,1]) ,]
 
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DL ),datHuntStat[,"vIDLookupTable"]$DL$larvaID  )
-datHuntVsPreyDL <- datHuntVsPreyDL[!is.na(datHuntVsPreyDL[,1]) & datHuntVsPreyDL[,2] < 25,] ##Remove NA And High Fliers
+datHuntVsPreyDL <- datHuntVsPreyDL[!is.na(datHuntVsPreyDL[,1]),] ##Remove NA And High Fliers
 datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DE ),datHuntStat[,"vIDLookupTable"]$DE$larvaID  )
-datHuntVsPreyDE <- datHuntVsPreyDE[!is.na(datHuntVsPreyDE[,1]) & datHuntVsPreyDE[,2] < 25,] ##Remove NA And High Fliers
+datHuntVsPreyDE <- datHuntVsPreyDE[!is.na(datHuntVsPreyDE[,1]),] ##Remove NA And High Fliers
 
 
 ## Check Number of Hunt Events For A LarvaID 
 vEventCount <- vector()
-datHuntVsPreyC <- datHuntVsPreyL ##Check Which Group
+datHuntVsPreyC <- datHuntVsPreyD ##Check Which Group
 for (i in 1:4)
 {
   vEventCount[i] <- ( sum(datHuntVsPreyC[ datHuntVsPreyC[,4] == i & !is.na(datHuntVsPreyC[,4]) ,2] ) )
@@ -311,6 +335,21 @@ plot(f2L) #,start = list(scale = 1, shape = 1) ##Show Diagnostics Of Fitting A E
 ## ########
 
 
+### Draw Distribution oF Hunt Rates - 
+## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
+HEventHuntGammaRate_LE <-((1-tail(drawLE2$q[,,schain],plotsamples))/tail(drawLE2$q[,,schain],plotsamples));
+HEventHuntGammaRate_LL <-((1-tail(drawLL2$q[,,schain],plotsamples))/tail(drawLL2$q[,,schain],plotsamples));
+HEventHuntGammaRate_DE <- ((1-tail(drawDE2$q[,,schain],plotsamples))/tail(drawDE2$q[,,schain],plotsamples));
+HEventHuntGammaRate_DL <- ((1-tail(drawDL2$q[,,schain],plotsamples))/tail(drawDL2$q[,,schain],plotsamples));      
+HEventHuntGammaRate_NE <- ((1-tail(drawNE2$q[,,schain],plotsamples))/tail(drawNE2$q[,,schain],plotsamples));
+HEventHuntGammaRate_NL <- ((1-tail(drawNL2$q[,,schain],plotsamples))/tail(drawNL2$q[,,schain],plotsamples));      
+HEventHuntGammaShape_LE <- tail(drawLE2$r[,,schain],plotsamples);
+HEventHuntGammaShape_LL <- tail(drawLL2$r[,,schain],plotsamples)
+HEventHuntGammaShape_DE <- tail(drawDE2$r[,,schain],plotsamples);
+HEventHuntGammaShape_DL <- tail(drawDL2$r[,,schain],plotsamples)
+HEventHuntGammaShape_NE <- tail(drawNE2$r[,,schain],plotsamples);
+HEventHuntGammaShape_NL <- tail(drawNL2$r[,,schain],plotsamples)
+
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
 pdf(file= paste(strPlotExportPath,"/stat/stat_LiveFoodTestHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
@@ -320,7 +359,7 @@ x <- seq(0,Plim,0.1)
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
 plotsamples <- 200
-layout(matrix(c(1,2,3,4,5,6), 3,2, byrow = FALSE))
+layout(matrix(c(1,2,3,7,4,5,6,7), 4,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,3.01,1,1))
 lineTypeL[1] <- 1
@@ -346,39 +385,24 @@ mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
 schain <- 1:3
 Ylim <- 3 
 pBW <- 0.001
-#densHEventSampled_LL <-density(drawLL2$q[1,,schain],bw=pBW);densHEventSampled_DL <-density(drawDL2$q[1,,schain],bw=pBW);densHEventSampled_NL <-density(drawNL2$q[1,,schain],bw=pBW)
-#densHEventSampled_LE <-density(drawLL2$q[1,,schain],bw=pBW);densHEventSampled_DE <-density(drawDL2$q[1,,schain],bw=pBW);densHEventSampled_NE <-density(drawNL2$q[1,,schain],bw=pBW)   
 
-plot(tail(drawLL2$q[,,schain],plotsamples), tail(drawLL2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegL[2],cex=1.5,lwd=4,ylab=NA,xlab=NA)
-points(tail(drawNL2$q[,,schain],plotsamples), tail(drawNL2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA)
-points(tail(drawDL2$q[,,schain],plotsamples), tail(drawDL2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegL[3],lwd=4,ylab=NA,xlab=NA)
+#### Plot Gamma Distributions Of Hunt Rates From Which Hunt Event Counts where Drawn 
 
-points(tail(drawLE2$q[,,schain],plotsamples), tail(drawNE2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegE[2],lwd=4,ylab=NA,xlab=NA)
-points(tail(drawNE2$q[,,schain],plotsamples), tail(drawNE2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegE[1],lwd=4,ylab=NA,xlab=NA)
-points(tail(drawDE2$q[,,schain],plotsamples), tail(drawDE2$r[,,schain],plotsamples),type='l',xlim=c(0,0.4),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourLegE[3],lwd=4,ylab=NA,xlab=NA)
+plotsamples <- 35
 
-mtext(side = 1,cex=0.8, line =2.2, expression(paste("Model  Parameter (p",") ") ) )
-mtext(side = 2,cex=0.8, line =2.2, paste("Density Bw:",densHEventSampled_LL$bw))
-legend("topright",legend = c(paste("NF " ),paste("LF ") ,paste("DF ") ) ,
-       col=colourL,lty=c(NA),pch=pchL[1],lwd=1,seg.len=1,cex=1.0)
+plotGammaHuntRates(x,HEventHuntGammaShape_NL,HEventHuntGammaRate_NL,colourHL[1],plotsamples,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_NE,HEventHuntGammaRate_NE,colourR[4],plotsamples,FALSE)
+plotGammaHuntRates(x,HEventHuntGammaShape_LL,HEventHuntGammaRate_LL,c(colourHL[2]),plotsamples,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_LE,HEventHuntGammaRate_LE,c(colourR[4]),plotsamples,FALSE)
+plotGammaHuntRates(x,HEventHuntGammaShape_DL,HEventHuntGammaRate_DL,c(colourHL[3]),plotsamples,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_DE,HEventHuntGammaRate_DE,c(colourR[4]),plotsamples,FALSE)
+mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
 
-### Draw Distribution oF Hunt Rates - 
-## for the exp draw (z= p/(1-p))
-densHEventHuntRate_LE <-density((1-tail(drawLE2$q[,,schain],nplotSamples))/tail(drawLE2$q[,,schain],nplotSamples));
-densHEventHuntRate_DE <- density((1-tail(drawDE2$q[,,schain],nplotSamples))/tail(drawDE2$q[,,schain],nplotSamples));   
-densHEventHuntRate_NE <- density((1-tail(drawNE2$q[,,schain],nplotSamples))/tail(drawNE2$q[,,schain],nplotSamples));   
-
-plot(densHEventHuntRate_LE$x, densHEventHuntRate_LE$y,type='l',xlim=c(0,12),ylim=c(0,1),lty=lineTypeL[2],col=colourL[2],lwd=4,ylab=NA,xlab=NA)
-lines(densHEventHuntRate_NE$x,densHEventHuntRate_NE$y,type='l',xlim=c(0,12),ylim=c(0,1),lty=lineTypeL[1],col=colourL[1],lwd=4,ylab=NA,xlab=NA)
-lines(densHEventHuntRate_DE$x, densHEventHuntRate_DE$y,type='l',xlim=c(0,12),ylim=c(0,1),lty=lineTypeL[3],col=colourL[3],lwd=4,ylab=NA,xlab=NA)
-legend("topright",legend = c(paste("NF " ),paste("LF ") ,paste("DF ") ) ,
-       col=colourL,lty=lineTypeL,lwd=3,seg.len=3,cex=1.1)
-mtext(side = 1,cex=0.8, line =2.2, expression(paste(" Hunt Rate  (",lambda,") ") ) )
 
 ##BoxPlot
-boxplot(datHuntVsPreyN[,2],datHuntVsPreyL[,2] ,datHuntVsPreyD[,2],
-        main=NA,notch=TRUE,col=colourD,names=c("NF","LF","DF"),ylim=c(0,50)  )
-mtext(side = 2,cex=0.8, line =2.2, "Hunt Event Counts (N)")
+boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
+        main=NA,notch=TRUE,col=colourD,names=c("NE","NL","LE","LL","DE","DL"),ylim=c(0,2.5)  )
+mtext(side = 2,cex=0.8, line =2.2, "Hunt Counts log(N+0.1) ")
 
 dev.off() 
 ################## ############# ### # # 
