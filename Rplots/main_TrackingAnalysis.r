@@ -55,18 +55,19 @@ r <- c(rfc(7),"#FF0000");
 pairedPalette <- col2rgb(brewer.pal(8,"Paired"),alpha = 1)
 ##For the 3 Groups 
 ###  NF, LF, DF , Black Colouring 
-pairedPalette["alpha",1:6] <- 150 ##Opacity
+pairedPalette["alpha",1:6] <- 210 ##Opacity
 colourLegE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 colourLegL <- col2hex(pairedPalette[,c(6,4,2,8)]) ##Transparent For MCMC Samples (Live)
-pairedPalette["alpha",1:6] <- 30 ##Opacity
+pairedPalette["alpha",1:6] <- 180 ##Opacity
 colourHE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
+pairedPalette["alpha",1:6] <- 220 ##Opacity
 colourHL <- col2hex(pairedPalette[,c(6,4,2,8)]) ##Transparent For MCMC Samples (Live)
 colourH <- colourHL
-colourP <- c(rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,1.0)) ##points]
-colourR <- c(rgb(0.9,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.1,0.1,0.1,0.1)) ##Region (Transparency)
+colourP <- c(rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,0.5)) ##points]
+colourR <- c(rgb(0.9,0.01,0.01,0.4),rgb(0.01,0.7,0.01,0.4),rgb(0.01,0.01,0.9,0.4),rgb(0.1,0.1,0.1,0.4)) ##Region (Transparency)
 
-pairedPalette["alpha",1:6] <- 180 ##Opacity
-colourD <- col2hex(pairedPalette) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
+pairedPalette["alpha",1:6] <- 200 ##Opacity
+colourD <- col2hex(pairedPalette[,c(5,6,3,4,1,2)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
  ##<- c("#E60303AA","#03B303FF","#0303E6AA")
 colourL <-c("#E60303AF","#03B303AF","#0303E6AF")
 

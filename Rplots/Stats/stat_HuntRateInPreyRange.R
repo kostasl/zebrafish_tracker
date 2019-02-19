@@ -238,23 +238,82 @@ plotEventCountDistribution_hist <- function(datHEventCount,drawHEvent,lcolour,HL
   
 }
 ## Plots The Spontaneous and Invoked Hunt Rates, Inferred via the gamma given by the -ve binomial
-plotGammaHuntRates <- function(x,HEventHuntGammaShape,HEventHuntGammaRate,lcolour,plotsamples,bnewPlot=FALSE)
+plotGammaHuntRates <- function(x,HEventHuntGammaShape,HEventHuntGammaRate,lcolour,plotsamples,lineType=1,bnewPlot=FALSE)
 {
   schain <- 1:3
   if (bnewPlot)
     plot(x,dgamma(x,rate=HEventHuntGammaShape[1,1],HEventHuntGammaRate[1,1]),main="",xlab=NA,ylab=NA,
-       xlim=c(0,40),ylim=c(0,0.8),col=lcolour)
+       xlim=c(0,70),ylim=c(0,0.5),col=lcolour,type="l",lwd=1, lty=lineType)
 
   for (c in schain)
   {
     for (i in 1:plotsamples)
     {
-      lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[1],lwd=1, lty=1)
+      lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[1],lwd=1, lty=lineType)
       #lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[2],lwd=3,lty=3)
     }
   }
 }
   
+
+## Box Plot Assist To Connect Individual Hunt Event Counts Between Empty (Spontaneous) and Live Test Conditions (Evoked) 
+## For Each Larva Experiment
+plotConnectedEventCounts <- function(datHuntStat,strCondTags)
+{
+  
+  ### Plot Connected Larva Event Counts - To Show Individual Behaviour In Spontaneous Vs Evoked Activity
+  for (gIdx in seq(1,NROW(strCondTags),2)  ) ##Iterated Through LF DF And NF Groups
+  {
+    gE <- strCondTags[gIdx] ##Empty Condution
+    gL <- strCondTags[gIdx+1] ##With ROtifers Test Condition 
+    vRegL <- datHuntStat[,"vIDLookupTable"][[gL]]
+    vRegE <- datHuntStat[,"vIDLookupTable"][[gE]]
+    
+    ## Fix Missing LarvaID: REMOVE FActor Field / Set NAs Which Are really ID 5
+    vRegL[,"larvaID"] <- as.numeric(vRegL[,"larvaID"])
+    vRegE[,"larvaID"] <- as.numeric(vRegE[,"larvaID"])
+    vRegL[is.na(vRegL$larvaID),"larvaID"] <- 5 
+    vRegE[is.na(vRegE$larvaID),"larvaID"] <- 5
+    
+    ## Drop Factors To Skip Errors 
+    vRegL[,"dataSetID"] <- as.numeric(vRegL[,"dataSetID"])
+    vRegE[,"dataSetID"] <- as.numeric(vRegE[,"dataSetID"])
+    
+    datSetID <- levels(vIDTable[[gE]]$dataSetID) #[ vIDTable[[gE]]$dataSetID[  vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID &
+    #vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID] ]
+    for (k in 1:NROW(vRegE) )
+    {
+      e <- vRegE[k,]
+      
+      ptSrc  <- vDat[[gE]][which(names(vDat[[gE]]) == e$expID) ]##Get Idx for Event Count from Specificed Experiment, and retrieve Event Count At Empty 
+      ##Find the Live Test for this Larva, Via the Larva ID dataset ID combination
+      LivePairExp <-(vRegL[vRegL$dataSetID == e$dataSetID & vRegL$larvaID == e$larvaID,])
+      if (NROW(LivePairExp) == 0)
+        next() ##Skip If Matched LiveTest Larva Is not Found
+      
+      message(e$expID)
+      
+      ptDest <- vDat[[gL]][which(names(vDat[[gL]]) == LivePairExp$expID) ]
+      
+      
+      ##Plot The Lines Connect Each Empty Tested Larva With Itself In THe Live Fed Conditions 
+      #Do not Plot NA connecting line
+      idxSrc  <- match(gE,strCondTags) ##Bar Center Idx for Each Condition E. Fed
+      idxDest <- match(gL ,strCondTags)           
+      
+      points(idxSrc,log10(ptSrc+1),pch=1,
+             col=colourP[4],cex=1 )
+      for (pIDest in ptDest) ##Sometimes there are Multiple Live Tests for an Empty One
+        points(idxDest,log10(pIDest+1),pch=1, col=colourP[4],cex=1 )
+      
+      segments(gIdx,log10(ptSrc+1),gIdx+1,log10(ptDest+1) ,col=colourP[4])
+      
+      
+    }##For Each Experiment
+    
+  } ## Go Through Pairs Of Conditions ##
+}##End Of Function ConnectEventPoints
+
   
 fromchain=1000
 
@@ -337,6 +396,8 @@ plot(f2L) #,start = list(scale = 1, shape = 1) ##Show Diagnostics Of Fitting A E
 
 ### Draw Distribution oF Hunt Rates - 
 ## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
+plotsamples <- 15
+
 HEventHuntGammaRate_LE <-((1-tail(drawLE2$q[,,schain],plotsamples))/tail(drawLE2$q[,,schain],plotsamples));
 HEventHuntGammaRate_LL <-((1-tail(drawLL2$q[,,schain],plotsamples))/tail(drawLL2$q[,,schain],plotsamples));
 HEventHuntGammaRate_DE <- ((1-tail(drawDE2$q[,,schain],plotsamples))/tail(drawDE2$q[,,schain],plotsamples));
@@ -358,27 +419,27 @@ Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(da
 x <- seq(0,Plim,0.1)
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
-plotsamples <- 200
+
 layout(matrix(c(1,2,3,7,4,5,6,7), 4,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,3.01,1,1))
+par(mar = c(3.9,3.2,1,1))
 lineTypeL[1] <- 1
 plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyNL,drawNL2,colourHL[1],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
 legend("bottomright",legend = c(paste("Data NE #",NROW(datHuntVsPreyNE) ),paste("Model NE "),
                                 paste("Data NL #",NROW(datHuntVsPreyNL) ),paste("Model NL ")), 
-       col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
+       col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyLE,drawLE2,colourHE[2],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyLL,drawLL2,colourHL[2],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
 legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
                                 paste("Data LL #",NROW(datHuntVsPreyLL) ),paste("Model LL ")), 
-      col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
+      col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE  )
 plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE  )
 legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyLE) ),paste("Model DE "),
                                 paste("Data DL #",NROW(datHuntVsPreyLL) ),paste("Model DL ")), 
-       col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
-mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
+       col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+mtext(side = 1,cex=0.8, line = 2.2, "Event Counts (N)")
 mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
 
 ## Compare Distrib Of Model Params ##
@@ -388,21 +449,32 @@ pBW <- 0.001
 
 #### Plot Gamma Distributions Of Hunt Rates From Which Hunt Event Counts where Drawn 
 
-plotsamples <- 35
-
-plotGammaHuntRates(x,HEventHuntGammaShape_NL,HEventHuntGammaRate_NL,colourHL[1],plotsamples,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_NE,HEventHuntGammaRate_NE,colourR[4],plotsamples,FALSE)
-plotGammaHuntRates(x,HEventHuntGammaShape_LL,HEventHuntGammaRate_LL,c(colourHL[2]),plotsamples,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_LE,HEventHuntGammaRate_LE,c(colourR[4]),plotsamples,FALSE)
-plotGammaHuntRates(x,HEventHuntGammaShape_DL,HEventHuntGammaRate_DL,c(colourHL[3]),plotsamples,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_DE,HEventHuntGammaRate_DE,c(colourR[4]),plotsamples,FALSE)
+plotGammaHuntRates(x,HEventHuntGammaShape_NL,HEventHuntGammaRate_NL,colourHL[1],plotsamples,1,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_NE,HEventHuntGammaRate_NE,colourHE[1],plotsamples,2,FALSE)
+legend("topright",legend = c(paste("Spontaneous (NE)" ),paste("Evoked (NL)")), col=c(colourHE[1], colourHL[1]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
+plotGammaHuntRates(x,HEventHuntGammaShape_LL,HEventHuntGammaRate_LL,c(colourHL[2]),plotsamples,1,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_LE,HEventHuntGammaRate_LE,c(colourHE[2]),plotsamples,2,FALSE)
+legend("topright",legend = c(paste("Spontaneous (LE)" ),paste("Evoked (LL)")), col=c(colourHE[2], colourHL[2]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
+plotGammaHuntRates(x,HEventHuntGammaShape_DL,HEventHuntGammaRate_DL,c(colourHL[3]),plotsamples,1,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_DE,HEventHuntGammaRate_DE,c(colourHE[3]),plotsamples,2,FALSE)
+legend("topright",legend = c(paste("Spontaneous (DE)" ),paste("Evoked (DL)")), col=c(colourHE[3], colourHL[3]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
+mtext(side = 2,cex=0.8, line = 2.2, " P(x) ")
 
 
 ##BoxPlot
-boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
-        main=NA,notch=TRUE,col=colourD,names=c("NE","NL","LE","LL","DE","DL"),ylim=c(0,2.5)  )
-mtext(side = 2,cex=0.8, line =2.2, "Hunt Counts log(N+0.1) ")
+strCondTags <- c("NE","NL","LE","LL","DE","DL")
+xbarcenters <- boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
+        main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2),axes = FALSE  )
+mtext(side = 2,cex=0.8, line =2.2, "Hunt Counts  log(N+1) ")
+vIDTable <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
+vDat        <- (datHuntStat[,"vHLarvaEventCount"])
+
+axis(1,at<-axis(1,labels=NA), labels=strCondTags)
+yticks <-axis(2,labels=NA)
+axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
+
+plotConnectedEventCounts(datHuntStat,strCondTags)
 
 dev.off() 
 ################## ############# ### # # 
