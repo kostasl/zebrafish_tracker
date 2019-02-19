@@ -369,6 +369,7 @@ print(vEventCount)
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
 preyCntRange <- c(0,100)
 
+#load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))'
 
 drawLL2 <- mcmc_drawEventCountModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventRate.tmp")
 drawNL2 <- mcmc_drawEventCountModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventRate.tmp")
@@ -377,26 +378,14 @@ drawLE2 <- mcmc_drawEventCountModels(datHuntVsPreyLE,preyCntRange,"modelGroupEve
 drawNE2 <- mcmc_drawEventCountModels(datHuntVsPreyNE,preyCntRange,"modelGroupEventRate.tmp")
 drawDE2 <- mcmc_drawEventCountModels(datHuntVsPreyDE,preyCntRange,"modelGroupEventRate.tmp")
 
-#### DEBUG CODE - Fitting An EXP Distribution TEST ###
-f1L <- fitdist( datHuntVsPreyLL[,2],"exp")
-plot(f1L,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f1D <- fitdist( datHuntVsPreyDL[,2],"exp");
-plot(f1D,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f1N <- fitdist( datHuntVsPreyNL[,2],"exp");
-plot(f1N,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-##### ### 
-f2D <- fitdist( datHuntVsPreyDL[,2],"nbinom",lower = c(0, 0))
-plot(f2D) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f2N <- fitdist( datHuntVsPreyNL[,2],"nbinom",lower = c(0, 0)) ##,start = list(scale = 1, shape = 1)
-plot(f2N) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f2L <- fitdist( datHuntVsPreyLL[,2],"nbinom",lower = c(0, 0)) #,start = list(scale = 1, shape = 1)
-plot(f2L) #,start = list(scale = 1, shape = 1) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-## ########
+save(drawLL2,drawNL2,drawDL2,drawLE2,drawNE2,drawDE2,file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
 
 
 ### Draw Distribution oF Hunt Rates - 
 ## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
 plotsamples <- 15
+schain <-1:3
+
 
 HEventHuntGammaRate_LE <-((1-tail(drawLE2$q[,,schain],plotsamples))/tail(drawLE2$q[,,schain],plotsamples));
 HEventHuntGammaRate_LL <-((1-tail(drawLL2$q[,,schain],plotsamples))/tail(drawLL2$q[,,schain],plotsamples));
@@ -420,9 +409,9 @@ x <- seq(0,Plim,0.1)
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
 
-layout(matrix(c(1,2,3,7,4,5,6,7), 4,2, byrow = FALSE))
+layout(matrix(c(1,2,3,7,4,5,6,8), 4,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,3.2,1,1))
+par(mar = c(3.9,3.3,1,1))
 lineTypeL[1] <- 1
 plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyNL,drawNL2,colourHL[1],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
@@ -475,6 +464,18 @@ yticks <-axis(2,labels=NA)
 axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
 
 plotConnectedEventCounts(datHuntStat,strCondTags)
+
+
+### Plot GAMMA Parameters Space
+Xlim <- 40
+plot(HEventHuntGammaRate_NE,HEventHuntGammaShape_NE,col=colourHE[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
+points(HEventHuntGammaRate_LE,HEventHuntGammaShape_LE,col=colourHE[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
+points(HEventHuntGammaRate_DE,HEventHuntGammaShape_DE,col=colourHE[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
+points(HEventHuntGammaRate_NL,HEventHuntGammaShape_NL,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1])
+points(HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
+points(HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste(Gamma, " rate (r)") ) )
+mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
 
 dev.off() 
 ################## ############# ### # # 
@@ -637,3 +638,20 @@ dev.off()
 
 #points(x/G_APPROXFPS,dgamma(x,rate=drawDurDE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurDE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="DE",xlim=c(0,6),col=colourR[1] ) 
 #points(x/G_APPROXFPS,dgamma(x,rate=drawDurNE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurNE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="NE",xlim=c(0,6),col=colourR[3] ) 
+
+
+#### DEBUG CODE - Fitting An EXP Distribution TEST ###
+f1L <- fitdist( datHuntVsPreyLL[,2],"exp")
+plot(f1L,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f1D <- fitdist( datHuntVsPreyDL[,2],"exp");
+plot(f1D,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f1N <- fitdist( datHuntVsPreyNL[,2],"exp");
+plot(f1N,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+##### ### 
+f2D <- fitdist( datHuntVsPreyDL[,2],"nbinom",lower = c(0, 0))
+plot(f2D) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f2N <- fitdist( datHuntVsPreyNL[,2],"nbinom",lower = c(0, 0)) ##,start = list(scale = 1, shape = 1)
+plot(f2N) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f2L <- fitdist( datHuntVsPreyLL[,2],"nbinom",lower = c(0, 0)) #,start = list(scale = 1, shape = 1)
+plot(f2L) #,start = list(scale = 1, shape = 1) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+## ########

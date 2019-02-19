@@ -81,8 +81,9 @@ datatest=list(Success=datFishSuccessRate$Success,
 
 varnames1=c("q","p","t","f","r")
 burn_in=1000;
-steps=10000;
+steps=100000;
 thin=10;
+chains=3
 
 library(rjags)
 strModelName = "model1.tmp"
@@ -90,7 +91,7 @@ fileConn=file(strModelName)
 writeLines(modelNBinom,fileConn);
 close(fileConn)
 
-m=jags.model(file=strModelName,data=datatest);
+m=jags.model(file=strModelName,data=datatest,n.chains=chains);
 update(m,burn_in)
 draw=jags.samples(m,steps,thin=thin,variable.names=varnames1)
 
