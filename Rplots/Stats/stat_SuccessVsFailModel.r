@@ -4,8 +4,37 @@
 
 source("TrackerDataFilesImport_lib.r")
 source("DataLabelling/labelHuntEvents_lib.r")
-##wiki suggest gamma prior for lambda
-model1="model {
+
+
+## The mixture Of Poisson Drawing from Gammaa, gives a negative binomial
+modelNBinom="model {
+         
+         for(i in 1:3) {
+             #lambda[i] ~ dgamma(1,1) ## 
+             r[i] ~ dgamma(1,1) ##
+             q[i] ~ dunif(0.0,1)
+
+             f[i] ~ dbeta(1,1)
+             p[i] ~ dbeta(1,1)
+             t[i] ~ dbeta(1,1) ##Prob Of Enganging With Prey Given HuntMode Is On
+         }
+
+         for(i in 1:NTOT){
+             Events[i] ~  dnegbin(q[ID[i]],r[ID[i]] )
+             TrackPrey[i] ~ dbinom(t[ID[i]],Events[i])
+             Success[i] ~ dbinom(p[ID[i]],TrackPrey[i])
+             Fail[i] ~ dbinom(f[ID[i]],TrackPrey[i])
+             
+         }
+}"
+
+
+
+
+## Model (Wrongly) Assumes Single Distribution Prior For Rates - Yet, fitting the group event rates shows
+## that it is best to assume a mixture of hunt rates exist in each group, such that the group hunt rates appears neg Binom.
+## wiki suggest gamma prior for lambda
+modelPoisson="model {
          
          for(i in 1:3) {
              lambda[i] ~ dgamma(1,1) ##Suggested in wiki 
@@ -50,7 +79,7 @@ datatest=list(Success=datFishSuccessRate$Success,
               ID=as.numeric(datFishSuccessRate$groupID),
               NTOT=nrow(datFishSuccessRate));
 
-varnames1=c("q","p","t","lambda")
+varnames1=c("q","p","t","f","r")
 burn_in=1000;
 steps=10000;
 thin=10;
@@ -58,7 +87,7 @@ thin=10;
 library(rjags)
 strModelName = "model1.tmp"
 fileConn=file(strModelName)
-writeLines(model1,fileConn);
+writeLines(modelNBinom,fileConn);
 close(fileConn)
 
 m=jags.model(file=strModelName,data=datatest);
