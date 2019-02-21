@@ -140,7 +140,7 @@ MeanHuntRate_NL <- HEventHuntGammaShape_NL*HEventHuntGammaRate_NL
 
 
 
-strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation_Success.pdf",sep="")
+strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of success, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 
 nlevels <- 5
@@ -161,7 +161,9 @@ zDL <-  kde2d(c(HEventSuccess_DL[,schain]), c(MeanHuntRate_DL[,schain]),n=80)
   
     contour(zNL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
   legend("topright", legend=paste(strGroups," n=",c(NRecCount_DL,NRecCount_LL,NRecCount_NL)),fill=colourL)
-dev.off()
+
+  
+  dev.off()
 
 
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation_Fails.pdf",sep="")

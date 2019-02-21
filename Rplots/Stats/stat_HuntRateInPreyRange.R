@@ -58,13 +58,14 @@ for(j in 1:NTOT){
 
 
 ## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
+## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
 ## Give geometric
 modelGEventRateGeom="model { 
 q ~ dunif(0.0,1)
 r ~ dgamma(1,1)
 
 for(j in 1:NTOT){
-  n[j] ~  dnegbin(q,r) ##R=1 for Geometric
+  n[j] ~  dnegbin(q,r) ##r=1 for Geometric
   }
 }"
 
@@ -237,19 +238,20 @@ plotEventCountDistribution_hist <- function(datHEventCount,drawHEvent,lcolour,HL
   mtext(side = 2, line = 2.1, 'P(s)')
   
 }
+
 ## Plots The Spontaneous and Invoked Hunt Rates, Inferred via the gamma given by the -ve binomial
 plotGammaHuntRates <- function(x,HEventHuntGammaShape,HEventHuntGammaRate,lcolour,plotsamples,lineType=1,bnewPlot=FALSE)
 {
   schain <- 1:3
   if (bnewPlot)
-    plot(x,dgamma(x,rate=HEventHuntGammaShape[1,1],HEventHuntGammaRate[1,1]),main="",xlab=NA,ylab=NA,
-       xlim=c(0,55),ylim=c(0,0.5),col=lcolour,type="l",lwd=1, lty=lineType)
+    plot(x,(dgamma(x,shape=HEventHuntGammaShape[1,1],rate=HEventHuntGammaRate[1,1]) ),main="",xlab=NA,ylab=NA,
+       xlim=c(0,15),ylim=c(0,0.5),col=lcolour,type="l",lwd=1, lty=lineType)
 
   for (c in schain)
   {
     for (i in 1:plotsamples)
     {
-      lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[1],lwd=1, lty=lineType)
+      lines(x, ( dgamma(x,shape=HEventHuntGammaShape[i,c],rate=HEventHuntGammaRate[i,c]) ) ,col=lcolour[1],lwd=1, lty=lineType)
       #lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[2],lwd=3,lty=3)
     }
   }
@@ -320,6 +322,9 @@ fromchain=1000
 #nLL1=read.table("Stats/mcmc/testLL.dat")$Freq
 #nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
 #nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
+## Load PreCalc Draws From Model ?? ##
+load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
+
 
 ## Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 ## Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
@@ -334,7 +339,6 @@ datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
                 with(datHuntLabelledEventsSBMerged, ( convertToScoreLabel(huntScore) != "Not_HuntMode/Delete" &
                                                                  convertToScoreLabel(huntScore) != "Duplicate/Overlapping" &
                                                                   (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
-                  
                                                                        eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
 
 ##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
@@ -384,7 +388,6 @@ print(vEventCount)
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
 preyCntRange <- c(0,100)
 
-#load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))'
 
 drawLL2 <- mcmc_drawEventCountModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventRate.tmp")
 drawNL2 <- mcmc_drawEventCountModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventRate.tmp")
@@ -401,13 +404,13 @@ save(drawLL2,drawNL2,drawDL2,drawLE2,drawNE2,drawDE2,file =paste(strDataExportDi
 plotsamples <- 15
 schain <-1:3
 
-
-HEventHuntGammaRate_LE <-((1-tail(drawLE2$q[,,schain],plotsamples))/tail(drawLE2$q[,,schain],plotsamples));
-HEventHuntGammaRate_LL <-((1-tail(drawLL2$q[,,schain],plotsamples))/tail(drawLL2$q[,,schain],plotsamples));
-HEventHuntGammaRate_DE <- ((1-tail(drawDE2$q[,,schain],plotsamples))/tail(drawDE2$q[,,schain],plotsamples));
-HEventHuntGammaRate_DL <- ((1-tail(drawDL2$q[,,schain],plotsamples))/tail(drawDL2$q[,,schain],plotsamples));      
-HEventHuntGammaRate_NE <- ((1-tail(drawNE2$q[,,schain],plotsamples))/tail(drawNE2$q[,,schain],plotsamples));
-HEventHuntGammaRate_NL <- ((1-tail(drawNL2$q[,,schain],plotsamples))/tail(drawNL2$q[,,schain],plotsamples));      
+### The Prob Of Success p from NegBinom translates to Gamma Rate p/(1-p), or scale: (1-p)/p
+HEventHuntGammaRate_LE <-tail(drawLE2$q[,,schain],plotsamples)/(1-tail(drawLE2$q[,,schain],plotsamples));
+HEventHuntGammaRate_LL <-tail(drawLL2$q[,,schain],plotsamples)/(1-tail(drawLL2$q[,,schain],plotsamples));
+HEventHuntGammaRate_DE <- tail(drawDE2$q[,,schain],plotsamples)/(1-tail(drawDE2$q[,,schain],plotsamples));
+HEventHuntGammaRate_DL <- (tail(drawDL2$q[,,schain],plotsamples)/(1-tail(drawDL2$q[,,schain],plotsamples)));      
+HEventHuntGammaRate_NE <- (tail(drawNE2$q[,,schain],plotsamples)/(1-tail(drawNE2$q[,,schain],plotsamples)));
+HEventHuntGammaRate_NL <- (tail(drawNL2$q[,,schain],plotsamples)/(1-tail(drawNL2$q[,,schain],plotsamples)));      
 HEventHuntGammaShape_LE <- tail(drawLE2$r[,,schain],plotsamples);
 HEventHuntGammaShape_LL <- tail(drawLL2$r[,,schain],plotsamples)
 HEventHuntGammaShape_DE <- tail(drawDE2$r[,,schain],plotsamples);
@@ -415,12 +418,27 @@ HEventHuntGammaShape_DL <- tail(drawDL2$r[,,schain],plotsamples)
 HEventHuntGammaShape_NE <- tail(drawNE2$r[,,schain],plotsamples);
 HEventHuntGammaShape_NL <- tail(drawNL2$r[,,schain],plotsamples)
 
+pBW = 2
+densHPoissonRate_LL <- density( HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL,bw=pBW)
+densHPoissonRate_LE <- density( HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE,bw=pBW)
+densHPoissonRate_DE <- density( HEventHuntGammaShape_DE*1/HEventHuntGammaRate_DE,bw=pBW)
+densHPoissonRate_DL <- density( HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL,bw=pBW)
+densHPoissonRate_NE <- density( HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE,bw=pBW)
+densHPoissonRate_NL <- density( HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL,bw=pBW)
+
+##Debug
+plot(x,log(dgamma(x,shape=HEventHuntGammaShape_LL[1,1],rate=HEventHuntGammaRate_LL[1,1])) ,main="",xlab=NA,ylab=NA,col=colourHL[2],type="l",lwd=1, lty=1)
+lines(x,log(dgamma(x,shape=HEventHuntGammaShape_LE[1,1],rate=HEventHuntGammaRate_LE[1,1])) ,main="",xlab=NA,ylab=NA,col=colourHL[2],type="l",lwd=1, lty=2)
+
+
+
+Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(datHuntVsPreyNL[,2])[2])
+x <- seq(0.01,Plim,0.05)
+
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
 pdf(file= paste(strPlotExportPath,"/stat/stat_MergedHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
 ##Now Plot Infered Distributions
-Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(datHuntVsPreyNL[,2])[2])
-x <- seq(0,Plim,0.1)
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
 
@@ -453,14 +471,17 @@ pBW <- 0.001
 
 #### Plot Gamma Distributions Of Hunt Rates From Which Hunt Event Counts where Drawn 
 
-plotGammaHuntRates(x,HEventHuntGammaShape_NL,HEventHuntGammaRate_NL,colourHL[1],plotsamples,1,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_NE,HEventHuntGammaRate_NE,colourHE[1],plotsamples,2,FALSE)
+
+
+plotGammaHuntRates(x,HEventHuntGammaShape_NE,HEventHuntGammaRate_NE,colourHE[1],plotsamples,2,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_NL,HEventHuntGammaRate_NL,colourHL[1],plotsamples,1,FALSE)
 legend("topright",legend = c(paste("Spontaneous (NE)" ),paste("Evoked (NL)")), col=c(colourHE[1], colourHL[1]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
-plotGammaHuntRates(x,HEventHuntGammaShape_LL,HEventHuntGammaRate_LL,c(colourHL[2]),plotsamples,1,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_LE,HEventHuntGammaRate_LE,c(colourHE[2]),plotsamples,2,FALSE)
+plotGammaHuntRates(x,HEventHuntGammaShape_LE,HEventHuntGammaRate_LE,c(colourHE[2]),plotsamples,2,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_LL,HEventHuntGammaRate_LL,c(colourHL[2]),plotsamples,1,FALSE)
 legend("topright",legend = c(paste("Spontaneous (LE)" ),paste("Evoked (LL)")), col=c(colourHE[2], colourHL[2]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
-plotGammaHuntRates(x,HEventHuntGammaShape_DL,HEventHuntGammaRate_DL,c(colourHL[3]),plotsamples,1,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_DE,HEventHuntGammaRate_DE,c(colourHE[3]),plotsamples,2,FALSE)
+plotGammaHuntRates(x,HEventHuntGammaShape_DE,HEventHuntGammaRate_DE,c(colourHE[3]),plotsamples,2,TRUE)
+plotGammaHuntRates(x,HEventHuntGammaShape_DL,HEventHuntGammaRate_DL,c(colourHL[3]),plotsamples,1,FALSE)
+
 legend("topright",legend = c(paste("Spontaneous (DE)" ),paste("Evoked (DL)")), col=c(colourHE[3], colourHL[3]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
 mtext(side = 2,cex=0.8, line = 2.2, " P(x) ")
@@ -482,14 +503,14 @@ plotConnectedEventCounts(datHuntStat,strCondTags)
 
 pchL <- c(1,2,0,16,17,15)
 ### Plot GAMMA Parameters Space
-Xlim <- 55
-plot(HEventHuntGammaRate_NE,HEventHuntGammaShape_NE,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
-points(HEventHuntGammaRate_LE,HEventHuntGammaShape_LE,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
-points(HEventHuntGammaRate_DE,HEventHuntGammaShape_DE,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
-points(HEventHuntGammaRate_NL,HEventHuntGammaShape_NL,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[4])
-points(HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[5])
-points(HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[6])
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste(Gamma, " rate (r)") ) )
+Xlim <- 50
+plot(1/HEventHuntGammaRate_NE,HEventHuntGammaShape_NE,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
+points(1/HEventHuntGammaRate_LE,HEventHuntGammaShape_LE,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
+points(1/HEventHuntGammaRate_DE,HEventHuntGammaShape_DE,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
+points(1/HEventHuntGammaRate_NL,HEventHuntGammaShape_NL,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[4])
+points(1/HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[5])
+points(1/HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[6])
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste(Gamma, " scale (r)") ) )
 mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
 legend("topright",legend = c(paste("NE" ),
                              paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
