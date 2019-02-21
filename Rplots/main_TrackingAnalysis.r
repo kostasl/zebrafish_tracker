@@ -60,7 +60,7 @@ colourLegE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb
 colourLegL <- col2hex(pairedPalette[,c(6,4,2,8)]) ##Transparent For MCMC Samples (Live)
 pairedPalette["alpha",1:6] <- 200 ##Opacity
 colourHE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
-pairedPalette["alpha",1:6] <- 230 ##Opacity
+pairedPalette["alpha",1:6] <- 190 ##Opacity
 colourHL <- col2hex(pairedPalette[,c(6,4,2,8)]) ##Transparent For MCMC Samples (Live)
 colourH <- colourHL
 colourP <- c(rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,0.5)) ##points]
@@ -172,7 +172,7 @@ strCondR  <- "*.csv";
   ##Warning : Merging is memory intensive
   #source("loadAllDataSets.r")
   ## Best to Load  a merged file datAllFrames instead :
-  load(paste(strDatDir,"datAllFrames_Ds-5-19.RData",sep="/"))
+  load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
   load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
   load(file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   

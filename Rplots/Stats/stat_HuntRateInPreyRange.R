@@ -179,7 +179,7 @@ plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,n
 ## Compare Model TO Data Using CDF ##
 plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples=100,newPlot = FALSE)
 {
-  XLim <- 50
+  XLim <- 80
   x <- seq(0,XLim,1)
 
   cdfD_N <- ecdf(datHEventCount[,2])
@@ -243,7 +243,7 @@ plotGammaHuntRates <- function(x,HEventHuntGammaShape,HEventHuntGammaRate,lcolou
   schain <- 1:3
   if (bnewPlot)
     plot(x,dgamma(x,rate=HEventHuntGammaShape[1,1],HEventHuntGammaRate[1,1]),main="",xlab=NA,ylab=NA,
-       xlim=c(0,70),ylim=c(0,0.5),col=lcolour,type="l",lwd=1, lty=lineType)
+       xlim=c(0,55),ylim=c(0,0.5),col=lcolour,type="l",lwd=1, lty=lineType)
 
   for (c in schain)
   {
@@ -293,7 +293,7 @@ plotConnectedEventCounts <- function(datHuntStat,strCondTags)
       
       message(e$expID)
       
-      ptDest <- vDat[[gL]][which(names(vDat[[gL]]) == LivePairExp$expID) ]
+      ptDest <- vDat[[gL]][which(names(vDat[[gL]]) %in% LivePairExp$expID) ]
       
       
       ##Plot The Lines Connect Each Empty Tested Larva With Itself In THe Live Fed Conditions 
@@ -321,7 +321,9 @@ fromchain=1000
 #nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
 #nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
 
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
+## Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
+## Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2" 
 
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
@@ -332,10 +334,23 @@ datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
                 with(datHuntLabelledEventsSBMerged, ( convertToScoreLabel(huntScore) != "Not_HuntMode/Delete" &
                                                                  convertToScoreLabel(huntScore) != "Duplicate/Overlapping" &
                                                                   (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
-                                                                   eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
-                                                                   
-datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID),]
-datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_filtered)
+                  
+                                                                       eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
+
+##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
+#AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
+vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
+vWeirdDataSetID <- c(11,17,18,19)
+##Check For Missing Exp Less than 24 
+for (dID in vWeirdDataSetID )
+  print(NROW(unique(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$dataSetID ==  dID ,]$expID)))
+
+datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID) & 
+                                                                                !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
+
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+
+
 
 ## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##
 ## Added Larva ID to Check for Correlation Through Time of Day - Surrogate as LarvaID;s increased through the day of the experiment from 1-4
@@ -402,7 +417,7 @@ HEventHuntGammaShape_NL <- tail(drawNL2$r[,,schain],plotsamples)
 
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
-pdf(file= paste(strPlotExportPath,"/stat/stat_LiveFoodTestHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_MergedHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
 ##Now Plot Infered Distributions
 Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(datHuntVsPreyNL[,2])[2])
 x <- seq(0,Plim,0.1)
@@ -425,8 +440,8 @@ legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste(
       col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE  )
 plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE  )
-legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyLE) ),paste("Model DE "),
-                                paste("Data DL #",NROW(datHuntVsPreyLL) ),paste("Model DL ")), 
+legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyDE) ),paste("Model DE "),
+                                paste("Data DL #",NROW(datHuntVsPreyDL) ),paste("Model DL ")), 
        col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, "Event Counts (N)")
 mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
@@ -456,7 +471,7 @@ strCondTags <- c("NE","NL","LE","LL","DE","DL")
 xbarcenters <- boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
         main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2),axes = FALSE  )
 mtext(side = 2,cex=0.8, line =2.2, "Hunt Counts  log(N+1) ")
-vIDTable <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
+vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
 vDat        <- (datHuntStat[,"vHLarvaEventCount"])
 
 axis(1,at<-axis(1,labels=NA), labels=strCondTags)
@@ -465,17 +480,21 @@ axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
 
 plotConnectedEventCounts(datHuntStat,strCondTags)
 
-
+pchL <- c(1,2,0,16,17,15)
 ### Plot GAMMA Parameters Space
-Xlim <- 40
-plot(HEventHuntGammaRate_NE,HEventHuntGammaShape_NE,col=colourHE[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
-points(HEventHuntGammaRate_LE,HEventHuntGammaShape_LE,col=colourHE[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
-points(HEventHuntGammaRate_DE,HEventHuntGammaShape_DE,col=colourHE[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
-points(HEventHuntGammaRate_NL,HEventHuntGammaShape_NL,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1])
-points(HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
-points(HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
+Xlim <- 55
+plot(HEventHuntGammaRate_NE,HEventHuntGammaShape_NE,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
+points(HEventHuntGammaRate_LE,HEventHuntGammaShape_LE,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
+points(HEventHuntGammaRate_DE,HEventHuntGammaShape_DE,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
+points(HEventHuntGammaRate_NL,HEventHuntGammaShape_NL,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[4])
+points(HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[5])
+points(HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[6])
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste(Gamma, " rate (r)") ) )
 mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
+legend("topright",legend = c(paste("NE" ),
+                             paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
+                             col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
+
 
 dev.off() 
 ################## ############# ### # # 
@@ -638,6 +657,15 @@ dev.off()
 
 #points(x/G_APPROXFPS,dgamma(x,rate=drawDurDE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurDE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="DE",xlim=c(0,6),col=colourR[1] ) 
 #points(x/G_APPROXFPS,dgamma(x,rate=drawDurNE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurNE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="NE",xlim=c(0,6),col=colourR[3] ) 
+
+## Sand Box ##
+
+labexpID <- table(datHuntLabelledEventsSBMerged[datHuntLabelledEventsSBMerged$groupID == "NL",]$expID)
+regexpID <- table(datTrackedEventsRegister[datTrackedEventsRegister$groupID == "NL" ,]$expID) 
+
+datHuntLabelledEventsSBMerged_filtered[datHuntLabelledEventsSBMerged_filtered$groupID == "NL" & datHuntLabelledEventsSBMerged_filtered$expID == 3911,]
+
+datTrackedEventsRegister[datTrackedEventsRegister$groupID == "NL" & datTrackedEventsRegister$expID == 3911 ,]
 
 
 #### DEBUG CODE - Fitting An EXP Distribution TEST ###
