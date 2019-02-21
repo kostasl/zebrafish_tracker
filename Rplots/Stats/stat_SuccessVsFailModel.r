@@ -56,13 +56,15 @@ modelPoisson="model {
 
 #strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged"
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2"
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
+vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
+
 ##We Can Choose To Exclude The Fish That Produced No Hunting Events
-datHuntLabelledEventsSB <- datHuntLabelledEventsSB[datHuntLabelledEventsSB$eventID != 0 &
+datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) & 
                                                      datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL") ,]
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 datFishSuccessRate$groupID <- factor(datFishSuccessRate$groupID)
@@ -111,25 +113,53 @@ colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
 ##Density in 2D of Success Vs Fail
 #X11()
 
+
+### Draw Distribution oF Hunt Rates - 
+## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
+plotsamples <- 200
+schain <-1:3
+Range_ylim <- c(1,25)
+
+
+### It looks like Tha Gamma scale is the inverse:  gamma rate!
+HEventHuntGammaRate_LL <-((1-tail(draw$q[2,,schain],plotsamples))/tail(draw$q[2,,schain],plotsamples));
+HEventHuntGammaRate_DL <- ((1-tail(draw$q[1,,schain],plotsamples))/tail(draw$q[1,,schain],plotsamples));      
+HEventHuntGammaRate_NL <- ((1-tail(draw$q[3,,schain],plotsamples))/tail(draw$q[3,,schain],plotsamples));      
+HEventHuntGammaShape_LL <- tail(draw$r[2,,schain],plotsamples)
+HEventHuntGammaShape_DL <- tail(draw$r[1,,schain],plotsamples)
+HEventHuntGammaShape_NL <- tail(draw$r[3,,schain],plotsamples)
+
+HEventSuccess_LL <-tail(draw$p[2,,schain],plotsamples)
+HEventSuccess_DL <-tail(draw$p[1,,schain],plotsamples)
+HEventSuccess_NL <-tail(draw$p[3,,schain],plotsamples)
+
+###Mean Rates As Exp OF Gamma
+MeanHuntRate_LL <- HEventHuntGammaShape_LL*HEventHuntGammaRate_LL
+MeanHuntRate_DL <- HEventHuntGammaShape_DL*HEventHuntGammaRate_DL
+MeanHuntRate_NL <- HEventHuntGammaShape_NL*HEventHuntGammaRate_NL
+
+
+
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation_Success.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of success, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 
 nlevels <- 5
-zLL <- kde2d(draw$q[2,,1], draw$lambda[2,,1], n=80)
-zNL <- kde2d(draw$q[3,,1], draw$lambda[3,,1], n=80)
-zDL <- kde2d(draw$q[1,,1], draw$lambda[1,,1], n=80)
+zLL <- kde2d(c(HEventSuccess_LL[,schain]), c(MeanHuntRate_LL[,schain]),n=80)
+zNL <-  kde2d(c(HEventSuccess_NL[,schain]), c(MeanHuntRate_NL[,schain]),n=80)
+zDL <-  kde2d(c(HEventSuccess_DL[,schain]), c(MeanHuntRate_DL[,schain]),n=80)
 
 
-Range_ylim <- c(7,17)
-  plot(draw$q[1,,1], draw$lambda[1,,1],col=colourD[1],ylim=Range_ylim,xlim=c(0,0.5),pch=19,
+  plot(HEventSuccess_DL, MeanHuntRate_DL,col=colourHL[3],ylim=Range_ylim,xlim=c(0,0.5),pch=19,
        main="Bayesian Estimation for Hunt Rate and Efficiency",
        xlab="Probability of Success q",
        ylab=(expression(paste("Hunt Rate ",lambda ) ) )  ) #paste("Hunt Rate", )
-  contour(zDL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
-  points(draw$q[2,,1], draw$lambda[2,,1],col=colourD[2],ylim=Range_ylim,xlim=c(0.1,0.5),pch=19)
+  points(HEventSuccess_LL, MeanHuntRate_LL,col=colourHL[2],ylim=Range_ylim,xlim=c(0.1,0.5),pch=19)
+  points(HEventSuccess_NL, MeanHuntRate_NL,col=colourHL[1],ylim=Range_ylim,xlim=c(0.1,0.5),pch=19)
+
+    contour(zDL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
   contour(zLL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
-  points(draw$q[3,,1], draw$lambda[3,,1],col=colourD[3],ylim=Range_ylim,xlim=c(0.1,0.5),pch=19)
-  contour(zNL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+  
+    contour(zNL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
   legend("topright", legend=paste(strGroups," n=",c(NRecCount_DL,NRecCount_LL,NRecCount_NL)),fill=colourL)
 dev.off()
 
