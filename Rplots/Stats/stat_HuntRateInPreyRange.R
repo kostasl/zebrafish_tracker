@@ -608,21 +608,22 @@ mcmc_drawEventDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFi
 ## Compare Model TO Data Using CDF ##
 plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples=100,newPlot = FALSE)
 {
-  XLim <- G_APPROXFPS*22
+  XLim <- G_APPROXFPS*180
   x <- seq(0,XLim,1)
   
-  cdfD_N <- ecdf(datHDuration[,3])
+  cdfD_N <- ecdf(datHDuration[,3]/G_APPROXFPS)
   
-  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=1.5,cex.lab=1.5,add=!newPlot)
+  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim/G_APPROXFPS),
+       ylim=c(0,1),cex=1.5,cex.lab=1.5,add=!newPlot)
   ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
     for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
     {
       cdfM <- dnbinom(x,size=drawHEvent$r[,j,c],prob=  drawHEvent$q[,j,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
-      lines(x,cumsum(cdfM),col=lcolour,lty=lty) #add=TRUE,
+      lines(x/G_APPROXFPS,cumsum(cdfM),col=lcolour,lty=lty) #add=TRUE,
     }
   }
-  plot(cdfD_N,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=1.5,cex.lab=1.5,add=TRUE)
+  plot(cdfD_N,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim/G_APPROXFPS),ylim=c(0,1),cex=1.5,cex.lab=1.5,add=TRUE)
 
 }
 
@@ -669,6 +670,14 @@ initLarvaHuntDurfunct <- function(nchains,N)
 ## Baysian Inference Fiting a Gamma distribution to the Hunt Event Duration Data ##
 ##Setup Data Structure To Pass To RJAgs
 plotsamples = 20
+##Remove Rec Of No Duration ###
+datHuntVsPreyLE <- datHuntVsPreyLE[datHuntVsPreyLE[,2] > 0,]
+datHuntVsPreyNE <- datHuntVsPreyNE[datHuntVsPreyNE[,2] > 0,]
+datHuntVsPreyDE <- datHuntVsPreyDE[datHuntVsPreyDE[,2] > 0,]
+datHuntVsPreyLL <- datHuntVsPreyLL[datHuntVsPreyLL[,2] > 0,]
+datHuntVsPreyNL <- datHuntVsPreyNL[datHuntVsPreyNL[,2] > 0,]
+datHuntVsPreyDL <- datHuntVsPreyDL[datHuntVsPreyDL[,2] > 0,]
+
 
 drawDurLE <- mcmc_drawEventDurationModels(datHuntVsPreyLE,preyCntRange,"modelGroupEventDuration.tmp" )
 drawDurNE <- mcmc_drawEventDurationModels(datHuntVsPreyNE,preyCntRange,"modelGroupEventDuration.tmp" )
@@ -682,13 +691,33 @@ save(drawDurLE,drawDurNE,drawDurDE,drawDurLL,drawDurNL,drawDurDL,
 
 layout(matrix(c(1,2,3,4,5,6), 3,2, byrow = FALSE))
 plotHuntDurationDistribution_cdf(datHuntVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntVsPreyLL,drawDurLL,colourHL[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+
 plotHuntDurationDistribution_cdf(datHuntVsPreyNE,drawDurNE,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntVsPreyNL,drawDurNL,colourHL[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
 
-plotHuntDurationDistribution_cdf(datHuntVsPreyLL,drawDurLL,colourHL[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntVsPreyDE,drawDurDE,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntVsPreyDL,drawDurDL,colourHL[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
 
-hist(drawDurLE$r)
-hist(drawDurN$r)
-hist(drawDurD$r)
+legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyDE) ),paste("Model DE "),
+                                paste("Data DL #",NROW(datHuntVsPreyDL) ),paste("Model DL ")), 
+       col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+mtext(side = 1,cex=0.8, line = 2.2, " Hunt Duration per Larva (sec)")
+mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
+
+
+hist(drawDurLE$d)
+hist(drawDurNE$d)
+
+##CHECK fIT
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurLE$r,50),  prob=tail(drawDurLE$q,50)),cex=0.3,col=colourHE[2] )
+lines(density(drawDurLE$d,bw=1000 ) )
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurNE$r,50),  prob=tail(drawDurNE$q,50)),cex=0.3,col=colourHE[1] )
+lines(density(drawDurNE$d,bw=1000 ) )
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurDE$r,50),  prob=tail(drawDurDE$q,50)),cex=0.3,col=colourHE[3] )
+lines(density(drawDurDE$d,bw=1000 ) )
+
+
 
 hist(drawDurLE$q)
 hist(drawDurN$s)
