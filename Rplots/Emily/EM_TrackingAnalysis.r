@@ -24,31 +24,28 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 
 ## GLOBAL VARS ###
 
-
 ## Required Variables - Locations 
 # Home Desktop
-setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
-strVideoFilePath  <- "/media/extStore/ExpData/zebrapreyCap/AnalysisSet/"
-strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
-strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
-strTrackInputPath <- "/media/extStore/ExpData/zebrapreyCap/TrackASetRepeat/" ##Same As Working Dir
-strDatDir        <- "./dat/TrackedSessionA" ##Where Are the Imported RData Stored
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+strVideoFilePath  <- "//mnt/ARXEIO1TB/ExpData/zebrapreyCap/AnalysisSet/"
+strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Qt_5_11_1-Release/" 
+strTrackeroutPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
+strTrackInputPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
+strDatDir        <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
+strDataExportDir <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
+strPlotExportPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
 
-##Emily ##
-#setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
-#strVideoFilePath         <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/expDataEmily/"
-#strTrackeroutPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/"
-#strDataSetDirectories <- list("/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackedEm/")##Dataset n 
-#strDataSetDirectories <- list("/media/extStore/ExpData/zebrapreyCap/TrackedEmilyDat/")##Dataset n 
+## Office PC ##
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+strVideoFilePath  <- "/media/kostasl/Maxtor/KOSTAS/20190212_double/AutoSetfps_30_01_19vid/" 
+strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
+strTrackeroutPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
+#strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
+strTrackInputPath <- "/media/kostasl/Maxtor/KOSTAS/" ##Where to source the Tracker csv files from
+strDatDir        <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedEmilyDat" ##Where Are the Imported RData Stored
+strDataExportDir <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/TrackedEmilyDat"
+strPlotExportPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots/" ##Where to source the Tracker csv files from 
 
-
-## Office PC
-setwd("/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/")
-strVideoFilePath  <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/expDataKostas/AnalysisSetAlpha/" 
-strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_9_2_GCC_64bit-Release/"
-strTrackeroutPath <- "/mnt/4E9CF34B9CF32BD9/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
-strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from 
-strDatDir        <- "./dat/TrackedSessionA" ##Where Are the Imported RData Stored
 
 ## Laptop
 setwd("~/Dropbox/Calculations/zebrafishtrackerData/")
@@ -71,7 +68,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
 DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
-G_APPROXFPS              <- 420
+G_APPROXFPS              <- 400
 G_THRESHUNTANGLE         <- 19 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
@@ -83,7 +80,7 @@ nFrWidth                 <- 50 ## Sliding Window Filter Width
 
 ##Emily CObined datasets into 1 folder
 strDataSetDirectories <- paste(strTrackInputPath, list(
-  "/TrackedEmilyDataC/" ##Dataset 1
+  "/Tracked_20190212/" ##Dataset 1
                               ),sep="/")
 ##Add Source Directory
 
@@ -103,7 +100,7 @@ rDataset <- c(rf(G_DATASETPALLETSIZE),"#FF00AA");
   
   lastDataSet = NROW(strDataSetDirectories)
   firstDataSet = 1
-  source("EM_runimportTrackerDataFiles.r")
+  source("Emily/EM_runimportTrackerDataFiles.r")
 
 ###### END OF IMPORT TRACKER DATA ############
 

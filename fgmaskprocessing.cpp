@@ -138,8 +138,15 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         //read input data. ESC or 'q' for quitting
         uint uiLearnedFrames = 0;
         uint skipFrames = uiStopFrame/ MOGhistoryLength;
-
         window_main.setTotalFrames(uiStopFrame); //Set To BG Processing REgion
+
+        //  Check If it contains no Frames And Exit
+        if (uiStopFrame < 2)
+        {
+            pwindow_main->LogEvent("[ERROR] This Video File is empty ");
+            capture.release();
+            return 0;
+        }
 
         while( !bExiting && (char)keyboard != 27 && nFrame < (uint) uiStopFrame && uiLearnedFrames < MOGhistoryLength)
         {
@@ -216,7 +223,6 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         if (bStaticAccumulatedBGMaskRemove & bshowMask)
            cv::imshow("Accumulated BG Model Thresholded",bgMask);
 
-
         cv::morphologyEx(bgMask,bgMask, cv::MORPH_CLOSE, kernelDilateMOGMask,cv::Point(-1,-1),1);
 
         pwindow_main->showVideoFrame(bgMask,nFrame);
@@ -229,7 +235,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
 
         //std::clog << gTimer.elapsed()/60000.0 << " Background Processing  loop. Finished" << std::endl;
-         window_main.LogEvent(" Background Processing  loop. Finished");
+        window_main.LogEvent(" Background Processing  loop. Finished");
 
 
       return nFrame;

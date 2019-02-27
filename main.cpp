@@ -281,6 +281,8 @@ int compString(QString str1,QString str2)
 
 int main(int argc, char *argv[])
 {
+    gTimer.start();
+
     bROIChanged = true;
     bPaused = false;
     bshowMask = false;
@@ -405,13 +407,12 @@ int main(int argc, char *argv[])
     }
     else
     {
-      outfilename  = QFileDialog::getSaveFileName(0, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
+      outfilename  = QFileDialog::getSaveFileName(NULL, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", 0, 0); // getting the filename (full path)
       gstroutDirCSV = outfilename.left(outfilename.lastIndexOf("/"));
     }
 
 
     std::cout << "Csv Output Dir is " << gstroutDirCSV.toStdString()  << "\n " <<std::endl;
-
 
 
  /// Check if vid file provided in arguments.
@@ -522,13 +523,13 @@ int main(int argc, char *argv[])
 
     //If No video Files have been loaded then Give GUI to User
     if (inVidFileNames.empty())
-            inVidFileNames =QFileDialog::getOpenFileNames(0, "Select videos to Process",gstrinDirVid.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
+            inVidFileNames =QFileDialog::getOpenFileNames(NULL, "Select videos to Process",gstrinDirVid.toStdString().c_str(), "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", 0, 0);
 
 
     // get the applications dir pah and expose it to QML
     //engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
 
-    gTimer.start();
+
     //create GUI windows
 
 
@@ -780,14 +781,17 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
        if ((bUseBGModelling && gbUpdateBGModel) || (bUseBGModelling && gbUpdateBGModelOnAllVids) )
        {
-            getBGModelFromVideo(bgStaticMask, window_main,invideoname,outfilename,MOGhistory);
-            cv::dilate(bgStaticMask,bgStaticMask,kernelDilateMOGMask,cv::Point(-1,-1),2);
-            cv::morphologyEx(bgStaticMask,bgStaticMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),4); //
-            cv::bitwise_not ( bgStaticMask, bgStaticMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
+           //If BG Model Returns >1 frames
+            if (getBGModelFromVideo(bgStaticMask, window_main,invideoname,outfilename,MOGhistory))
+            {
+                cv::dilate(bgStaticMask,bgStaticMask,kernelDilateMOGMask,cv::Point(-1,-1),2);
+                cv::morphologyEx(bgStaticMask,bgStaticMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),4); //
+                cv::bitwise_not ( bgStaticMask, bgStaticMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
 
-            //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
-            if (compString(invideoname,nextvideoname) < 3 && !gbUpdateBGModelOnAllVids)
-                gbUpdateBGModel = false; //Turn Off BG Updates
+                //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
+                if (compString(invideoname,nextvideoname) < 3 && !gbUpdateBGModelOnAllVids)
+                    gbUpdateBGModel = false; //Turn Off BG Updates
+            }
 
        }
 
@@ -1137,7 +1141,16 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     window_main.setTotalFrames(totFrames);
-    window_main.nFrame = nFrame;
+    //window_main.nFrame = nFrame;
+
+    //  Check If it contains no Frames And Exit
+    if (totFrames < 2)
+    {
+        window_main.LogEvent("[ERROR] This Video File is empty ");
+        capture.release();
+        return 0;
+    }
+
     if (!bBlindSourceTracking)
     {
         QFileInfo vidFileInfo(videoFilename);
@@ -1150,6 +1163,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     window_main.vidFilename = videoFilename;
     QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames) + " Start:" + QString::number(startFrameCount));
     window_main.LogEvent(strMsg);
+
 
     //qDebug() << strMsg;
 
@@ -1164,7 +1178,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
     nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
     frameNumberString = QString("%1").arg(nFrame, 5, 10, QChar('0')); //QString::number(nFrame);
-    pwindow_main->nFrame = nFrame;
+    window_main.nFrame = nFrame;
 
     //read input data. ESC or 'q' for quitting
     while( !bExiting && (char)keyboard != 27 )
@@ -1542,7 +1556,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 if (!iroi.contains(pfishBest->ptRotCentre,pfishBest->bodyRotBound.size.width+pfishBest->bodyRotBound.size.height ))
                 {
                     qfishrank.pop();
-                    pfishBest =0;
+                    pfishBest = 0;
                 }
              }
    }//Search For Best Model
