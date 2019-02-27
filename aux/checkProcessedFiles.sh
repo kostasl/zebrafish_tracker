@@ -12,7 +12,7 @@ echo $DATDIR
 
 rm datafileslist.txt
 rm vidfilelist.txt
-find $DATDIR -maxdepth 3 -name "*.csv" | sed 's,^[^/]*/,,' | sed s/\.[^\_]*$// | sed s/\.[^\_]*$// | sed 's/.*\///' |sed '/^$/d' | uniq | sort > datafileslist.txt
+find $DATDIR -maxdepth 3 -name "*tracks_*.csv" | sed 's,^[^/]*/,,' | sed s/\.[^\_]*$// | sed s/\.[^\_]*$// | sed 's/.*\///' |sed '/^$/d' | uniq | sort > datafileslist.txt
 find $VIDDIR -maxdepth 3  -name "*.mp4" > vidfilesfullpath.txt
 cat vidfilesfullpath.txt | sed 's,^[^/]*/,,' | sed s/\.[^\.]*$// | sed 's/.*\///' |sed '/^$/d' | uniq | sort > vidfilelist.txt
 diff --changed-group-format='%>' --unchanged-group-format='' datafileslist.txt vidfilelist.txt > unprocessedfiles.txt
