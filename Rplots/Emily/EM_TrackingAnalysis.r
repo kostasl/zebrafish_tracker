@@ -110,8 +110,10 @@ rDataset <- c(rf(G_DATASETPALLETSIZE),"#FF00AA");
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   ##oad Frames and HuntStats
-  source("loadAllDataSets.r")
+  #source("loadAllDataSets.r")
 
+  load(paste(strDatDir,"/datAllFrames_Ds20190212.RData",sep="") )
+  
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]

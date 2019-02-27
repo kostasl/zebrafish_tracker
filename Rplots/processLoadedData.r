@@ -27,26 +27,31 @@ for (i in strCondTags)
   ##Select Larvaof this Group
   
   datAllGroupFrames <- datAllFrames[which(datAllFrames$group == i),]
+  if (NROW(datAllGroupFrames) < 1)
+  {
+    warning("No Frames in Group, skipping")
+    next
+  }
   #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
   vexpID = unique(datAllGroupFrames$expID)
   idxDataSet <- unique(datAllGroupFrames$dataSet)
   
-  #  lHuntStat[[i]] = calcHuntStat(datAllGroupFrames,vexpID)
-  ##Combine Hunting Events across fish in this Condition In One
-  #datHuntEvent = do.call(rbind,lHuntStat[[i]]$vHuntingEventsList )
+  datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,dataSetsToProcess)
+  writeHuntEventToFile(datHuntEvent,dataSetsToProcess,groupsrcdatListPerDataSet)
   
   lTrackletStat[[i]] <- calcRecordingEventSpeed(datAllGroupFrames,vexpID,idxDataSet)
 
   ## DISABLED as these are not being used Anymore ##  
   ## Extract Hunting Events From Data
-  #lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vexpID,dataSetsToProcess)
+  lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vexpID,dataSetsToProcess)
 
-  datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,dataSetsToProcess)
-  writeHuntEventToFile(datHuntEvent,dataSetsToProcess,groupsrcdatListPerDataSet)
   
-  #lHuntStat[[i]] <- calcHuntStat3(datHuntEvent)
-  #stopifnot(length(lHuntStat[[i]]$vHLarvaEventCount) > 0)
-  
+  lHuntStat[[i]] <- calcHuntStat3(datHuntEvent)
+  #lHuntStat[[i]] = calcHuntStat3(datHuntEvent)
+  stopifnot(length(lHuntStat[[i]]$vHLarvaEventCount) > 0)
+
+  ##Combine Hunting Events across fish in this Condition In One
+  #datHuntEvent = do.call(rbind,lHuntStat[[i]]$vHuntingEventsList )
   ##Reconstruct DataSet File List - So As to link fileIdx To Files
   #filelist <- getFileSet("LiveFed/Empty/",strDataSetDirectories[[idxDataSet]])
   
@@ -86,5 +91,15 @@ boxplot(vPathLengthPerLarva_LE,vPathLengthPerLarva_DE,vPathLengthPerLarva_NE,
         ylim=c(0,10000),notch = TRUE,main="Total Path Length Per Larva  ",
         ylab="mm",xlab="",
         show.names=TRUE,names=c("LE","DE","NE","LL","DL","NL"),col=c(colourR[2],colourR[1],colourR[3] ) )
+dev.off()
+
+
+
+## Live Test - Path Length per larva
+pdf(file= paste(strPlotExportPath,"/boxplotEM_totalPathLengthPerGroup_Live.pdf",sep=""),onefile=TRUE ) 
+boxplot(vPathLengthPerLarva_LL,vPathLengthPerLarva_DL,vPathLengthPerLarva_NL,
+        ylim=c(0,1000),notch = FALSE,main="Total Path Length Per Larva  ",
+        ylab="mm",xlab="",
+        show.names=TRUE,names=c("LL","DL","NL"),col=c(colourR[2],colourR[1],colourR[3] ) )
 dev.off()
 

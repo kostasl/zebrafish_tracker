@@ -11,9 +11,11 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   d = strDataSetDirectories[[idxDataSet]]
   groupsrcdatList = list()
   strCondR  <- "*.csv"; 
-  groupsrcdatList[["LE"]] <- list(getFileSet("LiveFed/Empty/",d),"-LiveFed-Empty")
+  #groupsrcdatList[["LE"]] <- list(getFileSet("LiveFed/Empty/",d),"-LiveFed-Empty")
   
   groupsrcdatList[["LL"]] <- list(getFileSet("LiveFed/Live/",d),"-LiveFed-Live")
+  groupsrcdatList[["DL"]] <- list(getFileSet("DryFed/Live/",d),"-DryFed-Live")
+  groupsrcdatList[["NL"]] <- list(getFileSet("NotFed/Live/",d),"-NotFed-Live")
   
   ##OutPutFIleName
   strDataSetIdentifier <- strsplit(d,"/")
@@ -31,16 +33,16 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   stopifnot(NROW(datAllFrames[which(is.na(datAllFrames$expID)), ]) == 0)
   
   groupsrcdatListPerDataSet[[idxDataSet]] <- groupsrcdatList 
-  save(datAllFrames,groupsrcdatList,file=strDataFileName) ##Save With Dataset Idx Identifier
-  saveRDS(datAllFrames, file = strDataFileNameRDS)
+  save(datAllFrames,groupsrcdatList,file=paste(strDatDir,"/",strDataFileName ,sep="") )  ##Save With Dataset Idx Identifier
+  saveRDS(datAllFrames, file =paste(strDatDir,"/", strDataFileNameRDS,sep="") )
   
   #idxDataSet = idxDataSet + 1
 } ##For Each DataSet Directory
 #### END OF IMPORT TRACKER DATA ############
 
 ##Save the File Sources and all The Frames Combined - Just In case there are loading Problems Of the Individual RData files from each set
-save(groupsrcdatListPerDataSet,file=paste("groupsrcdatListPerDataSet_Ds",firstDataSet,lastDataSet,".RData",sep="-"))
+save(groupsrcdatListPerDataSet,file=paste(strDatDir,"/groupsrcdatListPerDataSet_Ds",firstDataSet,"-",lastDataSet,".RData",sep=""))
 
 #datAllFrames <- rbindlist(datAllSets);
 datAllFrames = do.call(rbind,datAllSets);
-save(datAllFrames,file=paste("datAllFrames_Ds",firstDataSet,lastDataSet,".RData",sep="-"))
+save(datAllFrames,file=paste(strDatDir,"/datAllFrames_Ds",firstDataSet,"-",lastDataSet,".RData",sep=""))
