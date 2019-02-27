@@ -85,7 +85,7 @@ thin=10;
 library(rjags)
 strModelName = "model1.tmp"
 fileConn=file(strModelName)
-writeLines(model1,fileConn);
+writeLines(modelNBinom,fileConn);
 close(fileConn)
 
 m=jags.model(file=strModelName,data=datatest);
