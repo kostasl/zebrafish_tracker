@@ -95,6 +95,13 @@ for (l in 1:max(hidx))
 
 }"
 
+
+library(rjags)
+strModelName = "modelLarvaEventDuration.tmp"
+fileConn=file(strModelName)
+writeLines(modelEventDuration,fileConn);
+close(fileConn)
+
 ## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
 ## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
 ## Give Neg Binomial
@@ -110,7 +117,7 @@ for(j in 1:NTOT){
 
 
 library(rjags)
-strModelName = "modelGroupEventDuration.tmp"
+strModelName = "modelLarvaHuntDuration.tmp"
 fileConn=file(strModelName)
 writeLines(modelLarvaHuntDuration,fileConn);
 close(fileConn)
@@ -339,7 +346,7 @@ fromchain=1000
 ## Load PreCalc Draws From Model ?? ##
 load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
 
-
+############ LOAD EVENTS LIst and Fix ####
 ## Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 ## Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
 strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2" 
@@ -366,8 +373,12 @@ for (dID in vWeirdDataSetID )
 datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID) & 
                                                                                 !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
 
-datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+################# # ## # # 
 
+
+
+## Get Summarized Hunt Results Per Larva ####
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 
 
 ## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##
@@ -576,7 +587,7 @@ dev.off()
 
 ## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
 ## Return Samples Drawn structure
-mcmc_drawEventDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFilename)
+mcmc_drawHuntDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFilename)
 {
   varnames1=c("d","q","r")
   burn_in=1000;
@@ -629,30 +640,6 @@ plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpc
 
 
 
-####### Function Returns Hunt Event Durations for Group ID, excluding events 0 (Food Count Event) 
-getdatHuntEventDuration <- function(strGroupID)
-{
-  
-  datDurationPerEpisodePerLarva <- (with(datHuntLabelledEventsSBMerged_filtered,
-               data.frame(DurationFrames=endFrame[groupID == strGroupID & eventID != 0]-startFrame[groupID == strGroupID & eventID != 0],
-                          expID=expID[groupID == strGroupID & eventID != 0],
-                          hidx=as.numeric(factor(expID[groupID == strGroupID & eventID != 0]))) )) ##Add hidx to use for correct prior Init in RJags
-  
-  datDurationPerEpisodePerLarva
-  
-  return (datDurationPerEpisodePerLarva)
-}
-
-##Random Init Of Chain 
-initEventDurfunct <- function(nchains,N)
-{
-  initlist <- replicate(nchains,list(r=abs(rnorm(N,3,1)), ##Base Line Vergence Prior to HuntOn
-                                     s=abs(rnorm(N,3,1)) ),
-                        simplify=FALSE)
-  
-  return(initlist)
-}
-
 ##Random Init Of Chain 
 initLarvaHuntDurfunct <- function(nchains,N)
 {
@@ -671,6 +658,8 @@ initLarvaHuntDurfunct <- function(nchains,N)
 ##Setup Data Structure To Pass To RJAgs
 plotsamples = 20
 ##Remove Rec Of No Duration ###
+### The Hunt Duration Is Discontinuous if we include the Larvae With 0 events, and this creates modelling problems 
+## Thus when Looking for Hunt Duration per larva we need to exclude the ones that did not hunt.
 datHuntVsPreyLE <- datHuntVsPreyLE[datHuntVsPreyLE[,2] > 0,]
 datHuntVsPreyNE <- datHuntVsPreyNE[datHuntVsPreyNE[,2] > 0,]
 datHuntVsPreyDE <- datHuntVsPreyDE[datHuntVsPreyDE[,2] > 0,]
@@ -679,12 +668,14 @@ datHuntVsPreyNL <- datHuntVsPreyNL[datHuntVsPreyNL[,2] > 0,]
 datHuntVsPreyDL <- datHuntVsPreyDL[datHuntVsPreyDL[,2] > 0,]
 
 
-drawDurLE <- mcmc_drawEventDurationModels(datHuntVsPreyLE,preyCntRange,"modelGroupEventDuration.tmp" )
-drawDurNE <- mcmc_drawEventDurationModels(datHuntVsPreyNE,preyCntRange,"modelGroupEventDuration.tmp" )
-drawDurDE <- mcmc_drawEventDurationModels(datHuntVsPreyDE,preyCntRange,"modelGroupEventDuration.tmp" )
-drawDurLL <- mcmc_drawEventDurationModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventDuration.tmp" )
-drawDurDL <- mcmc_drawEventDurationModels(datHuntVsPreyDL,preyCntRange,"modelGroupEventDuration.tmp" )
-drawDurNL <- mcmc_drawEventDurationModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventDuration.tmp" )
+load(file =paste(strDataExportDir,"stat_HuntDurationInPreyRange_nbinomRJags.RData",sep=""))
+
+drawDurLE <- mcmc_drawHuntDurationModels(datHuntVsPreyLE,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurNE <- mcmc_drawHuntDurationModels(datHuntVsPreyNE,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurDE <- mcmc_drawHuntDurationModels(datHuntVsPreyDE,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurLL <- mcmc_drawHuntDurationModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurDL <- mcmc_drawHuntDurationModels(datHuntVsPreyDL,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurNL <- mcmc_drawHuntDurationModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventDuration.tmp" )
 
 save(drawDurLE,drawDurNE,drawDurDE,drawDurLL,drawDurNL,drawDurDL,
      file =paste(strDataExportDir,"stat_HuntDurationInPreyRange_nbinomRJags.RData",sep=""))
@@ -692,9 +683,16 @@ save(drawDurLE,drawDurNE,drawDurDE,drawDurLL,drawDurNL,drawDurDL,
 layout(matrix(c(1,2,3,4,5,6), 3,2, byrow = FALSE))
 plotHuntDurationDistribution_cdf(datHuntVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
 plotHuntDurationDistribution_cdf(datHuntVsPreyLL,drawDurLL,colourHL[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
+                                paste("Data LL #",NROW(datHuntVsPreyLL) ),paste("Model LL ")), 
+        col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+
 
 plotHuntDurationDistribution_cdf(datHuntVsPreyNE,drawDurNE,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
 plotHuntDurationDistribution_cdf(datHuntVsPreyNL,drawDurNL,colourHL[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+legend("bottomright",legend = c(paste("Data NE #",NROW(datHuntVsPreyNE) ),paste("Model NE "),
+                                paste("Data NL #",NROW(datHuntVsPreyNL) ),paste("Model NL ")), 
+       col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 
 plotHuntDurationDistribution_cdf(datHuntVsPreyDE,drawDurDE,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
 plotHuntDurationDistribution_cdf(datHuntVsPreyDL,drawDurDL,colourHL[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
@@ -706,9 +704,6 @@ mtext(side = 1,cex=0.8, line = 2.2, " Hunt Duration per Larva (sec)")
 mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
 
 
-hist(drawDurLE$d)
-hist(drawDurNE$d)
-
 ##CHECK fIT
 plot(1:15000,dnbinom(1:15000, size=tail(drawDurLE$r,50),  prob=tail(drawDurLE$q,50)),cex=0.3,col=colourHE[2] )
 lines(density(drawDurLE$d,bw=1000 ) )
@@ -717,7 +712,74 @@ lines(density(drawDurNE$d,bw=1000 ) )
 plot(1:15000,dnbinom(1:15000, size=tail(drawDurDE$r,50),  prob=tail(drawDurDE$q,50)),cex=0.3,col=colourHE[3] )
 lines(density(drawDurDE$d,bw=1000 ) )
 
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurNL$r,50),  prob=tail(drawDurNL$q,50)),cex=0.3,col=colourHL[1] )
+lines(density(drawDurNL$d,bw=1000 ) )
+#####################################################   ############### ######################################
 
+############### Model Each Larva s Event Duration Separatelly ################################################
+###            Use The Labelled Events Register               #### ##################
+## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
+## Return Samples Drawn structure                             ########
+####### Function Returns Hunt Event Durations for Group ID, excluding events 0 (Food Count Event) 
+getdatHuntEventDuration <- function(strGroupID)
+{
+  
+  datDurationPerEpisodePerLarva <- (with(datHuntLabelledEventsSBMerged_fixed,
+                                         data.frame(DurationFrames=endFrame[groupID == strGroupID & eventID != 0]-startFrame[groupID == strGroupID & eventID != 0],
+                                                    expID=expID[groupID == strGroupID & eventID != 0],
+                                                    hidx=as.numeric(factor(expID[groupID == strGroupID & eventID != 0]))) )) ##Add hidx to use for correct prior Init in RJags
+  
+  datDurationPerEpisodePerLarva
+  
+  return (datDurationPerEpisodePerLarva)
+}
+
+##Random Init Of Chain 
+initEventDurfunct <- function(nchains,N)
+{
+  initlist <- replicate(nchains,list(r=abs(rnorm(N,3,1)), ##Base Line Vergence Prior to HuntOn
+                                     s=abs(rnorm(N,3,1)) ),
+                        simplify=FALSE)
+  
+  return(initlist)
+}
+
+
+
+mcmc_drawEventDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFilename)
+{
+  varnames1=c("d","s","r","hidx")
+  burn_in=1000;
+  steps=10000;
+  plotsamples = 200
+  thin=2;
+  chains = 3
+  
+  
+  ##Larva Event Counts Slice
+  datSliceF <- datHuntVsPrey[datHuntVsPrey[,1] >= preyCntRange[1] & datHuntVsPrey[,1] <= preyCntRange[2], ]
+  
+  datJags=list(d=datHuntVsPrey[,3],NTOT=NROW(datHuntVsPrey));
+  
+  nDat = NROW(datHuntVsPrey);
+  dataG=list(d=datHuntVsPrey$DurationFrames,NTOT=nDat,hidx=datHuntVsPrey$hidx,food=as.integer(datSliceF[,1]));
+  
+  model=jags.model(file=strModelFilename,data=dataG,n.chains=chains);
+  
+  update(model,burn_in)
+  
+  drawSamples=jags.samples(model,steps,thin=thin,variable.names=varnames1)
+  
+  return(drawSamples) 
+}
+
+
+datHE_LE <- getdatHuntEventDuration("LE")
+##
+### Cut And Examine The data Where There Are Between L and M rotifers Initially
+preyCntRange <- c(0,100)
+
+drawHD_LE<-mcmc_drawEventDurationModels (datHE_LE,preyCntRange, "modelLarvaEventDuration.tmp")
 
 hist(drawDurLE$q)
 hist(drawDurN$s)
