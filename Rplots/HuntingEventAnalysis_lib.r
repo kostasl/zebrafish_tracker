@@ -245,7 +245,7 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
           lHuntingEvents[[idxHuntRec]] <- data.frame(expID               = factor(i,levels=vexpID),
                                                      eventID             = k,
                                                      dataSetID           = factor(DataSetID,levels=vdatasetID),
-                                                     larvaID             = factor(larvaID,levels=seq(1:4)) , ##Identifies Larva Between Empty And Live Test Conditions
+                                                     larvaID             = factor(larvaID,levels=seq(1:10)) , ##Identifies Larva Between Empty And Live Test Conditions
                                                      groupID             = groupID,
                                                      fileIdx             = unique(datHuntFrames$fileIdx),
                                                      startFrame          = unlist(vHuntStartFrames),

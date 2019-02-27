@@ -155,5 +155,65 @@ findLabelledEvent <- function (EventRegisterRec)
   return(recs)
 }
 
+### 
+##################################### FIX Missing EXPID / Larvae From Hunt Event List #####################
+## Notes: I discovered that when Ploting hunt event counts, the total number of larvae in each group was lower than expected - ie, 51 instead of at least
+## 60 larvae per group. In the eventList used for labelling I had added for this reason eventID = 0, as a record so all larvae appear even if they produced no Hunt events.
+## However, there were still some missing. The code below runs HuntEvent Redection, looks for the missing records and Merges with the existing File and Adds the Hunt Events As required.
+source("HuntingEventAnalysis_lib.r")
+load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/")) ##Raw Data Tracker Frames 
+load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
+message(paste(" Loading Hunt Event List to Analyse... "))
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
+##Make A copy 
+datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged[!is.na(datHuntLabelledEventsSBMerged$groupID),]
+
+
+
+### LOAD Imported Data Sets - Starting From firstDataSet
+##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
+firstDataSet = NROW(strDataSetDirectories)-14
+lastDataSet = NROW(strDataSetDirectories)
+dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
+
+##For Some Reason Eventlist Does not have an event0 for all missing (non BHunting) Experiments 
+
+##For Some Reason Eventlist Does not have an event0 for all missing (non BHunting) Experiments 
+## I Needed to Fix With Adding 0 Events
+vExpIDS <- list() ## The Source
+vExpIDT <- list() ##The Target                                                                   
+vExpIDS[["NE"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "NE",]$expID))
+vExpIDS[["NL"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "NL",]$expID))
+vExpIDS[["LE"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "LE",]$expID))
+vExpIDS[["LL"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "LL",]$expID))
+vExpIDS[["DE"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "DE",]$expID))
+vExpIDS[["DL"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "DL",]$expID))
+
+##Obtain ExpID Found In HuntEvent List For Each Group 
+for (g in names(vExpIDS))
+{
+  
+  datHuntEvent = detectHuntEvents(datAllFrames[datAllFrames$groupID == g,],vExpIDS[[g]],dataSetsToProcess)
+  if (NROW(datHuntEvent[is.na(datHuntEvent$larvaID),]$larvaID ) > 0)
+    datHuntEvent[is.na(datHuntEvent$larvaID),]$larvaID <- 5 ##Fix Unaccounted for LarvaID
+  datHuntEvent$filenames = "." ##Add The Filename Field 
+  vExpIDT[[g]] <- levels(factor(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$groupID == g,]$expID))  ##Get LIst Of ExpID already In EventList
+  datMissingRecs <- datHuntEvent[!(datHuntEvent$expID %in%  vExpIDT[[g]]),] ##Get List Of Missing Records compared to the newly detected/processed HuntEvents
+  
+  message(paste("*Before Merge:Hunt Events List Has  N: ",NROW(table(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$groupID == g,]$expID)),
+                " Larvae in ",g) )
+  datHuntLabelledEventsSBMerged_fixed <- rbind(datHuntLabelledEventsSBMerged_fixed,datMissingRecs)
+  
+  message(paste("*After Merge:Hunt Events List Now Accounts for N: ",NROW(table(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$groupID == g,]$expID)),
+                " Larvae in ",g) )
+}
+
+##Save the Update List
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2"
+saveRDS(datHuntLabelledEventsSBMerged_fixed,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+################ The
 

@@ -58,13 +58,14 @@ for(j in 1:NTOT){
 
 
 ## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
+## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
 ## Give geometric
 modelGEventRateGeom="model { 
 q ~ dunif(0.0,1)
 r ~ dgamma(1,1)
 
 for(j in 1:NTOT){
-  n[j] ~  dnegbin(q,r) ##R=1 for Geometric
+  n[j] ~  dnegbin(q,r) ##Model Number Of Hunt Events Per LArvae
   }
 }"
 
@@ -78,8 +79,8 @@ close(fileConn)
 
 
 #####
-##Models Each Larva in the population of group Individually 
-modelGEventDuration="model { 
+##Models Each Event in the population of larvaer Individually 
+modelEventDuration="model { 
 
 for(j in 1:NTOT){
   d[j] ~ dgamma(s[hidx[j]],r[hidx[j]])
@@ -94,10 +95,31 @@ for (l in 1:max(hidx))
 
 }"
 
+
 library(rjags)
-strModelName = "modelGroupEventDuration.tmp"
+strModelName = "modelLarvaEventDuration.tmp"
 fileConn=file(strModelName)
-writeLines(modelGEventDuration,fileConn);
+writeLines(modelEventDuration,fileConn);
+close(fileConn)
+
+## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
+## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
+## Give Neg Binomial
+modelLarvaHuntDuration="model { 
+q ~ dunif(0.0,1)
+r ~ dgamma(1,1)
+
+for(j in 1:NTOT){
+  d[j] ~  dnegbin(q,r) ##Number Of Hunt Frames Per Larva
+  #d[j] ~ dweib(r, mu) ##dweib(v, lambda)
+  }
+}"
+
+
+library(rjags)
+strModelName = "modelLarvaHuntDuration.tmp"
+fileConn=file(strModelName)
+writeLines(modelLarvaHuntDuration,fileConn);
 close(fileConn)
 
 
@@ -179,7 +201,7 @@ plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,n
 ## Compare Model TO Data Using CDF ##
 plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples=100,newPlot = FALSE)
 {
-  XLim <- 50
+  XLim <- 80
   x <- seq(0,XLim,1)
 
   cdfD_N <- ecdf(datHEventCount[,2])
@@ -237,32 +259,97 @@ plotEventCountDistribution_hist <- function(datHEventCount,drawHEvent,lcolour,HL
   mtext(side = 2, line = 2.1, 'P(s)')
   
 }
+
 ## Plots The Spontaneous and Invoked Hunt Rates, Inferred via the gamma given by the -ve binomial
-plotGammaHuntRates <- function(x,HEventHuntGammaShape,HEventHuntGammaRate,lcolour,plotsamples,bnewPlot=FALSE)
+plotGammaHuntRates <- function(x,HEventHuntGammaShape,HEventHuntGammaRate,lcolour,plotsamples,lineType=1,bnewPlot=FALSE)
 {
   schain <- 1:3
   if (bnewPlot)
-    plot(x,dgamma(x,rate=HEventHuntGammaShape[1,1],HEventHuntGammaRate[1,1]),main="",xlab=NA,ylab=NA,
-       xlim=c(0,40),ylim=c(0,0.8),col=lcolour)
+    plot(x,(dgamma(x,shape=HEventHuntGammaShape[1,1],rate=HEventHuntGammaRate[1,1]) ),main="",xlab=NA,ylab=NA,
+       xlim=c(0,15),ylim=c(0,0.5),col=lcolour,type="l",lwd=1, lty=lineType)
 
   for (c in schain)
   {
     for (i in 1:plotsamples)
     {
-      lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[1],lwd=1, lty=1)
+      lines(x, ( dgamma(x,shape=HEventHuntGammaShape[i,c],rate=HEventHuntGammaRate[i,c]) ) ,col=lcolour[1],lwd=1, lty=lineType)
       #lines(x,dgamma(x,rate=HEventHuntGammaShape[i,c],HEventHuntGammaRate[i,c]),col=lcolour[2],lwd=3,lty=3)
     }
   }
 }
   
+
+## Box Plot Assist To Connect Individual Hunt Event Counts Between Empty (Spontaneous) and Live Test Conditions (Evoked) 
+## For Each Larva Experiment
+plotConnectedEventCounts <- function(datHuntStat,strCondTags)
+{
+  
+  ### Plot Connected Larva Event Counts - To Show Individual Behaviour In Spontaneous Vs Evoked Activity
+  for (gIdx in seq(1,NROW(strCondTags),2)  ) ##Iterated Through LF DF And NF Groups
+  {
+    gE <- strCondTags[gIdx] ##Empty Condution
+    gL <- strCondTags[gIdx+1] ##With ROtifers Test Condition 
+    vRegL <- datHuntStat[,"vIDLookupTable"][[gL]]
+    vRegE <- datHuntStat[,"vIDLookupTable"][[gE]]
+    
+    ## Fix Missing LarvaID: REMOVE FActor Field / Set NAs Which Are really ID 5
+    vRegL[,"larvaID"] <- as.numeric(vRegL[,"larvaID"])
+    vRegE[,"larvaID"] <- as.numeric(vRegE[,"larvaID"])
+    vRegL[is.na(vRegL$larvaID),"larvaID"] <- 5 
+    vRegE[is.na(vRegE$larvaID),"larvaID"] <- 5
+    
+    ## Drop Factors To Skip Errors 
+    vRegL[,"dataSetID"] <- as.numeric(vRegL[,"dataSetID"])
+    vRegE[,"dataSetID"] <- as.numeric(vRegE[,"dataSetID"])
+    
+    datSetID <- levels(vIDTable[[gE]]$dataSetID) #[ vIDTable[[gE]]$dataSetID[  vIDTable[[gE]]$larvaID == vIDTable[[gL]]$larvaID &
+    #vIDTable[[gE]]$dataSetID == vIDTable[[gL]]$dataSetID] ]
+    for (k in 1:NROW(vRegE) )
+    {
+      e <- vRegE[k,]
+      
+      ptSrc  <- vDat[[gE]][which(names(vDat[[gE]]) == e$expID) ]##Get Idx for Event Count from Specificed Experiment, and retrieve Event Count At Empty 
+      ##Find the Live Test for this Larva, Via the Larva ID dataset ID combination
+      LivePairExp <-(vRegL[vRegL$dataSetID == e$dataSetID & vRegL$larvaID == e$larvaID,])
+      if (NROW(LivePairExp) == 0)
+        next() ##Skip If Matched LiveTest Larva Is not Found
+      
+      message(e$expID)
+      
+      ptDest <- vDat[[gL]][which(names(vDat[[gL]]) %in% LivePairExp$expID) ]
+      
+      
+      ##Plot The Lines Connect Each Empty Tested Larva With Itself In THe Live Fed Conditions 
+      #Do not Plot NA connecting line
+      idxSrc  <- match(gE,strCondTags) ##Bar Center Idx for Each Condition E. Fed
+      idxDest <- match(gL ,strCondTags)           
+      
+      points(idxSrc,log10(ptSrc+1),pch=1,
+             col=colourP[4],cex=1 )
+      for (pIDest in ptDest) ##Sometimes there are Multiple Live Tests for an Empty One
+        points(idxDest,log10(pIDest+1),pch=1, col=colourP[4],cex=1 )
+      
+      segments(gIdx,log10(ptSrc+1),gIdx+1,log10(ptDest+1) ,col=colourP[4])
+      
+      
+    }##For Each Experiment
+    
+  } ## Go Through Pairs Of Conditions ##
+}##End Of Function ConnectEventPoints
+
   
 fromchain=1000
 
 #nLL1=read.table("Stats/mcmc/testLL.dat")$Freq
 #nNL1=read.table("Stats/mcmc/testNL.dat")$Freq
 #nDL1=read.table("Stats/mcmc/testDL.dat")$Freq
+## Load PreCalc Draws From Model ?? ##
+load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
 
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
+############ LOAD EVENTS LIst and Fix ####
+## Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
+## Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2" 
 
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
@@ -273,10 +360,26 @@ datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
                 with(datHuntLabelledEventsSBMerged, ( convertToScoreLabel(huntScore) != "Not_HuntMode/Delete" &
                                                                  convertToScoreLabel(huntScore) != "Duplicate/Overlapping" &
                                                                   (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
-                                                                   eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
-                                                                   
-datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID),]
-datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_filtered)
+                                                                       eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
+
+##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
+#AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
+vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
+vWeirdDataSetID <- c(11,17,18,19)
+##Check For Missing Exp Less than 24 
+for (dID in vWeirdDataSetID )
+  print(NROW(unique(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$dataSetID ==  dID ,]$expID)))
+
+datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID) & 
+                                                                                !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
+
+################# # ## # # 
+
+
+
+## Get Summarized Hunt Results Per Larva ####
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+
 
 ## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##
 ## Added Larva ID to Check for Correlation Through Time of Day - Surrogate as LarvaID;s increased through the day of the experiment from 1-4
@@ -300,7 +403,7 @@ datHuntVsPreyDE <- datHuntVsPreyDE[!is.na(datHuntVsPreyDE[,1]),] ##Remove NA And
 
 ## Check Number of Hunt Events For A LarvaID 
 vEventCount <- vector()
-datHuntVsPreyC <- datHuntVsPreyD ##Check Which Group
+datHuntVsPreyC <- datHuntVsPreyDL ##Check Which Group
 for (i in 1:4)
 {
   vEventCount[i] <- ( sum(datHuntVsPreyC[ datHuntVsPreyC[,4] == i & !is.na(datHuntVsPreyC[,4]) ,2] ) )
@@ -318,31 +421,21 @@ drawLE2 <- mcmc_drawEventCountModels(datHuntVsPreyLE,preyCntRange,"modelGroupEve
 drawNE2 <- mcmc_drawEventCountModels(datHuntVsPreyNE,preyCntRange,"modelGroupEventRate.tmp")
 drawDE2 <- mcmc_drawEventCountModels(datHuntVsPreyDE,preyCntRange,"modelGroupEventRate.tmp")
 
-#### DEBUG CODE - Fitting An EXP Distribution TEST ###
-f1L <- fitdist( datHuntVsPreyLL[,2],"exp")
-plot(f1L,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f1D <- fitdist( datHuntVsPreyDL[,2],"exp");
-plot(f1D,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f1N <- fitdist( datHuntVsPreyNL[,2],"exp");
-plot(f1N,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-##### ### 
-f2D <- fitdist( datHuntVsPreyDL[,2],"nbinom",lower = c(0, 0))
-plot(f2D) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f2N <- fitdist( datHuntVsPreyNL[,2],"nbinom",lower = c(0, 0)) ##,start = list(scale = 1, shape = 1)
-plot(f2N) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-f2L <- fitdist( datHuntVsPreyLL[,2],"nbinom",lower = c(0, 0)) #,start = list(scale = 1, shape = 1)
-plot(f2L) #,start = list(scale = 1, shape = 1) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
-## ########
+save(drawLL2,drawNL2,drawDL2,drawLE2,drawNE2,drawDE2,file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
 
 
 ### Draw Distribution oF Hunt Rates - 
 ## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
-HEventHuntGammaRate_LE <-((1-tail(drawLE2$q[,,schain],plotsamples))/tail(drawLE2$q[,,schain],plotsamples));
-HEventHuntGammaRate_LL <-((1-tail(drawLL2$q[,,schain],plotsamples))/tail(drawLL2$q[,,schain],plotsamples));
-HEventHuntGammaRate_DE <- ((1-tail(drawDE2$q[,,schain],plotsamples))/tail(drawDE2$q[,,schain],plotsamples));
-HEventHuntGammaRate_DL <- ((1-tail(drawDL2$q[,,schain],plotsamples))/tail(drawDL2$q[,,schain],plotsamples));      
-HEventHuntGammaRate_NE <- ((1-tail(drawNE2$q[,,schain],plotsamples))/tail(drawNE2$q[,,schain],plotsamples));
-HEventHuntGammaRate_NL <- ((1-tail(drawNL2$q[,,schain],plotsamples))/tail(drawNL2$q[,,schain],plotsamples));      
+plotsamples <- 15
+schain <-1:3
+
+### The Prob Of Success p from NegBinom translates to Gamma Rate p/(1-p), or scale: (1-p)/p
+HEventHuntGammaRate_LE <-tail(drawLE2$q[,,schain],plotsamples)/(1-tail(drawLE2$q[,,schain],plotsamples));
+HEventHuntGammaRate_LL <-tail(drawLL2$q[,,schain],plotsamples)/(1-tail(drawLL2$q[,,schain],plotsamples));
+HEventHuntGammaRate_DE <- tail(drawDE2$q[,,schain],plotsamples)/(1-tail(drawDE2$q[,,schain],plotsamples));
+HEventHuntGammaRate_DL <- (tail(drawDL2$q[,,schain],plotsamples)/(1-tail(drawDL2$q[,,schain],plotsamples)));      
+HEventHuntGammaRate_NE <- (tail(drawNE2$q[,,schain],plotsamples)/(1-tail(drawNE2$q[,,schain],plotsamples)));
+HEventHuntGammaRate_NL <- (tail(drawNL2$q[,,schain],plotsamples)/(1-tail(drawNL2$q[,,schain],plotsamples)));      
 HEventHuntGammaShape_LE <- tail(drawLE2$r[,,schain],plotsamples);
 HEventHuntGammaShape_LL <- tail(drawLL2$r[,,schain],plotsamples)
 HEventHuntGammaShape_DE <- tail(drawDE2$r[,,schain],plotsamples);
@@ -350,62 +443,121 @@ HEventHuntGammaShape_DL <- tail(drawDL2$r[,,schain],plotsamples)
 HEventHuntGammaShape_NE <- tail(drawNE2$r[,,schain],plotsamples);
 HEventHuntGammaShape_NL <- tail(drawNL2$r[,,schain],plotsamples)
 
+pBW = 0.8
+densHPoissonRate_LL <- density( HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL,bw=pBW)
+densHPoissonRate_LE <- density( HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE,bw=pBW)
+densHPoissonRate_DE <- density( HEventHuntGammaShape_DE*1/HEventHuntGammaRate_DE,bw=pBW)
+densHPoissonRate_DL <- density( HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL,bw=pBW)
+densHPoissonRate_NE <- density( HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE,bw=pBW)
+densHPoissonRate_NL <- density( HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL,bw=pBW)
+
+##Debug
+#plot(x,log(dgamma(x,shape=HEventHuntGammaShape_LL[1,1],rate=HEventHuntGammaRate_LL[1,1])) ,main="",xlab=NA,ylab=NA,col=colourHL[2],type="l",lwd=1, lty=1)
+#lines(x,log(dgamma(x,shape=HEventHuntGammaShape_LE[1,1],rate=HEventHuntGammaRate_LE[1,1])) ,main="",xlab=NA,ylab=NA,col=colourHL[2],type="l",lwd=1, lty=2)
+
+
+
+Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(datHuntVsPreyNL[,2])[2])
+x <- seq(0.01,Plim,0.05)
+
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
-pdf(file= paste(strPlotExportPath,"/stat/stat_LiveFoodTestHuntEventCounts",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/stat_ComparePoissonHuntRates",".pdf",sep=""))
 ##Now Plot Infered Distributions
-Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(datHuntVsPreyNL[,2])[2])
-x <- seq(0,Plim,0.1)
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
-plotsamples <- 200
-layout(matrix(c(1,2,3,7,4,5,6,7), 4,2, byrow = FALSE))
+
+layout(matrix(c(1,2,3,4,5,6,7), 3,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,3.01,1,1))
+par(mar = c(3.9,3.3,1,1))
 lineTypeL[1] <- 1
 plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyNL,drawNL2,colourHL[1],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
 legend("bottomright",legend = c(paste("Data NE #",NROW(datHuntVsPreyNE) ),paste("Model NE "),
                                 paste("Data NL #",NROW(datHuntVsPreyNL) ),paste("Model NL ")), 
-       col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
+       col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyLE,drawLE2,colourHE[2],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyLL,drawLL2,colourHL[2],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
 legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
                                 paste("Data LL #",NROW(datHuntVsPreyLL) ),paste("Model LL ")), 
-      col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
+      col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE  )
 plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE  )
-legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyLE) ),paste("Model DE "),
-                                paste("Data DL #",NROW(datHuntVsPreyLL) ),paste("Model DL ")), 
-       col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=4,cex=1.1,bg="white" )
-mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
+legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyDE) ),paste("Model DE "),
+                                paste("Data DL #",NROW(datHuntVsPreyDL) ),paste("Model DL ")), 
+       col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+mtext(side = 1,cex=0.8, line = 2.2, "Event Counts (N)")
 mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
+
+
+
+pchL <- c(1,2,0,16,17,15)
+### Plot GAMMA Parameters Space
+Xlim <- 50
+plot(1/HEventHuntGammaRate_NE,HEventHuntGammaShape_NE,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
+points(1/HEventHuntGammaRate_LE,HEventHuntGammaShape_LE,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
+points(1/HEventHuntGammaRate_DE,HEventHuntGammaShape_DE,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
+points(1/HEventHuntGammaRate_NL,HEventHuntGammaShape_NL,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[4])
+points(1/HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[5])
+points(1/HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[6])
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste(Gamma, " scale (r)") ) )
+mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
+legend("topright",legend = c(paste("NE" ),
+                             paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
+       col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
+###
+
+## BoxPlot of Hunt Event Counts - 
+strCondTags <- c("NE","NL","LE","LL","DE","DL")
+xbarcenters <- boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
+        main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2),axes = FALSE  )
+mtext(side = 2,cex=0.8, line =2.2, "Hunt Counts  log(N+1) ")
+vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
+vDat        <- (datHuntStat[,"vHLarvaEventCount"])
+
+axis(1,at<-axis(1,labels=NA), labels=strCondTags)
+yticks <-axis(2,labels=NA)
+axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
+## Connect Larvae From EMpty To LIve Test Condition #
+plotConnectedEventCounts(datHuntStat,strCondTags)
+
 
 ## Compare Distrib Of Model Params ##
 schain <- 1:3
 Ylim <- 3 
 pBW <- 0.001
 
-#### Plot Gamma Distributions Of Hunt Rates From Which Hunt Event Counts where Drawn 
 
-plotsamples <- 35
+Ylim <- 0.5
+plot(densHPoissonRate_NL$x, densHPoissonRate_NL$y,type='l',xlim=c(0,25),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourHL[1],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_LL$x, densHPoissonRate_LL$y,type='l',lty=lineTypeL[2],col=colourHL[2],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_DL$x, densHPoissonRate_DL$y,type='l',lty=lineTypeL[1],col=colourHL[3],lwd=4,ylab=NA,xlab=NA)
 
-plotGammaHuntRates(x,HEventHuntGammaShape_NL,HEventHuntGammaRate_NL,colourHL[1],plotsamples,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_NE,HEventHuntGammaRate_NE,colourR[4],plotsamples,FALSE)
-plotGammaHuntRates(x,HEventHuntGammaShape_LL,HEventHuntGammaRate_LL,c(colourHL[2]),plotsamples,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_LE,HEventHuntGammaRate_LE,c(colourR[4]),plotsamples,FALSE)
-plotGammaHuntRates(x,HEventHuntGammaShape_DL,HEventHuntGammaRate_DL,c(colourHL[3]),plotsamples,TRUE)
-plotGammaHuntRates(x,HEventHuntGammaShape_DE,HEventHuntGammaRate_DE,c(colourR[4]),plotsamples,FALSE)
-mtext(side = 1,cex=0.8, line = 2.2, "Hunt Event Counts (N)")
+lines(densHPoissonRate_NE$x, densHPoissonRate_NE$y,type='l',lty=lineTypeL[3],col=colourHL[1],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_LE$x, densHPoissonRate_LE$y,type='l',lty=lineTypeL[3],col=colourHL[2],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_DE$x, densHPoissonRate_DE$y,type='l',lty=lineTypeL[3],col=colourHL[3],lwd=4,ylab=NA,xlab=NA)
 
+legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Poisson Hunt Rate  (",lambda," )") )  )
+mtext(side = 2,cex=0.8, line = 2.2, " P(x) ")
 
-##BoxPlot
-boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
-        main=NA,notch=TRUE,col=colourD,names=c("NE","NL","LE","LL","DE","DL"),ylim=c(0,2.5)  )
-mtext(side = 2,cex=0.8, line =2.2, "Hunt Counts log(N+0.1) ")
 
 dev.off() 
 ################## ############# ### # # 
+# legend("topright",legend = c(paste("NF " ),paste("LF ") ,paste("DF ") ) ,
+#        col=colourL,lty=lineTypeL,lwd=3,seg.len=3,cex=1.1)
+
+
+
+#### Plot Gamma Distributions Of Hunt Rates From Which Hunt Event Counts where Drawn 
+#plotGammaHuntRates(x,HEventHuntGammaShape_NE,HEventHuntGammaRate_NE,colourHE[1],plotsamples,2,TRUE)
+#plotGammaHuntRates(x,HEventHuntGammaShape_NL,HEventHuntGammaRate_NL,colourHL[1],plotsamples,1,FALSE)
+#legend("topright",legend = c(paste("Spontaneous (NE)" ),paste("Evoked (NL)")), col=c(colourHE[1], colourHL[1]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
+#plotGammaHuntRates(x,HEventHuntGammaShape_LE,HEventHuntGammaRate_LE,c(colourHE[2]),plotsamples,2,TRUE)
+#plotGammaHuntRates(x,HEventHuntGammaShape_LL,HEventHuntGammaRate_LL,c(colourHL[2]),plotsamples,1,FALSE)
+#legend("topright",legend = c(paste("Spontaneous (LE)" ),paste("Evoked (LL)")), col=c(colourHE[2], colourHL[2]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
+#plotGammaHuntRates(x,HEventHuntGammaShape_DE,HEventHuntGammaRate_DE,c(colourHE[3]),plotsamples,2,TRUE)
+#plotGammaHuntRates(x,HEventHuntGammaShape_DL,HEventHuntGammaRate_DL,c(colourHL[3]),plotsamples,1,FALSE)
 
 
 # ## Compare Distrib Of Model Params ##
@@ -424,6 +576,8 @@ dev.off()
 #        col=colourL,lty=lineTypeL,lwd=3,seg.len=3,cex=1.1)
 
 
+
+
 ############## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ########################
 #### Plot Duration Of Eye Vergence Frames Per Larva - Time Spent Hunting Per Larva ###
 ## Note: I do not have enough data points per larvae, so as to make a model for both 
@@ -431,22 +585,63 @@ dev.off()
 ## Statistics of overall duration per larva, and statistic of individual 
 ######                Hunt Event Duration                                 ############
 
-####### Function Returns Hunt Event Durations for Group ID, excluding events 0 (Food Count Event) 
-getdatHuntDuration <- function(strGroupID)
+## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
+## Return Samples Drawn structure
+mcmc_drawHuntDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFilename)
 {
+  varnames1=c("d","q","r")
+  burn_in=1000;
+  steps=100000;
+  plotsamples = 10000
+  thin=2;
+  chains = 3
   
-  datDurationPerEpisodePerLarva <- (with(datHuntLabelledEventsSBMerged_filtered,
-               data.frame(DurationFrames=endFrame[groupID == strGroupID & eventID != 0]-startFrame[groupID == strGroupID & eventID != 0],
-                          expID=expID[groupID == strGroupID & eventID != 0],
-                          hidx=as.numeric(factor(expID[groupID == strGroupID & eventID != 0]))) )) ##Add hidx to use for correct prior Init in RJags
   
-  datDurationPerEpisodePerLarva
+  ##Larva Event Counts Slice
+  datSliceF <- datHuntVsPrey[datHuntVsPrey[,1] >= preyCntRange[1] & datHuntVsPrey[,1] <= preyCntRange[2], ]
+
+  datJags=list(d=datHuntVsPrey[,3],NTOT=NROW(datHuntVsPrey));
+
+  nDat = NROW(datHuntVsPrey);
+  dataG=list(d=datHuntVsPrey[,3],NTOT=nDat,food=as.integer(datSliceF[,1]));
   
-  return (datDurationPerEpisodePerLarva)
+  model=jags.model(file=strModelFilename,data=dataG,n.chains=chains);
+  
+  update(model,burn_in)
+  
+  drawSamples=jags.samples(model,steps,thin=thin,variable.names=varnames1)
+  
+  return(drawSamples) 
 }
 
+
+
+## Compare Model TO Data Using CDF ##
+plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples=100,newPlot = FALSE)
+{
+  XLim <- G_APPROXFPS*180
+  x <- seq(0,XLim,1)
+  
+  cdfD_N <- ecdf(datHDuration[,3]/G_APPROXFPS)
+  
+  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim/G_APPROXFPS),
+       ylim=c(0,1),cex=1.5,cex.lab=1.5,add=!newPlot)
+  ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
+  for (c in 1:NROW(drawHEvent$q[1,1,])) {
+    for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
+    {
+      cdfM <- dnbinom(x,size=drawHEvent$r[,j,c],prob=  drawHEvent$q[,j,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      lines(x/G_APPROXFPS,cumsum(cdfM),col=lcolour,lty=lty) #add=TRUE,
+    }
+  }
+  plot(cdfD_N,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim/G_APPROXFPS),ylim=c(0,1),cex=1.5,cex.lab=1.5,add=TRUE)
+
+}
+
+
+
 ##Random Init Of Chain 
-initDurfunct <- function(nchains,N)
+initLarvaHuntDurfunct <- function(nchains,N)
 {
   initlist <- replicate(nchains,list(r=abs(rnorm(N,3,1)), ##Base Line Vergence Prior to HuntOn
                                      s=abs(rnorm(N,3,1)) ),
@@ -456,50 +651,141 @@ initDurfunct <- function(nchains,N)
 }
 
 
-## Make DataStruct With Durations for each group - Exclude Event 0 ###
-datHDuration_LE <- getdatHuntDuration("LE")
-datHDuration_NE <- getdatHuntDuration("NE")
-datHDuration_DE <- getdatHuntDuration("DE")
 
-datHDuration_L <- datHDuration_LE
-datHDuration_N <- datHDuration_NE
-datHDuration_D <- datHDuration_DE
+## Make DataStruct With Hunt Durations of Each Larva of a group - Exclude Event 0 ###
 
 ## Baysian Inference Fiting a Gamma distribution to the Hunt Event Duration Data ##
 ##Setup Data Structure To Pass To RJAgs
-varnames1=c("d","s","r","hidx")
-burn_in=1000;
-steps=10000;
-plotsamples = 2000
-thin=2;
-chains = 3
+plotsamples = 20
+##Remove Rec Of No Duration ###
+### The Hunt Duration Is Discontinuous if we include the Larvae With 0 events, and this creates modelling problems 
+## Thus when Looking for Hunt Duration per larva we need to exclude the ones that did not hunt.
+datHuntVsPreyLE <- datHuntVsPreyLE[datHuntVsPreyLE[,2] > 0,]
+datHuntVsPreyNE <- datHuntVsPreyNE[datHuntVsPreyNE[,2] > 0,]
+datHuntVsPreyDE <- datHuntVsPreyDE[datHuntVsPreyDE[,2] > 0,]
+datHuntVsPreyLL <- datHuntVsPreyLL[datHuntVsPreyLL[,2] > 0,]
+datHuntVsPreyNL <- datHuntVsPreyNL[datHuntVsPreyNL[,2] > 0,]
+datHuntVsPreyDL <- datHuntVsPreyDL[datHuntVsPreyDL[,2] > 0,]
 
-datJagsLE=list(d=datHDuration_LE$DurationFrames/G_APPROXFPS,NTOT=NROW(datHDuration_LE),hidx=datHDuration_LE$hidx);
-datJagsNE=list(d=datHDuration_NE$DurationFrames/G_APPROXFPS,NTOT=NROW(datHDuration_NE),hidx=datHDuration_NE$hidx);
-datJagsDE=list(d=datHDuration_DE$DurationFrames/G_APPROXFPS,NTOT=NROW(datHDuration_DE),hidx=datHDuration_DE$hidx);
 
-mDurLE=jags.model(file="modelGroupEventDuration.tmp",data=datJagsLE,n.chains=chains,inits=initDurfunct(chains,max(unique(datJagsLE$hidx) )));
-mDurNE=jags.model(file="modelGroupEventDuration.tmp",data=datJagsNE,n.chains=chains,inits=initDurfunct(chains,max(unique(datJagsNE$hidx) )));
-mDurDE=jags.model(file="modelGroupEventDuration.tmp",data=datJagsDE,n.chains=chains,inits=initDurfunct(chains,max(unique(datJagsDE$hidx) )));
+load(file =paste(strDataExportDir,"stat_HuntDurationInPreyRange_nbinomRJags.RData",sep=""))
 
-update(mDurLE,burn_in)
-update(mDurNE,burn_in)
-update(mDurDE,burn_in)
+drawDurLE <- mcmc_drawHuntDurationModels(datHuntVsPreyLE,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurNE <- mcmc_drawHuntDurationModels(datHuntVsPreyNE,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurDE <- mcmc_drawHuntDurationModels(datHuntVsPreyDE,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurLL <- mcmc_drawHuntDurationModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurDL <- mcmc_drawHuntDurationModels(datHuntVsPreyDL,preyCntRange,"modelGroupEventDuration.tmp" )
+drawDurNL <- mcmc_drawHuntDurationModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventDuration.tmp" )
 
-drawDurL=jags.samples(mDurLE,steps,thin=thin,variable.names=varnames1)
-drawDurN=jags.samples(mDurNE,steps,thin=thin,variable.names=varnames1)
-drawDurD=jags.samples(mDurDE,steps,thin=thin,variable.names=varnames1)
+save(drawDurLE,drawDurNE,drawDurDE,drawDurLL,drawDurNL,drawDurDL,
+     file =paste(strDataExportDir,"stat_HuntDurationInPreyRange_nbinomRJags.RData",sep=""))
 
 layout(matrix(c(1,2,3,4,5,6), 3,2, byrow = FALSE))
-hist(drawDurL$r)
-hist(drawDurN$r)
-hist(drawDurD$r)
+plotHuntDurationDistribution_cdf(datHuntVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntVsPreyLL,drawDurLL,colourHL[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
+                                paste("Data LL #",NROW(datHuntVsPreyLL) ),paste("Model LL ")), 
+        col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 
-hist(drawDurL$s)
+
+plotHuntDurationDistribution_cdf(datHuntVsPreyNE,drawDurNE,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntVsPreyNL,drawDurNL,colourHL[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+legend("bottomright",legend = c(paste("Data NE #",NROW(datHuntVsPreyNE) ),paste("Model NE "),
+                                paste("Data NL #",NROW(datHuntVsPreyNL) ),paste("Model NL ")), 
+       col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+
+plotHuntDurationDistribution_cdf(datHuntVsPreyDE,drawDurDE,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntVsPreyDL,drawDurDL,colourHL[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+
+legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyDE) ),paste("Model DE "),
+                                paste("Data DL #",NROW(datHuntVsPreyDL) ),paste("Model DL ")), 
+       col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+mtext(side = 1,cex=0.8, line = 2.2, " Hunt Duration per Larva (sec)")
+mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
+
+
+##CHECK fIT
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurLE$r,50),  prob=tail(drawDurLE$q,50)),cex=0.3,col=colourHE[2] )
+lines(density(drawDurLE$d,bw=1000 ) )
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurNE$r,50),  prob=tail(drawDurNE$q,50)),cex=0.3,col=colourHE[1] )
+lines(density(drawDurNE$d,bw=1000 ) )
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurDE$r,50),  prob=tail(drawDurDE$q,50)),cex=0.3,col=colourHE[3] )
+lines(density(drawDurDE$d,bw=1000 ) )
+
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurNL$r,50),  prob=tail(drawDurNL$q,50)),cex=0.3,col=colourHL[1] )
+lines(density(drawDurNL$d,bw=1000 ) )
+#####################################################   ############### ######################################
+
+############### Model Each Larva s Event Duration Separatelly ################################################
+###            Use The Labelled Events Register               #### ##################
+## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
+## Return Samples Drawn structure                             ########
+####### Function Returns Hunt Event Durations for Group ID, excluding events 0 (Food Count Event) 
+getdatHuntEventDuration <- function(strGroupID)
+{
+  
+  datDurationPerEpisodePerLarva <- (with(datHuntLabelledEventsSBMerged_fixed,
+                                         data.frame(DurationFrames=endFrame[groupID == strGroupID & eventID != 0]-startFrame[groupID == strGroupID & eventID != 0],
+                                                    expID=expID[groupID == strGroupID & eventID != 0],
+                                                    hidx=as.numeric(factor(expID[groupID == strGroupID & eventID != 0]))) )) ##Add hidx to use for correct prior Init in RJags
+  
+  datDurationPerEpisodePerLarva
+  
+  return (datDurationPerEpisodePerLarva)
+}
+
+##Random Init Of Chain 
+initEventDurfunct <- function(nchains,N)
+{
+  initlist <- replicate(nchains,list(r=abs(rnorm(N,3,1)), ##Base Line Vergence Prior to HuntOn
+                                     s=abs(rnorm(N,3,1)) ),
+                        simplify=FALSE)
+  
+  return(initlist)
+}
+
+
+
+mcmc_drawEventDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFilename)
+{
+  varnames1=c("d","s","r","hidx")
+  burn_in=1000;
+  steps=10000;
+  plotsamples = 200
+  thin=2;
+  chains = 3
+  
+  
+  ##Larva Event Counts Slice
+  datSliceF <- datHuntVsPrey[datHuntVsPrey[,1] >= preyCntRange[1] & datHuntVsPrey[,1] <= preyCntRange[2], ]
+  
+  datJags=list(d=datHuntVsPrey[,3],NTOT=NROW(datHuntVsPrey));
+  
+  nDat = NROW(datHuntVsPrey);
+  dataG=list(d=datHuntVsPrey$DurationFrames,NTOT=nDat,hidx=datHuntVsPrey$hidx,food=as.integer(datSliceF[,1]));
+  
+  model=jags.model(file=strModelFilename,data=dataG,n.chains=chains);
+  
+  update(model,burn_in)
+  
+  drawSamples=jags.samples(model,steps,thin=thin,variable.names=varnames1)
+  
+  return(drawSamples) 
+}
+
+
+datHE_LE <- getdatHuntEventDuration("LE")
+##
+### Cut And Examine The data Where There Are Between L and M rotifers Initially
+preyCntRange <- c(0,100)
+
+drawHD_LE<-mcmc_drawEventDurationModels (datHE_LE,preyCntRange, "modelLarvaEventDuration.tmp")
+
+hist(drawDurLE$q)
 hist(drawDurN$s)
 hist(drawDurD$s)
 
-plot(tail(drawDurL$r,1000), tail(drawDurL$s,1000),ylim=c(0,200))
+plot(tail(drawDurLE$r,1000), tail(drawDurLE$s,1000),ylim=c(0,200))
 plot(tail(drawDurD$r,1000), tail(drawDurD$s,1000),ylim=c(0,200))
 plot(tail(drawDurN$r,1000), tail(drawDurN$s,1000),ylim=c(0,200))
 
@@ -565,3 +851,29 @@ dev.off()
 
 #points(x/G_APPROXFPS,dgamma(x,rate=drawDurDE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurDE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="DE",xlim=c(0,6),col=colourR[1] ) 
 #points(x/G_APPROXFPS,dgamma(x,rate=drawDurNE$r[,(steps/thin-ns):(steps/thin),],shape=drawDurNE$s[,(steps/thin-ns):(steps/thin),]),type="p",pch=16,cex=0.4,main="NE",xlim=c(0,6),col=colourR[3] ) 
+
+## Sand Box ##
+
+labexpID <- table(datHuntLabelledEventsSBMerged[datHuntLabelledEventsSBMerged$groupID == "NL",]$expID)
+regexpID <- table(datTrackedEventsRegister[datTrackedEventsRegister$groupID == "NL" ,]$expID) 
+
+datHuntLabelledEventsSBMerged_filtered[datHuntLabelledEventsSBMerged_filtered$groupID == "NL" & datHuntLabelledEventsSBMerged_filtered$expID == 3911,]
+
+datTrackedEventsRegister[datTrackedEventsRegister$groupID == "NL" & datTrackedEventsRegister$expID == 3911 ,]
+
+
+#### DEBUG CODE - Fitting An EXP Distribution TEST ###
+f1L <- fitdist( datJagsLE$d,"exp")
+plot(f1L,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f1D <- fitdist( datJagsDE$d,"exp");
+plot(f1D,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f1N <- fitdist(  datJagsNE$d,"exp");
+plot(f1N,sub="exp") ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+##### ### 
+f2D <- fitdist( datJagsDE$d,"exp",lower = c(0, 0),start = list(size = 10,mu=30))
+plot(f2D) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f2N <- fitdist( datHuntVsPreyNL[,2],"nbinom",lower = c(0, 0)) ##,start = list(scale = 1, shape = 1)
+plot(f2N) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+f2L <- fitdist( datHuntVsPreyLL[,2],"nbinom",lower = c(0, 0)) #,start = list(scale = 1, shape = 1)
+plot(f2L) #,start = list(scale = 1, shape = 1) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
+## ########

@@ -41,8 +41,8 @@ for (i in strCondTags)
   ## Extract Hunting Events From Data
   #lMotionStat[[i]] <- calcMotionStat(datAllGroupFrames,vexpID,dataSetsToProcess)
 
-  #datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,dataSetsToProcess)
-  #writeHuntEventToFile(datHuntEvent,dataSetsToProcess,groupsrcdatListPerDataSet)
+  datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,dataSetsToProcess)
+  writeHuntEventToFile(datHuntEvent,dataSetsToProcess,groupsrcdatListPerDataSet)
   
   #lHuntStat[[i]] <- calcHuntStat3(datHuntEvent)
   #stopifnot(length(lHuntStat[[i]]$vHLarvaEventCount) > 0)
