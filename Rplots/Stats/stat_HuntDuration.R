@@ -512,10 +512,22 @@ plotDurationGammaSamples(drawHD_DL$s,drawHD_DL$r,"blue")
   }
   
     
+  muEpiDur_NE <- GammaShapeSamples(drawHD_NE,nS)*GammaScaleSamples(drawHD_NE,nS)/G_APPROXFPS
+  muEpiDur_DE <- GammaShapeSamples(drawHD_DE,nS)*GammaScaleSamples(drawHD_DE,nS)/G_APPROXFPS
+  muEpiDur_LE <- GammaShapeSamples(drawHD_LE,nS)*GammaScaleSamples(drawHD_LE,nS)/G_APPROXFPS
+  muEpiDur_NL <- GammaShapeSamples(drawHD_NL,nS)*GammaScaleSamples(drawHD_NL,nS)/G_APPROXFPS
+  muEpiDur_DL <- GammaShapeSamples(drawHD_DL,nS)*GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS
+  muEpiDur_LL <- GammaShapeSamples(drawHD_LL,nS)*GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS
   
+  ## PLot Expected Duration - as the Gamma Mean      
+  plot(density(muEpiDur_NE),xlim=c(0,8),ylim=c(0,1))
+  lines(density(muEpiDur_DE),xlim=c(0,8))
+  lines(density(muEpiDur_LE),xlim=c(0,8))
+
+  lines(density(muEpiDur_LL),xlim=c(0,8),lty=2)
+  lines(density(muEpiDur_DL),xlim=c(0,8),lty=2)
+  lines(density(muEpiDur_NL),xlim=c(0,8),lty=2)
   
-  
-    
 ##################
   ### Plot GAMMA Parameters Space
   Xlim <- 5 #range(1/drawHD_LL$r)[2]
