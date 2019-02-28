@@ -3,9 +3,29 @@
 ### Produces Figure that compares the statistics of total Larva HUnt Duration for each experiment in a group ###
 ### 
 
+## Apply the Same Logic As Counting Hunt Events, to Counting Hunt Frames : ie Hunt Frames occur with some Rate Lambda, drawn from 
+## From a (set of) Gamma Distribution 
+## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
+## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
+## Give Neg Binomial
+modelLarvaHuntDuration="model { 
+q ~ dunif(0.0,1)
+r ~ dgamma(1,1)
+
+for(j in 1:NTOT){
+  d[j] ~  dnegbin(q,r) ##Number Of Hunt Frames Per Larva
+  #d[j] ~ dweib(r, mu) ##dweib(v, lambda)
+  }
+}"
 
 
-#####
+library(rjags)
+strModelName = "modelLarvaHuntDuration.tmp"
+fileConn=file(strModelName)
+writeLines(modelLarvaHuntDuration,fileConn);
+close(fileConn)
+
+###Alternativelly We May Probe the duration of individual Events ... 
 ##Models Each Event in the population of larvaer Individually 
 modelEventDuration="model { 
 
@@ -27,26 +47,6 @@ library(rjags)
 strModelName = "modelLarvaEventDuration.tmp"
 fileConn=file(strModelName)
 writeLines(modelEventDuration,fileConn);
-close(fileConn)
-
-## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
-## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
-## Give Neg Binomial
-modelLarvaHuntDuration="model { 
-q ~ dunif(0.0,1)
-r ~ dgamma(1,1)
-
-for(j in 1:NTOT){
-d[j] ~  dnegbin(q,r) ##Number Of Hunt Frames Per Larva
-#d[j] ~ dweib(r, mu) ##dweib(v, lambda)
-}
-}"
-
-
-library(rjags)
-strModelName = "modelLarvaHuntDuration.tmp"
-fileConn=file(strModelName)
-writeLines(modelLarvaHuntDuration,fileConn);
 close(fileConn)
 
 
@@ -282,10 +282,14 @@ HEventHuntGammaShape_NE <- tail(drawDurNE$r[,,schain],plotsamples);
 HEventHuntGammaShape_NL <- tail(drawDurNL$r[,,schain],plotsamples)
 
 
+#### HUNT EVENT PER LARVA PLOT #####
+## Comprehensive Plot On Number of Hunt Events
+pdf(file= paste(strPlotExportPath,"/stat/stat_ComparePoissonHuntDurations",".pdf",sep=""))
 
 layout(matrix(c(1,2,3,4,5,6), 3,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,3.3,1,1))
+
 plotHuntDurationDistribution_cdf(datHuntVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
 plotHuntDurationDistribution_cdf(datHuntVsPreyLL,drawDurLL,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
 legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
