@@ -2,6 +2,12 @@
 
 ### Produces Figure that compares the statistics of total Larva HUnt Duration for each experiment in a group ###
 ### 
+source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
+source("TrackerDataFilesImport_lib.r")
+### Hunting Episode Analysis ####
+source("HuntingEventAnalysis_lib.r")
+
+
 
 ## Apply the Same Logic As Counting Hunt Events, to Counting Hunt Frames : ie Hunt Frames occur with some Rate Lambda, drawn from 
 ## From a (set of) Gamma Distribution 
@@ -197,6 +203,71 @@ getHuntEventDuration <- function(strGroupID)
   return (datDurationPerEpisodePerLarva)
 }
 
+
+##Random Init Of Chain For nChains, and N priors 
+initEventDurfunct <- function(nchains,N)
+{
+  initlist <- replicate(nchains,list(r=abs(rnorm(N,3,1)), ##Base Line Vergence Prior to HuntOn
+                                     s=abs(rnorm(N,3,1)) ),
+                        simplify=FALSE)
+  
+  return(initlist)
+}
+
+
+mcmc_drawEventDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFilename)
+{
+  varnames1=c("d","s","r","hidx")
+  burn_in=1000;
+  steps=10000;
+  thin=2;
+  chains = 3
+  
+  
+  ##Larva Event Counts Slice
+  datSliceF <- datHuntVsPrey[datHuntVsPrey[,1] >= preyCntRange[1] & datHuntVsPrey[,1] <= preyCntRange[2], ]
+  
+  datJags=list(d=datHuntVsPrey[,3],NTOT=NROW(datHuntVsPrey));
+  
+  nDat = NROW(datHuntVsPrey);
+  dataG=list(d=datHuntVsPrey$DurationFrames,NTOT=nDat,hidx=datHuntVsPrey$hidx,food=as.integer(datSliceF[,1]));
+  
+  model=jags.model(file=strModelFilename,data=dataG,n.chains=chains,inits=initEventDurfunct(chains,NROW(unique(datHuntVsPrey$hidx)) ) );
+  
+  update(model,burn_in)
+  
+  drawSamples=jags.samples(model,steps,thin=thin,variable.names=varnames1)
+  
+  return(drawSamples) 
+}
+
+## Plots A collection of Gamma Distributions given the vector of parameters Shape and Rate
+plotDurationGammaSamples <- function (gammaShape,gammaRate,lcolour)
+{
+  plot(1:2000/G_APPROXFPS,dgamma(1:2000,shape=gammaShape[1],rate=gammaRate[1]),ylim=c(0,0.05),type="l",col=lcolour)
+  for (i in 1:NROW(gammaShape))
+    lines(1:2000/G_APPROXFPS,dgamma(1:2000,shape=gammaShape[i],rate=gammaRate[i]),col=lcolour)
+}
+
+GammaShapeSamples <- function(drawHuntDuration,plotsamples)
+{
+  vGammaShape <- vector()#tail(drawHD_NE$r[1,,schain],plotsamples)  
+  for (i in 1:NROW(drawHuntDuration$r))
+    vGammaShape <- append(vGammaShape,tail(drawHuntDuration$s[i,,schain],plotsamples))
+  
+  return(vGammaShape)
+}
+GammaScaleSamples <- function(drawHuntDuration,plotsamples)
+{
+  vGammaScale <- vector()#1/tail(drawHD_NE$r[1,,schain],plotsamples)
+  for (i in 1:NROW(drawHuntDuration$r))
+    vGammaScale <- append(vGammaScale,1/tail(drawHuntDuration$r[i,,schain],plotsamples))
+  
+  return(vGammaScale)
+}
+
+
+
 ############ LOAD DATA #################
 
 ############ LOAD EVENTS LIst and Fix ####
@@ -302,6 +373,126 @@ HEventHuntGammaShape_NE <- tail(drawDurNE$r[,,schain],plotsamples);
 HEventHuntGammaShape_NL <- tail(drawDurNL$r[,,schain],plotsamples)
 
 
+
+###########
+##CHECK fIT
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurLE$r,50),  prob=tail(drawDurLE$q,50)),cex=0.3,col=colourHE[2] )
+lines(density(drawDurLE$d,bw=1000 ) )
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurNE$r,50),  prob=tail(drawDurNE$q,50)),cex=0.3,col=colourHE[1] )
+lines(density(drawDurNE$d,bw=1000 ) )
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurDE$r,50),  prob=tail(drawDurDE$q,50)),cex=0.3,col=colourHE[3] )
+lines(density(drawDurDE$d,bw=1000 ) )
+
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurNL$r,50),  prob=tail(drawDurNL$q,50)),cex=0.3,col=colourHL[1] )
+lines(density(drawDurNL$d,bw=1000 ) )
+plot(1:15000,dnbinom(1:15000, size=tail(drawDurLL$r,50),  prob=tail(drawDurLL$q,50)),cex=0.3,col=colourHL[2] )
+lines(density(drawDurLL$d,bw=1000 ) )
+
+#####################################################   ############### ######################################
+
+############### Model Each Larva s Event Duration Separatelly ################################################
+###            Use The Labelled Events Register               #### ##################
+## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
+## Return Samples Drawn structure                             ########
+
+datHEvent_LE <- getHuntEventDuration("LE")
+datHEvent_NE <- getHuntEventDuration("NE")
+datHEvent_DE <- getHuntEventDuration("DE")
+datHEvent_LL <- getHuntEventDuration("LL")
+datHEvent_NL <- getHuntEventDuration("NL")
+datHEvent_DL <- getHuntEventDuration("DL")
+
+hist(datHEvent_LE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+hist(datHEvent_LL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+
+hist(datHEvent_NE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+hist(datHEvent_NL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+
+hist(datHEvent_DE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+hist(datHEvent_DL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+
+
+##
+### Cut And Examine The data Where There Are Between L and M rotifers Initially
+preyCntRange <- c(0,100)
+load(file =paste(strDataExportDir,"stat_HEventDurationInPreyRange_nbinomRJags.RData",sep="") )
+
+drawHD_LE<-mcmc_drawEventDurationModels (datHEvent_LE,preyCntRange, "modelLarvaEventDuration.tmp")
+drawHD_NE <-mcmc_drawEventDurationModels (datHEvent_NE,preyCntRange, "modelLarvaEventDuration.tmp")
+drawHD_DE <-mcmc_drawEventDurationModels (datHEvent_DE,preyCntRange, "modelLarvaEventDuration.tmp")
+drawHD_NL <-mcmc_drawEventDurationModels (datHEvent_NL,preyCntRange, "modelLarvaEventDuration.tmp")
+drawHD_LL <-mcmc_drawEventDurationModels (datHEvent_LL,preyCntRange, "modelLarvaEventDuration.tmp")
+drawHD_DL <-mcmc_drawEventDurationModels (datHEvent_DL,preyCntRange, "modelLarvaEventDuration.tmp")
+
+
+save(drawHD_LE,drawHD_NE,drawHD_DE,drawHD_NL,drawHD_LL,drawHD_DL,
+     file =paste(strDataExportDir,"stat_HEventDurationInPreyRange_nbinomRJags.RData",sep=""))
+
+##Per Larva, The Gamma Rates Are::
+hIdx <- 37
+gammaShape_LE <- drawHD_LE$s
+gammaRate_LE <- drawHD_LE$r
+
+
+plotDurationGammaSamples <- function (gammaShape,gammaRate,lcolour)
+{
+  plot(1:3000/G_APPROXFPS,dgamma(1:3000,shape=gammaShape[1],rate=gammaRate[1]),ylim=c(0,0.05),type="l",col=lcolour)
+  for (i in 1:NROW(gammaShape))
+    lines(1:3000/G_APPROXFPS,dgamma(1:3000,shape=gammaShape[i],rate=gammaRate[i]),col=lcolour)
+}
+plotDurationGammaSamples(drawHD_LE$s,drawHD_LE$r,"green")
+plotDurationGammaSamples(drawHD_DE$s,drawHD_DE$r,"blue")
+plotDurationGammaSamples(drawHD_NE$s,drawHD_NE$r,"red")
+
+plotDurationGammaSamples(drawHD_LL$s,drawHD_LL$r,"green")
+plotDurationGammaSamples(drawHD_NL$s,drawHD_NL$r,"red")
+plotDurationGammaSamples(drawHD_DL$s,drawHD_DL$r,"blue")
+
+  plot(1:2000/G_APPROXFPS,dgamma(1:2000,shape=gammaShape_LL,rate=gammaRate_LL))
+  ##Retrieve Draws From Each Larva's Episodes
+  ## Draw Structure Includes Infered Gamma Distributions to Fit Duration of Hunt Episode of Each Larva.
+  
+  # These Functions Obtain Samples From Each Larvae Fit, 
+  nS <- 2
+  muEpiDur_NE <- GammaShapeSamples(drawHD_NE,nS)*GammaScaleSamples(drawHD_NE,nS)/G_APPROXFPS
+  muEpiDur_DE <- GammaShapeSamples(drawHD_DE,nS)*GammaScaleSamples(drawHD_DE,nS)/G_APPROXFPS
+  muEpiDur_LE <- GammaShapeSamples(drawHD_LE,nS)*GammaScaleSamples(drawHD_LE,nS)/G_APPROXFPS
+  muEpiDur_NL <- GammaShapeSamples(drawHD_NL,nS)*GammaScaleSamples(drawHD_NL,nS)/G_APPROXFPS
+  muEpiDur_DL <- GammaShapeSamples(drawHD_DL,nS)*GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS
+  muEpiDur_LL <- GammaShapeSamples(drawHD_LL,nS)*GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS
+  
+
+  
+  
+  ###############
+  ### Plot GAMMA Parameters Space
+  Xlim <- 5 #range(1/drawHD_LL$r)[2]
+  Ylim <- range(drawHD_LL$s)[2]
+  nS <- 2
+  plot(GammaScaleSamples(drawHD_NE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_NE,nS),col=colourHL[1],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
+  points(GammaScaleSamples(drawHD_LE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_LE,nS),col=colourHL[2],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[2])
+  points(GammaScaleSamples(drawHD_DE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_DE,nS),col=colourHL[3],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[3])
+  points(GammaScaleSamples(drawHD_NL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_NL,nS),col=colourHL[1],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[4])
+  points(GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_LL,nS),col=colourHL[2],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[5])
+  points(GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_DL,nS),col=colourHL[3],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[6])
+  strXLab <- (expression(paste(Gamma, " scale (r/FPS)") ) )
+  mtext(side = 1,cex=0.8, line = 2.2,strXLab ) 
+  mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
+  legend("topright",legend = c(paste("NE" ),
+                               paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
+         col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
+  
+hist(drawDurLE$q)
+hist(drawDurN$s)
+hist(drawDurD$s)
+
+plot(tail(drawDurLE$r,1000), tail(drawDurLE$s,1000),ylim=c(0,200))
+plot(tail(drawDurD$r,1000), tail(drawDurD$s,1000),ylim=c(0,200))
+plot(tail(drawDurN$r,1000), tail(drawDurN$s,1000),ylim=c(0,200))
+
+######## Plot Comparison Of Duration Data ##########
+##Now Plot Infered Distributions
+
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
 pdf(file= paste(strPlotExportPath,"/stat/stat_ComparePoissonHuntDurations",".pdf",sep=""))
@@ -368,194 +559,23 @@ axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
 ## Connect Larvae From EMpty To LIve Test Condition #
 plotConnectedHuntDuration(datHuntStat,vDat,strCondTags)
 
+#### Show Density Of Hunt Episode Duration per Hunt Event ####
+## PLot Expected Duration - as the Gamma Mean      
+plot(density(muEpiDur_NE),xlim=c(0,8),ylim=c(0,1),col=colourHE[1])
+lines(density(muEpiDur_LE),xlim=c(0,8),col=colourHE[2])
+lines(density(muEpiDur_DE),xlim=c(0,8),col=colourHE[3])
+
+lines(density(muEpiDur_LL),xlim=c(0,8),lty=2,col=colourHE[2])
+lines(density(muEpiDur_DL),xlim=c(0,8),lty=2,col=colourHE[3])
+lines(density(muEpiDur_NL),xlim=c(0,8),lty=2,col=colourHE[1])
+
+
+
 dev.off()
 
 
-###########
-##CHECK fIT
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurLE$r,50),  prob=tail(drawDurLE$q,50)),cex=0.3,col=colourHE[2] )
-lines(density(drawDurLE$d,bw=1000 ) )
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurNE$r,50),  prob=tail(drawDurNE$q,50)),cex=0.3,col=colourHE[1] )
-lines(density(drawDurNE$d,bw=1000 ) )
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurDE$r,50),  prob=tail(drawDurDE$q,50)),cex=0.3,col=colourHE[3] )
-lines(density(drawDurDE$d,bw=1000 ) )
-
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurNL$r,50),  prob=tail(drawDurNL$q,50)),cex=0.3,col=colourHL[1] )
-lines(density(drawDurNL$d,bw=1000 ) )
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurLL$r,50),  prob=tail(drawDurLL$q,50)),cex=0.3,col=colourHL[2] )
-lines(density(drawDurLL$d,bw=1000 ) )
-
-#####################################################   ############### ######################################
-
-############### Model Each Larva s Event Duration Separatelly ################################################
-###            Use The Labelled Events Register               #### ##################
-## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
-## Return Samples Drawn structure                             ########
 
 
-##Random Init Of Chain For nChains, and N priors 
-initEventDurfunct <- function(nchains,N)
-{
-  initlist <- replicate(nchains,list(r=abs(rnorm(N,3,1)), ##Base Line Vergence Prior to HuntOn
-                                     s=abs(rnorm(N,3,1)) ),
-                        simplify=FALSE)
-  
-  return(initlist)
-}
-
-
-mcmc_drawEventDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFilename)
-{
-  varnames1=c("d","s","r","hidx")
-  burn_in=1000;
-  steps=10000;
-  thin=2;
-  chains = 3
-  
-  
-  ##Larva Event Counts Slice
-  datSliceF <- datHuntVsPrey[datHuntVsPrey[,1] >= preyCntRange[1] & datHuntVsPrey[,1] <= preyCntRange[2], ]
-  
-  datJags=list(d=datHuntVsPrey[,3],NTOT=NROW(datHuntVsPrey));
-  
-  nDat = NROW(datHuntVsPrey);
-  dataG=list(d=datHuntVsPrey$DurationFrames,NTOT=nDat,hidx=datHuntVsPrey$hidx,food=as.integer(datSliceF[,1]));
-  
-  model=jags.model(file=strModelFilename,data=dataG,n.chains=chains,inits=initEventDurfunct(chains,NROW(unique(datHuntVsPrey$hidx)) ) );
-  
-  update(model,burn_in)
-  
-  drawSamples=jags.samples(model,steps,thin=thin,variable.names=varnames1)
-  
-  return(drawSamples) 
-}
-## Plots A collection of Gamma Distributions given the vector of parameters Shape and Rate
-plotDurationGammaSamples <- function (gammaShape,gammaRate,lcolour)
-{
-  plot(1:2000/G_APPROXFPS,dgamma(1:2000,shape=gammaShape[1],rate=gammaRate[1]),ylim=c(0,0.05),type="l",col=lcolour)
-  for (i in 1:NROW(gammaShape))
-    lines(1:2000/G_APPROXFPS,dgamma(1:2000,shape=gammaShape[i],rate=gammaRate[i]),col=lcolour)
-}
-
-
-datHEvent_LE <- getHuntEventDuration("LE")
-datHEvent_NE <- getHuntEventDuration("NE")
-datHEvent_DE <- getHuntEventDuration("DE")
-datHEvent_LL <- getHuntEventDuration("LL")
-datHEvent_NL <- getHuntEventDuration("NL")
-datHEvent_DL <- getHuntEventDuration("DL")
-
-hist(datHEvent_LE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-hist(datHEvent_LL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-
-hist(datHEvent_NE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-hist(datHEvent_NL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-
-hist(datHEvent_DE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-hist(datHEvent_DL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-
-
-##
-### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,100)
-
-drawHD_LE<-mcmc_drawEventDurationModels (datHEvent_LE,preyCntRange, "modelLarvaEventDuration.tmp")
-drawHD_NE <-mcmc_drawEventDurationModels (datHEvent_NE,preyCntRange, "modelLarvaEventDuration.tmp")
-drawHD_DE <-mcmc_drawEventDurationModels (datHEvent_DE,preyCntRange, "modelLarvaEventDuration.tmp")
-drawHD_NL <-mcmc_drawEventDurationModels (datHEvent_NL,preyCntRange, "modelLarvaEventDuration.tmp")
-drawHD_LL <-mcmc_drawEventDurationModels (datHEvent_LL,preyCntRange, "modelLarvaEventDuration.tmp")
-drawHD_DL <-mcmc_drawEventDurationModels (datHEvent_DL,preyCntRange, "modelLarvaEventDuration.tmp")
-
-
-save(drawHD_LE,drawHD_NE,drawHD_DE,drawHD_NL,drawHD_LL,drawHD_DL,
-     file =paste(strDataExportDir,"stat_HEventDurationInPreyRange_nbinomRJags.RData",sep=""))
-
-##Per Larva, The Gamma Rates Are::
-hIdx <- 37
-gammaShape_LE <- drawHD_LE$s
-gammaRate_LE <- drawHD_LE$r
-
-
-plotDurationGammaSamples <- function (gammaShape,gammaRate,lcolour)
-{
-  plot(1:3000/G_APPROXFPS,dgamma(1:3000,shape=gammaShape[1],rate=gammaRate[1]),ylim=c(0,0.05),type="l",col=lcolour)
-  for (i in 1:NROW(gammaShape))
-    lines(1:3000/G_APPROXFPS,dgamma(1:3000,shape=gammaShape[i],rate=gammaRate[i]),col=lcolour)
-}
-plotDurationGammaSamples(drawHD_LE$s,drawHD_LE$r,"green")
-plotDurationGammaSamples(drawHD_DE$s,drawHD_DE$r,"blue")
-plotDurationGammaSamples(drawHD_NE$s,drawHD_NE$r,"red")
-
-plotDurationGammaSamples(drawHD_LL$s,drawHD_LL$r,"green")
-plotDurationGammaSamples(drawHD_NL$s,drawHD_NL$r,"red")
-plotDurationGammaSamples(drawHD_DL$s,drawHD_DL$r,"blue")
-
-  plot(1:2000/G_APPROXFPS,dgamma(1:2000,shape=gammaShape_LL,rate=gammaRate_LL))
-  ##Retrieve Draws From Each Larva's Episodes
-  ## Draw Structure Includes Infered Gamma Distributions to Fit Duration of Hunt Episode of Each Larva.
-  ## These Functions Obtain Samples From Each Larvae Fit, 
-  GammaShapeSamples <- function(drawHuntDuration,plotsamples)
-  {
-    vGammaShape <- vector()#tail(drawHD_NE$r[1,,schain],plotsamples)  
-    for (i in 1:NROW(drawHuntDuration$r))
-      vGammaShape <- append(vGammaShape,tail(drawHuntDuration$s[i,,schain],plotsamples))
-      
-    return(vGammaShape)
-  }
-  GammaScaleSamples <- function(drawHuntDuration,plotsamples)
-  {
-    vGammaScale <- vector()#1/tail(drawHD_NE$r[1,,schain],plotsamples)
-    for (i in 1:NROW(drawHuntDuration$r))
-      vGammaScale <- append(vGammaScale,1/tail(drawHuntDuration$r[i,,schain],plotsamples))
-    
-    return(vGammaScale)
-  }
-  
-    
-  muEpiDur_NE <- GammaShapeSamples(drawHD_NE,nS)*GammaScaleSamples(drawHD_NE,nS)/G_APPROXFPS
-  muEpiDur_DE <- GammaShapeSamples(drawHD_DE,nS)*GammaScaleSamples(drawHD_DE,nS)/G_APPROXFPS
-  muEpiDur_LE <- GammaShapeSamples(drawHD_LE,nS)*GammaScaleSamples(drawHD_LE,nS)/G_APPROXFPS
-  muEpiDur_NL <- GammaShapeSamples(drawHD_NL,nS)*GammaScaleSamples(drawHD_NL,nS)/G_APPROXFPS
-  muEpiDur_DL <- GammaShapeSamples(drawHD_DL,nS)*GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS
-  muEpiDur_LL <- GammaShapeSamples(drawHD_LL,nS)*GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS
-  
-  ## PLot Expected Duration - as the Gamma Mean      
-  plot(density(muEpiDur_NE),xlim=c(0,8),ylim=c(0,1))
-  lines(density(muEpiDur_DE),xlim=c(0,8))
-  lines(density(muEpiDur_LE),xlim=c(0,8))
-
-  lines(density(muEpiDur_LL),xlim=c(0,8),lty=2)
-  lines(density(muEpiDur_DL),xlim=c(0,8),lty=2)
-  lines(density(muEpiDur_NL),xlim=c(0,8),lty=2)
-  
-##################
-  ### Plot GAMMA Parameters Space
-  Xlim <- 5 #range(1/drawHD_LL$r)[2]
-  Ylim <- range(drawHD_LL$s)[2]
-  nS <- 2
-  plot(GammaScaleSamples(drawHD_NE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_NE,nS),col=colourHL[1],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
-  points(GammaScaleSamples(drawHD_LE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_LE,nS),col=colourHL[2],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[2])
-  points(GammaScaleSamples(drawHD_DE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_DE,nS),col=colourHL[3],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[3])
-  points(GammaScaleSamples(drawHD_NL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_NL,nS),col=colourHL[1],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[4])
-  points(GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_LL,nS),col=colourHL[2],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[5])
-  points(GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_DL,nS),col=colourHL[3],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[6])
-  strXLab <- (expression(paste(Gamma, " scale (r/FPS)") ) )
-  mtext(side = 1,cex=0.8, line = 2.2,strXLab ) 
-  mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
-  legend("topright",legend = c(paste("NE" ),
-                               paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
-         col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
-  
-hist(drawDurLE$q)
-hist(drawDurN$s)
-hist(drawDurD$s)
-
-plot(tail(drawDurLE$r,1000), tail(drawDurLE$s,1000),ylim=c(0,200))
-plot(tail(drawDurD$r,1000), tail(drawDurD$s,1000),ylim=c(0,200))
-plot(tail(drawDurN$r,1000), tail(drawDurN$s,1000),ylim=c(0,200))
-
-######## Plot Comparison Of Duration Data ##########
-##Now Plot Infered Distributions
 
 
 ## Plot Histogram Of Durations in approx SEC
