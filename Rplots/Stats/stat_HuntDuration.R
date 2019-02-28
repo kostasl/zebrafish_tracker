@@ -332,16 +332,17 @@ legend("topright",legend = c(paste("NE" ),
 strCondTags <- c("NE","NL","LE","LL","DE","DL")
 xbarcenters <- boxplot(log10( (datHuntVsPreyNE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntVsPreyNL[,3]+1)/G_APPROXFPS ),log10( (datHuntVsPreyLE[,3]+1)/G_APPROXFPS ),
                        log10( ( datHuntVsPreyLL[,3]+1 )/G_APPROXFPS ),log10(( datHuntVsPreyDE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntVsPreyDL[,3]+1)/G_APPROXFPS ),
-                       main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2),axes = FALSE  )
-mtext(side = 2,cex=0.8, line =2.2, "Hunt Duration log(D+1) ")
+                       main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2.5),axes = FALSE  )
+mtext(side = 2,cex=0.8, line =2.2, "Hunt Duration log( (Frames+1)/fps ) ")
 vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
-vDat        <- (datHuntStat[,"vHLarvaEventCount"])
+##Take Frame duration Values for each group and Divide by Framerate
+vDat        <- rapply(datHuntStat[,"vHDurationPerLarva"],function(x){return (x/G_APPROXFPS) },how="replace")
 
 axis(1,at<-axis(1,labels=NA), labels=strCondTags)
 yticks <-axis(2,labels=NA)
 axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
 ## Connect Larvae From EMpty To LIve Test Condition #
-plotConnectedEventCounts(datHuntStat,strCondTags)
+plotConnectedHuntDuration(datHuntStat,vDat,strCondTags)
 
 ###########
 ##CHECK fIT
