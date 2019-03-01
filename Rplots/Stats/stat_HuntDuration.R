@@ -110,8 +110,8 @@ plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpc
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
     for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
     {
-      cdfM <- dnbinom(seq(0,XLim,1),size=drawHEvent$r[,j,c], prob=  drawHEvent$q[,j,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
-      lines(x[1:NROW(cdfM[x])]/G_APPROXFPS,cumsum(cdfM[x])*XStep,col=lcolour,lty=lty) #add=TRUE,
+      cdfM <- cumsum(dnbinom(seq(0,XLim,1),size=drawHEvent$r[,j,c], prob=  drawHEvent$q[,j,c]  ))##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      lines(x[1:NROW(cdfM[x])]/G_APPROXFPS,cdfM[x],col=lcolour,lty=lty) #add=TRUE,
     }
   }
   plot(cdfD_N ,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim/G_APPROXFPS),ylim=c(0,1),cex=1.1,cex.lab=1.5,add=TRUE)
@@ -486,7 +486,7 @@ mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
 
 pchL <- c(1,2,0,16,17,15)
 ### Plot GAMMA Parameters Space
-Xlim <- range(1/HLarvaHuntGammaRate_LL/G_APPROXFPS)[2]
+Xlim <- range(1/HLarvaHuntGammaRate_DL/G_APPROXFPS)[2]
 plot(1/HLarvaHuntGammaRate_NE/G_APPROXFPS,HLarvaHuntGammaShape_NE,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
 points(1/HLarvaHuntGammaRate_LE/G_APPROXFPS,HLarvaHuntGammaShape_LE,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
 points(1/HLarvaHuntGammaRate_DE/G_APPROXFPS,HLarvaHuntGammaShape_DE,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
