@@ -110,7 +110,7 @@ plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpc
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
     for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
     {
-      cdfM <- dnbinom(seq(0,XLim,1),size=drawHEvent$r[,j,c],prob=  drawHEvent$q[,j,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      cdfM <- dnbinom(seq(0,XLim,1),size=drawHEvent$r[,j,c], prob=  drawHEvent$q[,j,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
       lines(x[1:NROW(cdfM[x])]/G_APPROXFPS,cumsum(cdfM[x])*XStep,col=lcolour,lty=lty) #add=TRUE,
     }
   }
