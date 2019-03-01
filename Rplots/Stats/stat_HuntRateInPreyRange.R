@@ -109,50 +109,6 @@ mcmc_drawEventCountModels <- function(datHuntVsPrey,preyCountRange,strModelFilen
 
 
 
-## Combines a the Gamma Fit distributions with a histogram and an empirical density estimate of the data (with a given BW)
-## datHDuration the raw Duration Dataframe, drawDur the MCMC Sampled values for the gamma distr. params
-## The histogram is scaled down fit the range of 
-plotDurationDensityFitComparison <- function(datHDuration,drawDur,lcolour,HLim,nplotSamples)
-{
-  XLim <- 6
-  
-  x <- seq(0,HLim,1) ##In Seconds
-  N <- 1000
-  
-  
-  densDur<-density(datHDuration[,1],bw=pBW)   
-  histDur <- hist(datHDuration[,1]/G_APPROXFPS,breaks=seq(0,HLim/G_APPROXFPS,0.1),plot=FALSE)
-  
-  
-  YScale <- range(densDur$y)[2]*1.05
-  hist_scale <- max(histDur$counts)/YScale ##Scale Histogram Relative To Density Peak
-  YLim <- 0.0015
-  
-  par(cex.lab = 1.1)
-  par(cex = 0.8)
-  par(cex.axis = 1.1)
-  
-  par(mar = c(5,5,2,5))
-  plot(densDur$x/G_APPROXFPS, densDur$y,type='l',xlim=c(0,XLim),ylim=c(0,YLim),lty=2,lwd=4,ylab=NA,xlab=NA)
-  
-  
-  pBW <- 120 ## Estimation BandWidth
-  ## Live Fed
-  for (c in 1:NROW(drawDur$r[1,1,]) )
-    for (i in (NROW(drawDur$r[,,c])-nplotSamples):NROW(drawDur$r[,,c]) )
-      lines(x/G_APPROXFPS,dgamma(x,rate=drawDur$r[,i,c],shape=drawDur$s[,i,c]),
-            type="p",pch=16,cex=1.4,xlim=c(0,XLim),ylim=c(0,YLim), col=lcolour ) 
-  
-  par(new=T)
-  plot(histDur$breaks[1:NROW(histDur$counts)],histDur$counts, axes=F, xlab=NA, ylab=NA,cex=1.1,
-       xlim=c(0.0,XLim),ylim=c(0,max(histDur$counts)*1.10 ) ,lwd=2,pch=21,col="#000000CC")
-  axis(side = 4)
-  mtext(side = 4, line = 2.1, 'Counts')
-  mtext(side = 2, line = 2.1, 'P(s)')
-  
-  
-} ##Plot Function
-
 
 ## Compare Model TO Data Using CDF ##
 plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples=100,newPlot = FALSE)
@@ -408,11 +364,6 @@ densHPoissonRate_DL <- density( HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL
 densHPoissonRate_NE <- density( HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE,bw=pBW)
 densHPoissonRate_NL <- density( HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL,bw=pBW)
 
-##Debug
-#plot(x,log(dgamma(x,shape=HEventHuntGammaShape_LL[1,1],rate=HEventHuntGammaRate_LL[1,1])) ,main="",xlab=NA,ylab=NA,col=colourHL[2],type="l",lwd=1, lty=1)
-#lines(x,log(dgamma(x,shape=HEventHuntGammaShape_LE[1,1],rate=HEventHuntGammaRate_LE[1,1])) ,main="",xlab=NA,ylab=NA,col=colourHL[2],type="l",lwd=1, lty=2)
-
-
 
 Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(datHuntVsPreyNL[,2])[2])
 x <- seq(0.01,Plim,0.05)
@@ -427,19 +378,19 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_ComparePoissonHuntRates",".pdf",se
 layout(matrix(c(1,2,3,4,5,6,7), 3,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,3.3,1,1))
-lineTypeL[1] <- 1
-plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
-plotEventCountDistribution_cdf(datHuntVsPreyNL,drawNL2,colourHL[1],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
+#lineTypeL[1] <- 1
+plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
+plotEventCountDistribution_cdf(datHuntVsPreyNL,drawNL2,colourHL[1],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE )
 legend("bottomright",legend = c(paste("Data NE #",NROW(datHuntVsPreyNE) ),paste("Model NE "),
                                 paste("Data NL #",NROW(datHuntVsPreyNL) ),paste("Model NL ")), 
        col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
-plotEventCountDistribution_cdf(datHuntVsPreyLE,drawLE2,colourHE[2],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
-plotEventCountDistribution_cdf(datHuntVsPreyLL,drawLL2,colourHL[2],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE )
+plotEventCountDistribution_cdf(datHuntVsPreyLE,drawLE2,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
+plotEventCountDistribution_cdf(datHuntVsPreyLL,drawLL2,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE )
 legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
                                 paste("Data LL #",NROW(datHuntVsPreyLL) ),paste("Model LL ")), 
       col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
-plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE  )
-plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[1],Plim,plotsamples,newPlot=FALSE  )
+plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE  )
+plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE  )
 legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyDE) ),paste("Model DE "),
                                 paste("Data DL #",NROW(datHuntVsPreyDL) ),paste("Model DL ")), 
        col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
@@ -486,23 +437,30 @@ pBW <- 0.001
 
 
 Ylim <- 0.5
-plot(densHPoissonRate_NL$x, densHPoissonRate_NL$y,type='l',xlim=c(0,25),ylim=c(0,Ylim),lty=lineTypeL[1],col=colourHL[1],lwd=4,ylab=NA,xlab=NA)
+plot(densHPoissonRate_NL$x, densHPoissonRate_NL$y,type='l',lty=lineTypeL[2],col=colourHL[1],lwd=4,ylab=NA,xlab=NA,xlim=c(0,25),ylim=c(0,Ylim))
 lines(densHPoissonRate_LL$x, densHPoissonRate_LL$y,type='l',lty=lineTypeL[2],col=colourHL[2],lwd=4,ylab=NA,xlab=NA)
-lines(densHPoissonRate_DL$x, densHPoissonRate_DL$y,type='l',lty=lineTypeL[1],col=colourHL[3],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_DL$x, densHPoissonRate_DL$y,type='l',lty=lineTypeL[2],col=colourHL[3],lwd=4,ylab=NA,xlab=NA)
 
-lines(densHPoissonRate_NE$x, densHPoissonRate_NE$y,type='l',lty=lineTypeL[3],col=colourHL[1],lwd=4,ylab=NA,xlab=NA)
-lines(densHPoissonRate_LE$x, densHPoissonRate_LE$y,type='l',lty=lineTypeL[3],col=colourHL[2],lwd=4,ylab=NA,xlab=NA)
-lines(densHPoissonRate_DE$x, densHPoissonRate_DE$y,type='l',lty=lineTypeL[3],col=colourHL[3],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_NE$x, densHPoissonRate_NE$y,type='l',lty=lineTypeL[1],col=colourHL[1],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_LE$x, densHPoissonRate_LE$y,type='l',lty=lineTypeL[1],col=colourHL[2],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_DE$x, densHPoissonRate_DE$y,type='l',lty=lineTypeL[1],col=colourHL[3],lwd=4,ylab=NA,xlab=NA)
 
-legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
+legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")),seg.len=2.2
+       , col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Poisson Hunt Rate  (",lambda," )") )  )
 mtext(side = 2,cex=0.8, line = 2.2, " P(x) ")
 
-
 dev.off() 
+
+
 ################## ############# ### # # 
 # legend("topright",legend = c(paste("NF " ),paste("LF ") ,paste("DF ") ) ,
 #        col=colourL,lty=lineTypeL,lwd=3,seg.len=3,cex=1.1)
+
+
+##Debug
+#plot(x,log(dgamma(x,shape=HEventHuntGammaShape_LL[1,1],rate=HEventHuntGammaRate_LL[1,1])) ,main="",xlab=NA,ylab=NA,col=colourHL[2],type="l",lwd=1, lty=1)
+#lines(x,log(dgamma(x,shape=HEventHuntGammaShape_LE[1,1],rate=HEventHuntGammaRate_LE[1,1])) ,main="",xlab=NA,ylab=NA,col=colourHL[2],type="l",lwd=1, lty=2)
 
 
 
