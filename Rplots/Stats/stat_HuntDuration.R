@@ -453,32 +453,47 @@ muEpiDur_LL <- GammaShapeSamples(drawHD_LL,nS)*GammaScaleSamples(drawHD_LL,nS)/G
 ## MAIN PLOT ###
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
-pdf(file= paste(strPlotExportPath,"/stat/stat_ComparePoissonHuntDurations",".pdf",sep=""))
-
+pdf(file= paste(strPlotExportPath,"/stat/fig4_statComparePoissonHuntDurations",".pdf",sep=""))
+outer = FALSE
+line = 1 ## SubFig Label Params
+cex = 1.1
+adj  = 2.5
+padj <- -6.8
+las <- 1
 layout(matrix(c(1,2,3,4,5,6), 3,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,3.3,1,1))
 plotsamples <- 25
 plotHuntDurationDistribution_cdf(datHuntVsPreyNE,drawDurNE,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
 plotHuntDurationDistribution_cdf(datHuntVsPreyNL,drawDurNL,colourHL[1],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
-legend("bottomright",legend = c(paste("Data NE #",NROW(datHuntVsPreyNE) ),paste("Model NE "),
-                                paste("Data NL #",NROW(datHuntVsPreyNL) ),paste("Model NL ")), 
+legend("bottomright",legend = c(  expression (),
+                                  bquote(NF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyNE))  )
+                                  ,bquote(NF["s"] ~"Model " ), 
+                                  bquote(NF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyNL)) )
+                                  ,bquote( NF["e"] ~ "Model " ) ), 
        col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
-
+mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 plotHuntDurationDistribution_cdf(datHuntVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
 plotHuntDurationDistribution_cdf(datHuntVsPreyLL,drawDurLL,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
-legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
-                                paste("Data LL #",NROW(datHuntVsPreyLL) ),paste("Model LL ")), 
+legend("bottomright",legend = c(  expression (),
+                                  bquote(LF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyLE))  )
+                                  ,bquote(LF["s"] ~"Model " ), 
+                                  bquote(LF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyLL)) )
+                                  ,bquote( LF["e"] ~ "Model " ) ),  
        col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
-
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 plotHuntDurationDistribution_cdf(datHuntVsPreyDE,drawDurDE,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
 plotHuntDurationDistribution_cdf(datHuntVsPreyDL,drawDurDL,colourHL[3],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
-legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyDE) ),paste("Model DE "),
-                                paste("Data DL #",NROW(datHuntVsPreyDL) ),paste("Model DL ")), 
+legend("bottomright",legend = c(  expression (),
+                                  bquote(DF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDE))  )
+                                  ,bquote(DF["s"] ~"Model " ), 
+                                  bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDL)) )
+                                  ,bquote( DF["e"] ~ "Model " ) ),  
        col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
-mtext(side = 1,cex=0.8, line = 2.2, " Larval Hunt Duration  (sec)")
+mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+mtext(side = 1,cex=0.8, line = 2.2, " Total Time Spent Hunting (sec)")
 mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
 
 ######
@@ -496,9 +511,10 @@ points(1/HLarvaHuntGammaRate_DL/G_APPROXFPS,HLarvaHuntGammaShape_DL,col=colourHL
 strXLab <- (expression(paste(Gamma, " scale (r/FPS)") ) )
 mtext(side = 1,cex=0.8, line = 2.2,strXLab ) 
 mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
-legend("topright",legend = c(paste("NE" ),
-                             paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
+legend("topright", legend = strDataLabels, #c(paste("NE" ), paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
        col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
+mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
 ###
 
 ## BoxPlot of Hunt Event Counts - 
@@ -506,16 +522,18 @@ strCondTags <- c("NE","NL","LE","LL","DE","DL")
 xbarcenters <- boxplot(log10( (datHuntVsPreyNE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntVsPreyNL[,3]+1)/G_APPROXFPS ),log10( (datHuntVsPreyLE[,3]+1)/G_APPROXFPS ),
                        log10( ( datHuntVsPreyLL[,3]+1 )/G_APPROXFPS ),log10(( datHuntVsPreyDE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntVsPreyDL[,3]+1)/G_APPROXFPS ),
                        main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2.5),axes = FALSE  )
-mtext(side = 2,cex=0.8, line =2.2, "Hunt Duration log( (D+1)/fps ) ")
+mtext(side = 2,cex=0.8, line =2.2, "Hunt Duration (sec) ) ") #log( (D+1)/fps
 vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
 ##Take Frame duration Values for each group and Divide by Framerate
 vDat        <- rapply(datHuntStat[,"vHDurationPerLarva"],function(x){return (x/G_APPROXFPS) },how="replace")
 
-axis(1,at<-axis(1,labels=NA), labels=strCondTags)
+axis(1,at<-axis(1,labels=NA), labels=c( strDataLabels[1],strDataLabels[4],strDataLabels[2],strDataLabels[5],strDataLabels[3],strDataLabels[6] ))
 yticks <-axis(2,labels=NA)
 axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
 ## Connect Larvae From EMpty To LIve Test Condition #
 plotConnectedHuntDuration(datHuntStat,vDat,strCondTags)
+mtext("E",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
 
 #### Show Density Of Hunt Episode Duration per Hunt Event ####
 ## PLot Expected Duration - as the Gamma Mean 
@@ -531,6 +549,7 @@ legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")),
        col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Hunt Episode Duration  (sec)") )  )
 mtext(side = 2,cex=0.8, line = 2.2, " P(x) ")
+mtext("F",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 dev.off()
 

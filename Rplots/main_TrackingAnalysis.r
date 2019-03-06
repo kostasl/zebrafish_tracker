@@ -71,10 +71,11 @@ colourD <- col2hex(pairedPalette[,c(5,6,3,4,1,2)]) #c(rgb(0.95,0.01,0.01,0.1),rg
  ##<- c("#E60303AA","#03B303FF","#0303E6AA")
 colourL <-c("#E60303AF","#03B303AF","#0303E6AF")
 
-pchL <- c(16,17,4) ## The style of bullet used for each group DL, LL, NL
+pchL <- c(1,2,0,16,17,4) ## The style of bullet used for each group DL, LL, NL
 lineTypeL <- c(2,1,3) ## The style of bullet used for each group DL, LL, NL
 
-
+## Condition Labels
+strDataLabels <- expression("NF"["s"],"LF"["s"],"DF"["s"],"NF"["e"],"LF"["e"],"DF"["e"] )
 
 ## GLOBAL VARS ###
 

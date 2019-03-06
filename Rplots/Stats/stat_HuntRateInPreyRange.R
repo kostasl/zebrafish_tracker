@@ -6,8 +6,8 @@
 # ** Yet the  empirical distribution does not look like poisson- but rather EXP like, heavy on the low event counts, and with a long tail. A Poisson For the group would imply an underlying 
 # 
 ### TODO Also Plot Duration Of Eye Vergence Frames ###
-
-library(fitdistrplus)
+#library(Hmisc) ##For Minor Ticks
+#library(fitdistrplus) ## Fpr testing Dist. Fit
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
@@ -325,8 +325,7 @@ print(vEventCount)
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
 preyCntRange <- c(0,100)
 
-load(file=paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
-
+### Rum The Sampler ###
 drawLL2 <- mcmc_drawEventCountModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventRate.tmp")
 drawNL2 <- mcmc_drawEventCountModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventRate.tmp")
 drawDL2 <- mcmc_drawEventCountModels(datHuntVsPreyDL,preyCntRange,"modelGroupEventRate.tmp")
@@ -370,10 +369,16 @@ x <- seq(0.01,Plim,0.05)
 
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
-pdf(file= paste(strPlotExportPath,"/stat/stat_ComparePoissonHuntRates",".pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/fig3_statComparePoissonHuntRates",".pdf",sep=""))
 ##Now Plot Infered Distributions
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
+outer = FALSE
+line = 1 ## SubFig Label Params
+cex = 1.1
+adj  = 2.5
+padj <- -6.8
+las <- 1
 
 layout(matrix(c(1,2,3,4,5,6,7), 3,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
@@ -381,21 +386,35 @@ par(mar = c(3.9,3.3,1,1))
 #lineTypeL[1] <- 1
 plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyNL,drawNL2,colourHL[1],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE )
-legend("bottomright",legend = c(paste("Data NE #",NROW(datHuntVsPreyNE) ),paste("Model NE "),
-                                paste("Data NL #",NROW(datHuntVsPreyNL) ),paste("Model NL ")), 
+legend("bottomright",legend = c(  expression (),
+                                  bquote(NF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyNE))  )
+                                 ,bquote(NF["s"] ~"Model " ), 
+                                 bquote(NF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyNL)) )
+                                 ,bquote( NF["e"] ~ "Model " ) ), 
        col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
 plotEventCountDistribution_cdf(datHuntVsPreyLE,drawLE2,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyLL,drawLL2,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE )
-legend("bottomright",legend = c(paste("Data LE #",NROW(datHuntVsPreyLE) ),paste("Model LE "),
-                                paste("Data LL #",NROW(datHuntVsPreyLL) ),paste("Model LL ")), 
+legend("bottomright",legend = c(  expression (),
+                                  bquote(LF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyLE))  )
+                                  ,bquote(LF["s"] ~"Model " ), 
+                                  bquote(LF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyLL)) )
+                                  ,bquote( LF["e"] ~ "Model " ) ), 
       col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
 plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE  )
 plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE  )
-legend("bottomright",legend = c(paste("Data DE #",NROW(datHuntVsPreyDE) ),paste("Model DE "),
-                                paste("Data DL #",NROW(datHuntVsPreyDL) ),paste("Model DL ")), 
+legend("bottomright",legend = c(  expression (),
+                                  bquote(DF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDE))  )
+                                  ,bquote(DF["s"] ~"Model " ), 
+                                  bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDL)) )
+                                  ,bquote( DF["e"] ~ "Model " ) ), 
        col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, "Event Counts (N)")
 mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
+mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 
 
@@ -410,24 +429,27 @@ points(1/HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0
 points(1/HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[6])
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste(Gamma, " scale (r)") ) )
 mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
-legend("topright",legend = c(paste("NE" ),
-                             paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
+legend("topright",legend = strDataLabels,  #c(paste("NE" ), paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
        col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
+mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
 ###
 
 ## BoxPlot of Hunt Event Counts - 
 strCondTags <- c("NE","NL","LE","LL","DE","DL")
 xbarcenters <- boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
         main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2),axes = FALSE  )
-mtext(side = 2,cex=0.8, line =2.2, "Hunt Counts  log(N+1) ")
+mtext(side = 2,cex=0.8, line =2.2, "Event Counts " ) #log(N+1)
 vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
 vDat        <- (datHuntStat[,"vHLarvaEventCount"])
 
-axis(1,at<-axis(1,labels=NA), labels=strCondTags)
+axis(1,at<-axis(1,labels=NA), labels=c( strDataLabels[1],strDataLabels[4],strDataLabels[2],strDataLabels[5],strDataLabels[3],strDataLabels[6] ))
 yticks <-axis(2,labels=NA)
-axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
+axis(2, at = yticks, labels =round(10^yticks)-1 , col.axis="black", las=2)
+#minor.tick() ##minor.tick(nx=4, ny=4, tick.ratio=4,x.args=NA) ## Can COnfuse to think scale is linear
 ## Connect Larvae From EMpty To LIve Test Condition #
 plotConnectedEventCounts(datHuntStat,vDat,strCondTags)
+mtext("E",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 
 ## Compare Distrib Of Poisson Rate Derived from Model  Params ##
@@ -449,6 +471,7 @@ legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")),seg.len=2.
        , col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Poisson Hunt Rate  (",lambda," )") )  )
 mtext(side = 2,cex=0.8, line = 2.2, " P(x) ")
+mtext("F",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 dev.off() 
 
