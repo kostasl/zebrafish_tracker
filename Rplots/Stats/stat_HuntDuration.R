@@ -330,7 +330,11 @@ plotDurationGammaSamples <- function (gammaShape,gammaRate,lcolour)
 strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2" 
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+## Load From Central Function
+datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
+
 
 ##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
 datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [

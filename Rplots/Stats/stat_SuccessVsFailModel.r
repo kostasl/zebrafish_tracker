@@ -56,16 +56,19 @@ modelPoisson="model {
 
 #strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2"
+#strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2"
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
-vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
+#datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
+#vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
 
 ##We Can Choose To Exclude The Fish That Produced No Hunting Events
-datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) & 
-                                                     datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL") ,]
+#datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) & 
+#                                                     datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL") ,]
+##Load From Central Function
+datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
+
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 datFishSuccessRate$groupID <- factor(datFishSuccessRate$groupID)
 strGroups <-levels(datFishSuccessRate$groupID)
@@ -141,30 +144,41 @@ MeanHuntRate_NL <- HEventHuntGammaShape_NL*HEventHuntGammaRate_NL
 
 
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
-pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of success, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of success, based on labelled data set",
+    onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
+#svg(filename=strPlotName,width=8,height=8)
 
-nlevels <- 5
-zLL <- kde2d(c(HEventSuccess_LL[,schain]), c(MeanHuntRate_LL[,schain]),n=80)
-zNL <-  kde2d(c(HEventSuccess_NL[,schain]), c(MeanHuntRate_NL[,schain]),n=80)
-zDL <-  kde2d(c(HEventSuccess_DL[,schain]), c(MeanHuntRate_DL[,schain]),n=80)
-
-
-  plot(HEventSuccess_DL, MeanHuntRate_DL,col=colourHL[3],ylim=Range_ylim,xlim=c(0,0.5),pch=19,
-       main="Bayesian Estimation for Hunt Rate and Efficiency",
-       xlab="Probability of Success q",
-       ylab=(expression(paste("Hunt Rate ",lambda ) ) )  ) #paste("Hunt Rate", )
-  points(HEventSuccess_LL, MeanHuntRate_LL,col=colourHL[2],ylim=Range_ylim,xlim=c(0.1,0.5),pch=19)
-  points(HEventSuccess_NL, MeanHuntRate_NL,col=colourHL[1],ylim=Range_ylim,xlim=c(0.1,0.5),pch=19)
-
-    contour(zDL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+  ##### Efficiency Inference Plot ## Taken From stat_SyccessVsFailModel.r ####
+  nlevels <- 5
+  zLL <- kde2d(c(HEventSuccess_LL[,schain]), c(MeanHuntRate_LL[,schain]),n=80)
+  zNL <-  kde2d(c(HEventSuccess_NL[,schain]), c(MeanHuntRate_NL[,schain]),n=80)
+  zDL <-  kde2d(c(HEventSuccess_DL[,schain]), c(MeanHuntRate_DL[,schain]),n=80)
+  
+  plot(HEventSuccess_DL, MeanHuntRate_DL,col=colourHL[3],ylim=Range_ylim,xlim=c(0,0.5),pch=pchL[3],
+       main=NA, #"Bayesian Estimation for Hunt Rate and Efficiency",
+       xlab=NA,#"Probability of Success q",
+       ylab=NA,cex.main =cex,cex.axis=cex )#(expression(paste("Hunt Rate ",lambda ) ) )  ) #paste("Hunt Rate", )
+  points(HEventSuccess_LL, MeanHuntRate_LL,col=colourHL[2],ylim=Range_ylim,xlim=c(0.1,0.5),pch=pchL[2])
+  points(HEventSuccess_NL, MeanHuntRate_NL,col=colourHL[1],ylim=Range_ylim,xlim=c(0.1,0.5),pch=pchL[1])
+  mtext(side = 1,cex=1.1, line = 2.2,"Probability of Success q" ) 
+  mtext(side = 2,cex=1.1, line = 2.2, expression(paste("Hunt Rate ",lambda ) )  )
+  
+  contour(zDL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
   contour(zLL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
   
-    contour(zNL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
-  legend("topright", legend=paste(strGroups," n=",c(NRecCount_DL,NRecCount_LL,NRecCount_NL)),fill=colourL)
-
+  contour(zNL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
+  #legend("topright", legend=paste(strGroups," n=",c(NRecCount_DL,NRecCount_LL,NRecCount_NL)),fill=colourL)
+  legend("topright",
+         legend=c(  expression (),
+                    bquote(NF["e"] ~ '#' ~ .(NRecCount_NL)  ),
+                    bquote(LF["e"] ~ '#' ~ .(NRecCount_LL)  ),
+                    bquote(DF["e"] ~ '#' ~ .(NRecCount_DL)  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         pch=pchL, col=colourLegL)
   
   dev.off()
 
+  
+  #########
 
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation_Fails.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of Engaging with Prey and Failing, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))

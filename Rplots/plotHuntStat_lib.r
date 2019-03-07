@@ -1,6 +1,7 @@
 ### Library Functions For Plotting Hunt Statistics ###
 
 
+
 pieChartLabelledEvents <- function(tblRes,GroupID,colourL=NA)
 {
   
@@ -40,6 +41,7 @@ pieChartLabelledEvents <- function(tblRes,GroupID,colourL=NA)
 }
 
 ##Show Results comparing Success only of Identified Hunt Events that tracked Prey
+## Return Number of Labelled Events
 pieChartLabelledSuccessVsFails <- function(tblRes,GroupID,colourL=NA)
 {
   ## Find Tbl Indexes Indicating Success 
@@ -63,12 +65,14 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID,colourL=NA)
   if (is.na(colourL))
   colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
   
-  pie(DLRes , labels = paste("","",round((DLRes/nLabelledDL)*100),"%",sep=""),cex=3.8,cex.main=3.8,clockwise = TRUE,
-      main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
+  pie(DLRes , labels = paste("","",round((DLRes/nLabelledDL)*100),"%",sep=""),
+      cex=2.8,cex.main=2.8,clockwise = TRUE,
+      #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
       radius=1.0,col=colourL) 
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
   #pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
   
+  return(nLabelledDL)
 }
 
 ##\todo convert Means to BoxPlots

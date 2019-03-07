@@ -43,6 +43,25 @@ convertToScoreLabel <- function (huntScore) {
 huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
 
 
+
+##Loads the Latest Labelled Hunt Events Set - Centralize Here so Changes Propagate To scripts
+getLabelledHuntEventsSet <- function()
+{
+  strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2"
+  message(paste(" Loading Hunt Event List to Analyse... "))
+  #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+  datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+  
+  ##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
+  vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
+  
+  ##We Can Choose To Exclude The Fish That Produced No Hunting Events
+  datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) & 
+                                                         datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL") ,]
+  return(datHuntLabelledEventsSB)
+}
+
+
 ### Used for running the tracker to score Hunt events, or to retrack a hunt event in supervised mode ##
 ### The retracked event are then used for analysis of sensorimotor differences/eye vergence information 
 ## Menu allows for events to be marked as tracked to avoid dublicates by  setting the param bskipMarked = TRUE  
@@ -427,11 +446,15 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
                                           "Fails_WS"=tblFishScoresLabelled[,"Fail-With Strike"],
                                           "Fails"= rowSums(tblFishScoresLabelled[,tblIdxFail]),  #tblFishScoresLabelled[,"Fail"]+tblFishScoresLabelled[,"Fail-No Strike"]+tblFishScoresLabelled[,"Fail-With Strike"],
                                           "HuntEvents"=rowSums(tblFishScoresLabelled[,c(tblIdxSuccess,tblIdxFail)] ),  #rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
-                                          "groupID"=NA) ) #
+                                          "groupID"=NA,
+                                          "dataSetID"=NA) ) #
   
   ##Add Group Label To the resulting Data Frame
   for (e in row.names(tblFishScoresLabelled) )
+  {
     datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )
+    datFishSuccessRate[e,"dataSetID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"dataSetID"] )
+  }
   
   return (datFishSuccessRate)
   
