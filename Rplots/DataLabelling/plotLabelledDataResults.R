@@ -118,9 +118,8 @@ mtext(c(expression(),  bquote("DF"["e"] ~ "#"~ .(nDL) / .(nlDL) )  ),
       outer=outer,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
 #text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
 
-
 dev.off()
-
+embed_fonts(strPlotName )
 
 
 

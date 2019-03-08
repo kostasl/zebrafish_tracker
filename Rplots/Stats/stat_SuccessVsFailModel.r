@@ -177,8 +177,10 @@ pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hu
   
   dev.off()
 
+embed_fonts(strPlotName)
   
-  #########
+
+######## ## # # # ## 
 
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimation_Fails.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of Engaging with Prey and Failing, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))

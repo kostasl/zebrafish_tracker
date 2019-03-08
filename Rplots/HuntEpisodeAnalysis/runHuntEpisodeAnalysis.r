@@ -39,10 +39,11 @@ G_THRESHUNTVERGENCEANGLE <- 40 ##Redifine Here Over main_Tracking - Make it loos
 
 #
 ############# Analysis AND REPLAY OF HUNT EVENTS ####
-load(strDataFileName) ## Load Imported Hunt Event Tracks
+load(strDataFileName) ## Load Imported Hunt Event Tracks - THe detailed Retracked Events
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
 lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData",".rds",sep="")) #Processed Registry on which we add )
 bSaveNewMotionData <- FALSE ##Overwrite the lMotionBoutDatFile
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
@@ -514,7 +515,7 @@ for (strGroup in strGroupID)
 {
   mrow <- 1
   lEyeLDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
-  for (recE in lEyeMotionDat)
+  for (recE in lEyeMotionDat) ##For Each Hunt Event 
   {
     if (is.null(recE))
       next()
@@ -537,7 +538,9 @@ for (strGroup in strGroupID)
   } ##For each EyeData Rec
 }
 
-plot(lEyeLDistMatrix[["LL"]][1,] ,type="l")
+plot(seq(0,maxDist,stepDist),lEyeLDistMatrix[["NL"]][1,],xlab="Distance (mm)" ,type="l",col="red",ylim=c(0,80))
+lines(seq(0,maxDist,stepDist),lEyeLDistMatrix[["LL"]][1,],xlab="Distance (mm)" ,type="l",col="green",ylim=c(0,80))
+lines(seq(0,maxDist,stepDist),lEyeLDistMatrix[["DL"]][1,],xlab="Distance (mm)" ,type="l",col="blue",ylim=c(0,80))
 
 ## PLOT EYE Vs Distance ##
 nlimit <- 3
@@ -547,6 +550,7 @@ for (strGroup in strGroupID)
   plot(0, 0 ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4),main=paste("Left Eye Vs Dist To Prey ",strGroup) )
   for (recE in lEyeMotionDat)
   {
+    print(n)
     if (is.null(recE))
       next()
     
@@ -557,7 +561,7 @@ for (strGroup in strGroupID)
     if (n > nlimit)
       break
     #lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
-    lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
+    points(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="p",col="blue",ylim=c(0,45),xlim=c(0,4),cex=0.2)
     n <- n + 1
   }
   
