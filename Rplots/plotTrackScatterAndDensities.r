@@ -425,23 +425,57 @@ calcRelativeAngleToPrey <- function(datRenderHuntEvent)
 #
 
 ## PLot The Relative Angle Of Fish Bearing to Prey Over Distance to Prey as a Polar Plot
-##- For Each Prey Of this Hunt Event
+##- Can Deal With Multiple Prey IDS, 
 ## The Is assumed to be at the centre of the polar plot 
-polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent)
+## Colour Code According To Eye Vergence
+polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
 {
+  Range <- 80 ##300 Pixels Around the prey
+  
   ### Plot Relative Angle To Each Prey ###
   vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
-  Range <- 80 ##300 Pixels Around the prey
+    
+  #display.brewer.all() to see avaulable options
+  ##Choose Heat Map For white being Low (BG) Red High Vergence
+  Polarrfc <-  colorRampPalette((brewer.pal(8,'YlOrRd' ))); ##Color Bling Friendly Pallet
+  colR <- (c(Polarrfc(80 ))); ##Assume 80 Degrees Max EyeVergence
+  #colR["alpha",] <- 110 ##Opacity
+  
   relAngle <- list()
   
   #txtW <- strwidth(parse(text=paste("270", "^o ", sep=""))) ##Override as it fails When In Layout Mode
   txtW <- -0.2# strwidth(parse(text=paste("270", "^o ", sep="")))
-  plot(1,type='n',xlim=c(-(Range+4*txtW),(Range+4*txtW)) ,ylim=c(-(Range+4*txtW),(Range+4*txtW) ),main="Angle to Prey Vs Distance ")
+  fgColor <- "white"
+  if (newPlot)
+  {
+    plot(1,type='n',xlim=c(-(Range+4*txtW),(Range+4*txtW)) ,ylim=c(-(Range+4*txtW),(Range+4*txtW) ),main="Angle to Prey Vs Distance ")
+    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = rgb(0,0,0.3,0.99))
+    
+    ## Make Range Circle Llines
+    lines(c(0,0),c(0,Range+Range/30) ,col=fgColor,lty=2) #V Line To 0
+    txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/2
+    text((Range-txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,
+         (Range-txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,
+         labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col=fgColor,cex=0.8)
+    
+    points(0,0,cex=0.8,col="blue")
+    for (i in seq(0,Range,1/DIM_MMPERPX )  )
+    {
+      lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col=fgColor)
+      txtW <- strwidth(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
+      text(i*cos(pi/180 * 0 )-txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="") ,
+           col=fgColor,cex=0.7)
+    }
+    
+    ##Plot Heat Map Legend
+    x <- 40+(1:Range/2)
+    points(x,rep(-70,NROW(x) ),pch=19,col=colR,cex=1.5)
+    text(x[1],-78,labels=expression("0"^degree),col=fgColor,font=2.2)  ##0 V Angle
+    text(tail(x,1),-78,labels=expression("80"^degree),col=fgColor,font=2.2)  ##0 V Angle
+  }
   
-  #display.brewer.all() to see avaulable options
-  Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
   
-  colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
+  
   n <- 0
   for (f in vTrackedPreyIDs)
   {
@@ -456,7 +490,8 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent)
     #relAngle[[as.character(f)]] <- ( ((360+180/pi * atan2( datRenderHuntEvent$Prey_X-datRenderHuntEvent$posX,datRenderHuntEvent$posY - datRenderHuntEvent$Prey_Y)) - datRenderHuntEvent$BodyAngle) %% 360) -180
     
     relAngle[[as.character(f)]]  <- (  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
-    
+    EyeVergence <- datRenderPrey$LEyeAngle-datRenderPrey$REyeAngle
+    EyeVergence[EyeVergence<1] <- 1
     #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
     
     ##Convert Frames To Seconds
@@ -464,22 +499,14 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent)
     d <- sqrt(  (datRenderPrey$Prey_X -datRenderPrey$posX )^2 + (datRenderPrey$Prey_Y -datRenderPrey$posY)^2   ) 
     x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
-    points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",col=colR[n])
+    points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",
+           col=colR[EyeVergence]) ##Color Accourding To EyeVergence
     
-    points(0,0,cex=0.8,col="blue")
-    for (i in seq(0,Range,1/DIM_MMPERPX )  )
-    {
-      lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col="blue")
-      txtW <- strwidth(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
-      text(i*cos(pi/180 * 0 )-txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="")   ,col="blue",cex=0.7)
-    }
+  
     
-    lines(c(0,0),c(0,Range+Range/30) ,col="blue") 
-    txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/2
-    text((Range-txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,(Range-txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col="blue",cex=0.8)
   }
   
-}
+} ## End of PlotAngleToPreyVsDistance 
 
 
 ############# PLot Heat Map of Movement Trajectories Across COnditions #####

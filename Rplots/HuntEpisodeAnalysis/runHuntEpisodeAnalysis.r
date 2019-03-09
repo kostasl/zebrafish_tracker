@@ -65,7 +65,7 @@ if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
 if (!exists("lEyeMotionDat" ,envir = globalenv(),mode="list"))
   lEyeMotionDat <<- list() ##Declared In Global Env
 
-#idxH <- 20
+idxH <- 20
 idTo <- 20#NROW(datTrackedEventsRegister)
 
 idxDLSet <- which(datTrackedEventsRegister$groupID == "DL")
@@ -988,3 +988,29 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
          xlab="Bout Sequence (From Capture - Backwards)") 
 # for (i in1:20) #dev.off()
 
+
+########### PLOT Polar Angle to Prey Vs Distance With Eye Vergence HeatMap ###
+pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColoured.pdf",sep=""))
+
+cnt = 0
+for (idxH in idxLLSet[1:8] )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+{
+  
+  cnt  = cnt + 1
+  message(paste("######### Processing ",cnt," ######") )
+  expID <- datTrackedEventsRegister[idxH,]$expID
+  trackID<- datTrackedEventsRegister[idxH,]$trackID
+  eventID <- datTrackedEventsRegister[idxH,]$eventID
+  groupID <- datTrackedEventsRegister[idxH,]$groupID
+  selectedPreyID <- datTrackedEventsRegister[idxH,]$PreyIDTarget
+  
+  message(paste(idxH, ".Process Hunt Event Expid:",expID,"Event:",eventID))
+  
+  datPlaybackHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
+                                                   & datHuntEventMergedFrames$trackID==trackID 
+                                                   & datHuntEventMergedFrames$eventID==eventID,]
+  
+  polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent,newPlot=(cnt==1) )
+}
+
+dev.off()  
