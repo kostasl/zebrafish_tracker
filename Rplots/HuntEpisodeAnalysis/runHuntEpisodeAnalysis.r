@@ -570,17 +570,26 @@ polygon(c(x, rev(x )),
            rev(bandLower[nSPerX > 1]) ),
         col=colourH[1],lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
 
+
 ## Plot The Mean V vergence And Standart Error 
+##Perhapse make it more convincing by Only Include EyeV > HuntThreshold ##
+pdf(file= paste(strPlotExportPath,"/EyeVsPreyDistance_All.pdf",sep=""),
+    title="Mean Eye Vergence Vs Distance from Prey DF, NF, LF" )
+
 plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
 plotMeanEyeV(lEyeVDistMatrix[["LL"]],colourH[2],addNewPlot=FALSE)
 plotMeanEyeV(lEyeVDistMatrix[["DL"]],colourH[3],addNewPlot=FALSE)
+legend("topright",fill=colourH, legend = c(  expression (),
+                                  bquote(NF["s"] ~ '#' ~ .(NROW(idxNLSet) )  ),
+                                  bquote(LF["e"] ~ '#' ~ .(NROW(idxLLSet) )  ),
+                                  bquote(DF["e"] ~ '#' ~ .(NROW(idxDLSet) )  ) ) )
+mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
+mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
 
-
+dev.off()
 
 lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["LL"]],2,mean,na.rm=TRUE),type="l",col=colourH[2],lwd=3,xlab=NA,ylab=NA)
 lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["DL"]],2,mean,na.rm=TRUE),type="l",col=colourH[3],lwd=3,xlab=NA,ylab=NA)
-mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)")
-mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ) ) 
 
 
 
@@ -1039,10 +1048,10 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
 
 
 ########### PLOT Polar Angle to Prey Vs Distance With Eye Vergence HeatMap ###
-pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColoured.pdf",sep=""))
-
+pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColoured_LL-L.pdf",sep=""))
+idx <- sample(idxLLSet,3)
 cnt = 0
-for (idxH in idxLLSet[1:8] )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idx )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
   
   cnt  = cnt + 1
@@ -1060,6 +1069,7 @@ for (idxH in idxLLSet[1:8] )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(
                                                    & datHuntEventMergedFrames$eventID==eventID,]
   
   polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent,newPlot=(cnt==1) )
+  mtext(paste("",idx,sep="",collapse=",")  ,side=3,outer = FALSE,col="red")
 }
 
 dev.off()  

@@ -14,29 +14,28 @@ histj<- function(x,y,x.breaks,y.breaks){
 plotMeanEyeV <- function(lEyeVDistMatrix,lcolour,addNewPlot=TRUE)
 {
   
-  
   lEyeVMatrix <-lEyeVDistMatrix
-  nSPerX <- apply(lEyeVMatrix,2,function(x){return (NROW(x[!is.na(x)])) })
+  nSPerX    <- apply(lEyeVMatrix,2,function(x){return (NROW(x[!is.na(x)])) })
+  
   bandUpper <- apply(lEyeVMatrix,2,mean,na.rm=TRUE ) + apply(lEyeVMatrix,2,sd,na.rm=TRUE)/sqrt(nSPerX)
   bandLower <- apply(lEyeVMatrix,2,mean,na.rm=TRUE ) - apply(lEyeVMatrix,2,sd,na.rm=TRUE)/sqrt(nSPerX)
   
   ##plot Only Where we Have more than 1 sample
   x<- seq(0,maxDist,stepDist)[nSPerX > 1]
   if (addNewPlot)
-    plot(x,apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],
+    plot(x,smooth( apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
         type="l",col=lcolour,lwd=3,ylim=c(0,100),xlim=c(0,5),
         xlab=NA,ylab=NA)
   else
-    lines(x,apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],
+    lines(x,smooth(apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
          type="l",col=lcolour,lwd=3,ylim=c(0,100),xlim=c(0,5),
          xlab=NA,ylab=NA)
   
   polygon(c(x, rev(x )),
-          c(bandUpper[nSPerX > 1] ,
-            rev(bandLower[nSPerX > 1]) ),
+          c(smooth(bandUpper[nSPerX > 1]) ,
+            smooth(rev(bandLower[nSPerX > 1])) ),
           col=lcolour,
           lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
-  
 }
 
 
@@ -478,7 +477,10 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
   fgColor <- "white"
   if (newPlot)
   {
-    plot(1,type='n',xlim=c(-(Range+4*txtW),(Range+4*txtW)) ,ylim=c(-(Range+4*txtW),(Range+4*txtW) ),main="Angle to Prey Vs Distance ")
+    plot(1,type='n',xlim=c(-(Range+4*txtW),(Range+4*txtW)) ,
+         ylim=c(-(Range+4*txtW),(Range+4*txtW) ),
+         main="Angle to Prey Vs Distance ",
+         xlab=NA,ylab=NA)
     rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = rgb(0,0,0.3,0.99))
     
     ## Make Range Circle Llines
