@@ -555,22 +555,27 @@ for (strGroup in strGroupID)
   } ##For each EyeData Rec
 }
 
-lEyeVMatrix <-lEyeVDistMatrix[["DL"]]
-nSPerX <- apply(lEyeVDistMatrix[["NL"]],2,function(x){return (NROW(x[!is.na(x)])) })
-bandUpper <- apply(lEyeVDistMatrix[["NL"]],2,mean,na.rm=TRUE ) + apply(lEyeVDistMatrix[["NL"]],2,sd,na.rm=TRUE)/sqrt(nSPerX)
-bandUpper[is.na(bandUpper)] <- 0
-bandLower <- apply(lEyeVDistMatrix[["NL"]],2,mean,na.rm=TRUE ) - apply(lEyeVDistMatrix[["NL"]],2,sd,na.rm=TRUE)/sqrt(nSPerX)
-bandLower[is.na(bandLower)] <- 0
+lEyeVMatrix <-lEyeVDistMatrix[["NL"]]
+nSPerX <- apply(lEyeVMatrix,2,function(x){return (NROW(x[!is.na(x)])) })
+bandUpper <- apply(lEyeVMatrix,2,mean,na.rm=TRUE ) + apply(lEyeVMatrix,2,sd,na.rm=TRUE)/sqrt(nSPerX)
+bandLower <- apply(lEyeVMatrix,2,mean,na.rm=TRUE ) - apply(lEyeVMatrix,2,sd,na.rm=TRUE)/sqrt(nSPerX)
 
 ##plot Only Where we Have more than 1 sample
 x<- seq(0,maxDist,stepDist)[nSPerX > 1]
-plot(x,apply(lEyeVDistMatrix[["NL"]],2,mean,na.rm=TRUE)[nSPerX > 1],
+plot(x,apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],
      type="l",col=colourH[1],lwd=3,ylim=c(0,100),xlim=c(0,5),
      xlab=NA,ylab=NA)
 polygon(c(x, rev(x )),
         c(bandUpper[nSPerX > 1] ,
            rev(bandLower[nSPerX > 1]) ),
-        type="l",col=colourH[1],lwd=3,ylim=c(0,100),xlab=NA,ylab=NA)
+        col=colourH[1],lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
+
+## Plot The Mean V vergence And Standart Error 
+plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
+plotMeanEyeV(lEyeVDistMatrix[["LL"]],colourH[2],addNewPlot=FALSE)
+plotMeanEyeV(lEyeVDistMatrix[["DL"]],colourH[3],addNewPlot=FALSE)
+
+
 
 lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["LL"]],2,mean,na.rm=TRUE),type="l",col=colourH[2],lwd=3,xlab=NA,ylab=NA)
 lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["DL"]],2,mean,na.rm=TRUE),type="l",col=colourH[3],lwd=3,xlab=NA,ylab=NA)

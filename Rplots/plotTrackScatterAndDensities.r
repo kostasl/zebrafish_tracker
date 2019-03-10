@@ -10,6 +10,36 @@ histj<- function(x,y,x.breaks,y.breaks){
   return(mat)
 }  
 
+##Plot Mean And Std Error Around Mean ##
+plotMeanEyeV <- function(lEyeVDistMatrix,lcolour,addNewPlot=TRUE)
+{
+  
+  
+  lEyeVMatrix <-lEyeVDistMatrix
+  nSPerX <- apply(lEyeVMatrix,2,function(x){return (NROW(x[!is.na(x)])) })
+  bandUpper <- apply(lEyeVMatrix,2,mean,na.rm=TRUE ) + apply(lEyeVMatrix,2,sd,na.rm=TRUE)/sqrt(nSPerX)
+  bandLower <- apply(lEyeVMatrix,2,mean,na.rm=TRUE ) - apply(lEyeVMatrix,2,sd,na.rm=TRUE)/sqrt(nSPerX)
+  
+  ##plot Only Where we Have more than 1 sample
+  x<- seq(0,maxDist,stepDist)[nSPerX > 1]
+  if (addNewPlot)
+    plot(x,apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],
+        type="l",col=lcolour,lwd=3,ylim=c(0,100),xlim=c(0,5),
+        xlab=NA,ylab=NA)
+  else
+    lines(x,apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],
+         type="l",col=lcolour,lwd=3,ylim=c(0,100),xlim=c(0,5),
+         xlab=NA,ylab=NA)
+  
+  polygon(c(x, rev(x )),
+          c(bandUpper[nSPerX > 1] ,
+            rev(bandLower[nSPerX > 1]) ),
+          col=lcolour,
+          lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
+  
+}
+
+
 
 plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
 {
