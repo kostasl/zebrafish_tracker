@@ -507,6 +507,8 @@ for (gp in strGroupID)
 ## Make Distance Vs Eye Angle Vectors ##
 ## PLOT EYE Vs Distance ##
 lEyeLDistMatrix <- list()
+lEyeRDistMatrix <- list()
+lEyeVDistMatrix <- list()
 nBreaks <- 50
 maxDist <- 5 #5mm Range
 stepDist <- maxDist/nBreaks
@@ -515,32 +517,74 @@ for (strGroup in strGroupID)
 {
   mrow <- 1
   lEyeLDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  lEyeRDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  lEyeVDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
   for (recE in lEyeMotionDat) ##For Each Hunt Event 
   {
     if (is.null(recE))
       next()
     groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
     if (as.character(groupID) != strGroup )
-      next()
+      next() ##Looking For EyeM Of Specific Group/ Skip Others
+    
     ##Go through Each distance and record Eye Angle
     for (d in 0:nBreaks)
     {
       recLEye <- recE[ recE[,"DistToPrey"] > d*stepDist & recE[,"DistToPrey"] <= (d+1)*stepDist ,"LEyeAngle"]
-      if (any(is.nan(recLEye)))
+      recREye <- recE[ recE[,"DistToPrey"] > d*stepDist & recE[,"DistToPrey"] <= (d+1)*stepDist ,"REyeAngle"]
+      
+      if (any(is.nan(recLEye) | is.nan(recREye) ))
         stop("Nan In Eye Angle")
+      
       if (NROW(recLEye) > 0)
         lEyeLDistMatrix[[strGroup]][mrow,d] <- mean(recLEye,na.rm=TRUE )##Pick the mean value
       else
         lEyeLDistMatrix[[strGroup]][mrow,d] <- NA
+
+      if (NROW(recREye) > 0)
+        lEyeRDistMatrix[[strGroup]][mrow,d] <- mean(recREye,na.rm=TRUE )##Pick the mean value
+      else
+        lEyeRDistMatrix[[strGroup]][mrow,d] <- NA
+      
+      ##Combine into Vergence Angle Matrix
+      lEyeVDistMatrix[[strGroup]][mrow,d] <- lEyeLDistMatrix[[strGroup]][mrow,d] - lEyeRDistMatrix[[strGroup]][mrow,d]
+            
     } ##For each Distance In Vector
     
     mrow <- mrow + 1
   } ##For each EyeData Rec
 }
 
-plot(seq(0,maxDist,stepDist),lEyeLDistMatrix[["NL"]][1,],xlab="Distance (mm)" ,type="l",col="red",ylim=c(0,80))
-lines(seq(0,maxDist,stepDist),lEyeLDistMatrix[["LL"]][1,],xlab="Distance (mm)" ,type="l",col="green",ylim=c(0,80))
-lines(seq(0,maxDist,stepDist),lEyeLDistMatrix[["DL"]][1,],xlab="Distance (mm)" ,type="l",col="blue",ylim=c(0,80))
+lEyeVMatrix <-lEyeVDistMatrix[["DL"]]
+nSPerX <- apply(lEyeVDistMatrix[["NL"]],2,function(x){return (NROW(x[!is.na(x)])) })
+bandUpper <- apply(lEyeVDistMatrix[["NL"]],2,mean,na.rm=TRUE ) + apply(lEyeVDistMatrix[["NL"]],2,sd,na.rm=TRUE)/sqrt(nSPerX)
+bandUpper[is.na(bandUpper)] <- 0
+bandLower <- apply(lEyeVDistMatrix[["NL"]],2,mean,na.rm=TRUE ) - apply(lEyeVDistMatrix[["NL"]],2,sd,na.rm=TRUE)/sqrt(nSPerX)
+bandLower[is.na(bandLower)] <- 0
+
+##plot Only Where we Have more than 1 sample
+x<- seq(0,maxDist,stepDist)[nSPerX > 1]
+plot(x,apply(lEyeVDistMatrix[["NL"]],2,mean,na.rm=TRUE)[nSPerX > 1],
+     type="l",col=colourH[1],lwd=3,ylim=c(0,100),xlim=c(0,5),
+     xlab=NA,ylab=NA)
+polygon(c(x, rev(x )),
+        c(bandUpper[nSPerX > 1] ,
+           rev(bandLower[nSPerX > 1]) ),
+        type="l",col=colourH[1],lwd=3,ylim=c(0,100),xlab=NA,ylab=NA)
+
+lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["LL"]],2,mean,na.rm=TRUE),type="l",col=colourH[2],lwd=3,xlab=NA,ylab=NA)
+lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["DL"]],2,mean,na.rm=TRUE),type="l",col=colourH[3],lwd=3,xlab=NA,ylab=NA)
+mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)")
+mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ) ) 
+
+
+
+##Plot An Example from Each 
+plot(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["NL"]][1,],xlab="Distance (mm)" ,type="l",col="red",ylim=c(0,80),main="Right Eye")
+lines(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["LL"]][1,],xlab="Distance (mm)" ,type="l",col="green",ylim=c(0,80))
+lines(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["DL"]][1,],xlab="Distance (mm)" ,type="l",col="blue",ylim=c(0,80))
+
+
 
 ## PLOT EYE Vs Distance ##
 nlimit <- 3
