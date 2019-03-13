@@ -463,6 +463,7 @@ Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
 return (relAngle)
 }
 
+
 ## Returns A list of vectors showing bearing Angle To Each Prey 
 calcRelativeAngleToPrey <- function(datRenderHuntEvent)
 {
@@ -493,12 +494,60 @@ calcRelativeAngleToPrey <- function(datRenderHuntEvent)
     ##Convert Frames To Seconds
   return (relAngle)
 }
-#
+# ### DUBlicate
+
+
+
+### Calc Relative Angle  To Prey / Azimuth - Returns Vector
+calcPreyAzimuth <- function(datRenderHuntEvent)
+{
+  
+  ### Plot Relative Angle To Each Prey ###
+  vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
+  relAngle <- list()
+  
+  n <- 0
+  for (f in vTrackedPreyIDs)
+  {
+    n<-n+1
+    message(f)
+    if (is.na(f))
+      next
+    
+    datRenderPrey <- datRenderHuntEvent[datRenderHuntEvent$PreyID == f,]
+    ##Atan2 returns -180 to 180, so 1st add 180 to convert to 360, then sub the fishBody Angle, then Mod 360 to wrap in 360deg circle, then sub 180 to convert to -180 to 180 relative to fish heading angles
+    #relAngle[[as.character(f)]] <- ( ((360+180/pi * atan2( datRenderHuntEvent$Prey_X-datRenderHuntEvent$posX,datRenderHuntEvent$posY - datRenderHuntEvent$Prey_Y)) - datRenderHuntEvent$BodyAngle) %% 360) -180
+    #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
+    
+    ##Convert Frames To Seconds
+    bearingRad = pi/180*(datRenderPrey$BodyAngle-90)##+90+180 - Body Heading
+    posVX = datRenderPrey$posX -cos(bearingRad)*DIM_DISTTOMOUTH_PX
+    posVY = datRenderPrey$posY+sin(bearingRad)*DIM_DISTTOMOUTH_PX
+    ##For Rel Angle Use Bladder Centroid So As to minimize angle error
+    
+    ##For Distance Use Estimated MouthPOint
+    d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
+    relAngle[[as.character(f)]]  <- cbind(distPX=d,
+                                          azimuth=( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX, datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+    )
+    
+        x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
+    y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
+    
+  }
+  
+  return(relAngle)
+}
+
+
+
 
 ## PLot The Relative Angle Of Fish Bearing to Prey Over Distance to Prey as a Polar Plot
 ##- Can Deal With Multiple Prey IDS, 
 ## The Is assumed to be at the centre of the polar plot 
 ## Colour Code According To Eye Vergence
+
+## \Returns prey azimuth Vector
 polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
 {
   Range <- 80 ##300 Pixels Around the prey
@@ -585,8 +634,8 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     
   }
   
+  return(relAngle)
 } ## End of PlotAngleToPreyVsDistance 
-
 
 ############# PLot Heat Map of Movement Trajectories Across COnditions #####
 # strTrajectoryDensityFileName <- paste("plots/densities/MotionDensity-Set-",strCond,".pdf",collapse=NULL);

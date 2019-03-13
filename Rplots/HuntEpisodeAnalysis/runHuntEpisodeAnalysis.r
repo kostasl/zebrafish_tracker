@@ -509,6 +509,8 @@ for (gp in strGroupID)
 lEyeLDistMatrix <- list()
 lEyeRDistMatrix <- list()
 lEyeVDistMatrix <- list()
+lPreyAngleDistMatrix <- list()
+
 nBreaks <- 50
 maxDist <- 5 #5mm Range
 stepDist <- maxDist/nBreaks
@@ -519,6 +521,8 @@ for (strGroup in strGroupID)
   lEyeLDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
   lEyeRDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
   lEyeVDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  lPreyAngleDistMatrix <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  
   for (recE in lEyeMotionDat) ##For Each Hunt Event 
   {
     if (is.null(recE))
@@ -549,26 +553,20 @@ for (strGroup in strGroupID)
       ##Combine into Vergence Angle Matrix
       lEyeVDistMatrix[[strGroup]][mrow,d] <- lEyeLDistMatrix[[strGroup]][mrow,d] - lEyeRDistMatrix[[strGroup]][mrow,d]
             
+      ### Calc Azimuth to Prey
+      bearingRad = pi/180*(datRenderPrey$BodyAngle-90)##+90+180 - Body Heading
+      posVX = datRenderPrey$posX -cos(bearingRad)*DIM_DISTTOMOUTH_PX
+      posVY = datRenderPrey$posY+sin(bearingRad)*DIM_DISTTOMOUTH_PX
+      ##For Rel Angle Use Bladder Centroid So As to minimize angle error
+      relAngle[[as.character(f)]]  <- ( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX, datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+      
+      
+      
     } ##For each Distance In Vector
     
     mrow <- mrow + 1
   } ##For each EyeData Rec
 }
-
-lEyeVMatrix <-lEyeVDistMatrix[["NL"]]
-nSPerX <- apply(lEyeVMatrix,2,function(x){return (NROW(x[!is.na(x)])) })
-bandUpper <- apply(lEyeVMatrix,2,mean,na.rm=TRUE ) + apply(lEyeVMatrix,2,sd,na.rm=TRUE)/sqrt(nSPerX)
-bandLower <- apply(lEyeVMatrix,2,mean,na.rm=TRUE ) - apply(lEyeVMatrix,2,sd,na.rm=TRUE)/sqrt(nSPerX)
-
-##plot Only Where we Have more than 1 sample
-x<- seq(0,maxDist,stepDist)[nSPerX > 1]
-plot(x,apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],
-     type="l",col=colourH[1],lwd=3,ylim=c(0,100),xlim=c(0,5),
-     xlab=NA,ylab=NA)
-polygon(c(x, rev(x )),
-        c(bandUpper[nSPerX > 1] ,
-           rev(bandLower[nSPerX > 1]) ),
-        col=colourH[1],lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
 
 
 pdf(file= paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep=""),
@@ -612,10 +610,6 @@ mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
 mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
 
 dev.off()
-
-lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["LL"]],2,mean,na.rm=TRUE),type="l",col=colourH[2],lwd=3,xlab=NA,ylab=NA)
-lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["DL"]],2,mean,na.rm=TRUE),type="l",col=colourH[3],lwd=3,xlab=NA,ylab=NA)
-
 
 
 ##Plot An Example from Each 
@@ -1073,6 +1067,7 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
 
 
 ########### PLOT Polar Angle to Prey Vs Distance With Eye Vergence HeatMap ###
+
 idx <- sample(idxLLSet,3)
 cnt = 0
 for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
@@ -1101,4 +1096,35 @@ for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   dev.off()  
 }
 
+############
 
+### Obtain Matrix of relative Angles 
+lrecAzimuth <- list()
+for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+{
+  
+  cnt  = cnt + 1
+  message(paste("######### Processing ",cnt," ######") )
+  
+
+  expID <- datTrackedEventsRegister[idxH,]$expID
+  trackID<- datTrackedEventsRegister[idxH,]$trackID
+  eventID <- datTrackedEventsRegister[idxH,]$eventID
+  groupID <- datTrackedEventsRegister[idxH,]$groupID
+  selectedPreyID <- datTrackedEventsRegister[idxH,]$PreyIDTarget
+  
+  message(paste(idxH, ".Process Hunt Event Expid:",expID,"Event:",eventID))
+  
+  datPlaybackHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
+                                                   & datHuntEventMergedFrames$trackID==trackID 
+                                                   & datHuntEventMergedFrames$eventID==eventID,]
+  
+  
+  lrecAzimuth[[cnt]] <- calcPreyAzimuth(datPlaybackHuntEvent[datPlaybackHuntEvent$LEyeAngle - datPlaybackHuntEvent$REyeAngle > G_THRESHUNTVERGENCEANGLE,] )
+  idx <- idxH  
+  mtext(paste("",idx,sep="",collapse=",")  ,side=3,outer = FALSE,col="red")
+
+  
+}
+
+plot(recAzimuth$`5`[,1]*DIM_MMPERPX,recAzimuth$`5`[,2])
