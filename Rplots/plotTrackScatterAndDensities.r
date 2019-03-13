@@ -201,10 +201,10 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
   ## (see Bianco et al. 2011) : "the functional retinal field as 163˚ after Easter and Nicola (1996)."
   iConeArc = 163/2 ##Degrees Of Assumed Half FOV of Each Eye
   ##Eye Distance taken By Bianco As 453mum, ie 0.5mm , take tracker
-  EyeDist = 0.4/DIM_MMPERPX ##From Head Centre
-  BodyArrowLength = 13
-  LEyecolour = "#0C0CFF2A"
-  REyecolour = "#FF00002A"
+  EyeDist         = 0.45/DIM_MMPERPX ##From Head Centre
+  BodyArrowLength = DIM_DISTTOMOUTH_PX
+  LEyecolour      = "#0C0CFF2A"
+  REyecolour      = "#FF00002A"
 
   #display.brewer.all() to see avaulable options
   Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
@@ -278,7 +278,6 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
     plot(datFishFrames$posX,frameWidth-datFishFrames$posY,xlim=X_FRAME,ylim=Y_FRAME,col="black",cex = .5,type='l',xlab="X",ylab="Y")
     ##Plot Current Frame Position
     points(posX,posY,col="black",pch=16)
-    
     arrows(posX,posY,posVX,posVY)
     
     ##Draw Heading Line Of Sight In Blue
@@ -343,6 +342,9 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
       {
         
         points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=16,cex=lastPreyFrame$Prey_Radius/2)
+        if (lastPreyFrame$Prey_Radius < 2) ##Draw X over Prey, If it has likely Dissappeared By Now   
+          points(lastPreyFrame$Prey_X,frameWidth-lastPreyFrame$Prey_Y,col=colR[[nn]],pch=4,cex=1.2)
+        
         lines(rangePreyFrame$Prey_X,frameWidth-rangePreyFrame$Prey_Y,col="red")
         text(lastPreyFrame$Prey_X+5,frameWidth-lastPreyFrame$Prey_Y+10,labels=f,col="darkred",cex=0.8)
       }

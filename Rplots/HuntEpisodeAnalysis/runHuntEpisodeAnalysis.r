@@ -36,7 +36,6 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
 G_THRESHUNTVERGENCEANGLE <- 40 ##Redifine Here Over main_Tracking - Make it looser so to detect 1st turn to Prey
 #    for (i in 1:40) dev.off()
-
 #
 ############# Analysis AND REPLAY OF HUNT EVENTS ####
 load(strDataFileName) ## Load Imported Hunt Event Tracks - THe detailed Retracked Events
@@ -1048,14 +1047,16 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
 
 
 ########### PLOT Polar Angle to Prey Vs Distance With Eye Vergence HeatMap ###
-pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColoured_LL-L.pdf",sep=""))
 idx <- sample(idxLLSet,3)
 cnt = 0
-for (idxH in idx )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
-  
+
   cnt  = cnt + 1
   message(paste("######### Processing ",cnt," ######") )
+  
+  pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColoured_LL-",idxH,".pdf",sep=""))
+  
   expID <- datTrackedEventsRegister[idxH,]$expID
   trackID<- datTrackedEventsRegister[idxH,]$trackID
   eventID <- datTrackedEventsRegister[idxH,]$eventID
@@ -1068,8 +1069,10 @@ for (idxH in idx )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTracked
                                                    & datHuntEventMergedFrames$trackID==trackID 
                                                    & datHuntEventMergedFrames$eventID==eventID,]
   
-  polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent,newPlot=(cnt==1) )
+  polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent,newPlot=TRUE )
+  idx <- idxH  
   mtext(paste("",idx,sep="",collapse=",")  ,side=3,outer = FALSE,col="red")
+  dev.off()  
 }
 
-dev.off()  
+

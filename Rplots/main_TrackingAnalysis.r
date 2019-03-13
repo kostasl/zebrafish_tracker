@@ -33,6 +33,8 @@ col2hex <- function(rgbcol) {
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
 DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
+DIM_DISTTOMOUTH_PX <- 16 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
+DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 G_APPROXFPS              <- 410
 G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
@@ -106,8 +108,8 @@ strPlotExportPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrac
 
 ## Laptop ##
 setwd("~/workspace/zebrafishtrack/Rplots")
-strVideoFilePath  <- "/media/kostasl/FLASHDATA/AnalysisSet"
-strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release"
+strVideoFilePath  <- "/media/kostasl/zfishDataAlpha"
+strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_2_GCC_64bit-Release"
 strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
 strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
 strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
