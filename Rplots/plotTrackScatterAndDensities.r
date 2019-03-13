@@ -181,6 +181,19 @@ plotGroupMotion <- function(filtereddatAllFrames,groupStat,vexpID)
   
 } ##End of Function
 
+bPause <- FALSE
+keydown <- function(key) {
+  if (key == "p") 
+  {
+    bPause <- TRUE
+    message("KEYPRESS ")
+    return( bPause)
+  }
+    
+  NULL
+}
+
+
 
 
 ##Test  PlayBack Plot Hunt Event###
@@ -215,6 +228,16 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
                                                          !is.na(datHuntEventMergedFrames$frameN) ,]
  
   X11() ##Show On Screen
+  setGraphicsEventHandlers(prompt = "Click p to pause",
+                           onMouseDown = NULL,
+                           onMouseUp = NULL,
+                           onIdle=NULL,
+                           onKeybd = keydown,
+                           consolePrompt="Press Key To Pause")
+  
+  eventEnv <- getGraphicsEventEnv()
+  
+  
   startFrame <- min(datHuntEventMergedFrames$frameN,na.rm =TRUE)
   endFrame   <- max(datHuntEventMergedFrames$frameN,na.rm =TRUE)
   vPreyFrameN   <- datHuntEventMergedFrames[datHuntEventMergedFrames$PreyID == preyTargetID ,]$frameN
@@ -222,11 +245,18 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
   
   for (i in seq(startFrame,endFrame,speed) )
   {
+    while (bPause) 
+    {
+      key<- readline(prompt="- Press r to continue -")
+      if (key == 'r')
+        bPause <- FALSE
+    }
+    
+    
     
     tR = (startFrame: min( c(i,endFrame ) ) )
     ##Multiple Copies Of Fish Can Exist As its Joined the Food Records, when tracking more than one Food Item.
     ## Thus When Rendering the fish Choose one of the food items that appears in the current frame range
-    
     
     
     datFishFrames <- datHuntEventMergedFrames[datHuntEventMergedFrames$frameN %in% tR,] ##in Range
@@ -276,6 +306,8 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
     ##Plot Track
     par(bg="white") 
     plot(datFishFrames$posX,frameWidth-datFishFrames$posY,xlim=X_FRAME,ylim=Y_FRAME,col="black",cex = .5,type='l',xlab="X",ylab="Y")
+    
+    
     ##Plot Current Frame Position
     points(posX,posY,col="black",pch=16)
     arrows(posX,posY,posVX,posVY)
@@ -327,7 +359,9 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
     
     
     ##Draw Frame Number
-    text(X_FRAME[1] + 30,frameHeight-10,labels=paste("#",i-startFrame,round( (i-startFrame)/(Fs/1000)),"msec" ) ,col="darkblue",cex=0.7)
+    #text(X_FRAME[1] + 60,frameHeight+20,labels=paste(i,"# (",i-startFrame,")",round( (i-startFrame)/(Fs/1000)),"msec" ) ,col="darkblue",cex=0.7)
+    mtext(side = 3,cex=1.0, line = 2.2, outer=FALSE, 
+          paste(i,"# (",i-startFrame,")",round( (i-startFrame)/(Fs/1000)),"msec" ) ,col="darkblue" )
     
     colR <- c(Polarrfc(NROW(vTrackedPreyIDs) ) ,"#FF0000");
     ###Draw Prey
@@ -361,6 +395,12 @@ renderHuntEventPlayback <- function(datHuntEventMergedFrames,preyTargetID,speed=
   
   
 }##RenderHunt Event
+
+
+
+
+
+
 
 
 ## PLot The Relative Angle Of Fish Bearing to Prey Over Time On  a Polar Plot - For Each Prey Of this Hunt Event
@@ -523,14 +563,19 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     ##Atan2 returns -180 to 180, so 1st add 180 to convert to 360, then sub the fishBody Angle, then Mod 360 to wrap in 360deg circle, then sub 180 to convert to -180 to 180 relative to fish heading angles
     #relAngle[[as.character(f)]] <- ( ((360+180/pi * atan2( datRenderHuntEvent$Prey_X-datRenderHuntEvent$posX,datRenderHuntEvent$posY - datRenderHuntEvent$Prey_Y)) - datRenderHuntEvent$BodyAngle) %% 360) -180
     
-    relAngle[[as.character(f)]]  <- (  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
     EyeVergence <- datRenderPrey$LEyeAngle-datRenderPrey$REyeAngle
     EyeVergence[EyeVergence<1] <- 1
     #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
     
     ##Convert Frames To Seconds
-    
-    d <- sqrt(  (datRenderPrey$Prey_X -datRenderPrey$posX )^2 + (datRenderPrey$Prey_Y -datRenderPrey$posY)^2   ) 
+    bearingRad = pi/180*(datRenderPrey$BodyAngle-90)##+90+180 - Body Heading
+    posVX = datRenderPrey$posX -cos(bearingRad)*DIM_DISTTOMOUTH_PX
+    posVY = datRenderPrey$posY+sin(bearingRad)*DIM_DISTTOMOUTH_PX
+    ##For Rel Angle Use Bladder Centroid So As to minimize angle error
+    relAngle[[as.character(f)]]  <- ( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX, datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+  
+    ##For Distance Use Estimated MouthPOint
+    d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
     x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",

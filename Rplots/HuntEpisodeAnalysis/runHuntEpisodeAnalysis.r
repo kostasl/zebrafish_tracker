@@ -53,9 +53,10 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 ###
 #nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering ##moved to main
 
+### RESET Storage Structs ###
 remove(lMotionBoutDat)
 remove(lEyeMotionDat)
-
+############################
 
 if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
   lMotionBoutDat <<- list() ##Declared In Global Env
@@ -241,7 +242,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   vTurnSpeed[is.na(vTurnSpeed)] <- 0
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
   
-  vDistToPrey_Fixed_FullRange      <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
+  vDistToPrey_Fixed_FullRange    <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
   
   #plot(vTailDisp,type='l')
   ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
@@ -570,14 +571,39 @@ polygon(c(x, rev(x )),
         col=colourH[1],lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
 
 
-## Plot The Mean V vergence And Standart Error 
-##Perhapse make it more convincing by Only Include EyeV > HuntThreshold ##
-pdf(file= paste(strPlotExportPath,"/EyeVsPreyDistance_All.pdf",sep=""),
-    title="Mean Eye Vergence Vs Distance from Prey DF, NF, LF" )
+pdf(file= paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep=""),
+    title="Mean Eye HUNT (>45 degrees) Vergence Vs Distance from Prey  LF" )
+#plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
+lHuntEyeVDistMatrix <- lEyeVDistMatrix[["LL"]]
+lHuntEyeVDistMatrix[lHuntEyeVDistMatrix < G_THRESHUNTVERGENCEANGLE] <- NA
+plotMeanEyeV(lHuntEyeVDistMatrix
+             ,colourH[2],addNewPlot=TRUE)
+legend("topright",fill=colourH[2], legend = c(  expression (),
+                                                bquote(LF["e"] ~ '#' ~ .(NROW(idxLLSet) )  )
+))
 
-plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
-plotMeanEyeV(lEyeVDistMatrix[["LL"]],colourH[2],addNewPlot=FALSE)
-plotMeanEyeV(lEyeVDistMatrix[["DL"]],colourH[3],addNewPlot=FALSE)
+mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
+mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
+
+dev.off()
+
+## Plot The Mean V vergence And Std Error  SEM
+##Perhapse make it more convincing by Only Include EyeV > HuntThreshold ##
+pdf(file= paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_ALL.pdf",sep=""),
+    title="Mean Eye Vergence Vs Distance from Prey  NF,LF,DF" )
+
+lHuntEyeVDistMatrix_NL <- lEyeVDistMatrix[["NL"]]
+lHuntEyeVDistMatrix_NL[lHuntEyeVDistMatrix_NL < G_THRESHUNTVERGENCEANGLE] <- NA
+plotMeanEyeV(lHuntEyeVDistMatrix_NL,colourH[1],addNewPlot=TRUE)
+
+lHuntEyeVDistMatrix_LL <- lEyeVDistMatrix[["LL"]]
+lHuntEyeVDistMatrix_LL[lHuntEyeVDistMatrix_LL < G_THRESHUNTVERGENCEANGLE] <- NA
+plotMeanEyeV(lHuntEyeVDistMatrix_LL,colourH[2],addNewPlot=FALSE)
+
+lHuntEyeVDistMatrix_DL <- lEyeVDistMatrix[["DL"]]
+lHuntEyeVDistMatrix_DL[lHuntEyeVDistMatrix_DL < G_THRESHUNTVERGENCEANGLE] <- NA
+plotMeanEyeV(lHuntEyeVDistMatrix_DL,colourH[3],addNewPlot=FALSE)
+
 legend("topright",fill=colourH, legend = c(  expression (),
                                   bquote(NF["s"] ~ '#' ~ .(NROW(idxNLSet) )  ),
                                   bquote(LF["e"] ~ '#' ~ .(NROW(idxLLSet) )  ),
@@ -1049,13 +1075,13 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
 ########### PLOT Polar Angle to Prey Vs Distance With Eye Vergence HeatMap ###
 idx <- sample(idxLLSet,3)
 cnt = 0
-for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
 
   cnt  = cnt + 1
   message(paste("######### Processing ",cnt," ######") )
   
-  pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColoured_LL-",idxH,".pdf",sep=""))
+  pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColouredB_NL-",idxH,".pdf",sep=""))
   
   expID <- datTrackedEventsRegister[idxH,]$expID
   trackID<- datTrackedEventsRegister[idxH,]$trackID

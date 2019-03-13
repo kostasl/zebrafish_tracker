@@ -148,7 +148,10 @@ findLabelledEvent <- function (EventRegisterRec)
   if (any(names(EventRegisterRec) == "startFrame"))
   {
     d<-(recs$startFrame - EventRegisterRec$startFrame)
-    recs <- recs[ which( abs(d) == min(abs(d) )), ] 
+    if (!is.na(d)) ##Get The BEst Match FOr Start Frame- If startFrame is not NA
+    {
+      recs <- recs[ which( abs(d) == min(abs(d) )), ] 
+    }
     
     }
   
