@@ -571,7 +571,8 @@ polygon(c(x, rev(x )),
         col=colourH[1],lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
 
 
-pdf(file= paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep=""),
+strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep="")
+pdf(file= strPlotFileName,
     title="Mean Eye HUNT (>45 degrees) Vergence Vs Distance from Prey  LF" )
 #plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
 lHuntEyeVDistMatrix <- lEyeVDistMatrix[["LL"]]
@@ -581,6 +582,8 @@ plotMeanEyeV(lHuntEyeVDistMatrix
 legend("topright",fill=colourH[2], legend = c(  expression (),
                                                 bquote(LF["e"] ~ '#' ~ .(NROW(idxLLSet) )  )
 ))
+embed_fonts(strPlotFileName)
+
 
 mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
 mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
@@ -589,7 +592,8 @@ dev.off()
 
 ## Plot The Mean V vergence And Std Error  SEM
 ##Perhapse make it more convincing by Only Include EyeV > HuntThreshold ##
-pdf(file= paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_ALL.pdf",sep=""),
+strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_ALL.pdf",sep="")
+pdf(file= strPlotFileName,
     title="Mean Eye Vergence Vs Distance from Prey  NF,LF,DF" )
 
 lHuntEyeVDistMatrix_NL <- lEyeVDistMatrix[["NL"]]
@@ -612,6 +616,7 @@ mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
 mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
 
 dev.off()
+embed_fonts(strPlotFileName)
 
 lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["LL"]],2,mean,na.rm=TRUE),type="l",col=colourH[2],lwd=3,xlab=NA,ylab=NA)
 lines(seq(0,maxDist,stepDist),apply(lEyeVDistMatrix[["DL"]],2,mean,na.rm=TRUE),type="l",col=colourH[3],lwd=3,xlab=NA,ylab=NA)
