@@ -7,7 +7,8 @@
 # 
 ### TODO Also Plot Duration Of Eye Vergence Frames ###
 #library(Hmisc) ##For Minor Ticks
-#library(fitdistrplus) ## Fpr testing Dist. Fit
+
+library(fitdistrplus) ## Fpr testing Dist. Fit
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")

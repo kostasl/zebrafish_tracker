@@ -723,6 +723,63 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
 }
 
 
+##Returns List of dataframes with PreyAzimuth Vs Distance for each hunt Episode In INdex LIst
+getPreyAzimuthForHuntEvents <- function(datTrackedEventsRegister,datHuntEventMergedFrames,idxTargetSet)
+{
+  ### Obtain Matrix of relative Angles 
+  lrecAzimuth  <- list()
+  
+  cnt <- 0
+  
+  for (idxH in idxTargetSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+  {
+    cnt  = cnt + 1
+    message(paste("######### Processing ",cnt," ######") )
+    
+    
+    expID <- datTrackedEventsRegister[idxH,]$expID
+    trackID<- datTrackedEventsRegister[idxH,]$trackID
+    eventID <- datTrackedEventsRegister[idxH,]$eventID
+    groupID <- datTrackedEventsRegister[idxH,]$groupID
+    selectedPreyID <- datTrackedEventsRegister[idxH,]$PreyIDTarget
+    
+    message(paste(idxH, ".Process Hunt Event Expid:",expID,"Event:",eventID))
+    
+    datPlaybackHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
+                                                     & datHuntEventMergedFrames$trackID==trackID 
+                                                     & datHuntEventMergedFrames$eventID==eventID,]
+    
+    lrecAzimuth[[cnt]] <- data.frame(do.call(rbind,
+                                             calcPreyAzimuth(datPlaybackHuntEvent[datPlaybackHuntEvent$LEyeAngle - datPlaybackHuntEvent$REyeAngle > G_THRESHUNTVERGENCEANGLE,] )
+    ) )
+  }
+  
+  return (lrecAzimuth)
+}
+
+## Does A histogram FOr Prey Azimuth Per Hunt Event - Eye Binarized to azimuth location occupied per Hunt Event
+getPreyAzimuthBinHist <- function(lrecAzimuth,Azi.breaks,dist.breaks)
+{
+  
+  ## Run Binarized Histogram
+  lhistAzimuth <- list()
+  for (i in 1:NROW(lrecAzimuth))
+    lhistAzimuth[[i]] <- histj(lrecAzimuth[[i]]$distPX*DIM_MMPERPX,lrecAzimuth[[i]]$azimuth,dist.breaks,Azi.breaks )
+  
+  return(lhistAzimuth)
+}##
+##
+
+
+## Histogram Binarized - Used For Azimuth VS Dis 2D histogram###
+histj<- function(x,y,x.breaks,y.breaks){
+  c1 = as.numeric(cut(x,breaks=x.breaks));
+  c2 = as.numeric(cut(y,breaks=y.breaks));
+  mat<-matrix(0,ncol=length(y.breaks)-1,nrow=length(x.breaks)-1);
+  mat[cbind(c1,c2)] = 1;
+  return(mat)
+}  
+
 
 
 ######################OLD CODE ####################

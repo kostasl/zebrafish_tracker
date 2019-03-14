@@ -10,7 +10,7 @@ histj<- function(x,y,x.breaks,y.breaks){
   return(mat)
 }  
 
-##Plot Mean And Std Error Around Mean ##
+## Plot Mean And Std Error Around Mean ##
 plotMeanEyeV <- function(lEyeVDistMatrix,lcolour,addNewPlot=TRUE)
 {
   
@@ -24,18 +24,18 @@ plotMeanEyeV <- function(lEyeVDistMatrix,lcolour,addNewPlot=TRUE)
   x<- seq(0,maxDist,stepDist)[nSPerX > 1]
   if (addNewPlot)
     plot(x,smooth( apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
-        type="l",col=lcolour,lwd=3,ylim=c(0,100),xlim=c(0,5),
+        type="l",col=lcolour,lwd=3,ylim=c(40,80),xlim=c(0,5),
         xlab=NA,ylab=NA)
   else
     lines(x,smooth(apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
-         type="l",col=lcolour,lwd=3,ylim=c(0,100),xlim=c(0,5),
+         type="l",col=lcolour,lwd=3,ylim=c(40,80),xlim=c(0,5),
          xlab=NA,ylab=NA)
   
   polygon(c(x, rev(x )),
           c(smooth(bandUpper[nSPerX > 1]) ,
             smooth(rev(bandLower[nSPerX > 1])) ),
           col=lcolour,
-          lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
+          lwd=1,ylim=c(40,80),xlab=NA,ylab=NA)
 }
 
 
@@ -613,7 +613,7 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     #relAngle[[as.character(f)]] <- ( ((360+180/pi * atan2( datRenderHuntEvent$Prey_X-datRenderHuntEvent$posX,datRenderHuntEvent$posY - datRenderHuntEvent$Prey_Y)) - datRenderHuntEvent$BodyAngle) %% 360) -180
     
     EyeVergence <- datRenderPrey$LEyeAngle-datRenderPrey$REyeAngle
-    EyeVergence[EyeVergence<1] <- 1
+    EyeVergence[EyeVergence<1] <- 1 ##Fix Min Value To Belong to 20 Degrees V
     #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
     
     ##Convert Frames To Seconds
