@@ -1100,6 +1100,8 @@ for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
 
 ### Obtain Matrix of relative Angles 
 lrecAzimuth <- list()
+cnt <- 0
+
 for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
   
@@ -1120,11 +1122,27 @@ for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
                                                    & datHuntEventMergedFrames$eventID==eventID,]
   
   
-  lrecAzimuth[[cnt]] <- calcPreyAzimuth(datPlaybackHuntEvent[datPlaybackHuntEvent$LEyeAngle - datPlaybackHuntEvent$REyeAngle > G_THRESHUNTVERGENCEANGLE,] )
-  idx <- idxH  
-  mtext(paste("",idx,sep="",collapse=",")  ,side=3,outer = FALSE,col="red")
-
-  
+  lrecAzimuth[[cnt]] <- do.call(rbind,
+                                calcPreyAzimuth(datPlaybackHuntEvent[datPlaybackHuntEvent$LEyeAngle - datPlaybackHuntEvent$REyeAngle > G_THRESHUNTVERGENCEANGLE,] )
+                                )
 }
+
+rfHot <- colorRampPalette(rev(brewer.pal(11,'Spectral')));
+histj<- function(x,y,x.breaks,y.breaks){
+  c1 = as.numeric(cut(x,breaks=x.breaks));
+  c2 = as.numeric(cut(y,breaks=y.breaks));
+  mat<-matrix(0,ncol=length(y.breaks)-1,nrow=length(x.breaks)-1);
+  mat[cbind(c1,c2)] = 1;
+  return(mat)
+}  
+
+
+hGroupbinDensity <- Reduce('+', lrecAzimuth)
+sampleSize  <- NROW(idxLLSet) #Number of Larvae Used 
+hotMap <- c(rfHot(sampleSize),"#FF0000");
+image((-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),hGroupbinDensity,axes=TRUE,
+      col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
+
+
 
 plot(recAzimuth$`5`[,1]*DIM_MMPERPX,recAzimuth$`5`[,2])

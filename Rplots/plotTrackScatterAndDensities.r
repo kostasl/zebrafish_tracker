@@ -527,7 +527,7 @@ calcPreyAzimuth <- function(datRenderHuntEvent)
     
     ##For Distance Use Estimated MouthPOint
     d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
-    relAngle[[as.character(f)]]  <- cbind(distPX=d,
+    relAngle[[n]]  <- cbind(preyID=f,distPX=d,
                                           azimuth=( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX, datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
     )
     
