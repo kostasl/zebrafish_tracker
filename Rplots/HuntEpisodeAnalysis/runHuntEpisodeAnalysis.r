@@ -1070,9 +1070,9 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
          xlab="Bout Sequence (From Capture - Backwards)") 
 # for (i in1:20) #dev.off()
 
-
-########### PLOT Polar Angle to Prey Vs Distance With Eye Vergence HeatMap ###
-
+########################################################################################
+###          On PREY AZIMUTH AND DISTANCE ANALYSIS                                  ####
+########### PLOT Polar Angle to Prey Vs Distance With Eye Vergence HeatMap ############
 idx <- sample(idxLLSet,3)
 cnt = 0
 for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
@@ -1103,36 +1103,71 @@ for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
 
 ############
 
-### Obtain Matrix of relative Angles 
-lrecAzimuth <- list()
-cnt <- 0
-
-for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+##Returns List of dataframes with PreyAzimuth Vs Distance for each hunt Episode In INdex LIst
+getPreyAzimuthForHuntEvents <- function(datTrackedEventsRegister,datHuntEventMergedFrames,idxTargetSet)
 {
+  ### Obtain Matrix of relative Angles 
+  lrecAzimuth  <- list()
   
-  cnt  = cnt + 1
-  message(paste("######### Processing ",cnt," ######") )
+  cnt <- 0
   
-
-  expID <- datTrackedEventsRegister[idxH,]$expID
-  trackID<- datTrackedEventsRegister[idxH,]$trackID
-  eventID <- datTrackedEventsRegister[idxH,]$eventID
-  groupID <- datTrackedEventsRegister[idxH,]$groupID
-  selectedPreyID <- datTrackedEventsRegister[idxH,]$PreyIDTarget
+  for (idxH in idxTargetSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+  {
+    cnt  = cnt + 1
+    message(paste("######### Processing ",cnt," ######") )
+    
   
-  message(paste(idxH, ".Process Hunt Event Expid:",expID,"Event:",eventID))
+    expID <- datTrackedEventsRegister[idxH,]$expID
+    trackID<- datTrackedEventsRegister[idxH,]$trackID
+    eventID <- datTrackedEventsRegister[idxH,]$eventID
+    groupID <- datTrackedEventsRegister[idxH,]$groupID
+    selectedPreyID <- datTrackedEventsRegister[idxH,]$PreyIDTarget
+    
+    message(paste(idxH, ".Process Hunt Event Expid:",expID,"Event:",eventID))
+    
+    datPlaybackHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
+                                                     & datHuntEventMergedFrames$trackID==trackID 
+                                                     & datHuntEventMergedFrames$eventID==eventID,]
+    
+    lrecAzimuth[[cnt]] <- data.frame(do.call(rbind,
+                                  calcPreyAzimuth(datPlaybackHuntEvent[datPlaybackHuntEvent$LEyeAngle - datPlaybackHuntEvent$REyeAngle > G_THRESHUNTVERGENCEANGLE,] )
+                                  ) )
+  }
   
-  datPlaybackHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==expID 
-                                                   & datHuntEventMergedFrames$trackID==trackID 
-                                                   & datHuntEventMergedFrames$eventID==eventID,]
-  
-  
-  lrecAzimuth[[cnt]] <- do.call(rbind,
-                                calcPreyAzimuth(datPlaybackHuntEvent[datPlaybackHuntEvent$LEyeAngle - datPlaybackHuntEvent$REyeAngle > G_THRESHUNTVERGENCEANGLE,] )
-                                )
+  return (lrecAzimuth)
 }
+## Does A histogram FOr Prey Azimuth Per Hunt Event - Eye Binarized to azimuth location occupied per Hunt Event
+getPreyAzimuthBinHist <- function(lrecAzimuth)
+{
+  ## Run Binarized Histogram
+  lhistAzimuth <- list()
+  for (i in 1:NROW(lrecAzimuth))
+    lhistAzimuth[[i]] <- histj(lrecAzimuth[[i]]$distPX*DIM_MMPERPX,lrecAzimuth[[i]]$azimuth,seq(0,5,0.1),seq(-90,90,3) )
+  
+  return(lhistAzimuth)
+}##
+##
+
+lrecAzimuth_NL  <- list();lhistAzimuth_NL  <- list();
+lrecAzimuth_NL <- getPreyAzimuthForHuntEvents(datTrackedEventsRegister,datHuntEventMergedFrames,idxNLSet)
+lhistAzimuth_NL <- getPreyAzimuthBinHist(lrecAzimuth_NL)
+datAzi_NL <- do.call(rbind,lrecAzimuth_NL)
+dNLb <- density(datAzi_NL$distPX*DIM_MMPERPX,bw=0.2,na.rm=TRUE)
+
+lrecAzimuth_LL  <- list();lhistAzimuth_LL  <- list();
+lrecAzimuth_LL <- getPreyAzimuthForHuntEvents(datTrackedEventsRegister,datHuntEventMergedFrames,idxLLSet)
+lhistAzimuth_LL <- getPreyAzimuthBinHist(lrecAzimuth_LL)
+datAzi_LL <- do.call(rbind,lrecAzimuth_LL)
+dLLb <- density(datAzi_LL$distPX*DIM_MMPERPX,bw=0.2,na.rm=TRUE)
+
+lrecAzimuth_DL  <- list();lhistAzimuth_DL  <- list();
+lrecAzimuth_DL <- getPreyAzimuthForHuntEvents(datTrackedEventsRegister,datHuntEventMergedFrames,idxDLSet)
+lhistAzimuth_DL <- getPreyAzimuthBinHist(lrecAzimuth_DL)
+datAzi_DL <- do.call(rbind,lrecAzimuth_DL)
+dDLb <- density(datAzi_DL$distPX*DIM_MMPERPX,bw=0.2,na.rm=TRUE)
 
 rfHot <- colorRampPalette(rev(brewer.pal(11,'Spectral')));
+## Histogram Binarized
 histj<- function(x,y,x.breaks,y.breaks){
   c1 = as.numeric(cut(x,breaks=x.breaks));
   c2 = as.numeric(cut(y,breaks=y.breaks));
@@ -1142,12 +1177,50 @@ histj<- function(x,y,x.breaks,y.breaks){
 }  
 
 
-hGroupbinDensity <- Reduce('+', lrecAzimuth)
-sampleSize  <- NROW(idxLLSet) #Number of Larvae Used 
-hotMap <- c(rfHot(sampleSize),"#FF0000");
-image((-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),hGroupbinDensity,axes=TRUE,
-      col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle")
+hGroupbinDensityLL <- Reduce('+', lhistAzimuth_LL)
+sampleSize_LL  <- NROW(lrecAzimuth_LL) #Number of Larvae Used 
+hotMap <- c(rfHot(sampleSize_LL*2),"#FF0000");
+pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_BinHist_LL.pdf",sep=""))
+image(seq(0,5,0.1),seq(-90,90,3),hGroupbinDensityLL,axes=TRUE,
+      col=hotMap,xlab="Distance (mm)",ylab="Prey Azimuth")
+dev.off()
+
+hGroupbinDensityNL <- Reduce('+', lhistAzimuth_NL)
+sampleSize_NL  <- NROW(lrecAzimuth_NL) #Number of Larvae Used 
+hotMap <- c(rfHot(sampleSize_NL*2),"#FF0000");
+pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_BinHist_NL.pdf",sep=""))
+image(seq(0,5,0.1),seq(-90,90,3),hGroupbinDensityNL,axes=TRUE,
+      col=hotMap,xlab="Distance (mm)",ylab="Prey Azimuth")
+dev.off()
+
+hGroupbinDensityDL <- Reduce('+', lhistAzimuth_DL)
+sampleSize_DL  <- NROW(lrecAzimuth_DL) #Number of Larvae Used 
+hotMap <- c(rfHot(sampleSize_DL*2),"#FF0000");
+pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_BinHist_DL.pdf",sep=""))
+image(seq(0,5,0.1),seq(-90,90,3),hGroupbinDensityDL,axes=TRUE,
+      col=hotMap,xlab="Distance (mm)",ylab="Prey Azimuth")
+dev.off()
 
 
+## Distribution / Likelihood of prey distance / Plot Distance to Prey Distributions
+## "Distance to Prey During Hunt" 
+plot(dNLb,col=colourLegL[1],xlim=c(0,5),lwd=3,lty=1,ylim=c(0,1),
+     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
+lines(dLLb,col=colourLegL[2],xlim=c(0,5),lwd=3,lty=2)
+lines(dDLb,col=colourLegL[3],xlim=c(0,5),lwd=3,lty=3)
+legend("topright",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(sampleSize_NL)  ),
+                  bquote(LF["e"] ~ '#' ~ .(sampleSize_LL)  ),
+                  bquote(DF["e"] ~ '#' ~ .(sampleSize_DL)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3),lwd=3)
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Distance to prey (mm) ") ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+###
 
-plot(recAzimuth$`5`[,1]*DIM_MMPERPX,recAzimuth$`5`[,2])
+## Explanatory Variable for Prey Dist could be Delta (PreyAzimuth)
+
+
+plot(lrecAzimuth[[cnt]]$distPX*DIM_MMPERPX,lrecAzimuth[[cnt]]$azimuth)
