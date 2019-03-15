@@ -557,14 +557,14 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     
   #display.brewer.all() to see avaulable options
   ##Choose Heat Map For white being Low (BG) Red High Vergence
-  Polarrfc <-  colorRampPalette((brewer.pal(8,'YlOrRd' ))); ##Color Bling Friendly Pallet
-  colR <- (c(Polarrfc(80 ))); ##Assume 80 Degrees Max EyeVergence
+  Polarrfc <-  colorRampPalette((brewer.pal(9,'YlOrRd' ))); ##Color Bling Friendly Pallet
+  colR <- (c(Polarrfc(100 ))); ##Assume 80 Degrees Max EyeVergence
   #colR["alpha",] <- 110 ##Opacity
   
   relAngle <- list()
   
   #txtW <- strwidth(parse(text=paste("270", "^o ", sep=""))) ##Override as it fails When In Layout Mode
-  txtW <- -0.2# strwidth(parse(text=paste("270", "^o ", sep="")))
+  txtW <- -0.1# strwidth(parse(text=paste("270", "^o ", sep="")))
   fgColor <- "white"
   if (newPlot)
   {
@@ -575,10 +575,10 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = rgb(0,0,0.3,0.99))
     
     ## Make Range Circle Llines
-    lines(c(0,0),c(0,Range+Range/30) ,col=fgColor,lty=2) #V Line To 0
+    lines(c(0,0),c(0,Range*0.85) ,col=fgColor,lty=2,lwd=1) #V Line To 0
     txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/2
-    text((Range-txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2)+Range/40,
-         (Range-txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2) ,
+    text((Range+txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2),
+         (Range+txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2),
          labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col=fgColor,cex=0.8)
     
     points(0,0,cex=0.8,col="blue")
@@ -586,15 +586,21 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     {
       lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col=fgColor)
       txtW <- strwidth(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
-      text(i*cos(pi/180 * 0 )-txtW,i*sin(pi/180 * 0 ),labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="") ,
+      txtH <- strheight(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
+      ## Place the Distance Labels
+      text(i*cos(pi/180 * -90 ),i*sin(pi/180 * -90 )-txtH,labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="") ,
            col=fgColor,cex=0.7)
     }
     
     ##Plot Heat Map Legend
-    x <- 40+(1:Range/2)
+    x <- Range/2+(1:Range/2) ##Make Narrow 1/2 length bar
     points(x,rep(-70,NROW(x) ),pch=19,col=colR,cex=1.5)
     text(x[1],-78,labels=expression("0"^degree),col=fgColor,font=2.2)  ##0 V Angle
-    text(tail(x,1),-78,labels=expression("80"^degree),col=fgColor,font=2.2)  ##0 V Angle
+    txtW <- strwidth(parse(text=c(expression(),bquote( .(G_THRESHUNTVERGENCEANGLE)^degree))))/2 ##Text Width For Centre Aligment 
+    segments(x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-72,x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-68) ##V Indicator Of Hunting Threshold
+    text(x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-78,labels=c(expression(),bquote( .(G_THRESHUNTVERGENCEANGLE)^degree)),col=fgColor,font=2.2)  ##0 V Angle
+    
+    text(tail(x,1)-txtW,-78,labels=expression("80"^degree),col=fgColor,font=2.2)  ##0 V Angle
   }
   
   

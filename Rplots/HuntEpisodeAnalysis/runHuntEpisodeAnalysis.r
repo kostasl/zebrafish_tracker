@@ -1074,12 +1074,14 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
 ########### PLOT Polar Angle to Prey Vs Distance With Eye Vergence HeatMap ############
 idx <- sample(idxLLSet,3)
 cnt = 0
-pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColouredB_NL-ALL",idxH,".pdf",sep=""))
+
 for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
-
+  pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColouredB_LL-",idxH,".pdf",sep=""))  
+  
   cnt  = cnt + 1
   message(paste("######### Processing ",cnt," ######") )
+  
   
   expID <- datTrackedEventsRegister[idxH,]$expID
   trackID<- datTrackedEventsRegister[idxH,]$trackID
@@ -1094,12 +1096,13 @@ for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
                                                    & datHuntEventMergedFrames$eventID==eventID,]
   
   datPlaybackHuntEvent <- filterEyeTailNoise(datPlaybackHuntEvent)
-  polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent,newPlot=(cnt==1) )
+  polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent,newPlot=TRUE)
   idx <- idxH  
   mtext(paste("",idx,sep="",collapse=",")  ,side=3,outer = FALSE,col="red")
-
+  
+  dev.off()
 }
-dev.off()
+
 
 plot(datPlaybackHuntEvent$LEyeAngle - datPlaybackHuntEvent$REyeAngle,col=colR[datPlaybackHuntEvent$LEyeAngle - datPlaybackHuntEvent$REyeAngle])
 
