@@ -494,6 +494,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
   
   meanBoutSpeed <- median(vEventSpeed_smooth[ActivityboutIdx_cleaned])
+  vEventPathLength <- cumsum(vEventSpeed_smooth)
   
   ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
   vMotionBout <- vEventSpeed_smooth
@@ -678,14 +679,14 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
     ymax <- 15 #max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])
     plot(t,vEventPathLength_mm,
-         main="Bout detection",
+         main="Body Motion",
          ylab=NA,
          xlab=NA, #"msec",
          cex.lab = 1.5,
-         ylim=c(-0.3, ymax  ),type='l',lwd=3) ##PLot Total Displacemnt over time
+         ylim=c(-0.3, ymax  ),type='l',lty=1,lwd=3,col="black") ##PLot Total Displacemnt over time
     par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     par(mar=c(4,4,2,2))
-    plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,3.5)) ##Plot Motion Speed
+    plot(t,Fs*vEventSpeed_smooth*DIM_MMPERPX,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,25),lwd=2,lty=2) ##Plot Motion Speed
     axis(side = 4,col="blue")
     mtext(side = 4,cex=0.8, line = 2.2, 'Speed (mm/sec)' ,font=2)
     mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
@@ -707,7 +708,8 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     for (poly in lshadedBout)
       polygon(poly,density=3,angle=-45) 
     
-    legend("topleft",legend=c("M Bout", "M End","Turn","Activity"),col=c("blue","purple","darkblue","grey"),pch=c(17,14,19,16) )
+    #legend("topleft",legend=c("M Bout", "M End","Turn","Activity"),col=c("blue","purple","darkblue","grey"),pch=c(17,14,19,16) )
+    legend("topleft",legend=c(" Displacement", "Speed"),col=c("black","blue","grey"),lty=c(1,2),lwd=c(3,2) )
     #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
     pkPt <- round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)
     text(t[pkPt],vEventSpeed_smooth[pkPt]+0.5,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  

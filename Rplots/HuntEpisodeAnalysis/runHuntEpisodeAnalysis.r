@@ -128,7 +128,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   
   
   ###### CARTOON PLAYBACK / RENDER HUNT EVENT ######
-  ## renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
+   #renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
   ##Make Videos With FFMPEG :
   #ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
   #ffmpeg  -start_number 5419 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=400 -pix_fmt yuv420p -c:a copy renderedHuntEvent4041_event13_track4.mp4
@@ -248,7 +248,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
   vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
-  vEventPathLength <- cumsum(vEventSpeed_smooth)
+  
   
   vTurnSpeed[is.na(vTurnSpeed)] <- 0
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
