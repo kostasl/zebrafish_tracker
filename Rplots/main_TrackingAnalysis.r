@@ -46,7 +46,7 @@ G_THRES_CAPTURE_SPEED    <- 0.8 ##Theshold on Body Speed above which a hunt even
 PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 G_MIN_TURNBOUT_ANGLE     <- 10 ##
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
-nEyeFilterWidth          <- nFrWidth*6
+nEyeFilterWidth          <- nFrWidth*2
 MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
 MIN_BOUT_PAUSE           <- 5
 G_MIN_BOUTSCORE          <- 2

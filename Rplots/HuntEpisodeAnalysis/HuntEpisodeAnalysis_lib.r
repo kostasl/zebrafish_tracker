@@ -15,12 +15,12 @@ citation("mclust")
 
 
 ## Setup Filters ## Can Check Bands with freqz(bf_speed) ## These are used in filterEyeTailNoise 
-Fs <- 430; #sampling rate
+Fs <- 410; #sampling rate
 bf_tail <- butter(1, c(0.01,0.3),type="pass"); ##Remove DC
 bf_tailClass <- butter(4, c(0.01,0.35),type="pass"); ##Remove DC
 bf_tailClass2 <- butter(4, 0.05,type="low"); ##Remove DC
 
-bf_eyes <- butter(4, 0.35,type="low",plane="z");
+bf_eyes <- butter(4, 0.07,type="low",plane="z"); #"z" for a digital filter or "s" for an analog filter.
 bf_speed <- butter(4, 0.06,type="low");  ##Focus On Low Fq to improve Detection Of Bout Motion and not little Jitter motion
 bf_tailSegSize <- butter(4, 0.02,type="low"); ## Tail Segmemt Size iF Used to Estimate Pitch - Stiking Upwards
 
@@ -667,10 +667,10 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     for (i in 1:NROW(vMotionBout_Off))  
     {
       lshadedBout[[i]] <- rbind(
-        cbind(t[vMotionBout_Off[i] ],vEventSpeed_smooth[vMotionBout_Off[i]]-1),
+        cbind(t[vMotionBout_Off[i] ],0*vEventSpeed_smooth[vMotionBout_Off[i]]-1),
         cbind(t[vMotionBout_Off[i] ], max(vEventPathLength_mm) ), #vEventPathLength_mm[vMotionBout_Off[i]]+15),
         cbind(t[vMotionBout_On[i] ], max(vEventPathLength_mm) ),#vEventPathLength_mm[vMotionBout_On[i]]+15),
-        cbind(t[vMotionBout_On[i] ], vEventSpeed_smooth[vMotionBout_On[i]]-1)
+        cbind(t[vMotionBout_On[i] ], 0*vEventSpeed_smooth[vMotionBout_On[i]]-1) ##Start from Low X Axis Height
       )
     }
     
@@ -679,30 +679,35 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     ymax <- 15 #max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])
     plot(t,vEventPathLength_mm,
          main="Bout detection",
-         ylab="mm",
-         xlab="", #"msec",
+         ylab=NA,
+         xlab=NA, #"msec",
          cex.lab = 1.5,
          ylim=c(-0.3, ymax  ),type='l',lwd=3) ##PLot Total Displacemnt over time
     par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     par(mar=c(4,4,2,2))
-    plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,1.5))
+    plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,3.5)) ##Plot Motion Speed
     axis(side = 4,col="blue")
-    mtext(side = 4, line = 2, 'Speed (mm/sec)')
+    mtext(side = 4,cex=0.8, line = 2.2, 'Speed (mm/sec)' ,font=2)
+    mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
+    mtext(side = 2,cex=0.8, line = 2.2, "Distance Travelled (mm)", font=2 ) 
+    
     
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
-    points(t[ActivityboutIdx],vEventSpeed_smooth[ActivityboutIdx],col="grey",pch=16,cex=1.1)
-    points(t[ActivityboutIdx_cleaned],vEventSpeed_smooth[ActivityboutIdx_cleaned],col="red")
-    points(t[TurnboutsIdx],vEventSpeed_smooth[TurnboutsIdx],col="darkblue",pch=19,cex=0.4) ##SHow Detected Turn Idxs
-    
-    points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)
-    segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
-    points(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off],col="purple",pch=14,lwd=3)
-    points(t[boutEdgesIdx],vEventSpeed_smooth[boutEdgesIdx],col="red",pch=8,lwd=3) 
-    segments(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On]-1,t[vMotionBout_On],vEventPathLength[vMotionBout_On]+15,lwd=0.9,col="green")
+    #points(t[ActivityboutIdx],vEventSpeed_smooth[ActivityboutIdx],col="grey",pch=16,cex=1.1) ## For Bout Debug
+    #points(t[ActivityboutIdx_cleaned],vEventSpeed_smooth[ActivityboutIdx_cleaned],col="red") ## For Bout Debug
+    #points(t[TurnboutsIdx],vEventSpeed_smooth[TurnboutsIdx],col="darkblue",pch=19,cex=0.4) ##SHow Detected Turn Idxs  ## For Bout Debug
+    #points(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On],col="blue",pch=17,lwd=3)## For Bout Debug
+    #points(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off],col="purple",pch=14,lwd=3) 
+    #points(t[boutEdgesIdx],vEventSpeed_smooth[boutEdgesIdx],col="red",pch=8,lwd=3)  ## For Bout Debug
+
+    ###Show Bout Region    
+   # segments(t[vMotionBout_Off],vEventSpeed_smooth[vMotionBout_Off]-1,t[vMotionBout_Off],0*vEventPathLength[vMotionBout_Off]+15,lwd=1.2,col="purple")
+   #  segments(t[vMotionBout_On],vEventSpeed_smooth[vMotionBout_On]-1,t[vMotionBout_On],0*vEventPathLength[vMotionBout_On]+15,lwd=0.9,col="green")
+    ##Show Bout Region
     for (poly in lshadedBout)
       polygon(poly,density=3,angle=-45) 
     
-    legend("topleft",legend=c("M Bout", "M End","Turn","Activity"),fill=c("blue","purple","darkblue","grey"),pch=c(17,14,19,16) )
+    legend("topleft",legend=c("M Bout", "M End","Turn","Activity"),col=c("blue","purple","darkblue","grey"),pch=c(17,14,19,16) )
     #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
     pkPt <- round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)
     text(t[pkPt],vEventSpeed_smooth[pkPt]+0.5,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  

@@ -14,6 +14,7 @@
 # install.packages("signal"))
 # install.packages("mclust")
 # install.packages("Rwave")
+#install.packages('extrafont') #then run font_import()
 
 ### TODO 1st Turn To Prey Detection Needs checking/fixing, 
 #####
@@ -23,6 +24,8 @@ library(MASS)
 library(mclust,quietly = TRUE) 
 
 require(Rwave) 
+library(extrafont)
+
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrackerDataFilesImport_lib.r")
@@ -76,7 +79,7 @@ idxTestSet = c(idxDLSet,idxLLSet,idxNLSet)  #c(16,17)# #c(96,74) ##Issue with ID
 cnt = 0
 
 
-for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
 
   cnt  = cnt + 1
@@ -124,8 +127,8 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   datPlaybackHuntEvent <- do.call(rbind,ldatFish)
   
   
-  ###### CARTOON PLAYBACK ######
-   renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
+  ###### CARTOON PLAYBACK / RENDER HUNT EVENT ######
+  ## renderHuntEventPlayback(datPlaybackHuntEvent,selectedPreyID,speed=1)# saveToFolder =  strFolderName,saveToFolder =  strFolderName#saveToFolder =  strFolderName
   ##Make Videos With FFMPEG :
   #ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
   #ffmpeg  -start_number 5419 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=400 -pix_fmt yuv420p -c:a copy renderedHuntEvent4041_event13_track4.mp4
@@ -177,6 +180,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   #datFishMotionVsTargetPrey <- filterEyeTailNoise(datFishMotionVsTargetPrey)
   ##
   ##Vector Of Vergence Angle
+  Fs <- unique(datFishMotionVsTargetPrey$fps)*0.90 ##Reduce Nominal By 10% as it is usually not achieved
   vEyeV <- datFishMotionVsTargetPrey$LEyeAngle-datFishMotionVsTargetPrey$REyeAngle
   
 
@@ -210,17 +214,24 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   vTailDisp <-  datRenderHuntEvent$DThetaSpine_6 + datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
   vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
   vTailDispFilt <- filtfilt(bf_tailClass2,abs( vTailDisp) )  ##Heavily Filtered and Used For Classifying Bouts
-  vTailSegSize <- filtfilt(bf_tailSegSize, datRenderHuntEvent$TailSegLength) ##Filter Fast Tail Size Fluctuations
+  ## Tail Segment Size - Filtered Heavily to Detect Slow Tilt Toward Prey
+  nPad <- 200
+  vTailSegSize <- medianf( ##Append To Start And end so No Sudden Clipping Occurs
+    c( rep ( head( datRenderHuntEvent$TailSegLength,1),nPad), datRenderHuntEvent$TailSegLength,rep ( tail( datRenderHuntEvent$TailSegLength,1),nPad)),10)  ##Filter Fast Tail Size Fluctuations
   ##Remove Out Of Range Values Clip to +- 1SD ## Set to Mean Value
   vTailSegSize[vTailSegSize < (mean(vTailSegSize)-1.5*sd(vTailSegSize) ) ] <- mean(vTailSegSize)-1.5*sd(vTailSegSize)
   vTailSegSize[vTailSegSize > (mean(vTailSegSize)+1.5*sd(vTailSegSize) ) ] <- mean(vTailSegSize)+1.5*sd(vTailSegSize)
+  vTailSegSize <-  filtfilt( bf_tailSegSize,vTailSegSize) 
+  vTailSegSize <- vTailSegSize[nPad:(NROW(vTailSegSize)-nPad)] ##Remove now Filtered / Padded Edges
   
   #vDPitchEstimate <- -(1/max(vTailSegSize))*asin((vTailSegSize)/max(vTailSegSize))*180/pi ##Estimate The Angle looking Upwards (towards the surface) of the larvae
   ##Change in Pitch Angle acos() 
   ## We can estimate a eye Angle Correction Factor due to tile as atan(tan(thetaV)*(vTailSegSize)/max(vTailSegSize) )
-  vPitchEstimate <- acos((vTailSegSize)/max(vTailSegSize))*180/pi ##Estimate Pitch Assuming maxTailSeg Represents Level Fish
-  vDPitchEstimate <- (-asin(diff(vTailSegSize)/max(vTailSegSize)) )*180/pi ##Change in Pitch
-  vEyeVPitchCorrected <- 2*atan( tan( (pi/180) * vEyeV/2)/(max(vTailSegSize)/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
+  ## Estimate Tail Seg Size At level / Use Mean value Above Median :
+  TailSegSize_level <- mean( vTailSegSize[vTailSegSize > median(vTailSegSize)] )
+  vPitchEstimate <- acos((vTailSegSize)/TailSegSize_level)*180/pi ##Estimate Pitch Assuming maxTailSeg Represents Level Fish
+  vDPitchEstimate <- (-asin(diff(vTailSegSize)/TailSegSize_level) )*180/pi ##Change in Pitch
+  vEyeVPitchCorrected <- 2*atan( tan( (pi/180) * vEyeV/2)/(TailSegSize_level/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
   #X11()
   #plot((1000*1:NROW(vTailDisp)/Fs),vTailDisp,type='l')
   
@@ -316,11 +327,13 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
 
   ################  PLot Event Detection Summary #################
   #
-  pdf(paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep=""),width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  strPlotFileName <- paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep="")
+  pdf(strPlotFileName,width = 8,height = 10 ,paper = "a4",onefile = TRUE );
   #X11()
   par(mar=c(4,4,1.5,1.5))
   
-  layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
+  #layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
+  layout(matrix(c(1,5,2,5,3,6,4,6), 4, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
 
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,
@@ -336,63 +349,61 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
       stop(paste("*** No Bouts detected for idxH:",idxH ) ) 
       next
     }
-    ##Change If Fish Heading
-    plot(t,vAngleDisplacement[1:NROW(t)],type='l',ylim=c(-60,60),
-         xlab= "",#"(msec)",
-         ylab="Degrees",
+    ## Change In Fish Heading
+    plot(t,vAngleDisplacement[1:NROW(t)],type='l',ylim=c(-70,70),
+         xlab= NA,#"(msec)",
+         ylab=NA,
          col="blue",main=" Angle Displacement")
     ## Note First Turn To Prey On Plot  ##
     tFirstTurnToPreyS <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
     tFirstTurnToPreyE <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
-    points(t[tFirstTurnToPreyS], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red")
-    points(t[tFirstTurnToPreyE], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black")
-    lines(t,cumsum(vTurnSpeed)[1:NROW(t)],type='l',lwd=2,lty=1,
-         xlab=NA,
-         ylab=NA,
-         col="blue4")
+    points(t[tFirstTurnToPreyS], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red") ##Start 1st Turn
+    points(t[tFirstTurnToPreyE], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black") ##End 1st Turn
+    lines(t,cumsum(vTurnSpeed)[1:NROW(t)],type='l',lwd=2,lty=1,      xlab=NA,          ylab=NA,          col="blue4")
     
-    ###Change In Pitch (Upwards Tilt)
-    lines(t,vPitchEstimate[1:NROW(t)],type='l',lwd=2,col='purple',lty=5) ##Convert to Pitch Change
-    legend("bottomright",legend=c("turn","pitch"),fill=c("blue4","purple"),lty=c(1,5) )
+    ###  Pitch (Upwards Tilt)
+    lines(t,vPitchEstimate[1:NROW(t)],type='l',lwd=2,col='purple',lty=2) ## Pitch 
+    legend("topleft",legend=c("Yaw","Pitch"),col=c("blue4","purple"),lty=c(1,5),lwd=2 )
+    axis(side=2,tick=TRUE,font=2)
+    axis(side=1,tick=TRUE,font=2)
+    mtext(side = 2,cex=0.8, line = 2.2, expression('Angle'^degree), font=2 ) 
     
-    par(new = FALSE)
-    plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
-         xlab="(msec)",
-         ylab="Distance (mm)",
-         col="purple",main="Motion Relative Prey and Eye Angles",lwd=2,ylim=c(0,5))
-    axis(side = 2,col="purple",cex=1.2,lwd=2)
-    
-    ##Add Eye Angles  ##
-    par(new = TRUE )
+  
+    ## Add Eye Angles  ##
+    #par(new = TRUE )
     par(mar=c(4,4,2,2))
-    plot(t,datRenderHuntEvent$REyeAngle[1:NROW(t)],axes=F,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(-55,85))
-    axis(side = 4,col="red")
-    mtext(side = 4, line = 3, 'Angles (Deg)')
-    lines(t,datRenderHuntEvent$LEyeAngle[1:NROW(t)],axes=F,col="blue",type='l',xlab=NA,ylab=NA)
-    lines(t,vEyeVPitchCorrected[1:NROW(t)],axes=F,col=rfc(11)[1],type='l',xlab=NA,ylab=NA,lwd=2,lty=4)
-    lines(t,vEyeV[1:NROW(t)],axes=F,col=rfc(11)[3],type='l',xlab=NA,ylab=NA,lwd=2,lty=4)
+    plot(t,-filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle[1:NROW(t)] ) ,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(0,80),lwd=2,lty=1) #,axes=F
+    lines(t,filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle[1:NROW(t)] ),col="blue",type='l',xlab=NA,ylab=NA,lwd=2,lty=1) #axes=F
+    ## Plot Eye Vergence 
+    lines(t,vEyeV[1:NROW(t)],axes=F,col="magenta",type='l',xlab=NA,ylab=NA,lwd=2,lty=2)
+    lines(t,vEyeVPitchCorrected[1:NROW(t)],axes=F,col=rfc(11)[11],type='l',xlab=NA,ylab=NA,lwd=2,lty=4)
+    legend("bottomleft", horiz= F,  ncol =2,
+           legend=c("R Eye ","L Eye ","Vergence","Vergence (C)"),
+           col=c("red3","blue","magenta",rfc(11)[11]),lty=c(1,1,2,4),lwd=2 )
+    
+    mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
+    mtext(side = 2,cex=0.8, line = 2.2, expression('Eye Angle'^degree), font=2 ) 
+    
+   #### /////////// ###
+    #plotAngleToPreyAndDistance(datRenderHuntEvent,vDistToPrey_Fixed_FullRange,t)
     
     
-    ##Add Angle To Prey OnTop Of Eye Angles##
-    Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
-    colR <- c(Polarrfc(NROW(tblPreyRecord) ) ,"#FF0000");
-    
-    n<-0
-    for (vAToPrey in lAngleToPrey)
-    {
-      l <- min(NROW(t),NROW(vAToPrey))
-      n<-n+1; lines((vAToPrey[1:l,1]-min(datRenderHuntEvent$frameN))/(Fs/1000),vAToPrey[1:l,2],type='l',col=colR[n],xlab=NA,ylab=NA)
-    }
-    legend("bottomleft",c(paste("(mm) Prey",selectedPreyID),"(Deg) R Eye","(Deg) L Eye",paste("(Deg) Prey",names(vAToPrey)) ) ,
-           fill=c("purple","red","blue",colR),cex=0.7,box.lwd =0 )
-    ###
-    plotTailPowerSpectrumInTime(lwlt)
-    polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent)
-    polarPlotAngleToPrey(datPlaybackHuntEvent)
-    plotTailSpectrum(vTailDisp)##Tail Spectrum
+    polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent) #5
+    polarPlotAngleToPrey(datPlaybackHuntEvent) #6
+    #plotTailPowerSpectrumInTime(lwlt) #7
+    #plotTailSpectrum(vTailDisp)##Tail Spectrum #8
 
   dev.off() 
+  embed_fonts(strPlotFileName)
   ## END OF SUMMARY HUNT EVENT PLOT ##
+  
+  strPlotFileName <- paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep="")
+  pdf(strPlotFileName,width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+  layout(matrix(c(1,2), 2, 1, byrow = TRUE))
+      plotTailPowerSpectrumInTime(lwlt)
+      plotTailSpectrum(vTailDisp)##Tail Spectrum
+  dev.off() 
+  embed_fonts(strPlotFileName)
   
   ##Tail Fq Mode
   #X11()
@@ -574,18 +585,21 @@ pdf(file= strPlotFileName,
 #plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
 lHuntEyeVDistMatrix <- lEyeVDistMatrix[["LL"]]
 lHuntEyeVDistMatrix[lHuntEyeVDistMatrix < G_THRESHUNTVERGENCEANGLE] <- NA
+nLarvaCount <- NROW(unique(datTrackedEventsRegister[idxLLSet,"expID"]))
+nEpisodeCount <- NROW(idxLLSet)
 plotMeanEyeV(lHuntEyeVDistMatrix
              ,colourH[2],addNewPlot=TRUE)
 legend("topright",fill=colourH[2], legend = c(  expression (),
-                                                bquote(LF["e"] ~ '#' ~ .(NROW(idxLLSet) )  )
+                                                bquote( ~ .(nEpisodeCount)~'Episodes' / .(nLarvaCount) ~ "Larvae"  ) ##Evoked Activity
 ))
-embed_fonts(strPlotFileName)
 
 
 mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
 mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
-
 dev.off()
+
+embed_fonts(strPlotFileName)
+
 
 ## Plot The Mean V vergence And Std Error  SEM
 ##Perhapse make it more convincing by Only Include EyeV > HuntThreshold ##
@@ -1075,9 +1089,9 @@ boxplot( datMotionBoutCombined$vMotionBoutIBI ~ datMotionBoutCombined$boutRank,
 idx <- sample(idxLLSet,3)
 cnt = 0
 
-for (idxH in idxNLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
-  pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_EyeVColouredB_LL-",idxH,".pdf",sep=""))  
+  pdf(file= paste(strPlotExportPath,"/HuntPaths/PreyAngleVsDistance_EyeVColouredB_LL-",idxH,".pdf",sep=""))  
   
   cnt  = cnt + 1
   message(paste("######### Processing ",cnt," ######") )

@@ -541,6 +541,40 @@ calcPreyAzimuth <- function(datRenderHuntEvent)
 
 
 
+############# A Linear 2 Axis Plot - Prey Vs Distance
+plotAngleToPreyAndDistance <- function(datRenderHuntEvent,vDistToPrey_Fixed_FullRange,t)
+{
+  
+  ##  Angle To Prey ##
+  par(new = FALSE)
+  par(mar=c(4,4,4,4))
+  plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
+       xlab="(msec)",
+       ylab=NA,
+       col="purple",main="Motion Relative Prey and Eye Angles",lwd=2,ylim=c(0,5))
+  axis(side = 2,col="purple",cex=1.2,lwd=2)
+  Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
+  colR <- c(Polarrfc(NROW(tblPreyRecord) ) ,"#FF0000");
+  n<-0
+  ##Add Prey Angle On Separate Axis
+  par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
+  
+  for (vAToPrey in lAngleToPrey)
+  {
+    l <- min(NROW(t),NROW(vAToPrey))
+    n<-n+1; 
+    plot((vAToPrey[1:l,1]-min(datRenderHuntEvent$frameN))/(Fs/1000),filtfilt(bf_eyes,vAToPrey[1:l,2]),type='l',axes=F,col=colR[n]
+         ,xlab=NA,ylab=NA, ylim=c(-40,40))
+  }
+  axis(side = 4,col=colR[n])
+  mtext(side = 4,cex=0.8, line = 2.2, expression('Angle To Prey'^degree), font=2 )
+  mtext(side = 2,cex=0.8, line = 2.2, expression("Distance To Prey (mm)"), font=2 ) 
+  
+  legend("bottomleft",c(paste("Distance to Prey "),paste("Angle to Prey",names(vAToPrey)) ) , #,selectedPreyID
+         col=c("purple",colR),cex=0.7,box.lwd =0,lty=1,lwd=2 )
+  ###
+} ## Plot Prey Angle And Distance 
+
 
 ## PLot The Relative Angle Of Fish Bearing to Prey Over Distance to Prey as a Polar Plot
 ##- Can Deal With Multiple Prey IDS, 
@@ -576,10 +610,10 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     
     ## Make Range Circle Llines
     lines(c(0,0),c(0,Range*0.85) ,col=fgColor,lty=2,lwd=1) #V Line To 0
-    txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/2
-    text((Range+txtW)*cos(pi/180 * seq(0,-270,-90) + pi/2),
-         (Range+txtW)*sin(pi/180 *seq(0,-270,-90) + pi/2),
-         labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col=fgColor,cex=0.8)
+    txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/3
+    text((Range+txtW/2)*cos(pi/180 * seq(0,-270,-90) + pi/2),
+         (Range+txtW/2)*sin(pi/180 *seq(0,-270,-90) + pi/2),
+         labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col=fgColor,cex=0.8,font=1.5)
     
     points(0,0,cex=0.8,col="blue")
     for (i in seq(0,Range,1/DIM_MMPERPX )  )
@@ -589,7 +623,7 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
       txtH <- strheight(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
       ## Place the Distance Labels
       text(i*cos(pi/180 * -90 ),i*sin(pi/180 * -90 )-txtH,labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="") ,
-           col=fgColor,cex=0.7)
+           col=fgColor,cex=0.7,font=1.8)
     }
     
     ##Plot Heat Map Legend
@@ -598,7 +632,7 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     text(x[1],-78,labels=expression("0"^degree),col=fgColor,font=2.2)  ##0 V Angle
     txtW <- strwidth(parse(text=c(expression(),bquote( .(G_THRESHUNTVERGENCEANGLE)^degree))))/2 ##Text Width For Centre Aligment 
     segments(x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-72,x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-68) ##V Indicator Of Hunting Threshold
-    text(x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-78,labels=c(expression(),bquote( .(G_THRESHUNTVERGENCEANGLE)^degree)),col=fgColor,font=2.2)  ##0 V Angle
+    text(x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-78,labels=c(expression(),bquote( .(G_THRESHUNTVERGENCEANGLE)^degree)),col=fgColor,font=2.0)  ##0 V Angle
     
     text(tail(x,1)-txtW,-78,labels=expression("80"^degree),col=fgColor,font=2.2)  ##0 V Angle
   }
