@@ -25,7 +25,7 @@ plotMeanEyeV <- function(lEyeVDistMatrix,lcolour,addNewPlot=TRUE)
   if (addNewPlot)
     plot(x,smooth( apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
         type="l",col=lcolour,lwd=3,ylim=c(40,80),xlim=c(0,5),
-        xlab=NA,ylab=NA)
+        xlab=NA,ylab=NA,cex.lab = 1.5)
   else
     lines(x,smooth(apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
          type="l",col=lcolour,lwd=3,ylim=c(40,80),xlim=c(0,5),
@@ -551,7 +551,10 @@ plotAngleToPreyAndDistance <- function(datRenderHuntEvent,vDistToPrey_Fixed_Full
   plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
        xlab="(msec)",
        ylab=NA,
-       col="purple",main="Motion Relative Prey and Eye Angles",lwd=2,ylim=c(0,5))
+       col="purple",
+       main="Motion Relative Prey and Eye Angles",
+       asp=1,
+       lwd=2,ylim=c(0,5))
   axis(side = 2,col="purple",cex=1.2,lwd=2)
   Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
   colR <- c(Polarrfc(NROW(tblPreyRecord) ) ,"#FF0000");

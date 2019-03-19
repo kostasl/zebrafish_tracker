@@ -331,6 +331,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   pdf(strPlotFileName,width = 8,height = 10 ,paper = "a4",onefile = TRUE );
   #X11()
   par(mar=c(4,4,1.5,1.5))
+  par(pty="s")
   
   #layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
   layout(matrix(c(1,5,2,5,3,6,4,6), 4, 2, byrow = TRUE))
@@ -594,8 +595,8 @@ legend("topright",fill=colourH[2], legend = c(  expression (),
 ))
 
 
-mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
-mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
+mtext(side = 1,cex=1.5, line = 2.2, "Distance from prey (mm)", font=2 )
+mtext(side = 2,cex=1.5, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
 dev.off()
 
 embed_fonts(strPlotFileName)
