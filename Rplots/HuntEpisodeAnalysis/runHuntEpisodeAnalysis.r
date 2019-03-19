@@ -331,8 +331,6 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   pdf(strPlotFileName,width = 8,height = 10 ,paper = "a4",onefile = TRUE );
   #X11()
   par(mar=c(4,4,1.5,1.5))
-  par(pty="s")
-  
   #layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
   layout(matrix(c(1,5,2,5,3,6,4,6), 4, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
@@ -388,8 +386,9 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
    #### /////////// ###
     #plotAngleToPreyAndDistance(datRenderHuntEvent,vDistToPrey_Fixed_FullRange,t)
     
-    
+    par(pty="s")    
     polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent) #5
+    par(pty="s")
     polarPlotAngleToPrey(datPlaybackHuntEvent) #6
     #plotTailPowerSpectrumInTime(lwlt) #7
     #plotTailSpectrum(vTailDisp)##Tail Spectrum #8
@@ -398,7 +397,14 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   embed_fonts(strPlotFileName)
   ## END OF SUMMARY HUNT EVENT PLOT ##
   
+  
   strPlotFileName <- paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep="")
+  tiff(filename= paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".tiff",sep=""),
+       width=800,height=600,units="px",pointsize = 12,bg="white")
+      par(mar=c(4,4,4,4))
+      plotTailPowerSpectrumInTime(lwlt)
+  dev.off()
+  
   pdf(strPlotFileName,width = 8,height = 12 ,paper = "a4",onefile = TRUE );
   layout(matrix(c(1,2), 2, 1, byrow = TRUE))
       plotTailPowerSpectrumInTime(lwlt)

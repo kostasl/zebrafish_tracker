@@ -158,18 +158,21 @@ plotTailPowerSpectrumInTime <- function(lwlt)
   #
   #plot(raster((  (vTailDisp.cwt)*1/Fs ) ), )
   #print(plot.cwt(tmp,xlab="time (units of sampling interval)"))
-
+ ##"Frequency Content Of TailBeat"
   collist<-c("#053061","#2166AC","#4393C3","#92C5DE","#D1E5F0","#F7F7F7","#FDDBC7","#F4A582","#D6604D","#B2182B","#67001F")
   ColorRamp<-colorRampPalette(collist)(10000)
   image(x=(1000*1:NROW(lwlt$cwtpower)/lwlt$Fs),y=Frq,z=lwlt$cwtpower[,NROW(Frq):1]
         ,useRaster=FALSE
-        ,main="Frequency Content Of TailBeat"
-        ,xlab="Time (msec)"
-        ,ylab ="Beat Frequency (Hz)"
+        ,main=NA
+        ,xlab=NA#"Time (msec)"
+        ,ylab =NA
         ,cex.lab = 1.5
         ,ylim=c(0,60)
         ,col=ColorRamp
   )
+  mtext(side = 1,cex=1.5, line = 2.2, "Time (msec)", font=2 )
+  mtext(side = 2,cex=1.5, line = 2.2, "Beat Frequency (Hz)", font=2 ) 
+  
   #contour(coefSq,add=T)
   #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
   
