@@ -181,6 +181,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   ##
   ##Vector Of Vergence Angle
   Fs <- unique(datFishMotionVsTargetPrey$fps)*0.90 ##Reduce Nominal By 10% as it is usually not achieved
+  
   vEyeV <- datFishMotionVsTargetPrey$LEyeAngle-datFishMotionVsTargetPrey$REyeAngle
   
 
@@ -270,7 +271,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth,0.15)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,0.15)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
@@ -337,7 +338,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
 
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,
                                                    TurnboutsIdx,
-                                                   vEventSpeed_smooth_mm,
+                                                   vEventSpeed_smooth,
                                                    vDistToPrey_Fixed_FullRange,
                                                    vAngleToPrey,
                                                    vTailDisp,
@@ -367,12 +368,17 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
     axis(side=1,tick=TRUE,font=2)
     mtext(side = 2,cex=0.8, line = 2.2, expression('Angle'^degree), font=2 ) 
     
-  
+    colourG <- c(rgb(0.9,0.9,0.9,0.4)) ##Region (Transparency)    
+    vREye <- -filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle[1:NROW(t)] )
+    vLEye <- filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle[1:NROW(t)] )
+    
     ## Add Eye Angles  ##
     #par(new = TRUE )
     par(mar=c(4,4,2,2))
-    plot(t,-filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle[1:NROW(t)] ) ,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(0,80),lwd=2,lty=1) #,axes=F
-    lines(t,filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle[1:NROW(t)] ),col="blue",type='l',xlab=NA,ylab=NA,lwd=2,lty=1) #axes=F
+    plot(t,vREye ,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(0,80),lwd=2,lty=1) #,axes=F
+    lines(t,vREye[vEyeV[1:NROW(t)] > G_THRESHUNTVERGENCEANGLE] ,col=colourG,type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(0,80),lwd=2,lty=1) #,axes=F
+    
+    lines(t,,col="blue",type='l',xlab=NA,ylab=NA,lwd=2,lty=1) #axes=F
     ## Plot Eye Vergence 
     lines(t,vEyeV[1:NROW(t)],axes=F,col="magenta",type='l',xlab=NA,ylab=NA,lwd=2,lty=2)
     lines(t,vEyeVPitchCorrected[1:NROW(t)],axes=F,col=rfc(11)[11],type='l',xlab=NA,ylab=NA,lwd=2,lty=4)

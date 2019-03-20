@@ -4,7 +4,7 @@
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
 DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
-DIM_DISTTOMOUTH_PX <- 12 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
+DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 G_APPROXFPS              <- 410
 G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
@@ -19,7 +19,7 @@ G_MIN_TURNBOUT_ANGLE     <- 10 ##
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
 nEyeFilterWidth          <- nFrWidth*2
 MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
-MIN_BOUT_PAUSE           <- 5
+MIN_BOUT_PAUSE           <- 25
 G_MIN_BOUTSCORE          <- 2
 
 ## Plot Options ##
