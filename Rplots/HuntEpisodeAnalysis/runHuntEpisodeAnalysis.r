@@ -32,9 +32,9 @@ source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 
-strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_SetB",".RData",sep="") ##To Which To Save After Loading
+strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_SetC",".RData",sep="") ##To Which To Save After Loading
 
-strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetB",".rds",sep="") #Processed Registry on which we add 
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") #Processed Registry on which we add 
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
 G_THRESHUNTVERGENCEANGLE <- 40 ##Redifine Here Over main_Tracking - Make it looser so to detect 1st turn to Prey
@@ -248,7 +248,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
   vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
-  
+  vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
   
   vTurnSpeed[is.na(vTurnSpeed)] <- 0
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
@@ -337,7 +337,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
 
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,
                                                    TurnboutsIdx,
-                                                   vEventSpeed_smooth,
+                                                   vEventSpeed_smooth_mm,
                                                    vDistToPrey_Fixed_FullRange,
                                                    vAngleToPrey,
                                                    vTailDisp,
@@ -587,6 +587,7 @@ for (strGroup in strGroupID)
 
 
 strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep="")
+par(pty="s")    
 pdf(file= strPlotFileName,
     title="Mean Eye HUNT (>45 degrees) Vergence Vs Distance from Prey  LF" )
 #plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
@@ -596,11 +597,10 @@ nLarvaCount <- NROW(unique(datTrackedEventsRegister[idxLLSet,"expID"]))
 nEpisodeCount <- NROW(idxLLSet)
 plotMeanEyeV(lHuntEyeVDistMatrix
              ,colourH[2],addNewPlot=TRUE)
-legend("topright",fill=colourH[2], legend = c(  expression (),
-                                                bquote( ~ .(nEpisodeCount)~'Episodes' / .(nLarvaCount) ~ "Larvae"  ) ##Evoked Activity
-))
-
-
+legend("topright",fill=colourH[2],cex = FONTSZ_AXISLAB,
+       legend = c(  expression (),bquote( ~ .(nEpisodeCount)~'Episodes' / .(nLarvaCount) ~ "Larvae"
+                                           ) ##Evoked Activity
+                    ))
 mtext(side = 1,cex=1.5, line = 2.2, "Distance from prey (mm)", font=2 )
 mtext(side = 2,cex=1.5, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
 dev.off()

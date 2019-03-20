@@ -497,7 +497,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
   
   meanBoutSpeed <- median(vEventSpeed_smooth[ActivityboutIdx_cleaned])
-  vEventPathLength <- cumsum(vEventSpeed_smooth)
+  vEventPathLength_mm <- cumsum(vEventSpeed_smooth) ### Speed is in mm 
   
   ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
   vMotionBout <- vEventSpeed_smooth
@@ -583,7 +583,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
   vMotionBout_On <-NA
   vMotionBout_Off <-NA
   
-  vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
+ ## vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
   ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
   if (lastBout > firstBout) ##If More than One Bout Exists
   {
@@ -685,11 +685,11 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
          main="Body Motion",
          ylab=NA,
          xlab=NA, #"msec",
-         cex.lab = 1.5,
+         cex.lab = FONTSZ_AXISLAB,
          ylim=c(-0.3, ymax  ),type='l',lty=1,lwd=3,col="black") ##PLot Total Displacemnt over time
     par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     par(mar=c(4,4,2,2))
-    plot(t,Fs*vEventSpeed_smooth*DIM_MMPERPX,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,25),lwd=2,lty=2) ##Plot Motion Speed
+    plot(t,vEventSpeed_smooth,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,25),lwd=2,lty=2) ##Plot Motion Speed
     axis(side = 4,col="blue")
     mtext(side = 4,cex=0.8, line = 2.2, 'Speed (mm/sec)' ,font=2)
     mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
