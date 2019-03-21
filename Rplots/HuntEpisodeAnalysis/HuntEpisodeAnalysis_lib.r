@@ -691,10 +691,10 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
          xlab=NA, #"msec",
          cex.lab = FONTSZ_AXISLAB,
          cex.axis = FONTSZ_AXIS,
-         ylim=c(-0.3, ymax  ),type='l',lty=1,lwd=3,col="black") ##PLot Total Displacemnt over time
+         ylim=c(-0.3, ymax  ),type='l',lty=1,lwd=3,col=colourG) ##PLot Total Displacemnt over time
     lines(t[HuntRangeIdx],vEventPathLength_mm[HuntRangeIdx],xlab= NA,#"(msec)",
           ylab=NA,cex=1,lwd=3,lty=1,pch=16,
-          col=colourG)
+          col="black")
     
     par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     par(mar=c(4,4,2,2))
@@ -702,10 +702,10 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
     
     vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
     
-    plot(t,vEventSpeed_smooth_mm,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,25),lwd=3,lty=4) ##Plot Motion Speed
+    plot(t,vEventSpeed_smooth_mm,type='l',axes=F,xlab=NA,ylab=NA,col=colourG,ylim=c(0,25),lwd=3,lty=4) ##Plot Motion Speed
     lines(t[HuntRangeIdx],vEventSpeed_smooth_mm[HuntRangeIdx],xlab= NA,#"(msec)",
-          ylab=NA,cex=1,lwd=3,lty=1,pch=16,
-          col=colourG)
+          ylab=NA,cex=1,lwd=3,lty=1,
+          col="blue")
     
     axis(side = 4,col="blue")
     mtext(side = 4,cex=0.8, line = 2.2, 'Speed (mm/sec)' ,font=2)
@@ -737,12 +737,17 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
     
     plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
          xlab=NA,ylab=NA, # "msec",
-         col="red",main="Tail Motion",lwd=2,
+         col=colourG,
+         main="Tail Motion",lwd=2,
          cex.lab = FONTSZ_AXISLAB,
          cex.axis = FONTSZ_AXIS)
+    lines(t[HuntRangeIdx],vTailMotion[HuntRangeIdx],type='l',
+         xlab=NA,ylab=NA, # "msec",
+         col="red",lwd=2)
+    
     lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black",lwd=2 )
     mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
-    mtext(side = 2,cex=0.8, line = 2.2, "Tail Tip Angle ", font=2 ) 
+    mtext(side = 2,cex=0.8, padj=-0.1, line = 2.2, expression("Tail Tip Angle  ("^degree~")"), font=2 ) 
     
     
   } ##If Plot Flag Is Set 
