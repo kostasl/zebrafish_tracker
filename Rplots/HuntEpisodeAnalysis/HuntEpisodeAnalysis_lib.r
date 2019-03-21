@@ -162,16 +162,17 @@ plotTailPowerSpectrumInTime <- function(lwlt)
   collist<-c("#053061","#2166AC","#4393C3","#92C5DE","#D1E5F0","#F7F7F7","#FDDBC7","#F4A582","#D6604D","#B2182B","#67001F")
   ColorRamp<-colorRampPalette(collist)(10000)
   image(x=(1000*1:NROW(lwlt$cwtpower)/lwlt$Fs),y=Frq,z=lwlt$cwtpower[,NROW(Frq):1]
-        ,useRaster=FALSE
-        ,main=NA
-        ,xlab=NA#"Time (msec)"
-        ,ylab =NA
-        ,cex.lab = 1.5
+        ,useRaster = FALSE
+        ,main = NA
+        ,xlab = NA#"Time (msec)"
+        ,ylab = NA
+        ,cex.lab = FONTSZ_AXISLAB
+        ,cex.axis=FONTSZ_AXIS
         ,ylim=c(0,60)
         ,col=ColorRamp
   )
-  mtext(side = 1,cex=1.5, line = 2.2, "Time (msec)", font=2 )
-  mtext(side = 2,cex=1.5, line = 2.2, "Beat Frequency (Hz)", font=2 ) 
+  mtext(side = 1,padj=1,cex=1.5, line = 2.2, "Time (msec)", font=2 )
+  mtext(side = 2,padj=-1,cex=1.5, line = 2.2, "Beat Frequency (Hz)", font=2 ) 
   
   #contour(coefSq,add=T)
   #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
@@ -492,8 +493,11 @@ calcRelativeAngleToPrey <- function(datRenderHuntEvent)
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
 ## Note: Incomplete Bouts At the end of the trajectory will be discarted  
 ## regionToAnalyse - Sequence of Idx On Which To Obtain Bout Motion Data - Usually Set from 1st to last point of prey capture for a specific Prey Item
-calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,vDistToPrey,vBearingToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
+calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEventSpeed_smooth,vDistToPrey,vBearingToPrey,vTailMotion,regionToAnalyse,plotRes=FALSE)
 {
+  ##Grey Point
+  colourG <- c(rgb(0.6,0.6,0.6,0.5)) ##Region (Transparency)    
+  
   ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
   
   meanBoutSpeed <- median(vEventSpeed_smooth[ActivityboutIdx_cleaned])
@@ -686,13 +690,23 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
          ylab=NA,
          xlab=NA, #"msec",
          cex.lab = FONTSZ_AXISLAB,
+         cex.axis = FONTSZ_AXIS,
          ylim=c(-0.3, ymax  ),type='l',lty=1,lwd=3,col="black") ##PLot Total Displacemnt over time
+    lines(t[HuntRangeIdx],vEventPathLength_mm[HuntRangeIdx],xlab= NA,#"(msec)",
+          ylab=NA,cex=1,lwd=3,lty=1,pch=16,
+          col=colourG)
+    
     par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     par(mar=c(4,4,2,2))
     
+    
     vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
     
-    plot(t,vEventSpeed_smooth_mm,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,25),lwd=2,lty=2) ##Plot Motion Speed
+    plot(t,vEventSpeed_smooth_mm,type='l',axes=F,xlab=NA,ylab=NA,col="blue",ylim=c(0,25),lwd=3,lty=4) ##Plot Motion Speed
+    lines(t[HuntRangeIdx],vEventSpeed_smooth_mm[HuntRangeIdx],xlab= NA,#"(msec)",
+          ylab=NA,cex=1,lwd=3,lty=1,pch=16,
+          col=colourG)
+    
     axis(side = 4,col="blue")
     mtext(side = 4,cex=0.8, line = 2.2, 'Speed (mm/sec)' ,font=2)
     mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
@@ -715,16 +729,21 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
       polygon(poly,density=3,angle=-45) 
     
     #legend("topleft",legend=c("M Bout", "M End","Turn","Activity"),col=c("blue","purple","darkblue","grey"),pch=c(17,14,19,16) )
-    legend("topleft",legend=c(" Displacement", "Speed"),col=c("black","blue","grey"),lty=c(1,2),lwd=c(3,2) )
+    legend("topleft",legend=c(" Displacement", "Speed"),col=c("black","blue","grey"),lty=c(1,4),lwd=c(3,2) )
     #lines(vMotionBoutDistanceToPrey_mm,col="purple",lw=2)
     pkPt <- round(vMotionBout_On+(vMotionBout_Off-vMotionBout_On )/2)
     text(t[pkPt],vEventSpeed_smooth[pkPt]+0.5,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
     plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
-         xlab="", # "msec",
-         col="red",main="Tail Motion")
-    lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black" )
+         xlab=NA,ylab=NA, # "msec",
+         col="red",main="Tail Motion",lwd=2,
+         cex.lab = FONTSZ_AXISLAB,
+         cex.axis = FONTSZ_AXIS)
+    lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black",lwd=2 )
+    mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
+    mtext(side = 2,cex=0.8, line = 2.2, "Tail Tip Angle ", font=2 ) 
+    
     
   } ##If Plot Flag Is Set 
   

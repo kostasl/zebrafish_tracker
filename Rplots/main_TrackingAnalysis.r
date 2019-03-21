@@ -30,8 +30,6 @@ col2hex <- function(rgbcol) {
   return(colPal)
 }
 
-source("config_lib.R")
-
 ## Required Variables - Locations 
 # Home Desktop
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
@@ -67,6 +65,9 @@ strPlotExportPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/pl
 ####################
 #source("TrackerDataFilesImport.r")
 ### Hunting Episode Analysis ####
+
+source("config_lib.R")
+
 source("HuntingEventAnalysis.r")
 
 source("TrajectoryAnalysis.r")
