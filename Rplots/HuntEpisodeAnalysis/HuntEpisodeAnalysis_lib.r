@@ -677,7 +677,11 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,vEventSpeed_smooth,
     
     ##Plot Displacement and Speed(Scaled)
     vTailDispFilt <- filtfilt( bf_tailClass2, abs(filtfilt(bf_tailClass, (vTailMotion) ) ) )
-    ymax <- 15 #max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])
+    if (max(vEventPathLength_mm) < 10)
+      ymax <- 10 #max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])
+    else
+      ymax <- 15 #max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])
+    
     plot(t,vEventPathLength_mm,
          main="Body Motion",
          ylab=NA,
