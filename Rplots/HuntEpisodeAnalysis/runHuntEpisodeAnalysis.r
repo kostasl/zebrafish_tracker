@@ -27,17 +27,17 @@ require(Rwave)
 library(extrafont)
 
 
+source("config_lib.R")
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrackerDataFilesImport_lib.r")
 source("plotTrackScatterAndDensities.r")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 
-strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_SetB",".RData",sep="") ##To Which To Save After Loading
+strDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_SetC",".RData",sep="") ##To Which To Save After Loading
 
-strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetB",".rds",sep="") #Processed Registry on which we add 
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") #Processed Registry on which we add 
 message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 
-G_THRESHUNTVERGENCEANGLE <- 40 ##Redifine Here Over main_Tracking - Make it looser so to detect 1st turn to Prey
 #    for (i in 1:40) dev.off()
 #
 ############# Analysis AND REPLAY OF HUNT EVENTS ####
@@ -181,6 +181,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   ##
   ##Vector Of Vergence Angle
   Fs <- unique(datFishMotionVsTargetPrey$fps)*0.90 ##Reduce Nominal By 10% as it is usually not achieved
+  
   vEyeV <- datFishMotionVsTargetPrey$LEyeAngle-datFishMotionVsTargetPrey$REyeAngle
   
 
@@ -231,7 +232,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   TailSegSize_level <- mean( vTailSegSize[vTailSegSize > median(vTailSegSize)] )
   vPitchEstimate <- acos((vTailSegSize)/TailSegSize_level)*180/pi ##Estimate Pitch Assuming maxTailSeg Represents Level Fish
   vDPitchEstimate <- (-asin(diff(vTailSegSize)/TailSegSize_level) )*180/pi ##Change in Pitch
-  vEyeVPitchCorrected <- 2*atan( tan( (pi/180) * vEyeV/2)/(TailSegSize_level/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
+
   #X11()
   #plot((1000*1:NROW(vTailDisp)/Fs),vTailDisp,type='l')
   
@@ -248,7 +249,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
   vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
-  
+  vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
   
   vTurnSpeed[is.na(vTurnSpeed)] <- 0
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
@@ -270,7 +271,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth,0.15)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,0.15)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
@@ -291,17 +292,20 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   
   ##Analyse from 1st Turn (assume Towardsprey) that is near the eye Vergence time point 
   startFrame <-NA
-#  if (NROW(TurnboutsIdx) > 3) ##If Turns Have been detected then Use 1st Turn Near eye V as startFrame for Analysis
-#  {
-#    ##Take 1st turn to prey Close to Eye V
-#    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
-#  }
+
+    
+    ##If Turns Have been detected then Use 1st Turn Near eye V as startFrame for Analysis
+    #  if (NROW(TurnboutsIdx) > 3) 
+    #  {
+    #    ##Take 1st turn to prey Close to Eye V
+    #    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
+    #  }
   
-  
+  ##Take Start frame to be close to Eye V > Threshold Event 
   if (is.na(startFrame))
   {
     startFrame <- max(1,min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -50) )##Start from point little earlier than Eye V
-    message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
+    #message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
   }
     
    
@@ -324,20 +328,32 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   ##Distance To PRey
   ##Length Of Vector Determines Analysis Range For Motion Bout 
   #MoveboutsIdx_cleaned <- which(vTailActivity==1)
-
+  colourG <- c(rgb(0.6,0.6,0.6,0.7)) ##Region (Transparency)    
+  vREye  <- -filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle )
+  
+  vLEye  <-  filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle )
+  vEyeVF <-  vLEye + vREye
+  vEyeVPitchCorrected <- 2*atan( tan( (pi/180) * vEyeVF/2)/(TailSegSize_level/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
+  idx_NotHunting <- which(vEyeVF < G_THRESHUNTVERGENCEANGLE)
+  idx_HuntMode <- which(vEyeVF >= G_THRESHUNTVERGENCEANGLE)
+  
+  vREye_ON <- vREye;vREye_ON[idx_NotHunting] <- NA
+  vLEye_ON <- vLEye;vLEye_ON[idx_NotHunting] <- NA
+  vEyeVF_ON <- vEyeVF;vEyeVF_ON[idx_NotHunting] <- NA
+  
   ################  PLot Event Detection Summary #################
   #
   strPlotFileName <- paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep="")
   pdf(strPlotFileName,width = 8,height = 10 ,paper = "a4",onefile = TRUE );
   #X11()
   par(mar=c(4,4,1.5,1.5))
-  
   #layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
   layout(matrix(c(1,5,2,5,3,6,4,6), 4, 2, byrow = TRUE))
     t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
 
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,
                                                    TurnboutsIdx,
+                                                   idx_HuntMode,
                                                    vEventSpeed_smooth,
                                                    vDistToPrey_Fixed_FullRange,
                                                    vAngleToPrey,
@@ -349,18 +365,27 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
       stop(paste("*** No Bouts detected for idxH:",idxH ) ) 
       next
     }
-    ## Change In Fish Heading
-    plot(t,vAngleDisplacement[1:NROW(t)],type='l',ylim=c(-70,70),
+    ##EYES Change In Fish Heading - Unfiltered
+    vAngleDisplacement_filt <- cumsum(vTurnSpeed)[1:NROW(t)]
+    plot(t,vAngleDisplacement_filt,type='l',
+         ylim=c(min(-70,min(vAngleDisplacement_filt,na.rm=T )), max(70,max(vAngleDisplacement_filt,na.rm=T) )  ),
+         lwd=3,lty=1,
          xlab= NA,#"(msec)",
          ylab=NA,
-         col="blue",main=" Angle Displacement")
+         col=colourG,main=" Angle Displacement")
+    ##Unfiltered
+#    lines(t,vAngleDisplacement[1:NROW(t)],type='l',lwd=2,lty=1,      xlab=NA,          ylab=NA,col="blue")
+    lines(t[idx_HuntMode ],vAngleDisplacement_filt[idx_HuntMode ], ylim=c(-70,70),
+         xlab= NA,#"(msec)",
+         ylab=NA,cex=1,lwd=3,lty=1,pch=16,
+         col="black")
+    
     ## Note First Turn To Prey On Plot  ##
     tFirstTurnToPreyS <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
     tFirstTurnToPreyE <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
     points(t[tFirstTurnToPreyS], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red") ##Start 1st Turn
     points(t[tFirstTurnToPreyE], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black") ##End 1st Turn
-    lines(t,cumsum(vTurnSpeed)[1:NROW(t)],type='l',lwd=2,lty=1,      xlab=NA,          ylab=NA,          col="blue4")
-    
+
     ###  Pitch (Upwards Tilt)
     lines(t,vPitchEstimate[1:NROW(t)],type='l',lwd=2,col='purple',lty=2) ## Pitch 
     legend("topleft",legend=c("Yaw","Pitch"),col=c("blue4","purple"),lty=c(1,5),lwd=2 )
@@ -368,27 +393,37 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
     axis(side=1,tick=TRUE,font=2)
     mtext(side = 2,cex=0.8, line = 2.2, expression('Angle'^degree), font=2 ) 
     
-  
-    ## Add Eye Angles  ##
+ 
+    ## Add Eye Angles  and Add Faint Lines For Not Hunting Mode##
     #par(new = TRUE )
     par(mar=c(4,4,2,2))
-    plot(t,-filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle[1:NROW(t)] ) ,col="red3",type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(0,80),lwd=2,lty=1) #,axes=F
-    lines(t,filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle[1:NROW(t)] ),col="blue",type='l',xlab=NA,ylab=NA,lwd=2,lty=1) #axes=F
+    plot(t[1:NROW(vREye)],vREye  ,col=colourG,type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(0,80),lwd=3,lty=1) #,axes=F
+    lines(t[1:NROW(vREye_ON)],vREye_ON ,col="red3",xlab=NA,ylab=NA,cex=1.0,ylim=c(0,80),lwd=3,lty=1) #,axes=F
+    
+    lines(t[1:NROW(vLEye)],vLEye,col=colourG,type='l',xlab=NA,ylab=NA,lwd=3,lty=1) #Left Eye
+    lines(t[1:NROW(vLEye_ON)],vLEye_ON,col="blue",xlab=NA,ylab=NA,lwd=3,lty=1) 
+    
     ## Plot Eye Vergence 
-    lines(t,vEyeV[1:NROW(t)],axes=F,col="magenta",type='l',xlab=NA,ylab=NA,lwd=2,lty=2)
-    lines(t,vEyeVPitchCorrected[1:NROW(t)],axes=F,col=rfc(11)[11],type='l',xlab=NA,ylab=NA,lwd=2,lty=4)
-    legend("bottomleft", horiz= F,  ncol =2,
-           legend=c("R Eye ","L Eye ","Vergence","Vergence (C)"),
-           col=c("red3","blue","magenta",rfc(11)[11]),lty=c(1,1,2,4),lwd=2 )
+    colV <- rgb(25/255,174/255,158/255)
+    lines(t[1:NROW(vEyeVF)],vEyeVF,col=colourG,xlab=NA,ylab=NA,lwd=3,lty=2) #Right Eye
+    lines(t[1:NROW(vEyeVF_ON)],vEyeVF_ON,col=colV,xlab=NA,ylab=NA,lwd=3,lty=2) ##Faded out of HuntMode
+    
+    lines(t,vEyeVPitchCorrected[1:NROW(t)],axis=F,col=colourG,type='l',xlab=NA,ylab=NA,lwd=3,lty=4)
+    lines(t[idx_HuntMode],vEyeVPitchCorrected[1:NROW(t)][idx_HuntMode],axis=F,col=rfc(11)[11],type='l',xlab=NA,ylab=NA,lwd=3,lty=4)
+    
+    legend("topleft", horiz= F,  ncol =1,
+       legend=c("Right ","Left ","Vergence","Vergence (C)"),
+       col=c("red3","blue",colV,rfc(11)[11]),lty=c(1,1,2,4),lwd=2 )
     
     mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
     mtext(side = 2,cex=0.8, line = 2.2, expression('Eye Angle'^degree), font=2 ) 
     
-   #### /////////// ###
+   #### /////////// END OF EYE PLOT ###
     #plotAngleToPreyAndDistance(datRenderHuntEvent,vDistToPrey_Fixed_FullRange,t)
     
-    
+    par(pty="s")    
     polarPlotAngleToPreyVsDistance(datPlaybackHuntEvent) #5
+    par(pty="s")
     polarPlotAngleToPrey(datPlaybackHuntEvent) #6
     #plotTailPowerSpectrumInTime(lwlt) #7
     #plotTailSpectrum(vTailDisp)##Tail Spectrum #8
@@ -397,7 +432,14 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   embed_fonts(strPlotFileName)
   ## END OF SUMMARY HUNT EVENT PLOT ##
   
+  
   strPlotFileName <- paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep="")
+  tiff(filename= paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".tiff",sep=""),
+       width=800,height=600,units="px",pointsize = 12,bg="white")
+      par(mar=c(5,5,2,2))
+      plotTailPowerSpectrumInTime(lwlt)
+  dev.off()
+  
   pdf(strPlotFileName,width = 8,height = 12 ,paper = "a4",onefile = TRUE );
   layout(matrix(c(1,2), 2, 1, byrow = TRUE))
       plotTailPowerSpectrumInTime(lwlt)
@@ -580,6 +622,7 @@ for (strGroup in strGroupID)
 
 
 strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep="")
+par(pty="s")    
 pdf(file= strPlotFileName,
     title="Mean Eye HUNT (>45 degrees) Vergence Vs Distance from Prey  LF" )
 #plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
@@ -589,13 +632,12 @@ nLarvaCount <- NROW(unique(datTrackedEventsRegister[idxLLSet,"expID"]))
 nEpisodeCount <- NROW(idxLLSet)
 plotMeanEyeV(lHuntEyeVDistMatrix
              ,colourH[2],addNewPlot=TRUE)
-legend("topright",fill=colourH[2], legend = c(  expression (),
-                                                bquote( ~ .(nEpisodeCount)~'Episodes' / .(nLarvaCount) ~ "Larvae"  ) ##Evoked Activity
-))
-
-
-mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
-mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
+legend("topright",fill=colourH[2],cex = FONTSZ_AXISLAB,
+       legend = c(  expression (),bquote( ~ .(nEpisodeCount)~'Episodes' / .(nLarvaCount) ~ "Larvae"
+                                           ) ##Evoked Activity
+                    ))
+mtext(side = 1,cex=1.5, line = 2.2, "Distance from prey (mm)", font=2 )
+mtext(side = 2,cex=1.5, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
 dev.off()
 
 embed_fonts(strPlotFileName)
@@ -1152,7 +1194,7 @@ pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_BinHist_LL.pdf",sep=""))
 hGroupbinDensityLL <- Reduce('+', lhistAzimuth_LL)
 sampleSize_LL  <- NROW(lrecAzimuth_LL) #Number of Larvae Used 
 hotMap <- c(rfHot(sampleSize_LL*1),"#FF0000")
-image(axisDist,axisAzi,hGroupbinDensityLL,axes=TRUE,
+image(axisDist,axisAzi,hGroupbinDensityLL,axis=TRUE,
       col=hotMap,xlab="Distance (mm)",ylab="Prey Azimuth")
 
 dev.off()
@@ -1162,7 +1204,7 @@ pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_BinHist_NL.pdf",sep=""))
 hGroupbinDensityNL <- Reduce('+', lhistAzimuth_NL)
 sampleSize_NL  <- NROW(lrecAzimuth_NL) #Number of Larvae Used 
 hotMap <- c(rfHot(sampleSize_NL*2),"#FF0000");
-image(axisDist,axisAzi,hGroupbinDensityNL,axes=TRUE,
+image(axisDist,axisAzi,hGroupbinDensityNL,axis=TRUE,
       col=hotMap,xlab="Distance (mm)",ylab="Prey Azimuth")
 dev.off()
 
@@ -1171,7 +1213,7 @@ pdf(file= paste(strPlotExportPath,"/PreyAngleVsDistance_BinHist_DL.pdf",sep=""))
 hGroupbinDensityDL <- Reduce('+', lhistAzimuth_DL)
 sampleSize_DL  <- NROW(lrecAzimuth_DL) #Number of Larvae Used 
 hotMap <- c(rfHot(sampleSize_DL*2),"#FF0000");
-image(axisDist,axisAzi,hGroupbinDensityDL,axes=TRUE,
+image(axisDist,axisAzi,hGroupbinDensityDL,axis=TRUE,
       col=hotMap,xlab="Distance (mm)",ylab="Prey Azimuth")
 dev.off()
 

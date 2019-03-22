@@ -23,9 +23,10 @@ plotMeanEyeV <- function(lEyeVDistMatrix,lcolour,addNewPlot=TRUE)
   ##plot Only Where we Have more than 1 sample
   x<- seq(0,maxDist,stepDist)[nSPerX > 1]
   if (addNewPlot)
+    
     plot(x,smooth( apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
-        type="l",col=lcolour,lwd=3,ylim=c(40,80),xlim=c(0,5),
-        xlab=NA,ylab=NA)
+        type="l",col=lcolour,lwd=3,ylim=c(0,80),xlim=c(0,5),
+        xlab=NA,ylab=NA,cex.lab = FONTSZ_AXISLAB,cex.axis=FONTSZ_AXIS)
   else
     lines(x,smooth(apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
          type="l",col=lcolour,lwd=3,ylim=c(40,80),xlim=c(0,5),
@@ -521,22 +522,27 @@ calcPreyAzimuth <- function(datRenderHuntEvent)
     
     ##Convert Frames To Seconds
     bearingRad = pi/180*(datRenderPrey$BodyAngle-90)##+90+180 - Body Heading
-    posVX = datRenderPrey$posX -cos(bearingRad)*DIM_DISTTOMOUTH_PX
-    posVY = datRenderPrey$posY+sin(bearingRad)*DIM_DISTTOMOUTH_PX
+    posVX = datRenderPrey$posX + cos(bearingRad)*DIM_DISTTOMOUTH_PX
+    posVY = datRenderPrey$posY + sin(bearingRad)*DIM_DISTTOMOUTH_PX
     ##For Rel Angle Use Bladder Centroid So As to minimize angle error
     
     ##For Distance Use Estimated MouthPOint
     d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
-    relAngle[[n]]  <- cbind(preyID=f,distPX=d,
-                                          azimuth=( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX, datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
-    )
+    relAngle[[n]]  <- cbind(preyID=f,
+                            distPX=d,
+                            azimuth=( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX, datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+                            )
+    ##From MouthPoint
+    #relAngle[[n]]  <- cbind(preyID=f,distPX=d,
+    #                        azimuth=( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -posVX, posVY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180     )
     
-        x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
+    
+    x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
     
   }
   
-  return(relAngle)
+  return(relAngle )
 }
 
 
@@ -551,7 +557,10 @@ plotAngleToPreyAndDistance <- function(datRenderHuntEvent,vDistToPrey_Fixed_Full
   plot(t,vDistToPrey_Fixed_FullRange[1:NROW(t)]*DIM_MMPERPX,type='l',
        xlab="(msec)",
        ylab=NA,
-       col="purple",main="Motion Relative Prey and Eye Angles",lwd=2,ylim=c(0,5))
+       col="purple",
+       main="Motion Relative Prey and Eye Angles",
+       asp=1,
+       lwd=2,ylim=c(0,5))
   axis(side = 2,col="purple",cex=1.2,lwd=2)
   Polarrfc <- colorRampPalette(rev(brewer.pal(8,'Dark2')));
   colR <- c(Polarrfc(NROW(tblPreyRecord) ) ,"#FF0000");
@@ -657,16 +666,23 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
     #points(relAngle[[as.character(f)]],datRenderPrey$frameN,type='b',cex=0.2,xlim=c(-180,180))
     
     ##Convert Frames To Seconds
-    bearingRad = pi/180*(datRenderPrey$BodyAngle-90)##+90+180 - Body Heading
-    posVX = datRenderPrey$posX -cos(bearingRad)*DIM_DISTTOMOUTH_PX
-    posVY = datRenderPrey$posY+sin(bearingRad)*DIM_DISTTOMOUTH_PX
-    ##For Rel Angle Use Bladder Centroid So As to minimize angle error
-    relAngle[[as.character(f)]]  <- ( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX, datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+    #bearingRad = pi/180*(datRenderPrey$BodyAngle-90)##+90+180 - Body Heading
+    #posVX = datRenderPrey$posX + cos(bearingRad)*DIM_DISTTOMOUTH_PX
+    #posVY = datRenderPrey$posY + sin(bearingRad)*DIM_DISTTOMOUTH_PX
+    ##For Rel Angle Use Bladder Centroid So As to minimize angle error 
+    # this is also replicated in calcPreyAzimuth(datRenderPrey)
+    #relAngle[[as.character(f)]]  <- ( ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX, datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
   
+    polarCoord <- calcPreyAzimuth(datRenderPrey)[[n]]
+    
     ##For Distance Use Estimated MouthPOint
-    d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
-    x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
-    y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
+    #d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
+    d <- polarCoord[,"distPX"]
+    x <- (d)*cos(2*pi-pi/180 * polarCoord[,"azimuth"] + pi/2)
+    y <- (d)*sin(2*pi-pi/180 * polarCoord[,"azimuth"] + pi/2)
+    
+    
+    
     points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",
            col=colR[EyeVergence]) ##Color Accourding To EyeVergence
     
