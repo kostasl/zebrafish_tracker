@@ -25,18 +25,20 @@ plotMeanEyeV <- function(lEyeVDistMatrix,lcolour,addNewPlot=TRUE)
   if (addNewPlot)
     
     plot(x,smooth( apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
-        type="l",col=lcolour,lwd=3,ylim=c(0,80),xlim=c(0,5),
-        xlab=NA,ylab=NA,cex.lab = FONTSZ_AXISLAB,cex.axis=FONTSZ_AXIS)
+        type="l",col=lcolour,lwd=3,ylim=c(0,100),xlim=c(0,4),
+        xlab=NA,ylab=NA,
+        cex.lab = FONTSZ_AXISLAB,
+        cex.axis=FONTSZ_AXIS)
   else
     lines(x,smooth(apply(lEyeVMatrix,2,mean,na.rm=TRUE)[nSPerX > 1],kind="3R" ),
-         type="l",col=lcolour,lwd=3,ylim=c(40,80),xlim=c(0,5),
+         type="l",col=lcolour,lwd=3,ylim=c(40,80),xlim=c(0,4),
          xlab=NA,ylab=NA)
   
   polygon(c(x, rev(x )),
           c(smooth(bandUpper[nSPerX > 1]) ,
             smooth(rev(bandLower[nSPerX > 1])) ),
           col=lcolour,
-          lwd=1,ylim=c(40,80),xlab=NA,ylab=NA)
+          lwd=1,ylim=c(0,100),xlab=NA,ylab=NA)
 }
 
 

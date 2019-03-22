@@ -259,7 +259,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   #plot(vTailDisp,type='l')
   ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
   # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
-  lwlt <- getPowerSpectrumInTime(vTailDisp,Fs)
+  lwlt <- getPowerSpectrumInTime(vTailDisp[regionToAnalyse],Fs)
   
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
   #### Cluster Tail Motion Wtih Fish Speed - Such As to Identify Motion Bouts Idx 
@@ -314,7 +314,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
                               min(
                                 which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
                                 max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  
-                                ) + 20
+                                ) + 200
                               ) ##Set To Up To The Minimum Distance From Prey
   
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
@@ -344,13 +344,14 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   ################  PLot Event Detection Summary #################
   #
   strPlotFileName <- paste(strPlotExportPath,"/MotionBoutPage",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep="")
-  pdf(strPlotFileName,width = 8,height = 10 ,paper = "a4",onefile = TRUE );
+  pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
   #X11()
-  par(mar=c(4,4,1.5,1.5))
+  par(mar=c(2,2,1.5,1.5))
   #layout(matrix(c(1,6,2,6,3,7,4,7,5,8), 5, 2, byrow = TRUE))
   layout(matrix(c(1,5,2,5,3,6,4,6), 4, 2, byrow = TRUE))
-    t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
-
+    t <- seq(1:NROW(regionToAnalyse))/(Fs/1000) ##Time Vector / Starts from 0 , not where regionToAnalyse starts
+    #t <- seq(1:NROW(vEventSpeed_smooth))/(Fs/1000) ##Time Vector
+    par(pty="s") #Aspect Ration =1 
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,
                                                    TurnboutsIdx,
                                                    idx_HuntMode,
@@ -367,12 +368,16 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
     }
     ##EYES Change In Fish Heading - Unfiltered
     vAngleDisplacement_filt <- cumsum(vTurnSpeed)[1:NROW(t)]
+    par(pty="s")
     plot(t,vAngleDisplacement_filt,type='l',
-         ylim=c(min(-70,min(vAngleDisplacement_filt,na.rm=T )), max(70,max(vAngleDisplacement_filt,na.rm=T) )  ),
+         ylim=c(min(-80,min(vAngleDisplacement_filt,na.rm=T )), max(80,max(vAngleDisplacement_filt,na.rm=T) )  ),
          lwd=3,lty=1,
          xlab= NA,#"(msec)",
          ylab=NA,
-         col=colourG,main=" Angle Displacement")
+         cex.lab = FONTSZ_AXISLAB,
+         cex.axis = FONTSZ_AXIS,
+         col=colourG,
+         main=" Angle Displacement")
     ##Unfiltered
 #    lines(t,vAngleDisplacement[1:NROW(t)],type='l',lwd=2,lty=1,      xlab=NA,          ylab=NA,col="blue")
     lines(t[idx_HuntMode ],vAngleDisplacement_filt[idx_HuntMode ], ylim=c(-70,70),
@@ -389,16 +394,18 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
     ###  Pitch (Upwards Tilt)
     lines(t,vPitchEstimate[1:NROW(t)],type='l',lwd=2,col='purple',lty=2) ## Pitch 
     legend("topleft",legend=c("Yaw","Pitch"),col=c("blue4","purple"),lty=c(1,5),lwd=2 )
-    axis(side=2,tick=TRUE,font=2)
-    axis(side=1,tick=TRUE,font=2)
-    mtext(side = 2,cex=0.8, line = 2.2, expression('Angle'^degree), font=2 ) 
+    #axis(side=2,tick=TRUE,font=2,cex.axis = FONTSZ_AXIS)
+    #axis(side=1,tick=TRUE,font=2,cex.axis = FONTSZ_AXIS)
+    mtext(side = 2,cex=FONTSZ_AXISLAB, line = 2.2, expression('Change in Bearing '^degree), font=2 ) 
     
  
     ## Add Eye Angles  and Add Faint Lines For Not Hunting Mode##
     #par(new = TRUE )
-    par(mar=c(4,4,2,2))
-    plot(t[1:NROW(vREye)],vREye  ,col=colourG,type='l',xlab=NA,ylab=NA,cex=1.2,ylim=c(0,80),lwd=3,lty=1) #,axes=F
-    lines(t[1:NROW(vREye_ON)],vREye_ON ,col="red3",xlab=NA,ylab=NA,cex=1.0,ylim=c(0,80),lwd=3,lty=1) #,axes=F
+    par(pty="s")
+    plot(t[1:NROW(vREye)],vREye  ,col=colourG,type='l',xlab=NA,ylab=NA,
+         cex=1.2,cex.axis = FONTSZ_AXIS,
+         ylim=c(0,100),lwd=3,lty=1) #,axes=F
+    lines(t[1:NROW(vREye_ON)],vREye_ON ,col="red3",xlab=NA,ylab=NA,cex=1.0,lwd=3,lty=1) #,axes=F
     
     lines(t[1:NROW(vLEye)],vLEye,col=colourG,type='l',xlab=NA,ylab=NA,lwd=3,lty=1) #Left Eye
     lines(t[1:NROW(vLEye_ON)],vLEye_ON,col="blue",xlab=NA,ylab=NA,lwd=3,lty=1) 
@@ -415,8 +422,8 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
        legend=c("Right ","Left ","Vergence","Vergence (C)"),
        col=c("red3","blue",colV,rfc(11)[11]),lty=c(1,1,2,4),lwd=2 )
     
-    mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
-    mtext(side = 2,cex=0.8, line = 2.2, expression('Eye Angle'^degree), font=2 ) 
+    mtext(side = 1,cex=FONTSZ_AXISLAB, line = 2.2,padj=0.3, "Time (msec)", font=2 )
+    mtext(side = 2,cex=FONTSZ_AXISLAB, line = 2.2,padj=-0.1, expression('Eye Angle'^degree), font=2 ) 
     
    #### /////////// END OF EYE PLOT ###
     #plotAngleToPreyAndDistance(datRenderHuntEvent,vDistToPrey_Fixed_FullRange,t)
@@ -435,7 +442,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   
   strPlotFileName <- paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep="")
   tiff(filename= paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".tiff",sep=""),
-       width=800,height=600,units="px",pointsize = 12,bg="white")
+       width=640,height=480,units="px",pointsize = 15,bg="white")
       par(mar=c(5,5,2,2))
       plotTailPowerSpectrumInTime(lwlt)
   dev.off()
@@ -443,7 +450,7 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   pdf(strPlotFileName,width = 8,height = 12 ,paper = "a4",onefile = TRUE );
   layout(matrix(c(1,2), 2, 1, byrow = TRUE))
       plotTailPowerSpectrumInTime(lwlt)
-      plotTailSpectrum(vTailDisp)##Tail Spectrum
+      #plotTailSpectrum(vTailDisp)##Tail Spectrum
   dev.off() 
   embed_fonts(strPlotFileName)
   
@@ -504,11 +511,11 @@ if (vEventSpeed_smooth[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
   
   lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[EyeRegionToExtract ],
                                  REyeAngle=datRenderHuntEvent$REyeAngle[EyeRegionToExtract],
-                                 PitchEstimate=vPitchEstimate,
-                                 PitchEstimateChange=vDPitchEstimate,
-                                 EyeVPitchCorrected=vEyeVPitchCorrected,
-                                 DistToPrey=vDistToPrey_Fixed_FullRange[EyeRegionToExtract]*DIM_MMPERPX,
-                                 DistToPreyInit= vDistToPrey_Fixed_FullRange[EyeRegionToExtract[min(which(EyeRegionToExtract > 0) ) ]]*DIM_MMPERPX,
+                                 PitchEstimate = vPitchEstimate,
+                                 PitchEstimateChange = vDPitchEstimate,
+                                 EyeVPitchCorrected = vEyeVPitchCorrected,
+                                 DistToPrey = vDistToPrey_Fixed_FullRange[EyeRegionToExtract]*DIM_MMPERPX,
+                                 DistToPreyInit = vDistToPrey_Fixed_FullRange[EyeRegionToExtract[min(which(EyeRegionToExtract > 0) ) ]]*DIM_MMPERPX,
                                  RegistarIdx           = as.numeric(rep(idxH,rows)),
                                  expID                 = as.numeric(rep(expID,rows)),
                                  eventID               = as.numeric(rep(eventID,rows)),
@@ -624,7 +631,7 @@ for (strGroup in strGroupID)
 strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep="")
 par(pty="s")    
 pdf(file= strPlotFileName,
-    title="Mean Eye HUNT (>45 degrees) Vergence Vs Distance from Prey  LF" )
+    title="Mean Eye HUNT (>45 degrees) Vergence Vs Distance from Prey  LF",width=5,height=5,bg="white" )
 #plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
 lHuntEyeVDistMatrix <- lEyeVDistMatrix[["LL"]]
 lHuntEyeVDistMatrix[lHuntEyeVDistMatrix < G_THRESHUNTVERGENCEANGLE] <- NA
@@ -636,8 +643,11 @@ legend("topright",fill=colourH[2],cex = FONTSZ_AXISLAB,
        legend = c(  expression (),bquote( ~ .(nEpisodeCount)~'Episodes' / .(nLarvaCount) ~ "Larvae"
                                            ) ##Evoked Activity
                     ))
-mtext(side = 1,cex=1.5, line = 2.2, "Distance from prey (mm)", font=2 )
-mtext(side = 2,cex=1.5, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
+#axis(side=2,tick=TRUE,font=2,cex.axis = FONTSZ_AXIS)
+
+mtext(side = 1,cex=FONTSZ_AXISLAB, line = 2.2, "Distance from prey (mm)", font=2 )
+mtext(side = 2,cex=FONTSZ_AXISLAB, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
+
 dev.off()
 
 embed_fonts(strPlotFileName)

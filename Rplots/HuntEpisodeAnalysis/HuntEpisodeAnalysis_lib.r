@@ -171,8 +171,8 @@ plotTailPowerSpectrumInTime <- function(lwlt)
         ,ylim=c(0,60)
         ,col=ColorRamp
   )
-  mtext(side = 1,padj=1,cex=1.5, line = 2.2, "Time (msec)", font=2 )
-  mtext(side = 2,padj=-1,cex=1.5, line = 2.2, "Beat Frequency (Hz)", font=2 ) 
+  mtext(side = 1,padj=1,cex=FONTSZ_AXISLAB*1.2, line = 2.2, "Time (msec)", font=2 )
+  mtext(side = 2,padj=-1,cex=FONTSZ_AXISLAB*1.2, line = 2.2, "Beat Frequency (Hz)", font=2 ) 
   
   #contour(coefSq,add=T)
   #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
@@ -671,7 +671,8 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
     #vEventSpeed_smooth <- vEventSpeed_smooth*5
     
     lshadedBout <- list()
-    t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)
+    #t <- seq(1:NROW(vEventPathLength_mm))/(Fs/1000)
+    t <- seq(1:NROW(regionToAnalyse))/(Fs/1000) ##Time Vector / Starts from 0 , not where regionToAnalyse starts
     for (i in 1:NROW(vMotionBout_Off))  
     {
       lshadedBout[[i]] <- rbind(
@@ -689,32 +690,34 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
     else
       ymax <- 15 #max(vEventPathLength_mm[!is.na(vEventPathLength_mm)])
     
-    plot(t,vEventPathLength_mm,
+    plot(t,vEventPathLength_mm[regionToAnalyse],
          main="Body Motion",
          ylab=NA,
          xlab=NA, #"msec",
          cex.lab = FONTSZ_AXISLAB,
          cex.axis = FONTSZ_AXIS,
          ylim=c(-0.3, ymax  ),type='l',lty=1,lwd=3,col=colourG) ##PLot Total Displacemnt over time
-    lines(t[HuntRangeIdx],vEventPathLength_mm[HuntRangeIdx],xlab= NA,#"(msec)",
+    lines(t[HuntRangeIdx-min(regionToAnalyse)],vEventPathLength_mm[HuntRangeIdx],xlab= NA,#"(msec)",
           ylab=NA,cex=1,lwd=3,lty=1,pch=16,
           col="black")
     
     par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
-    par(mar=c(4,4,2,2))
-    
     
     vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
     
-    plot(t,vEventSpeed_smooth_mm,type='l',axes=F,xlab=NA,ylab=NA,col=colourG,ylim=c(0,25),lwd=3,lty=4) ##Plot Motion Speed
-    lines(t[HuntRangeIdx],vEventSpeed_smooth_mm[HuntRangeIdx],xlab= NA,#"(msec)",
+    plot(t,vEventSpeed_smooth_mm[regionToAnalyse],type='l',
+         axes=F,xlab=NA,ylab=NA,col=colourG,ylim=c(0,25),lwd=3,lty=4,
+         cex.lab = FONTSZ_AXISLAB,
+         cex.axis = FONTSZ_AXIS
+    ) ##Plot Motion Speed / Shift HuntIdx Time Back to Start of Region to Analyse
+    lines(t[HuntRangeIdx-min(regionToAnalyse)],vEventSpeed_smooth_mm[HuntRangeIdx],xlab= NA,#"(msec)",
           ylab=NA,cex=1,lwd=3,lty=1,
           col="blue")
     
-    axis(side = 4,col="blue")
-    mtext(side = 4,cex=0.8, line = 2.2, 'Speed (mm/sec)' ,font=2)
-    mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
-    mtext(side = 2,cex=0.8, line = 2.2, "Distance Travelled (mm)", font=2 ) 
+    axis(side = 4,col="blue",cex.axis = FONTSZ_AXIS)
+    mtext(side = 4,cex=FONTSZ_AXISLAB, line = 2.2, 'Speed (mm/sec)' ,font=2)
+    #mtext(side = 1,cex=FONTSZ_AXISLAB, line = 2.2, "Time (msec)", font=2 )
+    mtext(side = 2,cex=FONTSZ_AXISLAB, padj=-0.1,line = 2.2, "Distance Travelled (mm)", font=2 ) 
     
     
     #lines(vTailDispFilt*DIM_MMPERPX,type='l',col="magenta")
@@ -739,19 +742,19 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
     text(t[pkPt],vEventSpeed_smooth[pkPt]+0.5,labels=boutSeq) ##Show Bout Sequence IDs to Debug Identification  
     #legend(1,100,c("PathLength","FishSpeed","TailMotion","BoutDetect","DistanceToPrey" ),fill=c("black","blue","magenta","red","purple") )
     
-    plot(t[1:NROW(vTailMotion)],vTailMotion,type='l',
+    plot(t,vTailMotion[regionToAnalyse],type='l',
          xlab=NA,ylab=NA, # "msec",
          col=colourG,
          main="Tail Motion",lwd=2,
          cex.lab = FONTSZ_AXISLAB,
          cex.axis = FONTSZ_AXIS)
-    lines(t[HuntRangeIdx],vTailMotion[HuntRangeIdx],type='l',
+    lines(t[HuntRangeIdx-min(regionToAnalyse)],vTailMotion[HuntRangeIdx],type='l',
          xlab=NA,ylab=NA, # "msec",
          col="red",lwd=2)
     
-    lines(t[1:NROW(vTailMotion)],vTailDispFilt,col="black",lwd=2 )
-    mtext(side = 1,cex=0.8, line = 2.2, "Time (msec)", font=2 )
-    mtext(side = 2,cex=0.8, padj=-0.1, line = 2.2, expression("Tail Tip Angle  ("^degree~")"), font=2 ) 
+    lines(t,vTailDispFilt[regionToAnalyse],col="black",lwd=2 )
+   # mtext(side = 1,cex=FONTSZ_AXISLAB, line = 2.2, "Time (msec)", font=2 )
+    mtext(side = 2,cex=FONTSZ_AXISLAB, padj=-0.1, line = 2.2, expression("Tail Tip Angle"^degree~""), font=2 ) 
     
     
   } ##If Plot Flag Is Set 

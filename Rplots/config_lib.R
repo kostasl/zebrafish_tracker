@@ -23,8 +23,8 @@ MIN_BOUT_PAUSE           <- 25
 G_MIN_BOUTSCORE          <- 2
 
 ## Plot Options ##
-FONTSZ_AXISLAB <- 1.8
-FONTSZ_AXIS    <- 1.8
+FONTSZ_AXISLAB <- 1.2
+FONTSZ_AXIS    <- 1.2 ##Axis Tik Number Size
 
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(7),"#FF0000");
