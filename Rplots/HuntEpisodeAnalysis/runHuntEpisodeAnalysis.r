@@ -263,7 +263,6 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   
   vDistToPrey_Fixed_FullRange    <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
 
-
   #plot(vTailDisp,type='l')
   ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
   # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
@@ -274,16 +273,47 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   #vMotionSpeed <- vEventSpeed_smooth + vTurnSpeed
   #MoveboutsIdx <- detectMotionBouts2(vEventSpeed_smooth,lwlt$freqMode)
 
+  
+  ##Analyse from 1st Turn (assume Towardsprey) that is near the eye Vergence time point 
+  startFrame <-NA
+  
+  
+  ##If Turns Have been detected then Use 1st Turn Near eye V as startFrame for Analysis
+  #  if (NROW(TurnboutsIdx) > 3) 
+  #  {
+  #    ##Take 1st turn to prey Close to Eye V
+  #    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
+  #  }
+  ## Find Frame Where Prey Apparently Dissapears :
+  idx_PreyLost <- max(which(datRenderHuntEvent$Prey_Radius == min(datRenderHuntEvent$Prey_Radius,na.rm = T)))
+  
+  ##Take Start frame to be close to Eye V > Threshold Event 
+  if (is.na(startFrame))
+  {
+    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) - Fs/3) )##Start from point little earlier than Eye V
+    #message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
+  }
+  
+  
+  ##Start Near Before Eye Vergence, End After Prey Has been consumed (dissappeared), or where Eye Vergence is out of Hunt Mode
+  regionToAnalyse       <-seq(max( c(startFrame,1  ) ) , #
+                              min(NROW(vEventSpeed), ##Do not exceed last frame event
+                              min(
+                                idx_PreyLost, 
+                                max(which(vEyeV >= G_THRESHUNTVERGENCEANGLE) )  
+                              ) + 200)
+  ) ##Set To Up To The Minimum Distance From Prey
+  
   ########## BOUT DETECTION #################
   TurnboutsIdx <- NA
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,1)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm[regionToAnalyse],3)+min(regionToAnalyse)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
-  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode,0.3) 
+  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed[regionToAnalyse]),lwlt$freqMode,0.3) +min(regionToAnalyse)
   
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
   ##Score Detected Frames On Overlapping Detectors
@@ -302,34 +332,6 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   ## As the Furthers point Between : Either The Prey Distance Is minimized, or The Eye Vergence Switches Off) 
   ## which(datFishMotionVsTargetPrey$LEyeAngle > G_THRESHUNTANGLE) , which(datFishMotionVsTargetPrey$REyeAngle < -G_THRESHUNTANGLE) )) -50,
   
-  ##Analyse from 1st Turn (assume Towardsprey) that is near the eye Vergence time point 
-  startFrame <-NA
-
-    
-    ##If Turns Have been detected then Use 1st Turn Near eye V as startFrame for Analysis
-    #  if (NROW(TurnboutsIdx) > 3) 
-    #  {
-    #    ##Take 1st turn to prey Close to Eye V
-    #    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
-    #  }
-  ## Find Frame Where Prey Apparently Dissapears :
-  idx_PreyLost <- max(which(datRenderHuntEvent$Prey_Radius == min(datRenderHuntEvent$Prey_Radius,na.rm = T)))
-  
-  ##Take Start frame to be close to Eye V > Threshold Event 
-  if (is.na(startFrame))
-  {
-    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) - Fs/3) )##Start from point little earlier than Eye V
-    #message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
-  }
-    
-   
-  ##Start Near Before Eye Vergence, End After Prey Has been consumed (dissappeared), or where Eye Vergence is out of Hunt Mode
-  regionToAnalyse       <-seq(max( c(startFrame,1  ) ) , #
-                              min(
-                                idx_PreyLost, 
-                                max(which(vEyeV >= G_THRESHUNTVERGENCEANGLE) )  
-                                ) + 200
-                              ) ##Set To Up To The Minimum Distance From Prey
   
   vDistToPrey_Fixed      <- interpolateDistToPrey(vDistToPrey_Fixed_FullRange,vEventSpeed_smooth,regionToAnalyse)
   

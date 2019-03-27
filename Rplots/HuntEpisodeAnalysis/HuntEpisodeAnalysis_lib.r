@@ -210,7 +210,8 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
   #plot(fitBIC)
   
   
-  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.02),c(0.03),c(0.04),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",
+                prior =  priorControl(functionName="defaultPrior",mean=c(c(0.1),c(0.6),c(0.7),c(1),c(3),c(1),c(1.5)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
   #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   
@@ -512,7 +513,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   vMotionBout[ ActivityboutIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
   
   vTurnBout <- vEventSpeed_smooth
-  vTurnBout[ 1:NROW(vTurnBout) ]   <- 0
+  vTurnBout[ 1:NROW(vMotionBout) ]   <- 0 ##Use vMotionBout Size / In case there are differeced due to ActivityboutIdx_cleaned
   vTurnBout[ TurnboutsIdx  ] <- 1 ##Set Detected BoutFrames As Motion Frames
   
   ##Make Initial Cut So There is always a Bout On/Off 1st & Last Frame Is always a pause
@@ -619,6 +620,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)
   boutRank <- seq(1,NROW(vMotionBoutDuration),1 ) ##Denotes Reverse Order - From Prey Captcha being First going backwards to the n bout
   turnSeq <- rep(0,NROW(vMotionBoutDuration))   ##Empty Vector Of Indicating The Number of Turns that have occured up to a Bout
+  
   ## TURN TO PREY SEQUENCE NUMBERING 
   ## Assign A TurnSequence Number to Each Detected Bout / Used to Select 1 turn to prey etc..
   ## Go through Each MotionBout and Check If Turns Detected within Each Bout / Then Increment Counter
