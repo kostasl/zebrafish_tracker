@@ -330,7 +330,7 @@ detectTurnBouts <- function(vTurnSpeed,vTailDispFilt,minTurnSpeed=NA)
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #fit <- Mclust(xy ,G=nNumberOfComponents,modelNames = "VII", prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.05,20),c(1.5,15),c(2.5,20)),shrinkage=0.1 ) )
-  priorMu <- seq(min(vTurnSpeed),max(vTurnSpeed),1)
+  priorMu <- seq(min(vTurnSpeed),max(vTurnSpeed),0.2)
   fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V", prior =  priorControl(functionName="defaultPrior", mean=  priorMu ,shrinkage=0.1 ) )  
   summary(fit)
   
@@ -595,6 +595,9 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   if (lastBout > firstBout) ##If More than One Bout Exists
   {
     vMotionBoutIBI <-1000*vMotionBout_rle$lengths[seq(lastBout-1,firstBout,-2 )]/Fs #' IN msec and in reverse Order From Prey Capture Backwards
+    ##Add One Since IBI count is 1 less than the bout count
+    vMotionBoutIBI <- c(vMotionBoutIBI,NA)
+    
   }
     ##Now That Indicators Have been integrated On Frames - Redetect On/Off Points
     vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
@@ -611,8 +614,6 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   
 
     
-  ##Add One Since IBI count is 1 less than the bout count
-  vMotionBoutIBI <- c(vMotionBoutIBI,NA)
   
   ## Denotes the Relative Time of Bout Occurance as a Sequence 1 is first, ... 10th -closer to Prey
   boutSeq <- seq(NROW(vMotionBoutDuration),1,-1 ) ##The time Sequence Of Event Occurance (Fwd Time)

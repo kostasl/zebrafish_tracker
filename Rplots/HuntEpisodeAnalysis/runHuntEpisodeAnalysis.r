@@ -279,11 +279,11 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,1.5)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,1)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
-  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode,0.5) 
+  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode,0.3) 
   
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
   ##Score Detected Frames On Overlapping Detectors
@@ -345,9 +345,9 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   colourG <- c(rgb(0.6,0.6,0.6,0.7)) ##Region (Transparency)    
 
   vEyeVPitchCorrected <- 2*atan( tan( (pi/180) * vEyeVF/2)/(TailSegSize_level/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
-  idx_NotHunting <- which(vEyeVF < G_THRESHUNTVERGENCEANGLE)
-  idx_Vergence <-  which(vEyeVF >= G_THRESHUNTVERGENCEANGLE)
-  idx_HuntMode <- seq(min(idx_Vergence),max(idx_Vergence))
+  idx_NotHunting  <- which(vEyeVF < G_THRESHUNTVERGENCEANGLE)
+  idx_Vergence    <-  which(vEyeVF >= G_THRESHUNTVERGENCEANGLE)
+  idx_HuntMode    <- seq(min(idx_Vergence),max(idx_Vergence))
   
   vREye_ON <- vREye;vREye_ON[idx_NotHunting] <- NA
   vLEye_ON <- vLEye;vLEye_ON[idx_NotHunting] <- NA
@@ -399,11 +399,15 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
 
     ##First Turn As Indicated by detected sequence 
     tFirstTurnToPreyS <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
-    tFirstTurnToPreyE <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
+    tFirstTurnToPreyE <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
     
+    ##If First Turn Is Out of Range, then Change
+    if ((tFirstTurnToPreyS-min(regionToAnalyse) )  <0 )
+    {
     ##First Turn To prey  As The largest turn Within the hunting Sequence  ##
-    #tFirstTurnToPreyS <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On < max(idx_HuntMode) ), ]$vMotionBout_On
-    #tFirstTurnToPreyE <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On < max(idx_HuntMode) ), ]$vMotionBout_Off
+      tFirstTurnToPreyS <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On < max(idx_HuntMode) ), ]$vMotionBout_On
+      tFirstTurnToPreyE <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On < max(idx_HuntMode) ), ]$vMotionBout_Off
+    }
     
     points(t[tFirstTurnToPreyS-min(regionToAnalyse)], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red") ##Start 1st Turn
     points(t[tFirstTurnToPreyE-min(regionToAnalyse)], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black") ##End 1st Turn
