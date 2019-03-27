@@ -263,11 +263,6 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   
   vDistToPrey_Fixed_FullRange    <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
 
-  #plot(vTailDisp,type='l')
-  ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
-  # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
-  lwlt <- getPowerSpectrumInTime(vTailDisp[regionToAnalyse],Fs)
-  
   #MoveboutsIdx <- detectMotionBouts(vEventSpeed)##find_peaks(vEventSpeed_smooth*100,25)
   #### Cluster Tail Motion Wtih Fish Speed - Such As to Identify Motion Bouts Idx 
   #vMotionSpeed <- vEventSpeed_smooth + vTurnSpeed
@@ -290,7 +285,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   ##Take Start frame to be close to Eye V > Threshold Event 
   if (is.na(startFrame))
   {
-    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) - Fs/3) )##Start from point little earlier than Eye V
+    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) - Fs/2) )##Start from point little earlier than Eye V
     #message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
   }
   
@@ -304,27 +299,40 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
                               ) + 200)
   ) ##Set To Up To The Minimum Distance From Prey
   
+  
+  
+  
   ########## BOUT DETECTION #################
   TurnboutsIdx <- NA
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm[regionToAnalyse],3)+min(regionToAnalyse)
+  #plot(vTailDisp,type='l')
+  ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
+  # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
+  lwlt <- getPowerSpectrumInTime(vTailDisp[regionToAnalyse],Fs)
+  
+  
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm[regionToAnalyse],3) +min(regionToAnalyse)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
-  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed[regionToAnalyse]),lwlt$freqMode,0.3) +min(regionToAnalyse)
   
+  TurnboutsIdx <- detectTurnBouts(vTurnSpeed[regionToAnalyse],lwlt$freqMode,0.3)+min(regionToAnalyse)
+  
+#  plot(vTurnSpeed) ##Ccheck 
+#  points(TurnboutsIdx, vTurnSpeed[TurnboutsIdx ],pch=2,cex=1,col="red") 
+
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
   ##Score Detected Frames On Overlapping Detectors
   tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
   ##Select Bouts Based On Score. ex. score >= 3 means it Exceeds Speed+Tail Motion+Turn+Tail Motion Thresholds
   ##Try with G_MIN_BOUTSCORE
-  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>G_MIN_BOUTSCORE]))
+  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=G_MIN_BOUTSCORE]))
   if ( NROW(MoveboutsIdx_cleaned) == 0 )
-    MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>(G_MIN_BOUTSCORE-1)]))
+    MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=(G_MIN_BOUTSCORE-1)]))
   if ( NROW(MoveboutsIdx_cleaned) == 0 )
-    MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>(G_MIN_BOUTSCORE-2)]))
+    MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=(G_MIN_BOUTSCORE-2)]))
   
   # # # # # # # # # # # # # ## # ## # # # # # 
   
@@ -404,7 +412,8 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     tFirstTurnToPreyE <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
     
     ##If First Turn Is Out of Range, then Change
-    if ((tFirstTurnToPreyS-min(regionToAnalyse) )  <0 )
+    if (NROW(tFirstTurnToPreyS) == 0 )
+    #if ((tFirstTurnToPreyS-min(regionToAnalyse) )  <0 )
     {
     ##First Turn To prey  As The largest turn Within the hunting Sequence  ##
       tFirstTurnToPreyS <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On < max(idx_HuntMode) ), ]$vMotionBout_On
@@ -477,13 +486,11 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
 #  dev.off() 
 #  embed_fonts(strPlotFileName)
   
-  ##Tail Fq Mode
-  #X11()
-  #plot(1000*1:NROW(lwlt$freqMode)/lwlt$Fs,lwlt$freqMode,type='l',ylim=c(0,50),xlab="msec",ylab="Hz",main="Tail Beat Fq Mode")
   
   ##Exclude Idx of Bouts for Which We do not have an angle -Make Vectors In the Right Sequence 
   BoutOnsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_On"][ lMotionBoutDat[[idxH]][,"vMotionBout_On"] < NROW(vAngleToPrey ) ][lMotionBoutDat[[idxH]][,"boutSeq"]]
   BoutOffsetWithinRange <- lMotionBoutDat[[idxH]][,"vMotionBout_Off"][ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] < NROW(vAngleToPrey ) ][lMotionBoutDat[[idxH]][,"boutSeq"]]
+  BoutOffsetWithinRange <- na.exclude(BoutOffsetWithinRange)
   vAnglesAtOnset <- vAngleToPrey[BoutOnsetWithinRange ,2]
   vAnglesAtOffset <- vAngleToPrey[BoutOffsetWithinRange,2]
   
@@ -494,10 +501,13 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   
   ##More Accuratelly Measure Angular Path Length Of Prey Angle Between Bouts - During the pause - Not Just the Difference Between Start-End Angle
   vBearingToPreyPath <- vector()
-  for (p in 1:(NROW(BoutOffsetWithinRange)-1) )
-  {
-    vBearingToPrey <- vAngleToPrey[BoutOffsetWithinRange[p]:BoutOnsetWithinRange[p+1],2] 
-    vBearingToPreyPath[p] <- sqrt(sum(diff(vBearingToPrey)^2)) ##Length of Path that the Prey Angle takes in the TimeFrame of the IBI
+  ## Do not run if only 1 bout detected
+  if (NROW(BoutOffsetWithinRange) > 1) {
+    for (p in 1:(NROW(BoutOffsetWithinRange)-1) )
+    {
+      vBearingToPrey <- vAngleToPrey[BoutOffsetWithinRange[p]:BoutOnsetWithinRange[p+1],2] 
+      vBearingToPreyPath[p] <- sqrt(sum(diff(vBearingToPrey)^2)) ##Length of Path that the Prey Angle takes in the TimeFrame of the IBI
+    }
   }
     
   dBearingToPrey <- vAngleToPrey[BoutOffsetWithinRange[1:(NROW(BoutOffsetWithinRange)-1)],2]

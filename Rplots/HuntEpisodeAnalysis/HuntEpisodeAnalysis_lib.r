@@ -251,7 +251,7 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectTailBouts <- function(vTailMotionFq)
 {
-  nNumberOfComponents = 7
+  nNumberOfComponents = 10
   nSelectComponents = 2
   colClass <- c("#FF0000","#04A022","#0000FF")
   
@@ -272,7 +272,7 @@ detectTailBouts <- function(vTailMotionFq)
   nSelectComponents <- round(nNumberOfComponents/2)
   message(paste("Setting TailClust Comp. to N:",nNumberOfComponents,"Select n:",nSelectComponents) )
   
-  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "E",prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)),shrinkage=0.1 ) )  
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(1),c(4),c(10),c(13),c(18),c(30)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
   #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   
@@ -307,7 +307,8 @@ detectTailBouts <- function(vTailMotionFq)
 ## Notes: Converted To Use 1Dim only Turnspeed to Detect Turns / Can use Tail Motion but I was getting False Positives when combined
 detectTurnBouts <- function(vTurnSpeed,vTailDispFilt,minTurnSpeed=NA)
 {
-  vTurnSpeed <- abs(vTurnSpeed)
+  vTurnSpeed <- na.exclude(abs(vTurnSpeed))
+  
   nNumberOfComponents = max(3,round( (max(vTurnSpeed)-min(vTurnSpeed))/1 ))
   nSelectComponents = round(nNumberOfComponents*0.85)
   
@@ -331,23 +332,25 @@ detectTurnBouts <- function(vTurnSpeed,vTailDispFilt,minTurnSpeed=NA)
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #fit <- Mclust(xy ,G=nNumberOfComponents,modelNames = "VII", prior =  priorControl(functionName="defaultPrior", mean=c(c(0.05,1),c(0.05,20),c(1.5,15),c(2.5,20)),shrinkage=0.1 ) )
-  priorMu <- seq(min(vTurnSpeed),max(vTurnSpeed),0.2)
+  priorMu <- seq(min(vTurnSpeed),max(vTurnSpeed),(max(vTurnSpeed)-min(vTurnSpeed)) / nNumberOfComponents)
   fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V", prior =  priorControl(functionName="defaultPrior", mean=  priorMu ,shrinkage=0.1 ) )  
-  summary(fit)
+  
+#  summary(fit)
   
   boutClass <- fit$classification
   clusterActivity <- vector()
-  for (i in unique(boutClass))
+  for (i in 1:nNumberOfComponents)
     clusterActivity[i] <- max( pvEventSpeed[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
   #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
   
   #boutCluster <- which(clusterActivity == max(clusterActivity))
+  ##select the clusters n= (nNumberOfComponents-nSelectComponents) with highest activity - and above min threshold 
   boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) & 
                            clusterActivity > minTurnSpeed) )   
   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   ## Add Prior Bias to Selects from Clusters To The 
-  return (which(fit$classification %in% boutCluster ) )
+  return (which(boutClass %in% boutCluster ) )
   
   
 }
@@ -502,7 +505,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   ##Grey Point
   colourG <- c(rgb(0.6,0.6,0.6,0.5)) ##Region (Transparency)    
   
-  ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
+  ActivityboutIdx_cleaned <- ActivityboutIdx #[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
   
   meanBoutSpeed <- median(vEventSpeed_smooth[ActivityboutIdx_cleaned])
   vEventPathLength <- cumsum(vEventSpeed_smooth) ### Speed is in mm 
@@ -631,7 +634,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
     for (tidx in 1:NROW(vMotionBout_On) ) 
     {
       turnSeq[tidx] <- 0
-      
+      ##Check if Turn frames Detected during bout
       if ( any( vTurnBout[vMotionBout_On[tidx]:vMotionBout_Off[tidx] ] > 0) ) 
       {
         ##Only score those that are towards Prey / and not NA
