@@ -700,7 +700,8 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
          cex.lab = FONTSZ_AXISLAB,
          cex.axis = FONTSZ_AXIS,
          ylim=c(-0.3, ymax  ),type='l',lty=1,lwd=3,col=colourG) ##PLot Total Displacemnt over time
-    lines(t[HuntRangeIdx-min(regionToAnalyse)],vEventPathLength_mm[HuntRangeIdx],xlab= NA,#"(msec)",
+    ##Slide Time of Hunt Onset to Set 0 at time of of region to analyse
+    lines(t[HuntRangeIdx-min(regionToAnalyse)],vEventPathLength_mm[HuntRangeIdx],xlab= NA,#"(msec)", 
           ylab=NA,cex=1,lwd=3,lty=1,pch=16,
           col="black")
     

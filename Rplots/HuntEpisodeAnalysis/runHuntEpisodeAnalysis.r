@@ -183,7 +183,10 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   Fs <- unique(datFishMotionVsTargetPrey$fps)*0.90 ##Reduce Nominal By 10% as it is usually not achieved
   
   vEyeV <- datFishMotionVsTargetPrey$LEyeAngle-datFishMotionVsTargetPrey$REyeAngle
-  
+
+  vREye  <- -filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle )
+  vLEye  <-  filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle )
+  vEyeVF <-  vLEye + vREye
 
   #### PROCESS BOUTS ###
   vDeltaXFrames        <- diff(datRenderHuntEvent$posX,lag=1,differences=1)
@@ -259,7 +262,8 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
   
   vDistToPrey_Fixed_FullRange    <- interpolateDistToPrey(vDistToPrey[1:NROW(vEventSpeed_smooth)],vEventSpeed_smooth)
-  
+
+
   #plot(vTailDisp,type='l')
   ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
   # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
@@ -275,7 +279,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,0.15)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,1.5)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
@@ -308,20 +312,22 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     #    ##Take 1st turn to prey Close to Eye V
     #    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
     #  }
+  ## Find Frame Where Prey Apparently Dissapears :
+  idx_PreyLost <- max(which(datRenderHuntEvent$Prey_Radius == min(datRenderHuntEvent$Prey_Radius,na.rm = T)))
   
   ##Take Start frame to be close to Eye V > Threshold Event 
   if (is.na(startFrame))
   {
-    startFrame <- max(1,min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -50) )##Start from point little earlier than Eye V
+    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) -50) )##Start from point little earlier than Eye V
     #message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
   }
     
    
-  
+  ##Start Near Before Eye Vergence, End After Prey Has been consumed (dissappeared), or where Eye Vergence is out of Hunt Mode
   regionToAnalyse       <-seq(max( c(startFrame,1  ) ) , #
                               min(
-                                which(vDistToPrey_Fixed_FullRange == min(vDistToPrey_Fixed_FullRange)), 
-                                max(which(vEyeV > G_THRESHUNTVERGENCEANGLE) )  
+                                idx_PreyLost, 
+                                max(which(vEyeV >= G_THRESHUNTVERGENCEANGLE) )  
                                 ) + 200
                               ) ##Set To Up To The Minimum Distance From Prey
   
@@ -337,13 +343,11 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   ##Length Of Vector Determines Analysis Range For Motion Bout 
   #MoveboutsIdx_cleaned <- which(vTailActivity==1)
   colourG <- c(rgb(0.6,0.6,0.6,0.7)) ##Region (Transparency)    
-  vREye  <- -filtfilt(bf_eyes,datRenderHuntEvent$REyeAngle )
-  
-  vLEye  <-  filtfilt(bf_eyes,datRenderHuntEvent$LEyeAngle )
-  vEyeVF <-  vLEye + vREye
+
   vEyeVPitchCorrected <- 2*atan( tan( (pi/180) * vEyeVF/2)/(TailSegSize_level/(vTailSegSize) ) )*180/pi ##Assume Top Angle Of a triangle of projected points - where the top point moves closer to base as the pitch increases
   idx_NotHunting <- which(vEyeVF < G_THRESHUNTVERGENCEANGLE)
-  idx_HuntMode <- which(vEyeVF >= G_THRESHUNTVERGENCEANGLE)
+  idx_Vergence <-  which(vEyeVF >= G_THRESHUNTVERGENCEANGLE)
+  idx_HuntMode <- seq(min(idx_Vergence),max(idx_Vergence))
   
   vREye_ON <- vREye;vREye_ON[idx_NotHunting] <- NA
   vLEye_ON <- vLEye;vLEye_ON[idx_NotHunting] <- NA
@@ -371,13 +375,13 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     datMotionBout = data.frame( lMotionBoutDat[[idxH]]  )
     if (is.na( lMotionBoutDat[[idxH]] ) )
     {
-      stop(paste("*** No Bouts detected for idxH:",idxH ) ) 
+      warning(paste("*** No Bouts detected for idxH:",idxH ) ) 
       next
     }
     ##EYES Change In Fish Heading - Unfiltered
     vAngleDisplacement_filt <- cumsum(vTurnSpeed)[1:NROW(t)]
     par(pty="s")
-    plot(t,vAngleDisplacement_filt,type='l',
+    plot(t,vAngleDisplacement_filt[regionToAnalyse],type='l',
          ylim=c(min(-80,min(vAngleDisplacement_filt,na.rm=T )), max(80,max(vAngleDisplacement_filt,na.rm=T) )  ),
          lwd=3,lty=1,
          xlab= NA,#"(msec)",
@@ -388,16 +392,21 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
          main=" Angle Displacement")
     ##Unfiltered
 #    lines(t,vAngleDisplacement[1:NROW(t)],type='l',lwd=2,lty=1,      xlab=NA,          ylab=NA,col="blue")
-    lines(t[idx_HuntMode ],vAngleDisplacement_filt[idx_HuntMode ], ylim=c(-70,70),
+    lines(t[idx_HuntMode-min(regionToAnalyse)],vAngleDisplacement_filt[idx_HuntMode ], ylim=c(-70,70),
          xlab= NA,#"(msec)",
          ylab=NA,cex=1,lwd=3,lty=1,pch=16,
          col="black")
+
+    ##First Turn As Indicated by detected sequence 
+    #tFirstTurnToPreyS <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
+    #tFirstTurnToPreyE <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
     
-    ## Note First Turn To Prey On Plot  ##
-    tFirstTurnToPreyS <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
-    tFirstTurnToPreyE <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
-    points(t[tFirstTurnToPreyS], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red") ##Start 1st Turn
-    points(t[tFirstTurnToPreyE], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black") ##End 1st Turn
+    ##First Turn To prey  As The largest turn Within the hunting Sequence  ##
+    tFirstTurnToPreyS <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On > min(idx_HuntMode) ), ]$vMotionBout_On
+    tFirstTurnToPreyE <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On > min(idx_HuntMode) ), ]$vMotionBout_Off
+    
+    points(t[tFirstTurnToPreyS-min(regionToAnalyse)], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red") ##Start 1st Turn
+    points(t[tFirstTurnToPreyE-min(regionToAnalyse)], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black") ##End 1st Turn
 
     ###  Pitch (Upwards Tilt)
     lines(t,vPitchEstimate[1:NROW(t)],type='l',lwd=2,col='purple',lty=2) ## Pitch 
@@ -410,21 +419,21 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     ## Add Eye Angles  and Add Faint Lines For Not Hunting Mode##
     #par(new = TRUE )
     par(pty="s")
-    plot(t[1:NROW(vREye)],vREye  ,col=colourG,type='l',xlab=NA,ylab=NA,
+    plot(t,vREye[regionToAnalyse]  ,col=colourG,type='l',xlab=NA,ylab=NA,
          cex=1.2,cex.axis = FONTSZ_AXIS,
          ylim=c(0,100),lwd=3,lty=1) #,axes=F
-    lines(t[1:NROW(vREye_ON)],vREye_ON ,col="red3",xlab=NA,ylab=NA,cex=1.0,lwd=3,lty=1) #,axes=F
+    lines(t[idx_HuntMode-min(regionToAnalyse)],vREye_ON[idx_HuntMode] ,col="red3",xlab=NA,ylab=NA,cex=1.0,lwd=3,lty=1) #,axes=F
     
-    lines(t[1:NROW(vLEye)],vLEye,col=colourG,type='l',xlab=NA,ylab=NA,lwd=3,lty=1) #Left Eye
-    lines(t[1:NROW(vLEye_ON)],vLEye_ON,col="blue",xlab=NA,ylab=NA,lwd=3,lty=1) 
+    lines(t,vLEye[regionToAnalyse],col=colourG,type='l',xlab=NA,ylab=NA,lwd=3,lty=1) #Left Eye
+    lines(t[idx_HuntMode-min(regionToAnalyse)],vLEye_ON[idx_HuntMode],col="blue",xlab=NA,ylab=NA,lwd=3,lty=1) 
     
     ## Plot Eye Vergence 
     colV <- rgb(25/255,174/255,158/255)
-    lines(t[1:NROW(vEyeVF)],vEyeVF,col=colourG,xlab=NA,ylab=NA,lwd=3,lty=2) #Right Eye
-    lines(t[1:NROW(vEyeVF_ON)],vEyeVF_ON,col=colV,xlab=NA,ylab=NA,lwd=3,lty=2) ##Faded out of HuntMode
+    lines(t,vEyeVF[regionToAnalyse],col=colourG,xlab=NA,ylab=NA,lwd=3,lty=2) #Right Eye
+    lines(t[idx_HuntMode-min(regionToAnalyse)],vEyeVF_ON[idx_HuntMode],col=colV,xlab=NA,ylab=NA,lwd=3,lty=2) ##Faded out of HuntMode
     
-    lines(t,vEyeVPitchCorrected[1:NROW(t)],axis=F,col=colourG,type='l',xlab=NA,ylab=NA,lwd=3,lty=4)
-    lines(t[idx_HuntMode],vEyeVPitchCorrected[1:NROW(t)][idx_HuntMode],axis=F,col=rfc(11)[11],type='l',xlab=NA,ylab=NA,lwd=3,lty=4)
+    lines(t,vEyeVPitchCorrected[regionToAnalyse],axis=F,col=colourG,type='l',xlab=NA,ylab=NA,lwd=3,lty=4)
+    lines(t[idx_HuntMode-min(regionToAnalyse)],vEyeVPitchCorrected[idx_HuntMode],axis=F,col=rfc(11)[11],type='l',xlab=NA,ylab=NA,lwd=3,lty=4)
     
     legend("topleft", horiz= F,  ncol =1,
        legend=c("Right ","Left ","Vergence","Vergence (C)"),
@@ -447,20 +456,20 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   embed_fonts(strPlotFileName)
   ## END OF SUMMARY HUNT EVENT PLOT ##
   
-  
+  ## Tail Spectrum / Image Output
   strPlotFileName <- paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".pdf",sep="")
   tiff(filename= paste(strPlotExportPath,"/TailSpectrum",idxH,"_exp",expID,"_event",eventID,"_track",trackID,".tiff",sep=""),
        width=640,height=480,units="px",pointsize = 15,bg="white")
       par(mar=c(5,5,2,2))
       plotTailPowerSpectrumInTime(lwlt)
   dev.off()
-  
-  pdf(strPlotFileName,width = 8,height = 12 ,paper = "a4",onefile = TRUE );
-  layout(matrix(c(1,2), 2, 1, byrow = TRUE))
-      plotTailPowerSpectrumInTime(lwlt)
+  ## Tail spectrum PDF Output
+#  pdf(strPlotFileName,width = 8,height = 12 ,paper = "a4",onefile = TRUE );
+#  layout(matrix(c(1,2), 2, 1, byrow = TRUE))
+#      plotTailPowerSpectrumInTime(lwlt)
       #plotTailSpectrum(vTailDisp)##Tail Spectrum
-  dev.off() 
-  embed_fonts(strPlotFileName)
+#  dev.off() 
+#  embed_fonts(strPlotFileName)
   
   ##Tail Fq Mode
   #X11()
