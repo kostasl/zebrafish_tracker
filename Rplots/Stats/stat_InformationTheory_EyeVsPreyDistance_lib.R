@@ -156,6 +156,7 @@ calcInfoOfHuntEvent <- function(drawS,dataSubset,n=NA,groupID)
         par(new=T) 
         plot(DistRange,vPPhiPerX,ylim=c(0,2.5),xlim=c(0,max(DistRange) ),axes=F,type="p",pch=19,col=colourP[4], xlab=NA,
              ylab=NA,sub=paste("x requires ", round(100*log2(NROW(DistRange)) )/100,"bits"  ) )
+        ##Intergate Inf Across Distance
         lines(DistRange,rev(cumsum(rev(vPPhiPerX))),ylim=c(0,2.5),xlim=c(0,max(DistRange) ),type="l",col=colourR[4], xlab=NA, ylab=NA )
       }
       

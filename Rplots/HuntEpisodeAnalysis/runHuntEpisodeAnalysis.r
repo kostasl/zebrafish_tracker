@@ -44,9 +44,9 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 load(strDataFileName) ## Load Imported Hunt Event Tracks - THe detailed Retracked Events
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
-lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
-lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData",".rds",sep="")) #Processed Registry on which we add )
-bSaveNewMotionData <- FALSE ##Overwrite the lMotionBoutDatFile
+#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
+#lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #Processed Registry on which we add )
+bSaveNewMotionData <- TRUE ##Overwrite the lMotionBoutDatFile
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
 
@@ -56,18 +56,18 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 ###
 #nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering ##moved to main
 
-### RESET Storage Structs ###
-remove(lMotionBoutDat)
-remove(lEyeMotionDat)
+
 ############################
+### RESET Storage Structs ###
+if (exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
+    remove(lMotionBoutDat)
 
-if (!exists("lMotionBoutDat" ,envir = globalenv(),mode="list"))
-  lMotionBoutDat <<- list() ##Declared In Global Env
-
-
-if (!exists("lEyeMotionDat" ,envir = globalenv(),mode="list"))
-  lEyeMotionDat <<- list() ##Declared In Global Env
-
+if ( exists("lEyeMotionDat" ,envir = globalenv(),mode="list") ) 
+    remove(lEyeMotionDat)
+##Make New Empty Ones 
+lEyeMotionDat <- list() ##Declared In Global Env
+lMotionBoutDat <- list()  ##Declared In Global Env
+  
 idxH <- 20
 idTo <- 20#NROW(datTrackedEventsRegister)
 
@@ -79,7 +79,7 @@ idxTestSet = c(idxDLSet,idxLLSet,idxNLSet)  #c(16,17)# #c(96,74) ##Issue with ID
 cnt = 0
 
 
-for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
 
   cnt  = cnt + 1
@@ -190,20 +190,24 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   vDeltaYFrames        <- diff(datRenderHuntEvent$posY,lag=1,differences=1)
   vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
   
-  
   #nNumberOfBouts       <- 
   dframe               <- diff(datRenderHuntEvent$frameN,lag=1,differences=1)
   dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
   vEventSpeed          <- meanf(vDeltaDisplacement/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
   
-
   vDeltaBodyAngle      <- diffPolar(datRenderHuntEvent$BodyAngle) #(  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
   vTurnSpeed           <- meanf(vDeltaBodyAngle[1:NROW(dframe)]/dframe,5)
   vAngleDisplacement   <- cumsum(vDeltaBodyAngle)
 
-    
   #vEventPathLength     <- cumsum(vEventSpeed) ##Noise Adds to Length
-  vDistToPrey          <- meanf(sqrt( (datFishMotionVsTargetPrey$Prey_X -datFishMotionVsTargetPrey$posX )^2 + (datFishMotionVsTargetPrey$Prey_Y - datFishMotionVsTargetPrey$posY)^2   ),3)
+  
+  ## Calc Distance TO Prey, by shifting centroid forward to approx where the Mouth Point is.
+  bearingRad = pi/180*(datFishMotionVsTargetPrey$BodyAngle-90)##+90+180 - Body Heading
+  posVX = datFishMotionVsTargetPrey$posX + cos(bearingRad)*DIM_DISTTOMOUTH_PX
+  posVY = datFishMotionVsTargetPrey$posY + sin(bearingRad)*DIM_DISTTOMOUTH_PX
+
+  ##For Distance Use Estimated MouthPOint
+  vDistToPrey          <- meanf(sqrt( (datFishMotionVsTargetPrey$posX -posVX )^2 + (datFishMotionVsTargetPrey$Prey_Y - posVY)^2   ),3)
   vSpeedToPrey         <- diff(vDistToPrey,lag=1,differences=1)
   lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
   
@@ -281,9 +285,13 @@ for (idxH in idxLLSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTr
   ##Score Detected Frames On Overlapping Detectors
   tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
   ##Select Bouts Based On Score. ex. score >= 3 means it Exceeds Speed+Tail Motion+Turn+Tail Motion Thresholds
+  ##Try with G_MIN_BOUTSCORE
   MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>G_MIN_BOUTSCORE]))
+  if ( NROW(MoveboutsIdx_cleaned) == 0 )
+    MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>(G_MIN_BOUTSCORE-1)]))
+  if ( NROW(MoveboutsIdx_cleaned) == 0 )
+    MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>(G_MIN_BOUTSCORE-2)]))
   
-  stopifnot(NROW(MoveboutsIdx_cleaned) > 0 )
   # # # # # # # # # # # # # ## # ## # # # # # 
   
   ##Find Region Of Interest For Analysis Of Bouts
@@ -529,13 +537,13 @@ if (vEventSpeed_smooth[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
 
 ########## SAVE Processed Hunt Events ###########
 if (bSaveNewMotionData)
-  saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData",".rds",sep="") ) #Processed Registry on which we add )
+  saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 #datEpisodeMotionBout <- lMotionBoutDat[[1]]
 
 
 ########## SAVE Processed Hunt Events ###########
 if (bSaveNewMotionData)
-  saveRDS(lEyeMotionDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData",".rds",sep="") ) #Processed Registry on which we add )
+  saveRDS(lEyeMotionDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 #datEpisodeMotionBout <- lMotionBoutDat[[1]]
 
  ############# VERIFY ###

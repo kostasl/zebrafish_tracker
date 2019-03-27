@@ -118,6 +118,9 @@ getPowerSpectrumInTime <- function(w,Fs)
   w.nVoices <- 12
   w.nOctaves <- 32
   w.W0 <- 2*pi
+  
+  ##Remove Missing Values
+  w <- na.omit(w) 
   w.cwt <- cwt(w,noctave=w.nOctaves,nvoice=w.nVoices,plot=FALSE,twoD=TRUE,w0=w.W0)
   w.coefSq <- Mod(w.cwt)^2 #Power
 
@@ -488,7 +491,7 @@ calcRelativeAngleToPrey <- function(datRenderHuntEvent)
 #
 
 
-##############################
+##
 ## Identify Bout Sections and Get Data On Durations etc.
 ##Uses The Detected Regions Of Bouts to extract data, on BoutOnset-Offset - Duration, Distance from Prey and Bout Power as a measure of distance moved during bout
 ## Note: Incomplete Bouts At the end of the trajectory will be discarted  
