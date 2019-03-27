@@ -283,7 +283,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
-  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode,0.2) 
+  TurnboutsIdx <- detectTurnBouts(abs(vTurnSpeed),lwlt$freqMode,0.5) 
   
   MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
   ##Score Detected Frames On Overlapping Detectors
@@ -318,7 +318,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   ##Take Start frame to be close to Eye V > Threshold Event 
   if (is.na(startFrame))
   {
-    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) -50) )##Start from point little earlier than Eye V
+    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) - Fs/3) )##Start from point little earlier than Eye V
     #message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
   }
     
@@ -398,12 +398,12 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
          col="black")
 
     ##First Turn As Indicated by detected sequence 
-    #tFirstTurnToPreyS <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
-    #tFirstTurnToPreyE <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
+    tFirstTurnToPreyS <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
+    tFirstTurnToPreyE <-datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
     
     ##First Turn To prey  As The largest turn Within the hunting Sequence  ##
-    tFirstTurnToPreyS <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On > min(idx_HuntMode) ), ]$vMotionBout_On
-    tFirstTurnToPreyE <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On > min(idx_HuntMode) ), ]$vMotionBout_Off
+    #tFirstTurnToPreyS <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On < max(idx_HuntMode) ), ]$vMotionBout_On
+    #tFirstTurnToPreyE <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On < max(idx_HuntMode) ), ]$vMotionBout_Off
     
     points(t[tFirstTurnToPreyS-min(regionToAnalyse)], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red") ##Start 1st Turn
     points(t[tFirstTurnToPreyE-min(regionToAnalyse)], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black") ##End 1st Turn
