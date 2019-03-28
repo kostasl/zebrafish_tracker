@@ -9,7 +9,7 @@ source("TrackerDataFilesImport_lib.r")
 source("HuntingEventAnalysis_lib.r")
 
 
-strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetB",".rds",sep="") #Processed Registry on which we add 
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") #Processed Registry on which we add 
 
 #source("DataLabelling/labelHuntEvents_lib.r")
 ### GP Process Estimation Of Hunt Rate Vs Prey Density Using Bayesian Inference Model
@@ -77,9 +77,9 @@ modelLin <- "model{
 
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
-lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData.rds",sep="") ) #Processed Registry on which we add )
+lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 remove(lFirstBoutPoints) ##Load From File
-lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData",".rds",sep="") ) #Processed Registry on which we add )
+lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 
 # datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
 # lFirstBoutPoints <- list() ##Add Dataframes Of 1st bout Turns for Each Group
@@ -209,7 +209,7 @@ dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 
 ##Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 
 outer = FALSE
 line = 1 ## SubFig Label Params

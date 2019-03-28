@@ -529,7 +529,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   
   ## Eye Angle Vs Distance ##
   ##Exclude the capture bout / attack / by excluding the last bout (which is 1st item on Motion Bout list <=> rank 1)
-  EyeRegionToExtract <- seq( max(1,startFrame-1200), max(regionToAnalyse[ regionToAnalyse <= lMotionBoutDat[[idxH]][1,"vMotionBout_On"] ]) )
+ # EyeRegionToExtract <- seq( max(1,startFrame-1200), max(regionToAnalyse[ regionToAnalyse <= lMotionBoutDat[[idxH]][1,"vMotionBout_On"] ]) )
   bCaptureStrike <- 0
   
   ##If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
@@ -538,17 +538,18 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
 if (vEventSpeed_smooth[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
     bCaptureStrike <- 1 ##Set Flag
   
-  rows <- NROW(datRenderHuntEvent$LEyeAngle[EyeRegionToExtract])
+  rows <- NROW(datRenderHuntEvent$LEyeAngle[regionToAnalyse])
   
   ##Estimate Pitch From Length Changes
   
-  lEyeMotionDat[[idxH]] <- cbind(LEyeAngle=datRenderHuntEvent$LEyeAngle[EyeRegionToExtract ],
-                                 REyeAngle=datRenderHuntEvent$REyeAngle[EyeRegionToExtract],
-                                 PitchEstimate = vPitchEstimate,
-                                 PitchEstimateChange = vDPitchEstimate,
-                                 EyeVPitchCorrected = vEyeVPitchCorrected,
-                                 DistToPrey = vDistToPrey_Fixed_FullRange[EyeRegionToExtract]*DIM_MMPERPX,
-                                 DistToPreyInit = vDistToPrey_Fixed_FullRange[EyeRegionToExtract[min(which(EyeRegionToExtract > 0) ) ]]*DIM_MMPERPX,
+  lEyeMotionDat[[idxH]] <- cbind(t=t,
+                                 LEyeAngle=datRenderHuntEvent$LEyeAngle[regionToAnalyse ],
+                                 REyeAngle=datRenderHuntEvent$REyeAngle[regionToAnalyse],
+                                 PitchEstimate = vPitchEstimate[regionToAnalyse],
+                                 PitchEstimateChange = vDPitchEstimate[regionToAnalyse],
+                                 EyeVPitchCorrected = vEyeVPitchCorrected[regionToAnalyse],
+                                 DistToPrey = vDistToPrey_Fixed_FullRange[regionToAnalyse]*DIM_MMPERPX,
+                                 DistToPreyInit = vDistToPrey_Fixed_FullRange[regionToAnalyse[min(which(regionToAnalyse > 0) ) ]]*DIM_MMPERPX,
                                  RegistarIdx           = as.numeric(rep(idxH,rows)),
                                  expID                 = as.numeric(rep(expID,rows)),
                                  eventID               = as.numeric(rep(eventID,rows)),
@@ -933,7 +934,7 @@ for (gp in strGroupID)
 } ## Go through each group - Extract Firstbout 
 
 ##Save List on First Bout Data
-saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData",".rds",sep="") ) #Processed Registry on which we add )
+saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 
 
 

@@ -155,6 +155,8 @@ legend("topleft",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsIn
        ,col=colourH,pch=pchL,lty=c(1,2,3),lwd=2)
 dev.off()
 
+boxplot(unlist(datFirstBoutVsInfLL$MInf),unlist(datFirstBoutVsInfNL$MInf),unlist(datFirstBoutVsInfDL$MInf),names=c("LL","NL","DL") )
+boxplot(unlist(datFirstBoutVsInfLL$UnderShootRatio),unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfDL$UnderShootRatio),names=c("LL","NL","DL") )
 
 ## plot Undershot Ratio  - Showing RegisterIDs ###
 ##dataLL$distMax[ lInfStructDL$vsamplePSeqIdx]
