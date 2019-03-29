@@ -172,9 +172,9 @@ points(unlist(datFirstBoutVsInfNL$UnderShootRatio),unlist(datFirstBoutVsInfNL$MI
        col=colourH[3],pch=pchL[3])
 points(unlist(datFirstBoutVsInfDL$UnderShootRatio),unlist(datFirstBoutVsInfDL$MInf),ylim=c(0,2),xlim=c(0,2),
        col=colourH[1],pch=pchL[1])
-text(unlist(datFirstBoutVsInfNL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfNL$MInf)*1.01,unlist(datFirstBoutVsInfNL$RegistarIdx),cex=0.7,col=colourP[3])
-text(unlist(datFirstBoutVsInfLL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfLL$MInf)*1.01,unlist(datFirstBoutVsInfLL$RegistarIdx),cex=0.7)
-text(unlist(datFirstBoutVsInfDL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfDL$MInf)*1.01,datFirstBoutVsInfDL$RegistarIdx,cex=0.7,col=colourP[1])
+text(unlist(datFirstBoutVsInfNL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfNL$MInf)*1.01,datTrackedEventsRegister[ unlist(datFirstBoutVsInfNL$RegistarIdx),"expID"],cex=0.7,col=colourP[3])
+text(unlist(datFirstBoutVsInfLL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfLL$MInf)*1.01,datTrackedEventsRegister[ unlist(datFirstBoutVsInfLL$RegistarIdx),"expID"],cex=0.7)
+text(unlist(datFirstBoutVsInfDL$UnderShootRatio)*1.01,unlist(datFirstBoutVsInfDL$MInf)*1.01,datTrackedEventsRegister[ unlist(datFirstBoutVsInfDL$RegistarIdx),"expID"],cex=0.7,col=colourP[1])
 
 legend("topright",legend=paste(c("DL n=","LL n=","NL n="),c(NROW(datFirstBoutVsInfDL),NROW(datFirstBoutVsInfLL) ,NROW(datFirstBoutVsInfNL) ) ) 
        ,col=colourH,pch=pchL,lty=c(1,2,3),lwd=2)

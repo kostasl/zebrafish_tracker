@@ -6,6 +6,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 #strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 #strProcDataFileName <- paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
 strProcDataFileName <- paste("setn15-HuntEvents-SB-Updated-Merged") ##To Which To Save After Loading
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2"
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
@@ -46,15 +47,68 @@ datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateM
 datFishSuccessRateActive_WS <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vEfficiencyRatio_Strike),]
 datFishSuccessRateActive_NS <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vEfficiencyRatio_NStrike),]
 
+strPlotFileName <- paste(strPlotExportPath,"/stat/HuntEfficiency_hist.pdf",sep="")
+pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
+
 ## Plot Histogram of efficiency ##
+layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
 ptbreaks <- seq(from=0,to=1,by=1/10)
 layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
-hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio,col=colourR[1],main=paste("DL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio,col=colourR[3],main=paste("DL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]))
      ,xlab="",breaks=ptbreaks,ylim=c(0,20))
 hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio,col=colourR[2],main=paste("LL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",])),
      xlab="",breaks=ptbreaks,ylim=c(0,20))
-hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio,col=colourR[3],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio,col=colourR[1],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]))
      ,xlab="Hunt  Efficiency (Success/(Fail+Succ.) )score",breaks=ptbreaks,ylim=c(0,20))
+
+dev.off()
+
+###Hunt Power Histogram
+
+strPlotFileName <- paste(strPlotExportPath,"/stat/HuntPower_hist.pdf",sep="")
+pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
+layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio*datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$HuntEvents,
+     col=colourR[3],main=paste("DL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",])),
+     xlab="",breaks=10,ylim=c(0,40))
+
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio*datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$HuntEvents,
+     col=colourR[2],main=paste("LL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",])),
+     xlab="",breaks=10,ylim=c(0,40))
+
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio*datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$HuntEvents,
+     col=colourR[1],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",])),
+     xlab="",breaks=10,ylim=c(0,40))
+####
+dev.off()
+
+
+
+###Scatter of hunt efficiency vs hunt count
+strPlotFileName <- paste(strPlotExportPath,"/stat/HuntEfficiencyVsHuntCount_scatter.pdf",sep="")
+pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
+
+
+  plot(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio,
+       datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$HuntEvents,col=colourR[2],pch=3,
+       ylab="Hunt Event Count",xlab="Efficiency")
+  points(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio,
+              datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$HuntEvents,col=colourR[1],pch=16 )
+  points(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio,
+         datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$HuntEvents,col=colourR[3],pch=21 )
+
+vDL_expID <- rownames(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",])
+vLL_expID <- rownames(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",])  
+
+text(unlist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio)*1.01,
+     unlist( datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$HuntEvents)*1.01,vDL_expID
+    ,cex=0.7)
+text(unlist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)*1.01,
+     unlist( datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$HuntEvents)*1.01,vLL_expID
+     ,cex=0.7)
+
+dev.off()
+
 
 
 ## Plot Efficiency  Density 

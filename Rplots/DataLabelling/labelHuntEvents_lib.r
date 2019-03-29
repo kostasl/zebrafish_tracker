@@ -446,12 +446,14 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
                                           "Fails_WS"=tblFishScoresLabelled[,"Fail-With Strike"],
                                           "Fails"= rowSums(tblFishScoresLabelled[,tblIdxFail]),  #tblFishScoresLabelled[,"Fail"]+tblFishScoresLabelled[,"Fail-No Strike"]+tblFishScoresLabelled[,"Fail-With Strike"],
                                           "HuntEvents"=rowSums(tblFishScoresLabelled[,c(tblIdxSuccess,tblIdxFail)] ),  #rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
+                                          "expID"=NA,
                                           "groupID"=NA,
                                           "dataSetID"=NA) ) #
   
   ##Add Group Label To the resulting Data Frame
   for (e in row.names(tblFishScoresLabelled) )
   {
+    datFishSuccessRate[e,"expID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"expID"] )
     datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )
     datFishSuccessRate[e,"dataSetID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"dataSetID"] )
   }
