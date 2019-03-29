@@ -44,16 +44,35 @@ for (idx in 1:NROW(lEyeMotionDat) )
 
 datMaxEyeV <- data.frame(do.call(rbind,lMaxEyeV))
 
-cor(unlist(datMaxEyeV$maxEyeV), unlist(datMaxEyeV$duration_ms) )
-cor(unlist(datMaxEyeV$maxEyeV), unlist(datMaxEyeV$distance_mm) ) 
+duration_cor <- cor(unlist(datMaxEyeV$maxEyeV), unlist(datMaxEyeV$duration_ms), method = "pearson") 
+duration_cov <- cov(unlist(datMaxEyeV$maxEyeV), unlist(datMaxEyeV$duration_ms))
+distance_cor <- cor(unlist(datMaxEyeV$maxEyeV), unlist(datMaxEyeV$distance_mm) , method = "pearson")
+distance_cov <- cov(unlist(datMaxEyeV$maxEyeV), unlist(datMaxEyeV$distance_mm)) 
 
 
 ##Does Duration Explain Eye Vergence ? ##
-plot(datMaxEyeV$duration_ms,datMaxEyeV$maxEyeV,ylim=c(0,100))
+strPlotFileName <- paste(strPlotExportPath,"/stat/EyeVToDuration_corr.pdf",sep="")
+pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
+plot(datMaxEyeV$duration_ms,datMaxEyeV$maxEyeV,ylim=c(0,100),main=paste("P cor=",prettyNum(duration_cor) ),ylab="Max Eye Vergence",xlab="Hunt duration (ms)" )
 abline(lm(unlist(datMaxEyeV$maxEyeV)~unlist(datMaxEyeV$duration_ms)), col="red") # regression line (y~x) 
+## Robust locally weighted regression is  a method for smoothing by Ezekiel (1941, p. 51). The points are grouped accord- a scatterplot, (xi,yi), i = 1, . . . , n, in which the fitted value at xk ing to xi, and for each group the mean of the yi is plotted is the value of a  polynomial fit to the data using weighted least against the mean of the xi. More recently, Stone (1977) squares,
 lines(lowess(unlist(datMaxEyeV$maxEyeV)~unlist(datMaxEyeV$duration_ms) ))
+dev.off()
 
 ##Distance??
-plot(datMaxEyeV$distance_mm,datMaxEyeV$maxEyeV,ylim=c(0,100))
-abline(lm(unlist(datMaxEyeV$maxEyeV)~unlist(datMaxEyeV$distance_mm)), col="red") # regression line (y~x) 
-lines(lowess(unlist(datMaxEyeV$maxEyeV)~unlist(datMaxEyeV$distance_mm) ))
+strPlotFileName <- paste(strPlotExportPath,"/stat/EyeVToDistance_corr.pdf",sep="")
+pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
+  plot(datMaxEyeV$distance_mm,datMaxEyeV$maxEyeV,ylim=c(0,100))
+  abline(lm(unlist(datMaxEyeV$maxEyeV)~unlist(datMaxEyeV$distance_mm)), col="red") # regression line (y~x) 
+  lines(lowess(unlist(datMaxEyeV$maxEyeV)~unlist(datMaxEyeV$distance_mm) ))
+dev.off()
+
+##How does Distance to target correlate to time
+strPlotFileName <- paste(strPlotExportPath,"/stat/DistanceToDuration_corr.pdf",sep="")
+pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
+
+  plot(datMaxEyeV$distance_mm,datMaxEyeV$duration_ms,xlab="Distance (mm)",ylab="Hunt duration (ms)" )
+  abline(lm(unlist(datMaxEyeV$duration_ms)~unlist(datMaxEyeV$distance_mm)), col="red") # regression line (y~x) 
+  lines(lowess(unlist(datMaxEyeV$duration_ms)~unlist(datMaxEyeV$distance_mm) ))
+
+dev.off()

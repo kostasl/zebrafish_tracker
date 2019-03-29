@@ -258,16 +258,17 @@ detectTailBouts <- function(vTailMotionFq)
   nRec <- NROW(vTailMotionFq)
   ##Fix Length Differences
   x  <-  vTailMotionFq[1:nRec]
+
+  return (which(x > 5)) ###Stop here - keep it simple > 5Hz
+  ##Automatic Component number selection
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #modelNames = "EII"
   ###I can test For Possibility Of Clustering With G=n using mclustBIC returnCodes - When 0 Its succesfull
-  fitBIC <- mclustBIC(x ,G=1:(nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(5),c(10),c(20),c(40),c(8.5)) ,shrinkage=0.1 ) )
-  
+  fitBIC <- mclustBIC(x ,G=1:(nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.5),c(2),c(10),c(20),c(30),c(40)) ,shrinkage=0.1 ) )
   #plot(fitBIC)
   ##Select Largest Number Of Components That does not Crash !
   message(attr(fitBIC,"returnCodes"))
-  
   nNumberOfComponents <- max(which(attr(fitBIC,"returnCodes")[,2] == 0))
   nSelectComponents <- round(nNumberOfComponents/2)
   message(paste("Setting TailClust Comp. to N:",nNumberOfComponents,"Select n:",nSelectComponents) )
@@ -300,7 +301,7 @@ detectTailBouts <- function(vTailMotionFq)
   boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ) )   
   #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
   
-  return (which(fit$classification %in% boutCluster ) )
+  return (which(boutClass %in% boutCluster ) )
   
 }
 

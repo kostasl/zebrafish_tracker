@@ -280,7 +280,9 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   #    startFrame <- TurnboutsIdx[min(which( TurnboutsIdx >= min(which(vEyeV > G_THRESHUNTVERGENCEANGLE) -10)  ) )]-50 
   #  }
   ## Find Frame Where Prey Apparently Dissapears :
-  idx_PreyLost <- max(which(datRenderHuntEvent$Prey_Radius == min(datRenderHuntEvent$Prey_Radius,na.rm = T)))
+  vPreySize <- meanf(datRenderHuntEvent$Prey_Radius,100)
+  vPreySize[vPreySize < 1] <- NA ##When Radius is oo small set to NA
+  idx_PreyLost <-  min(which(is.na(vPreySize))) #min(vPreySize,na.rm = T)
   
   ##Take Start frame to be close to Eye V > Threshold Event 
   if (is.na(startFrame))
@@ -388,6 +390,12 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
       warning(paste("*** No Bouts detected for idxH:",idxH ) ) 
       next
     }
+    
+    ##First Turn As Indicated by detected sequence 
+    tFirstTurnToPreyS <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
+    tFirstTurnToPreyE <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
+    
+    
     ##EYES Change In Fish Heading - Unfiltered
     vAngleDisplacement_filt <- cumsum(vTurnSpeed)[1:NROW(t)]
     par(pty="s")
@@ -407,10 +415,6 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
          ylab=NA,cex=1,lwd=3,lty=1,pch=16,
          col="black")
 
-    ##First Turn As Indicated by detected sequence 
-    tFirstTurnToPreyS <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_On
-    tFirstTurnToPreyE <- datMotionBout[datMotionBout$turnSeq==1,]$vMotionBout_Off
-    
     ##If First Turn Is Out of Range, then Change
     if (NROW(tFirstTurnToPreyS) == 0 )
     #if ((tFirstTurnToPreyS-min(regionToAnalyse) )  <0 )
