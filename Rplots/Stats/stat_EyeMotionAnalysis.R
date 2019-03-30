@@ -38,7 +38,9 @@ for (idx in 1:NROW(lEyeMotionDat) )
   huntDuration_ms <- lEyeMotionDat[[idx]][,"t"][idx_End]-lEyeMotionDat[[idx]][,"t"][idx_Start]
   huntDistance_mm <- lEyeMotionDat[[idx]][,"DistToPreyInit"][idx_End]-lEyeMotionDat[[idx]][,"DistToPrey"][idx_End]
   
-  lMaxEyeV[[idx]] <- list(maxEyeV = maxV,duration_ms= huntDuration_ms,distance_mm=huntDistance_mm,RegIdx=lEyeMotionDat[[idx]][,"RegistarIdx"][idx_End] )
+  lMaxEyeV[[idx]] <- list(maxEyeV = maxV,duration_ms= huntDuration_ms,distance_mm=huntDistance_mm,
+                          RegIdx=lEyeMotionDat[[idx]][,"RegistarIdx"][idx_End],
+                          groupID=lEyeMotionDat[[idx]][,"groupID"][idx_End] )
 }
 
 
@@ -76,3 +78,29 @@ pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
   lines(lowess(unlist(datMaxEyeV$duration_ms)~unlist(datMaxEyeV$distance_mm) ))
 
 dev.off()
+
+
+## Duration Of Hunt Events
+strGroupID <- unique(datTrackedEventsRegister[unlist(datMaxEyeV$RegIdx),]$groupID)
+
+boxplot(unlist(datMaxEyeV[datMaxEyeV$groupID==1,]$duration_ms ),
+        unlist(datMaxEyeV[datMaxEyeV$groupID==2,]$duration_ms ) ,
+        unlist(datMaxEyeV[datMaxEyeV$groupID==3,]$duration_ms ),main="Duration of Hunt Event",names=strGroupID  )
+
+boxplot(unlist(datMaxEyeV[datMaxEyeV$groupID==1,]$distance_mm ),
+        unlist(datMaxEyeV[datMaxEyeV$groupID==2,]$distance_mm ) ,
+        unlist(datMaxEyeV[datMaxEyeV$groupID==3,]$distance_mm ),main="Distance of Hunt Event",names=strGroupID  )
+
+
+## Check Efficiency Of Prey Distance Over Hunt Time  ##
+vDistOverTime_A <- unlist(datMaxEyeV[datMaxEyeV$groupID==1,]$distance_mm) / unlist(datMaxEyeV[datMaxEyeV$groupID==1,]$duration_ms)
+vDistOverTime_B <- unlist(datMaxEyeV[datMaxEyeV$groupID==2,]$distance_mm) / unlist(datMaxEyeV[datMaxEyeV$groupID==2,]$duration_ms)
+vDistOverTime_C <- unlist(datMaxEyeV[datMaxEyeV$groupID==3,]$distance_mm) / unlist(datMaxEyeV[datMaxEyeV$groupID==3,]$duration_ms)
+
+layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
+ptbreaks <- seq(from=-0.001,to=0.005,by=1/5000)
+hist(vDistOverTime_A,xlim=c(0,0.004),breaks=ptbreaks)
+hist(vDistOverTime_B,xlim=c(0,0.004),breaks=ptbreaks)
+hist(vDistOverTime_C,xlim=c(0,0.004),breaks=ptbreaks)
+
+

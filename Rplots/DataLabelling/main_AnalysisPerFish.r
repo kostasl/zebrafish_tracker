@@ -60,7 +60,7 @@ hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEffici
      xlab="",breaks=ptbreaks,ylim=c(0,20))
 hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio,col=colourR[1],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]))
      ,xlab="Hunt  Efficiency (Success/(Fail+Succ.) )score",breaks=ptbreaks,ylim=c(0,20))
-
+mtext("Efficiency","top",side=3)
 dev.off()
 
 ###Hunt Power Histogram
@@ -206,9 +206,6 @@ plot(densLLScore_WS,col=colourH[2],main="Hunt Power On Fail With Strike",
 lines(densNLScore_WS,col=colourH[3],lwd=2)
 lines(densDLScore_WS,col=colourH[1],lwd=2)
 legend("topright",legend=paste(c("DL #","LL #","NL #"),c(densDLScore$n,densLLScore$n,densNLScore$n) ),fill = colourH)
-
-## Plot CDF ##
->>>>>>> bf00ce8ce4ee70a345be846909552c3472c22f84
 
 ## Plot CDF ##
 strPlotName = paste(strPlotExportPath,"/stat/efficiency/ecdf_huntpower_WS.pdf",sep="")
