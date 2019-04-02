@@ -208,9 +208,6 @@ lines(densDLScore_WS,col=colourH[1],lwd=2)
 legend("topright",legend=paste(c("DL #","LL #","NL #"),c(densDLScore$n,densLLScore$n,densNLScore$n) ),fill = colourH)
 
 ## Plot CDF ##
->>>>>>> bf00ce8ce4ee70a345be846909552c3472c22f84
-
-## Plot CDF ##
 strPlotName = paste(strPlotExportPath,"/stat/efficiency/ecdf_huntpower_WS.pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="Compare Hunt Power Between Groups With Strike",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 plot(cdfDLScore_WS,lty=2,lwd=1,col=colourH[1],xlim=c(0,12),xlab=expression(S^2/(S+F[WS]),paste("")),cex.axis=1.5,main="CDF Hunt power with Strike" )
@@ -228,7 +225,6 @@ densLLScore_NS <- density(datFishSuccessRateActive_NS[datFishSuccessRateActive_N
 cdfDLScore_NS <- ecdf(datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "DL",]$vEfficiencyRatio_NStrike*datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "DL",]$Success)
 cdfNLScore_NS <- ecdf(datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "NL",]$vEfficiencyRatio_NStrike*datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "NL",]$Success)
 cdfLLScore_NS <- ecdf(datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "LL",]$vEfficiencyRatio_NStrike*datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "LL",]$Success)
-
 
 dev.off() ##Plot How Hunt Power is modified when comparing to Failures With A strike Only
 plot(densLLScore_NS,col=colourH[2],main="Hunt Power On Fail With NO Strike",

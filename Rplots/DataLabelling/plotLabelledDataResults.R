@@ -122,11 +122,48 @@ dev.off()
 embed_fonts(strPlotName )
 
 
+######## Plot Strike Vs No Strike Split In Success And Fail ###
+## Find Tbl Indexes Indicating Success 
+###Label ##Sucess Fail Summary Only 
+strPlotName = paste(strPlotExportPath,"/HuntEventsLabellingSuccessStrikeBreakDown-SB.pdf",sep="")
+pdf(strPlotName,width=8,height=16,bg="white",
+    compress=FALSE,onefile = FALSE, 
+    title="Summary Of Manual Hunt Event Labelling Conditioning On Prey Tracking Being On") #col=(as.integer(filtereddatAllFrames$expID))
+
+colourL <-c(rfc(6),"#FF0000")
+outer = FALSE
+line = 1 ## SubFig Label Params
+cex = 1.5
+adj  = 0.5
+padj <- -0
+las <- 1
 
 
 
+layout(matrix(c(1,2,3,4,4,4), 2, 3, byrow = TRUE))
+nlNL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "NL",]$expID))
+nNL<-pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"NL",colourL)
+mtext(c(expression(),  bquote("NF"["e"] ~ "#"~ .(nNL) / .(nlNL) )  ),
+      at="top",
+      outer=outer,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
 
+nlLL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "LL",]$expID))
+nLL <- pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"LL",colourL)
+mtext(c(expression(),  bquote("LF"["e"] ~ "#"~ .(nLL) / .(nlLL) )  ),
+      at="top",
+      outer=outer,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
 
+nlDL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "DL",]$expID))
+nDL <-pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"DL",colourL)
+mtext(c(expression(),  bquote("DF"["e"] ~ "#"~ .(nDL) / .(nlDL) )  ),
+      at="top",
+      outer=outer,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+legend("bottomright",legend=c("Success Noclass","Success Strike","Success No Strike","Fail Strike","Fail No Strike"),
+       fill=colourL,
+       col = colourL,
+       bg = "white",cex=1.0,
+       merge=FALSE,horiz=FALSE)
+dev.off()
 # 
 # 
 # ## PLOT SCATTER Of Success Vs Fail For Each Group 

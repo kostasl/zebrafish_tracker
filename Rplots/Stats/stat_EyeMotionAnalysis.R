@@ -38,7 +38,7 @@ for (idx in 1:NROW(lEyeMotionDat) )
   huntDuration_ms <- lEyeMotionDat[[idx]][,"t"][idx_End]-lEyeMotionDat[[idx]][,"t"][idx_Start]
   huntDistance_mm <- lEyeMotionDat[[idx]][,"DistToPreyInit"][idx_End]-lEyeMotionDat[[idx]][,"DistToPrey"][idx_End]
   
-  lMaxEyeV[[idx]] <- list(maxEyeV = maxV,duration_ms= huntDuration_ms,distance_mm=huntDistance_mm,RegIdx=lEyeMotionDat[[idx]][,"RegistarIdx"][idx_End] )
+  lMaxEyeV[[idx]] <- list(maxEyeV = maxV,duration_ms= huntDuration_ms,distance_mm=huntDistance_mm,RegIdx=lEyeMotionDat[[idx]][,"RegistarIdx"][idx_End],CaptureStrike=lEyeMotionDat[[idx]][,"doesCaptureStrike"][idx_End] )
 }
 
 

@@ -596,6 +596,8 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   vMotionBout_Off <-NA
   
   vEventPathLength_mm<- vEventPathLength*DIM_MMPERPX
+  vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
+  
   ##Skip If Recording Starts With Bout , And Catch The One After the First Pause
   if (lastBout > firstBout) ##If More than One Bout Exists
   {
@@ -613,9 +615,21 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
     else
       vMotionBoutDuration <-1000*vMotionBout_rle$lengths[1]/Fs ##Measure Duration From Lengths Of Active Motion Using RLE flag
     
-    vMotionBoutDistanceToPrey_mm <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
+    ##Re-adjust pair count
+    iPairs <- min(length(vMotionBout_On),length(vMotionBout_Off)) 
+    
+    vMotionBoutDistanceToPrey_mm    <- vDistToPrey[vMotionBout_On]*DIM_MMPERPX
     vMotionBoutDistanceTravelled_mm <- (vEventPathLength_mm[vMotionBout_Off[1:iPairs] ] - vEventPathLength_mm[vMotionBout_On[1:iPairs] ]) ##The Power of A Bout can be measured by distance Travelled
     vTurnBoutAngle                  <- (vBearingToPrey[vMotionBout_Off[1:iPairs],2] - vBearingToPrey[vMotionBout_On[1:iPairs],2])
+    # Measure peak speed for each bout 
+    
+    
+    cntS <- 0;  vMotionPeakSpeed_mm <- vector()
+    for (boutOn in vMotionBout_On[1:iPairs])
+    {
+      cntS <- cntS + 1
+      vMotionPeakSpeed_mm[cntS] <- max(vEventSpeed_smooth_mm[ boutOn:vMotionBout_Off[cntS] ],na.rm=TRUE) ##Hold Max mm/sec speed of this bout
+    }
   
 
     
@@ -670,7 +684,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   ##Combine and Return
   datMotionBout <- cbind(boutSeq,boutRank,vMotionBout_On,vMotionBout_Off,
                          vMotionBoutIBI,vMotionBoutDuration,
-                         vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm,
+                         vMotionBoutDistanceToPrey_mm,vMotionBoutDistanceTravelled_mm,vMotionPeakSpeed_mm,
                          vTurnBoutAngle,turnSeq) ##Make Data Frame
   
   
@@ -714,7 +728,6 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
     
     par(new=TRUE) ##Add To Path Length Plot But On Separate Axis So it Scales Nicely
     
-    vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
     
     plot(t,vEventSpeed_smooth_mm[regionToAnalyse],type='l',
          axes=F,xlab=NA,ylab=NA,col=colourG,ylim=c(0,25),lwd=3,lty=4,
