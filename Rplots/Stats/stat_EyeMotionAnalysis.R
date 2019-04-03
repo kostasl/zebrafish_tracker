@@ -1,4 +1,4 @@
-### Stat Analysis of Eye Movement Data ##
+### Stat Analysis of Eye Movement Data - Distance and duration of hunt events vs Max Eye Vergence Etc ##
 
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
@@ -80,6 +80,9 @@ pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
 dev.off()
 
 
+
+
+### Other Aux Stuff ##
 ## Duration Of Hunt Events
 strGroupID <- unique(datTrackedEventsRegister[unlist(datMaxEyeV$RegIdx),]$groupID)
 
@@ -99,8 +102,8 @@ vDistOverTime_C <- unlist(datMaxEyeV[datMaxEyeV$groupID==3,]$distance_mm) / unli
 
 layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
 ptbreaks <- seq(from=-0.001,to=0.005,by=1/5000)
-hist(vDistOverTime_A,xlim=c(0,0.004),breaks=ptbreaks)
-hist(vDistOverTime_B,xlim=c(0,0.004),breaks=ptbreaks)
-hist(vDistOverTime_C,xlim=c(0,0.004),breaks=ptbreaks)
+hist(vDistOverTime_A,xlim=c(0,0.004),breaks=ptbreaks,main=strGroupID[1])
+hist(vDistOverTime_B,xlim=c(0,0.004),breaks=ptbreaks,main=strGroupID[2])
+hist(vDistOverTime_C,xlim=c(0,0.004),breaks=ptbreaks,main=strGroupID[3])
 
 
