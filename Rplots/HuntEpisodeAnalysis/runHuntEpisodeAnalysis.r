@@ -539,7 +539,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   ##If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
   ## TODO Change this to a velocity Estimate for capture strike
   ##if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
-if (vEventSpeed_smooth[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
+if (vEventSpeed_smooth_mm[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
     bCaptureStrike <- 1 ##Set Flag
   
   rows <- NROW(datRenderHuntEvent$LEyeAngle[regionToAnalyse])
@@ -581,6 +581,7 @@ if (bSaveNewMotionData)
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
 #datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
 
+datEyeMotionCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
 ### CHECK Process ##
 ##Check If all where processed
 message(" Huntevent Processing Summary #EventInRegistry/#EventsProcessed")

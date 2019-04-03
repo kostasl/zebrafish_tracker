@@ -226,7 +226,6 @@ cdfDLScore_NS <- ecdf(datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$gr
 cdfNLScore_NS <- ecdf(datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "NL",]$vEfficiencyRatio_NStrike*datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "NL",]$Success)
 cdfLLScore_NS <- ecdf(datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "LL",]$vEfficiencyRatio_NStrike*datFishSuccessRateActive_NS[datFishSuccessRateActive_NS$groupID == "LL",]$Success)
 
-
 dev.off() ##Plot How Hunt Power is modified when comparing to Failures With A strike Only
 plot(densLLScore_NS,col=colourH[2],main="Hunt Power On Fail With NO Strike",
      xlab=expression(S^2/(S+F),paste("")) ,type="l",lwd=2,ylim=c(0,0.7))
