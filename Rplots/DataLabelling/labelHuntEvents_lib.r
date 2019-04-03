@@ -488,7 +488,7 @@ findLabelledEvent <- function (EventRegisterRec)
     warning("Missing startFrame from Event Register")
   
   
-  recs<- datLabelledHuntEventAllGroups[as.character(datLabelledHuntEventAllGroups$groupID) == as.character(EventRegisterRec$groupID) &
+  recs <- datLabelledHuntEventAllGroups[as.character(datLabelledHuntEventAllGroups$groupID) == as.character(EventRegisterRec$groupID) &
                                          as.character(datLabelledHuntEventAllGroups$eventID) == as.character(EventRegisterRec$eventID) &
                                          as.character(datLabelledHuntEventAllGroups$expID) == as.character(EventRegisterRec$expID)
                                        ,]
@@ -498,15 +498,14 @@ findLabelledEvent <- function (EventRegisterRec)
   {
     ##Filter Down
     ##find the hunt event which contains the currect start frame ie ends before the start frame
-    recs <- recs[ recs$startFrame>EventRegisterRec$startFrame  & 
-                    recs$endFrame >  EventRegisterRec$startFrame , ] 
-    
-    d<-(recs$startFrame - EventRegisterRec$startFrame) 
+    recs <- recs[   recs$endFrame >  EventRegisterRec$startFrame , ] 
+    ##Calc Distance Based on Start and End Frame
+    d<-(recs$startFrame - EventRegisterRec$startFrame + recs$endFrame - EventRegisterRec$endFrame) 
     ##Get The BEst Match FOr Start Frame- as the 1st hunt event starting after EventReg startframe (we usually rewind a little from the automatically detect start frame) 
     if (!any(is.na(d))) ## If startFrame is not NA
     {
       ##remove the -ve ones from the search by set to  max
-      d[d<0] <- max(d)+1
+      #d[d<0] <- max(d)+1
       ##Now retrieve the first event starting after our start frame , ending after our startframe* (filtered above)
       recs <- recs[which(abs(d) == min(abs(d)) ), ] 
     }

@@ -140,9 +140,12 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     datTrackedEventsRegister$PreyIDTarget <- NA
   if (!any(names(datTrackedEventsRegister) == "startFrame"))
     datTrackedEventsRegister$startFrame <- NA
+  if (!any(names(datTrackedEventsRegister) == "endFrame"))
+    datTrackedEventsRegister$endFrame <- NA
   
   ##Set To 1st Frame In Hunt Event
   datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
+  datTrackedEventsRegister[idxH,]$endFrame     <- max(datPlaybackHuntEvent$frameN)
   
   #selectedPreyID <- max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
   ##Check If Assigned OtherWise Automatically Select the longest Track
@@ -612,7 +615,7 @@ for (idx in 1:NROW(datTrackedEventsRegister))
   print(paste(idx, convertToScoreLabel( recLabel$huntScore), unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$RegistarIdx == idx,]$doesCaptureStrike)  ) )
 }
   
-findLabelledEvent(datTrackedEventsRegister[166 ,]) ##not Hunt Mode?
+findLabelledEvent(datTrackedEventsRegister[169 ,]) ##not Hunt Mode?
 
 ## Make Distance Vs Eye Angle Vectors ##
 ## PLOT EYE Vs Distance ##
