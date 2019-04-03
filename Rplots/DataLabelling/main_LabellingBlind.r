@@ -118,10 +118,13 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
 #strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 #strProcDataFileName <- paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
-strProcDataFileName <- paste("setn15-HuntEvents-SB-Updated-Merged") ##To Which To Save After Loading
+#strProcDataFileName <- paste("setn15-HuntEvents-SB-Updated-Merged2") ##To Which To Save After Loading
+
 message(paste(" Loading Hunt Event List to Process... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+##Load the latest set
+datHuntEventAllGroupToLabel  <- getLabelledHuntEventsSet()
  ##<- datHuntEvent
 groupsList <- c("DL","NL","LL") ##unique(datHuntEventAllGroupToLabel$groupID)
 str_FilterLabel <- "UnLabelled"

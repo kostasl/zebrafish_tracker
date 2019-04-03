@@ -44,8 +44,8 @@ message(paste(" Importing Retracked HuntEvents from:",strDataFileName))
 load(strDataFileName) ## Load Imported Hunt Event Tracks - THe detailed Retracked Events
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
-#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
-#lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #Processed Registry on which we add )
+lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
+lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #Processed Registry on which we add )
 bSaveNewMotionData <- TRUE ##Overwrite the lMotionBoutDatFile
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
@@ -536,11 +536,14 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
  # EyeRegionToExtract <- seq( max(1,startFrame-1200), max(regionToAnalyse[ regionToAnalyse <= lMotionBoutDat[[idxH]][1,"vMotionBout_On"] ]) )
   bCaptureStrike <- 0
   
-  ##If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
   ## TODO Change this to a velocity Estimate for capture strike
-  ##if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
-if (vEventSpeed_smooth_mm[regionToAnalyse] > G_THRES_CAPTURE_SPEED)
+  #if (any(vEventSpeed_smooth_mm[regionToAnalyse] > G_THRES_CAPTURE_SPEED))
+  ##Check THe Last Bout For Speed Threshold Indicating Capture Strike 
+  if ( lMotionBoutDat[[idxH]][lMotionBoutDat[[idxH]][,"boutRank"] == 1,"vMotionPeakSpeed_mm"] > G_THRES_CAPTURE_SPEED  ) ##  
     bCaptureStrike <- 1 ##Set Flag
+     ## Can Also :: If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
+        ##if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
+    
   
   rows <- NROW(datRenderHuntEvent$LEyeAngle[regionToAnalyse])
   
@@ -599,9 +602,17 @@ for (gp in strGroupID)
   
 }
 
-       
-
-
+## Check Labels For Each of the imported events ##
+##This matching between retracked events and the labelled events is not very good way of obtaining manual score label
+datTrackedEventsRegister[unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$doesCaptureStrike >0 ,]$RegistarIdx),]
+## in auxFunction we have 
+for (idx in 1:NROW(datTrackedEventsRegister))
+{
+  recLabel <- findLabelledEvent( datTrackedEventsRegister[idx,] )
+  print(paste(idx, convertToScoreLabel( recLabel$huntScore), unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$RegistarIdx == idx,]$doesCaptureStrike)  ) )
+}
+  
+findLabelledEvent(datTrackedEventsRegister[166 ,]) ##not Hunt Mode?
 
 ## Make Distance Vs Eye Angle Vectors ##
 ## PLOT EYE Vs Distance ##
@@ -905,7 +916,9 @@ for (gp in strGroupID)
   #                            , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
   lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
                                   Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
-                                  , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx)
+                                  , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx,
+                                  doesCaptureStrike=( datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$boutRank == 1 ,]$vMotionPeakSpeed_mm >= G_THRES_CAPTURE_SPEED )
+                                  )
   
   
   ##Searching 

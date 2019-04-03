@@ -121,42 +121,7 @@ message(strfile)
 ############ END OF IMPORT NEW DATASET HUNT EVENTS ONTO LABELEED SET ### 
 
 ### FIND a HUNT Event Record in the Labelled Events from the HuntAnalusis Register -
-## Use it To Locate One Of the Detail Retracked HuntEvents In the Labelled Group
-## You can the Use mainLabellingBlind, and give the rowID so as to replay the Video in the tracker
-findLabelledEvent <- function (EventRegisterRec)
-{
-  
- 
-  #strDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
-  #strDataFileName <-paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
-  strDataFileName <-paste("setn15-HuntEvents-SB-Updated-Merged2",sep="") ##To Which To Save After Loading
-  
-  message(paste(" Loading Hunt Event List to Validate : ","/LabelledSet/",strDataFileName,".rds" ))
-  
-  datLabelledHuntEventAllGroups <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
-  
-  if (is.na(EventRegisterRec$startFrame))
-      warning("Missing startFrame from Event Register")
-  
-  
-  recs<- datLabelledHuntEventAllGroups[as.character(datLabelledHuntEventAllGroups$groupID) == as.character(EventRegisterRec$groupID) &
-                                  as.character(datLabelledHuntEventAllGroups$eventID) == as.character(EventRegisterRec$eventID) &
-                                  as.character(datLabelledHuntEventAllGroups$expID) == as.character(EventRegisterRec$expID)
-                                ,]
-  
-  ##If Start Frame Is there - Check For Closest Match 
-  if (any(names(EventRegisterRec) == "startFrame"))
-  {
-    d<-(recs$startFrame - EventRegisterRec$startFrame)
-    if (!is.na(d)) ##Get The BEst Match FOr Start Frame- If startFrame is not NA
-    {
-      recs <- recs[ which( abs(d) == min(abs(d) )), ] 
-    }
-    
-    }
-  
-  return(recs)
-}
+
 
 ### 
 ##################################### FIX Missing EXPID / Larvae From Hunt Event List #####################

@@ -15,7 +15,7 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
   Sys.setenv(LD_LIBRARY_PATH="")
   #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"",sep=":" ) ) 
   #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.12.0/gcc_64/lib/",sep=":" ) ) ##Home PC/
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) ##Home PC/
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.12.0/gcc_64/lib/",sep=":" ) ) ##Home PC/
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/media/kostasl/D445GB_ext4/opt/Qt3.0.1/5.10.0/gcc_64/lib/",sep=":" ) ) ##Home PC - OpenCV QT5 lib link/
   
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) #### Office
@@ -96,11 +96,13 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     
     rec <- datHuntEvent[i,] 
-    
+    stopifnot(!is.na(rec$expID ))
     
     ##A Noddy  Way of selecting Records
-    if (!(convertToScoreLabel(rec$huntScore) %in% factorLabelFilter) | rec$expID != ExpIDFilter | rec$eventID != EventIDFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
+    if (!(convertToScoreLabel(rec$huntScore) %in% factorLabelFilter) )
       next ##SKip Record if previously Labelled
+    if (rec$expID != ExpIDFilter | rec$eventID != EventIDFilter  ) ##&& rec$huntScore != (which(levels(huntLabels)=="NA")-1)
+      next
     
     ##Added Later To Struct Is  A Flag that a Hunt Event Has been Retracked - adding the food target
     if (any(names(datHuntEvent)=="markTracked")  ) ##This Marks Videos that have been Labelled and Retracked For anal
@@ -134,7 +136,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame, "ExpID:",rec$expID ) )
     ##--
-    strArgs = paste("--HideDataSource=0 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    strArgs = paste(" --HideDataSource=0 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
     message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
     if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
       stop(paste("Tracker software not found in :",strTrackerPath ))
@@ -462,3 +464,54 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
   
 }
 
+## Use it To Locate One Of the Detail Retracked HuntEvents In the Labelled Group
+## You can the Use mainLabellingBlind, and give the rowID so as to replay the Video in the tracker
+findLabelledEvent <- function (EventRegisterRec)
+{
+  
+  ##Check for Funky Errors in huntScore labels (not recognized labels):
+  
+  #strDataFileName <- paste("setn14-D5-18-HuntEvents-Merged") ##To Which To Save After Loading
+  #strDataFileName <-paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
+  #  strDataFileName <-paste("setn15-HuntEvents-SB-Updated-Merged2",sep="") ##To Which To Save After Loading
+  
+  #  message(paste(" Loading Hunt Event List to Validate : ","/LabelledSet/",strDataFileName,".rds" ))
+  #  datLabelledHuntEventAllGroups <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
+  
+  datLabelledHuntEventAllGroups <- getLabelledHuntEventsSet()
+
+  datErrorRecords <- datLabelledHuntEventAllGroups[is.na(convertToScoreLabel( datLabelledHuntEventAllGroups$huntScore)),]
+  stopifnot(NROW(datErrorRecords) == 0 )
+  
+    
+  if (is.na(EventRegisterRec$startFrame))
+    warning("Missing startFrame from Event Register")
+  
+  
+  recs<- datLabelledHuntEventAllGroups[as.character(datLabelledHuntEventAllGroups$groupID) == as.character(EventRegisterRec$groupID) &
+                                         as.character(datLabelledHuntEventAllGroups$eventID) == as.character(EventRegisterRec$eventID) &
+                                         as.character(datLabelledHuntEventAllGroups$expID) == as.character(EventRegisterRec$expID)
+                                       ,]
+  
+  ##If Start Frame Is there - Check For Closest Match 
+  if (any(names(EventRegisterRec) == "startFrame"))
+  {
+    ##Filter Down
+    ##find the hunt event which contains the currect start frame ie ends before the start frame
+    recs <- recs[ recs$startFrame>EventRegisterRec$startFrame  & 
+                    recs$endFrame >  EventRegisterRec$startFrame , ] 
+    
+    d<-(recs$startFrame - EventRegisterRec$startFrame) 
+    ##Get The BEst Match FOr Start Frame- as the 1st hunt event starting after EventReg startframe (we usually rewind a little from the automatically detect start frame) 
+    if (!any(is.na(d))) ## If startFrame is not NA
+    {
+      ##remove the -ve ones from the search by set to  max
+      d[d<0] <- max(d)+1
+      ##Now retrieve the first event starting after our start frame , ending after our startframe* (filtered above)
+      recs <- recs[which(abs(d) == min(abs(d)) ), ] 
+    }
+    
+  }
+  
+  return(recs)
+}
