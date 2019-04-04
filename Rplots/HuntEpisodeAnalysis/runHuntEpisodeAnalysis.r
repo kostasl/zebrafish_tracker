@@ -172,21 +172,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     message(paste("Targeted Prey Changed For Hunt Event to ID:",selectedPreyID," - Updating Register...") )
     datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
   }
-  
-  ## Find Matching labelled event
-  if ( is.na(datTrackedEventsRegister[idxH,]$LabelledEventIdx)) 
-  {
-    recLabel <- findLabelledEvent( datTrackedEventsRegister[idxH,] )
-    if (NROW(recLabel) > 0 ){
-      datTrackedEventsRegister[idxH,]$LabelledEventIdx <- row.names(recLabel) ## Save the Ids Of the Labelled hunt event records
-      datTrackedEventsRegister[idxH,]$LabelledScore    <- recLabel$huntScore
-    }
-  }
-  
   ################ END OF PREY SELECT / Start Processing ###
-  ##Save With Dataset Idx Identifier
-  saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) 
-  ##########  EBD OF TRACK EVent Register Update ###
   
   ## Select Prey Specific Subset
   datFishMotionVsTargetPrey <- ldatFish[[as.character(selectedPreyID)]] #datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == ,] 
@@ -596,6 +582,29 @@ if (bSaveNewMotionData)
   saveRDS(lEyeMotionDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 #datEpisodeMotionBout <- lMotionBoutDat[[1]]
 
+
+##### Attached LABELLED EVENT IDS  Find Matching labelled event
+datTrackedEventsRegister$LabelledEventIdx <- NA
+for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
+{
+  
+  if ( is.na(datTrackedEventsRegister[idxH,]$LabelledEventIdx)) 
+  {
+    recLabel <- findLabelledEvent( datTrackedEventsRegister[idxH,] )
+    if (NROW(recLabel) > 0 ){
+      datTrackedEventsRegister[idxH,]$LabelledEventIdx <- row.names(recLabel) ## Save the Ids Of the Labelled hunt event records
+      datTrackedEventsRegister[idxH,]$LabelledScore    <- recLabel$huntScore
+      print(convertToScoreLabel(recLabel$huntScore))
+    }
+  }
+}  
+##################
+
+##Save With Dataset Idx Identifier
+saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) 
+##########  EBD OF TRACK EVent Register Update ###
+
+
  ############# VERIFY ###
 ####Select Subset Of Data To Analyse
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
@@ -628,12 +637,6 @@ for (idx in 1:NROW(datTrackedEventsRegister))
   recLabel <- findLabelledEvent( datTrackedEventsRegister[idx,] )
   print(paste(idx, convertToScoreLabel( recLabel$huntScore), unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$RegistarIdx == idx,]$doesCaptureStrike)  ) )
 }
-
-##show capt strike vs approach hunt events 
-sum(lFirstBoutPoints$NL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$NL[,"doesCaptureStrike"]))
-sum(lFirstBoutPoints$DL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$DL[,"doesCaptureStrike"]))
-sum(lFirstBoutPoints$LL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$LL[,"doesCaptureStrike"]))
-findLabelledEvent(datTrackedEventsRegister[169 ,]) ##not Hunt Mode?
 
 ## Make Distance Vs Eye Angle Vectors ##
 ## PLOT EYE Vs Distance ##
@@ -975,6 +978,13 @@ for (gp in strGroupID)
 
 ##Save List on First Bout Data
 saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
+
+
+
+##show capt strike vs approach hunt events 
+sum(lFirstBoutPoints$NL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$NL[,"doesCaptureStrike"]))
+sum(lFirstBoutPoints$DL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$DL[,"doesCaptureStrike"]))
+sum(lFirstBoutPoints$LL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$LL[,"doesCaptureStrike"]))
 
 
 

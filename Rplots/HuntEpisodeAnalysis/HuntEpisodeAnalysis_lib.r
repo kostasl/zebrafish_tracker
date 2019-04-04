@@ -509,7 +509,7 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
 {
   ##Grey Point
   colourG <- c(rgb(0.6,0.6,0.6,0.5)) ##Region (Transparency)    
-  idx_Terminal         <- min(max(HuntRangeIdx)+Fs/2,max(regionToAnalyse))
+  idx_Terminal         <- min(max(HuntRangeIdx)+Fs/10,max(regionToAnalyse))
   ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx < idx_Terminal ] #[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
   
   meanBoutSpeed <- median(vEventSpeed_smooth[ActivityboutIdx_cleaned])
