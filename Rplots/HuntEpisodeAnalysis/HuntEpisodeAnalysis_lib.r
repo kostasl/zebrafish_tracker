@@ -197,6 +197,10 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
   #t <- datRenderHuntEvent$frameN
   #X11();plot(pvEventSpeed,pvTailDispFilt,type='p')
   
+  ##simple threshold shortcut 
+  
+  return(which(x > G_THRES_CAPTURE_SPEED/2))
+  
   #X11();plot(pvEventSpeed,type='p')
   #BIC <- mclustBIC(dEventSpeed)
   
@@ -505,14 +509,15 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
 {
   ##Grey Point
   colourG <- c(rgb(0.6,0.6,0.6,0.5)) ##Region (Transparency)    
-  
-  ActivityboutIdx_cleaned <- ActivityboutIdx #[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
+  idx_Terminal         <- min(max(HuntRangeIdx)+Fs/2,max(regionToAnalyse))
+  ActivityboutIdx_cleaned <- ActivityboutIdx[ActivityboutIdx < idx_Terminal ] #[ActivityboutIdx %in% regionToAnalyse]  #[which(vEventSpeed_smooth[ActivityboutIdx] > G_MIN_BOUTSPEED   )  ]
   
   meanBoutSpeed <- median(vEventSpeed_smooth[ActivityboutIdx_cleaned])
   vEventPathLength <- cumsum(vEventSpeed_smooth) ### Speed is in mm 
   
   ##Binarize , Use indicator function 1/0 for frames where Motion Occurs
-  vMotionBout <- vEventSpeed_smooth
+  ##Bouts only within hunting region ##
+  vMotionBout <- vEventSpeed_smooth[1:idx_Terminal]
   vMotionBout[ 1:NROW(vMotionBout) ]   <- 0
   vMotionBout[ ActivityboutIdx_cleaned  ] <- 1 ##Set Detected BoutFrames As Motion Frames
   
@@ -525,7 +530,8 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   vMotionBout[2] <- 1
   vMotionBout[NROW(vMotionBout)] <- 0
   
-  vMotionBout_OnOffDetect <- diff(vMotionBout) ##Set 1n;s on Onset, -1 On Offset of Bout
+  ##Bouts only within hunting region ##
+  vMotionBout_OnOffDetect <- diff(vMotionBout[1:idx_Terminal]) ##Set 1n;s on Onset, -1 On Offset of Bout
   ##Detect Speed Minima
   boutEdgesIdx <- find_peaks((max(vEventSpeed_smooth)- vEventSpeed_smooth)*100,Fs/5)
   
@@ -670,8 +676,9 @@ calcMotionBoutInfo2 <- function(ActivityboutIdx,TurnboutsIdx,HuntRangeIdx,vEvent
   
   
   ##Reverse Order 
-  vMotionBoutDistanceToPrey_mm <- vMotionBoutDistanceToPrey_mm[boutSeq] 
+  vMotionBoutDistanceToPrey_mm    <- vMotionBoutDistanceToPrey_mm[boutSeq] 
   vMotionBoutDistanceTravelled_mm <- vMotionBoutDistanceTravelled_mm[boutSeq]
+  vMotionPeakSpeed_mm             <-vMotionPeakSpeed_mm[boutSeq]
   vTurnBoutAngle <- vTurnBoutAngle[boutSeq]
   vMotionBout_On <- vMotionBout_On[boutSeq]
   vMotionBout_Off <- vMotionBout_Off[boutSeq]

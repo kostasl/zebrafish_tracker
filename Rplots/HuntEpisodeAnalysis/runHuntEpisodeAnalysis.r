@@ -381,7 +381,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     par(pty="s") #Aspect Ration =1 
     lMotionBoutDat[[idxH]]  <- calcMotionBoutInfo2(MoveboutsIdx_cleaned,
                                                    TurnboutsIdx,
-                                                   idx_HuntMode,
+                                                   idx_HuntMode, ##Bout Analysis goes only up to when huntMode Ends
                                                    vEventSpeed_smooth,
                                                    vDistToPrey_Fixed_FullRange,
                                                    vAngleToPrey,
@@ -614,7 +614,11 @@ for (idx in 1:NROW(datTrackedEventsRegister))
   recLabel <- findLabelledEvent( datTrackedEventsRegister[idx,] )
   print(paste(idx, convertToScoreLabel( recLabel$huntScore), unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$RegistarIdx == idx,]$doesCaptureStrike)  ) )
 }
-  
+
+##show capt strike vs approach hunt events 
+sum(lFirstBoutPoints$NL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$NL[,"doesCaptureStrike"]))
+sum(lFirstBoutPoints$DL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$DL[,"doesCaptureStrike"]))
+sum(lFirstBoutPoints$LL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$LL[,"doesCaptureStrike"]))
 findLabelledEvent(datTrackedEventsRegister[169 ,]) ##not Hunt Mode?
 
 ## Make Distance Vs Eye Angle Vectors ##
