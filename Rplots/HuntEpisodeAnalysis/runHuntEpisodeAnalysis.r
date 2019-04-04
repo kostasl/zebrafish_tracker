@@ -142,6 +142,10 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     datTrackedEventsRegister$startFrame <- NA
   if (!any(names(datTrackedEventsRegister) == "endFrame"))
     datTrackedEventsRegister$endFrame <- NA
+  if (!any(names(datTrackedEventsRegister) == "LabelledEventIdx"))
+    datTrackedEventsRegister$LabelledEventIdx <- NA
+  if (!any(names(datTrackedEventsRegister) == "LabelledScore"))
+    datTrackedEventsRegister$LabelledScore <- NA
   
   ##Set To 1st Frame In Hunt Event
   datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
@@ -160,19 +164,29 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
     datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
     datTrackedEventsRegister[idxH,]$PreyCount    <- NROW(tblPreyRecord)
     #datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
-    saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) ##Save With Dataset Idx Identifier
   }
-  
   #
   ##Save The Selected Prey Item
   if (selectedPreyID != datTrackedEventsRegister[idxH,]$PreyIDTarget)
   {
     message(paste("Targeted Prey Changed For Hunt Event to ID:",selectedPreyID," - Updating Register...") )
     datTrackedEventsRegister[idxH,]$PreyIDTarget <- selectedPreyID
-    saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) ##Save With Dataset Idx Identifier
   }
-  ################ END OF PREY SELECT / Start Processing ###
   
+  ## Find Matching labelled event
+  if ( is.na(datTrackedEventsRegister[idxH,]$LabelledEventIdx)) 
+  {
+    recLabel <- findLabelledEvent( datTrackedEventsRegister[idxH,] )
+    if (NROW(recLabel) > 0 ){
+      datTrackedEventsRegister[idxH,]$LabelledEventIdx <- row.names(recLabel) ## Save the Ids Of the Labelled hunt event records
+      datTrackedEventsRegister[idxH,]$LabelledScore    <- recLabel$huntScore
+    }
+  }
+  
+  ################ END OF PREY SELECT / Start Processing ###
+  ##Save With Dataset Idx Identifier
+  saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) 
+  ##########  EBD OF TRACK EVent Register Update ###
   
   ## Select Prey Specific Subset
   datFishMotionVsTargetPrey <- ldatFish[[as.character(selectedPreyID)]] #datPlaybackHuntEvent[datPlaybackHuntEvent$PreyID == ,] 

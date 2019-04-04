@@ -500,7 +500,7 @@ findLabelledEvent <- function (EventRegisterRec)
     ##find the hunt event which contains the currect start frame ie ends before the start frame
     recs <- recs[   recs$endFrame >  EventRegisterRec$startFrame , ] 
     ##Calc Distance Based on Start and End Frame
-    d<-(recs$startFrame - EventRegisterRec$startFrame + recs$endFrame - EventRegisterRec$endFrame) 
+    d <- (recs$startFrame - EventRegisterRec$startFrame + recs$endFrame - EventRegisterRec$endFrame) 
     ##Get The BEst Match FOr Start Frame- as the 1st hunt event starting after EventReg startframe (we usually rewind a little from the automatically detect start frame) 
     if (!any(is.na(d))) ## If startFrame is not NA
     {
