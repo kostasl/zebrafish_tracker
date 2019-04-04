@@ -490,7 +490,8 @@ findLabelledEvent <- function (EventRegisterRec)
   
   recs <- datLabelledHuntEventAllGroups[as.character(datLabelledHuntEventAllGroups$groupID) == as.character(EventRegisterRec$groupID) &
                                          as.character(datLabelledHuntEventAllGroups$eventID) == as.character(EventRegisterRec$eventID) &
-                                         as.character(datLabelledHuntEventAllGroups$expID) == as.character(EventRegisterRec$expID)
+                                         as.character(datLabelledHuntEventAllGroups$expID) == as.character(EventRegisterRec$expID) & 
+                                          !is.na(datLabelledHuntEventAllGroups$markTracked) ##If its in TrackedRegistry  then it must have been markedtraked
                                        ,]
   
   ##If Start Frame Is there - Check For Closest Match 
