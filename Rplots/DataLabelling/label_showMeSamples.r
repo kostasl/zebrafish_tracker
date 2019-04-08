@@ -21,14 +21,14 @@ for (g in vHuntEventLabels )
   l=l+1
 }
 
-TargetGroups <- "LL" #c("LL","DL","NL")
+TargetGroups <- c("LL","DL","NL")
 TargetLabel <- as.numeric(readline("### Key In A Number For Which Label You want to see:"))
 #TargetLabel = which(vHuntEventLabels == vHuntEventLabels[Keyc])-1;
 #gc <- sample(groupsList,1)
 datHuntEventPool <- datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$huntScore == TargetLabel &
                                                      datHuntEventAllGroupToValidate$eventID != 0 & 
                                                      datHuntEventAllGroupToValidate$groupID %in% TargetGroups 
-                                                   ,] ##&is.na(datHuntEventAllGroupToValidate$markTracked)
+                                                   & is.na(datHuntEventAllGroupToValidate$markTracked),] ## Do not redo tracked)
 
 if (NROW(datHuntEventPool) == 0)
   stop("No Hunt records with that label were found")
@@ -46,7 +46,7 @@ datHuntEventPool <- labelHuntEvents(datHuntEventAllGroupToValidate,
                                     idxFilter=NA,
                                     bskipMarked = FALSE)
 
-### Summarize Label Occupancies 
+### Summarize Label Occupancies  347/1569
 tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$eventID != 0,]$huntScore),datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$eventID != 0,]$groupID)
 tblRes
 #579/2017

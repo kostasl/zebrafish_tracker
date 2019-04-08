@@ -543,9 +543,9 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   #if (any(vEventSpeed_smooth_mm[regionToAnalyse] > G_THRES_CAPTURE_SPEED))
   ##Check THe Last Bout For Speed Threshold Indicating Capture Strike 
   if ( lMotionBoutDat[[idxH]][lMotionBoutDat[[idxH]][,"boutRank"] == 1,"vMotionPeakSpeed_mm"] > G_THRES_CAPTURE_SPEED  ) ##  
-    bCaptureStrike <- 1 ##Set Flag
      ## Can Also :: If The last bout looks like a captcha / Use Distance travelled to detect Strong Propulsion in the last Bout
-        ##if (lMotionBoutDat[[idxH]][1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
+       if ( lMotionBoutDat[[idxH]][lMotionBoutDat[[idxH]][,"boutRank"] == 1,"vMotionBoutDistanceTravelled_mm"] > 0.5) 
+         bCaptureStrike <- 1 ##Set Flag
     
   
   rows <- NROW(datRenderHuntEvent$LEyeAngle[regionToAnalyse])
@@ -576,42 +576,55 @@ if (bSaveNewMotionData)
   saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 #datEpisodeMotionBout <- lMotionBoutDat[[1]]
 
-
 ########## SAVE Processed Hunt Events ###########
 if (bSaveNewMotionData)
   saveRDS(lEyeMotionDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 #datEpisodeMotionBout <- lMotionBoutDat[[1]]
 
+####Select Subset Of Data To Analyse
+datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+#datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
+datEyeMotionCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
 
 ##### Attached LABELLED EVENT IDS  Find Matching labelled event
 datTrackedEventsRegister$LabelledEventIdx <- NA
+datTrackedEventsRegister$LabelledScore <- NA
+datTrackedEventsRegister$CaptureStrikeDetected <- NA ##Set Flag that Moution Bout of Capture was automatically detected 
 for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
   
-  if ( is.na(datTrackedEventsRegister[idxH,]$LabelledEventIdx)) 
+  #if ( is.na(datTrackedEventsRegister[idxH,]$LabelledEventIdx)) 
   {
     recLabel <- findLabelledEvent( datTrackedEventsRegister[idxH,] )
+    datTrackedEventsRegister[idxH,]$CaptureStrikeDetected <-  unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$RegistarIdx == idxH,]$doesCaptureStrike)
     if (NROW(recLabel) > 0 ){
-      datTrackedEventsRegister[idxH,]$LabelledEventIdx <- row.names(recLabel) ## Save the Ids Of the Labelled hunt event records
-      datTrackedEventsRegister[idxH,]$LabelledScore    <- recLabel$huntScore
+      datTrackedEventsRegister[idxH,]$LabelledEventIdx      <- row.names(recLabel) ## Save the Ids Of the Labelled hunt event records
+      datTrackedEventsRegister[idxH,]$LabelledScore         <- recLabel$huntScore
       print(convertToScoreLabel(recLabel$huntScore))
     }
   }
 }  
-##################
 
 ##Save With Dataset Idx Identifier
 saveRDS(datTrackedEventsRegister,file=strRegisterDataFileName) 
 ##########  EBD OF TRACK EVent Register Update ###
 
 
- ############# VERIFY ###
-####Select Subset Of Data To Analyse
-datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
-#datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
+## VERIFICATION #
+## CHECK Labelled Events  Labels For Each of the imported events ##
+##This matching between retracked events and the labelled events is not very good way of obtaining manual score label
+datTrackedEventsRegister[unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$doesCaptureStrike >0 ,]$RegistarIdx),]
+## in auxFunction we have 
+for (idx in 1:NROW(datTrackedEventsRegister))
+{
+  recLabel <- findLabelledEvent( datTrackedEventsRegister[idx,] )
+  print(paste(idx, convertToScoreLabel( recLabel$huntScore), unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$RegistarIdx == idx,]$doesCaptureStrike)  ) )
+}
 
-datEyeMotionCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
-### CHECK Process ##
+################## Labelled Events ###
+
+
+############# VERIFY ###
 ##Check If all where processed
 message(" Huntevent Processing Summary #EventInRegistry/#EventsProcessed")
 for (gp in strGroupID)
@@ -623,20 +636,9 @@ for (gp in strGroupID)
                 NROW(idxProc),
                 "/",NROW(idxReg ) ) )
   
-  
   message(paste("Missing Reg Idxs:",paste(list(idxReg[!(idxReg %in% idxProc)]), sep="," ) ) )
-  
 }
 
-## Check Labels For Each of the imported events ##
-##This matching between retracked events and the labelled events is not very good way of obtaining manual score label
-datTrackedEventsRegister[unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$doesCaptureStrike >0 ,]$RegistarIdx),]
-## in auxFunction we have 
-for (idx in 1:NROW(datTrackedEventsRegister))
-{
-  recLabel <- findLabelledEvent( datTrackedEventsRegister[idx,] )
-  print(paste(idx, convertToScoreLabel( recLabel$huntScore), unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$RegistarIdx == idx,]$doesCaptureStrike)  ) )
-}
 
 ## Make Distance Vs Eye Angle Vectors ##
 ## PLOT EYE Vs Distance ##

@@ -160,7 +160,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       l <- 0
       
       setLabel <- factor(x=rec$huntScore,levels=seq(0,NROW(vHuntEventLabels)-1),labels=vHuntEventLabels )
-      message(paste("### Event's ", row.names(rec) , " Current Label is :",setLabel," ####" ) )
+      message(paste("\n\n ### Event's ", row.names(rec) , " Current Label is :",setLabel," ####" ) )
       message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
       
       
