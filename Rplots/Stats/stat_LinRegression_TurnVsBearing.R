@@ -64,11 +64,11 @@ modelLin <- "model{
 
   # Prior for beta
   for(j in 1:2){
-    beta[j] ~ dnorm(0,0.0001)
+    beta[j] ~ dnorm(0.1,10)
   }
 
   # Prior for the inverse variance
-  inv.var   ~ dgamma(0.01, 0.01)
+  inv.var   ~ dgamma(1, 1)
   sigma     <- 1/sqrt(inv.var)
 
 }"
@@ -115,20 +115,21 @@ lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBo
 
 
 ## Get Event Counts Within Range ##
-datTurnVsPreyLL <- cbind(lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$LL[,"Turn"]),lFirstBoutPoints$LL[,"RegistarIdx"] )
-datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]),]
+## Added Flag whether Capture Strike move Detected 
+flagWithCaptureStrike <- 1
+randomSubset <- 30
+datTurnVsPreyLL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , Turn= as.numeric(lFirstBoutPoints$LL[,"Turn"]),lFirstBoutPoints$LL[,"RegistarIdx"],CaptureStrikeDetected=datTrackedEventsRegister[lFirstBoutPoints$LL[,"RegistarIdx"],"CaptureStrikeDetected"] )
+#datTurnVsPreyLL <- datTurnVsPreyLL[ sample(NROW(datTurnVsPreyLL),size=randomSubset), ]
+datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]) & datTurnVsPreyLL[,4] == flagWithCaptureStrike,]
 
-datTurnVsPreyLL <- cbind(lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$LL[,"Turn"]),lFirstBoutPoints$LL[,"RegistarIdx"] )
-datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]),]
+datTurnVsPreyNL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$NL[,"OnSetAngleToPrey"] ,Turn= as.numeric(lFirstBoutPoints$NL[,"Turn"]),lFirstBoutPoints$NL[,"RegistarIdx"],CaptureStrikeDetected=datTrackedEventsRegister[lFirstBoutPoints$NL[,"RegistarIdx"],"CaptureStrikeDetected"] )
+#datTurnVsPreyNL <- datTurnVsPreyNL[ sample(NROW(datTurnVsPreyNL),size=randomSubset), ]
+datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]) & datTurnVsPreyNL[,4] == flagWithCaptureStrike,]
 
 
-
-
-datTurnVsPreyNL <- cbind(lFirstBoutPoints$NL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$NL[,"Turn"]),lFirstBoutPoints$NL[,"RegistarIdx"] )
-datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]),]
-
-datTurnVsPreyDL <- cbind(lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , as.numeric(lFirstBoutPoints$DL[,"Turn"]),lFirstBoutPoints$DL[,"RegistarIdx"] )
-datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]),]
+datTurnVsPreyDL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , Turn=  as.numeric(lFirstBoutPoints$DL[,"Turn"]),lFirstBoutPoints$DL[,"RegistarIdx"],CaptureStrikeDetected=datTrackedEventsRegister[lFirstBoutPoints$DL[,"RegistarIdx"],"CaptureStrikeDetected"] )
+#datTurnVsPreyDL <- datTurnVsPreyDL[ sample(NROW(datTurnVsPreyDL),size=randomSubset), ]
+datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]) & datTurnVsPreyDL[,4] == flagWithCaptureStrike,]
 
 ##Outlier datTurnVsPreyDL[13,] <- NA
 
@@ -144,8 +145,10 @@ rhoMaxA = 1000
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
-steps=100000;
+steps=200000;
 thin=1;
+nchains <- 3
+
 
 
 ##Larva Event Counts Slice
@@ -186,9 +189,9 @@ fileConn=file("model.tmp")
 writeLines(modelLin,fileConn);
 close(fileConn)
 
-mLL=jags.model(file="model.tmp",data=dataLL);
-mNL=jags.model(file="model.tmp",data=dataNL);
-mDL=jags.model(file="model.tmp",data=dataDL);
+mLL=jags.model(file="model.tmp",data=dataLL,n.chains = nchains);
+mNL=jags.model(file="model.tmp",data=dataNL,n.chains = nchains);
+mDL=jags.model(file="model.tmp",data=dataDL,n.chains = nchains);
 #update(mLL,burn_in);update(mNL,burn_in);update(mDL,burn_in)
 
 
@@ -205,7 +208,7 @@ ind = 10000 ## Number of last sampled values
 muLLa=mean(drawLL$beta[,(steps-ind):steps,1][1,]) 
 muLLb=mean(drawLL$beta[,(steps-ind):steps,1][2,])
 muNLa=mean(drawNL$beta[,(steps-ind):steps,1][1,])
-muNLb=mean(drawNL$beta[,(steps-ind):steps,1][2,])
+muNLb=median(drawNL$beta[,(steps-ind):steps,1][2,]) #Slope
 muDLa=mean(drawDL$beta[,(steps-ind):steps,1][1,])
 muDLb=mean(drawDL$beta[,(steps-ind):steps,1][2,])
 sig=mean(drawLL$sigma[,(steps-ind):steps,1])
@@ -216,7 +219,8 @@ dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 
 ##Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_CapSrike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+#pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_RandSubset_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -228,47 +232,49 @@ las <- 1
 layout(matrix(c(1,2),1,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
-plot(lFirstBoutPoints[["NL"]][,1], lFirstBoutPoints[["NL"]][,2],
+plot( datTurnVsPreyDL[,"OnSetAngleToPrey"],datTurnVsPreyDL[,"Turn"],
      main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
      xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
      ylab=NA,#expression("Bearing To Prey After Turn "~(theta^degree) ),
      xlim=c(-100,100),
      ylim=c(-100,100),
-     col=colourP[1] ,pch=pchL[1]) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+     col=colourP[3] ,pch=pchL[3]) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
 mtext(side = 1,cex=0.8, line = 2.2, expression("Bearing To Prey Prior Turn "~(phi^degree) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Bearing To Prey After Turn "~(theta^degree) ))
 
-##Draw 0 Vertical Line
-segments(0,-90,0,90); segments(-90,0,90,0); segments(-90,-90,90,90,lwd=1,lty=2);
 #text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
-abline(lm(lFirstBoutPoints[["NL"]][,2] ~ lFirstBoutPoints[["NL"]][,1]),col=colourH[4],lwd=1.0) ##Fit Line / Regression
-abline(a=muDLa,b=muDLb,col=colourH[1],lwd=1.5) ##Fit Line / Regression
-abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[1],lwd=4.0) ##Fit Line / Regression
-abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[1],lwd=4.0) ##Fit Line / Regression
+abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourH[3],lwd=2.0,lty=2) ##Fit Line / Regression
+abline(a=muDLa,b=muDLb,col=colourH[3],lwd=1.5) ##Fit Line / Regression
+#abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[1],lwd=4.0) ##Fit Line / Regression
+#abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[1],lwd=4.0) ##Fit Line / Regression
 
 #abline( lsfit(lFirstBoutPoints[["DL"]][,2], lFirstBoutPoints[["DL"]][,1] ) ,col=colourH[1],lwd=2.0)
 ##LL
-points(lFirstBoutPoints[["LL"]][,1], lFirstBoutPoints[["LL"]][,2],pch=pchL[2],col=colourP[2])
+points(datTurnVsPreyLL[,"OnSetAngleToPrey"],datTurnVsPreyLL[,"Turn"],pch=pchL[2],col=colourP[2],cex=1.2)
 #text(lFirstBoutPoints[["LL"]][,1]+2,lFirstBoutPoints[["LL"]][,2]+5,labels=lFirstBoutPoints[["LL"]][,3],cex=0.8,col="darkgreen")
-abline(lm(lFirstBoutPoints[["LL"]][,2] ~ lFirstBoutPoints[["LL"]][,1]),col=colourH[4],lwd=1.0)
-abline(a=muLLa,b=muLLb,col=colourH[2],lwd=1.5) ##Fit Line / Regression
-abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[2],lwd=4.0) ##Fit Line / Regression
-abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[2],lwd=4.0) ##Fit Line / Regression
+abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourH[2],lwd=2.0,lty=2)
+abline(a=muLLa,b=muLLb,col=colourH[2],lwd=1.5,lty=1.5) ##Fit Line / Regression
+#abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[2],lwd=4.0) ##Fit Line / Regression
+#abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[2],lwd=4.0) ##Fit Line / Regression
 
 #abline(lsfit(lFirstBoutPoints[["LL"]][,2], lFirstBoutPoints[["LL"]][,1] ) ,col=colourH[2],lwd=2.0)
 ##NL
-points(lFirstBoutPoints[["DL"]][,1], lFirstBoutPoints[["DL"]][,2],pch=pchL[3],col=colourP[3])
+points( datTurnVsPreyNL[,"OnSetAngleToPrey"],datTurnVsPreyNL[,"Turn"],pch=pchL[1],col=colourP[1])
 #text(lFirstBoutPoints[["NL"]][,1]+2,lFirstBoutPoints[["NL"]][,2]+5,labels=lFirstBoutPoints[["NL"]][,3],cex=0.8,col="darkred")
-abline(lm(lFirstBoutPoints[["DL"]][,2] ~ lFirstBoutPoints[["DL"]][,1]),col=colourH[4],lwd=1.0)
-abline(a=muNLa,b=muNLb,col=colourH[3],lwd=1.5) ##Fit Line / Regression
-abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[3],lwd=4.0) ##Fit Line / Regression
-abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[3],lwd=4.0) ##Fit Line / Regression
+abline(lm(datTurnVsPreyNL[,"Turn"] ~ datTurnVsPreyNL[,"OnSetAngleToPrey"]),col=colourH[1],lwd=2.0,lty=2)
+abline(a=muNLa,b=muNLb,col=colourH[1],lwd=1.5) ##Fit Line / Regression
+#abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[3],lwd=4.0) ##Fit Line / Regression
+#abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[3],lwd=4.0) ##Fit Line / Regression
 #abline( lsfit(lFirstBoutPoints[["NL"]][,2], lFirstBoutPoints[["NL"]][,1] ) ,col=colourH[3],lwd=2.0)
+
+##Guiding lines / Draw 0 Vertical Line
+segments(0,-100,0,100); segments(-100,0,100,0); segments(-100,-100,100,100,lwd=1,lty=2);
+
 legend("topleft",
        legend=c(  expression (),
-                         bquote(NF["e"] ~ '#' ~ .(NROW(lFirstBoutPoints[["NL"]][,1]))  ),
-                         bquote(LF["e"] ~ '#' ~ .(NROW(lFirstBoutPoints[["LL"]][,1]))  ),
-                         bquote(DF["e"] ~ '#' ~ .(NROW(lFirstBoutPoints[["DL"]][,1]))  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+                         bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]))  ),
+                         bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
+                         bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        pch=pchL, col=colourLegL)
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
@@ -281,9 +287,9 @@ lines(dLLb,col=colourLegL[2],xlim=c(0.5,1.2),lwd=3,lty=2)
 lines(dDLb,col=colourLegL[3],xlim=c(0.5,1.2),lwd=3,lty=3)
 legend("topright",
        legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(NROW(lFirstBoutPoints[["NL"]][,1]))  ),
-                  bquote(LF["e"] ~ '#' ~ .(NROW(lFirstBoutPoints[["LL"]][,1]))  ),
-                  bquote(DF["e"] ~ '#' ~ .(NROW(lFirstBoutPoints[["DL"]][,1]))  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+                  bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]))  ),
+                  bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
+                  bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3),lwd=3)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("slope ",gamma) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
@@ -292,7 +298,14 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 ### PLot Scatter with regression lines with Conf intervals##
 dev.off()
 
+pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_CapSrike",flagWithCaptureStrike,"_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+#pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_RandSub_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 
+boxplot(datTurnVsPreyNL[,"Turn"]/datTurnVsPreyNL[,"OnSetAngleToPrey"],
+        datTurnVsPreyLL[,"Turn"]/datTurnVsPreyLL[,"OnSetAngleToPrey"],
+        datTurnVsPreyDL[,"Turn"]/datTurnVsPreyDL[,"OnSetAngleToPrey"],
+        names=c("NL","LL","DL"),main="Undershoot slope ",col=colourH)
+dev.off()
 #strPlotName <-  paste(strPlotExportPath,"/stat_TurnVsBearing_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
 #pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 #myplot_res(1000)
