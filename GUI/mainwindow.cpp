@@ -673,8 +673,8 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 
     if (bDraggingRoiPoint)
     {   //Update Point - Bound it from Periphery - OtherWise TemplateMatch Fails due to Small Image Crop at boundary
-        ptDrag->x = std::max(gFishBoundBoxSize/2, std::min(frameScene.cols - gFishBoundBoxSize/2,ptMouse.x));
-        ptDrag->y = std::max(gFishBoundBoxSize/2, std::min(frameScene.rows - gFishBoundBoxSize/2,ptMouse.y));
+        ptDrag->x = std::max(gFishBoundBoxSize/4, std::min(frameScene.cols - gFishBoundBoxSize/4,ptMouse.x));
+        ptDrag->y = std::max(gFishBoundBoxSize/4, std::min(frameScene.rows - gFishBoundBoxSize/4,ptMouse.y));
         bROIChanged = true;
     }
     else

@@ -50,4 +50,5 @@ datHuntEventPool <- labelHuntEvents(datHuntEventAllGroupToValidate,
 tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$eventID != 0,]$huntScore),datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$eventID != 0,]$groupID)
 tblRes
 #579/2017
-# 
+#  Tracked 
+table(convertToScoreLabel(datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$eventID != 0,]$huntScore),datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$eventID != 0,]$markTracked,useNA = "ifany")

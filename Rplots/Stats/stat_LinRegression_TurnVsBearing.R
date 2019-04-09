@@ -64,7 +64,7 @@ modelLin <- "model{
 
   # Prior for beta
   for(j in 1:2){
-    beta[j] ~ dnorm(0.1,10)
+    beta[j] ~ dnorm(0.1,0.1)
   }
 
   # Prior for the inverse variance
@@ -208,7 +208,7 @@ ind = 10000 ## Number of last sampled values
 muLLa=mean(drawLL$beta[,(steps-ind):steps,1][1,]) 
 muLLb=mean(drawLL$beta[,(steps-ind):steps,1][2,])
 muNLa=mean(drawNL$beta[,(steps-ind):steps,1][1,])
-muNLb=median(drawNL$beta[,(steps-ind):steps,1][2,]) #Slope
+muNLb=mean(drawNL$beta[,(steps-ind):steps,1][2,]) #Slope
 muDLa=mean(drawDL$beta[,(steps-ind):steps,1][1,])
 muDLb=mean(drawDL$beta[,(steps-ind):steps,1][2,])
 sig=mean(drawLL$sigma[,(steps-ind):steps,1])
