@@ -1,5 +1,18 @@
 ##
 
+### \notes main Tracking handles the initial import of tracked videos into data frames, and the detection of hunting episodes - 
+## Hunting episdes are placed in as "setn15-HuntEvents-SB-Updated-Merged2 - and labelling updates this file.
+##
+### Hunt event Motion Analysis 
+##  For close analysis of hunting the DataLabelling directory has a script to draw hunt events of as pecific assigned label or unlabelled ones
+##  The output files of fish and prey (food)  are placed in HuntEventS_Retracked and from there they need to be moved to the subdirectory where LF, DF, NF 
+##  retracked (Success / Fail separated) events are placed/ 
+##  To import them run the HuntEpisodeAnalysis/runimportHuntEpisodeTrackFiles.r - This will merge food and larva motion records and produce
+##  an imported hunt event register. From there analysis and a plot for each hunt episode is produced by running runHuntEpisodeAnalysis.r
+#
+## A script that Randomly and blindly allows to manually label hunt events exists in the DataLablling dir, main_LabellingBlind - this updates the 
+## detected huntevent register ("setn15-HuntEvents-SB-Updated-Merged2)
+#####################
 
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
@@ -13,7 +26,8 @@ G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to li
 G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
-G_THRES_CAPTURE_SPEED    <- 12##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
+G_THRES_CAPTURE_SPEED    <-  9.9 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
+G_THRES_MOTION_BOUT_SPEED <- 3.9 ##Got from Clustering #4 ##mm/sec
 PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 G_MIN_TURNBOUT_ANGLE     <- 10 ##
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags

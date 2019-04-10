@@ -46,6 +46,8 @@ datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Proc
 remove(lMotionBoutDat)
 lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #Processed Registry on which we add )
+##datHuntEventMergedFrames
+load(file=paste(strDataExportDir,"datAllHuntEventAnalysisFrames_setC.RData",sep=""))
 bSaveNewMotionData <- TRUE ##Overwrite the lMotionBoutDatFile
 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
@@ -55,6 +57,18 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 
 ###
 #nEyeFilterWidth <- nFrWidth*6 ##For Median Filtering ##moved to main
+
+##Add PreyTarget ID To Register Save The Prey Target To Register
+if (!any(names(datTrackedEventsRegister) == "PreyIDTarget"))
+  datTrackedEventsRegister$PreyIDTarget <- NA
+if (!any(names(datTrackedEventsRegister) == "startFrame"))
+  datTrackedEventsRegister$startFrame <- NA
+if (!any(names(datTrackedEventsRegister) == "endFrame"))
+  datTrackedEventsRegister$endFrame <- NA
+if (!any(names(datTrackedEventsRegister) == "LabelledEventIdx"))
+  datTrackedEventsRegister$LabelledEventIdx <- NA
+if (!any(names(datTrackedEventsRegister) == "LabelledScore"))
+  datTrackedEventsRegister$LabelledScore <- NA
 
 
 ############################
@@ -78,6 +92,10 @@ idxTestSet = c(idxDLSet,idxLLSet,idxNLSet)  #c(16,17)# #c(96,74) ##Issue with ID
 
 cnt = 0
 
+###Discover Thresholds adaptivelly :
+#boutSpeedRanked <- getMotionBoutSpeedThresholds(datHuntEventMergedFrames)
+#G_THRES_CAPTURE_SPEED <- median(boutSpeedRanked)
+#G_THRES_MOTION_BOUT_SPEED <- min((boutSpeedRanked))
 
 for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
@@ -109,7 +127,8 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   if (NROW(tblPreyRecord) < 1)
   {
     warning(paste(" Skipping No Prey ID for " ,expID,"_event",eventID,"_track",trackID, sep="" )  ) 
-    next
+    stop()
+    #next
   }
   
   ##### FILTERS #######
@@ -135,22 +154,11 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   ########################
   
   
-  ##Add PreyTarget ID To Register Save The Prey Target To Register
-  if (!any(names(datTrackedEventsRegister) == "PreyIDTarget"))
-    datTrackedEventsRegister$PreyIDTarget <- NA
-  if (!any(names(datTrackedEventsRegister) == "startFrame"))
-    datTrackedEventsRegister$startFrame <- NA
-  if (!any(names(datTrackedEventsRegister) == "endFrame"))
-    datTrackedEventsRegister$endFrame <- NA
-  if (!any(names(datTrackedEventsRegister) == "LabelledEventIdx"))
-    datTrackedEventsRegister$LabelledEventIdx <- NA
-  if (!any(names(datTrackedEventsRegister) == "LabelledScore"))
-    datTrackedEventsRegister$LabelledScore <- NA
-  
   ##Set To 1st Frame In Hunt Event
-  datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN)
-  datTrackedEventsRegister[idxH,]$endFrame     <- max(datPlaybackHuntEvent$frameN)
+  datTrackedEventsRegister[idxH,]$startFrame   <- min(datPlaybackHuntEvent$frameN,na.rm = T)
+  datTrackedEventsRegister[idxH,]$endFrame     <- max(datPlaybackHuntEvent$frameN,na.rm = T)
   
+  stopifnot(!is.na(datTrackedEventsRegister[idxH,]$startFrame))
   #selectedPreyID <- max(as.numeric(names(which(tblPreyRecord == max(tblPreyRecord)))))
   ##Check If Assigned OtherWise Automatically Select the longest Track
   if (is.na(datTrackedEventsRegister[idxH,]$PreyIDTarget)) 
@@ -290,7 +298,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   ##Take Start frame to be close to Eye V > Threshold Event 
   if (is.na(startFrame))
   {
-    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) - Fs/2) )##Start from point little earlier than Eye V
+    startFrame <- max(1,min(which(vEyeVF >= G_THRESHUNTVERGENCEANGLE) - round(Fs/2) )  )##Start from point little earlier than Eye V
     #message(paste("Warning: No TurnBouts Detected idxH:",idxH )  )
   }
   
@@ -596,6 +604,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   #if ( is.na(datTrackedEventsRegister[idxH,]$LabelledEventIdx)) 
   {
     recLabel <- findLabelledEvent( datTrackedEventsRegister[idxH,] )
+    print(idxH)    
     datTrackedEventsRegister[idxH,]$CaptureStrikeDetected <-  unique(datEyeMotionCombinedAll[datEyeMotionCombinedAll$RegistarIdx == idxH,]$doesCaptureStrike)
     if (NROW(recLabel) > 0 ){
       datTrackedEventsRegister[idxH,]$LabelledEventIdx      <- row.names(recLabel) ## Save the Ids Of the Labelled hunt event records
@@ -1333,13 +1342,13 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 ###
 
 ## Explanatory Variable for Prey Dist could be Delta (PreyAzimuth) lower = c(0.1,0.1),
-gammaLL <- fitdist( datAzi_LL[!is.na(datAzi_LL$distPX),]$distPX*DIM_MMPERPX,"gamma",start = list(scale = 2, shape = 1)) #,start = list(scale = 1, shape = 1)
-gammaDL <- fitdist( datAzi_DL[!is.na(datAzi_DL$distPX),]$distPX*DIM_MMPERPX,"gamma",start = list(scale = 2, shape = 1)) #,start = list(scale = 1, shape = 1)
-gammaNL <- fitdist( datAzi_NL[!is.na(datAzi_NL$distPX),]$distPX*DIM_MMPERPX,"gamma",start = list(scale = 2, shape = 1)) #,start = list(scale = 1, shape = 1)
+#gammaLL <- fitdist( datAzi_LL[!is.na(datAzi_LL$distPX),]$distPX*DIM_MMPERPX,"gamma",start = list(scale = 2, shape = 1)) #,start = list(scale = 1, shape = 1)
+#gammaDL <- fitdist( datAzi_DL[!is.na(datAzi_DL$distPX),]$distPX*DIM_MMPERPX,"gamma",start = list(scale = 2, shape = 1)) #,start = list(scale = 1, shape = 1)
+#gammaNL <- fitdist( datAzi_NL[!is.na(datAzi_NL$distPX),]$distPX*DIM_MMPERPX,"gamma",start = list(scale = 2, shape = 1)) #,start = list(scale = 1, shape = 1)
 
-plot(gammaLL)
-plot(gammaDL)
-plot(gammaNL)
+#plot(gammaLL)
+#plot(gammaDL)
+#plot(gammaNL)
 
 
 plot(lrecAzimuth[[cnt]]$distPX*DIM_MMPERPX,lrecAzimuth[[cnt]]$azimuth)

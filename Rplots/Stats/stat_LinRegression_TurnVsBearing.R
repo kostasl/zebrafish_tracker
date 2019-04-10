@@ -116,9 +116,10 @@ lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBo
 
 ## Get Event Counts Within Range ##
 ## Added Flag whether Capture Strike move Detected 
-flagWithCaptureStrike <- 1
+flagWithCaptureStrike <- 0
 randomSubset <- 30
-datTurnVsPreyLL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , Turn= as.numeric(lFirstBoutPoints$LL[,"Turn"]),lFirstBoutPoints$LL[,"RegistarIdx"],CaptureStrikeDetected=datTrackedEventsRegister[lFirstBoutPoints$LL[,"RegistarIdx"],"CaptureStrikeDetected"] )
+datTurnVsPreyLL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , Turn= as.numeric(lFirstBoutPoints$LL[,"Turn"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],
+                         CaptureStrikeDetected=datTrackedEventsRegister[lFirstBoutPoints$LL[,"RegistarIdx"],"CaptureStrikeDetected"] )
 #datTurnVsPreyLL <- datTurnVsPreyLL[ sample(NROW(datTurnVsPreyLL),size=randomSubset), ]
 datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]) & datTurnVsPreyLL[,4] == flagWithCaptureStrike,]
 

@@ -85,4 +85,4 @@ lHuntEventTRACKSfileSrc <- list()
   
 #datAllFrames <- rbindlist(datAllSets);
 #datAllFrames = do.call(rbind,datAllSets);
-save(datHuntEventMergedFrames,file=paste(strDataExportDir,"datAllHuntEventAnalysisFrames.RData",sep=""))
+save(datHuntEventMergedFrames,file=paste(strDataExportDir,"datAllHuntEventAnalysisFrames_setC.RData",sep=""))

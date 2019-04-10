@@ -183,6 +183,64 @@ plotTailPowerSpectrumInTime <- function(lwlt)
   
 }
 
+##Returns most active nSelectComponents activity Bout Detection Thresholds - can be used to set what min bout speed is , and 
+## what capture speed bout can be above median of the function's return value ie median(clusterActivity[boutCluster])
+## and min Bout Speed can be min(clusterActivity[boutCluster])
+## As datHuntEventMergedFrames contains stiched hunt events together back to back, the max speeed can be misleading - as position quickly jumps at stich poitns
+## As such the fastest component (~400mm/sec) is removed
+getMotionBoutSpeedThresholds <- function(datHuntEventMergedFrames)
+{
+  nNumberOfComponents = 17
+  nSelectComponents = 6##5##7
+  
+  #### PROCESS BOUTS ###
+  vDeltaDisplacement   <- sqrt(diff(datHuntEventMergedFrames$posX,lag=1,differences=1)^2+diff(datHuntEventMergedFrames$posY,lag=1,differences=1)^2) ## Path Length Calculated As Total Displacement
+  
+  #nNumberOfBouts       <- 
+  dframe               <- diff(datHuntEventMergedFrames$frameN,lag=1,differences=1)
+  dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
+  vFs                   <- datHuntEventMergedFrames$fps[1:NROW(dframe)]
+  vEventSpeed_smooth          <- meanf(vDeltaDisplacement[1:NROW(dframe)]/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+  vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+  vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed_smooth) #meanf(vEventSpeed,100) #
+  vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
+  vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+  vEventSpeed_smooth_mm <- vFs*vEventSpeed_smooth*DIM_MMPERPX
+  
+  ##Can use a fit scan to detect best number of components and then choose half as the most active side of these
+  #fitBIC <- mclustBIC(vEventSpeed_smooth_mm ,G=1:(nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.5),c(2),c(5),c(8),c(10),c(12),c(14),c(14)) ,shrinkage=0.1 ) )
+  #plot(fitBIC)
+  ##Select Largest Number Of Components That does not Crash !
+  #message(attr(fitBIC,"returnCodes"))
+  #nNumberOfComponents <- max(which(attr(fitBIC,"returnCodes")[,2] == 0))
+  #nSelectComponents <- round(nNumberOfComponents/2)
+  
+  
+  fit <- Mclust(vEventSpeed_smooth_mm ,G=nNumberOfComponents,modelNames = "V",
+                prior =  priorControl(functionName="defaultPrior",mean=seq(1:nNumberOfComponents),shrinkage=0.1 ) )  
+  
+  #summary(fit)
+  
+  boutClass <- fit$classification
+  clusterActivity <- vector()
+  for (i in unique(boutClass))
+    clusterActivity[i] <- max(vEventSpeed_smooth_mm[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
+  #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
+  
+  clusterActivity[is.na(clusterActivity)] <- 0
+ 
+  ##Get rid of the Fastest one, as that is just the transition between events
+  maxBoutCluster <- which(clusterActivity == max(clusterActivity))
+  
+  ##Select the Top nSelectComponents of clusterActivity
+  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) & 
+                           clusterActivity > G_THRES_MOTION_BOUT_SPEED/2 &
+                           clusterActivity < clusterActivity[maxBoutCluster]  ) )   
+  
+  ##
+  return ( clusterActivity[boutCluster] )
+}
+
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 ##Use multiple components #17, and select top 6 active ones whose activity is above minMotionSpeed
 detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
@@ -199,7 +257,7 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
   
   ##simple threshold shortcut 
   
-  return(which(x > G_THRES_CAPTURE_SPEED/2))
+  return(which(x > G_THRES_MOTION_BOUT_SPEED))
   
   #X11();plot(pvEventSpeed,type='p')
   #BIC <- mclustBIC(dEventSpeed)
@@ -211,9 +269,7 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
   
   #fitBIC <- mclustBIC(x ,G=1:(2*nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)) ,shrinkage=0.1 ) )
   #message(attr(fitBIC,"returnCodes"))
-  #plot(fitBIC)
-  
-  
+ 
   fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",
                 prior =  priorControl(functionName="defaultPrior",mean=c(c(0.1),c(0.6),c(0.7),c(1),c(3),c(1),c(1.5)),shrinkage=0.1 ) )  
   # "VVV" check out doc mclustModelNames
