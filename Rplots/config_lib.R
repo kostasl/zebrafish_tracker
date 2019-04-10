@@ -26,7 +26,7 @@ G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to li
 G_MINGAPBETWEENEPISODES  <- 300
 G_MINEPISODEDURATION     <- 100
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
-G_THRES_CAPTURE_SPEED    <-  9.9 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
+G_THRES_CAPTURE_SPEED    <-  8 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
 G_THRES_MOTION_BOUT_SPEED <- 3.9 ##Got from Clustering #4 ##mm/sec
 PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 G_MIN_TURNBOUT_ANGLE     <- 10 ##

@@ -220,7 +220,7 @@ dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 
 ##Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_CapSrike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 #pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_RandSubset_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 
 outer = FALSE
@@ -299,7 +299,7 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 ### PLot Scatter with regression lines with Conf intervals##
 dev.off()
 
-pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_CapSrike",flagWithCaptureStrike,"_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 #pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_RandSub_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 
 boxplot(datTurnVsPreyNL[,"Turn"]/datTurnVsPreyNL[,"OnSetAngleToPrey"],
