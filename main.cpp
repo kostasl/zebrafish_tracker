@@ -1754,7 +1754,6 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
                 // qDebug() << "Invalid blob-prey pair detected";
                 //float d = cv::norm(pfood->zTrack.centroid - foodblob->pt);
                 //assert(d > gMaxClusterRadiusFoodToBlob)
-
                 vPairScores.push_back(pBlobScore); //Append Pair Score to vector
             }
 
@@ -1769,6 +1768,8 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         //    break;
     } // Loop Through BLOBS
 
+
+
     ///Sort Score Vector And Assign Pairs ///
    std::sort(vPairScores.begin(),vPairScores.end() );
    int iMatchCount =0;
@@ -1776,7 +1777,6 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
    //Make A copy of the Blob vector So we do not Mess up the Pair.blob pointers
    vfoodblobs_spare = foodblobs;
-
     //Start from Top Score And Assign pairs by rank
    std::vector<foodBlobMatch>::iterator it = vPairScores.begin();
    while( it!=vPairScores.end())
@@ -1785,35 +1785,17 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 
         /// Check if Blob Has Already been taken out And Matched //
         bool blobAvailable = false; //Flag If this Blob Has been Preivously Matched to A food (Ie Used)
-        bool blobConsumed = false; //Flag If this Blob Has Now been and should be deleted
+        //bool blobConsumed = false; //Flag If this Blob Has Now been and should be deleted
 
-        ///Find Paired Blob From Available Blobs - If There then Still Available
-        /// this is done so we Can detect the unmatched Ones
-        zfdblobs::iterator ft = vfoodblobs_spare.begin();
-        while(ft != vfoodblobs_spare.end() )
-        {
-            zfdblob* foodblob = &(*ft);
-            if ( cv::norm(foodblob->pt - pair.pFoodBlob->pt ) < 0.3 )
-            {
-                //Keep a copy before deleting
-                foodblobMatched = *foodblob;
-                blobAvailable = true;
-                break; //Found Blob -> Exit Loop
-            }
-            else
-                ++ft;
-        }//Loop And Find Used Blob
+        foodblobMatched = *pair.pFoodBlob;
+        //Find matching keypoint/ and remove from list of available blobs for matching
+        blobAvailable = checkKeypointExistsAndRemove(vfoodblobs_spare,foodblobMatched);
 
         //Candidate Pair, directs (Points) to Blob Which is not Available anymore
         if (!blobAvailable)
         {   ++it;
             continue; //Check next Pair
         }
-
-        //Blob Appears avail BUT it has already
-        // been matched to this food (Can Happen if paused) -> REMOVE from the avail list
-        if (blobAvailable && cv::norm(pair.pFoodObject->zfoodblob.pt - foodblobMatched.pt ) < 0.3) //Need to Clear List If Paused
-            blobConsumed = true;
 
         //Skip Paired Up FoodObject Items
         if (blobAvailable && (pair.pFoodObject->nLastUpdateFrame - nFrame) > 0 )
@@ -1822,19 +1804,14 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             pair.pFoodObject->activeFrames ++; //Increase Count Of Consecutive Active Frames
             pair.pFoodObject->updateState(foodblobMatched,0, foodblobMatched.pt,nFrame, pair.score,foodblobMatched.size);
             iMatchCount++;
-            blobConsumed = true;
+           // blobConsumed = true;
         }
-
-        //Deleting Blobs Invalidates the next Pointer Pairs! So do not alter the vector Just yet!
-        if (blobConsumed) //Erase Matched Blob From Available List - This can happen when Paused
-            ft = vfoodblobs_spare.erase(ft);
-
 
        ++it;
    }//Loop Through Pairs And MAtch Food To Blob
 
 //qDebug() << "Matched " << iMatchCount;
-
+    /// Unmatched Keypoints/blobs handling//
     /// Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
     //If There Are more Blobs Remaining / New Objects Allowed (Currently OFF for OpticFlow, and we are below the Count Limit
     if (bAllowNew && (vfoodblobs_spare.size() > 1) && (vfoodmodels.size() < gi_FoodModelNumberLimit) )
@@ -1894,7 +1871,36 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
 } //UpdateFoodModels //
 
 
+bool checkKeypointExistsAndRemove(zfdblobs& vfoodblobs_spare,zfdblob& FoodBlob)
+{
+    bool blobAvailable = false;
+    //zfdblob foodblobMatched;
+    ///Find Paired Blob From Available Blobs - If There then Still Available
+    /// this is done so we Can detect the unmatched Ones
+    zfdblobs::iterator ft = vfoodblobs_spare.begin();
+    while(ft != vfoodblobs_spare.end() )
+    {
+        zfdblob* foodblob = &(*ft);
+        //is this blob/keypoint the same / ie still available in spare list?
+        if ( cv::norm(foodblob->pt - FoodBlob.pt ) < 0.3 )
+        {
+            //Keep a copy before deleting
+            //foodblobMatched = *foodblob;
+            blobAvailable = true;
+            //Deleting Blobs Invalidates the next Pointer Pairs! So do not alter the vector Just yet!
+            //if (blobConsumed) //Erase Matched Blob From Available List - This can happen when Paused
+            ft = vfoodblobs_spare.erase(ft);
 
+            break; //Found Blob -> Exit Loop
+        }
+        else
+            ++ft;
+
+
+    }//Loop And Find Used Blob
+
+    return blobAvailable;
+}
 
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 {

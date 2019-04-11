@@ -97,6 +97,8 @@ void UpdateFishModels(const cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs&
 void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew); //,cv::Mat& frameOut
 int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zftblobs& vPreyKeypoints_next  );
 
+bool checkKeypointExistsAndRemove(zfdblobs& vfoodblobs_spare,zfdblob& FoodBlob); //Matches Keypoints/Blobs based on position and removes match from vector
+
 void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
 bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,cv::Mat& img);
@@ -184,6 +186,7 @@ int maxChainDistance(std::vector<cv::Point> vPointChain,int idx,int idy);
 /// \param ptOutA, B two points defining the best  line fit
 /// \return Best Ange In rads
 double findEyeOrientation(cv::Mat& frameFish_gray, cv::Point2f& ptEyeCenter,std::vector<cv::Point>& outvEyeContour);
+
 
 
 void makeEllipse(cv::Point2f ptcenter,double angle,double a, double b, std::vector<cv::Point>& voutEllipse);
