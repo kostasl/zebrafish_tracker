@@ -1769,20 +1769,20 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     } // Loop Through BLOBS
 
 
-
-    ///Sort Score Vector And Assign Pairs ///
+   ///
+   /// Run Through Possible Food-KeyPoint Pairs and update models of best matches  //
+   // Sort Score Vector so we hit best food-blob match first //
    std::sort(vPairScores.begin(),vPairScores.end() );
    int iMatchCount =0;
    zfdblob foodblobMatched;
 
    //Make A copy of the Blob vector So we do not Mess up the Pair.blob pointers
    vfoodblobs_spare = foodblobs;
-    //Start from Top Score And Assign pairs by rank
+   // Start from Top Score And Assign pairs by rank //
    std::vector<foodBlobMatch>::iterator it = vPairScores.begin();
    while( it!=vPairScores.end())
    {
         foodBlobMatch pair = (*it);
-
         /// Check if Blob Has Already been taken out And Matched //
         bool blobAvailable = false; //Flag If this Blob Has been Preivously Matched to A food (Ie Used)
         //bool blobConsumed = false; //Flag If this Blob Has Now been and should be deleted
@@ -1791,7 +1791,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         //Find matching keypoint/ and remove from list of available blobs for matching
         blobAvailable = checkKeypointExistsAndRemove(vfoodblobs_spare,foodblobMatched);
 
-        //Candidate Pair, directs (Points) to Blob Which is not Available anymore
+        //Candidate Pair, directs (Points) to Blob Which is not Available anymore /already matched blob
         if (!blobAvailable)
         {   ++it;
             continue; //Check next Pair
@@ -1806,13 +1806,12 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             iMatchCount++;
            // blobConsumed = true;
         }
-
        ++it;
    }//Loop Through Pairs And MAtch Food To Blob
 
 //qDebug() << "Matched " << iMatchCount;
-    /// Unmatched Keypoints/blobs handling//
-    /// Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
+    /// Unmatched Keypoints/blobs handling -create new Food Models ///
+    // Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
     //If There Are more Blobs Remaining / New Objects Allowed (Currently OFF for OpticFlow, and we are below the Count Limit
     if (bAllowNew && (vfoodblobs_spare.size() > 1) && (vfoodmodels.size() < gi_FoodModelNumberLimit) )
     {
@@ -1833,19 +1832,12 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     } //Make New Food Model If Allowed
 
 
-    ///Delete All Inactive Food Models
+    /// Delete All Inactive Food Models ///
     ft = vfoodmodels.begin();
     while(ft != vfoodmodels.end() ) //&& vfishmodels.size() > 1
     {
         pfood = ft->second;
-        // Delete If Inactive For Too Long and it is Not tracked
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
-//        if ((!pfood->isActive
-//             && !pfood->isNew
-//             || pfood->inactiveFrames > gcMaxFoodModelInactiveFrames
-//             || (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames/2))
-//             && (pfood->isTargeted == false)
-//            ) //Check If it Timed Out and Not Tracked/ Then Delete
          if (pfood->isUnused())
         {
             ft = vfoodmodels.erase(ft);
