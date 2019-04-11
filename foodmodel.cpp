@@ -60,11 +60,22 @@ foodModel::~foodModel()
 void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius)
 {
 
+    float fDistToNewPosition = cv::norm(fblob.pt-this->zTrack.centroid);
+
+    if (fDistToNewPosition > gMaxClusterRadiusFoodToBlob)
+    {
+         qDebug() << "Prey " << this->ID << " match too far d: " << fDistToNewPosition << " Mscore :" << matchScore;
+         //return;
+    }
+
+
     blobMatchScore = matchScore;
     nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
     this->zfoodblob      = fblob;
     this->zTrack.pointStack.push_back(bcentre);
-    this->zTrack.effectiveDisplacement = cv::norm(fblob.pt-this->zTrack.centroid);
+    this->zTrack.effectiveDisplacement = fDistToNewPosition;
+
+
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
     this->blobRadius = szradius;
     zTrack.boundingBox.x = bcentre.x - 6;
@@ -81,6 +92,8 @@ void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
     /// the update to check if it has been inactive for too long- if found on next frame it will become active again
     //Although it may have been found here, it is still marked inactive until the next round
     isActive = (inactiveFrames < gcMaxFoodModelInactiveFrames) && !isNew;
+
+
 
     ///Trick 2: Only mark as active if blob size is > 1 , otherwise we may be just tracking pixel flow
     /// Filter out activity based on optic flow only/where a blob cannot be seen/ but tracking a video pixel nontheless
@@ -208,5 +221,16 @@ return retNfood;
 }
 
 
+/// Logic for when food item should be deleted
+bool foodModel::isUnused()
+{
+    bool bLost =  (!this->isActive
+                 && !this->isNew
+                 || this->inactiveFrames > gcMaxFoodModelInactiveFrames
+                 || (this->activeFrames < gcMinFoodModelActiveFrames && this->inactiveFrames > gcMaxFoodModelInactiveFrames/2))
+                 && (this->isTargeted == false);
+
+            return bLost;
+}
 
 

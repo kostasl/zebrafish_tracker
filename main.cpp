@@ -1710,7 +1710,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     int bIdx,fIdx;
 
         /// Assign Blobs To Food Models //
-     // Look through Blobs find Respective food model attached or Create New Food Model if missing
+     // Look through KeyPoints/Blobs find Respective food model attached or Create New Food Model if missing
     bIdx = 0;
     for (zfdblobs::iterator it = foodblobs.begin(); it!=foodblobs.end(); ++it)
     {
@@ -1724,9 +1724,10 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         {
              pfood = ft->second;
             pfood->blobMatchScore = 0 ;
-            cv::Point2f ptfoodCentroid = pfood->zfoodblob.pt;
+            cv::Point2f ptfoodCentroid = pfood->zTrack.centroid;
 
-            int iMatchScore = gMaxClusterRadiusFoodToBlob*4; //Reset to 5So We Can Rank this Match
+            //Initial score Is high and drops with penalties
+            int iMatchScore = gMaxClusterRadiusFoodToBlob*2; //Reset to 5So We Can Rank this Match
 
             float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
             float fbdist = norm(ptfoodCentroid-ptblobCentroid);
@@ -1734,8 +1735,9 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             ///TODO Can add Directional comparison - motion accross frames should be similar
             /// Also a gaussian model of speed, size, direction - tuned to each foodobject could be nice here
 
-            //Penalize Distance
-            iMatchScore -= 1.0*fbdist;
+            //Penalize Distance in px moved since last seen
+
+            iMatchScore -= exp(2* fbdist/ (nFrame - pfood->nLastUpdateFrame + 1) ) ;
 
             //Penalize Size Mismatch
             iMatchScore -= 2.0*abs(pfood->zfoodblob.size - foodblob->size);
@@ -1744,9 +1746,15 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             if (overlap > 0.0)
                 iMatchScore +=(int)(10.0*overlap);
 
-            if (iMatchScore > 0) //Only add Pairs with possible Scores - (Set By the initial iMatchScore Value)
+            //Only add Pairs with possible Scores - (Set By the initial iMatchScore Value)
+            if (iMatchScore > 0)
             {
                 foodBlobMatch pBlobScore(pfood,foodblob,iMatchScore);
+
+                // qDebug() << "Invalid blob-prey pair detected";
+                //float d = cv::norm(pfood->zTrack.centroid - foodblob->pt);
+                //assert(d > gMaxClusterRadiusFoodToBlob)
+
                 vPairScores.push_back(pBlobScore); //Append Pair Score to vector
             }
 
@@ -1779,15 +1787,12 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         bool blobAvailable = false; //Flag If this Blob Has been Preivously Matched to A food (Ie Used)
         bool blobConsumed = false; //Flag If this Blob Has Now been and should be deleted
 
-
+        ///Find Paired Blob From Available Blobs - If There then Still Available
+        /// this is done so we Can detect the unmatched Ones
         zfdblobs::iterator ft = vfoodblobs_spare.begin();
         while(ft != vfoodblobs_spare.end() )
         {
             zfdblob* foodblob = &(*ft);
-
-            ///Find Paired Blob From Available Blobs - If There then Still Available
-            /// So we Can detect the unmatched Ones
-
             if ( cv::norm(foodblob->pt - pair.pFoodBlob->pt ) < 0.3 )
             {
                 //Keep a copy before deleting
@@ -1799,7 +1804,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
                 ++ft;
         }//Loop And Find Used Blob
 
-        //Candidate Pair Points to Blob Which is not Available anymore
+        //Candidate Pair, directs (Points) to Blob Which is not Available anymore
         if (!blobAvailable)
         {   ++it;
             continue; //Check next Pair
@@ -1858,12 +1863,13 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         pfood = ft->second;
         // Delete If Inactive For Too Long and it is Not tracked
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
-        if ((!pfood->isActive
-             && !pfood->isNew
-             || pfood->inactiveFrames > gcMaxFoodModelInactiveFrames
-             || (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames/2))
-             && (pfood->isTargeted == false)
-            ) //Check If it Timed Out and Not Tracked/ Then Delete
+//        if ((!pfood->isActive
+//             && !pfood->isNew
+//             || pfood->inactiveFrames > gcMaxFoodModelInactiveFrames
+//             || (pfood->activeFrames < gcMinFoodModelActiveFrames && pfood->inactiveFrames > gcMaxFoodModelInactiveFrames/2))
+//             && (pfood->isTargeted == false)
+//            ) //Check If it Timed Out and Not Tracked/ Then Delete
+         if (pfood->isUnused())
         {
             ft = vfoodmodels.erase(ft);
             std::clog << nFrame << "# Delete foodmodel: " << pfood->ID << " Inactive:" << pfood->inactiveFrames <<  " N:" << vfoodmodels.size() << std::endl;
