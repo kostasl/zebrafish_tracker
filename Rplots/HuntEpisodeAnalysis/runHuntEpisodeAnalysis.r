@@ -952,6 +952,8 @@ for (gp in strGroupID)
   lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
                                   Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
                                   , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx,
+                                  CaptureSpeed = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                          datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm,
                                   doesCaptureStrike=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                               datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm >= G_THRES_CAPTURE_SPEED )
                                   )
@@ -997,6 +999,61 @@ sum(lFirstBoutPoints$NL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$NL[,"doesC
 sum(lFirstBoutPoints$DL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$DL[,"doesCaptureStrike"]))
 sum(lFirstBoutPoints$LL[,"doesCaptureStrike"])/NROW((lFirstBoutPoints$LL[,"doesCaptureStrike"]))
 
+###
+### UNdershoot Vs Capture speed ###
+datTurnVsStrikeSpeed_NL <- data.frame( cbind(Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]) )
+datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]) )
+datTurnVsStrikeSpeed_DL <- data.frame( cbind(Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]) )
+densNL <-  kde2d(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,n=80)
+densLL <-  kde2d(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,n=80)
+densDL <-  kde2d(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,n=80)
+
+covLL <- cov( 1/datTurnVsStrikeSpeed_LL$Undershoot,datTurnVsStrikeSpeed_LL$CaptureSpeed)
+covDL <- cov( 1/datTurnVsStrikeSpeed_DL$Undershoot,datTurnVsStrikeSpeed_DL$CaptureSpeed)
+covNL  <- cov( 1/datTurnVsStrikeSpeed_NL$Undershoot,datTurnVsStrikeSpeed_NL$CaptureSpeed)
+
+
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/UndershootCaptureSpeed_scatter.pdf",sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.3,1,1))
+
+plot(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
+     xlab=NA,ylab=NA,ylim=c(0,60),main="NF")
+contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[1],lty=1,lwd=3)
+
+plot(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
+     ylim=c(0,60),xlab=NA,ylab="Capture speed (mm/sec)",main="LF")
+contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[2],lty=2,lwd=3)
+
+plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),
+     xlab="Undershoot",ylab=NA,main="DF")
+contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[3],lty=3,lwd=3)
+
+dev.off()
+
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/CaptureSpeed.pdf",sep=""))
+boxplot(
+  datTurnVsStrikeSpeed_NL$CaptureSpeed,
+  datTurnVsStrikeSpeed_LL$CaptureSpeed,
+  datTurnVsStrikeSpeed_DL$CaptureSpeed,
+  col=colourP,
+  main="Final bout Speed",names=c("NF","LF","DF"),ylab="Capture speed (mm/sec)",notch=TRUE )
+dev.off()
+
+
+
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/UndershootCaptureSpeedProduct.pdf",sep=""))
+boxplot(
+        1/datTurnVsStrikeSpeed_NL$Undershoot*datTurnVsStrikeSpeed_NL$CaptureSpeed,
+        1/datTurnVsStrikeSpeed_LL$Undershoot*datTurnVsStrikeSpeed_LL$CaptureSpeed,
+        1/datTurnVsStrikeSpeed_DL$Undershoot*datTurnVsStrikeSpeed_DL$CaptureSpeed,
+        col=colourP,
+        main="Capture Speed/Undershoot  ",names=c("NF","LF","DF"),notch=TRUE,ylab="Capture-speed undershoot product" )
+legend("topright",fill=colourH,legend = c(paste("LF cov:",prettyNum( covLL,digits=3) ),
+                                          paste("NF cov:",prettyNum( covNL,digits=3) ),
+                                          paste("DF cov:",prettyNum( covDL,digits=3) )  ) )
+dev.off()
 
 
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
