@@ -63,19 +63,20 @@ modelLin <- "model{
 
  
   # Prior for beta
-  beta[1] ~ dnorm(0,4)
-  beta[2] ~ dnorm(10,4)
+  beta[1] ~ dnorm(0,2)
+  beta[2] ~ dnorm(1,0.1)
   
 
   # Prior for the inverse variance
-  inv.var   ~ dgamma(10, 205)
+  inv.var   ~ dgamma(0.1, 1)
   sigma     <- 1/sqrt(inv.var)
 
 }"
 
 ####Select Subset Of Data To Analyse
-plot(dgamma(1:100,            shape=10,scale=205           ))
-plot(dnorm(1:100,   mean=1,sd=4           ))
+plot(dgamma(1:100,            shape=0.1,scale=1           ))
+
+plot(dnorm(1:100,   mean=1,sd=1           ))
 
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)

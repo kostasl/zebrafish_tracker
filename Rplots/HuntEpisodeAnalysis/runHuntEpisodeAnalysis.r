@@ -954,6 +954,8 @@ for (gp in strGroupID)
                                   , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx,
                                   CaptureSpeed = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                           datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm,
+                                  DistanceToPrey = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                          datMotionBoutCombined$boutRank == 1 ,]$vMotionBoutDistanceToPrey_mm,
                                   doesCaptureStrike=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                               datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm >= G_THRES_CAPTURE_SPEED )
                                   )
@@ -1020,7 +1022,7 @@ par(mar = c(3.9,4.3,1,1))
 
 plot(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
      xlab=NA,ylab=NA,ylim=c(0,60),main="NF")
-contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[1],lty=1,lwd=3)
+contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[1],lty=2,lwd=3)
 
 plot(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
      ylim=c(0,60),xlab=NA,ylab="Capture speed (mm/sec)",main="LF")
@@ -1028,9 +1030,10 @@ contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[2],lty=2,lwd=3)
 
 plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),
      xlab="Undershoot",ylab=NA,main="DF")
-contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[3],lty=3,lwd=3)
+contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[3],lty=2,lwd=3)
 
 dev.off()
+
 
 pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/CaptureSpeed.pdf",sep=""))
 boxplot(
@@ -1054,6 +1057,44 @@ legend("topright",fill=colourH,legend = c(paste("LF cov:",prettyNum( covLL,digit
                                           paste("NF cov:",prettyNum( covNL,digits=3) ),
                                           paste("DF cov:",prettyNum( covDL,digits=3) )  ) )
 dev.off()
+
+
+### Capture Speed vs Distance to prey ###
+datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]) )
+datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]) )
+datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]) )
+
+
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/CaptureSpeedVsDistanceToPrey.pdf",sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.3,1,1))
+densNL <-  kde2d(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,n=80)
+densLL <-  kde2d(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,n=80)
+densDL <-  kde2d(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,n=80)
+
+plot(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
+     ylim=c(0,60),xlab=NA,ylab="Capture speed (mm/sec)",xlim=c(0,2.0),
+     main="Strike speed Vs Distance from target")
+contour(densNL, drawlabels=FALSE, nlevels=4,add=TRUE,col=colourL[1],lty=2,lwd=2)
+legend("topright",
+       legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed) ) ) ) 
+
+
+plot(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
+     ylim=c(0,60),xlab=NA,ylab="Capture speed (mm/sec)",main="LF",xlim=c(0,2.0))
+contour(densLL, drawlabels=FALSE, nlevels=4,add=TRUE,col=colourL[2],lty=2,lwd=2)
+legend("topright",
+       legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed) ) ) ) 
+
+plot(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],
+     ylim=c(0,60),ylab="Capture speed (mm/sec)",xlab="Distance to prey (mm)",main="DL",xlim=c(0,2.0))
+contour(densDL, drawlabels=FALSE, nlevels=4,add=TRUE,col=colourL[3],lty=2,lwd=2)
+legend("topright",
+       legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed) ) ) ) 
+
+dev.off()
+
 
 
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
