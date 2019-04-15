@@ -539,7 +539,9 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
                                   expID                 = as.numeric(rep(expID,rows)),
                                   eventID               = as.numeric(rep(eventID,rows)),
                                   groupID               = rep((groupID) ,rows), ##as.character
-                                  PreyCount             = rep(NROW(tblPreyRecord),rows)
+                                  PreyCount             = rep(NROW(tblPreyRecord),rows),
+                                  OnSetEyeVergence      = datRenderHuntEvent$LEyeAngle[ lMotionBoutDat[[idxH]][,"vMotionBout_On"] ] - datRenderHuntEvent$REyeAngle[lMotionBoutDat[[idxH]][,"vMotionBout_On"] ],
+                                  OffSetEyeVergence      = datRenderHuntEvent$LEyeAngle[ lMotionBoutDat[[idxH]][,"vMotionBout_Off"] ] - datRenderHuntEvent$REyeAngle[lMotionBoutDat[[idxH]][,"vMotionBout_Off"] ]
                                   )
   
   ## Eye Angle Vs Distance ##
@@ -945,10 +947,9 @@ for (gp in strGroupID)
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
   datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) >= abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
   datMotionBoutTurnToPrey <- datMotionBoutTurnToPrey[!is.na(datMotionBoutTurnToPrey$RegistarIdx),]
-  ## Punctuate 1st Turn To Prey
-  #lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
-  #                            Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
-  #                            , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
+  
+  ## Relates First turn to prey to final capture strike parameters  ##
+  ##
   lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
                                   Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
                                   , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx,
@@ -957,7 +958,9 @@ for (gp in strGroupID)
                                   DistanceToPrey = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                           datMotionBoutCombined$boutRank == 1 ,]$vMotionBoutDistanceToPrey_mm,
                                   doesCaptureStrike=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
-                                                                              datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm >= G_THRES_CAPTURE_SPEED )
+                                                                              datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm >= G_THRES_CAPTURE_SPEED ),
+                                  CaptureStrikeEyeVergence = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                                      datMotionBoutCombined$boutRank == 1 ,]$OnSetEyeVergence
                                   )
   
   
@@ -1021,16 +1024,26 @@ layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 par(mar = c(3.9,4.3,1,1))
 
 plot(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
-     xlab=NA,ylab=NA,ylim=c(0,60),main="NF")
+     xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,2),main=NA)
 contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[1],lty=2,lwd=3)
+legend("topright",
+       legend=paste("NF cov:",prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed) ) ) ) 
 
 plot(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
-     ylim=c(0,60),xlab=NA,ylab="Capture speed (mm/sec)",main="LF")
+     ylim=c(0,60),xlim=c(0,2),xlab=NA,ylab=NA)
 contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[2],lty=2,lwd=3)
+mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
+legend("topright",
+       legend=paste("LF cov:",prettyNum(digits=3, cov(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed) ) ) ) 
 
-plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),
-     xlab="Undershoot",ylab=NA,main="DF")
+
+plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),xlim=c(0,2),
+     xlab=NA,ylab=NA,main=NA)
 contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[3],lty=2,lwd=3)
+mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
+legend("topright",
+       legend=paste("DF cov:",prettyNum(digits=3, cov(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed) ) ) ) 
+
 
 dev.off()
 
@@ -1095,6 +1108,22 @@ legend("topright",
 
 dev.off()
 
+############### Capture speed vs Eye V #### 
+datDistanceToPreyVsEyeV_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"]) )
+datDistanceToPreyVsEyeV_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]) )
+datDistanceToPreyVsEyeV_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"]) )
+
+plot(datDistanceToPreyVsEyeV_LL$DistanceToPrey,datDistanceToPreyVsEyeV_LL$EyeV)
+plot(datDistanceToPreyVsEyeV_NL$DistanceToPrey,datDistanceToPreyVsEyeV_NL$EyeV)
+plot(datDistanceToPreyVsEyeV_DL$DistanceToPrey,datDistanceToPreyVsEyeV_DL$EyeV)
+
+
+datCaptureSpeedToPreyVsEyeV_NL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"]) )
+datCaptureSpeedToPreyVsEyeV_LL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]) )
+datCaptureSpeedToPreyVsEyeV_DL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"]) )
+
+plot(datCaptureSpeedToPreyVsEyeV_LL$EyeV, datCaptureSpeedToPreyVsEyeV_LL$CaptureSpeed )
+plot(datCaptureSpeedToPreyVsEyeV_NL$EyeV, datCaptureSpeedToPreyVsEyeV_NL$CaptureSpeed )
 
 
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###
