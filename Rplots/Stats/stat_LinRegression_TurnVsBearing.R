@@ -116,19 +116,22 @@ lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBo
 
 ## Get Event Counts Within Range ##
 ## Added Flag whether Capture Strike move Detected 
-flagWithCaptureStrike <- 0
+flagWithCaptureStrike <- 1
 randomSubset <- 30
 datTurnVsPreyLL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , Turn= as.numeric(lFirstBoutPoints$LL[,"Turn"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],
-                         CaptureStrikeDetected=datTrackedEventsRegister[lFirstBoutPoints$LL[,"RegistarIdx"],"CaptureStrikeDetected"] )
+                         CaptureStrikeDetected=lFirstBoutPoints$LL[,"doesCaptureStrike"] ) ##datTrackedEventsRegister[lFirstBoutPoints$NL[,"RegistarIdx"],"CaptureStrikeDetected"]
 #datTurnVsPreyLL <- datTurnVsPreyLL[ sample(NROW(datTurnVsPreyLL),size=randomSubset), ]
 datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]) & datTurnVsPreyLL[,4] == flagWithCaptureStrike,]
 
-datTurnVsPreyNL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$NL[,"OnSetAngleToPrey"] ,Turn= as.numeric(lFirstBoutPoints$NL[,"Turn"]),lFirstBoutPoints$NL[,"RegistarIdx"],CaptureStrikeDetected=datTrackedEventsRegister[lFirstBoutPoints$NL[,"RegistarIdx"],"CaptureStrikeDetected"] )
+datTurnVsPreyNL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$NL[,"OnSetAngleToPrey"] ,Turn= as.numeric(lFirstBoutPoints$NL[,"Turn"]),
+                         lFirstBoutPoints$NL[,"RegistarIdx"],
+                         CaptureStrikeDetected=lFirstBoutPoints$NL[,"doesCaptureStrike"] )
 #datTurnVsPreyNL <- datTurnVsPreyNL[ sample(NROW(datTurnVsPreyNL),size=randomSubset), ]
 datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]) & datTurnVsPreyNL[,4] == flagWithCaptureStrike,]
 
 
-datTurnVsPreyDL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , Turn=  as.numeric(lFirstBoutPoints$DL[,"Turn"]),lFirstBoutPoints$DL[,"RegistarIdx"],CaptureStrikeDetected=datTrackedEventsRegister[lFirstBoutPoints$DL[,"RegistarIdx"],"CaptureStrikeDetected"] )
+datTurnVsPreyDL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , Turn=  as.numeric(lFirstBoutPoints$DL[,"Turn"]),lFirstBoutPoints$DL[,"RegistarIdx"],
+                         CaptureStrikeDetected=lFirstBoutPoints$DL[,"doesCaptureStrike"] )
 #datTurnVsPreyDL <- datTurnVsPreyDL[ sample(NROW(datTurnVsPreyDL),size=randomSubset), ]
 datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]) & datTurnVsPreyDL[,4] == flagWithCaptureStrike,]
 
@@ -305,7 +308,7 @@ pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_Cap",G_THRES_CA
 boxplot(datTurnVsPreyNL[,"Turn"]/datTurnVsPreyNL[,"OnSetAngleToPrey"],
         datTurnVsPreyLL[,"Turn"]/datTurnVsPreyLL[,"OnSetAngleToPrey"],
         datTurnVsPreyDL[,"Turn"]/datTurnVsPreyDL[,"OnSetAngleToPrey"],
-        names=c("NL","LL","DL"),main="Undershoot slope ",col=colourH)
+        names=c("NL","LL","DL"),main="Undershoot slope ",col=colourH,ylim=c(0,2.0) )
 dev.off()
 #strPlotName <-  paste(strPlotExportPath,"/stat_TurnVsBearing_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
 #pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
