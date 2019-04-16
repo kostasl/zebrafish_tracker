@@ -55,25 +55,28 @@ myplot_res<- function(ind,qq=0.05){
 
 ## This Is the Linear Regression Model Used
 modelLin <- "model{
-
   # Likelihood
   for(i in 1:N){
     turn[i]   ~ dnorm(mu[i],inv.var)
     mu[i] <- beta[1] + beta[2]*bearing[i] 
   }
 
+ 
   # Prior for beta
-  for(j in 1:2){
-    beta[j] ~ dnorm(0.1,0.1)
-  }
+  beta[1] ~ dnorm(0,2)
+  beta[2] ~ dnorm(1,0.1)
+  
 
   # Prior for the inverse variance
-  inv.var   ~ dgamma(1, 1)
+  inv.var   ~ dgamma(0.1, 1)
   sigma     <- 1/sqrt(inv.var)
 
 }"
 
 ####Select Subset Of Data To Analyse
+plot(dgamma(1:100,            shape=0.1,scale=1           ))
+
+plot(dnorm(1:100,   mean=1,sd=1           ))
 
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
@@ -121,19 +124,19 @@ randomSubset <- 30
 datTurnVsPreyLL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$LL[,"OnSetAngleToPrey"] , Turn= as.numeric(lFirstBoutPoints$LL[,"Turn"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],
                          CaptureStrikeDetected=lFirstBoutPoints$LL[,"doesCaptureStrike"] ) ##datTrackedEventsRegister[lFirstBoutPoints$NL[,"RegistarIdx"],"CaptureStrikeDetected"]
 #datTurnVsPreyLL <- datTurnVsPreyLL[ sample(NROW(datTurnVsPreyLL),size=randomSubset), ]
-datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]) & datTurnVsPreyLL[,4] == flagWithCaptureStrike,]
+#datTurnVsPreyLL <- datTurnVsPreyLL[!is.na(datTurnVsPreyLL[,1]) & datTurnVsPreyLL[,4] == flagWithCaptureStrike,]
 
 datTurnVsPreyNL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$NL[,"OnSetAngleToPrey"] ,Turn= as.numeric(lFirstBoutPoints$NL[,"Turn"]),
                          lFirstBoutPoints$NL[,"RegistarIdx"],
                          CaptureStrikeDetected=lFirstBoutPoints$NL[,"doesCaptureStrike"] )
 #datTurnVsPreyNL <- datTurnVsPreyNL[ sample(NROW(datTurnVsPreyNL),size=randomSubset), ]
-datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]) & datTurnVsPreyNL[,4] == flagWithCaptureStrike,]
+#datTurnVsPreyNL <- datTurnVsPreyNL[!is.na(datTurnVsPreyNL[,1]) & datTurnVsPreyNL[,4] == flagWithCaptureStrike,]
 
 
 datTurnVsPreyDL <- cbind(OnSetAngleToPrey=lFirstBoutPoints$DL[,"OnSetAngleToPrey"] , Turn=  as.numeric(lFirstBoutPoints$DL[,"Turn"]),lFirstBoutPoints$DL[,"RegistarIdx"],
                          CaptureStrikeDetected=lFirstBoutPoints$DL[,"doesCaptureStrike"] )
 #datTurnVsPreyDL <- datTurnVsPreyDL[ sample(NROW(datTurnVsPreyDL),size=randomSubset), ]
-datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]) & datTurnVsPreyDL[,4] == flagWithCaptureStrike,]
+#datTurnVsPreyDL <- datTurnVsPreyDL[!is.na(datTurnVsPreyDL[,1]) & datTurnVsPreyDL[,4] == flagWithCaptureStrike,]
 
 ##Outlier datTurnVsPreyDL[13,] <- NA
 
@@ -149,7 +152,7 @@ rhoMaxA = 1000
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
-steps=200000;
+steps=100000;
 thin=1;
 nchains <- 3
 
@@ -223,8 +226,8 @@ dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 
 ##Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
-#pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_RandSubset_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+#pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
