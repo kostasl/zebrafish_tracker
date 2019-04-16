@@ -242,8 +242,10 @@ getMotionBoutSpeedThresholds <- function(datHuntEventMergedFrames)
 }
 
 
-##Clusters Fish Speed Measurements into Bout And Non Bout
+## Uses the tracked data to suggest good thresholds for bout classification, 
+## Clusters Fish Speed Measurements into Bout And Non Bout
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
+
 getTailBoutThresholds <- function(datHuntEventMergedFrames)
 {
   
