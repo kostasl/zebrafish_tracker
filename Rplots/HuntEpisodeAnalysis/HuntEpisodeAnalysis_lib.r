@@ -241,53 +241,42 @@ getMotionBoutSpeedThresholds <- function(datHuntEventMergedFrames)
   return ( clusterActivity[boutCluster] )
 }
 
-##Clusters Fish Speed Measurements into Bout And Non Bout
-##Use multiple components #17, and select top 6 active ones whose activity is above minMotionSpeed
-detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
+
+## Uses the tracked data to suggest good thresholds for bout classification, 
+## Clusters Fish Speed Measurements into Bout And Non Bout
+##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
+
+getTailBoutThresholds <- function(datHuntEventMergedFrames)
 {
-  nNumberOfComponents = 17
-  nSelectComponents = 6##5##7
+  
+  
+  nNumberOfComponents = 20
+  nSelectComponents = 2
   colClass <- c("#FF0000","#04A022","#0000FF")
   
-  nRec <- NROW(vEventSpeed)
-  ##Fix Length Differences
-  x  <-  vEventSpeed[1:nRec]
-  #t <- datRenderHuntEvent$frameN
-  #X11();plot(pvEventSpeed,pvTailDispFilt,type='p')
-  
-  ##simple threshold shortcut 
-  
-  return(which(x > G_THRES_MOTION_BOUT_SPEED))
-  
-  #X11();plot(pvEventSpeed,type='p')
-  #BIC <- mclustBIC(dEventSpeed)
-  
+  vTailDisp <-  datHuntEventMergedFrames$DThetaSpine_6 + datHuntEventMergedFrames$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7 #abs(datRenderHuntEvent$DThetaSpine_1) +  abs(datRenderHuntEvent$DThetaSpine_2) + abs(datRenderHuntEvent$DThetaSpine_3) + abs(datRenderHuntEvent$DThetaSpine_4) + abs(datRenderHuntEvent$DThetaSpine_5) + abs(datRenderHuntEvent$DThetaSpine_6) + abs(datRenderHuntEvent$DThetaSpine_7)
+  vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
+  vFs                   <- datHuntEventMergedFrames$fps[1:NROW(dframe)]
+  lwlt <- getPowerSpectrumInTime(vTailDisp,mean(vFs) )##Fix Length Differences
+  x <- lwlt$freqMode
+  ##Automatic Component number selection
   ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
   ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
   #modelNames = "EII"
+  ###I can test For Possibility Of Clustering With G=n using mclustBIC returnCodes - When 0 Its succesfull
+  fitBIC <- mclustBIC(x ,G=3:(nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.5),c(2),c(10),c(20),c(30),c(40)) ,shrinkage=0.1 ) )
+  #plot(fitBIC)
+  ##Select Largest Number Of Components That does not Crash !
+  message(attr(fitBIC,"returnCodes"))
+  nNumberOfComponents <- max(which(attr(fitBIC,"returnCodes")[,2] == 0))
+  nSelectComponents <- round(nNumberOfComponents/3) ##select 1/2 of most active components
+  message(paste("Setting TailClust Comp. to N:",nNumberOfComponents,"Select n:",nSelectComponents) )
   
+  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(1),c(4),c(10),c(13),c(18),c(30)),shrinkage=0.1 ) )  
+
+
+  #summary(fit)
   
-  #fitBIC <- mclustBIC(x ,G=1:(2*nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.01),c(0.01),c(0.05),c(0.02),c(0.4),c(1.5)) ,shrinkage=0.1 ) )
-  #message(attr(fitBIC,"returnCodes"))
- 
-  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",
-                prior =  priorControl(functionName="defaultPrior",mean=c(c(0.1),c(0.6),c(0.7),c(1),c(3),c(1),c(1.5)),shrinkage=0.1 ) )  
-  # "VVV" check out doc mclustModelNames
-  #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  
-  #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  summary(fit)
-  
-  #  X11()
-  #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  # rug(xy)
-  
-  #X11()
-  
-  #plot(pvEventSpeed[1:nRec],type='l',col=colClass[1])
-  #points(which(boutClass == 3), pvEventSpeed[boutClass == 3],type='p',col=colClass[2])
-  
-  ##Find Which Cluster Contains the Highest Peaks
   boutClass <- fit$classification
   clusterActivity <- vector()
   for (i in unique(boutClass))
@@ -295,14 +284,27 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
   #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
   
   clusterActivity[is.na(clusterActivity)] <- 0
-  #boutCluster <- which(clusterActivity == max(clusterActivity))
+  
+  ##Get rid of the Fastest one, as that is just the transition between events
+  maxBoutCluster <- which(clusterActivity == max(clusterActivity))
+  
   ##Select the Top nSelectComponents of clusterActivity
   boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) & 
-                           clusterActivity > minMotionSpeed) )   
-  #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
-  ## Add Prior Bias to Selects from Clusters To The 
-  return (which(fit$classification %in% boutCluster ) )
-  #return (which( fit$z[,3]> fit$z[,1]*prior_factor1 | fit$z[,3]> fit$z[,2]*prior_factor2    )) #
+                           clusterActivity > 1 &
+                           clusterActivity < clusterActivity[maxBoutCluster]  ) )   
+  
+  return ( clusterActivity[boutCluster] )
+  
+}
+
+
+##Clusters Fish Speed Measurements into Bout And Non Bout
+##Use multiple components #17, and select top 6 active ones whose activity is above minMotionSpeed
+detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
+{
+ 
+  
+  return(which(vEventSpeed > minMotionSpeed))
   
 }
 
@@ -311,57 +313,9 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectTailBouts <- function(vTailMotionFq)
 {
-  nNumberOfComponents = 10
-  nSelectComponents = 2
-  colClass <- c("#FF0000","#04A022","#0000FF")
-  
-  nRec <- NROW(vTailMotionFq)
-  ##Fix Length Differences
-  x  <-  vTailMotionFq[1:nRec]
 
-  return (which(x > 5)) ###Stop here - keep it simple > 5Hz
-  ##Automatic Component number selection
-  ### INcreased to 3 Clusters TO Include Other Non-Bout Activity
-  ##prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  #modelNames = "EII"
-  ###I can test For Possibility Of Clustering With G=n using mclustBIC returnCodes - When 0 Its succesfull
-  fitBIC <- mclustBIC(x ,G=1:(nNumberOfComponents),prior =  priorControl(functionName="defaultPrior", mean=c(c(0.5),c(2),c(10),c(20),c(30),c(40)) ,shrinkage=0.1 ) )
-  #plot(fitBIC)
-  ##Select Largest Number Of Components That does not Crash !
-  message(attr(fitBIC,"returnCodes"))
-  nNumberOfComponents <- max(which(attr(fitBIC,"returnCodes")[,2] == 0))
-  nSelectComponents <- round(nNumberOfComponents/2)
-  message(paste("Setting TailClust Comp. to N:",nNumberOfComponents,"Select n:",nSelectComponents) )
-  
-  fit <- Mclust(x ,G=nNumberOfComponents,modelNames = "V",prior =  priorControl(functionName="defaultPrior", mean=c(c(1),c(4),c(10),c(13),c(18),c(30)),shrinkage=0.1 ) )  
-  # "VVV" check out doc mclustModelNames
-  #fit <- Mclust(xy ,G=2, ,prior =  priorControl(functionName="defaultPrior", mean=c(c(0.005,0),c(0.5,15)),shrinkage=0.8 ) )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  
-  #fit <- Mclust(xy ,G=3 )  #prior=priorControl(functionName="defaultPrior",shrinkage = 0) modelNames = "V"  prior =  shrinkage = 0,modelName = "VVV"
-  summary(fit)
-  
-  
-  #X11()
-  #plot(x, main="", xlab="",type="l")
-  
-  #  X11()
-  #plot(fit, what="density", main="", xlab="Velocity (Mm/s)")
-  # rug(xy)
-
-  ##Find Which Cluster Contains the Highest Peaks
-  boutClass <- fit$classification
-  clusterActivity <- vector()
-  for (i in unique(boutClass))
-    clusterActivity[i] <- max(x[boutClass == i])#,mean(pvEventSpeed[boutClass == 2]),mean(pvEventSpeed[boutClass == 3]))
-  #clusterActivity <- c(mean(pvEventSpeed[boutClass == 1]),mean(pvEventSpeed[boutClass == 2]))
-  
-  clusterActivity[is.na(clusterActivity)] <- 0
-  #boutCluster <- which(clusterActivity == max(clusterActivity))
-  ##Select the Top nSelectComponents of clusterActivity
-  boutCluster <- c(which(rank(clusterActivity) >  (nNumberOfComponents-nSelectComponents) ) )   
-  #points(which( fit$z[,2]> fit$z[,1]*prior_factor ), dEventSpeed[ fit$z[,2]> fit$z[,1]*prior_factor  ],type='p',col=colClass[3])
-  
-  return (which(boutClass %in% boutCluster ) )
+  x  <-  vTailMotionFq
+  return (which(x > G_THRES_TAILFQ_BOUT)) ###Stop here - keep it simple > 10Hz
   
 }
 
@@ -415,6 +369,8 @@ detectTurnBouts <- function(vTurnSpeed,vTailDispFilt,minTurnSpeed=NA)
   
   
 }
+
+
 ##Clusters Fish Speed Measurements into Bout And Non Bout
 ##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
 detectMotionBouts2 <- function(vEventSpeed,vTailDispFilt)

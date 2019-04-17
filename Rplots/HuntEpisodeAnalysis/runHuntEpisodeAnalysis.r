@@ -94,9 +94,10 @@ cnt = 0
 
 ###Discover Thresholds adaptivelly :
 #boutSpeedRanked <- getMotionBoutSpeedThresholds(datHuntEventMergedFrames)
+#tailFqRanked <-  getTailBoutThresholds (datHuntEventMergedFrames)
 #G_THRES_CAPTURE_SPEED <- median(boutSpeedRanked)
 #G_THRES_MOTION_BOUT_SPEED <- min((boutSpeedRanked))
-
+#G_THRES_TAILFQ_BOUT  <- median(tailFqRanked)
 for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(datTrackedEventsRegister)
 {
 
@@ -326,7 +327,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   lwlt <- getPowerSpectrumInTime(vTailDisp[regionToAnalyse],Fs)
   
   
-  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm[regionToAnalyse],3) +min(regionToAnalyse)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm[regionToAnalyse],3) +min(regionToAnalyse,G_THRES_MOTION_BOUT_SPEED)
   TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
@@ -336,7 +337,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
 #  plot(vTurnSpeed) ##Ccheck 
 #  points(TurnboutsIdx, vTurnSpeed[TurnboutsIdx ],pch=2,cex=1,col="red") 
 
-  MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx )
+  MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx ) ##
   ##Score Detected Frames On Overlapping Detectors
   tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
   ##Select Bouts Based On Score. ex. score >= 3 means it Exceeds Speed+Tail Motion+Turn+Tail Motion Thresholds
@@ -396,7 +397,7 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
                                                    vTailDisp,
                                                    regionToAnalyse,plotRes = TRUE)
     datMotionBout = data.frame( lMotionBoutDat[[idxH]]  )
-    if (is.na( lMotionBoutDat[[idxH]] ) )
+    if (NROW( lMotionBoutDat[[idxH]] ) == 0 )
     {
       warning(paste("*** No Bouts detected for idxH:",idxH ) ) 
       next
@@ -435,8 +436,9 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
       tFirstTurnToPreyE <- datMotionBout[which(rank(datMotionBout$vTurnBoutAngle) == 1 & datMotionBout$vMotionBout_On < max(idx_HuntMode) ), ]$vMotionBout_Off
     }
     
-    points(t[tFirstTurnToPreyS-min(regionToAnalyse)], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red") ##Start 1st Turn
-    points(t[tFirstTurnToPreyE-min(regionToAnalyse)], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black") ##End 1st Turn
+    ## here -min(regionToAnalyse) ##-min(regionToAnalyse)
+    points(t[tFirstTurnToPreyS], vAngleDisplacement[tFirstTurnToPreyS],pch=2,cex=2.5,col="red") ##Start 1st Turn
+    points(t[tFirstTurnToPreyE], vAngleDisplacement[tFirstTurnToPreyE],pch=6,cex=2.5,col="black") ##End 1st Turn
 
     ###  Pitch (Upwards Tilt)
     lines(t,vPitchEstimate[1:NROW(t)],type='l',lwd=2,col='purple',lty=2) ## Pitch 
@@ -579,7 +581,9 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
   
   #X11();plot(1000*(1:NROW(lEyeMotionDat[[idxH]][,"LEyeAngle"]))/G_APPROXFPS ,lEyeMotionDat[[idxH]][,"LEyeAngle"] )
 } ###END OF EACH Hunt Episode Loop 
-
+#########################
+########################                                                          ############################
+###################################################################################
 
 ########## SAVE Processed Hunt Events ###########
 if (bSaveNewMotionData)
@@ -650,175 +654,6 @@ for (gp in strGroupID)
   message(paste("Missing Reg Idxs:",paste(list(idxReg[!(idxReg %in% idxProc)]), sep="," ) ) )
 }
 
-
-## Make Distance Vs Eye Angle Vectors ##
-## PLOT EYE Vs Distance ##
-lEyeLDistMatrix <- list()
-lEyeRDistMatrix <- list()
-lEyeVDistMatrix <- list()
-lPreyAngleDistMatrix <- list()
-
-nBreaks <- 50
-maxDist <- 5 #5mm Range
-stepDist <- maxDist/nBreaks
-vDist <- seq(0,to=maxDist,by=stepDist)
-for (strGroup in strGroupID)
-{
-  mrow <- 1
-  lEyeLDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
-  lEyeRDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
-  lEyeVDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
-  lPreyAngleDistMatrix <- matrix(NA,nrow=80,ncol=nBreaks+1)
-  
-  for (recE in lEyeMotionDat) ##For Each Hunt Event 
-  {
-    if (is.null(recE))
-      next()
-    
-    ## Filter Noise 
-    recE[is.na(recE[,"REyeAngle"]) ,"REyeAngle"]  <- 0
-    recE[,"REyeAngle"] <- filtfilt(bf_eyes,recE[,"REyeAngle"]  ) 
-    recE[is.na(recE[,"LEyeAngle"]) ,"LEyeAngle"]  <- 0
-    recE[,"LEyeAngle"] <- filtfilt(bf_eyes,recE[,"LEyeAngle"]  ) 
-    
-    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
-    if (as.character(groupID) != strGroup )
-      next() ##Looking For EyeM Of Specific Group/ Skip Others
-    
-    ##Go through Each distance and record Eye Angle
-    for (d in 0:nBreaks)
-    {
-      recLEye <- recE[ recE[,"DistToPrey"] > d*stepDist & recE[,"DistToPrey"] <= (d+1)*stepDist ,"LEyeAngle"]
-      recREye <- recE[ recE[,"DistToPrey"] > d*stepDist & recE[,"DistToPrey"] <= (d+1)*stepDist ,"REyeAngle"]
-      
-      if (any(is.nan(recLEye) | is.nan(recREye) ))
-        stop("Nan In Eye Angle")
-      
-      if (NROW(recLEye) > 0)
-        lEyeLDistMatrix[[strGroup]][mrow,d] <- mean(recLEye,na.rm=TRUE )##Pick the mean value
-      else
-        lEyeLDistMatrix[[strGroup]][mrow,d] <- NA
-
-      if (NROW(recREye) > 0)
-        lEyeRDistMatrix[[strGroup]][mrow,d] <- mean(recREye,na.rm=TRUE )##Pick the mean value
-      else
-        lEyeRDistMatrix[[strGroup]][mrow,d] <- NA
-      
-      ##Combine into Vergence Angle Matrix
-      lEyeVDistMatrix[[strGroup]][mrow,d] <- lEyeLDistMatrix[[strGroup]][mrow,d] - lEyeRDistMatrix[[strGroup]][mrow,d]
-     
-      
-    } ##For each Distance In Vector
-    
-    mrow <- mrow + 1
-  } ##For each EyeData Rec
-}
-
-
-strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep="")
-par(pty="s")    
-pdf(file= strPlotFileName,
-    title="Mean Eye HUNT (>45 degrees) Vergence Vs Distance from Prey  LF",width=5,height=5,bg="white" )
-#plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
-lHuntEyeVDistMatrix <- lEyeVDistMatrix[["LL"]]
-lHuntEyeVDistMatrix[lHuntEyeVDistMatrix < G_THRESHUNTVERGENCEANGLE] <- NA
-nLarvaCount <- NROW(unique(datTrackedEventsRegister[idxLLSet,"expID"]))
-nEpisodeCount <- NROW(idxLLSet)
-plotMeanEyeV(lHuntEyeVDistMatrix
-             ,colourH[2],addNewPlot=TRUE)
-legend("topright",fill=colourH[2],cex = FONTSZ_AXISLAB,
-       legend = c(  expression (),bquote( ~ .(nEpisodeCount)~'Episodes' / .(nLarvaCount) ~ "Larvae"
-                                           ) ##Evoked Activity
-                    ))
-#axis(side=2,tick=TRUE,font=2,cex.axis = FONTSZ_AXIS)
-
-mtext(side = 1,cex=FONTSZ_AXISLAB, line = 2.2, "Distance from prey (mm)", font=2 )
-mtext(side = 2,cex=FONTSZ_AXISLAB, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
-
-dev.off()
-
-embed_fonts(strPlotFileName)
-
-
-## Plot The Mean V vergence And Std Error  SEM
-##Perhapse make it more convincing by Only Include EyeV > HuntThreshold ##
-strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_ALL.pdf",sep="")
-pdf(file= strPlotFileName,
-    title="Mean Eye Vergence Vs Distance from Prey  NF,LF,DF" )
-
-lHuntEyeVDistMatrix_NL <- lEyeVDistMatrix[["NL"]]
-lHuntEyeVDistMatrix_NL[lHuntEyeVDistMatrix_NL < G_THRESHUNTVERGENCEANGLE] <- NA
-plotMeanEyeV(lHuntEyeVDistMatrix_NL,colourH[1],addNewPlot=TRUE)
-
-lHuntEyeVDistMatrix_LL <- lEyeVDistMatrix[["LL"]]
-lHuntEyeVDistMatrix_LL[lHuntEyeVDistMatrix_LL < G_THRESHUNTVERGENCEANGLE] <- NA
-plotMeanEyeV(lHuntEyeVDistMatrix_LL,colourH[2],addNewPlot=FALSE)
-
-lHuntEyeVDistMatrix_DL <- lEyeVDistMatrix[["DL"]]
-lHuntEyeVDistMatrix_DL[lHuntEyeVDistMatrix_DL < G_THRESHUNTVERGENCEANGLE] <- NA
-plotMeanEyeV(lHuntEyeVDistMatrix_DL,colourH[3],addNewPlot=FALSE)
-
-legend("topright",fill=colourH, legend = c(  expression (),
-                                  bquote(NF["s"] ~ '#' ~ .(NROW(idxNLSet) )  ),
-                                  bquote(LF["e"] ~ '#' ~ .(NROW(idxLLSet) )  ),
-                                  bquote(DF["e"] ~ '#' ~ .(NROW(idxDLSet) )  ) ) )
-mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
-mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
-
-dev.off()
-embed_fonts(strPlotFileName)
-
-
-##Plot An Example from Each 
-plot(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["NL"]][1,],xlab="Distance (mm)" ,type="l",col="red",ylim=c(0,80),main="Right Eye")
-lines(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["LL"]][1,],xlab="Distance (mm)" ,type="l",col="green",ylim=c(0,80))
-lines(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["DL"]][1,],xlab="Distance (mm)" ,type="l",col="blue",ylim=c(0,80))
-
-
-
-## PLOT EYE Vs Distance ##
-nlimit <- 3
-n<- 0
-for (strGroup in strGroupID)
-{
-  plot(0, 0 ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4),main=paste("Left Eye Vs Dist To Prey ",strGroup) )
-  for (recE in lEyeMotionDat)
-  {
-    print(n)
-    if (is.null(recE))
-      next()
-    
-    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
-    if (as.character(groupID) != strGroup )
-      next()
-    
-    if (n > nlimit)
-      break
-    #lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
-    points(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="p",col="blue",ylim=c(0,45),xlim=c(0,4),cex=0.2)
-    n <- n + 1
-  }
-  
-}
-
-
-## PLOT EYE Vs Distance ##
-for (strGroup in strGroupID)
-{
-  plot(0, 0 ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4),main=paste("Right Eye Vs Dist To Prey ",strGroup) )
-  for (recE in lEyeMotionDat)
-  {
-    if (is.null(recE))
-      next()
-    
-    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
-    if (as.character(groupID) != strGroup )
-      next()
-    #lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
-    lines(recE[,"DistToPrey"], -1*recE[,"REyeAngle"] ,type="l",col="red",ylim=c(0,45),xlim=c(0,4))
-  }
-}
-##On Bout Leng
 
 ##On Bout Lengths ##Where Seq is the order Of Occurance, While Rank denotes our custom Ordering From Captcha backwards
 
@@ -1463,5 +1298,180 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 #plot(gammaDL)
 #plot(gammaNL)
 
-
 plot(lrecAzimuth[[cnt]]$distPX*DIM_MMPERPX,lrecAzimuth[[cnt]]$azimuth)
+
+
+###########################
+##
+## Make Distance Vs Eye Angle Vectors ##
+## PLOT EYE Vs Distance ##
+
+lEyeLDistMatrix <- list()
+lEyeRDistMatrix <- list()
+lEyeVDistMatrix <- list()
+lPreyAngleDistMatrix <- list()
+
+nBreaks <- 50
+maxDist <- 5 #5mm Range
+stepDist <- maxDist/nBreaks
+vDist <- seq(0,to=maxDist,by=stepDist)
+for (strGroup in strGroupID)
+{
+  mrow <- 1
+  lEyeLDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  lEyeRDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  lEyeVDistMatrix[[strGroup]] <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  lPreyAngleDistMatrix <- matrix(NA,nrow=80,ncol=nBreaks+1)
+  
+  for (recE in lEyeMotionDat) ##For Each Hunt Event 
+  {
+    if (is.null(recE))
+      next()
+    
+    ## Filter Noise 
+    recE[is.na(recE[,"REyeAngle"]) ,"REyeAngle"]  <- 0
+    recE[,"REyeAngle"] <- filtfilt(bf_eyes,recE[,"REyeAngle"]  ) 
+    recE[is.na(recE[,"LEyeAngle"]) ,"LEyeAngle"]  <- 0
+    recE[,"LEyeAngle"] <- filtfilt(bf_eyes,recE[,"LEyeAngle"]  ) 
+    
+    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
+    if (as.character(groupID) != strGroup )
+      next() ##Looking For EyeM Of Specific Group/ Skip Others
+    
+    ##Go through Each distance and record Eye Angle
+    for (d in 0:nBreaks)
+    {
+      recLEye <- recE[ recE[,"DistToPrey"] > d*stepDist & recE[,"DistToPrey"] <= (d+1)*stepDist ,"LEyeAngle"]
+      recREye <- recE[ recE[,"DistToPrey"] > d*stepDist & recE[,"DistToPrey"] <= (d+1)*stepDist ,"REyeAngle"]
+      
+      if (any(is.nan(recLEye) | is.nan(recREye) ))
+        stop("Nan In Eye Angle")
+      
+      if (NROW(recLEye) > 0)
+        lEyeLDistMatrix[[strGroup]][mrow,d] <- mean(recLEye,na.rm=TRUE )##Pick the mean value
+      else
+        lEyeLDistMatrix[[strGroup]][mrow,d] <- NA
+      
+      if (NROW(recREye) > 0)
+        lEyeRDistMatrix[[strGroup]][mrow,d] <- mean(recREye,na.rm=TRUE )##Pick the mean value
+      else
+        lEyeRDistMatrix[[strGroup]][mrow,d] <- NA
+      
+      ##Combine into Vergence Angle Matrix
+      lEyeVDistMatrix[[strGroup]][mrow,d] <- lEyeLDistMatrix[[strGroup]][mrow,d] - lEyeRDistMatrix[[strGroup]][mrow,d]
+      
+      
+    } ##For each Distance In Vector
+    
+    mrow <- mrow + 1
+  } ##For each EyeData Rec
+}
+
+
+strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_LL.pdf",sep="")
+par(pty="s")    
+pdf(file= strPlotFileName,
+    title="Mean Eye HUNT (>45 degrees) Vergence Vs Distance from Prey  LF",width=5,height=5,bg="white" )
+#plotMeanEyeV(lEyeVDistMatrix[["NL"]],colourH[1],addNewPlot=TRUE)
+lHuntEyeVDistMatrix <- lEyeVDistMatrix[["LL"]]
+lHuntEyeVDistMatrix[lHuntEyeVDistMatrix < G_THRESHUNTVERGENCEANGLE] <- NA
+nLarvaCount <- NROW(unique(datTrackedEventsRegister[idxLLSet,"expID"]))
+nEpisodeCount <- NROW(idxLLSet)
+plotMeanEyeV(lHuntEyeVDistMatrix
+             ,colourH[2],addNewPlot=TRUE)
+legend("topright",fill=colourH[2],cex = FONTSZ_AXISLAB,
+       legend = c(  expression (),bquote( ~ .(nEpisodeCount)~'Episodes' / .(nLarvaCount) ~ "Larvae"
+       ) ##Evoked Activity
+       ))
+#axis(side=2,tick=TRUE,font=2,cex.axis = FONTSZ_AXIS)
+
+mtext(side = 1,cex=FONTSZ_AXISLAB, line = 2.2, "Distance from prey (mm)", font=2 )
+mtext(side = 2,cex=FONTSZ_AXISLAB, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
+
+dev.off()
+
+embed_fonts(strPlotFileName)
+
+
+## Plot The Mean V vergence And Std Error  SEM
+##Perhapse make it more convincing by Only Include EyeV > HuntThreshold ##
+strPlotFileName = paste(strPlotExportPath,"/EyeVsPreyDistanceFiltHuntMode_ALL.pdf",sep="")
+pdf(file= strPlotFileName,
+    title="Mean Eye Vergence Vs Distance from Prey  NF,LF,DF" )
+
+lHuntEyeVDistMatrix_NL <- lEyeVDistMatrix[["NL"]]
+lHuntEyeVDistMatrix_NL[lHuntEyeVDistMatrix_NL < G_THRESHUNTVERGENCEANGLE] <- NA
+plotMeanEyeV(lHuntEyeVDistMatrix_NL,colourH[1],addNewPlot=TRUE)
+
+lHuntEyeVDistMatrix_LL <- lEyeVDistMatrix[["LL"]]
+lHuntEyeVDistMatrix_LL[lHuntEyeVDistMatrix_LL < G_THRESHUNTVERGENCEANGLE] <- NA
+plotMeanEyeV(lHuntEyeVDistMatrix_LL,colourH[2],addNewPlot=FALSE)
+
+lHuntEyeVDistMatrix_DL <- lEyeVDistMatrix[["DL"]]
+lHuntEyeVDistMatrix_DL[lHuntEyeVDistMatrix_DL < G_THRESHUNTVERGENCEANGLE] <- NA
+plotMeanEyeV(lHuntEyeVDistMatrix_DL,colourH[3],addNewPlot=FALSE)
+
+legend("topright",fill=colourH, legend = c(  expression (),
+                                             bquote(NF["s"] ~ '#' ~ .(NROW(idxNLSet) )  ),
+                                             bquote(LF["e"] ~ '#' ~ .(NROW(idxLLSet) )  ),
+                                             bquote(DF["e"] ~ '#' ~ .(NROW(idxDLSet) )  ) ) )
+mtext(side = 1,cex=0.8, line = 2.2, "Distance from prey (mm)", font=2 )
+mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence " (v^degree)  ), font=2 ) 
+
+dev.off()
+embed_fonts(strPlotFileName)
+
+
+##Plot An Example from Each 
+plot(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["NL"]][1,],xlab="Distance (mm)" ,type="l",col="red",ylim=c(0,80),main="Right Eye")
+lines(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["LL"]][1,],xlab="Distance (mm)" ,type="l",col="green",ylim=c(0,80))
+lines(seq(0,maxDist,stepDist),-lEyeRDistMatrix[["DL"]][1,],xlab="Distance (mm)" ,type="l",col="blue",ylim=c(0,80))
+
+
+
+## PLOT EYE Vs Distance ##
+nlimit <- 3
+n<- 0
+for (strGroup in strGroupID)
+{
+  plot(0, 0 ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4),main=paste("Left Eye Vs Dist To Prey ",strGroup) )
+  for (recE in lEyeMotionDat)
+  {
+    print(n)
+    if (is.null(recE))
+      next()
+    
+    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
+    if (as.character(groupID) != strGroup )
+      next()
+    
+    if (n > nlimit)
+      break
+    #lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
+    points(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="p",col="blue",ylim=c(0,45),xlim=c(0,4),cex=0.2)
+    n <- n + 1
+  }
+  
+}
+
+
+## PLOT EYE Vs Distance ##
+for (strGroup in strGroupID)
+{
+  plot(0, 0 ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4),main=paste("Right Eye Vs Dist To Prey ",strGroup) )
+  for (recE in lEyeMotionDat)
+  {
+    if (is.null(recE))
+      next()
+    
+    groupID <- datTrackedEventsRegister[unique(recE[,"RegistarIdx"]),]$groupID
+    if (as.character(groupID) != strGroup )
+      next()
+    #lines(recE[,"DistToPrey"], recE[,"LEyeAngle"] ,type="l",col="blue",ylim=c(0,45),xlim=c(0,4))
+    lines(recE[,"DistToPrey"], -1*recE[,"REyeAngle"] ,type="l",col="red",ylim=c(0,45),xlim=c(0,4))
+  }
+}
+##On Bout Leng
+
+
+
