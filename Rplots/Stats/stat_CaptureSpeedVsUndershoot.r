@@ -3,6 +3,13 @@
 ## higher undershoot predicts higher capture speeds, while undershoot also seems to predict higher distance from prey 
 ##  suggesting that LF stays further away from prey, so it does stronger capture bouts and it is undershoot that allows it to do it.
 ## Their ability to judge distance is also revealed in the the eye vergence prior to capture, where there is a relationship between EyeV and distance to prey   is shown 
+## Stohoi:
+## S1 Establish whether undershoot covaries with capture speed
+## S2 Compare cap.Speed vs UNdershoot models between groups - Do they also covary in all groups?
+## S3 compare accuracy of capture speed vs distance to prey between groups (use covariance distributions)
+## Aitiology :
+## 
+## A: Does undershoot explain capture speed and distance to prey accuracy?
 
 ### Stat Model on Capture speed vs undershoot
 
@@ -12,20 +19,70 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
+strmodel_capspeedVsUndershoot <- "
+model {
+  ##Draw capt speed from 2d gaussian
+  for (i in 1:N)
+  {
+    c[i,1:2] ~ dmnorm(mu[],prec[ , ])
+  }
 
-strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") #Processed Registry on which we add 
-
-
-##
 
 
 
-### PLOT ####
-########################################################
-###        UNdershoot Vs Capture speed               ###
+
+  ##Covariance matrix and its inverse -> the precision matrix
+  prec[1:2,1:2] <- inverse(cov[,])
+  cov[1,1] <- sigma[1]*sigma[1]
+  cov[1,2] <- sigma[1]*sigma[2]*rho
+  cov[2,1] <- sigma[1]*sigma[2]*rho
+  cov[2,2] <- sigma[2]*sigma[2]
+  
+  ## Priors 
+  sigma[1] ~ dunif(0,1) ##the undershoot - Keep it broad within the expected limits 
+  sigma[2] ~ dunif(0,100) ##the cap speed sigma 
+  rho ~ dunif(-1,1) ##The covar coefficient
+  mu[1] ~ dnorm(1,0.01) ##undershoot
+  mu[2] ~ dnorm(0,0.01) ##cap speed
+    
+  ## Synthesize data from the distribution
+  x_rand ~ dmnorm(mu[],prec[,])
+
+} "
+
+datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") ) ## THis is the Processed Register File On 
+lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
+lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
+
 datTurnVsStrikeSpeed_NL <- data.frame( cbind(Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]) )
 datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]) )
 datTurnVsStrikeSpeed_DL <- data.frame( cbind(Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]) )
+
+##
+steps < 10000
+str_vars <- c("mu","rho","sigma","x_rand")
+ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL))
+
+jags_model <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_LF, 
+                         n.adapt = 500, n.chains = 3, quiet = F)
+update(jags_model, 500)
+
+draw_LF=jags.samples(jags_model,steps,thin=2,variable.names=str_vars)
+
+##Get the synthesized data:
+plot(draw_LF$x_rand[1,9000:10000,1],draw$x_rand[2,9000:10000,1])
+plot(datTurnVsStrikeSpeed_LL)
+## Check out the covar coeffient
+hist(draw_LF$rho     )
+#mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
+
+### PLOT EMPIRICAL 
+####
+########################################################
+###        UNdershoot Vs Capture speed               ###
+
+
+
 densNL <-  kde2d(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,n=80)
 densLL <-  kde2d(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,n=80)
 densDL <-  kde2d(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,n=80)
