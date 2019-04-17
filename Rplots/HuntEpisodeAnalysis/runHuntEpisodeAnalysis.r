@@ -911,6 +911,8 @@ datDistanceToPreyVsEyeV_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$
 datDistanceToPreyVsEyeV_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]) )
 datDistanceToPreyVsEyeV_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"]) )
 
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence.pdf",sep=""))
+
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
@@ -926,10 +928,17 @@ plot(datDistanceToPreyVsEyeV_DL$DistanceToPrey,datDistanceToPreyVsEyeV_DL$EyeV,x
 legend("topright",
        legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_DL$DistanceToPrey, datDistanceToPreyVsEyeV_DL$EyeV) ) ) ) 
 
+dev.off()
+
 ############### Capture speed vs Eye V #### 
 datCaptureSpeedToPreyVsEyeV_NL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"]) )
 datCaptureSpeedToPreyVsEyeV_LL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]) )
 datCaptureSpeedToPreyVsEyeV_DL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"]) )
+
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence.pdf",sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.3,1,1))
 
 plot(datCaptureSpeedToPreyVsEyeV_NL$EyeV, datCaptureSpeedToPreyVsEyeV_NL$CaptureSpeed )
 legend("topright",
@@ -944,7 +953,7 @@ legend("topright",
        legend=paste("DF cov:",prettyNum(digits=3, cov(datCaptureSpeedToPreyVsEyeV_DL$EyeV, datCaptureSpeedToPreyVsEyeV_DL$CaptureSpeed) ) ) ) 
 
 
-
+dev.off()
 
 
 ### FIRST Bout TURN COMPARISON BETWEEN GROUPS  ###

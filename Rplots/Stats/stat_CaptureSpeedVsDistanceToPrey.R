@@ -95,6 +95,17 @@ dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
 
+## Check out the dist to prey variance  , compare estimated densities
+dLLb_sigmaD<-density(tail(draw_LF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
+dNLb_sigmaD<-density(tail(draw_NF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
+dDLb_sigmaD<-density(tail(draw_DF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
+
+dLLb_sigmaC<-density(tail(draw_LF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
+dNLb_sigmaC<-density(tail(draw_NF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
+dDLb_sigmaC<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
+
+
+
 ntail <-2000
 pBw   <- 0.1 
 ##Get the synthesized data:
@@ -114,13 +125,13 @@ adj  = 3.5
 padj <- -23.0
 las <- 1
 
-layout(matrix(c(1,2),1,2, byrow = FALSE))
+layout(matrix(c(1,2,3,4),2,2, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,1.2),ylim=c(0,60),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,1.0),ylim=c(0,40),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[1])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
@@ -151,9 +162,30 @@ legend("topright",
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
                   bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3),lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Covariance of Capture speed and Prey Distance  ",rho) ))
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Cov. Capture speed to Prey Distance  ",rho) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
+### aDDD DISTANCE TO PREY VARIANCE COMPARISON
+
+plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
+     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
+lines(dLLb_sigmaD,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_sigmaD,col=colourLegL[3],lwd=3,lty=3)
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Prey Distance  ",delta) ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
+
+### PloT CAPT SPEED VARIANCE 
+
+plot(dNLb_sigmaC,col=colourLegL[1],xlim=c(0.0,60),lwd=3,lty=1,ylim=c(0,0.3),
+     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
+lines(dLLb_sigmaC,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_sigmaC,col=colourLegL[3],lwd=3,lty=3)
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Capture Speed  ") ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
+
 
 dev.off()
 
