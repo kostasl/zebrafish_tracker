@@ -1,4 +1,4 @@
-### Kostas Lagogiannis 2019-04-15 
+### Kostas Lagogiannis 2019-04-17 
 ## Discovered relationship between the last bout speed - ie Capture speed and the undershoot ratio -
 ## higher undershoot predicts higher capture speeds, while undershoot also seems to predict higher distance from prey 
 ##  suggesting that LF stays further away from prey, so it does stronger capture bouts and it is undershoot that allows it to do it.
@@ -21,31 +21,31 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
-strmodel_capspeedVsUndershoot <- "
+strmodel_capspeedVsDistance <- "
 model {
-  ##Draw capt speed from 2d gaussian
-  for (i in 1:N)
-  {
-    c[i,1:2] ~ dmnorm(mu[],prec[ , ])
-  }
+##Draw capt speed from 2d gaussian
+for (i in 1:N)
+{
+  c[i,1:2] ~ dmnorm(mu[],prec[ , ])
+}
 
 
-  ##Covariance matrix and its inverse -> the precision matrix
-  prec[1:2,1:2] <- inverse(cov[,])
-  cov[1,1] <- sigma[1]*sigma[1]
-  cov[1,2] <- sigma[1]*sigma[2]*rho
-  cov[2,1] <- sigma[1]*sigma[2]*rho
-  cov[2,2] <- sigma[2]*sigma[2]
-  
-  ## Priors 
-  sigma[1] ~ dunif(0,1) ##the undershoot - Keep it broad within the expected limits 
-  sigma[2] ~ dunif(0,100) ##the cap speed sigma 
-  rho ~ dunif(-1,1) ##The covar coefficient
-  mu[1] ~ dnorm(1,0.01) ##undershoot
-  mu[2] ~ dnorm(0,0.01) ##cap speed
-    
-  ## Synthesize data from the distribution
-  x_rand ~ dmnorm(mu[],prec[,])
+##Covariance matrix and its inverse -> the precision matrix
+prec[1:2,1:2] <- inverse(cov[,])
+cov[1,1] <- sigma[1]*sigma[1]
+cov[1,2] <- sigma[1]*sigma[2]*rho
+cov[2,1] <- sigma[1]*sigma[2]*rho
+cov[2,2] <- sigma[2]*sigma[2]
+
+## Priors 
+sigma[1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
+sigma[2] ~ dunif(0,100) ##the cap speed sigma 
+rho ~ dunif(-1,1) ##The covar coefficient
+mu[1] ~ dnorm(1,0.01) ##Distance prey
+mu[2] ~ dnorm(0,0.01) ##cap speed
+
+## Synthesize data from the distribution
+x_rand ~ dmnorm(mu[],prec[,])
 
 } "
 
@@ -54,31 +54,32 @@ datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTra
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="")) 
 
-datTurnVsStrikeSpeed_NL <- data.frame( cbind(Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]) )
-datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]) )
-datTurnVsStrikeSpeed_DL <- data.frame( cbind(Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]) )
+### Capture Speed vs Distance to prey ###
+datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]) )
+datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]) )
+datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]) )
 
 ##
 steps <- 5000
 str_vars <- c("mu","rho","sigma","x_rand")
-ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
-ldata_NF <- list(c=datTurnVsStrikeSpeed_NL,N=NROW(datTurnVsStrikeSpeed_NL)) ##Not fed
-ldata_DF <- list(c=datTurnVsStrikeSpeed_DL,N=NROW(datTurnVsStrikeSpeed_DL)) ##Dry fed
+ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
+ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
+ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
 
-jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_LF, 
-                         n.adapt = 500, n.chains = 3, quiet = F)
+jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_LF, 
+                            n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_LF, 500)
 draw_LF=jags.samples(jags_model_LF,steps,thin=2,variable.names=str_vars)
 
 ##Not Fed
-jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_NF, 
-                         n.adapt = 500, n.chains = 3, quiet = F)
+jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_NF, 
+                            n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_NF)
 draw_NF=jags.samples(jags_model_NF,steps,thin=2,variable.names=str_vars)
 
 ##Not Fed
-jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_DF, 
-                         n.adapt = 500, n.chains = 3, quiet = F)
+jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_DF, 
+                            n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_DF, 500)
 draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
@@ -97,14 +98,14 @@ dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 ntail <-2000
 pBw   <- 0.1 
 ##Get the synthesized data:
-plot(draw_NF$x_rand[1,(steps-ntail):steps,1],draw_NF$x_rand[2,(steps-ntail):steps,1],col=colourH[1])
-points(draw_LF$x_rand[1,(steps-ntail):steps,1],draw_LF$x_rand[2,(steps-ntail):steps,1],col=colourH[2])
-points(draw_DF$x_rand[1,(steps-ntail):steps,1],draw_DF$x_rand[2,(steps-ntail):steps,1],col=colourH[3])
+plot(tail((draw_NF$x_rand[1,,1]) , ntail),tail((draw_NF$x_rand[2,,1]) , ntail),col=colourH[1])
+points(tail((draw_LF$x_rand[1,,1]) , ntail),tail((draw_LF$x_rand[2,,1]) , ntail),col=colourH[2])
+points(tail((draw_DF$x_rand[1,,1]) , ntail),tail((draw_DF$x_rand[2,,1]) , ntail),col=colourH[3])
 
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelCaptureSpeedVsUndershoot_SetC2.pdf",sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelCaptureSpeedVsDistToPrey_SetC2.pdf",sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -119,10 +120,10 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,2),ylim=c(0,60),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,1.2),ylim=c(0,60),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[1])
-mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
+mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
@@ -150,7 +151,7 @@ legend("topright",
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
                   bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3),lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Capture speed to Undershoot Covariance ",rho) ))
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Covariance of Capture speed and Prey Distance  ",rho) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
