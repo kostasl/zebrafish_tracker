@@ -906,36 +906,12 @@ legend("topright",
 
 dev.off()
 
-############### Distance to prey vs Eye V at the onset of capture bout #### 
-datDistanceToPreyVsEyeV_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"]) )
-datDistanceToPreyVsEyeV_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]) )
-datDistanceToPreyVsEyeV_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"]) )
-
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence.pdf",sep=""))
-
-layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.3,1,1))
-plot(datDistanceToPreyVsEyeV_NL$DistanceToPrey,datDistanceToPreyVsEyeV_NL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
-legend("topright",
-       legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_NL$DistanceToPrey, datDistanceToPreyVsEyeV_NL$EyeV) ) ) ) 
-
-plot(datDistanceToPreyVsEyeV_LL$DistanceToPrey,datDistanceToPreyVsEyeV_LL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
-legend("topright",
-       legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_LL$DistanceToPrey, datDistanceToPreyVsEyeV_LL$EyeV) ) ) ) 
-
-plot(datDistanceToPreyVsEyeV_DL$DistanceToPrey,datDistanceToPreyVsEyeV_DL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
-legend("topright",
-       legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_DL$DistanceToPrey, datDistanceToPreyVsEyeV_DL$EyeV) ) ) ) 
-
-dev.off()
-
 ############### Capture speed vs Eye V #### 
 datCaptureSpeedToPreyVsEyeV_NL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"]) )
 datCaptureSpeedToPreyVsEyeV_LL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]) )
 datCaptureSpeedToPreyVsEyeV_DL <- data.frame( cbind(CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"],EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"]) )
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/CaptureSpeedVsEyeVergence.pdf",sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
