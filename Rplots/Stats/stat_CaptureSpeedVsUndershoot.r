@@ -59,21 +59,102 @@ datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Tu
 datTurnVsStrikeSpeed_DL <- data.frame( cbind(Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]) )
 
 ##
-steps < 10000
+steps <- 5000
 str_vars <- c("mu","rho","sigma","x_rand")
-ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL))
+ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
+ldata_NF <- list(c=datTurnVsStrikeSpeed_NL,N=NROW(datTurnVsStrikeSpeed_NL)) ##Not fed
+ldata_DF <- list(c=datTurnVsStrikeSpeed_DL,N=NROW(datTurnVsStrikeSpeed_DL)) ##Dry fed
 
-jags_model <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_LF, 
+jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_LF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model, 500)
+update(jags_model_LF, 500)
+draw_LF=jags.samples(jags_model_LF,steps,thin=2,variable.names=str_vars)
 
-draw_LF=jags.samples(jags_model,steps,thin=2,variable.names=str_vars)
+##Not Fed
+jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_NF, 
+                         n.adapt = 500, n.chains = 3, quiet = F)
+update(jags_model_NF)
+draw_NF=jags.samples(jags_model_NF,steps,thin=2,variable.names=str_vars)
 
+##Not Fed
+jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_DF, 
+                         n.adapt = 500, n.chains = 3, quiet = F)
+update(jags_model_DF, 500)
+draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
+
+### Estimate  densities  ###
+nContours <- 5
+zLL <- kde2d(c(tail(draw_LF$mu[1,,1],ntail)), c(tail(draw_LF$mu[2,,1],ntail)),n=80)
+zNL <- kde2d(c(tail(draw_NF$mu[1,,1],ntail)), c(tail(draw_NF$mu[2,,1],ntail)),n=80)
+zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=80)
+
+## Check out the covar coeffient , compare estimated densities
+dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
+dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
+dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
+
+
+ntail <-2000
+pBw   <- 0.1 
 ##Get the synthesized data:
-plot(draw_LF$x_rand[1,9000:10000,1],draw$x_rand[2,9000:10000,1])
-plot(datTurnVsStrikeSpeed_LL)
-## Check out the covar coeffient
-hist(draw_LF$rho     )
+plot(draw_NF$x_rand[1,(steps-ntail):steps,1],draw_NF$x_rand[2,(steps-ntail):steps,1],col=colourH[1])
+points(draw_LF$x_rand[1,(steps-ntail):steps,1],draw_LF$x_rand[2,(steps-ntail):steps,1],col=colourH[2])
+points(draw_DF$x_rand[1,(steps-ntail):steps,1],draw_DF$x_rand[2,(steps-ntail):steps,1],col=colourH[3])
+
+####################################
+## PLot Model / Means and covariance ##
+## Open Output PDF 
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+
+outer = FALSE
+line = 1 ## SubFig Label Params
+cex = 1.1
+adj  = 3.5
+padj <- -23.0
+las <- 1
+
+layout(matrix(c(1,2),1,2, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.3,1,1))
+
+## Plot the mean of the 2D Models ##
+ntail <- 1000
+plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,2),ylim=c(0,60),ylab=NA,xlab=NA )
+points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[1])
+mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed " ))
+
+contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+
+
+legend("topleft",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]))  ),
+                  bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
+                  bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       pch=pchL, col=colourLegL)
+mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
+## Plot the covariance ##
+plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,3),
+     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
+lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
+legend("topright",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3),lwd=3)
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Capture speed to Undershoot Covariance ",rho) ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
+
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
 
 ### PLOT EMPIRICAL 
