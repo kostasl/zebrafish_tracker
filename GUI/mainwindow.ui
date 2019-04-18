@@ -47,7 +47,7 @@
      <number>1</number>
     </property>
     <property name="statusTip">
-     <string>Press p to Pause, r to Run, t to Track</string>
+     <string/>
     </property>
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>

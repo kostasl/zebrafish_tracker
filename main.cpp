@@ -210,7 +210,7 @@ bool bExiting;
 bool bTracking;
 bool bTrackFood         = true;
 bool bAddPreyManually   = false;
-bool bMeasure2pDistance = true; /// A mode allowing 2point distance measurement
+bool bMeasure2pDistance = false; /// A mode allowing 2point distance measurement
 bool bTrackFish         = true;
 bool bRecordToFile      = true;
 bool bSaveImages            = false;
@@ -2037,7 +2037,6 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
        if (bMeasure2pDistance)
        {
            pwindow_main->LogEvent(QString(">> Manual Distance Measurement ON <<"));
-           pwindow_main->statusBar()->showMessage(("Measurement point set"));
            pwindow_main->SetTrackerState(7);
            bPaused = true;
        }

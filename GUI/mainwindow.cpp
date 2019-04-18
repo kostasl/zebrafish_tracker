@@ -118,8 +118,8 @@ MainWindow::MainWindow(QWidget *parent) :
     createSpinBoxes();
     nFrame = 0;
     //Reset Point Pair
-    userPointPair.first.x = userPointPair.first.y = 0;
-    userPointPair.second.x = userPointPair.second.y = 0;
+    userPointPair.first.x = userPointPair.first.y = -10;
+    userPointPair.second.x = userPointPair.second.y = -10;
 }
 
 void MainWindow::createSpinBoxes()
@@ -283,18 +283,28 @@ void MainWindow::SetTrackerState(int stateID)
     switch (stateID)
     {
         case 0: //paused
-            this->statusBar()->showMessage(tr("Paused"));
+        {
+            this->statusBar()->showMessage(tr("Paused, press r to resume"));
+            bPaused = true;
+        }
+        break;
         case 1:
             this->statusBar()->showMessage(tr("Tracking - press p to pause"));
+        break;
         case 5:
             this->statusBar()->showMessage(tr("Click to manually set new prey item to track "));
+        break;
         case 6:
             {
                 this->statusBar()->showMessage(tr("Measure mode, click on 1st source point of measurement"));
              }
+        break;
         case 7:
             this->statusBar()->showMessage(tr("Click on 2nd point of measurement"));
-
+        break;
+        case 8:
+              this->statusBar()->showMessage(tr("New point pair added. "));
+        break;
         default:
             this->statusBar()->showMessage(tr("Tracking - press p to pause"));
     }
@@ -776,7 +786,22 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
             }
             if (bMeasure2pDistance)
             {
-                this->ui->statusbar->showMessage(("Measurement point set"))
+                this->ui->statusbar->showMessage(("Measurement point set"));
+                if (userPointPair.first.x < 0)
+                {
+                    userPointPair.first.x = ptMouse.x;
+                    userPointPair.first.y = ptMouse.y;
+                    this->SetTrackerState(7);
+                }else
+                {
+                    userPointPair.second.x = ptMouse.x;
+                    userPointPair.second.y = ptMouse.y;
+                    vMeasureLines.push_back(userPointPair);
+                    this->LogEvent(QString("Distance : ") + QString::number( cv::norm(userPointPair.second-userPointPair.first)));
+                    this->SetTrackerState(0);
+                    //Reset Point
+                    userPointPair.first.x = -10;
+                }
 
             }
         }
