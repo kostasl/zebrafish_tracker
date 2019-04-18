@@ -11,6 +11,10 @@ extern QFile outfooddatafile;
 
 extern fishModels vfishmodels; //Vector containing live fish models
 extern foodModels vfoodmodels; //Vector containing live fish models
+extern pointPairs vMeasureLines; //vector of point pairs/ user defined lines
+
+std::pair<cv::Point,cv::Point> userPointPair; //The currently defined point pair prior to adding to list
+
 extern bool bPaused;
 extern bool bStoreThisTemplate;
 extern bool bDraggingTemplateCentre;
@@ -35,7 +39,8 @@ extern bool bRemovePixelNoise;
 extern bool bUseBGModelling;
 extern bool bUseGPU;
 extern bool bUseHistEqualization; //For eye Segmentation
-
+extern bool bAddPreyManually; //In this mode, a left click adds a new prey item
+extern bool bMeasure2pDistance; //In this mode clicks are interpred as measurement points
 
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
@@ -44,6 +49,7 @@ bool bDraggingRoiPoint;
 extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
 cv::Point* ptDrag;
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -111,6 +117,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     createSpinBoxes();
     nFrame = 0;
+    //Reset Point Pair
+    userPointPair.first.x = userPointPair.first.y = 0;
+    userPointPair.second.x = userPointPair.second.y = 0;
 }
 
 void MainWindow::createSpinBoxes()
@@ -268,6 +277,28 @@ void MainWindow::LogEvent(QString strMessage)
     }
 }
 
+void MainWindow::SetTrackerState(int stateID)
+{
+
+    switch (stateID)
+    {
+        case 0: //paused
+            this->statusBar()->showMessage(tr("Paused"));
+        case 1:
+            this->statusBar()->showMessage(tr("Tracking - press p to pause"));
+        case 5:
+            this->statusBar()->showMessage(tr("Click to manually set new prey item to track "));
+        case 6:
+            {
+                this->statusBar()->showMessage(tr("Measure mode, click on 1st source point of measurement"));
+             }
+        case 7:
+            this->statusBar()->showMessage(tr("Click on 2nd point of measurement"));
+
+        default:
+            this->statusBar()->showMessage(tr("Tracking - press p to pause"));
+    }
+}
 
 ///
 /// \brief getFoodItemAtLocation Return Pointer to 1st food item found at clicked (mouse) location
@@ -735,7 +766,20 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     else
     {
         if (mouseEvent->buttons() == Qt::LeftButton)
+        {
             bSceneMouseLButtonDown = true;
+            if (bAddPreyManually)
+            {
+                foodModel* pfood = new foodModel(cv::KeyPoint(ptMouse,1),++gi_MaxFoodID  );
+                pfood->blobMatchScore = 0;
+                vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
+            }
+            if (bMeasure2pDistance)
+            {
+                this->ui->statusbar->showMessage(("Measurement point set"))
+
+            }
+        }
 
         if (mouseEvent->buttons() == Qt::RightButton){
             foodModel* food = getFoodItemAtLocation(ptMouse);
@@ -851,7 +895,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
             {
                 bDraggingTemplateCentre = true;
                 LogEvent("[info] Adjust Template from position ON- Start Dragging");
-                //this->statusBar()->set
+                this->statusBar()->showMessage(tr("Adjust fish detection template position"));
                 qDebug() << "Start Dragging Fish Bound from position x: " << ptMouse.x << " y:" << ptMouse.y;
 
             }

@@ -40,6 +40,7 @@ public:
     void setTotalFrames(uint FrameCount);
     void UpdateTailSegSizeSpinBox(float fTailSize);
     void LogEvent(QString strMessage);
+    void SetTrackerState(int stateID);
 
     foodModel* getFoodItemAtLocation(cv::Point ptLocation); //Return Pointer to food object at under scene loc coordinates indicated
     unsigned int nFrame = 0;

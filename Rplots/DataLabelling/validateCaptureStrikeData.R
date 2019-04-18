@@ -17,6 +17,11 @@ datCaptureBoutsToValidate <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAna
 ##Save a backup before changing anything
 saveRDS(datCaptureBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_CaptureBoutData_ToValidate_backup.rds",sep="")) ##Save With Dataset Idx Identifier
 
+##Make desired columns if missing 
+if (!any(names(datCaptureBoutsToValidate) == "MarkValidated"))
+  datCaptureBoutsToValidate$MarkValidated <- NA
+
+
 idxToValidate <- datCaptureBoutsToValidate$RegistarIdx
 
 #idxToValidate <- c(idxReg_DL,idxReg_NL,idxReg_LL)

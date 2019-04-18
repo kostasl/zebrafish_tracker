@@ -22,6 +22,9 @@
  ///    * R reset fish Spline
  ///    * W Toggle output to CSV file writing
  ///    * T to save current tracked region as new template
+ ///    * M Manual Measure Distance (px) -
+ ///    * E Manually Set Eye Angles
+  ///    * F Manually set prey position (which is then tracked)
  ///    * q Exit Quit application
  ///*
  ///*
@@ -180,6 +183,7 @@ cv::Rect rect_pasteregion;
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
 fishModels vfishmodels; //Vector containing live fish models
 foodModels vfoodmodels;
+pointPairs vMeasureLines; //Point pairs defining line distances
 
 uint gi_MaxFishID;
 uint gi_MaxFoodID; //Declared in Model Header Files
@@ -204,10 +208,12 @@ bool bPaused;
 bool bStartPaused;
 bool bExiting;
 bool bTracking;
-bool bTrackFood    = true;
-bool bTrackFish    = true;
-bool bRecordToFile = true;
-bool bSaveImages   = false;
+bool bTrackFood         = true;
+bool bAddPreyManually   = false;
+bool bMeasure2pDistance = true; /// A mode allowing 2point distance measurement
+bool bTrackFish         = true;
+bool bRecordToFile      = true;
+bool bSaveImages            = false;
 bool b1stPointSet;
 bool bMouseLButtonDown;
 //bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
@@ -2012,7 +2018,33 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         pwindow_main->LogEvent(QString("<< [DISABLED] Recording Tracks OFF >>"));
     }
 
+    /// Manual Prey addition mode - a left click adds new prey
+    if ((char)keyboard == 'P')
+    {
 
+        bAddPreyManually = !bAddPreyManually;
+
+        if (bAddPreyManually)
+            pwindow_main->LogEvent(QString(">> Manual Prey Adding ON <<"));
+        else
+            pwindow_main->LogEvent(QString("<< Manual Prey Adding OFF >>"));
+    }
+
+    /// Measure Distance In straight Line Mode
+    if ((char)keyboard == 'M')
+    {
+       bMeasure2pDistance= !bMeasure2pDistance;
+       if (bMeasure2pDistance)
+       {
+           pwindow_main->LogEvent(QString(">> Manual Distance Measurement ON <<"));
+           pwindow_main->statusBar()->showMessage(("Measurement point set"));
+           pwindow_main->SetTrackerState(7);
+           bPaused = true;
+       }
+       else
+           pwindow_main->LogEvent(QString("<< Manual Distance Measurement  OFF >>"));
+           //pwindow_main->ui->statusBar->showMessage(("Adjust fish detection template position"));
+    }
 
 
     if ((char)keyboard == 'q')
@@ -2770,8 +2802,6 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
                 b1stPointSet = false; //Rotate To 1st Point Again
              }
         }
-
-
 
 
 
