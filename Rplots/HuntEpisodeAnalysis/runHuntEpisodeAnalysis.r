@@ -794,6 +794,8 @@ for (gp in strGroupID)
                                                                           datMotionBoutCombined$boutRank == 1 ,]$vMotionBoutDistanceToPrey_mm,
                                   doesCaptureStrike=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                               datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm >= G_THRES_CAPTURE_SPEED ),
+                                  CaptureStrikeFrame=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                                datMotionBoutCombined$boutRank == 1 ,]$vMotionBout_On  ),
                                   CaptureStrikeEyeVergence = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                                       datMotionBoutCombined$boutRank == 1 ,]$OnSetEyeVergence
                                   )
@@ -831,6 +833,7 @@ for (gp in strGroupID)
 
 ##Save List on First Bout Data
 saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
+#saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_CaptureBoutData_ToValidate",".rds",sep="") ) #Processed Registry on which we add )
 
 
 
