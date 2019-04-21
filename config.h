@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <opencv2/core/core.hpp>
 #include <limits>
 #include <string>
 #include <cmath>
@@ -102,5 +103,8 @@ extern int iEyeMaskSepWidth; //Line width separating the eyes in the Head Image
 extern double sigma ;
 extern int M ; //Gaussian Kernel Size
 
+/// \brief pointPairs is a vector holding points that the user chooses so as to measure distances between arbitrary points
+typedef std::pair<cv::Point,cv::Point>  pointPair;
+typedef std::vector<pointPair > pointPairs;
 
 #endif // CONFIG_H

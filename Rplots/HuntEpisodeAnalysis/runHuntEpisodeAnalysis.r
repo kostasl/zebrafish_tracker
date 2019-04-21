@@ -597,6 +597,8 @@ if (bSaveNewMotionData)
 
 ####Select Subset Of Data To Analyse
 datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
+#saveRDS(datMotionBoutCombinedAll,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate",".rds",sep="") ) #Processed Registry on which we add )
+
 #datMotionBoutCombined$groupID <- levels(datTrackedEventsRegister$groupID)[datMotionBoutCombined$groupID]
 datEyeMotionCombinedAll <-  data.frame( do.call(rbind,lEyeMotionDat ) )
 
@@ -833,7 +835,7 @@ for (gp in strGroupID)
 
 ##Save List on First Bout Data
 saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
-#saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_CaptureBoutData_ToValidate",".rds",sep="") ) #Processed Registry on which we add )
+
 
 
 

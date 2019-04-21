@@ -210,7 +210,7 @@ bool bExiting;
 bool bTracking;
 bool bTrackFood         = true;
 bool bAddPreyManually   = false;
-bool bMeasure2pDistance = false; /// A mode allowing 2point distance measurement
+bool bMeasure2pDistance = true; /// A mode allowing 2point distance measurement
 bool bTrackFish         = true;
 bool bRecordToFile      = true;
 bool bSaveImages            = false;
@@ -370,7 +370,8 @@ int main(int argc, char *argv[])
         "{EnableCUDA cuda | 0  | Use CUDA for MOG, and mask processing - if available  }"
         "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
         "{EyeHistEqualization histEq | 0  | Use hist. equalization to enhance eye detection contrast  }"
-         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
+        "{TrackFish ft | 1  | Track Fish not just the moving prey }"
+        "{MeasureMode M | 0 | Click 2 points to measure distance to prey}"
         ;
 
 //
@@ -379,7 +380,8 @@ int main(int argc, char *argv[])
     stringstream ssMsg;
     ssMsg<<"Zebrafish Behavioural Video Tracker"<< std::endl;
     ssMsg<<"--------------------------" << std::endl;
-    ssMsg<<"Author : Konstantinos Lagogiannis 2017"<<std::endl;
+    ssMsg<<"Author : Konstantinos Lagogiannis 2017, while in Meyer Lab at King's College London"<<std::endl;
+    ssMsg<< "email: costaslag@gmail.com"<<std::endl;
     ssMsg<<"./zebraprey_track <outfolder> <inVideoFile> <startframe=1> <stopframe=0> <duration=inf>"<<std::endl;
     ssMsg<<"(note: output folder is automatically generated when absent)"<<std::endl;
     ssMsg << "Example: \n  Use checkFilesProcessed.sh script to generate list of videos to processes then execute as : " << std::endl;
@@ -510,6 +512,8 @@ int main(int argc, char *argv[])
     if (parser.has("EyeHistEqualization"))
         bUseHistEqualization = (parser.get<int>("EyeHistEqualization") == 1)?true:false;
 
+
+
     ///Disable OPENCL in case SEG Fault is hit - usually from MOG when running multiple tracker processes
     if (parser.has("DisableOpenCL"))
             if (parser.get<int>("DisableOpenCL") == 1)
@@ -525,6 +529,8 @@ int main(int argc, char *argv[])
     if (parser.has("EnableCUDA"))
            bUseGPU = (parser.get<int>("EnableCUDA") == 1)?true:false;
 
+    if (parser.has("MeasureMode"))
+        bMeasure2pDistance = (parser.get<int>("MeasureMode") == 1)?true:false;
 
 
     //If No video Files have been loaded then Give GUI to User
@@ -879,6 +885,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     if (bRenderToDisplay)
         drawAllROI(outframe);
 
+    if (bMeasure2pDistance)
+        drawUserDefinedPoints(outframe);
     //Redraw ROI Mask
     if (bROIChanged)
     {
@@ -2911,6 +2919,18 @@ void drawAllROI(cv::Mat& frame)
     }
 }
 
+/// Draws all paired points found in the vMeasureLines vector - where user defined points are stored by the user when
+/// in measuremode .
+void drawUserDefinedPoints(cv::Mat& frame)
+{
+    for (std::vector<pointPair>::iterator it = vMeasureLines.begin(); it != vMeasureLines.end(); ++it)
+    {
+        pointPair pPoints = (pointPair)(*it);
+        cv::circle(frame,pPoints.first,1,cv::Scalar(0,200,60),1);
+        cv::circle(frame,pPoints.second,1,cv::Scalar(20,60,220),1);
+    }
+
+}
 
 ///
 /// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords

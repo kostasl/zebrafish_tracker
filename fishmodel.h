@@ -175,8 +175,6 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h);
 ///
 typedef std::map<zftID,fishModel* > fishModels;
 
-/// \brief pointPairs is a vector holding points that the user chooses so as to measure distances between arbitrary points
-typedef std::vector<std::pair<cv::Point,cv::Point> > pointPairs;
 
 
 class CompareFishScore {

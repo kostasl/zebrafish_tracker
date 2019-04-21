@@ -25,6 +25,7 @@ extern int g_SegFoodThesMax; //Food Segmentation Threshold
 extern int gthresEyeSeg;
 extern int gi_maxEllipseMajor;
 extern int gi_minEllipseMajor;
+extern uint uiStopFrame;
 extern QElapsedTimer gTimer;
 extern ltROIlist vRoi;
 extern int gFishBoundBoxSize;
@@ -680,7 +681,7 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 
     // get the scene pos in the item's local coordinate space
     QPointF ptImg = item->mapFromScene(ptSceneclick);
-    cv::Point ptMouse(ptImg.x(),ptImg.y());
+    cv::Point ptMouse((int)ptImg.x(),(int)ptImg.y());
 
     //qDebug() << "Mouse Mv";
     if (bDraggingTemplateCentre ) //bDraggingTemplateCentre
@@ -797,7 +798,20 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
                     userPointPair.second.x = ptMouse.x;
                     userPointPair.second.y = ptMouse.y;
                     vMeasureLines.push_back(userPointPair);
-                    this->LogEvent(QString("Distance : ") + QString::number( cv::norm(userPointPair.second-userPointPair.first)));
+                    QString strMetro = QString("[INFO] Prey pos X:") + QString::number(userPointPair.first.x) +
+                            QString(" Y:") + QString::number(userPointPair.first.y) +
+                            QString(" Distance: ") + QString::number( cv::norm(userPointPair.second-userPointPair.first));
+                    //Compose a comma delimeted string contaning the validation bout data - user can copy paste them to the validation script
+                    QString strDat = QString("[DATA] [") + QString::number(userPointPair.first.x) +
+                            QString(",") + QString::number(userPointPair.first.y) +
+                            QString(",") + QString::number(userPointPair.second.x) +
+                            QString(",") + QString::number(userPointPair.second.y) +
+                            QString(",") + QString::number(nFrame) +
+                            QString(",") + QString::number(uiStopFrame) ;
+
+                    this->LogEvent(strMetro );
+                    this->LogEvent(strDat);
+                    qDebug() << strMetro;
                     this->SetTrackerState(0);
                     //Reset Point
                     userPointPair.first.x = -10;

@@ -140,6 +140,7 @@ void addROI(ltROI& newRoi);
 void deleteROI(cv::Point mousePos);
 /// \fn Draw the Regions on the frame image
 void drawAllROI(cv::Mat& frame);
+void drawUserDefinedPoints(cv::Mat& frame);
 
 /// \fn  ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi, cv::Point pnt)
 /// \brief Loop Over ROI
