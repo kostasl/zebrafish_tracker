@@ -9,7 +9,7 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
-datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") ) ## THis is the Processed Register File On 
+datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 ## The Original list if the lFirstBout data from runHuntepisode analysis
 datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
 
@@ -20,6 +20,16 @@ saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalys
 ##Make desired columns if missing 
 if (!any(names(datMotionBoutsToValidate) == "MarkValidated"))
   datMotionBoutsToValidate$MarkValidated <- NA
+if (!any(names(datMotionBoutsToValidate) == "vd_PreyX"))
+  datMotionBoutsToValidate$vd_PreyX <- NA
+if (!any(names(datMotionBoutsToValidate) == "vd_PreyY"))
+datMotionBoutsToValidate$vd_PreyY <- NA
+if (!any(names(datMotionBoutsToValidate) == "vd_MouthX"))
+datMotionBoutsToValidate$vd_MouthX <- NA
+if (!any(names(datMotionBoutsToValidate) == "vd_MouthY"))
+datMotionBoutsToValidate$vd_MouthY <- NA
+  
+  
 
 
 datCaptureBoutsToValidate <- datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ] 
@@ -52,8 +62,53 @@ for (idx in idxToValidate)
   
   execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=NULL,stderr =NULL) ## stdout=FALSE stderr = FALSE
   
+  if (execres != 0)
+    stop(execres) ##Stop If Application Exit Status is not success
   
-}
+  flush(con=stdin())
+  flush(con=stdout())
+  ##Show user Prompt for bout validation input
+  message(paste("\n\n ### Event's ", row.names(rec) , "  ####" ) )
+  
+  strDat <-""
+  while ( nchar(strDat) < 3 && substr(strDat,1,1) != 'c')
+    strDat <- readline(prompt="# Validation Data [Prey X, Y, Mouth X,Y,Frame Bout On, Bout Off ] :")
+  
+  
+  ## extract validation data on prey location and fish mouth position ##
+  strDat <- gsub(strDat,pattern = "[][]",replacement = "")
+  arrDat <- strsplit(strDat,"," )[[1]]
+  stopifnot(NROW(arrDat) > 5 ) ##Stop if array data not found
+  preyX <- as.numeric( arrDat[1]);  preyY  <- as.numeric(arrDat[2]);
+  mouthX <- as.numeric(arrDat[3]); mouthY <- as.numeric(arrDat[4]);
+  boutOn <- as.numeric(arrDat[5]) - rec$startFrame; boutOff <- as.numeric(arrDat[6]) - rec$startFrame
+  recUpd<- within( datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ],{ ##Multiple vars 
+    vd_PreyY <- preyY
+    vd_PreyX <- preyX
+    vd_MouthX <- mouthX
+    vd_MouthY <- mouthY
+    vMotionBout_On <- boutOn
+    vMotionBout_Off <- boutOff
+    vMotionBoutDistanceToPrey_mm <- DIM_MMPERPX*(sqrt((preyX-mouthX)^2+(preyY-mouthY)^2 ))
+  })
+  
+  recUpd
+  ##Pass data to record   
+  strKeyC <- readline(prompt="### Mark Validated ? (y/n):")
+  if (strKeyC == 'y')
+  {
+    recUpd$MarkValidated <- 1
+    datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ] <- recUpd
+  }
+  
+  strKeyC <- readline(prompt="### Move to next or quit ? (n/q):")
+  if (strKeyC == 'q')
+    break;
+  
+  
+} ## end of loop 
+##Update Capture bouts back to original dataframe ##
+datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ]  <- datCaptureBoutsToValidate
 
-saveRDS(datCaptureBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_CaptureBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
-
+saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
+saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
