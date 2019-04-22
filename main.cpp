@@ -1462,6 +1462,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 continue;
 
              pfish = ft->second;
+             assert(pfish);
              ///Does this Blob Belong To A Known Fish Model?
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
              if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 )
@@ -3500,7 +3501,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
               {
                   ss.str(""); //Empty String
-                  ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta;
+                  ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta; //Store to global variable
                   cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
                   fish->nFailedEyeDetectionCount = 0; //Reset Error Count
               }

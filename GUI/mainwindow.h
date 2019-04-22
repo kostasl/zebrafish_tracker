@@ -81,6 +81,7 @@ protected:
     QImage qimgHead; //SCene Image Updated in ShowCV Image
     cv::Mat frameScene; //CvMat Last Frame Drawn
 private slots:
+
     void on_spinBoxTemplateThres_valueChanged(int arg1);
 
     void on_spinBoxMOGBGRatio_valueChanged(int arg1);
@@ -122,6 +123,8 @@ private slots:
     void on_checkBoxMOG_stateChanged(int arg1);
 
 private:
+    void reportUserMeasurement(cv::Point ptMouse);
+
     Ui::MainWindow      *ui;
 
     /**

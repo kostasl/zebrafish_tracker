@@ -31,9 +31,11 @@ datMotionBoutsToValidate$vd_MouthY <- NA
   
   
 
-
+##Get the Capture strike bout subset
 datCaptureBoutsToValidate <- datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ] 
-idxToValidate <- datCaptureBoutsToValidate$RegistarIdx
+
+## Exclude the already Validated records
+idxToValidate <- datCaptureBoutsToValidate[is.na(datCaptureBoutsToValidate$MarkValidated), ]$RegistarIdx
 
 #idxToValidate <- c(idxReg_DL,idxReg_NL,idxReg_LL)
 
@@ -82,22 +84,27 @@ for (idx in idxToValidate)
   preyX <- as.numeric( arrDat[1]);  preyY  <- as.numeric(arrDat[2]);
   mouthX <- as.numeric(arrDat[3]); mouthY <- as.numeric(arrDat[4]);
   boutOn <- as.numeric(arrDat[5]) - rec$startFrame; boutOff <- as.numeric(arrDat[6]) - rec$startFrame
-  recUpd<- within( datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ],{ ##Multiple vars 
-    vd_PreyY <- preyY
+  fOnSetEyeVergence <- as.numeric(arrDat[7])
+  ##update temp record - which push to main data.frame after user mark-validates it
+  ## \note Angle to prey Not Recalculated , changes to bout frames  invalidates vMotionBoutDistanceTravelled_mm
+  recUpd<- within( datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ],{ ##Multiple vars update
+    vd_PreyY <- preyY 
     vd_PreyX <- preyX
     vd_MouthX <- mouthX
     vd_MouthY <- mouthY
     vMotionBout_On <- boutOn
-    vMotionBout_Off <- boutOff
+    vMotionBout_Off <- boutOff 
     vMotionBoutDistanceToPrey_mm <- DIM_MMPERPX*(sqrt((preyX-mouthX)^2+(preyY-mouthY)^2 ))
+    OnSetEyeVergence <- fOnSetEyeVergence
   })
   
-  recUpd
-  ##Pass data to record   
+  message(paste("Distance to prey:", prettyNum(digits=3,recUpd$vMotionBoutDistanceToPrey_mm)," eyeV:",prettyNum(digits=3,recUpd$OnSetEyeVergence) ))
+  ## Pass data to record   // SAVE
   strKeyC <- readline(prompt="### Mark Validated ? (y/n):")
   if (strKeyC == 'y')
   {
     recUpd$MarkValidated <- 1
+    ##update data frame
     datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ] <- recUpd
   }
   

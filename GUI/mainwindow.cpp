@@ -747,6 +747,57 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 }//Mouse Move Event
 
 
+/// \brief Outputs the 2 point click locations, for prey and mouth point positions - as set by the user
+/// Additionally reports the eye vergence -
+/// This function is used to validate the capture strike data from the retracked events- it is used with the script
+/// validateCaptureStrikeData.R
+///
+void MainWindow::reportUserMeasurement(cv::Point ptMouse)
+{
+ ///
+    float fg_EyeVergence = 0.0f;
+    fishModels::reverse_iterator rt = vfishmodels.rbegin();
+    if (rt != vfishmodels.rend() ) //Pick the the last fish
+    {
+       fishModel* pfish = rt->second;
+        if (pfish)
+            fg_EyeVergence = pfish->leftEyeTheta - pfish->rightEyeTheta;
+    }
+
+    this->ui->statusbar->showMessage(("Measurement point set"));
+    if (userPointPair.first.x < 0)
+    {
+        userPointPair.first.x = ptMouse.x;
+        userPointPair.first.y = ptMouse.y;
+        this->SetTrackerState(7);
+    }else
+    {
+        userPointPair.second.x = ptMouse.x;
+        userPointPair.second.y = ptMouse.y;
+        vMeasureLines.push_back(userPointPair);
+        QString strMetro = QString("[INFO] Prey pos X:") + QString::number(userPointPair.first.x) +
+                QString(" Y:") + QString::number(userPointPair.first.y) +
+                QString(" Distance: ") + QString::number( cv::norm(userPointPair.second-userPointPair.first)) +
+                QString(" EyeV: ") + QString::number( fg_EyeVergence);
+        //Compose a comma delimeted string contaning the validation bout data - user can copy paste them to the validation script
+        QString strDat = QString("[DATA] [") + QString::number(userPointPair.first.x) +
+                QString(",") + QString::number(userPointPair.first.y) +
+                QString(",") + QString::number(userPointPair.second.x) +
+                QString(",") + QString::number(userPointPair.second.y) +
+                QString(",") + QString::number(nFrame) +
+                QString(",") + QString::number(uiStopFrame) +
+                QString(",") + QString::number(fg_EyeVergence)+
+                QString("]");
+
+        this->LogEvent(strMetro );
+        this->LogEvent(strDat);
+        qDebug() << strMetro;
+        this->SetTrackerState(0);
+        //Reset Point
+        userPointPair.first.x = -10;
+    }
+}
+
 ///
 /// \brief MainWindow::mousePressEvent
 /// Two Cases - Either A Move the Fish Bounding Window Initiates
@@ -754,7 +805,7 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 /// \param mouseEvent
 ///
 
-void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
+void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 {
 
     QPointF ptSceneclick = mouseEvent->scenePos();
@@ -785,38 +836,11 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
                 pfood->blobMatchScore = 0;
                 vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
             }
+
             if (bMeasure2pDistance)
             {
-                this->ui->statusbar->showMessage(("Measurement point set"));
-                if (userPointPair.first.x < 0)
-                {
-                    userPointPair.first.x = ptMouse.x;
-                    userPointPair.first.y = ptMouse.y;
-                    this->SetTrackerState(7);
-                }else
-                {
-                    userPointPair.second.x = ptMouse.x;
-                    userPointPair.second.y = ptMouse.y;
-                    vMeasureLines.push_back(userPointPair);
-                    QString strMetro = QString("[INFO] Prey pos X:") + QString::number(userPointPair.first.x) +
-                            QString(" Y:") + QString::number(userPointPair.first.y) +
-                            QString(" Distance: ") + QString::number( cv::norm(userPointPair.second-userPointPair.first));
-                    //Compose a comma delimeted string contaning the validation bout data - user can copy paste them to the validation script
-                    QString strDat = QString("[DATA] [") + QString::number(userPointPair.first.x) +
-                            QString(",") + QString::number(userPointPair.first.y) +
-                            QString(",") + QString::number(userPointPair.second.x) +
-                            QString(",") + QString::number(userPointPair.second.y) +
-                            QString(",") + QString::number(nFrame) +
-                            QString(",") + QString::number(uiStopFrame) ;
 
-                    this->LogEvent(strMetro );
-                    this->LogEvent(strDat);
-                    qDebug() << strMetro;
-                    this->SetTrackerState(0);
-                    //Reset Point
-                    userPointPair.first.x = -10;
-                }
-
+                reportUserMeasurement(ptMouse);
             }
         }
 
