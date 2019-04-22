@@ -119,3 +119,43 @@ datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ]  <- datCaptureB
 
 saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
 saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
+
+## Recalc First Bout Data based on Validated Info ###
+
+strGroupID <- levels(datTrackedEventsRegister$groupID)
+lFirstBoutPoints <- list() ##Add Dataframes Of 1st bout Turns for Each Group
+###### PLOT BOUTTURN Vs Prey Angle Coloured with BOUTSEQ ################
+for (gp in strGroupID)
+{
+  groupID <- which(levels(datTrackedEventsRegister$groupID) == gp)
+  
+  datMotionBoutsToValidate$vMotionBoutDistanceToPrey_mm <- as.numeric(datMotionBoutsToValidate$vMotionBoutDistanceToPrey_mm)
+  datMotionBoutCombined <-datMotionBoutsToValidate[datMotionBoutsToValidate$groupID == as.numeric(groupID), ] #Select Group
+  
+  datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
+  datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) >= abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
+  datMotionBoutTurnToPrey <- datMotionBoutTurnToPrey[!is.na(datMotionBoutTurnToPrey$RegistarIdx),]
+  
+  ## Relates First turn to prey to final capture strike parameters  ##
+  ##
+  lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
+                                  Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
+                                  , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx,
+                                  CaptureSpeed = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                          datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm,
+                                  DistanceToPrey = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                            datMotionBoutCombined$boutRank == 1 ,]$vMotionBoutDistanceToPrey_mm,
+                                  doesCaptureStrike=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                               datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm >= G_THRES_CAPTURE_SPEED ),
+                                  CaptureStrikeFrame=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                                datMotionBoutCombined$boutRank == 1 ,]$vMotionBout_On  ),
+                                  CaptureStrikeEyeVergence = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                                      datMotionBoutCombined$boutRank == 1 ,]$OnSetEyeVergence,
+                                  Validated = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                       datMotionBoutCombined$boutRank == 1 ,]$MarkValidated
+  )
+  
+}
+
+##Save List on First Bout Data
+saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="") ) #Processed Registry on which we add )
