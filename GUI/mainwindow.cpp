@@ -795,6 +795,8 @@ void MainWindow::reportUserMeasurement(cv::Point ptMouse)
         this->SetTrackerState(0);
         //Reset Point
         userPointPair.first.x = -10;
+        /// Save an image for the records //
+        this->saveScreenShot();
     }
 }
 

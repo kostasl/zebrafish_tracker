@@ -49,10 +49,10 @@ x_rand ~ dmnorm(mu[],prec[,])
 
 } "
 
-datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") ) ## THis is the Processed Register File On 
+datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
-lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="")) 
+lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
 datDistanceToPreyVsEyeV_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"]) )
 datDistanceToPreyVsEyeV_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]) )
@@ -115,7 +115,7 @@ points(tail((draw_DF$x_rand[1,,1]) , ntail),tail((draw_DF$x_rand[2,,1]) , ntail)
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToPreyVsEyeV_SetC2.pdf",sep=""),width=14,height=7,title="A statistical model for EyeVergence vs Distance to prey  before capture bout ")
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToPreyVsEyeV_SetCv2.pdf",sep=""),width=14,height=7,title="A statistical model for EyeVergence vs Distance to prey  before capture bout ")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -197,7 +197,7 @@ dev.off()
 
 ############### Distance to prey vs Eye V at the onset of capture bout #### 
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence_CV2.pdf",sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
