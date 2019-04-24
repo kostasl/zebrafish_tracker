@@ -1,4 +1,5 @@
-### Library For for the Analysis of Tracking data in the carefully retracked Hunt Episodes imported ###
+### Analyse identified and Retracked (2nd pass), hunt events ###
+### Library For for the Analysis of Tracking data in the carefully *retracked* Hunt Episodes imported ###
 ## Smooths eye trajectories, fish speed, detects Bouts, turn events, angles produces a plot containing Detection Points and Motion Relative to Tracked Prey ##
 
 ## Note, Bouts are given sequence numbers in time of occurance and rank in order going from close to prey capture backwards

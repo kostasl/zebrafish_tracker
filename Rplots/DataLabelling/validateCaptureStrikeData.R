@@ -120,8 +120,54 @@ datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ]  <- datCaptureB
 saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
 saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 
-## Recalc First Bout Data based on Validated Info ###
 
+### Recalc derived bout data / capture speed and angle to prey ###
+##datHuntEventMergedFrames
+load(file=paste(strDataExportDir,"datAllHuntEventAnalysisFrames_setC.RData",sep=""))
+source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
+
+
+
+idxRegValidated <- datMotionBoutsToValidate[!is.na(datMotionBoutsToValidate$MarkValidated) & datMotionBoutsToValidate$MarkValidated == 1,]$RegistarIdx
+
+for (idx in idxRegValidated )
+{
+  recReg <- datTrackedEventsRegister[idx,]
+    #### PROCESS Validated BOUTS ###
+  datPlaybackHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==recReg$expID 
+                                                   & datHuntEventMergedFrames$trackID==recReg$trackID 
+                                                   & datHuntEventMergedFrames$eventID==recReg$eventID,]
+  
+  ## Find the motion bouts of this event that have been validated (so we  can recalc their derived data ie speed)
+  datMotionBouts <- datMotionBoutsToValidate[datMotionBoutsToValidate$MarkValidated == 1 & datMotionBoutsToValidate$RegistarIdx == row.names( recReg), ]
+  
+  vDeltaDisplacement   <- sqrt(diff(datPlaybackHuntEvent$posX,lag=1,differences=1)^2+diff(datPlaybackHuntEvent$posY,lag=1,differences=1)^2) ## Path Length Calculated As Total Displacement
+  
+  #nNumberOfBouts       <- 
+  dframe               <- diff(datPlaybackHuntEvent$frameN,lag=1,differences=1)
+  dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
+  vFs                   <- datPlaybackHuntEvent$fps[1:NROW(dframe)]
+  vEventSpeed_smooth          <- meanf(vDeltaDisplacement[1:NROW(dframe)]/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+  vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+  vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed_smooth) #meanf(vEventSpeed,100) #
+  vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
+  vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+  vEventSpeed_smooth_mm <- vFs*vEventSpeed_smooth*DIM_MMPERPX
+  
+  ## Get peak Capture Speed within capture bout ##
+  for (recBout in datMotionBouts)
+  {
+    recBout$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[recBout$vMotionBout_On:recBout$vMotionBout_Off],na.rm=TRUE)
+    print(recBout$vMotionPeakSpeed_mm)
+  }
+  ## Get Angle To Prey at onset and offset 
+  
+  
+  ## Do Next Validated rec ##
+}
+
+
+## Recalc First Bout Data based on Validated Info ###
 strGroupID <- levels(datTrackedEventsRegister$groupID)
 lFirstBoutPoints <- list() ##Add Dataframes Of 1st bout Turns for Each Group
 ###### PLOT BOUTTURN Vs Prey Angle Coloured with BOUTSEQ ################

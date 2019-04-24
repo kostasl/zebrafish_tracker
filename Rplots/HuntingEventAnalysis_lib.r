@@ -1,5 +1,5 @@
-# ################
-# ## \todo Code to Detect Prey Hunting Events - Locate Videos And Start Frames - ###
+# ################ Hunt Event Detection on 1st pass on  Tracked Data #####
+# ## \todo Code to *Detect* Prey Hunting Events - Locate Videos And Start Frames - ###
 # ## Rank Files With Most Hunting
 
 # M. Meyer sent doc with ideas on 30-11-17, suggests:
