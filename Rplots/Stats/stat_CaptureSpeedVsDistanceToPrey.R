@@ -85,11 +85,16 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###
 nContours <- 5
+ntail <-2000
+pBw   <- 0.1 
+
+
 zLL <- kde2d(c(tail(draw_LF$mu[1,,1],ntail)), c(tail(draw_LF$mu[2,,1],ntail)),n=80)
 zNL <- kde2d(c(tail(draw_NF$mu[1,,1],ntail)), c(tail(draw_NF$mu[2,,1],ntail)),n=80)
 zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=80)
 
-pBw <- 1
+
+
 ## Check out the covar coeffient , compare estimated densities
 dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
@@ -107,8 +112,6 @@ dDLb_sigmaC<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
 
 
 
-ntail <-2000
-pBw   <- 0.1 
 ##Get the synthesized data:
 plot(tail((draw_NF$x_rand[1,,1]) , ntail),tail((draw_NF$x_rand[2,,1]) , ntail),col=colourH[1])
 points(tail((draw_LF$x_rand[1,,1]) , ntail),tail((draw_LF$x_rand[2,,1]) , ntail),col=colourH[2])
@@ -152,7 +155,7 @@ legend("topleft",
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ## Plot the covariance ##
-plot(dNLb_rho,col=colourLegL[1],xlim=c(-2.0,2),lwd=3,lty=1,ylim=c(0,2),
+plot(dNLb_rho,col=colourLegL[1],xlim=c(-2.0,2),lwd=3,lty=1,ylim=c(0,5),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
@@ -169,7 +172,7 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 ### aDDD DISTANCE TO PREY VARIANCE COMPARISON
 
-plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(-2,2),lwd=3,lty=1,ylim=c(0,2),
+plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(-2,2),lwd=3,lty=1,ylim=c(0,5),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaD,col=colourLegL[2],lwd=3,lty=2)

@@ -84,6 +84,9 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###
 nContours <- 5
+ntail <-1000
+pBw   <- 0.1 
+
 zLL <- kde2d(c(tail(draw_LF$mu[1,,1],ntail)), c(tail(draw_LF$mu[2,,1],ntail)),n=80)
 zNL <- kde2d(c(tail(draw_NF$mu[1,,1],ntail)), c(tail(draw_NF$mu[2,,1],ntail)),n=80)
 zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=80)
@@ -105,8 +108,6 @@ dDLb_sigmaC<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
 
 
 
-ntail <-2000
-pBw   <- 0.1 
 ##Get the synthesized data:
 plot(tail((draw_NF$x_rand[1,,1]) , ntail),tail((draw_NF$x_rand[2,,1]) , ntail),col=colourH[1])
 points(tail((draw_LF$x_rand[1,,1]) , ntail),tail((draw_LF$x_rand[2,,1]) , ntail),col=colourH[2])

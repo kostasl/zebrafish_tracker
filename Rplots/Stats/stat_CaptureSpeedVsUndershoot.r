@@ -89,13 +89,15 @@ zNL <- kde2d(c(tail(draw_NF$mu[1,,1],ntail)), c(tail(draw_NF$mu[2,,1],ntail)),n=
 zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=80)
 
 ## Check out the covar coeffient , compare estimated densities
+pBw   <- 0.1
+ntail <-1000
+
+
 dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
-
-ntail <-2000
-pBw   <- 0.1 
+ 
 ##Get the synthesized data:
 plot(draw_NF$x_rand[1,(steps-ntail):steps,1],draw_NF$x_rand[2,(steps-ntail):steps,1],col=colourH[1])
 points(draw_LF$x_rand[1,(steps-ntail):steps,1],draw_LF$x_rand[2,(steps-ntail):steps,1],col=colourH[2])
