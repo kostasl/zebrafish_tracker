@@ -31,6 +31,7 @@ if (!any(names(datMotionBoutsToValidate) == "vd_MouthX"))
 if (!any(names(datMotionBoutsToValidate) == "vd_MouthY"))
   datMotionBoutsToValidate$vd_MouthY <- NA
 
+datTrackedEventsRegister$LabelledScore <- convertToScoreLabel( datTrackedEventsRegister$LabelledScore)
 
 
 ##Get the Capture strike bout subset
@@ -75,8 +76,13 @@ for (idx in idxToValidate)
   message(paste("\n\n ### Event's ", row.names(rec) , "  ####" ) )
   
   strDat <-""
-  while ( nchar(strDat) < 3 && substr(strDat,1,1) != 'c')
-    strDat <- readline(prompt="# Validation Data [Prey X, Y, Mouth X,Y,Frame Bout On, Bout Off ] :")
+  arrDat <- ""
+  while ( NROW(arrDat) < 5 && substr(strDat,1,1) != 'c' )
+  {
+    strDat <- readline(prompt=paste(idx, "# Validation Data [Prey X, Y, Mouth X,Y,Frame Bout On, Bout Off ] :") )
+    strDat <- gsub(strDat,pattern = "[][]",replacement = "")
+    arrDat <- strsplit(strDat,"," )[[1]]
+  }
   
   
   ## extract validation data on prey location and fish mouth position ##
@@ -87,7 +93,6 @@ for (idx in idxToValidate)
   mouthX <- as.numeric(arrDat[3]); mouthY <- as.numeric(arrDat[4]);
   boutOn <- as.numeric(arrDat[5]) - rec$startFrame; boutOff <- as.numeric(arrDat[6]) - rec$startFrame
   fOnSetEyeVergence <- as.numeric(arrDat[7])
-  ##update temp record - which push to main data.frame after user mark-validates it
   ## \note Angle to prey Not Recalculated , changes to bout frames  invalidates vMotionBoutDistanceTravelled_mm
   recUpd<- within( datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ],{ ##Multiple vars update
     vd_PreyY <- preyY 
@@ -99,25 +104,32 @@ for (idx in idxToValidate)
     vMotionBoutDistanceToPrey_mm <- DIM_MMPERPX*(sqrt((preyX-mouthX)^2+(preyY-mouthY)^2 ))
     OnSetEyeVergence <- fOnSetEyeVergence
   })
-  
-  message(paste("Distance to prey:", prettyNum(digits=3,recUpd$vMotionBoutDistanceToPrey_mm)," eyeV:",prettyNum(digits=3,recUpd$OnSetEyeVergence) ))
+   message(paste(recUpd$RegistarIdx,"Distance to prey:", prettyNum(digits=3,recUpd$vMotionBoutDistanceToPrey_mm)," eyeV:",prettyNum(digits=3,recUpd$OnSetEyeVergence) ))
   ## Pass data to record   // SAVE
   strKeyC <- readline(prompt="### Mark Validated ? (y/n):")
   if (strKeyC == 'y')
   {
     recUpd$MarkValidated <- 1
+    
     ##update data frame
     datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ] <- recUpd
     
+    print(paste( recUpd$RegistarIdx, "# Validated") )
+    stopifnot(datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ]$MarkValidated == 1)
+    ## Save Back ## 
+    ##Update Capture bouts back to original dataframe ##
+    datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ]  <- datCaptureBoutsToValidate
+
     ##Update the register end frame - is this was a capture (last bout) 
     if (recUpd$boutRank == 1)
       datTrackedEventsRegister[idx,]$endFrame <- rec$startFrame + recUpd$vMotionBout_Off
     
+    
     ## print event label 
-    message("Outcome logged on Registry (matched) :",convertToScoreLabel(rec$LabelledScore ))
+    message("Outcome logged on Registry (matched) :",convertToScoreLabel( datTrackedEventsRegister[idx,]$LabelledScore ))
     print(levels(convertToScoreLabel(rec$LabelledScore )))
     strKeyC <- readline(prompt=paste("### Change label to [",convertToScoreLabel(rec$LabelledScore ),"]:") )
-    
+    strKeyC <- as.numeric(strKeyC)
     if (is.numeric(strKeyC))
     {
       newLab <- convertToScoreLabel(as.numeric(strKeyC)-1 ) 
@@ -127,15 +139,14 @@ for (idx in idxToValidate)
       
   }
   
+ 
   strKeyC <- readline(prompt="### Move to next or quit ? (n/q):")
   if (strKeyC == 'q')
     break;
   
   
 } ## end of loop 
-
-##Update Capture bouts back to original dataframe ##
-datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ]  <- datCaptureBoutsToValidate
+# datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ]  <- datCaptureBoutsToValidate
 
 saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
 saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
