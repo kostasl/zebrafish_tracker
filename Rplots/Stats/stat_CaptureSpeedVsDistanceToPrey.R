@@ -49,10 +49,10 @@ x_rand ~ dmnorm(mu[],prec[,])
 
 } "
 
-datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") ) ## THis is the Processed Register File On 
+datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
-lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="")) 
+lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
 ### Capture Speed vs Distance to prey ###
 datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]) )
@@ -89,6 +89,7 @@ zLL <- kde2d(c(tail(draw_LF$mu[1,,1],ntail)), c(tail(draw_LF$mu[2,,1],ntail)),n=
 zNL <- kde2d(c(tail(draw_NF$mu[1,,1],ntail)), c(tail(draw_NF$mu[2,,1],ntail)),n=80)
 zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=80)
 
+pBw <- 1
 ## Check out the covar coeffient , compare estimated densities
 dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
@@ -116,7 +117,7 @@ points(tail((draw_DF$x_rand[1,,1]) , ntail),tail((draw_DF$x_rand[2,,1]) , ntail)
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelCaptureSpeedVsDistToPrey_SetC2.pdf",sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelCaptureSpeedVsDistToPrey_SetCV2.pdf",sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -151,7 +152,7 @@ legend("topleft",
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ## Plot the covariance ##
-plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,3),
+plot(dNLb_rho,col=colourLegL[1],xlim=c(-2.0,2),lwd=3,lty=1,ylim=c(0,2),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
@@ -168,7 +169,7 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 ### aDDD DISTANCE TO PREY VARIANCE COMPARISON
 
-plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,5),
+plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(-2,2),lwd=3,lty=1,ylim=c(0,2),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaD,col=colourLegL[2],lwd=3,lty=2)
@@ -194,35 +195,36 @@ dev.off()
 ### PLOT EMPIRICAL 
 ####
 ########################################################
-###        UNdershoot Vs Capture speed               ###
+###        Distance Vs Capture speed               ###
 
 
 
-densNL <-  kde2d(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,n=80)
-densLL <-  kde2d(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,n=80)
-densDL <-  kde2d(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,n=80)
+densNL <-  kde2d(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,n=80)
+densLL <-  kde2d(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,n=80)
+densDL <-  kde2d(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,n=80)
 
-covLL <- cov( 1/datTurnVsStrikeSpeed_LL$Undershoot,datTurnVsStrikeSpeed_LL$CaptureSpeed)
-covDL <- cov( 1/datTurnVsStrikeSpeed_DL$Undershoot,datTurnVsStrikeSpeed_DL$CaptureSpeed)
-covNL  <- cov( 1/datTurnVsStrikeSpeed_NL$Undershoot,datTurnVsStrikeSpeed_NL$CaptureSpeed)
+covNL  <- cov(datDistanceVsStrikeSpeed_NL$DistanceToPrey,datDistanceVsStrikeSpeed_NL$CaptureSpeed)
+covLL <- cov( datDistanceVsStrikeSpeed_LL$DistanceToPrey,datDistanceVsStrikeSpeed_LL$CaptureSpeed)
+covDL <- cov( datDistanceVsStrikeSpeed_DL$DistanceToPrey,datDistanceVsStrikeSpeed_DL$CaptureSpeed)
 
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/UndershootCaptureSpeed_scatter.pdf",sep=""))
+
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterCV.pdf",sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
 
-plot(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
+plot(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
      xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,2),main=NA)
-lFit <- lm(datTurnVsStrikeSpeed_NL$CaptureSpeed ~ datTurnVsStrikeSpeed_NL$Undershoot)
+lFit <- lm(datDistanceVsStrikeSpeed_NL$CaptureSpeed ~ datDistanceVsStrikeSpeed_NL$DistanceToPrey)
 abline(lFit,col=colourH[1],lwd=3.0) ##Fit Line / Regression
 contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[1],lty=2,lwd=3)
 legend("topright",
        legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
 
-plot(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
+plot(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
      ylim=c(0,60),xlim=c(0,2),xlab=NA,ylab=NA)
-lFit <- lm(datTurnVsStrikeSpeed_LL$CaptureSpeed ~ datTurnVsStrikeSpeed_LL$Undershoot)
+lFit <- lm(datDistanceVsStrikeSpeed_LL$CaptureSpeed ~ datDistanceVsStrikeSpeed_LL$DistanceToPrey)
 abline(lFit,col=colourH[2],lwd=3.0) ##Fit Line / Regression
 contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[2],lty=2,lwd=3)
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
@@ -230,12 +232,12 @@ legend("topright",
        legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ) 
 
 
-plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),xlim=c(0,2),
+plot(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),xlim=c(0,2),
      xlab=NA,ylab=NA,main=NA)
-lFit <- lm(datTurnVsStrikeSpeed_DL$CaptureSpeed ~ datTurnVsStrikeSpeed_DL$Undershoot)
+lFit <- lm(datDistanceVsStrikeSpeed_DL$CaptureSpeed ~ datDistanceVsStrikeSpeed_DL$DistanceToPrey)
 abline(lFit,col=colourH[3],lwd=3.0) ##Fit Line / Regression
 contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[3],lty=2,lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
+mtext(side = 1,cex=0.8, line = 2.2, expression("Distance To Prey "~(d) ))
 legend("topright",
        legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ) 
 

@@ -174,7 +174,7 @@ covDL <- cov( 1/datTurnVsStrikeSpeed_DL$Undershoot,datTurnVsStrikeSpeed_DL$Captu
 covNL  <- cov( 1/datTurnVsStrikeSpeed_NL$Undershoot,datTurnVsStrikeSpeed_NL$CaptureSpeed)
 
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/UndershootCaptureSpeed_scatter.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter.pdf",sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))

@@ -35,7 +35,7 @@ col2hex <- function(rgbcol) {
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "//mnt/ARXEIO1TB/ExpData/zebrapreyCap/AnalysisSet/"
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release//" 
-strTrackeroutPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/BoutValidate"
+strTrackeroutPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
 strTrackInputPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
 strDatDir        <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
 strDataExportDir <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
@@ -46,7 +46,7 @@ strPlotExportPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/ze
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
 strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
-strTrackeroutPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/BoutValidate"
+strTrackeroutPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
 #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
 strTrackInputPath <- "/media/LinuxDat/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
 strDatDir        <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored

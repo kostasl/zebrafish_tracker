@@ -4,6 +4,7 @@
 ##  turn was on firstbout, and link it to the final, capture bout intensity.
 
 
+source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
@@ -16,6 +17,7 @@ datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAna
 #datHuntEventAllGroupToValidate <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 ##Save a backup before changing anything
 saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate_backup.rds",sep="")) ##Save With Dataset Idx Identifier
+saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate_backup.rds",sep="") ) ## THis is the Processed Register File On 
 
 ##Make desired columns if missing 
 if (!any(names(datMotionBoutsToValidate) == "MarkValidated"))
@@ -23,13 +25,13 @@ if (!any(names(datMotionBoutsToValidate) == "MarkValidated"))
 if (!any(names(datMotionBoutsToValidate) == "vd_PreyX"))
   datMotionBoutsToValidate$vd_PreyX <- NA
 if (!any(names(datMotionBoutsToValidate) == "vd_PreyY"))
-datMotionBoutsToValidate$vd_PreyY <- NA
+  datMotionBoutsToValidate$vd_PreyY <- NA
 if (!any(names(datMotionBoutsToValidate) == "vd_MouthX"))
-datMotionBoutsToValidate$vd_MouthX <- NA
+  datMotionBoutsToValidate$vd_MouthX <- NA
 if (!any(names(datMotionBoutsToValidate) == "vd_MouthY"))
-datMotionBoutsToValidate$vd_MouthY <- NA
-  
-  
+  datMotionBoutsToValidate$vd_MouthY <- NA
+
+
 
 ##Get the Capture strike bout subset
 datCaptureBoutsToValidate <- datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ] 
@@ -56,7 +58,7 @@ for (idx in idxToValidate)
   recBout <- datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ]
   
   message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame + recBout$vMotionBout_On-1)," -End:",rec$endFrame + recBout$vMotionBout_Off, "ExpID:",rec$expID ) )
-  strArgs = paste(" --MeasureMode=1 --HideDataSource=0 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackeroutPath,
+  strArgs = paste(" --MeasureMode=1 --HideDataSource=0 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=",strTrackeroutPath,"/BoutValidate/",
                   " --startframe=",max(0,rec$startFrame + recBout$vMotionBout_On-1)," --stopframe=",max(0,rec$endFrame + recBout$vMotionBout_Off-1)," --startpaused=1",sep="")
   message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
   if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
@@ -106,6 +108,23 @@ for (idx in idxToValidate)
     recUpd$MarkValidated <- 1
     ##update data frame
     datCaptureBoutsToValidate[datCaptureBoutsToValidate$RegistarIdx == idx, ] <- recUpd
+    
+    ##Update the register end frame - is this was a capture (last bout) 
+    if (recUpd$boutRank == 1)
+      datTrackedEventsRegister[idx,]$endFrame <- rec$startFrame + recUpd$vMotionBout_Off
+    
+    ## print event label 
+    message("Outcome logged on Registry (matched) :",convertToScoreLabel(rec$LabelledScore ))
+    print(levels(convertToScoreLabel(rec$LabelledScore )))
+    strKeyC <- readline(prompt=paste("### Change label to [",convertToScoreLabel(rec$LabelledScore ),"]:") )
+    
+    if (is.numeric(strKeyC))
+    {
+      newLab <- convertToScoreLabel(as.numeric(strKeyC)-1 ) 
+      message(paste("new label:",newLab ) )
+      datTrackedEventsRegister[idx,]$LabelledScore <- newLab        
+    }
+      
   }
   
   strKeyC <- readline(prompt="### Move to next or quit ? (n/q):")
@@ -114,6 +133,7 @@ for (idx in idxToValidate)
   
   
 } ## end of loop 
+
 ##Update Capture bouts back to original dataframe ##
 datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ]  <- datCaptureBoutsToValidate
 
@@ -133,13 +153,15 @@ idxRegValidated <- datMotionBoutsToValidate[!is.na(datMotionBoutsToValidate$Mark
 for (idx in idxRegValidated )
 {
   recReg <- datTrackedEventsRegister[idx,]
-    #### PROCESS Validated BOUTS ###
+  #### PROCESS Validated BOUTS ###
   datPlaybackHuntEvent <- datHuntEventMergedFrames[datHuntEventMergedFrames$expID==recReg$expID 
                                                    & datHuntEventMergedFrames$trackID==recReg$trackID 
                                                    & datHuntEventMergedFrames$eventID==recReg$eventID,]
   
   ## Find the motion bouts of this event that have been validated (so we  can recalc their derived data ie speed)
-  datMotionBouts <- datMotionBoutsToValidate[datMotionBoutsToValidate$MarkValidated == 1 & datMotionBoutsToValidate$RegistarIdx == row.names( recReg), ]
+  datMotionBouts <- datMotionBoutsToValidate[!is.na(datMotionBoutsToValidate$MarkValidated)&
+                                               datMotionBoutsToValidate$MarkValidated == 1 &
+                                               datMotionBoutsToValidate$RegistarIdx == row.names( recReg), ]
   
   vDeltaDisplacement   <- sqrt(diff(datPlaybackHuntEvent$posX,lag=1,differences=1)^2+diff(datPlaybackHuntEvent$posY,lag=1,differences=1)^2) ## Path Length Calculated As Total Displacement
   
@@ -155,10 +177,12 @@ for (idx in idxRegValidated )
   vEventSpeed_smooth_mm <- vFs*vEventSpeed_smooth*DIM_MMPERPX
   
   ## Get peak Capture Speed within capture bout ##
-  for (recBout in datMotionBouts)
+  for (idxBout in row.names(datMotionBouts) )
   {
-    recBout$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[recBout$vMotionBout_On:recBout$vMotionBout_Off],na.rm=TRUE)
-    print(recBout$vMotionPeakSpeed_mm)
+    oldVal <- datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm
+    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:datMotionBoutsToValidate[idxBout,]$vMotionBout_Off],na.rm=TRUE)
+    stopifnot(is.numeric(datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm) | is.infinite((datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm)))
+    print(paste(idxBout,"speed",oldVal," new:",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm))
   }
   ## Get Angle To Prey at onset and offset 
   
