@@ -71,7 +71,8 @@ int giHeadIsolationMaskVOffset      = 24; //Vertical Distance to draw  Mask and 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 1;
 int gEyeTemplateAngleSteps      = 5;
-int iEyeMaskSepWidth            = 5; //5 px width vertical line separates the eyes for segmentation
+int iEyeMaskSepWidth            = 2; //5 px width vertical line separates the eyes for segmentation
+double eyeStepIncrement         = 0.05;
 double gTemplateMatchThreshold  = 0.89; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iFishAngleOffset            = 0;

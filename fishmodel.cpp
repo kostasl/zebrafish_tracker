@@ -5,7 +5,7 @@
 
 extern cv::Mat frameDebugC;
 extern cv::Size gszTemplateImg;
-
+extern double eyeStepIncrement;
 
 //extern int gFishTailSpineSegmentLength;
 //extern int gFitTailIntensityScanAngleDeg;
@@ -375,6 +375,94 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
     return mindist;
 }
 
+/// \brief Uses detected ellipsoids to set fish's eye model state / using an incremental update
+///
+int fishModel::updateEyeState(tEllipsoids& vell)
+{
+
+    double fleftEyeTheta = 0.0f;
+    double frightEyeTheta = 0.0f;
+    double stepUpdate = eyeStepIncrement;
+
+    // If we are stuck on same frame then estimate the unbiased empirical mean angle for each eye
+    // use an incremental mean calculation
+    if (uiFrameIterations > 1)
+        stepUpdate = 1.0/std::max(500.0, (double)uiFrameIterations);
+
+
+    ///  Print Out Values -
+    /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
+    /// \todo Move this to specialized Function Like @renderFrameText
+    //ss.str(""); //Empty String
+    //ss.precision(3);
+    // ss << "L:" << fish->leftEyeTheta;
+    // cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+    // ss << "R:"  << this->rightEyeTheta;
+    // cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+    //ss << "L Eye Detection Error - Check Threshold";
+    //window_main.LogEvent(QString::fromStdString(ss.str()));
+
+
+
+    if (vell.size() > 0)
+    {//Left Eye Detected First
+        tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
+        this->leftEye           = lEye;
+        fleftEyeTheta      = lEye.rectEllipse.angle-90;
+        if (fleftEyeTheta > 90)
+             fleftEyeTheta      = lEye.rectEllipse.angle-90;
+        if (fleftEyeTheta < -30)
+             fleftEyeTheta      = lEye.rectEllipse.angle+90;
+
+        // Update Internal Variable for Eye Angle //
+        // Use an incremental/ recent average rule
+        this->leftEyeTheta = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
+
+    }else
+    { //Set To Not detected - Do not update estimates - set score to 0
+        //this->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+        //this->leftEyeTheta  = 180;
+        this->leftEye.fitscore = 0;
+        this->nFailedEyeDetectionCount++;
+    }
+
+
+   // ss.str(""); //Empty String
+    if (vell.size() > 1)
+    {
+      tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
+      this->rightEye     = rEye; //Save last fitted ellipsoid struct
+      frightEyeTheta     = rEye.rectEllipse.angle-90;
+      //Fix Equivalent Angles To Range -50 +30
+      if (frightEyeTheta < -90)
+           frightEyeTheta      = rEye.rectEllipse.angle+90;
+      if (frightEyeTheta > 30)
+          frightEyeTheta       = rEye.rectEllipse.angle-90;
+
+    }else
+    { //Set To Not detected
+     //   ss << "R Eye Detection Error - Check Threshold";
+     //   window_main.LogEvent(QString::fromStdString(ss.str()));
+
+        //this->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+        //this->rightEyeTheta  = 180;
+        this->rightEye.fitscore = 0;
+        this->nFailedEyeDetectionCount++;
+    }
+
+    // Update Internal Variable for Eye Angle //
+    // Use an incremental/ recent average rule
+    this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
+
+   if (this->leftEye.fitscore > 20 && this->rightEye.fitscore > 20)
+   {
+      this->nFailedEyeDetectionCount = 0; // Reset Error Count
+   }
+
+
+
+}
+
 
 ///
 /// \brief fishModel::Update - Called On Every FrameProcessed To Update Model State
@@ -387,7 +475,15 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
 void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
-    nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
+    //Check if frame advanced
+    if (nLastUpdateFrame == nFrame)
+        uiFrameIterations++; //Increment count of calculation cycles that we are stuck on same frame
+    else
+    {
+        nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
+        uiFrameIterations = 0;
+    }
+
     this->zTrack.id     = ID;
     this->templateScore  = templatematchScore;
     this->bearingAngle   = Angle;

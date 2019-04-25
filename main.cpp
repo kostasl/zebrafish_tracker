@@ -3420,7 +3420,6 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
 
 
-
               /// EYE DETECTION Report Results to Output Frame //
               /// Returns imgFishHeadProcessed Upsampled with ellipses drawns
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
@@ -3441,69 +3440,15 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               if (imgFishHeadProcessed.u)
                   imgFishHeadProcessed.copyTo(outimgFishHeadProcessed);
 
-              /// Set Detected Eyes Back to Fish Features
-              ///  Print Out Values -
-              /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
-              /// \todo Move this to specialized Function Like @renderFrameText
-              ss.str(""); //Empty String
-              ss.precision(3);
-              if (vell.size() > 0)
-              {//Left Eye Detected First
-                  tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
-                  fish->leftEye           = lEye;
-                  fish->leftEyeTheta      = lEye.rectEllipse.angle;
-                  if (fish->leftEyeTheta > 90)
-                       fish->leftEyeTheta      = lEye.rectEllipse.angle-90;
-                  if (fish->leftEyeTheta < -30)
-                       fish->leftEyeTheta      = lEye.rectEllipse.angle+90;
-
-                  ss << "L:" << fish->leftEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-              }else
-              { //Set To Not detected
-                  ss << "L Eye Detection Error - Check Threshold";
-                  window_main.LogEvent(QString::fromStdString(ss.str()));
-
-                  fish->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-                  fish->leftEyeTheta  = 180;
-                  fish->leftEye.fitscore = 0;
-                  fish->nFailedEyeDetectionCount++;
-              }
-
-
-              ss.str(""); //Empty String
-              if (vell.size() > 1)
-              {
-                tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
-                fish->rightEye          = rEye;
-                fish->rightEyeTheta     = rEye.rectEllipse.angle;
-                //Fix Equavalent Angles To Range -50 +30
-                if (fish->rightEyeTheta < -90)
-                     fish->rightEyeTheta      = rEye.rectEllipse.angle+90;
-                if (fish->rightEyeTheta > 30)
-                     fish->rightEyeTheta      = rEye.rectEllipse.angle-90;
-
-                ss << "R:"  << fish->rightEyeTheta;
-                cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-              }else
-              { //Set To Not detected
-                  ss << "R Eye Detection Error - Check Threshold";
-                  window_main.LogEvent(QString::fromStdString(ss.str()));
-
-                  fish->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-                  fish->rightEyeTheta  = 180;
-                  fish->rightEye.fitscore = 0;
-                  fish->nFailedEyeDetectionCount++;
-              }
-
+              /// Pass detected Ellipses to Update the fish model's Eye State //
+              fish->updateEyeState(vell);
 
               ///If Both Eyes Detected Then Print Vergence Angle
               if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
               {
                   ss.str(""); //Empty String
-                  ss << "V:"  << fish->leftEyeTheta - fish->rightEyeTheta; //Store to global variable
+                  ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0; //Store to global variable
                   cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-                  fish->nFailedEyeDetectionCount = 0; //Reset Error Count
               }
 
 
