@@ -376,7 +376,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 }
 
 /// \brief Uses detected ellipsoids to set fish's eye model state / using an incremental update
-///
+///\return total Score for fit
 int fishModel::updateEyeState(tEllipsoids& vell)
 {
 
@@ -388,19 +388,6 @@ int fishModel::updateEyeState(tEllipsoids& vell)
     // use an incremental mean calculation
     if (uiFrameIterations > 1)
         stepUpdate = 1.0/std::max(500.0, (double)uiFrameIterations);
-
-
-    ///  Print Out Values -
-    /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
-    /// \todo Move this to specialized Function Like @renderFrameText
-    //ss.str(""); //Empty String
-    //ss.precision(3);
-    // ss << "L:" << fish->leftEyeTheta;
-    // cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-    // ss << "R:"  << this->rightEyeTheta;
-    // cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
-    //ss << "L Eye Detection Error - Check Threshold";
-    //window_main.LogEvent(QString::fromStdString(ss.str()));
 
 
 
@@ -460,7 +447,7 @@ int fishModel::updateEyeState(tEllipsoids& vell)
    }
 
 
-
+return (this->leftEye.fitscore + this->rightEye.fitscore);
 }
 
 

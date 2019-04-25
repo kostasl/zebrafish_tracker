@@ -1205,3 +1205,8 @@ void MainWindow::on_checkBoxMOG_stateChanged(int arg1)
 {
 
 }
+
+void MainWindow::on_spinBoxEyeThres_valueChanged(const QString &arg1)
+{
+
+}

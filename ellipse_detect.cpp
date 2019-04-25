@@ -447,7 +447,7 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 ///
 /// \brief getEyeSegThreshold Samples all  points all arc in ellipseSample_pts and 3 values starting median intensity and moving up
 ///  //Deprecated : Uses a heap to samples the N most intense Pixels in an arc below the estimated position of the eyes given the
-/// upsampled head image
+/// upsampled head image integrates user set threshold gthresEyeSeg - as set by the GUI
 /// \param pimgIn //Upsampled Grey Scale HEad Image
 /// \param ptcenter //Center Of Head Image around which to estimate Eye Position
 /// \param ellipseSample_pts //Holds the Drawn Arc Points around the last spine Point

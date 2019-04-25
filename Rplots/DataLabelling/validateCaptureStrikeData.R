@@ -216,7 +216,7 @@ for (gp in strGroupID)
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
   datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) >= abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
   datMotionBoutTurnToPrey <- datMotionBoutTurnToPrey[!is.na(datMotionBoutTurnToPrey$RegistarIdx),]
-  
+  c
   ## Relates First turn to prey to final capture strike parameters  ##
   ##
   lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,

@@ -3443,13 +3443,30 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               /// Pass detected Ellipses to Update the fish model's Eye State //
               fish->updateEyeState(vell);
 
+              ///  Print Out Values //
+              /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
+              /// \todo Move this to specialized Function Like @renderFrameText
               ///If Both Eyes Detected Then Print Vergence Angle
+              ss.precision(3);
               if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
               {
                   ss.str(""); //Empty String
+                  ss << "L:" << fish->leftEyeTheta;
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-45,rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  ss.str(""); //Empty String
+                  ss << "R:"  << fish->rightEyeTheta;
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-45,rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  ss.str(""); //Empty String
                   ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0; //Store to global variable
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-75,rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-45,rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }
+
+
+              //ss.str(""); //Empty String
+
+
+              //ss << "L Eye Detection Error - Check Threshold";
+              //window_main.LogEvent(QString::fromStdString(ss.str()));
 
 
               //Check If Too Many Eye Detection Failures - Then Switch Template

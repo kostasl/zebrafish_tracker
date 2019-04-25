@@ -122,6 +122,8 @@ private slots:
 
     void on_checkBoxMOG_stateChanged(int arg1);
 
+    void on_spinBoxEyeThres_valueChanged(const QString &arg1);
+
 private:
     void reportUserMeasurement(cv::Point ptMouse);
 
