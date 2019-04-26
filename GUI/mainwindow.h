@@ -62,7 +62,7 @@ public slots:
     void tailSizevalueChanged(float i);
     void maxEllipseSizevalueChanged(int i);
     void minEllipseSizevalueChanged(int i);
-
+    void UpdateSpinBoxToValue();
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
@@ -123,6 +123,8 @@ private slots:
     void on_checkBoxMOG_stateChanged(int arg1);
 
     void on_spinBoxEyeThres_valueChanged(const QString &arg1);
+
+    void on_spinBoxEyeThres_valueChanged(int arg1);
 
 private:
     void reportUserMeasurement(cv::Point ptMouse);

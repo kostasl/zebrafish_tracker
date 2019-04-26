@@ -420,12 +420,24 @@ void MainWindow::showCVimg(cv::Mat& img)
 }
 
 
+
+void MainWindow::UpdateSpinBoxToValue()
+{
+
+    this->ui->spinBoxEyeThres->setValue(gthresEyeSeg);
+    this->ui->spinBoxFishThres->setValue(g_Segthresh);
+
+    this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
+    this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
+
+}
+
 void MainWindow::eyevalueChanged(int i)
 {
     //qDebug() << "Eye SpinBox gave " << i;
 
-    if (!bSceneMouseLButtonDown)
-        LogEvent(QString("changed Eye Seg Threshold:") + QString::number(i));
+    if (bSceneMouseLButtonDown)
+        LogEvent(QString("Changed Eye Seg Threshold:") + QString::number(i));
 
     gthresEyeSeg = i;
 }
@@ -1207,6 +1219,11 @@ void MainWindow::on_checkBoxMOG_stateChanged(int arg1)
 }
 
 void MainWindow::on_spinBoxEyeThres_valueChanged(const QString &arg1)
+{
+
+}
+
+void MainWindow::on_spinBoxEyeThres_valueChanged(int arg1)
 {
 
 }

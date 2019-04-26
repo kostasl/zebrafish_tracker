@@ -63,6 +63,7 @@
 #include <template_detect.h>
 #include <zfttracks.h>
 #include <fgmaskprocessing.h>
+#include "eyesdetector.h"
 
 #include <errorhandlers.h> // My Custom Mem Fault Handling Functions and Debug
 
@@ -159,6 +160,9 @@ cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 Ptr<GeneralizedHough> pGHT;
 Ptr<GeneralizedHoughBallard> pGHTBallard;
 Ptr<GeneralizedHoughGuil> pGHTGuil;
+
+// Custom RL optimization of eyeSegmentation and fitting
+EyesDetector* pRLEye;
 
 /// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
 cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
@@ -657,6 +661,9 @@ int main(int argc, char *argv[])
     kernelOpenfish  = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
     kernelClose     = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
 
+    // RL For eye segmentation
+    //init with 20 seg thres states , and 10 eye vergence states
+    pRLEye = new EyesDetector(0,15,-10,80);
 
     try{
 
@@ -715,6 +722,8 @@ int main(int argc, char *argv[])
     gLastfishimg_template.release();
 
     gFishTemplateCache.release();
+
+    delete pRLEye;//Destroy EyeSeg Assistant
 
     //gFishTemplateCache.deallocate();
 
@@ -3441,7 +3450,16 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   imgFishHeadProcessed.copyTo(outimgFishHeadProcessed);
 
               /// Pass detected Ellipses to Update the fish model's Eye State //
-              fish->updateEyeState(vell);
+              double fitScoreReward = fish->updateEyeState(vell);
+
+              tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
+              current_eyeState.iSegThres1        = gthresEyeSeg;
+              current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);
+
+              pRLEye->UpdateStateValue(current_eyeState,fitScoreReward);
+              tEyeDetectorState new_eyeState = pRLEye->DrawNextAction(current_eyeState);
+              gthresEyeSeg = new_eyeState.iSegThres1; //Update threshold as indicated by algorithm
+              pwindow_main->UpdateSpinBoxToValue();
 
               ///  Print Out Values //
               /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
