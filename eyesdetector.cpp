@@ -40,22 +40,29 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
         ulong idxState_ActDown = std::max(0,idxVal_i-1);
         double qUp   = 0; //Marginal Value of going action up thresh.
         double qDown = 0;//Marginal Value of going action down thresh.
+        double qStay = 0;
 
         //Calc Marginal Value For each Action taken (the state can shift the eye vergence so marginalize across a range )
+        for (ulong i=0;i < mStateValue[idxVal_i].size();i++ )
+                qStay += mStateValue[idxVal_i][i];
+
         for (ulong i=0;i < mStateValue[idxState_ActUp].size();i++ )
                 qUp += mStateValue[idxState_ActUp][i];
 
         for (ulong i=0;i < mStateValue[idxState_ActDown].size();i++ )
                 qDown += mStateValue[idxState_ActDown][i];
         // if equal value
-        if (qUp == qDown ) //Add noise to randomly choose direction
-            qUp += (drand48()-0.5);
+        //if (qUp == qDown ) //Add noise to randomly choose direction
+        //    qUp += (drand48()-0.5);
 
-        if (qUp > qDown )
+        if (qUp > qDown && qUp > qStay)
                 nextState.iSegThres1++;
-        else {
+
+        if (qUp < qDown && qDown > qStay)
                 nextState.iSegThres1--;
-        }
+
+        //Otherwise stay on the same threshold
+
     } // Taking greedy action / not exploring
 
     //Do not exceed state space limits - bounce off walls;
@@ -84,8 +91,13 @@ double EyesDetector::UpdateStateValue(tEyeDetectorState toState,double RewardSco
     //Update The Current State value by propagating value of next state backwards
 
     //TD learning - Use immediate Reward and add discounted future state rewards
-    mStateValue[idxVal_i][idxVal_j] = mStateValue[idxVal_i][idxVal_j] +
+    if (!bExploreMove) //propagate value from nearby threshold transitions
+        mStateValue[idxVal_i][idxVal_j] = mStateValue[idxVal_i][idxVal_j] +
                                       alpha*(RewardScore + gamma*mStateValue[idxNextVal_i][idxNextVal_j]-mStateValue[idxVal_i][idxVal_j] );
+    else {//When exploring we do not update based on the transition / as the action taken could not have been  chosen -
+         // only account for user/reward in state
+        mStateValue[idxVal_i][idxVal_j] = mStateValue[idxVal_i][idxVal_j] + alpha*(RewardScore - mStateValue[idxVal_i][idxVal_j]);
+    }
 
     currentState = toState; //Make transition to new state as set by the environment
 
