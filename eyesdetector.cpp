@@ -3,11 +3,11 @@
 
 /// implements a reinforcement learning technique to discover parameters for
 /// best extraction of eye information from video frames
-tEyeDetectorState EyesDetector::DrawNextState(tEyeDetectorState currentState)
+tEyeDetectorState EyesDetector::DrawNextState(tEyeDetectorState currentState,double RewardScore)
 {
 
-   int idxVal_i = currentState.iSegThres1-baseIdxRow;
-   int idxVal_j = currentState.VergenceAngle-baseIdxCol;
+   ulong idxVal_i = currentState.iSegThres1-baseIdxRow;
+   ulong idxVal_j = currentState.VergenceAngle-baseIdxCol;
    tEyeDetectorState nextState = currentState;
     //Draw if we are exploring or Greedy
    if (drand48() < pExplore)
@@ -15,24 +15,58 @@ tEyeDetectorState EyesDetector::DrawNextState(tEyeDetectorState currentState)
        bExploreMove = true;
    }
 
-    //Choose Action that determines Next State
+    //Explore: Choose Action that determines Next State
+    // Todo : Maybe policy could be modified to context, ie  EyeVergence
     // Increase/Decrease Threshold
-    if (drand48()<0.5 )
+    if (drand48()<0.5 & bExploreMove)
     {
         nextState.iSegThres1++;
-        nextState.iSegThres1 = std::max(nextState.iSegThres1,baseIdxRow);
     }else {
         nextState.iSegThres1--;
     }
 
+    //Policy: Take greedy action with some prob
+    if (!bExploreMove)
+    {
+
+        ulong idxState_ActUp = std::min(baseIdxRow,idxVal_i++);
+        ulong idxState_ActDown = std::max((ulong)0,idxVal_i--);
+
+        //Calc Marginal Value For each Action taken
+
+        if (mStateValue[idxState_ActUp][idxVal_j] > mStateValue[idxState_ActDown][idxVal_j] )
+                nextState.iSegThres1 = idxState_ActUp;
+        else {
+
+        }
+    }
+
+
+    nextState.iSegThres1 = std::max((ulong)nextState.iSegThres1,baseIdxRow);
+    nextState.iSegThres1 = std::min((ulong)nextState.iSegThres1,baseIdxRow);
+
+
     // Explore Next State Value
 
 
+}
+
+
+
+void EyesDetector::UpdateStateValue(tEyeDetectorState nextState)
+{
+
+    ulong idxVal_i = currentState.iSegThres1-baseIdxRow;
+    ulong idxVal_j = currentState.VergenceAngle-baseIdxCol;
+
     //Get Next states Value and update current - Greedy
-   int idxNextVal_i = nextState.iSegThres1-baseIdxRow;
-   int idxNextVal_j = nextState.VergenceAngle-baseIdxCol;
+    ulong idxNextVal_i = nextState.iSegThres1-baseIdxRow;
+    ulong idxNextVal_j = nextState.VergenceAngle-baseIdxCol;
     //Update The Current State value by propagating value of next state backwards
-    mStateValue[idxVal_i][idxVal_j] = mStateValue[idxVal_i][idxVal_j] + 0.1*(mStateValue[idxNextVal_i][idxNextVal_j]-mStateValue[idxVal_i][idxVal_j] );
+
+    //TD learning - Use immediate Reward and add discounted future state rewards
+    mStateValue[idxVal_i][idxVal_j] = mStateValue[idxVal_i][idxVal_j] +
+                                      alpha*(RewardScore + gamma*mStateValue[idxNextVal_i][idxNextVal_j]-mStateValue[idxVal_i][idxVal_j] );
 
 }
 

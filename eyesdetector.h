@@ -9,6 +9,8 @@
 ///
 /// can be converted to baysian sampler, to fit a model parameters
 
+typedef unsigned long ulong;
+
 typedef struct
 {
     int iSegThres1;
@@ -40,17 +42,21 @@ public:
         for(int i = 0;i < rows;++i) mStateValue[i].resize(cols);
     }
 
-
-    tEyeDetectorState DrawNextState(tEyeDetectorState currentState);
-
+    /// The TD learning transitions function
+    /// \param RewardScore the fitness score as evaluated after fitting ellipse with given settings
+    tEyeDetectorState DrawNextState(tEyeDetectorState currentState,double RewardScore);
+    void UpdateStateValue(tEyeDetectorState nextState);
 
 
 private:
     const double pExplore = 0.1;
+    const double alpha = 0.1; //learning rate for step update
+    const double gamma = 0.1; //discounting of fut. rewards
     std::vector< std::vector<int> > mStateValue;
-    int baseIdxRow; //Used to Translate State Value range to value table idxs
-    int baseIdxCol;
+    ulong baseIdxRow; //Used to Translate State Value range to value table idxs
+    ulong baseIdxCol;
     bool bExploreMove;
+    tEyeDetectorState currentState;
 };
 
 #endif // EYESDETECTOR_H
