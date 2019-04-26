@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <math.h>
+
 /// \class EyesDetector
 /// \brief Uses reinforcement learning techniques to identify best way to discriminate eye angle.
 ///  Uses ellipsedetection score to estimate value of each action.
@@ -28,18 +29,18 @@ typedef struct EyeDetectorState
     void setVergenceState(double vangle){
                 //Set A discrete number of eye vergence states - here 4 - ranging from -20 to 100
         if (vangle < 20.0)
-            VergenceState = 1;
+            VergenceState = 0;
 
         if (vangle >= 20.0 && vangle < 40.0)
-            VergenceState = 2;
+            VergenceState = 1;
 
         if (vangle >= 40.0 && vangle < 60.0)
-            VergenceState = 3;
+            VergenceState = 2;
 
         if (vangle >= 60.0)
-            VergenceState = 4;
+            VergenceState = 3;
 
-       if (VergenceState > 4)
+       if (VergenceState > 3)
            throw "Error:setVergenceState";
 
 

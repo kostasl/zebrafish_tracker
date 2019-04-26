@@ -394,7 +394,7 @@ int fishModel::updateEyeState(tEllipsoids& vell)
     if (vell.size() > 0)
     {//Left Eye Detected First
         tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
-        this->leftEye           = lEye;
+
         fleftEyeTheta      = lEye.rectEllipse.angle-90;
         if (fleftEyeTheta > 90)
              fleftEyeTheta      = lEye.rectEllipse.angle-90;
@@ -403,6 +403,8 @@ int fishModel::updateEyeState(tEllipsoids& vell)
 
         // Update Internal Variable for Eye Angle //
         // Use an incremental/ recent average rule
+        lEye.rectEllipse.angle = fleftEyeTheta;
+        this->leftEye           = lEye;
         this->leftEyeTheta = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
 
     }else
@@ -418,13 +420,20 @@ int fishModel::updateEyeState(tEllipsoids& vell)
     if (vell.size() > 1)
     {
       tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
-      this->rightEye     = rEye; //Save last fitted ellipsoid struct
-      frightEyeTheta     = rEye.rectEllipse.angle-90;
+
+      frightEyeTheta     = rEye.rectEllipse.angle - 90;
       //Fix Equivalent Angles To Range -50 +30
       if (frightEyeTheta < -90)
            frightEyeTheta      = rEye.rectEllipse.angle+90;
       if (frightEyeTheta > 30)
           frightEyeTheta       = rEye.rectEllipse.angle-90;
+
+      rEye.rectEllipse.angle = frightEyeTheta;
+      this->rightEye     = rEye; //Save last fitted ellipsoid struct
+
+      // Update Internal Variable for Eye Angle //
+      // Use an incremental/ recent average rule
+      this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
 
     }else
     { //Set To Not detected
@@ -437,9 +446,6 @@ int fishModel::updateEyeState(tEllipsoids& vell)
         this->nFailedEyeDetectionCount++;
     }
 
-    // Update Internal Variable for Eye Angle //
-    // Use an incremental/ recent average rule
-    this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
 
    if (this->leftEye.fitscore > 20 && this->rightEye.fitscore > 20)
    {

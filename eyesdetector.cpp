@@ -2,6 +2,7 @@
 #include <random>
 #include <QDebug>
 #include <assert.h>
+
 /// \brief implements a reinforcement learning technique to discover parameters for
 /// best extraction of eye information from video frames
 ///
