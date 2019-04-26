@@ -3469,8 +3469,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               /// Pass detected Ellipses to Update the fish model's Eye State //
               double fitScoreReward = fish->updateEyeState(vell)+ gUserReward;
-              gUserReward = 0.0; //Reset Rewards
-              qDebug() << "R:" << fitScoreReward;
+              gUserReward = 0.0; //Reset User Provided Rewards
+              //qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
               current_eyeState.iSegThres1        = gthresEyeSeg; //Update to what the environment state is
               current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);
