@@ -76,6 +76,7 @@ double eyeStepIncrement         = 0.05;
 double gTemplateMatchThreshold  = 0.89; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;
 int iFishAngleOffset            = 0;
+double gUserReward               = 0; //User feedback for reinforcement learning
 //using namespace std;
 
 

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <math.h>
+#include <random>
 
 /// \class EyesDetector
 /// \brief Uses reinforcement learning techniques to identify best way to discriminate eye angle.
@@ -14,6 +15,7 @@
 extern int gthresEyeSeg;
 
 typedef unsigned long ulong;
+typedef std::vector< std::vector<double> > tStateValueMatrix;
 typedef struct EyeDetectorState
 {
     EyeDetectorState(){
@@ -66,7 +68,7 @@ public:
     tEyeDetectorState getCurrentState();
     void setCurrentState(tEyeDetectorState State);
     ~EyesDetector();
-
+        // OVerload the member access functs
     std::vector<double> & operator[](int i)
     {
       return mStateValue[i];
@@ -75,6 +77,7 @@ public:
     {
       return mStateValue[i];
     }
+
     void resize(int rows, int cols)//resize the two dimentional array .
     {
         mStateValue.resize(rows);
@@ -88,14 +91,16 @@ public:
 
 
 private:
-    const double pExplore = 0.1;
+    const double pExplore = 0.2;
     const double alpha = 0.1; //learning rate for step update
     const double gamma = 0.1; //discounting of fut. rewards
-    std::vector< std::vector<double> > mStateValue;
-    ulong baseIdxRow; //Used to Translate State Value range to value table idxs
-    ulong baseIdxCol;
+    tStateValueMatrix mStateValue;
+    int baseIdxRow; //Used to Translate State Value range to value table idxs
+    int baseIdxCol;
     bool bExploreMove;
     tEyeDetectorState currentState;
+    std::default_random_engine generator;
+
 };
 
 #endif // EYESDETECTOR_H

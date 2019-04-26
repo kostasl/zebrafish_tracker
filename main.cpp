@@ -663,7 +663,7 @@ int main(int argc, char *argv[])
 
     // RL For eye segmentation
     //init with 20 seg thres states , and 10 eye vergence states
-    pRLEye = new EyesDetector(0,15,-10,80);
+    pRLEye = new EyesDetector(-5,15,-10,80);
 
     try{
 
@@ -2124,6 +2124,20 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         iFishAngleOffset = 0;
     }
 
+    if ((char)keyboard == 'x')
+    {
+        gUserReward = -1000;
+        pwindow_main->LogEvent("User -ve Reward ");
+    }
+    if ((char)keyboard == 'a')
+    {
+        gUserReward = +1000;
+        pwindow_main->LogEvent("User +ve Reward ");
+    }
+
+
+
+
 }
 
 
@@ -3449,9 +3463,14 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               if (imgFishHeadProcessed.u)
                   imgFishHeadProcessed.copyTo(outimgFishHeadProcessed);
 
-              /// Pass detected Ellipses to Update the fish model's Eye State //
-              double fitScoreReward = fish->updateEyeState(vell);
+              // Debug test //
+              //if (gthresEyeSeg < 0)
+              //    gUserReward = -500;
 
+              /// Pass detected Ellipses to Update the fish model's Eye State //
+              double fitScoreReward = fish->updateEyeState(vell)+ gUserReward;
+              gUserReward = 0.0; //Reset Rewards
+              qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
               current_eyeState.iSegThres1        = gthresEyeSeg; //Update to what the environment state is
               current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);

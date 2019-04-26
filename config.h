@@ -82,6 +82,7 @@ extern float gDisplacementThreshold; //Distance That Fish Is displaced so as to 
 extern int gFishBoundBoxSize; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
 extern int gFishTailSpineSegmentLength;
 extern int gFitTailIntensityScanAngleDeg; //
+extern double gUserReward; //User Given reward via GUI
 
 extern const int gFishTailSpineSegmentCount;
 extern const int gcFishContourSize;

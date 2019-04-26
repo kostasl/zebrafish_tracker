@@ -13,6 +13,7 @@
 /// \returns a modified currentState reflecting the action taken in the state space based on (greedy policy)
 tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 {
+    std::uniform_int_distribution<> distr(0, mStateValue.size()-1);
 
    int idxVal_i = (int)currentState.iSegThres1-baseIdxRow;
    int idxVal_j = (int)currentState.VergenceState-baseIdxCol;
@@ -27,13 +28,9 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 
     //Explore: Choose Action that determines Next State
     // Todo : Maybe policy could be modified to context, ie  EyeVergence
-    // Increase/Decrease Threshold
-    if (drand48()<0.5 & bExploreMove)
-    {
-        nextState.iSegThres1++;
-    }else {
-        nextState.iSegThres1--;
-    }
+    //Jump to random threshold
+    if (bExploreMove)
+        nextState.iSegThres1 =distr(generator)+baseIdxRow;
 
     //Policy: Take greedy action with some prob
     if (!bExploreMove)
@@ -62,8 +59,8 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
     } // Taking greedy action / not exploring
 
     //Do not exceed state space limits - bounce off walls;
-    nextState.iSegThres1 = std::max((ulong)nextState.iSegThres1,baseIdxRow);
-    nextState.iSegThres1 = std::min((ulong)nextState.iSegThres1,baseIdxRow+mStateValue.size()-1);
+    nextState.iSegThres1 = std::max((int)nextState.iSegThres1,baseIdxRow);
+    nextState.iSegThres1 = std::min((int)nextState.iSegThres1,baseIdxRow+(int)mStateValue.size()-1);
 
 
     //Return next state to the environment - which will evaluate the fit score to update the value funct.
@@ -78,13 +75,12 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 /// \param RewardScore the immediate value of the current state and
 double EyesDetector::UpdateStateValue(tEyeDetectorState toState,double RewardScore)
 {
-
-    ulong idxVal_i = (ulong)currentState.iSegThres1-baseIdxRow;
-    ulong idxVal_j = (ulong)currentState.VergenceState;
+    int idxVal_i = std::max(0,(int)currentState.iSegThres1-(int)baseIdxRow);
+    int idxVal_j = currentState.VergenceState;
 
     //Get Next states Value and update current - Greedy
-    ulong idxNextVal_i = (ulong)toState.iSegThres1-baseIdxRow;
-    ulong idxNextVal_j = (ulong)toState.VergenceState;
+    int idxNextVal_i = (int)toState.iSegThres1-baseIdxRow;
+    int idxNextVal_j = (int)toState.VergenceState;
     //Update The Current State value by propagating value of next state backwards
 
     //TD learning - Use immediate Reward and add discounted future state rewards
