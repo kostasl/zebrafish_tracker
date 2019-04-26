@@ -49,10 +49,10 @@ model {
 
 } "
 
-datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") ) ## THis is the Processed Register File On 
+datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
-lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="")) 
+lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
 datTurnVsStrikeSpeed_NL <- data.frame( cbind(Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]) )
 datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]) )
@@ -106,7 +106,7 @@ points(draw_DF$x_rand[1,(steps-ntail):steps,1],draw_DF$x_rand[2,(steps-ntail):st
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelCaptureSpeedVsUndershoot_SetC2.pdf",sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelCaptureSpeedVsUndershoot_SetCV2.pdf",sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
 
 outer = FALSE
 line = 1 ## SubFig Label Params

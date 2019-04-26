@@ -3453,12 +3453,13 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               double fitScoreReward = fish->updateEyeState(vell);
 
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
-              current_eyeState.iSegThres1        = gthresEyeSeg;
+              current_eyeState.iSegThres1        = gthresEyeSeg; //Update to what the environment state is
               current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);
 
-              pRLEye->UpdateStateValue(current_eyeState,fitScoreReward);
-              tEyeDetectorState new_eyeState = pRLEye->DrawNextAction(current_eyeState);
-              gthresEyeSeg = new_eyeState.iSegThres1; //Update threshold as indicated by algorithm
+              pRLEye->UpdateStateValue(current_eyeState,fitScoreReward); //Tell RL that we moved state so it calc value and updates internal state
+              //pRLEye->setCurrentState(current_eyeState);
+              tEyeDetectorState new_eyeState = pRLEye->DrawNextAction(current_eyeState); //RL choose next Action /
+              gthresEyeSeg = new_eyeState.iSegThres1; //Action Sets a partial state -> Update threshold as indicated by algorithm
               pwindow_main->UpdateSpinBoxToValue();
 
               ///  Print Out Values //

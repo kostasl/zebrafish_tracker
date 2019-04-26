@@ -13,8 +13,8 @@
 tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 {
 
-   ulong idxVal_i = currentState.iSegThres1-baseIdxRow;
-   ulong idxVal_j = currentState.VergenceState-baseIdxCol;
+   int idxVal_i = (int)currentState.iSegThres1-baseIdxRow;
+   int idxVal_j = (int)currentState.VergenceState-baseIdxCol;
    tEyeDetectorState nextState = currentState;
     //Draw if we are exploring or Greedy
    if (drand48() < pExplore)
@@ -38,8 +38,8 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
     if (!bExploreMove)
     {
 
-        ulong idxState_ActUp = std::min( mStateValue.size()-1,idxVal_i+1);
-        ulong idxState_ActDown = std::max((ulong)0,idxVal_i-1);
+        ulong idxState_ActUp = std::min((int) mStateValue.size()-1,idxVal_i+1);
+        ulong idxState_ActDown = std::max(0,idxVal_i-1);
         double qUp   = 0; //Marginal Value of going action up thresh.
         double qDown = 0;//Marginal Value of going action down thresh.
 
@@ -73,21 +73,24 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 
 
 /// \brief call it after drawing a new state and evaluating its fitness
+/// Make transition to to NewState once value has been updated
 /// \param RewardScore the immediate value of the current state and
-double EyesDetector::UpdateStateValue(tEyeDetectorState nextState,double RewardScore)
+double EyesDetector::UpdateStateValue(tEyeDetectorState toState,double RewardScore)
 {
 
     ulong idxVal_i = (ulong)currentState.iSegThres1-baseIdxRow;
     ulong idxVal_j = (ulong)currentState.VergenceState;
 
     //Get Next states Value and update current - Greedy
-    ulong idxNextVal_i = (ulong)nextState.iSegThres1-baseIdxRow;
-    ulong idxNextVal_j = (ulong)nextState.VergenceState;
+    ulong idxNextVal_i = (ulong)toState.iSegThres1-baseIdxRow;
+    ulong idxNextVal_j = (ulong)toState.VergenceState;
     //Update The Current State value by propagating value of next state backwards
 
     //TD learning - Use immediate Reward and add discounted future state rewards
     mStateValue[idxVal_i][idxVal_j] = mStateValue[idxVal_i][idxVal_j] +
                                       alpha*(RewardScore + gamma*mStateValue[idxNextVal_i][idxNextVal_j]-mStateValue[idxVal_i][idxVal_j] );
+
+    currentState = toState; //Make transition to new state as set by the environment
 
     return mStateValue[idxVal_i][idxVal_j];
 }
@@ -123,6 +126,11 @@ EyesDetector::~EyesDetector()
 tEyeDetectorState EyesDetector::getCurrentState()
 {
     return currentState;
+}
+
+void EyesDetector::setCurrentState(tEyeDetectorState State)
+{
+    currentState = State;
 }
 
 

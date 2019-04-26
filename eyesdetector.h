@@ -29,11 +29,14 @@ typedef struct EyeDetectorState
                 //Set A discrete number of eye vergence states - here 4 - ranging from -20 to 100
         if (vangle < 20.0)
             VergenceState = 1;
-        else if (vangle >= 20.0 & vangle < 40.0)
+
+        if (vangle >= 20.0 && vangle < 40.0)
             VergenceState = 2;
-        else if (vangle >= 40.0 & vangle < 60.0)
+
+        if (vangle >= 40.0 && vangle < 60.0)
             VergenceState = 3;
-        else if (vangle >= 60.0)
+
+        if (vangle >= 60.0)
             VergenceState = 4;
 
        if (VergenceState > 4)
@@ -42,6 +45,7 @@ typedef struct EyeDetectorState
 
       //  VergenceState = (int)std::max(0.0, std::min(12.0, round( (vangle)/10.0 )+2.0 )  );
     }
+
     int iSegThres1;
     int iSegThres2;
     int VergenceState;
@@ -59,6 +63,7 @@ public:
     EyesDetector(int RangeValThres_min,int RangeValThres_max,int AngleVal_min,int AngleVal_max);
     EyesDetector();
     tEyeDetectorState getCurrentState();
+    void setCurrentState(tEyeDetectorState State);
     ~EyesDetector();
 
     std::vector<double> & operator[](int i)
