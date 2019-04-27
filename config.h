@@ -76,7 +76,8 @@ extern int gi_CannyThresSmall; //Aperture size should be odd between 3 and 7 in 
 extern int gi_maxEllipseMajor; /// thres  for Eye Ellipse Detection methods
 extern int gi_minEllipseMajor; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 extern int gi_VotesEllipseThres; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-extern int gthresEyeSeg; //Threshold For Eye Segmentation In Isolated Head IMage
+extern int gthresEyeSeg; //Central Threshold For Eye Segmentation In Isolated Head IMage
+extern int gthresEyeSegL; //Lower Eye Seg Threshold
 extern int gnumberOfTemplatesInCache; //INcreases As new Are Added
 extern float gDisplacementThreshold; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 extern int gFishBoundBoxSize; /// pixel width/radius of bounding Box When Isolating the fish's head From the image

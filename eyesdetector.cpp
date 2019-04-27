@@ -16,7 +16,9 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
     std::uniform_int_distribution<> distr(0, mStateValue.size()-1);
 
    int idxVal_i = (int)currentState.iSegThres1-baseIdxRow;
-   int idxVal_j = (int)currentState.VergenceState-baseIdxCol;
+   int idxVal_j = (int)currentState.iDSegThres2;
+   int idxVal_k = (int)currentState.VergenceState;
+
    tEyeDetectorState nextState = currentState;
     //Draw if we are exploring or Greedy
    if (drand48() < pExplore)
@@ -43,17 +45,14 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
         double qStay = 0;
 
         //Calc Marginal Value For each Action taken (the state can shift the eye vergence so marginalize across a range )
-        for (ulong i=0;i < mStateValue[idxVal_i].size();i++ )
-                qStay += mStateValue[idxVal_i][i];
+        for (ulong v=0;v < mStateValue[idxVal_i][idxVal_j].size();v++ )
+                qStay += mStateValue[idxVal_i][idxVal_j][v];
 
-        for (ulong i=0;i < mStateValue[idxState_ActUp].size();i++ )
-                qUp += mStateValue[idxState_ActUp][i];
+        for (ulong v=0;v < mStateValue[idxState_ActUp][idxVal_j].size();v++ )
+                qUp += mStateValue[idxState_ActUp][idxVal_j][v];
 
-        for (ulong i=0;i < mStateValue[idxState_ActDown].size();i++ )
-                qDown += mStateValue[idxState_ActDown][i];
-        // if equal value
-        //if (qUp == qDown ) //Add noise to randomly choose direction
-        //    qUp += (drand48()-0.5);
+        for (ulong v=0;v < mStateValue[idxState_ActDown][idxVal_j].size();v++ )
+                qDown += mStateValue[idxState_ActDown][idxVal_j][v];
 
         if (qUp > qDown && qUp > qStay)
                 nextState.iSegThres1++;
@@ -61,19 +60,41 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
         if (qUp < qDown && qDown > qStay)
                 nextState.iSegThres1--;
 
-        //Otherwise stay on the same threshold
+        // Check Limits: Do not exceed state space limits - bounce off walls;
+        nextState.iSegThres1 = std::max((int)nextState.iSegThres1,baseIdxRow);
+        nextState.iSegThres1 = std::min((int)nextState.iSegThres1,baseIdxRow+(int)mStateValue.size()-1);
+
+        //Otherwise stay on the same Main threshold
+        /// Calc action Value of Changing 2nd threshold //
+        idxVal_i = (int)nextState.iSegThres1-baseIdxRow;
+
+        ulong idx2ndState_ActUp = std::min((int) mStateValue[0].size()-1,idxVal_j+1);
+        ulong idx2ndState_ActDown = std::max(0,idxVal_j-1);
+        // Action taken to move main thesh, then value of stay changed, recalc
+        if (nextState.iSegThres1 != currentState.iSegThres1)
+        {
+            for (ulong v=0;v < mStateValue[idxVal_i].size();v++ )
+                    qStay += mStateValue[idxVal_i][idxVal_j][v];
+        }
+
+        for (ulong v=0;v < mStateValue[idxVal_i].size();v++ )
+                qUp += mStateValue[idxVal_i][idx2ndState_ActUp][v];
+
+        for (ulong v=0;v < mStateValue[idxVal_i].size();v++ )
+                qDown += mStateValue[idxVal_i][idx2ndState_ActDown][v];
+
+        if (qUp > qDown && qUp > qStay)
+            nextState.iDSegThres2++;
+
+        if (qUp < qDown && qDown > qStay)
+            nextState.iDSegThres2--;
 
     } // Taking greedy action / not exploring
 
-    //Do not exceed state space limits - bounce off walls;
-    nextState.iSegThres1 = std::max((int)nextState.iSegThres1,baseIdxRow);
-    nextState.iSegThres1 = std::min((int)nextState.iSegThres1,baseIdxRow+(int)mStateValue.size()-1);
 
 
     //Return next state to the environment - which will evaluate the fit score to update the value funct.
     return nextState;
-
-
 }
 
 
@@ -83,39 +104,44 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 double EyesDetector::UpdateStateValue(tEyeDetectorState toState,double RewardScore)
 {
     int idxVal_i = std::max(0,(int)currentState.iSegThres1-(int)baseIdxRow);
-    int idxVal_j = currentState.VergenceState;
+    int idxVal_j = currentState.iDSegThres2; //The difference to 2nd threshold
+    int idxVal_k = currentState.VergenceState;
 
     //Get Next states Value and update current - Greedy
     int idxNextVal_i = (int)toState.iSegThres1-baseIdxRow;
-    int idxNextVal_j = (int)toState.VergenceState;
+    int idxNextVal_j = (int)toState.iDSegThres2;
+    int idxNextVal_k = (int)toState.VergenceState;
+
     //Update The Current State value by propagating value of next state backwards
 
     //TD learning - Use immediate Reward and add discounted future state rewards
     if (!bExploreMove) //propagate value from nearby threshold transitions
-        mStateValue[idxVal_i][idxVal_j] = mStateValue[idxVal_i][idxVal_j] +
-                                      alpha*(RewardScore + gamma*mStateValue[idxNextVal_i][idxNextVal_j]-mStateValue[idxVal_i][idxVal_j] );
+        mStateValue[idxVal_i][idxVal_j][idxVal_k] = mStateValue[idxVal_i][idxVal_j][idxVal_k] +
+                                      alpha*(RewardScore + gamma*mStateValue[idxNextVal_i][idxNextVal_j][idxNextVal_k]-mStateValue[idxVal_i][idxVal_j][idxVal_k] );
     else {//When exploring we do not update based on the transition / as the action taken could not have been  chosen -
          // only account for user/reward in state
-        mStateValue[idxVal_i][idxVal_j] = mStateValue[idxVal_i][idxVal_j] + alpha*(RewardScore - mStateValue[idxVal_i][idxVal_j]);
+        mStateValue[idxVal_i][idxVal_j][idxVal_k] = mStateValue[idxVal_i][idxVal_j][idxVal_k] + alpha*(RewardScore - mStateValue[idxVal_i][idxVal_j][idxVal_k]);
     }
 
     currentState = toState; //Make transition to new state as set by the environment
 
-    return mStateValue[idxVal_i][idxVal_j];
+    return mStateValue[idxVal_i][idxVal_j][idxVal_k];
 }
 
 
-EyesDetector::EyesDetector(int RangeValThres_min,int RangeValThres_max,int AngleVal_min,int AngleVal_max): EyesDetector(RangeValThres_max-RangeValThres_min, 4)
+EyesDetector::EyesDetector(int RangeValThres_min,int RangeValThres_max,int AngleVal_min,int AngleVal_max): EyesDetector(RangeValThres_max-RangeValThres_min,(RangeValThres_max-RangeValThres_min)/2, 4)
 {
 ///Keep The min values so We can translate, locatre State  Values
 baseIdxRow = RangeValThres_min;
+
 //baseIdxCol = AngleVal_min;
 
     for(int i = 0;i < mStateValue.size();++i)
     {
           for(int j = 0;j < mStateValue[i].size();++j)
           {
-            mStateValue[i][j] = 100; // start with high value on all - so we get to explore more
+              for(int k = 0;j < mStateValue[i].size();++j)
+                 mStateValue[i][j][k] = 100; // start with high value on all - so we get to explore more
           }
     }
 

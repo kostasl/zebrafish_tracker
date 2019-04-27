@@ -5,6 +5,8 @@
 #include <math.h>
 #include <random>
 
+#include "ellipse_detect.h"
+
 /// \class EyesDetector
 /// \brief Uses reinforcement learning techniques to identify best way to discriminate eye angle.
 ///  Uses ellipsedetection score to estimate value of each action.
@@ -15,16 +17,18 @@
 extern int gthresEyeSeg;
 
 typedef unsigned long ulong;
-typedef std::vector< std::vector<double> > tStateValueMatrix;
+typedef std::vector<std::vector< std::vector<double> > > tStateValueMatrix;
 typedef struct EyeDetectorState
 {
     EyeDetectorState(){
         iSegThres1 = gthresEyeSeg;
-        iSegThres2 = gthresEyeSeg+1;
+        iDSegThres2 = 1;
+        yEyePosition = 7;
         VergenceState = 1;
     }
-    EyeDetectorState(int initSegT1,int initSegT2,int initVAngle):iSegThres1(initSegT1),iSegThres2(initSegT2){
+    EyeDetectorState(int initSegT1,int initSegT2,int initVAngle):iSegThres1(initSegT1),iDSegThres2(initSegT2){
         setVergenceState(initVAngle);
+        yEyePosition = 7;
     }
 
     //Translate vergence angles to discretized eye vergence states
@@ -49,8 +53,14 @@ typedef struct EyeDetectorState
       //  VergenceState = (int)std::max(0.0, std::min(12.0, round( (vangle)/10.0 )+2.0 )  );
     }
 
+    void setEyePos(tDetectedEllipsoid lEye,tDetectedEllipsoid rEye){
+
+    }
+
+
     int iSegThres1;
-    int iSegThres2;
+    int iDSegThres2; //Distance Of T2 from T1
+    int yEyePosition; //Centre on Y axis for Eye fitted ellipsoids - We can allow the learning algorithm to fix/move the head cutout to improve fit
     int VergenceState;
 
 
@@ -62,26 +72,40 @@ typedef struct EyeDetectorState
 class EyesDetector
 {
 public:
-    EyesDetector(int VarRows,int ValCol):mStateValue( VarRows,std::vector<double>(ValCol) ){} //Rows - number of segthres to explore - Cols - Vergence state descriptors
+    EyesDetector(ulong  ValD1,ulong  ValD2,ulong ValD3):mStateValue( ValD1,std::vector<std::vector<double>>(ValD2,std::vector<double>(ValD3)) ){} //Rows - number of segthres to explore - Cols - Vergence state descriptors
     EyesDetector(int RangeValThres_min,int RangeValThres_max,int AngleVal_min,int AngleVal_max);
     EyesDetector();
     tEyeDetectorState getCurrentState();
     void setCurrentState(tEyeDetectorState State);
     ~EyesDetector();
         // OVerload the member access functs
-    std::vector<double> & operator[](int i)
+    double & operator[](int i)
     {
-      return mStateValue[i];
-    }
-    const std::vector<double> & operator[] (int i) const
-    {
-      return mStateValue[i];
+
+      return mStateValue[1][1][i];
     }
 
-    void resize(int rows, int cols)//resize the two dimentional array .
+    /// \todo make 1 iterator design flattening the 3D array
+    const double  operator[] (int i) const
+    {
+      return mStateValue[1][1][i];
+    }
+
+    /// overload size operator / return full state object size
+    size_t
+    size() const _GLIBCXX_NOEXCEPT
+    { return mStateValue.size()*mStateValue[1].size()*mStateValue[1][1].size();}
+
+    void resize(int rows, int cols,int index)//resize the 3 Dimensional array .
     {
         mStateValue.resize(rows);
-        for(int i = 0;i < rows;++i) mStateValue[i].resize(cols);
+        for(int i = 0;i < rows;++i)
+        {
+            mStateValue[i].resize(cols);
+            for (int j=0;j<cols;j++)
+                mStateValue[i][j].resize(index);
+        }
+
     }
 
     /// The TD learning transitions function

@@ -54,6 +54,7 @@ int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
 int gi_minEllipseMajor      = 12; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 3; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
+int gthresEyeSegL               = 2;
 int gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
 float gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
 int gFishBoundBoxSize           = 24; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
