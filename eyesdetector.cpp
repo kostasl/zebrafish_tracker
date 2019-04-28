@@ -157,8 +157,11 @@ baseIdxRow = RangeValThres_min;
  /// Load Archived values if they Exists
  /// Load Saved Learned Behaviour
   std::ifstream is(gsEyeDetectorFilename.toStdString());
-  cereal::JSONInputArchive archive(is);
-  archive(mStateValue); //Load State Value
+  if (is.is_open())
+  {
+    cereal::JSONInputArchive archive(is);
+    archive(mStateValue); //Load State Value
+  }
 
 }
 

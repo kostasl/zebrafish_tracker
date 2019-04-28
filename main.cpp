@@ -728,7 +728,7 @@ int main(int argc, char *argv[])
     gFishTemplateCache.release();
 
     //Save Learned Values to Disk
-    std::ofstream os(gsEyeDetectorFilename);
+    std::ofstream os(gsEyeDetectorFilename.toStdString());
     cereal::JSONOutputArchive archive(os);
     pRLEye->serialize(archive); //Load State Value
     delete pRLEye;//Destroy EyeSeg Assistant
