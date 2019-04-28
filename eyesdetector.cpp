@@ -15,8 +15,8 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 {
     std::uniform_int_distribution<> distr(0, mStateValue.size()-1);
 
-   int idxVal_i = (int)currentState.iSegThres1-baseIdxRow;
-   int idxVal_j = (int)currentState.iDSegThres2;
+   int idxVal_i = std::max((int)mStateValue.size()-1,(int)currentState.iSegThres1-baseIdxRow);
+   int idxVal_j = std::max((int)mStateValue[0].size()-1, std::min(0,(int)currentState.iDSegThres2));
    int idxVal_k = (int)currentState.VergenceState;
 
    tEyeDetectorState nextState = currentState;
@@ -91,6 +91,9 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 
     } // Taking greedy action / not exploring
 
+    //Enforce bounds on 2nd threshold
+    nextState.iDSegThres2 = std::max((int)nextState.iDSegThres2,0);
+    nextState.iDSegThres2= std::min((int)nextState.iDSegThres2,(int)mStateValue[0].size()-1);
 
 
     //Return next state to the environment - which will evaluate the fit score to update the value funct.
