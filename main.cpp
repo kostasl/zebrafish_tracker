@@ -71,6 +71,8 @@
 
 #include <string.h>
 
+#include <cereal/archives/json.hpp> //Data Serialize of EyeDetector
+#include <fstream>
 
 #include <QDirIterator>
 #include <QDir>
@@ -118,6 +120,7 @@
 QElapsedTimer gTimer;
 QFile outfishdatafile;
 QFile outfooddatafile;
+QFile EyeDetectorRL; //Reinforcement Learned Behaviour For Eye Segmentation -
 QString outfilename;
 std::string gstrwinName = "FishFrame";
 QString gstroutDirCSV,gstrinDirVid,gstrvidFilename; //The Output Directory
@@ -665,6 +668,7 @@ int main(int argc, char *argv[])
     //init with 20 seg thres states , and 10 eye vergence states
     pRLEye = new EyesDetector(-5,15,-10,80);
 
+
     try{
 
         //app.exec();
@@ -723,7 +727,13 @@ int main(int argc, char *argv[])
 
     gFishTemplateCache.release();
 
+    //Save Learned Values to Disk
+    std::ofstream os(gsEyeDetectorFilename);
+    cereal::JSONOutputArchive archive(os);
+    pRLEye->serialize(archive); //Load State Value
     delete pRLEye;//Destroy EyeSeg Assistant
+
+
 
     //gFishTemplateCache.deallocate();
 

@@ -1,9 +1,17 @@
 #ifndef EYESDETECTOR_H
 #define EYESDETECTOR_H
 
+#include "config.h"
 #include <vector>
 #include <math.h>
 #include <random>
+
+
+
+#include <cereal/archives/json.hpp>
+#include "cereal/types/vector.hpp"
+
+#include <fstream>
 
 #include "ellipse_detect.h"
 
@@ -107,6 +115,13 @@ public:
         }
 
     }
+    // This method lets cereal know which data members to serialize
+      template<class Archive>
+      void serialize(Archive & archive)
+      {
+        archive(CEREAL_NVP(( mStateValue ) )); // serialize things by passing them to the archive
+      }
+
 
     /// The TD learning transitions function
     /// \param RewardScore the fitness score as evaluated after fitting ellipse with given settings

@@ -86,3 +86,4 @@ double gUserReward               = 0; //User feedback for reinforcement learning
  double sigma = 3.0;
  int M = round((3.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
 
+const QString gsEyeDetectorFilename = "RLEyeDetector.json";

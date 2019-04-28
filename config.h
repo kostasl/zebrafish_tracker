@@ -5,6 +5,7 @@
 #include <limits>
 #include <string>
 #include <cmath>
+#include <QString>
 
 #define ZTF_FISHCONTOURSIZE          90
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
@@ -104,6 +105,9 @@ extern int iEyeMaskSepWidth; //Line width separating the eyes in the Head Image
 ///Global Variables
 extern double sigma ;
 extern int M ; //Gaussian Kernel Size
+
+//Filename to Save Reinf. Learning State for EyeDetection
+extern const QString gsEyeDetectorFilename;
 
 /// \brief pointPairs is a vector holding points that the user chooses so as to measure distances between arbitrary points
 typedef std::pair<cv::Point,cv::Point>  pointPair;

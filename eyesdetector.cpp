@@ -1,7 +1,13 @@
+#include "config.h"
 #include "eyesdetector.h"
 #include <random>
 #include <QDebug>
 #include <assert.h>
+
+
+#include <cereal/archives/json.hpp>
+#include "cereal/types/vector.hpp"
+#include <fstream>
 
 /// \brief implements a reinforcement learning technique to discover parameters for
 /// best extraction of eye information from video frames
@@ -107,7 +113,7 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 double EyesDetector::UpdateStateValue(tEyeDetectorState toState,double RewardScore)
 {
     int idxVal_i = std::max(0,(int)currentState.iSegThres1-(int)baseIdxRow);
-    int idxVal_j = currentState.iDSegThres2; //The difference to 2nd threshold
+    int idxVal_j = std::max(0,currentState.iDSegThres2); //The difference to 2nd threshold/ enfornce lower bound
     int idxVal_k = currentState.VergenceState;
 
     //Get Next states Value and update current - Greedy
@@ -148,6 +154,11 @@ baseIdxRow = RangeValThres_min;
           }
     }
 
+ /// Load Archived values if they Exists
+ /// Load Saved Learned Behaviour
+  std::ifstream is(gsEyeDetectorFilename.toStdString());
+  cereal::JSONInputArchive archive(is);
+  archive(mStateValue); //Load State Value
 
 }
 
@@ -158,6 +169,7 @@ EyesDetector::EyesDetector()
 
 EyesDetector::~EyesDetector()
 {
+
 
 }
 
