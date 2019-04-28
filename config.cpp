@@ -51,7 +51,7 @@ bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in F
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
 int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
-int gi_minEllipseMajor      = 12; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 3; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
 int gthresEyeSegL               = 2;
@@ -86,4 +86,4 @@ double gUserReward               = 0; //User feedback for reinforcement learning
  double sigma = 3.0;
  int M = round((3.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
 
-const QString gsEyeDetectorFilename = "RLEyeDetector.json";
+const QString gsEyeDetectorFilename = "RLEyeDetector.xml";

@@ -9,6 +9,7 @@
 
 
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/xml.hpp>
 #include "cereal/types/vector.hpp"
 
 #include <fstream>
@@ -119,7 +120,7 @@ public:
       template<class Archive>
       void serialize(Archive & archive)
       {
-        archive(CEREAL_NVP(( mStateValue ) )); // serialize things by passing them to the archive
+        archive(CEREAL_NVP(mStateValue)); // serialize things by passing them to the archive
       }
 
 
@@ -127,7 +128,7 @@ public:
     /// \param RewardScore the fitness score as evaluated after fitting ellipse with given settings
     tEyeDetectorState DrawNextAction(tEyeDetectorState currentState);
     double UpdateStateValue(tEyeDetectorState nextState,double RewardScore);
-
+    void SaveState();/// Saves learned behaviour to disk in RLEyeDetector.xml;
 
 private:
     const double pExplore = 0.2;

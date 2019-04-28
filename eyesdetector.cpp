@@ -6,6 +6,7 @@
 
 
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/xml.hpp>
 #include "cereal/types/vector.hpp"
 #include <fstream>
 
@@ -159,10 +160,30 @@ baseIdxRow = RangeValThres_min;
   std::ifstream is(gsEyeDetectorFilename.toStdString());
   if (is.is_open())
   {
-    cereal::JSONInputArchive archive(is);
-    archive(mStateValue); //Load State Value
+
+    try
+      {
+        cereal::XMLInputArchive archive(is);
+        archive(mStateValue); //Load State Value
+      }catch (QString e)
+      {
+              qDebug() << "Failed to open RLEyeDetector Data file:" << e;
+      }
+
+
   }
 
+}
+
+void EyesDetector::SaveState()
+{
+    //Save Learned Values to Disk
+    std::ofstream os(gsEyeDetectorFilename.toStdString());
+    cereal::XMLOutputArchive archive(os);
+    this->serialize(archive); //Load State Value
+
+    os.flush();
+    //archive.~XMLOutputArchive(); //XMLArchive only flushes if destroyed
 }
 
 EyesDetector::EyesDetector()

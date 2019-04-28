@@ -72,6 +72,7 @@
 #include <string.h>
 
 #include <cereal/archives/json.hpp> //Data Serialize of EyeDetector
+#include <cereal/archives/xml.hpp> //Data Serialize of EyeDetector
 #include <fstream>
 
 #include <QDirIterator>
@@ -727,10 +728,8 @@ int main(int argc, char *argv[])
 
     gFishTemplateCache.release();
 
-    //Save Learned Values to Disk
-    std::ofstream os(gsEyeDetectorFilename.toStdString());
-    cereal::JSONOutputArchive archive(os);
-    pRLEye->serialize(archive); //Load State Value
+    pRLEye->SaveState();
+    window_main.LogEvent("[INFO] Saved EyeDetector State.");
     delete pRLEye;//Destroy EyeSeg Assistant
 
 
