@@ -1,0 +1,1246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cereal>
+	<mStateValue size="dynamic">
+		<value0 size="dynamic">
+			<value0 size="dynamic">
+				<value0>344.93669938806062</value0>
+				<value1>239.53044551613368</value1>
+				<value2>283.53672949046808</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>149.42909618434001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>130.822</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>104</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>126.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value0>
+		<value1 size="dynamic">
+			<value0 size="dynamic">
+				<value0>310.21959044101663</value0>
+				<value1>293.08399089402292</value1>
+				<value2>262.96018311317368</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>113.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>150.83799999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>151.99799999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>124</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>115.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value1>
+		<value2 size="dynamic">
+			<value0 size="dynamic">
+				<value0>314.53596547114495</value0>
+				<value1>310.66472695374443</value1>
+				<value2>263.5730711833433</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>109.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>124.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value2>
+		<value3 size="dynamic">
+			<value0 size="dynamic">
+				<value0>294.6847444334453</value0>
+				<value1>304.80569569034333</value1>
+				<value2>252.35898817661146</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>115</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>124</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>122.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>136.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>131</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>129.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value3>
+		<value4 size="dynamic">
+			<value0 size="dynamic">
+				<value0>289.46340322065413</value0>
+				<value1>318.04959311189793</value1>
+				<value2>210.58869804856096</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>145.11922773644255</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>126.614</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>130.80000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>128</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>129.19999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>123.2</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>127.2</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>130.80000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value4>
+		<value5 size="dynamic">
+			<value0 size="dynamic">
+				<value0>332.74380957374808</value0>
+				<value1>290.89882900941581</value1>
+				<value2>216.64181832562031</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>160.93608</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>180.58288000000002</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>170.83240000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>163.548</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>136.19999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>121.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>128.80000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>118</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>162.56080400000002</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value5>
+		<value6 size="dynamic">
+			<value0 size="dynamic">
+				<value0>300.89894232538131</value0>
+				<value1>275.04112989604943</value1>
+				<value2>219.7139711362635</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value6>
+		<value7 size="dynamic">
+			<value0 size="dynamic">
+				<value0>300.81827062023893</value0>
+				<value1>229.38272267120587</value1>
+				<value2>188.98215770324683</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>119.54286172499</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>120.8</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>116</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>131.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>122.2</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value7>
+		<value8 size="dynamic">
+			<value0 size="dynamic">
+				<value0>271.32104884384313</value0>
+				<value1>261.38864913748614</value1>
+				<value2>202.54464629386132</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>114.8</value0>
+				<value1>28.800000000000001</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>205.25254287632146</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value8>
+		<value9 size="dynamic">
+			<value0 size="dynamic">
+				<value0>277.5820287638461</value0>
+				<value1>219.67063815058054</value1>
+				<value2>189.38395562040742</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>151.64960000000002</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>137.19999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>116.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>137.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>117.2</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>124.8</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>117.398</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>129.81999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>159.30540400000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value9>
+		<value10 size="dynamic">
+			<value0 size="dynamic">
+				<value0>258.19499131302103</value0>
+				<value1>205.35974732931359</value1>
+				<value2>195.52331774332009</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>132.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>119.82944000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>157.60000600000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>113.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value10>
+		<value11 size="dynamic">
+			<value0 size="dynamic">
+				<value0>253.6347931119395</value0>
+				<value1>236.95677910337963</value1>
+				<value2>188.65361010530145</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>116</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value11>
+		<value12 size="dynamic">
+			<value0 size="dynamic">
+				<value0>234.23315482271053</value0>
+				<value1>233.16132174081554</value1>
+				<value2>188.30761824338634</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>114.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value12>
+		<value13 size="dynamic">
+			<value0 size="dynamic">
+				<value0>235.52073047416724</value0>
+				<value1>211.14271216797937</value1>
+				<value2>152.76014638656505</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>108.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value13>
+		<value14 size="dynamic">
+			<value0 size="dynamic">
+				<value0>225.34743538948601</value0>
+				<value1>201.61194515942688</value1>
+				<value2>129.75884742129989</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>123.2</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value14>
+		<value15 size="dynamic">
+			<value0 size="dynamic">
+				<value0>205.17611632444317</value0>
+				<value1>188.40598180875404</value1>
+				<value2>124.67080170359984</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>111.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>110.59999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>137.566</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>114.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value15>
+		<value16 size="dynamic">
+			<value0 size="dynamic">
+				<value0>183.43845513816532</value0>
+				<value1>180.27344567267062</value1>
+				<value2>62.05395439161672</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>110.8</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value16>
+		<value17 size="dynamic">
+			<value0 size="dynamic">
+				<value0>155.96367903722276</value0>
+				<value1>202.15778943238166</value1>
+				<value2>111.43904626591774</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>121.95805601405999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>112.2</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>103.8</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>117.73999999999999</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>109.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>112.2</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>107.40000000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>108.8</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>165.29206592707399</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value17>
+		<value18 size="dynamic">
+			<value0 size="dynamic">
+				<value0>159.52544085007455</value0>
+				<value1>157.26770980115299</value1>
+				<value2>76.952759170347235</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>104.35671393437264</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>110.8</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>119.8</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>137.34</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>107.26600000000001</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>120</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>115</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value18>
+		<value19 size="dynamic">
+			<value0 size="dynamic">
+				<value0>98.796988942770753</value0>
+				<value1>135.104217026475</value1>
+				<value2>50.482661321114044</value2>
+				<value3>0</value3>
+			</value0>
+			<value1 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value1>
+			<value2 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value2>
+			<value3 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value3>
+			<value4 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value4>
+			<value5 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value5>
+			<value6 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value6>
+			<value7 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value7>
+			<value8 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value8>
+			<value9 size="dynamic">
+				<value0>100</value0>
+				<value1>0</value1>
+				<value2>0</value2>
+				<value3>0</value3>
+			</value9>
+		</value19>
+	</mStateValue>
+</cereal>
+
