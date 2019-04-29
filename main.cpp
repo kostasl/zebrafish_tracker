@@ -24,7 +24,7 @@
  ///    * T to save current tracked region as new template
  ///    * M Manual Measure Distance (px) -
  ///    * E Manually Set Eye Angles
-  ///    * F Manually set prey position (which is then tracked)
+  ///   * F Manually set prey position (which is then tracked)
  ///    * q Exit Quit application
  ///*
  ///*
@@ -3457,13 +3457,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
               std::stringstream ss;
 
-            if (ret < 2)
+            if (ret < 2 | gUserReward < 0)
             {
                 ss << " Eye Detection Error - Check Threshold";
                 window_main.LogEvent(QString::fromStdString(ss.str()));
-                //fish->leftEyeTheta = 180;
-                //fish->rightEyeTheta = 180;
-                //fish->leftEye.fitscore = fish->rightEye.fitscore = 0;
                 fish->nFailedEyeDetectionCount++;
                 //std::clog << ss.str() << std::endl;
             }
@@ -3497,7 +3494,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               /// \todo Move this to specialized Function Like @renderFrameText
               ///If Both Eyes Detected Then Print Vergence Angle
               ss.precision(3);
-              if (fish->leftEye.fitscore > 20 && fish->rightEye.fitscore > 20)
+              if (fitScoreReward > 150)
               {
                   ss.str(""); //Empty String
                   ss << "L:" << fish->leftEyeTheta;
@@ -3519,7 +3516,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
               //Check If Too Many Eye Detection Failures - Then Switch Template
-              if (fish->nFailedEyeDetectionCount > 10)
+              if (fish->nFailedEyeDetectionCount > 40)
               {
                     fish->idxTemplateRow = iLastKnownGoodTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
                     pwindow_main->LogEvent(QString("[warning] Too Many Eye detection Failures - Change Template Randomly to :" + QString::number(iLastKnownGoodTemplateRow)));

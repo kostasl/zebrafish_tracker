@@ -20,10 +20,11 @@
 /// \returns a modified currentState reflecting the action taken in the state space based on (greedy policy)
 tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 {
-    std::uniform_int_distribution<> distr(0, mStateValue.size()-1);
+    std::uniform_int_distribution<> distrA(0, mStateValue.size()-1);
+    std::uniform_int_distribution<> distrB(0, mStateValue[0].size()-1);
 
-   int idxVal_i = std::max((int)mStateValue.size()-1,(int)currentState.iSegThres1-baseIdxRow);
-   int idxVal_j = std::max((int)mStateValue[0].size()-1, std::min(0,(int)currentState.iDSegThres2));
+   int idxVal_i = std::min((int)mStateValue.size()-1,(int)currentState.iSegThres1-baseIdxRow);
+   int idxVal_j = std::min((int)mStateValue[0].size()-1, std::max(0,(int)currentState.iDSegThres2));
    int idxVal_k = (int)currentState.VergenceState;
 
    tEyeDetectorState nextState = currentState;
@@ -35,11 +36,15 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
    else
        bExploreMove = false;
 
+    //bExploreMove = false; //Never Explore
     //Explore: Choose Action that determines Next State
     // Todo : Maybe policy could be modified to context, ie  EyeVergence
     //Jump to random threshold
     if (bExploreMove)
-        nextState.iSegThres1 =distr(generator)+baseIdxRow;
+    {
+        nextState.iSegThres1  =distrA(generator)+baseIdxRow;
+        nextState.iDSegThres2 =distrB(generator);
+    }
 
     //Policy: Take greedy action with some prob
     if (!bExploreMove)
@@ -74,20 +79,20 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
         //Otherwise stay on the same Main threshold
         /// Calc action Value of Changing 2nd threshold //
         idxVal_i = (int)nextState.iSegThres1-baseIdxRow;
-
-        ulong idx2ndState_ActUp = std::min((int) mStateValue[0].size()-1,idxVal_j+1);
-        ulong idx2ndState_ActDown = std::max(0,idxVal_j-1);
+        qUp =qDown = 0.0;
+        int idx2ndState_ActUp = std::min((int) mStateValue[0].size()-1,idxVal_j+1);
+        int idx2ndState_ActDown = std::max(0,idxVal_j-1);
         // Action taken to move main thesh, then value of stay changed, recalc
         if (nextState.iSegThres1 != currentState.iSegThres1)
-        {
-            for (ulong v=0;v < mStateValue[idxVal_i].size();v++ )
+        {   qStay = 0.0;
+            for (ulong v=0;v < mStateValue[idxVal_i][idxVal_j].size();v++ )
                     qStay += mStateValue[idxVal_i][idxVal_j][v];
         }
 
-        for (ulong v=0;v < mStateValue[idxVal_i].size();v++ )
+        for (ulong v=0;v < mStateValue[idxVal_i][idx2ndState_ActUp].size();v++ )
                 qUp += mStateValue[idxVal_i][idx2ndState_ActUp][v];
 
-        for (ulong v=0;v < mStateValue[idxVal_i].size();v++ )
+        for (ulong v=0;v < mStateValue[idxVal_i][idx2ndState_ActDown].size();v++ )
                 qDown += mStateValue[idxVal_i][idx2ndState_ActDown][v];
 
         if (qUp > qDown && qUp > qStay)
@@ -118,8 +123,8 @@ double EyesDetector::UpdateStateValue(tEyeDetectorState toState,double RewardSco
     int idxVal_k = currentState.VergenceState;
 
     //Get Next states Value and update current - Greedy
-    int idxNextVal_i = (int)toState.iSegThres1-baseIdxRow;
-    int idxNextVal_j = (int)toState.iDSegThres2;
+    int idxNextVal_i = std::max(0,(int)toState.iSegThres1-(int)baseIdxRow);
+    int idxNextVal_j = std::max(0,(int)toState.iDSegThres2);
     int idxNextVal_k = (int)toState.VergenceState;
 
     //Update The Current State value by propagating value of next state backwards
@@ -150,7 +155,7 @@ baseIdxRow = RangeValThres_min;
     {
           for(int j = 0;j < mStateValue[i].size();++j)
           {
-              for(int k = 0;j < mStateValue[i].size();++j)
+              for(int k = 0;k < mStateValue[i][j].size();++k)
                  mStateValue[i][j][k] = 100; // start with high value on all - so we get to explore more
           }
     }

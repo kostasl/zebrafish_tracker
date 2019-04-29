@@ -380,7 +380,7 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 ///\return total Score for fit
 int fishModel::updateEyeState(tEllipsoids& vell)
 {
-
+    int retPerfScore = 0;
     double fleftEyeTheta = 0.0f;
     double frightEyeTheta = 0.0f;
 
@@ -450,12 +450,16 @@ int fishModel::updateEyeState(tEllipsoids& vell)
    if (this->leftEye.fitscore > 20 && this->rightEye.fitscore > 20)
    {
       this->nFailedEyeDetectionCount = 0; // Reset Error Count
+      retPerfScore = this->leftEye.fitscore + this->rightEye.fitscore;
+   }else //penalize
+   {
+      retPerfScore =  (this->leftEye.fitscore + this->rightEye.fitscore)- 400;
    }
 
    //Reset Step size to default
     stepUpdate = eyeStepIncrement;
 
-return (this->leftEye.fitscore + this->rightEye.fitscore);
+return (retPerfScore);
 }
 
 
