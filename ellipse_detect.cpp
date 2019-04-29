@@ -1,6 +1,7 @@
 ///*
-/// Implements Algorithm based on A NEW EFFICIENT ELLIPSE DETECTION METHOD, Yonghong Xie   ,IEEE, 2002
-///
+/// \title Implements Algorithm based on A NEW EFFICIENT ELLIPSE DETECTION METHOD, Yonghong Xie   ,IEEE, 2002
+/// \brief Picks 2 random points as possible main elliptic axis and Uses a voting strategy for the most likely minor axis for this pair of points
+/// \details algorithm Steps:
 /// (1) Store all edge pixels in a one dimensional array.
 /// (2) Clear the accumulator array .
 /// (3) For each pixel (x1, y1 ), carry out the following steps from (4) to (14).
@@ -413,16 +414,16 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
                 double coscostau = costau*costau;  //eqn (6)
 // b = sqrt( (aSq * thirdPtDistsSq(K) .* sinTauSq) ./ (aSq - thirdPtDistsSq(K) .* cosTau.^2 + eps) );
                 double bb = aa*dd*(1.0-coscostau)/(aa - dd * coscostau + 0.00001); //(5)
-                int b = std::round((sqrt(bb)));
+                int b = (int)std::round((sqrt(bb)));
                 ///Step 8
                 if (b > 1)
                 {
 
-                    //accumulator[b-2]+=1;
-                    //accumulator[b-1]+=2; // (Make A "weighted" Band Of width 3)
+                    if (b > 2 ) accumulator[b-2]+=2;
+                    accumulator[b-1]+=5; // (Make A "weighted" Band Of width 3)
                     accumulator[b]  +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    //accumulator[b+1]+=2; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    //accumulator[b+2]+=1; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    accumulator[b+1]+=5; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    if (b < accLength-2) accumulator[b+2]+=2; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
 
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head
 //                    double ellArea = M_PI*b*a;
@@ -454,7 +455,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
                     vedgePoints_trial.push_back(it3); //Store Pointer To Point
                 }
 
-            ///Step 9 Loop Until All Pixels 3rd are computed for this pair of pixes
+            ///Step 9 Loop Until All Pixels 3rd are computed for this pair of pixels
             }
 
             ///Step 10 //Find Max In accumulator array. The related length is the possible length of minor axis for assumed ellipse.
