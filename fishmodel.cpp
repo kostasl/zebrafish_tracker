@@ -15,6 +15,7 @@ extern double eyeStepIncrement;
 
 fishModel::fishModel()
 {
+        stepUpdate = 1.0; // with fast rate and slow down with updates
         bearingAngle                = 0.0;
         lastTailFitError            = 0.0;
         templateScore               = 0.0;
@@ -33,8 +34,8 @@ fishModel::fishModel()
         this->ID    = 0;
         zTrack.id   = this->ID;
         zTrack.colour = CV_RGB(255,0,0);
-        leftEyeTheta          = 180; //In Degrees - A Value that looks wrong to show its not initialized
-        rightEyeTheta         = 180; //In Degrees
+        leftEyeTheta          = 0; //In Degrees - A Value that looks wrong to show its not initialized
+        rightEyeTheta         = 0; //In Degrees
         c_spineSegL           = gFishTailSpineSegmentLength;
 }
 
@@ -57,7 +58,7 @@ fishModel::fishModel()
 
 fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter):fishModel()
 {
-
+    stepUpdate = 1.0; // with fast rate and slow down with updates
     inactiveFrames  = 0;
     this->ID        = blob.hash() ;
     this->blobLabel = blob.hash();
@@ -382,13 +383,12 @@ int fishModel::updateEyeState(tEllipsoids& vell)
 
     double fleftEyeTheta = 0.0f;
     double frightEyeTheta = 0.0f;
-    double stepUpdate = eyeStepIncrement;
+
 
     // If we are stuck on same frame then estimate the unbiased empirical mean angle for each eye
     // use an incremental mean calculation
     if (uiFrameIterations > 1)
         stepUpdate = 1.0/std::max(500.0, (double)uiFrameIterations);
-
 
 
     if (vell.size() > 0)
@@ -452,6 +452,8 @@ int fishModel::updateEyeState(tEllipsoids& vell)
       this->nFailedEyeDetectionCount = 0; // Reset Error Count
    }
 
+   //Reset Step size to default
+    stepUpdate = eyeStepIncrement;
 
 return (this->leftEye.fitscore + this->rightEye.fitscore);
 }
