@@ -1227,3 +1227,8 @@ void MainWindow::on_spinBoxEyeThres_valueChanged(int arg1)
 {
 
 }
+
+void MainWindow::on_checkBoxHistEqualizer_stateChanged(int arg1)
+{
+
+}

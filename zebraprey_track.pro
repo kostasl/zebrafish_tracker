@@ -6,6 +6,7 @@ TEMPLATE = app
 QT += widgets gui qml quick
 
 CONFIG += c++11
+CONFIG += warn_off
 
 SOURCES += main.cpp \
     cvBlob/cvcontour.cpp \

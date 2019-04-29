@@ -126,6 +126,8 @@ private slots:
 
     void on_spinBoxEyeThres_valueChanged(int arg1);
 
+    void on_checkBoxHistEqualizer_stateChanged(int arg1);
+
 private:
     void reportUserMeasurement(cv::Point ptMouse);
 

@@ -12,8 +12,8 @@
 /// equations   (1)   to   (4)   to   calculate   the   center,
 /// orientation and length of major axis for the assumed ellipse.
 ///
-/// (6) For  each  third  pixel  (x,  y),  if  the  distance  between
-/// (x,  y)  and  (x0,  y0)   is  ?greater?  than  the  required  least
+/// (6) For  each  third  pixel  (x3,  y3),  if  the  distance  between
+/// (x3,  y3)  and  (x0,  y0)   is  ?greater?  than  the  required  least
 /// distance  for  a  pair  of  pixels  to  be  considered  :
 ///
 /// "The distance between (x, y) and (x 0 , y 0 ) should be less than the distance between (x 1 , y 1 ) and (x 0 ,y 0 ) or between (x 2 , y 2 ) and (x 0 , y 0 ) ."
@@ -22,7 +22,7 @@
 /// (7)  Using  equations  (5)  and  (6)  to  calculate  the  length  of minor axis.
 /// (8)  Increment  the  accumulator  for  this  length  of  minor  axis by 1.
 /// (9)  Loop  until  all  pixels  are  computed  for  this  pair  of  pixels.
-/// (10) Find the maxium element in accumulator array.
+/// (10) Find the maximum element in accumulator array.
 /// The related  length  is  the  possible  length  of  minor  axis
 /// for  assumed  ellipse.  If  the  vote  is  greater  than  the
 /// required   least   number   for   assumed   ellipse,   one  ellipse is detected.
@@ -34,7 +34,7 @@
 /// (16)   End.
 ///
 
-/// Eqns:
+/// Equations:
 /// x 0 = (x 1 + x 2 )/2  --(1)
 /// y 0 = (y 1 + y 2 )/2  --(2)
 /// a = [(x 2 – x 1 ) + (y 2 – y 1 ) ] /2 ---(3)
@@ -111,11 +111,10 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
    const float pxThres = 100.0; //threshold is non-zero
    //vedgepoint.clear();
 
-
-//Split Image In Two
   for(int i=0; i<imgEdgeIn.rows; i++)
       for(int j=0; j<imgEdgeIn.cols; j++)
       { cv::Point pt(j,i); //x,y
+           //Check if Pixel Brightness is high enough to be an ON pixel
            if ( imgEdgeIn.at<uchar>(pt) >  pxThres)
            {
                vedgepoint.push_back(tEllipsoidEdge(pt));
@@ -125,6 +124,97 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
 
 }
 
+/// Check if point is active(bright) and add it to list of edge points if it is and invalidate edge point (make it black)
+inline bool addPointEdge(cv::Mat& imgEdgeIn,cv::Point pt,tEllipsoidEdges& vedgepoint)
+{
+    const float pxThres = 100.0; //threshold is non-zero
+    bool ret_pointWasEdge =false;
+    //Check if Pixel Brightness is high enough to be an ON pixel
+       if ( imgEdgeIn.at<uchar>(pt) >  pxThres)
+         {
+                   vedgepoint.push_back(tEllipsoidEdge(pt));
+                   //Turn pixel off
+                    imgEdgeIn.at<uchar>(pt) = 0;
+                    ret_pointWasEdge = true;
+          }
+}
+
+/// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
+/// CHeck the 8 neighbours and invalidate once added to edge
+///
+void getNeighbourEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint)
+{
+
+    //Add original start point
+    addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y),vedgepoint);
+
+
+   //Check All neighbour points at distance d
+   if (startpt.x >0) //Left
+   {
+        addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y),vedgepoint);
+
+        if (startpt.y > 0) //Left Top Corner
+             addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y-1),vedgepoint);
+
+        if (startpt.y < imgEdgeIn.rows) //Left Bottom Corner
+             addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y+1),vedgepoint);
+   }
+
+   if (startpt.y < imgEdgeIn.rows) //Bottom
+        addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y+1),vedgepoint);
+
+   if (startpt.y > 0) //Top
+        addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y-1),vedgepoint);
+
+   if (startpt.x < imgEdgeIn.cols) //Left
+   {
+        addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y),vedgepoint);
+
+        if (startpt.y > 0) //Right TOp Corner
+             addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y-1),vedgepoint);
+
+        if (startpt.y < imgEdgeIn.rows) //Right Bottom Corner
+             addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y+1),vedgepoint);
+
+   }
+
+} //Get the neighbours
+
+
+/// All points on an edge that are connected/ belong to the same edge curve//
+void getConnectedEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint)
+{
+
+     // Get First point of edge.
+
+     //Get list of its Neighbours and remove them from Image
+     tEllipsoidEdges vNeighbours;
+     getNeighbourEdgePoints(imgEdgeIn,startpt,vNeighbours);
+     //Add neighbours to list of connected edges
+     vedgepoint.insert(vedgepoint.end(), vNeighbours.begin(),vNeighbours.end() );
+     //Recursive repeat for each neighbour
+     for (tEllipsoidEdges::iterator it = vNeighbours.begin();it != vNeighbours.end();++it )
+     {
+        cv::Point2f pt_n = (*it).ptEdge;
+        getConnectedEdgePoints(imgEdgeIn,pt_n,vedgepoint);
+     }
+
+         //For each neighbour
+
+
+}
+
+/// \brief entry point of recursive algorithm that returns all pixel points that are along the same edge
+/// it checks neighbours and follows down chain of edges -
+/// \param imgEdgeIn binarized image of edge pixels
+/// \returns vedgepoint list of connected pixels to the one in startpt
+void getPointsAlongEdge(cv::Mat imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint)
+{
+      cv::Mat imgEdgeIn_checked = imgEdgeIn.clone();
+      getConnectedEdgePoints(imgEdgeIn_checked,startpt,vedgepoint);
+
+}
 
 /// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
 void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint)
@@ -209,13 +299,14 @@ bool operator<(const tDetectedEllipsoid& a,const tDetectedEllipsoid& b) {
 
 ///
 /// \brief detectEllipse Implements the Efficient ellipse Detection Algorithm -
+/// \param imgEdgeIn / binarized image of edges from where vedgePoints_all was extracted
 /// \param vedgePoints_all
 /// \param qEllipsoids
 /// \notes The min Votes Threszhold is not fixed but continuously adapted to be just below the highest, see  gi_VotesEllipseThres
 /// \return
 ///
 /// \todo check image bounds
-int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetectedEllipsoid>& qEllipsoids)
+int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetectedEllipsoid>& qEllipsoids)
 {
     const int minEllipseMajor   = gi_minEllipseMajor;
     const int maxEllipseMajor   = gi_maxEllipseMajor;
@@ -254,8 +345,10 @@ int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetecte
 
     /// Random Pair Formation //
         //Copy List Of Edges over and Randomize
-        tEllipsoidEdges vedgePoints_pair = vedgePoints_all;
-        std::uniform_int_distribution<> distr(1, vedgePoints_pair.size()-1); // define the range
+        //tEllipsoidEdges vedgePoints_pair =  vedgePoints_all;
+        tEllipsoidEdges vedgePoints_pair;
+        getPointsAlongEdge(imgEdgeIn,ptxy1,vedgePoints_pair); //
+        std::uniform_int_distribution<> distr(1, std::max(1,(int)vedgePoints_pair.size()-1) ); // define the range
 
         while (vedgePoints_pair.size() > 0)
         {
@@ -619,7 +712,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
 
     /// Equalize Histogram to Enhance Contrast
     if (bUseHistEqualization)
-     cv::equalizeHist(imgUpsampled_gray, imgUpsampled_gray);
+        cv::equalizeHist(imgUpsampled_gray, imgUpsampled_gray);
 
     /// Estimate Eye Segmentation threshold from sample points in Image
     std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
@@ -752,7 +845,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         //cv::imshow("REyeCover",imgEdge_local);
 
         getEdgePoints(imgEdge_local_REye,vedgePoints_all);
-        detectEllipse(vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
+        detectEllipse(imgEdge_local_REye,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
         //imgEdge_local.copyTo(imgEdge_dbg);
         if (qEllipsoids.size() == 0 )
         //    qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
@@ -850,7 +943,7 @@ int detectEllipses(cv::Mat& pimgIn,tEllipsoids& vellipses,cv::Mat& outHeadFrameM
         //cv::imshow("LEyeCover",imgEdge_local);
 
         getEdgePoints(imgEdge_local_LEye,vedgePoints_all);
-        detectEllipse(vedgePoints_all,qEllipsoids);
+        detectEllipse(imgEdge_local_LEye,vedgePoints_all,qEllipsoids);
         if (qEllipsoids.size() == 0 )
 //            qDebug() << " R Eye Backup Ellipse Failed";
             pwindow_main->LogEvent("R Eye Backup Ellipse Failed ");

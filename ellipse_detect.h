@@ -88,6 +88,11 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint);
 void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);
 
 
+/// Functions for optimizing ellipse detection to only consider connected pairs of points (ie points that belong to the same line/curve
+void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);/// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
+void getPointsAlongEdge(cv::Mat imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint);
+void getConnectedEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint);
+
 
 void show_histogram(std::string const& name, cv::Mat1b const& image);
 #endif // ELLIPSE_DETECT
