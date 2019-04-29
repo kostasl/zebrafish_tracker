@@ -4,7 +4,8 @@
 /// (1) Store all edge pixels in a one dimensional array.
 /// (2) Clear the accumulator array .
 /// (3) For each pixel (x1, y1 ), carry out the following steps from (4) to (14).
-/// (4) For each other pixel (x2, y2), if the distance between (x1, y1) and (x 2, y2)
+/// (4) Select 2nd point:at random is ok, but here 2nd point is at random from the list of connected points (pts on the same line)
+/// For each other pixel (x2, y2), if the distance between (x1, y1) and (x 2, y2)
 /// is greater than the required least distance  for  a  pair  of  pixels  to  be  considered  then
 /// carry out the following steps from (5) to (14).
 ///
