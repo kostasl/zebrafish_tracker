@@ -348,8 +348,10 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
     /// Random Pair Formation //
         //Copy List Of Edges over and Randomize
         //tEllipsoidEdges vedgePoints_pair =  vedgePoints_all;
+        // Use only points on the same curve //
         tEllipsoidEdges vedgePoints_pair;
         getPointsAlongEdge(imgEdgeIn,ptxy1,vedgePoints_pair); //
+
         std::uniform_int_distribution<> distr(1, std::max(1,(int)vedgePoints_pair.size()-1) ); // define the range
 
         while (vedgePoints_pair.size() > 0)
@@ -419,11 +421,11 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
                 if (b > 1)
                 {
 
-                    if (b > 2 ) accumulator[b-2]+=2;
-                    accumulator[b-1]+=5; // (Make A "weighted" Band Of width 3)
+                    //if (b > 2 ) accumulator[b-2]+=2;
+                    //accumulator[b-1]+=5; // (Make A "weighted" Band Of width 3)
                     accumulator[b]  +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    accumulator[b+1]+=5; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    if (b < accLength-2) accumulator[b+2]+=2; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    //accumulator[b+1]+=5; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    //if (b < accLength-2) accumulator[b+2]+=2; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
 
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head
 //                    double ellArea = M_PI*b*a;
@@ -533,7 +535,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
     } //Loop through all  point as 1st point pair (Prob: pairs can be repeated)
 
 
-    gi_VotesEllipseThres = thresMinVotes = 0.95*Highest2dVotes;//Adapt Threshold To Best Score
+    gi_VotesEllipseThres = thresMinVotes;// = 0.95*Highest2dVotes;//Adapt Threshold To Best Score
 //    std::clog << "ThresVot:" << gi_VotesEllipseThres << std::endl;
 
 
