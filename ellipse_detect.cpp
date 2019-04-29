@@ -348,6 +348,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
     /// Random Pair Formation //
         //Copy List Of Edges over and Randomize
         //tEllipsoidEdges vedgePoints_pair =  vedgePoints_all;
+
         // Use only points on the same curve //
         tEllipsoidEdges vedgePoints_pair;
         getPointsAlongEdge(imgEdgeIn,ptxy1,vedgePoints_pair); //
@@ -382,11 +383,6 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
 
             double alpha = atan2(ptxy2.y - ptxy1.y,ptxy2.x - ptxy1.x);//atan [(y 2 – y 1 )/(x 2 – x 1 )] //--(4) α the orientation of the ellipse
 
-            //double dCntrLScore = round(cv::norm(ptxy0-ptLEyeMid));
-            //double dCntrRScore = round(cv::norm(ptxy0-ptREyeMid));
-            //double dCntrScore = std::min(dCntrLScore,dCntrRScore);
-
-
             ///Step (6) - 3rd Pixel;
             vedgePoints_trial.clear();
             for (tEllipsoidEdges::iterator it3 = vedgePoints_all.begin();it3 != vedgePoints_all.end(); ++it3 )
@@ -398,7 +394,6 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
                     continue ; //point has been deleted
 
                 double d = (cv::norm(ptxy0-ptxy3));
-                //Measure Distance From Centre of Eyes (Located at centre of img frame)
 
                 double dd = d*d;
 
@@ -485,8 +480,12 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
                     {
                         //imgDebug.at<uchar>(pEdge->ptEdge) = 200; //Debug - Show Used
 
-                        pEdge->ptEdge.x = 0;
-                        pEdge->ptEdge.y = 0;
+                        /// UNCOMMENT to invalidate used points so they are not used on next trial/iteration of ellipsoid fitting-
+                        /// \note Invalidating used points allocates edges to 1st come 1st serve basis to detected ellipses
+                        /// this favours the smallest ellipsoids in the allowed range, and so cuts down on the possible fit score of larger ones (by removing points)
+                        /// Commenting out this invalidation below gives much better eye fitting.
+                        //pEdge->ptEdge.x = 0;
+                        //pEdge->ptEdge.y = 0;
                         itd = vedgePoints_trial.erase(itd);
                     }else {
                         ++itd;

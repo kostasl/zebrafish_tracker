@@ -3511,14 +3511,12 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //ss.str(""); //Empty String
 
 
-              //ss << "L Eye Detection Error - Check Threshold";
-              //window_main.LogEvent(QString::fromStdString(ss.str()));
 
 
               //Check If Too Many Eye Detection Failures - Then Switch Template
               if (fish->nFailedEyeDetectionCount > 40)
               {
-                    fish->idxTemplateRow = iLastKnownGoodTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
+                    //fish->idxTemplateRow = iLastKnownGoodTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
                     pwindow_main->LogEvent(QString("[warning] Too Many Eye detection Failures - Change Template Randomly to :" + QString::number(iLastKnownGoodTemplateRow)));
               }
 
