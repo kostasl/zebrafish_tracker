@@ -311,7 +311,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
 {
     const int minEllipseMajor   = gi_minEllipseMajor;
     const int maxEllipseMajor   = gi_maxEllipseMajor;
-    const int minMinorEllipse   = gi_minEllipseMajor/1.8;
+    const int minMinorEllipse   = gi_minEllipseMajor/2.8;
     int thresMinVotes     = gi_VotesEllipseThres;
 
     const int accLength = vedgePoints_all.size();
@@ -417,11 +417,11 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
                 ///Step 8
                 if (b > 1)
                 {
-                    //Make A "weighted" Band Of width 3
+
                     //accumulator[b-2]+=1;
-                    accumulator[b-1]+=2;
+                    //accumulator[b-1]+=2; // (Make A "weighted" Band Of width 3)
                     accumulator[b]  +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    accumulator[b+1]+=2; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    //accumulator[b+1]+=2; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
                     //accumulator[b+2]+=1; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
 
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head
