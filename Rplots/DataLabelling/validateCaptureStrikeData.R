@@ -88,6 +88,10 @@ for (idx in idxToValidate)
   ## extract validation data on prey location and fish mouth position ##
   strDat <- gsub(strDat,pattern = "[][]",replacement = "")
   arrDat <- strsplit(strDat,"," )[[1]]
+  
+  if (NROW(arrDat) < 5)
+    break;
+  
   stopifnot(NROW(arrDat) > 5 ) ##Stop if array data not found
   preyX <- as.numeric( arrDat[1]);  preyY  <- as.numeric(arrDat[2]);
   mouthX <- as.numeric(arrDat[3]); mouthY <- as.numeric(arrDat[4]);
@@ -157,6 +161,7 @@ saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalys
 saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 
 
+stop("Done Labelling")
 ### Recalc derived bout data / capture speed and angle to prey ###
 ##datHuntEventMergedFrames
 load(file=paste(strDataExportDir,"datAllHuntEventAnalysisFrames_setC.RData",sep=""))
