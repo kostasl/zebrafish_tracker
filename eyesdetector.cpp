@@ -23,7 +23,7 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
     std::uniform_int_distribution<> distrA(0, mStateValue.size()-1);
     std::uniform_int_distribution<> distrB(0, mStateValue[0].size()-1);
 
-   int idxVal_i = std::min((int)mStateValue.size()-1,(int)currentState.iSegThres1-baseIdxRow);
+   int idxVal_i = std::min((int)mStateValue.size()-1, std::max(0,(int)currentState.iSegThres1-baseIdxRow));
    int idxVal_j = std::min((int)mStateValue[0].size()-1, std::max(0,(int)currentState.iDSegThres2));
    int idxVal_k = (int)currentState.VergenceState;
 

@@ -3,16 +3,16 @@
 	<mStateValue size="dynamic">
 		<value0 size="dynamic">
 			<value0 size="dynamic">
-				<value0>236.72751615986584</value0>
-				<value1>176.93678546557214</value1>
-				<value2>161.77476070055064</value2>
+				<value0>349.26868453132346</value0>
+				<value1>281.04156857530256</value1>
+				<value2>184.45332385233326</value2>
 				<value3>255.60886514211796</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>508.82318518346466</value0>
-				<value1>482.02369996342719</value1>
-				<value2>485.60392218376609</value2>
-				<value3>427.50481241217909</value3>
+				<value0>375.56534715035821</value0>
+				<value1>444.8748146527451</value1>
+				<value2>420.07509346892402</value2>
+				<value3>427.20500328328109</value3>
 			</value1>
 			<value2 size="dynamic">
 				<value0>237.59433062734513</value0>
@@ -21,403 +21,403 @@
 				<value3>213.32236033297468</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>206.05577030309109</value0>
-				<value1>100</value1>
-				<value2>100</value2>
+				<value0>263.14361787997962</value0>
+				<value1>138.56383627239458</value1>
+				<value2>136.68492801583648</value2>
 				<value3>246.78658131813046</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>566.50755880227132</value0>
-				<value1>501.68526530183107</value1>
-				<value2>439.0088959937604</value2>
-				<value3>420.7501886346422</value3>
+				<value0>433.31881472609496</value0>
+				<value1>464.86625933362689</value1>
+				<value2>429.98358360162439</value2>
+				<value3>440.08945402312963</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>235.55178838971571</value0>
+				<value0>245.99660955074415</value0>
 				<value1>165.56296234831984</value1>
-				<value2>125</value2>
+				<value2>148.5</value2>
 				<value3>240.00171081336387</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>493.41611803033226</value0>
-				<value1>554.46014180691088</value1>
-				<value2>419.59723095585349</value2>
-				<value3>423.77319276120494</value3>
+				<value0>365.78486897397062</value0>
+				<value1>439.82869313046882</value1>
+				<value2>414.62892386452666</value2>
+				<value3>434.69921913768218</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>181.02952203278363</value0>
+				<value0>258.28881384903053</value0>
 				<value1>180.81189756720633</value1>
-				<value2>155.73763465607232</value2>
-				<value3>285.34750945652127</value3>
+				<value2>181.46888624730562</value2>
+				<value3>317.08305027886746</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>100</value0>
+				<value0>135.73900307356917</value0>
 				<value1>132.55205623387002</value1>
 				<value2>128.0362445785791</value2>
 				<value3>225.70020482143502</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>480.45433822466197</value0>
-				<value1>481.83475827333194</value1>
-				<value2>397.20142922688132</value2>
+				<value0>428.99885501526569</value0>
+				<value1>467.56002349311075</value1>
+				<value2>441.69578444958404</value2>
 				<value3>386.00866625323505</value3>
 			</value9>
 		</value0>
 		<value1 size="dynamic">
 			<value0 size="dynamic">
-				<value0>176.30653777700471</value0>
+				<value0>207.01284463251193</value0>
 				<value1>164.57800763163056</value1>
-				<value2>132.01651364650994</value2>
-				<value3>253.19070005004323</value3>
+				<value2>186.88081198608467</value2>
+				<value3>272.82821106804562</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>288.96621272826263</value0>
-				<value1>164.64886142361135</value1>
+				<value0>387.61510844568687</value0>
+				<value1>279.82531504856843</value1>
 				<value2>133.18000000000001</value2>
 				<value3>323.38250910135952</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>546.2986266328312</value0>
-				<value1>475.24154818769051</value1>
-				<value2>437.78767903473812</value2>
+				<value0>427.90422260846867</value0>
+				<value1>462.95169639308517</value1>
+				<value2>454.73590832004498</value2>
 				<value3>417.29342263398655</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>262.85111211035201</value0>
-				<value1>138.39495855120984</value1>
-				<value2>160.90972870146226</value2>
+				<value0>351.0782322942066</value0>
+				<value1>169.35366913068771</value1>
+				<value2>205.67734250887457</value2>
 				<value3>251.56675012144353</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>257.66277580625655</value0>
-				<value1>163.03296174256306</value1>
+				<value0>362.84465462687353</value0>
+				<value1>265.09084900793727</value1>
 				<value2>186.03688696189724</value2>
 				<value3>283.48810189006565</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>548.04069007973658</value0>
-				<value1>475.41874039008371</value1>
-				<value2>424.51001962763644</value2>
-				<value3>395.73903277657331</value3>
+				<value0>460.50235033175363</value0>
+				<value1>445.90065399305888</value1>
+				<value2>409.62125856736083</value2>
+				<value3>412.22405977909932</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>184.70278093420026</value0>
-				<value1>164.60260664883742</value1>
-				<value2>211.84535489622866</value2>
+				<value0>241.83964023742431</value0>
+				<value1>255.59035334298497</value1>
+				<value2>234.90743311044145</value2>
 				<value3>156.51280335246418</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>140.94417363366637</value0>
-				<value1>100</value1>
+				<value0>181.3288322696024</value0>
+				<value1>133.07639091773663</value1>
 				<value2>129.59731675623641</value2>
 				<value3>191.97583593048032</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>203.2155302181005</value0>
-				<value1>184.00059294826463</value1>
-				<value2>223.22627140858287</value2>
+				<value0>290.69130152002236</value0>
+				<value1>227.47322118533799</value1>
+				<value2>268.45795068251897</value2>
 				<value3>255.78792919988899</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>134.42046233008051</value0>
-				<value1>135.04378501881001</value1>
-				<value2>158.73175057573425</value2>
+				<value0>228.41886962719266</value0>
+				<value1>190.25115623995117</value1>
+				<value2>183.68902833181482</value2>
 				<value3>232.21659452699134</value3>
 			</value9>
 		</value1>
 		<value2 size="dynamic">
 			<value0 size="dynamic">
 				<value0>194.69867570110392</value0>
-				<value1>127</value1>
-				<value2>164.23750689436031</value2>
+				<value1>238.74872950163578</value1>
+				<value2>224.4055594387932</value2>
 				<value3>306.00122144123065</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>501.63978884207654</value0>
-				<value1>478.01483097992008</value1>
-				<value2>454.38137588428935</value2>
-				<value3>491.61334453429299</value3>
+				<value0>397.62372722903922</value0>
+				<value1>423.16333396182284</value1>
+				<value2>449.27652670961714</value2>
+				<value3>424.01320942362526</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>190.00195399079843</value0>
-				<value1>176.43784236652726</value1>
-				<value2>255.77549731185925</value2>
+				<value0>334.46331339645957</value0>
+				<value1>336.03051333407643</value1>
+				<value2>269.95230899144826</value2>
 				<value3>249.21714071383747</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>177.05286585745486</value0>
-				<value1>172.96206817785088</value1>
-				<value2>132</value2>
+				<value0>306.81636957856176</value0>
+				<value1>205.46609648718211</value1>
+				<value2>155.7499110024107</value2>
 				<value3>263.53703823320285</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>316.93247287610933</value0>
-				<value1>100</value1>
-				<value2>129.96593063388593</value2>
-				<value3>217.86887396028621</value3>
+				<value0>327.85320470101897</value0>
+				<value1>131.49715269693851</value1>
+				<value2>159.2144377667737</value2>
+				<value3>239.03937689202331</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>330.15318961939511</value0>
-				<value1>100</value1>
+				<value0>425.69328747648132</value0>
+				<value1>141.66487057481697</value1>
 				<value2>170.788375618164</value2>
 				<value3>332.98666625023964</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>205.85170805137329</value0>
-				<value1>100</value1>
-				<value2>183.87193230561533</value2>
-				<value3>156.96688170361028</value3>
+				<value0>274.12378053569324</value0>
+				<value1>136.48414115069733</value1>
+				<value2>247.6506733280662</value2>
+				<value3>185.01911653421567</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>254.07094480305932</value0>
+				<value0>326.7852154369329</value0>
 				<value1>163.86771306433354</value1>
 				<value2>176.38646015447901</value2>
 				<value3>241.21777077411014</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>529.6306470457647</value0>
-				<value1>488.16449757282879</value1>
-				<value2>400.98503567951042</value2>
+				<value0>432.69555630491715</value0>
+				<value1>431.25296623453471</value1>
+				<value2>415.9537103125121</value2>
 				<value3>367.02330342775707</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>226.12865376858485</value0>
-				<value1>160.9346847328101</value1>
-				<value2>192.60641116585597</value2>
+				<value0>302.62501551216718</value0>
+				<value1>249.90741418570377</value1>
+				<value2>213.75924472996709</value2>
 				<value3>247.63100519781722</value3>
 			</value9>
 		</value2>
 		<value3 size="dynamic">
 			<value0 size="dynamic">
-				<value0>501.53601029544035</value0>
-				<value1>341.98220650553088</value1>
-				<value2>440.11895326575143</value2>
-				<value3>468.26642086938307</value3>
+				<value0>404.57433098996864</value0>
+				<value1>410.86357683430998</value1>
+				<value2>410.56136120490731</value2>
+				<value3>469.88075143083142</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>243.09620931016451</value0>
-				<value1>165.81093679351505</value1>
-				<value2>189.37300550669082</value2>
+				<value0>332.51247566951639</value0>
+				<value1>219.67514645851708</value1>
+				<value2>219.29328881346797</value2>
 				<value3>276.46493857066554</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>269.33112042272126</value0>
+				<value0>303.60235175848175</value0>
 				<value1>156.34675165175105</value1>
 				<value2>131.98016670738906</value2>
 				<value3>209.59939111688959</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>178.51876450733749</value0>
-				<value1>100</value1>
-				<value2>167.51618352330257</value2>
+				<value0>244.19739199868354</value0>
+				<value1>175.17414727859079</value1>
+				<value2>248.47686958681385</value2>
 				<value3>223.95608186948257</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>167.51520165175194</value0>
-				<value1>127</value1>
-				<value2>205.02964641748315</value2>
+				<value0>269.50333863235335</value0>
+				<value1>173.33474898051432</value1>
+				<value2>223.52668177573483</value2>
 				<value3>241.49274066119267</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>206.30848405876412</value0>
-				<value1>100</value1>
+				<value0>150.36450457643639</value0>
+				<value1>140.56556449802429</value1>
 				<value2>148.19743334337713</value2>
 				<value3>330.81944943228774</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>505.89752390427162</value0>
-				<value1>531.15041834472231</value1>
-				<value2>430.9569318790268</value2>
-				<value3>374.89230009664084</value3>
+				<value0>391.66970777256074</value0>
+				<value1>416.01467457744423</value1>
+				<value2>455.4714560519854</value2>
+				<value3>403.57187969261224</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>249.24894837550048</value0>
-				<value1>124.31562431817783</value1>
-				<value2>127.73069915027331</value2>
+				<value0>337.44680212359924</value0>
+				<value1>184.16655602302927</value1>
+				<value2>146.83723392852465</value2>
 				<value3>220.93312537695459</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>207.75089175302665</value0>
-				<value1>132.49979212872881</value1>
-				<value2>127.06588238198856</value2>
+				<value0>253.980305195337</value0>
+				<value1>166.73068490947637</value1>
+				<value2>156.36914450058481</value2>
 				<value3>129.82921791558292</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>329.77652388990282</value0>
-				<value1>193.25055059824641</value1>
-				<value2>200.30866951924611</value2>
+				<value0>396.643589300016</value0>
+				<value1>306.35329442365816</value1>
+				<value2>258.04016737483317</value2>
 				<value3>310.49075276235038</value3>
 			</value9>
 		</value3>
 		<value4 size="dynamic">
 			<value0 size="dynamic">
-				<value0>133</value0>
-				<value1>160.73483117748535</value1>
+				<value0>193.2047196241798</value0>
+				<value1>212.31812982821864</value1>
 				<value2>100</value2>
 				<value3>301.24637253109091</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>136.59658845248504</value0>
-				<value1>136.33558357208418</value1>
+				<value0>265.99675540492746</value0>
+				<value1>198.96847264300561</value1>
 				<value2>240.84476591059817</value2>
-				<value3>262.52800834466495</value3>
+				<value3>279.85093663324699</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>477.70538998311451</value0>
-				<value1>450.41595083172859</value1>
-				<value2>445.48942270121296</value2>
-				<value3>453.23061442642302</value3>
+				<value0>390.56986412424504</value0>
+				<value1>453.29338670265196</value1>
+				<value2>389.89503646431433</value2>
+				<value3>421.91547215834862</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>257.46894233119428</value0>
-				<value1>131.36237076712851</value1>
+				<value0>357.20921741929362</value0>
+				<value1>185.51456344621846</value1>
 				<value2>263.68989798338885</value2>
 				<value3>259.74452401919717</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>277.11826293659379</value0>
-				<value1>130</value1>
-				<value2>100</value2>
-				<value3>243.75013195108528</value3>
+				<value0>349.47401904270498</value0>
+				<value1>214.29216727192744</value1>
+				<value2>158.65607001766412</value2>
+				<value3>261.06202280268144</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>258.9796483923044</value0>
-				<value1>167.24536808266649</value1>
-				<value2>150.34218265048074</value2>
-				<value3>188.6355685738655</value3>
+				<value0>314.27452616100186</value0>
+				<value1>216.16049710489995</value1>
+				<value2>172.59298790113235</value2>
+				<value3>209.2095130359898</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>195.4197898487142</value0>
+				<value0>257.60677669915987</value0>
 				<value1>175.33202238683751</value1>
-				<value2>157.83769262838484</value2>
+				<value2>185.2059238497842</value2>
 				<value3>205.73086983238957</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>224.96688504813494</value0>
-				<value1>150.72</value1>
+				<value0>312.69408253587295</value0>
+				<value1>241.73761603112024</value1>
 				<value2>137.0685844141008</value2>
 				<value3>260.04397544336723</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>397.46459683184622</value0>
-				<value1>281.67921593231569</value1>
-				<value2>230.23077184068791</value2>
-				<value3>309.12268248174405</value3>
+				<value0>431.15751154114446</value0>
+				<value1>370.81900860656475</value1>
+				<value2>275.80806627111349</value2>
+				<value3>316.91809259940339</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>472.92683717355015</value0>
-				<value1>555.68859656779955</value1>
-				<value2>425.08927411263778</value2>
-				<value3>378.49516560617622</value3>
+				<value0>389.95404729556441</value0>
+				<value1>406.74819613166568</value1>
+				<value2>337.03095009292377</value2>
+				<value3>397.67807713963174</value3>
 			</value9>
 		</value4>
 		<value5 size="dynamic">
 			<value0 size="dynamic">
-				<value0>460.77812879532871</value0>
-				<value1>458.28262699690879</value1>
-				<value2>458.95983185107997</value2>
-				<value3>457.57291230485009</value3>
+				<value0>383.30601570841424</value0>
+				<value1>343.62250203711443</value1>
+				<value2>371.71952146679803</value2>
+				<value3>324.01159839824726</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>164.25824478299657</value0>
-				<value1>220.69110845951008</value1>
-				<value2>273.44970563998641</value2>
+				<value0>288.95170208345843</value0>
+				<value1>270.25514718815492</value1>
+				<value2>301.51867991524841</value2>
 				<value3>293.82008989650274</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>272.70054835730127</value0>
-				<value1>100</value1>
+				<value0>319.13626583556277</value0>
+				<value1>157.83065165346434</value1>
 				<value2>131.56249635439858</value2>
 				<value3>244.68028593977957</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>312.88354752887102</value0>
-				<value1>199.76730573088867</value1>
+				<value0>365.53314609028399</value0>
+				<value1>289.76127078391141</value1>
 				<value2>192.58230702399993</value2>
-				<value3>333.01678272347613</value3>
+				<value3>336.73892857823876</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>484.4978289133789</value0>
-				<value1>497.13863337883765</value1>
-				<value2>450.2351569969797</value2>
-				<value3>490.95287505551727</value3>
+				<value0>377.31201364228673</value0>
+				<value1>370.27691719486597</value1>
+				<value2>367.92150230294959</value2>
+				<value3>347.22840818919474</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>245.3344629032004</value0>
-				<value1>100</value1>
-				<value2>130.26645051770879</value2>
+				<value0>275.3304593739133</value0>
+				<value1>163.11720564967192</value1>
+				<value2>161.46110758943178</value2>
 				<value3>241.80306558153052</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>268.85776905601028</value0>
-				<value1>155.92390957804639</value1>
-				<value2>206.85948629638162</value2>
+				<value0>341.79680301172556</value0>
+				<value1>261.12081454653656</value1>
+				<value2>262.26616917198038</value2>
 				<value3>335.39159015529179</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>204.84903454051812</value0>
-				<value1>195.58808060591011</value1>
-				<value2>173.3649394645611</value2>
+				<value0>266.91548780778089</value0>
+				<value1>273.74943774241802</value1>
+				<value2>194.56907820561204</value2>
 				<value3>129.95832641446509</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>194.68083145044676</value0>
-				<value1>100</value1>
-				<value2>152.56892230434335</value2>
-				<value3>254.38415061599656</value3>
+				<value0>264.22377895283586</value0>
+				<value1>193.36493689662174</value1>
+				<value2>181.17307465678442</value2>
+				<value3>274.90882530039283</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>369.36340483775024</value0>
-				<value1>217.25985800713215</value1>
-				<value2>216.56358204824778</value2>
+				<value0>423.33676336343069</value0>
+				<value1>267.14080119462932</value1>
+				<value2>231.03626765973377</value2>
 				<value3>316.72555064415195</value3>
 			</value9>
 		</value5>
 		<value6 size="dynamic">
 			<value0 size="dynamic">
-				<value0>188.68119083433982</value0>
-				<value1>167.14917520998699</value1>
+				<value0>294.77382659153369</value0>
+				<value1>249.0780985411208</value1>
 				<value2>222.35169844302513</value2>
 				<value3>269.01464100412301</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>459.18103976026288</value0>
-				<value1>452.07655643941956</value1>
-				<value2>402.29155478065394</value2>
-				<value3>436.2994425821102</value3>
+				<value0>253.43366798539267</value0>
+				<value1>362.86316498464521</value1>
+				<value2>381.7764095821841</value2>
+				<value3>438.91986696196682</value3>
 			</value1>
 			<value2 size="dynamic">
 				<value0>158.59559034953509</value0>
 				<value1>100</value1>
-				<value2>135.30129107115587</value2>
+				<value2>181.52459856797094</value2>
 				<value3>244.38938477661517</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>100</value0>
-				<value1>163.70339838825339</value1>
+				<value0>213.6429850107248</value0>
+				<value1>209.69189954669397</value1>
 				<value2>148.67576248464403</value2>
 				<value3>218.50051068487193</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>261.11157353614084</value0>
-				<value1>139.66574505207623</value1>
-				<value2>140.20514501086899</value2>
+				<value0>332.09540676234195</value0>
+				<value1>191.4105727985287</value1>
+				<value2>162.48587891472798</value2>
 				<value3>339.40068852339891</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>318.80021106519342</value0>
-				<value1>100</value1>
-				<value2>195.61439836178809</value2>
-				<value3>236.15737547121375</value3>
+				<value0>345.54369509013247</value0>
+				<value1>127.75696656387294</value1>
+				<value2>216.29975724295917</value2>
+				<value3>289.68165116347603</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>496.89922086950304</value0>
-				<value1>498.039286492016</value1>
-				<value2>386.81216988575864</value2>
-				<value3>397.3594359286385</value3>
+				<value0>383.65302508209874</value0>
+				<value1>404.15380452220319</value1>
+				<value2>390.07744132251611</value2>
+				<value3>413.60823676562109</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>248.87819612891067</value0>
+				<value0>282.24288984652725</value0>
 				<value1>100</value1>
 				<value2>100</value2>
 				<value3>205.07432793118141</value3>
@@ -429,7 +429,7 @@
 				<value3>132.95956106584438</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>249.84565339064136</value0>
+				<value0>315.84180496575874</value0>
 				<value1>158.24373016832692</value1>
 				<value2>127.52730336133284</value2>
 				<value3>128.73281393950785</value3>
@@ -437,807 +437,807 @@
 		</value6>
 		<value7 size="dynamic">
 			<value0 size="dynamic">
-				<value0>468.43564926163361</value0>
-				<value1>292.71455529101894</value1>
-				<value2>428.87132384284132</value2>
-				<value3>454.29303620931296</value3>
+				<value0>286.57238058200664</value0>
+				<value1>397.25785876856457</value1>
+				<value2>369.95479246406467</value2>
+				<value3>306.09207390434307</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>133.14963512722761</value0>
-				<value1>205.42074886067462</value1>
-				<value2>230.21510272364534</value2>
-				<value3>221.1975420574972</value3>
+				<value0>222.21778782839056</value0>
+				<value1>227.39943953900135</value1>
+				<value2>287.41239859799521</value2>
+				<value3>243.44078227756859</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>309.36337972802897</value0>
-				<value1>187.42189389619261</value1>
-				<value2>131.85037575306717</value2>
+				<value0>345.5400186378148</value0>
+				<value1>200.67970450657336</value1>
+				<value2>178.4150030367197</value2>
 				<value3>265.53112433279853</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>502.7013245857367</value0>
-				<value1>447.0153216549997</value1>
-				<value2>446.48067637662001</value2>
-				<value3>443.49085319558526</value3>
+				<value0>350.62062075425098</value0>
+				<value1>325.57367378687485</value1>
+				<value2>383.56038169784813</value2>
+				<value3>409.13544270773025</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>134.69808264009782</value0>
-				<value1>162.61282368044468</value1>
-				<value2>69.413899944451842</value2>
+				<value0>221.84132448723295</value0>
+				<value1>190.63308262480041</value1>
+				<value2>108.53330261522461</value2>
 				<value3>233.54543904599649</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>475.27895660935729</value0>
-				<value1>390.01601245308001</value1>
-				<value2>448.53319081665586</value2>
-				<value3>413.28872320561726</value3>
+				<value0>360.94043495586476</value0>
+				<value1>355.31588148519558</value1>
+				<value2>352.51361147549835</value2>
+				<value3>406.11321105079423</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>216.58092333737309</value0>
-				<value1>191.6884660803411</value1>
-				<value2>223.95914935312192</value2>
-				<value3>255.72141671501365</value3>
+				<value0>279.33297915258066</value0>
+				<value1>286.46179988633827</value1>
+				<value2>258.35523793447123</value2>
+				<value3>273.12286940279864</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>232.05975282984224</value0>
-				<value1>100</value1>
+				<value0>281.73797136011461</value0>
+				<value1>131.40387867059826</value1>
 				<value2>138.26341953201069</value2>
 				<value3>243.22583924466014</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>496.94713286548375</value0>
-				<value1>500.08183771397802</value1>
-				<value2>437.27422466131441</value2>
-				<value3>409.23839214983747</value3>
+				<value0>372.84265634149665</value0>
+				<value1>392.02470028349398</value1>
+				<value2>407.48406128040506</value2>
+				<value3>398.3939060530995</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>168.09101217133301</value0>
-				<value1>132.30241215087904</value1>
-				<value2>130.59409971769546</value2>
-				<value3>254.13765652274338</value3>
+				<value0>234.61997653209826</value0>
+				<value1>159.36496014598799</value1>
+				<value2>161.20674878260778</value2>
+				<value3>267.02786620301026</value3>
 			</value9>
 		</value7>
 		<value8 size="dynamic">
 			<value0 size="dynamic">
-				<value0>252.16538609429045</value0>
-				<value1>159.03884959927188</value1>
-				<value2>152.26640340925215</value2>
+				<value0>307.34635181356566</value0>
+				<value1>201.001489933568</value1>
+				<value2>221.70792477374388</value2>
 				<value3>295.48862789487208</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>460.38330088514027</value0>
-				<value1>430.5846552016925</value1>
-				<value2>411.2778918209475</value2>
-				<value3>445.98249777895586</value3>
+				<value0>65.27624133414264</value0>
+				<value1>200.49964533116076</value1>
+				<value2>305.04092183645861</value2>
+				<value3>408.2876352267665</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>252.43249014417819</value0>
+				<value0>333.98658286343903</value0>
 				<value1>185.33805743106223</value1>
-				<value2>100</value2>
+				<value2>127.59130534974244</value2>
 				<value3>285.02378048509507</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>197.07684568956125</value0>
-				<value1>141.51119457385386</value1>
-				<value2>138.20828540575181</value2>
-				<value3>277.46199240682188</value3>
+				<value0>251.47272981612767</value0>
+				<value1>198.544929081335</value1>
+				<value2>212.31871059133778</value2>
+				<value3>289.15070169809553</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>456.80416244847936</value0>
-				<value1>328.15413124001981</value1>
-				<value2>94.485467121661998</value2>
+				<value0>361.47720310910859</value0>
+				<value1>378.46806870445329</value1>
+				<value2>355.24476503861536</value2>
 				<value3>430.67081883657107</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>200.75948161339329</value0>
-				<value1>162.35410383449207</value1>
-				<value2>151.11481661312106</value2>
-				<value3>293.37220821190527</value3>
+				<value0>235.65449510976964</value0>
+				<value1>214.71685020951102</value1>
+				<value2>222.95861027689369</value2>
+				<value3>302.39346708451058</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>471.54862120385292</value0>
-				<value1>423.46879565943163</value1>
-				<value2>365.37174102233479</value2>
-				<value3>425.37493381036728</value3>
+				<value0>272.95049288393545</value0>
+				<value1>355.74566994990801</value1>
+				<value2>298.31201547001763</value2>
+				<value3>264.37433605995949</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>197.48706327206261</value0>
-				<value1>127</value1>
-				<value2>309.6659914976982</value2>
+				<value0>300.03656315108498</value0>
+				<value1>226.83044801327793</value1>
+				<value2>316.20456296090282</value2>
 				<value3>332.18850705358534</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>371.67806365963833</value0>
-				<value1>200.30900293616395</value1>
-				<value2>230.39753325411871</value2>
+				<value0>397.58329845335902</value0>
+				<value1>300.51191499493336</value1>
+				<value2>284.2723633046524</value2>
 				<value3>321.23901230051877</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>202.93533543618014</value0>
-				<value1>127.12848874493523</value1>
-				<value2>126.60469111311039</value2>
+				<value0>277.8662650767028</value0>
+				<value1>152.54144065739678</value1>
+				<value2>144.70751277819971</value2>
 				<value3>255.34625196656521</value3>
 			</value9>
 		</value8>
 		<value9 size="dynamic">
 			<value0 size="dynamic">
-				<value0>225.19091922503361</value0>
-				<value1>100</value1>
-				<value2>100</value2>
+				<value0>224.37461309940684</value0>
+				<value1>166.09591414119484</value1>
+				<value2>131.11277891820947</value2>
 				<value3>267.09028040933833</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>378.93385185761048</value0>
-				<value1>133.9282245474522</value1>
-				<value2>154.53984115720678</value2>
+				<value0>260.87749402540641</value0>
+				<value1>151.91012417650649</value1>
+				<value2>173.5115837158682</value2>
 				<value3>404.00373536282234</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>185.17177227085224</value0>
-				<value1>128.05131773096113</value1>
+				<value0>243.6589364138465</value0>
+				<value1>192.18416355446072</value1>
 				<value2>145.26761578513268</value2>
 				<value3>319.79258729504562</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>261.12951617728459</value0>
-				<value1>118</value1>
-				<value2>202.66850998625068</value2>
-				<value3>206.82751090632158</value3>
+				<value0>269.92591896064022</value0>
+				<value1>137.7463010107941</value1>
+				<value2>209.76582065944945</value2>
+				<value3>227.59667595651024</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>239.68726312818441</value0>
-				<value1>100</value1>
-				<value2>167.42219748696033</value2>
+				<value0>227.0366415030752</value0>
+				<value1>118</value1>
+				<value2>238.61241772593743</value2>
 				<value3>235.51833308054094</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>431.10958391799585</value0>
-				<value1>431.2195931155934</value1>
-				<value2>421.80338691274568</value2>
-				<value3>435.84796937958345</value3>
+				<value0>287.28833403496816</value0>
+				<value1>201.67449675099118</value1>
+				<value2>364.94106408161673</value2>
+				<value3>426.2631724416251</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>281.75375577248633</value0>
-				<value1>100</value1>
-				<value2>182.30568553148353</value2>
+				<value0>306.55778891579934</value0>
+				<value1>151.77356847932242</value1>
+				<value2>202.95781539170503</value2>
 				<value3>216.12406880107514</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>165.5438725883071</value0>
-				<value1>100</value1>
+				<value0>275.20521396080096</value0>
+				<value1>224.42917685999436</value1>
 				<value2>175.60278274408822</value2>
 				<value3>321.46640340291412</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>441.42357199465897</value0>
-				<value1>415.86246928872754</value1>
-				<value2>409.04827940636488</value2>
+				<value0>334.69627966314954</value0>
+				<value1>363.46866260992914</value1>
+				<value2>349.14624107106732</value2>
 				<value3>441.65944928945521</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>256.88839582927807</value0>
-				<value1>100</value1>
-				<value2>125.94074187370228</value2>
+				<value0>324.81243876103952</value0>
+				<value1>153.22199323844416</value1>
+				<value2>154.4371504803957</value2>
 				<value3>247.29836548824042</value3>
 			</value9>
 		</value9>
 		<value10 size="dynamic">
 			<value0 size="dynamic">
-				<value0>241.14008897255519</value0>
-				<value1>132.53605364419298</value1>
-				<value2>155.04260504753526</value2>
+				<value0>221.46501897964356</value0>
+				<value1>221.72865758880596</value1>
+				<value2>168.00209014126924</value2>
 				<value3>277.21819576072733</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>304.53222964630271</value0>
-				<value1>180.37496248232466</value1>
-				<value2>219.30781292334783</value2>
+				<value0>79.731838658542031</value0>
+				<value1>283.2474300161353</value1>
+				<value2>265.98229538012845</value2>
 				<value3>339.89701003562914</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>452.81496586803343</value0>
-				<value1>403.56735456941846</value1>
-				<value2>447.07873454353694</value2>
-				<value3>445.19161408208305</value3>
+				<value0>61.778778897102129</value0>
+				<value1>334.66193794697762</value1>
+				<value2>335.24060523935879</value2>
+				<value3>366.43152411198048</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>380.66480979718597</value0>
-				<value1>181.39737085893287</value1>
-				<value2>343.10794975340565</value2>
-				<value3>417.23495486379755</value3>
+				<value0>132.74901519579291</value0>
+				<value1>328.90464120192672</value1>
+				<value2>329.61945792659571</value2>
+				<value3>364.88709091315036</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>222.04711962733236</value0>
-				<value1>172.80055286903584</value1>
+				<value0>319.16122164132474</value0>
+				<value1>265.40337983110106</value1>
 				<value2>297.27839356839138</value2>
 				<value3>334.4146110156849</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>282.68918065909889</value0>
-				<value1>100</value1>
-				<value2>126.24033259138852</value2>
+				<value0>320.33092512814193</value0>
+				<value1>144.25431242735246</value1>
+				<value2>155.40990169762776</value2>
 				<value3>226.06415572153443</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>223.40227081128791</value0>
-				<value1>100</value1>
+				<value0>261.13323261118364</value0>
+				<value1>127.79616464626001</value1>
 				<value2>133.29523094804415</value2>
 				<value3>235.65422582724173</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>393.54884847211775</value0>
-				<value1>437.62211413032952</value1>
-				<value2>427.67506823233447</value2>
+				<value0>363.40811600202636</value0>
+				<value1>372.16642717778149</value1>
+				<value2>281.92773209547357</value2>
 				<value3>438.74611021391371</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>209.18781930169533</value0>
-				<value1>125.34715816487189</value1>
+				<value0>234.19004335071662</value0>
+				<value1>189.83956895237156</value1>
 				<value2>100</value2>
 				<value3>219.93835972830482</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>211.77895266465072</value0>
-				<value1>152.21511485236496</value1>
-				<value2>127.81739624487925</value2>
+				<value0>264.76274262840047</value0>
+				<value1>173.578915513601</value1>
+				<value2>148.77158172738362</value2>
 				<value3>219.63627243649066</value3>
 			</value9>
 		</value10>
 		<value11 size="dynamic">
 			<value0 size="dynamic">
-				<value0>200.57848925809816</value0>
-				<value1>130</value1>
-				<value2>206.37455465160062</value2>
+				<value0>211.66222232563973</value0>
+				<value1>189.08927227590419</value1>
+				<value2>254.99483407984428</value2>
 				<value3>133.50478954942972</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>429.11386788775081</value0>
-				<value1>418.50815001875429</value1>
-				<value2>384.07689755377453</value2>
-				<value3>410.30608333767987</value3>
+				<value0>156.19355487691155</value0>
+				<value1>352.09732535881147</value1>
+				<value2>250.28067079241049</value2>
+				<value3>210.61620404708964</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>175.2151938420262</value0>
+				<value0>196.69367445782359</value0>
 				<value1>127.98892110696305</value1>
-				<value2>157.82675964850307</value2>
-				<value3>100</value3>
+				<value2>171.4177880041357</value2>
+				<value3>131.47078734543538</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>244.2296092272025</value0>
-				<value1>129.95549771623735</value1>
-				<value2>157.87267802490908</value2>
+				<value0>293.78917921647809</value0>
+				<value1>155.28413002117568</value1>
+				<value2>201.04128294848181</value2>
 				<value3>259.68178651038397</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>208.90302378949102</value0>
-				<value1>100</value1>
+				<value0>243.8749623876534</value0>
+				<value1>150.71021800603251</value1>
 				<value2>123.83836074371493</value2>
 				<value3>254.9007350327997</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>405.9375030822352</value0>
+				<value0>337.08022749777149</value0>
 				<value1>419.88827506716945</value1>
-				<value2>309.35703327218511</value2>
+				<value2>318.39746730735686</value2>
 				<value3>388.05021675338469</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>173.33175012609749</value0>
-				<value1>122.60779267824566</value1>
-				<value2>89.431380057986715</value2>
+				<value0>223.57082877129466</value0>
+				<value1>188.58324565213408</value1>
+				<value2>135.46718148739006</value2>
 				<value3>261.74543925986455</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>185.74062842777556</value0>
-				<value1>133.68224700534751</value1>
+				<value0>250.9369946538859</value0>
+				<value1>190.84336554717461</value1>
 				<value2>123</value2>
 				<value3>247.70218076992379</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>268.69204660563452</value0>
-				<value1>156.74826239728137</value1>
-				<value2>279.76230582720621</value2>
+				<value0>319.12101447137081</value0>
+				<value1>197.31052019888313</value1>
+				<value2>322.11331727814434</value2>
 				<value3>340.16661961648663</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>428.51343647253725</value0>
-				<value1>464.03817495638708</value1>
-				<value2>397.02784193994199</value2>
+				<value0>285.80025747681941</value0>
+				<value1>238.03519501717926</value1>
+				<value2>389.7540654607231</value2>
 				<value3>441.98688971459956</value3>
 			</value9>
 		</value11>
 		<value12 size="dynamic">
 			<value0 size="dynamic">
-				<value0>142.1961256070424</value0>
+				<value0>118.6867682389162</value0>
 				<value1>63.315372070717181</value1>
 				<value2>12.817035762316102</value2>
 				<value3>208.82810622275252</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>287.17879420201012</value0>
-				<value1>197.95129847477841</value1>
-				<value2>8.0968728613460925</value2>
+				<value0>215.46620102017397</value0>
+				<value1>241.07436040152075</value1>
+				<value2>159.17105639666789</value2>
 				<value3>345.09561428574636</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>100</value0>
-				<value1>100</value1>
+				<value0>125.46481199988651</value0>
+				<value1>121.85407272831065</value1>
 				<value2>42.614411684292548</value2>
 				<value3>234.57126465001198</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>182.10022826559026</value0>
-				<value1>100</value1>
-				<value2>38.494072872847831</value2>
+				<value0>240.13899087999945</value0>
+				<value1>147.32726238218493</value1>
+				<value2>64.478457618323958</value2>
 				<value3>212.65941034735701</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>392.81763405151133</value0>
-				<value1>328.94636842559783</value1>
-				<value2>139.66998802226337</value2>
+				<value0>299.14421568965196</value0>
+				<value1>247.46507353594103</value1>
+				<value2>63.607606307612023</value2>
 				<value3>449.13116892801457</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>208.4350976440175</value0>
+				<value0>260.99452503892212</value0>
 				<value1>119.3</value1>
-				<value2>86.287924148354705</value2>
+				<value2>138.49549889289125</value2>
 				<value3>159.89242341972005</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>236.03146156896372</value0>
-				<value1>155.66408643153804</value1>
-				<value2>203.72890266246188</value2>
-				<value3>245.47695979923373</value3>
+				<value0>241.50047368572018</value0>
+				<value1>203.59489345431564</value1>
+				<value2>270.47995480366615</value2>
+				<value3>266.22532458643184</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>379.00204120709884</value0>
-				<value1>347.42520019798729</value1>
-				<value2>349.08191125689575</value2>
-				<value3>346.35171798887257</value3>
+				<value0>333.27389745300451</value0>
+				<value1>263.90554073379712</value1>
+				<value2>321.59011411314526</value2>
+				<value3>277.62651273393982</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>197.6800599108567</value0>
-				<value1>129.58639542409375</value1>
-				<value2>218.43474750139524</value2>
+				<value0>283.21034962092455</value0>
+				<value1>198.60782638946037</value1>
+				<value2>232.99007520097038</value2>
 				<value3>207.67048436233878</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>133.78270110847683</value0>
-				<value1>180.78942216000058</value1>
-				<value2>67.806581681624834</value2>
+				<value0>179.57958773520497</value0>
+				<value1>193.13587790636109</value1>
+				<value2>99.824091492189979</value2>
 				<value3>198.91454007986346</value3>
 			</value9>
 		</value12>
 		<value13 size="dynamic">
 			<value0 size="dynamic">
-				<value0>361.21400019026356</value0>
-				<value1>268.98190399735972</value1>
-				<value2>345.86274215360976</value2>
-				<value3>342.43806633141179</value3>
+				<value0>62.438266053174971</value0>
+				<value1>54.861216601482482</value1>
+				<value2>189.00243345418934</value2>
+				<value3>125.24777932355435</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>229.32397635723518</value0>
-				<value1>165.53238784628792</value1>
-				<value2>-127.24642106546581</value2>
+				<value0>205.90432836097119</value0>
+				<value1>194.75649477262087</value1>
+				<value2>57.223789190980526</value2>
 				<value3>209.7778182570533</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>203.4432480635918</value0>
-				<value1>131</value1>
-				<value2>-75.929205411993053</value2>
+				<value0>149.93971634793135</value0>
+				<value1>148.1661627102747</value1>
+				<value2>70.840449582929267</value2>
 				<value3>336.24110972431953</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>350.13700381579895</value0>
-				<value1>130.73634432023061</value1>
-				<value2>208.97856544077507</value2>
-				<value3>305.0116854790403</value3>
+				<value0>38.116653902270592</value0>
+				<value1>174.77858237135382</value1>
+				<value2>293.41722674800536</value2>
+				<value3>288.91949817784553</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>150.67828618432839</value0>
-				<value1>129</value1>
-				<value2>114.00978173350424</value2>
+				<value0>259.25052608326098</value0>
+				<value1>250.08465793641494</value1>
+				<value2>103.41408991273451</value2>
 				<value3>214.00279938006292</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>215.30126771052653</value0>
-				<value1>185.62104355776327</value1>
-				<value2>147.36795568293286</value2>
+				<value0>224.83825746451453</value0>
+				<value1>282.16900009396994</value1>
+				<value2>140.60941580169006</value2>
 				<value3>279.47987916783063</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>335.36563156307068</value0>
-				<value1>241.3468752162544</value1>
-				<value2>318.81013479102887</value2>
+				<value0>304.40571342359419</value0>
+				<value1>239.34268123123357</value1>
+				<value2>241.97383845394762</value2>
 				<value3>394.5003912727073</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>394.84999199390336</value0>
-				<value1>389.15642461835381</value1>
-				<value2>369.48889046079142</value2>
-				<value3>424.59599702081402</value3>
+				<value0>172.01448533795966</value0>
+				<value1>80.567204077729983</value1>
+				<value2>337.01544362038624</value2>
+				<value3>378.83795893751585</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>233.721387785882</value0>
-				<value1>150.75305273627265</value1>
+				<value0>260.19127800187465</value0>
+				<value1>242.0803729256827</value1>
 				<value2>113.68186513362934</value2>
-				<value3>165.02448323999246</value3>
+				<value3>182.08579448747858</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>374.28170022188073</value0>
-				<value1>179.26717328367428</value1>
-				<value2>277.89506321354031</value2>
-				<value3>405.79847189422765</value3>
+				<value0>365.47358175376434</value0>
+				<value1>318.38102049948975</value1>
+				<value2>373.38446904686498</value2>
+				<value3>398.00598385194917</value3>
 			</value9>
 		</value13>
 		<value14 size="dynamic">
 			<value0 size="dynamic">
-				<value0>217.36757657287319</value0>
-				<value1>100</value1>
-				<value2>-51.865329824006764</value2>
-				<value3>60.623872851428189</value3>
+				<value0>198.21153450080641</value0>
+				<value1>60.080461105107382</value1>
+				<value2>-19.698037573557563</value2>
+				<value3>34.985866229599495</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>184.89235436918017</value0>
-				<value1>129.21000000000001</value1>
-				<value2>49.761679406891091</value2>
+				<value0>189.95579404107542</value0>
+				<value1>148.83400432575385</value1>
+				<value2>71.15481965760705</value2>
 				<value3>-37.625733576950736</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>174.07565623625126</value0>
-				<value1>100</value1>
-				<value2>56.221676531201368</value2>
-				<value3>228.73274078883472</value3>
+				<value0>132.54896561114577</value0>
+				<value1>155.90100844985795</value1>
+				<value2>106.87586841356978</value2>
+				<value3>240.90958356474164</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>379.02965579819744</value0>
-				<value1>357.38416628579108</value1>
-				<value2>383.49558396302535</value2>
-				<value3>319.88021383526626</value3>
+				<value0>226.42719356477895</value0>
+				<value1>305.33342279631347</value1>
+				<value2>-126.32009125552722</value2>
+				<value3>269.62982127378217</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>167.09078295934853</value0>
+				<value0>192.3144019836347</value0>
 				<value1>124</value1>
-				<value2>24.924180971322706</value2>
+				<value2>1.3830553011505415</value2>
 				<value3>173.22475305185367</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>210.05536810040476</value0>
-				<value1>147.73149552947939</value1>
+				<value0>285.84619569875957</value0>
+				<value1>198.46067807623405</value1>
 				<value2>123.34895951837728</value2>
 				<value3>194.71725600033614</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>273.72355588411477</value0>
-				<value1>100</value1>
-				<value2>212.00365618177085</value2>
-				<value3>182.79623095603293</value3>
+				<value0>241.89832921334747</value0>
+				<value1>179.45889181938185</value1>
+				<value2>233.19679992242317</value2>
+				<value3>203.29409977796143</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>332.77350977782612</value0>
-				<value1>244.43779695581324</value1>
-				<value2>365.79752529398905</value2>
-				<value3>379.55977901442719</value3>
+				<value0>185.36569663868028</value0>
+				<value1>128.31922294585965</value1>
+				<value2>282.95210902501009</value2>
+				<value3>371.78571236817743</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>195.42489119691714</value0>
-				<value1>220.05527366715063</value1>
-				<value2>115.88563270498891</value2>
+				<value0>264.40782946379244</value0>
+				<value1>247.08285549534043</value1>
+				<value2>192.57836733972331</value2>
 				<value3>143.56591428702779</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>177.90620446583512</value0>
-				<value1>100</value1>
-				<value2>126.243136131</value2>
+				<value0>211.91338538225838</value0>
+				<value1>121.57360738149056</value1>
+				<value2>153.39777315003542</value2>
 				<value3>154.69839637998174</value3>
 			</value9>
 		</value14>
 		<value15 size="dynamic">
 			<value0 size="dynamic">
-				<value0>291.80967627433074</value0>
-				<value1>-12.86983960980146</value1>
+				<value0>-234.51264237714452</value0>
+				<value1>-26.46989931061124</value1>
 				<value2>269.52663245221498</value2>
 				<value3>261.37411728565201</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>207.17638003309904</value0>
-				<value1>118</value1>
-				<value2>12.919449186471816</value2>
+				<value0>40.669762510698156</value0>
+				<value1>160.96521382705953</value1>
+				<value2>56.118329521300147</value2>
 				<value3>46.355970144915609</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>183.11214868089041</value0>
-				<value1>154.43150107294468</value1>
-				<value2>-36.238623016483452</value2>
+				<value0>124.66454151230045</value0>
+				<value1>212.35279459100164</value1>
+				<value2>57.830836503391829</value2>
 				<value3>139.88744003983547</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>229.73389337614722</value0>
-				<value1>207.43618260048586</value1>
-				<value2>-5.7119113480022108</value2>
-				<value3>213.45414801831973</value3>
+				<value0>113.5682960012951</value0>
+				<value1>138.95556528931638</value1>
+				<value2>78.474065240416564</value2>
+				<value3>225.35846846218061</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>351.65259855491439</value0>
-				<value1>342.62338474154626</value1>
-				<value2>295.12924269601086</value2>
+				<value0>292.04668941482578</value0>
+				<value1>275.47933847373542</value1>
+				<value2>-214.92588547048456</value2>
 				<value3>313.01912408387466</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>194.46144989522654</value0>
-				<value1>122.91054576741328</value1>
-				<value2>127.53550463436996</value2>
+				<value0>257.95564757372915</value0>
+				<value1>142.01125643236117</value1>
+				<value2>138.71080800572309</value2>
 				<value3>185.92488356537552</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>179.69704013689875</value0>
-				<value1>121.322279868124</value1>
-				<value2>198.08827624588906</value2>
-				<value3>170.96316720926671</value3>
+				<value0>259.15179904703052</value0>
+				<value1>181.79338329958193</value1>
+				<value2>232.04522226962496</value2>
+				<value3>190.30722150687825</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>277.15945113608439</value0>
-				<value1>207.71127129816853</value1>
-				<value2>285.0464194461818</value2>
+				<value0>102.08655957013725</value0>
+				<value1>239.45223092981203</value1>
+				<value2>301.03732453176406</value2>
 				<value3>261.2722227176223</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>154.28001714431218</value0>
+				<value0>173.1693604501904</value0>
 				<value1>100</value1>
-				<value2>163.8189628008441</value2>
+				<value2>173.96380002947927</value2>
 				<value3>182.9512723416332</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>209.20635791575421</value0>
-				<value1>181.60936936488673</value1>
+				<value0>252.06325398356896</value0>
+				<value1>221.80290639588446</value1>
 				<value2>135.99125244544018</value2>
 				<value3>223.24297090733194</value3>
 			</value9>
 		</value15>
 		<value16 size="dynamic">
 			<value0 size="dynamic">
-				<value0>187.68182218010372</value0>
-				<value1>51.017838375480615</value1>
-				<value2>14.095381496242986</value2>
+				<value0>-124.08073580120981</value0>
+				<value1>92.916054537932553</value1>
+				<value2>31.841506507431724</value2>
 				<value3>197.37167327047996</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>172.75061110907367</value0>
-				<value1>165.80048726575797</value1>
-				<value2>7.5913512344579779</value2>
-				<value3>29.85802738502705</value3>
+				<value0>108.32615877239141</value0>
+				<value1>135.78928074450027</value1>
+				<value2>-24.70869716895978</value2>
+				<value3>-28.178133510008355</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>339.97445205236636</value0>
-				<value1>5.2716571882479286</value1>
-				<value2>250.06489380425296</value2>
-				<value3>268.37457080953953</value3>
+				<value0>23.293126811585743</value0>
+				<value1>161.81326052695229</value1>
+				<value2>-40.963585561221812</value2>
+				<value3>212.83569400243584</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>142.40491500000002</value0>
-				<value1>33.086455664786804</value1>
+				<value0>144.49846643071962</value0>
+				<value1>11.44172043736647</value1>
 				<value2>-75.254326251370543</value2>
 				<value3>140.5001726669604</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>261.57498206047978</value0>
-				<value1>89.344882065752671</value1>
-				<value2>-26.011353622921753</value2>
-				<value3>190.27858391395154</value3>
+				<value0>268.33116986348483</value0>
+				<value1>102.91506466041767</value1>
+				<value2>32.306158611777086</value2>
+				<value3>200.38526700273957</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>321.42193508295918</value0>
-				<value1>189.91162090575415</value1>
-				<value2>-99.654434208623712</value2>
-				<value3>300.99677422977703</value3>
+				<value0>171.93548651944235</value0>
+				<value1>33.446904059539364</value1>
+				<value2>220.64267391061819</value2>
+				<value3>241.08369375916558</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>375.9897307122946</value0>
-				<value1>342.38204972141853</value1>
-				<value2>284.03613453388226</value2>
-				<value3>328.46843333253418</value3>
+				<value0>202.39123455733147</value0>
+				<value1>206.25131234371071</value1>
+				<value2>258.47285865680118</value2>
+				<value3>-82.999734967882176</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>235.56800355912478</value0>
+				<value0>206.52943293169028</value0>
 				<value1>126.25441669731161</value1>
-				<value2>107.07282728406571</value2>
-				<value3>100.45064181223422</value3>
+				<value2>136.72153758586555</value2>
+				<value3>66.4055776310108</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>220.52664397569765</value0>
-				<value1>100</value1>
-				<value2>97.995353931529365</value2>
+				<value0>240.54167471282747</value0>
+				<value1>142.01917040884038</value1>
+				<value2>144.5215062599666</value2>
 				<value3>174.60735156249419</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>353.38870365956109</value0>
-				<value1>358.4761751160267</value1>
-				<value2>340.39768977462364</value2>
-				<value3>345.84641305872924</value3>
+				<value0>323.4986952251702</value0>
+				<value1>321.91592837685766</value1>
+				<value2>269.18738363141114</value2>
+				<value3>342.66574865060255</value3>
 			</value9>
 		</value16>
 		<value17 size="dynamic">
 			<value0 size="dynamic">
-				<value0>140.96045354438573</value0>
-				<value1>21.692144280006335</value1>
-				<value2>81.324364390356678</value2>
+				<value0>-190.38096815969178</value0>
+				<value1>62.605572803307602</value1>
+				<value2>63.72780179106762</value2>
 				<value3>172.0550047780599</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>131.89296491093833</value0>
-				<value1>60.026354833133531</value1>
-				<value2>24.197387130114187</value2>
+				<value0>45.624690419545821</value0>
+				<value1>47.189142371637018</value1>
+				<value2>-5.0813977679347992</value2>
 				<value3>42.047653832050692</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>175.53195422399142</value0>
-				<value1>90.695039446154496</value1>
-				<value2>-16.122096123109877</value2>
+				<value0>-6.8922684493046944</value0>
+				<value1>-26.617896741353633</value1>
+				<value2>22.929313345731043</value2>
 				<value3>87.128271273167783</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>326.16821981851751</value0>
-				<value1>120.82406941625293</value1>
-				<value2>299.7981846345242</value2>
+				<value0>-98.373811922633735</value0>
+				<value1>190.00118467957091</value1>
+				<value2>148.20209733923903</value2>
 				<value3>256.59974583888578</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>205.46213651873853</value0>
-				<value1>138.61721623016945</value1>
-				<value2>-69.937489036379546</value2>
-				<value3>180.58870834480896</value3>
+				<value0>104.97975625091414</value0>
+				<value1>203.46510455174132</value1>
+				<value2>66.92373844639198</value2>
+				<value3>138.64556759565164</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>201.62743023007164</value0>
-				<value1>141.94863262356182</value1>
-				<value2>64.379577342885085</value2>
-				<value3>111.57300853235645</value3>
+				<value0>113.5981218705894</value0>
+				<value1>197.70727232657615</value1>
+				<value2>181.04988690532369</value2>
+				<value3>79.271447052170359</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>140.92609841781496</value0>
-				<value1>163.38844709665008</value1>
-				<value2>78.138306021858767</value2>
-				<value3>280.45122505955447</value3>
+				<value0>-109.02440256589678</value0>
+				<value1>88.746032249023187</value1>
+				<value2>279.51779600455433</value2>
+				<value3>296.01654357446017</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>223.24278848483743</value0>
-				<value1>165.88969756641734</value1>
-				<value2>27.994362513251406</value2>
-				<value3>171.88565241386658</value3>
+				<value0>167.18971308771231</value0>
+				<value1>174.58054925741743</value1>
+				<value2>92.813643956084903</value2>
+				<value3>130.81701320600141</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>202.58226533117903</value0>
-				<value1>164.30946511718804</value1>
+				<value0>249.99894925715023</value0>
+				<value1>197.41346679563867</value1>
 				<value2>76.657225748281888</value2>
-				<value3>220.68392923519622</value3>
+				<value3>228.77176969122132</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>329.93409184871877</value0>
-				<value1>250.1845995182652</value1>
-				<value2>149.2860886955558</value2>
-				<value3>315.62333795447159</value3>
+				<value0>277.09167949265094</value0>
+				<value1>289.67844495144612</value1>
+				<value2>191.60869145673195</value2>
+				<value3>314.51946828961172</value3>
 			</value9>
 		</value17>
 		<value18 size="dynamic">
 			<value0 size="dynamic">
-				<value0>324.84972653298695</value0>
-				<value1>314.35140201985854</value1>
-				<value2>137.10426142680754</value2>
+				<value0>-122.3632296201546</value0>
+				<value1>-168.79038712045252</value1>
+				<value2>93.207078928030342</value2>
 				<value3>251.21019130990052</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>143.58504024676725</value0>
-				<value1>130.84772629382184</value1>
-				<value2>-10.060287159217889</value2>
+				<value0>-104.46664182740929</value0>
+				<value1>-41.466734480987697</value1>
+				<value2>77.970251943095548</value2>
 				<value3>60.909396894029662</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>179.58848556966794</value0>
-				<value1>120.23680032643392</value1>
-				<value2>13.705073535810165</value2>
+				<value0>28.664044584050583</value0>
+				<value1>99.46968795896403</value1>
+				<value2>43.379841483465526</value2>
 				<value3>-71.207368806591973</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>248.54915797114523</value0>
-				<value1>100</value1>
-				<value2>14.890593585209871</value2>
-				<value3>188.78610793567142</value3>
+				<value0>52.023085541237016</value0>
+				<value1>58.683371221753831</value1>
+				<value2>41.04537620983595</value2>
+				<value3>147.71338422555237</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>176.96684272120478</value0>
-				<value1>100</value1>
-				<value2>-23.343405544753594</value2>
+				<value0>51.207964794295933</value0>
+				<value1>119.84658447836686</value1>
+				<value2>0.61678011410379341</value2>
 				<value3>32.212347399939524</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>190.27147225016125</value0>
-				<value1>118</value1>
-				<value2>131.27750085795967</value2>
-				<value3>97.048661533202974</value3>
+				<value0>85.586658751026135</value0>
+				<value1>106.97353414538878</value1>
+				<value2>145.81422997595206</value2>
+				<value3>116.14830763047823</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>222.96066055893576</value0>
-				<value1>165.99864440441547</value1>
-				<value2>65.938831998518921</value2>
-				<value3>129.62548418025915</value3>
+				<value0>15.479616374410675</value0>
+				<value1>111.665672222797</value1>
+				<value2>100.53941329519611</value2>
+				<value3>139.47730617724253</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>366.41328118924974</value0>
-				<value1>418.76334470831068</value1>
-				<value2>189.96324452700745</value2>
-				<value3>311.99260335214791</value3>
+				<value0>188.35013372185017</value0>
+				<value1>237.69422237871058</value1>
+				<value2>283.22038347285832</value2>
+				<value3>260.84127061709006</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>151.11163808910163</value0>
-				<value1>116.73931167283841</value1>
+				<value0>164.63155829234881</value0>
+				<value1>134.84236168297247</value1>
 				<value2>51.652665003512681</value2>
 				<value3>196.08861376919228</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>275.26838336828257</value0>
-				<value1>180.26796755446125</value1>
-				<value2>143.46552521235844</value2>
+				<value0>231.70768654238088</value0>
+				<value1>204.69952686297219</value1>
+				<value2>163.18733893372351</value2>
 				<value3>191.25282083572159</value3>
 			</value9>
 		</value18>
 		<value19 size="dynamic">
 			<value0 size="dynamic">
-				<value0>173.99068790120978</value0>
-				<value1>33.625879673888676</value1>
-				<value2>52.730250149087567</value2>
+				<value0>77.292162036784276</value0>
+				<value1>-57.695475517205494</value1>
+				<value2>20.828267748446887</value2>
 				<value3>-59.475522189707306</value3>
 			</value0>
 			<value1 size="dynamic">
-				<value0>167.7835654422253</value0>
-				<value1>88.057442591767881</value1>
-				<value2>-33.304270000000002</value2>
+				<value0>-138.0186462935234</value0>
+				<value1>-25.124149482128892</value1>
+				<value2>-37.202724088485837</value2>
 				<value3>50.040451128984266</value3>
 			</value1>
 			<value2 size="dynamic">
-				<value0>182.16424411895542</value0>
-				<value1>106.2313294111644</value1>
-				<value2>86.427719594712727</value2>
+				<value0>128.33969701204791</value0>
+				<value1>18.009116370518289</value1>
+				<value2>96.213289537191386</value2>
 				<value3>-0.32539653797445922</value3>
 			</value2>
 			<value3 size="dynamic">
-				<value0>233.30328476017692</value0>
-				<value1>155.62042577916034</value1>
-				<value2>171.06491085719892</value2>
-				<value3>49.391481140831857</value3>
+				<value0>37.288221611975331</value0>
+				<value1>89.603060422219059</value1>
+				<value2>81.643635237122652</value2>
+				<value3>15.340194106105386</value3>
 			</value3>
 			<value4 size="dynamic">
-				<value0>341.98274541100847</value0>
-				<value1>331.7410212494969</value1>
-				<value2>266.54295642390639</value2>
+				<value0>-133.15611808021725</value0>
+				<value1>-63.429896281793624</value1>
+				<value2>226.13783479998187</value2>
 				<value3>277.89471280664674</value3>
 			</value4>
 			<value5 size="dynamic">
-				<value0>167.92770610428812</value0>
-				<value1>158.4241749044491</value1>
-				<value2>40.078982366843825</value2>
+				<value0>-75.269569156767886</value0>
+				<value1>89.827383145786314</value1>
+				<value2>90.359594679926715</value2>
 				<value3>137.11633159746592</value3>
 			</value5>
 			<value6 size="dynamic">
-				<value0>376.28186175616912</value0>
-				<value1>347.69343145368686</value1>
+				<value0>-57.422509457332268</value0>
+				<value1>275.54755453187505</value1>
 				<value2>22.632671317257021</value2>
 				<value3>263.94254598950948</value3>
 			</value6>
 			<value7 size="dynamic">
-				<value0>195.83303647544281</value0>
-				<value1>65.28153554402715</value1>
+				<value0>170.34035335266594</value0>
+				<value1>29.261721505228188</value1>
 				<value2>4.8242773076404859</value2>
 				<value3>217.58160332969354</value3>
 			</value7>
 			<value8 size="dynamic">
-				<value0>162.81623435281341</value0>
-				<value1>100</value1>
+				<value0>185.02137878046713</value0>
+				<value1>101.5930996243265</value1>
 				<value2>-8.6228213740320925</value2>
 				<value3>204.45388988363797</value3>
 			</value8>
 			<value9 size="dynamic">
-				<value0>236.44268671051151</value0>
-				<value1>135.77014892552251</value1>
-				<value2>35.177566855200887</value2>
+				<value0>217.71662248466856</value0>
+				<value1>150.19313403297025</value1>
+				<value2>58.094465421804379</value2>
 				<value3>204.80562122308535</value3>
 			</value9>
 		</value19>

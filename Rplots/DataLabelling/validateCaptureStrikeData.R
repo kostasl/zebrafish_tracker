@@ -137,7 +137,12 @@ for (idx in idxToValidate)
       datTrackedEventsRegister[idx,]$LabelledScore <- newLab        
     }
       
-  }
+    ##Save 
+    saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
+    saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
+    
+    
+  } ##Mark validated
   
  
   strKeyC <- readline(prompt="### Move to next or quit ? (n/q):")

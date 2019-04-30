@@ -388,7 +388,7 @@ int fishModel::updateEyeState(tEllipsoids& vell)
     // If we are stuck on same frame then estimate the unbiased empirical mean angle for each eye
     // use an incremental mean calculation
     if (uiFrameIterations > 1)
-        stepUpdate = 1.0/std::max(500.0, (double)uiFrameIterations);
+        stepUpdate = 1.0/std::min(400.0, (double)uiFrameIterations);
 
 
     if (vell.size() > 0)
@@ -405,7 +405,9 @@ int fishModel::updateEyeState(tEllipsoids& vell)
         // Use an incremental/ recent average rule
         lEye.rectEllipse.angle = fleftEyeTheta;
         this->leftEye           = lEye;
-        this->leftEyeTheta = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
+
+        if (lEye.fitscore > 50)
+            this->leftEyeTheta = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
 
     }else
     { //Set To Not detected - Do not update estimates - set score to 0
@@ -433,6 +435,7 @@ int fishModel::updateEyeState(tEllipsoids& vell)
 
       // Update Internal Variable for Eye Angle //
       // Use an incremental/ recent average rule
+      if (rEye.fitscore > 50)
       this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
 
     }else
