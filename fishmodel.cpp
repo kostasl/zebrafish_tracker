@@ -451,7 +451,6 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
         this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
 
 
-
     this->leftEye = mleftEye;
     this->rightEye = mrightEye;
 
