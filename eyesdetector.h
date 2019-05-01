@@ -131,7 +131,7 @@ public:
     void SaveState();/// Saves learned behaviour to disk in RLEyeDetector.xml;
 
 private:
-    const double pExplore = 0.1;
+    const double pExplore = 0.0;
     const double alpha = 0.1; //lqearning rate for step update
     const double gamma = 0.2; //discounting of fut. rewards
     tStateValueMatrix mStateValue;

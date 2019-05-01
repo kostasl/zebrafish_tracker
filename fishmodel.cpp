@@ -378,11 +378,13 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
 /// \brief Uses detected ellipsoids to set fish's eye model state / using an incremental update
 ///\return total Score for fit
-int fishModel::updateEyeState(tEllipsoids& vell)
+int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 {
     int retPerfScore = 0;
     double fleftEyeTheta = 0.0f;
+    int ileftEyeSamples = 0;
     double frightEyeTheta = 0.0f;
+    int irightEyeSamples = 0;
 
 
     // If we are stuck on same frame then estimate the unbiased empirical mean angle for each eye
@@ -390,79 +392,138 @@ int fishModel::updateEyeState(tEllipsoids& vell)
     if (uiFrameIterations > 1)
         stepUpdate = 1.0/std::min(400.0, (double)uiFrameIterations);
 
+//    //tDetectedEllipsoid
+//    // Go through All detected ellipsoids,
+//    for (int i=0; i< vLeftEll.size(); i++)
+//    {
+//        // select ones are for left/right eye
+//        tDetectedEllipsoid Eye = vLeftEll[i];
+//        if (Eye.cLabel == 'L') //Left eye
+//        {
+//            fleftEyeTheta += Eye.getEyeAngle();
+//            ileftEyeSamples +=1;
+//        }
+//    // and obtain mean angle for left/right eye from set of detected ellipsoids.
+//    }
 
-    if (vell.size() > 0)
-    {//Left Eye Detected First
-        tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
+//    for (int i=0; i< vRightEll.size(); i++)
+//    {
+//        tDetectedEllipsoid REye = vRightEll[i];
+//        frightEyeTheta += REye.getEyeAngle();
+//        irightEyeSamples +=1;
+//        this->leftEye.fitscore += REye.fitscore;
+//    }
 
-        fleftEyeTheta      = lEye.rectEllipse.angle-90;
-        if (fleftEyeTheta > 90)
-             fleftEyeTheta      = lEye.rectEllipse.angle-90;
-        if (fleftEyeTheta < -30)
-             fleftEyeTheta      = lEye.rectEllipse.angle+90;
-
-        // Update Internal Variable for Eye Angle //
-        // Use an incremental/ recent average rule
-        lEye.rectEllipse.angle = fleftEyeTheta;
-        this->leftEye           = lEye;
-
-        if (lEye.fitscore > 50)
-            this->leftEyeTheta = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
-
-    }else
-    { //Set To Not detected - Do not update estimates - set score to 0
-        //this->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-        //this->leftEyeTheta  = 180;
-        this->leftEye.fitscore = 0;
-        this->nFailedEyeDetectionCount++;
-    }
-
-
-   // ss.str(""); //Empty String
-    if (vell.size() > 1)
+    //Get Mean sample angles
+    if (ileftEyeSamples >0)
     {
-      tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
-
-      frightEyeTheta     = rEye.rectEllipse.angle - 90;
-      //Fix Equivalent Angles To Range -50 +30
-      if (frightEyeTheta < -90)
-           frightEyeTheta      = rEye.rectEllipse.angle+90;
-      if (frightEyeTheta > 30)
-          frightEyeTheta       = rEye.rectEllipse.angle-90;
-
-      rEye.rectEllipse.angle = frightEyeTheta;
-      this->rightEye     = rEye; //Save last fitted ellipsoid struct
-
-      // Update Internal Variable for Eye Angle //
-      // Use an incremental/ recent average rule
-      if (rEye.fitscore > 50)
-      this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
-
+        fleftEyeTheta   = fleftEyeTheta/(float)ileftEyeSamples;
+        this->leftEye.fitscore = this->leftEye.fitscore/(float)ileftEyeSamples;
     }else
-    { //Set To Not detected
-     //   ss << "R Eye Detection Error - Check Threshold";
-     //   window_main.LogEvent(QString::fromStdString(ss.str()));
+    {
+        this->nFailedEyeDetectionCount++;
+    }
 
-        //this->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
-        //this->rightEyeTheta  = 180;
-        this->rightEye.fitscore = 0;
+    if (irightEyeSamples >0)
+    {
+       frightEyeTheta  = frightEyeTheta/(float)irightEyeSamples;
+        this->rightEye.fitscore = this->rightEye.fitscore/(float)irightEyeSamples;
+    }else
+    {
         this->nFailedEyeDetectionCount++;
     }
 
 
-   if (this->leftEye.fitscore > 20 && this->rightEye.fitscore > 20)
-   {
-      this->nFailedEyeDetectionCount = 0; // Reset Error Count
-      retPerfScore = this->leftEye.fitscore + this->rightEye.fitscore;
-   }else //penalize
-   {
-      retPerfScore =  (this->leftEye.fitscore + this->rightEye.fitscore)- 400;
-   }
+    tDetectedEllipsoid mleftEye(vLeftEll);
+    tDetectedEllipsoid mrightEye(vRightEll);
 
-   //Reset Step size to default
-    stepUpdate = eyeStepIncrement;
+    fleftEyeTheta = mleftEye.getEyeAngle();
+    frightEyeTheta = mrightEye.getEyeAngle();
+    //Incremental Update
+    if (std::isnan(fleftEyeTheta) )
+        this->nFailedEyeDetectionCount++;
+    else
+        this->leftEyeTheta  = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
 
-return (retPerfScore);
+    if (std::isnan(frightEyeTheta) )
+        this->nFailedEyeDetectionCount++;
+    else
+        this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
+
+
+
+    this->leftEye = mleftEye;
+    this->rightEye = mrightEye;
+
+    if (this->leftEye.fitscore > 20 && this->rightEye.fitscore > 20)
+    {
+       this->nFailedEyeDetectionCount = 0; // Reset Error Count
+       retPerfScore = this->leftEye.fitscore + this->rightEye.fitscore;
+    }else //penalize
+    {
+       retPerfScore =  (this->leftEye.fitscore + this->rightEye.fitscore)- 400;
+    }
+
+    //Reset Step size to default
+     stepUpdate = eyeStepIncrement;
+
+ return (retPerfScore);
+
+
+
+
+//    if (vell.size() > 0)
+//    {//Left Eye Detected First
+//        tDetectedEllipsoid lEye = vell.at(0); //L Eye Is pushed 1st
+
+//        // Update Internal Variable for Eye Angle //
+//        // Use an incremental/ recent average rule
+//        lEye.rectEllipse.angle = fleftEyeTheta;
+//        this->leftEye           = lEye;
+
+//        if (lEye.fitscore > 50)
+//            this->leftEyeTheta = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
+
+//    }else
+//    { //Set To Not detected - Do not update estimates - set score to 0
+//        //this->leftEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+//        //this->leftEyeTheta  = 180;
+//        this->leftEye.fitscore = 0;
+//        this->nFailedEyeDetectionCount++;
+//    }
+
+
+//   // ss.str(""); //Empty String
+//    if (vell.size() > 1)
+//    {
+//      tDetectedEllipsoid rEye = vell.at(1); //R Eye Is pushed 2nd
+
+//      frightEyeTheta     = rEye.rectEllipse.angle - 90;
+//      //Fix Equivalent Angles To Range -50 +30
+//      if (frightEyeTheta < -90)
+//           frightEyeTheta      = rEye.rectEllipse.angle+90;
+//      if (frightEyeTheta > 30)
+//          frightEyeTheta       = rEye.rectEllipse.angle-90;
+
+//      rEye.rectEllipse.angle = frightEyeTheta;
+//      this->rightEye     = rEye; //Save last fitted ellipsoid struct
+
+//      // Update Internal Variable for Eye Angle //
+//      // Use an incremental/ recent average rule
+//      if (rEye.fitscore > 50)
+//      this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
+
+//    }else
+//    { //Set To Not detected
+//     //   ss << "R Eye Detection Error - Check Threshold";
+//     //   window_main.LogEvent(QString::fromStdString(ss.str()));
+
+//        //this->rightEye       = tDetectedEllipsoid(cv::RotatedRect(),0);
+//        //this->rightEyeTheta  = 180;
+//        this->rightEye.fitscore = 0;
+//        this->nFailedEyeDetectionCount++;
+//    }
+
 }
 
 
@@ -941,7 +1002,7 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
     out.setRealNumberNotation(QTextStream::RealNumberNotation::FixedNotation );
     out.setRealNumberPrecision(2);
-    assert(!std::isnan( h.leftEyeTheta ) && !std::isnan( h.rightEyeTheta ) );
+   // assert(!std::isnan( h.leftEyeTheta ) && !std::isnan( h.rightEyeTheta ) );
     out << h.ID <<"\t"<< h.bearingAngle <<"\t" << h.zTrack << "\t" << h.leftEyeTheta << "\t" <<  h.rightEyeTheta;
 
     //Set Global 1st Spine Direction (Helps to detect Errors)

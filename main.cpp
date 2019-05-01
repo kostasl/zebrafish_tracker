@@ -1335,7 +1335,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 //          cv::imshow("headDetect",outframeHeadEyeDetect);
 
             window_main.showVideoFrame(outframe,nFrame); //Show On QT Window
-            window_main.showInsetimg(outframeHead);
+            window_main.showInsetimg(outframeHead); //Shows the edge processing img used for eye detection
         }
 
         // Switch Off Render To Display If In Offline Tracking Mode
@@ -3369,8 +3369,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
           ///Make Normalized Fish View
-           tEllipsoids vell;
-           vell.clear();
+          /// Ellipsoid Vectors detected for each eye
+           tEllipsoids vellLeft;
+           tEllipsoids vellRight;
+
 
 
            //maskedImg_gray.copyTo(imgTmp); //imgTmp Contain full frame Image in Gray
@@ -3438,8 +3440,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
               /// EYE DETECTION Report Results to Output Frame //
-              /// Returns imgFishHeadProcessed Upsampled with ellipses drawns
-              int ret = detectEllipses(imgFishHead,vell,imgFishHeadSeg,imgFishHeadProcessed);
+              /// Returns imgFishHeadProcessed Upsampled with ellipses drawns, and imgFishHeadSeg - the processed edges img used
+              /// to detect the eyes
+              ///
+              int ret = detectEyeEllipses(imgFishHead,vellLeft,vellRight,imgFishHeadSeg,imgFishHeadProcessed);
               std::stringstream ss;
 
             if (ret < 2 | gUserReward < 0)
@@ -3459,7 +3463,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //    gUserReward = -500;
 
               /// Pass detected Ellipses to Update the fish model's Eye State //
-              double fitScoreReward = fish->updateEyeState(vell)+ gUserReward;
+              double fitScoreReward = fish->updateEyeState(vellLeft,vellRight)+ gUserReward;
               gUserReward = 0.0; //Reset User Provided Rewards
               //qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
