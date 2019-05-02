@@ -213,7 +213,8 @@ void getConnectedEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdg
 /// \returns vedgepoint list of connected pixels to the one in startpt
 void getPointsAlongEdge(cv::Mat imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint)
 {
-      cv::Mat imgEdgeIn_checked = imgEdgeIn.clone();
+      cv::Mat imgEdgeIn_checked;// = imgEdgeIn.clone();
+      imgEdgeIn.copyTo(imgEdgeIn_checked);
       getConnectedEdgePoints(imgEdgeIn_checked,startpt,vedgepoint);
 
 }
@@ -838,11 +839,11 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         {
             vEyes.push_back(vLEyeHull);
             rcLEye =  cv::fitEllipse(vLEyeHull);
-            tDetectedEllipsoid dEll(rcLEye,50);
+            tDetectedEllipsoid dEll(rcLEye,10);
             lEll.fitscore       = dEll.fitscore;
             lEll.rectEllipse    = dEll.rectEllipse;
             qEllipsoids.push(dEll); //Add As last resort candidate
-            cv::ellipse(imgEdge_local, lEll.rectEllipse ,CV_RGB(255,255,255),1);
+            //cv::ellipse(imgEdge_local, lEll.rectEllipse ,CV_RGB(255,255,255),1);
         }
     }
 
@@ -930,11 +931,11 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         {
               vEyes.push_back(vREyeHull);
               rcREye =  cv::fitEllipse(vREyeHull);
-              tDetectedEllipsoid dEll(rcREye,50); //Make with a above threshold score
+              tDetectedEllipsoid dEll(rcREye,10); //Make with a above threshold score
               rEll.fitscore       = dEll.fitscore;
               rEll.rectEllipse    = dEll.rectEllipse;
               qEllipsoids.push(dEll); //Add As last resort candidate
-              cv::ellipse(imgEdge_local, rEll.rectEllipse ,CV_RGB(255,255,255),1);
+              //cv::ellipse(imgEdge_local, rEll.rectEllipse ,CV_RGB(255,255,255),1);
         }
     }
 

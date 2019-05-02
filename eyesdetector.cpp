@@ -118,13 +118,14 @@ tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
 /// \param RewardScore the immediate value of the current state and
 double EyesDetector::UpdateStateValue(tEyeDetectorState toState,double RewardScore)
 {
-    int idxVal_i = std::max(0,(int)currentState.iSegThres1-(int)baseIdxRow);
-    int idxVal_j = std::max(0,currentState.iDSegThres2); //The difference to 2nd threshold/ enfornce lower bound
+
+    int idxVal_i = std::max(0, std::min( (int)currentState.iSegThres1-(int)baseIdxRow, (int)mStateValue.size()-1 ));
+    int idxVal_j = std::max(0,std::min( currentState.iDSegThres2,(int)mStateValue[0].size()-1) ); //The difference to 2nd threshold/ enfornce lower bound
     int idxVal_k = currentState.VergenceState;
 
     //Get Next states Value and update current - Greedy
-    int idxNextVal_i = std::max(0,(int)toState.iSegThres1-(int)baseIdxRow);
-    int idxNextVal_j = std::max(0,(int)toState.iDSegThres2);
+    int idxNextVal_i = std::max(0, std::min( (int)toState.iSegThres1-(int)baseIdxRow, (int)mStateValue.size()-1));
+    int idxNextVal_j = std::max(0,std::min( (int)toState.iDSegThres2, (int)mStateValue[0].size()-1) );
     int idxNextVal_k = (int)toState.VergenceState;
 
     //Update The Current State value by propagating value of next state backwards

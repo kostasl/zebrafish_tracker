@@ -31,8 +31,7 @@
 
 ///
  ///*  Dependencies : opencv3 (W/O CUDA ) QT5
- ///*
- /// \details
+ ///* /// \details
  ///  Heurestic optimizations:
  ///   * Detection of stopped Larva or loss of features from BG Substraction - via mask correction
  ///   * Filter blobs and maintain separate lists for each class (food/fish)
@@ -3463,7 +3462,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //    gUserReward = -500;
 
               /// Pass detected Ellipses to Update the fish model's Eye State //
-              double fitScoreReward = fish->updateEyeState(vellLeft,vellRight)+ gUserReward;
+              /// Make Fit score count very little
+              double fitScoreReward = 0.0000*fish->updateEyeState(vellLeft,vellRight)+ gUserReward;
               gUserReward = 0.0; //Reset User Provided Rewards
               //qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
@@ -3473,10 +3473,11 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //Test - Add Target Vector
               //fitScoreReward += -10.0*abs(40.25 - fish->leftEyeTheta) -10.0*abs(34.7 - fish->rightEyeTheta);
               pRLEye->UpdateStateValue(current_eyeState,fitScoreReward); //Tell RL that we moved state so it calc value and updates internal state
-              //pRLEye->setCurrentState(current_eyeState);
-              tEyeDetectorState new_eyeState = pRLEye->DrawNextAction(current_eyeState); //RL choose next Action /
-              gthresEyeSeg = new_eyeState.iSegThres1; //Action Sets a partial state -> Update threshold as indicated by algorithm
-              gthresEyeSegL = new_eyeState.iSegThres1-new_eyeState.iDSegThres2;
+              pRLEye->setCurrentState(current_eyeState);
+              /// \note RL Is disabled - No State changes
+              //tEyeDetectorState new_eyeState = pRLEye->DrawNextAction(current_eyeState); //RL choose next Action /
+              //gthresEyeSeg = new_eyeState.iSegThres1; //Action Sets a partial state -> Update threshold as indicated by algorithm
+              //gthresEyeSegL = new_eyeState.iSegThres1-new_eyeState.iDSegThres2;
               pwindow_main->UpdateSpinBoxToValue();
 
               ///  Print Out Values //
