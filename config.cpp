@@ -52,6 +52,8 @@ int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
 int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
 int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
+int giEyeIsolationMaskRadius = 10; ///Mask circle between eyes
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 3; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
 int gthresEyeSegL               = 2;
@@ -72,7 +74,7 @@ int giHeadIsolationMaskVOffset      = 24; //Vertical Distance to draw  Mask and 
 ///Fish Features Detection Params
 int gFishTemplateAngleSteps     = 1;
 int gEyeTemplateAngleSteps      = 5;
-int iEyeMaskSepWidth            = 2; //5 px width vertical line separates the eyes for segmentation
+int iEyeMaskSepWidth            = 25; //5 px width vertical line separates the eyes for segmentation
 double eyeStepIncrement         = 0.1;
 double gTemplateMatchThreshold  = 0.89; //If not higher than 0.9 The fish body can be matched at extremeties
 int iLastKnownGoodTemplateRow   = 0;

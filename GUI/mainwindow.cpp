@@ -1232,3 +1232,9 @@ void MainWindow::on_checkBoxHistEqualizer_stateChanged(int arg1)
 {
 
 }
+
+/// \brief Change the eye Mask Width betwee eyes
+void MainWindow::on_spinBoxEyeMaskW_valueChanged(int arg1)
+{
+    iEyeMaskSepWidth = arg1;
+}

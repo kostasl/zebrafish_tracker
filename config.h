@@ -76,6 +76,7 @@ extern int gi_CannyThres;
 extern int gi_CannyThresSmall; //Aperture size should be odd between 3 and 7 in function Canny
 extern int gi_maxEllipseMajor; /// thres  for Eye Ellipse Detection methods
 extern int gi_minEllipseMajor; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+extern int gi_minEllipseMinor; //The threshold in ellipse detection for how slim an ellipsoid can be
 extern int gi_VotesEllipseThres; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 extern int gthresEyeSeg; //Central Threshold For Eye Segmentation In Isolated Head IMage
 extern int gthresEyeSegL; //Lower Eye Seg Threshold
@@ -91,7 +92,7 @@ extern const int gcFishContourSize;
 extern const int gMaxFitIterations; //extern const ant For Max Iteration to Fit Tail Spine to Fish Contour
 
 extern int giHeadIsolationMaskVOffset; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
-
+extern int giEyeIsolationMaskRadius; //Radius of circle masking between eyes
 ///Fish Features Detection Params
 extern int gFishTemplateAngleSteps;
 extern int gEyeTemplateAngleSteps;
