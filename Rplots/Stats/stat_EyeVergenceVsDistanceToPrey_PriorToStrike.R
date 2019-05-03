@@ -131,7 +131,7 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,1.0),ylim=c(0,100),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.8),ylim=c(40,80),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[1])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))

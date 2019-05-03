@@ -697,6 +697,9 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     int lengthLine = 13;
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
+    /// Make Mask regions to Separate Eyes //
+    cv::Point ptMaskCntr = cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
+    cv::RotatedRect rectMidEllipse = cv::RotatedRect(ptMaskCntr,cv::Size2f(iEyeMaskSepWidth,imgUpsampled_gray.rows+26),0);
 
     /*ptLEyeMid.x = ptcentre.x-lengthLine;
     ptLEyeMid.y = ptcentre.y/2; //y=0 is the top left corner
@@ -787,14 +790,11 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     imgEdge_local = imgFishHead_Lapl + imgFishHead_Lapl2 + imgFishHead_Lapl3;
 
     /// Make Mask regions to Separate Eyes //
-    cv::Point ptMaskCntr = cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
-    cv::RotatedRect rect = cv::RotatedRect(ptMaskCntr,cv::Size2f(iEyeMaskSepWidth,imgUpsampled_gray.rows+26),0);
-
     //Add Thick Mid line to erase inner Eye Edges and artefacts
     cv::line(imgEdge_local,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes with line111
     cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),giHeadIsolationMaskVOffset,CV_RGB(0,0,0),CV_FILLED); //Mask Body
     //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
-    cv::ellipse(imgEdge_local,rect,CV_RGB(0,0,0),CV_FILLED ) ; //Mask the body and between eye edges
+    cv::ellipse(imgEdge_local,rectMidEllipse,CV_RGB(0,0,0),CV_FILLED ) ; //Mask the body and between eye edges
 
     //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
 
@@ -1012,21 +1012,18 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
    //cv::imshow("Fish CONTOUR ",img_contour);
 /// Show Mask Outlines TO USER ///
     /// Show Eye Points to User ///
-    cv::circle(img_colour,ptREyeMid,2,cv::Scalar(255),1);
-    cv::circle(img_colour,ptLEyeMid,2,cv::Scalar(255),1);
     /// Show Masks with nominal width//
     cv::line(img_colour,ptcentre,cv::Point(img_colour.cols/2,0),CV_RGB(0,250,50),1);//Split Eyes iEyeMaskSepWidth
     cv::circle(img_colour,cv::Point(img_colour.cols/2,img_colour.rows),giHeadIsolationMaskVOffset,CV_RGB(0,250,50),1); //Mask Body
     //Make Inner eye Mask, covering back edges for both - Place centre on edge of Body Mask vertically, and centre horizontally
-    //cv::circle(imgUpsampled_gray,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,250,50),1); //Mask Body
-    //cv::ellipse(imgUpsampled_gray,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset), )
-    cv::ellipse(img_colour,rect,CV_RGB(0,250,250),1 ) ;
-
+    cv::ellipse(img_colour,rectMidEllipse,CV_RGB(0,250,250),1 ) ;
 
 
    /// Show Eye Anchor Points
-    img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;img_colour.at<cv::Vec3b>(ptLEyeMid)[2] = 205; //Blue
-    img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 0;img_colour.at<cv::Vec3b>(ptREyeMid)[2] = 205; //Blue
+    //img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;img_colour.at<cv::Vec3b>(ptLEyeMid)[2] = 205; //Blue
+    //img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 0;img_colour.at<cv::Vec3b>(ptREyeMid)[2] = 205; //Blue
+    cv::circle(img_colour,ptREyeMid,2,CV_RGB(0,0,255),1);
+    cv::circle(img_colour,ptLEyeMid,2,CV_RGB(0,0,255),1);
 
 //    // Show Eye Segmentation Arc Sample points
 //    for (int i=0;i<vEyeSegSamplePoints.size();i++)
