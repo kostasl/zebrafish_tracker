@@ -205,15 +205,15 @@ pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeV
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
-plot(datDistanceToPreyVsEyeV_NL$DistanceToPrey,datDistanceToPreyVsEyeV_NL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
+plot(datDistanceToPreyVsUndershoot_NL$Undershoot,datDistanceToPreyVsUndershoot_NL$DistanceToPrey  ,xlim=c(0,2.0),ylim=c(0,2))
 legend("topright",
-       legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_NL$DistanceToPrey, datDistanceToPreyVsEyeV_NL$EyeV) ) ) ) 
+       legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_NL$DistanceToPrey, datDistanceToPreyVsEyeV_NL$Undershoot ) ) ) ) 
 
-plot(datDistanceToPreyVsEyeV_LL$DistanceToPrey,datDistanceToPreyVsEyeV_LL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
+plot(datDistanceToPreyVsUndershoot_LL$Undershoot,datDistanceToPreyVsUndershoot_LL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,2))
 legend("topright",
        legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_LL$DistanceToPrey, datDistanceToPreyVsEyeV_LL$EyeV) ) ) ) 
 
-plot(datDistanceToPreyVsEyeV_DL$DistanceToPrey,datDistanceToPreyVsEyeV_DL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
+plot(datDistanceToPreyVsEyeV_DL$DistanceToPrey,datDistanceToPreyVsEyeV_DL$EyeV,xlim=xlim=c(0,2.0),ylim=c(0,2))
 legend("topright",
        legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_DL$DistanceToPrey, datDistanceToPreyVsEyeV_DL$EyeV) ) ) ) 
 
