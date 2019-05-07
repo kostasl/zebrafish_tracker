@@ -1,5 +1,5 @@
 ///*
-/// \title
+/// \title Zebrafish tracker used in combination with darkfield IR illumination
 /// \date Jun 2018
 /// \author Konstantinos Lagogiannis
 /// \version 1.0
@@ -24,7 +24,7 @@
  ///    * T to save current tracked region as new template
  ///    * M Manual Measure Distance (px) -
  ///    * E Manually Set Eye Angles
-  ///   * F Manually set prey position (which is then tracked)
+ ///    * F Manually set prey position (which is then tracked)
  ///    * q Exit Quit application
  ///*
  ///*
