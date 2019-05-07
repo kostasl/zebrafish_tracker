@@ -40,7 +40,7 @@ cov[2,1] <- sigma[1]*sigma[2]*rho
 cov[2,2] <- sigma[2]*sigma[2]
 
 ## Priors 
-sigma[1] ~ dunif(0,1) ## dist prey - Keep it broad within the expected limits 
+sigma[1] ~ dunif(0,2) ## dist prey - Keep it broad within the expected limits 
 sigma[2] ~ dunif(0,1) ## the Undeshoot Ratio sigma 
 rho ~ dunif(-1,1) ##The covar coefficient
 mu[1] ~ dnorm(1,0.01) ##Distance prey
@@ -61,7 +61,7 @@ datDistanceToPreyVsUndershoot_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutP
 datDistanceToPreyVsUndershoot_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"]) )
 
 ##
-steps <- 5000
+steps <- 3000
 str_vars <- c("mu","rho","sigma","x_rand")
 ldata_LF <- list(c=datDistanceToPreyVsUndershoot_LL,N=NROW(datDistanceToPreyVsUndershoot_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceToPreyVsUndershoot_NL,N=NROW(datDistanceToPreyVsUndershoot_NL)) ##Not fed
@@ -105,9 +105,9 @@ dNLb_sigmaD<-density(tail(draw_NF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_sigmaD<-density(tail(draw_DF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
 
 ##undershoot
-dLLb_sigmaU<-density(tail(draw_LF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
-dNLb_sigmaU<-density(tail(draw_NF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
-dDLb_sigmaU<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
+dLLb_sigmaU<-density(tail(draw_LF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
+dNLb_sigmaU<-density(tail(draw_NF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
+dDLb_sigmaU<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
 
 
 
@@ -119,7 +119,8 @@ points(tail((draw_DF$x_rand[2,,1]) , ntail),tail((draw_DF$x_rand[1,,1]) , ntail)
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToPreyVsEyeV_SetCv2.pdf",sep=""),width=14,height=7,title="A statistical model for EyeVergence vs Distance to prey  before capture bout ")
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToUndershootVsDistance_SetCv2.pdf",sep=""),width=14,height=7,
+    title="A statistical model for Undershoot vs Distance to Prey before capture bout ")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -134,7 +135,7 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[2,,1],ntail),tail(draw_NF$mu[1,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,2),ylim=c(0,1),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[2,,1],ntail),tail(draw_NF$mu[1,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(0,1),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[2,,1],ntail),tail(draw_LF$mu[1,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_DF$mu[2,,1],ntail),tail(draw_DF$mu[1,,1],ntail),col=colourH[3],pch=pchL[1])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot ("~gamma~")" ))
@@ -164,7 +165,7 @@ legend("topright",
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
                   bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3),lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Cov. Eye Vergence to Prey Distance  ",rho) ))
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Cov. Undershoot to Prey Distance  ",rho) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
@@ -180,7 +181,7 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
 ### PloT CAPT SPEED VARIANCE 
 
-plot(dNLb_sigmaU,col=colourLegL[1],xlim=c(-2.0,2),lwd=3,lty=1,ylim=c(0,2),
+plot(dNLb_sigmaU,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,5),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaU,col=colourLegL[2],lwd=3,lty=2)
@@ -200,22 +201,25 @@ dev.off()
 
 ############### Distance to prey vs Eye V at the onset of capture bout #### 
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence_CV2.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/UndershootToPreyVsDistance_scatter_CV2.pdf",sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
-plot(datDistanceToPreyVsUndershoot_NL$Undershoot,datDistanceToPreyVsUndershoot_NL$DistanceToPrey  ,xlim=c(0,2.0),ylim=c(0,2))
+plot(datDistanceToPreyVsUndershoot_NL$Undershoot,datDistanceToPreyVsUndershoot_NL$DistanceToPrey  ,xlim=c(0,2.0),ylim=c(0,2),col=colourP[1] ,xlab=NA,ylab=NA)
 legend("topright",
-       legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_NL$DistanceToPrey, datDistanceToPreyVsEyeV_NL$Undershoot ) ) ) ) 
+       legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_NL$Undershoot, datDistanceToPreyVsUndershoot_NL$DistanceToPrey ) ) ) ) 
 
-plot(datDistanceToPreyVsUndershoot_LL$Undershoot,datDistanceToPreyVsUndershoot_LL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,2))
+plot(datDistanceToPreyVsUndershoot_LL$Undershoot,datDistanceToPreyVsUndershoot_LL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,2),col=colourP[2],xlab=NA,ylab=NA)
 legend("topright",
-       legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_LL$DistanceToPrey, datDistanceToPreyVsEyeV_LL$EyeV) ) ) ) 
+       legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_LL$DistanceToPrey, datDistanceToPreyVsUndershoot_LL$DistanceToPrey) ) ) ) 
+mtext(side = 2,cex=0.8, line = 2.2, expression("Distance To Prey (mm) " ))
 
-plot(datDistanceToPreyVsEyeV_DL$DistanceToPrey,datDistanceToPreyVsEyeV_DL$EyeV,xlim=xlim=c(0,2.0),ylim=c(0,2))
+
+plot(datDistanceToPreyVsUndershoot_DL$Undershoot,datDistanceToPreyVsUndershoot_DL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,2),col=colourP[3],xlab=NA,ylab=NA)
 legend("topright",
-       legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_DL$DistanceToPrey, datDistanceToPreyVsEyeV_DL$EyeV) ) ) ) 
+       legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_DL$Undershoot, datDistanceToPreyVsUndershoot_DL$DistanceToPrey) )  )  ) 
+mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot " ))
 
 dev.off()
 
