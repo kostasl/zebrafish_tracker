@@ -43,25 +43,36 @@ cov[2,2] <- sigma[2]*sigma[2]
 sigma[1] ~ dunif(0,100) ##the EyeV sigma 
 sigma[2] ~ dunif(0,1) ## the Undeshoot Ratio sigma 
 rho ~ dunif(-1,1) ##The covar coefficient
-mu[1] ~ dnorm(40,1) ##Eye V
-mu[2] ~ dnorm(1,0.01)  ## undershoot
+mu[1] ~ dnorm(50,0.001) ##Eye V
+mu[2] ~ dnorm(1,0.001)  ## undershoot
 
 ## Synthesize data from the distribution
 x_rand ~ dmnorm(mu[],prec[,])
 
 } "
 
+strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershootVsEyeVergence_Valid.pdf"
+strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootToEyyVergence_scatter_Valid.pdf"
+
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
-datEyeVToPreyVsUndershoot_NL <- data.frame( cbind(EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"]) )
-datEyeVToPreyVsUndershoot_LL <- data.frame( cbind(EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"],Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"]) )
-datEyeVToPreyVsUndershoot_DL <- data.frame( cbind(EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"],Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"]) )
+datEyeVToPreyVsUndershoot_NL <- data.frame( cbind(EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"]),Validated= lFirstBoutPoints$NL[,"Validated"] )
+datEyeVToPreyVsUndershoot_LL <- data.frame( cbind(EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"],Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"]),Validated= lFirstBoutPoints$LL[,"Validated"] )
+datEyeVToPreyVsUndershoot_DL <- data.frame( cbind(EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"],Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"]),Validated= lFirstBoutPoints$DL[,"Validated"])
+
+
+###Validated Only
+datEyeVToPreyVsUndershoot_NL <- datEyeVToPreyVsUndershoot_NL[!is.na(datEyeVToPreyVsUndershoot_NL$Validated), ]
+datEyeVToPreyVsUndershoot_LL <- datEyeVToPreyVsUndershoot_LL[!is.na(datEyeVToPreyVsUndershoot_LL$Validated), ]
+datEyeVToPreyVsUndershoot_DL <- datEyeVToPreyVsUndershoot_DL[!is.na(datEyeVToPreyVsUndershoot_DL$Validated), ]
 
 ##
-steps <- 3000
+
+
+steps <- 5000
 str_vars <- c("mu","rho","sigma","x_rand")
 ldata_LF <- list(c=datEyeVToPreyVsUndershoot_LL,N=NROW(datEyeVToPreyVsUndershoot_LL)) ##Live fed
 ldata_NF <- list(c=datEyeVToPreyVsUndershoot_NL,N=NROW(datEyeVToPreyVsUndershoot_NL)) ##Not fed
@@ -99,10 +110,10 @@ dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
 
-## Check out the dist to prey variance  , compare estimated densities
-dLLb_sigmaD<-density(tail(draw_LF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
-dNLb_sigmaD<-density(tail(draw_NF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
-dDLb_sigmaD<-density(tail(draw_DF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
+## Check out the Eye Vergence variance  , compare estimated densities
+dLLb_sigmaE<-density(tail(draw_LF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw*3)
+dNLb_sigmaE<-density(tail(draw_NF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw*3)
+dDLb_sigmaE<-density(tail(draw_DF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw*3)
 
 ##undershoot
 dLLb_sigmaU<-density(tail(draw_LF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
@@ -119,8 +130,9 @@ points(tail((draw_DF$x_rand[2,,1]) , ntail),tail((draw_DF$x_rand[1,,1]) , ntail)
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToUndershootVsDistance_SetCv2.pdf",sep=""),width=14,height=7,
-    title="A statistical model for Undershoot vs Distance to Prey before capture bout ")
+
+pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
+    title="A statistical model for Undershoot vs Eye Vergence before capture bout ")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -135,11 +147,11 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[2,,1],ntail),tail(draw_NF$mu[1,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(0,1),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[2,,1],ntail),tail(draw_NF$mu[1,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(40,100),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[2,,1],ntail),tail(draw_LF$mu[1,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_DF$mu[2,,1],ntail),tail(draw_DF$mu[1,,1],ntail),col=colourH[3],pch=pchL[1])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot ("~gamma~")" ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence "~(degrees) ))
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
@@ -165,18 +177,18 @@ legend("topright",
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
                   bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3),lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Cov. Undershoot to Prey Distance  ",rho) ))
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Cov. Undershoot to Eye Vergence  ",rho) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ### ADD DISTANCE TO PREY VARIANCE COMPARISON
 
-plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,5),
+plot(dNLb_sigmaE,col=colourLegL[1],xlim=c(0.0,15),lwd=3,lty=1,ylim=c(0,2),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb_sigmaD,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_sigmaD,col=colourLegL[3],lwd=3,lty=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Prey Distance  ",delta) ))
+lines(dLLb_sigmaE,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_sigmaE,col=colourLegL[3],lwd=3,lty=3)
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Eye Vergence  ",delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
 ### PloT CAPT SPEED VARIANCE 
@@ -201,24 +213,24 @@ dev.off()
 
 ############### Distance to prey vs Eye V at the onset of capture bout #### 
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/UndershootToPreyVsDistance_scatter_CV2.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
-plot(datDistanceToPreyVsUndershoot_NL$Undershoot,datDistanceToPreyVsUndershoot_NL$DistanceToPrey  ,xlim=c(0,2.0),ylim=c(0,2),col=colourP[1] ,xlab=NA,ylab=NA)
+plot(datEyeVToPreyVsUndershoot_NL$Undershoot,datEyeVToPreyVsUndershoot_NL$EyeV  ,xlim=c(0,2.0),ylim=c(20,100),col=colourP[1] ,xlab=NA,ylab=NA)
 legend("topright",
-       legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_NL$Undershoot, datDistanceToPreyVsUndershoot_NL$DistanceToPrey ) ) ) ) 
+       legend=paste("NF cov:",prettyNum(digits=3, cov(datEyeVToPreyVsUndershoot_NL$Undershoot, datEyeVToPreyVsUndershoot_NL$EyeV ) ) ) ) 
 
-plot(datDistanceToPreyVsUndershoot_LL$Undershoot,datDistanceToPreyVsUndershoot_LL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,2),col=colourP[2],xlab=NA,ylab=NA)
+plot(datEyeVToPreyVsUndershoot_LL$Undershoot,datEyeVToPreyVsUndershoot_LL$EyeV,xlim=c(0,2.0),ylim=c(20,100),col=colourP[2],xlab=NA,ylab=NA)
 legend("topright",
-       legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_LL$DistanceToPrey, datDistanceToPreyVsUndershoot_LL$DistanceToPrey) ) ) ) 
-mtext(side = 2,cex=0.8, line = 2.2, expression("Distance To Prey (mm) " ))
+       legend=paste("LF cov:",prettyNum(digits=3, cov(datEyeVToPreyVsUndershoot_LL$Undershoot, datEyeVToPreyVsUndershoot_LL$EyeV) ) ) ) 
+mtext(side = 2,cex=0.8, line = 2.2, expression("Eye Vergence "~(degree) ) )
 
 
-plot(datDistanceToPreyVsUndershoot_DL$Undershoot,datDistanceToPreyVsUndershoot_DL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,2),col=colourP[3],xlab=NA,ylab=NA)
+plot(datEyeVToPreyVsUndershoot_DL$Undershoot,datEyeVToPreyVsUndershoot_DL$EyeV,xlim=c(0,2.0),ylim=c(20,100),col=colourP[3],xlab=NA,ylab=NA)
 legend("topright",
-       legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_DL$Undershoot, datDistanceToPreyVsUndershoot_DL$DistanceToPrey) )  )  ) 
+       legend=paste("DF cov:",prettyNum(digits=3, cov(datEyeVToPreyVsUndershoot_DL$Undershoot, datEyeVToPreyVsUndershoot_DL$EyeV) )  )  ) 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot " ))
 
 dev.off()

@@ -1,7 +1,9 @@
-###  Kostasl 2018 
-##  Validate the capture strike data that was automatically detected from the retracked huntevents :
-##  * after running runHuntEpisodeAnalysis.r, a bout detection list for each of the hunt episodes is used to obtain what the undershoot 
-##  turn was on firstbout, and link it to the final, capture bout intensity.
+##'  Kostas Lagogiannis 
+##' April 2019 
+##' Validate the capture strike data that was automatically detected from the retracked huntevents :
+##' * after running runHuntEpisodeAnalysis.r, a bout detection list for each of the hunt episodes is used to obtain what the undershoot 
+##' turn was on firstbout, and link it to the final, capture bout intensity.
+##' these data are then used in statistical models to establish relationships between capture speed, distance to prey, eye vergence and undershoot on 1st turn to prey
 
 
 source("config_lib.R")

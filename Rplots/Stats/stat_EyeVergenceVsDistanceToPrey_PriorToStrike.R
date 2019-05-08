@@ -39,10 +39,10 @@ cov[2,2] <- sigma[2]*sigma[2]
 
 ## Priors 
 sigma[1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
-sigma[2] ~ dunif(0,100) ##the EyeV sigma 
+sigma[2] ~ dnorm(5,1)  ##the EyeV sigma 
 rho ~ dunif(-1,1) ##The covar coefficient
 mu[1] ~ dnorm(1,0.01) ##Distance prey
-mu[2] ~ dnorm(0,0.01) ##Eye V 
+mu[2] ~ dnorm(40,1) ##Eye V 
 
 ## Synthesize data from the distribution
 x_rand ~ dmnorm(mu[],prec[,])
@@ -112,9 +112,9 @@ dLLb_sigmaD<-density(tail(draw_LF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_sigmaD<-density(tail(draw_NF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_sigmaD<-density(tail(draw_DF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
 
-dLLb_sigmaC<-density(tail(draw_LF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
-dNLb_sigmaC<-density(tail(draw_NF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
-dDLb_sigmaC<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
+dLLb_sigmaE<-density(tail(draw_LF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
+dNLb_sigmaE<-density(tail(draw_NF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
+dDLb_sigmaE<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
 
 
 
@@ -142,7 +142,7 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.8),ylim=c(40,80),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.8),ylim=c(20,100),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[1])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
@@ -189,11 +189,11 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
 ### PloT CAPT SPEED VARIANCE 
 
-plot(dNLb_sigmaC,col=colourLegL[1],xlim=c(0.0,60),lwd=3,lty=1,ylim=c(0,0.3),
+plot(dNLb_sigmaE,col=colourLegL[1],xlim=c(0.0,60),lwd=3,lty=1,ylim=c(0,1),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb_sigmaC,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_sigmaC,col=colourLegL[3],lwd=3,lty=3)
+lines(dLLb_sigmaE,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_sigmaE,col=colourLegL[3],lwd=3,lty=3)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Eye Vergence  ") ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 

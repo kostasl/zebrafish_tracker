@@ -50,6 +50,8 @@ mu[2] ~ dnorm(1,0.01) ##undershoot
 x_rand ~ dmnorm(mu[],prec[,])
 
 } "
+strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershootVsDistance_Valid.pdf"
+strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootToPreyVsDistance_scatter_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -124,7 +126,8 @@ points(tail((draw_DF$x_rand[2,,1]) , ntail),tail((draw_DF$x_rand[1,,1]) , ntail)
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToUndershootVsDistance_Valid.pdf",sep=""),width=14,height=7,
+
+pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
     title="A statistical model for Undershoot vs Distance to Prey before capture bout ")
 
 outer = FALSE
@@ -206,7 +209,8 @@ dev.off()
 
 ############### Distance to prey vs Eye V at the onset of capture bout #### 
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/UndershootToPreyVsDistance_scatter_CV2.pdf",sep=""))
+
+pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )

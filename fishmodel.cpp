@@ -390,7 +390,7 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
     // If we are stuck on same frame then estimate the unbiased empirical mean angle for each eye
     // use an incremental mean calculation
     if (uiFrameIterations > 1)
-        stepUpdate = 1.0/std::min(400.0, (double)uiFrameIterations);
+        stepUpdate = 1.0/std::min(200.0, (double)uiFrameIterations);
 
 //    //tDetectedEllipsoid
 //    // Go through All detected ellipsoids,
