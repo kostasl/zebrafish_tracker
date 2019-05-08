@@ -53,7 +53,8 @@
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
  /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
- /// \todo (completed)
+ /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
+ ///        :added fishdetector class
  ////////
 
 

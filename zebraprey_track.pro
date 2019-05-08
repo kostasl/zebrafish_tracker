@@ -26,7 +26,8 @@ SOURCES += main.cpp \
     fgmaskprocessing.cpp \
     errorhandlers.cpp \
     config.cpp \
-    eyesdetector.cpp
+    eyesdetector.cpp \
+    fishdetector.cpp
 
 RESOURCES += qml.qrc
 
@@ -109,7 +110,8 @@ HEADERS += \
     foodmodel.h \
     fgmaskprocessing.h \
     errorhandlers.h \
-    eyesdetector.h
+    eyesdetector.h \
+    fishdetector.h
 
 
 FORMS += \
