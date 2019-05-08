@@ -49,14 +49,24 @@ x_rand ~ dmnorm(mu[],prec[,])
 
 } "
 
+strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelDistToPreyVsEyeV_Valid.pdf"
+strDataPDFFileName <- "/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence_scatter_Valid.pdf"
+
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
-datDistanceToPreyVsEyeV_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"]) )
-datDistanceToPreyVsEyeV_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]) )
-datDistanceToPreyVsEyeV_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"]) )
+datDistanceToPreyVsEyeV_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$NL[,"CaptureStrikeEyeVergence"]),Validated= lFirstBoutPoints$NL[,"Validated"] )
+datDistanceToPreyVsEyeV_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$LL[,"CaptureStrikeEyeVergence"]),Validated= lFirstBoutPoints$LL[,"Validated"] )
+datDistanceToPreyVsEyeV_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],EyeV=lFirstBoutPoints$DL[,"CaptureStrikeEyeVergence"]),Validated= lFirstBoutPoints$DL[,"Validated"] )
+
+
+###Validated Only
+datDistanceToPreyVsEyeV_NL <- datDistanceToPreyVsEyeV_NL[!is.na(datDistanceToPreyVsEyeV_NL$Validated), ]
+datDistanceToPreyVsEyeV_LL <- datDistanceToPreyVsEyeV_LL[!is.na(datDistanceToPreyVsEyeV_LL$Validated), ]
+datDistanceToPreyVsEyeV_DL <- datDistanceToPreyVsEyeV_DL[!is.na(datDistanceToPreyVsEyeV_DL$Validated), ]
+
 
 ##
 steps <- 5000
@@ -116,7 +126,8 @@ points(tail((draw_DF$x_rand[1,,1]) , ntail),tail((draw_DF$x_rand[2,,1]) , ntail)
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToPreyVsEyeV_SetCv2.pdf",sep=""),width=14,height=7,title="A statistical model for EyeVergence vs Distance to prey  before capture bout ")
+
+pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A statistical model for EyeVergence vs Distance to prey  before capture bout ")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -198,20 +209,21 @@ dev.off()
 
 ############### Distance to prey vs Eye V at the onset of capture bout #### 
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/DistanceToPreyVsEyeVergence_CV2.pdf",sep=""))
+
+pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
-plot(datDistanceToPreyVsEyeV_NL$DistanceToPrey,datDistanceToPreyVsEyeV_NL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
+plot(datDistanceToPreyVsEyeV_NL$DistanceToPrey,datDistanceToPreyVsEyeV_NL$EyeV,xlim=c(0,1.0),ylim=c(0,100),col=colourH[1],xlab="Distance to prey (mm)",ylab="Eye Vergence")
 legend("topright",
        legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_NL$DistanceToPrey, datDistanceToPreyVsEyeV_NL$EyeV) ) ) ) 
 
-plot(datDistanceToPreyVsEyeV_LL$DistanceToPrey,datDistanceToPreyVsEyeV_LL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
+plot(datDistanceToPreyVsEyeV_LL$DistanceToPrey,datDistanceToPreyVsEyeV_LL$EyeV,xlim=c(0,1.0),ylim=c(0,100),col=colourH[2],xlab="Distance to prey (mm)",ylab="Eye Vergence")
 legend("topright",
-       legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_LL$DistanceToPrey, datDistanceToPreyVsEyeV_LL$EyeV) ) ) ) 
+       legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_LL$DistanceToPrey, datDistanceToPreyVsEyeV_LL$EyeV) ) )) 
 
-plot(datDistanceToPreyVsEyeV_DL$DistanceToPrey,datDistanceToPreyVsEyeV_DL$EyeV,xlim=c(0,2.0),ylim=c(0,100))
+plot(datDistanceToPreyVsEyeV_DL$DistanceToPrey,datDistanceToPreyVsEyeV_DL$EyeV,xlim=c(0,1.0),ylim=c(0,100),col=colourH[3] ,xlab="Distance to prey (mm)",ylab="Eye Vergence")
 legend("topright",
        legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsEyeV_DL$DistanceToPrey, datDistanceToPreyVsEyeV_DL$EyeV) ) ) ) 
 

@@ -49,15 +49,24 @@ x_rand ~ dmnorm(mu[],prec[,])
 
 } "
 
+strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelCaptureSpeedVsDistToPrey_Valid.pdf";
+strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
+
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
 ### Capture Speed vs Distance to prey ###
-datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]) )
-datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]) )
-datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]) )
+datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
+datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),Validated= lFirstBoutPoints$LL[,"Validated"] )
+datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),Validated= lFirstBoutPoints$DL[,"Validated"] )
+
+###Subset Validated Only
+datDistanceVsStrikeSpeed_NL <- datDistanceVsStrikeSpeed_NL[!is.na(datDistanceVsStrikeSpeed_NL$Validated), ]
+datDistanceVsStrikeSpeed_LL <- datDistanceVsStrikeSpeed_LL[!is.na(datDistanceVsStrikeSpeed_LL$Validated), ]
+datDistanceVsStrikeSpeed_DL <- datDistanceVsStrikeSpeed_DL[!is.na(datDistanceVsStrikeSpeed_DL$Validated), ]
+
 
 ##
 steps <- 5000
@@ -120,7 +129,8 @@ points(tail((draw_DF$x_rand[1,,1]) , ntail),tail((draw_DF$x_rand[2,,1]) , ntail)
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelCaptureSpeedVsDistToPrey_SetCV2.pdf",sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
+
+pdf(file= paste(strPlotExportPath,strModelPDFFilename,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -212,7 +222,7 @@ covDL <- cov( datDistanceVsStrikeSpeed_DL$DistanceToPrey,datDistanceVsStrikeSpee
 
 
 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterCV.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))

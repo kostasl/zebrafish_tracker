@@ -56,9 +56,14 @@ datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTra
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
-datDistanceToPreyVsUndershoot_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"]) )
-datDistanceToPreyVsUndershoot_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"]) )
-datDistanceToPreyVsUndershoot_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"]) )
+datDistanceToPreyVsUndershoot_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"]),Validated= lFirstBoutPoints$NL[,"Validated"]) 
+datDistanceToPreyVsUndershoot_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"]) ,Validated= lFirstBoutPoints$LL[,"Validated"])
+datDistanceToPreyVsUndershoot_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"]),Validated= lFirstBoutPoints$DL[,"Validated"] )
+
+###Validated Only
+datDistanceToPreyVsUndershoot_NL <- datDistanceToPreyVsUndershoot_NL[!is.na(datDistanceToPreyVsUndershoot_NL$Validated), ]
+datDistanceToPreyVsUndershoot_LL <- datDistanceToPreyVsUndershoot_LL[!is.na(datDistanceToPreyVsUndershoot_LL$Validated), ]
+datDistanceToPreyVsUndershoot_DL <- datDistanceToPreyVsUndershoot_DL[!is.na(datDistanceToPreyVsUndershoot_DL$Validated), ]
 
 ##
 steps <- 3000
@@ -87,7 +92,7 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 ### Estimate  densities  ###
 nContours <- 5
 ntail <-1000
-pBw   <- 0.1 
+pBw   <- 0.05 
             ## idx 1: Distance , 2:Undershoot 
 zLL <- kde2d(c(tail(draw_LF$mu[2,,1],ntail)), c(tail(draw_LF$mu[1,,1],ntail)),n=80)
 zNL <- kde2d(c(tail(draw_NF$mu[2,,1],ntail)), c(tail(draw_NF$mu[1,,1],ntail)),n=80)
@@ -119,7 +124,7 @@ points(tail((draw_DF$x_rand[2,,1]) , ntail),tail((draw_DF$x_rand[1,,1]) , ntail)
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToUndershootVsDistance_SetCv2.pdf",sep=""),width=14,height=7,
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_modelDistToUndershootVsDistance_Valid.pdf",sep=""),width=14,height=7,
     title="A statistical model for Undershoot vs Distance to Prey before capture bout ")
 
 outer = FALSE
@@ -171,7 +176,7 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 ### ADD DISTANCE TO PREY VARIANCE COMPARISON
 
-plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,5),
+plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,10),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaD,col=colourLegL[2],lwd=3,lty=2)
@@ -181,7 +186,7 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
 ### PloT CAPT SPEED VARIANCE 
 
-plot(dNLb_sigmaU,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,5),
+plot(dNLb_sigmaU,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,10),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaU,col=colourLegL[2],lwd=3,lty=2)
