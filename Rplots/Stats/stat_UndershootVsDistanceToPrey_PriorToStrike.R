@@ -43,8 +43,8 @@ cov[2,2] <- sigma[2]*sigma[2]
 sigma[1] ~ dunif(0,2) ## dist prey - Keep it broad within the expected limits 
 sigma[2] ~ dunif(0,1) ## the Undeshoot Ratio sigma 
 rho ~ dunif(-1,1) ##The covar coefficient
-mu[1] ~ dnorm(1,0.01) ##Distance prey
-mu[2] ~ dnorm(1,0.01) ##undershoot
+mu[1] ~ dnorm(1,0.001) ##Distance prey
+mu[2] ~ dnorm(1,0.001) ##undershoot
 
 ## Synthesize data from the distribution
 x_rand ~ dmnorm(mu[],prec[,])
