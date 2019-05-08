@@ -143,7 +143,7 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[2,,1],ntail),tail(draw_NF$mu[1,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(0,1),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[2,,1],ntail),tail(draw_NF$mu[1,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(0,0.6),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[2,,1],ntail),tail(draw_LF$mu[1,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_DF$mu[2,,1],ntail),tail(draw_DF$mu[1,,1],ntail),col=colourH[3],pch=pchL[1])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot ("~gamma~")" ))
@@ -215,17 +215,17 @@ pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
-plot(datDistanceToPreyVsUndershoot_NL$Undershoot,datDistanceToPreyVsUndershoot_NL$DistanceToPrey  ,xlim=c(0,2.0),ylim=c(0,2),col=colourP[1] ,xlab=NA,ylab=NA)
+plot(datDistanceToPreyVsUndershoot_NL$Undershoot,datDistanceToPreyVsUndershoot_NL$DistanceToPrey  ,xlim=c(0,2.0),ylim=c(0,1),col=colourP[1] ,xlab=NA,ylab=NA)
 legend("topright",
        legend=paste("NF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_NL$Undershoot, datDistanceToPreyVsUndershoot_NL$DistanceToPrey ) ) ) ) 
 
-plot(datDistanceToPreyVsUndershoot_LL$Undershoot,datDistanceToPreyVsUndershoot_LL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,2),col=colourP[2],xlab=NA,ylab=NA)
+plot(datDistanceToPreyVsUndershoot_LL$Undershoot,datDistanceToPreyVsUndershoot_LL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,1),col=colourP[2],xlab=NA,ylab=NA)
 legend("topright",
        legend=paste("LF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_LL$DistanceToPrey, datDistanceToPreyVsUndershoot_LL$DistanceToPrey) ) ) ) 
 mtext(side = 2,cex=0.8, line = 2.2, expression("Distance To Prey (mm) " ))
 
 
-plot(datDistanceToPreyVsUndershoot_DL$Undershoot,datDistanceToPreyVsUndershoot_DL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,2),col=colourP[3],xlab=NA,ylab=NA)
+plot(datDistanceToPreyVsUndershoot_DL$Undershoot,datDistanceToPreyVsUndershoot_DL$DistanceToPrey,xlim=c(0,2.0),ylim=c(0,1),col=colourP[3],xlab=NA,ylab=NA)
 legend("topright",
        legend=paste("DF cov:",prettyNum(digits=3, cov(datDistanceToPreyVsUndershoot_DL$Undershoot, datDistanceToPreyVsUndershoot_DL$DistanceToPrey) )  )  ) 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot " ))

@@ -95,7 +95,7 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 ### Estimate  densities  ###
 nContours <- 5
 ntail <-2000
-pBw   <- 0.1 
+pBw   <- 0.02 
 
 
 zLL <- kde2d(c(tail(draw_LF$mu[1,,1],ntail)), c(tail(draw_LF$mu[2,,1],ntail)),n=80)
@@ -105,9 +105,9 @@ zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=
 
 
 ## Check out the covar coeffient , compare estimated densities
-dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
-dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
-dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
+dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
+dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
+dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
 
 
 ## Check out the dist to prey variance  , compare estimated densities
@@ -147,7 +147,7 @@ par(mar = c(3.9,4.3,1,1))
 ntail <- 1000
 plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,1.0),ylim=c(0,40),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[1])
+points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[3])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 
@@ -165,7 +165,7 @@ legend("topleft",
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ## Plot the covariance ##
-plot(dNLb_rho,col=colourLegL[1],xlim=c(-2.0,2),lwd=3,lty=1,ylim=c(0,5),
+plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
@@ -182,7 +182,7 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 ### aDDD DISTANCE TO PREY VARIANCE COMPARISON
 
-plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(-2,2),lwd=3,lty=1,ylim=c(0,5),
+plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0,1),lwd=3,lty=1,ylim=c(0,20),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaD,col=colourLegL[2],lwd=3,lty=2)

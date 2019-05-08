@@ -183,7 +183,7 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 ### ADD DISTANCE TO PREY VARIANCE COMPARISON
 
-plot(dNLb_sigmaE,col=colourLegL[1],xlim=c(0.0,15),lwd=3,lty=1,ylim=c(0,2),
+plot(dNLb_sigmaE,col=colourLegL[1],xlim=c(0.0,15),lwd=3,lty=1,ylim=c(0,1),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaE,col=colourLegL[2],lwd=3,lty=2)
