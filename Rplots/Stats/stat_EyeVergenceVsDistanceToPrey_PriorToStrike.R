@@ -39,10 +39,10 @@ cov[2,2] <- sigma[2]*sigma[2]
 
 ## Priors 
 sigma[1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
-sigma[2] ~ dnorm(5,1)  ##the EyeV sigma 
+sigma[2] ~ dunif(0,100)  ##the EyeV sigma 
 rho ~ dunif(-1,1) ##The covar coefficient
-mu[1] ~ dnorm(1,0.01) ##Distance prey
-mu[2] ~ dnorm(40,1) ##Eye V 
+mu[1] ~ dnorm(1,0.001) ##Distance prey
+mu[2] ~ dnorm(40,0.001) ##Eye V 
 
 ## Synthesize data from the distribution
 x_rand ~ dmnorm(mu[],prec[,])
@@ -142,7 +142,7 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.8),ylim=c(20,100),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.8),ylim=c(40,80),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[1])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
@@ -189,7 +189,7 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
 ### PloT CAPT SPEED VARIANCE 
 
-plot(dNLb_sigmaE,col=colourLegL[1],xlim=c(0.0,60),lwd=3,lty=1,ylim=c(0,1),
+plot(dNLb_sigmaE,col=colourLegL[1],xlim=c(0.0,20),lwd=3,lty=1,ylim=c(0,1),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaE,col=colourLegL[2],lwd=3,lty=2)
