@@ -122,7 +122,7 @@ colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
 plotsamples <- 200
 schain <-1:3
 Range_ylim <- c(1,25)
-
+cex < 1.2
 
 ### It looks like Tha Gamma scale is the inverse:  gamma rate!
 HEventHuntGammaRate_LL <-((1-tail(draw$q[2,,schain],plotsamples))/tail(draw$q[2,,schain],plotsamples));
@@ -141,6 +141,10 @@ MeanHuntRate_LL <- HEventHuntGammaShape_LL*HEventHuntGammaRate_LL
 MeanHuntRate_DL <- HEventHuntGammaShape_DL*HEventHuntGammaRate_DL
 MeanHuntRate_NL <- HEventHuntGammaShape_NL*HEventHuntGammaRate_NL
 
+
+HConsumptionRate_NL <- HEventSuccess_NL*MeanHuntRate_NL
+HConsumptionRate_LL <- HEventSuccess_LL*MeanHuntRate_LL
+HConsumptionRate_DL <- HEventSuccess_DL*MeanHuntRate_DL
 
 
 strPlotName = paste(strPlotExportPath,"/stat/stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
@@ -204,6 +208,25 @@ points(draw$t[3,,1], draw$lambda[3,,1],col=colourD[3],ylim=c(5,26),xlim=c(0,1),p
 legend("topright", legend=strGroups,fill=colourL)
 dev.off()
 
+
+
+## Show  consumption estimates per fish , mean consumption ##
+strPlotName = paste(strPlotExportPath,"/stat/stat_HuntConsumptionEstimation.pdf",sep="")
+pdf(strPlotName,width=8,height=8,title="Bayesian Inference on distribution of hunt rate parameter and probability of Engaging with Prey, based on labelled data set",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+
+plot(density(HConsumptionRate_NL),xlim=c(0,8),ylim=c(0,1.5),col=colourLegL[1],lwd=3.5,lty=1,xlab=NA,ylab=NA,main="Mean consumption per larva")
+lines(density(HConsumptionRate_LL),col=colourLegL[2],lwd=3.5,lty=2)
+lines(density(HConsumptionRate_DL),col=colourLegL[3],lwd=3.5,lty=3)
+legend("topright",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(NRecCount_NL)  ),
+                  bquote(LF["e"] ~ '#' ~ .(NRecCount_LL)  ),
+                  bquote(DF["e"] ~ '#' ~ .(NRecCount_DL)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3),lwd=3)
+mtext(side = 1,cex=1.3, line = 2.2, expression(paste("Consumption (Prey/10min)  ") ))
+mtext(side = 2,cex=1.3, line = 2.2, expression("Density ") )
+
+dev.off()
 #hist(draw$q[1,,1],breaks=seq(0,30,length=100),col=colourH[1])
 #hist(drawNL$q[1,,1],breaks=seq(0,30,length=100),add=T,col=colourH[2])
 #hist(drawDL$q[1,,1],breaks=seq(0,30,length=100),add=T,col=colourH[3])
