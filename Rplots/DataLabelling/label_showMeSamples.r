@@ -1,6 +1,9 @@
 ### I used showMeSamples.r to reTrack specific Events of given Outcome along with prey tracking- 
 ## The Tracked files are then imported and combined in runimportHuntEventAnalysisDataFiles.r
 ##
+## \note   Make Videos With FFMPEG :
+# ffmpeg  -start_number 22126 -i "%5d.png"  -c:v libx264  -preset slow -crf 0  -vf fps=30 -pix_fmt yuv420p -c:a copy renderedHuntEvent3541_event14_track19.mp4
+
 
 source("DataLabelling/labelHuntEvents_lib.r")
 
