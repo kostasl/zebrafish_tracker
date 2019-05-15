@@ -63,16 +63,22 @@ datDistanceToPreyVsUndershoot_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutP
 datDistanceToPreyVsUndershoot_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"]),Validated= lFirstBoutPoints$DL[,"Validated"] )
 
 ###Validated Only
-datDistanceToPreyVsUndershoot_NL <- datDistanceToPreyVsUndershoot_NL[!is.na(datDistanceToPreyVsUndershoot_NL$Validated), ]
-datDistanceToPreyVsUndershoot_LL <- datDistanceToPreyVsUndershoot_LL[!is.na(datDistanceToPreyVsUndershoot_LL$Validated), ]
-datDistanceToPreyVsUndershoot_DL <- datDistanceToPreyVsUndershoot_DL[!is.na(datDistanceToPreyVsUndershoot_DL$Validated), ]
+replace(datDistanceToPreyVsUndershoot_NL$Validated, is.na(datDistanceToPreyVsUndershoot_NL$Validated), 0)
+replace(datDistanceToPreyVsUndershoot_LL$Validated, is.na(datDistanceToPreyVsUndershoot_LL$Validated), 0)
+replace(datDistanceToPreyVsUndershoot_DL$Validated, is.na(datDistanceToPreyVsUndershoot_DL$Validated), 0) 
 
+datDistanceToPreyVsUndershoot_NL <- datDistanceToPreyVsUndershoot_NL[datDistanceToPreyVsUndershoot_NL$Validated == 1, ]
+datDistanceToPreyVsUndershoot_LL <- datDistanceToPreyVsUndershoot_LL[datDistanceToPreyVsUndershoot_LL$Validated == 1, ]
+datDistanceToPreyVsUndershoot_DL <- datDistanceToPreyVsUndershoot_DL[datDistanceToPreyVsUndershoot_DL$Validated == 1, ]
+
+datDistanceToPreyVsUndershoot_ALL <- rbind(datDistanceToPreyVsUndershoot_NL,datDistanceToPreyVsUndershoot_LL,datDistanceToPreyVsUndershoot_DL)
 ##
 steps <- 3000
 str_vars <- c("mu","rho","sigma","x_rand")
 ldata_LF <- list(c=datDistanceToPreyVsUndershoot_LL,N=NROW(datDistanceToPreyVsUndershoot_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceToPreyVsUndershoot_NL,N=NROW(datDistanceToPreyVsUndershoot_NL)) ##Not fed
 ldata_DF <- list(c=datDistanceToPreyVsUndershoot_DL,N=NROW(datDistanceToPreyVsUndershoot_DL)) ##Dry fed
+ldata_ALL <- list(c=datDistanceToPreyVsUndershoot_ALL,N=NROW(datDistanceToPreyVsUndershoot_ALL)) ##All larvae
 
 jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_LF, 
                             n.adapt = 500, n.chains = 3, quiet = F)
@@ -88,9 +94,17 @@ draw_NF=jags.samples(jags_model_NF,steps,thin=2,variable.names=str_vars)
 ##Not Fed
 jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_DF, 
                             n.adapt = 500, n.chains = 3, quiet = F)
+
 update(jags_model_DF, 500)
 draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
+##All groups
+jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_ALL, 
+                            n.adapt = 500, n.chains = 3, quiet = F)
+update(jags_model_ALL, 500)
+draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
+
+##All 
 ### Estimate  densities  ###
 nContours <- 5
 ntail <-1000
@@ -99,29 +113,32 @@ pBw   <- 0.05
 zLL <- kde2d(c(tail(draw_LF$mu[2,,1],ntail)), c(tail(draw_LF$mu[1,,1],ntail)),n=80)
 zNL <- kde2d(c(tail(draw_NF$mu[2,,1],ntail)), c(tail(draw_NF$mu[1,,1],ntail)),n=80)
 zDL <- kde2d(c(tail(draw_DF$mu[2,,1],ntail)), c(tail(draw_DF$mu[1,,1],ntail)),n=80)
+zALL <- kde2d(c(tail(draw_ALL$mu[2,,1],ntail)), c(tail(draw_ALL$mu[1,,1],ntail)),n=80)
 
 ## Check out the covar coeffient , compare estimated densities
 dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
-
+dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
 ## Check out the dist to prey variance  , compare estimated densities
 dLLb_sigmaD<-density(tail(draw_LF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_sigmaD<-density(tail(draw_NF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_sigmaD<-density(tail(draw_DF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
+dALLb_sigmaD<-density(tail(draw_ALL$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
 
 ##undershoot
 dLLb_sigmaU<-density(tail(draw_LF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_sigmaU<-density(tail(draw_NF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_sigmaU<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
-
+dALLb_sigmaU<-density(tail(draw_ALL$sigma[2,,1],ntail),kernel="gaussian",bw=pBw)
 
 
 ##Get the synthesized data:
 plot(tail((draw_NF$x_rand[2,,1]) , ntail),tail((draw_NF$x_rand[1,,1]) , ntail),col=colourH[1], xlim=c(0,2),ylim=c(0,1),xlab="Undershoot",ylab="Distance")
 points(tail((draw_LF$x_rand[2,,1]) , ntail),tail((draw_LF$x_rand[1,,1]) , ntail),col=colourH[2])
 points(tail((draw_DF$x_rand[2,,1]) , ntail),tail((draw_DF$x_rand[1,,1]) , ntail),col=colourH[3])
+points(tail((draw_ALL$x_rand[2,,1]) , ntail),tail((draw_ALL$x_rand[1,,1]) , ntail),col=colourH[4],pch=1,cex=1.6)
 
 ####################################
 ## PLot Model / Means and covariance ##
@@ -143,47 +160,53 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[2,,1],ntail),tail(draw_NF$mu[1,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(0,0.6),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[2,,1],ntail),tail(draw_NF$mu[1,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0.5,1.4),ylim=c(0,0.6),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[2,,1],ntail),tail(draw_LF$mu[1,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[2,,1],ntail),tail(draw_DF$mu[1,,1],ntail),col=colourH[3],pch=pchL[1])
+points(tail(draw_DF$mu[2,,1],ntail),tail(draw_DF$mu[1,,1],ntail),col=colourH[3],pch=pchL[3])
+points(tail(draw_ALL$mu[2,,1],ntail),tail(draw_ALL$mu[1,,1],ntail),col=colourH[4],pch=pchL[4])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot ("~gamma~")" ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 
 
 legend("topleft",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  , #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+                  bquote(All ~ '#' ~ .(ldata_ALL$N)  ) ),
        pch=pchL, col=colourLegL)
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ## Plot the covariance ##
-plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
+plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,7),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
+lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
 legend("topright",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3),lwd=3)
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  ),
+                  bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3,4),lwd=3)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Cov. Undershoot to Prey Distance  ",rho) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ### ADD DISTANCE TO PREY VARIANCE COMPARISON
 
-plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,10),
+plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0.0,0.6),lwd=3,lty=1,ylim=c(0,10),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaD,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_sigmaD,col=colourLegL[3],lwd=3,lty=3)
+lines(dALLb_sigmaD,col=colourLegL[4],lwd=3,lty=4)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Prey Distance  ",delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
@@ -194,11 +217,14 @@ plot(dNLb_sigmaU,col=colourLegL[1],xlim=c(0.0,1),lwd=3,lty=1,ylim=c(0,10),
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaU,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_sigmaU,col=colourLegL[3],lwd=3,lty=3)
+lines(dALLb_sigmaU,col=colourLegL[4],lwd=3,lty=3)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Undershoot  ") ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
 
 dev.off()
+
+
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
 
@@ -231,4 +257,28 @@ legend("topright",
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot " ))
 
 dev.off()
+
+## Distance tO PREY 
+
+hist(datDistanceToPreyVsUndershoot_NL$DistanceToPrey,xlim=c(0,0.8),breaks=20 )
+hist(datDistanceToPreyVsUndershoot_LL$DistanceToPrey,xlim=c(0,0.8),breaks=20)
+hist(datDistanceToPreyVsUndershoot_DL$DistanceToPrey,xlim=c(0,0.8),breaks=20)
+
+
+
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+xquant <- seq(0,0.8,0.05)
+pdistBW <- 0.05
+
+plot(density(datDistanceToPreyVsUndershoot_NL$DistanceToPrey,bw=pdistBW),col="black",lwd=4,xlim=c(0,0.8) )
+for (i in 1:100)
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,ntail-i,1],1),sd=tail(draw_NF$sigma[1,ntail-i,1],1)),type='l',col=colourH[1] )
+
+plot(density(datDistanceToPreyVsUndershoot_LL$DistanceToPrey,bw=pdistBW),col="black",lwd=4,xlim=c(0,0.8))
+for (i in 1:100)
+  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[1,ntail-i,1],1),sd=tail(draw_LF$sigma[1,ntail-i,1],1)),type='l',col=colourH[2] )
+
+plot(density(datDistanceToPreyVsUndershoot_DL$DistanceToPrey,bw=pdistBW),col="black",lwd=4,xlim=c(0,0.8))
+for (i in 1:100)
+  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[1,ntail-i,1],1),sd=tail(draw_DF$sigma[1,ntail-i,1],1)),type='l',col=colourH[3] )
 
