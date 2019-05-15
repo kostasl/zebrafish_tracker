@@ -52,7 +52,7 @@ x_rand ~ dmnorm(mu[],prec[,])
 } "
 
 strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershootVsEyeVergence_Valid.pdf"
-strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootToEyyVergence_scatter_Valid.pdf"
+strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootToEyeVergence_scatter_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )

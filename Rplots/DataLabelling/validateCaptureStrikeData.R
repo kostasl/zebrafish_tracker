@@ -33,7 +33,7 @@ if (!any(names(datMotionBoutsToValidate) == "vd_MouthX"))
 if (!any(names(datMotionBoutsToValidate) == "vd_MouthY"))
   datMotionBoutsToValidate$vd_MouthY <- NA
 
-datTrackedEventsRegister$LabelledScore <- convertToScoreLabel( datTrackedEventsRegister$LabelledScore)
+#datTrackedEventsRegister$LabelledScore <- convertToScoreLabel( datTrackedEventsRegister$LabelledScore)
 
 
 ##Get the Capture strike bout subset
@@ -159,6 +159,10 @@ for (idx in idxToValidate)
 } ## end of loop 
 # datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank==1, ]  <- datCaptureBoutsToValidate
 
+## Correct Recs: 
+#datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx == 12,]$MarkValidated <- NA
+
+#Save 
 saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
 saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 
@@ -168,7 +172,6 @@ stop("Done Labelling")
 ##datHuntEventMergedFrames
 load(file=paste(strDataExportDir,"datAllHuntEventAnalysisFrames_setC.RData",sep=""))
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
-
 
 
 idxRegValidated <- datMotionBoutsToValidate[!is.na(datMotionBoutsToValidate$MarkValidated) & datMotionBoutsToValidate$MarkValidated == 1,]$RegistarIdx
@@ -203,7 +206,8 @@ for (idx in idxRegValidated )
   for (idxBout in row.names(datMotionBouts) )
   {
     oldVal <- datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm
-    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:datMotionBoutsToValidate[idxBout,]$vMotionBout_Off],na.rm=TRUE)
+    ## Speed over then next 70 frames ##
+    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:datMotionBoutsToValidate[idxBout,]$vMotionBout_On+70],na.rm=TRUE)
     stopifnot(is.numeric(datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm) | is.infinite((datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm)))
     print(paste(idxBout,"speed",oldVal," new:",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm))
   }
