@@ -208,7 +208,24 @@ for (idx in idxRegValidated )
     print(paste(idxBout,"speed",oldVal," new:",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm))
   }
   ## Get Angle To Prey at onset and offset 
+  ## Set Update Prey Position At respective Bout Frame - Or Around that region of frames
   
+  ##Get Angle to Prey 
+  lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
+  vAngleToPrey <- data.frame(lAngleToPrey[as.character(selectedPreyID)])
+  names(vAngleToPrey) = c("frameN","AngleToPrey")
+  ##Also Found   
+  #polarCoord <- calcPreyAzimuth(datRenderPrey)[[n]]
+  
+  ##For Distance Use Estimated MouthPOint
+  #d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
+  #d <- polarCoord[,"distPX"]
+  #x <- (d)*cos(2*pi-pi/180 * polarCoord[,"azimuth"] + pi/2)
+  #y <- (d)*sin(2*pi-pi/180 * polarCoord[,"azimuth"] + pi/2)
+  
+  
+  
+  ##Update datMotionBoutsToValidate
   
   ## Do Next Validated rec ##
 }
