@@ -52,6 +52,7 @@ x_rand ~ dmnorm(mu[],prec[,])
 } "
 strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershootVsDistance_Valid.pdf"
 strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootToPreyVsDistance_scatter_Valid.pdf"
+strDistDensityPDFFileName <- "/stat/UndershootAnalysis/stat_PreyDistance_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -265,20 +266,47 @@ hist(datDistanceToPreyVsUndershoot_LL$DistanceToPrey,xlim=c(0,0.8),breaks=20)
 hist(datDistanceToPreyVsUndershoot_DL$DistanceToPrey,xlim=c(0,0.8),breaks=20)
 
 
+## pLOT THE dISTANCE TO PREY 
+
+pdf(file= paste(strPlotExportPath,strDistDensityPDFFileName,sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-xquant <- seq(0,0.8,0.05)
-pdistBW <- 0.05
+xquant <- seq(-0.1,0.8,0.05)
+pdistBW <- DIM_MMPERPX ## Manuall annotation  error is at least 1 px error , so smoothing with this bw is relevant
+strKern <- "gaussian"
 
-plot(density(datDistanceToPreyVsUndershoot_NL$DistanceToPrey,bw=pdistBW),col="black",lwd=4,xlim=c(0,0.8) )
+plot(density(datDistanceToPreyVsUndershoot_NL$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8) ,main="Distance to prey prior to capture strike")
 for (i in 1:100)
   lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,ntail-i,1],1),sd=tail(draw_NF$sigma[1,ntail-i,1],1)),type='l',col=colourH[1] )
+lines(density(datDistanceToPreyVsUndershoot_NL$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8) )
+legend("topright",title="NF",
+       legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                 paste("model " ) ),
+       col=c("black",colourH[3]),lwd=c(3,1) ) 
 
-plot(density(datDistanceToPreyVsUndershoot_LL$DistanceToPrey,bw=pdistBW),col="black",lwd=4,xlim=c(0,0.8))
+
+plot(density(datDistanceToPreyVsUndershoot_LL$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8),main=NA)
 for (i in 1:100)
   lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[1,ntail-i,1],1),sd=tail(draw_LF$sigma[1,ntail-i,1],1)),type='l',col=colourH[2] )
+lines(density(datDistanceToPreyVsUndershoot_LL$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8),main=NA)
 
-plot(density(datDistanceToPreyVsUndershoot_DL$DistanceToPrey,bw=pdistBW),col="black",lwd=4,xlim=c(0,0.8))
+legend("topright",title="LF",
+       legend=c( paste("Data Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
+                 paste("model " ) ),
+       col=c("black",colourH[2]),lwd=c(3,1) ) 
+
+
+plot(density(datDistanceToPreyVsUndershoot_DL$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8),main=NA)
 for (i in 1:100)
   lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[1,ntail-i,1],1),sd=tail(draw_DF$sigma[1,ntail-i,1],1)),type='l',col=colourH[3] )
+lines(density(datDistanceToPreyVsUndershoot_DL$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8),main=NA)
 
+legend("topright",title="DF",
+       legend=c( paste("Data  Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
+                 paste("model " ) ),
+       col=c("black",colourH[3]),lwd=c(3,1) ) 
+
+mtext(side = 1,cex=0.8, line = 2.2, expression("Distance To Prey (mm)" ))
+
+dev.off()
+embed_fonts(strDistDensityPDFFileName)
