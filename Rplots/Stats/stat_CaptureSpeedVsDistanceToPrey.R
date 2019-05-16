@@ -49,7 +49,7 @@ for  (g in 1:2)
   
   ## Priors 
   sigma[g,1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
-  sigma[g,2] ~ dunif(0,100) ##the cap speed sigma 
+  sigma[g,2] ~ dunif(0,20) ##the cap speed sigma 
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
 
@@ -145,21 +145,30 @@ zALL <- kde2d(c(tail(draw_ALL$mu[1,,1],ntail)), c(tail(draw_ALL$mu[2,,1],ntail))
 dLLb_rho[[1]] <-density(tail(draw_LF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
 dNLb_rho[[1]] <-density(tail(draw_NF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
 dDLb_rho[[1]] <-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
-dALLb_rho[[1]] <-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
+dALLb_rho[[1]] <-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
 
 dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
 dNLb_rho[[2]]<-density(tail(draw_NF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
 dDLb_rho[[2]]<-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
-dALLb_rho[[2]]<-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
+dALLb_rho[[2]]<-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
 
 
 ## Check out the dist to prey variance  , compare estimated densities
-dLLb_sigmaD<-density(tail(draw_LF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
-dNLb_sigmaD<-density(tail(draw_NF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
-dDLb_sigmaD<-density(tail(draw_DF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
-dALLb_sigmaD<-density(tail(draw_ALL$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
+#dLLb_sigmaD <- list();dNLb_sigmaD<-list();dDLb_sigmaD<-list();dALLb_sigmaD<-list()
+dLLb_sigmaD <-density(tail(draw_LF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
+dNLb_sigmaD <-density(tail(draw_NF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
+dDLb_sigmaD <-density(tail(draw_DF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
+dALLb_sigmaD <-density(tail(draw_ALL$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
 
 
+## Check out the dist to prey variance  , compare estimated densities
+#dLLb_sigmaD[[2]] <-density(tail(draw_LF$sigma[2,2,,1],ntail),kernel="gaussian",bw=pBw)
+#dNLb_sigmaD[[2]]<-density(tail(draw_NF$sigma[2,2,,1],ntail),kernel="gaussian",bw=pBw)
+#dDLb_sigmaD[[2]]<-density(tail(draw_DF$sigma[2,2,,1],ntail),kernel="gaussian",bw=pBw)
+#dALLb_sigmaD[[2]]<-density(tail(draw_ALL$sigma[2,2,,1],ntail),kernel="gaussian",bw=pBw)
+
+
+dLLb_sigmaC <- list();dNLb_sigmaC<- list();dDLb_sigmaC<-list();dALLb_sigmaC<-list()
 dLLb_sigmaC<-density(tail(draw_LF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dNLb_sigmaC<-density(tail(draw_NF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
@@ -168,10 +177,10 @@ dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
 
 ##Get the synthesized data:
-plot(tail((draw_NF$x_rand[1,,1]) , ntail),tail((draw_NF$x_rand[2,,1]) , ntail),col=colourH[1])
-points(tail((draw_LF$x_rand[1,,1]) , ntail),tail((draw_LF$x_rand[2,,1]) , ntail),col=colourH[2])
-points(tail((draw_DF$x_rand[1,,1]) , ntail),tail((draw_DF$x_rand[2,,1]) , ntail),col=colourH[3])
-points(tail((draw_ALL$x_rand[2,,1]) , ntail),tail((draw_ALL$x_rand[1,,1]) , ntail),col=colourH[4],pch=1,cex=1.6)
+plot(tail((draw_NF$x_rand[,1,,1]) , ntail),tail((draw_NF$x_rand[,2,,1]) , ntail),col=colourH[1])
+points(tail((draw_LF$x_rand[,1,,1]) , ntail),tail((draw_LF$x_rand[,2,,1]) , ntail),col=colourH[2])
+points(tail((draw_DF$x_rand[,1,,1]) , ntail),tail((draw_DF$x_rand[,2,,1]) , ntail),col=colourH[3])
+points(tail((draw_ALL$x_rand[,2,,1]) , ntail),tail((draw_ALL$x_rand[,1,,1]) , ntail),col=colourH[4],pch=1,cex=1.6)
 
 ####################################
 ## PLot Model / Means and covariance ##
