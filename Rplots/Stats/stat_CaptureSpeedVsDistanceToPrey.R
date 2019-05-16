@@ -66,8 +66,9 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 } "
 
-strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelCaptureSpeedVsDistToPrey_Valid.pdf";
+strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Valid.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
+strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -140,23 +141,29 @@ zALL <- kde2d(c(tail(draw_ALL$mu[1,,1],ntail)), c(tail(draw_ALL$mu[2,,1],ntail))
 
 
 ## Check out the covar coeffient , compare estimated densities
-dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
-dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
-dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
-dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
+
+dLLb_rho[[1]] <-density(tail(draw_LF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
+dNLb_rho[[1]] <-density(tail(draw_NF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
+dDLb_rho[[1]] <-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
+dALLb_rho[[1]] <-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
+
+dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+dNLb_rho[[2]]<-density(tail(draw_NF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+dDLb_rho[[2]]<-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+dALLb_rho[[2]]<-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
 
 
 ## Check out the dist to prey variance  , compare estimated densities
-dLLb_sigmaD<-density(tail(draw_LF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
-dNLb_sigmaD<-density(tail(draw_NF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
-dDLb_sigmaD<-density(tail(draw_DF$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
-dALLb_sigmaD<-density(tail(draw_ALL$sigma[1,,1],ntail),kernel="gaussian",bw=pBw)
+dLLb_sigmaD<-density(tail(draw_LF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
+dNLb_sigmaD<-density(tail(draw_NF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
+dDLb_sigmaD<-density(tail(draw_DF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
+dALLb_sigmaD<-density(tail(draw_ALL$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
 
 
-dLLb_sigmaC<-density(tail(draw_LF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
-dNLb_sigmaC<-density(tail(draw_NF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
-dDLb_sigmaC<-density(tail(draw_DF$sigma[2,,1],ntail),kernel="gaussian",bw=1)
-dALLb_sigmaC<-density(tail(draw_ALL$sigma[2,,1],ntail),kernel="gaussian",bw=1)
+dLLb_sigmaC<-density(tail(draw_LF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
+dNLb_sigmaC<-density(tail(draw_NF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
+dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
+dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
 
 
@@ -194,7 +201,7 @@ points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH
 points(tail(draw_DF$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[3],pch=pchL[3])
 points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
 
-points(tail(draw_ALL$mu[1,,1],ntail),tail(draw_ALL$mu[2,,1],ntail),col=colourH[4],pch=pchL[4])
+points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
@@ -260,11 +267,12 @@ dev.off()
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
 
+
+
 ### PLOT EMPIRICAL 
 ####
 ########################################################
 ###        Distance Vs Capture speed               ###
-
 
 
 densNL <-  kde2d(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,n=80)
@@ -311,3 +319,64 @@ legend("topright",
 
 
 dev.off()
+
+
+
+#### Capture Speed Only Model And Data ##
+
+## pLOT THE Capture Speed
+
+pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName,sep=""))
+
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+xquant <- seq(0,60,1)
+XLIM <- c(0,60)
+pdistBW <- 2 ## mm/sec
+strKern <- "gaussian"
+ntail <- NROW(draw_NF$mu[1,2,,1])*0.10
+
+plot(density(datDistanceVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM ,main="Capture Speed on capture strike")
+for (i in 1:(ntail-1) )
+{
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,2,ntail-i,1],1),sd=tail(draw_NF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[1] )
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,ntail-i,1],1),sd=tail(draw_NF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[1] )
+}
+
+lines(density(datTurnVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
+legend("topright",title="NF",
+       legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                 paste("model " ) ),
+       col=c("black",colourH[3]),lwd=c(3,1) ) 
+
+
+plot(density(datDistanceVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+for (i in 1:(ntail-1) )
+{
+  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[1,2,ntail-i,1],1),sd=tail(draw_LF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[2] )
+  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[2,2,ntail-i,1],1),sd=tail(draw_LF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[2] )
+}
+lines(density(datTurnVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+
+legend("topright",title="LF",
+       legend=c( paste("Data Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
+                 paste("model " ) ),
+       col=c("black",colourH[2]),lwd=c(3,1) ) 
+
+
+plot(density(datDistanceVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+for (i in 1:(ntail-1) )
+{
+  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[1,2,ntail-i,1],1),sd=tail(draw_DF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[3] )
+  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[2,2,ntail-i,1],1),sd=tail(draw_DF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[3] )
+}
+lines(density(datTurnVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+
+legend("topright",title="DF",
+       legend=c( paste("Data  Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
+                 paste("model " ) ),
+       col=c("black",colourH[3]),lwd=c(3,1) ) 
+
+mtext(side = 1,cex=0.8, line = 2.2, expression("Distance To Prey (mm)" ))
+
+dev.off()
+embed_fonts(strDistDensityPDFFileName)

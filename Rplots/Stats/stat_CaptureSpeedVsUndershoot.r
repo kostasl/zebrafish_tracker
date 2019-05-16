@@ -248,52 +248,5 @@ legend("topright",
 dev.off()
 
 
-#### Capture Speed Only Model And Data ##
-
-## pLOT THE dISTANCE TO PREY 
-
-pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName,sep=""))
-
-layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-xquant <- seq(0,60,1)
-XLIM <- c(0,60)
-pdistBW <- 5 ## mm/sec
-strKern <- "gaussian"
-
-plot(density(datTurnVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM ,main="Capture Speed on capture strike")
-for (i in 1:100)
-  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,ntail-i,1],1),sd=tail(draw_NF$sigma[2,ntail-i,1],1)),type='l',col=colourH[1] )
-lines(density(datTurnVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
-legend("topright",title="NF",
-       legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
-                 paste("model " ) ),
-       col=c("black",colourH[3]),lwd=c(3,1) ) 
-
-
-plot(density(datTurnVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
-for (i in 1:100)
-  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[2,ntail-i,1],1),sd=tail(draw_LF$sigma[2,ntail-i,1],1)),type='l',col=colourH[2] )
-lines(density(datTurnVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
-
-legend("topright",title="LF",
-       legend=c( paste("Data Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
-                 paste("model " ) ),
-       col=c("black",colourH[2]),lwd=c(3,1) ) 
-
-
-plot(density(datTurnVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
-for (i in 1:100)
-  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[2,ntail-i,1],1),sd=tail(draw_DF$sigma[2,ntail-i,1],1)),type='l',col=colourH[3] )
-lines(density(datTurnVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
-
-legend("topright",title="DF",
-       legend=c( paste("Data  Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
-                 paste("model " ) ),
-       col=c("black",colourH[3]),lwd=c(3,1) ) 
-
-mtext(side = 1,cex=0.8, line = 2.2, expression("Distance To Prey (mm)" ))
-
-dev.off()
-embed_fonts(strDistDensityPDFFileName)
 
 
