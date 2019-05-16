@@ -22,30 +22,45 @@ source("TrackerDataFilesImport_lib.r")
 source("HuntingEventAnalysis_lib.r")
 
 strmodel_capspeedVsDistance <- "
+var x_rand[2,2];
+
 model {
+
+
 ##Draw capt speed from 2d gaussian
 for (i in 1:N)
 {
-  c[i,1:2] ~ dmnorm(mu[],prec[ , ])
+  ##Draw from gaussian model  as determined by mod flag
+  c[i,1:2] ~ dmnorm(mu[mID[i]+1,],prec[mID[i]+1, , ]) ## data in column 1 and 2
+  mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
 }
 
 
 ##Covariance matrix and its inverse -> the precision matrix
-prec[1:2,1:2] <- inverse(cov[,])
-cov[1,1] <- sigma[1]*sigma[1]
-cov[1,2] <- sigma[1]*sigma[2]*rho
-cov[2,1] <- sigma[1]*sigma[2]*rho
-cov[2,2] <- sigma[2]*sigma[2]
+## for each Gaussian in the mixture (1 and 2)
+for  (g in 1:2)
+{
+  prec[g,1:2,1:2] <- inverse(cov[g,,])
+  
+  cov[g,1,1] <- sigma[g,1]*sigma[g,1]
+  cov[g,1,2] <- sigma[g,1]*sigma[g,2]*rho[g]
+  cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g]
+  cov[g,2,2] <- sigma[g,2]*sigma[g,2]
+  
+  ## Priors 
+  sigma[g,1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
+  sigma[g,2] ~ dunif(0,100) ##the cap speed sigma 
+  rho[g] ~ dunif(-1,1) ##The covar coefficient
+  mu[g,1] ~ dnorm(1,0.01) ##Distance prey
+  mu[g,2] ~ dnorm(0,0.01) ##cap speed
+  
+}
 
-## Priors 
-sigma[1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
-sigma[2] ~ dunif(0,100) ##the cap speed sigma 
-rho ~ dunif(-1,1) ##The covar coefficient
-mu[1] ~ dnorm(1,0.01) ##Distance prey
-mu[2] ~ dnorm(0,0.01) ##cap speed
+
 
 ## Synthesize data from the distribution
-x_rand ~ dmnorm(mu[],prec[,])
+x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
+x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 } "
 
@@ -76,13 +91,15 @@ datDistanceVsStrikeSpeed_DL <- datDistanceVsStrikeSpeed_DL[datDistanceVsStrikeSp
 datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsStrikeSpeed_LL,datDistanceVsStrikeSpeed_DL)
 ##
 
-##
-steps <- 5000
-str_vars <- c("mu","rho","sigma","x_rand")
-ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
-ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
-ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
-ldata_ALL <- list(c=datDistanceVsStrikeSpeed_ALL,N=NROW(datDistanceVsStrikeSpeed_ALL)) ##Dry fed
+##  Init  datastruct that we pass to model ##
+
+##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
+steps <- 500
+str_vars <- c("mu","rho","sigma","x_rand","mID")
+ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL),mod=rep(1,NROW(datDistanceVsStrikeSpeed_LL))) ##Live fed
+ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL),mod=rep(1,NROW(datDistanceVsStrikeSpeed_NL))) ##Not fed
+ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL),mod=rep(1,NROW(datDistanceVsStrikeSpeed_DL))) ##Dry fed
+ldata_ALL <- list(c=datDistanceVsStrikeSpeed_ALL,N=NROW(datDistanceVsStrikeSpeed_ALL),mod=rep(1,NROW(datDistanceVsStrikeSpeed_ALL))) ##Dry fed
 
 jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_LF, 
                             n.adapt = 500, n.chains = 3, quiet = F)

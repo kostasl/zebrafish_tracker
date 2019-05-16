@@ -206,18 +206,19 @@ for (idx in idxRegValidated )
   for (idxBout in row.names(datMotionBouts) )
   {
     oldVal <- datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm
+    frameRangeCapt <- (datMotionBoutsToValidate[idxBout,]$vMotionBout_On:   min(datMotionBoutsToValidate[idxBout,]$vMotionBout_Off, datMotionBoutsToValidate[idxBout,]$vMotionBout_On+50 ) )
     ## Speed over then next 70 frames ##
-    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:datMotionBoutsToValidate[idxBout,]$vMotionBout_On+70],na.rm=TRUE)
+    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[],na.rm=TRUE)
     stopifnot(is.numeric(datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm) | is.infinite((datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm)))
     print(paste(idxBout,"speed",oldVal," new:",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm))
   }
   ## Get Angle To Prey at onset and offset 
   ## Set Update Prey Position At respective Bout Frame - Or Around that region of frames
-  
+  #datPlaybackHuntEvent
   ##Get Angle to Prey 
-  lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
-  vAngleToPrey <- data.frame(lAngleToPrey[as.character(selectedPreyID)])
-  names(vAngleToPrey) = c("frameN","AngleToPrey")
+  #lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
+  #vAngleToPrey <- data.frame(lAngleToPrey[as.character(selectedPreyID)])
+  #names(vAngleToPrey) = c("frameN","AngleToPrey")
   ##Also Found   
   #polarCoord <- calcPreyAzimuth(datRenderPrey)[[n]]
   

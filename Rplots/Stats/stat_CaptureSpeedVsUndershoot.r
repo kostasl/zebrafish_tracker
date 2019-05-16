@@ -39,7 +39,7 @@ model {
   
   ## Priors 
   sigma[1] ~ dunif(0,1) ##the undershoot - Keep it broad within the expected limits 
-  sigma[2] ~ dunif(0,100) ##the cap speed sigma 
+  sigma[2] ~ dunif(0,15) ##the cap speed sigma 
   rho ~ dunif(-1,1) ##The covar coefficient
   mu[1] ~ dnorm(1,0.01) ##undershoot
   mu[2] ~ dnorm(0,0.01) ##cap speed
@@ -51,7 +51,7 @@ model {
 
 strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeedVsUndershoot_Valid.pdf"
 strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter_Valid.pdf"
-
+strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -252,11 +252,11 @@ dev.off()
 
 ## pLOT THE dISTANCE TO PREY 
 
-pdf(file= paste(strPlotExportPath,strDistDensityPDFFileName,sep=""))
+pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName,sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-xquant <- seq(0,50,1)
-XLIM <- c(0,40)
+xquant <- seq(0,60,1)
+XLIM <- c(0,60)
 pdistBW <- 5 ## mm/sec
 strKern <- "gaussian"
 

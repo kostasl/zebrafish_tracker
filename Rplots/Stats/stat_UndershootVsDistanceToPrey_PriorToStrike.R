@@ -9,8 +9,10 @@
 ##' S1 Establish whether undershoot covaries with capture speed
 ##' S2 Compare cap.Speed vs UNdershoot models between groups - Do they also covary in all groups?
 ##' S3 compare accuracy of capture speed vs distance to prey between groups (use covariance distributions)
-##' Aitiology :
+##' \extension to mixture of 2 gaussians to check if approach vs strike swims can be seen
 ## 
+
+
 ##' A: Does undershoot explain capture speed and distance to prey accuracy?
 
 ### Stat Model on Capture speed vs undershoot
@@ -28,7 +30,7 @@ model {
 ##Draw capt speed from 2d gaussian
 for (i in 1:N)
 {
-  c[i,1:2] ~ dmnorm(mu[],prec[ , ])
+  c[i,1:2] ~ dmnorm(mu[],prec[ , ]) ##Choose data column 1 and 2
 }
 
 
