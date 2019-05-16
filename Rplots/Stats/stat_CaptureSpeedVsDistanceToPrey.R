@@ -68,7 +68,7 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Valid.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
-strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
+strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeed_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -134,23 +134,24 @@ ntail <-2000
 pBw   <- 0.02 
 
 
-zLL <- kde2d(c(tail(draw_LF$mu[1,,1],ntail)), c(tail(draw_LF$mu[2,,1],ntail)),n=80)
-zNL <- kde2d(c(tail(draw_NF$mu[1,,1],ntail)), c(tail(draw_NF$mu[2,,1],ntail)),n=80)
-zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=80)
-zALL <- kde2d(c(tail(draw_ALL$mu[1,,1],ntail)), c(tail(draw_ALL$mu[2,,1],ntail)),n=80)
+zLL <- kde2d(c(tail(draw_LF$mu[,1,,1],ntail)), c(tail(draw_LF$mu[,2,,1],ntail)),n=80)
+zNL <- kde2d(c(tail(draw_NF$mu[,1,,1],ntail)), c(tail(draw_NF$mu[,2,,1],ntail)),n=80)
+zDL <- kde2d(c(tail(draw_DF$mu[,1,,1],ntail)), c(tail(draw_DF$mu[,2,,1],ntail)),n=80)
+zALL <- kde2d(c(tail(draw_ALL$mu[,1,,1],ntail)), c(tail(draw_ALL$mu[,2,,1],ntail)),n=80)
 
 
 ## Check out the covar coeffient , compare estimated densities
 
-dLLb_rho[[1]] <-density(tail(draw_LF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
-dNLb_rho[[1]] <-density(tail(draw_NF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
-dDLb_rho[[1]] <-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
-dALLb_rho[[1]] <-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
+dLLb_rho <-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
+dNLb_rho <-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
+dDLb_rho <-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
+dALLb_rho <-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=0.05)
+dALLb_rho[[2]] <-density(tail(draw_ALL$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 
-dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
-dNLb_rho[[2]]<-density(tail(draw_NF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
-dDLb_rho[[2]]<-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
-dALLb_rho[[2]]<-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
+#dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+#dNLb_rho[[2]]<-density(tail(draw_NF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+#dDLb_rho[[2]]<-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+#dALLb_rho[[2]]<-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
 
 
 ## Check out the dist to prey variance  , compare estimated densities
@@ -201,8 +202,8 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(0,40),ylab=NA,xlab=NA )
-points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(0,40),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(10,60),ylab=NA,xlab=NA )
+points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(10,60),ylab=NA,xlab=NA )
 
 points(tail(draw_LF$mu[1,1,,1],ntail),tail(draw_LF$mu[1,2,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
@@ -231,7 +232,7 @@ legend("topleft",
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ## Plot the covariance ##
-plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,7),
+plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,3),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
@@ -262,7 +263,7 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
 ### PloT CAPT SPEED VARIANCE 
 
-plot(dNLb_sigmaC,col=colourLegL[1],xlim=c(0.0,30),lwd=3,lty=1,ylim=c(0,0.5),
+plot(dNLb_sigmaC,col=colourLegL[1],xlim=c(0.0,30),lwd=3,lty=1,ylim=c(0,0.3),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaC,col=colourLegL[2],lwd=3,lty=2)
