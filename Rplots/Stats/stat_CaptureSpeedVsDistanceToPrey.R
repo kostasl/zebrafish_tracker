@@ -51,11 +51,13 @@ for  (g in 1:2)
   sigma[g,1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
   sigma[g,2] ~ dunif(0,100) ##the cap speed sigma 
   rho[g] ~ dunif(-1,1) ##The covar coefficient
-  mu[g,1] ~ dnorm(1,0.01) ##Distance prey
-  mu[g,2] ~ dnorm(0,0.01) ##cap speed
-  
 }
 
+  mu[1,1] ~ dnorm(0,0.01) ##Distance prey
+  mu[1,2] ~ dnorm(10,0.01) ##cap speed
+
+  mu[2,1] ~ dnorm(0.5,0.01) ##Distance prey
+  mu[2,2] ~ dnorm(30,0.01) ##cap speed
 
 
 ## Synthesize data from the distribution
@@ -94,25 +96,25 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 ##  Init  datastruct that we pass to model ##
 
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
-steps <- 500
+steps <- 1500
 str_vars <- c("mu","rho","sigma","x_rand","mID")
-ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL),mod=rep(1,NROW(datDistanceVsStrikeSpeed_LL))) ##Live fed
-ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL),mod=rep(1,NROW(datDistanceVsStrikeSpeed_NL))) ##Not fed
-ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL),mod=rep(1,NROW(datDistanceVsStrikeSpeed_DL))) ##Dry fed
-ldata_ALL <- list(c=datDistanceVsStrikeSpeed_ALL,N=NROW(datDistanceVsStrikeSpeed_ALL),mod=rep(1,NROW(datDistanceVsStrikeSpeed_ALL))) ##Dry fed
+ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
+ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
+ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
+ldata_ALL <- list(c=datDistanceVsStrikeSpeed_ALL,N=NROW(datDistanceVsStrikeSpeed_ALL)) ##Dry fed
 
 jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_LF, 
                             n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_LF, 500)
 draw_LF=jags.samples(jags_model_LF,steps,thin=2,variable.names=str_vars)
 
-##Not Fed
+## Not Fed
 jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_NF, 
                             n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_NF)
 draw_NF=jags.samples(jags_model_NF,steps,thin=2,variable.names=str_vars)
 
-##Not Fed
+##  DRY  Fed
 jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_DF, 
                             n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_DF, 500)
@@ -183,10 +185,17 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 1000
-plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(0,40),ylab=NA,xlab=NA )
-points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[3])
+plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(0,40),ylab=NA,xlab=NA )
+points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(0,40),ylab=NA,xlab=NA )
+
+points(tail(draw_LF$mu[1,1,,1],ntail),tail(draw_LF$mu[1,2,,1],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
+
+points(tail(draw_DF$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[3],pch=pchL[3])
+points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
+
 points(tail(draw_ALL$mu[1,,1],ntail),tail(draw_ALL$mu[2,,1],ntail),col=colourH[4],pch=pchL[4])
+
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 
