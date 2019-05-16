@@ -63,41 +63,59 @@ datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Tu
 datTurnVsStrikeSpeed_DL <- data.frame( cbind(Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),Validated= lFirstBoutPoints$DL[,"Validated"] )
 
 
+###Validated Only
+replace(datTurnVsStrikeSpeed_NL$Validated, is.na(datTurnVsStrikeSpeed_NL$Validated), 0)
+replace(datTurnVsStrikeSpeed_LL$Validated, is.na(datTurnVsStrikeSpeed_LL$Validated), 0)
+replace(datTurnVsStrikeSpeed_DL$Validated, is.na(datTurnVsStrikeSpeed_DL$Validated), 0) 
 
 ###Validated Only
-datTurnVsStrikeSpeed_NL <- datTurnVsStrikeSpeed_NL[!is.na(datTurnVsStrikeSpeed_NL$Validated), ]
-datTurnVsStrikeSpeed_LL <- datTurnVsStrikeSpeed_LL[!is.na(datTurnVsStrikeSpeed_LL$Validated), ]
-datTurnVsStrikeSpeed_DL <- datTurnVsStrikeSpeed_DL[!is.na(datTurnVsStrikeSpeed_DL$Validated), ]
+datTurnVsStrikeSpeed_NL <- datTurnVsStrikeSpeed_NL[datTurnVsStrikeSpeed_NL$Validated == 1, ]
+datTurnVsStrikeSpeed_LL <- datTurnVsStrikeSpeed_LL[datTurnVsStrikeSpeed_LL$Validated == 1, ]
+datTurnVsStrikeSpeed_DL <- datTurnVsStrikeSpeed_DL[datTurnVsStrikeSpeed_DL$Validated == 1, ]
 
+datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_LL,datTurnVsStrikeSpeed_DL)
+
+##
 ##
 steps <- 5000
 str_vars <- c("mu","rho","sigma","x_rand")
 ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datTurnVsStrikeSpeed_NL,N=NROW(datTurnVsStrikeSpeed_NL)) ##Not fed
 ldata_DF <- list(c=datTurnVsStrikeSpeed_DL,N=NROW(datTurnVsStrikeSpeed_DL)) ##Dry fed
+ldata_ALL <- list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
+
 
 jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_LF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_LF, 500)
 draw_LF=jags.samples(jags_model_LF,steps,thin=2,variable.names=str_vars)
 
-##Not Fed
+## Not Fed
 jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_NF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_NF)
 draw_NF=jags.samples(jags_model_NF,steps,thin=2,variable.names=str_vars)
 
-##Not Fed
+## Dry  Fed
 jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_DF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_DF, 500)
 draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
+
+
+## ALL  groups
+jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_ALL, 
+                            n.adapt = 500, n.chains = 3, quiet = F)
+update(jags_model_ALL, 500)
+draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###
 nContours <- 5
 zLL <- kde2d(c(tail(draw_LF$mu[1,,1],ntail)), c(tail(draw_LF$mu[2,,1],ntail)),n=80)
 zNL <- kde2d(c(tail(draw_NF$mu[1,,1],ntail)), c(tail(draw_NF$mu[2,,1],ntail)),n=80)
 zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=80)
+zALL <- kde2d(c(tail(draw_ALL$mu[1,,1],ntail)), c(tail(draw_ALL$mu[2,,1],ntail)),n=80)
+
 
 ## Check out the covar coeffient , compare estimated densities
 pBw   <- 0.1
@@ -107,6 +125,7 @@ ntail <-1000
 dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
+dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
  
 ##Get the synthesized data:
@@ -132,38 +151,44 @@ layout(matrix(c(1,2),1,2, byrow = FALSE))
 par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
-ntail <- 1000
+ntail <- 750
 plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,2),ylim=c(0,60),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[1])
+points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[3])
+points(tail(draw_ALL$mu[1,,1],ntail),tail(draw_ALL$mu[2,,1],ntail),col=colourH[4],pch=pchL[1])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-
+contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 
 legend("topleft",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  , #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+                  bquote(All ~ '#' ~ .(ldata_ALL$N)  ) ),
        pch=pchL, col=colourLegL)
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ## Plot the covariance ##
-plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,3),
+plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
+lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
+
 legend("topright",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3),lwd=3)
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  ),
+                  bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3,4),lwd=3)
+
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Capture speed to Undershoot Covariance ",rho) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
@@ -221,3 +246,54 @@ legend("topright",
 
 
 dev.off()
+
+
+#### Capture Speed Only Model And Data ##
+
+## pLOT THE dISTANCE TO PREY 
+
+pdf(file= paste(strPlotExportPath,strDistDensityPDFFileName,sep=""))
+
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+xquant <- seq(0,50,1)
+XLIM <- c(0,40)
+pdistBW <- 5 ## mm/sec
+strKern <- "gaussian"
+
+plot(density(datTurnVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM ,main="Capture Speed on capture strike")
+for (i in 1:100)
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,ntail-i,1],1),sd=tail(draw_NF$sigma[2,ntail-i,1],1)),type='l',col=colourH[1] )
+lines(density(datTurnVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
+legend("topright",title="NF",
+       legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                 paste("model " ) ),
+       col=c("black",colourH[3]),lwd=c(3,1) ) 
+
+
+plot(density(datTurnVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+for (i in 1:100)
+  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[2,ntail-i,1],1),sd=tail(draw_LF$sigma[2,ntail-i,1],1)),type='l',col=colourH[2] )
+lines(density(datTurnVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+
+legend("topright",title="LF",
+       legend=c( paste("Data Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
+                 paste("model " ) ),
+       col=c("black",colourH[2]),lwd=c(3,1) ) 
+
+
+plot(density(datTurnVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+for (i in 1:100)
+  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[2,ntail-i,1],1),sd=tail(draw_DF$sigma[2,ntail-i,1],1)),type='l',col=colourH[3] )
+lines(density(datTurnVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+
+legend("topright",title="DF",
+       legend=c( paste("Data  Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
+                 paste("model " ) ),
+       col=c("black",colourH[3]),lwd=c(3,1) ) 
+
+mtext(side = 1,cex=0.8, line = 2.2, expression("Distance To Prey (mm)" ))
+
+dev.off()
+embed_fonts(strDistDensityPDFFileName)
+
+
