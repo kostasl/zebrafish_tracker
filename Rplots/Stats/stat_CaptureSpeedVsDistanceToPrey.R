@@ -60,7 +60,7 @@ for  (g in 1:2)
   ## High speed Capture Cluster
   mu[2,1] ~ dnorm(0.5,0.01) ##Distance prey
   mu[2,2] ~ dnorm(30,0.001) ##cap speed
-  sigma[2,2] ~ dunif(0,5) ##the cap speed sigma 
+  sigma[2,2] ~ dunif(0,25) ##the cap speed sigma 
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
