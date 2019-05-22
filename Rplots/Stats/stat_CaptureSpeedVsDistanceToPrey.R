@@ -49,16 +49,18 @@ for  (g in 1:2)
   
   ## Priors 
   sigma[g,1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
-  sigma[g,2] ~ dunif(0,20) ##the cap speed sigma 
+  
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
-
+  ## Low Speed Captcha cluster
   mu[1,1] ~ dnorm(0,0.01) ##Distance prey
-  mu[1,2] ~ dnorm(10,0.01) ##cap speed
+  mu[1,2] ~ dnorm(5,0.1) ##cap speed
+  sigma[1,2] ~ dunif(0,5) ##the cap speed sigma 
 
+  ## High speed Capture Cluster
   mu[2,1] ~ dnorm(0.5,0.01) ##Distance prey
-  mu[2,2] ~ dnorm(30,0.01) ##cap speed
-
+  mu[2,2] ~ dnorm(30,0.1) ##cap speed
+  sigma[2,2] ~ dunif(0,5) ##the cap speed sigma 
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -68,6 +70,7 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Valid.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
+strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeed_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
@@ -146,7 +149,7 @@ dLLb_rho <-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 dNLb_rho <-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 dDLb_rho <-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 dALLb_rho <-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=0.05)
-dALLb_rho[[2]] <-density(tail(draw_ALL$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
+##dALLb_rho[[2]] <-density(tail(draw_ALL$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 
 #dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
 #dNLb_rho[[2]]<-density(tail(draw_NF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
@@ -277,6 +280,47 @@ dev.off()
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
 
+###    Plot Cluster Membership ratios , mean number of HUnt Events in every cluster #####
+##Select the Cluster ID that has the fastest capture speed, as being the capture strike
+idxCaptClust_LF <- ifelse ( mean(draw_LF$mu[,2,,1]) > mean(draw_LF$mu[,1,,1]),2,1 ) 
+idxCaptClust_NF <- ifelse ( mean(draw_NF$mu[,2,,1]) > mean(draw_NF$mu[,1,,1]),2,1 ) 
+idxCaptClust_DF <- ifelse ( mean(draw_DF$mu[,2,,1]) > mean(draw_DF$mu[,1,,1]),2,1 ) 
+
+
+#' Count the numbe of huntevents classed as having a capture strike accoridng to the 2-gaussian fit
+getClusterOccupancySamples <- function(draw_G,ntail)
+{
+  ##get mean membership per Hunt Event 
+  vMembership <- vector()
+  n <- NROW(draw_G$mu[1,2,,1])
+  ntail <- min(n, ntail) ##check for ntail exceeding number of samples
+  for (i in 1:ntail)
+  {
+    ##Get Last nSamples For each Hunt Event Memberhip vector / Count number of events in Fast cluster over each sample
+    vMembership[i] <- sum(draw_G$mID[, (n-ntail):n,1][,i])
+    
+  }
+
+  return(vMembership)  
+}
+
+vMembership_LF <- getClusterOccupancySamples(draw_LF,100);
+vMembership_NF <- getClusterOccupancySamples(draw_NF,100);
+vMembership_DF <- getClusterOccupancySamples(draw_DF,100);
+hist(vMembership_LF/NROW(draw_LF$mID),xlim=c(0,1),main= paste("LF Strike Speed",prettyNum( mean(draw_LF$mu[idxCaptClust_LF,2,,1]),digits=4 )  ) )
+hist(vMembership_NF/NROW(draw_NF$mID),xlim=c(0,1),main= paste("NF Strike Speed",prettyNum( mean(draw_NF$mu[idxCaptClust_NF,2,,1]),digits=4 )  ) )
+hist(vMembership_DF/NROW(draw_DF$mID),xlim=c(0,1),main= paste("DF Strike Speed",prettyNum( mean(draw_DF$mu[idxCaptClust_DF,2,,1]),digits=4 )  ) )
+
+
+pdf(file= paste(strPlotExportPath,strClusterOccupancyPDFFileName,sep=""))
+boxplot(vMembership_NF/NROW(draw_NF$mID),vMembership_LF/NROW(draw_LF$mID),vMembership_DF/NROW(draw_DF$mID),ylim=c(0,0.8),
+        main="Estimated ratio of high speed captures ",names=c("NF","LF","DF") , col=colourH )
+dev.off()
+#table(draw_LF$mID[,,1])[idxCaptClust_LF]/table(draw_LF$mID[,,1])[1]
+#table(draw_NF$mID[,,1])[idxCaptClust_LF]/table(draw_NF$mID[,,1])[1]
+#table(draw_DF$mID[,,1])[idxCaptClust_LF]/table(draw_DF$mID[,,1])[1]
+###
+
 
 
 ### PLOT EMPIRICAL 
@@ -334,18 +378,19 @@ dev.off()
 
 #### Capture Speed Only Model And Data ##
 
-## pLOT THE Capture Speed
+## pLOT THE Capture Speed  GAUSSIAN FIT of Capture Speed
 
 pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName,sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 xquant <- seq(0,60,1)
 XLIM <- c(0,60)
+YLIM <- c(0,0.08)
 pdistBW <- 2 ## mm/sec
 strKern <- "gaussian"
 ntail <- NROW(draw_NF$mu[1,2,,1])*0.10
 
-plot(density(datDistanceVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM ,main="Capture Speed on capture strike")
+plot(density(datDistanceVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Capture Speed on capture strike")
 for (i in 1:(ntail-1) )
 {
   lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,2,ntail-i,1],1),sd=tail(draw_NF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[1] )
@@ -359,7 +404,7 @@ legend("topright",title="NF",
        col=c("black",colourH[3]),lwd=c(3,1) ) 
 
 
-plot(density(datDistanceVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+plot(density(datDistanceVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
 for (i in 1:(ntail-1) )
 {
   lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[1,2,ntail-i,1],1),sd=tail(draw_LF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[2] )
@@ -373,7 +418,7 @@ legend("topright",title="LF",
        col=c("black",colourH[2]),lwd=c(3,1) ) 
 
 
-plot(density(datDistanceVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
+plot(density(datDistanceVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
 for (i in 1:(ntail-1) )
 {
   lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[1,2,ntail-i,1],1),sd=tail(draw_DF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[3] )
@@ -386,7 +431,7 @@ legend("topright",title="DF",
                  paste("model " ) ),
        col=c("black",colourH[3]),lwd=c(3,1) ) 
 
-mtext(side = 1,cex=0.8, line = 2.2, expression("Distance To Prey (mm)" ))
+mtext(side = 1,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
 
 dev.off()
 embed_fonts(strDistDensityPDFFileName)
