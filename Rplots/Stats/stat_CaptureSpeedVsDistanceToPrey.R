@@ -54,12 +54,12 @@ for  (g in 1:2)
 }
   ## Low Speed Captcha cluster
   mu[1,1] ~ dnorm(0,0.01) ##Distance prey
-  mu[1,2] ~ dnorm(10,1) ##cap speed
-  sigma[1,2] ~ dunif(0,5) ##the cap speed sigma 
+  mu[1,2] ~ dnorm(10,0.1) ##cap speed
+  sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
 
   ## High speed Capture Cluster
   mu[2,1] ~ dnorm(0.5,0.01) ##Distance prey
-  mu[2,2] ~ dnorm(30,0.001) ##cap speed
+  mu[2,2] ~ dnorm(30,0.0001) ##cap speed
   sigma[2,2] ~ dunif(0,25) ##the cap speed sigma 
 
 ## Synthesize data from the distribution
@@ -312,8 +312,9 @@ hist(vMembership_NF/NROW(draw_NF$mID),xlim=c(0,1),main= paste("NF Strike Speed",
 hist(vMembership_DF/NROW(draw_DF$mID),xlim=c(0,1),main= paste("DF Strike Speed",prettyNum( mean(draw_DF$mu[idxCaptClust_DF,2,,1]),digits=4 )  ) )
 
 
+## Show Whther LF does proportionally more strike swimms than the other two
 pdf(file= paste(strPlotExportPath,strClusterOccupancyPDFFileName,sep=""))
-boxplot(vMembership_NF/NROW(draw_NF$mID),vMembership_LF/NROW(draw_LF$mID),vMembership_DF/NROW(draw_DF$mID),ylim=c(0,0.8),
+boxplot(vMembership_NF/NROW(draw_NF$mID),vMembership_LF/NROW(draw_LF$mID),vMembership_DF/NROW(draw_DF$mID),ylim=c(0,1.0),
         main="Estimated ratio of high speed captures ",names=c("NF","LF","DF") , col=colourH )
 dev.off()
 #table(draw_LF$mID[,,1])[idxCaptClust_LF]/table(draw_LF$mID[,,1])[1]
@@ -397,7 +398,7 @@ for (i in 1:(ntail-1) )
   lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,ntail-i,1],1),sd=tail(draw_NF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[1] )
 }
 
-lines(density(datTurnVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
+lines(density(datDistanceVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
 legend("topright",title="NF",
        legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
                  paste("model " ) ),
@@ -434,4 +435,4 @@ legend("topright",title="DF",
 mtext(side = 1,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
 
 dev.off()
-embed_fonts(strDistDensityPDFFileName)
+embed_fonts(strCaptSpeedDensityPDFFileName)
