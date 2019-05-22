@@ -15,7 +15,7 @@
 library(rjags)
 library(runjags)
 
-
+source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
