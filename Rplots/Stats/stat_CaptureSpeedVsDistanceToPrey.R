@@ -36,7 +36,9 @@ for (i in 1:N)
 }
 
 ## Fit Bernouli distribution on Number of Hunt |Events that have a high-speed strike 
-mStrikeCount ~ dbin(sum(mID)/N,N )
+## Probability of Strike Swim 
+pS  ~ dnorm(sum(mID)/N,1000)T(0,1)
+mStrikeCount ~ dbin(pS,N )
 
 ##Covariance matrix and its inverse -> the precision matrix
 ## for each Gaussian in the mixture (1 and 2)
@@ -70,6 +72,7 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 } "
 
+strMainPDFFilename <- "/stat/UndershootAnalysis/fig7_stat_modelMixCaptureSpeedVsDistToPrey.pdf";
 strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Valid.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
 strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
@@ -102,8 +105,8 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 ##  Init  datastruct that we pass to model ##
 
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
-steps <- 750
-str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount")
+steps <- 1550
+str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS")
 ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
 ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
@@ -181,12 +184,87 @@ dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
 
+#### Main Figure - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
+
+pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
+
+outer = FALSE
+line = 1 ## SubFig Label Params
+cex = 1.1
+adj  = 3.5
+padj <- -23.0
+las <- 1
+nContours <- 4
+
+layout(matrix(c(1,2),1,2, byrow = TRUE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.3,1,1))
+
+## Plot the mean of the 2D Models ##
+ntail <- 400
+plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,60),ylab=NA,xlab=NA )
+points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,60),ylab=NA,xlab=NA )
+
+points(tail(draw_LF$mu[1,1,,1],ntail),tail(draw_LF$mu[1,2,,1],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
+
+points(tail(draw_DF$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[3],pch=pchL[3])
+points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
+
+#points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
+
+mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
+
+contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=1 )
+contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=2)
+contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=3 )
+#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+
+
+legend("topleft",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                  #bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+                  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       pch=pchL, col=colourLegL)
+mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
+
+plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA)
+lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
+lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
+#lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
+
+
+#### ## Probability Density of Strike capture ####
+legend("topleft",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                  #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
+                  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3,4),lwd=3)
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
+dev.off()
+
+
+
+
+
+
+
 
 ##Get the synthesized data:
-plot(tail((draw_NF$x_rand[,1,,1]) , ntail),tail((draw_NF$x_rand[,2,,1]) , ntail),col=colourH[1])
-points(tail((draw_LF$x_rand[,1,,1]) , ntail),tail((draw_LF$x_rand[,2,,1]) , ntail),col=colourH[2])
-points(tail((draw_DF$x_rand[,1,,1]) , ntail),tail((draw_DF$x_rand[,2,,1]) , ntail),col=colourH[3])
-points(tail((draw_ALL$x_rand[,2,,1]) , ntail),tail((draw_ALL$x_rand[,1,,1]) , ntail),col=colourH[4],pch=1,cex=1.6)
+#plot(tail((draw_NF$x_rand[,1,,1]) , ntail),tail((draw_NF$x_rand[,2,,1]) , ntail),col=colourH[1])
+#points(tail((draw_LF$x_rand[,1,,1]) , ntail),tail((draw_LF$x_rand[,2,,1]) , ntail),col=colourH[2])
+#points(tail((draw_DF$x_rand[,1,,1]) , ntail),tail((draw_DF$x_rand[,2,,1]) , ntail),col=colourH[3])
+#points(tail((draw_ALL$x_rand[,2,,1]) , ntail),tail((draw_ALL$x_rand[,1,,1]) , ntail),col=colourH[4],pch=1,cex=1.6)
 
 ####################################
 ## PLot Model / Means and covariance ##
@@ -237,23 +315,24 @@ legend("topleft",
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ## Plot the covariance ##
-plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,3),
+plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
 lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
 
-legend("topright",
+legend("topleft",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
                   bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  ),
                   bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3),lwd=3)
+       col=colourLegL,lty=c(1,2,3,4),lwd=3)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Cov. Capture speed to Prey Distance  ",rho) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
 
 ### aDDD DISTANCE TO PREY VARIANCE COMPARISON
 
@@ -277,16 +356,18 @@ lines(dALLb_sigmaC,col=colourLegL[4],lwd=3,lty=4)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Capture Speed  ") ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
-
 dev.off()
+
+
+
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
 
 ###    Plot Cluster Membership ratios , mean number of HUnt Events in every cluster #####
 ##Select the Cluster ID that has the fastest capture speed, as being the capture strike
-idxCaptClust_LF <- ifelse ( mean(draw_LF$mu[,2,,1]) > mean(draw_LF$mu[,1,,1]),2,1 ) 
-idxCaptClust_NF <- ifelse ( mean(draw_NF$mu[,2,,1]) > mean(draw_NF$mu[,1,,1]),2,1 ) 
-idxCaptClust_DF <- ifelse ( mean(draw_DF$mu[,2,,1]) > mean(draw_DF$mu[,1,,1]),2,1 ) 
+idxCaptClust_LF <- ifelse ( mean(draw_LF$mu[2,2,,1]) > mean(draw_LF$mu[1,2,,1]),2,1 ) 
+idxCaptClust_NF <- ifelse ( mean(draw_NF$mu[2,2,,1]) > mean(draw_NF$mu[1,2,,1]),2,1 ) 
+idxCaptClust_DF <- ifelse ( mean(draw_DF$mu[2,2,,1]) > mean(draw_DF$mu[1,2,,1]),2,1 ) 
 
 
 #' Count the numbe of huntevents classed as having a capture strike accoridng to the 2-gaussian fit
@@ -308,7 +389,8 @@ getClusterOccupancySamples <- function(draw_G,ntail)
 
 vMembership_LF <- getClusterOccupancySamples(draw_LF,100);
 vMembership_NF <- getClusterOccupancySamples(draw_NF,100);
-vMembership_DF <- getClusterOccupancySamples(draw_DF,100);
+Membership_DF <- getClusterOccupancySamples(draw_DF,100);
+layout(matrix(c(1,2,3),3,1, byrow = TRUE))
 hist(vMembership_LF/NROW(draw_LF$mID),xlim=c(0,1),main= paste("LF Strike Speed",prettyNum( mean(draw_LF$mu[idxCaptClust_LF,2,,1]),digits=4 )  ) )
 hist(vMembership_NF/NROW(draw_NF$mID),xlim=c(0,1),main= paste("NF Strike Speed",prettyNum( mean(draw_NF$mu[idxCaptClust_NF,2,,1]),digits=4 )  ) )
 hist(vMembership_DF/NROW(draw_DF$mID),xlim=c(0,1),main= paste("DF Strike Speed",prettyNum( mean(draw_DF$mu[idxCaptClust_DF,2,,1]),digits=4 )  ) )
@@ -318,7 +400,6 @@ hist(draw_LF$mStrikeCount/NROW(draw_LF$mID),xlim=c(0,1),main= paste("LF Strike S
 hist(draw_NF$mStrikeCount/NROW(draw_NF$mID),xlim=c(0,1),main= paste("NF Strike Speed",prettyNum( mean(draw_NF$mu[idxCaptClust_NF,2,,1]),digits=4 )  ) )
 hist(draw_DF$mStrikeCount/NROW(draw_DF$mID),xlim=c(0,1),main= paste("DF Strike Speed",prettyNum( mean(draw_DF$mu[idxCaptClust_DF,2,,1]),digits=4 )  ) )
 
-hist()
 
 ## Show Whther LF does proportionally more strike swimms than the other two
 pdf(file= paste(strPlotExportPath,strClusterOccupancyPDFFileName,sep=""))
@@ -329,6 +410,8 @@ dev.off()
 #table(draw_NF$mID[,,1])[idxCaptClust_LF]/table(draw_NF$mID[,,1])[1]
 #table(draw_DF$mID[,,1])[idxCaptClust_LF]/table(draw_DF$mID[,,1])[1]
 ###
+
+
 
 
 
@@ -389,7 +472,7 @@ dev.off()
 
 ## pLOT THE Capture Speed  GAUSSIAN FIT of Capture Speed
 
-pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName,sep=""))
+pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 xquant <- seq(0,70,1)
@@ -402,8 +485,8 @@ ntail <- NROW(draw_NF$mu[1,2,,1])*0.10
 plot(density(datDistanceVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Capture Speed on capture strike")
 for (i in 1:(ntail-1) )
 {
-  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,2,ntail-i,1],1),sd=tail(draw_NF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[1] )
-  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,ntail-i,1],1),sd=tail(draw_NF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[1] )
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,2,ntail-i,1],1),sd=tail(draw_NF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[1],lty=1 )
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[idxCaptClust_NF,2,ntail-i,1],1),sd=tail(draw_NF$sigma[idxCaptClust_NF,2,ntail-i,1],1)),type='l',col=colourH[1],lty=2 )
 }
 
 lines(density(datDistanceVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
@@ -417,7 +500,7 @@ plot(density(datDistanceVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern)
 for (i in 1:(ntail-1) )
 {
   lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[1,2,ntail-i,1],1),sd=tail(draw_LF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[2] )
-  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[2,2,ntail-i,1],1),sd=tail(draw_LF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[2] )
+  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[idxCaptClust_LF,2,ntail-i,1],1),sd=tail(draw_LF$sigma[idxCaptClust_LF,2,ntail-i,1],1)),type='l',col=colourH[2],lty=2 )
 }
 lines(density(datTurnVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
 
@@ -431,7 +514,7 @@ plot(density(datDistanceVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern)
 for (i in 1:(ntail-1) )
 {
   lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[1,2,ntail-i,1],1),sd=tail(draw_DF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[3] )
-  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[2,2,ntail-i,1],1),sd=tail(draw_DF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[3] )
+  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[idxCaptClust_DF,2,ntail-i,1],1),sd=tail(draw_DF$sigma[idxCaptClust_DF,2,ntail-i,1],1)),type='l',col=colourH[3] ,lty=2)
 }
 lines(density(datTurnVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
 
