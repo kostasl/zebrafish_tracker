@@ -15,7 +15,7 @@
 library(rjags)
 library(runjags)
 
-
+source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
@@ -81,17 +81,17 @@ for  (g in 1:2)
   cov[g,2,2] <- sigma[g,2]*sigma[g,2]
   
   ## Priors 
-  sigma[g,1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
+  sigma[g,1] ~ dunif(0,0.1) ##undershoot prey - Keep it broad within the expected limits 
   
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
 ## Low Speed Captcha cluster
-mu[1,1] ~ dnorm(1,0.01) ##undershoot 
+mu[1,1] ~ dnorm(1,0.001) ##undershoot 
 mu[1,2] ~ dnorm(10,0.01) ##cap speed
 sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
 
 ## High speed Capture Cluster
-mu[2,1] ~ dnorm(1,0.01) ##undershoot
+mu[2,1] ~ dnorm(1,0.001) ##undershoot
 mu[2,2] ~ dnorm(30,0.0001) ##cap speed
 sigma[2,2] ~ dunif(0,25) ##the cap speed sigma 
 
@@ -165,6 +165,8 @@ draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###
 nContours <- 3
+ntail <-400
+
 
 zLL <- kde2d(c(tail(draw_LF$mu[,1,,1],ntail)), c(tail(draw_LF$mu[,2,,1],ntail)),n=80)
 zNL <- kde2d(c(tail(draw_NF$mu[,1,,1],ntail)), c(tail(draw_NF$mu[,2,,1],ntail)),n=80)
@@ -174,7 +176,6 @@ zALL <- kde2d(c(tail(draw_ALL$mu[,1,,1],ntail)), c(tail(draw_ALL$mu[,2,,1],ntail
 
 ## Check out the covar coeffient , compare estimated densities
 pBw   <- 0.1
-ntail <-1000
 
 
 dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
@@ -185,9 +186,9 @@ dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
  
 ##Get the synthesized data:
 
-plot(tail(draw_NF$x_rand[1,,1],ntail ),tail(draw_NF$x_rand[2,,1],ntail ),col=colourH[1])
-points(tail(draw_LF$x_rand[1,,1],ntail ),tail(draw_LF$x_rand[2,,1],ntail ),col=colourH[2])
-points(tail(draw_DF$x_rand[1,,1],ntail ),tail(draw_DF$x_rand[2,,1],ntail ),col=colourH[3])
+#plot(tail(draw_NF$x_rand[1,,1],ntail ),tail(draw_NF$x_rand[2,,1],ntail ),col=colourH[1])
+#points(tail(draw_LF$x_rand[1,,1],ntail ),tail(draw_LF$x_rand[2,,1],ntail ),col=colourH[2])
+#points(tail(draw_DF$x_rand[1,,1],ntail ),tail(draw_DF$x_rand[2,,1],ntail ),col=colourH[3])
 
 ####################################
 ## PLot Model / Means and covariance ##
