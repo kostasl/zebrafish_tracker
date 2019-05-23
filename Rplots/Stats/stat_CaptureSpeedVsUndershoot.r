@@ -49,6 +49,59 @@ model {
 
 } "
 
+
+strmodel_capspeedVsUndershoot_Mixture <- "
+var x_rand[2,2];
+
+model {
+
+##Draw capt speed from 2d gaussian
+for (i in 1:N)
+{
+  ##Draw from gaussian model  as determined by mod flag
+  c[i,1:2] ~ dmnorm(mu[mID[i]+1,],prec[mID[i]+1, , ]) ## data in column 1 and 2
+  mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
+  
+}
+
+## Fit Bernouli distribution on Number of Hunt |Events that have a high-speed strike 
+## Probability of Strike Swim 
+pS  ~ dnorm(sum(mID)/N,1000)T(0,1)
+mStrikeCount ~ dbin(pS,N )
+
+##Covariance matrix and its inverse -> the precision matrix
+## for each Gaussian in the mixture (1 and 2)
+for  (g in 1:2)
+{
+  prec[g,1:2,1:2] <- inverse(cov[g,,])
+  
+  cov[g,1,1] <- sigma[g,1]*sigma[g,1]
+  cov[g,1,2] <- sigma[g,1]*sigma[g,2]*rho[g]
+  cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g]
+  cov[g,2,2] <- sigma[g,2]*sigma[g,2]
+  
+  ## Priors 
+  sigma[g,1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
+  
+  rho[g] ~ dunif(-1,1) ##The covar coefficient
+}
+## Low Speed Captcha cluster
+mu[1,1] ~ dnorm(1,0.01) ##undershoot 
+mu[1,2] ~ dnorm(10,0.01) ##cap speed
+sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
+
+## High speed Capture Cluster
+mu[2,1] ~ dnorm(1,0.01) ##undershoot
+mu[2,2] ~ dnorm(30,0.0001) ##cap speed
+sigma[2,2] ~ dunif(0,25) ##the cap speed sigma 
+
+## Synthesize data from the distribution
+x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
+x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
+
+} "
+
+
 strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeedVsUndershoot_Valid.pdf"
 strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter_Valid.pdf"
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
@@ -77,36 +130,37 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 5000
-str_vars <- c("mu","rho","sigma","x_rand")
+steps <- 500
+#str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
+str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS") #Mixture Model
 ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datTurnVsStrikeSpeed_NL,N=NROW(datTurnVsStrikeSpeed_NL)) ##Not fed
 ldata_DF <- list(c=datTurnVsStrikeSpeed_DL,N=NROW(datTurnVsStrikeSpeed_DL)) ##Dry fed
 ldata_ALL <- list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
 
 
-jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_LF, 
+jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_LF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_LF, 500)
+update(jags_model_LF, 300)
 draw_LF=jags.samples(jags_model_LF,steps,thin=2,variable.names=str_vars)
 
 ## Not Fed
-jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_NF, 
+jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_NF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_NF)
+update(jags_model_NF,300)
 draw_NF=jags.samples(jags_model_NF,steps,thin=2,variable.names=str_vars)
 
 ## Dry  Fed
-jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_DF, 
+jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_DF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_DF, 500)
+update(jags_model_DF, 300)
 draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
 
 ## ALL  groups
-jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_ALL, 
+jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
                             n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_ALL, 500)
+update(jags_model_ALL, 300)
 draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###

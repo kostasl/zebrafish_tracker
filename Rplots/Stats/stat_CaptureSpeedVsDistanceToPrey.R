@@ -73,7 +73,7 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 } "
 
 strMainPDFFilename <- "/stat/UndershootAnalysis/fig7_stat_modelMixCaptureSpeedVsDistToPrey.pdf";
-strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Valid.pdf";
+strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
 strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeed_Valid.pdf"
@@ -194,16 +194,16 @@ cex = 1.1
 adj  = 3.5
 padj <- -23.0
 las <- 1
-nContours <- 4
+nContours <- 5
 
 layout(matrix(c(1,2),1,2, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
-ntail <- 400
-plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,60),ylab=NA,xlab=NA )
-points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,60),ylab=NA,xlab=NA )
+ntail <- 600
+plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
 
 points(tail(draw_LF$mu[1,1,,1],ntail),tail(draw_LF$mu[1,2,,1],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
@@ -218,7 +218,7 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=1 )
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=2)
-contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=3 )
+contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=4 )
 #contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 
 
@@ -284,7 +284,7 @@ layout(matrix(c(1,2,3,4),2,2, byrow = TRUE))
 par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
-ntail <- 1000
+ntail <- 600
 plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(10,60),ylab=NA,xlab=NA )
 points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.6),ylim=c(10,60),ylab=NA,xlab=NA )
 
