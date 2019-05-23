@@ -26,15 +26,17 @@ var x_rand[2,2];
 
 model {
 
-
 ##Draw capt speed from 2d gaussian
 for (i in 1:N)
 {
   ##Draw from gaussian model  as determined by mod flag
   c[i,1:2] ~ dmnorm(mu[mID[i]+1,],prec[mID[i]+1, , ]) ## data in column 1 and 2
   mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
+  
 }
 
+## Fit Bernouli distribution on Number of Hunt |Events that have a high-speed strike 
+mStrikeCount ~ dbin(sum(mID)/N,N )
 
 ##Covariance matrix and its inverse -> the precision matrix
 ## for each Gaussian in the mixture (1 and 2)
@@ -54,7 +56,7 @@ for  (g in 1:2)
 }
   ## Low Speed Captcha cluster
   mu[1,1] ~ dnorm(0,0.01) ##Distance prey
-  mu[1,2] ~ dnorm(10,0.1) ##cap speed
+  mu[1,2] ~ dnorm(10,0.01) ##cap speed
   sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
 
   ## High speed Capture Cluster
@@ -100,8 +102,8 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 ##  Init  datastruct that we pass to model ##
 
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
-steps <- 1500
-str_vars <- c("mu","rho","sigma","x_rand","mID")
+steps <- 750
+str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount")
 ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
 ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
@@ -311,6 +313,12 @@ hist(vMembership_LF/NROW(draw_LF$mID),xlim=c(0,1),main= paste("LF Strike Speed",
 hist(vMembership_NF/NROW(draw_NF$mID),xlim=c(0,1),main= paste("NF Strike Speed",prettyNum( mean(draw_NF$mu[idxCaptClust_NF,2,,1]),digits=4 )  ) )
 hist(vMembership_DF/NROW(draw_DF$mID),xlim=c(0,1),main= paste("DF Strike Speed",prettyNum( mean(draw_DF$mu[idxCaptClust_DF,2,,1]),digits=4 )  ) )
 
+layout(matrix(c(1,2,3),3,1, byrow = TRUE))
+hist(draw_LF$mStrikeCount/NROW(draw_LF$mID),xlim=c(0,1),main= paste("LF Strike Speed",prettyNum( mean(draw_LF$mu[idxCaptClust_LF,2,,1]),digits=4 )  ) )
+hist(draw_NF$mStrikeCount/NROW(draw_NF$mID),xlim=c(0,1),main= paste("NF Strike Speed",prettyNum( mean(draw_NF$mu[idxCaptClust_NF,2,,1]),digits=4 )  ) )
+hist(draw_DF$mStrikeCount/NROW(draw_DF$mID),xlim=c(0,1),main= paste("DF Strike Speed",prettyNum( mean(draw_DF$mu[idxCaptClust_DF,2,,1]),digits=4 )  ) )
+
+hist()
 
 ## Show Whther LF does proportionally more strike swimms than the other two
 pdf(file= paste(strPlotExportPath,strClusterOccupancyPDFFileName,sep=""))
@@ -384,7 +392,7 @@ dev.off()
 pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName,sep=""))
 
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-xquant <- seq(0,60,1)
+xquant <- seq(0,70,1)
 XLIM <- c(0,60)
 YLIM <- c(0,0.08)
 pdistBW <- 2 ## mm/sec
