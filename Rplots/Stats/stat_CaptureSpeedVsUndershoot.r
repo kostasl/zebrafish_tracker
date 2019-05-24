@@ -21,6 +21,59 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
+
+## Plots the Data Density and the 2 Gaussians fititng high and low speed capture swims
+plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx)
+{
+  xquant <- seq(0,70,1)
+  XLIM <- c(0,60)
+  YLIM <- c(0,0.08)
+  pdistBW <- 2 ## mm/sec
+  strKern <- "gaussian"
+  ntail <- NROW(drawMCMC$mu[1,2,,1])*0.10
+  
+  plot(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Capture Speed on capture strike")
+  for (i in 1:(ntail-1) )
+  {
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,1],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[colourIdx],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,1],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[colourIdx],lty=2 )
+  }
+  
+  lines(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
+  legend("topright",title="NF",
+         legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                   paste("model " ) ),
+         col=c("black",colourH[3]),lwd=c(3,1) ) 
+  
+}
+
+
+## Plots the Data Density and the 2 Gaussians fititng high and low speed capture swims
+plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx)
+{
+  xquant <- seq(0,2,0.02)
+  XLIM <- c(0,2)
+  YLIM <- c(0,5)
+  pdistBW <- 0.1 ## mm/sec
+  strKern <- "gaussian"
+  ntail <- NROW(drawMCMC$mu[1,1,,1])*0.10
+  
+  plot(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Undershoot On 1st turn to prey")
+  for (i in 1:(ntail-1) )
+  {
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,1],1),sd=tail(drawMCMC$sigma[1,1,ntail-i,1],1)),type='l',col=colourH[colourIdx],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,1],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,1],1)),type='l',col=colourH[colourIdx],lty=2 )
+  }
+  
+  lines(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
+  legend("topright",title="",
+         legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                   paste("model " ) ),
+         col=c("black",colourH[3]),lwd=c(3,1) ) 
+  
+}
+
+
 strmodel_capspeedVsUndershoot <- "
 model {
   ##Draw capt speed from 2d gaussian
@@ -86,7 +139,7 @@ for  (g in 1:2)
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
 ## Low Speed Captcha cluster
-mu[1,1] ~ dnorm(1,0.001) ##undershoot 
+mu[1,1] ~ dnorm(1,0.01) ##undershoot 
 mu[1,2] ~ dnorm(10,0.01) ##cap speed
 sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
 
@@ -130,7 +183,7 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 500
+steps <- 1500
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
 str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS") #Mixture Model
 ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
@@ -258,6 +311,19 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 dev.off()
 
+### Show Speed Fit ###
+
+
+pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+
+plotCaptureSpeedFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
+plotCaptureSpeedFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
+plotCaptureSpeedFit(datTurnVsStrikeSpeed_LL,draw_DF,3)
+
+dev.off()
+
+plotUndeshootClusterFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
 ## plot 
 ##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )
 
