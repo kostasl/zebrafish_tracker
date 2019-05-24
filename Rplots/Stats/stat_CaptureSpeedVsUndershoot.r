@@ -15,7 +15,7 @@
 library(rjags)
 library(runjags)
 
-
+source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
@@ -49,6 +49,59 @@ model {
 
 } "
 
+
+strmodel_capspeedVsUndershoot_Mixture <- "
+var x_rand[2,2];
+
+model {
+
+##Draw capt speed from 2d gaussian
+for (i in 1:N)
+{
+  ##Draw from gaussian model  as determined by mod flag
+  c[i,1:2] ~ dmnorm(mu[mID[i]+1,],prec[mID[i]+1, , ]) ## data in column 1 and 2
+  mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
+  
+}
+
+## Fit Bernouli distribution on Number of Hunt |Events that have a high-speed strike 
+## Probability of Strike Swim 
+pS  ~ dnorm(sum(mID)/N,1000)T(0,1)
+mStrikeCount ~ dbin(pS,N )
+
+##Covariance matrix and its inverse -> the precision matrix
+## for each Gaussian in the mixture (1 and 2)
+for  (g in 1:2)
+{
+  prec[g,1:2,1:2] <- inverse(cov[g,,])
+  
+  cov[g,1,1] <- sigma[g,1]*sigma[g,1]
+  cov[g,1,2] <- sigma[g,1]*sigma[g,2]*rho[g]
+  cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g]
+  cov[g,2,2] <- sigma[g,2]*sigma[g,2]
+  
+  ## Priors 
+  sigma[g,1] ~ dunif(0,0.1) ##undershoot prey - Keep it broad within the expected limits 
+  
+  rho[g] ~ dunif(-1,1) ##The covar coefficient
+}
+## Low Speed Captcha cluster
+mu[1,1] ~ dnorm(1,0.001) ##undershoot 
+mu[1,2] ~ dnorm(10,0.01) ##cap speed
+sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
+
+## High speed Capture Cluster
+mu[2,1] ~ dnorm(1,0.001) ##undershoot
+mu[2,2] ~ dnorm(30,0.0001) ##cap speed
+sigma[2,2] ~ dunif(0,25) ##the cap speed sigma 
+
+## Synthesize data from the distribution
+x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
+x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
+
+} "
+
+
 strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeedVsUndershoot_Valid.pdf"
 strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter_Valid.pdf"
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
@@ -77,49 +130,52 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 5000
-str_vars <- c("mu","rho","sigma","x_rand")
+steps <- 500
+#str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
+str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS") #Mixture Model
 ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datTurnVsStrikeSpeed_NL,N=NROW(datTurnVsStrikeSpeed_NL)) ##Not fed
 ldata_DF <- list(c=datTurnVsStrikeSpeed_DL,N=NROW(datTurnVsStrikeSpeed_DL)) ##Dry fed
 ldata_ALL <- list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
 
 
-jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_LF, 
+jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_LF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_LF, 500)
+update(jags_model_LF, 300)
 draw_LF=jags.samples(jags_model_LF,steps,thin=2,variable.names=str_vars)
 
 ## Not Fed
-jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_NF, 
+jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_NF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_NF)
+update(jags_model_NF,300)
 draw_NF=jags.samples(jags_model_NF,steps,thin=2,variable.names=str_vars)
 
 ## Dry  Fed
-jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_DF, 
+jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_DF, 
                          n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_DF, 500)
+update(jags_model_DF, 300)
 draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
 
 ## ALL  groups
-jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot), data = ldata_ALL, 
+jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
                             n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_ALL, 500)
+update(jags_model_ALL, 300)
 draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###
-nContours <- 5
-zLL <- kde2d(c(tail(draw_LF$mu[1,,1],ntail)), c(tail(draw_LF$mu[2,,1],ntail)),n=80)
-zNL <- kde2d(c(tail(draw_NF$mu[1,,1],ntail)), c(tail(draw_NF$mu[2,,1],ntail)),n=80)
-zDL <- kde2d(c(tail(draw_DF$mu[1,,1],ntail)), c(tail(draw_DF$mu[2,,1],ntail)),n=80)
-zALL <- kde2d(c(tail(draw_ALL$mu[1,,1],ntail)), c(tail(draw_ALL$mu[2,,1],ntail)),n=80)
+nContours <- 3
+ntail <-400
+
+
+zLL <- kde2d(c(tail(draw_LF$mu[,1,,1],ntail)), c(tail(draw_LF$mu[,2,,1],ntail)),n=80)
+zNL <- kde2d(c(tail(draw_NF$mu[,1,,1],ntail)), c(tail(draw_NF$mu[,2,,1],ntail)),n=80)
+zDL <- kde2d(c(tail(draw_DF$mu[,1,,1],ntail)), c(tail(draw_DF$mu[,2,,1],ntail)),n=80)
+zALL <- kde2d(c(tail(draw_ALL$mu[,1,,1],ntail)), c(tail(draw_ALL$mu[,2,,1],ntail)),n=80)
 
 
 ## Check out the covar coeffient , compare estimated densities
 pBw   <- 0.1
-ntail <-1000
 
 
 dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
@@ -130,9 +186,9 @@ dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
  
 ##Get the synthesized data:
 
-plot(tail(draw_NF$x_rand[1,,1],ntail ),tail(draw_NF$x_rand[2,,1],ntail ),col=colourH[1])
-points(tail(draw_LF$x_rand[1,,1],ntail ),tail(draw_LF$x_rand[2,,1],ntail ),col=colourH[2])
-points(tail(draw_DF$x_rand[1,,1],ntail ),tail(draw_DF$x_rand[2,,1],ntail ),col=colourH[3])
+#plot(tail(draw_NF$x_rand[1,,1],ntail ),tail(draw_NF$x_rand[2,,1],ntail ),col=colourH[1])
+#points(tail(draw_LF$x_rand[1,,1],ntail ),tail(draw_LF$x_rand[2,,1],ntail ),col=colourH[2])
+#points(tail(draw_DF$x_rand[1,,1],ntail ),tail(draw_DF$x_rand[2,,1],ntail ),col=colourH[3])
 
 ####################################
 ## PLot Model / Means and covariance ##
@@ -150,14 +206,20 @@ layout(matrix(c(1,2),1,2, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
 
+
 ## Plot the mean of the 2D Models ##
-ntail <- 750
-plot(tail(draw_NF$mu[1,,1],ntail),tail(draw_NF$mu[2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,2),ylim=c(0,60),ylab=NA,xlab=NA )
-points(tail(draw_LF$mu[1,,1],ntail),tail(draw_LF$mu[2,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[1,,1],ntail),tail(draw_DF$mu[2,,1],ntail),col=colourH[3],pch=pchL[3])
-points(tail(draw_ALL$mu[1,,1],ntail),tail(draw_ALL$mu[2,,1],ntail),col=colourH[4],pch=pchL[1])
+ntail <- 600
+plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,60),ylab=NA,xlab=NA )
+points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,60),ylab=NA,xlab=NA )
+
+points(tail(draw_LF$mu[1,1,,1],ntail),tail(draw_LF$mu[1,2,,1],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
+
+points(tail(draw_DF$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[3],pch=pchL[3])
+points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
+
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
@@ -191,9 +253,14 @@ legend("topright",
 
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Capture speed to Undershoot Covariance ",rho) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
+
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 dev.off()
+
+## plot 
+##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )
+
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
 
