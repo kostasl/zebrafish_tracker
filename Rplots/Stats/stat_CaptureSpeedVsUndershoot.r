@@ -133,20 +133,20 @@ for  (g in 1:2)
   cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g]
   cov[g,2,2] <- sigma[g,2]*sigma[g,2]
   
-  ## Priors 
-  sigma[g,1] ~ dunif(0,0.1) ##undershoot prey - Keep it broad within the expected limits 
   
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
 ## Low Speed Captcha cluster
 mu[1,1] ~ dnorm(1,0.01) ##undershoot 
-mu[1,2] ~ dnorm(10,0.01) ##cap speed
-sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
+mu[1,2] ~ dnorm(10,0.1) ##cap speed
+sigma[1,2] ~ dunif(0,5) ##the low cap speed sigma 
+sigma[1,1] ~ dunif(0,0.11) ##undershoot prey - Keep it broader within the expected limits 
 
 ## High speed Capture Cluster
 mu[2,1] ~ dnorm(1,0.001) ##undershoot
 mu[2,2] ~ dnorm(30,0.0001) ##cap speed
 sigma[2,2] ~ dunif(0,25) ##the cap speed sigma 
+sigma[2,1] ~ dunif(0,0.11) ##undershoot prey - Keep it narrow within the expected limits 
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -211,13 +211,13 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
 
 ## ALL  groups
-jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
-                            n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_ALL, 300)
-draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
+#jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
+                            #n.adapt = 500, n.chains = 3, quiet = F)
+#update(jags_model_ALL, 300)
+#draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###
-nContours <- 3
+nContours <- 4
 ntail <-400
 
 
@@ -229,14 +229,13 @@ zALL <- kde2d(c(tail(draw_ALL$mu[,1,,1],ntail)), c(tail(draw_ALL$mu[,2,,1],ntail
 
 ## Check out the covar coeffient , compare estimated densities
 pBw   <- 0.1
-
-
-dLLb_rho<-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
-dNLb_rho<-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
-dDLb_rho<-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=pBw)
+## Strike Cluster Only (Fast speed)
+dLLb_rho<-density(tail(draw_LF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
+dNLb_rho<-density(tail(draw_NF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
+dDLb_rho<-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
 dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
- 
+
 ##Get the synthesized data:
 
 #plot(tail(draw_NF$x_rand[1,,1],ntail ),tail(draw_NF$x_rand[2,,1],ntail ),col=colourH[1])
@@ -261,7 +260,7 @@ par(mar = c(3.9,4.3,1,1))
 
 
 ## Plot the mean of the 2D Models ##
-ntail <- 600
+#ntail <- 600
 plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,60),ylab=NA,xlab=NA )
 points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,60),ylab=NA,xlab=NA )
 
@@ -270,6 +269,10 @@ points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH
 
 points(tail(draw_DF$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[3],pch=pchL[3])
 points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
+
+#points(tail(draw_ALL$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[4],pch=pchL[4])
+#points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
+
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 
@@ -277,16 +280,58 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 
 legend("topleft",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )  , #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-                  bquote(All ~ '#' ~ .(ldata_ALL$N)  ) ),
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+                  ),
        pch=pchL, col=colourLegL)
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
+### Show Cluster Membership
+plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
+lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
+lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
+#lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
+
+legend("topright",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                  #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
+                  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3,4),lwd=3)
+
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
+
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
+dev.off()
+
+### Show Speed Fit ###
+pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+
+plotCaptureSpeedFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
+plotCaptureSpeedFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
+plotCaptureSpeedFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
+
+dev.off()
+
+plotUndeshootClusterFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
+plotUndeshootClusterFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
+
+plotUndeshootClusterFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
+## plot 
+##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )
+
+###Show covariance ##
 
 ## Plot the covariance ##
 plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
@@ -296,36 +341,6 @@ lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
 lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
 
-legend("topright",
-       legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  ),
-                  bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3,4),lwd=3)
-
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Capture speed to Undershoot Covariance ",rho) ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
-
-mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-
-dev.off()
-
-### Show Speed Fit ###
-
-
-pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
-layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-
-plotCaptureSpeedFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
-plotCaptureSpeedFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
-plotCaptureSpeedFit(datTurnVsStrikeSpeed_LL,draw_DF,3)
-
-dev.off()
-
-plotUndeshootClusterFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
-## plot 
-##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )
 
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
