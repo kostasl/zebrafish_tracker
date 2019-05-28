@@ -137,6 +137,7 @@ for  (g in 1:2)
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
 ## Low Speed Captcha cluster
+
 mu[1,1] ~ dnorm(1,0.01) ##undershoot 
 mu[1,2] ~ dnorm(10,0.1) ##cap speed
 sigma[1,2] ~ dunif(0,5) ##the low cap speed sigma 
@@ -395,6 +396,31 @@ legend("topright",
 
 dev.off()
 
+############## Capture Speed Fit Density 
 
+#layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+xquant <- seq(0,70,1)
+XLIM <- c(0,60)
+YLIM <- c(0,0.08)
+pdistBW <- 2 ## mm/sec
+strKern <- "gaussian"
+ntail <- NROW(draw_NF$mu[1,2,,1])*0.10
+
+plot(density(datTurnVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Capture Speed on capture strike")
+for (i in 1:(ntail-1) )
+{
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,2,ntail-i,1],1),sd=tail(draw_NF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[1],lty=1 )
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,ntail-i,1],1),sd=tail(draw_NF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[1],lty=2 )
+}
+
+xuquant <- seq(0,2,0.02)
+plot(density(datTurnVsStrikeSpeed_NL$Undershoot,bw=0.1,kernel=strKern),col="black",lwd=4,xlim=c(0,2),ylim=c(0,5) ,main="Undershoot clusters")
+for (i in 1:(ntail-1) )
+{
+  lines(xuquant,dnorm(xuquant,mean=tail(draw_NF$mu[1,1,ntail-i,1],1),sd=tail(draw_NF$sigma[1,1,ntail-i,1],1)),type='l',col=colourH[1],lty=1 )
+  lines(xuquant,dnorm(xuquant,mean=tail(draw_NF$mu[2,1,ntail-i,1],1),sd=tail(draw_NF$sigma[2,1,ntail-i,1],1)),type='l',col=colourH[1],lty=2 )
+  #lines(xuquant,dnorm(xuquant,mean=tail(draw_NF$mu[2,1,ntail-i,1],1),sd=tail(draw_NF$sigma[,1,ntail-i,1],1)),type='l',col=colourH[1],lty=1,lwd=3 )
+  
+}
 
 
