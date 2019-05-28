@@ -80,8 +80,6 @@ for  (g in 1:2)
   cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g]
   cov[g,2,2] <- sigma[g,2]*sigma[g,2]
   
-  ## Priors 
-  sigma[g,1] ~ dunif(0,0.1) ##undershoot prey - Keep it broad within the expected limits 
   
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
@@ -89,11 +87,14 @@ for  (g in 1:2)
 mu[1,1] ~ dnorm(1,0.001) ##undershoot 
 mu[1,2] ~ dnorm(10,0.01) ##cap speed
 sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
+sigma[1,1] ~ dunif(0,0.05) ##undershoot prey - Keep it broad within the expected limits 
+
 
 ## High speed Capture Cluster
 mu[2,1] ~ dnorm(1,0.001) ##undershoot
 mu[2,2] ~ dnorm(30,0.0001) ##cap speed
 sigma[2,2] ~ dunif(0,25) ##the cap speed sigma 
+sigma[2,1] ~ dunif(0,0.05) ##undershoot prey - Keep it broad within the expected limits 
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -314,6 +315,31 @@ legend("topright",
 
 dev.off()
 
+############## Capture Speed Fit Density 
 
+#layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+xquant <- seq(0,70,1)
+XLIM <- c(0,60)
+YLIM <- c(0,0.08)
+pdistBW <- 2 ## mm/sec
+strKern <- "gaussian"
+ntail <- NROW(draw_NF$mu[1,2,,1])*0.10
+
+plot(density(datTurnVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Capture Speed on capture strike")
+for (i in 1:(ntail-1) )
+{
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,2,ntail-i,1],1),sd=tail(draw_NF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[1],lty=1 )
+  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,ntail-i,1],1),sd=tail(draw_NF$sigma[2,2,ntail-i,1],1)),type='l',col=colourH[1],lty=2 )
+}
+
+xuquant <- seq(0,2,0.02)
+plot(density(datTurnVsStrikeSpeed_NL$Undershoot,bw=0.1,kernel=strKern),col="black",lwd=4,xlim=c(0,2),ylim=c(0,5) ,main="Undershoot clusters")
+for (i in 1:(ntail-1) )
+{
+  lines(xuquant,dnorm(xuquant,mean=tail(draw_NF$mu[1,1,ntail-i,1],1),sd=tail(draw_NF$sigma[1,1,ntail-i,1],1)),type='l',col=colourH[1],lty=1 )
+  lines(xuquant,dnorm(xuquant,mean=tail(draw_NF$mu[2,1,ntail-i,1],1),sd=tail(draw_NF$sigma[2,1,ntail-i,1],1)),type='l',col=colourH[1],lty=2 )
+  #lines(xuquant,dnorm(xuquant,mean=tail(draw_NF$mu[2,1,ntail-i,1],1),sd=tail(draw_NF$sigma[,1,ntail-i,1],1)),type='l',col=colourH[1],lty=1,lwd=3 )
+  
+}
 
 
