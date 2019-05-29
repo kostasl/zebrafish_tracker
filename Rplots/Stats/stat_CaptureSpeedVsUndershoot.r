@@ -155,8 +155,8 @@ for  (g in 1:2)
 ## Low Speed Captcha cluster
 
 mu[1,1] ~ dnorm(1,0.000001) ##undershoot 
-mu[1,2] ~ dnorm(10,0.1) ##cap speed
-sigma[1,2] ~ dunif(0,5) ##the low cap speed sigma 
+mu[1,2] ~ dnorm(8,0.1) ##cap speed
+sigma[1,2] ~ dunif(0,2) ##the low cap speed sigma 
 sigma[1,1] ~ dunif(0,0.1) ##undershoot prey - Keep it broader within the expected limits 
 
 ## High speed Capture Cluster
