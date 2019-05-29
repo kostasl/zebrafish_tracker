@@ -78,13 +78,13 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx)
 initfunct <- function(nchains,N)
 {
   initlist <- replicate(nchains,list(mID=c(rbinom(N,1,0.5)), ##Base Line Vergence Prior to HuntOn
-                                     sigma = matrix(c (  c(runif(1,min=0,max=0.1),runif(1,min=0,max=2)),
-                                                         c(runif(1,min=0,max=0.1),runif(1,min=0,max=15))  ),nrow=2,byrow=T  ),
+#                                     sigma = matrix(c (  c(runif(1,min=0,max=0.1),runif(1,min=0,max=2)),
+#s                                                         c(runif(1,min=0,max=0.1),runif(1,min=0,max=15))  ),nrow=2,byrow=T  ),
 #                                     mu  = matrix(c (  c( rnorm(1,mean=1,sd=sqrt(1/10) ), rnorm(1,mean=8,sd=sqrt(1/2) ) ),
 #                                                        c( rnorm(1,mean=1, sd=sqrt(1/10) ) , rnorm(1,mean=30, sd=sqrt(1/0.1) )    ) )
 #                                                     ,nrow=2,byrow = T  ),
                                      ".RNG.name"="base::Super-Duper",
-                                     ".RNG.seed"=round(runif(1,0,20000)) ),
+                                     ".RNG.seed"=round(runif(1,0,60000)) ),
                                      simplify=FALSE)
   return(initlist)
 }
@@ -156,13 +156,13 @@ for  (g in 1:2)
 mu[1,1] ~ dnorm(1,0.000001)T(0,2) ##undershoot 
 mu[1,2] ~ dnorm(8,0.1)T(0,) ##cap speed
 sigma[1,2] ~ dunif(0,2) ##the low cap speed sigma 
-sigma[1,1] ~ dunif(0,0.1) ##undershoot prey - Keep it broader within the expected limits 
+sigma[1,1] ~ dunif(0,0.15) ##undershoot prey - Keep it broader within the expected limits 
 
 ## High speed Capture Cluster
 mu[2,1] ~ dnorm(1,0.000001)T(0,2) ##undershoot
 mu[2,2] ~ dnorm(30,0.0001)T(0,) ##cap speed
-sigma[2,2] ~ dunif(0,15) ##the cap speed sigma 
-sigma[2,1] ~ dunif(0,0.1) ##undershoot prey - Keep it narrow within the expected limits 
+sigma[2,2] ~ dunif(0,13) ##the cap speed sigma 
+sigma[2,1] ~ dunif(0,0.15) ##undershoot prey - Keep it narrow within the expected limits 
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -201,7 +201,7 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 2500
+steps <- 500000
 nchains <- 5
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
 str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS") #Mixture Model
