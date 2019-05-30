@@ -158,13 +158,13 @@ for  (g in 1:2)
 mu[1,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot 
 mu[1,2] ~ dnorm(8,0.1)T(0,) ##cap speed
 sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
-sigma[1,1] ~ dunif(0,0.15) ##Overshoot prey - Keep it broader within the expected limits
+sigma[1,1] ~ dunif(0,0.25) ##Overshoot prey - Keep it broader within the expected limits
 
 ## High speed Capture Cluster
 mu[2,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot
-mu[2,2] ~ dnorm(30,0.0001)T(0,) ##cap speed
+mu[2,2] ~ dnorm(30,0.1)T(mu[1,2],) ##cap speed
 sigma[2,2] ~ dunif(0,13) ##the cap speed sigma 
-sigma[2,1] ~ dunif(0,0.15) ##undershoot prey - Keep it narrow within the expected limits
+sigma[2,1] ~ dunif(0,0.25) ##undershoot prey - Keep it narrow within the expected limits
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -202,9 +202,9 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 100000
+steps <- 2000
 nchains <- 5
-nthin <- 5
+nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
 str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS") #Mixture Model
 ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
@@ -259,7 +259,7 @@ dDLb_rho<-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
 
 
 ###Check COnv
-draw <- draw_NF
+draw <- draw_DF
 plot(draw$mu[1,1,,1],type='l',ylim=c(0,2),col=rfc(nchains)[1] )
 lines(draw$mu[1,1,,2],type='l',ylim=c(0,2),col=rfc(nchains)[2] )
 lines(draw$mu[1,1,,3],type='l',ylim=c(0,2),col=rfc(nchains)[3] )

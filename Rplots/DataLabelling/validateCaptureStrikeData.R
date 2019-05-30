@@ -168,6 +168,7 @@ saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackA
 
 
 stop("Done Labelling")
+#### Recalculations Of Bout And 1st Turn To Prey Data ####
 ### Recalc derived bout data / capture speed and angle to prey ###
 ##datHuntEventMergedFrames
 load(file=paste(strDataExportDir,"datAllHuntEventAnalysisFrames_setC.RData",sep=""))
@@ -202,7 +203,7 @@ for (idx in idxRegValidated )
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
   vEventSpeed_smooth_mm <- vFs*vEventSpeed_smooth*DIM_MMPERPX
   
-  vDistToPrey          <- sqrt( (datPlaybackHuntEvent$posX -datMotionBouts$vd_PreyX  )^2 + (datPlaybackHuntEvent$Prey_Y - datMotionBouts$vd_PreyY)^2   )
+  vDistToPrey          <- sqrt( (datPlaybackHuntEvent$posX -datMotionBouts$vd_PreyX  )^2 + (datPlaybackHuntEvent$posY - datMotionBouts$vd_PreyY)^2   )
   idxTouchDown         <- which(vDistToPrey == min(vDistToPrey,na.rm=T) ) ##Find frame where larva closest to prey - assume this is the capture frame
 
     ## Get peak Capture Speed within capture bout ##
@@ -231,7 +232,8 @@ for (idx in idxRegValidated )
     
     oldDist <- datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm     
     datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm <- vDistToPrey[datMotionBouts$vMotionBout_On]*DIM_MMPERPX
-    
+    if (is.na(datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm))
+      stop("NA Dist")
     
     print( paste(idxBout,"speed",oldVal,"->",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm,
                 "Prey Angle: ",oldValAngle,"->",datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey,
@@ -281,3 +283,11 @@ for (gp in strGroupID)
 
 ##Save List on First Bout Data
 saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="") ) #Processed Registry on which we add )
+
+
+#### Plot Angles to Prey 
+
+vDistToPrey <- datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank == 1 & 
+                                          datMotionBoutsToValidate$groupID == 3,]$vMotionBoutDistanceToPrey_mm
+
+
