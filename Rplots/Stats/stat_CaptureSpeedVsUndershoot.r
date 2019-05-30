@@ -33,7 +33,7 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   ntail <- NROW(drawMCMC$mu[1,2,,nchain])*0.10
   
   
-  plot(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Capture Speed on capture strike")
+  plot(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
   for (i in 1:(ntail-1) )
   {
     lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=1 )
@@ -41,10 +41,11 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   }
   
   lines(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
-  legend("topright",title="NF",
+  legend("topright",title="",
          legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
-                   paste("model " ) ),
-         col=c("black",colourH[3]),lwd=c(3,1) ) 
+                   paste("Model low speed " ),
+                   paste("Model high speed " )),
+         col=c("black",colourLegL [3]),lwd=c(3,1,1),lty=c(1,1,2) ) 
   
 }
 
@@ -59,7 +60,7 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
   strKern <- "gaussian"
   ntail <- NROW(drawMCMC$mu[1,1,,1])*0.10
   
-  plot(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Undershoot On 1st turn to prey")
+  plot(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
   for (i in 1:(ntail-1) )
   {
     lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,1],nchain),sd=tail(drawMCMC$sigma[1,1,ntail-i,1],nchain)),type='l',col=colourH[colourIdx],lty=1 )
@@ -69,8 +70,9 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
   lines(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
   legend("topright",title="",
          legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
-                   paste("model " ) ),
-         col=c("black",colourH[3]),lwd=c(3,1) ) 
+                   paste("Model low speed " ),
+                   paste("Model high speed " )),
+         col=c("black",colourLegL [3]),lwd=c(3,1,1),lty=c(1,1,2) ) 
   
 }
 
@@ -156,13 +158,13 @@ for  (g in 1:2)
 mu[1,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot 
 mu[1,2] ~ dnorm(8,0.1)T(0,) ##cap speed
 sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
-sigma[1,1] ~ dunif(0,0.20) ##undershoot prey - Keep it broader within the expected limits 
+sigma[1,1] ~ dunif(0,0.15) ##Overshoot prey - Keep it broader within the expected limits
 
 ## High speed Capture Cluster
 mu[2,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot
 mu[2,2] ~ dnorm(30,0.0001)T(0,) ##cap speed
 sigma[2,2] ~ dunif(0,13) ##the cap speed sigma 
-sigma[2,1] ~ dunif(0,0.20) ##undershoot prey - Keep it narrow within the expected limits 
+sigma[2,1] ~ dunif(0,0.15) ##undershoot prey - Keep it narrow within the expected limits
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -200,7 +202,7 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 10000
+steps <- 100000
 nchains <- 5
 nthin <- 5
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -237,7 +239,7 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
 
 ### Estimate  densities  ###
 nContours <- 6
-ntail <- NROW(draw_NF$mu[1,1,,1])*0.50
+ntail <- NROW(draw_NF$mu[1,1,,1])*0.20
 
 
 
@@ -257,7 +259,7 @@ dDLb_rho<-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
 
 
 ###Check COnv
-draw <- draw_DF
+draw <- draw_NF
 plot(draw$mu[1,1,,1],type='l',ylim=c(0,2),col=rfc(nchains)[1] )
 lines(draw$mu[1,1,,2],type='l',ylim=c(0,2),col=rfc(nchains)[2] )
 lines(draw$mu[1,1,,3],type='l',ylim=c(0,2),col=rfc(nchains)[3] )
@@ -289,8 +291,8 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ##Collect Draws from all chains
-plot(tail(draw_NF$mu[1,1,,],ntail),tail(draw_NF$mu[1,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,60),ylab=NA,xlab=NA )
-points(tail(draw_NF$mu[2,1,,],ntail),tail(draw_NF$mu[2,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,60),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[1,1,,],ntail),tail(draw_NF$mu[1,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,50),ylab=NA,xlab=NA )
+points(tail(draw_NF$mu[2,1,,],ntail),tail(draw_NF$mu[2,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,50),ylab=NA,xlab=NA )
 
 points(tail(draw_LF$mu[1,1,,],ntail),tail(draw_LF$mu[1,2,,],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_LF$mu[2,1,,],ntail),tail(draw_LF$mu[2,2,,],ntail),col=colourH[2],pch=pchL[2])
@@ -347,6 +349,7 @@ pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 npchain<-3
 plotCaptureSpeedFit(datTurnVsStrikeSpeed_NL,draw_NF,1,npchain)
+title(main="Model capture Speed")
 plotCaptureSpeedFit(datTurnVsStrikeSpeed_LL,draw_LF,2,npchain)
 plotCaptureSpeedFit(datTurnVsStrikeSpeed_DL,draw_DF,3,npchain)
 
@@ -355,8 +358,10 @@ dev.off()
 pdf(file= paste(strPlotExportPath,strUndershootDensityPDFFileName ,sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
+title(main="Model undershoot on 1st turn to prey")
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
+
 dev.off()
 ## plot 
 ##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )

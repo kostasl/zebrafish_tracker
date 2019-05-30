@@ -484,7 +484,7 @@ calcRelativeAngleToPrey <- function(datRenderHuntEvent)
   vTrackedPreyIDs <- unique(datRenderHuntEvent$PreyID)
   
   
-  Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
+  #Range <- ((max(datRenderHuntEvent[!is.na(datRenderHuntEvent$PreyID),]$frameN) - min(datRenderHuntEvent$frameN) ) / G_APPROXFPS)+1
   relAngle <- list()
   
   n <- 0

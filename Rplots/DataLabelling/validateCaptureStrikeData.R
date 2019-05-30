@@ -202,35 +202,42 @@ for (idx in idxRegValidated )
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
   vEventSpeed_smooth_mm <- vFs*vEventSpeed_smooth*DIM_MMPERPX
   
-  ## Get peak Capture Speed within capture bout ##
+  vDistToPrey          <- sqrt( (datPlaybackHuntEvent$posX -datMotionBouts$vd_PreyX  )^2 + (datPlaybackHuntEvent$Prey_Y - datMotionBouts$vd_PreyY)^2   )
+  idxTouchDown         <- which(vDistToPrey == min(vDistToPrey,na.rm=T) ) ##Find frame where larva closest to prey - assume this is the capture frame
+
+    ## Get peak Capture Speed within capture bout ##
   for (idxBout in row.names(datMotionBouts) )
   {
     oldVal <- datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm
-    frameRangeCapt <- (datMotionBoutsToValidate[idxBout,]$vMotionBout_On:   min(datMotionBoutsToValidate[idxBout,]$vMotionBout_Off, datMotionBoutsToValidate[idxBout,]$vMotionBout_On+50 ) )
+    frameRangeCapt <- (datMotionBoutsToValidate[idxBout,]$vMotionBout_On:   min(datMotionBoutsToValidate[idxBout,]$vMotionBout_Off,
+                                                                                idxTouchDown+50 ) ) ##A little after point where Larva Touches prey
     ## Speed over then next 70 frames ##
     datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[],na.rm=TRUE)
     stopifnot(is.numeric(datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm) | is.infinite((datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm)))
-    print(paste(idxBout,"speed",oldVal," new:",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm))
+    
+  
+    datPlaybackHuntEvent[datMotionBouts$vMotionBout_On:datMotionBouts$vMotionBout_Off, ]$PreyID <- 1
+    datPlaybackHuntEvent[datMotionBouts$vMotionBout_On:datMotionBouts$vMotionBout_Off, ]$Prey_X <- datMotionBouts$vd_PreyX  
+    datPlaybackHuntEvent[datMotionBouts$vMotionBout_On:datMotionBouts$vMotionBout_Off, ]$Prey_Y <- datMotionBouts$vd_PreyY
+    
+    ##Calc relative to body axis angle
+    relAngle <- ( ( 180 +  180/pi * atan2(datPlaybackHuntEvent$Prey_X -datPlaybackHuntEvent$posX,datPlaybackHuntEvent$posY - datPlaybackHuntEvent$Prey_Y)) -datPlaybackHuntEvent$BodyAngle    ) %% 360 - 180
+    
+    ##Set Them Back in The Bout INfo
+    oldValAngle <- datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey
+    datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey  <- relAngle[datMotionBouts$vMotionBout_On]
+    datMotionBoutsToValidate[idxBout,]$OffSetAngleToPrey <- relAngle[datMotionBouts$vMotionBout_Off]
+    
+    
+    oldDist <- datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm     
+    datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm <- vDistToPrey[datMotionBouts$vMotionBout_On]*DIM_MMPERPX
+    
+    
+    print( paste(idxBout,"speed",oldVal,"->",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm,
+                "Prey Angle: ",oldValAngle,"->",datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey,
+                "Prey Dist: ",oldDist,"->",datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm) )
+    
   }
-  ## Get Angle To Prey at onset and offset 
-  ## Set Update Prey Position At respective Bout Frame - Or Around that region of frames
-  #datPlaybackHuntEvent
-  ##Get Angle to Prey 
-  #lAngleToPrey <- calcRelativeAngleToPrey(datRenderHuntEvent)
-  #vAngleToPrey <- data.frame(lAngleToPrey[as.character(selectedPreyID)])
-  #names(vAngleToPrey) = c("frameN","AngleToPrey")
-  ##Also Found   
-  #polarCoord <- calcPreyAzimuth(datRenderPrey)[[n]]
-  
-  ##For Distance Use Estimated MouthPOint
-  #d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
-  #d <- polarCoord[,"distPX"]
-  #x <- (d)*cos(2*pi-pi/180 * polarCoord[,"azimuth"] + pi/2)
-  #y <- (d)*sin(2*pi-pi/180 * polarCoord[,"azimuth"] + pi/2)
-  
-  
-  
-  ##Update datMotionBoutsToValidate
   
   ## Do Next Validated rec ##
 }
