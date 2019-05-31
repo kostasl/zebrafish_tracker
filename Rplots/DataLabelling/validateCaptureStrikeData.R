@@ -221,17 +221,29 @@ for (idx in idxRegValidated )
     datPlaybackHuntEvent[datMotionBouts$vMotionBout_On:datMotionBouts$vMotionBout_Off, ]$Prey_X <- datMotionBouts$vd_PreyX  
     datPlaybackHuntEvent[datMotionBouts$vMotionBout_On:datMotionBouts$vMotionBout_Off, ]$Prey_Y <- datMotionBouts$vd_PreyY
     
-    ##Calc relative to body axis angle
-    relAngle <- ( ( 180 +  180/pi * atan2(datPlaybackHuntEvent$Prey_X -datPlaybackHuntEvent$posX,datPlaybackHuntEvent$posY - datPlaybackHuntEvent$Prey_Y)) -datPlaybackHuntEvent$BodyAngle    ) %% 360 - 180
+    ##Calc relative angle of mouth to Prey , and normalize to Vertical axis by removing the  body axis angle
+    bodyAngle <- datPlaybackHuntEvent[datMotionBouts$vMotionBout_On,]$BodyAngle 
+
+    #relAngle <- ( ( 180 +  180/pi * atan2(datMotionBouts$vd_PreyX - datMotionBouts$vd_MouthX,datMotionBouts$vd_MouthY - datMotionBouts$vd_PreyY  )) - bodyAngle    ) %% 360 - 180
+    relAngle <-  180/pi * atan2(datMotionBouts$vd_PreyX - datMotionBouts$vd_MouthX, datMotionBouts$vd_PreyY-datMotionBouts$vd_MouthY  ) 
+    if (relAngle < 0) ##Convert atan2 angle to 360 circle
+      relAngle = relAngle + 360
+    
+    ##Now Get relative Angle to larva body orientation (also measured in 360 to vertical axis)    
+    relAngle <- relAngle  - bodyAngle
+    if (abs(relAngle) > 90 )
+      warning("Angle to prey over 90 degrees")
     
     ##Set Them Back in The Bout INfo
     oldValAngle <- datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey
-    datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey  <- relAngle[datMotionBouts$vMotionBout_On]
-    datMotionBoutsToValidate[idxBout,]$OffSetAngleToPrey <- relAngle[datMotionBouts$vMotionBout_Off]
+    datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey  <- relAngle
+    
+    datMotionBoutsToValidate[idxBout,]$OffSetAngleToPrey <- NA # relAngle[datMotionBouts$vMotionBout_Off]
     
     
     oldDist <- datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm     
-    datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm <- vDistToPrey[datMotionBouts$vMotionBout_On]*DIM_MMPERPX
+    ##Calc Distance From Mouth
+    datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm <-  DIM_MMPERPX*(sqrt((datMotionBoutsToValidate[idxBout,]$vd_PreyX-datMotionBoutsToValidate[idxBout,]$vd_MouthX )^2+(datMotionBoutsToValidate[idxBout,]$vd_PreyY-datMotionBoutsToValidate[idxBout,]$vd_MouthY)^2 ))
     if (is.na(datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm))
       stop("NA Dist")
     
@@ -244,6 +256,26 @@ for (idx in idxRegValidated )
   ## Do Next Validated rec ##
 }
 
+##Make relative to y axis instead of x - and convert to clockwise counting
+xAngle <-  180/pi * atan2(datMotionBouts$vd_PreyX - datMotionBouts$vd_MouthX, datMotionBouts$vd_PreyY-datMotionBouts$vd_MouthY  ) 
+
+
+##Make atan2 angle go around 360 circle so we can compare to body angle
+relAngle <- (360+xAngle) - bodyAngle
+
+x <- (10)*cos(2*pi-pi/180 * bodyAngle + pi/2) + datMotionBouts$vd_MouthX
+y <- (10)*sin(2*pi-pi/180 * bodyAngle + pi/2) + datMotionBouts$vd_MouthY
+
+xp <- (10)*cos(2*pi-pi/180 * xAngle + pi/2) + datMotionBouts$vd_MouthX
+yp <- (10)*sin(2*pi-pi/180 * xAngle + pi/2) + datMotionBouts$vd_MouthY
+
+plot(datMotionBouts$vd_PreyX,datMotionBouts$vd_PreyY,xlim=c(datMotionBouts$vd_MouthX-50,datMotionBouts$vd_MouthX+50))
+points(datMotionBouts$vd_MouthX,datMotionBouts$vd_MouthY,col="blue",pch=16)
+segments(datMotionBouts$vd_MouthX,datMotionBouts$vd_MouthY,x,y,cex=1, main="",col="red")
+segments(datMotionBouts$vd_MouthX,datMotionBouts$vd_MouthY,xp,yp,cex=1, main="",col="magenta")
+
+##Update Saved Data
+saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
 
 ## Recalc First Bout Data based on Validated Info ###
 strGroupID <- levels(datTrackedEventsRegister$groupID)
@@ -283,11 +315,3 @@ for (gp in strGroupID)
 
 ##Save List on First Bout Data
 saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="") ) #Processed Registry on which we add )
-
-
-#### Plot Angles to Prey 
-
-vDistToPrey <- datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank == 1 & 
-                                          datMotionBoutsToValidate$groupID == 3,]$vMotionBoutDistanceToPrey_mm
-
-

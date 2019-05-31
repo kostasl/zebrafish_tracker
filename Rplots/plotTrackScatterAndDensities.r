@@ -528,6 +528,7 @@ calcPreyAzimuth <- function(datRenderHuntEvent)
     posVY = datRenderPrey$posY + sin(bearingRad)*DIM_DISTTOMOUTH_PX
     ##For Rel Angle Use Bladder Centroid So As to minimize angle error
     
+    
     ##For Distance Use Estimated MouthPOint
     d <- sqrt(  (datRenderPrey$Prey_X -posVX )^2 + (datRenderPrey$Prey_Y - posVY)^2   ) 
     relAngle[[n]]  <- cbind(preyID=f,
@@ -694,6 +695,27 @@ polarPlotAngleToPreyVsDistance <- function(datRenderHuntEvent,newPlot=TRUE)
   
   return(relAngle)
 } ## End of PlotAngleToPreyVsDistance 
+
+
+## Plot Prey Position prior to Capture Based on the validated Capture Bout Data 
+#### Plot Angles to Prey 
+getCaptureBoutPreyPosition <- function (datMotionBoutsToValidate,groupID)
+{
+  vDistToPrey <- datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank == 1 & 
+                                            datMotionBoutsToValidate$groupID == groupID,]$vMotionBoutDistanceToPrey_mm
+  vAngleToPrey <- datMotionBoutsToValidate[datMotionBoutsToValidate$boutRank == 1 & 
+                                             datMotionBoutsToValidate$groupID == groupID,]$OnSetAngleToPrey
+  
+  preyY <- vDistToPrey*cos(vAngleToPrey*pi/180)
+  preyX <- vDistToPrey*sin(vAngleToPrey*pi/180)
+  
+  #x <- (d)*cos(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
+  #y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
+  
+  
+  return (data.frame( cbind(preyX,preyY,vAngleToPrey,vDistToPrey)) )
+}
+
 
 ############# PLot Heat Map of Movement Trajectories Across COnditions #####
 # strTrajectoryDensityFileName <- paste("plots/densities/MotionDensity-Set-",strCond,".pdf",collapse=NULL);

@@ -58,13 +58,13 @@ for  (g in 1:2)
 }
   ## Low Speed Captcha cluster
   mu[1,1] ~ dnorm(0,0.01) ##Distance prey
-  mu[1,2] ~ dnorm(10,0.01) ##cap speed
-  sigma[1,2] ~ dunif(0,3) ##the low cap speed sigma 
+  mu[1,2] ~ dnorm(8,0.01) ##cap speed
+  sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
 
   ## High speed Capture Cluster
   mu[2,1] ~ dnorm(0.5,0.01) ##Distance prey
   mu[2,2] ~ dnorm(30,0.0001) ##cap speed
-  sigma[2,2] ~ dunif(0,25) ##the cap speed sigma 
+  sigma[2,2] ~ dunif(0,13) ##the cap speed sigma 
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -527,3 +527,24 @@ mtext(side = 1,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
 
 dev.off()
 embed_fonts(strCaptSpeedDensityPDFFileName)
+
+
+
+#### Plot Prey Location  ###########
+## The Original list if the lFirstBout data from runHuntepisode analysis
+source("plotTrackScatterAndDensities.r")
+datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
+
+preyCapPos_LF <- (getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "LL")))
+preyCapPos_DF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "DL"))
+preyCapPos_NF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "NL"))
+
+##Typical Fish Length in px is 80 (NF)
+##Typical Eye Verged Head Width (widest point) 17px
+##Bladded Width =9px
+plot(preyCapPos_NF$preyX ,preyCapPos_NF$preyY,col=colourH[1],pch=pchL[1],ylim=c(-DIM_MMPERPX*82,1.0),xlim=c(-5/2,5/2))
+points(preyCapPos_LF$preyX ,preyCapPos_LF$preyY,col=colourH[2],pch=pchL[2])
+points(preyCapPos_DF$preyX ,preyCapPos_DF$preyY,col=colourH[3],pch=pchL[3])
+##Draw Fish Bounding Rects representation
+rect(-DIM_MMPERPX*17/2,-DIM_MMPERPX*9/2,+DIM_MMPERPX*17/2,-DIM_MMPERPX*7/2 ) 
+rect(-DIM_MMPERPX*9/2,-DIM_MMPERPX*82,+DIM_MMPERPX*9/2,0 ) 

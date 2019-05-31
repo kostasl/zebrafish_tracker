@@ -158,13 +158,13 @@ for  (g in 1:2)
 mu[1,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot 
 mu[1,2] ~ dnorm(8,0.1)T(0,) ##cap speed
 sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
-sigma[1,1] ~ dunif(0,0.25) ##Overshoot prey - Keep it broader within the expected limits
+sigma[1,1] ~ dunif(0,0.20) ##Overshoot prey - Keep it broader within the expected limits
 
 ## High speed Capture Cluster
 mu[2,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot
 mu[2,2] ~ dnorm(30,0.1)T(mu[1,2],) ##cap speed
 sigma[2,2] ~ dunif(0,13) ##the cap speed sigma 
-sigma[2,1] ~ dunif(0,0.25) ##undershoot prey - Keep it narrow within the expected limits
+sigma[2,1] ~ dunif(0,0.20) ##undershoot prey - Keep it narrow within the expected limits
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -291,8 +291,8 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ##Collect Draws from all chains
-plot(tail(draw_NF$mu[1,1,,],ntail),tail(draw_NF$mu[1,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,50),ylab=NA,xlab=NA )
-points(tail(draw_NF$mu[2,1,,],ntail),tail(draw_NF$mu[2,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,2),ylim=c(10,50),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[1,1,,],ntail),tail(draw_NF$mu[1,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA )
+points(tail(draw_NF$mu[2,1,,],ntail),tail(draw_NF$mu[2,2,,],ntail),col=colourH[1],pch=pchL[1],ylab=NA,xlab=NA )
 
 points(tail(draw_LF$mu[1,1,,],ntail),tail(draw_LF$mu[1,2,,],ntail),col=colourH[2],pch=pchL[2])
 points(tail(draw_LF$mu[2,1,,],ntail),tail(draw_LF$mu[2,2,,],ntail),col=colourH[2],pch=pchL[2])
