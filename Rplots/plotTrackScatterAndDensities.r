@@ -716,6 +716,90 @@ getCaptureBoutPreyPosition <- function (datMotionBoutsToValidate,groupID)
   return (data.frame( cbind(preyX,preyY,vAngleToPrey,vDistToPrey)) )
 }
 
+## plot The Prey Locations Prior to Capture ##
+## The Radar Figure With the Prey Positions Prior To Capture
+plotCaptureBoutPreyPositions()
+{
+  datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
+  
+  preyCapPos_LF <- (getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "LL")))
+  preyCapPos_DF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "DL"))
+  preyCapPos_NF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "NL"))
+  
+  ##Typical Fish Length in px is 80 (NF)
+  ##Typical Eye Verged Head Width (widest point) 17px
+  ##Bladded Width =9px
+  
+  
+  Range <- 30 ##300 Pixels Around the prey
+  
+  #display.brewer.all() to see avaulable options
+  ##Choose Heat Map For white being Low (BG) Red High Vergence
+  Polarrfc <-  colorRampPalette((brewer.pal(9,'YlOrRd' ))); ##Color Bling Friendly Pallet
+  colR <- (c(Polarrfc(100 ))); ##Assume 80 Degrees Max EyeVergence
+  #colR["alpha",] <- 110 ##Opacity
+  
+  relAngle <- list()
+  
+  #txtW <- strwidth(parse(text=paste("270", "^o ", sep=""))) ##Override as it fails When In Layout Mode
+  txtW <- -0.1# strwidth(parse(text=paste("270", "^o ", sep="")))
+  fgColor <- "white"
+  if (newPlot)
+  {
+    plot(1,type='n',xlim=c(-(Range+4*txtW),(Range+4*txtW)) ,
+         ylim=c(-(Range+4*txtW),(Range+4*txtW) ),
+         main="Angle to Prey Vs Distance ",
+         xlab=NA,ylab=NA)
+    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = rgb(0,0,0.3,0.99))
+    
+    ## Make Range Circle Llines
+    lines(c(0,0),c(0,Range*0.85) ,col=fgColor,lty=2,lwd=1) #V Line To 0
+    txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/3
+    text((Range+txtW/2)*cos(pi/180 * seq(0,-270,-90) + pi/2),
+         (Range+txtW/2)*sin(pi/180 *seq(0,-270,-90) + pi/2),
+         labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col=fgColor,cex=0.8,font=1.5)
+    
+    points(0,0,cex=0.8,col="blue")
+    for (i in seq(0,Range,1/(2*DIM_MMPERPX) )  )
+    {
+      lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col=fgColor)
+      txtW <- strwidth(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
+      txtH <- strheight(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
+      ## Place the Distance Labels
+      text(i*cos(pi/180 * -90 ),i*sin(pi/180 * -90 )-txtH,labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="") ,
+           col=fgColor,cex=0.7,font=1.8)
+    }
+    
+    ##Plot Heat Map Legend
+    x <- Range/2+(1:Range/2) ##Make Narrow 1/2 length bar
+    points(x,rep(-70,NROW(x) ),pch=19,col=colR,cex=1.5)
+    text(x[1],-78,labels=expression("0"^degree),col=fgColor,font=2.2)  ##0 V Angle
+    txtW <- strwidth(parse(text=c(expression(),bquote( .(G_THRESHUNTVERGENCEANGLE)^degree))))/2 ##Text Width For Centre Aligment 
+    segments(x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-72,x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-68) ##V Indicator Of Hunting Threshold
+    text(x[1]+ G_THRESHUNTVERGENCEANGLE/2-txtW,-78,labels=c(expression(),bquote( .(G_THRESHUNTVERGENCEANGLE)^degree)),col=fgColor,font=2.0)  ##0 V Angle
+    
+    text(tail(x,1)-txtW,-78,labels=expression("80"^degree),col=fgColor,font=2.2)  ##0 V Angle
+  } ##If New Canvas 
+  
+  
+  
+  ## plot The Prey Locations Prior to Capture ## 
+    
+    #points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",
+    #       col=colR[EyeVergence]) ##Color Accourding To EyeVergence
+    
+  plot(preyCapPos_NF$preyX ,preyCapPos_NF$preyY,col=colourH[1],pch=pchL[1]) #xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) )
+  points(preyCapPos_LF$preyX ,preyCapPos_LF$preyY,col=colourH[2],pch=pchL[2])
+  points(preyCapPos_DF$preyX ,preyCapPos_DF$preyY,col=colourH[3],pch=pchL[3])
+  ##Draw Fish Bounding Rects representation
+  rect(-DIM_MMPERPX*17/2,-DIM_MMPERPX*9/2,+DIM_MMPERPX*17/2,-DIM_MMPERPX*7/2 ) 
+  rect(-DIM_MMPERPX*9/2,-DIM_MMPERPX*82,+DIM_MMPERPX*9/2,0 ) 
+  
+    
+
+  
+  
+}
 
 ############# PLot Heat Map of Movement Trajectories Across COnditions #####
 # strTrajectoryDensityFileName <- paste("plots/densities/MotionDensity-Set-",strCond,".pdf",collapse=NULL);

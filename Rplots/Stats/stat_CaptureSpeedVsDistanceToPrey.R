@@ -533,18 +533,4 @@ embed_fonts(strCaptSpeedDensityPDFFileName)
 #### Plot Prey Location  ###########
 ## The Original list if the lFirstBout data from runHuntepisode analysis
 source("plotTrackScatterAndDensities.r")
-datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
-
-preyCapPos_LF <- (getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "LL")))
-preyCapPos_DF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "DL"))
-preyCapPos_NF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "NL"))
-
-##Typical Fish Length in px is 80 (NF)
-##Typical Eye Verged Head Width (widest point) 17px
-##Bladded Width =9px
-plot(preyCapPos_NF$preyX ,preyCapPos_NF$preyY,col=colourH[1],pch=pchL[1],ylim=c(-DIM_MMPERPX*82,1.0),xlim=c(-5/2,5/2))
-points(preyCapPos_LF$preyX ,preyCapPos_LF$preyY,col=colourH[2],pch=pchL[2])
-points(preyCapPos_DF$preyX ,preyCapPos_DF$preyY,col=colourH[3],pch=pchL[3])
-##Draw Fish Bounding Rects representation
-rect(-DIM_MMPERPX*17/2,-DIM_MMPERPX*9/2,+DIM_MMPERPX*17/2,-DIM_MMPERPX*7/2 ) 
-rect(-DIM_MMPERPX*9/2,-DIM_MMPERPX*82,+DIM_MMPERPX*9/2,0 ) 
+#plotCaptureBoutPreyPositions

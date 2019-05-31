@@ -18,8 +18,8 @@ datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAna
 
 #datHuntEventAllGroupToValidate <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 ##Save a backup before changing anything
-saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate_backup.rds",sep="")) ##Save With Dataset Idx Identifier
-saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate_backup.rds",sep="") ) ## THis is the Processed Register File On 
+saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate_backup_fixed.rds",sep="")) ##Save With Dataset Idx Identifier
+saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate_backup_fixed.rds",sep="") ) ## THis is the Processed Register File On 
 
 ##Make desired columns if missing 
 if (!any(names(datMotionBoutsToValidate) == "MarkValidated"))
@@ -225,14 +225,22 @@ for (idx in idxRegValidated )
     bodyAngle <- datPlaybackHuntEvent[datMotionBouts$vMotionBout_On,]$BodyAngle 
 
     #relAngle <- ( ( 180 +  180/pi * atan2(datMotionBouts$vd_PreyX - datMotionBouts$vd_MouthX,datMotionBouts$vd_MouthY - datMotionBouts$vd_PreyY  )) - bodyAngle    ) %% 360 - 180
-    relAngle <-  180/pi * atan2(datMotionBouts$vd_PreyX - datMotionBouts$vd_MouthX, datMotionBouts$vd_PreyY-datMotionBouts$vd_MouthY  ) 
-    if (relAngle < 0) ##Convert atan2 angle to 360 circle
-      relAngle = relAngle + 360
-    
+    relAngle <- 180- 180/pi * atan2(datMotionBouts$vd_PreyX - datMotionBouts$vd_MouthX, datMotionBouts$vd_PreyY-datMotionBouts$vd_MouthY  ) 
+    ##Check which direction the angles should be compared
+    {
+      if ( abs(bodyAngle - relAngle) > 180) ##Body Angle Leads - Substract
+        relAngle = ifelse(relAngle < bodyAngle, 360+relAngle-bodyAngle,relAngle - (360+bodyAngle) )
+      else 
+        relAngle <- relAngle-bodyAngle
+    }
+    ##Convert atan2 angle to 360 circle
+    #relAngle <- ifelse(relAngle < 0,relAngle + 360,relAngle)
     ##Now Get relative Angle to larva body orientation (also measured in 360 to vertical axis)    
-    relAngle <- relAngle  - bodyAngle
-    if (abs(relAngle) > 90 )
-      warning("Angle to prey over 90 degrees")
+    #relAngle <-  ifelse(relAngle > 180 & bodyAngle < 180,(relAngle) - (360+bodyAngle), relAngle) ##If  comparing angles across the vertical 0 line
+    #relAngle <-  ifelse(bodyAngle > 180 & relAngle < 180,(360+relAngle) - (bodyAngle), (relAngle) - (bodyAngle)) ##If  comparing angles across the vertical 0 line
+    
+    if (abs(relAngle) > 160 )
+      stop("Angle to prey over 160 degrees")
     
     ##Set Them Back in The Bout INfo
     oldValAngle <- datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey
@@ -256,23 +264,35 @@ for (idx in idxRegValidated )
   ## Do Next Validated rec ##
 }
 
+## DUBUG CODE Testing  mouth-Prey Position and Angles 
 ##Make relative to y axis instead of x - and convert to clockwise counting
-xAngle <-  180/pi * atan2(datMotionBouts$vd_PreyX - datMotionBouts$vd_MouthX, datMotionBouts$vd_PreyY-datMotionBouts$vd_MouthY  ) 
-
-
+datMotionBouts <- datMotionBoutsToValidate[idxBout,]
+d <- datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm/DIM_MMPERPX
+xAngle <- 180-180/pi * atan2(datMotionBouts$vd_PreyX - datMotionBouts$vd_MouthX, datMotionBouts$vd_PreyY-datMotionBouts$vd_MouthY  ) 
 ##Make atan2 angle go around 360 circle so we can compare to body angle
-relAngle <- (360+xAngle) - bodyAngle
 
-x <- (10)*cos(2*pi-pi/180 * bodyAngle + pi/2) + datMotionBouts$vd_MouthX
-y <- (10)*sin(2*pi-pi/180 * bodyAngle + pi/2) + datMotionBouts$vd_MouthY
+relAngle <- ifelse(xAngle < 0,xAngle + 360,xAngle)
+##Check which direction the angles should be compared
+{
+if ( abs(bodyAngle - relAngle) > 180) ##Body Angle Leads - Substract
+  relAngle = ifelse(relAngle < bodyAngle, 360+relAngle-bodyAngle,relAngle - (360+bodyAngle) )
+else 
+  relAngle <- relAngle-bodyAngle
+}
+  
+##Now Get relative Angle to larva body orientation (also measured in 360 to vertical axis)    
+#relAngle <-  ifelse(relAngle > 180 & bodyAngle < 180,(relAngle) - (360+bodyAngle), relAngle) ##If  comparing angles across the vertical 0 line
+#relAngle <-  ifelse(bodyAngle > 180 & relAngle < 180,(360+relAngle) - (bodyAngle), (relAngle) - (bodyAngle)) ##If  comparing angles across the vertical 0 line
 
-xp <- (10)*cos(2*pi-pi/180 * xAngle + pi/2) + datMotionBouts$vd_MouthX
-yp <- (10)*sin(2*pi-pi/180 * xAngle + pi/2) + datMotionBouts$vd_MouthY
+x <- (10)*cos(pi/180 * bodyAngle -pi/2) + datMotionBouts$vd_MouthX
+y <- (10)*sin(pi/180 * bodyAngle - pi/2) + datMotionBouts$vd_MouthY
+xp <- (d)*cos(pi/180 * (bodyAngle+relAngle) - pi/2) + datMotionBouts$vd_MouthX
+yp <- (d)*sin(pi/180 * (bodyAngle+relAngle) - pi/2) + datMotionBouts$vd_MouthY
 
-plot(datMotionBouts$vd_PreyX,datMotionBouts$vd_PreyY,xlim=c(datMotionBouts$vd_MouthX-50,datMotionBouts$vd_MouthX+50))
-points(datMotionBouts$vd_MouthX,datMotionBouts$vd_MouthY,col="blue",pch=16)
-segments(datMotionBouts$vd_MouthX,datMotionBouts$vd_MouthY,x,y,cex=1, main="",col="red")
-segments(datMotionBouts$vd_MouthX,datMotionBouts$vd_MouthY,xp,yp,cex=1, main="",col="magenta")
+plot(datMotionBouts$vd_PreyX,512-datMotionBouts$vd_PreyY,xlim=c(datMotionBouts$vd_MouthX-50,datMotionBouts$vd_MouthX+50)) ## Prey
+points(datMotionBouts$vd_MouthX,512-datMotionBouts$vd_MouthY,col="blue",pch=16) ##Mouth
+segments(datMotionBouts$vd_MouthX,512-datMotionBouts$vd_MouthY,x,512-y,cex=1, main="",col="red") ##Body Orientation
+segments(datMotionBouts$vd_MouthX,512-datMotionBouts$vd_MouthY,xp,512-yp,cex=1, main="",col="magenta")
 
 ##Update Saved Data
 saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
