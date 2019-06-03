@@ -156,14 +156,14 @@ for  (g in 1:2)
 ## Low Speed Captcha cluster
 
 mu[1,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot 
-mu[1,2] ~ dnorm(8,0.1)T(0,) ##cap speed
+mu[1,2] ~ dnorm(5,0.1)T(0,) ##cap speed
 sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
 sigma[1,1] ~ dunif(0,0.20) ##Overshoot prey - Keep it broader within the expected limits
 
 ## High speed Capture Cluster
 mu[2,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot
-mu[2,2] ~ dnorm(30,0.1)T(mu[1,2],) ##cap speed
-sigma[2,2] ~ dunif(0,13) ##the cap speed sigma 
+mu[2,2] ~ dnorm(35,0.1)T(mu[1,2],) ##cap speed
+sigma[2,2] ~ dunif(0,10) ##the cap speed sigma 
 sigma[2,1] ~ dunif(0,0.20) ##undershoot prey - Keep it narrow within the expected limits
 
 ## Synthesize data from the distribution
@@ -202,7 +202,7 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 2000
+steps <- 5000
 nchains <- 5
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -291,14 +291,14 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ##Collect Draws from all chains
-plot(tail(draw_NF$mu[1,1,,],ntail),tail(draw_NF$mu[1,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA )
-points(tail(draw_NF$mu[2,1,,],ntail),tail(draw_NF$mu[2,2,,],ntail),col=colourH[1],pch=pchL[1],ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA )
+#points(tail(draw_NF$mu[2,1,,],ntail),tail(draw_NF$mu[2,2,,],ntail),col=colourH[1],pch=pchL[1],ylab=NA,xlab=NA )
 
-points(tail(draw_LF$mu[1,1,,],ntail),tail(draw_LF$mu[1,2,,],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_LF$mu[2,1,,],ntail),tail(draw_LF$mu[2,2,,],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourH[2],pch=pchL[2])
+#points(tail(draw_LF$mu[2,1,,],ntail),tail(draw_LF$mu[2,2,,],ntail),col=colourH[2],pch=pchL[2])
 
-points(tail(draw_DF$mu[1,1,,],ntail),tail(draw_DF$mu[1,2,,],ntail),col=colourH[3],pch=pchL[3])
-points(tail(draw_DF$mu[2,1,,],ntail),tail(draw_DF$mu[2,2,,],ntail),col=colourH[3],pch=pchL[3])
+points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourH[3],pch=pchL[3])
+#points(tail(draw_DF$mu[2,1,,],ntail),tail(draw_DF$mu[2,2,,],ntail),col=colourH[3],pch=pchL[3])
 
 #points(tail(draw_ALL$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[4],pch=pchL[4])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
@@ -307,10 +307,14 @@ mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 
 
-contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+
+contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
+contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
+contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+
 
 legend("topleft",
        legend=c(  expression (),

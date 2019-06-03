@@ -58,13 +58,13 @@ for  (g in 1:2)
 }
   ## Low Speed Captcha cluster
   mu[1,1] ~ dnorm(0,0.01) ##Distance prey
-  mu[1,2] ~ dnorm(8,0.01) ##cap speed
+  mu[1,2] ~ dnorm(5,0.1)T(0,) ##cap speed
   sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
 
   ## High speed Capture Cluster
   mu[2,1] ~ dnorm(0.5,0.01) ##Distance prey
-  mu[2,2] ~ dnorm(30,0.0001) ##cap speed
-  sigma[2,2] ~ dunif(0,13) ##the cap speed sigma 
+  mu[2,2] ~ dnorm(35,0.5)T(mu[1,2],) ##cap speed
+  sigma[2,2] ~ dunif(0,10) ##the high cap speed sigma 
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
