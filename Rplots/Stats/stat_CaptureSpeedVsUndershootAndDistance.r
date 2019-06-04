@@ -119,12 +119,14 @@ for  (g in 1:2)
   
   cov[g,1,1] <- sigma[g,1]*sigma[g,1]
   cov[g,1,2] <- sigma[g,1]*sigma[g,2]*rho[g,1] ## Undershoot-Speed Covar
+  cov[g,1,3] <- sigma[g,1]*sigma[g,3]*rho[g,3] ##Undeshoot-Dist Covar
+  
   cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g,1]
   cov[g,2,2] <- sigma[g,2]*sigma[g,2]
   cov[g,2,3] <- sigma[g,2]*sigma[g,3]*rho[g,2] #Speed-Dist Covar
+  
   cov[g,3,2] <- sigma[g,2]*sigma[g,3]*rho[g,2]
   cov[g,3,3] <- sigma[g,3]*sigma[g,3] 
-  cov[g,1,3] <- sigma[g,1]*sigma[g,3]*rho[g,3] ##Undeshoot-Dist Covar
   cov[g,3,1] <- sigma[g,1]*sigma[g,3]*rho[g,3] ##Undeshoot-Dist Covar
 
   ## Dist Priors 
