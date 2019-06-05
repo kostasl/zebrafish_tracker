@@ -105,7 +105,7 @@ for (i in 1:N)
   mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
   
 }
-
+###14
 ## Fit Bernouli distribution on Number of Hunt |Events that have a high-speed strike 
 ## Probability of Strike Swim 
 pS  ~ dnorm(sum(mID)/N,1000)T(0,1)
@@ -115,7 +115,7 @@ mStrikeCount ~ dbin(pS,N )
 ## for each Gaussian in the mixture (1 and 2)
 for  (g in 1:2)
 {
-  prec[g,1:3,1:3] <- inverse(cov[g,,])
+  prec[g,1:3,1:3] <- inverse(cov[g,1:3,1:3])
   
   cov[g,1,1] <- sigma[g,1]*sigma[g,1]
   cov[g,1,2] <- sigma[g,1]*sigma[g,2]*rho[g,1] ## Undershoot-Speed Covar
@@ -125,36 +125,37 @@ for  (g in 1:2)
   cov[g,2,2] <- sigma[g,2]*sigma[g,2]
   cov[g,2,3] <- sigma[g,2]*sigma[g,3]*rho[g,2] #Speed-Dist Covar
   
-  cov[g,3,2] <- sigma[g,2]*sigma[g,3]*rho[g,2]
-  cov[g,3,3] <- sigma[g,3]*sigma[g,3] 
   cov[g,3,1] <- sigma[g,1]*sigma[g,3]*rho[g,3] ##Undeshoot-Dist Covar
+  cov[g,3,2] <- sigma[g,2]*sigma[g,3]*rho[g,2]
+  cov[g,3,3] <- sigma[g,3]*sigma[g,3]
 
-  ## Dist Priors 
-  sigma[g,3] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
+  Sigmainv[g,1:3,1:3] ~ dwish(cov[g,,],3)
+###37
   
-  
-  rho[g,1] ~ dunif(-1,1) ##The Undershoot Speed covar coefficient
-  rho[g,2] ~ dunif(-1,1) ##The Speed Distance covar coefficient
-  rho[g,3] ~ dunif(-1,1) ##The UNdershoot Distance covar coefficient
+  rho[g,1]  <- -0.1 #dunif(0,1) ##The Undershoot Speed covar coefficient
+  rho[g,2] <- 0.1 #dunif(0.5,1) ##The Speed Distance covar coefficient
+  rho[g,3] <- -0.1 # dunif(0.5,1) ##The UNdershoot Distance covar coefficient
 
 }
 ## Low Speed Captcha cluster
 
-mu[1,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot 
+mu[1,1] ~ dnorm(1,0.00001)T(0.001,2) ##undershoot 
 mu[1,2] ~ dnorm(5,0.1)T(0,) ## High cap speed
-mu[1,3] ~ dnorm(0.5,0.01)T(0,) ##Distance prey
+mu[1,3] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
 
-sigma[1,1] ~ dunif(0,0.20) ##Overshoot prey - Keep it broader within the expected limits
-sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
-  
+sigma[1,1] ~ dunif(0.0,0.20) ##Overshoot prey - Keep it broader within the expected limits
+sigma[1,2] ~ dunif(0.00,4) ##the low cap speed sigma 
+sigma[1,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
+    
 
 ## High speed Capture Cluster
-mu[2,1] ~ dnorm(1,0.00001)T(0,2) ##undershoot
+mu[2,1] ~ dnorm(1,0.00001)T(0.0,2) ##undershoot
 mu[2,2] ~ dnorm(35,0.1)T(mu[1,2],) ##cap speed
 mu[2,3] ~ dnorm(0.5,0.01)T(0,) ##Distance prey
 
-sigma[2,2] ~ dunif(0,10) ##the cap speed sigma 
-sigma[2,1] ~ dunif(0,0.20) ##undershoot prey - Keep it narrow within the expected limits
+sigma[2,1] ~ dunif(0.0,0.20) ##undershoot prey - Keep it narrow within the expected limits
+sigma[2,2] ~ dunif(0.0,10) ##the cap speed sigma 
+sigma[2,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
 
 ## Synthesize data from the distribution
 x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
@@ -249,7 +250,7 @@ dDLb_rho<-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
 
 
 ###Check COnv
-draw <- draw_DF
+draw <- draw_NF
 plot(draw$mu[1,1,,1],type='l',ylim=c(0,2),col=rfc(nchains)[1] )
 lines(draw$mu[1,1,,2],type='l',ylim=c(0,2),col=rfc(nchains)[2] )
 lines(draw$mu[1,1,,3],type='l',ylim=c(0,2),col=rfc(nchains)[3] )
