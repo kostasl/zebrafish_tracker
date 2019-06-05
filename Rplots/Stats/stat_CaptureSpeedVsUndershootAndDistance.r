@@ -132,9 +132,9 @@ for  (g in 1:2)
   #Sigmainv[g,1:3,1:3] ~ dwish(cov[g,,],3)
 ###37
   
-  rho[g,1]  <- -0.1 #dunif(0,1) ##The Undershoot Speed covar coefficient
-  rho[g,2] <- -0.1 #dunif(0.5,1) ##The Speed Distance covar coefficient
-  rho[g,3] <- -0.1 # dunif(0.5,1) ##The UNdershoot Distance covar coefficient
+  rho[g,1]  <- 0.25 #dunif(0,1) ##The Undershoot Speed covar coefficient
+  rho[g,2] <- -0.25 #dunif(0.5,1) ##The Speed Distance covar coefficient
+  rho[g,3] <- 0.251 # dunif(0.5,1) ##The UNdershoot Distance covar coefficient
 
 }
 ## Low Speed Captcha cluster
