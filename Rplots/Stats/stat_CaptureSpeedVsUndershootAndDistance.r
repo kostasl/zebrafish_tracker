@@ -253,6 +253,9 @@ save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###
+
+load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+
 nContours <- 6
 ntail <- NROW(draw_NF$mu[1,1,,1])*0.20
 
@@ -300,6 +303,11 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 ## Open Output PDF 
 pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
 
+dev.off()
+
+### Show Speed Fit ###
+pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
+layout(matrix(c(1,
 outer = FALSE
 line = 1 ## SubFig Label Params
 cex = 1.1
@@ -369,12 +377,7 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
 
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-
-dev.off()
-
-### Show Speed Fit ###
-pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
-layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+2,3),3,1, byrow = FALSE))
 npchain<-3
 plotCaptureSpeedFit(datTurnVsStrikeSpeed_NL,draw_NF,1,npchain)
 title(main="Model capture Speed")
@@ -482,11 +485,22 @@ dev.off()
 ############# 3D
 
 library(plot3D)
+dev.off()
+layout(matrix(c(1,2,3),1,3, byrow = FALSE))
 
-scatter3D(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),col = colourH[1],zlim =range(draw_LF$mu[,,,]))
-scatter3D(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),col = colourH[2],add=TRUE)
-scatter3D(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),col = colourH[3],add=TRUE)
 
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_UndershootSpeedDistance_3Dmodelplot_AB.pdf",sep=""))
+
+scatter3D(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),grid=10,col = colourH[1],
+          ticktype = "detailed",theta=0,phi=0,box=,type= c("shade", "wire", "dots"),zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),xlab="Undershoot", ylab="Distance",zlab="Speed")
+
+scatter3D(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[2],
+          zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
+
+scatter3D(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[3],
+          zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
+
+dev.off()
 ###
 #install.packages("plotly")
 
