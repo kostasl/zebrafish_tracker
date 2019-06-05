@@ -316,7 +316,7 @@ outer = FALSE
 line = 1 ## SubFig Label Params
 cex = 1.1
 adj  = 3.5
-padj <- -23.0
+padj <- -10.0
 las <- 1
 
 
@@ -333,7 +333,7 @@ points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourH[3],
 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
-mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=-7,adj=3,cex.main=cex)
+mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -381,7 +381,7 @@ contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty
 #                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
 #      ),
 #       pch=pchL, col=colourLegL)
-mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=-7,adj=3,cex.main=cex)
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 
 
 
@@ -412,7 +412,7 @@ contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty
 #                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
 #       ),
 #       pch=pchL, col=colourLegL)
-mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=-7,adj=3,cex.main=cex)
+mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 
 
 
@@ -434,7 +434,7 @@ legend("topleft",
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
 #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=-7,adj=3,cex.main=cex)
+mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 
 
 dev.off()
