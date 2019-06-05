@@ -30,8 +30,8 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   YLIM <- c(0,0.08)
   pdistBW <- 2 ## mm/sec
   strKern <- "gaussian"
-  ntail <- NROW(drawMCMC$mu[1,2,,nchain])*0.10
-  
+  #ntail <- NROW(drawMCMC$mu[1,2,,nchain])*0.10
+  ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
   
   plot(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
   for (i in 1:(ntail-1) )
@@ -58,13 +58,13 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
   YLIM <- c(0,5)
   pdistBW <- 0.1 ## mm/sec
   strKern <- "gaussian"
-  ntail <- NROW(drawMCMC$mu[1,1,,1])*0.10
+  ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
   
   plot(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
   for (i in 1:(ntail-1) )
   {
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,1],nchain),sd=tail(drawMCMC$sigma[1,1,ntail-i,1],nchain)),type='l',col=colourH[colourIdx],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,1],nchain),sd=tail(drawMCMC$sigma[2,1,ntail-i,1],nchain)),type='l',col=colourH[colourIdx],lty=2 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,1,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
   }
   
   lines(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
@@ -74,6 +74,29 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
                    paste("Model high speed " )),
          col=c("black",colourLegL [3]),lwd=c(3,1,1),lty=c(1,1,2) ) 
   
+}
+
+
+plotDistanceClustFit <- function(datDist,drawMCMC,colourIdx,nchain = 1)
+{
+  xquant <- seq(-0.1,0.8,0.05)
+  pdistBW <- DIM_MMPERPX ## Manuall annotation  error is at least 1 px error , so smoothing with this bw is relevant
+  strKern <- "gaussian"
+  ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
+  plot(density(datDist$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8),ylim=c(0,5) ,
+       main="Distance to prey prior to capture strike")
+  for (i in 1:(ntail-1) )
+  {
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,3,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,3,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
+  }
+  lines(density(datDist$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8) )
+  legend("topright",title="NF",
+         legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                   paste("Model low speed " ),
+                   paste("Model high speed " )),
+         col=c("black",colourLegL[3]),lwd=c(3,1,1),lty=c(1,1,2) ) 
+
 }
 
 
@@ -121,7 +144,7 @@ for  (g in 1:2)
   cov[g,1,2] <- sigma[g,1]*sigma[g,2]*rho[g,1] ## Undershoot-Speed Covar
   cov[g,1,3] <- sigma[g,1]*sigma[g,3]*rho[g,3] ##Undeshoot-Dist Covar
   
-  cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g,1]
+  cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g,1] #UNdershoot-Speed
   cov[g,2,2] <- sigma[g,2]*sigma[g,2]
   cov[g,2,3] <- sigma[g,2]*sigma[g,3]*rho[g,2] #Speed-Dist Covar
   
@@ -131,10 +154,10 @@ for  (g in 1:2)
 
   #Sigmainv[g,1:3,1:3] ~ dwish(cov[g,,],3)
 ###37
-  
-  rho[g,1]  <- 0.25 #dunif(0,1) ##The Undershoot Speed covar coefficient
-  rho[g,2] <- -0.25 #dunif(0.5,1) ##The Speed Distance covar coefficient
-  rho[g,3] <- 0.251 # dunif(0.5,1) ##The UNdershoot Distance covar coefficient
+  ##the sum of all the entries in a covariance matrix is the variance of the sum of the n random variables
+  rho[g,1]  ~ dunif(-0.5,0.5) ##The Undershoot Speed covar coefficient
+  rho[g,2] ~ dunif(-0.5,0.5) ##The Speed - Distance covar coefficient
+  rho[g,3] ~ dunif(-0.5,0.5) ##The UNdershoot Distance covar coefficient
 
 }
 ## Low Speed Captcha cluster
@@ -168,6 +191,7 @@ strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeedVsUndersh
 strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter_Valid.pdf"
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
 strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershoot_Valid.pdf"
+strDistanceDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelDistance_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -193,11 +217,11 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 500
+steps <- 5000
 nchains <- 5
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
-str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS") #Mixture Model
+str_vars <- c("mu","rho","cov","sigma","x_rand","mID","mStrikeCount","pS") #Mixture Model
 ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datTurnVsStrikeSpeed_NL,N=NROW(datTurnVsStrikeSpeed_NL)) ##Not fed
 ldata_DF <- list(c=datTurnVsStrikeSpeed_DL,N=NROW(datTurnVsStrikeSpeed_DL)) ##Dry fed
@@ -221,7 +245,7 @@ jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture
 update(jags_model_DF, 300)
 draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
 
-
+save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
 ## ALL  groups
 #jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
                             #n.adapt = 500, n.chains = 3, quiet = F)
@@ -242,12 +266,21 @@ zDL <- kde2d(c(tail(draw_DF$mu[,1,,],ntail)), c(tail(draw_DF$mu[,2,,],ntail)),n=
 
 ## Check out the covar coeffient , compare estimated densities
 pBw   <- 0.1
-## Strike Cluster Only (Fast speed)
-dLLb_rho<-density(tail(draw_LF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
-dNLb_rho<-density(tail(draw_NF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
-dDLb_rho<-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=pBw)
-#dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
+## Strike Cluster Only (Fast speed) draw_NF$mu[,2,,]
+## The Undershoot To Capt. Speed covar coefficient
+dLLb_rhoUS<-density(tail(draw_LF$rho[2,1,,],ntail),kernel="gaussian",bw=pBw)
+dNLb_rhoUS<-density(tail(draw_NF$rho[2,1,,],ntail),kernel="gaussian",bw=pBw)
+dDLb_rhoUS<-density(tail(draw_DF$rho[2,1,,],ntail),kernel="gaussian",bw=pBw)
+#The Speed - Distance covar coefficient
+dLLb_rhoSD<-density(tail(draw_LF$rho[2,2,,],ntail),kernel="gaussian",bw=pBw)
+dNLb_rhoSD<-density(tail(draw_NF$rho[2,2,,],ntail),kernel="gaussian",bw=pBw)
+dDLb_rhoSD<-density(tail(draw_DF$rho[2,2,,],ntail),kernel="gaussian",bw=pBw)
+##The UNdershoot Distance covar 
+dLLb_rhoUD<-density(tail(draw_LF$rho[2,3,,],ntail),kernel="gaussian",bw=pBw)
+dNLb_rhoUD<-density(tail(draw_NF$rho[2,3,,],ntail),kernel="gaussian",bw=pBw)
+dDLb_rhoUD<-density(tail(draw_DF$rho[2,3,,],ntail),kernel="gaussian",bw=pBw)
 
+#dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
 ###Check COnv
 draw <- draw_NF
@@ -356,20 +389,41 @@ plotUndeshootClusterFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
 title(main="Model undershoot on 1st turn to prey")
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
+dev.off()
 
+pdf(file= paste(strPlotExportPath,strDistanceDensityPDFFileName ,sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+plotDistanceClustFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
+title(main="Model undershoot on 1st turn to prey")
+plotDistanceClustFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
+plotDistanceClustFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
 dev.off()
 ## plot 
 ##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )
 
-###Show covariance ##
-
-## Plot the covariance ##
-plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
-     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+### COVARIANCE PLOT ##
+###Show covariance In the High Speed Capture Cluster ##
+layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+## Plot the covariance Coefficients##
+plot(dNLb_rhoUS,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+     main="Undershoot-Speed", #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
-lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
+lines(dLLb_rhoUS,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_rhoUS,col=colourLegL[3],lwd=3,lty=3)
+#lines(dALLb_rhoUS,col=colourLegL[4],lwd=3,lty=4)
+
+plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+     main="Speed-Distance", #"Density Inference of Turn-To-Prey Slope ",
+     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
+lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
+
+##Speed TO Distance Covariance Coeff
+plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+     main="Undershoot-Distance", #"Density Inference of Turn-To-Prey Slope ",
+     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
+lines(dLLb_rhoUD,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
 
 
 
@@ -425,5 +479,14 @@ legend("topright",
 
 dev.off()
 
+############# 3D
 
+library(plot3D)
+
+scatter3D(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),col = colourH[1],zlim =range(draw_LF$mu[,,,]))
+scatter3D(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),col = colourH[2],add=TRUE)
+scatter3D(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),col = colourH[3],add=TRUE)
+
+###
+#install.packages("plotly")
 
