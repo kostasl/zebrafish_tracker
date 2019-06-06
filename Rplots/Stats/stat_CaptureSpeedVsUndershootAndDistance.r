@@ -578,3 +578,9 @@ dev.off()
 ###
 #install.packages("plotly")
 
+############# Plot Position Of Prey Prior Capture Bout 
+
+pdf(file= paste(strPlotExportPath,"/PreyPositionPriorCapture_Validated.pdf",sep=""))
+
+plotCaptureBoutPreyPositions()
+dev.off()

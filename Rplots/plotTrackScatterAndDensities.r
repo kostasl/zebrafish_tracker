@@ -721,17 +721,22 @@ getCaptureBoutPreyPosition <- function (datMotionBoutsToValidate,groupID)
 plotCaptureBoutPreyPositions <- function(newPlot = T)
 {
   datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
+  ##LOad so as to disambiguate the GroupdID
+  strDataFileName <-paste("setn15-HuntEvents-SB-Updated-Merged2",sep="") ##To Which To Save After Loading
+  datHuntEventAllGroupToValidate <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
   
-  preyCapPos_LF <- (getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "LL")))
-  preyCapPos_DF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "DL"))
-  preyCapPos_NF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,which(strGroupID == "NL"))
+  strGroupID <- c(unique(datHuntEventAllGroupToValidate$groupID))
+  
+  preyCapPos_LF <- (getCaptureBoutPreyPosition(datMotionBoutsToValidate,2))
+  preyCapPos_DF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,1)
+  preyCapPos_NF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,3)
   
   ##Typical Fish Length in px is 80 (NF)
   ##Typical Eye Verged Head Width (widest point) 17px
   ##Bladded Width =9px
   
   
-  Range <- 50 ##300 Pixels Around the prey
+  Range <- 20 ##300 Pixels Around the prey
   
   #display.brewer.all() to see avaulable options
   ##Choose Heat Map For white being Low (BG) Red High Vergence
@@ -743,35 +748,38 @@ plotCaptureBoutPreyPositions <- function(newPlot = T)
   
   #txtW <- strwidth(parse(text=paste("270", "^o ", sep=""))) ##Override as it fails When In Layout Mode
   txtW <- -0.1# strwidth(parse(text=paste("270", "^o ", sep="")))
-  fgColor <- "white"
+  fgColor <- "black"
+  bgColor <- rgb(1,1,1.0,1)
   if (newPlot)
   {
-    plot(1,type='n',xlim=c(-(Range+4*txtW),(Range+4*txtW)) ,
-         ylim=c(-(Range+4*txtW),(Range+4*txtW) ),
-         main="Angle to Prey Vs Distance ",
+    plot(1,type='n',xlim=c(-(Range+4*txtW)*DIM_MMPERPX,(Range+4*txtW)*DIM_MMPERPX ) ,
+         ylim=c(-(Range+4*txtW)*DIM_MMPERPX,(Range+4*txtW)*DIM_MMPERPX ),
+         main="Prey position prior to capture move ",
          xlab=NA,ylab=NA)
-    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = rgb(0,0,0.3,0.09))
+    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bgColor)
     
-    ## Make Range Circle Llines
-    lines(c(0,0),c(0,Range*0.85) ,col=fgColor,lty=2,lwd=1) #V Line To 0
+    ## Make Vertical HeadOn Lline
+    lines(c(0,0),c(0,Range*0.85)*DIM_MMPERPX ,col=fgColor,lty=2,lwd=1) #V Line To 0
     txtW <- strwidth(parse(text=paste("270", "^o ", sep="")))/3
-    text((Range+txtW/2)*cos(pi/180 * seq(0,-270,-90) + pi/2),
-         (Range+txtW/2)*sin(pi/180 *seq(0,-270,-90) + pi/2),
+    text(DIM_MMPERPX*(Range+txtW/2)*cos(pi/180 * seq(0,-270,-90) + pi/2),
+         DIM_MMPERPX*(Range+txtW/2)*sin(pi/180 *seq(0,-270,-90) + pi/2),
          labels = parse(text=paste(seq(0,270,90), "^o ", sep="")) ,col=fgColor,cex=0.8,font=1.5)
     
     points(0,0,cex=0.8,col="blue")
-    for (i in seq(0,Range,1/(2*DIM_MMPERPX) )  )
+    ###Draw The Circles
+    for (i in seq(0,Range,1/(4*DIM_MMPERPX) )  )
     {
-      lines(i*cos(pi/180 * seq(0,360,1) ),i*sin(pi/180 * seq(0,360,1) ),col=fgColor)
+      
+      lines(DIM_MMPERPX*i*cos(pi/180 * seq(0,360,1) ),DIM_MMPERPX*i*sin(pi/180 * seq(0,360,1) ),col=fgColor)
       txtW <- strwidth(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
       txtH <- strheight(paste(as.character(i*DIM_MMPERPX),"",sep="") )/2
       ## Place the Distance Labels
-      text(i*cos(pi/180 * -90 ),i*sin(pi/180 * -90 )-txtH,labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="") ,
+      text(DIM_MMPERPX*i*cos(pi/180 * -90 ),DIM_MMPERPX*i*sin(pi/180 * -90 )-txtH,labels = paste(as.character(i*DIM_MMPERPX),"mm",sep="") ,
            col=fgColor,cex=0.7,font=1.8)
     }
     
     ##Plot Heat Map Legend
-    x <- Range/2+(1:Range/2) ##Make Narrow 1/2 length bar
+    x <- Range/2+(1:Range/2)*DIM_MMPERPX ##Make Narrow 1/2 length bar
     points(x,rep(-70,NROW(x) ),pch=19,col=colR,cex=1.5)
     text(x[1],-78,labels=expression("0"^degree),col=fgColor,font=2.2)  ##0 V Angle
     txtW <- strwidth(parse(text=c(expression(),bquote( .(G_THRESHUNTVERGENCEANGLE)^degree))))/2 ##Text Width For Centre Aligment 
@@ -788,12 +796,21 @@ plotCaptureBoutPreyPositions <- function(newPlot = T)
     #points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",
     #       col=colR[EyeVergence]) ##Color Accourding To EyeVergence
     
-  points(preyCapPos_NF$preyX/DIM_MMPERPX ,preyCapPos_NF$preyY/DIM_MMPERPX,col=colourH[1],pch=pchL[1],add=T,cex=0.2) #xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) )
-  points(preyCapPos_LF$preyX/DIM_MMPERPX ,preyCapPos_LF$preyY/DIM_MMPERPX,col=colourH[2],pch=pchL[2],cex=0.2)
-  points(preyCapPos_DF$preyX/DIM_MMPERPX ,preyCapPos_DF$preyY/DIM_MMPERPX,col=colourH[3],pch=pchL[3],cex=0.2)
+  points(preyCapPos_NF$preyX,preyCapPos_NF$preyY,col=colourH[1],pch=pchL[5],cex=0.7) #xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) )
+  points(preyCapPos_LF$preyX ,preyCapPos_LF$preyY,col=colourH[2],pch=pchL[6],cex=0.7)
+  points(preyCapPos_DF$preyX ,preyCapPos_DF$preyY,col=colourH[3],pch=pchL[7],cex=0.7)
   ##Draw Fish Bounding Rects representation
-  rect(-17/2,-9/2,+17/2,-7/2 ) 
-  rect(-9/2,-82,+9/2,0 ) 
+  rect(-17*DIM_MMPERPX/2,-9*DIM_MMPERPX/2,+17*DIM_MMPERPX/2,-7*DIM_MMPERPX/2 ) 
+  rect(-9*DIM_MMPERPX/2,-82*DIM_MMPERPX,+9*DIM_MMPERPX/2,0 ) 
+  
+  legend("topright",
+         legend=c(  expression (),
+                    bquote(NF ~ '#' ~ .(NROW(preyCapPos_NF) ) ),
+                    bquote(LF ~ '#' ~ .(NROW(preyCapPos_LF))  ),
+                    bquote(DF ~ '#' ~ .(NROW(preyCapPos_DF) )  )
+                    #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
+         ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL,pch=c(pchL[5],pchL[6],pchL[7]))
   
     
 

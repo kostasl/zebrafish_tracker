@@ -68,6 +68,4 @@ lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
 ## Condition Labels
 strDataLabels <- expression("NF"["s"],"LF"["s"],"DF"["s"],"NF"["e"],"LF"["e"],"DF"["e"] )
 
-## Can be obtained via strGroupID <- levels(unique(datHuntEventMergedFrames$groupID))
-strGroupID <- c("LL","DL","NL")
 ## GLOBAL VARS ###
