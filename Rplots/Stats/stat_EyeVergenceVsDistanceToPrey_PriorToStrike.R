@@ -127,7 +127,8 @@ points(tail((draw_DF$x_rand[1,,1]) , ntail),tail((draw_DF$x_rand[2,,1]) , ntail)
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
 
-pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A statistical model for EyeVergence vs Distance to prey  before capture bout ")
+pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
+    title="A statistical model for EyeVergence vs Distance to prey  before capture bout ")
 
 outer = FALSE
 line = 1 ## SubFig Label Params

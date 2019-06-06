@@ -57,13 +57,13 @@ for  (g in 1:2)
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
   ## Low Speed Captcha cluster
-  mu[1,1] ~ dnorm(0,0.01) ##Distance prey
+  mu[1,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
   mu[1,2] ~ dnorm(5,0.1)T(0,) ##cap speed
   sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
 
   ## High speed Capture Cluster
-  mu[2,1] ~ dnorm(0.5,0.01) ##Distance prey
-  mu[2,2] ~ dnorm(35,0.5)T(mu[1,2],) ##cap speed
+  mu[2,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
+  mu[2,2] ~ dnorm(35,0.1)T(mu[1,2],) ##cap speed
   sigma[2,2] ~ dunif(0,10) ##the high cap speed sigma 
 
 ## Synthesize data from the distribution
@@ -72,7 +72,7 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 } "
 
-strMainPDFFilename <- "/stat/UndershootAnalysis/fig7_stat_modelMixCaptureSpeedVsDistToPrey.pdf";
+strMainPDFFilename <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeedVsDistToPrey.pdf";
 strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
 strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
@@ -137,7 +137,7 @@ draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 
 ### Estimate  densities  ###
-nContours <- 5
+nContours <- 6
 ntail <-2000
 pBw   <- 0.02 
 
@@ -192,7 +192,7 @@ outer = FALSE
 line = 1 ## SubFig Label Params
 cex = 1.1
 adj  = 3.5
-padj <- -23.0
+padj <- -15.0
 las <- 1
 nContours <- 5
 
@@ -202,24 +202,25 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 600
-plot(tail(draw_NF$mu[1,1,,1],ntail),tail(draw_NF$mu[1,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
-points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
-
-points(tail(draw_LF$mu[1,1,,1],ntail),tail(draw_LF$mu[1,2,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
-
-points(tail(draw_DF$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[3],pch=pchL[3])
-points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
+plot(tail(draw_NF$mu[,1,,1],ntail),tail(draw_NF$mu[,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+#points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+points(tail(draw_LF$mu[,1,,1],ntail),tail(draw_LF$mu[,2,,1],ntail),col=colourH[2],pch=pchL[2])
+#points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_DF$mu[,1,,1],ntail),tail(draw_DF$mu[,2,,1],ntail),col=colourH[3],pch=pchL[3])
+#points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
 
 #points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 
-contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=1 )
-contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=2)
-contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,xlim=c(0,0.5),ylim=c(0,60),lty=4 )
-#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+
+contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[3],lty=2)
+contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
+contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 
 
 legend("topleft",
@@ -238,7 +239,7 @@ lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
 lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
 #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
-
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 #### ## Probability Density of Strike capture ####
 legend("topleft",
@@ -249,7 +250,7 @@ legend("topleft",
                   #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
                   ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3,4),lwd=3)
-mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
 
 dev.off()
 
