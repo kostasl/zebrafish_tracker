@@ -27,7 +27,7 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
 {
   xquant <- seq(0,70,1)
   XLIM <- c(0,60)
-  YLIM <- c(0,0.08)
+  YLIM <- c(0,0.15)
   pdistBW <- 2 ## mm/sec
   strKern <- "gaussian"
   #ntail <- NROW(drawMCMC$mu[1,2,,nchain])*0.10
@@ -36,7 +36,7 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   plot(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
   for (i in 1:(ntail-1) )
   {
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
     lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
   }
   
@@ -45,7 +45,7 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
          legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
                    paste("Model low speed " ),
                    paste("Model high speed " )),
-         col=c("black",colourLegL [3]),lwd=c(3,1,1),lty=c(1,1,2) ) 
+         col=c("black",colourR[4],colourLegL[colourIdx]),lwd=c(3,1,1),lty=c(1,1,2) ) 
   
 }
 
@@ -55,7 +55,7 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
 {
   xquant <- seq(0,2,0.02)
   XLIM <- c(0,2)
-  YLIM <- c(0,5)
+  YLIM <- c(0,3)
   pdistBW <- 0.1 ## mm/sec
   strKern <- "gaussian"
   ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
@@ -63,8 +63,8 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
   plot(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
   for (i in 1:(ntail-1) )
   {
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,1,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,1,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
   }
   
   lines(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
@@ -72,7 +72,7 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
          legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
                    paste("Model low speed " ),
                    paste("Model high speed " )),
-         col=c("black",colourLegL [3]),lwd=c(3,1,1),lty=c(1,1,2) ) 
+         col=c("black",colourR[4],colourLegL[colourIdx]),lwd=c(3,1,1),lty=c(1,1,2) ) 
   
 }
 
@@ -84,18 +84,18 @@ plotDistanceClustFit <- function(datDist,drawMCMC,colourIdx,nchain = 1)
   strKern <- "gaussian"
   ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
   plot(density(datDist$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8),ylim=c(0,5) ,
-       main="Distance to prey prior to capture strike")
+       main=NA)
   for (i in 1:(ntail-1) )
   {
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,3,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,3,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,3,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,3,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
   }
   lines(density(datDist$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8) )
-  legend("topright",title="NF",
+  legend("topright",title=NA,
          legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
                    paste("Model low speed " ),
                    paste("Model high speed " )),
-         col=c("black",colourLegL[3]),lwd=c(3,1,1),lty=c(1,1,2) ) 
+         col=c("black",colourR[4],colourLegL[colourIdx]),lwd=c(3,1,1),lty=c(1,1,2) ) 
 
 }
 
@@ -253,6 +253,9 @@ save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 ### Estimate  densities  ###
+
+load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+
 nContours <- 6
 ntail <- NROW(draw_NF$mu[1,1,,1])*0.20
 
@@ -263,6 +266,14 @@ zNL <- kde2d(c(tail(draw_NF$mu[,1,,],ntail)), c(tail(draw_NF$mu[,2,,],ntail)),n=
 zDL <- kde2d(c(tail(draw_DF$mu[,1,,],ntail)), c(tail(draw_DF$mu[,2,,],ntail)),n=180)
 #zALL <- kde2d(c(tail(draw_ALL$mu[,1,,1],ntail)), c(tail(draw_ALL$mu[,2,,1],ntail)),n=80)
 
+zLLD <- kde2d(c(tail(draw_LF$mu[,1,,],ntail)), c(tail(draw_LF$mu[,3,,],ntail)),n=180)
+zNLD <- kde2d(c(tail(draw_NF$mu[,1,,],ntail)), c(tail(draw_NF$mu[,3,,],ntail)),n=180)
+zDLD <- kde2d(c(tail(draw_DF$mu[,1,,],ntail)), c(tail(draw_DF$mu[,3,,],ntail)),n=180)
+
+
+zLLS <- kde2d(c(tail(draw_LF$mu[,3,,],ntail)), c(tail(draw_LF$mu[,2,,],ntail)),n=180)
+zNLS <- kde2d(c(tail(draw_NF$mu[,3,,],ntail)), c(tail(draw_NF$mu[,2,,],ntail)),n=180)
+zDLS <- kde2d(c(tail(draw_DF$mu[,3,,],ntail)), c(tail(draw_DF$mu[,2,,],ntail)),n=180)
 
 ## Check out the covar coeffient , compare estimated densities
 pBw   <- 0.1
@@ -300,47 +311,39 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 ## Open Output PDF 
 pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
 
+### Show Speed Fit ###
 outer = FALSE
 line = 1 ## SubFig Label Params
 cex = 1.1
 adj  = 3.5
-padj <- -23.0
+padj <- -10.0
 las <- 1
 
 
-layout(matrix(c(1,2),1,2, byrow = FALSE))
+layout(matrix(c(1,2,3,4),2,2, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,1,1))
-
 
 ## Plot the mean of the 2D Models ##
 ##Collect Draws from all chains
 plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA )
-#points(tail(draw_NF$mu[2,1,,],ntail),tail(draw_NF$mu[2,2,,],ntail),col=colourH[1],pch=pchL[1],ylab=NA,xlab=NA )
-
 points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourH[2],pch=pchL[2])
-#points(tail(draw_LF$mu[2,1,,],ntail),tail(draw_LF$mu[2,2,,],ntail),col=colourH[2],pch=pchL[2])
-
 points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourH[3],pch=pchL[3])
-#points(tail(draw_DF$mu[2,1,,],ntail),tail(draw_DF$mu[2,2,,],ntail),col=colourH[3],pch=pchL[3])
-
-#points(tail(draw_ALL$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[4],pch=pchL[4])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
-
+mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 
 
-legend("topleft",
+legend("topright",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
@@ -348,7 +351,70 @@ legend("topleft",
                   #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
                   ),
        pch=pchL, col=colourLegL)
-mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+
+
+###############
+
+
+## Distance To Prey Vs Speed ##
+plot(tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+points(tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourH[3],pch=pchL[3])
+#points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
+
+mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to prey (mm)  " ))
+mtext(side = 2,cex=0.8, line = 2.2, expression(" Capture Speed (mm/sec)" ))
+
+contour(zDLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zLLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zDLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
+contour(zLLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
+contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+
+
+#legend("topleft",
+#       legend=c(  expression (),
+#                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+#                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+#                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+#                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+#      ),
+#       pch=pchL, col=colourLegL)
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
+
+
+
+
+
+## Distance To Prey ##
+plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA )
+points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourH[3],pch=pchL[3])
+#points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
+
+mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Distance to prey (mm)  " ))
+
+contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
+contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
+contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+
+
+#legend("topright",
+#       legend=c(  expression (),
+#                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+#                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+#                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+#                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+#       ),
+#       pch=pchL, col=colourLegL)
+mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
+
+
 
 ### Show Cluster Membership
 plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
@@ -356,24 +422,30 @@ lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
 lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
 #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
 
-legend("topright",
+legend("topleft",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
                   bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
                   #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
-                  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3,4),lwd=3)
 
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
+#mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 
-mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 dev.off()
 
-### Show Speed Fit ###
+#######################
+
+
+##### Individual Rand Vars Fit ###
+## Capture Speeds ##
 pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
+par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 npchain<-3
 plotCaptureSpeedFit(datTurnVsStrikeSpeed_NL,draw_NF,1,npchain)
@@ -383,7 +455,9 @@ plotCaptureSpeedFit(datTurnVsStrikeSpeed_DL,draw_DF,3,npchain)
 
 dev.off()
 
+## Undershoot  ##
 pdf(file= paste(strPlotExportPath,strUndershootDensityPDFFileName ,sep=""))
+par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
 title(main="Model undershoot on 1st turn to prey")
@@ -391,12 +465,15 @@ plotUndeshootClusterFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
 dev.off()
 
+## Distance ##
 pdf(file= paste(strPlotExportPath,strDistanceDensityPDFFileName ,sep=""))
+par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 plotDistanceClustFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
-title(main="Model undershoot on 1st turn to prey")
+title(main="Model distance from prey prior to capture")
 plotDistanceClustFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
 plotDistanceClustFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
+
 dev.off()
 ## plot 
 ##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )
@@ -482,11 +559,28 @@ dev.off()
 ############# 3D
 
 library(plot3D)
+dev.off()
+layout(matrix(c(1,2,3),1,3, byrow = FALSE))
 
-scatter3D(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),col = colourH[1],zlim =range(draw_LF$mu[,,,]))
-scatter3D(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),col = colourH[2],add=TRUE)
-scatter3D(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),col = colourH[3],add=TRUE)
 
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_UndershootSpeedDistance_3Dmodelplot_AB.pdf",sep=""))
+
+scatter3D(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),grid=10,col = colourH[1],
+          ticktype = "detailed",theta=0,phi=0,box=,type= c("shade", "wire", "dots"),zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),xlab="Undershoot", ylab="Distance",zlab="Speed")
+
+scatter3D(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[2],
+          zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
+
+scatter3D(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[3],
+          zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
+
+dev.off()
 ###
 #install.packages("plotly")
 
+############# Plot Position Of Prey Prior Capture Bout 
+
+pdf(file= paste(strPlotExportPath,"/PreyPositionPriorCapture_Validated.pdf",sep=""))
+
+plotCaptureBoutPreyPositions()
+dev.off()

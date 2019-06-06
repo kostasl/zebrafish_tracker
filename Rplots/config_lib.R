@@ -13,7 +13,7 @@
 ## A script that Randomly and blindly allows to manually label hunt events exists in the DataLablling dir, main_LabellingBlind - this updates the 
 ## detected huntevent register ("setn15-HuntEvents-SB-Updated-Merged2)
 #####################
-
+library(MASS)
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
 DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
@@ -68,6 +68,4 @@ lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
 ## Condition Labels
 strDataLabels <- expression("NF"["s"],"LF"["s"],"DF"["s"],"NF"["e"],"LF"["e"],"DF"["e"] )
 
-## Can be obtained via strGroupID <- levels(unique(datHuntEventMergedFrames$groupID))
-strGroupID <- c("LL","DL","NL")
 ## GLOBAL VARS ###

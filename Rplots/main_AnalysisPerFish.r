@@ -2,7 +2,7 @@
 ## Using Labelled Data from SB - with sparse corrections by KL where wrong labels have been spotted
 ### KOstasl 13-08-18
 source("DataLabelling/labelHuntEvents_lib.r")
-
+source("config_lib.R")
 #strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 #strProcDataFileName <- paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
 strProcDataFileName <- paste("setn15-HuntEvents-SB-Updated-Merged") ##To Which To Save After Loading
@@ -112,17 +112,22 @@ dev.off()
 
 
 ## Plot Efficiency  Density 
-densDLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio)
-densNLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio)
-densLLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)
+densDLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio,bw=0.05)
+densNLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio,bw=0.05)
+densLLEffScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio,bw=0.05)
 
 
 dev.off() ##Clear Old plot
-plot(densLLEffScore,col=colourH[2],main="Hunt efficiency density",type="l",lwd=2,ylim=c(0,2.0),xlim=c(0,1))
-lines(densNLEffScore,col=colourH[3],lwd=2)
-lines(densDLEffScore,col=colourH[1],lwd=2,xlab="Hunting efficiency score" )
-legend("topright",legend=paste(c("DL #","LL #","NL #"),c(densDLEffScore$n,densLLEffScore$n,densNLEffScore$n) ),fill = colourH)
+strPlotFileName <- paste(strPlotExportPath,"/stat/HuntEfficiency_Density.pdf",sep="")
+pdf(strPlotFileName,width = 16,height = 16 ,paper = "a4",onefile = TRUE );
 
+plot(densNLEffScore,col=colourH[1],main="Hunt efficiency density",type="l",lwd=3,lty=1,ylim=c(0,3.0),xlim=c(0,1)\\\\)
+lines(densLLEffScore,col=colourH[2],lwd=3,lty=2)
+lines(densDLEffScore,col=colourH[3],lwd=3,lty=3,xlab="Hunting efficiency score" )
+legend("topright",legend=paste(c("NL #","LL #","DL #"),
+                               c(densNLEffScore$n,densLLEffScore$n,densDLEffScore$n) ),col = colourH,lty=c(1,2,3,4),lwd=3)
+
+dev.off()
 
 ## Plot Efficiency based on Fails_ With A strike Density 
 densDLEffScore_WS <- density(datFishSuccessRateActive_WS[datFishSuccessRateActive_WS$groupID == "DL",]$vEfficiencyRatio_Strike)
