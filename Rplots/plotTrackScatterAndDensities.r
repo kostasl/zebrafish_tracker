@@ -718,7 +718,7 @@ getCaptureBoutPreyPosition <- function (datMotionBoutsToValidate,groupID)
 
 ## plot The Prey Locations Prior to Capture ##
 ## The Radar Figure With the Prey Positions Prior To Capture
-plotCaptureBoutPreyPositions()
+plotCaptureBoutPreyPositions <- function(newPlot = T)
 {
   datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
   
@@ -731,7 +731,7 @@ plotCaptureBoutPreyPositions()
   ##Bladded Width =9px
   
   
-  Range <- 30 ##300 Pixels Around the prey
+  Range <- 50 ##300 Pixels Around the prey
   
   #display.brewer.all() to see avaulable options
   ##Choose Heat Map For white being Low (BG) Red High Vergence
@@ -750,7 +750,7 @@ plotCaptureBoutPreyPositions()
          ylim=c(-(Range+4*txtW),(Range+4*txtW) ),
          main="Angle to Prey Vs Distance ",
          xlab=NA,ylab=NA)
-    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = rgb(0,0,0.3,0.99))
+    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = rgb(0,0,0.3,0.09))
     
     ## Make Range Circle Llines
     lines(c(0,0),c(0,Range*0.85) ,col=fgColor,lty=2,lwd=1) #V Line To 0
@@ -788,12 +788,12 @@ plotCaptureBoutPreyPositions()
     #points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",
     #       col=colR[EyeVergence]) ##Color Accourding To EyeVergence
     
-  plot(preyCapPos_NF$preyX ,preyCapPos_NF$preyY,col=colourH[1],pch=pchL[1]) #xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) )
-  points(preyCapPos_LF$preyX ,preyCapPos_LF$preyY,col=colourH[2],pch=pchL[2])
-  points(preyCapPos_DF$preyX ,preyCapPos_DF$preyY,col=colourH[3],pch=pchL[3])
+  points(preyCapPos_NF$preyX/DIM_MMPERPX ,preyCapPos_NF$preyY/DIM_MMPERPX,col=colourH[1],pch=pchL[1],add=T,cex=0.2) #xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) )
+  points(preyCapPos_LF$preyX/DIM_MMPERPX ,preyCapPos_LF$preyY/DIM_MMPERPX,col=colourH[2],pch=pchL[2],cex=0.2)
+  points(preyCapPos_DF$preyX/DIM_MMPERPX ,preyCapPos_DF$preyY/DIM_MMPERPX,col=colourH[3],pch=pchL[3],cex=0.2)
   ##Draw Fish Bounding Rects representation
-  rect(-DIM_MMPERPX*17/2,-DIM_MMPERPX*9/2,+DIM_MMPERPX*17/2,-DIM_MMPERPX*7/2 ) 
-  rect(-DIM_MMPERPX*9/2,-DIM_MMPERPX*82,+DIM_MMPERPX*9/2,0 ) 
+  rect(-17/2,-9/2,+17/2,-7/2 ) 
+  rect(-9/2,-82,+9/2,0 ) 
   
     
 
