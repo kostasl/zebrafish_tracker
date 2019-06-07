@@ -267,14 +267,6 @@ message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
-## Merge the missing empty Records
-#datHuntLabelledEventsSBMergedSpontaneous <- datHuntLabelledEventsSBMerged[datHuntLabelledEventsSBMerged$groupID %in% c("DE","NE","LE"),]
-#datHuntLabelledEventsSBMerged3 <- rbind(datHuntLabelledEventsSBMerged2,datHuntLabelledEventsSBMergedSpontaneous)
-#strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3" 
-#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-#saveRDS(datHuntLabelledEventsSBMerged3,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
-
 
 ##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
 datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
@@ -347,7 +339,7 @@ save(drawLL2,drawNL2,drawDL2,drawLE2,drawNE2,drawDE2,file =paste(strDataExportDi
 
 ### Draw Distribution oF Hunt Rates - 
 ## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
-plotsamples <- 100
+plotsamples <- 500
 schain <-1:3
 
 ### The Prob Of Success p from NegBinom translates to Gamma Rate p/(1-p), or scale: (1-p)/p
@@ -378,7 +370,7 @@ x <- seq(0.01,Plim,0.05)
 
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
-pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf",sep=""),width = 14,height = 7)
 ##Now Plot Infered Distributions
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
@@ -386,10 +378,10 @@ outer = FALSE
 line = 1 ## SubFig Label Params
 cex = 1.1
 adj  = 2.5
-padj <- -6.8
+padj <- -10.5
 las <- 1
 
-layout(matrix(c(1,2,3,4,5,6,7), 3,2, byrow = FALSE))
+layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5), 2,6, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,3.3,1,1))
 #lineTypeL[1] <- 1
@@ -402,7 +394,7 @@ legend("bottomright",legend = c(  expression (),
                                  ,bquote( NF["e"] ~ "Model " ) ), 
        col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-mtext(side = 1,cex=0.8, line = 2.2, "Hunt events ")
+mtext(side = 1,cex=0.8, line = 2.2, "Number of hunt events ")
 mtext(side = 2,cex=0.8, line = 2.2, " Cumulative function ")
 
 
@@ -415,7 +407,7 @@ legend("bottomright",legend = c(  expression (),
                                   ,bquote( LF["e"] ~ "Model " ) ), 
       col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-mtext(side = 1,cex=0.8, line = 2.2, "Hunt events ")
+mtext(side = 1,cex=0.8, line = 2.2, "Number of hunt events ")
 mtext(side = 2,cex=0.8, line = 2.2, " Cumulative function ")
 
 
@@ -427,26 +419,26 @@ legend("bottomright",legend = c(  expression (),
                                   bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDL)) )
                                   ,bquote( DF["e"] ~ "Model " ) ), 
        col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
-mtext(side = 1,cex=0.8, line = 2.2, "Hunt events ")
+mtext(side = 1,cex=0.8, line = 2.2, "Number of hunt events ")
 mtext(side = 2,cex=0.8, line = 2.2, " Cumulative function ")
 mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 
 
 pchL <- c(1,2,0,16,17,15)
-### Plot GAMMA Parameters Space
-Xlim <- 50
-plot(1/HEventHuntGammaRate_NE,HEventHuntGammaShape_NE,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
-points(1/HEventHuntGammaRate_LE,HEventHuntGammaShape_LE,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
-points(1/HEventHuntGammaRate_DE,HEventHuntGammaShape_DE,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
-points(1/HEventHuntGammaRate_NL,HEventHuntGammaShape_NL,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[4])
-points(1/HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[5])
-points(1/HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[6])
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste(Gamma, " scale (r)") ) )
-mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
-legend("topright",legend = strDataLabels,  #c(paste("NE" ), paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
-       col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
-mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+### Plot GAMMA Parameters Space ####
+#Xlim <- 50
+#plot(1/HEventHuntGammaRate_NE,HEventHuntGammaShape_NE,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
+#points(1/HEventHuntGammaRate_LE,HEventHuntGammaShape_LE,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[2])
+#points(1/HEventHuntGammaRate_DE,HEventHuntGammaShape_DE,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[3])
+#points(1/HEventHuntGammaRate_NL,HEventHuntGammaShape_NL,col=colourHL[1],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[4])
+#points(1/HEventHuntGammaRate_LL,HEventHuntGammaShape_LL,col=colourHL[2],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[5])
+#points(1/HEventHuntGammaRate_DL,HEventHuntGammaShape_DL,col=colourHL[3],ylim=c(0,3),xlim=c(0,Xlim),pch=pchL[6])
+#mtext(side = 1,cex=0.8, line = 2.2, expression(paste(Gamma, " scale (r)") ) )
+#mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
+#legend("topright",legend = strDataLabels,  #c(paste("NE" ), paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
+#       col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
+#mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 ###
 
@@ -464,7 +456,7 @@ axis(2, at = yticks, labels =round(10^yticks)-1 , col.axis="black", las=2)
 #minor.tick() ##minor.tick(nx=4, ny=4, tick.ratio=4,x.args=NA) ## Can COnfuse to think scale is linear
 ## Connect Larvae From EMpty To LIve Test Condition #
 plotConnectedEventCounts(datHuntStat,vDat,strCondTags)
-mtext("E",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 
 ## Compare Distrib Of Poisson Rate Derived from Model  Params ##
@@ -473,8 +465,8 @@ Ylim <- 3
 pBW <- 0.001
 
 
-Ylim <- 0.5
-plot(densHPoissonRate_NL$x, densHPoissonRate_NL$y,type='l',lty=lineTypeL[2],col=colourLegL[1] ,lwd=4,ylab=NA,xlab=NA,xlim=c(0,25),ylim=c(0,Ylim))
+Ylim <- 0.7
+plot(densHPoissonRate_NL$x, densHPoissonRate_NL$y,type='l',lty=lineTypeL[2],col=colourHLine[1] ,lwd=4,ylab=NA,xlab=NA,xlim=c(0,25),ylim=c(0,Ylim))
 lines(densHPoissonRate_LL$x, densHPoissonRate_LL$y,type='l',lty=lineTypeL[2],col=colourHLine[2],lwd=4,ylab=NA,xlab=NA)
 lines(densHPoissonRate_DL$x, densHPoissonRate_DL$y,type='l',lty=lineTypeL[2],col=colourHLine[3],lwd=4,ylab=NA,xlab=NA)
 
@@ -482,11 +474,11 @@ lines(densHPoissonRate_NE$x, densHPoissonRate_NE$y,type='l',lty=lineTypeL[1],col
 lines(densHPoissonRate_LE$x, densHPoissonRate_LE$y,type='l',lty=lineTypeL[1],col=colourHLine[2],lwd=4,ylab=NA,xlab=NA)
 lines(densHPoissonRate_DE$x, densHPoissonRate_DE$y,type='l',lty=lineTypeL[1],col=colourHLine[3],lwd=4,ylab=NA,xlab=NA)
 
-legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")),seg.len=2.2
-       , col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Estimated Hunt Rate  (",lambda," )") )  )
+legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")),seg.len=3.5
+       , col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
+mtext(side = 1,cex=0.8, line = 2.5, expression(paste("Estimated hunt rate  (",lambda," )") )  )
 mtext(side = 2,cex=0.8, line = 2.2, " Density function ")
-mtext("F",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+mtext("E",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 dev.off() 
 

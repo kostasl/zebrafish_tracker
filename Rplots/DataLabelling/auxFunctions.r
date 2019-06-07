@@ -185,3 +185,14 @@ saveRDS(datHuntLabelledEventsSBMerged_fixed,file=paste(strDatDir,"/LabelledSet/"
 
 ################ The
 
+##Found out that the Updated File  "setn15-HuntEvents-SB-Updated-Merged2" was missing the Spontaneous hunt event. I managed to retrived
+## and append these from the earlier version of the file "setn15-HuntEvents-SB-Updated-Merged"
+## Merge the missing empty Records Fix Code ###
+datHuntLabelledEventsSBMerged2 <- readRDS(file=paste(strDatDir,"/LabelledSet/","setn15-HuntEvents-SB-Updated-Merged2",".rds",sep="" ))
+datHuntLabelledEventsSBMergedSpontaneous <- readRDS(file=paste(strDatDir,"/LabelledSet/","setn15-HuntEvents-SB-Updated-Merged",".rds",sep="" ))
+datHuntLabelledEventsSBMergedSpontaneous <- datHuntLabelledEventsSBMergedSpontaneous[datHuntLabelledEventsSBMerged$groupID %in% c("DE","NE","LE"),]
+datHuntLabelledEventsSBMerged3 <- rbind(datHuntLabelledEventsSBMerged2,datHuntLabelledEventsSBMergedSpontaneous)
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3" 
+saveRDS(datHuntLabelledEventsSBMerged3,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+### End Merging Fix Code #####
+

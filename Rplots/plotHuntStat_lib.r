@@ -109,8 +109,9 @@ pieChartLabelledSuccessVsFails_StrikeBreakDown <- function(tblRes,GroupID,colour
   if (is.na(colourL))
     colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
   
-  pie(DLRes , labels = paste("","",round((DLRes/nLabelledDL)*100),"%",sep=""),
-      cex=2.8,cex.main=2.8,clockwise = TRUE,
+  pie(DLRes , labels =  c(paste0(" ",round((DLRes[1]/nLabelledDL)*100),"%"),
+                          paste0(" ",round((DLRes[2]/nLabelledDL)*100),"%") ),
+      cex=2.0,cex.main=2.8,clockwise = TRUE,
       #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
       radius=1.0,col=colourL) 
   
@@ -119,6 +120,90 @@ pieChartLabelledSuccessVsFails_StrikeBreakDown <- function(tblRes,GroupID,colour
   return(nLabelledDL)
   
 }
+
+pieChartStrikeVsNonStrike_Success <- function(tblRes,GroupID,colourL)
+{
+  tblIdxSuccess <- which ("Success" == row.names(tblRes)  ) ##Generic
+  tblIdxSuccess_Strike <- which (grepl("Success-OnStrike",row.names(tblRes) ) )
+  tblIdxSuccess_NoStrike <- which (grepl("Success-OnApproach",row.names(tblRes) ) ) 
+
+  tblIdxFail <- which ("Fail" == row.names(tblRes) ) 
+  tblIdxFail_Strike <- which (grepl("Fail-With Strike",row.names(tblRes) ) )
+  tblIdxFail_NoStrike <- which (grepl("Fail-No Strike",row.names(tblRes) ) ) 
+  tblidxValidHuntEvents <- c(6,7,tblIdxSuccess,tblIdxFail)
+  
+  ##Summarize COmbine Labels ###
+  # Success Together, And Fails Together
+  DLRes=c(
+   # sum(tblRes[tblIdxSuccess,GroupID]),
+    sum(tblRes[tblIdxSuccess_Strike,GroupID]),
+    sum(tblRes[tblIdxSuccess_NoStrike,GroupID])
+    #sum(tblRes[tblIdxFail_Strike,GroupID]),
+    #sum(tblRes[tblIdxFail_NoStrike,GroupID])
+  )
+  
+  #NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
+  #LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
+  ##Here We Condition on the Fact that these were Hunt Events Tracking Prey / 
+  nLabelledDL <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+  #nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
+  #nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
+  
+  #ScoreLabels <- c("Success Noclass","Success Strike","Success No Strike","Fail Strike","Fail No Strike") ##"Fail Noclass" Removed as it is 0
+  ScoreLabels <- c("Success Strike","Success No-Strike") ##"Fail Noclass" Removed as it is 0
+  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
+  if (is.na(colourL))
+    colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+  
+  pie(DLRes , labels = c(paste0("",round((DLRes[1]/nLabelledDL)*100),"%"),
+                         paste0("",round((DLRes[2]/nLabelledDL)*100),"%") ),
+      cex=1.4,cex.main=2.8,clockwise = TRUE,
+      radius=1.0,col=colourL) 
+  
+  
+  
+  return(nLabelledDL)
+  
+}  
+  
+
+pieChartStrikeVsNonStrike_Fail <- function(tblRes,GroupID,colourL)
+{
+  tblIdxFail <- which ("Fail" == row.names(tblRes) ) 
+  tblIdxFail_Strike <- which (grepl("Fail-With Strike",row.names(tblRes) ) )
+  tblIdxFail_NoStrike <- which (grepl("Fail-No Strike",row.names(tblRes) ) ) 
+  tblidxValidHuntEvents <- c(6,7,tblIdxSuccess,tblIdxFail)
+  
+  ##Summarize COmbine Labels ###
+  # Success Together, And Fails Together
+  DLRes=c(
+    # sum(tblRes[tblIdxSuccess,GroupID]),
+    #sum(tblRes[tblIdxSuccess_Strike,GroupID]),
+    #sum(tblRes[tblIdxSuccess_NoStrike,GroupID])
+    sum(tblRes[tblIdxFail_Strike,GroupID]),
+    sum(tblRes[tblIdxFail_NoStrike,GroupID])
+  )
+  
+  nLabelledDL <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+
+  #ScoreLabels <- c("Success Noclass","Success Strike","Success No Strike","Fail Strike","Fail No Strike") ##"Fail Noclass" Removed as it is 0
+  ScoreLabels <- c("Fail Strike","Fail No-Strike") ##"Fail Noclass" Removed as it is 0
+  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
+  if (is.na(colourL))
+    colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+  
+  pie(DLRes , labels = c(paste0("",round((DLRes[1]/nLabelledDL)*100),"%"),
+                         paste0("",round((DLRes[2]/nLabelledDL)*100),"%") ),
+      cex=1.4,cex.main=2.8,clockwise = TRUE,
+      #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
+      radius=1.0,col=colourL) 
+  
+  
+  
+  return(nLabelledDL)
+  
+}  
+
 
 ##\todo convert Means to BoxPlots
 ## Box Plots Used to Compare Conditions On Mean Stats - Saves Output As Pdf

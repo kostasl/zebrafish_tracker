@@ -56,8 +56,9 @@ getLabelledHuntEventsSet <- function()
   vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
   
   ##We Can Choose To Exclude The Fish That Produced No Hunting Events
-  datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) & 
-                                                         datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL") ,]
+  datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) 
+                                                       #& datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL")
+                                                          ,]
   return(datHuntLabelledEventsSB)
 }
 
