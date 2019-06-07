@@ -8,13 +8,13 @@
 ### TODO Also Plot Duration Of Eye Vergence Frames ###
 #library(Hmisc) ##For Minor Ticks
 
-library(fitdistrplus) ## Fpr testing Dist. Fit
+#library(fitdistrplus) ## Fpr testing Dist. Fit
 
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
-
+source("config_lib.R")
 
 ##### Do Jags Statistics ###
 modelI="model { 
@@ -262,11 +262,19 @@ load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",s
 ############ LOAD EVENTS LIst and Fix ####
 ## Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 ## Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2" 
-
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"  ##Load the merged Frames
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+## Merge the missing empty Records
+#datHuntLabelledEventsSBMergedSpontaneous <- datHuntLabelledEventsSBMerged[datHuntLabelledEventsSBMerged$groupID %in% c("DE","NE","LE"),]
+#datHuntLabelledEventsSBMerged3 <- rbind(datHuntLabelledEventsSBMerged2,datHuntLabelledEventsSBMergedSpontaneous)
+#strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3" 
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+#saveRDS(datHuntLabelledEventsSBMerged3,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+
 
 ##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
 datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
@@ -280,11 +288,11 @@ datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
 vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
 vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Exp Less than 4*2*3=24
 ##Check For Missing Exp Less than 24 
-for (dID in vWeirdDataSetID )
-  print(NROW(unique(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$dataSetID ==  dID ,]$expID)))
 
 datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID) & 
                                                                                 !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
+for (dID in vWeirdDataSetID )
+  print(NROW(unique(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$dataSetID ==  dID ,]$expID)))
 
 ################# # ## # # 
 
@@ -339,7 +347,7 @@ save(drawLL2,drawNL2,drawDL2,drawLE2,drawNE2,drawDE2,file =paste(strDataExportDi
 
 ### Draw Distribution oF Hunt Rates - 
 ## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
-plotsamples <- 15
+plotsamples <- 100
 schain <-1:3
 
 ### The Prob Of Success p from NegBinom translates to Gamma Rate p/(1-p), or scale: (1-p)/p
@@ -356,7 +364,7 @@ HEventHuntGammaShape_DL <- tail(drawDL2$r[,,schain],plotsamples)
 HEventHuntGammaShape_NE <- tail(drawNE2$r[,,schain],plotsamples);
 HEventHuntGammaShape_NL <- tail(drawNL2$r[,,schain],plotsamples)
 
-pBW = 0.8
+pBW = 0.5
 densHPoissonRate_LL <- density( HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL,bw=pBW)
 densHPoissonRate_LE <- density( HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE,bw=pBW)
 densHPoissonRate_DE <- density( HEventHuntGammaShape_DE*1/HEventHuntGammaRate_DE,bw=pBW)
@@ -370,7 +378,7 @@ x <- seq(0.01,Plim,0.05)
 
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
-pdf(file= paste(strPlotExportPath,"/stat/fig3_statComparePoissonHuntRates",".pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf",sep=""))
 ##Now Plot Infered Distributions
 ##Show Alignment with Empirical Distribution of HuntEvent Numbers
 ## Number of Hunt Events Per Larva
@@ -394,6 +402,9 @@ legend("bottomright",legend = c(  expression (),
                                  ,bquote( NF["e"] ~ "Model " ) ), 
        col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+mtext(side = 1,cex=0.8, line = 2.2, "Hunt events ")
+mtext(side = 2,cex=0.8, line = 2.2, " Cumulative function ")
+
 
 plotEventCountDistribution_cdf(datHuntVsPreyLE,drawLE2,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
 plotEventCountDistribution_cdf(datHuntVsPreyLL,drawLL2,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE )
@@ -404,6 +415,9 @@ legend("bottomright",legend = c(  expression (),
                                   ,bquote( LF["e"] ~ "Model " ) ), 
       col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+mtext(side = 1,cex=0.8, line = 2.2, "Hunt events ")
+mtext(side = 2,cex=0.8, line = 2.2, " Cumulative function ")
+
 
 plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE  )
 plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE  )
@@ -413,8 +427,8 @@ legend("bottomright",legend = c(  expression (),
                                   bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDL)) )
                                   ,bquote( DF["e"] ~ "Model " ) ), 
        col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=1.1,bg="white" )
-mtext(side = 1,cex=0.8, line = 2.2, "Event Counts (N)")
-mtext(side = 2,cex=0.8, line = 2.2, " F(x < N) ")
+mtext(side = 1,cex=0.8, line = 2.2, "Hunt events ")
+mtext(side = 2,cex=0.8, line = 2.2, " Cumulative function ")
 mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 
@@ -440,7 +454,7 @@ mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 strCondTags <- c("NE","NL","LE","LL","DE","DL")
 xbarcenters <- boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
         main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2),axes = FALSE  )
-mtext(side = 2,cex=0.8, line =2.2, "Event Counts " ) #log(N+1)
+mtext(side = 2,cex=0.8, line =2.2, "Number of hunt events " ) #log(N+1)
 vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
 vDat        <- (datHuntStat[,"vHLarvaEventCount"])
 
@@ -460,18 +474,18 @@ pBW <- 0.001
 
 
 Ylim <- 0.5
-plot(densHPoissonRate_NL$x, densHPoissonRate_NL$y,type='l',lty=lineTypeL[2],col=colourHL[1],lwd=4,ylab=NA,xlab=NA,xlim=c(0,25),ylim=c(0,Ylim))
-lines(densHPoissonRate_LL$x, densHPoissonRate_LL$y,type='l',lty=lineTypeL[2],col=colourHL[2],lwd=4,ylab=NA,xlab=NA)
-lines(densHPoissonRate_DL$x, densHPoissonRate_DL$y,type='l',lty=lineTypeL[2],col=colourHL[3],lwd=4,ylab=NA,xlab=NA)
+plot(densHPoissonRate_NL$x, densHPoissonRate_NL$y,type='l',lty=lineTypeL[2],col=colourLegL[1] ,lwd=4,ylab=NA,xlab=NA,xlim=c(0,25),ylim=c(0,Ylim))
+lines(densHPoissonRate_LL$x, densHPoissonRate_LL$y,type='l',lty=lineTypeL[2],col=colourHLine[2],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_DL$x, densHPoissonRate_DL$y,type='l',lty=lineTypeL[2],col=colourHLine[3],lwd=4,ylab=NA,xlab=NA)
 
-lines(densHPoissonRate_NE$x, densHPoissonRate_NE$y,type='l',lty=lineTypeL[1],col=colourHL[1],lwd=4,ylab=NA,xlab=NA)
-lines(densHPoissonRate_LE$x, densHPoissonRate_LE$y,type='l',lty=lineTypeL[1],col=colourHL[2],lwd=4,ylab=NA,xlab=NA)
-lines(densHPoissonRate_DE$x, densHPoissonRate_DE$y,type='l',lty=lineTypeL[1],col=colourHL[3],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_NE$x, densHPoissonRate_NE$y,type='l',lty=lineTypeL[1],col=colourHLine[1],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_LE$x, densHPoissonRate_LE$y,type='l',lty=lineTypeL[1],col=colourHLine[2],lwd=4,ylab=NA,xlab=NA)
+lines(densHPoissonRate_DE$x, densHPoissonRate_DE$y,type='l',lty=lineTypeL[1],col=colourHLine[3],lwd=4,ylab=NA,xlab=NA)
 
 legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")),seg.len=2.2
        , col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=2,cex=1.1,bg="white" )
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Poisson Hunt Rate  (",lambda," )") )  )
-mtext(side = 2,cex=0.8, line = 2.2, " P(x) ")
+mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Estimated Hunt Rate  (",lambda," )") )  )
+mtext(side = 2,cex=0.8, line = 2.2, " Density function ")
 mtext("F",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 dev.off() 

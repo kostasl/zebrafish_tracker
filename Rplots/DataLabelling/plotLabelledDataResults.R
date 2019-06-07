@@ -1,9 +1,8 @@
 ## Konstantinos Lagogiannis 2018
 ## TODO Add Auto Success Label detect with datHuntEvent[grepl("Success",as.character(convertToScoreLabel(datHuntEvent$huntScore) ) ) ,]
 ###Plot Labelled Results ##
-
+source("config_lib.R")
 source("plotHuntStat_lib.r")
-
 source("DataLabelling/labelHuntEvents_lib.r")
 ##source() Needs Plot Hunt Stat for PieChart
 ## We can update To The Latest DataLabelling by running auxFunctions 
