@@ -165,10 +165,10 @@ update(jags_model_DF, 500)
 draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
 ## All groups combined data points
-jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_ALL, 
-                            n.adapt = 500, n.chains = 3, quiet = F)
-update(jags_model_ALL, 500)
-draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
+#jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_ALL, 
+#                            n.adapt = 500, n.chains = 3, quiet = F)
+#update(jags_model_ALL, 500)
+#draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 
 ### Estimate  densities  ###
@@ -177,10 +177,10 @@ ntail <-2000
 pBw   <- 0.02 
 
 
-zLL <- kde2d(c(tail(draw_LF$mu[,1,,1],ntail)), c(tail(draw_LF$mu[,2,,1],ntail)),n=80)
-zNL <- kde2d(c(tail(draw_NF$mu[,1,,1],ntail)), c(tail(draw_NF$mu[,2,,1],ntail)),n=80)
-zDL <- kde2d(c(tail(draw_DF$mu[,1,,1],ntail)), c(tail(draw_DF$mu[,2,,1],ntail)),n=80)
-zALL <- kde2d(c(tail(draw_ALL$mu[,1,,1],ntail)), c(tail(draw_ALL$mu[,2,,1],ntail)),n=80)
+zLL <- kde2d(c(tail(draw_LF$mu[,1,,],ntail)), c(tail(draw_LF$mu[,2,,],ntail)),n=180)
+zNL <- kde2d(c(tail(draw_NF$mu[,1,,],ntail)), c(tail(draw_NF$mu[,2,,],ntail)),n=180)
+zDL <- kde2d(c(tail(draw_DF$mu[,1,,],ntail)), c(tail(draw_DF$mu[,2,,],ntail)),n=180)
+#zALL <- kde2d(c(tail(draw_ALL$mu[,1,,1],ntail)), c(tail(draw_ALL$mu[,2,,1],ntail)),n=80)
 
 
 ## Check out the covar coeffient , compare estimated densities
@@ -221,7 +221,7 @@ dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
 #### Main Figure - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
 
-pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,title="A Gaussian Cluster statistical model for Capture Strike speed and Distance to Prey")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -236,12 +236,12 @@ layout(matrix(c(1,2),1,2, byrow = TRUE))
 par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
-ntail <- 600
-plot(tail(draw_NF$mu[,1,,1],ntail),tail(draw_NF$mu[,2,,1],ntail),col=colourP[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+ntail <- 700
+plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
 #points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
-points(tail(draw_LF$mu[,1,,1],ntail),tail(draw_LF$mu[,2,,1],ntail),col=colourP[2],pch=pchL[2])
+points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
 #points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[,1,,1],ntail),tail(draw_DF$mu[,2,,1],ntail),col=colourP[3],pch=pchL[3])
+points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
 
 #points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
