@@ -72,11 +72,46 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 } "
 
+
+## Plots the Data Density and the 2 Gaussians fititng high and low speed capture swims
+plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
+{
+  xquant <- seq(0,70,1)
+  XLIM <- c(0,60)
+  YLIM <- c(0,0.15)
+  pdistBW <- 2 ## mm/sec
+  strKern <- "gaussian"
+  #ntail <- NROW(drawMCMC$mu[1,2,,nchain])*0.10
+  ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
+  
+  plot(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA,xlab = NA,ylab=NA)
+  for (i in 1:(ntail-1) )
+  {
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=2 )
+  }
+  
+  dens<- density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern)
+  lines(dens,col="black",lwd=4,xlim=XLIM )
+  legend("topright",title="",
+         legend=c( paste0("",dens$n, "# Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                   paste("Model low speed " ),
+                   paste("Model high speed " )),
+         col=c("black",colourLegL[colourIdx],colourLegL[colourIdx]),lwd=c(3,1,1),lty=c(1,1,2) ) 
+  
+  mtext(side = 1,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
+  mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
+  
+}
+
+
+
+
 strMainPDFFilename <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeedVsDistToPrey.pdf";
 strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
 strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
-strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeed_Valid.pdf"
+strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeed_Valid.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -105,7 +140,7 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 ##  Init  datastruct that we pass to model ##
 
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
-steps <- 1550
+steps <- 15500
 str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS")
 ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
@@ -202,11 +237,11 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ntail <- 600
-plot(tail(draw_NF$mu[,1,,1],ntail),tail(draw_NF$mu[,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[,1,,1],ntail),tail(draw_NF$mu[,2,,1],ntail),col=colourP[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
 #points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
-points(tail(draw_LF$mu[,1,,1],ntail),tail(draw_LF$mu[,2,,1],ntail),col=colourH[2],pch=pchL[2])
+points(tail(draw_LF$mu[,1,,1],ntail),tail(draw_LF$mu[,2,,1],ntail),col=colourP[2],pch=pchL[2])
 #points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[,1,,1],ntail),tail(draw_DF$mu[,2,,1],ntail),col=colourH[3],pch=pchL[3])
+points(tail(draw_DF$mu[,1,,1],ntail),tail(draw_DF$mu[,2,,1],ntail),col=colourP[3],pch=pchL[3])
 #points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
 
 #points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
@@ -271,7 +306,7 @@ dev.off()
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
 
-pdf(file= paste(strPlotExportPath,strModelPDFFilename,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,strModelPDFFilename,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed And Distance to prey")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -440,7 +475,7 @@ par(mar = c(3.9,4.3,1,1))
 plot(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
      xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,2),main=NA)
 lFit <- lm(datDistanceVsStrikeSpeed_NL$CaptureSpeed ~ datDistanceVsStrikeSpeed_NL$DistanceToPrey)
-abline(lFit,col=colourH[1],lwd=3.0) ##Fit Line / Regression
+abline(lFit,col=colourP[1],lwd=3.0) ##Fit Line / Regression
 contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[1],lty=2,lwd=3)
 legend("topright",
        legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
@@ -448,7 +483,7 @@ legend("topright",
 plot(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
      ylim=c(0,60),xlim=c(0,2),xlab=NA,ylab=NA)
 lFit <- lm(datDistanceVsStrikeSpeed_LL$CaptureSpeed ~ datDistanceVsStrikeSpeed_LL$DistanceToPrey)
-abline(lFit,col=colourH[2],lwd=3.0) ##Fit Line / Regression
+abline(lFit,col=colourP[2],lwd=3.0) ##Fit Line / Regression
 contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[2],lty=2,lwd=3)
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
 legend("topright",
@@ -470,64 +505,19 @@ dev.off()
 
 
 #### Capture Speed Only Model And Data ##
-
-## pLOT THE Capture Speed  GAUSSIAN FIT of Capture Speed
-
 pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
 
+par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-xquant <- seq(0,70,1)
-XLIM <- c(0,60)
-YLIM <- c(0,0.08)
-pdistBW <- 2 ## mm/sec
-strKern <- "gaussian"
-ntail <- NROW(draw_NF$mu[1,2,,1])*0.10
+npchain<-3
+plotCaptureSpeedFit(datDistanceVsStrikeSpeed_NL,draw_NF,1,npchain)
+#title(main="Model capture Speed")
+plotCaptureSpeedFit(datDistanceVsStrikeSpeed_LL,draw_LF,2,npchain)
+plotCaptureSpeedFit(datDistanceVsStrikeSpeed_DL,draw_DF,3,npchain)
 
-plot(density(datDistanceVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main="Capture Speed on capture strike")
-for (i in 1:(ntail-1) )
-{
-  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[1,2,ntail-i,1],1),sd=tail(draw_NF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[1],lty=1 )
-  lines(xquant,dnorm(xquant,mean=tail(draw_NF$mu[idxCaptClust_NF,2,ntail-i,1],1),sd=tail(draw_NF$sigma[idxCaptClust_NF,2,ntail-i,1],1)),type='l',col=colourH[1],lty=2 )
-}
-
-lines(density(datDistanceVsStrikeSpeed_NL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
-legend("topright",title="NF",
-       legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
-                 paste("model " ) ),
-       col=c("black",colourH[3]),lwd=c(3,1) ) 
-
-
-plot(density(datDistanceVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
-for (i in 1:(ntail-1) )
-{
-  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[1,2,ntail-i,1],1),sd=tail(draw_LF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[2] )
-  lines(xquant,dnorm(xquant,mean=tail(draw_LF$mu[idxCaptClust_LF,2,ntail-i,1],1),sd=tail(draw_LF$sigma[idxCaptClust_LF,2,ntail-i,1],1)),type='l',col=colourH[2],lty=2 )
-}
-lines(density(datTurnVsStrikeSpeed_LL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
-
-legend("topright",title="LF",
-       legend=c( paste("Data Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
-                 paste("model " ) ),
-       col=c("black",colourH[2]),lwd=c(3,1) ) 
-
-
-plot(density(datDistanceVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
-for (i in 1:(ntail-1) )
-{
-  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[1,2,ntail-i,1],1),sd=tail(draw_DF$sigma[1,2,ntail-i,1],1)),type='l',col=colourH[3] )
-  lines(xquant,dnorm(xquant,mean=tail(draw_DF$mu[idxCaptClust_DF,2,ntail-i,1],1),sd=tail(draw_DF$sigma[idxCaptClust_DF,2,ntail-i,1],1)),type='l',col=colourH[3] ,lty=2)
-}
-lines(density(datTurnVsStrikeSpeed_DL$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,main=NA)
-
-legend("topright",title="DF",
-       legend=c( paste("Data  Density") , #(Bw:",prettyNum(digits=2, pdistBW ),")"
-                 paste("model " ) ),
-       col=c("black",colourH[3]),lwd=c(3,1) ) 
-
-mtext(side = 1,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
 
 dev.off()
-embed_fonts(strCaptSpeedDensityPDFFileName)
+#embed_fonts(strCaptSpeedDensityPDFFileName)
 
 
 

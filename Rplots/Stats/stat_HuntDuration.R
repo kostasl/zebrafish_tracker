@@ -96,11 +96,14 @@ mcmc_drawHuntDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFil
 
 
 ## Compare Model TO Data Using CDF ##
+## Comverting frames to Duration using Approx FPS - 
+## Note : plot at intervals otherwise plot is slow and very large
 plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpch,lty,Plim,nplotSamples=100,newPlot = FALSE)
 {
   XLim <- G_APPROXFPS*180
-  XStep <- round(G_APPROXFPS/4)
-  x <- seq(0,XLim,XStep)
+  XStep <- round(G_APPROXFPS)
+  x <- seq(XStep,XLim,XStep)
+  x_s <- seq(0,XLim,1)
   yDat <- datHDuration[,3]/G_APPROXFPS
   
   cdfD_N <- ecdf(yDat)
@@ -110,8 +113,14 @@ plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpc
   ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
     for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
-    {
-      cdfM <- cumsum(dnbinom(seq(0,XLim,1),size=drawHEvent$r[,j,c], prob=  drawHEvent$q[,j,c]  ))##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+    {##seq(0,XLim,1)
+     ## Step-wise approx
+      #cdfM <- cumsum((XStep  * dnbinom(x,size=drawHEvent$r[,j,c], prob=  drawHEvent$q[,j,c]  ) ) )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      #lines(x/G_APPROXFPS,cdfM,col=lcolour,lty=lty) #add=TRUE,
+      
+      ##Complete on per frame duration data - cummulative distribution
+      cdfM <- cumsum(dnbinom(x_s,size=drawHEvent$r[,j,c], prob=  drawHEvent$q[,j,c]  ))##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      ##Sample CDF at key points 
       lines(x[1:NROW(cdfM[x])]/G_APPROXFPS,cdfM[x],col=lcolour,lty=lty) #add=TRUE,
     }
   }
@@ -380,28 +389,28 @@ for (dID in vWeirdDataSetID )
 ## Added Larva ID to Check for Correlation Through Time of Day - Surrogate as LarvaID;s increase through the day of the experiment from 1 morning -4 evening
 ## No Effect Of Time Of Data is evident Found #
 
-## Remove Rec Without Any Hunt Events / ie 0 Duration ###
+##***## NOTE Remove Rec Without Any Hunt Events / ie 0 Duration ### 
 ###  This is because The Hunt Duration Is Discontinuous if we include the Larvae With 0 events, and this creates modelling problems 
 ## Thus when Looking for Hunt Duration per larva we need to exclude the ones that did not hunt.
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ),datHuntStat[,"vIDLookupTable"]$LL$larvaID )
-datHuntVsPreyLL <- datHuntVsPreyLL[!is.na(datHuntVsPreyLL[,1]) & datHuntVsPreyLL[,2] > 0,]
+datHuntVsPreyLL <- datHuntVsPreyLL[!is.na(datHuntVsPreyLL[,1]) & datHuntVsPreyLL[,2] > 0 ,]
 datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ),datHuntStat[,"vIDLookupTable"]$LE$larvaID  )
-datHuntVsPreyLE <- datHuntVsPreyLE[!is.na(datHuntVsPreyLE[,1]) & datHuntVsPreyLE[,2] > 0,]
+datHuntVsPreyLE <- datHuntVsPreyLE[!is.na(datHuntVsPreyLE[,1]) & datHuntVsPreyLE[,2] > 0,] ##& datHuntVsPreyLE[,2] > 0
 
 datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NL),datHuntStat[,"vIDLookupTable"]$NL$larvaID )
 datHuntVsPreyNL <- datHuntVsPreyNL[!is.na(datHuntVsPreyNL[,1]) & datHuntVsPreyNL[,2] > 0,]
 datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NE),datHuntStat[,"vIDLookupTable"]$NE$larvaID  )
-datHuntVsPreyNE <- datHuntVsPreyNE[!is.na(datHuntVsPreyNE[,1]) & datHuntVsPreyNE[,2] > 0 ,]
+datHuntVsPreyNE <- datHuntVsPreyNE[!is.na(datHuntVsPreyNE[,1]) & datHuntVsPreyNE[,2] > 0  ,]
 
 datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DL ),datHuntStat[,"vIDLookupTable"]$DL$larvaID  )
-datHuntVsPreyDL <- datHuntVsPreyDL[!is.na(datHuntVsPreyDL[,1]) & datHuntVsPreyDL[,2] > 0 ,] ##Remove NA And High Fliers
+datHuntVsPreyDL <- datHuntVsPreyDL[!is.na(datHuntVsPreyDL[,1]) & datHuntVsPreyDL[,2] > 0,] ##Remove datHuntVsPreyDL[,2] NA And High Fliers
 datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DE ),datHuntStat[,"vIDLookupTable"]$DE$larvaID  )
 datHuntVsPreyDE <- datHuntVsPreyDE[!is.na(datHuntVsPreyDE[,1]) & datHuntVsPreyDE[,2] > 0,] ##Remove NA And High Fliers
 
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
 preyCntRange <- c(0,100)
-plotsamples <- 15
+plotsamples <- 500
 schain <-1:3
 
 ## Run Sampler On Larva Total Hunt Duration 
@@ -469,7 +478,7 @@ las <- 1
 layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5), 2,6, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,3.3,1,1))
-plotsamples <- 15
+
 plotHuntDurationDistribution_cdf(datHuntVsPreyNE,drawDurNE,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
 plotHuntDurationDistribution_cdf(datHuntVsPreyNL,drawDurNL,colourHL[1],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
 legend("bottomright",legend = c(  expression (),
@@ -542,7 +551,7 @@ yticks <-axis(2,labels=NA)
 axis(2, at = yticks, labels =round(10^yticks) , col.axis="black", las=2)
 ## Connect Larvae From EMpty To LIve Test Condition #
 plotConnectedHuntDuration(datHuntStat,vDat,strCondTags)
-mtext("I",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+mtext("I",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj+3,cex.main=cex)
 
 
 #### Show Density Of Hunt Episode Duration per Hunt Event ####
@@ -558,7 +567,7 @@ lines(density(muEpiDur_NL,bw=pBW),xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[1
 legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), seg.len=3.5,
        col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Estimated duration of each hunt episode  (sec)") )  )
-mtext(side = 2,cex=0.8, line = 2.2, " P(x) ")
+mtext(side = 2,cex=0.8, line = 2.2, " Density function ")
 mtext("J",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 dev.off()
