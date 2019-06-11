@@ -11,7 +11,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 modelNorm="model {
          
          for(i in 1:3) {
-             mu[i]   ~ dunif(3,6 )
+             mu[i]   ~ dunif(3,6 ) ## Mean length in mm
              prec[i] ~ dunif(0,50) ##dgamma(1,1) ##
              sigma[i] <- sqrt(1/prec[i]) 
         }
@@ -22,8 +22,25 @@ modelNorm="model {
          }
 }"
 
+##New Fish Size Record ###
+#datFlatPxLength <- data.frame(
+#  rbind(cbind(datFishLength$LF,which(strGroupID == "LL")),
+#        cbind(datFishLength$NF,which(strGroupID == "NL")),
+#        cbind(datFishLength$DF,which(strGroupID == "DL")))
+#)
+#datFlatPxLength <- cbind(datFlatPxLength,NA)
+#names(datFlatPxLength) <- c("LengthPx","groupID","expID")
+#datFlatPxLength <- datFlatPxLength[!is.na(datFlatPxLength$LengthPx), ]
+#write.csv(datFlatPxLength,file= paste(strDataExportDir,"/FishLength_Updated.csv",sep=""))
+#saveRDS(datFlatPxLength,file= paste(strDataExportDir,"/FishLength_Updated.rds",sep="") ) ## THis is the Processed Register File On 
 
-strProcDataFileName <- paste0(strDatDir, "/FishLength.RData")
+################### LOAD CSV OF PX Larva lengths
+#strProcDataFileName <- paste0(strDatDir, "/FishLength.RData") <- Original rec - no expid's
+## *NOTE: 11/6/19 I exported the old data in flat file with GroupID and expID,  **
+## As the DF distrution looked wide, and rather bimodal, I measured more larvae to fill in the gaps. 
+## The new data is in this csv, leaving the posibility to add more. 
+## The scriptlet to run the labelling process on a set of expID is found in auxFunctions.r
+datFlatPxLength <- read.csv(file= paste(strDataExportDir,"/FishLength_Updated2.csv",sep=""))
 message(paste(" Loading Measured fish length in pixels data ... "))
 load(file=strProcDataFileName) ##Save With Dataset Idx Identifier
 
@@ -31,26 +48,28 @@ load(file=strProcDataFileName) ##Save With Dataset Idx Identifier
 ## Recalc First Bout Data based on Validated Info ###
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 strGroupID <- levels(datTrackedEventsRegister$groupID)
+# 
+# strGroupName <- names(datFishLength)
+# datFlatFrame <- data.frame(
+#                 rbind(cbind(datFishLength$LF*DIM_MMPERPX,which(strGroupID == "LL")),
+#                       cbind(datFishLength$NF*DIM_MMPERPX,which(strGroupID == "NL")),
+#                       cbind(datFishLength$DF*DIM_MMPERPX,which(strGroupID == "DL")))
+#                 )
+# names(datFlatFrame) <- c("LengthPx","groupID")
+# datFlatFrame <- datFlatFrame[!is.na(datFlatFrame$LengthPx), ]
+# 
 
-strGroupName <- names(datFishLength)
-datFlatFrame <- data.frame(
-                rbind(cbind(datFishLength$LF*DIM_MMPERPX,which(strGroupID == "LL")),
-                      cbind(datFishLength$NF*DIM_MMPERPX,which(strGroupID == "NL")),
-                      cbind(datFishLength$DF*DIM_MMPERPX,which(strGroupID == "DL")))
-                )
 
-names(datFlatFrame) <- c("LengthPx","groupID")
-datFlatFrame <- datFlatFrame[!is.na(datFlatFrame$LengthPx), ]
 ## Check OUt Length Hist
 hist(datFlatFrame$LengthPx*DIM_MMPERPX ,xlim=c(2,6))
 
-Jagsdata=list(groupID=datFlatFrame$groupID,
-              LarvaLength=datFlatFrame$LengthPx, 
+Jagsdata=list(groupID=datFlatPxLength$groupID,
+              LarvaLength=datFlatPxLength$LengthPx*DIM_MMPERPX, 
               NTOT=nrow(datFlatFrame));
 
 varnames1=c("mu","sigma")
 burn_in=1000;
-steps=10000;
+steps=100000;
 thin=10;
 chains=3
 
@@ -69,9 +88,9 @@ dmodelSizeNF <- density(draw$mu[which(strGroupID == "NL"),,]*DIM_MMPERPX,bw=0.01
 dmodelSizeLF <- density(draw$mu[which(strGroupID == "LL"),,]*DIM_MMPERPX,bw=0.01)
 dmodelSizeDF <- density(draw$mu[which(strGroupID == "DL"),,]*DIM_MMPERPX,bw=0.01)
 
-dSizeNF <- density(datFishLength[!is.na(datFishLength$NF),]$NF*DIM_MMPERPX,bw=0.05)
-dSizeLF <- density(datFishLength[!is.na(datFishLength$LF),]$LF*DIM_MMPERPX,bw=0.05)
-dSizeDF <- density(datFishLength[!is.na(datFishLength$DF),]$DF*DIM_MMPERPX,bw=0.05)
+dSizeNF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,bw=0.05)
+dSizeLF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX,bw=0.05)
+dSizeDF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "DL"),]$LengthPx *DIM_MMPERPX,bw=0.05)
 
 points(datFishLength[!is.na(datFishLength$DF),]$DF*DIM_MMPERPX,rep(0.1,NROW(datFishLength[!is.na(datFishLength$DF),]$DF) ) ) 
 #lines(dmodelSizeLF,col=colourHLine[2] , xlim=c(3,6),lty=2 ,lwd=2   )
@@ -79,11 +98,11 @@ points(datFishLength[!is.na(datFishLength$DF),]$DF*DIM_MMPERPX,rep(0.1,NROW(datF
 #lines(dmodelSizeDF,col=colourHLine[3],lty=2,lwd=2)
 
 xquant <- seq(0,6,diff(dSizeNF$x)[1])
-XLIM <- c(3,5)
+XLIM <- c(1,6)
 YLIM <- c(0,3)
 pdistBW <- 2 ## mm/sec
 strKern <- "gaussian"
-ntail <- nrow(draw$mu[which(strGroupID == "NL"),,])*0.7
+ntail <- 100 #nrow(draw$mu[which(strGroupID == "NL"),,])*0.5
 norm <- max(dSizeNF$y)
 
 modelNorm <- max(dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),,],1),
@@ -91,16 +110,15 @@ modelNorm <- max(dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),,],1),
 
 
 ## Normalized Model ?
-sum(diff(dSizeNF$x)[1] * dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail,],1),
-sd=tail(draw$sigma[which(strGroupID == "NL"),ntail,],1)))
+sum(diff(dSizeNF$x)[1] * dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail,],1),sd=tail(draw$sigma[which(strGroupID == "NL"),ntail,],1)))
 ##Normalized empirical density?
 sum(diff(dSizeNF$x)[1]*dSizeNF$y)
 
 
-plot(xquant,
+plot(
       dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail,],1),
             sd=tail(draw$sigma[which(strGroupID == "NL"),ntail,],1)),
-     type='l',col=colourHLine[1],lwd=3,xlim=XLIM,ylim=YLIM,xlab=NA,ylab=NA)
+     type='l',col=colourHLine[1],lwd=3,xlab=NA,ylab=NA)
 
 lines(dSizeNF$x,dSizeNF$y,col=colourHLine[1],lwd=4,lty=2)
 

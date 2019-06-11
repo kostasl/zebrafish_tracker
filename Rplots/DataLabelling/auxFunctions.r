@@ -196,3 +196,40 @@ strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"
 saveRDS(datHuntLabelledEventsSBMerged3,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 ### End Merging Fix Code #####
 
+########################################### MEASURING FISH ###
+##### Run Tracker On All Vids ##
+source("DataLabelling/labelHuntEvents_lib.r")
+source("HuntingEventAnalysis_lib.r")
+load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/")) ##Raw Data Tracker Frames 
+load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
+##For Some Reason Eventlist Does not have an event0 for all missing (non BHunting) Experiments 
+
+##For Some Reason Eventlist Does not have an event0 for all missing (non BHunting) Experiments 
+## I Needed to Fix With Adding 0 Events
+vExpIDS <- list() ## The Source
+vExpIDS[["NE"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "NE",]$expID))
+vExpIDS[["NL"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "NL",]$expID))
+vExpIDS[["LE"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "LE",]$expID))
+vExpIDS[["LL"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "LL",]$expID))
+vExpIDS[["DE"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "DE",]$expID))
+vExpIDS[["DL"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "DL",]$expID))
+
+for (expID in rev(vExpIDS[["DE"]] ) )
+{
+  strVideoFile <- list.files(path =strVideoFilePath, pattern = paste0(rep("_",n=NROW(expID)),expID,"_002" ) ,
+                           all.files = FALSE,
+                           full.names = TRUE, recursive = TRUE,
+                           ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
+  
+  ##--
+  strArgs = paste(" --MeasureMode=1 --HideDataSource=0 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=~",
+                  " --startframe=1 --startpaused=1",sep="")
+  
+  message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
+  if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
+    stop(paste("Tracker software not found in :",strTrackerPath ))
+  
+  execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=NULL,stderr =NULL) ## stdout=FALSE stderr = FALSE
+  
+  print(strVideoFile)
+}
