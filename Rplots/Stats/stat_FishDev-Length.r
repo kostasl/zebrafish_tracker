@@ -27,19 +27,20 @@ strProcDataFileName <- paste0(strDatDir, "/FishLength.RData")
 message(paste(" Loading Measured fish length in pixels data ... "))
 load(file=strProcDataFileName) ##Save With Dataset Idx Identifier
 
-datFishLength
+## Extrach the groupID - GroupName Convention we have been using 
+## Recalc First Bout Data based on Validated Info ###
+datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
+strGroupID <- levels(datTrackedEventsRegister$groupID)
 
+strGroupName <- names(datFishLength)
+datFlatFrame <- rbind(cbind(datFishLength$LF,which(strGroupID == "LL")),
+                      cbind(datFishLength$NF,which(strGroupID == "NL")),
+                      cbind(datFishLength$NF,which(strGroupID == "DL")))
+
+## Check OUt Length Hist
 hist(datFishLength$LF,xlim=c(50,150))
 
-datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
-datFishSuccessRate$groupID <- factor(datFishSuccessRate$groupID)
-strGroups <-levels(datFishSuccessRate$groupID)
-
-NRecCount_DL <- table(datFishSuccessRate$groupID)["DL"]
-NRecCount_NL <- table(datFishSuccessRate$groupID)["NL"]
-NRecCount_LL <- table(datFishSuccessRate$groupID)["LL"]
-
-datatest=list(Success=datFishSuccessRate$Success,
+Jagsdata=list(groupID=datFishSuccessRate$Success,
               Fail=datFishSuccessRate$Fails,
               TrackPrey=datFishSuccessRate$Fails+datFishSuccessRate$Success, ##Number of Prey Engangements
               Events=datFishSuccessRate$HuntEvents, ##Includes No_Target - ie cases where stimuli Trigger Fish HuntMode But no Prey Tracking Seems to take place
