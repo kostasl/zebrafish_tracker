@@ -11,7 +11,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 modelNorm="model {
          
          for(i in 1:3) {
-             mu[i]   ~ dnorm(6,0.0001 )
+             mu[i]   ~ dunif(3,6 )
              prec[i] ~ dunif(0,50) ##dgamma(1,1) ##
              sigma[i] <- sqrt(1/prec[i]) 
         }
@@ -34,9 +34,9 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 
 strGroupName <- names(datFishLength)
 datFlatFrame <- data.frame(
-                rbind(cbind(datFishLength$LF,which(strGroupID == "LL")),
-                      cbind(datFishLength$NF,which(strGroupID == "NL")),
-                      cbind(datFishLength$DF,which(strGroupID == "DL")))
+                rbind(cbind(datFishLength$LF*DIM_MMPERPX,which(strGroupID == "LL")),
+                      cbind(datFishLength$NF*DIM_MMPERPX,which(strGroupID == "NL")),
+                      cbind(datFishLength$DF*DIM_MMPERPX,which(strGroupID == "DL")))
                 )
 
 names(datFlatFrame) <- c("LengthPx","groupID")
@@ -50,7 +50,7 @@ Jagsdata=list(groupID=datFlatFrame$groupID,
 
 varnames1=c("mu","sigma")
 burn_in=1000;
-steps=100000;
+steps=10000;
 thin=10;
 chains=3
 
@@ -69,63 +69,72 @@ dmodelSizeNF <- density(draw$mu[which(strGroupID == "NL"),,]*DIM_MMPERPX,bw=0.01
 dmodelSizeLF <- density(draw$mu[which(strGroupID == "LL"),,]*DIM_MMPERPX,bw=0.01)
 dmodelSizeDF <- density(draw$mu[which(strGroupID == "DL"),,]*DIM_MMPERPX,bw=0.01)
 
-dSizeNF <- density(datFishLength[!is.na(datFishLength$NF),]$NF*DIM_MMPERPX,bw=0.1)
-dSizeLF <- density(datFishLength[!is.na(datFishLength$LF),]$LF*DIM_MMPERPX,bw=0.1)
-dSizeDF <- density(datFishLength[!is.na(datFishLength$DF),]$DF*DIM_MMPERPX,bw=0.1)
+dSizeNF <- density(datFishLength[!is.na(datFishLength$NF),]$NF*DIM_MMPERPX,bw=0.05)
+dSizeLF <- density(datFishLength[!is.na(datFishLength$LF),]$LF*DIM_MMPERPX,bw=0.05)
+dSizeDF <- density(datFishLength[!is.na(datFishLength$DF),]$DF*DIM_MMPERPX,bw=0.05)
 
-
+points(datFishLength[!is.na(datFishLength$DF),]$DF*DIM_MMPERPX,rep(0.1,NROW(datFishLength[!is.na(datFishLength$DF),]$DF) ) ) 
 #lines(dmodelSizeLF,col=colourHLine[2] , xlim=c(3,6),lty=2 ,lwd=2   )
 #lines(dmodelSizeNF,col=colourHLine[1],lty=2,lwd=2)
 #lines(dmodelSizeDF,col=colourHLine[3],lty=2,lwd=2)
 
-xquant <- seq(0,120,1)
-XLIM <- c(3,6)
-YLIM <- c(0,1)
+xquant <- seq(0,6,diff(dSizeNF$x)[1])
+XLIM <- c(3,5)
+YLIM <- c(0,3)
 pdistBW <- 2 ## mm/sec
 strKern <- "gaussian"
-ntail <- nrow(draw$mu[which(strGroupID == "NL"),,])*0.2
+ntail <- nrow(draw$mu[which(strGroupID == "NL"),,])*0.7
 norm <- max(dSizeNF$y)
 
 modelNorm <- max(dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),,],1),
                    sd=tail(draw$sigma[which(strGroupID == "NL"),,],1)))
 
-##sHOW dATA dENSITY
-plot(dSizeLF$x,dSizeLF$y/norm,col=colourHLine[2] , xlim=XLIM,ylim=YLIM ,lwd=2 ,type='l',xlab=NA,ylab=NA )
-lines(dSizeNF$x,dSizeNF$y/norm,col=colourHLine[1],lwd=2)
-lines(dSizeDF$x,dSizeDF$y/norm,col=colourHLine[3],lwd=2)
+
+## Normalized Model ?
+sum(diff(dSizeNF$x)[1] * dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail,],1),
+sd=tail(draw$sigma[which(strGroupID == "NL"),ntail,],1)))
+##Normalized empirical density?
+sum(diff(dSizeNF$x)[1]*dSizeNF$y)
 
 
-#plot(xquant*DIM_MMPERPX,
-#      dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail,],1),
-#            sd=tail(draw$sigma[which(strGroupID == "NL"),ntail,],1)),type='l',
-#      col=colourH[1],lwd=1,xlim=XLIM,ylim=YLIM,xlab=NA,ylab=NA)
+plot(xquant,
+      dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail,],1),
+            sd=tail(draw$sigma[which(strGroupID == "NL"),ntail,],1)),
+     type='l',col=colourHLine[1],lwd=3,xlim=XLIM,ylim=YLIM,xlab=NA,ylab=NA)
+
+lines(dSizeNF$x,dSizeNF$y,col=colourHLine[1],lwd=4,lty=2)
+
+#### PLOT Fitted Larva Length  ###
+plot(dSizeLF,col=colourHLine[2] , xlim=XLIM,ylim=YLIM ,lwd=4 ,type='l',xlab=NA,ylab=NA,lty=2 )
+lines(dSizeNF,col=colourHLine[1],lwd=4,lty=2)
+lines(dSizeDF,col=colourHLine[3],xlim=XLIM,lwd=4,lty=2)
 
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
-  lines(xquant*DIM_MMPERPX,
+  lines(xquant,
        dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail-i,],1),
-                                sd=tail(draw$sigma[which(strGroupID == "NL"),ntail-i,],1))/modelNorm
-       ,type='l', col=colourH[1],lwd=1)
+                                sd=tail(draw$sigma[which(strGroupID == "NL"),ntail-i,],1))
+       ,type='l', col=colourH[1],lwd=1,lty=1)
 }
 
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
-  lines(xquant*DIM_MMPERPX,
+  lines(xquant,
         dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "LL"),ntail-i,],1),
-              sd=tail(draw$sigma[which(strGroupID == "LL"),ntail-i,],1))/modelNorm,
-        type='l', col=colourH[2],lwd=1)
+              sd=tail(draw$sigma[which(strGroupID == "LL"),ntail-i,],1)),
+        type='l', col=colourH[2],lwd=1,lty=1)
 }
 
 
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
-  lines(xquant*DIM_MMPERPX,
+  lines(xquant,
         dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "DL"),ntail-i,],1),
-              sd=tail(draw$sigma[which(strGroupID == "DL"),ntail-i,],1))/modelNorm
-        ,type='l',col=colourH[3],lwd=1)
+              sd=tail(draw$sigma[which(strGroupID == "DL"),ntail-i,],1))
+        ,type='l',col=colourH[3],lwd=1,lty=1)
 }
 
 
