@@ -84,9 +84,9 @@ update(sizemodel,burn_in)
 draw=jags.samples(sizemodel,steps,thin=thin,variable.names=varnames1)
 
 ##
-dmodelSizeNF <- density(draw$mu[which(strGroupID == "NL"),,]*DIM_MMPERPX,bw=0.01)
-dmodelSizeLF <- density(draw$mu[which(strGroupID == "LL"),,]*DIM_MMPERPX,bw=0.01)
-dmodelSizeDF <- density(draw$mu[which(strGroupID == "DL"),,]*DIM_MMPERPX,bw=0.01)
+dmodelSizeNF <- density(draw$mu[which(strGroupID == "NL"),,],bw=0.01)
+dmodelSizeLF <- density(draw$mu[which(strGroupID == "LL"),,],bw=0.01)
+dmodelSizeDF <- density(draw$mu[which(strGroupID == "DL"),,],bw=0.01)
 
 dSizeNF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,bw=0.05)
 dSizeLF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX,bw=0.05)
@@ -98,11 +98,11 @@ points(datFishLength[!is.na(datFishLength$DF),]$DF*DIM_MMPERPX,rep(0.1,NROW(datF
 #lines(dmodelSizeDF,col=colourHLine[3],lty=2,lwd=2)
 
 xquant <- seq(0,6,diff(dSizeNF$x)[1])
-XLIM <- c(1,6)
+XLIM <- c(3,6)
 YLIM <- c(0,3)
 pdistBW <- 2 ## mm/sec
 strKern <- "gaussian"
-ntail <- 100 #nrow(draw$mu[which(strGroupID == "NL"),,])*0.5
+ntail <- 500 #nrow(draw$mu[which(strGroupID == "NL"),,])*0.5
 norm <- max(dSizeNF$y)
 
 modelNorm <- max(dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),,],1),
@@ -122,11 +122,13 @@ plot(xquant,
 
 lines(dSizeNF$x,dSizeNF$y,col=colourHLine[1],lwd=4,lty=2)
 
+## FIGURE CONTROL FOR LARVAL SIZE
 #### PLOT Fitted Larva Length  ###
-plot(dSizeLF,col=colourHLine[2] , xlim=XLIM,ylim=YLIM ,lwd=4 ,type='l',xlab=NA,ylab=NA,lty=2 )
-lines(dSizeNF,col=colourHLine[1],lwd=4,lty=2)
-lines(dSizeDF,col=colourHLine[3],xlim=XLIM,lwd=4,lty=2)
+pdf(file= paste(strPlotExportPath,"/stat/stat_LarvalLengthsGaussian.pdf" ,sep=""))
+par(mar = c(3.9,4.3,1,1))
+layout(matrix(c(1,2,3,4),4,1, byrow = FALSE))
 
+plot(dSizeNF,col=colourHLine[1] , xlim=XLIM,ylim=YLIM ,lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=1 )
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
@@ -135,7 +137,16 @@ for (i in 1:(ntail-1) )
                                 sd=tail(draw$sigma[which(strGroupID == "NL"),ntail-i,],1))
        ,type='l', col=colourH[1],lwd=1,lty=1)
 }
+lines(dSizeNF,col="black",lwd=4,lty=2)
+mtext(side = 1,cex=0.8, line = 2.2, expression("Estimated Larval Length (mm) " ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
+legend("topright",title="NF",
+       legend=c( paste0("",dSizeNF$n, "# Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                 paste("Model  " )),
+       col=c("black",colourLegL[1]),lwd=c(3,1),lty=c(1,1) ) 
 
+## 2nd panel
+plot(dSizeLF,col=colourHLine[2] , xlim=XLIM,ylim=YLIM ,lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=1 )
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
@@ -144,8 +155,16 @@ for (i in 1:(ntail-1) )
               sd=tail(draw$sigma[which(strGroupID == "LL"),ntail-i,],1)),
         type='l', col=colourH[2],lwd=1,lty=1)
 }
+lines(dSizeLF,col="black" , xlim=XLIM,ylim=YLIM ,lwd=4 ,type='l',xlab=NA,ylab=NA,lty=2 )
+mtext(side = 1,cex=0.8, line = 2.2, expression("Estimated Larval Length (mm) " ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
+legend("topright",title="LF",
+       legend=c( paste0("",dSizeLF$n, "# Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                 paste("Model  " )),
+       col=c("black",colourLegL[2]),lwd=c(3,1),lty=c(1,1) ) 
 
 
+plot(dSizeDF,col=colourHLine[3] , xlim=XLIM,ylim=YLIM ,lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=1 )
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
@@ -154,9 +173,23 @@ for (i in 1:(ntail-1) )
               sd=tail(draw$sigma[which(strGroupID == "DL"),ntail-i,],1))
         ,type='l',col=colourH[3],lwd=1,lty=1)
 }
+lines(dSizeDF,col="black",xlim=XLIM,lwd=4,lty=2)
 
+mtext(side = 1,cex=0.8, line = 2.2, expression("Estimated Larval Length (mm) " ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
+legend("topright",title="DF",
+       legend=c( paste0("",dSizeDF$n, "# Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                 paste("Model  " )),
+       col=c("black",colourLegL[3]),lwd=c(3,1),lty=c(1,1) ) 
 
+##MPlot parameter Density
+plot(dmodelSizeNF,col=colourHLine[1] , xlim=XLIM ,lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=1 )
+lines(dmodelSizeLF,col=colourHLine[2] , xlim=XLIM ,lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=1 )
+lines(dmodelSizeDF,col=colourHLine[3] , xlim=XLIM ,lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=1 )
+mtext(side = 1,cex=0.8, line = 2.2, expression("Estimated Larval Length (mm) " ))
+mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
 
+dev.off()
 
 #######PLOT RESULTS
 
