@@ -115,10 +115,10 @@ sum(diff(dSizeNF$x)[1] * dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"
 sum(diff(dSizeNF$x)[1]*dSizeNF$y)
 
 
-plot(
+plot(xquant,
       dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail,],1),
             sd=tail(draw$sigma[which(strGroupID == "NL"),ntail,],1)),
-     type='l',col=colourHLine[1],lwd=3,xlab=NA,ylab=NA)
+     type='l',col=colourHLine[1],lwd=3,ylim=YLIM,xlim=XLIM,xlab=NA,ylab=NA)
 
 lines(dSizeNF$x,dSizeNF$y,col=colourHLine[1],lwd=4,lty=2)
 
