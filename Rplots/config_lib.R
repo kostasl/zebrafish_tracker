@@ -49,7 +49,7 @@ pairedPalette <- col2rgb(brewer.pal(8,"Paired"),alpha = 1)
 pairedPalette["alpha",1:8] <- 210 ##Opacity
 colourLegE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 colourLegL <- col2hex(pairedPalette[,c(6,4,2,8)]) ##Transparent For MCMC Samples (Live)
-pairedPalette["alpha",1:8] <-150 ##Opacity
+pairedPalette["alpha",1:8] <-100 ##Opacity
 colourHLine <- col2hex(pairedPalette[,c(6,4,2,5,3,1,7)]) ##Transparent For MCMC Samples (Live) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 pairedPalette["alpha",1:8] <-55 ##Opacity
 colourHPoint <- col2hex(pairedPalette[,c(6,4,2,5,3,1,7)]) ##Transparent For MCMC Samples (Live) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)

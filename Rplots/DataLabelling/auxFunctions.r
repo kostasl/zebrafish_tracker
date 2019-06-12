@@ -214,22 +214,25 @@ vExpIDS[["LL"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "LL",]$exp
 vExpIDS[["DE"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "DE",]$expID))
 vExpIDS[["DL"]] <- levels(factor(datAllFrames[datAllFrames$groupID == "DL",]$expID))
 
-for (expID in rev(vExpIDS[["DE"]] ) )
+## Show exp vid, blind for which group it belongs to
+vExpIDsGroupBlind <- levels(factor(datAllFrames$expID))
+for (expID in sample(vExpIDsGroupBlind ) )
 {
+  message("Measure length for expID:",expID)
   strVideoFile <- list.files(path =strVideoFilePath, pattern = paste0(rep("_",n=NROW(expID)),expID,"_002" ) ,
                            all.files = FALSE,
                            full.names = TRUE, recursive = TRUE,
                            ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
   
   ##--
-  strArgs = paste(" --MeasureMode=1 --HideDataSource=0 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=~",
+  strArgs = paste(" --MeasureMode=1 --HideDataSource=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=1 --invideofile=",strVideoFile," --outputdir=~",
                   " --startframe=1 --startpaused=1",sep="")
   
-  message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
+  #message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
   if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
     stop(paste("Tracker software not found in :",strTrackerPath ))
   
   execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=NULL,stderr =NULL) ## stdout=FALSE stderr = FALSE
   
-  print(strVideoFile)
+  #print(strVideoFile)
 }
