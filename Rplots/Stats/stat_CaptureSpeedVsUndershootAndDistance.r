@@ -217,7 +217,7 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 5000
+steps <- 100000
 nchains <- 5
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
