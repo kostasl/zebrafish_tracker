@@ -456,9 +456,9 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
   ##Add Group Label To the resulting Data Frame
   for (e in row.names(tblFishScoresLabelled) )
   {
-    datFishSuccessRate[e,"expID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"expID"] )
-    datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"groupID"] )
-    datFishSuccessRate[e,"dataSetID"] <- unique( datHuntLabelledEvents[datHuntLabelledEvents$expID == e,"dataSetID"] )
+    datFishSuccessRate[e,"expID"] <- unique( datHuntLabelledEvents[!is.na(datHuntLabelledEvents$expID) & datHuntLabelledEvents$expID == e,"expID"] )
+    datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[!is.na(datHuntLabelledEvents$expID) & datHuntLabelledEvents$expID == e,"groupID"] )
+    datFishSuccessRate[e,"dataSetID"] <- unique( datHuntLabelledEvents[!is.na(datHuntLabelledEvents$expID) & datHuntLabelledEvents$expID == e,"dataSetID"] )
   }
   
   return (datFishSuccessRate)

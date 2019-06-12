@@ -66,9 +66,9 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID,colourL=NA)
   colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
   
   pie(DLRes , labels = paste("","",round((DLRes/nLabelledDL)*100),"%",sep=""),
-      cex=2.8,cex.main=2.8,clockwise = TRUE,
+      cex=2.2,cex.main=2.2,clockwise = TRUE,
       #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
-      radius=1.0,col=colourL) 
+      radius=1.0,col=colourL )
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
   #pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
   
@@ -613,4 +613,42 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
   
   
 }
+
+
+
+
+## The figure with CDF of hunt efficiency - plotted as power, so as to show differences in actual consumption 
+## instead of just ratio of success vs fail
+plotHuntPowerData <- function(datHuntEventAllGroupToLabel)
+{
+  datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
+  
+  datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx,vEfficiencyRatio,vEfficiencyRatio_Strike,vEfficiencyRatio_NStrike)
+  
+  ## Subset only the active/Larvae - ones that have hunted 
+  datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vScoreIdx),]
+  
+  ## Plot Density of Hunting POWER S^2/(S+F)
+  densDLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
+  densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
+  densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
+  
+  cdfDLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
+  cdfNLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
+  cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
+  
+  
+  #par(mar = c(3.9,4.3,1,1))
+  plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],cex=1.5,cex.axis=2.5,xlim=c(0,12),pch=pchL[1],ylim=c(0.03,1.01),
+       main=NA,ylab=NA,  xlab=NA)
+  plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=1.2)
+  plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=1.2)
+  
+  mtext(side = 1,cex=1.5, line = 3.5, expression( "Hunt power " ~ N[S]^2/(N[S]+N[F]) ,paste("") )   )
+  mtext(side = 2,cex=1.5, line = 3.5, expression("Cumulative function " ))
+  
+  legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+         col = colourLegL,pch=pchL,cex=cex=cex+0.2)
+}
+
 

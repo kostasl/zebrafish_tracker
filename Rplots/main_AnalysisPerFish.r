@@ -14,6 +14,10 @@ datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strP
 groupsList <- c("DL","NL","LL") ##unique(datHuntEventAllGroupToLabel$groupID)
 str_FilterLabel <- "UnLabelled"
 
+datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
+tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
+remove(datFishSuccessRateMerged)
+
 ##Histogram of Success Doesn t Show Any obvious differences
 #layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
 #hist(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$Success,breaks = seq(0,45,3),ylim=c(0,50),main="LL",col="#0000FFAA")
@@ -25,9 +29,6 @@ str_FilterLabel <- "UnLabelled"
 #datFishSuccessRate[,"Success"] <- as.numeric(datFishSuccessRate[,"Success"])
 #
 
-datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
-tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
-remove(datFishSuccessRateMerged)
 
 datFishSuccessRateMerged <- cbind(datFishSuccessRate,markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
       markTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),2]),
@@ -46,6 +47,43 @@ datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx,vEfficiency
 datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vScoreIdx),]
 datFishSuccessRateActive_WS <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vEfficiencyRatio_Strike),]
 datFishSuccessRateActive_NS <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vEfficiencyRatio_NStrike),]
+
+
+
+
+
+
+## Plot Density of Hunting POWER S^2/(S+F)
+densDLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
+densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
+densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
+
+cdfDLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
+cdfNLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
+cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
+
+dev.off() ##Clear Old plot
+
+## Plot CDF HUNT POWER ##
+pdf(file= paste(strPlotExportPath,"/stat/efficiency/fig3-ecdf_huntpower.pdf",sep=""))
+par(mar = c(3.9,4.3,1,1))
+
+plotHuntPowerData(datHuntEventAllGroupToLabel)
+
+# plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],cex=1.2,cex.axis=1.3,xlim=c(0,12),pch=pchL[1],ylim=c(0.03,1.01),
+#      main=NA,ylab=NA,  xlab=NA)
+# plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=1.2)
+# plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=1.2)
+# 
+# mtext(side = 1,cex=1.2, line = 2.8, expression( "Hunt power " ~ N[S]^2/(N[S]+N[F]) ,paste("") )   )
+# mtext(side = 2,cex=1.2, line = 2.8, expression("Cumulative function " ))
+# 
+# legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+#        col = colourLegL,pch=pchL,cex=1.2)
+dev.off()
+
+
+
 
 strPlotFileName <- paste(strPlotExportPath,"/stat/HuntEfficiency_hist.pdf",sep="")
 pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
@@ -121,7 +159,7 @@ dev.off() ##Clear Old plot
 strPlotFileName <- paste(strPlotExportPath,"/stat/HuntEfficiency_Density.pdf",sep="")
 pdf(strPlotFileName,width = 16,height = 16 ,paper = "a4",onefile = TRUE );
 
-plot(densNLEffScore,col=colourH[1],main="Hunt efficiency density",type="l",lwd=3,lty=1,ylim=c(0,3.0),xlim=c(0,1)\\\\)
+plot(densNLEffScore,col=colourH[1],main="Hunt efficiency density",type="l",lwd=3,lty=1,ylim=c(0,3.0),xlim=c(0,1) )
 lines(densLLEffScore,col=colourH[2],lwd=3,lty=2)
 lines(densDLEffScore,col=colourH[3],lwd=3,lty=3,xlab="Hunting efficiency score" )
 legend("topright",legend=paste(c("NL #","LL #","DL #"),
@@ -168,31 +206,14 @@ hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreI
 hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx,col=colourR[3],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]))
      ,xlab="Hunt efficiency score",breaks=ptbreaks,ylim=c(0,45))
 
-## Plot Density of Hunting POWER S^2/(S+F)
-densDLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
-densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
-densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
 
-cdfDLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
-cdfNLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
-cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
 
-dev.off() ##Clear Old plot
- plot(densLLScore,col=colourH[2],main="Hunt Power",
-      xlab=expression(S^2/(S+F),paste("")) ,type="l",lwd=2,pch=pchL[2],ylim=c(0,0.7))
- lines(densNLScore,col=colourH[3],lwd=2)
- lines(densDLScore,col=colourH[1],lwd=2,pch=pchL[3])
- legend("topright",legend=paste(c("DL #","LL #","NL #"),c(densDLScore$n,densLLScore$n,densNLScore$n) ),fill = colourH)
+plot(densLLScore,col=colourH[2],main="Hunt Power",
+     xlab=expression(S^2/(S+F),paste("")) ,type="l",lwd=2,pch=pchL[2],ylim=c(0,0.7))
+lines(densNLScore,col=colourH[3],lwd=2)
+lines(densDLScore,col=colourH[1],lwd=2,pch=pchL[3])
+legend("topright",legend=paste(c("DL #","LL #","NL #"),c(densDLScore$n,densLLScore$n,densNLScore$n) ),fill = colourH)
 
-## Plot CDF ##
-pdf(file= paste(strPlotExportPath,"/stat/efficiency/ecdf_huntpower.pdf",sep=""))
-  plot(cdfDLScore,lty=2,lwd=1,col=colourH[1],cex.axis=1.3,xlim=c(0,12),pch=pchL[1],ylim=c(0.001,1.01),
-       main="Hunting power ECDF",ylab="",
-     xlab=expression(N[S]^2/(N[S]+N[F]),paste("")) )
-  plot(cdfLLScore,add=T,lty=1,lwd=2,col=colourH[2],pch=pchL[2],ylim=c(0,1.01))
-  plot(cdfNLScore,add=T,lty=1,lwd=2,col=colourH[3],pch=pchL[3],ylim=c(0,1.01))
-  legend("bottomright",legend=paste(c("DL #","LL #","NL #"),c(densDLScore$n,densLLScore$n,densNLScore$n) ),col = colourH,pch=pchL)
-dev.off()
 
 ###### Plot Power Under  Strike Fails 
 ## Plot Density of Hunting POWER S^2/(S+F)
