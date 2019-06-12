@@ -106,17 +106,19 @@ dev.off()
 strPlotFileName <- paste(strPlotExportPath,"/stat/HuntPower_hist.pdf",sep="")
 pdf(strPlotFileName,width = 16,height = 18 ,paper = "a4",onefile = TRUE );
 layout(matrix(c(1,2,3), 3, 1 ,byrow=TRUE))
-hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio*datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$HuntEvents,
+breaksInt<- seq(0,15,0.2)
+
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx ,
      col=colourR[3],main=paste("DL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",])),
-     xlab="",breaks=10,ylim=c(0,40))
+     xlab="",breaks=breaksInt,xlim=c(0,10),ylim=c(0,40))
 
-hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio*datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$HuntEvents,
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx,
      col=colourR[2],main=paste("LL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",])),
-     xlab="",breaks=10,ylim=c(0,40))
+     xlab="",breaks=breaksInt,xlim=c(0,10),ylim=c(0,40))
 
-hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio*datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$HuntEvents,
+hist(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx,
      col=colourR[1],main=paste("NL #",NROW(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",])),
-     xlab="",breaks=10,ylim=c(0,40))
+     xlab="",breaks=breaksInt,ylim=c(0,40),xlim=c(0,10))
 ####
 dev.off()
 

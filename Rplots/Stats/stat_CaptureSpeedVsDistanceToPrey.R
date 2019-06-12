@@ -140,7 +140,7 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 ##  Init  datastruct that we pass to model ##
 
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
-steps <- 15500
+steps <- 105500
 str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS")
 ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
@@ -224,8 +224,8 @@ dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,title="A Gaussian Cluster statistical model for Capture Strike speed and Distance to Prey")
 
 outer = FALSE
-line = 1 ## SubFig Label Params
-cex = 1.1
+line = 2.2 ## SubFig Label Params
+cex = 1.5
 adj  = 3.5
 padj <- -15.0
 las <- 1
@@ -236,8 +236,9 @@ layout(matrix(c(1,2),1,2, byrow = TRUE))
 par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
-ntail <- 700
-plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+ntail <- 2000
+plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1],
+     xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex )
 #points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
 points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
 #points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
@@ -246,9 +247,9 @@ points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoin
 
 #points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
-
+mtext(side = 1,cex=cex, line = 2.5, expression("Distance to Prey (mm) "~(delta) ))
+mtext(side = 2,cex=cex, line = 2.5, expression("Capture Speed (mm/sec)  " ))
+mtext("A",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -265,17 +266,18 @@ legend("topleft",
                   bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
                   #bquote(All ~ '#' ~ .(ldata_ALL$N)  )
                   ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       pch=pchL, col=colourLegL)
-mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+       pch=pchL, col=colourLegL,cex=cex)
 
 
-plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA)
+
+plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
+     cex=cex,cex.axis=cex )
 lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
 lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
 #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
-mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-
+mtext(side = 1,cex=cex, line = 2.5, expression(paste("Probability of high speed capture  ",(p["s"]) ) ) ,cex.main=cex )
+mtext(side = 2,cex=cex, line = 2.5, expression("Density  " ))
+mtext("B",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 #### ## Probability Density of Strike capture ####
 legend("topleft",
        legend=c(  expression (),
@@ -284,7 +286,7 @@ legend("topleft",
                   bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
                   #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
                   ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3,4),lwd=3)
+       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
 
 
 dev.off()
@@ -330,7 +332,7 @@ points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH
 points(tail(draw_DF$mu[1,1,,1],ntail),tail(draw_DF$mu[1,2,,1],ntail),col=colourH[3],pch=pchL[3])
 points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
 
-points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
+#points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to Prey (mm) "~(delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
@@ -338,7 +340,7 @@ mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 
 
 legend("topleft",
@@ -356,7 +358,7 @@ plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
-lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
+#lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
 
 legend("topleft",
        legend=c(  expression (),
@@ -377,7 +379,7 @@ plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0,0.5),lwd=3,lty=1,ylim=c(0,20),
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaD,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_sigmaD,col=colourLegL[3],lwd=3,lty=3)
-lines(dALLb_sigmaD,col=colourLegL[4],lwd=3,lty=4)
+#lines(dALLb_sigmaD,col=colourLegL[4],lwd=3,lty=4)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Prey Distance  ",delta) ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
@@ -388,7 +390,7 @@ plot(dNLb_sigmaC,col=colourLegL[1],xlim=c(0.0,30),lwd=3,lty=1,ylim=c(0,0.3),
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_sigmaC,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_sigmaC,col=colourLegL[3],lwd=3,lty=3)
-lines(dALLb_sigmaC,col=colourLegL[4],lwd=3,lty=4)
+#lines(dALLb_sigmaC,col=colourLegL[4],lwd=3,lty=4)
 mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Variance Capture Speed  ") ))
 mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
 
