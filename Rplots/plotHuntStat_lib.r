@@ -622,8 +622,20 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
 plotHuntPowerData <- function(datHuntEventAllGroupToLabel)
 {
   datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
+  vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio_Strike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_WS"]))
+  vEfficiencyRatio_NStrike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_NS"]))
+  #vScoreIdx[is.nan(vScoreIdx) ] <- 0
+  tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
+  datFishSuccessRateMerged <- cbind(datFishSuccessRate,
+                                    markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
+                                    markTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),2]),
+                                    notTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),3]))
   
   datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx,vEfficiencyRatio,vEfficiencyRatio_Strike,vEfficiencyRatio_NStrike)
+  
+  
   
   ## Subset only the active/Larvae - ones that have hunted 
   datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vScoreIdx),]
@@ -638,17 +650,18 @@ plotHuntPowerData <- function(datHuntEventAllGroupToLabel)
   cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
   
   
-  #par(mar = c(3.9,4.3,1,1))
-  plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],cex=1.5,cex.axis=2.5,xlim=c(0,12),pch=pchL[1],ylim=c(0.03,1.01),
-       main=NA,ylab=NA,  xlab=NA)
-  plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=1.2)
-  plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=1.2)
+  #par(mar = c(3.9,4.3,1,1)) 
+  plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],xlim=c(0,12),pch=pchL[1],ylim=c(0.03,1.01),
+       main=NA,ylab=NA,  xlab=NA,cex.main =cex,cex.axis=cex )
   
+  plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01))
+  plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01))
+  #axis(side=1)
   mtext(side = 1,cex=1.5, line = 3.5, expression( "Hunt power " ~ N[S]^2/(N[S]+N[F]) ,paste("") )   )
   mtext(side = 2,cex=1.5, line = 3.5, expression("Cumulative function " ))
   
-  legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
-         col = colourLegL,pch=pchL,cex=cex=cex+0.2)
+  #legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+  #       col = colourLegL,pch=pchL,cex=cex=cex+0.2)
 }
 
 

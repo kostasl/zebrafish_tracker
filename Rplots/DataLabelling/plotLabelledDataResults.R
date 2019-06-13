@@ -38,6 +38,57 @@ tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHunt
 tblIdxSuccess <- which (grepl("Success",row.names(tblResSB) ) ) 
 tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) ) 
 
+
+
+##############################################
+## Success / Strike Non Strike Percentage ##
+strPlotName = paste(strPlotExportPath,"/fig.4-HuntEventsLabelling-Strike-NoStrike.pdf",sep="")
+pdf(strPlotName,width=8,height=6,bg="white",
+    compress=FALSE,onefile = FALSE, 
+    title="Breakdown on Strike Vs Non-Strike for Success Vs Failed hunt events - Manual data labels ") #col=(as.integer(filtereddatAllFrames$expID))
+
+layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
+##c(bottom, left, top, right) 
+par(mar = c(3.0,3,3,2))
+
+
+pieChartStrikeVsNonStrike_Success(tblResSB,"NL",c(colourLegL[1],"white") ) ##colourLegE[1]
+pieChartStrikeVsNonStrike_Success(tblResSB,"LL",c(colourLegL[2],"white"))
+mtext("Successful captures with strike bout",
+      at="top", outer=outer,side=3,col="black",font=2,las=las,line=line-3,padj=padj,adj=adj,cex=cex)
+pieChartStrikeVsNonStrike_Success(tblResSB,"DL",c(colourLegL[3],"white"))
+
+
+pieChartStrikeVsNonStrike_Fail(tblResSB,"NL",c(colourLegL[1],"white") )
+mtext("Failed captures with strike bout",
+      at="top",
+      outer=outer,side=3,col="black",font=2,las=las,line=line-3,padj=padj,adj=adj-1.6,cex=cex)
+mtext("NF",
+      at="top",side=1,
+      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+
+pieChartStrikeVsNonStrike_Fail(tblResSB,"LL",c(colourLegL[2],"white"))
+mtext("LF",
+      at="top",side=1,
+      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+
+pieChartStrikeVsNonStrike_Fail(tblResSB,"DL",c(colourLegL[3],"white"))
+mtext("DF",
+      at="top",side=1,
+      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+
+#legend("bottomleft",legend=c("Strike","No Strike"),
+#       fill=c(colourLegL[1],colourLegE[1]),
+#       bg = "white",cex=2.0,
+#       merge=FALSE,horiz=TRUE,title="NF")
+
+dev.off()
+#  ############ END OF FIG 4 Strike Labelling ###
+
+
+
+
+
 ###Label Summary  /No Target/Escapes /Success / Fail
 
 #display.brewer.all() to see avaulable options
@@ -164,53 +215,6 @@ legend("bottomright",legend=c("Success Noclass","Success Strike","Success No Str
        merge=FALSE,horiz=FALSE)
 dev.off()
 
-
-##############################################
-## Success / Strike Non Strike Percentage ##
-strPlotName = paste(strPlotExportPath,"/fig.4-HuntEventsLabelling-Strike-NoStrike.pdf",sep="")
-pdf(strPlotName,width=8,height=6,bg="white",
-    compress=FALSE,onefile = FALSE, 
-    title="Breakdown on Strike Vs Non-Strike for Success Vs Failed hunt events - Manual data labels ") #col=(as.integer(filtereddatAllFrames$expID))
-
-layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
-##c(bottom, left, top, right) 
-par(mar = c(3.0,3,3,2))
-
-
-pieChartStrikeVsNonStrike_Success(tblResSB,"NL",c(colourLegL[1],"white") ) ##colourLegE[1]
-mtext("Successful captures with strike bout",
-      at="top",
-      outer=outer,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj-1.2,cex=cex)
-
-pieChartStrikeVsNonStrike_Success(tblResSB,"LL",c(colourLegL[2],"white"))
-pieChartStrikeVsNonStrike_Success(tblResSB,"DL",c(colourLegL[3],"white"))
-
-
-pieChartStrikeVsNonStrike_Fail(tblResSB,"NL",c(colourLegL[1],"white") )
-mtext("Failed captures with strike bout",
-      at="top",
-      outer=outer,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj-1.6,cex=cex)
-mtext("NF",
-      at="top",side=1,
-      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
-
-pieChartStrikeVsNonStrike_Fail(tblResSB,"LL",c(colourLegL[2],"white"))
-mtext("LF",
-      at="top",side=1,
-      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
-
-pieChartStrikeVsNonStrike_Fail(tblResSB,"DL",c(colourLegL[3],"white"))
-mtext("DF",
-      at="top",side=1,
-      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
-
-#legend("bottomleft",legend=c("Strike","No Strike"),
-#       fill=c(colourLegL[1],colourLegE[1]),
-#       bg = "white",cex=2.0,
-#       merge=FALSE,horiz=TRUE,title="NF")
-
-dev.off()
-# 
 # 
 # ## PLOT SCATTER Of Success Vs Fail For Each Group 
 # strPlotName = paste(strPlotExportPath,"/HuntLabelsSuccessVsFailScatter-SB.pdf",sep="")

@@ -187,7 +187,7 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 } "
 
 
-strModelPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeedVsUndershoot_Valid.pdf"
+strModelPDFFileName <- "/stat/UndershootAnalysis/fig6-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
 strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter_Valid.pdf"
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
 strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershoot_Valid.pdf"
@@ -257,7 +257,7 @@ save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance
 load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
 
 nContours <- 6
-ntail <- NROW(draw_NF$mu[1,1,,1])*0.20
+ntail <- 1200 #NROW(draw_NF$mu[1,1,,1])*0.20
 
 
 
@@ -306,7 +306,7 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 #points(tail(draw_LF$x_rand[1,,1],ntail ),tail(draw_LF$x_rand[2,,1],ntail ),col=colourH[2])
 #points(tail(draw_DF$x_rand[1,,1],ntail ),tail(draw_DF$x_rand[2,,1],ntail ),col=colourH[3])
 
-####################################
+#################################### MAIN FIGURE #####
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
 pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
@@ -326,9 +326,9 @@ par(mar = c(3.9,4.3,1,1))
 
 ## Plot the mean of the 2D Models ##
 ##Collect Draws from all chains
-plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA )
-points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourH[3],pch=pchL[3])
+plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA )
+points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
+points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
@@ -342,24 +342,20 @@ contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
 contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
 
-
 legend("topright",
        legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                  bquote(NF[""] ~ '#' ~ .(ldata_NF$N)  ),
+                  bquote(LF[""] ~ '#' ~ .(ldata_LF$N)  ),
+                  bquote(DF[""] ~ '#' ~ .(ldata_DF$N)  )
                   #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
                   ),
        pch=pchL, col=colourLegL)
-
-
 ###############
 
-
 ## Distance To Prey Vs Speed ##
-plot(tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
-points(tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourH[3],pch=pchL[3])
+plot(tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+points(tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
+points(tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to prey (mm)  " ))
@@ -384,13 +380,10 @@ contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 
 
-
-
-
 ## Distance To Prey ##
-plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourH[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA )
-points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourH[3],pch=pchL[3])
+plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA )
+points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourHPoint[2],pch=pchL[2])
+points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
 mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
@@ -417,16 +410,16 @@ mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=li
 
 
 ### Show Cluster Membership
-plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
-lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
-lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
+plot(density(tail(draw_NF$pS,ntail),pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
+lines(density(tail(draw_LF$pS,ntail) ),col=colourLegL[2],lwd=3,lty=2)
+lines(density(tail(draw_DF$pS,ntail) ),col=colourLegL[3],lwd=3,lty=3)
 #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
 
 legend("topleft",
        legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                  bquote(NF[""] ~ '#' ~ .(ldata_NF$N)  ),
+                  bquote(LF[""] ~ '#' ~ .(ldata_LF$N)  ),
+                  bquote(DF[""] ~ '#' ~ .(ldata_DF$N)  )
                   #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
        ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3,4),lwd=3)
@@ -439,7 +432,8 @@ mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=li
 
 dev.off()
 
-#######################
+##################################################
+####################################################
 
 
 ##### Individual Rand Vars Fit ###
