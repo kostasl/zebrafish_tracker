@@ -652,16 +652,16 @@ plotHuntPowerData <- function(datHuntEventAllGroupToLabel)
   
   #par(mar = c(3.9,4.3,1,1)) 
   plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],xlim=c(0,12),pch=pchL[1],ylim=c(0.03,1.01),
-       main=NA,ylab=NA,  xlab=NA,cex.main =cex,cex.axis=cex )
+       main=NA,ylab=NA,  xlab=NA,cex.main =cex,cex.axis=cex,cex=cex )
   
-  plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01))
-  plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01))
+  plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=cex)
+  plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=cex)
   #axis(side=1)
   mtext(side = 1,cex=1.5, line = 3.5, expression( "Hunt power " ~ N[S]^2/(N[S]+N[F]) ,paste("") )   )
   mtext(side = 2,cex=1.5, line = 3.5, expression("Cumulative function " ))
   
-  #legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
-  #       col = colourLegL,pch=pchL,cex=cex=cex+0.2)
+  legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+         col = colourLegL,pch=pchL,cex=cex+0.2)
 }
 
 

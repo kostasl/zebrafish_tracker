@@ -107,11 +107,12 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
 
 
 
-strMainPDFFilename <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeedVsDistToPrey.pdf";
+strMainPDFFilename <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeedVsDistToPrey.pdf"; ## Used Fig 4
 strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
 strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
-strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeed_Valid.pdf"
+
+strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeed_Valid.pdf" ## Used in Fig 4
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -219,9 +220,10 @@ dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
 
-#### Main Figure - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
+#### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
 
-pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,title="A Gaussian Cluster statistical model for Capture Strike speed and Distance to Prey")
+pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,
+    title="A Gaussian Cluster statistical model for Capture Strike speed and Distance to Prey")
 
 outer = FALSE
 line = 2.2 ## SubFig Label Params
@@ -293,6 +295,31 @@ dev.off()
 
 
 
+#### FIG 4 / Capture Speed Only Model And Data ##
+pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
+
+par(mar = c(3.9,4.3,1,1))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+npchain<-3
+plotCaptureSpeedFit(datDistanceVsStrikeSpeed_NL,draw_NF,1,npchain)
+#title(main="Model capture Speed")
+plotCaptureSpeedFit(datDistanceVsStrikeSpeed_LL,draw_LF,2,npchain)
+plotCaptureSpeedFit(datDistanceVsStrikeSpeed_DL,draw_DF,3,npchain)
+
+
+dev.off()
+#embed_fonts(strCaptSpeedDensityPDFFileName)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -308,7 +335,8 @@ dev.off()
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
 
-pdf(file= paste(strPlotExportPath,strModelPDFFilename,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed And Distance to prey")
+pdf(file= paste(strPlotExportPath,strModelPDFFilename,sep=""),width=14,height=7,
+    title="A statistical model for Capture Strike speed And Distance to prey")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -505,21 +533,6 @@ legend("topright",
 dev.off()
 
 
-
-#### Capture Speed Only Model And Data ##
-pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
-
-par(mar = c(3.9,4.3,1,1))
-layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-npchain<-3
-plotCaptureSpeedFit(datDistanceVsStrikeSpeed_NL,draw_NF,1,npchain)
-#title(main="Model capture Speed")
-plotCaptureSpeedFit(datDistanceVsStrikeSpeed_LL,draw_LF,2,npchain)
-plotCaptureSpeedFit(datDistanceVsStrikeSpeed_DL,draw_DF,3,npchain)
-
-
-dev.off()
-#embed_fonts(strCaptSpeedDensityPDFFileName)
 
 
 

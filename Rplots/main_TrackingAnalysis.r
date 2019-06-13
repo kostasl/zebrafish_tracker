@@ -16,62 +16,12 @@ library(extrafont) ##For Font Embdedding in PDF, Run import_fonts() after instal
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
-
-####################
-##Convert RGB Values To HEX Colour Val.
-col2hex <- function(rgbcol) {
-  colPal <- vector()
-  
-  for (j in 1:NCOL(rgbcol))
-  {
-    
-    colPal[j] <- rgb(rgbcol["red",j],rgbcol["green",j],rgbcol["blue",j],rgbcol["alpha",j],maxColorValue = 255)
-  }
-  return(colPal)
-}
-
-## Required Variables - Locations 
-# Home Desktop
-setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-strVideoFilePath  <- "//mnt/ARXEIO1TB/ExpData/zebrapreyCap/AnalysisSet/"
-strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release//" 
-strTrackeroutPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
-strTrackInputPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
-strDatDir        <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
-strDataExportDir <-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
-strPlotExportPath <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
-
-
-## Office PC ##
-setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
-strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
-strTrackeroutPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
-#strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
-strTrackInputPath <- "/media/LinuxDat/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
-strDatDir        <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
-strDataExportDir <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
-strPlotExportPath <- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
-
-## Laptop ##
-setwd("~/workspace/zebrafishtrack/Rplots")
-strVideoFilePath  <- "/media/kostasl/zfishDataAlpha"
-strTrackerPath <-  "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_2_GCC_64bit-Release"
-strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
-strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
-strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
-strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
-strPlotExportPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots"
-####################
-#source("TrackerDataFilesImport.r")
-### Hunting Episode Analysis ####
-
 source("config_lib.R")
 
+setEnvFileLocations("HOME") #OFFICE,#LAPTOP
+
 source("HuntingEventAnalysis.r")
-
 source("TrajectoryAnalysis.r")
-
 source("DataLabelling/labelHuntEvents_lib.r")
 ########
 

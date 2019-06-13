@@ -227,7 +227,7 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 
 ##Open Output PDF 
 #pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
-pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -250,8 +250,8 @@ mtext(side = 1,cex=0.8, line = 2.2, expression("Bearing To Prey Prior Turn "~(ph
 mtext(side = 2,cex=0.8, line = 2.2, expression("Bearing To Prey After Turn "~(theta^degree) ))
 
 #text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
-abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourH[3],lwd=2.0,lty=2) ##Fit Line / Regression
-abline(a=muDLa,b=muDLb,col=colourH[3],lwd=1.5) ##Fit Line / Regression
+abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourLegL[3],lwd=1.5,lty=2) ##Fit Line / Regression
+abline(a=muDLa,b=muDLb,col=colourLegL[3],lwd=4.0) ##Fit Line / Regression
 #abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[1],lwd=4.0) ##Fit Line / Regression
 #abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[1],lwd=4.0) ##Fit Line / Regression
 
@@ -259,8 +259,8 @@ abline(a=muDLa,b=muDLb,col=colourH[3],lwd=1.5) ##Fit Line / Regression
 ##LL
 points(datTurnVsPreyLL[,"OnSetAngleToPrey"],datTurnVsPreyLL[,"Turn"],pch=pchL[2],col=colourP[2],cex=1.2)
 #text(lFirstBoutPoints[["LL"]][,1]+2,lFirstBoutPoints[["LL"]][,2]+5,labels=lFirstBoutPoints[["LL"]][,3],cex=0.8,col="darkgreen")
-abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourH[2],lwd=2.0,lty=2)
-abline(a=muLLa,b=muLLb,col=colourH[2],lwd=1.5,lty=1.5) ##Fit Line / Regression
+abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourLegL[2],lwd=1.5,lty=2)
+abline(a=muLLa,b=muLLb,col=colourLegL[2],lwd=4.0,lty=1.5) ##Fit Line / Regression
 #abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[2],lwd=4.0) ##Fit Line / Regression
 #abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[2],lwd=4.0) ##Fit Line / Regression
 
@@ -268,8 +268,8 @@ abline(a=muLLa,b=muLLb,col=colourH[2],lwd=1.5,lty=1.5) ##Fit Line / Regression
 ##NL
 points( datTurnVsPreyNL[,"OnSetAngleToPrey"],datTurnVsPreyNL[,"Turn"],pch=pchL[1],col=colourP[1])
 #text(lFirstBoutPoints[["NL"]][,1]+2,lFirstBoutPoints[["NL"]][,2]+5,labels=lFirstBoutPoints[["NL"]][,3],cex=0.8,col="darkred")
-abline(lm(datTurnVsPreyNL[,"Turn"] ~ datTurnVsPreyNL[,"OnSetAngleToPrey"]),col=colourH[1],lwd=2.0,lty=2)
-abline(a=muNLa,b=muNLb,col=colourH[1],lwd=1.5) ##Fit Line / Regression
+abline(lm(datTurnVsPreyNL[,"Turn"] ~ datTurnVsPreyNL[,"OnSetAngleToPrey"]),col=colourLegL[1],lwd=1.5,lty=2)
+abline(a=muNLa,b=muNLb,col=colourLegL[1],lwd=4.0) ##Fit Line / Regression
 #abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[3],lwd=4.0) ##Fit Line / Regression
 #abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[3],lwd=4.0) ##Fit Line / Regression
 #abline( lsfit(lFirstBoutPoints[["NL"]][,2], lFirstBoutPoints[["NL"]][,1] ) ,col=colourH[3],lwd=2.0)
@@ -304,6 +304,18 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 ### PLot Scatter with regression lines with Conf intervals##
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
 
 pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 #pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_RandSub_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
