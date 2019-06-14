@@ -16,6 +16,7 @@ library(extrafont) ##For Font Embdedding in PDF, Run import_fonts() after instal
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
 setEnvFileLocations("HOME") #OFFICE,#LAPTOP

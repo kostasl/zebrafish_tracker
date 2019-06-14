@@ -20,16 +20,14 @@ source("DataLabelling/labelHuntEvents_lib.r")
 #datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 #datHuntLabelledEventsSB <- datHuntLabelledEventsSB[datHuntLabelledEventsSB$eventID != 0,]
 ##Using Centralized Function
+strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
-
 tblResSB <- table(convertToScoreLabel(datHuntLabelledEventsSB$huntScore),datHuntLabelledEventsSB$groupID)
 
 
-
 ##Load My partially labeled  (KL) Labelled data Merged  
-#strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##This is the KL labelled data set
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged2"
-datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+strProcDataFileNameKL <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##This is the KL labelled data set
+datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileNameKL,".rds",sep="" ))
 datHuntLabelledEventsKL <- datHuntLabelledEventsKL[datHuntLabelledEventsKL$eventID != 0,]
 tblResKL <- table(convertToScoreLabel(datHuntLabelledEventsKL$huntScore),datHuntLabelledEventsKL$groupID)
 
@@ -47,6 +45,13 @@ pdf(strPlotName,width=8,height=6,bg="white",
     compress=FALSE,onefile = FALSE, 
     title="Breakdown on Strike Vs Non-Strike for Success Vs Failed hunt events - Manual data labels ") #col=(as.integer(filtereddatAllFrames$expID))
 
+outer = FALSE
+line = 3 ## SubFig Label Params
+cex = 1.5
+adj  = 0.5
+padj <- -0
+las <- 1
+
 layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
 ##c(bottom, left, top, right) 
 par(mar = c(3.0,3,3,2))
@@ -63,19 +68,34 @@ pieChartStrikeVsNonStrike_Fail(tblResSB,"NL",c(colourLegL[1],"white") )
 mtext("Failed captures with strike bout",
       at="top",
       outer=outer,side=3,col="black",font=2,las=las,line=line-3,padj=padj,adj=adj-1.6,cex=cex)
-mtext("NF",
-      at="top",side=1,
-      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+#mtext("NF", at="top",side=1,outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+
+legend("bottomright",legend=c("Strike","Approach"),title="NF",
+       fill=c(colourLegL[1],"white"), #c(colourLegL[1],colourL[2]),
+       col = c(colourLegL[1],"white"),
+       bg = "white",cex=cex,
+       merge=FALSE,horiz=FALSE)
+
+
 
 pieChartStrikeVsNonStrike_Fail(tblResSB,"LL",c(colourLegL[2],"white"))
-mtext("LF",
-      at="top",side=1,
-      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+#mtext("LF",   at="top",side=1,    outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+legend("bottomright",legend=c("Strike","Approach"),title="LF",
+       fill=c(colourLegL[2],"white"), #c(colourLegL[1],colourL[2]),
+       col = c(colourLegL[2],"white"),
+       bg = "white",cex=cex,
+       merge=FALSE,horiz=FALSE)
+
 
 pieChartStrikeVsNonStrike_Fail(tblResSB,"DL",c(colourLegL[3],"white"))
-mtext("DF",
-      at="top",side=1,
-      outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+#mtext("DF",at="top",side=1,  outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+
+legend("bottomright",legend=c("Strike","Approach"),title="DF",
+       fill=c(colourLegL[3],"white"), #c(colourLegL[1],colourL[2]),
+       col = c(colourLegL[3],"white"),
+       bg = "white",cex=cex,
+       merge=FALSE,horiz=FALSE)
+
 
 #legend("bottomleft",legend=c("Strike","No Strike"),
 #       fill=c(colourLegL[1],colourLegE[1]),

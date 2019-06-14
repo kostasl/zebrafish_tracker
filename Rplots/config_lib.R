@@ -15,6 +15,21 @@
 #####################
 library(MASS)
 
+
+####################
+##Convert RGB Values To HEX Colour Val.
+col2hex <- function(rgbcol) {
+  colPal <- vector()
+  
+  for (j in 1:NCOL(rgbcol))
+  {
+    
+    colPal[j] <- rgb(rgbcol["red",j],rgbcol["green",j],rgbcol["blue",j],rgbcol["alpha",j],maxColorValue = 255)
+  }
+  return(colPal)
+}
+
+
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
 DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
 DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
@@ -73,21 +88,6 @@ lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
 
 ## Condition Labels
 strDataLabels <- expression("NF"["s"],"LF"["s"],"DF"["s"],"NF"["e"],"LF"["e"],"DF"["e"] )
-
-
-####################
-##Convert RGB Values To HEX Colour Val.
-col2hex <- function(rgbcol) {
-  colPal <- vector()
-  
-  for (j in 1:NCOL(rgbcol))
-  {
-    
-    colPal[j] <- rgb(rgbcol["red",j],rgbcol["green",j],rgbcol["blue",j],rgbcol["alpha",j],maxColorValue = 255)
-  }
-  return(colPal)
-}
-
 
 ## Uses Global assignment operateor <<- to set file locations depending on which system I am running the code on
 setEnvFileLocations <- function(strSetName)
