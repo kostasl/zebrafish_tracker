@@ -47,7 +47,7 @@ pdf(strPlotName,width=8,height=6,bg="white",
 
 outer = FALSE
 line = 3 ## SubFig Label Params
-cex = 1.5
+cex = 1.1
 adj  = 0.5
 padj <- -0
 las <- 1

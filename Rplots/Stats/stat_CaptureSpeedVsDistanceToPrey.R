@@ -228,9 +228,9 @@ pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=8,
 
 outer = FALSE
 line = 2.8 ## SubFig Label Params
-cex = 1.5
+cex = 1.1
 adj  = 1.0
-padj <- -8.0
+padj <- -11.0
 las <- 1
 nContours <- 5
 
