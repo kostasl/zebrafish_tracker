@@ -339,7 +339,7 @@ save(drawLL2,drawNL2,drawDL2,drawLE2,drawNE2,drawDE2,file =paste(strDataExportDi
 
 ### Draw Distribution oF Hunt Rates - 
 ## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
-plotsamples <- 500
+plotsamples <- 200
 schain <-1:3
 
 ### The Prob Of Success p from NegBinom translates to Gamma Rate p/(1-p), or scale: (1-p)/p

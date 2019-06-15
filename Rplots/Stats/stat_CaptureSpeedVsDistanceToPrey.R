@@ -172,6 +172,7 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 #update(jags_model_ALL, 500)
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
+save(draw_LF,draw_NF,draw_DF,file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 
 ### Estimate  densities  ###
 nContours <- 6
@@ -223,12 +224,13 @@ dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
 #### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
 
-pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=8,
+pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,
     title="A Gaussian Cluster statistical model for Capture Strike speed and Distance to Prey")
 
 outer = FALSE
 line = 2.8 ## SubFig Label Params
-cex = 1.1
+lineAxis = 3.2
+cex = 1.4
 adj  = 1.0
 padj <- -11.0
 las <- 1
@@ -236,7 +238,8 @@ nContours <- 5
 
 layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5),2,6, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(5,4.5,3,1))
+#par(mar = c(5,4.5,3,1))
+par(mar = c(3.9,4.7,1,1))
 
 plotCaptureSpeedFit(datDistanceVsStrikeSpeed_NL,draw_NF,1,npchain)
 mtext("B",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
@@ -258,8 +261,8 @@ points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoin
 
 #points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=cex, line = 3.2, expression("Distance to Prey (mm) "~(delta) ))
-mtext(side = 2,cex=cex, line = 2.5, expression("Capture Speed (mm/sec)  " ))
+mtext(side = 1,cex=cex, line = lineAxis, expression("Distance to Prey (mm) "~(delta) ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
 mtext("F",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -286,8 +289,8 @@ plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),l
 lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
 lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
 #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
-mtext(side = 1,cex=cex, line = 3.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) ) ,cex.main=cex )
-mtext(side = 2,cex=cex, line = 2.5, expression("Density  " ))
+mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Probability of high speed capture  ",(p["s"]) ) ) ,cex.main=cex )
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density  " ))
 
 mtext("G",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 #### ## Probability Density of Strike capture ####

@@ -391,20 +391,20 @@ for (dID in vWeirdDataSetID )
 ##***## NOTE Remove Rec Without Any Hunt Events / ie 0 Duration ### 
 ###  This is because The Hunt Duration Is Discontinuous if we include the Larvae With 0 events, and this creates modelling problems 
 ## Thus when Looking for Hunt Duration per larva we need to exclude the ones that did not hunt.
-datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ),datHuntStat[,"vIDLookupTable"]$LL$larvaID )
-datHuntVsPreyLL <- datHuntVsPreyLL[!is.na(datHuntVsPreyLL[,1]) & datHuntVsPreyLL[,2] > 0 ,]
-datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ),datHuntStat[,"vIDLookupTable"]$LE$larvaID  )
-datHuntVsPreyLE <- datHuntVsPreyLE[!is.na(datHuntVsPreyLE[,1]) & datHuntVsPreyLE[,2] > 0,] ##& datHuntVsPreyLE[,2] > 0
+datHuntDurVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ),datHuntStat[,"vIDLookupTable"]$LL$larvaID )
+datHuntDurVsPreyLL <- datHuntDurVsPreyLL[!is.na(datHuntDurVsPreyLL[,1]) & datHuntDurVsPreyLL[,2] > 0 ,]
+datHuntDurVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ),datHuntStat[,"vIDLookupTable"]$LE$larvaID  )
+datHuntDurVsPreyLE <- datHuntDurVsPreyLE[!is.na(datHuntDurVsPreyLE[,1]) & datHuntDurVsPreyLE[,2] > 0,] ##& datHuntDurVsPreyLE[,2] > 0
 
-datHuntVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NL),datHuntStat[,"vIDLookupTable"]$NL$larvaID )
-datHuntVsPreyNL <- datHuntVsPreyNL[!is.na(datHuntVsPreyNL[,1]) & datHuntVsPreyNL[,2] > 0,]
-datHuntVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NE),datHuntStat[,"vIDLookupTable"]$NE$larvaID  )
-datHuntVsPreyNE <- datHuntVsPreyNE[!is.na(datHuntVsPreyNE[,1]) & datHuntVsPreyNE[,2] > 0  ,]
+datHuntDurVsPreyNL <- cbind(datHuntStat[,"vHInitialPreyCount"]$NL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NL),datHuntStat[,"vIDLookupTable"]$NL$larvaID )
+datHuntDurVsPreyNL <- datHuntDurVsPreyNL[!is.na(datHuntDurVsPreyNL[,1]) & datHuntDurVsPreyNL[,2] > 0,]
+datHuntDurVsPreyNE <- cbind(datHuntStat[,"vHInitialPreyCount"]$NE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$NE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$NE),datHuntStat[,"vIDLookupTable"]$NE$larvaID  )
+datHuntDurVsPreyNE <- datHuntDurVsPreyNE[!is.na(datHuntDurVsPreyNE[,1]) & datHuntDurVsPreyNE[,2] > 0  ,]
 
-datHuntVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DL ),datHuntStat[,"vIDLookupTable"]$DL$larvaID  )
-datHuntVsPreyDL <- datHuntVsPreyDL[!is.na(datHuntVsPreyDL[,1]) & datHuntVsPreyDL[,2] > 0,] ##Remove datHuntVsPreyDL[,2] NA And High Fliers
-datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DE ),datHuntStat[,"vIDLookupTable"]$DE$larvaID  )
-datHuntVsPreyDE <- datHuntVsPreyDE[!is.na(datHuntVsPreyDE[,1]) & datHuntVsPreyDE[,2] > 0,] ##Remove NA And High Fliers
+datHuntDurVsPreyDL <- cbind(datHuntStat[,"vHInitialPreyCount"]$DL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DL ),datHuntStat[,"vIDLookupTable"]$DL$larvaID  )
+datHuntDurVsPreyDL <- datHuntDurVsPreyDL[!is.na(datHuntDurVsPreyDL[,1]) & datHuntDurVsPreyDL[,2] > 0,] ##Remove datHuntDurVsPreyDL[,2] NA And High Fliers
+datHuntDurVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DE ),datHuntStat[,"vIDLookupTable"]$DE$larvaID  )
+datHuntDurVsPreyDE <- datHuntDurVsPreyDE[!is.na(datHuntDurVsPreyDE[,1]) & datHuntDurVsPreyDE[,2] > 0,] ##Remove NA And High Fliers
 
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
@@ -413,12 +413,12 @@ plotsamples <- 200
 schain <-1:3
 
 ## Run Sampler On Larva Total Hunt Duration 
-drawDurLE <- mcmc_drawHuntDurationModels(datHuntVsPreyLE,preyCntRange,"modelLarvaHuntDuration.tmp" )
-drawDurNE <- mcmc_drawHuntDurationModels(datHuntVsPreyNE,preyCntRange,"modelLarvaHuntDuration.tmp" )
-drawDurDE <- mcmc_drawHuntDurationModels(datHuntVsPreyDE,preyCntRange,"modelLarvaHuntDuration.tmp" )
-drawDurLL <- mcmc_drawHuntDurationModels(datHuntVsPreyLL,preyCntRange,"modelLarvaHuntDuration.tmp" )
-drawDurDL <- mcmc_drawHuntDurationModels(datHuntVsPreyDL,preyCntRange,"modelLarvaHuntDuration.tmp" )
-drawDurNL <- mcmc_drawHuntDurationModels(datHuntVsPreyNL,preyCntRange,"modelLarvaHuntDuration.tmp" )
+drawDurLE <- mcmc_drawHuntDurationModels(datHuntDurVsPreyLE,preyCntRange,"modelLarvaHuntDuration.tmp" )
+drawDurNE <- mcmc_drawHuntDurationModels(datHuntDurVsPreyNE,preyCntRange,"modelLarvaHuntDuration.tmp" )
+drawDurDE <- mcmc_drawHuntDurationModels(datHuntDurVsPreyDE,preyCntRange,"modelLarvaHuntDuration.tmp" )
+drawDurLL <- mcmc_drawHuntDurationModels(datHuntDurVsPreyLL,preyCntRange,"modelLarvaHuntDuration.tmp" )
+drawDurDL <- mcmc_drawHuntDurationModels(datHuntDurVsPreyDL,preyCntRange,"modelLarvaHuntDuration.tmp" )
+drawDurNL <- mcmc_drawHuntDurationModels(datHuntDurVsPreyNL,preyCntRange,"modelLarvaHuntDuration.tmp" )
 ##
 save(drawDurLE,drawDurNE,drawDurDE,drawDurLL,drawDurNL,drawDurDL,
      file =paste(strDataExportDir,"stat_HuntDurationInPreyRange_nbinomRJags.RData",sep=""))
@@ -479,36 +479,36 @@ layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5), 2,6, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.7,1,1))
 
-plotHuntDurationDistribution_cdf(datHuntVsPreyNE,drawDurNE,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
-plotHuntDurationDistribution_cdf(datHuntVsPreyNL,drawDurNL,colourHL[1],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+plotHuntDurationDistribution_cdf(datHuntDurVsPreyNE,drawDurNE,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntDurVsPreyNL,drawDurNL,colourHL[1],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
 legend("bottomright",legend = c(  expression (),
-                                  bquote(NF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyNE))  )
+                                  bquote(NF["s"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyNE))  )
                                   ,bquote(NF["s"] ~"Model " ), 
-                                  bquote(NF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyNL)) )
+                                  bquote(NF["e"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyNL)) )
                                   ,bquote( NF["e"] ~ "Model " ) ), 
        col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
 mtext("F",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec)")
 mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
 
-plotHuntDurationDistribution_cdf(datHuntVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
-plotHuntDurationDistribution_cdf(datHuntVsPreyLL,drawDurLL,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+plotHuntDurationDistribution_cdf(datHuntDurVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntDurVsPreyLL,drawDurLL,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
 legend("bottomright",legend = c(  expression (),
-                                  bquote(LF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyLE))  )
+                                  bquote(LF["s"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyLE))  )
                                   ,bquote(LF["s"] ~"Model " ), 
-                                  bquote(LF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyLL)) )
+                                  bquote(LF["e"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyLL)) )
                                   ,bquote( LF["e"] ~ "Model " ) ),  
        col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
 mtext("G",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec)")
 mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
 
-plotHuntDurationDistribution_cdf(datHuntVsPreyDE,drawDurDE,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
-plotHuntDurationDistribution_cdf(datHuntVsPreyDL,drawDurDL,colourHL[3],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
+plotHuntDurationDistribution_cdf(datHuntDurVsPreyDE,drawDurDE,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
+plotHuntDurationDistribution_cdf(datHuntDurVsPreyDL,drawDurDL,colourHL[3],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
 legend("bottomright",legend = c(  expression (),
-                                  bquote(DF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDE))  )
+                                  bquote(DF["s"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyDE))  )
                                   ,bquote(DF["s"] ~"Model " ), 
-                                  bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDL)) )
+                                  bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyDL)) )
                                   ,bquote( DF["e"] ~ "Model " ) ),  
        col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
 mtext("H",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
@@ -538,8 +538,8 @@ pchL <- c(1,2,0,16,17,15)
 
 ## BoxPlot of Hunt Event Counts - 
 strCondTags <- c("NE","NL","LE","LL","DE","DL")
-xbarcenters <- boxplot(log10( (datHuntVsPreyNE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntVsPreyNL[,3]+1)/G_APPROXFPS ),log10( (datHuntVsPreyLE[,3]+1)/G_APPROXFPS ),
-                       log10( ( datHuntVsPreyLL[,3]+1 )/G_APPROXFPS ),log10(( datHuntVsPreyDE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntVsPreyDL[,3]+1)/G_APPROXFPS ),
+xbarcenters <- boxplot(log10( (datHuntDurVsPreyNE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntDurVsPreyNL[,3]+1)/G_APPROXFPS ),log10( (datHuntDurVsPreyLE[,3]+1)/G_APPROXFPS ),
+                       log10( ( datHuntDurVsPreyLL[,3]+1 )/G_APPROXFPS ),log10(( datHuntDurVsPreyDE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntDurVsPreyDL[,3]+1)/G_APPROXFPS ),
                        main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2.5),axes = FALSE,cex=cex,cex.axis=cex,cex.lab=cex  )
 mtext(side = 2,cex=cex, line =lineAxis, "Total hunting time  (sec) ") #log( (D+1)/fps
 vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
@@ -577,139 +577,139 @@ dev.off()
 
 
 
+# 
+# 
+# ## Continued...
+# 
+# 
+# 
+# 
+# 
+# 
+# #### Further Plot Checks ####
+# 
+# ###########
+# ##CHECK fIT
+# plot(1:15000,dnbinom(1:15000, size=tail(drawDurLE$r,50),  prob=tail(drawDurLE$q,50)),cex=0.3,col=colourHE[2] )
+# lines(density(drawDurLE$d,bw=1000 ) )
+# plot(1:15000,dnbinom(1:15000, size=tail(drawDurNE$r,50),  prob=tail(drawDurNE$q,50)),cex=0.3,col=colourHE[1] )
+# lines(density(drawDurNE$d,bw=1000 ) )
+# plot(1:15000,dnbinom(1:15000, size=tail(drawDurDE$r,50),  prob=tail(drawDurDE$q,50)),cex=0.3,col=colourHE[3] )
+# lines(density(drawDurDE$d,bw=1000 ) )
+# 
+# plot(1:15000,dnbinom(1:15000, size=tail(drawDurNL$r,50),  prob=tail(drawDurNL$q,50)),cex=0.3,col=colourHL[1] )
+# lines(density(drawDurNL$d,bw=1000 ) )
+# plot(1:15000,dnbinom(1:15000, size=tail(drawDurLL$r,50),  prob=tail(drawDurLL$q,50)),cex=0.3,col=colourHL[2] )
+# lines(density(drawDurLL$d,bw=1000 ) )
+# 
+# #####################################################   ############### ######################################
+# 
+# ############### Model Each Larva s Event Duration Separatelly ################################################
+# ###            Use The Labelled Events Register               #### ##################
+# ## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
+# ## Return Samples Drawn structure                             ########
+# 
+# hist(datHEvent_LE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+# hist(datHEvent_LL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+# 
+# hist(datHEvent_NE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+# hist(datHEvent_NL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+# 
+# hist(datHEvent_DE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+# hist(datHEvent_DL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
+# 
+# 
+# ##
+# ### Cut And Examine The data Where There Are Between L and M rotifers Initially
+# preyCntRange <- c(0,100)
+# 
+# ##Retrieve Draws From Each Larva's Episodes
+# ## Draw Structure Includes Infered Gamma Distributions to Fit Duration of Hunt Episode of Each Larva.
+# plotDurationGammaSamples(drawHD_LE$s,drawHD_LE$r,"green")
+# plotDurationGammaSamples(drawHD_DE$s,drawHD_DE$r,"blue")
+# plotDurationGammaSamples(drawHD_NE$s,drawHD_NE$r,"red")
+# 
+# plotDurationGammaSamples(drawHD_LL$s,drawHD_LL$r,"green")
+# plotDurationGammaSamples(drawHD_NL$s,drawHD_NL$r,"red")
+# plotDurationGammaSamples(drawHD_DL$s,drawHD_DL$r,"blue")
+# 
+# 
+# ###############
+# ### Plot GAMMA Parameters Space
+# Xlim <- 5 #range(1/drawHD_LL$r)[2]
+# Ylim <- range(drawHD_LL$s)[2]
+# nS <- 2
+# plot(GammaScaleSamples(drawHD_NE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_NE,nS),col=colourHL[1],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
+# points(GammaScaleSamples(drawHD_LE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_LE,nS),col=colourHL[2],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[2])
+# points(GammaScaleSamples(drawHD_DE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_DE,nS),col=colourHL[3],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[3])
+# points(GammaScaleSamples(drawHD_NL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_NL,nS),col=colourHL[1],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[4])
+# points(GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_LL,nS),col=colourHL[2],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[5])
+# points(GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_DL,nS),col=colourHL[3],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[6])
+# strXLab <- (expression(paste(Gamma, " scale (r/FPS)") ) )
+# mtext(side = 1,cex=0.8, line = 2.2,strXLab ) 
+# mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
+# legend("topright",legend = c(paste("NE" ),
+#                              paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
+#        col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
 
-
-## Continued...
-
-
-
-
-
-
-#### Further Plot Checks ####
-
-###########
-##CHECK fIT
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurLE$r,50),  prob=tail(drawDurLE$q,50)),cex=0.3,col=colourHE[2] )
-lines(density(drawDurLE$d,bw=1000 ) )
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurNE$r,50),  prob=tail(drawDurNE$q,50)),cex=0.3,col=colourHE[1] )
-lines(density(drawDurNE$d,bw=1000 ) )
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurDE$r,50),  prob=tail(drawDurDE$q,50)),cex=0.3,col=colourHE[3] )
-lines(density(drawDurDE$d,bw=1000 ) )
-
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurNL$r,50),  prob=tail(drawDurNL$q,50)),cex=0.3,col=colourHL[1] )
-lines(density(drawDurNL$d,bw=1000 ) )
-plot(1:15000,dnbinom(1:15000, size=tail(drawDurLL$r,50),  prob=tail(drawDurLL$q,50)),cex=0.3,col=colourHL[2] )
-lines(density(drawDurLL$d,bw=1000 ) )
-
-#####################################################   ############### ######################################
-
-############### Model Each Larva s Event Duration Separatelly ################################################
-###            Use The Labelled Events Register               #### ##################
-## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
-## Return Samples Drawn structure                             ########
-
-hist(datHEvent_LE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-hist(datHEvent_LL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-
-hist(datHEvent_NE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-hist(datHEvent_NL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-
-hist(datHEvent_DE$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-hist(datHEvent_DL$DurationFrames/G_APPROXFPS,xlim=c(0,10),breaks=30)
-
-
-##
-### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,100)
-
-##Retrieve Draws From Each Larva's Episodes
-## Draw Structure Includes Infered Gamma Distributions to Fit Duration of Hunt Episode of Each Larva.
-plotDurationGammaSamples(drawHD_LE$s,drawHD_LE$r,"green")
-plotDurationGammaSamples(drawHD_DE$s,drawHD_DE$r,"blue")
-plotDurationGammaSamples(drawHD_NE$s,drawHD_NE$r,"red")
-
-plotDurationGammaSamples(drawHD_LL$s,drawHD_LL$r,"green")
-plotDurationGammaSamples(drawHD_NL$s,drawHD_NL$r,"red")
-plotDurationGammaSamples(drawHD_DL$s,drawHD_DL$r,"blue")
-
-
-###############
-### Plot GAMMA Parameters Space
-Xlim <- 5 #range(1/drawHD_LL$r)[2]
-Ylim <- range(drawHD_LL$s)[2]
-nS <- 2
-plot(GammaScaleSamples(drawHD_NE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_NE,nS),col=colourHL[1],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[1],xlab=NA,ylab=NA)
-points(GammaScaleSamples(drawHD_LE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_LE,nS),col=colourHL[2],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[2])
-points(GammaScaleSamples(drawHD_DE,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_DE,nS),col=colourHL[3],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[3])
-points(GammaScaleSamples(drawHD_NL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_NL,nS),col=colourHL[1],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[4])
-points(GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_LL,nS),col=colourHL[2],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[5])
-points(GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS,GammaShapeSamples(drawHD_DL,nS),col=colourHL[3],ylim=c(0,Ylim),xlim=c(0,Xlim),pch=pchL[6])
-strXLab <- (expression(paste(Gamma, " scale (r/FPS)") ) )
-mtext(side = 1,cex=0.8, line = 2.2,strXLab ) 
-mtext(side = 2,cex=0.8, line = 2.2, expression(paste(Gamma, " shape (k)") ) )
-legend("topright",legend = c(paste("NE" ),
-                             paste("LE"),paste("DE"), paste("NL"),paste("LL"),paste("DL")),
-       col=c(colourHL[1],colourHL[2],colourHL[3],colourHL[1],colourHL[2],colourHL[3]) ,pch=pchL,cex=0.9,bg="white",ncol=2)
-
-
-######## Plot Comparison Of Duration Data ##########
-##Now Plot Infered Distributions
-
-
-## Plot Histogram Of Durations in approx SEC
-pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDuration",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
-
-layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
-hist(datHDuration_LE$DurationFrames /G_APPROXFPS,breaks=seq(0,12,0.5),col=colourR[2],xlab="",ylim=c(0,60),main="LE")
-hist(datHDuration_NE$DurationFrames/G_APPROXFPS,breaks=seq(0,12,0.5),col=colourR[3],main="NE",xlab="",ylim=c(0,60))
-hist(datHDuration_DE$DurationFrames/G_APPROXFPS,breaks=seq(0,12,0.5),col=colourR[1],main="DE",xlab="Duration of Spontaneous Hunt Events (sec) ",ylim=c(0,60))
-dev.off()
-
-## Raw Histograms for Total Hunt Duration Per Larva
-pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousTotalHuntDurationPerLarva",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
-layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
-hist(datHuntVsPreyL[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[2],main="LE",xlab="",xlim=c(0,40),ylim=c(0,40))
-hist(datHuntVsPreyN[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[3],main="NE",xlab="",xlim=c(0,40),ylim=c(0,40))
-hist(datHuntVsPreyD[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[1],main="DE",xlab=" Total Duration per Larva spent in Spontaneous Hunt Events ",xlim=c(0,40),ylim=c(0,40))
-dev.off()
-#### Also Plo
-
-## Box plot Of Total Duration Per Larva
-boxplot(datHuntVsPreyN[,3]/G_APPROXFPS,datHuntVsPreyL[,3]/G_APPROXFPS,datHuntVsPreyD[,3]/G_APPROXFPS,
-        main=NA,notch=TRUE,names=c("NE","LE","DE"),ylim=c(0,40), ylab="(sec)",col=colourH )
-
-
-
-
-#### Plot Density ###
-###Plot Density of Slope
-
-### Make Plot Of Histograms and Gamma Fit 
-strPlotName <- paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDuration_p",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
-pdf(strPlotName,width=16,height=10,title="Comparing the Duration of spontaneous hunt events " ) 
-
-
-Plim <- max( round(range(datHDuration_L[,1])[2] ),round(range(datHDuration_D[,1])[2] ),round(range(datHDuration_N[,1])[2] ))*1.1   
-layout(matrix(c(1,2,3,4,4,5), 3,2, byrow = FALSE))
-plotDurationDensityFitComparison(datHDuration_L,drawDurL,colourH[2],Plim,10) #colourR[2]
-legend("topright",legend=paste(c("Empirical Density ","Baysian Gamma Fit","Histogram ") )
-       ,pch=c(NA,NA,21),lwd=c(2,1,2),lty=c(2,1,NA),col=c("black",colourL[2],colourH[4]) )
-
-plotDurationDensityFitComparison(datHDuration_D,drawDurD,colourH[1],Plim,10)
-plotDurationDensityFitComparison(datHDuration_N,drawDurN,colourH[3],Plim,10)
-## Plot Distrib Of Params
-ns <- 200
-plot(drawDurL$r[,(steps/thin-ns):(steps/thin),],drawDurL$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[2],xlim=c(0,0.01),ylim=c(0,6),
-     xlab="Rate Parameter",ylab="Shape Parameter") 
-points(drawDurD$r[,(steps/thin-ns):(steps/thin),],drawDurD$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[1] ) 
-points(drawDurN$r[,(steps/thin-ns):(steps/thin),],drawDurN$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[3] ) 
-
-legend("topright",legend=paste(c("DF #","LF #","NF #"),c(nDatDF,nDatLF ,nDatNF ) )
-       ,pch=16,col=colourL)
-
-boxplot(datHDuration_L$DurationFrames/G_APPROXFPS,datHDuration_D$DurationFrames/G_APPROXFPS,datHDuration_N$DurationFrames/G_APPROXFPS,
-        main="Hunt Duration per Larva ",notch=TRUE,names=c("LE","DE","NE"),ylim=c(0,6), ylab="(sec)" )
-
-
-dev.off()
+# 
+# ######## Plot Comparison Of Duration Data ##########
+# ##Now Plot Infered Distributions
+# 
+# 
+# ## Plot Histogram Of Durations in approx SEC
+# pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDuration",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
+# 
+# layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
+# hist(datHDuration_LE$DurationFrames /G_APPROXFPS,breaks=seq(0,12,0.5),col=colourR[2],xlab="",ylim=c(0,60),main="LE")
+# hist(datHDuration_NE$DurationFrames/G_APPROXFPS,breaks=seq(0,12,0.5),col=colourR[3],main="NE",xlab="",ylim=c(0,60))
+# hist(datHDuration_DE$DurationFrames/G_APPROXFPS,breaks=seq(0,12,0.5),col=colourR[1],main="DE",xlab="Duration of Spontaneous Hunt Events (sec) ",ylim=c(0,60))
+# dev.off()
+# 
+# ## Raw Histograms for Total Hunt Duration Per Larva
+# pdf(file= paste(strPlotExportPath,"/stat/stat_SpontaneousTotalHuntDurationPerLarva",preyCntRange[1],"-",preyCntRange[2], "_hist.pdf",sep=""))
+# layout(matrix(c(1,2,3), 3,1, byrow = FALSE))
+# hist(datHuntVsPreyL[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[2],main="LE",xlab="",xlim=c(0,40),ylim=c(0,40))
+# hist(datHuntVsPreyN[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[3],main="NE",xlab="",xlim=c(0,40),ylim=c(0,40))
+# hist(datHuntVsPreyD[,3]/G_APPROXFPS,breaks=seq(0,51,3),col=colourR[1],main="DE",xlab=" Total Duration per Larva spent in Spontaneous Hunt Events ",xlim=c(0,40),ylim=c(0,40))
+# dev.off()
+# #### Also Plo
+# 
+# ## Box plot Of Total Duration Per Larva
+# boxplot(datHuntVsPreyN[,3]/G_APPROXFPS,datHuntVsPreyL[,3]/G_APPROXFPS,datHuntVsPreyD[,3]/G_APPROXFPS,
+#         main=NA,notch=TRUE,names=c("NE","LE","DE"),ylim=c(0,40), ylab="(sec)",col=colourH )
+# 
+# 
+# 
+# 
+# #### Plot Density ###
+# ###Plot Density of Slope
+# 
+# ### Make Plot Of Histograms and Gamma Fit 
+# strPlotName <- paste(strPlotExportPath,"/stat/stat_SpontaneousHuntEventDuration_p",preyCntRange[1],"-",preyCntRange[2], ".pdf",sep="")
+# pdf(strPlotName,width=16,height=10,title="Comparing the Duration of spontaneous hunt events " ) 
+# 
+# 
+# Plim <- max( round(range(datHDuration_L[,1])[2] ),round(range(datHDuration_D[,1])[2] ),round(range(datHDuration_N[,1])[2] ))*1.1   
+# layout(matrix(c(1,2,3,4,4,5), 3,2, byrow = FALSE))
+# plotDurationDensityFitComparison(datHDuration_L,drawDurL,colourH[2],Plim,10) #colourR[2]
+# legend("topright",legend=paste(c("Empirical Density ","Baysian Gamma Fit","Histogram ") )
+#        ,pch=c(NA,NA,21),lwd=c(2,1,2),lty=c(2,1,NA),col=c("black",colourL[2],colourH[4]) )
+# 
+# plotDurationDensityFitComparison(datHDuration_D,drawDurD,colourH[1],Plim,10)
+# plotDurationDensityFitComparison(datHDuration_N,drawDurN,colourH[3],Plim,10)
+# ## Plot Distrib Of Params
+# ns <- 200
+# plot(drawDurL$r[,(steps/thin-ns):(steps/thin),],drawDurL$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[2],xlim=c(0,0.01),ylim=c(0,6),
+#      xlab="Rate Parameter",ylab="Shape Parameter") 
+# points(drawDurD$r[,(steps/thin-ns):(steps/thin),],drawDurD$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[1] ) 
+# points(drawDurN$r[,(steps/thin-ns):(steps/thin),],drawDurN$s[,(steps/thin-ns):(steps/thin),] ,type="p",pch=16,cex=1.2,col=colourR[3] ) 
+# 
+# legend("topright",legend=paste(c("DF #","LF #","NF #"),c(nDatDF,nDatLF ,nDatNF ) )
+#        ,pch=16,col=colourL)
+# 
+# boxplot(datHDuration_L$DurationFrames/G_APPROXFPS,datHDuration_D$DurationFrames/G_APPROXFPS,datHDuration_N$DurationFrames/G_APPROXFPS,
+#         main="Hunt Duration per Larva ",notch=TRUE,names=c("LE","DE","NE"),ylim=c(0,6), ylab="(sec)" )
+# 
+# 
+# dev.off()

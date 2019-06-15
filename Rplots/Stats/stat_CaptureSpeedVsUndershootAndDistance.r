@@ -314,7 +314,8 @@ pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
 ### Show Speed Fit ###
 outer = FALSE
 line = 1 ## SubFig Label Params
-cex = 1.1
+lineAxis = 3.2
+cex = 1.4
 adj  = 3.5
 padj <- -10.0
 las <- 1
@@ -322,17 +323,17 @@ las <- 1
 
 layout(matrix(c(1,2,3,4),2,2, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.3,1,1))
+par(mar = c(3.9,4.7,1,1))
 
 ## Plot the mean of the 2D Models ##
 ##Collect Draws from all chains
-plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
 points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
 points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec)  " ))
+mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -349,17 +350,17 @@ legend("topright",
                   bquote(DF[""] ~ '#' ~ .(ldata_DF$N)  )
                   #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
                   ),
-       pch=pchL, col=colourLegL)
+       pch=pchL, col=colourLegL,cex=cex)
 ###############
 
 ## Distance To Prey Vs Speed ##
-plot(tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA ,cex=cex,cex.axis=cex )
 points(tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
 points(tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=0.8, line = 2.2, expression("Distance to prey (mm)  " ))
-mtext(side = 2,cex=0.8, line = 2.2, expression(" Capture Speed (mm/sec)" ))
+mtext(side = 1,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
+mtext(side = 2,cex=cex, line = lineAxis, expression(" Capture Speed (mm/sec)" ))
 
 contour(zDLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
 contour(zLLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -381,13 +382,13 @@ mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=li
 
 
 ## Distance To Prey ##
-plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA )
+plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
 points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourHPoint[2],pch=pchL[2])
 points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Distance to prey (mm)  " ))
+mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
 
 contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
 contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -410,7 +411,7 @@ mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=li
 
 
 ### Show Cluster Membership
-plot(density(tail(draw_NF$pS,ntail),pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
+plot(density(tail(draw_NF$pS,ntail),pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=4,lty=1,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex )
 lines(density(tail(draw_LF$pS,ntail) ),col=colourLegL[2],lwd=3,lty=2)
 lines(density(tail(draw_DF$pS,ntail) ),col=colourLegL[3],lwd=3,lty=3)
 #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
@@ -422,10 +423,10 @@ legend("topleft",
                   bquote(DF[""] ~ '#' ~ .(ldata_DF$N)  )
                   #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
        ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3,4),lwd=3)
+       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
 
-mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density ") )
+mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
 #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
 

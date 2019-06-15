@@ -118,15 +118,18 @@ sum(diff(dSizeNF$x)[1]*dSizeNF$y)
 #### PLOT Fitted Larva Length  ###
 pdf(file= paste(strPlotExportPath,"/stat/stat_LarvalLengthsGaussian.pdf" ,sep=""),width = 14,height = 3.5)
 
-par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3,4),1,4, byrow = TRUE))
-line = 6.3 ## SubFig Label Params
-cex = 2
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.9,1,1))
+
+line = 8.3 ## SubFig Label Params
+lineAxis = 3.0
+cex = 1.4
 adj  = -3
-padj <- -11.2
+padj <- -7.2
 las <- 1
 
-plot(dSizeNF,col=colourHLine[1] , xlim=XLIM,ylim=YLIM ,lwd=2 ,type='l',main=NA,xlab=NA,ylab=NA,lty=2 )
+plot(dSizeNF,col=colourHLine[1] , xlim=XLIM,ylim=YLIM ,lwd=2 ,type='l',main=NA,xlab=NA,ylab=NA,lty=2 ,cex=cex,cex.axis=cex,cex.lab=cex)
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
@@ -136,16 +139,16 @@ for (i in 1:(ntail-1) )
        ,type='l', col=colourHLine[1],lwd=1,lty=1)
 }
 lines(dSizeNF,col="black",lwd=4,lty=2)
-mtext(side = 1,cex=0.8, line = 2.2, expression("Larval length (mm) " ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
-mtext("K",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=padj,adj=adj,cex.main=cex) #las=las,line=line,padj=padj,adj=adj
+mtext(side = 1,cex=cex, line = lineAxis, expression("Larval length (mm) " ) )
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+mtext("K",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex) #las=las,line=line,padj=padj,adj=adj
 legend("topright",title="NF",
        legend=c( paste0("",dSizeNF$n, "# Data "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
                  paste("Model  " )),
-       col=c("black",colourLegL[1]),lwd=c(3,1),lty=c(2,1),seg.len = 3 ) 
+       col=c("black",colourLegL[1]),lwd=c(3,1),lty=c(2,1),seg.len = 3,cex=cex ) 
 
 ## 2nd panel
-plot(dSizeLF,col=colourHLine[2] , xlim=XLIM,ylim=YLIM ,lwd=2 ,type='l',main=NA,xlab=NA,ylab=NA,lty=2 )
+plot(dSizeLF,col=colourHLine[2] , xlim=XLIM,ylim=YLIM ,lwd=2 ,type='l',main=NA,xlab=NA,ylab=NA,lty=2,cex=cex,cex.axis=cex,cex.lab=cex )
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
@@ -155,16 +158,16 @@ for (i in 1:(ntail-1) )
         type='l', col=colourHLine[2],lwd=1,lty=1)
 }
 lines(dSizeLF,col="black" , xlim=XLIM,ylim=YLIM ,lwd=4 ,type='l',xlab=NA,ylab=NA,lty=2 )
-mtext(side = 1,cex=0.8, line = 2.2, expression("Larval length (mm) " ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
-mtext("L",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=padj,adj=adj,cex.main=cex) #las=las,line=line,padj=padj,adj=adj
+mtext(side = 1,cex=cex, line = lineAxis, expression("Larval length (mm) " ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+mtext("L",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex) #las=las,line=line,padj=padj,adj=adj
 legend("topright",title="LF",
        legend=c( paste0("",dSizeLF$n, "# Data "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
                  paste("Model  " )),
-       col=c("black",colourLegL[2]),lwd=c(3,1),lty=c(2,1),seg.len = 3) 
+       col=c("black",colourLegL[2]),lwd=c(3,1),lty=c(2,1),seg.len = 3,cex=cex) 
 
 
-plot(dSizeDF,col=colourHLine[3] , xlim=XLIM,ylim=YLIM ,lwd=2 ,type='l',main=NA,xlab=NA,ylab=NA,lty=2 )
+plot(dSizeDF,col=colourHLine[3] , xlim=XLIM,ylim=YLIM ,lwd=2 ,type='l',main=NA,xlab=NA,ylab=NA,lty=2,cex=cex,cex.axis=cex,cex.lab=cex )
 ##Show Model Fit
 for (i in 1:(ntail-1) )
 {
@@ -175,23 +178,23 @@ for (i in 1:(ntail-1) )
 }
 lines(dSizeDF,col="black",xlim=XLIM,lwd=4,lty=2)
 
-mtext(side = 1,cex=0.8, line = 2.2, expression("Larval length (mm) " ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
-mtext("M",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=padj,adj=adj,cex.main=cex) #las=las,line=line,padj=padj,adj=adj
+mtext(side = 1,cex=cex, line = lineAxis, expression("Larval length (mm) " ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+mtext("M",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex) #las=las,line=line,padj=padj,adj=adj
 legend("topright",title="DF",
        legend=c( paste0("",dSizeDF$n, "# Data "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
                  paste("Model  " )),
-       col=c("black",colourLegL[3]),lwd=c(3,1),lty=c(2,1),seg.len = 3 ) 
+       col=c("black",colourLegL[3]),lwd=c(3,1),lty=c(2,1),seg.len = 3 ,cex=cex) 
 
 ##MPlot parameter Density
-plot(dmodelSizeNF,col=colourLegL[1] , xlim=XLIM,ylim=c(0,17),lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=1 )
+plot(dmodelSizeNF,col=colourLegL[1] , xlim=XLIM,ylim=c(0,17),lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=1,cex=cex,cex.axis=cex,cex.lab=cex )
 lines(dmodelSizeLF,col=colourLegL[2] , xlim=XLIM ,lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=2 )
 lines(dmodelSizeDF,col=colourLegL[3] , xlim=XLIM ,lwd=4 ,type='l',main=NA,xlab=NA,ylab=NA,lty=3 )
 legend("topright", legend=c("NF","LF","DF"), 
-       col=colourLegL,lty=c(1,2,3),lwd=3,seg.len=4)
-mtext(side = 1,cex=0.8, line = 2.2, expression("Estimated mean larval length (mm) " ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Density function " ))
-mtext("N",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=padj,adj=adj,cex.main=cex) #las=las,line=line,padj=padj,adj=adj
+       col=colourLegL,lty=c(1,2,3),lwd=3,seg.len=4,cex=cex)
+mtext(side = 1,cex=cex, line = lineAxis, expression("Estimated mean length (mm) " ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+mtext("N",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex) #las=las,line=line,padj=padj,adj=adj
 
 dev.off()
 
