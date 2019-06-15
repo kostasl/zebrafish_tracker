@@ -224,86 +224,86 @@ pBw <- 0.01
 dLLb<-density(drawLL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
-
-##Open Output PDF 
-#pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
-pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
-
-outer = FALSE
-line = 1 ## SubFig Label Params
-cex = 1.1
-adj  = 3.5
-padj <- -23.0
-las <- 1
-
-layout(matrix(c(1,2),1,2, byrow = FALSE))
-##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.3,1,1))
-plot( datTurnVsPreyDL[,"OnSetAngleToPrey"],datTurnVsPreyDL[,"Turn"],
-     main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
-     xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
-     ylab=NA,#expression("Bearing To Prey After Turn "~(theta^degree) ),
-     xlim=c(-100,100),
-     ylim=c(-100,100),
-     col=colourP[3] ,pch=pchL[3]) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
-mtext(side = 1,cex=0.8, line = 2.2, expression("Bearing To Prey Prior Turn "~(phi^degree) ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Bearing To Prey After Turn "~(theta^degree) ))
-
-#text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
-abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourLegL[3],lwd=1.5,lty=2) ##Fit Line / Regression
-abline(a=muDLa,b=muDLb,col=colourLegL[3],lwd=4.0) ##Fit Line / Regression
-#abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[1],lwd=4.0) ##Fit Line / Regression
-#abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[1],lwd=4.0) ##Fit Line / Regression
-
-#abline( lsfit(lFirstBoutPoints[["DL"]][,2], lFirstBoutPoints[["DL"]][,1] ) ,col=colourH[1],lwd=2.0)
-##LL
-points(datTurnVsPreyLL[,"OnSetAngleToPrey"],datTurnVsPreyLL[,"Turn"],pch=pchL[2],col=colourP[2],cex=1.2)
-#text(lFirstBoutPoints[["LL"]][,1]+2,lFirstBoutPoints[["LL"]][,2]+5,labels=lFirstBoutPoints[["LL"]][,3],cex=0.8,col="darkgreen")
-abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourLegL[2],lwd=1.5,lty=2)
-abline(a=muLLa,b=muLLb,col=colourLegL[2],lwd=4.0,lty=1.5) ##Fit Line / Regression
-#abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[2],lwd=4.0) ##Fit Line / Regression
-#abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[2],lwd=4.0) ##Fit Line / Regression
-
-#abline(lsfit(lFirstBoutPoints[["LL"]][,2], lFirstBoutPoints[["LL"]][,1] ) ,col=colourH[2],lwd=2.0)
-##NL
-points( datTurnVsPreyNL[,"OnSetAngleToPrey"],datTurnVsPreyNL[,"Turn"],pch=pchL[1],col=colourP[1])
-#text(lFirstBoutPoints[["NL"]][,1]+2,lFirstBoutPoints[["NL"]][,2]+5,labels=lFirstBoutPoints[["NL"]][,3],cex=0.8,col="darkred")
-abline(lm(datTurnVsPreyNL[,"Turn"] ~ datTurnVsPreyNL[,"OnSetAngleToPrey"]),col=colourLegL[1],lwd=1.5,lty=2)
-abline(a=muNLa,b=muNLb,col=colourLegL[1],lwd=4.0) ##Fit Line / Regression
-#abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[3],lwd=4.0) ##Fit Line / Regression
-#abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[3],lwd=4.0) ##Fit Line / Regression
-#abline( lsfit(lFirstBoutPoints[["NL"]][,2], lFirstBoutPoints[["NL"]][,1] ) ,col=colourH[3],lwd=2.0)
-
-##Guiding lines / Draw 0 Vertical Line
-segments(0,-100,0,100); segments(-100,0,100,0); segments(-100,-100,100,100,lwd=1,lty=2);
-
-legend("topleft",
-       legend=c(  expression (),
-                         bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]))  ),
-                         bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
-                         bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       pch=pchL, col=colourLegL)
-mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-
-
-##Density Estimation
-plot(dNLb,col=colourLegL[1],xlim=c(0.5,1.2),lwd=3,lty=1,ylim=c(0,20),
-     main=NA, #"Density Inference of Turn-To-Prey Slope ",
-     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb,col=colourLegL[2],xlim=c(0.5,1.2),lwd=3,lty=2)
-lines(dDLb,col=colourLegL[3],xlim=c(0.5,1.2),lwd=3,lty=3)
-legend("topright",
-       legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]))  ),
-                  bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
-                  bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3),lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("slope ",gamma) ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
-mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-
-### PLot Scatter with regression lines with Conf intervals##
-dev.off()
+  
+  ##Open Output PDF 
+  #pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+  pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+  
+  outer = FALSE
+  line = 1 ## SubFig Label Params
+  cex = 1.4
+  adj  = 3.5
+  padj <- -16.5
+  las <- 1
+  
+  layout(matrix(c(1,2),1,2, byrow = FALSE))
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(3.95,4.7,1,1))
+  plot( datTurnVsPreyDL[,"OnSetAngleToPrey"],datTurnVsPreyDL[,"Turn"],
+       main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
+       xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
+       ylab=NA,#expression("Bearing To Prey After Turn "~(theta^degree) ),
+       xlim=c(-100,100),
+       ylim=c(-100,100),
+       col=colourP[3] ,pch=pchL[3],cex=cex,cex.axis=cex) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+  mtext(side = 1,cex=cex, line = lineAxis, expression("Bearing To Prey Prior Turn "~(phi^degree) ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Bearing To Prey After Turn "~(theta^degree) ))
+  
+  #text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
+  abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourLegL[3],lwd=1.5,lty=2) ##Fit Line / Regression
+  abline(a=muDLa,b=muDLb,col=colourLegL[3],lwd=4.0) ##Fit Line / Regression
+  #abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[1],lwd=4.0) ##Fit Line / Regression
+  #abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[1],lwd=4.0) ##Fit Line / Regression
+  
+  #abline( lsfit(lFirstBoutPoints[["DL"]][,2], lFirstBoutPoints[["DL"]][,1] ) ,col=colourH[1],lwd=2.0)
+  ##LL
+  points(datTurnVsPreyLL[,"OnSetAngleToPrey"],datTurnVsPreyLL[,"Turn"],pch=pchL[2],col=colourP[2],cex=1.2)
+  #text(lFirstBoutPoints[["LL"]][,1]+2,lFirstBoutPoints[["LL"]][,2]+5,labels=lFirstBoutPoints[["LL"]][,3],cex=0.8,col="darkgreen")
+  abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourLegL[2],lwd=1.5,lty=2)
+  abline(a=muLLa,b=muLLb,col=colourLegL[2],lwd=4.0,lty=1.5) ##Fit Line / Regression
+  #abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[2],lwd=4.0) ##Fit Line / Regression
+  #abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[2],lwd=4.0) ##Fit Line / Regression
+  
+  #abline(lsfit(lFirstBoutPoints[["LL"]][,2], lFirstBoutPoints[["LL"]][,1] ) ,col=colourH[2],lwd=2.0)
+  ##NL
+  points( datTurnVsPreyNL[,"OnSetAngleToPrey"],datTurnVsPreyNL[,"Turn"],pch=pchL[1],col=colourP[1])
+  #text(lFirstBoutPoints[["NL"]][,1]+2,lFirstBoutPoints[["NL"]][,2]+5,labels=lFirstBoutPoints[["NL"]][,3],cex=0.8,col="darkred")
+  abline(lm(datTurnVsPreyNL[,"Turn"] ~ datTurnVsPreyNL[,"OnSetAngleToPrey"]),col=colourLegL[1],lwd=1.5,lty=2)
+  abline(a=muNLa,b=muNLb,col=colourLegL[1],lwd=4.0) ##Fit Line / Regression
+  #abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[3],lwd=4.0) ##Fit Line / Regression
+  #abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[3],lwd=4.0) ##Fit Line / Regression
+  #abline( lsfit(lFirstBoutPoints[["NL"]][,2], lFirstBoutPoints[["NL"]][,1] ) ,col=colourH[3],lwd=2.0)
+  
+  ##Guiding lines / Draw 0 Vertical Line
+  segments(0,-100,0,100); segments(-100,0,100,0); segments(-100,-100,100,100,lwd=1,lty=2);
+  
+  legend("topleft",
+         legend=c(  expression (),
+                           bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]))  ),
+                           bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
+                           bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         pch=pchL, col=colourLegL,cex=cex)
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  
+  
+  ##Density Estimation
+  plot(dNLb,col=colourLegL[1],xlim=c(0.5,1.2),lwd=4,lty=1,ylim=c(0,20),
+       main=NA, #"Density Inference of Turn-To-Prey Slope ",
+       xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(dLLb,col=colourLegL[2],xlim=c(0.5,1.2),lwd=4,lty=2)
+  lines(dDLb,col=colourLegL[3],xlim=c(0.5,1.2),lwd=4,lty=3)
+  legend("topright",
+         legend=c(  expression (),
+                    bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]))  ),
+                    bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
+                    bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated parameter slope ",gamma) ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  
+  ### PLot Scatter with regression lines with Conf intervals##
+  dev.off()
 
 
 
