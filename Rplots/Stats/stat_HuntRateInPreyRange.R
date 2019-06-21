@@ -384,7 +384,7 @@ las <- 1
 
 layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5), 2,6, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.7,1,1))
+par(mar = c(3.9,4.75,1,1))
 
 #lineTypeL[1] <- 1
 plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )

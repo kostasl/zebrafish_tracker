@@ -167,7 +167,7 @@ mu[1,2] ~ dnorm(5,0.1)T(0,) ## High cap speed
 mu[1,3] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
 
 sigma[1,1] ~ dunif(0.0,0.20) ##Overshoot prey - Keep it broader within the expected limits
-sigma[1,2] ~ dunif(0.00,4) ##the low cap speed sigma 
+sigma[1,2] ~ dunif(0.00,2) ##the low cap speed sigma 
 sigma[1,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
     
 
@@ -177,7 +177,7 @@ mu[2,2] ~ dnorm(35,0.1)T(mu[1,2],) ##cap speed
 mu[2,3] ~ dnorm(0.5,0.01)T(0,) ##Distance prey
 
 sigma[2,1] ~ dunif(0.0,0.20) ##undershoot prey - Keep it narrow within the expected limits
-sigma[2,2] ~ dunif(0.0,10) ##the cap speed sigma 
+sigma[2,2] ~ dunif(0.0,10) ##the high cap speed sigma 
 sigma[2,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
 
 ## Synthesize data from the distribution
@@ -217,7 +217,7 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 100000
+steps <- 15000
 nchains <- 5
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -309,7 +309,7 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 #################################### MAIN FIGURE #####
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A statistical model for Capture Strike speed / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
 
 ### Show Speed Fit ###
 outer = FALSE
@@ -317,13 +317,13 @@ line = 1 ## SubFig Label Params
 lineAxis = 3.2
 cex = 1.4
 adj  = 3.5
-padj <- -10.0
+padj <- -8.0
 las <- 1
 
 
 layout(matrix(c(1,2,3,4),2,2, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.7,1,1))
+par(mar = c(3.9,4.7,2,1))
 
 ## Plot the mean of the 2D Models ##
 ##Collect Draws from all chains
@@ -334,7 +334,7 @@ points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoin
 
 mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
 mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
-mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
+mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
 contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -378,7 +378,7 @@ contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty
 #                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
 #      ),
 #       pch=pchL, col=colourLegL)
-mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
+mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
 
 ## Distance To Prey ##
@@ -406,7 +406,7 @@ contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty
 #                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
 #       ),
 #       pch=pchL, col=colourLegL)
-mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
+mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
 
 
@@ -428,7 +428,7 @@ legend("topleft",
 mtext(side = 2,cex=cex, line = lineAxis, expression("Density ") )
 mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
 #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex)
+mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
 
 dev.off()

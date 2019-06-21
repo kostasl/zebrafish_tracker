@@ -39,7 +39,7 @@ modelPoisson="model {
              lambda[i] ~ dgamma(1,1) ##Suggested in wiki 
              #lambda[i] ~ dexp(1) 
              q[i] ~ dbeta(1,1)
-             p[i] ~ dbeta(1,1)
+             p[i] ~ dbeta(1,1) ##Prob of capture
              t[i] ~ dbeta(1,1) ##Prob Of Enganging With Prey Given HuntMode Is On
          }
 
@@ -149,6 +149,7 @@ HConsumptionRate_NL <- HEventSuccess_NL*MeanHuntRate_NL
 HConsumptionRate_LL <- HEventSuccess_LL*MeanHuntRate_LL
 HConsumptionRate_DL <- HEventSuccess_DL*MeanHuntRate_DL
 
+save(draw,file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
 ###MAIN OUTPUT PLOT ##
 
 strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
@@ -159,7 +160,7 @@ pdf(strPlotName,width=14,height=14,
 outer = FALSE
 line = 3.5 ## SubFig Label Params
 lineGroupLabel <- line - 32 ##pie chart group label
-cex = 1.5
+cex = 1.4
 adj  = 0.5
 padj <- -0
 las <- 1
@@ -257,17 +258,44 @@ par(mar = c(5,6,2,3))
   mtext(side = 2, cex=cex, line = line, expression("Density function") )
   mtext("C",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
   #### Plot Hunt Power ####
-  plotHuntPowerData(datHuntLabelledEventsSB)
+  plotHuntPowerDataCDF(datHuntLabelledEventsSB)
   mtext("D",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
   
 dev.off()
 #embed_fonts(strPlotName)
   
+### Plot Covariance of Hunt Rate To Prob Of Success
+fNL <- density((HEventSuccess_NL[,1]*MeanHuntRate_NL[,1]))
+fLL <- density(HEventSuccess_LL[,1]*MeanHuntRate_LL[,1])
+plot(density((HEventSuccess_LL[,1]*MeanHuntRate_LL[,1]) ),col=colourLegL[2],ylim=c(0,1))
+lines(density((HEventSuccess_LL[,1]*MeanHuntRate_LL[,1])),col=colourLegL[2],lwd=2)
+lines(density((HEventSuccess_NL[,1]*MeanHuntRate_NL[,1])),col=colourLegL[1])
+lines(density((HEventSuccess_DL[,1]*MeanHuntRate_NL[,1])),col=colourLegL[3])
+
+plot(density((HEventSuccess_NL[,1]*MeanHuntRate_LL[,1])),col=colourLegL[2])
+lines(density((HEventSuccess_NL[,1]*MeanHuntRate_NL[,1])),col=colourLegL[1])
+lines(density((HEventSuccess_NL[,1]*MeanHuntRate_DL[,1])),col=colourLegL[3])
 
 
+strPlotName = paste(strPlotExportPath,"/stat/fig3S2_stat_HuntRateAndEfficiency_CDF.pdf",sep="")
+pdf(strPlotName,width=7,height=7,
+    title="Hunting Rate and Efficiency - Labelled results and Bayesian Inference ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
+    onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
 
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(4.2,4.7,1.1,1))
+plotHuntEfficiencyDataCDF(datHuntLabelledEventsSB)
 
+dev.off()
 
+strPlotName = paste(strPlotExportPath,"/stat/fig3S3_stat_HuntRateAndEfficiency_PDF.pdf",sep="")
+pdf(strPlotName,width=7,height=7,
+    title="Hunting Rate and Efficiency - Labelled results and Bayesian Inference ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
+    onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
+par(mar = c(4.2,4.7,1.1,1))
+
+plotHuntEfficiencyDataPDF(datHuntLabelledEventsSB)
+dev.off()
 # 
 # ######## ## # # # ## 
 # ########################

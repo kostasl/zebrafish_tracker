@@ -235,10 +235,10 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
   adj  = 3.5
   padj <- -16.5
   las <- 1
-  
+  lineAxis = 3.2    
   layout(matrix(c(1,2),1,2, byrow = FALSE))
   ##Margin: (Bottom,Left,Top,Right )
-  par(mar = c(3.95,4.7,1,1))
+  par(mar = c(3.95,4.75,1,1))
   plot( datTurnVsPreyDL[,"OnSetAngleToPrey"],datTurnVsPreyDL[,"Turn"],
        main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
        xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
@@ -283,7 +283,7 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
                            bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
                            bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
          pch=pchL, col=colourLegL,cex=cex)
-  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
   
   ##Density Estimation
@@ -300,7 +300,7 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
          col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
   mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated parameter slope ",gamma) ))
   mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
-  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
   ### PLot Scatter with regression lines with Conf intervals##
   dev.off()

@@ -619,7 +619,7 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
 
 ## The figure with CDF of hunt efficiency - plotted as power, so as to show differences in actual consumption 
 ## instead of just ratio of success vs fail
-plotHuntPowerData <- function(datHuntEventAllGroupToLabel)
+plotHuntPowerDataCDF <- function(datHuntEventAllGroupToLabel)
 {
   datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
   vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
@@ -663,5 +663,101 @@ plotHuntPowerData <- function(datHuntEventAllGroupToLabel)
   legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
          col = colourLegL,pch=pchL,cex=cex+0.2)
 }
+
+
+
+
+## The figure with CDF of hunt efficiency - plotted as power, so as to show differences in actual consumption 
+## instead of just ratio of success vs fail
+plotHuntEfficiencyDataCDF <- function(datHuntEventAllGroupToLabel)
+{
+  datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
+  vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio_Strike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_WS"]))
+  vEfficiencyRatio_NStrike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_NS"]))
+  #vScoreIdx[is.nan(vScoreIdx) ] <- 0
+  tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
+  datFishSuccessRateMerged <- cbind(datFishSuccessRate,
+                                    markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
+                                    markTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),2]),
+                                    notTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),3]))
+  
+  datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx,vEfficiencyRatio,vEfficiencyRatio_Strike,vEfficiencyRatio_NStrike)
+  
+  
+  
+  ## Subset only the active/Larvae - ones that have hunted 
+  datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vEfficiencyRatio),]
+  
+  ## Plot Density of Hunting POWER S^2/(S+F)
+  densDLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio)
+  densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio)
+  densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)
+  
+  cdfDLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio)
+  cdfNLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio)
+  cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)
+  
+  
+  #par(mar = c(3.9,4.3,1,1)) 
+  plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],xlim=c(0,1),pch=pchL[1],ylim=c(0.03,1.01),
+       main=NA,ylab=NA,  xlab=NA,cex.main =cex,cex.axis=cex,cex=cex )
+  
+  plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=cex)
+  plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=cex)
+  #axis(side=1)
+  mtext(side = 1,cex=1.5, line = 3.5, expression( "Capture Efficiency  "  ,paste("") )   )
+  mtext(side = 2,cex=1.5, line = 3.5, expression("Cumulative function " ))
+  
+  legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+         col = colourLegL,pch=pchL,cex=cex+0.2)
+}
+
+
+
+
+## The figure with CDF of hunt efficiency - plotted as power, so as to show differences in actual consumption 
+## instead of just ratio of success vs fail
+plotHuntEfficiencyDataPDF <- function(datHuntEventAllGroupToLabel)
+{
+  datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
+  vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio_Strike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_WS"]))
+  vEfficiencyRatio_NStrike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_NS"]))
+  #vScoreIdx[is.nan(vScoreIdx) ] <- 0
+  tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
+  datFishSuccessRateMerged <- cbind(datFishSuccessRate,
+                                    markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
+                                    markTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),2]),
+                                    notTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),3]))
+  
+  datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx,vEfficiencyRatio,vEfficiencyRatio_Strike,vEfficiencyRatio_NStrike)
+  
+  
+  
+  ## Subset only the active/Larvae - ones that have hunted 
+  datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vEfficiencyRatio),]
+  
+  ## Plot Density of Hunting POWER S^2/(S+F)
+  densDLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio)
+  densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio)
+  densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)
+  
+  #par(mar = c(3.9,4.3,1,1)) 
+  plot(densNLScore,lty=2,lwd=3,col=colourLegL [1],xlim=c(0,1),pch=pchL[1],ylim=c(0.01,3.01),
+       main=NA,ylab=NA,  xlab=NA,cex.main =cex,cex.axis=cex,cex=cex )
+  
+  lines(densLLScore,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,3.01),cex=cex)
+  lines(densDLScore,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,3.01),cex=cex)
+  #axis(side=1)
+  mtext(side = 1,cex=1.5, line = 3.5, expression( "Capture Efficiency  "  ,paste("") )   )
+  mtext(side = 2,cex=1.5, line = 3.5, expression("Cumulative function " ))
+  
+  legend("topright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+         col = colourLegL,pch=pchL,cex=cex+0.2)
+}
+
 
 

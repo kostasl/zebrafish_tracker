@@ -59,7 +59,7 @@ for  (g in 1:2)
   ## Low Speed Captcha cluster
   mu[1,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
   mu[1,2] ~ dnorm(5,0.1)T(0,) ##cap speed
-  sigma[1,2] ~ dunif(0,4) ##the low cap speed sigma 
+  sigma[1,2] ~ dunif(0,2) ##the low cap speed sigma 
 
   ## High speed Capture Cluster
   mu[2,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
@@ -142,7 +142,7 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 ##  Init  datastruct that we pass to model ##
 
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
-steps <- 105500
+steps <- 15500 #105500
 str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS")
 ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
@@ -191,7 +191,7 @@ zDL <- kde2d(c(tail(draw_DF$mu[,1,,],ntail)), c(tail(draw_DF$mu[,2,,],ntail)),n=
 dLLb_rho <-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 dNLb_rho <-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 dDLb_rho <-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
-dALLb_rho <-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=0.05)
+#dALLb_rho <-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 ##dALLb_rho[[2]] <-density(tail(draw_ALL$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 
 #dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
@@ -205,7 +205,7 @@ dALLb_rho <-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 dLLb_sigmaD <-density(tail(draw_LF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
 dNLb_sigmaD <-density(tail(draw_NF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
 dDLb_sigmaD <-density(tail(draw_DF$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
-dALLb_sigmaD <-density(tail(draw_ALL$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
+#dALLb_sigmaD <-density(tail(draw_ALL$sigma[,1,,1],ntail),kernel="gaussian",bw=pBw)
 
 
 ## Check out the dist to prey variance  , compare estimated densities
@@ -219,7 +219,7 @@ dLLb_sigmaC <- list();dNLb_sigmaC<- list();dDLb_sigmaC<-list();dALLb_sigmaC<-lis
 dLLb_sigmaC<-density(tail(draw_LF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dNLb_sigmaC<-density(tail(draw_NF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
-dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
+#dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
 
 #### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
