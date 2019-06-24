@@ -192,6 +192,7 @@ strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
 strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershoot_Valid.pdf"
 strDistanceDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelDistance_Valid.pdf"
+strModelCovarPDFFileName <- "/stat/UndershootAnalysis/fig6S1-stat_modelCaptureSpeedVsUndershootAndDistance_COVar.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -279,17 +280,17 @@ zDLS <- kde2d(c(tail(draw_DF$mu[,3,,],ntail)), c(tail(draw_DF$mu[,2,,],ntail)),n
 pBw   <- 0.1
 ## Strike Cluster Only (Fast speed) draw_NF$mu[,2,,]
 ## The Undershoot To Capt. Speed covar coefficient
-dLLb_rhoUS<-density(tail(draw_LF$rho[2,1,,],ntail),kernel="gaussian",bw=pBw)
-dNLb_rhoUS<-density(tail(draw_NF$rho[2,1,,],ntail),kernel="gaussian",bw=pBw)
-dDLb_rhoUS<-density(tail(draw_DF$rho[2,1,,],ntail),kernel="gaussian",bw=pBw)
+dLLb_rhoUS<-density(tail(draw_LF$rho[,1,,],ntail),kernel="gaussian",bw=pBw)  ## Undershoot-Speed Covar
+dNLb_rhoUS<-density(tail(draw_NF$rho[,1,,],ntail),kernel="gaussian",bw=pBw)
+dDLb_rhoUS<-density(tail(draw_DF$rho[,1,,],ntail),kernel="gaussian",bw=pBw)
 #The Speed - Distance covar coefficient
-dLLb_rhoSD<-density(tail(draw_LF$rho[2,2,,],ntail),kernel="gaussian",bw=pBw)
-dNLb_rhoSD<-density(tail(draw_NF$rho[2,2,,],ntail),kernel="gaussian",bw=pBw)
-dDLb_rhoSD<-density(tail(draw_DF$rho[2,2,,],ntail),kernel="gaussian",bw=pBw)
+dLLb_rhoSD<-density(tail(draw_LF$rho[,2,,],ntail),kernel="gaussian",bw=pBw)
+dNLb_rhoSD<-density(tail(draw_NF$rho[,2,,],ntail),kernel="gaussian",bw=pBw)
+dDLb_rhoSD<-density(tail(draw_DF$rho[,2,,],ntail),kernel="gaussian",bw=pBw)
 ##The UNdershoot Distance covar 
-dLLb_rhoUD<-density(tail(draw_LF$rho[2,3,,],ntail),kernel="gaussian",bw=pBw)
-dNLb_rhoUD<-density(tail(draw_NF$rho[2,3,,],ntail),kernel="gaussian",bw=pBw)
-dDLb_rhoUD<-density(tail(draw_DF$rho[2,3,,],ntail),kernel="gaussian",bw=pBw)
+dLLb_rhoUD<-density(tail(draw_LF$rho[,3,,],ntail),kernel="gaussian",bw=pBw)
+dNLb_rhoUD<-density(tail(draw_NF$rho[,3,,],ntail),kernel="gaussian",bw=pBw)
+dDLb_rhoUD<-density(tail(draw_DF$rho[,3,,],ntail),kernel="gaussian",bw=pBw)
 
 #dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
@@ -473,8 +474,12 @@ dev.off()
 ## plot 
 ##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )
 
-### COVARIANCE PLOT ##
+### COVARIANCE PLOT  (Fast Cluster)##
 ###Show covariance In the High Speed Capture Cluster ##
+
+pdf(file= paste0(strPlotExportPath,strModelCovarPDFFileName),width=14,height=7,
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+
 layout(matrix(c(1,2,3),1,3, byrow = FALSE))
 ## Plot the covariance Coefficients##
 plot(dNLb_rhoUS,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
@@ -497,6 +502,25 @@ plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
 lines(dLLb_rhoUD,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
 
+dev.off()
+
+## SLow Clust
+clust <- 2
+###Undershoot-Speed Covar
+plot(density(draw_LF$sigma[clust,1,,1]*draw_LF$sigma[clust,2,,1]*draw_LF$rho[clust,1,,1]),
+     col=colourLegL[2],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4))
+lines(density(draw_NF$sigma[clust,1,,1]*draw_NF$sigma[clust,2,,1]*draw_NF$rho[clust,1,,1]),
+     col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4))
+lines(density(draw_DF$sigma[clust,1,,1]*draw_DF$sigma[clust,2,,1]*draw_DF$rho[clust,1,,1]),
+      col=colourLegL[3],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4))
+
+###Speed Distance
+plot(density(draw_LF$sigma[clust,3,,1]*draw_LF$sigma[clust,2,,1]*draw_LF$rho[clust,2,,1]),
+     col=colourLegL[2],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4))
+lines(density(draw_NF$sigma[clust,3,,1]*draw_NF$sigma[clust,2,,1]*draw_NF$rho[clust,2,,1]),
+      col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4))
+lines(density(draw_DF$sigma[clust,3,,1]*draw_DF$sigma[clust,2,,1]*draw_DF$rho[clust,2,,1]),
+      col=colourLegL[3],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4))
 
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
