@@ -109,7 +109,8 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
 
 
 strMainPDFFilename <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeedVsDistToPrey.pdf"; ## Used Fig 4
-strModelPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
+strModelVarPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
+strModelCoVarPDFFilename <- "/stat/UndershootAnalysis/fig4S1_stat_modelMixCaptureSpeedVsDistToPrey_COVariances.pdf";
 strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
 strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
 
@@ -174,10 +175,15 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
 save(draw_LF,draw_NF,draw_DF,file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 
+### Load Pre Calc Results
+load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
+#### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
+
 ### Estimate  densities  ###
 nContours <- 6
 ntail <-2000
 pBw   <- 0.02 
+
 
 
 zLL <- kde2d(c(tail(draw_LF$mu[,1,,],ntail)), c(tail(draw_LF$mu[,2,,],ntail)),n=180)
@@ -221,15 +227,13 @@ dNLb_sigmaC<-density(tail(draw_NF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 #dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
-
-#### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
-
 pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,
     title="A Gaussian Cluster statistical model for Capture Strike speed and Distance to Prey")
 
 outer = FALSE
 line = 2.8 ## SubFig Label Params
-lineAxis = 3.2
+lineAxis = 2.7
+lineXAxis = 2.5
 cex = 1.4
 adj  = 1.0
 padj <- -11.0
@@ -352,7 +356,7 @@ dev.off()
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
 
-pdf(file= paste(strPlotExportPath,strModelPDFFilename,sep=""),width=14,height=7,
+pdf(file= paste(strPlotExportPath,strModelVarPDFFilename,sep=""),width=14,height=7,
     title="A statistical model for Capture Strike speed And Distance to prey")
 
 outer = FALSE
@@ -397,9 +401,14 @@ legend("topleft",
        pch=pchL, col=colourLegL)
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
-## Plot the covariance ##
+
+
+## Plot the COVARIANCE ##
+pdf(file= paste(strPlotExportPath,strModelCoVarPDFFilename,sep=""),width=7,height=7,
+    title="A statistical model for Covariance of Capture speed to Distance to prey")
+
 plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
-     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+     main=NA,cex=cex, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
 lines(dLLb_rho,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
@@ -409,16 +418,20 @@ legend("topleft",
        legend=c(  expression (),
                   bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
                   bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  ),
-                  bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3,4),lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression(paste("Cov. Capture speed to Prey Distance  ",rho) ))
-mtext(side = 2,cex=0.8, line = 2.2, expression("Density ") )
-mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                  #bquote(ALL ~ '#' ~ .(ldata_ALL$N)  ) 
+                  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Cov. Capture speed to Prey Distance  ",rho) ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density ") )
+#mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
+dev.off()
 
 
-### aDDD DISTANCE TO PREY VARIANCE COMPARISON
 
+
+
+### ADD DISTANCE TO PREY VARIANCE COMPARISON
 plot(dNLb_sigmaD,col=colourLegL[1],xlim=c(0,0.5),lwd=3,lty=1,ylim=c(0,20),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
