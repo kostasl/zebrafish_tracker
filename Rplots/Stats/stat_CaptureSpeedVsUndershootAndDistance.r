@@ -1,17 +1,7 @@
-### Kostas Lagogiannis 2019-04-15 
-## Discovered relationship between the last bout speed - ie Capture speed and the undershoot ratio -
-## higher undershoot predicts higher capture speeds, while undershoot also seems to predict higher distance from prey 
-##  suggesting that LF stays further away from prey, so it does stronger capture bouts and it is undershoot that allows it to do it.
-## Their ability to judge distance is also revealed in the the eye vergence prior to capture, where there is a relationship between EyeV and distance to prey   is shown 
-## Stohoi:
-## S1 Establish whether undershoot covaries with capture speed
-## S2 Compare cap.Speed vs UNdershoot models between groups - Do they also covary in all groups?
-## S3 compare accuracy of capture speed vs distance to prey between groups (use covariance distributions)
-## Aitiology :
-## 
-## A: Does undershoot explain capture speed and distance to prey accuracy?
+### Kostas Lagogiannis 2019-06-24 
+## 3D Gaussian Model for each group, to discover covariance structure 
+## I made this to complement the Clustering Method, so as to characterize the overall covariance structure
 
-### Stat Model on Capture speed vs undershoot
 library(rjags)
 library(runjags)
 
@@ -114,8 +104,8 @@ initfunct <- function(nchains,N)
   return(initlist)
 }
 
-
-strmodel_capspeedVsUndershoot_Mixture <- "
+## Non Clustering Model, 3D Gaussian 
+strmodel_capspeedVsUndershootAndDistance <- "
 var x_rand[2,3];
 
 model {
@@ -124,19 +114,14 @@ model {
 for (i in 1:N)
 {
   ##Draw from gaussian model  as determined by mod flag
-  c[i,1:3] ~ dmnorm(mu[mID[i]+1,],prec[mID[i]+1, , ]) ## data in column 1 and 2
+  c[i,1:3] ~ dmnorm(mu[1,],prec[1, , ]) ## data in column 1 and 2
   mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
   
 }
-###14
-## Fit Bernouli distribution on Number of Hunt |Events that have a high-speed strike 
-## Probability of Strike Swim 
-pS  ~ dnorm(sum(mID)/N,1000)T(0,1)
-mStrikeCount ~ dbin(pS,N )
 
 ##Covariance matrix and its inverse -> the precision matrix
 ## for each Gaussian in the mixture (1 and 2)
-for  (g in 1:2)
+for  (g in 1:1)
 {
   prec[g,1:3,1:3] <- inverse(cov[g,1:3,1:3])
   
@@ -159,38 +144,29 @@ for  (g in 1:2)
   rho[g,2] ~ dunif(-0.5,0.5) ##The Speed - Distance covar coefficient
   rho[g,3] ~ dunif(-0.5,0.5) ##The UNdershoot Distance covar coefficient
 
+
+  ## Cluster's priors 
+  mu[g,1] ~ dnorm(1,0.00001)T(0.0,2) ##undershoot
+  mu[g,2] ~ dnorm(25,0.01)T(0,) ##cap speed
+  mu[g,3] ~ dnorm(0.5,0.01)T(0,) ##Distance prey
+  
+  sigma[g,1] ~ dunif(0.0,0.20) ##undershoot prey - Keep it narrow within the expected limits
+  sigma[g,2] ~ dunif(0.0,15) ## cap speed sigma 
+  sigma[g,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
+
+  ## Synthesize data from the distribution
+  x_rand[g,] ~ dmnorm(mu[1,],prec[1,,])
+
 }
-## Low Speed Captcha cluster
 
-mu[1,1] ~ dnorm(1,0.00001)T(0.001,2) ##undershoot 
-mu[1,2] ~ dnorm(5,0.1)T(0,) ## High cap speed
-mu[1,3] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
-
-sigma[1,1] ~ dunif(0.0,0.20) ##Overshoot prey - Keep it broader within the expected limits
-sigma[1,2] ~ dunif(0.00,2) ##the low cap speed sigma 
-sigma[1,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
-    
-
-## High speed Capture Cluster
-mu[2,1] ~ dnorm(1,0.00001)T(0.0,2) ##undershoot
-mu[2,2] ~ dnorm(35,0.1)T(mu[1,2],) ##cap speed
-mu[2,3] ~ dnorm(0.5,0.01)T(0,) ##Distance prey
-
-sigma[2,1] ~ dunif(0.0,0.20) ##undershoot prey - Keep it narrow within the expected limits
-sigma[2,2] ~ dunif(0.0,10) ##the high cap speed sigma 
-sigma[2,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
-
-## Synthesize data from the distribution
-x_rand[1,] ~ dmnorm(mu[1,],prec[1,,])
-x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 } "
 
 
-strModelPDFFileName <- "/stat/UndershootAnalysis/fig6-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
-strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter_Valid.pdf"
-strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
-strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershoot_Valid.pdf"
+strModelPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
+strDataPDFFileName <- "/stat/UndershootAnalysis/fig7-UndershootCaptureSpeedCV_scatter_Valid.pdf"
+strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelCaptureSpeed_Valid.pdf"
+strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelUndershoot_Valid.pdf"
 strDistanceDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelDistance_Valid.pdf"
 strModelCovarPDFFileName <- "/stat/UndershootAnalysis/fig6S1-stat_modelCaptureSpeedVsUndershootAndDistance_COVar.pdf"
 
@@ -218,7 +194,7 @@ datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_L
 
 ##
 ##
-steps <- 15000
+steps <- 1000
 nchains <- 5
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -229,24 +205,24 @@ ldata_DF <- list(c=datTurnVsStrikeSpeed_DL,N=NROW(datTurnVsStrikeSpeed_DL)) ##Dr
 ldata_ALL <- list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
 
 
-jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_LF, 
+jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershootAndDistance), data = ldata_LF, 
                          n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_LF$N))
 update(jags_model_LF, 300)
 draw_LF=jags.samples(jags_model_LF,steps,thin=nthin,variable.names=str_vars)
 
 ## Not Fed
-jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_NF, 
+jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershootAndDistance), data = ldata_NF, 
                          n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_NF$N)) 
 update(jags_model_NF,300)
 draw_NF=jags.samples(jags_model_NF,steps,thin=nthin,variable.names=str_vars)
 
 ## Dry  Fed
-jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_DF, 
+jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershootAndDistance), data = ldata_DF, 
                          n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_DF$N))
 update(jags_model_DF, 300)
 draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
 
-save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+#save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
 ## ALL  groups
 #jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
                             #n.adapt = 500, n.chains = 3, quiet = F)
@@ -255,7 +231,7 @@ save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance
 
 ### Estimate  densities  ###
 
-load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+#load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
 
 nContours <- 6
 ntail <- 1200 #NROW(draw_NF$mu[1,1,,1])*0.20
