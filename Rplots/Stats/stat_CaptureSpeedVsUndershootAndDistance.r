@@ -27,7 +27,7 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   for (i in 1:(ntail-1) )
   {
     lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
+    #lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
   }
   
   lines(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
@@ -151,7 +151,7 @@ for  (g in 1:1)
   mu[g,3] ~ dnorm(0.5,0.01)T(0,) ##Distance prey
   
   sigma[g,1] ~ dunif(0.0,0.20) ##undershoot prey - Keep it narrow within the expected limits
-  sigma[g,2] ~ dunif(0.0,15) ## cap speed sigma 
+  sigma[g,2] ~ dunif(0.0,5) ## cap speed sigma 
   sigma[g,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
 
   ## Synthesize data from the distribution
@@ -387,10 +387,10 @@ mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=li
 
 
 
-### Show Cluster Membership
-plot(density(tail(draw_NF$pS,ntail),pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=4,lty=1,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex )
-lines(density(tail(draw_LF$pS,ntail) ),col=colourLegL[2],lwd=3,lty=2)
-lines(density(tail(draw_DF$pS,ntail) ),col=colourLegL[3],lwd=3,lty=3)
+### Show Covar Of Undershoot to Distance  Membership
+plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-1,1),ylim=c(0.4,10),lwd=4,lty=1,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex )
+lines(dLLb_rhoUD,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
 #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
 
 legend("topleft",
