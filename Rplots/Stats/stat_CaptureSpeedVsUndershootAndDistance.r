@@ -287,7 +287,7 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
 pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
-    title="A 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+    title="A 3D statistical model for Capture Strike speed / Turn Ratio / Distance to Prey")
 
 ### Show Speed Fit ###
 outer = FALSE
@@ -311,7 +311,7 @@ points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoin
 points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
 mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
@@ -366,7 +366,7 @@ points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourHPoin
 points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
 mtext(side = 2,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
 
 contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -405,7 +405,7 @@ legend("topleft",
        col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
 
 mtext(side = 2,cex=cex, line = lineAxis, expression("Density ") )
-mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Undershoot to prey-distance covariance " ) )  )
+mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Turn ratio to distance covariance " ) )  )
 #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
@@ -549,7 +549,7 @@ plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,co
 lFit <- lm(datTurnVsStrikeSpeed_DL$CaptureSpeed ~ datTurnVsStrikeSpeed_DL$Undershoot)
 abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
 contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
-mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
 legend("topright",
        legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
 
@@ -584,7 +584,7 @@ plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$DistanceToPrey,
      ylim=c(0,1.0),xlim=c(0,2),   xlab=NA,ylab=NA,main=NA,cex=cex)
 lFit <- lm(datTurnVsStrikeSpeed_DL$DistanceToPrey ~ datTurnVsStrikeSpeed_DL$Undershoot)
 abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
-mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
 legend("topright",
        legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ,cex=cex) 
 

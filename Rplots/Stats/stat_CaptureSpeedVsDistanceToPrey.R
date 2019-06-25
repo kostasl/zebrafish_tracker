@@ -407,50 +407,50 @@ legend("topleft",
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 
 
-
-## Plot the COVARIANCE ##
-pdf(file= paste(strPlotExportPath,strModelCoVarPDFFilename,sep=""),width=14,height=7,
-    title="A statistical model for Covariance of Capture speed to Distance to prey")
-
-layout(matrix(c(1,2),1,2, byrow = TRUE))
-##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.3,3,1))
-
-plot(dNLb_rho_slow,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
-     main=NA,cex=cex, #"Density Inference of Turn-To-Prey Slope ",
-     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb_rho_slow,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_rho_slow,col=colourLegL[3],lwd=3,lty=3)
-#lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
-mtext(side = 2,cex=cex, line = lineAxis-0.5, expression("Density ") )
-mtext(side = 1,outer=F,cex=cex, line = lineXAxis,adj=0.5 ,expression(paste("Capture speed to prey distance  covariance ",(rho["s"]) ) ))
-mtext(side = 3,cex=cex, line = lineAxis-2, expression("Slow") )
-mtext("A",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
-
-
-legend("topleft",
-       legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
-                  #bquote(ALL ~ '#' ~ .(ldata_ALL$N)  ) 
-       ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
-
-
-plot(dNLb_rho_fast,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
-     main=NA,cex=cex, #"Density Inference of Turn-To-Prey Slope ",
-     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb_rho_fast,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_rho_fast,col=colourLegL[3],lwd=3,lty=3)
-#lines(d
-
-mtext(side = 1,outer=F,cex=cex, line = lineXAxis,adj=0.5 ,expression(paste("Capture speed to prey distance covariance ",(rho["f"]) ) ))
-mtext(side = 2,cex=cex, line = lineAxis-0.5, expression("Density ") )
-mtext(side = 3,cex=cex, line = lineAxis-2, expression("Fast") )
-mtext("B",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
-
-dev.off()
+  
+  ## Plot the COVARIANCE ##
+  pdf(file= paste(strPlotExportPath,strModelCoVarPDFFilename,sep=""),width=14,height=7,
+      title="A statistical model for Covariance of Capture speed to Distance to prey")
+  
+  layout(matrix(c(1,2),1,2, byrow = TRUE))
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(3.9,4.3,3,1))
+  
+  plot(dNLb_rho_slow,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
+       main=NA,cex=cex, #"Density Inference of Turn-To-Prey Slope ",
+       xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
+  lines(dLLb_rho_slow,col=colourLegL[2],lwd=3,lty=2)
+  lines(dDLb_rho_slow,col=colourLegL[3],lwd=3,lty=3)
+  #lines(dALLb_rho,col=colourLegL[4],lwd=3,lty=4)
+  mtext(side = 2,cex=cex, line = lineAxis-0.5, expression("Density ") )
+  mtext(side = 1,outer=F,cex=cex, line = lineXAxis,adj=0.5 ,expression(paste("Capture speed to prey distance  covariance ",(rho["s"]) ) ))
+  mtext(side = 3,cex=cex, line = lineAxis-2, expression("Slow") )
+  mtext("A",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
+  
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+                    bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+                    bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                    #bquote(ALL ~ '#' ~ .(ldata_ALL$N)  ) 
+         ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+  
+  
+  plot(dNLb_rho_fast,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,5),
+       main=NA,cex=cex, #"Density Inference of Turn-To-Prey Slope ",
+       xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
+  lines(dLLb_rho_fast,col=colourLegL[2],lwd=3,lty=2)
+  lines(dDLb_rho_fast,col=colourLegL[3],lwd=3,lty=3)
+  #lines(d
+  
+  mtext(side = 1,outer=F,cex=cex, line = lineXAxis,adj=0.5 ,expression(paste("Capture speed to prey distance covariance ",(rho["f"]) ) ))
+  mtext(side = 2,cex=cex, line = lineAxis-0.5, expression("Density ") )
+  mtext(side = 3,cex=cex, line = lineAxis-2, expression("Fast") )
+  mtext("B",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
+  
+  dev.off()
 
 
 
