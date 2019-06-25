@@ -64,51 +64,31 @@ modelLin <- "model{
  
   # Prior for beta
   beta[1] ~ dnorm(0,2)
-  beta[2] ~ dnorm(1,0.1)
-  
+  beta[2] ~  dnorm(1,1/sqrt(sigmaU))T(0.0,2) ##undershoot
+  sigmaU ~ dunif(0.0,0.20)
 
   # Prior for the inverse variance
-  inv.var   ~ dgamma(0.1, 1)
+  inv.var   ~  dgamma(5, 2)
   sigma     <- 1/sqrt(inv.var)
 
 }"
 
 ####Select Subset Of Data To Analyse
-plot(dgamma(1:100,            shape=0.1,scale=1           ))
+plot(dgamma(1:100,            shape=5,scale=2           ))
 
 plot(dnorm(1:100,   mean=1,sd=1           ))
 
 datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
 remove(lMotionBoutDat)
-lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
+#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #Processed Registry on which we add )
 remove(lFirstBoutPoints) ##Load From File
-lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
+#lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 
-# datMotionBoutCombinedAll <-  data.frame( do.call(rbind,lMotionBoutDat ) )
-# lFirstBoutPoints <- list() ##Add Dataframes Of 1st bout Turns for Each Group
-# strGroupID <- levels(datTrackedEventsRegister$groupID)
-# for (gp in strGroupID)
-# {
-#   groupID <- which(levels(datTrackedEventsRegister$groupID) == gp)
-#   
-#   datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm <- as.numeric(datMotionBoutCombinedAll$vMotionBoutDistanceToPrey_mm)
-#   datMotionBoutCombined <-datMotionBoutCombinedAll[datMotionBoutCombinedAll$groupID == as.numeric(groupID), ] #Select Group
-#   
-#   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
-#   datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) >= abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
-#   datMotionBoutTurnToPrey <- datMotionBoutTurnToPrey[!is.na(datMotionBoutTurnToPrey$RegistarIdx),]
-#   ## Punctuate 1st Turn To Prey
-#   #lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey,
-#   #                            Turn= datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1,]$OffSetAngleToPrey
-#   #                            , RegistarIdx=datMotionBoutCombined[datMotionBoutCombined$turnSeq == 1 & datMotionBoutCombined$boutSeq == 1 ,]$RegistarIdx)
-#   lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
-#                                   Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
-#                                   , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx)
-#   
-#   
-# }
-#   
+## The Original list if the lFirstBout data from runHuntepisode analysis
+datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
+lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="") ) #Processed Registry on which we add )
+
 
 ##Add The Empty Test Conditions
 #strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
@@ -152,7 +132,7 @@ rhoMaxA = 1000
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
-steps=100000;
+steps=50000;
 thin=1;
 nchains <- 3
 
@@ -209,7 +189,7 @@ drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
 
 ## Plot ### 
-ind = 10000 ## Number of last sampled values
+ind = steps*0.10 ## Number of last sampled values
 ## Save the Mean Slope and intercept
 ##quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2]
 muLLa=mean(drawLL$beta[,(steps-ind):steps,1][1,]) 
@@ -225,8 +205,9 @@ dLLb<-density(drawLL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
   
-  ##Open Output PDF 
-  #pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootLinRegressions_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+  ##### ######################
+  ### MAIN FIGURE ############
+  ################################  
   pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
   
   outer = FALSE
@@ -298,7 +279,7 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
                     bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
                     bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
          col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated parameter slope ",gamma) ))
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated turn ratio ",(gamma) ) ))
   mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
   mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
@@ -310,7 +291,41 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 
 
 
+###################### Further Turn Analysis #########################
+##### Check out Undershoot Consistency - Ratio of Angle to Prey At start and end of bout ####
+  layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(4.5,4.3,0.5,1))
 
+  idxReg <- row.names(datTrackedEventsRegister[datTrackedEventsRegister$groupID == "NL",])
+  boutTurnRatio_NL <- datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey /
+    datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey 
+  boutTurnRatio_NL <- boutTurnRatio_NL[which(boutTurnRatio_NL > -2 & boutTurnRatio_NL < 2)]
+  #plot(boutTurnRatioF,ylab="On/Off",)
+  hist(boutTurnRatio_NL,xlim=c(-3,3),breaks=100)
+  
+  idxReg <- row.names(datTrackedEventsRegister[datTrackedEventsRegister$groupID == "LL",])
+  boutTurnRatio_LL <- datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey /
+    datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey 
+  boutTurnRatio_LL <- boutTurnRatio_LL[which(boutTurnRatio_LL > -2 & boutTurnRatio_LL < 2)]
+  #plot(boutTurnRatioF,ylab="On/Off",)
+  hist(boutTurnRatio_LL,xlim=c(-3,3),breaks=100)
+  
+    
+  idxReg <- row.names(datTrackedEventsRegister[datTrackedEventsRegister$groupID == "DL",])
+  boutTurnRatio_DL <- datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey /
+    datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey 
+  boutTurnRatio_DL <- boutTurnRatio_DL[which(boutTurnRatio_DL > -2 & boutTurnRatio_DL < 2)]
+  #plot(boutTurnRatioF,ylab="On/Off",)
+  hist(boutTurnRatio_DL,xlim=c(-3,3),breaks=100)
+  
+  
+  
+  boxplot(boutTurnRatio_NL,boutTurnRatio_LL,boutTurnRatio_DL)
+  
+  plot(datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx==idxReg,]$boutRank,
+       datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx==idxReg,]$OffSetAngleToPrey)
+  
 
 
 

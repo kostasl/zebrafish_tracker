@@ -204,16 +204,21 @@ for (idx in idxRegValidated )
   vEventSpeed_smooth_mm <- vFs*vEventSpeed_smooth*DIM_MMPERPX
   
   vDistToPrey          <- sqrt( (datPlaybackHuntEvent$posX -datMotionBouts$vd_PreyX  )^2 + (datPlaybackHuntEvent$posY - datMotionBouts$vd_PreyY)^2   )
-  idxTouchDown         <- which(vDistToPrey == min(vDistToPrey,na.rm=T) ) ##Find frame where larva closest to prey - assume this is the capture frame
-
+  idxTouchDown         <- head(which(vDistToPrey == min(vDistToPrey,na.rm=T) ),1) ##Find 1st frame where larva closest to prey - assume this is the capture frame
+  
     ## Get peak Capture Speed within capture bout ##
   for (idxBout in row.names(datMotionBouts) )
   {
     oldVal <- datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm
+    ##Find the 1st frame when speed goes below threshold after larva centroid has passed prey item
+    idxSpeedLow    <- idxTouchDown+min(which(vEventSpeed_smooth_mm[idxTouchDown:datMotionBoutsToValidate[idxBout,]$vMotionBout_Off] < G_THRES_MOTION_BOUT_SPEED),na.rm=T)  ##Find frame where larva closest to prey - assume this is the capture frame
+    if (!is.integer (idxSpeedLow)) ##If low speed thres not hit, then just take the end of the bout
+      idxSpeedLow <- datMotionBoutsToValidate[idxBout,]$vMotionBout_Off
+    
     frameRangeCapt <- (datMotionBoutsToValidate[idxBout,]$vMotionBout_On:   min(datMotionBoutsToValidate[idxBout,]$vMotionBout_Off,
-                                                                                idxTouchDown+50 ) ) ##A little after point where Larva Touches prey
+                                                                                idxSpeedLow+1 ) ) ##Until Speed is low or end of Bout
     ## Speed over then next 70 frames ##
-    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[],na.rm=TRUE)
+    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:idxSpeedLow] ,na.rm=TRUE )
     stopifnot(is.numeric(datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm) | is.infinite((datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm)))
     
   
@@ -255,7 +260,7 @@ for (idx in idxRegValidated )
     if (is.na(datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm))
       stop("NA Dist")
     
-    print( paste(idxBout,"speed",oldVal,"->",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm,
+    print( paste(row.names(recReg),"speed",oldVal,"->",datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm,
                 "Prey Angle: ",oldValAngle,"->",datMotionBoutsToValidate[idxBout,]$OnSetAngleToPrey,
                 "Prey Dist: ",oldDist,"->",datMotionBoutsToValidate[idxBout,]$vMotionBoutDistanceToPrey_mm) )
     
@@ -335,3 +340,7 @@ for (gp in strGroupID)
 
 ##Save List on First Bout Data
 saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="") ) #Processed Registry on which we add )
+
+
+
+

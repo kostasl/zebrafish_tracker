@@ -1,5 +1,5 @@
 ### Kostas Lagogiannis 2019-06-24 
-## 3D Gaussian Model for each group, to discover covariance structure 
+## 3D Gaussian Model for each group, to discover covariance structure in Undershoot to Distance/Speed
 ## I made this to complement the Clustering Method, so as to characterize the overall covariance structure
 
 library(rjags)
@@ -26,10 +26,10 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   plot(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
   for (i in 1:(ntail-1) )
   {
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=1 )
     #lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
   }
-  
+  ##Data
   lines(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
   legend("topright",title="",
          legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
@@ -53,8 +53,8 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
   plot(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
   for (i in 1:(ntail-1) )
   {
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,1,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,1,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=1 )
+    #lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
   }
   
   lines(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
@@ -77,8 +77,8 @@ plotDistanceClustFit <- function(datDist,drawMCMC,colourIdx,nchain = 1)
        main=NA)
   for (i in 1:(ntail-1) )
   {
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,3,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,3,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,3,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=1 )
+    #lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,3,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
   }
   lines(density(datDist$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8) )
   legend("topright",title=NA,
@@ -146,13 +146,13 @@ for  (g in 1:1)
 
 
   ## Cluster's priors 
-  mu[g,1] ~ dnorm(1,0.00001)T(0.0,2) ##undershoot
-  mu[g,2] ~ dnorm(25,0.01)T(0,) ##cap speed
-  mu[g,3] ~ dnorm(0.5,0.01)T(0,) ##Distance prey
+  mu[g,1] ~ dnorm(1, 0.00001)T(0.0,2) ##undershoot
+  mu[g,2] ~ dnorm(15,0.00001)T(0,) ##cap speed
+  mu[g,3] ~ dnorm(0.1,0.01)T(0,) ##Distance prey
   
-  sigma[g,1] ~ dunif(0.0,0.20) ##undershoot prey - Keep it narrow within the expected limits
+  sigma[g,1] ~ dunif(0.0,0.30) ##undershoot prey - Keep it narrow within the expected limits
   sigma[g,2] ~ dunif(0.0,5) ## cap speed sigma 
-  sigma[g,3] ~ dunif(0.0,1) ##dist prey - Keep it broad within the expected limits 
+  sigma[g,3] ~ dunif(0.0,0.3) ##dist prey - Keep it broad within the expected limits 
 
   ## Synthesize data from the distribution
   x_rand[g,] ~ dmnorm(mu[1,],prec[1,,])
@@ -403,7 +403,7 @@ legend("topleft",
        col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
 
 mtext(side = 2,cex=cex, line = lineAxis, expression("Density ") )
-mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
+mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Undershoot to prey-distance covariance " ) )  )
 #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
@@ -412,6 +412,11 @@ dev.off()
 
 ##################################################
 ####################################################
+
+### Show Covar Of Undershoot to Speed  Membership
+plot(dNLb_rhoUS,col=colourLegL[1],xlim=c(-1,1),ylim=c(0.4,10),lwd=4,lty=1,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex )
+lines(dLLb_rhoUS,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_rhoUS,col=colourLegL[3],lwd=3,lty=3)
 
 
 ##### Individual Rand Vars Fit ###
@@ -501,13 +506,10 @@ lines(density(draw_DF$sigma[clust,3,,1]*draw_DF$sigma[clust,2,,1]*draw_DF$rho[cl
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
 
-### PLOT EMPIRICAL 
-####
-########################################################
+  ######################################################################
+ ###         PLOT EMPIRICAL                              ##############
+#####################################################################
 ###        UNdershoot Vs Capture speed               ###
-
-
-
 densNL <-  kde2d(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,n=80)
 densLL <-  kde2d(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,n=80)
 densDL <-  kde2d(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,n=80)
@@ -516,60 +518,96 @@ covLL <- cov( 1/datTurnVsStrikeSpeed_LL$Undershoot,datTurnVsStrikeSpeed_LL$Captu
 covDL <- cov( 1/datTurnVsStrikeSpeed_DL$Undershoot,datTurnVsStrikeSpeed_DL$CaptureSpeed)
 covNL  <- cov( 1/datTurnVsStrikeSpeed_NL$Undershoot,datTurnVsStrikeSpeed_NL$CaptureSpeed)
 
+
 pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.3,1,1))
+par(mar = c(3.9,4.5,1,1))
 
-plot(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
-     xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,2),main=NA)
+plot(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,col=colourLegL[1],
+     xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,2),main=NA,cex=cex)
 lFit <- lm(datTurnVsStrikeSpeed_NL$CaptureSpeed ~ datTurnVsStrikeSpeed_NL$Undershoot)
-abline(lFit,col=colourH[1],lwd=3.0) ##Fit Line / Regression
-contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[1],lty=2,lwd=3)
+abline(lFit,col=colourLegL[1],lwd=3.0) ##Fit Line / Regression
+contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
 legend("topright",
-       legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
+       legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ,cex=cex)  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
 
-plot(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
-     ylim=c(0,60),xlim=c(0,2),xlab=NA,ylab=NA)
+plot(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,col=colourLegL[2],
+     ylim=c(0,60),xlim=c(0,2),xlab=NA,ylab=NA,cex=cex)
 lFit <- lm(datTurnVsStrikeSpeed_LL$CaptureSpeed ~ datTurnVsStrikeSpeed_LL$Undershoot)
-abline(lFit,col=colourH[2],lwd=3.0) ##Fit Line / Regression
-contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[2],lty=2,lwd=3)
-mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
+abline(lFit,col=colourLegL[2],lwd=3.0) ##Fit Line / Regression
+contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
+mtext(side = 2,cex=cex, line = lineAxis-0.7, expression("Capture Speed (mm/sec) " ))
 legend("topright",
-       legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ) 
+       legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
 
 
-plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),xlim=c(0,2),
-     xlab=NA,ylab=NA,main=NA)
+plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$CaptureSpeed,col=colourLegL[3],ylim=c(0,60),xlim=c(0,2),
+     xlab=NA,ylab=NA,main=NA,cex=cex)
 lFit <- lm(datTurnVsStrikeSpeed_DL$CaptureSpeed ~ datTurnVsStrikeSpeed_DL$Undershoot)
-abline(lFit,col=colourH[3],lwd=3.0) ##Fit Line / Regression
-contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[3],lty=2,lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression("Undershoot "~(gamma) ))
+abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
+contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
+mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
 legend("topright",
-       legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ) 
+       legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
+
+
+dev.off()
+
+
+
+## EMPIRICAL - UNdeshoot vs Prey Distance 
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig7-UndershootDistanceCV_scatter.pdf",sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(4.5,4.3,0.5,1))
+
+plot(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$DistanceToPrey,col=colourLegL[1],
+     xlab=NA,ylab=NA,ylim=c(0,1.0),xlim=c(0,2),main=NA,cex=cex)
+lFit <- lm(datTurnVsStrikeSpeed_NL$DistanceToPrey ~ datTurnVsStrikeSpeed_NL$Undershoot)
+abline(lFit,col=colourLegL[1],lwd=3.0) ##Fit Line / Regression
+legend("topright",
+       legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
+
+plot(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$DistanceToPrey,col=colourLegL[2],
+     ylim=c(0,1),xlim=c(0,2.0),xlab=NA,ylab=NA,cex=cex)
+lFit <- lm(datTurnVsStrikeSpeed_LL$DistanceToPrey ~ datTurnVsStrikeSpeed_LL$Undershoot)
+abline(lFit,col=colourLegL[2],lwd=3.0) ##Fit Line / Regression
+mtext(side = 2,cex=cex, line = 2.2, expression("Distance to prey  (mm) " ))
+legend("topright",
+       legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
+
+
+plot(datTurnVsStrikeSpeed_DL$Undershoot, datTurnVsStrikeSpeed_DL$DistanceToPrey,col=colourLegL[3],
+     ylim=c(0,1.0),xlim=c(0,2),   xlab=NA,ylab=NA,main=NA,cex=cex)
+lFit <- lm(datTurnVsStrikeSpeed_DL$DistanceToPrey ~ datTurnVsStrikeSpeed_DL$Undershoot)
+abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
+mtext(side = 1,cex=cex, line = lineAxis, expression("Undershoot "~(gamma) ))
+legend("topright",
+       legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ,cex=cex) 
 
 
 dev.off()
 
 ############# 3D
-
-library(plot3D)
-dev.off()
-layout(matrix(c(1,2,3),1,3, byrow = FALSE))
-
-
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_UndershootSpeedDistance_3Dmodelplot_AB.pdf",sep=""))
-
-scatter3D(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),grid=10,col = colourH[1],
-          ticktype = "detailed",theta=0,phi=0,box=,type= c("shade", "wire", "dots"),zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),xlab="Undershoot", ylab="Distance",zlab="Speed")
-
-scatter3D(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[2],
-          zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
-
-scatter3D(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[3],
-          zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
-
-dev.off()
+# 
+# library(plot3D)
+# dev.off()
+# layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+# 
+# 
+# pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_UndershootSpeedDistance_3Dmodelplot_AB.pdf",sep=""))
+# 
+# scatter3D(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),grid=10,col = colourH[1],
+#           ticktype = "detailed",theta=0,phi=0,box=,type= c("shade", "wire", "dots"),zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),xlab="Undershoot", ylab="Distance",zlab="Speed")
+# 
+# scatter3D(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[2],
+#           zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
+# 
+# scatter3D(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[3],
+#           zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
+# 
+# dev.off()
 ###
 #install.packages("plotly")
 
