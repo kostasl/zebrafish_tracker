@@ -151,7 +151,7 @@ for  (g in 1:1)
   mu[g,3] ~ dnorm(0.1,0.01)T(0,) ##Distance prey
   
   sigma[g,1] ~ dunif(0.0,0.30) ##undershoot prey - Keep it narrow within the expected limits
-  sigma[g,2] ~ dunif(0.0,5) ## cap speed sigma 
+  sigma[g,2] ~ dunif(0.0,15) ## cap speed sigma 
   sigma[g,3] ~ dunif(0.0,0.3) ##dist prey - Keep it broad within the expected limits 
 
   ## Synthesize data from the distribution
@@ -222,7 +222,7 @@ jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershootAndDista
 update(jags_model_DF, 300)
 draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
 
-#save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
 ## ALL  groups
 #jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
                             #n.adapt = 500, n.chains = 3, quiet = F)
@@ -286,12 +286,14 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 #################################### MAIN FIGURE #####
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
+    title="A 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
 
 ### Show Speed Fit ###
 outer = FALSE
 line = 1 ## SubFig Label Params
-lineAxis = 3.2
+lineAxis = 2.7
+lineXAxis = 3.0
 cex = 1.4
 adj  = 3.5
 padj <- -8.0

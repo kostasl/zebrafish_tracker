@@ -95,12 +95,12 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   dens<- density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern)
   lines(dens,col="black",lwd=4,xlim=XLIM )
   legend("topright",title="",cex=cex,
-         legend=c( paste0("",dens$n, "# Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+         legend=c( paste0("",dens$n, "# Data density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
                    paste("Model low speed " ),
                    paste("Model high speed " )),
          col=c("black",colourLegL[colourIdx],colourLegL[colourIdx]),lwd=c(3,1,1),lty=c(1,1,2) ) 
   
-  mtext(side = 1,cex=cex, line = 3.2, expression("Capture Speed (mm/sec) " ))
+  mtext(side = 1,cex=cex, line = 3.2, expression("Capture speed (mm/sec) " ))
   mtext(side = 2,cex=cex, line = 2.5, expression("Density function " ))
   
 }
@@ -111,7 +111,7 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
 strMainPDFFilename <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeedVsDistToPrey.pdf"; ## Used Fig 4
 strModelVarPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
 strModelCoVarPDFFilename <- "/stat/UndershootAnalysis/fig4S1_stat_modelMixCaptureSpeedVsDistToPrey_COVariances.pdf";
-strDataPDFFileName <- "/stat/UndershootAnalysis/PreyDistanceCaptureSpeed_scatterValid.pdf"
+strDataPDFFileName <- "/stat/UndershootAnalysis/fig4S2_PreyDistanceCaptureSpeed_scatterValid.pdf"
 strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
 
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeed_Valid.pdf" ## Used in Fig 4
@@ -233,22 +233,22 @@ dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 #dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
 pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,
-    title="A Gaussian Cluster statistical model for Capture Strike speed and Distance to Prey")
+    title="A Gaussian clustering statistical model for capture strike speed and distance to prey")
 
 outer = FALSE
 line = 2.8 ## SubFig Label Params
 lineAxis = 2.7
-lineXAxis = 2.5
+lineXAxis = 3.0
 cex = 1.4
 adj  = 1.0
-padj <- -11.0
+padj <- -8.0
 las <- 1
 nContours <- 5
 
 layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5),2,6, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 #par(mar = c(5,4.5,3,1))
-par(mar = c(3.9,4.7,1,1))
+par(mar = c(4.5,4.7,2,1))
 
 plotCaptureSpeedFit(datDistanceVsStrikeSpeed_NL,draw_NF,1,npchain)
 mtext("B",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
@@ -270,8 +270,8 @@ points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoin
 
 #points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=cex, line = lineAxis, expression("Distance to Prey (mm) "~(delta) ))
-mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Distance to prey  ["~delta~"] (mm)" ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Capture speed (mm/sec)  " ))
 mtext("F",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -298,7 +298,7 @@ plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),l
 lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
 lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
 #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
-mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Probability of high speed capture  ",(p["s"]) ) ) ,cex.main=cex )
+mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high speed capture  ["~p["s"]~"]" ) ) ,cex.main=cex )
 mtext(side = 2,cex=cex, line = lineAxis, expression("Density  " ))
 
 mtext("G",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
@@ -425,7 +425,7 @@ lines(dDLb_rho_slow,col=colourLegL[3],lwd=3,lty=3)
 mtext(side = 2,cex=cex, line = lineAxis-0.5, expression("Density ") )
 mtext(side = 1,outer=F,cex=cex, line = lineXAxis,adj=0.5 ,expression(paste("Capture speed to prey distance  covariance ",(rho["s"]) ) ))
 mtext(side = 3,cex=cex, line = lineAxis-2, expression("Slow") )
-mtext("A",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex.main=cex)
+mtext("A",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
 
 
 legend("topleft",
@@ -448,7 +448,7 @@ lines(dDLb_rho_fast,col=colourLegL[3],lwd=3,lty=3)
 mtext(side = 1,outer=F,cex=cex, line = lineXAxis,adj=0.5 ,expression(paste("Capture speed to prey distance covariance ",(rho["f"]) ) ))
 mtext(side = 2,cex=cex, line = lineAxis-0.5, expression("Density ") )
 mtext(side = 3,cex=cex, line = lineAxis-2, expression("Fast") )
-mtext("B",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex.main=cex)
+mtext("B",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
 
 dev.off()
 
@@ -551,43 +551,46 @@ covLL <- cov( datDistanceVsStrikeSpeed_LL$DistanceToPrey,datDistanceVsStrikeSpee
 covDL <- cov( datDistanceVsStrikeSpeed_DL$DistanceToPrey,datDistanceVsStrikeSpeed_DL$CaptureSpeed)
 
 
-
-pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
-layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.3,1,1))
-
-plot(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
-     xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,2),main=NA)
-lFit <- lm(datDistanceVsStrikeSpeed_NL$CaptureSpeed ~ datDistanceVsStrikeSpeed_NL$DistanceToPrey)
-abline(lFit,col=colourP[1],lwd=3.0) ##Fit Line / Regression
-contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[1],lty=2,lwd=3)
-legend("topright",
-       legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
-
-plot(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
-     ylim=c(0,60),xlim=c(0,2),xlab=NA,ylab=NA)
-lFit <- lm(datDistanceVsStrikeSpeed_LL$CaptureSpeed ~ datDistanceVsStrikeSpeed_LL$DistanceToPrey)
-abline(lFit,col=colourP[2],lwd=3.0) ##Fit Line / Regression
-contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[2],lty=2,lwd=3)
-mtext(side = 2,cex=0.8, line = 2.2, expression("Capture Speed (mm/sec) " ))
-legend("topright",
-       legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ) 
-
-
-plot(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),xlim=c(0,2),
-     xlab=NA,ylab=NA,main=NA)
-lFit <- lm(datDistanceVsStrikeSpeed_DL$CaptureSpeed ~ datDistanceVsStrikeSpeed_DL$DistanceToPrey)
-abline(lFit,col=colourH[3],lwd=3.0) ##Fit Line / Regression
-contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[3],lty=2,lwd=3)
-mtext(side = 1,cex=0.8, line = 2.2, expression("Distance To Prey "~(d) ))
-legend("topright",
-       legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ) 
-
-
-dev.off()
-
-
+  
+  pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
+  
+  lineAxis = 2.4
+  lineXAxis = 2.7
+  layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(3.9,4.3,2,1))
+  
+  plot(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],
+       xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,1),main=NA,cex=cex)
+  lFit <- lm(datDistanceVsStrikeSpeed_NL$CaptureSpeed ~ datDistanceVsStrikeSpeed_NL$DistanceToPrey)
+  abline(lFit,col=colourLegL[1],lwd=3.0) ##Fit Line / Regression
+  contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
+  legend("topright",
+         legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex  )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
+  
+  plot(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],
+       ylim=c(0,60),xlim=c(0,1),xlab=NA,ylab=NA,cex=cex)
+  lFit <- lm(datDistanceVsStrikeSpeed_LL$CaptureSpeed ~ datDistanceVsStrikeSpeed_LL$DistanceToPrey)
+  abline(lFit,col=colourLegL[2],lwd=3.0) ##Fit Line / Regression
+  contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec) " ))
+  legend("topright",
+         legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex  ) 
+  
+  
+  plot(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],ylim=c(0,60),xlim=c(0,1),
+       xlab=NA,ylab=NA,main=NA,cex=cex)
+  lFit <- lm(datDistanceVsStrikeSpeed_DL$CaptureSpeed ~ datDistanceVsStrikeSpeed_DL$DistanceToPrey)
+  abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
+  contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
+  mtext(side = 1,cex=cex, line = lineXAxis, expression("Distance To Prey ["~d~"]" ))
+  legend("topright",
+         legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
+  
+  
+  dev.off()
+  
+  
 
 
 

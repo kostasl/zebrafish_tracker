@@ -246,7 +246,7 @@ jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture
 update(jags_model_DF, 300)
 draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
 
-save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+save(draw_LF,draw_NF,draw_DF,file = paste0(strDataExportDir,"stat_ClusterCaptSpeedVsUndershootAndDistance_RJags.RData"))
 ## ALL  groups
 #jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
                             #n.adapt = 500, n.chains = 3, quiet = F)
@@ -255,7 +255,7 @@ save.image(file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance
 
 ### Estimate  densities  ###
 
-load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+load(paste0(strDataExportDir,"stat_ClusterCaptSpeedVsUndershootAndDistance_RJags.RData"))
 
 nContours <- 6
 ntail <- 1200 #NROW(draw_NF$mu[1,1,,1])*0.20
@@ -310,12 +310,14 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 #################################### MAIN FIGURE #####
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,title="A 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
+    title="A 3D statistical model for clustering Capture Strike speed / Undershoot Ratio / Distance to Prey")
 
 ### Show Speed Fit ###
 outer = FALSE
 line = 1 ## SubFig Label Params
 lineAxis = 3.2
+lineXAxis = 3.0
 cex = 1.4
 adj  = 3.5
 padj <- -8.0
@@ -333,8 +335,8 @@ points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoin
 points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=cex, line = lineAxis, expression("Turn Ratio "~(gamma) ))
-mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
+mtext(side = 1,cex=cex, line = lineAxis, expression("Turn ratio ["~gamma~"]" ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Capture speed (mm/sec)  " ))
 mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
 contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -360,8 +362,8 @@ points(tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoin
 points(tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
-mtext(side = 2,cex=cex, line = lineAxis, expression(" Capture Speed (mm/sec)" ))
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Distance to prey (mm)  " ))
+mtext(side = 2,cex=cex, line = lineAxis, expression(" Capture speed (mm/sec)" ))
 
 contour(zDLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
 contour(zLLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -388,7 +390,7 @@ points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourHPoin
 points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourHPoint[3],pch=pchL[3])
 #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
 
-mtext(side = 1,cex=cex, line = lineAxis, expression("Turn Ratio "~(gamma) ))
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
 mtext(side = 2,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
 
 contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -427,7 +429,7 @@ legend("topleft",
        col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
 
 mtext(side = 2,cex=cex, line = lineAxis, expression("Density ") )
-mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Probability of high speed capture  ",(p["s"]) ) )  )
+mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high speed capture  ["~p["s"]~"]" ) )  )
 #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
 mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 

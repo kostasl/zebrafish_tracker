@@ -298,26 +298,30 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
   par(mar = c(4.5,4.3,0.5,1))
 
   idxReg <- row.names(datTrackedEventsRegister[datTrackedEventsRegister$groupID == "NL",])
-  boutTurnRatio_NL <- datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey /
-    datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey 
+  ### Calc Turn Ratio
+  boutTurnRatio_NL <- (datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey -
+                        datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey )/ datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey
+  
   boutTurnRatio_NL <- boutTurnRatio_NL[which(boutTurnRatio_NL > -2 & boutTurnRatio_NL < 2)]
   #plot(boutTurnRatioF,ylab="On/Off",)
-  hist(boutTurnRatio_NL,xlim=c(-3,3),breaks=100)
+  hist(boutTurnRatio_NL,xlim=c(-3,3),breaks=50)
   
   idxReg <- row.names(datTrackedEventsRegister[datTrackedEventsRegister$groupID == "LL",])
-  boutTurnRatio_LL <- datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey /
-    datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey 
+  boutTurnRatio_LL <-  (datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey -
+                          datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey )/ datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey
+  
   boutTurnRatio_LL <- boutTurnRatio_LL[which(boutTurnRatio_LL > -2 & boutTurnRatio_LL < 2)]
   #plot(boutTurnRatioF,ylab="On/Off",)
-  hist(boutTurnRatio_LL,xlim=c(-3,3),breaks=100)
+  hist(boutTurnRatio_LL,xlim=c(-3,3),breaks=50)
   
     
   idxReg <- row.names(datTrackedEventsRegister[datTrackedEventsRegister$groupID == "DL",])
-  boutTurnRatio_DL <- datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey /
-    datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey 
+  boutTurnRatio_DL <-  (datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey -
+                          datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OffSetAngleToPrey )/ datMotionBoutsToValidate[datMotionBoutsToValidate$RegistarIdx %in% idxReg,]$OnSetAngleToPrey
+  
   boutTurnRatio_DL <- boutTurnRatio_DL[which(boutTurnRatio_DL > -2 & boutTurnRatio_DL < 2)]
   #plot(boutTurnRatioF,ylab="On/Off",)
-  hist(boutTurnRatio_DL,xlim=c(-3,3),breaks=100)
+  hist(boutTurnRatio_DL,xlim=c(-3,3),breaks=50)
   
   
   
