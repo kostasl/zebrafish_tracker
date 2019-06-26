@@ -368,7 +368,7 @@ par(mar = c(3.9,4.7,3.5,1))
       mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
       mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and turn ratio "  ))
-      mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+      mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
       
     
       plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
@@ -380,7 +380,7 @@ par(mar = c(3.9,4.7,3.5,1))
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
       mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance"  ))
       
-      mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+      mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
       
       ##Speed TO Distance Covariance Coeff
       plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
@@ -392,7 +392,7 @@ par(mar = c(3.9,4.7,3.5,1))
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
       mtext(side = 3,cex=cex, line = lineTitle, expression("Turn ratio and distance"  ))
       
-      mtext("C",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+      mtext("E",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
       
 dev.off()
 

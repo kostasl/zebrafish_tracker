@@ -25,6 +25,7 @@ setEnvFileLocations("HOME") #OFFICE,#LAPTOP
 ## 
 # Time Line manually designed - revised by Martin 
 
+
 ### Fig 2 ####
 source("Stats/stat_HuntRateInPreyRange.R")
 source("Stats/stat_HuntDuration.R")
@@ -40,7 +41,10 @@ source("Stats/stat_CaptureSpeedVsDistanceToPrey.R")
 ### Fig 5 ####
 source("Stats/stat_LinRegression_TurnVsBearing.R")
 
-### Fig 6 ####
+## Fig 6  clustering Speed, TurnRatio and Distance to Prey using 3D 2xGaussian mixture method####
+source("Stats/stat_ClusterCaptureSpeedVsUndershootAndDistance.r")
+
+### Fig 7 Show Covariance using Gaussian 3D non clustering model aong wit ####
 source("Stats/stat_CaptureSpeedVsUndershootAndDistance.r")
 
 
