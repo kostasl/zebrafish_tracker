@@ -163,12 +163,12 @@ for  (g in 1:1)
 } "
 
 
-strModelPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
+strModelPDFFileName <- "/stat/UndershootAnalysis/fig7S1-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
 strDataPDFFileName <- "/stat/UndershootAnalysis/fig7-UndershootCaptureSpeedCV_scatter_Valid.pdf"
 strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelCaptureSpeed_Valid.pdf"
 strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelUndershoot_Valid.pdf"
 strDistanceDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelDistance_Valid.pdf"
-strModelCovarPDFFileName <- "/stat/UndershootAnalysis/fig6S1-stat_modelCaptureSpeedVsUndershootAndDistance_COVar.pdf"
+strModelCovarPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelCaptureSpeedVsUndershootAndDistance_COVar.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -231,7 +231,7 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_CaptSpeedVsUnd
 
 ### Estimate  densities  ###
 
-#load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
 
 nContours <- 6
 ntail <- 1200 #NROW(draw_NF$mu[1,1,,1])*0.20
@@ -283,7 +283,123 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 #points(tail(draw_LF$x_rand[1,,1],ntail ),tail(draw_LF$x_rand[2,,1],ntail ),col=colourH[2])
 #points(tail(draw_DF$x_rand[1,,1],ntail ),tail(draw_DF$x_rand[2,,1],ntail ),col=colourH[3])
 
-#################################### MAIN FIGURE #####
+
+
+### MAIN COVARIANCE PLOT  (Fast Cluster)##
+###Show covariance In the High Speed Capture Cluster ##
+
+pdf(file= paste0(strPlotExportPath,strModelCovarPDFFileName),width=14,height=7,
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+
+### Show Speed Fit ###
+outer = FALSE
+line = 1 ## SubFig Label Params
+lineAxis = 2.7
+lineXAxis = 3.0
+lineTitle = 0.5
+
+cex = 1.4
+adj  = 3.5
+padj <- -8.0
+las <- 1
+
+layout(matrix(c(1,1,1,2,2,2,3,3,4,4,5,5),2,6, byrow = TRUE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.7,3.5,1))
+
+
+  ## Plot the mean of the 2D Models ##
+  ##Collect Draws from all chains
+  plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
+  points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
+  points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
+  #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
+  
+  mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+  
+  contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
+  contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
+  contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+  
+  legend("topright",
+         legend=c(  expression (),
+                    bquote(NF[""] ~ '#' ~ .(ldata_NF$N)  ),
+                    bquote(LF[""] ~ '#' ~ .(ldata_LF$N)  ),
+                    bquote(DF[""] ~ '#' ~ .(ldata_DF$N)  )
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),
+         pch=pchL, col=colourLegL,cex=cex)
+  ###############
+  
+  
+  ## Distance To Prey Vs Turn Ratio##
+  plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
+  points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourHPoint[2],pch=pchL[2])
+  points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourHPoint[3],pch=pchL[3])
+  #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
+  
+  mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
+  
+  contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
+  contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
+  contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+  
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+
+
+
+      ### COVARIANCES 
+      ## Plot the covariance Coefficients##
+      plot(dNLb_rhoUS,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+           main=NA, #"Density Inference of Turn-To-Prey Slope ",
+           xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+      lines(dLLb_rhoUS,col=colourLegL[2],lwd=3,lty=2)
+      lines(dDLb_rhoUS,col=colourLegL[3],lwd=3,lty=3)
+      #lines(dALLb_rhoUS,col=colourLegL[4],lwd=3,lty=4)
+      mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
+      mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and turn ratio "  ))
+      mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+      
+    
+      plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+           main=NA, #"Density Inference of Turn-To-Prey Slope ",
+           xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+      lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
+      lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
+      mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
+      mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance"  ))
+      
+      mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+      
+      ##Speed TO Distance Covariance Coeff
+      plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+           main=NA, #"Density Inference of Turn-To-Prey Slope ",
+           xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+      lines(dLLb_rhoUD,col=colourLegL[2],lwd=3,lty=2)
+      lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
+      mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
+      mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+      mtext(side = 3,cex=cex, line = lineTitle, expression("Turn ratio and distance"  ))
+      
+      mtext("C",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+      
+dev.off()
+
+
+
+
+####################################  MAIN FIGURE 2 #####
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
 pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
@@ -360,7 +476,7 @@ contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty
 mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
 
-## Distance To Prey ##
+## Distance To Prey Vs Turn Ratio##
 plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
 points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourHPoint[2],pch=pchL[2])
 points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourHPoint[3],pch=pchL[3])
@@ -457,35 +573,7 @@ dev.off()
 ## plot 
 ##plot(xquant,dnorm(xquant,mean=tail(draw_NF$mu[2,2,,1],1),sd=tail(draw_NF$sigma[2,2,,1],1)),type='l',col=colourH[1],lty=1 )
 
-### COVARIANCE PLOT  (Fast Cluster)##
-###Show covariance In the High Speed Capture Cluster ##
 
-pdf(file= paste0(strPlotExportPath,strModelCovarPDFFileName),width=14,height=7,
-    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-
-layout(matrix(c(1,2,3),1,3, byrow = FALSE))
-## Plot the covariance Coefficients##
-plot(dNLb_rhoUS,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
-     main="Undershoot-Speed", #"Density Inference of Turn-To-Prey Slope ",
-     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb_rhoUS,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_rhoUS,col=colourLegL[3],lwd=3,lty=3)
-#lines(dALLb_rhoUS,col=colourLegL[4],lwd=3,lty=4)
-
-plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
-     main="Speed-Distance", #"Density Inference of Turn-To-Prey Slope ",
-     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
-
-##Speed TO Distance Covariance Coeff
-plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
-     main="Undershoot-Distance", #"Density Inference of Turn-To-Prey Slope ",
-     xlab=NA,ylab=NA) #expression(paste("slope ",gamma) ) )
-lines(dLLb_rhoUD,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
-
-dev.off()
 
 ## SLow Clust
 clust <- 2

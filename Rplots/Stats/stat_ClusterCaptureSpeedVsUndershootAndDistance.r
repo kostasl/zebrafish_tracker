@@ -37,7 +37,7 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   for (i in 1:(ntail-1) )
   {
     lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=2 )
   }
   
   lines(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
@@ -64,7 +64,7 @@ plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
   for (i in 1:(ntail-1) )
   {
     lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,1,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=2 )
   }
   
   lines(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
@@ -88,7 +88,7 @@ plotDistanceClustFit <- function(datDist,drawMCMC,colourIdx,nchain = 1)
   for (i in 1:(ntail-1) )
   {
     lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,3,ntail-i,nchain],1)),type='l',col=colourR[4],lty=1 )
-    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,3,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,3,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=2 )
   }
   lines(density(datDist$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8) )
   legend("topright",title=NA,
@@ -189,10 +189,10 @@ x_rand[2,] ~ dmnorm(mu[2,],prec[2,,])
 
 strModelPDFFileName <- "/stat/UndershootAnalysis/fig6-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
 strDataPDFFileName <- "/stat/UndershootAnalysis/UndershootCaptureSpeedCV_scatter_Valid.pdf"
-strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureSpeed_Valid.pdf"
-strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelUndershoot_Valid.pdf"
-strDistanceDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelDistance_Valid.pdf"
-strModelCovarPDFFileName <- "/stat/UndershootAnalysis/fig6S1-stat_modelCaptureSpeedVsUndershootAndDistance_COVar.pdf"
+strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig6S1_stat_modelCaptureSpeed_Valid.pdf"
+strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/fig6S3_stat_modelUndershoot_Valid.pdf"
+strDistanceDensityPDFFileName <- "/stat/UndershootAnalysis/fig6S2_stat_modelDistance_Valid.pdf"
+strModelCovarPDFFileName <- "/stat/UndershootAnalysis/fig6S4-stat_modelCaptureSpeedVsUndershootAndDistance_COVar.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -447,7 +447,7 @@ par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 npchain<-3
 plotCaptureSpeedFit(datTurnVsStrikeSpeed_NL,draw_NF,1,npchain)
-title(main="Model capture Speed")
+title(main="Capture speed Gaussian mixture model ")
 plotCaptureSpeedFit(datTurnVsStrikeSpeed_LL,draw_LF,2,npchain)
 plotCaptureSpeedFit(datTurnVsStrikeSpeed_DL,draw_DF,3,npchain)
 
@@ -458,7 +458,7 @@ pdf(file= paste(strPlotExportPath,strUndershootDensityPDFFileName ,sep=""))
 par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
-title(main="Model undershoot on 1st turn to prey")
+title(main="Turn ratio on 1st turn to prey Gaussian mixture model ")
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
 plotUndeshootClusterFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
 dev.off()
@@ -468,7 +468,7 @@ pdf(file= paste(strPlotExportPath,strDistanceDensityPDFFileName ,sep=""))
 par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 plotDistanceClustFit(datTurnVsStrikeSpeed_NL,draw_NF,1)
-title(main="Model distance from prey prior to capture")
+title(main="Distance from prey prior to capture Gaussian mixture model")
 plotDistanceClustFit(datTurnVsStrikeSpeed_LL,draw_LF,2)
 plotDistanceClustFit(datTurnVsStrikeSpeed_DL,draw_DF,3)
 
