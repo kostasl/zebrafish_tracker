@@ -37,6 +37,7 @@ tblIdxSuccess <- which (grepl("Success",row.names(tblResSB) ) )
 tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) ) 
 
 
+pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB)
 
 ##############################################
 ## Success / Strike Non Strike Percentage ##

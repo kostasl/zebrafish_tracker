@@ -89,17 +89,18 @@ pieChartLabelledSuccessVsFails_StrikeBreakDown <- function(tblRes,GroupID,colour
   ##Summarize COmbine Labels ###
   # Success Together, And Fails Together
   DLRes=c(
-    sum(tblRes[tblIdxSuccess,GroupID]),
+    #sum(tblRes[tblIdxSuccess,GroupID]),
     sum(tblRes[tblIdxSuccess_Strike,GroupID]),
-    sum(tblRes[tblIdxSuccess_NoStrike,GroupID]),
     sum(tblRes[tblIdxFail_Strike,GroupID]),
+    
+    sum(tblRes[tblIdxSuccess_NoStrike,GroupID]),
     sum(tblRes[tblIdxFail_NoStrike,GroupID])
   )
   
   #NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
   #LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
   ##Here We Condition on the Fact that these were Hunt Events Tracking Prey / 
-  nLabelledDL <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+  nLabelled <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
   #nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
   #nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
   
@@ -109,17 +110,21 @@ pieChartLabelledSuccessVsFails_StrikeBreakDown <- function(tblRes,GroupID,colour
   if (is.na(colourL))
     colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
   
-  pie(DLRes , labels =  c(paste0(" ",round((DLRes[1]/nLabelledDL)*100),"%"),
-                          paste0(" ",round((DLRes[2]/nLabelledDL)*100),"%") ),
+  pie(DLRes , labels =  c(paste0(" ",round((DLRes[1]/nLabelled)*100),"%"),
+                          paste0(" ",round((DLRes[2]/nLabelled)*100),"%"),
+                          paste0(" ",round((DLRes[3]/nLabelled)*100),"%"),
+                          paste0(" ",round((DLRes[4]/nLabelled)*100),"%")),
       cex=2.0,cex.main=2.8,clockwise = TRUE,
       #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
       radius=1.0,col=colourL) 
   
  
   
-  return(nLabelledDL)
+  return(nLabelled)
   
 }
+
+
 
 pieChartStrikeVsNonStrike_Success <- function(tblRes,GroupID,colourL)
 {
