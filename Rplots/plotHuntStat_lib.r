@@ -40,6 +40,77 @@ pieChartLabelledEvents <- function(tblRes,GroupID,colourL=NA)
   
 }
 
+
+##Show Results comparing Success only of Identified Hunt Events that tracked Prey
+## Return Number of Labelled Events
+pieChartLabelledSuccessVsFails_StrikeBreakDown <- function(tblRes,GroupID,colourL=NA)
+{
+  ## Find Tbl Indexes Indicating Success 
+  tblIdxSuccess <- which (grepl("Success",row.names(tblRes) ) ) 
+  tblIdxFail <- which (grepl("Fail",row.names(tblRes) ) ) 
+  tblidxValidHuntEvents <- c(6,7,tblIdxSuccess,tblIdxFail)
+  tblIdxSuccess_Strike <- which (grepl("Success-OnStrike",row.names(tblRes) ) )
+  tblIdxSuccess_NoStrike <- which (grepl("Success-OnApproach",row.names(tblRes) ) ) 
+  tblIdxFail_Strike <- which (grepl("Fail-With Strike",row.names(tblRes) ) )
+  tblIdxFail_NoStrike <- which (grepl("Fail-No Strike",row.names(tblRes) ) ) 
+  
+  
+  ##Summarize COmbine Labels ###
+  # Success Together, And Fails Together
+  DLRes=c(sum(tblRes[tblIdxSuccess_Strike,GroupID]) ,
+          sum(tblRes[tblIdxSuccess_NoStrike,GroupID] ),
+          sum(tblRes[tblIdxFail_Strike,GroupID] ),
+          sum(tblRes[tblIdxFail_NoStrike,GroupID] )) 
+  nLabelledDL <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+  
+  ScoreLabels <- c("Success","Fail")
+  
+  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
+  if (is.na(colourL))
+    colourL <-  c("#66C2A5FF","#66C2A5A1","#A3A3A3FF","#A3A3A3A1") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+  
+  pie(DLRes , labels = paste("","",prettyNum(  (DLRes/(nLabelledDL) *100),digits=3   ),"%",sep=""),
+      cex=1.4,cex.main=1.4,clockwise = TRUE,
+      #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
+      radius=1.0,col=colourL,border=F )
+
+  return(nLabelledDL)
+}
+
+
+
+##Show Results comparing Success only of Identified Hunt Events that tracked Prey
+## Return Number of Labelled Events
+pieChartLabelledStrikeBreakDown <- function(tblRes,GroupID,colourL=NA)
+{
+  ## Find Tbl Indexes Indicating Success 
+  tblIdxSuccess_Strike <- which (grepl("Success-OnStrike",row.names(tblRes) ) )
+  tblIdxSuccess_NoStrike <- which (grepl("Success-OnApproach",row.names(tblRes) ) ) 
+  tblIdxFail_Strike <- which (grepl("Fail-With Strike",row.names(tblRes) ) )
+  tblIdxFail_NoStrike <- which (grepl("Fail-No Strike",row.names(tblRes) ) ) 
+
+  
+  ##Summarize COmbine Labels ###
+  # Success Together, And Fails Together
+  DLRes=c(sum(tblRes[tblIdxSuccess_Strike,GroupID],tblRes[tblIdxFail_Strike,GroupID]) ,
+          sum(tblRes[tblIdxSuccess_NoStrike,GroupID],tblRes[tblIdxFail_NoStrike,GroupID])
+          ) 
+  nLabelledDL <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
+  
+  ScoreLabels <- c("Success","Fail")
+  
+  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
+  if (is.na(colourL))
+    colourL <-  c("#66C2A5FF","#66C2A5A1","#A3A3A3FF","#A3A3A3A1") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+  
+  pie(DLRes , labels = paste("","",prettyNum(  (DLRes/(nLabelledDL) *100),digits=3   ),"%",sep=""),
+      cex=1.4,cex.main=1.4,clockwise = TRUE,
+      #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
+      radius=1.0,col=colourL,border=T )
+  
+  return(nLabelledDL)
+}
+
 ##Show Results comparing Success only of Identified Hunt Events that tracked Prey
 ## Return Number of Labelled Events
 pieChartLabelledSuccessVsFails <- function(tblRes,GroupID,colourL=NA)
@@ -47,83 +118,28 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID,colourL=NA)
   ## Find Tbl Indexes Indicating Success 
   tblIdxSuccess <- which (grepl("Success",row.names(tblRes) ) ) 
   tblIdxFail <- which (grepl("Fail",row.names(tblRes) ) ) 
-  tblidxValidHuntEvents <- c(6,7,tblIdxSuccess,tblIdxFail)
-  
+
   ##Summarize COmbine Labels ###
   # Success Together, And Fails Together
-  DLRes=c(sum(tblRes[tblIdxSuccess,GroupID]) ,sum(tblRes[tblIdxFail,GroupID] ) ) 
-  #NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
-  #LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
-  ##Here We Condition on the Fact that these were Hunt Events Tracking Prey / 
+  DLRes=c(sum(tblRes[tblIdxSuccess,GroupID]) ,
+          sum(tblRes[tblIdxFail,GroupID] )) 
   nLabelledDL <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
-  #nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
-  #nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
-  
+
   ScoreLabels <- c("Success","Fail")
   
   rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
   if (is.na(colourL))
-  colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+  colourL <-  c("#66C2A5FF","#B3B3B3FF","#B3B3B381") #c(rfc(NROW(ScoreLabels)),"#FF0000");
   
   pie(DLRes , labels = paste("","",round((DLRes/nLabelledDL)*100),"%",sep=""),
-      cex=2.2,cex.main=2.2,clockwise = TRUE,
+      cex=1.4,cex.main=1.4,clockwise = TRUE,
       #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
-      radius=1.0,col=colourL )
+      radius=1.0,col=colourL,border=F )
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
   #pie(LLRes , labels = paste(ScoreLabels," %",round((LLRes/nLabelledLL)*100)/100,sep=""),clockwise = TRUE,main=paste("LL #",nLabelledLL),radius=1.08)
   
   return(nLabelledDL)
 }
-
-##
-pieChartLabelledSuccessVsFails_StrikeBreakDown <- function(tblRes,GroupID,colourL)
-{
-  tblIdxSuccess <- which ("Success" == row.names(tblRes)  ) ##Generic
-  tblIdxSuccess_Strike <- which (grepl("Success-OnStrike",row.names(tblRes) ) )
-  tblIdxSuccess_NoStrike <- which (grepl("Success-OnApproach",row.names(tblRes) ) ) 
-  tblIdxFail <- which ("Fail" == row.names(tblRes) ) 
-  tblIdxFail_Strike <- which (grepl("Fail-With Strike",row.names(tblRes) ) )
-  tblIdxFail_NoStrike <- which (grepl("Fail-No Strike",row.names(tblRes) ) ) 
-  tblidxValidHuntEvents <- c(6,7,tblIdxSuccess,tblIdxFail)
-  
-  ##Summarize COmbine Labels ###
-  # Success Together, And Fails Together
-  DLRes=c(
-    #sum(tblRes[tblIdxSuccess,GroupID]),
-    sum(tblRes[tblIdxSuccess_Strike,GroupID]),
-    sum(tblRes[tblIdxFail_Strike,GroupID]),
-    
-    sum(tblRes[tblIdxSuccess_NoStrike,GroupID]),
-    sum(tblRes[tblIdxFail_NoStrike,GroupID])
-  )
-  
-  #NLRes=c(sum(tblRes[c(3,12),"NL"]) ,sum(tblRes[c(4,10,11),"NL"]),sum(tblRes[c(5),"NL"]),sum(tblRes[c(7),"NL"]))
-  #LLRes=c(sum(tblRes[c(3,12),"LL"]) ,sum(tblRes[c(4,10,11),"LL"]),sum(tblRes[c(5),"LL"]),sum(tblRes[c(7),"LL"]))
-  ##Here We Condition on the Fact that these were Hunt Events Tracking Prey / 
-  nLabelled <- sum(DLRes)  ##sum(tblRes[c(3,12,4,10,11,5,7),GroupID])
-  #nLabelledLL <- sum(tblRes[c(3,12,4,10,11,5,7),"LL"])
-  #nLabelledNL <- sum(tblRes[c(3,12,4,10,11,5,7),"NL"])
-  
-  ScoreLabels <- c("Success Noclass","Success Strike","Success No Strike","Fail Strike","Fail No Strike") ##"Fail Noclass" Removed as it is 0
-  
-  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
-  if (is.na(colourL))
-    colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
-  
-  pie(DLRes , labels =  c(paste0(" ",round((DLRes[1]/nLabelled)*100),"%"),
-                          paste0(" ",round((DLRes[2]/nLabelled)*100),"%"),
-                          paste0(" ",round((DLRes[3]/nLabelled)*100),"%"),
-                          paste0(" ",round((DLRes[4]/nLabelled)*100),"%")),
-      cex=2.0,cex.main=2.8,clockwise = TRUE,
-      #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
-      radius=1.0,col=colourL) 
-  
- 
-  
-  return(nLabelled)
-  
-}
-
 
 
 pieChartStrikeVsNonStrike_Success <- function(tblRes,GroupID,colourL)

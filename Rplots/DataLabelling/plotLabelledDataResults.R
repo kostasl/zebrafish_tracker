@@ -58,41 +58,42 @@ layout(matrix(c(1,2,3,4,5,6), 2, 3, byrow = TRUE))
 par(mar = c(3.0,3,3,2))
 
 
-pieChartStrikeVsNonStrike_Success(tblResSB,"NL",c(colourLegL[1],"white") ) ##colourLegE[1]
-pieChartStrikeVsNonStrike_Success(tblResSB,"LL",c(colourLegL[2],"white"))
-mtext("Successful captures with strike bout",
+pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"NL",NA ) ##colourLegE[1]
+pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"LL",NA)
+mtext("Proportion of strike swims per capture outcome",
       at="top", outer=outer,side=3,col="black",font=2,las=las,line=line-3,padj=padj,adj=adj,cex=cex)
-pieChartStrikeVsNonStrike_Success(tblResSB,"DL",c(colourLegL[3],"white"))
+pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"DL",NA)
 
+### Strike  Vs Non Strike For Capture Swimss
 
-pieChartStrikeVsNonStrike_Fail(tblResSB,"NL",c(colourLegL[1],"white") )
-mtext("Failed captures with strike bout",
+pieChartLabelledStrikeBreakDown(tblResSB,"NL",c("black","white") )
+mtext("Proportion of strike swims per capture attempts",
       at="top",
-      outer=outer,side=3,col="black",font=2,las=las,line=line-3,padj=padj,adj=adj-1.6,cex=cex)
+      outer=outer,side=3,col="black",font=2,las=las,line=line-3,padj=padj,adj=adj-1.0,cex=cex)
 #mtext("NF", at="top",side=1,outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
 
 legend("bottomright",legend=c("Strike","Approach"),title="NF",
-       fill=c(colourLegL[1],"white"), #c(colourLegL[1],colourL[2]),
+       fill=c("black","white"), #c(colourLegL[1],colourL[2]),
        col = c(colourLegL[1],"white"),
        bg = "white",cex=cex,
        merge=FALSE,horiz=FALSE)
 
 
 
-pieChartStrikeVsNonStrike_Fail(tblResSB,"LL",c(colourLegL[2],"white"))
+pieChartLabelledStrikeBreakDown(tblResSB,"LL",c("black","white"))
 #mtext("LF",   at="top",side=1,    outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
 legend("bottomright",legend=c("Strike","Approach"),title="LF",
-       fill=c(colourLegL[2],"white"), #c(colourLegL[1],colourL[2]),
+       fill=c("black","white"), #c(colourLegL[1],colourL[2]),
        col = c(colourLegL[2],"white"),
        bg = "white",cex=cex,
        merge=FALSE,horiz=FALSE)
 
 
-pieChartStrikeVsNonStrike_Fail(tblResSB,"DL",c(colourLegL[3],"white"))
+pieChartLabelledStrikeBreakDown(tblResSB,"DL",c("black","white"))
 #mtext("DF",at="top",side=1,  outer=outer,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
 
 legend("bottomright",legend=c("Strike","Approach"),title="DF",
-       fill=c(colourLegL[3],"white"), #c(colourLegL[1],colourL[2]),
+       fill=c("black","white"), #c(colourLegL[1],colourL[2]),
        col = c(colourLegL[3],"white"),
        bg = "white",cex=cex,
        merge=FALSE,horiz=FALSE)
