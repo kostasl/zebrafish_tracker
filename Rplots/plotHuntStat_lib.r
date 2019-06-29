@@ -1,5 +1,14 @@
 ### Library Functions For Plotting Hunt Statistics ###
 
+## Adding Legend outside plotting area by overlaying a new plot layer
+## SRC: https://stackoverflow.com/questions/3932038/plot-a-legend-outside-of-the-plotting-area-in-base-graphics
+add_legend <- function(...) {
+  opar <- par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), 
+              mar=c(0, 0, 0, 0), new=TRUE)
+  on.exit(par(opar))
+  plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
+  legend(...)
+}
 
 
 pieChartLabelledEvents <- function(tblRes,GroupID,colourL=NA)
@@ -106,7 +115,7 @@ pieChartLabelledStrikeBreakDown <- function(tblRes,GroupID,colourL=NA)
   pie(DLRes , labels = paste("","",prettyNum(  (DLRes/(nLabelledDL) *100),digits=3   ),"%",sep=""),
       cex=1.4,cex.main=1.4,clockwise = TRUE,
       #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
-      radius=1.0,col=colourL,border=T )
+      radius=1.0,col=colourL,border=TRUE )
   
   return(nLabelledDL)
 }

@@ -7,15 +7,15 @@ source("DataLabelling/labelHuntEvents_lib.r")
 
 
 ## The mixture Of Poisson Drawing from Gammaa, gives a negative binomial
+## ID identifies the group ID of each larva
 modelNBinom="model {
          
          for(i in 1:3) {
-             #lambda[i] ~ dgamma(1,1) ## 
              r[i] ~ dgamma(1,1) ##
              q[i] ~ dunif(0.0,1)
 
-             f[i] ~ dbeta(1,1)
-             p[i] ~ dbeta(1,1)
+             f[i] ~ dbeta(1,1) ##Prob of capture Fail
+             p[i] ~ dbeta(1,1) ##Prob of capture success
              t[i] ~ dbeta(1,1) ##Prob Of Enganging With Prey Given HuntMode Is On
          }
 
@@ -33,24 +33,25 @@ modelNBinom="model {
 ## Model (Wrongly) Assumes Single Distribution Prior For Rates - Yet, fitting the group event rates shows
 ## that it is best to assume a mixture of hunt rates exist in each group, such that the group hunt rates appears neg Binom.
 ## wiki suggest gamma prior for lambda
-modelPoisson="model {
-         
-         for(i in 1:3) {
-             lambda[i] ~ dgamma(1,1) ##Suggested in wiki 
-             #lambda[i] ~ dexp(1) 
-             q[i] ~ dbeta(1,1)
-             p[i] ~ dbeta(1,1) ##Prob of capture
-             t[i] ~ dbeta(1,1) ##Prob Of Enganging With Prey Given HuntMode Is On
-         }
-
-         for(i in 1:NTOT){
-             Events[i] ~ dpois(lambda[ID[i]])
-             TrackPrey[i] ~ dbinom(t[ID[i]],Events[i])
-             Success[i] ~ dbinom(q[ID[i]],TrackPrey[i])
-             Fail[i] ~ dbinom(p[ID[i]],TrackPrey[i])
-             
-         }
-}"
+##NOT USED###
+# modelPoisson="model {
+#          
+#          for(i in 1:3) {
+#              lambda[i] ~ dgamma(1,1) ##Suggested in wiki 
+#              #lambda[i] ~ dexp(1) 
+#              q[i] ~ dbeta(1,1) 
+#              p[i] ~ dbeta(1,1) ##Prob of capture success
+#              t[i] ~ dbeta(1,1) ##Prob Of Enganging With Prey Given HuntMode Is On
+#          }
+# 
+#          for(i in 1:NTOT){
+#              Events[i] ~ dpois(lambda[ID[i]])
+#              TrackPrey[i] ~ dbinom(t[ID[i]],Events[i])
+#              Success[i] ~ dbinom(q[ID[i]],TrackPrey[i])
+#              Fail[i] ~ dbinom(p[ID[i]],TrackPrey[i])
+#              
+#          }
+# }"
 
 
 #strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated"
@@ -149,8 +150,17 @@ HConsumptionRate_NL <- HEventSuccess_NL*MeanHuntRate_NL
 HConsumptionRate_LL <- HEventSuccess_LL*MeanHuntRate_LL
 HConsumptionRate_DL <- HEventSuccess_DL*MeanHuntRate_DL
 
+#'' Measure correlation between success probability and efficiency - 
+chain <-1 ##use chain 1
+HCovRateAndEfficiency_NL <- cor( tail(HEventSuccess_NL[,chain],plotsamples),tail(MeanHuntRate_NL[,chain],plotsamples) )
+HCovRateAndEfficiency_LL <- cor( tail(HEventSuccess_LL[,chain],plotsamples),tail(MeanHuntRate_LL[,chain],plotsamples) )
+HCovRateAndEfficiency_DL <- cor( tail(HEventSuccess_DL[,chain],plotsamples),tail(MeanHuntRate_DL[,chain],plotsamples) )
+
 save(draw,file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
 ###MAIN OUTPUT PLOT ##
+
+
+load(file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
 
 strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
 pdf(strPlotName,width=14,height=14,
@@ -263,6 +273,9 @@ par(mar = c(5,6,2,3))
   
 dev.off()
 #embed_fonts(strPlotName)
+
+
+
   
 ### Plot Covariance of Hunt Rate To Prob Of Success
 fNL <- density((HEventSuccess_NL[,1]*MeanHuntRate_NL[,1]))
@@ -287,6 +300,9 @@ par(mar = c(4.2,4.7,1.1,1))
 plotHuntEfficiencyDataCDF(datHuntLabelledEventsSB)
 
 dev.off()
+
+
+
 
 strPlotName = paste(strPlotExportPath,"/stat/fig3S3_stat_HuntRateAndEfficiency_PDF.pdf",sep="")
 pdf(strPlotName,width=7,height=7,
