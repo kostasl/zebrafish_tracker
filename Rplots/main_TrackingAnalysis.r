@@ -19,7 +19,7 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
-setEnvFileLocations("LAPTOP") #OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP
 
 source("HuntingEventAnalysis.r")
 source("TrajectoryAnalysis.r")

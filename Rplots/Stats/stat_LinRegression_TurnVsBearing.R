@@ -227,8 +227,8 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
        xlim=c(-100,100),
        ylim=c(-100,100),
        col=colourP[3] ,pch=pchL[3],cex=cex,cex.axis=cex) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
-  mtext(side = 1,cex=cex, line = lineAxis, expression("Bearing To Prey Prior Turn "~(phi^degree) ))
-  mtext(side = 2,cex=cex, line = lineAxis, expression("Bearing To Prey After Turn "~(theta^degree) ))
+  mtext(side = 1,cex=cex, line = lineAxis, expression("Bearing To prey prior to turn "~(theta^degree) ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey "~(phi^degree) ))
   
   #text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
   abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourLegL[3],lwd=1.5,lty=2) ##Fit Line / Regression
