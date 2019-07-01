@@ -36,7 +36,7 @@ pieChartLabelledEvents <- function(tblRes,GroupID,colourL=NA)
   
   ScoreLabels <- c("Success","Fail","No Target","Escape")
   
-  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
+  #rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
   if (is.na(colourL))
     colourL <- c(rfc(NROW(ScoreLabels)),"#FF0000");
   
@@ -74,9 +74,10 @@ pieChartLabelledSuccessVsFails_StrikeBreakDown <- function(tblRes,GroupID,colour
   
   ScoreLabels <- c("Success","Fail")
   
-  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
   if (is.na(colourL))
-    colourL <-  c("#66C2A5FF","#66C2A5A1","#A3A3A3FF","#A3A3A3A1") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+    colourL <- rev(brewer.pal(4,'Paired'))
+  
+    #colourL <-  c("#66C2A5FF","#66C2A5A1","#A3A3A3FF","#A3A3A3A1") #c(rfc(NROW(ScoreLabels)),"#FF0000");
   
   pie(DLRes , labels = paste("","",prettyNum(  (DLRes/(nLabelledDL) *100),digits=3   ),"%",sep=""),
       cex=1.4,cex.main=1.4,clockwise = TRUE,
@@ -136,9 +137,11 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID,colourL=NA)
 
   ScoreLabels <- c("Success","Fail")
   
-  rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
-  if (is.na(colourL))
-  colourL <-  c("#66C2A5FF","#B3B3B3FF","#B3B3B381") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+  #rfc <- colorRampPalette(rev(brewer.pal(8,'Set2')));
+  colPaired <- rev(brewer.pal(4,'Paired')) ## chosen for colorblindness
+  if (!is.array(colourL))
+     #colourL <-  c("#66C2A5FF","#B3B3B3FF","#B3B3B381") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+     colourL <- c(colPaired[1],colPaired[3]) 
   
   pie(DLRes , labels = paste("","",round((DLRes/nLabelledDL)*100),"%",sep=""),
       cex=1.4,cex.main=1.4,clockwise = TRUE,

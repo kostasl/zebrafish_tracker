@@ -178,7 +178,10 @@ las <- 1
 layout(matrix(c(1,2,3,4,4,4,5,6,6), 3, 3, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,5.5,1))
-colourL <-  c("#66C2A5","#B3B3B3") #c(rfc(NROW(ScoreLabels)),"#FF0000");
+#colourL <-  c("#66C2A5","#B3B3B3") Fails Colourblind
+colPaired <- rev(brewer.pal(4,'Paired')) ## chosen for colorblindness
+colourL <- c(colPaired[1],colPaired[3]) 
+
 ## Get Number Of Larvae / 
 nlNL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "NL",]$expID))
 nNL <- pieChartLabelledSuccessVsFails(tblResSB,"NL",colourL) #c(colourLegL[1],colourL[2]) 
