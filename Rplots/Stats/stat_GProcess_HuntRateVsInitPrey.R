@@ -15,23 +15,44 @@ source("HuntingEventAnalysis_lib.r")
 ### GP Process Estimation Of Hunt Rate Vs Prey Density Using Bayesian Inference Model
 myplot_res<- function(ind,qq=0.05){
   
+  
+  ### Show Speed Fit ###
+  outer = FALSE
+  line = 1 ## SubFig Label Params
+  lineAxis = 3.2
+  lineXAxis = 3.0
+  cex = 1.4
+  adj  = 3.5
+  padj <- -8.0
+  las <- 1
+  
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(3.9,4.7,2,1))
+  
+  
   xplotLim <- c(0,60)
   yplotLim <- c(0,80)
-  plot(foodlevelsLL,countsLL,col=colourP[1],
-       main = "GP Regression Of HuntRate Vs Initial Prey Count ",
-       ylab="Number of Hunt Events",
-       xlab="Initial Tracker-Estimated Prey Count",
+  plot(foodlevelsLL,countsLL,col=colourLegL[2],cex=cex,cex.axis=cex,
+       main = NA,
+       ylab=NA,
+       xlab=NA,
        xlim = xplotLim,
        ylim = yplotLim,
-       pch=16,
+       pch=pchL[2],
        sub=paste("GP tau:",format(mean(drawLL$tau),digits=4 ),
                  "rho:",format(mean(drawLL$rho),digits=4 ) )  
        )
   
-  legend("topright",legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
   
-  points(foodlevelsNL,countsNL,col=colourP[2],pch=16,xlim = xplotLim)
-  points(foodlevelsDL,countsDL,col=colourP[3],pch=16,xlim = xplotLim)
+  mtext(side = 1,cex=cex, line = lineXAxis, expression("Initial prey count in ROI (Tracker estimate)" ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression(" Number of hunt events in 10 min" ))
+  
+  
+  legend("topright",pch=pchL,cex=cex,
+         legend = c(paste("NF #",nDatNL),paste("LF #",nDatLL),paste("DF #",nDatDL)),col=colourLegL)
+  
+  points(foodlevelsNL,countsNL,col=colourLegL[1],pch=pchL[1],xlim = xplotLim,cex=cex)
+  points(foodlevelsDL,countsDL,col=colourLegL[3],pch=pchL[3],xlim = xplotLim,cex=cex)
   
   muLL=apply(drawLL$lambda[,(steps-ind):steps,1],1,mean)
   muNL=apply(drawNL$lambda[,(steps-ind):steps,1],1,mean)
@@ -137,11 +158,12 @@ modelGPFixedRho="model {
 
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL_19-07-18",sep="") ## Latest Updated HuntEvent Labelled data
 #strProcDataFileName <- "setn14-HuntEventsFixExpID-SB-Updated-Merged" ##Has the Empty-Test Condition Fish Too (unlabelled)
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
+#strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged" ##Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged)
 
 ##Add The Empty Test Conditions
@@ -186,8 +208,8 @@ rhoMaxA = 0.8
 Noise = 1 ##The Gaussian Noise Term
 
 burn_in=10;
-steps=1000;
-thin=1;
+steps=10000;
+thin=2;
 
 
 ##Larva Event Counts Slice
@@ -228,6 +250,10 @@ ordDL=order(foodlevelsDL)
 foodlevelsDL=foodlevelsDL[ordDL]
 countsDL=nEventsDL2[ordDL]
 
+dfoodlevelsNL <- density(foodlevelsNL,bw=0.5)
+dfoodlevelsLL <- density(foodlevelsLL,bw=0.5)
+dfoodlevelsDL <- density(foodlevelsDL,bw=0.5)
+
 
 dataLL=list(n=countsLL,food=foodlevelsLL,N=length(countsLL),tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
 dataNL=list(n=countsNL,food=foodlevelsNL,N=length(countsNL),tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
@@ -251,11 +277,34 @@ drawLL=jags.samples(mLL,steps,thin=thin,variable.names=varnames)
 drawNL=jags.samples(mNL,steps,thin=thin,variable.names=varnames)
 drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
-strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateLabelledT30V50VsPrey_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
+save(drawLL,drawNL,drawDL,file = paste0(strDataExportDir,"stat_GPProcessHuntRateVsPreyDensity_RJags.RData"))
+
+strPlotName <-  paste(strPlotExportPath,"/stat/fig2S1-stat_HuntEventRateLabelledT30V50VsPrey_GPEstimate2-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 myplot_res(1000)
+
 dev.off()
 
+cex <- 1.4
+plot(dfoodlevelsNL,lwd=4,lty=1,xlim=c(0,60),col=colourLegL[1],main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex )
+lines(dfoodlevelsLL,lwd=4,lty=1,col=colourLegL[2])
+lines(dfoodlevelsDL,lwd=4,lty=1,col=colourLegL[3])
+
+## Compare Prey Density ###
+par(mar = c(3.9,4.7,2,1))
+strCumPlotName <-  paste(strPlotExportPath,"/stat/fig2S2-InitPreyCount_CDF.pdf",sep="")
+pdf(strCumPlotName,width=8,height=8,title="Compare prey density testing conditions between groups") 
+  plot(ecdf(foodlevelsNL),xlim=c(0,60),lwd=4,lty=1,col=colourLegL[1],main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,pch=pchL[1])
+  lines(ecdf(foodlevelsLL),xlim=c(0,60),lwd=4,lty=2,pch=pchL[2],col=colourLegL[2],cex=cex)
+  lines(ecdf(foodlevelsDL),xlim=c(0,60),lwd=4,lty=3,pch=pchL[3],col=colourLegL[3],cex=cex)
+  mtext(side = 1,cex=cex, line = 2.7, expression("Initial prey count in ROI (Tracker estimate)" ))
+  mtext(side = 2,cex=cex, line = 2.2, expression(" Cumulative distribution " ))
+  
+  legend("bottomright",pch=pchL,cex=cex,
+         legend = c(paste("NF #",nDatNL),paste("LF #",nDatLL),paste("DF #",nDatDL)),col=colourLegL)
+dev.off()
+
+###
 
 X11()
 myplot_res(1000)

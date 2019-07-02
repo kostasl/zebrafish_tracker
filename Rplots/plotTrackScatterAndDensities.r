@@ -754,7 +754,7 @@ plotCaptureBoutPreyPositions <- function(newPlot = T)
   {
     plot(1,type='n',xlim=c(-(Range+4*txtW)*DIM_MMPERPX,(Range+4*txtW)*DIM_MMPERPX ) ,
          ylim=c(-(Range+4*txtW)*DIM_MMPERPX,(Range+4*txtW)*DIM_MMPERPX ),
-         main="Prey position prior to capture move ",
+         main="Prey position prior to capture swim ",
          xlab=NA,ylab=NA)
     rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bgColor)
     
@@ -796,9 +796,9 @@ plotCaptureBoutPreyPositions <- function(newPlot = T)
     #points(x,y,type='p',cex=0.2,xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) ), main="",
     #       col=colR[EyeVergence]) ##Color Accourding To EyeVergence
     
-  points(preyCapPos_NF$preyX,preyCapPos_NF$preyY,col=colourH[1],pch=pchL[5],cex=0.7) #xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) )
-  points(preyCapPos_LF$preyX ,preyCapPos_LF$preyY,col=colourH[2],pch=pchL[6],cex=0.7)
-  points(preyCapPos_DF$preyX ,preyCapPos_DF$preyY,col=colourH[3],pch=pchL[7],cex=0.7)
+  points(preyCapPos_NF$preyX,preyCapPos_NF$preyY,col=colourHLine [1],pch=pchL[5],cex=0.7) #xlim=c(-(Range),(Range) ) ,ylim=c(-(Range),(Range) )
+  points(preyCapPos_LF$preyX ,preyCapPos_LF$preyY,col=colourHLine[2],pch=pchL[6],cex=0.7)
+  points(preyCapPos_DF$preyX ,preyCapPos_DF$preyY,col=colourHLine[3],pch=pchL[7],cex=0.7)
   ##Draw Fish Bounding Rects representation
   rect(-17*DIM_MMPERPX/2,-9*DIM_MMPERPX/2,+17*DIM_MMPERPX/2,-7*DIM_MMPERPX/2 ) 
   rect(-9*DIM_MMPERPX/2,-82*DIM_MMPERPX,+9*DIM_MMPERPX/2,0 ) 
