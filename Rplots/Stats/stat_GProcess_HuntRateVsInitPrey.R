@@ -54,21 +54,21 @@ myplot_res<- function(ind,qq=0.05){
   points(foodlevelsNL,countsNL,col=colourLegL[1],pch=pchL[1],xlim = xplotLim,cex=cex)
   points(foodlevelsDL,countsDL,col=colourLegL[3],pch=pchL[3],xlim = xplotLim,cex=cex)
   
-  muLL=apply(drawLL$lambda[,(steps-ind):steps,1],1,mean)
-  muNL=apply(drawNL$lambda[,(steps-ind):steps,1],1,mean)
-  muDL=apply(drawDL$lambda[,(steps-ind):steps,1],1,mean)
+  muLL=apply(apply(drawLL$lambda[,,1],1,tail,ind),2,mean)
+  muNL=apply(apply(drawNL$lambda[,,1],1,tail,ind),2,mean)
+  muDL=apply(apply(drawDL$lambda[,,1],1,tail,ind),2,mean)
   
   lines(foodlevelsLL,muLL,col=colourH[1],lwd=4,xlim = xplotLim)
   lines(foodlevelsNL,muNL,col=colourH[2],lwd=4,xlim = xplotLim)
   lines(foodlevelsDL,muDL,col=colourH[3],lwd=4,xlim = xplotLim)
   
-  band=apply(drawLL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
+  band=apply(apply(drawLL$lambda[,,1],1,tail,ind),2,quantile,probs=c(qq,1-qq))
   polygon(c(foodlevelsLL,rev(foodlevelsLL)),c(band[1,],rev(band[2,])),col=colourR[1])
   
-  band=apply(drawNL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
+  band=apply(apply(drawNL$lambda[,,1],1,tail,ind),2,quantile,probs=c(qq,1-qq))
   polygon(c(foodlevelsNL,rev(foodlevelsNL)),c(band[1,],rev(band[2,])),col=colourR[2])
   
-  band=apply(drawDL$lambda[,(steps-ind):steps,1],1,quantile,probs=c(qq,1-qq))
+  band=apply(apply(drawDL$lambda[,,1],1,tail,ind),2,quantile,probs=c(qq,1-qq))
   polygon(c(foodlevelsDL,rev(foodlevelsDL)),c(band[1,],rev(band[2,])),col=colourR[3])
   
 }
@@ -279,9 +279,9 @@ drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
 save(drawLL,drawNL,drawDL,file = paste0(strDataExportDir,"stat_GPProcessHuntRateVsPreyDensity_RJags.RData"))
 
-strPlotName <-  paste(strPlotExportPath,"/stat/fig2S1-stat_HuntEventRateLabelledT30V50VsPrey_GPEstimate2-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
-pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
-myplot_res(1000)
+  strPlotName <-  paste(strPlotExportPath,"/stat/fig2S1-stat_HuntEventRateLabelledT30V50VsPrey_GPEstimate2-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
+  pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
+  myplot_res(2000)
 
 dev.off()
 
@@ -307,5 +307,5 @@ dev.off()
 ###
 
 X11()
-myplot_res(1000)
+myplot_res(100)
 
