@@ -279,9 +279,9 @@ drawDL=jags.samples(mDL,steps,thin=thin,variable.names=varnames)
 
 save(drawLL,drawNL,drawDL,file = paste0(strDataExportDir,"stat_GPProcessHuntRateVsPreyDensity_RJags.RData"))
 
-  strPlotName <-  paste(strPlotExportPath,"/stat/fig2S1-stat_HuntEventRateLabelledT30V50VsPrey_GPEstimate2-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
-  pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
-  myplot_res(2000)
+strPlotName <-  paste(strPlotExportPath,"/stat/fig2S1-stat_HuntEventRateLabelledT30V50VsPrey_GPEstimate2-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
+pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
+  myplot_res(2500)
 
 dev.off()
 
@@ -307,5 +307,5 @@ dev.off()
 ###
 
 X11()
-myplot_res(100)
+myplot_res(4000)
 
