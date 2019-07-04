@@ -1,6 +1,6 @@
 ##'  Kostas Lagogiannis 
 ##' April 2019 
-##' Validate the capture strike data that was automatically detected from the retracked huntevents :
+##' Validate the capture strike data that was automatically detected from the retracked huntevents : - Manually label mouth position, prey position at capture bout
 ##' * after running runHuntEpisodeAnalysis.r, a bout detection list for each of the hunt episodes is used to obtain what the undershoot 
 ##' turn was on firstbout, and link it to the final, capture bout intensity.
 ##' these data are then used in statistical models to establish relationships between capture speed, distance to prey, eye vergence and undershoot on 1st turn to prey
@@ -320,6 +320,7 @@ for (gp in strGroupID)
   ## Relates First turn to prey to final capture strike parameters  ##
   ##
   lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
+                                  OnSetDistanceToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$vMotionBoutDistanceToPrey_mm,
                                   Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
                                   , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx,
                                   CaptureSpeed = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &

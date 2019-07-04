@@ -120,7 +120,7 @@ for (i in 1:N)
 }
 
 ##Covariance matrix and its inverse -> the precision matrix
-## for each Gaussian in the mixture (1 and 2)
+## for each Gaussian in the mixture - Single Gaussian  Here -
 for  (g in 1:1)
 {
   prec[g,1:3,1:3] <- inverse(cov[g,1:3,1:3])
@@ -676,10 +676,55 @@ mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
 legend("topright",
        legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ,cex=cex) 
 
-
 dev.off()
 
-############# 3D
+
+### Onset Angle Density 
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig5S1-DetectionAngleDensity.pdf",sep=""))
+  ### Show Speed Fit ###
+  outer = FALSE
+  line = 1 ## SubFig Label Params
+  lineAxis = 2.7
+  lineXAxis = 3.0
+  cex = 1.4
+  adj  = 3.5
+  padj <- -8.0
+  las <- 1
+  
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(4.5,4.3,0.5,1))
+  
+  
+  plot(density(lFirstBoutPoints$NL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[1],xlim=c(-120.0,120),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
+  lines(density(lFirstBoutPoints$LL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[2],xlim=c(-120.0,120),lwd=3,lty=2)
+  lines(density(lFirstBoutPoints$DL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[3],xlim=c(-120.0,120),lwd=3,lty=3,main=NA)
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$NL))  ),
+                    bquote(LF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$LL))  ),
+                    bquote(DF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$DL))  )
+         ), 
+         col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+  
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Prey azimuth upon detection  " ) )  )
+  #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=c
+dev.off()
+
+
+### Plot Initial Distance to Prey Vs Final Distance Scatter
+plot(lFirstBoutPoints$LL[,"OnSetDistanceToPrey"],lFirstBoutPoints$LL[,"DistanceToPrey"],col=colourLegL[2],pch=pchL[2])
+points(lFirstBoutPoints$NL[,"OnSetDistanceToPrey"],lFirstBoutPoints$NL[,"DistanceToPrey"],col=colourLegL[1],pch=pchL[1])
+points(lFirstBoutPoints$DL[,"OnSetDistanceToPrey"],lFirstBoutPoints$DL[,"DistanceToPrey"],col=colourLegL[3],pch=pchL[3])
+############# 
+
+plot(lFirstBoutPoints$LL[,"OnSetAngleToPrey"],lFirstBoutPoints$LL[,"DistanceToPrey"],col=colourLegL[2],pch=pchL[2])
+points(lFirstBoutPoints$NL[,"OnSetAngleToPrey"],lFirstBoutPoints$NL[,"DistanceToPrey"],col=colourLegL[1],pch=pchL[1])
+points(lFirstBoutPoints$DL[,"OnSetAngleToPrey"],lFirstBoutPoints$DL[,"DistanceToPrey"],col=colourLegL[3],pch=pchL[3])
+
+##
+
 # 
 # library(plot3D)
 # dev.off()
