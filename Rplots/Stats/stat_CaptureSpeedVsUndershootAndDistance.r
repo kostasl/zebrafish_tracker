@@ -679,7 +679,7 @@ legend("topright",
 dev.off()
 
 
-### Onset Angle Density 
+### Onset/ DETECTION Angle Density supplementary angle figure
 pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig5S1-DetectionAngleDensity.pdf",sep=""))
   ### Show Speed Fit ###
   outer = FALSE
