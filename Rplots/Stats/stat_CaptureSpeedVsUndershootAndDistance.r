@@ -719,10 +719,15 @@ points(lFirstBoutPoints$NL[,"OnSetDistanceToPrey"],lFirstBoutPoints$NL[,"Distanc
 points(lFirstBoutPoints$DL[,"OnSetDistanceToPrey"],lFirstBoutPoints$DL[,"DistanceToPrey"],col=colourLegL[3],pch=pchL[3])
 ############# 
 
-plot(lFirstBoutPoints$LL[,"OnSetAngleToPrey"],lFirstBoutPoints$LL[,"DistanceToPrey"],col=colourLegL[2],pch=pchL[2])
-points(lFirstBoutPoints$NL[,"OnSetAngleToPrey"],lFirstBoutPoints$NL[,"DistanceToPrey"],col=colourLegL[1],pch=pchL[1])
-points(lFirstBoutPoints$DL[,"OnSetAngleToPrey"],lFirstBoutPoints$DL[,"DistanceToPrey"],col=colourLegL[3],pch=pchL[3])
 
+### Onset/ DETECTION Angle Density supplementary angle figure
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig5S2-DetectionAngleVsDistance_scatter.pdf",sep=""))
+  plot(lFirstBoutPoints$LL[,"OnSetAngleToPrey"],lFirstBoutPoints$LL[,"OnSetDistanceToPrey"],col=colourLegL[2],pch=pchL[2],xlim=c(-120.0,120),lwd=2,lty=1,main=NA,xlab=NA,ylab=NA)
+  points(lFirstBoutPoints$NL[,"OnSetAngleToPrey"],lFirstBoutPoints$NL[,"OnSetDistanceToPrey"],col=colourLegL[1],pch=pchL[1],lwd=2)
+  points(lFirstBoutPoints$DL[,"OnSetAngleToPrey"],lFirstBoutPoints$DL[,"OnSetDistanceToPrey"],col=colourLegL[3],pch=pchL[3],lwd=2)
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Prey distance upon detection (mm)") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Prey azimuth upon detection (deg)  " ) )  )
+dev.off()
 ##
 
 # 
