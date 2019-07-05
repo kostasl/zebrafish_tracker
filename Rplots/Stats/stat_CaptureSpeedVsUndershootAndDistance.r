@@ -175,11 +175,14 @@ datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTra
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
-datTurnVsStrikeSpeed_NL <- data.frame( cbind(Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],Validated= lFirstBoutPoints$NL[,"Validated"] )
-datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],Validated= lFirstBoutPoints$LL[,"Validated"] )
-datTurnVsStrikeSpeed_DL <- data.frame( cbind(Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],Validated= lFirstBoutPoints$DL[,"Validated"] )
+datTurnVsStrikeSpeed_NL <- data.frame( cbind(Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],OnSetDistance=lFirstBoutPoints$NL[,"OnSetDistanceToPrey"],Validated= lFirstBoutPoints$NL[,"Validated"] )
+datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],OnSetDistance=lFirstBoutPoints$LL[,"OnSetDistanceToPrey"],Validated= lFirstBoutPoints$LL[,"Validated"] )
+datTurnVsStrikeSpeed_DL <- data.frame( cbind(Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],OnSetDistance=lFirstBoutPoints$DL[,"OnSetDistanceToPrey"],Validated= lFirstBoutPoints$DL[,"Validated"] )
 
-
+###Filter For Hunting Where Prey Is approached into strike distance, rather than Initial Prey Distance being within strike Distance
+#datTurnVsStrikeSpeed_NL <- datTurnVsStrikeSpeed_NL[datTurnVsStrikeSpeed_NL$OnSetDistance > 0.6,]
+#datTurnVsStrikeSpeed_LL <- datTurnVsStrikeSpeed_LL[datTurnVsStrikeSpeed_LL$OnSetDistance > 0.6,]
+#datTurnVsStrikeSpeed_DL <- datTurnVsStrikeSpeed_DL[datTurnVsStrikeSpeed_DL$OnSetDistance > 0.6,]
 ###Validated Only
 replace(datTurnVsStrikeSpeed_NL$Validated, is.na(datTurnVsStrikeSpeed_NL$Validated), 0)
 replace(datTurnVsStrikeSpeed_LL$Validated, is.na(datTurnVsStrikeSpeed_LL$Validated), 0)
@@ -270,6 +273,9 @@ dDLb_rhoUD<-density(tail(draw_DF$rho[,3,,],ntail),kernel="gaussian",bw=pBw)
 
 #dALLb_rho<-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=pBw)
 
+save(dLLb_rhoSD,dNLb_rhoSD,dDLb_rhoSD,file = paste0(strDataExportDir,"stat_CaptSpeedVsDistance_Covariance_RJags.RData"))
+## ALL  
+
 ###Check COnv
 draw <- draw_NF
 plot(draw$mu[1,1,,1],type='l',ylim=c(0,2),col=rfc(nchains)[1] )
@@ -316,7 +322,7 @@ par(mar = c(3.9,4.7,3.5,1))
   #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
   
   mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
-  mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Capture speed (mm/sec)  " ))
   mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
   
   contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -371,16 +377,16 @@ par(mar = c(3.9,4.7,3.5,1))
       mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
       
     
-      plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
-           main=NA, #"Density Inference of Turn-To-Prey Slope ",
-           xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
-      lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
-      lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
-      mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
-      mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance"  ))
+#      plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+#           main=NA, #"Density Inference of Turn-To-Prey Slope ",
+#           xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+#      lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
+#      lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
+#      mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
+#      mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+#      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance"  ))
       
-      mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+#      mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
       
       ##Speed TO Distance Covariance Coeff
       plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
@@ -395,7 +401,6 @@ par(mar = c(3.9,4.7,3.5,1))
       mtext("E",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
       
 dev.off()
-
 
 
 
@@ -609,7 +614,7 @@ covDL <- cov( 1/datTurnVsStrikeSpeed_DL$Undershoot,datTurnVsStrikeSpeed_DL$Captu
 covNL  <- cov( 1/datTurnVsStrikeSpeed_NL$Undershoot,datTurnVsStrikeSpeed_NL$CaptureSpeed)
 
 
-pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
+pdf(file= paste(strPlotExportPath,"distal",strDataPDFFileName,sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.5,1,1))
@@ -647,7 +652,7 @@ dev.off()
 
 
 ## EMPIRICAL - UNdeshoot vs Prey Distance 
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig7-UndershootDistanceCV_scatter.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig7-UndershootDistanceCV_Distal_scatter.pdf",sep=""))
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(4.5,4.3,0.5,1))

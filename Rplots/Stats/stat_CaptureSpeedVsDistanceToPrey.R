@@ -179,6 +179,9 @@ save(draw_LF,draw_NF,draw_DF,file =paste(strDataExportDir,"stat_CaptSpeedVsDista
 load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 #### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
 
+## Load COvariance (dLLb_rhoSD) - Calculated by 3D model in stat_CaptureSpeedVsUndershootAndDistance ##
+load(file = paste0(strDataExportDir,"stat_CaptSpeedVsDistance_Covariance_RJags.RData"))
+
 ### Estimate  densities  ###
 nContours <- 6
 ntail <-2000
@@ -245,7 +248,7 @@ padj <- -8.0
 las <- 1
 nContours <- 5
 
-layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5),2,6, byrow = TRUE))
+layout(matrix(c(1,1,2,2,3,3,4,4,5,5,6,6),2,6, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 #par(mar = c(5,4.5,3,1))
 par(mar = c(4.5,4.7,2,1))
@@ -258,7 +261,30 @@ mtext("C",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,pad
 plotCaptureSpeedFit(datDistanceVsStrikeSpeed_DL,draw_DF,3,npchain)
 mtext("D",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 
-## Plot the mean of the 2D Models ##
+
+#### ## Probability Density of Strike capture ####
+plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
+     cex=cex,cex.axis=cex )
+lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
+lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
+#lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
+mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high speed capture  ["~p["s"]~"]" ) ) ,cex.main=cex )
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density  function" ))
+
+mtext("E",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+#### ## Probability Density of Strike capture ####
+legend("topleft",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                  #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
+       ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+
+
+
+## Plot the mean of the 2D Models Cluster ##
 ntail <- 2000
 plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1],
      xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex )
@@ -293,25 +319,16 @@ legend("topleft",
 
 
 
-plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
-     cex=cex,cex.axis=cex )
-lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
-lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
-#lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
-mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high speed capture  ["~p["s"]~"]" ) ) ,cex.main=cex )
-mtext(side = 2,cex=cex, line = lineAxis, expression("Density  " ))
-
-mtext("G",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-#### ## Probability Density of Strike capture ####
-legend("topleft",
-       legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
-                  #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
-                  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
-
+## Plot COvariance - Calculated by 3D model in stat_CaptureSpeedVsUndershootAndDistance
+plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+     xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
+lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+mtext(side = 3,cex=cex, line = lineTitle-3, expression("Capture distance and speed "  ))
+mtext("G",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 
 dev.off()
 
