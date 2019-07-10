@@ -8,10 +8,10 @@ library(tools)
 library(RColorBrewer);
 library("MASS");
 library(extrafont) ##For F
-
+library(mvtnorm)
 
 source("config_lib.R")
-setEnvFileLocations("LAPTOP") #OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -23,9 +23,13 @@ datCapture_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"Distance
 datCapture_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] )
 datCapture_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] )
 
-###Subset Validated Only
 
-
+##Make A Contour From Params
+xval=seq(1,10,0.1)
+yval=seq(1,10,0.1)
+grid=expand.grid(xval,yval)
+m=matrix(dmvnorm(grid,mean=c(5,5),sigma=diag(2)),length(xval),length(yval))
+contour(m)
 
 ####################
 #source("TrackerDataFilesImport.r")
@@ -33,7 +37,9 @@ datCapture_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"Distance
 
 #### Plot Raw Capture Data Indicating Low/High Speed Clustering for each
 ### Load Pre Calc RJAgs Model Results
+##   stat_CaptSpeedVsDistance_RJags.RData ##stat_CaptSpeedCluster_RJags.RData
 load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
+
 
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -56,7 +62,6 @@ minClusterLikelyhood <- 0.95
 steps <- NROW(draw_LF$mID[1,,1])
 nsamples <- min(steps,1)
 
-
 lClustScore_LF <- list(fastClustScore=apply(draw_LF$mID[,(steps-nsamples):nsamples,1],1,mean) ,RegistarIdx=datCapture_LL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_LL)))
 lClustScore_LF$pchL[lClustScore_LF$fastClustScore > minClusterLikelyhood] <- 16
 
@@ -67,28 +72,34 @@ lClustScore_DF <- list(fastClustScore=apply(draw_DF$mID[,(steps-nsamples):nsampl
 lClustScore_DF$pchL[lClustScore_DF$fastClustScore > minClusterLikelyhood] <- 16
 
 ##Make SPeed Density Of Each Cluster
+dens_dist_NF_all <- density(datCapture_NL$DistanceToPrey)
 dens_dist_NF_fast <- density(datCapture_NL$DistanceToPrey[lClustScore_NF$pchL == 16])
 dens_dist_NF_slow <- density(datCapture_NL$DistanceToPrey[lClustScore_NF$pchL == 1])
 
 ##Make SPeed Density Of Each Cluster
+dens_dist_LF_all <- density(datCapture_LL$DistanceToPrey)
 dens_dist_LF_fast <- density(datCapture_LL$DistanceToPrey[lClustScore_LF$pchL == 16])
 dens_dist_LF_slow <- density(datCapture_LL$DistanceToPrey[lClustScore_LF$pchL == 1])
 
 ##Make SPeed Density Of Each Cluster
+dens_dist_DF_all <- density(datCapture_DL$DistanceToPrey)
 dens_dist_DF_fast <- density(datCapture_DL$DistanceToPrey[lClustScore_DF$pchL == 16])
 dens_dist_DF_slow <- density(datCapture_DL$DistanceToPrey[lClustScore_DF$pchL == 1])
 
 
 
-plot(dens_dist_NF_fast,xlim=c(-1.0,1),col=colourLegL[1],lwd=3,lty=1,ylim=c(0,5),
+plot(dens_dist_NF_all,xlim=c(0.0,0.5),col=colourLegL[1],lwd=4,lty=1,ylim=c(0,5),
      main=NA,cex=cex,xlab=NA,ylab=NA)
-lines(dens_dist_NF_slow,col=colourLegE[1],lwd=3,lty=1)
+lines(dens_dist_NF_fast,col=colourLegL[1],lwd=2,lty=2)
+lines(dens_dist_NF_slow,col=colourLegE[1],lwd=2,lty=2)
 
-lines(dens_dist_LF_fast,col=colourLegL[2],lwd=3,lty=2)
-lines(dens_dist_LF_slow,col=colourLegE[2],lwd=3,lty=2)
+plot(dens_dist_LF_all,xlim=c(0.0,0.5),col=colourLegL[2],lwd=4,lty=1)
+lines(dens_dist_LF_fast,col=colourLegL[2],lwd=2,lty=2)
+lines(dens_dist_LF_slow,col=colourLegE[2],lwd=2,lty=2)
 
-lines(dens_dist_DF_fast,col=colourLegL[3],lwd=3,lty=3)
-lines(dens_dist_DF_slow,col=colourLegE[3],lwd=3,lty=3)
+plot(dens_dist_DF_all,xlim=c(0.0,0.5),col=colourLegL[3],lwd=4,lty=1)
+lines(dens_dist_DF_fast,col=colourLegL[3],lwd=2,lty=2)
+lines(dens_dist_DF_slow,col=colourLegE[3],lwd=2,lty=2)
 
 legend("topleft",
        legend=c(  expression (),
@@ -105,6 +116,80 @@ mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high 
 mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 
 
+
+###### Capture Speed  ###
+
+lineAxis = 2.4
+lineXAxis = 2.7
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.3,2,1))
+##Make SPeed Density Of Each Cluster
+dens_speed_NF_all <- density(datCapture_NL$CaptureSpeed)
+dens_speed_NF_fast <- density(datCapture_NL$CaptureSpeed[lClustScore_NF$pchL == 16])
+dens_speed_NF_slow <- density(datCapture_NL$CaptureSpeed[lClustScore_NF$pchL == 1])
+
+##Make SPeed Density Of Each Cluster
+dens_speed_LF_all <- density(datCapture_LL$CaptureSpeed)
+dens_speed_LF_fast <- density(datCapture_LL$CaptureSpeed[lClustScore_LF$pchL == 16])
+dens_speed_LF_slow <- density(datCapture_LL$CaptureSpeed[lClustScore_LF$pchL == 1])
+
+##Make SPeed Density Of Each Cluster
+dens_speed_DF_all <- density(datCapture_DL$CaptureSpeed)
+dens_speed_DF_fast <- density(datCapture_DL$CaptureSpeed[lClustScore_DF$pchL == 16])
+dens_speed_DF_slow <- density(datCapture_DL$CaptureSpeed[lClustScore_DF$pchL == 1])
+
+## Plot Density Speed ##
+plot(dens_speed_NF_all,xlim=c(0.0,60),col=colourLegL[1],lwd=4,lty=1,ylim=c(0,0.1),
+     main=NA,cex=cex,xlab=NA,ylab=NA)
+lines(dens_speed_NF_fast,col=colourLegL[1],lwd=2,lty=2)
+lines(dens_speed_NF_slow,col=colourLegE[1],lwd=2,lty=2)
+
+plot(dens_speed_LF_all,xlim=c(0.0,60),col=colourLegL[2],lwd=4,lty=1,ylim=c(0,0.1))
+lines(dens_speed_LF_fast,col=colourLegL[2],lwd=2,lty=2)
+lines(dens_speed_LF_slow,col=colourLegE[2],lwd=2,lty=2)
+
+plot(dens_speed_DF_all,xlim=c(0.0,60),col=colourLegL[3],lwd=4,lty=1,ylim=c(0,0.1))
+lines(dens_speed_DF_fast,col=colourLegL[3],lwd=2,lty=2)
+lines(dens_speed_DF_slow,col=colourLegE[3],lwd=2,lty=2)
+####### END OF Speed ###
+
+#'######### TURN RATIO ##########
+##Make SPeed Density Of Each Cluster
+dens_turn_NF_all <- density(datCapture_NL$Undershoot)
+dens_turn_NF_fast <- density(datCapture_NL$Undershoot[lClustScore_NF$pchL == 16])
+dens_turn_NF_slow <- density(datCapture_NL$Undershoot[lClustScore_NF$pchL == 1])
+
+##Make SPeed Density Of Each Cluster
+dens_turn_LF_all <- density(datCapture_LL$Undershoot)
+dens_turn_LF_fast <- density(datCapture_LL$Undershoot[lClustScore_LF$pchL == 16])
+dens_turn_LF_slow <- density(datCapture_LL$Undershoot[lClustScore_LF$pchL == 1])
+
+##Make SPeed Density Of Each Cluster
+fracSlow_DF <- table(lClustScore_DF$pchL )[1]/NROW(lClustScore_DF$pchL)
+dens_turn_DF_all <- density(datCapture_DL$Undershoot)
+dens_turn_DF_fast <- density(datCapture_DL$Undershoot[lClustScore_DF$pchL == 16] )
+dens_turn_DF_slow <- density(datCapture_DL$Undershoot[lClustScore_DF$pchL == 1])
+
+
+
+## Plot TURN RATIO  ##
+plot(dens_turn_NF_all,xlim=c(0.0,2),col=colourLegL[1],lwd=4,lty=1,ylim=c(0,3),
+     main=NA,cex=cex,xlab=NA,ylab=NA)
+lines(dens_turn_NF_fast,col=colourLegL[1],lwd=2,lty=2)
+lines(dens_turn_NF_slow,col=colourLegE[1],lwd=2,lty=2)
+
+plot(dens_turn_LF_all,xlim=c(0.0,2),col=colourLegL[2],lwd=4,lty=1,ylim=c(0,3))
+lines(dens_turn_LF_fast,col=colourLegL[2],lwd=2,lty=2)
+lines(dens_turn_LF_slow,col=colourLegE[2],lwd=2,lty=2)
+
+plot(dens_turn_DF_all,xlim=c(0.0,2),col=colourLegL[3],lwd=4,lty=1,ylim=c(0,3))
+lines(dens_turn_DF_fast$x,dens_turn_DF_fast$y*(1-fracSlow_DF),col=colourLegL[3],lwd=2,lty=2)
+lines(dens_turn_DF_slow$x,dens_turn_DF_slow$y*fracSlow_DF,col=colourLegE[3],lwd=2,lty=2)
+####### END OF Speed ###
+
+
+
 pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
 
 lineAxis = 2.4
@@ -112,8 +197,13 @@ lineXAxis = 2.7
 layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,2,1))
-
-plot(datCapture_NL$DistanceToPrey, datCapture_NL$CaptureSpeed,col=colourP[1],pch=lClustScore_NF$pchL,
+  
+##For Colouring Data based on Fish/ExpID to examine Systematic differences
+ colIdx_NL<- rainbow(max(colIdx_NL) )[as.numeric(as.factor(as.numeric(datTrackedEventsRegister[datCapture_NL$RegistarIdx,]$expID)))]
+ colIdx_DL<- rainbow(max(colIdx_DL) )[as.numeric(as.factor(as.numeric(datTrackedEventsRegister[datCapture_DL$RegistarIdx,]$expID)))]
+ colIdx_LL<- rainbow(max(colIdx_LL) )[as.numeric(as.factor(as.numeric(datTrackedEventsRegister[datCapture_LL$RegistarIdx,]$expID)))]
+ 
+plot(datCapture_NL$DistanceToPrey, datCapture_NL$CaptureSpeed,col=colourP[1]  ,pch=lClustScore_NF$pchL,
      xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,1),main=NA,cex=cex)
 
 lFit <- lm(datCapture_NL$CaptureSpeed[lClustScore_NF$pchL == 16] ~ datCapture_NL$DistanceToPrey[lClustScore_NF$pchL == 16])
