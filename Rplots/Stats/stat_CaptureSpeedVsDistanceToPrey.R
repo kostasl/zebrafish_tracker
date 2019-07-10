@@ -58,12 +58,12 @@ for  (g in 1:2)
 }
   ## Low Speed Captcha cluster
   mu[1,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
-  mu[1,2] ~ dnorm(5,0.1)T(0,) ##cap speed
+  mu[1,2] ~ dnorm(5,1)T(0,) ##cap speed
   sigma[1,2] ~ dunif(0,2) ##the low cap speed sigma 
 
   ## High speed Capture Cluster
   mu[2,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
-  mu[2,2] ~ dnorm(35,0.1)T(mu[1,2],) ##cap speed
+  mu[2,2] ~ dnorm(35,1)T(mu[1,2],) ##cap speed
   sigma[2,2] ~ dunif(0,10) ##the high cap speed sigma 
 
 ## Synthesize data from the distribution
@@ -143,7 +143,7 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 ##  Init  datastruct that we pass to model ##
 
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
-steps <- 15500 #105500
+steps <- 5500 #105500
 str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS","RegistarIdx")
 ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
@@ -175,20 +175,17 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 
 save(draw_LF,draw_NF,draw_DF,file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 
+
+
+
+
+
 ### Load Pre Calc Results
 load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 #### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
 
 ## Load COvariance (dLLb_rhoSD) - Calculated by 3D model in stat_CaptureSpeedVsUndershootAndDistance ##
 load(file = paste0(strDataExportDir,"stat_CaptSpeedVsDistance_Covariance_RJags.RData"))
-
-
-
-
-
-
-
-
 
 
 #######################################################
