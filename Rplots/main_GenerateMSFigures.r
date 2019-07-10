@@ -28,7 +28,7 @@ datCapture_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"Distance
 xval=seq(1,10,0.1)
 yval=seq(1,10,0.1)
 grid=expand.grid(xval,yval)
-m=matrix(dmvnorm(grid,mean=c(5,5),sigma=diag(2)),length(xval),length(yval))
+m=matrix(dmvnorm(grid,mean=c(5,5),sigma=draw_NF$sigma[,,1,2]),length(xval),length(yval))
 contour(m)
 
 ####################

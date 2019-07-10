@@ -48,7 +48,7 @@ for  (g in 1:2)
   
   cov[g,1,1] <- sigma[g,1]*sigma[g,1]
   cov[g,1,2] <- sigma[g,1]*sigma[g,2]*rho[g]
-  cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g]
+  cov[g,2,1] <- cov[g,1,2] ##sigma[g,1]*sigma[g,2]*rho[g]
   cov[g,2,2] <- sigma[g,2]*sigma[g,2]
   
   ## Priors 
@@ -144,7 +144,7 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
 steps <- 5500 #105500
-str_vars <- c("mu","rho","sigma","x_rand","mID","mStrikeCount","pS","RegistarIdx")
+str_vars <- c("mu","rho","sigma","cov","x_rand","mID","mStrikeCount","pS","RegistarIdx")
 ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
 ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
 ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
