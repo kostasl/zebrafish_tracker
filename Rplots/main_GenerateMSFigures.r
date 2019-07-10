@@ -19,9 +19,9 @@ datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTra
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
 ### Capture Speed vs Distance to prey ###
-datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
-datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] )
-datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] )
+datCapture_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
+datCapture_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] )
+datCapture_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] )
 
 ###Subset Validated Only
 
@@ -53,26 +53,30 @@ las <- 1
 ## Denote Fast/Slow CLuster Membership of Data Points - 
 ##Make List For Mean Number of Times Strike Was Classed as fast (score likelihood this is a fast one), and the RegIDx and Plot Point type,
 minClusterLikelyhood <- 0.95 
-lClustScore_LF <- list(fastClustScore=apply(draw_LF$mID[, (900):1000,1][,],1,mean) ,RegistarIdx=datDistanceVsStrikeSpeed_LL$RegistarIdx,pchL=rep_len(1,NROW(datDistanceVsStrikeSpeed_LL)))
+steps <- NROW(draw_LF$mID[1,,1])
+nsamples <- min(steps,1)
+
+
+lClustScore_LF <- list(fastClustScore=apply(draw_LF$mID[,(steps-nsamples):nsamples,1],1,mean) ,RegistarIdx=datCapture_LL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_LL)))
 lClustScore_LF$pchL[lClustScore_LF$fastClustScore > minClusterLikelyhood] <- 16
 
-lClustScore_NF <- list(fastClustScore=apply(draw_NF$mID[, (900):1000,1][,],1,mean) ,RegistarIdx=datDistanceVsStrikeSpeed_NL$RegistarIdx,pchL=rep_len(1,NROW(datDistanceVsStrikeSpeed_NL)))
+lClustScore_NF <- list(fastClustScore=apply(draw_NF$mID[,(steps-nsamples):nsamples,1],1,mean) ,RegistarIdx=datCapture_NL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_NL)))
 lClustScore_NF$pchL[lClustScore_NF$fastClustScore > minClusterLikelyhood] <- 16
 
-lClustScore_DF <- list(fastClustScore=apply(draw_DF$mID[, (900):1000,1][,],1,mean) ,RegistarIdx=datDistanceVsStrikeSpeed_DL$RegistarIdx,pchL=rep_len(1,NROW(datDistanceVsStrikeSpeed_DL)))
+lClustScore_DF <- list(fastClustScore=apply(draw_DF$mID[,(steps-nsamples):nsamples,1],1,mean) ,RegistarIdx=datCapture_DL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_DL)))
 lClustScore_DF$pchL[lClustScore_DF$fastClustScore > minClusterLikelyhood] <- 16
 
 ##Make SPeed Density Of Each Cluster
-dens_dist_NF_fast <- density(datDistanceVsStrikeSpeed_NL$DistanceToPrey[lClustScore_NF$pchL == 16])
-dens_dist_NF_slow <- density(datDistanceVsStrikeSpeed_NL$DistanceToPrey[lClustScore_NF$pchL == 1])
+dens_dist_NF_fast <- density(datCapture_NL$DistanceToPrey[lClustScore_NF$pchL == 16])
+dens_dist_NF_slow <- density(datCapture_NL$DistanceToPrey[lClustScore_NF$pchL == 1])
 
 ##Make SPeed Density Of Each Cluster
-dens_dist_LF_fast <- density(datDistanceVsStrikeSpeed_LL$DistanceToPrey[lClustScore_LF$pchL == 16])
-dens_dist_LF_slow <- density(datDistanceVsStrikeSpeed_LL$DistanceToPrey[lClustScore_LF$pchL == 1])
+dens_dist_LF_fast <- density(datCapture_LL$DistanceToPrey[lClustScore_LF$pchL == 16])
+dens_dist_LF_slow <- density(datCapture_LL$DistanceToPrey[lClustScore_LF$pchL == 1])
 
 ##Make SPeed Density Of Each Cluster
-dens_dist_DF_fast <- density(datDistanceVsStrikeSpeed_DL$DistanceToPrey[lClustScore_DF$pchL == 16])
-dens_dist_DF_slow <- density(datDistanceVsStrikeSpeed_DL$DistanceToPrey[lClustScore_DF$pchL == 1])
+dens_dist_DF_fast <- density(datCapture_DL$DistanceToPrey[lClustScore_DF$pchL == 16])
+dens_dist_DF_slow <- density(datCapture_DL$DistanceToPrey[lClustScore_DF$pchL == 1])
 
 
 
@@ -88,9 +92,9 @@ lines(dens_dist_DF_slow,col=colourLegE[3],lwd=3,lty=3)
 
 legend("topleft",
        legend=c(  expression (),
-                  bquote(NF[""] ~ '#' ~ .(NROW(datDistanceVsStrikeSpeed_NL))  ),
-                  bquote(LF[""] ~ '#' ~ .(NROW(datDistanceVsStrikeSpeed_LL))  ),
-                  bquote(DF[""] ~ '#' ~ .(NROW(datDistanceVsStrikeSpeed_DL))  )
+                  bquote(NF[""] ~ '#' ~ .(NROW(datCapture_NL))  ),
+                  bquote(LF[""] ~ '#' ~ .(NROW(datCapture_LL))  ),
+                  bquote(DF[""] ~ '#' ~ .(NROW(datCapture_DL))  )
                   #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
        ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
        col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
@@ -109,18 +113,18 @@ layout(matrix(c(1,2,3),3,1, byrow = FALSE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.3,2,1))
 
-plot(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],pch=lClustScore_NF$pchL,
+plot(datCapture_NL$DistanceToPrey, datCapture_NL$CaptureSpeed,col=colourP[1],pch=lClustScore_NF$pchL,
      xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,1),main=NA,cex=cex)
 
-lFit <- lm(datDistanceVsStrikeSpeed_NL$CaptureSpeed ~ datDistanceVsStrikeSpeed_NL$DistanceToPrey)
+lFit <- lm(datCapture_NL$CaptureSpeed[lClustScore_NF$pchL == 16] ~ datCapture_NL$DistanceToPrey[lClustScore_NF$pchL == 16])
 abline(lFit,col=colourLegL[1],lwd=3.0) ##Fit Line / Regression
 contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
 legend("topright",
        legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex  )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
 
-plot(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],pch=lClustScore_LF$pchL,
+plot(datCapture_LL$DistanceToPrey, datCapture_LL$CaptureSpeed,col=colourP[2],pch=lClustScore_LF$pchL,
      ylim=c(0,60),xlim=c(0,1),xlab=NA,ylab=NA,cex=cex)
-lFit <- lm(datDistanceVsStrikeSpeed_LL$CaptureSpeed ~ datDistanceVsStrikeSpeed_LL$DistanceToPrey)
+lFit <- lm(datCapture_LL$CaptureSpeed[lClustScore_LF$pchL == 16] ~ datCapture_LL$DistanceToPrey[lClustScore_LF$pchL == 16])
 abline(lFit,col=colourLegL[2],lwd=3.0) ##Fit Line / Regression
 contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
 mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec) " ))
@@ -128,10 +132,10 @@ legend("topright",
        legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex  ) 
 
 
-plot(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],pch=lClustScore_DF$pchL,
+plot(datCapture_DL$DistanceToPrey, datCapture_DL$CaptureSpeed,col=colourP[3],pch=lClustScore_DF$pchL,
      ylim=c(0,60),xlim=c(0,1),
      xlab=NA,ylab=NA,main=NA,cex=cex)
-lFit <- lm(datDistanceVsStrikeSpeed_DL$CaptureSpeed ~ datDistanceVsStrikeSpeed_DL$DistanceToPrey)
+lFit <- lm(datCapture_DL$CaptureSpeed[lClustScore_DF$pchL == 16] ~ datCapture_DL$DistanceToPrey[lClustScore_DF$pchL == 16])
 abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
 contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
 mtext(side = 1,cex=cex, line = lineXAxis, expression("Distance To Prey ["~d~"]" ))
@@ -140,6 +144,84 @@ legend("topright",
 
 
 dev.off()
+
+
+############## Capture Speed Vs Turn Ratio #### 
+
+
+
+pdf(file= paste(strPlotExportPath,"distal",strDataPDFFileName,sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.5,1,1))
+
+plot(datCapture_NL$Undershoot, datCapture_NL$CaptureSpeed,col=colourLegL[1],pch=lClustScore_NF$pchL,
+     xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,2),main=NA,cex=cex)
+lFit <- lm(datCapture_NL$CaptureSpeed ~ datCapture_NL$Undershoot)
+abline(lFit,col=colourLegL[1],lwd=3.0) ##Fit Line / Regression
+contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
+legend("topright",
+       legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ,cex=cex)  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
+
+plot(datCapture_LL$Undershoot, datCapture_LL$CaptureSpeed,col=colourLegL[2],pch=lClustScore_LF$pchL,
+     ylim=c(0,60),xlim=c(0,2),xlab=NA,ylab=NA,cex=cex)
+lFit <- lm(datCapture_LL$CaptureSpeed ~ datCapture_LL$Undershoot)
+abline(lFit,col=colourLegL[2],lwd=3.0) ##Fit Line / Regression
+contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
+mtext(side = 2,cex=cex, line = lineAxis-0.7, expression("Capture Speed (mm/sec) " ))
+legend("topright",
+       legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
+
+
+plot(datCapture_DL$Undershoot, datCapture_DL$CaptureSpeed,col=colourLegL[3],pch=lClustScore_DF$pchL,
+     ylim=c(0,60),xlim=c(0,2),
+     xlab=NA,ylab=NA,main=NA,cex=cex)
+lFit <- lm(datCapture_DL$CaptureSpeed ~ datCapture_DL$Undershoot)
+abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
+contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
+legend("topright",
+       legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
+
+
+dev.off()
+
+
+
+## EMPIRICAL - UNdeshoot vs Prey Distance 
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig7-UndershootDistanceCV_Distal_scatter.pdf",sep=""))
+layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(4.5,4.3,0.5,1))
+
+plot(datCapture_NL$Undershoot, datCapture_NL$DistanceToPrey,col=colourLegL[1],pch=lClustScore_NF$pchL,
+     xlab=NA,ylab=NA,ylim=c(0,1.0),xlim=c(0,2),main=NA,cex=cex)
+lFit <- lm(datCapture_NL$DistanceToPrey ~ datCapture_NL$Undershoot)
+abline(lFit,col=colourLegL[1],lwd=3.0) ##Fit Line / Regression
+legend("topright",
+       legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
+
+plot(datCapture_LL$Undershoot, datCapture_LL$DistanceToPrey,col=colourLegL[2],pch=lClustScore_LF$pchL,
+     ylim=c(0,1),xlim=c(0,2.0),xlab=NA,ylab=NA,cex=cex)
+lFit <- lm(datCapture_LL$DistanceToPrey ~ datCapture_LL$Undershoot)
+abline(lFit,col=colourLegL[2],lwd=3.0) ##Fit Line / Regression
+mtext(side = 2,cex=cex, line = 2.2, expression("Distance to prey  (mm) " ))
+legend("topright",
+       legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
+
+
+plot(datCapture_DL$Undershoot, datCapture_DL$DistanceToPrey,col=colourLegL[3],pch=lClustScore_DF$pchL,
+     ylim=c(0,1.0),xlim=c(0,2),   xlab=NA,ylab=NA,main=NA,cex=cex)
+lFit <- lm(datCapture_DL$DistanceToPrey ~ datCapture_DL$Undershoot)
+abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
+mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
+legend("topright",
+       legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ) ,cex=cex) 
+
+dev.off()
+
+
+
 
 ########## END oF CaptureSpeed vs Distance  ###
 
