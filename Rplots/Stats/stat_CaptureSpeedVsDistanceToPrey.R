@@ -21,6 +21,12 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
+##### Notes on Covariance Prior , I could have used a wishard :
+## What I do know is that if I assume Omega is my prior guess for covariance
+## matrix Sigma, then I use the following in JAGS:
+#  invSigma ~ dwish(J*Omega,J) #where J is the degrees of freedom, Omega Prior Guess for
+#and I get the correct prior.
+
 strmodel_capspeedVsDistance <- "
 var x_rand[2,2];
 
@@ -139,9 +145,7 @@ datDistanceVsStrikeSpeed_DL <- datDistanceVsStrikeSpeed_DL[datDistanceVsStrikeSp
 
 datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsStrikeSpeed_LL,datDistanceVsStrikeSpeed_DL)
 ##
-
 ##  Init  datastruct that we pass to model ##
-
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
 steps <- 5500 #105500
 str_vars <- c("mu","rho","sigma","cov","x_rand","mID","mStrikeCount","pS","RegistarIdx")
@@ -150,6 +154,9 @@ ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_N
 ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
 ldata_ALL <- list(c=datDistanceVsStrikeSpeed_ALL,N=NROW(datDistanceVsStrikeSpeed_ALL)) ##Dry fed
 
+
+
+### RUN MODEL ###
 jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_LF, 
                             n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_LF, 500)
@@ -231,59 +238,11 @@ plot(dens_dist_LF_fast)
 lines(dens_dist_LF_slow)
 
 
-pdf(file= paste(strPlotExportPath,strDataPDFFileName,sep=""))
-
-lineAxis = 2.4
-lineXAxis = 2.7
-layout(matrix(c(1,2,3),3,1, byrow = FALSE))
-##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.3,2,1))
-
-plot(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,col=colourP[1],pch=lClustScore_NF$pchL,
-     xlab=NA,ylab=NA,ylim=c(0,60),xlim=c(0,1),main=NA,cex=cex)
-
-lFit <- lm(datDistanceVsStrikeSpeed_NL$CaptureSpeed ~ datDistanceVsStrikeSpeed_NL$DistanceToPrey)
-abline(lFit,col=colourLegL[1],lwd=3.0) ##Fit Line / Regression
-contour(densNL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
-legend("topright",
-       legend=paste("NF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex  )  #prettyNum(digits=3, cov(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed)
-
-plot(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,col=colourP[2],pch=lClustScore_LF$pchL,
-     ylim=c(0,60),xlim=c(0,1),xlab=NA,ylab=NA,cex=cex)
-lFit <- lm(datDistanceVsStrikeSpeed_LL$CaptureSpeed ~ datDistanceVsStrikeSpeed_LL$DistanceToPrey)
-abline(lFit,col=colourLegL[2],lwd=3.0) ##Fit Line / Regression
-contour(densLL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
-mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec) " ))
-legend("topright",
-       legend=paste("LF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex  ) 
-
-
-plot(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,col=colourP[3],pch=lClustScore_DF$pchL,
-     ylim=c(0,60),xlim=c(0,1),
-     xlab=NA,ylab=NA,main=NA,cex=cex)
-lFit <- lm(datDistanceVsStrikeSpeed_DL$CaptureSpeed ~ datDistanceVsStrikeSpeed_DL$DistanceToPrey)
-abline(lFit,col=colourLegL[3],lwd=3.0) ##Fit Line / Regression
-contour(densDL, drawlabels=FALSE, nlevels=7,add=TRUE,col=colourL[4],lty=2,lwd=1)
-mtext(side = 1,cex=cex, line = lineXAxis, expression("Distance To Prey ["~d~"]" ))
-legend("topright",
-       legend=paste("DF int.:",prettyNum(digits=3,lFit$coefficients[1])," slope: ",prettyNum(digits=3,lFit$coefficients[2])  ),cex=cex ) 
-
-
-dev.off()
-
-
-
-
-
-
-
 
 ### Estimate  densities  ###
 nContours <- 6
 ntail <-2000
 pBw   <- 0.02 
-
-
 
 zLL <- kde2d(c(tail(draw_LF$mu[,1,,],ntail)), c(tail(draw_LF$mu[,2,,],ntail)),n=180)
 zNL <- kde2d(c(tail(draw_NF$mu[,1,,],ntail)), c(tail(draw_NF$mu[,2,,],ntail)),n=180)
@@ -304,9 +263,9 @@ dDLb_rho_fast <-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 #dALLb_rho <-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 ##dALLb_rho[[2]] <-density(tail(draw_ALL$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 
-#dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
-#dNLb_rho[[2]]<-density(tail(draw_NF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
-#dDLb_rho[[2]]<-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+dNLb_rho[[2]]<-density(tail(draw_NF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+dDLb_rho[[2]]<-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
 #dALLb_rho[[2]]<-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
 
 
@@ -337,12 +296,14 @@ pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,
 outer = FALSE
 line = 2.8 ## SubFig Label Params
 lineAxis = 2.7
+lineTitle = 2.7
 lineXAxis = 3.0
 cex = 1.4
 adj  = 1.0
 padj <- -8.0
 las <- 1
 nContours <- 5
+npchain<-3
 
 layout(matrix(c(1,1,2,2,3,3,4,4,5,5,6,6),2,6, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
@@ -419,7 +380,7 @@ legend("topleft",
 plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
      main=NA, #"Density Inference of Turn-To-Prey Slope ",
      xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
-lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
+lines(dLLb_rhoSD_fast,col=colourLegL[2],lwd=3,lty=2)
 lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
 mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
 mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
@@ -435,7 +396,7 @@ dev.off()
 
 
 #### FIG 4 / Capture Speed Only Model And Data ##
-pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""))
+pdf(file= paste(strPlotExportPath,strCaptSpeedDensityPDFFileName ,sep=""),width=14)
 
 par(mar = c(3.9,4.3,1,1))
 layout(matrix(c(1,2,3),1,3, byrow = FALSE))
@@ -473,7 +434,7 @@ dev.off()
 ####################################
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
-
+message(strModelVarPDFFilename)
 pdf(file= paste(strPlotExportPath,strModelVarPDFFilename,sep=""),width=14,height=7,
     title="A statistical model for Capture Strike speed And Distance to prey")
 
