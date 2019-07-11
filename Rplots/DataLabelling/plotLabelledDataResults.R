@@ -41,7 +41,7 @@ tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) )
 
 ##############################################
   ## Success / Strike Non Strike Percentage ##
-  strPlotName = paste(strPlotExportPath,"/fig4-HuntEventsLabelling-Strike-NoStrike.pdf",sep="")
+  strPlotName = paste(strPlotExportPath,"/fig5-HuntEventsLabelling-Strike-NoStrike.pdf",sep="")
   pdf(strPlotName,width=9.2,height=3.6,bg="white",
       compress=FALSE,onefile = FALSE, 
       title="Breakdown on Fast Vs Slow for Success Vs Failed hunt events - Manual data labels ") #col=(as.integer(filtereddatAllFrames$expID))
