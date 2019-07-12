@@ -10,10 +10,12 @@ library(mvtnorm)
 
 library(ggplot2) ##install.packages("ggplot2")
 library(ggExtra)##  install.packages("ggExtra") ##devtools::install_github("daattali/ggExtra").
+library(cowplot)
+library(ggpubr) ##install.packages("ggpubr")
 
-#library(ggpubr) ##install.packages("ggpubr")
+
 source("config_lib.R")
-setEnvFileLocations("HOME") #OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP
 
 
 ####################
@@ -110,10 +112,18 @@ datCapture_DL <- cbind(datCapture_DL,Cluster=factor(labels=c("slow","fast"),lClu
 #### GGPLOT VERSION ###
 
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPrey_NF.pdf",sep=""),width=7,height=7)
+ #layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+# ##Margin: (Bottom,Left,Top,Right )
+ #par(mar = c(3.9,4.7,12,1))
 
-  p_NF = ggplot( datCapture_NL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) + ggtitle("NF") + theme(plot.title = element_text("Helvetica", face="bold", size=12), legend.position = "none") 
-  p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) + 
+  p_NF = ggplot( datCapture_NL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) +
+    ggtitle(NULL) +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    fill_palette("jco")
+  
+  p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
     scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") )
+    
   contour_fast <- getFastClusterGrid(draw_NF)
   contour_slow <- getSlowClusterGrid(draw_NF)
   p_NF = p_NF +
@@ -121,13 +131,32 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
     geom_contour(contour_slow, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
     scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.8)) +
     scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 80)) 
-  ggMarginal(p_NF,
-             x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+  
+    ggMarginal(p_NF, x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+  
+    ##Make Custom Marginal Plot
+   #xplot <- ggdensity(datCapture_NL,"DistanceToPrey",  mapping=aes(x="DistanceToPrey",color=datCapture_NL$Cluster), fill = "Cluster") +
+    #clean_theme()  + theme(plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    #fill_palette("jco") ##scale_color_manual( values = c("#00AFBB", "#00AFBB" ) )+
+   #yplot <- ggdensity(datCapture_NL, "CaptureSpeed",mapping=aes(x="CaptureSpeed",color=datCapture_NL$Cluster), fill = "Cluster")+
+  #  rotate() + clean_theme() + theme(plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none")+
+  #  fill_palette("jco") #
+  
+    ##Cordinates Run 0-1 From lower left 0,0 
+   # ggdraw() +
+  #  draw_plot(xplot, x = 0.055, y = 0.8, width = 0.74, height = 0.2) +
+   # draw_plot(p_NF, x = 0, y = 0, width = 0.8, height = 0.8) +
+    #draw_plot(yplot, x = 0.8 , y = 0.055, width = 0.2, height = 0.74)
+  
+  
 dev.off()
 
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPrey_LF.pdf",sep=""),width=7,height=7)
 
-  p_LF <- ggplot( datCapture_LL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) + ggtitle("LF") + theme(plot.title = element_text("Helvetica", face="bold", size=12), legend.position = "none") 
+  p_LF <- ggplot( datCapture_LL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) + ggtitle(NULL)  +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    fill_palette("jco")
+  
   p_LF <- p_LF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
     scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") )
   contour_fast <- getFastClusterGrid(draw_LF)
@@ -143,7 +172,10 @@ dev.off()
 
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPrey_DF.pdf",sep=""),width=7,height=7)
 
-  p_DF = ggplot( datCapture_DL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) + ggtitle("DF") + theme(plot.title = element_text("Helvetica", face="bold", size=12), legend.position = "none") 
+  p_DF = ggplot( datCapture_DL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) + ggtitle(NULL)  +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    fill_palette("jco")
+  
   p_DF = p_DF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_DL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) + 
                 scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) # scale_color_manual( values = c(colourHPoint[4],colourHPoint[1])  )
   contour_fast <- getFastClusterGrid(draw_DF)
@@ -155,19 +187,19 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
   ggMarginal(p_DF ,x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 
 dev.off()
-  
-  
+
+
 ### Probability of Membership in High speed Cluster / 
-dat_pS <- data.frame(pS_NF=tail(draw_NF$pS[,,1],500),pS_LF=tail(draw_LF$pS[,,1],500),pS_DF=tail(draw_DF$pS[,,1],500) )
-plot_probM = ggplot(dat_pS, aes(pS_NF,colour=colourHLine[1])) +
+  dat_pS <- data.frame(pS_NF=tail(draw_NF$pS[,,1],500),pS_LF=tail(draw_LF$pS[,,1],500),pS_DF=tail(draw_DF$pS[,,1],500) )
+  plot_probM = ggplot(dat_pS, aes(pS_NF,colour=colourHLine[1])) +
   geom_density() +  scale_x_continuous(name= expression(paste("Probability of high speed capture  ["~p["s"]~"]" )), limits=c(0, 1)) +
   scale_y_continuous(name="Density function", limits=c(0, 15)) 
-plot_probM= plot_probM + geom_density(dat_pS, mapping=aes(x=pS_LF,colour=colourHLine[2])) 
-plot_probM + geom_density(dat_pS, mapping=aes(x=pS_DF,colour=colourHLine[3])) 
-
+  plot_probM= plot_probM + geom_density(dat_pS, mapping=aes(x=pS_LF,colour=colourHLine[2])) 
+  plot_probM + geom_density(dat_pS, mapping=aes(x=pS_DF,colour=colourHLine[3])) 
+#####
 
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterMembership.pdf",sep=""),width=7,height=7)
-
+  par(mar = c(3.9,4.7,1,1))
   #### ## Probability Density of Strike capture ####
   plot(density(tail(draw_NF$pS[,,1],1000),pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
        cex=cex,cex.axis=cex )
@@ -176,8 +208,144 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterMembership.pdf",sep=""
   #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
   mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high speed capture  ["~p["s"]~"]" ) ) ,cex.main=cex )
   mtext(side = 2,cex=cex, line = lineAxis, expression("Density function" ))
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF[""] ~ '#' ~ .(NROW(datCapture_NL$DistanceToPrey))  ),
+                    bquote(LF[""] ~ '#' ~ .(NROW(datCapture_LL$DistanceToPrey))  ),
+                    bquote(DF[""] ~ '#' ~ .(NROW(datCapture_DL$DistanceToPrey))  )
+                    #bquote(ALL ~ '#' ~ .(ldata_ALL$N)  ) 
+         ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+  
+  
 dev.off()
 
+
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_meanDistanceOfFastCapture.pdf",sep=""),width=7,height=7)
+  par(mar = c(3.9,4.7,1,1))
+  #### ## Probability Density of Strike capture ####
+  plot(density(tail(draw_NF$mu[2,1,,1],1000)),col=colourLegL[1],xlim=c(0,0.8),ylim=c(0.0,35),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
+       cex=cex,cex.axis=cex )
+  lines(density(tail(draw_LF$mu[2,1,,1],1000)),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(tail(draw_DF$mu[2,1,,1],1000)),col=colourLegL[3],lwd=3,lty=3)
+  #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
+  mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Estimated mean distance of high speed capture (mm)") ) ,cex.main=cex )
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Density function" ))
+  
+  # legend("topleft",
+  #        legend=c(  expression (),
+  #                   bquote(NF[""] ~ '#' ~ .(NROW(datCapture_NL$DistanceToPrey))  ),
+  #                   bquote(LF[""] ~ '#' ~ .(NROW(datCapture_LL$DistanceToPrey))  ),
+  #                   bquote(DF[""] ~ '#' ~ .(NROW(datCapture_DL$DistanceToPrey))  )
+  #                   #bquote(ALL ~ '#' ~ .(ldata_ALL$N)  ) 
+  #        ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+  #        col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+
+
+dev.off()
+
+##########UNDERSHOOT Vs Distance
+#fig6.CaptureSpeed/fig6-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf
+
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootAndDistance_NF.pdf",sep=""),width=7,height=7)
+#layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+# ##Margin: (Bottom,Left,Top,Right )
+#par(mar = c(3.9,4.7,12,1))
+
+p_NF = ggplot( datCapture_NL, aes(Undershoot, DistanceToPrey ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_y_continuous(name="Distance to prey (mm)", limits=c(0, 0.8)) +
+  scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+
+ggMarginal(p_NF, x="Undershoot",y="DistanceToPrey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootAndDistance_LF.pdf",sep=""),width=7,height=7)
+#layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+# ##Margin: (Bottom,Left,Top,Right )
+#par(mar = c(3.9,4.7,12,1))
+
+p_NF = ggplot( datCapture_LL, aes(Undershoot, DistanceToPrey ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_y_continuous(name="Distance to prey (mm)", limits=c(0, 0.8)) +
+  scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+
+ggMarginal(p_NF, x="Undershoot",y="DistanceToPrey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootAndDistance_DF.pdf",sep=""),width=7,height=7)
+#layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+# ##Margin: (Bottom,Left,Top,Right )
+#par(mar = c(3.9,4.7,12,1))
+
+p_NF = ggplot( datCapture_DL, aes(Undershoot, DistanceToPrey ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_DL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_y_continuous(name="Distance to prey (mm)", limits=c(0, 0.8)) +
+  scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+
+ggMarginal(p_NF, x="Undershoot",y="DistanceToPrey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
+
+########UNdershoot - Speed ###
+
+
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootAndSpeed_NF.pdf",sep=""),width=7,height=7)
+#layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+# ##Margin: (Bottom,Left,Top,Right )
+#par(mar = c(3.9,4.7,12,1))
+
+p_NF = ggplot( datCapture_NL, aes(Undershoot, CaptureSpeed ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
+  scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+
+ggMarginal(p_NF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootAndSpeed_DF.pdf",sep=""),width=7,height=7)
+#layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+# ##Margin: (Bottom,Left,Top,Right )
+#par(mar = c(3.9,4.7,12,1))
+
+p_DF = ggplot( datCapture_DL, aes(Undershoot, CaptureSpeed ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_DF = p_DF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_DL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
+  scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+
+ggMarginal(p_DF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
+
+
+p_LF
 
 plot(dens_dist_NF_all,xlim=c(0.0,0.5),col=colourLegL[1],lwd=4,lty=1,ylim=c(0,5),
      main=NA,cex=cex,xlab=NA,ylab=NA)
