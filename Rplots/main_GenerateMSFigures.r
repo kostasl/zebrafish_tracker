@@ -15,7 +15,7 @@ library(ggpubr) ##install.packages("ggpubr")
 
 
 source("config_lib.R")
-setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #OFFICE,#LAPTOP
 
 
 ####################
@@ -345,7 +345,24 @@ ggMarginal(p_DF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour =
 dev.off()
 
 
-p_LF
+
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootAndSpeed_LF.pdf",sep=""),width=7,height=7)
+#layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+# ##Margin: (Bottom,Left,Top,Right )
+#par(mar = c(3.9,4.7,12,1))
+
+p_LF = ggplot( datCapture_LL, aes(Undershoot, CaptureSpeed ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_LF = p_LF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
+  scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+
+ggMarginal(p_LF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
 
 plot(dens_dist_NF_all,xlim=c(0.0,0.5),col=colourLegL[1],lwd=4,lty=1,ylim=c(0,5),
      main=NA,cex=cex,xlab=NA,ylab=NA)
