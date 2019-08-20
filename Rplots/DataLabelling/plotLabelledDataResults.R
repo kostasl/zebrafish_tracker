@@ -65,7 +65,7 @@ tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) )
         at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
   
   
-  mtext("A",at="topleft", side=3,col="black",font=2,las=0,line=0,padj=0,adj=0,cex=cex)
+  #mtext("A",at="topleft", side=3,col="black",font=2,las=0,line=0,padj=0,adj=0,cex=cex)
   
   pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"LL",NA)
   mtext(c(expression(),  bquote("LF ")),
