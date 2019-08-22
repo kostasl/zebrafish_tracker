@@ -15,7 +15,7 @@ library(ggpubr) ##install.packages("ggpubr")
 
 
 source("config_lib.R")
-setEnvFileLocations("HOME") #OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP
 
 
 ####################
@@ -190,6 +190,8 @@ dev.off()
 
 
 ### Probability of Membership in High speed Cluster / 
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_ProbOfFactCapture_All.pdf",sep=""),width=7,height=7)
+
   dat_pS <- data.frame(pS_NF=tail(draw_NF$pS[,,1],500),pS_LF=tail(draw_LF$pS[,,1],500),pS_DF=tail(draw_DF$pS[,,1],500) )
   plot_probM = ggplot(dat_pS, aes(pS_NF,colour=colourHLine[1])) +
   geom_density() +  scale_x_continuous(name= expression(paste("Probability of high speed capture  ["~p["s"]~"]" )), limits=c(0, 1)) +
@@ -197,7 +199,9 @@ dev.off()
   plot_probM= plot_probM + geom_density(dat_pS, mapping=aes(x=pS_LF,colour=colourHLine[2])) 
   plot_probM + geom_density(dat_pS, mapping=aes(x=pS_DF,colour=colourHLine[3])) 
 #####
-
+dev.off()
+  
+  
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterMembership.pdf",sep=""),width=7,height=7)
   par(mar = c(3.9,4.7,1,1))
   #### ## Probability Density of Strike capture ####
