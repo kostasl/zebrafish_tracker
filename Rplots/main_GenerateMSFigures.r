@@ -191,13 +191,24 @@ dev.off()
 
 ### Probability of Membership in High speed Cluster / 
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_ProbOfFactCapture_All.pdf",sep=""),width=7,height=7)
-
-  dat_pS <- data.frame(pS_NF=tail(draw_NF$pS[,,1],500),pS_LF=tail(draw_LF$pS[,,1],500),pS_DF=tail(draw_DF$pS[,,1],500) )
-  plot_probM = ggplot(dat_pS, aes(pS_NF,colour=colourHLine[1])) +
-  geom_density() +  scale_x_continuous(name= expression(paste("Probability of high speed capture  ["~p["s"]~"]" )), limits=c(0, 1)) +
-  scale_y_continuous(name="Density function", limits=c(0, 15)) 
-  plot_probM= plot_probM + geom_density(dat_pS, mapping=aes(x=pS_LF,colour=colourHLine[2])) 
-  plot_probM + geom_density(dat_pS, mapping=aes(x=pS_DF,colour=colourHLine[3])) 
+ 
+  dat2_NF <- rbind( data.frame(D=tail(draw_NF$pS[,,1],500),label=rep("NF",500) ),
+                    data.frame(D=tail(draw_LF$pS[,,1],500),label=rep("LF",500) ),
+                    data.frame(D=tail(draw_DF$pS[,,1],500),label=rep("DF",500) ))
+  
+    ggplot(dat2_NF, aes(x=D,colour=dat2_NF$label,group = label) ) +
+    geom_density( lwd=1.5,aes(linetype=label,colour=label) ) +  
+    theme(legend.position = c(0.1, 0.8),legend.title=NULL) + ## No Legend
+    scale_x_continuous(name= expression(paste("Probability of high speed capture  ["~p["s"]~"]" )), limits=c(0, 1),expand=c(0,0) ) +
+    scale_y_continuous(name="Density function", limits=c(0, 15),expand=c(0,0)) +
+    scale_color_manual(values=colourHLine) ##Change legend text
+    #theme_classic(base_size = 16)
+  
+  
+  plot_probM = plot_probM + geom_density(dat2_NF[dat2_NF$label=="NF",], mapping=aes(x=pS_LF,colour=colourHLine[2])) 
+  plot_probM + geom_density(dat_pS, mapping=aes(x=pS_DF,colour=colourHLine[3]))  +
+                scale_color_manual(labels = c("T999", "T888","T88asd8"),values=colourHLine) ##Change legend text
+  
 #####
 dev.off()
   
