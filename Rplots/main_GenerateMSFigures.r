@@ -15,7 +15,7 @@ library(ggpubr) ##install.packages("ggpubr")
 
 
 source("config_lib.R")
-setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #OFFICE,#LAPTOP
 
 
 ####################
@@ -23,7 +23,8 @@ setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP
 ### Hunting Episode Analysis ####
 
 
-###Used for drawing contour in ggplot
+###Used for drawing contour in ggplot -
+## Draw the model fit above the cluster points
 getFastClusterGrid <- function(drawMCMC)
 {
   ### Add the cluster contours ###
@@ -116,23 +117,27 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
 # ##Margin: (Bottom,Left,Top,Right )
  #par(mar = c(3.9,4.7,12,1))
 
-  p_NF = ggplot( datCapture_NL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) +
+  p_NF = ggplot( datCapture_NL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster))  +
     ggtitle(NULL) +
-    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),
+          axis.text = element_text(family="Helvetica",face="bold", size=16),
+          plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
     fill_palette("jco")
+    
   
   p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
     scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") )
     
-  contour_fast <- getFastClusterGrid(draw_NF)
+  contour_fast <- getFastClusterGrid(draw_NF) ## Draw the mvtnorm model fit contour
   contour_slow <- getSlowClusterGrid(draw_NF)
   p_NF = p_NF +
     geom_contour(contour_fast, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
     geom_contour(contour_slow, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
     scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.8)) +
     scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 80)) 
-  
-    ggMarginal(p_NF, x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+    #theme_linedraw()
+
+    ggMarginal(p_NF, x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=FALSE) 
   
     ##Make Custom Marginal Plot
    #xplot <- ggdensity(datCapture_NL,"DistanceToPrey",  mapping=aes(x="DistanceToPrey",color=datCapture_NL$Cluster), fill = "Cluster") +
@@ -147,14 +152,15 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
   #  draw_plot(xplot, x = 0.055, y = 0.8, width = 0.74, height = 0.2) +
    # draw_plot(p_NF, x = 0, y = 0, width = 0.8, height = 0.8) +
     #draw_plot(yplot, x = 0.8 , y = 0.055, width = 0.2, height = 0.74)
-  
-  
+
 dev.off()
 
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPrey_LF.pdf",sep=""),width=7,height=7)
 
   p_LF <- ggplot( datCapture_LL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) + ggtitle(NULL)  +
-    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),
+          axis.text = element_text(family="Helvetica",face="bold", size=16),
+          plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
     fill_palette("jco")
   
   p_LF <- p_LF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
@@ -167,13 +173,16 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
                 scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 80))
   ggMarginal(p_LF ,
              x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+
 dev.off()
 
 
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPrey_DF.pdf",sep=""),width=7,height=7)
 
   p_DF = ggplot( datCapture_DL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster)) + ggtitle(NULL)  +
-    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),
+          axis.text = element_text(family="Helvetica",face="bold", size=16),
+          plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
     fill_palette("jco")
   
   p_DF = p_DF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_DL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) + 
@@ -190,7 +199,7 @@ dev.off()
 
 
 ### Probability of Membership in High speed Cluster / 
-pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_ProbOfFactCapture_All.pdf",sep=""),width=7,height=7)
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_ProbOfFactCapture_ggplot.pdf",sep=""),width=7,height=7)
  
   dat2_NF <- rbind( data.frame(D=tail(draw_NF$pS[,,1],500),Group=rep("NF",500) ),
                     data.frame(D=tail(draw_LF$pS[,,1],500),Group=rep("LF",500) ),
@@ -225,8 +234,8 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterMembership.pdf",sep=""
   lines(density(tail(draw_LF$pS[,,1],1000)),col=colourLegL[2],lwd=3,lty=2)
   lines(density(tail(draw_DF$pS[,,1],1000)),col=colourLegL[3],lwd=3,lty=3)
   #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
-  mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high speed capture  ["~p["s"]~"]" ) ) ,cex.main=cex )
-  mtext(side = 2,cex=cex, line = lineAxis, expression("Density function" ))
+  mtext(side = 1,cex=cex, line = lineXAxis, expression(paste(bold("Probability of high speed capture  ["~p["s"]~"]" ) ) ) ,cex.main=cex )
+  mtext(side = 2,cex=cex, line = lineAxis, expression(bold("Density function" ) ) )
   
   legend("topleft",
          legend=c(  expression (),
@@ -249,8 +258,8 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_meanDistanceOfFastCapture.pdf
   lines(density(tail(draw_LF$mu[2,1,,1],1000)),col=colourLegL[2],lwd=3,lty=2)
   lines(density(tail(draw_DF$mu[2,1,,1],1000)),col=colourLegL[3],lwd=3,lty=3)
   #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
-  mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Estimated mean distance of high speed capture (mm)") ) ,cex.main=cex )
-  mtext(side = 2,cex=cex, line = lineAxis, expression("Density function" ))
+  mtext(side = 1,cex=cex, line = lineXAxis, expression(paste(bold("Estimated mean distance of high speed capture (mm)") )  ) ,cex.main=cex )
+  mtext(side = 2,cex=cex, line = lineAxis, expression(bold("Density function")  ))
   
   # legend("topleft",
   #        legend=c(  expression (),

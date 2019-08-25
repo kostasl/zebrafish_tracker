@@ -56,6 +56,15 @@ G_MIN_BOUTSCORE          <- 1 ##Number of coincident event needed to detect bout
 FONTSZ_AXISLAB <- 1.2
 FONTSZ_AXIS    <- 1.2 ##Axis Tik Number Size
 
+line = 2.8 ## SubFig Label Params
+lineAxis = 2.7
+lineTitle = 2.7
+lineXAxis = 3.0
+cex = 1.4
+adj  = 1.0
+padj <- -8.0
+las <- 1
+
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(7),"#FF0000");
 pairedPalette <- col2rgb(brewer.pal(8,"Paired"),alpha = 1)
