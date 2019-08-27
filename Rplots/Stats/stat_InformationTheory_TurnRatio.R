@@ -91,9 +91,9 @@ datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_LL_clustered",".rds",sep="")) 
 datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_DL_clustered",".rds",sep="")) 
 
-datCapture_NL <- datCapture_NL[datCapture_NL$Cluster == "fast",]
-datCapture_LL <- datCapture_LL[datCapture_LL$Cluster == "fast",]
-datCapture_DL <- datCapture_DL[datCapture_DL$Cluster == "fast",]
+#datCapture_NL <- datCapture_NL[datCapture_NL$Cluster == "fast",]
+#datCapture_LL <- datCapture_LL[datCapture_LL$Cluster == "fast",]
+#datCapture_DL <- datCapture_DL[datCapture_DL$Cluster == "fast",]
 
 ### Capture Speed vs Distance to prey ###
 #datCapture_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
@@ -115,8 +115,8 @@ XRange_DL  <- range(datCapture_DL$Undershoot) #seq(0,2,0.2)
 YRange_DL <- range(datCapture_DL$CaptureSpeed) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
 
-XRange  <- seq(0,2,0.2) #
-YRange <- seq(0,60,5) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+XRange  <- c(0,2) #
+YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
 freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,XRange,YRange)
 freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,XRange,YRange)
@@ -139,14 +139,19 @@ sd(datCapture_NL$CaptureSpeed)
 sd(datCapture_LL$CaptureSpeed)
 sd(datCapture_DL$CaptureSpeed)
 
+sd(datCapture_NL$DistanceToPrey)
+sd(datCapture_LL$DistanceToPrey)
+sd(datCapture_DL$DistanceToPrey)
+
+
 #### ### Speed Vs Distance
 
-XRange  <- c(0,0.8) #
-YRange <- x(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+XRange  <- c(0,0.6) #
+YRange  <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
-freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,XRange,YRange)
-freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,XRange,YRange)
 freqM_NF <- InfoCalc_get2DFreq(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,XRange,YRange)
+freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,XRange,YRange)
+freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,XRange,YRange)
 
 calcMIEntropy(freqM_NF)
 calcMIEntropy(freqM_LF)
@@ -157,6 +162,45 @@ cancor(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed)
 cancor(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed)
 cancor(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed)
 
+cor(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,method="pearson")
+cor(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,method="pearson")
+cor(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,method="pearson")
+
+cov(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed)
+cov(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed)
+cov(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed)
+
+
+library(corrgram)
+layout(matrix(c(1,2,3),1,3, byrow = FALSE))
+#Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.7,12,1))
+
+strPlotName = paste(strPlotExportPath,"/Correlations_Huntvariables_NF.pdf",sep="")
+pdf(strPlotName,width=8,height=8,title="Correlations In hunt variables",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+
+corrgram(cbind(Speed=datCapture_NL$CaptureSpeed,Dist=datCapture_NL$DistanceToPrey,Turnratio=datCapture_NL$Undershoot,FastCluster=datCapture_NL$Cluster)
+               , order=FALSE, lower.panel=panel.pie ,
+         upper.panel=NULL, text.panel=panel.txt,
+         main="NF Hunt variable correlations")
+dev.off()
+
+strPlotName = paste(strPlotExportPath,"/Correlations_Huntvariables_LF.pdf",sep="")
+pdf(strPlotName,width=8,height=8,title="Correlations In hunt variables",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  corrgram(cbind(Speed=datCapture_LL$CaptureSpeed,Dist=datCapture_LL$DistanceToPrey,Turnratio=datCapture_LL$Undershoot,FastCluster=datCapture_LL$Cluster)
+         , order=FALSE, lower.panel=panel.pie ,
+         upper.panel=NULL, text.panel=panel.txt,
+         main="LF Hunt variable correlations")
+dev.off()
+
+strPlotName = paste(strPlotExportPath,"/Correlations_Huntvariables_DF.pdf",sep="")
+pdf(strPlotName,width=8,height=8,title="Correlations In hunt variables",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+
+  corrgram(cbind(Speed=datCapture_DL$CaptureSpeed,Dist=datCapture_DL$DistanceToPrey,Turnratio=datCapture_DL$Undershoot,FastCluster=datCapture_DL$Cluster)
+           , order=FALSE, lower.panel=panel.pie ,
+           upper.panel=NULL, text.panel=panel.txt,
+           main="DF Hunt variable correlations")
+dev.off()
 
 ##redundancy
 #1-H_X/2^3
