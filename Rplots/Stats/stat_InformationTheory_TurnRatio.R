@@ -24,23 +24,75 @@ datCapture_DL <- datCapture_DL[datCapture_DL$Validated == 1, ]
 
 
 
+DistRange  <- seq(0,0.8,0.1)
+SpeedRange <- seq(0,70,1) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+
+freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,DistRange,SpeedRange)
+freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,DistRange,SpeedRange)
+freqM_NF <- InfoCalc_get2DFreq(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,DistRange,SpeedRange)
+
+
+H_Y <- H_entropy(rowSums(freqM_DF) )
+H_X <- H_entropy(colSums(freqM_DF))
+H_XY <- H_entropy(freqM_DF)
+## Calc Mutual Info
+H_X + H_Y - H_XY
+
+
+
+H_Y <- H_entropy(rowSums(freqM_LF) )
+H_X <- H_entropy(colSums(freqM_LF))
+H_XY <- H_entropy(freqM_LF)
+## Calc Mutual Info
+H_X + H_Y - H_XY
 
 
 ##
 ## Calc Info In single Sample & Hunt Event
-#InfoCalc <- function(DistRange,minDist,maxDist,Ulist)
-  
-  DistRange  <- seq(0,1,0.1)
-  SpeedRange <- seq(0,100,1) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
-  
-  
-  #Generates a list with all possible pairs of in the range of Phi And Distance X 
-  Grid <- expand.grid(SpeedRange,DistRange)
+InfoCalc_get2DFreq <- function(datX,datY,XRange,yRange)
+{
   
   ### Tally 2D data points in the grid
+  nbins <- 10
+  
+  x.bin <- seq(floor(min(XRange)), ceiling(max(XRange)), length=nbins)
+  y.bin <- seq(floor(min(yRange)), ceiling(max(yRange)), length=nbins)
   
   
+  freq <-  as.data.frame(table(findInterval(datX, x.bin),findInterval(datY, y.bin)))
+  freq[,1] <- as.numeric(freq[,1])
+  freq[,2] <- as.numeric(freq[,2])
+  
+  ##Place frequencies on 2D matrix 
+  freq2D <- diag(nbins)*0
+  freq2D[cbind(freq[,1], freq[,2])] <- freq[,3]
+
+  ##Draw Matrix
+  par(mfrow=c(1,2))
+  image(x.bin, y.bin, freq2D, col=topo.colors(max(freq2D)))
+  contour(x.bin, y.bin, freq2D, add=TRUE, col=rgb(1,1,1,.7))
+  
+  palette(rainbow(max(freq2D)))
+  cols <- (freq2D[-1,-1] + freq2D[-1,-(nbins-1)] + freq2D[-(nbins-1),-(nbins-1)] + freq2D[-(nbins-1),-1])/4
+  persp(freq2D, col=cols)
+  
+  
+  
+  return(freq2D)
+}
+ 
+
+H_entropy<- function(in_freq) 
+{
+  in_freq_norm <- in_freq/sum(in_freq)
+  in_freq_norm = in_freq_norm[in_freq_norm >0 ]
+  
+  H = -sum(in_freq_norm* log2(in_freq_norm))  
+  
+  return(H)
+}
   ## Normalize Grid To Sum of Points to obtain Joint Prob P(Capt Speed| Distance)
+  
   
  
   PVec=rep(0,NROW(Grid)) 
