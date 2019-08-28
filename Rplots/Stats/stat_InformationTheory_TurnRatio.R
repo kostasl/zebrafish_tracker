@@ -83,6 +83,33 @@ calcMIEntropy <- function(freqM)
 }
 
 
+
+##Bootstrap Data analysis from 2 chosen columns of datCapture_NL (lFirstBout)  to get stats on correlations and Mutual Information
+bootStrap_stat <- function(datCapture_X,datCapture_Y,N)
+{
+  datCapture <- data.frame(cbind(datCapture_X,datCapture_Y))
+  l_sampleXYAnalysis <- list()
+  for (i in 1:N)
+  {
+    
+    #freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,XRange,YRange)
+    #freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,XRange,YRange)
+    idxSample <- sample(1:NROW(datCapture),size=floor(NROW(datCapture)*0.90))
+    datSub <- datCapture[idxSample,]
+    freqM_NF <- InfoCalc_get2DFreq(datSub[,1],datSub[,2],XRange,YRange)
+    
+    infC <- calcMIEntropy(freqM_NF)
+    corrXY <- cor(datSub[,1],datSub[,2],method="pearson")
+    l_sampleXYAnalysis[[i]] <- data.frame(MI = infC$MutualInf_XY,entropy_X = infC$H_X,entropy_Y = infC$H_Y,corr=corrXY)
+    #inf_LF <-calcMIEntropy(freqM_LF)
+    #inf_DF <-calcMIEntropy(freqM_DF)
+  }
+  datXYAnalysis <- do.call(rbind,l_sampleXYAnalysis)
+  
+  return(datXYAnalysis)
+}
+
+
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
 
@@ -119,32 +146,19 @@ YRange_DL <- range(datCapture_DL$CaptureSpeed) ##We limit The information Obtain
 XRange  <- c(0,2) #
 YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
+stat_Cap_NF <- bootStrap_stat(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,100)
+stat_Cap_LF <- bootStrap_stat(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,100)
+stat_Cap_DF <- bootStrap_stat(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,100)
 
-##Bootstrap Data to get stats on correlations
-l_sampleXYAnalysis <- list()
-for (i in 1:20)
-{
-  
-  #freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,XRange,YRange)
-  #freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,XRange,YRange)
-  idxSample <- sample(1:NROW(datCapture_NL),size=floor(NROW(datCapture_NL)*0.90))
-  datSub <- datCapture_NL[idxSample,]
-  freqM_NF <- InfoCalc_get2DFreq(datSub$Undershoot,datSub$CaptureSpeed,XRange,YRange)
-  
-  infC <- calcMIEntropy(freqM_NF)
-  corrXY <- cor(datSub$DistanceToPrey,datSub$CaptureSpeed,method="pearson")
-  l_sampleXYAnalysis[[i]] <- data.frame(MI = infC$MutualInf_XY,entropy_X = infC$H_X,entropy_Y = infC$H_Y,corr=corrXY)
-  #inf_LF <-calcMIEntropy(freqM_LF)
-  #inf_DF <-calcMIEntropy(freqM_DF)
-}
-datXYAnalysis <- do.call(rbind,l_sampleXYAnalysis)
+meanMI <- list(MI_NF=mean(stat_Cap_NF$MI),MI_LF=mean(stat_Cap_LF$MI),MI_DF=mean(stat_Cap_DF$MI))
+barplot(c(meanMI$MI_NF,meanMI$MI_LF,meanMI$MI_DF),ylim=c(0,1) )
 
-library(ggplot)
-dodge <- position_dodge(width = 0.9)
-limits <- aes(ymax = mean(datXYAnalysis$MI) + sd(datXYAnalysis$MI)/sqrt(NROW((datXYAnalysis$MI))),
-              ymin = mean(datXYAnalysis$MI) - 2*sd(datXYAnalysis$MI)/sqrt(NROW((datXYAnalysis$MI))))
-
-p <- ggplot(data = datXYAnalysis, aes(y = MI ))
+# library(ggplot)
+# dodge <- position_dodge(width = 0.9)
+# limits <- aes(ymax = mean(datXYAnalysis$MI) + sd(datXYAnalysis$MI)/sqrt(NROW((datXYAnalysis$MI))),
+#               ymin = mean(datXYAnalysis$MI) - 2*sd(datXYAnalysis$MI)/sqrt(NROW((datXYAnalysis$MI))))
+# 
+# p <- ggplot(data = datXYAnalysis, aes(y = MI ))
 
 ##Correlation Undershoot to Speed
 cancor(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed)
