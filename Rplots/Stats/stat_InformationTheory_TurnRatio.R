@@ -10,7 +10,7 @@ source("config_lib.R")
 
 ##
 ## Calc Info In single Sample & Hunt Event
-InfoCalc_get2DFreq <- function(datX,datY,XRange,YRange)
+InfoCalc_get2DFreq <- function(datX,datY,XRange,YRange,plot=FALSE)
 {
   
   ### Tally 2D data points in the grid
@@ -18,7 +18,7 @@ InfoCalc_get2DFreq <- function(datX,datY,XRange,YRange)
   nYbins <- 16 ##ie 2^3 - x bit encoding of Distance
   
   x.bin <- seq(floor(min(XRange)), (max(XRange)), length=nXbins)
-  y.bin <- seq(floor(min(yRange)), (max(YRange)), length=nYbins)
+  y.bin <- seq(floor(min(YRange)), (max(YRange)), length=nYbins)
   
   
   freq <-  as.data.frame(table(X=findInterval(datX, x.bin),Y=findInterval(datY, (y.bin) )))
@@ -31,15 +31,16 @@ InfoCalc_get2DFreq <- function(datX,datY,XRange,YRange)
   freq2D[cbind(as.numeric( as.character(freq[,2]) ), as.numeric(as.character(freq[,1] )  ) ) ] <- freq[,3]
   
   ##Draw Matrix
-  par(mfrow=c(1,3),pty="s")
-  plot(datX,datY,xlim=XRange,ylim=YRange)
-  image(x.bin, (y.bin), t(freq2D), col=topo.colors(max(freq2D)+1))
-  contour(x.bin, y.bin, t(freq2D), add=TRUE,nlevels=5, col=rgb(1,1,1,.7))
-  
-  palette(rainbow(max(freq2D)))
-  #cols <- (freq2D[-1,-1] + freq2D[-1,-(nYbins-1)] + freq2D[-(nXbins-1),-(nYbins-1)] + freq2D[-(nXbins-1),-1])/4
-  persp(freq2D ,theta=45) #col=cols
-  
+  if (plot)
+  {
+    par(mfrow=c(1,3),pty="s")
+    plot(datX,datY,xlim=XRange,ylim=YRange)
+    image(x.bin, (y.bin), t(freq2D), col=topo.colors(max(freq2D)+1))
+    contour(x.bin, y.bin, t(freq2D), add=TRUE,nlevels=5, col=rgb(1,1,1,.7))
+    palette(rainbow(max(freq2D)))
+    #cols <- (freq2D[-1,-1] + freq2D[-1,-(nYbins-1)] + freq2D[-(nXbins-1),-(nYbins-1)] + freq2D[-(nXbins-1),-1])/4
+    persp(freq2D ,theta=45) #col=cols
+  }
   
   
   return(freq2D)
@@ -118,13 +119,32 @@ YRange_DL <- range(datCapture_DL$CaptureSpeed) ##We limit The information Obtain
 XRange  <- c(0,2) #
 YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
-freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,XRange,YRange)
-freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,XRange,YRange)
-freqM_NF <- InfoCalc_get2DFreq(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed,XRange,YRange)
 
-calcMIEntropy(freqM_NF)
-calcMIEntropy(freqM_LF)
-calcMIEntropy(freqM_DF)
+##Bootstrap Data to get stats on correlations
+l_sampleXYAnalysis <- list()
+for (i in 1:20)
+{
+  
+  #freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,XRange,YRange)
+  #freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,XRange,YRange)
+  idxSample <- sample(1:NROW(datCapture_NL),size=floor(NROW(datCapture_NL)*0.90))
+  datSub <- datCapture_NL[idxSample,]
+  freqM_NF <- InfoCalc_get2DFreq(datSub$Undershoot,datSub$CaptureSpeed,XRange,YRange)
+  
+  infC <- calcMIEntropy(freqM_NF)
+  corrXY <- cor(datSub$DistanceToPrey,datSub$CaptureSpeed,method="pearson")
+  l_sampleXYAnalysis[[i]] <- data.frame(MI = infC$MutualInf_XY,entropy_X = infC$H_X,entropy_Y = infC$H_Y,corr=corrXY)
+  #inf_LF <-calcMIEntropy(freqM_LF)
+  #inf_DF <-calcMIEntropy(freqM_DF)
+}
+datXYAnalysis <- do.call(rbind,l_sampleXYAnalysis)
+
+library(ggplot)
+dodge <- position_dodge(width = 0.9)
+limits <- aes(ymax = mean(datXYAnalysis$MI) + sd(datXYAnalysis$MI)/sqrt(NROW((datXYAnalysis$MI))),
+              ymin = mean(datXYAnalysis$MI) - 2*sd(datXYAnalysis$MI)/sqrt(NROW((datXYAnalysis$MI))))
+
+p <- ggplot(data = datXYAnalysis, aes(y = MI ))
 
 ##Correlation Undershoot to Speed
 cancor(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed)
@@ -149,18 +169,17 @@ sd(datCapture_DL$DistanceToPrey)
 XRange  <- c(0,0.6) #
 YRange  <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
-freqM_NF <- InfoCalc_get2DFreq(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,XRange,YRange)
-freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,XRange,YRange)
-freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,XRange,YRange)
+  freqM_NF <- InfoCalc_get2DFreq(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,XRange,YRange)
+  freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,XRange,YRange)
+  freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,XRange,YRange)
 
-calcMIEntropy(freqM_NF)
-calcMIEntropy(freqM_LF)
-calcMIEntropy(freqM_DF)
+  calcMIEntropy(freqM_NF)
+  calcMIEntropy(freqM_LF)
+  calcMIEntropy(freqM_DF)
 
-##Correlation Speed to Distance
-cancor(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed)
-cancor(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed)
-cancor(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed)
+  ##Correlation Speed to Distance
+  cancor(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed)
+  cancor(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed)
 
 cor(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,method="pearson")
 cor(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,method="pearson")
