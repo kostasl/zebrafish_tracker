@@ -46,10 +46,8 @@ InfoCalc_get2DFreq <- function(datX,datY,XRange,YRange,plot=FALSE)
   return(freq2D)
 }##
 ##Debug ##
-datX = datCapture_DL$Undershoot
-datY = datCapture_DL$CaptureSpeed
-XRange <- c(0,2)
-YRange <- c(0,70)
+#datX = datCapture_DL$Undershoot
+#datY = datCapture_DL$CaptureSpeed
 
 
 ##Shannon Entropy
@@ -85,7 +83,7 @@ calcMIEntropy <- function(freqM)
 
 
 ##Bootstrap Data analysis from 2 chosen columns of datCapture_NL (lFirstBout)  to get stats on correlations and Mutual Information
-bootStrap_stat <- function(datCapture_X,datCapture_Y,N)
+bootStrap_stat <- function(datCapture_X,datCapture_Y,N,XRange,YRange)
 {
   datCapture <- data.frame(cbind(datCapture_X,datCapture_Y))
   l_sampleXYAnalysis <- list()
@@ -94,7 +92,7 @@ bootStrap_stat <- function(datCapture_X,datCapture_Y,N)
     
     #freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,XRange,YRange)
     #freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,XRange,YRange)
-    idxSample <- sample(1:NROW(datCapture),size=floor(NROW(datCapture)*0.90))
+    idxSample <- sample(1:NROW(datCapture),size=floor(NROW(datCapture)*0.80))
     datSub <- datCapture[idxSample,]
     freqM_NF <- InfoCalc_get2DFreq(datSub[,1],datSub[,2],XRange,YRange)
     
@@ -132,23 +130,77 @@ datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 #datCapture_LL <- datCapture_LL[datCapture_LL$Validated == 1, ]
 #datCapture_DL <- datCapture_DL[datCapture_DL$Validated == 1, ]
 
+# XRange_NL  <- range(datCapture_NL$Undershoot) #seq(0,2,0.2)
+# YRange_NL <- range(datCapture_NL$CaptureSpeed) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+# 
+# XRange_LL  <- range(datCapture_LL$Undershoot) #seq(0,2,0.2)
+# YRange_LL <- range(datCapture_LL$CaptureSpeed) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+# 
+# XRange_DL  <- range(datCapture_DL$Undershoot) #seq(0,2,0.2)
+# YRange_DL <- range(datCapture_DL$CaptureSpeed) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+# 
 
-XRange_NL  <- range(datCapture_NL$Undershoot) #seq(0,2,0.2)
-YRange_NL <- range(datCapture_NL$CaptureSpeed) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
-
-XRange_LL  <- range(datCapture_LL$Undershoot) #seq(0,2,0.2)
-YRange_LL <- range(datCapture_LL$CaptureSpeed) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
-
-XRange_DL  <- range(datCapture_DL$Undershoot) #seq(0,2,0.2)
-YRange_DL <- range(datCapture_DL$CaptureSpeed) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
-
-
-XRange  <- c(0,2) #
+XRange  <- c(0,0.8) #
 YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
-stat_Cap_NF <- bootStrap_stat(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,100)
-stat_Cap_LF <- bootStrap_stat(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,100)
-stat_Cap_DF <- bootStrap_stat(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,100)
+stat_Cap_NF <- bootStrap_stat(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,1000,XRange,YRange)
+stat_Cap_LF <- bootStrap_stat(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,1000,XRange,YRange)
+stat_Cap_DF <- bootStrap_stat(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,1000,XRange,YRange)
+
+## Distance Vs Capture Speed Mututal INformation 
+bkSeq <- seq(0,1,0.02)
+hist(stat_Cap_NF$MI,xlim=c(0,1),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
+     xlab="Mutual information between capture speed and distance to prey", main="Bootstrapped Mutual information")
+hist(stat_Cap_LF$MI,xlim=c(0,1),col=colourL[1],add=TRUE ,breaks = bkSeq)
+hist(stat_Cap_DF$MI,xlim=c(0,1),col=colourL[3],add=TRUE,breaks = bkSeq )
+
+
+##Correlation
+bkSeq <- seq(-0.1,0.8,0.02)
+hist(stat_Cap_NF$corr,xlim=c(-0.1,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation speed vs distance",main="Bootstraped 0.80" )
+hist(stat_Cap_LF$corr,xlim=c(-0.1,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
+hist(stat_Cap_DF$corr,xlim=c(-0.1,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
+
+##LF Explores More Speeds - Higher Speed Entropy
+bkSeq <- seq(0,4,0.05)
+hist(stat_Cap_NF$entropy_Y,xlim=c(1,4),col=colourL[2], breaks=bkSeq,xlab="Capture speed entropy  ",main=NA  )
+hist(stat_Cap_LF$entropy_Y,xlim=c(1,4),col=colourL[1],add=TRUE, breaks=bkSeq)
+hist(stat_Cap_DF$entropy_Y,xlim=c(1,4),col=colourL[3],add=TRUE, breaks=bkSeq)
+
+##LF Explores More Distances - Higher Prey-Distance Entropy
+hist(stat_Cap_NF$entropy_X,xlim=c(1,4),col=colourL[2], breaks=bkSeq,xlab="Distance to prey entropy  " ,main=NA )
+hist(stat_Cap_LF$entropy_X,xlim=c(1,4),col=colourL[1], breaks=bkSeq,add=TRUE )
+hist(stat_Cap_DF$entropy_X,xlim=c(1,4),col=colourL[3], breaks=bkSeq,add=TRUE )
+
+### DENSITIES ####
+pBw <- 0.02
+
+# Plot Speed Vs Distance Correlation - bootstraped Stat ##
+strPlotName = paste(strPlotExportPath,"/stat/fig5_statbootstrap_correlation_SpeedVsDistance.pdf",sep="")
+pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+par(mar = c(3.9,4.7,1,1))
+
+  plot(density(stat_Cap_NF$corr,kernel="gaussian",bw=pBw),
+       col=colourLegL[1],xlim=c(0,1),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(density(stat_Cap_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(stat_Cap_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+  
+# legend("topright",         legend=c(  expression (),
+#                    bquote(NF~ ''  ),
+#                    bquote(LF ~ '' ),
+#                    bquote(DF ~ '' )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+#         col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of capture speed to prey distance  ") ))
+  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+
+dev.off()
+
+
+
+
+
+############# BOOTSTRAP 
+
 
 meanMI <- list(MI_NF=mean(stat_Cap_NF$MI),MI_LF=mean(stat_Cap_LF$MI),MI_DF=mean(stat_Cap_DF$MI))
 barplot(c(meanMI$MI_NF,meanMI$MI_LF,meanMI$MI_DF),ylim=c(0,1) )
@@ -159,50 +211,51 @@ barplot(c(meanMI$MI_NF,meanMI$MI_LF,meanMI$MI_DF),ylim=c(0,1) )
 #               ymin = mean(datXYAnalysis$MI) - 2*sd(datXYAnalysis$MI)/sqrt(NROW((datXYAnalysis$MI))))
 # 
 # p <- ggplot(data = datXYAnalysis, aes(y = MI ))
+XRange  <- c(0,2) #
+YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
-##Correlation Undershoot to Speed
-cancor(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed)
-cancor(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed)
-cancor(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed)
+###### UNDERSHOOT TO SPEED
+  stat_CapTurnVsSpeed_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed,1000,XRange,YRange)
+  stat_CapTurnVsSpeed_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,1000,XRange,YRange)
+  stat_CapTurnVsSpeed_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,1000,XRange,YRange)
+  
+  
+    # TURN Vs Capture Speed Mututal INformation 
+  bkSeq <- seq(0,4,0.02)
+  hist(stat_CapTurnVsSpeed_NF$MI,xlim=c(0,4),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
+       xlab="Mutual information between capture speed and distance to prey", main="Bootstrapped Mutual information")
+  hist(stat_CapTurnVsSpeed_LF$MI,xlim=c(0,4),col=colourL[1],add=TRUE ,breaks = bkSeq)
+  hist(stat_CapTurnVsSpeed_DF$MI,xlim=c(0,4),col=colourL[3],add=TRUE,breaks = bkSeq )
+  
+    # TURN Correlation to Speed
+  bkSeq <- seq(-0.8,0.8,0.02)
+  hist(stat_CapTurnVsSpeed_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation speed vs distance",main="Bootstraped 0.80" )
+  hist(stat_CapTurnVsSpeed_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
+  hist(stat_CapTurnVsSpeed_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
 
-sd(datCapture_NL$Undershoot)
-sd(datCapture_LL$Undershoot)
-sd(datCapture_DL$Undershoot)
+#### UNDERSHOOT TO DISTANCE FROM PREY 
+  XRange  <- c(0,2) #
+  YRange <- c(0,0.8) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+  
+  stat_CapTurnVsDist_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$DistanceToPrey,1000,XRange,YRange)
+  stat_CapTurnVsDist_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$DistanceToPrey,1000,XRange,YRange)
+  stat_CapTurnVsDist_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$DistanceToPrey,1000,XRange,YRange)
+  
+    # TURN Vs Capture Speed Mututal INformation 
+  bkSeq <- seq(0,4,0.02)
+  hist(stat_CapTurnVsDist_NF$MI,xlim=c(0,4),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
+       xlab="Mutual information between capture speed and distance to prey", main="Bootstrapped Mutual information")
+  hist(stat_CapTurnVsDist_LF$MI,xlim=c(0,4),col=colourL[1],add=TRUE ,breaks = bkSeq)
+  hist(stat_CapTurnVsDist_DF$MI,xlim=c(0,4),col=colourL[3],add=TRUE,breaks = bkSeq )
+  
+    # TURN Correlation to Speed
+  bkSeq <- seq(-0.8,0.8,0.02)
+  hist(stat_CapTurnVsDist_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation speed vs distance",main="Bootstraped 0.80" )
+  hist(stat_CapTurnVsDist_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
+  hist(stat_CapTurnVsDist_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
 
-sd(datCapture_NL$CaptureSpeed)
-sd(datCapture_LL$CaptureSpeed)
-sd(datCapture_DL$CaptureSpeed)
 
-sd(datCapture_NL$DistanceToPrey)
-sd(datCapture_LL$DistanceToPrey)
-sd(datCapture_DL$DistanceToPrey)
-
-
-#### ### Speed Vs Distance
-
-XRange  <- c(0,0.6) #
-YRange  <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
-
-  freqM_NF <- InfoCalc_get2DFreq(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,XRange,YRange)
-  freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,XRange,YRange)
-  freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,XRange,YRange)
-
-  calcMIEntropy(freqM_NF)
-  calcMIEntropy(freqM_LF)
-  calcMIEntropy(freqM_DF)
-
-  ##Correlation Speed to Distance
-  cancor(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed)
-  cancor(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed)
-
-cor(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,method="pearson")
-cor(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,method="pearson")
-cor(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,method="pearson")
-
-cov(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed)
-cov(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed)
-cov(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed)
-
+### CORELOLAGRAM
 
 library(corrgram)
 layout(matrix(c(1,2,3),1,3, byrow = FALSE))
