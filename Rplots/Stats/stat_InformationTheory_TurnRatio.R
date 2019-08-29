@@ -215,47 +215,95 @@ XRange  <- c(0,2) #
 YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
 
 ###### UNDERSHOOT TO SPEED
-  stat_CapTurnVsSpeed_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed,1000,XRange,YRange)
-  stat_CapTurnVsSpeed_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,1000,XRange,YRange)
-  stat_CapTurnVsSpeed_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,1000,XRange,YRange)
+  stat_CapTurnVsSpeed_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed,10000,XRange,YRange)
+  stat_CapTurnVsSpeed_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,10000,XRange,YRange)
+  stat_CapTurnVsSpeed_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,10000,XRange,YRange)
   
   
-    # TURN Vs Capture Speed Mututal INformation 
+  # TURN Vs Capture Speed Mututal INformation 
   bkSeq <- seq(0,4,0.02)
   hist(stat_CapTurnVsSpeed_NF$MI,xlim=c(0,4),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
        xlab="Mutual information between capture speed and distance to prey", main="Bootstrapped Mutual information")
   hist(stat_CapTurnVsSpeed_LF$MI,xlim=c(0,4),col=colourL[1],add=TRUE ,breaks = bkSeq)
   hist(stat_CapTurnVsSpeed_DF$MI,xlim=c(0,4),col=colourL[3],add=TRUE,breaks = bkSeq )
   
-    # TURN Correlation to Speed
+  
+  
+  # TURN Correlation to Speed / For LF undershooting is combined with faster captures (and more distal) - Not for NF, or DF
   bkSeq <- seq(-0.8,0.8,0.02)
-  hist(stat_CapTurnVsSpeed_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation speed vs distance",main="Bootstraped 0.80" )
+  hist(stat_CapTurnVsSpeed_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation turn-ratio vs speed",main="Bootstraped 0.80" )
   hist(stat_CapTurnVsSpeed_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
   hist(stat_CapTurnVsSpeed_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
 
+  #  PLot Density Turn Vs Speed
+  strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsSpeed.pdf",sep="")
+  pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables - turn-ratio vs capture Speed",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.9,4.7,1,1))
+  
+    pBw <- 0.02
+    plot(density(stat_CapTurnVsSpeed_NF$corr,kernel="gaussian",bw=pBw),
+         col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+    lines(density(stat_CapTurnVsSpeed_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+    lines(density(stat_CapTurnVsSpeed_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+    mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of turn-ratio to capture speed  ") ))
+    mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+  
+  dev.off()  
+  
+  
+    
+  
+  
+  
 #### UNDERSHOOT TO DISTANCE FROM PREY 
   XRange  <- c(0,2) #
   YRange <- c(0,0.8) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
   
-  stat_CapTurnVsDist_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$DistanceToPrey,1000,XRange,YRange)
-  stat_CapTurnVsDist_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$DistanceToPrey,1000,XRange,YRange)
-  stat_CapTurnVsDist_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$DistanceToPrey,1000,XRange,YRange)
+  stat_CapTurnVsDist_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$DistanceToPrey,10000,XRange,YRange)
+  stat_CapTurnVsDist_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$DistanceToPrey,10000,XRange,YRange)
+  stat_CapTurnVsDist_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$DistanceToPrey,10000,XRange,YRange)
   
-    # TURN Vs Capture Speed Mututal INformation 
+    # TURN Vs Capture Speed Mutual INformation  
   bkSeq <- seq(0,4,0.02)
   hist(stat_CapTurnVsDist_NF$MI,xlim=c(0,4),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
-       xlab="Mutual information between capture speed and distance to prey", main="Bootstrapped Mutual information")
+       xlab="Mutual information between turn-ratio and distance to prey", main="Bootstrapped Mutual information")
   hist(stat_CapTurnVsDist_LF$MI,xlim=c(0,4),col=colourL[1],add=TRUE ,breaks = bkSeq)
   hist(stat_CapTurnVsDist_DF$MI,xlim=c(0,4),col=colourL[3],add=TRUE,breaks = bkSeq )
   
-    # TURN Correlation to Speed
-  bkSeq <- seq(-0.8,0.8,0.02)
-  hist(stat_CapTurnVsDist_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation speed vs distance",main="Bootstraped 0.80" )
-  hist(stat_CapTurnVsDist_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
-  hist(stat_CapTurnVsDist_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
+  # TURN Correlation to Speed - DF/LF UNdershoot correlates with distance increase -  NF, the opposite correlation arises
+  #require( tikzDevice )
+  #strPlotName = paste(strPlotExportPath,"/Correlations_HuntTurnVsDist.tex",sep="")
+  #tikz( strPlotName )
+  
+    bkSeq <- seq(-0.8,0.8,0.02)
+    hist(stat_CapTurnVsDist_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation Turn-ratio vs distance",main="Bootstraped 0.80" )
+    hist(stat_CapTurnVsDist_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
+    hist(stat_CapTurnVsDist_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
+    
+#  dev.off()
 
 
-### CORELOLAGRAM
+  ### DENSITY PLOT  
+  strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsDistance.pdf",sep="")
+  pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables - turn-ratio vs capture Speed",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.9,4.7,1,1))
+  
+  pBw <- 0.02
+  plot(density(stat_CapTurnVsDist_NF$corr,kernel="gaussian",bw=pBw),
+       col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(density(stat_CapTurnVsDist_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(stat_CapTurnVsDist_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of turn-ratio to distance to prey  ") ))
+  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+  
+  dev.off()  
+  
+  
+  
+  
+  
+  
+  ### CORRELOLAGRAM ###
 
 library(corrgram)
 layout(matrix(c(1,2,3),1,3, byrow = FALSE))
