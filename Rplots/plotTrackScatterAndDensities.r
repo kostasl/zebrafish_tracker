@@ -716,7 +716,7 @@ getCaptureBoutPreyPosition <- function (datMotionBoutsToValidate,groupID)
   return (data.frame( cbind(preyX,preyY,vAngleToPrey,vDistToPrey)) )
 }
 
-## plot The Prey Locations Prior to Capture ##
+## plot The Prey Locations Prior to Capture in relation to the head of the larvae##
 ## The Radar Figure With the Prey Positions Prior To Capture
 plotCaptureBoutPreyPositions <- function(newPlot = T)
 {
