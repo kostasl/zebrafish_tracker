@@ -415,23 +415,30 @@ dev.off()
 #plot_ly(x=zLLD$x, y=zLLD$y, z=zLLD$z) %>% add_surface()
 
 library( rgl )
-library(plot3D)
+#library(plot3D)
 # Static chart
-ntail <- 150
+ntail <- 80
 datMu3D <-  data.frame( cbind.data.frame( TurnR=as.numeric(tail(draw_NF$mu[,1,,1],ntail)),CSpeed=tail(draw_NF$mu[,2,,1],ntail),Dist=tail(draw_NF$mu[,3,,1],ntail),col=colourHL[1])  )
 datMu3D <- rbind(datMu3D,
                  data.frame( cbind.data.frame( TurnR=tail(draw_LF$mu[,1,,1],ntail),CSpeed=tail(draw_LF$mu[,2,,1],ntail),Dist=tail(draw_LF$mu[,3,,1],ntail),col=colourHL[2])  ))
 datMu3D <- rbind(datMu3D,
                  data.frame( cbind.data.frame( TurnR=tail(draw_DF$mu[,1,,1],ntail),CSpeed=tail(draw_DF$mu[,2,,1],ntail),Dist=tail(draw_DF$mu[,3,,1],ntail),col=colourHL[3])  ))
 
-rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.5,xlab="Turn Ratio",ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)"
-        )
-rgl::rgl.postscript(paste0(strPlotExportPath,"fig7_Modelballs3D.pdf",fmt=pdf) )
-decorate3d(xlim, ylim, zlim, 
-           xlab = "x", ylab = "y", zlab = "z", 
-           box = TRUE, axes = TRUE, main = NULL, sub = NULL,
-           top = TRUE, aspect = FALSE, expand = 1.03, 
-           ...)
+open3d()
+rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
+             xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)",
+             xlim=c(0.5,1.5), ylim=c(10,50), zlim=c(0,0.6),
+             expand = 1.03,box = TRUE,aspect = FALSE      )
+
+rgl::rgl.viewpoint(60,10)
+rgl::rgl.viewpoint(45,45)
+
+#decorate3d(
+#           box = TRUE, axes = TRUE, main = NULL, sub = NULL,
+#           top = TRUE, aspect = FALSE, expand = 1.03,cex=cex)
+
+
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_SpeedVsTurn_view"),fmt="pdf" )
 
 
 
