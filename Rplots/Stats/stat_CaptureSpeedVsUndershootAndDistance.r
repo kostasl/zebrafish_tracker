@@ -387,6 +387,8 @@ pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),w
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
       mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and turn ratio "  ))
       #mtext("C",at="topleft",outer=outer,side=2,col="black",font=2  ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+      
+      ###############
 dev.off()      
       
       
@@ -400,8 +402,19 @@ pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsDistance_Covar.pdf
       lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
       mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance"  ))
+      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance to prey"  ))
       
+      
+      
+      
+      legend("topleft",
+             legend=c(  expression (),
+                        bquote(NF[""] ),
+                        bquote(LF[""] ),
+                        bquote(DF[""]   )
+                        
+             ),
+             lty=c(1,2,3),lwd=3,fill=colourLegL,cex=cex)
       #mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 dev.off()     
       
@@ -416,7 +429,7 @@ pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"
       lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
       mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-      mtext(side = 3,cex=cex, line = lineTitle, expression("Turn ratio and distance"  ))
+      mtext(side = 3,cex=cex, line = lineTitle, expression("Turn ratio and distance to prey"  ))
       
 #      mtext("E",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 dev.off()
