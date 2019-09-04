@@ -298,8 +298,8 @@ lines(draw$mu[1,1,,5],type='l',ylim=c(0,2),col=rfc(nchains)[5] )
 ### MAIN COVARIANCE PLOT  (Fast Cluster)##
 ###Show covariance In the High Speed Capture Cluster ##
 
-pdf(file= paste0(strPlotExportPath,strModelCovarPDFFileName),width=14,height=7,
-    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+pdf(file= paste0(strPlotExportPath,"/stat/fig7S1-stat_3Dmodel_TurnRatioVsSpeedAndDistance.pdf"),width=14,height=7,
+    title=" 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
 nContours <- 5
 ### Show Speed Fit ###
 outer = FALSE
@@ -329,7 +329,7 @@ layout(matrix(c(1,1,2,2),1,4, byrow = TRUE))
   
   mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
   mtext(side = 2,cex=cex, line = lineAxis, expression("Capture speed (mm/sec)  " ))
-  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+  #mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
   
   contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
   contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
@@ -365,7 +365,7 @@ layout(matrix(c(1,1,2,2),1,4, byrow = TRUE))
   contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
   contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
   
-  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+  #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 dev.off()
 
 
