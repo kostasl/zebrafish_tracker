@@ -15,7 +15,7 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 source("config_lib.R")
-
+source("DataLabelling/labelHuntEvents_lib.r")
 ##### Do Jags Statistics ###
 modelI="model { 
 qq ~ dnorm(10,0.001)T(0,400)
@@ -265,7 +265,7 @@ load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",s
 strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"  ##Load the merged Frames
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
 
 ##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
