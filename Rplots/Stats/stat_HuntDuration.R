@@ -246,10 +246,10 @@ initLarvaHuntDurfunct <- function(nchains,N)
 
 
 ####### Function Returns Hunt Event Durations for Group ID, excluding events 0 (Food Count Event) 
-getHuntEventDuration <- function(strGroupID)
+getHuntEventDuration <- function(datLabelled,strGroupID)
 {
   
-  datDurationPerEpisodePerLarva <- (with(datHuntLabelledEventsSBMerged_fixed,
+  datDurationPerEpisodePerLarva <- (with(datLabelled,
                                          data.frame(DurationFrames=endFrame[groupID == strGroupID & eventID != 0]-startFrame[groupID == strGroupID & eventID != 0],
                                                     expID=expID[groupID == strGroupID & eventID != 0],
                                                     hidx=as.numeric(factor(expID[groupID == strGroupID & eventID != 0]))) )) ##Add hidx to use for correct prior Init in RJags
@@ -364,12 +364,12 @@ datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!i
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 
 ## Get Event Duration Per Group ###
-datHEvent_LE <- getHuntEventDuration("LE")
-datHEvent_NE <- getHuntEventDuration("NE")
-datHEvent_DE <- getHuntEventDuration("DE")
-datHEvent_LL <- getHuntEventDuration("LL")
-datHEvent_NL <- getHuntEventDuration("NL")
-datHEvent_DL <- getHuntEventDuration("DL")
+datHEvent_LE <- getHuntEventDuration(datHuntLabelledEventsSBMerged_fixed,"LE")
+datHEvent_NE <- getHuntEventDuration(datHuntLabelledEventsSBMerged_fixed,"NE")
+datHEvent_DE <- getHuntEventDuration(datHuntLabelledEventsSBMerged_fixed,"DE")
+datHEvent_LL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_fixed,"LL")
+datHEvent_NL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_fixed,"NL")
+datHEvent_DL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_fixed,"DL")
 
 ### Load Prior RJags Sampled Values ###
 load(file =paste(strDataExportDir,"stat_HuntDurationInPreyRange_nbinomRJags.RData",sep="")) ## Total Hint Duration per Larvae
@@ -462,7 +462,13 @@ muEpiDur_NL <- GammaShapeSamples(drawHD_NL,nS)*GammaScaleSamples(drawHD_NL,nS)/G
 muEpiDur_DL <- GammaShapeSamples(drawHD_DL,nS)*GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS
 muEpiDur_LL <- GammaShapeSamples(drawHD_LL,nS)*GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS
 
-
+pBW <- 0.20
+densEpiDur_NE <- density(muEpiDur_NE,bw=pBW)
+densEpiDur_LE <- density(muEpiDur_LE,bw=pBW)
+densEpiDur_DE <- density(muEpiDur_DE,bw=pBW)
+densEpiDur_NL <- density(muEpiDur_NL,bw=pBW)
+densEpiDur_LL <- density(muEpiDur_LL,bw=pBW)
+densEpiDur_DL <- density(muEpiDur_DL,bw=pBW)
 ## MAIN PLOT ###
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
@@ -556,14 +562,14 @@ mtext("I",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 #### Show Density Of Hunt Episode Duration per Hunt Event ####
 ## PLot Expected Duration - as the Gamma Mean 
-pBW <- 0.25
-plot(density(muEpiDur_NE,bw=pBW),type='l',xlim=c(0,8),ylim=c(0,1),lty=lineTypeL[1],col=colourHLine[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
-lines(density(muEpiDur_LE,bw=pBW),xlim=c(0,8),col=colourHLine[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
-lines(density(muEpiDur_DE,bw=pBW),xlim=c(0,8),col=colourHLine[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
 
-lines(density(muEpiDur_LL,bw=pBW),xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[2],lwd=4,ylab=NA,xlab=NA)
-lines(density(muEpiDur_DL,bw=pBW),xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[3],lwd=4,ylab=NA,xlab=NA)
-lines(density(muEpiDur_NL,bw=pBW),xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[1],lwd=4,ylab=NA,xlab=NA)
+plot(densEpiDur_NE,type='l',xlim=c(0,8),ylim=c(0,1),lty=lineTypeL[1],col=colourHLine[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+lines(densEpiDur_LE,xlim=c(0,8),col=colourHLine[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+lines(densEpiDur_DE,xlim=c(0,8),col=colourHLine[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+
+lines(densEpiDur_LL,xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[2],lwd=4,ylab=NA,xlab=NA)
+lines(densEpiDur_DL,xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[3],lwd=4,ylab=NA,xlab=NA)
+lines(densEpiDur_NL,xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[1],lwd=4,ylab=NA,xlab=NA)
 legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), seg.len=3.5,
        col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
 mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated duration of each hunt episode  (sec)") )  )
@@ -575,7 +581,128 @@ dev.off()
 #### END OF MAIN PLOT ###
 #########################
 
+###Courtesy of https://stackoverflow.com/questions/40851328/compute-area-under-density-estimation-curve-i-e-probability
+getProbOfInterval  <- function(densEpiDur,xmin,xmax)
+{
+  #### Calculate Percentiles and Compare Results
+  xx <- densEpiDur$x  ## 512 evenly spaced points on [min(x) - 3 * d$bw, max(x) + 3 * d$bw]
+  yy <- densEpiDur$y ## 512 density values for `xx`
+  dx <- xx[2L] - xx[1L]  ## spacing / bin size
+  
+  afunct <- approxfun(xx, yy)
+  Const <- integrate(afunct, min(xx), max(xx))$value 
+  p.unscaled <- integrate(afunct, xmin, min(xmax,max(xx) ) ) $value
+  p.scaled <- p.unscaled / Const
+  
+  return(p.scaled)
+}
 
+##Check the duration that contains 95% of LE Values 
+pLEMx <- quantile(muEpiDur_LE,probs=0.95)
+##Compare Percentage to Other Groups
+getProbOfInterval(densEpiDur_DE,0,pLEMx) ##73% of huntdurations in DE
+getProbOfInterval(densEpiDur_NE,0,pLEMx) ## 69% in NE
+
+## Now in Livefed conditions
+pLLMx <- quantile(muEpiDur_LL,probs=0.95)
+##Compare Percentage to Other Groups
+getProbOfInterval(densEpiDur_DL,0,pLLMx) ##73% of huntdurations in DE
+getProbOfInterval(densEpiDur_NL,0,pLLMx) ## 69% in NE
+
+
+### Evoked - Spontaneous Overlap
+getProbOfInterval(densEpiDur_LL,0,pLEMx) - 0.95 ##73% of huntdurations in DE
+getProbOfInterval(densEpiDur_NL,0,quantile(muEpiDur_NE,probs=0.95)) - 0.95 ## Ovelap Between Evoked - Spontaneous NL
+getProbOfInterval(densEpiDur_DL,0,quantile(muEpiDur_DE,probs=0.95)) - 0.95## 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############Check Successfull Only ###################
+##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
+datHuntLabelledEventsSBMerged_Success_filtered <- datHuntLabelledEventsSBMerged_filtered  [
+  with(datHuntLabelledEventsSBMerged_filtered , ( ( convertToScoreLabel(huntScore) == "Success-OnApproach" |
+                                          convertToScoreLabel(huntScore) == "Success-OnApproach-AfterStrike" |
+                                          convertToScoreLabel(huntScore) == "Success" |
+                                            convertToScoreLabel(huntScore) == "Success-OnStrike" |
+                                            convertToScoreLabel(huntScore) == "Success-SpitBackOut" |
+                                            convertToScoreLabel(huntScore) == "Success-OnStrike-SpitBackOut") &
+                                          ( (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
+                                            eventID == 0)), ] ## Add the 0 Event, In Case Larva Produced No Events
+
+##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
+datHuntLabelledEventsSBMerged_Failed_filtered <- datHuntLabelledEventsSBMerged_filtered  [
+  with(datHuntLabelledEventsSBMerged_filtered , ( ( convertToScoreLabel(huntScore) == "Fail-No Strike" |
+                                                      convertToScoreLabel(huntScore) == "Fail-With Strike" |
+                                                      convertToScoreLabel(huntScore) == "Fail") &
+                                                    ( (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
+                                                    eventID == 0)), ] ## Add the 0 Event, In Case Larva Produced No Events
+
+
+
+datHuntSuccDur_LL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Success_filtered,"LL")
+datHuntSuccDur_DL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Success_filtered,"DL")
+datHuntSuccDur_NL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Success_filtered,"NL")
+
+datHuntFailDur_LL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Failed_filtered,"LL")
+datHuntFailDur_DL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Failed_filtered,"DL")
+datHuntFailDur_NL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Failed_filtered,"NL")
+
+
+datHuntSuccessStat <- makeHuntStat(datHuntLabelledEventsSBMerged_Success_filtered)
+
+#### Compare How Success Episode duratins shift / Appears differences are beyond the 50% 
+quantile(datHuntSuccDur_NL$DurationFrames/G_APPROXFPS)
+quantile(datHuntSuccDur_LL$DurationFrames/G_APPROXFPS)
+quantile(datHuntSuccDur_DL$DurationFrames/G_APPROXFPS)
+
+
+#### Compare How Success Episode duratins shift / Appears differences are beyond the 50% 
+quantile(datHuntFailDur_NL$DurationFrames/G_APPROXFPS)
+quantile(datHuntFailDur_LL$DurationFrames/G_APPROXFPS)
+quantile(datHuntFailDur_DL$DurationFrames/G_APPROXFPS)
+
+
+#     ####PLOT SUCC DENSITY
+pdf(file= paste(strPlotExportPath,"/stat/fig2.B_statComparePoissonHuntDurations",".pdf",sep=""),width = 14,height = 7)
+outer = FALSE
+line = 1 ## SubFig Label Params
+lineAxis = 3.2
+cex = 1.4
+adj  = 2.5
+padj <- -7.5
+las <- 1
+
+  plot(density(datHuntSuccDur_NL$DurationFrames/G_APPROXFPS),type='l',xlim=c(0,8),ylim=c(0,1),lty=lineTypeL[3],col=colourL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(density(datHuntSuccDur_LL$DurationFrames/G_APPROXFPS),xlim=c(0,8),col=colourL[2],lty=lineTypeL[3],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHuntSuccDur_DL$DurationFrames/G_APPROXFPS),xlim=c(0,8),col=colourL[3],lty=lineTypeL[3],lwd=4,ylab=NA,xlab=NA)
+  
+  legend("topright",legend = c(paste("Evoked Successful ")), seg.len=3.5,
+         col=c(colourR[4], colourR[4]),lty=c(3,1),lwd=4,cex=1.1,bg="white" )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Measured duration of each hunt episode  (sec)") )  )
+  mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
+
+dev.off()
 
 # 
 # 

@@ -482,8 +482,6 @@ rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view"
 
 
 
-
-
 #####
 ####################################  Summary FIGURE Of Each Pair + A Covariance Of Distance To Turn Ratio  #####
 ## PLot Model / Means and covariance ##
