@@ -336,30 +336,15 @@ plotDurationGammaSamples <- function (gammaShape,gammaRate,lcolour)
 ############ LOAD EVENTS LIst and Fix ####
 ## Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 ## Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3" 
-message(paste(" Loading Hunt Event List to Analyse... "))
-#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-#datHuntLabelledEventsSBMerged <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3" 
+
 
 ## Load From Central Function
-datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
+## Removeshese Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
+datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet()
 
 
-##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
-datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
-  with(datHuntLabelledEventsSBMerged, ( convertToScoreLabel(huntScore) != "Not_HuntMode/Delete" &
-                                          convertToScoreLabel(huntScore) != "Duplicate/Overlapping" &
-                                          (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
-         eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
-
-##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
-#AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
-vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
-vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Exp Less than 4*2*3=24
-
-datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID) & 
-                                                                                !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
-
+################# # ## # # 
 ## Get Summarized Hunt Results Per Larva ####
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 
@@ -375,11 +360,6 @@ datHEvent_DL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_fixed,"DL")
 load(file =paste(strDataExportDir,"stat_HuntDurationInPreyRange_nbinomRJags.RData",sep="")) ## Total Hint Duration per Larvae
 load(file =paste(strDataExportDir,"stat_HEventDurationInPreyRange_nbinomRJags.RData",sep="") ) ## Hunt Episode Duration
 
-## Check Event Number in Strange List
-for (dID in vWeirdDataSetID )
-  print(NROW(unique(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$dataSetID ==  dID ,]$expID)))
-
-################# # ## # # 
 
 ## Baysian Inference Fiting a Gamma distribution to the Hunt Event Duration Data ##
 ##Setup Data Structure To Pass To RJAgs

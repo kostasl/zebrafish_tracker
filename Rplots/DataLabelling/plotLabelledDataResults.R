@@ -71,8 +71,8 @@ tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) )
   mtext(c(expression(),  bquote("LF ")),
         at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
   
-  mtext("Proportions of labelled capture swim speed  per hunting outcome",
-        at="top", outer=outer,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
+  #mtext("Proportions of labelled capture swim speed  per hunting outcome",
+  #      at="top", outer=outer,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
   
   pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"DL",NA)
   mtext(c(expression(),  bquote("DF ")),

@@ -144,7 +144,7 @@ pieChartLabelledSuccessVsFails <- function(tblRes,GroupID,colourL=NA)
      colourL <- c(colPaired[1],colPaired[3]) 
   
   pie(DLRes , labels = paste("","",round((DLRes/nLabelledDL)*100),"%",sep=""),
-      cex=1.4,cex.main=1.4,clockwise = TRUE,
+      cex=2.8,cex.main=2.8,clockwise = TRUE,
       #main=paste(GroupID," #",nLabelledDL,"/",nLabelledDL+sum(tblRes[1,GroupID]) ),
       radius=1.0,col=colourL,border=F )
   #pie(NLRes , labels = paste(ScoreLabels," %",round((NLRes/nLabelledNL)*100)/100,sep=""),clockwise = TRUE,main=paste("NL #",nLabelledNL),radius=1.08)
