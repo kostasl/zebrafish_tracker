@@ -426,9 +426,12 @@ datMu3D <- rbind(datMu3D,
 
 open3d()
 rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
-             xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)",
-             xlim=c(0.5,1.5), ylim=c(10,50), zlim=c(0,0.6),
-             expand = 1.03,box = TRUE,aspect = FALSE      )
+             xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)"
+             ,xlim=c(0.5,1.5), 
+             ylim=c(10,50), zlim=c(0,0.6)
+             ,expand = 1.1 
+             #,box = TRUE,aspect = FALSE
+             )
 
 rgl::rgl.viewpoint(60,10)
 rgl::rgl.viewpoint(45,45)
@@ -438,7 +441,7 @@ rgl::rgl.viewpoint(45,45)
 #           top = TRUE, aspect = FALSE, expand = 1.03,cex=cex)
 
 
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_SpeedVsTurn_view"),fmt="pdf" )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_SpeedVsDist_view"),fmt="pdf" )
 
 
 
