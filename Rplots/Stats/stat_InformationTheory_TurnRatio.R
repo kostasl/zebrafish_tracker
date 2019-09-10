@@ -1,4 +1,15 @@
 ## Calculate Mutual Information Between turn ratio and Distance to Prey
+## What is the relationship between correlation Pearson and Mutual Information?
+# what do these measures do? 
+# In Cov(X,Y) they create a weighted sum of the product of the two random variables. 
+# In I(X,Y) they create a weighted sum of their joint probabilities.
+#So with Cov(X,Y) we look at what non-independence does to their product, while in I(X,Y) we look at what non-independence does to their joint probability distribution. 
+#So the two are not antagonistic—they are complementary, describing different aspects of the association between two random variables. One could comment that Mutual Information "is not concerned" whether the association is linear or not, while Covariance may be zero and the variables may still be stochastically dependent. On the other hand, Covariance can be calculated directly from a data sample without the need to actually know the probability distributions involved (since it is an expression involving moments of the distribution), while Mutual Information requires knowledge of the distributions
+
+###Spearman's rank correlation coefficient or Spearman's rho, is a nonparametric measure of rank correlation (statistical dependence between the rankings of two variables).
+# It assesses how well the relationship between two variables can be described using a monotonic function.
+## The Spearman correlation between two variables is equal to the Pearson correlation between the rank values of those two variables; 
+# while Pearson's correlation assesses linear relationships, Spearman's correlation assesses monotonic relationships (whether linear or not). If there are no repeated data values, a perfect Spearman correlation of +1 or −1 occurs when each of the variables is a perfect monotone function of the other
 
 library(tools)
 library(RColorBrewer);
@@ -56,6 +67,7 @@ H_entropy<- function(in_freq)
   in_freq_norm <- in_freq/sum(in_freq)
   in_freq_norm = in_freq_norm[in_freq_norm >0 ]
   
+  ## Here we assume uniform distribution among X, which may be incorrect
   H = -sum(in_freq_norm* log2(in_freq_norm))  
   
   return(H)
@@ -83,6 +95,8 @@ calcMIEntropy <- function(freqM)
 
 
 ##Bootstrap Data analysis from 2 chosen columns of datCapture_NL (lFirstBout)  to get stats on correlations and Mutual Information
+## Can use Pearson to examine correlations in value, 
+## Or spearman to examine correlation in rank (ie value increases correlate and not corr not influenced by the absolute value of each data point)
 bootStrap_stat <- function(datCapture_X,datCapture_Y,N,XRange,YRange)
 {
   datCapture <- data.frame(cbind(datCapture_X,datCapture_Y))
@@ -97,7 +111,7 @@ bootStrap_stat <- function(datCapture_X,datCapture_Y,N,XRange,YRange)
     freqM_NF <- InfoCalc_get2DFreq(datSub[,1],datSub[,2],XRange,YRange)
     
     infC <- calcMIEntropy(freqM_NF)
-    corrXY <- cor(datSub[,1],datSub[,2],method="pearson")
+    corrXY <- cor(datSub[,1],datSub[,2],method="pearson") #method="spearman"
     l_sampleXYAnalysis[[i]] <- data.frame(MI = infC$MutualInf_XY,entropy_X = infC$H_X,entropy_Y = infC$H_Y,corr=corrXY)
     #inf_LF <-calcMIEntropy(freqM_LF)
     #inf_DF <-calcMIEntropy(freqM_DF)
@@ -148,11 +162,12 @@ stat_Cap_LF <- bootStrap_stat(datCapture_LL$DistanceToPrey,datCapture_LL$Capture
 stat_Cap_DF <- bootStrap_stat(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,1000,XRange,YRange)
 
 ## Distance Vs Capture Speed Mututal INformation 
-bkSeq <- seq(0,1,0.02)
-hist(stat_Cap_NF$MI,xlim=c(0,1),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
-     xlab="Mutual information between capture speed and distance to prey", main="Bootstrapped Mutual information")
-hist(stat_Cap_LF$MI,xlim=c(0,1),col=colourL[1],add=TRUE ,breaks = bkSeq)
-hist(stat_Cap_DF$MI,xlim=c(0,1),col=colourL[3],add=TRUE,breaks = bkSeq )
+bkSeq <- seq(0,2,0.02)
+range(stat_Cap_NF$MI)
+hist(stat_Cap_NF$MI,xlim=c(0,2),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
+     xlab="MI capture speed and distance to prey", main="Bootstrapped Mutual information")
+hist(stat_Cap_LF$MI,xlim=c(0,2),col=colourL[1],add=TRUE ,breaks = bkSeq)
+hist(stat_Cap_DF$MI,xlim=c(0,2),col=colourL[3],add=TRUE,breaks = bkSeq )
 
 
 ##Correlation
@@ -222,10 +237,10 @@ YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Ph
   
   # TURN Vs Capture Speed Mututal INformation 
   bkSeq <- seq(0,4,0.02)
-  hist(stat_CapTurnVsSpeed_NF$MI,xlim=c(0,4),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
-       xlab="Mutual information between capture speed and distance to prey", main="Bootstrapped Mutual information")
-  hist(stat_CapTurnVsSpeed_LF$MI,xlim=c(0,4),col=colourL[1],add=TRUE ,breaks = bkSeq)
-  hist(stat_CapTurnVsSpeed_DF$MI,xlim=c(0,4),col=colourL[3],add=TRUE,breaks = bkSeq )
+  hist(stat_CapTurnVsSpeed_NF$MI,xlim=c(0,3),ylim=c(0,1000),col=colourL[2],breaks = bkSeq ,
+       xlab="MI capture speed and distance to prey", main="Bootstrapped Mutual information")
+  hist(stat_CapTurnVsSpeed_LF$MI,xlim=c(0,3),col=colourL[1],add=TRUE ,breaks = bkSeq)
+  hist(stat_CapTurnVsSpeed_DF$MI,xlim=c(0,3),col=colourL[3],add=TRUE,breaks = bkSeq )
   
   
   
@@ -236,6 +251,7 @@ YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Ph
   hist(stat_CapTurnVsSpeed_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
 
   #  PLot Density Turn Vs Speed
+  #strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_Spearman_correlation_TurnVsSpeed.pdf",sep="")
   strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsSpeed.pdf",sep="")
   pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables - turn-ratio vs capture Speed",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
   par(mar = c(3.9,4.7,1,1))
@@ -257,7 +273,7 @@ YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Ph
   
 #### UNDERSHOOT TO DISTANCE FROM PREY 
   XRange  <- c(0,2) #
-  YRange <- c(0,0.8) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+  YRange <- c(0,0.6) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
   
   stat_CapTurnVsDist_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$DistanceToPrey,10000,XRange,YRange)
   stat_CapTurnVsDist_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$DistanceToPrey,10000,XRange,YRange)
@@ -265,10 +281,10 @@ YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Ph
   
     # TURN Vs Capture Speed Mutual INformation  
   bkSeq <- seq(0,4,0.02)
-  hist(stat_CapTurnVsDist_NF$MI,xlim=c(0,4),ylim=c(0,300),col=colourL[2],breaks = bkSeq ,
-       xlab="Mutual information between turn-ratio and distance to prey", main="Bootstrapped Mutual information")
-  hist(stat_CapTurnVsDist_LF$MI,xlim=c(0,4),col=colourL[1],add=TRUE ,breaks = bkSeq)
-  hist(stat_CapTurnVsDist_DF$MI,xlim=c(0,4),col=colourL[3],add=TRUE,breaks = bkSeq )
+  hist(stat_CapTurnVsDist_NF$MI,xlim=c(0,3),ylim=c(0,1000),col=colourL[2],breaks = bkSeq ,
+       xlab="MI turn-ratio and distance to prey", main="Bootstrapped Mutual information")
+  hist(stat_CapTurnVsDist_LF$MI,xlim=c(0,3),col=colourL[1],add=TRUE ,breaks = bkSeq)
+  hist(stat_CapTurnVsDist_DF$MI,xlim=c(0,3),col=colourL[3],add=TRUE,breaks = bkSeq )
   
   # TURN Correlation to Speed - DF/LF UNdershoot correlates with distance increase -  NF, the opposite correlation arises
   #require( tikzDevice )
@@ -276,7 +292,7 @@ YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Ph
   #tikz( strPlotName )
   
     bkSeq <- seq(-0.8,0.8,0.02)
-    hist(stat_CapTurnVsDist_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation Turn-ratio vs distance",main="Bootstraped 0.80" )
+    hist(stat_CapTurnVsDist_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab=" correlation Turn-ratio vs distance",main="Bootstraped 0.80" )
     hist(stat_CapTurnVsDist_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
     hist(stat_CapTurnVsDist_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
     
@@ -284,17 +300,18 @@ YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Ph
 
 
   ### DENSITY PLOT  
-  strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsDistance.pdf",sep="")
+  #strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_Spearman_correlation_TurnVsDistance.pdf",sep="")
+    strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsDistance.pdf",sep="")
   pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables - turn-ratio vs capture Speed",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
-  par(mar = c(3.9,4.7,1,1))
+    par(mar = c(3.9,4.7,1,1))
   
-  pBw <- 0.02
-  plot(density(stat_CapTurnVsDist_NF$corr,kernel="gaussian",bw=pBw),
+  pBwpBw <- 0.02
+    plot(density(stat_CapTurnVsDist_NF$corr,kernel="gaussian",bw=pBw),
        col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
-  lines(density(stat_CapTurnVsDist_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
-  lines(density(stat_CapTurnVsDist_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
-  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of turn-ratio to distance to prey  ") ))
-  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+    lines(density(stat_CapTurnVsDist_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+    lines(density(stat_CapTurnVsDist_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+    mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of turn-ratio to distance to prey  ") ))
+    mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
   
   dev.off()  
   

@@ -1,5 +1,6 @@
 ### Kostas Lagogiannis 2019-06-24 
-## 3D Gaussian Model for each group, to discover covariance structure in Undershoot to Distance/Speed
+## 3D Gaussian Model for each group, to discover covariance structure in Undershoot to Distance/Speed 
+## ******** No clustering Between slow and Fast Swims ****** 
 ## I made this to complement the Clustering Method, so as to characterize the overall covariance structure
 
 library(rjags)
@@ -311,10 +312,12 @@ cex = 1.4
 adj  = 3.5
 padj <- -8.0
 las <- 1
-
-layout(matrix(c(1,1,1,2,2,2,3,3,4,4,5,5),2,6, byrow = TRUE))
-##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.7,3.5,1))
+
+#layout(matrix(c(1,1,1,2,2,2,3,3,4,4,5,5),2,6, byrow = TRUE))
+layout(matrix(c(1,1,2,2),1,4, byrow = TRUE))
+##Margin: (Bottom,Left,Top,Right )
+
 
 
   ## Plot the mean of the 2D Models ##
@@ -363,12 +366,18 @@ par(mar = c(3.9,4.7,3.5,1))
   contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
   
   mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+dev.off()
 
 
 
       ### COVARIANCES 
       ## Plot the covariance Coefficients##
-      plot(dNLb_rhoUS,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,4),
+  
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),width=7,height=7,
+      title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+     ##Speed TO Distance Covariance Coeff      
+  
+      plot(dNLb_rhoUS,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,5),
            main=NA, #"Density Inference of Turn-To-Prey Slope ",
            xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
       lines(dLLb_rhoUS,col=colourLegL[2],lwd=3,lty=2)
@@ -377,32 +386,52 @@ par(mar = c(3.9,4.7,3.5,1))
       mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
       mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and turn ratio "  ))
-      mtext("C",at="topleft",outer=outer,side=2,col="black",font=2  ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+      #mtext("C",at="topleft",outer=outer,side=2,col="black",font=2  ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
       
-    
-      plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,4),
+      ###############
+dev.off()      
+      
+      
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsDistance_Covar.pdf"),width=7,height=7,
+      title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+      ##Speed TO Distance Covariance Coeff    
+      plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,5),
            main=NA, #"Density Inference of Turn-To-Prey Slope ",
            xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
       lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
       lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
       mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance"  ))
+      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance to prey"  ))
       
-      mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
       
+      
+      
+      legend("topleft",
+             legend=c(  expression (),
+                        bquote(NF[""] ),
+                        bquote(LF[""] ),
+                        bquote(DF[""]   )
+                        
+             ),
+             lty=c(1,2,3),lwd=3,fill=colourLegL,cex=cex)
+      #mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+dev.off()     
+      
+      
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"),width=7,height=7,
+          title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
       ##Speed TO Distance Covariance Coeff
-      plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,4),
+      plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,5),
            main=NA, #"Density Inference of Turn-To-Prey Slope ",
            xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
       lines(dLLb_rhoUD,col=colourLegL[2],lwd=3,lty=2)
       lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
       mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
       mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-      mtext(side = 3,cex=cex, line = lineTitle, expression("Turn ratio and distance"  ))
+      mtext(side = 3,cex=cex, line = lineTitle, expression("Turn ratio and distance to prey"  ))
       
-      mtext("E",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-      
+#      mtext("E",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 dev.off()
 
 
@@ -426,11 +455,11 @@ datMu3D <- rbind(datMu3D,
 
 open3d()
 rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
-             xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)"
-             ,xlim=c(0.5,1.5), 
-             ylim=c(10,50), zlim=c(0,0.6)
-             ,expand = 1.1 
-             #,box = TRUE,aspect = FALSE
+             #xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)",
+             xlab="", ylab="",zlab="",
+             xlim=c(0.5,1.5), ylim=c(10,50), zlim=c(0,0.6),
+             box = FALSE ,aspect = TRUE
+             #,expand = 1.5
              )
 
 rgl::rgl.viewpoint(60,10)
@@ -440,14 +469,21 @@ rgl::rgl.viewpoint(45,45)
 #           box = TRUE, axes = TRUE, main = NULL, sub = NULL,
 #           top = TRUE, aspect = FALSE, expand = 1.03,cex=cex)
 
+###Warning External Editing of PDF may fail. a Ghostscript conversion can fix this: 
+#Use : gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=output.pdf fig7_Modelballs3D_SpeedVsTurn_view.pdf
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view.pdf"),fmt="pdf",drawText = FALSE )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view.tex"),fmt="tex",drawText = TRUE )
+rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view"),fmt="png" )
 
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_SpeedVsDist_view"),fmt="pdf" )
+## I use the tex Axis doc to combine 3d Fig with axis text. I then compile a pdf, which I import into inkScape (using Cairo to rasterize image), so I can adjust size, add axis labels etc etc.
+## END OF 3D plot Messing with exporting
+## 
 
 
 
-example(scatter3D)
 
-####################################  Summary FIGURE Of Each Pair  #####
+#####
+####################################  Summary FIGURE Of Each Pair + A Covariance Of Distance To Turn Ratio  #####
 ## PLot Model / Means and covariance ##
 ## Open Output PDF 
 pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
