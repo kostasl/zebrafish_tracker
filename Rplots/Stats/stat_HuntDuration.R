@@ -650,10 +650,24 @@ datHuntLabelledEventsSBMerged_Success_filtered <- datHuntLabelledEventsSBMerged_
                                           ( (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
                                             eventID == 0)), ] ## Add the 0 Event, In Case Larva Produced No Events
 
+##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
+datHuntLabelledEventsSBMerged_Failed_filtered <- datHuntLabelledEventsSBMerged_filtered  [
+  with(datHuntLabelledEventsSBMerged_filtered , ( ( convertToScoreLabel(huntScore) == "Fail-No Strike" |
+                                                      convertToScoreLabel(huntScore) == "Fail-With Strike" |
+                                                      convertToScoreLabel(huntScore) == "Fail") &
+                                                    ( (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
+                                                    eventID == 0)), ] ## Add the 0 Event, In Case Larva Produced No Events
+
+
 
 datHuntSuccDur_LL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Success_filtered,"LL")
 datHuntSuccDur_DL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Success_filtered,"DL")
 datHuntSuccDur_NL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Success_filtered,"NL")
+
+datHuntFailDur_LL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Failed_filtered,"LL")
+datHuntFailDur_DL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Failed_filtered,"DL")
+datHuntFailDur_NL <- getHuntEventDuration(datHuntLabelledEventsSBMerged_Failed_filtered,"NL")
+
 
 datHuntSuccessStat <- makeHuntStat(datHuntLabelledEventsSBMerged_Success_filtered)
 
@@ -663,16 +677,31 @@ quantile(datHuntSuccDur_LL$DurationFrames/G_APPROXFPS)
 quantile(datHuntSuccDur_DL$DurationFrames/G_APPROXFPS)
 
 
-#     ####PLOT SUCC DENSITY
-plot(density(datHuntSuccDur_NL$DurationFrames/G_APPROXFPS),type='l',xlim=c(0,8),ylim=c(0,1),lty=lineTypeL[3],col=colourL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
-lines(density(datHuntSuccDur_LL$DurationFrames/G_APPROXFPS),xlim=c(0,8),col=colourL[2],lty=lineTypeL[3],lwd=4,ylab=NA,xlab=NA)
-lines(density(datHuntSuccDur_DL$DurationFrames/G_APPROXFPS),xlim=c(0,8),col=colourL[3],lty=lineTypeL[3],lwd=4,ylab=NA,xlab=NA)
+#### Compare How Success Episode duratins shift / Appears differences are beyond the 50% 
+quantile(datHuntFailDur_NL$DurationFrames/G_APPROXFPS)
+quantile(datHuntFailDur_LL$DurationFrames/G_APPROXFPS)
+quantile(datHuntFailDur_DL$DurationFrames/G_APPROXFPS)
 
-legend("topright",legend = c(paste("Evoked Successful ")), seg.len=3.5,
-       col=c(colourR[4], colourR[4]),lty=c(3,1),lwd=4,cex=1.1,bg="white" )
-mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Measured duration of each hunt episode  (sec)") )  )
-mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
-mtext("J",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+
+#     ####PLOT SUCC DENSITY
+pdf(file= paste(strPlotExportPath,"/stat/fig2.B_statComparePoissonHuntDurations",".pdf",sep=""),width = 14,height = 7)
+outer = FALSE
+line = 1 ## SubFig Label Params
+lineAxis = 3.2
+cex = 1.4
+adj  = 2.5
+padj <- -7.5
+las <- 1
+
+  plot(density(datHuntSuccDur_NL$DurationFrames/G_APPROXFPS),type='l',xlim=c(0,8),ylim=c(0,1),lty=lineTypeL[3],col=colourL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(density(datHuntSuccDur_LL$DurationFrames/G_APPROXFPS),xlim=c(0,8),col=colourL[2],lty=lineTypeL[3],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHuntSuccDur_DL$DurationFrames/G_APPROXFPS),xlim=c(0,8),col=colourL[3],lty=lineTypeL[3],lwd=4,ylab=NA,xlab=NA)
+  
+  legend("topright",legend = c(paste("Evoked Successful ")), seg.len=3.5,
+         col=c(colourR[4], colourR[4]),lty=c(3,1),lwd=4,cex=1.1,bg="white" )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Measured duration of each hunt episode  (sec)") )  )
+  mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
+
 dev.off()
 
 # 
