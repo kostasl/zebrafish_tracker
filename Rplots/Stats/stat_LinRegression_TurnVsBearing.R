@@ -65,7 +65,7 @@ modelLin <- "model{
   # Prior for beta
   beta[1] ~ dnorm(0,2)
   beta[2] ~  dnorm(1,1/sqrt(sigmaU))T(0.0,2) ##undershoot
-  sigmaU ~ dunif(0.0,0.20)
+  sigmaU ~ dunif(0.0,0.50)
 
   # Prior for the inverse variance
   inv.var   ~  dgamma(5, 2)
@@ -168,7 +168,7 @@ dataNL=list(turn=turnsNL,bearing=bearingNL,N=nDatNL,tauRange=tauRangeA,rhoMax=rh
 dataDL=list(turn=turnsDL,bearing=bearingDL,N=nDatDL,tauRange=tauRangeA,rhoMax=rhoMaxA,tau0=Noise);
 
 varnames=c("tau","rho","alpha","lambda")
-varnames=c("beta","sigma")
+varnames=c("beta","sigma","sigmaU")
 
 library(rjags)
 fileConn=file("model.tmp")
@@ -198,13 +198,26 @@ muNLa=mean(drawNL$beta[,(steps-ind):steps,1][1,])
 muNLb=mean(drawNL$beta[,(steps-ind):steps,1][2,]) #Slope
 muDLa=mean(drawDL$beta[,(steps-ind):steps,1][1,])
 muDLb=mean(drawDL$beta[,(steps-ind):steps,1][2,])
-sig=mean(drawLL$sigma[,(steps-ind):steps,1])
+#sig=mean(drawLL$sigma[,(steps-ind):steps,1])
+sigLL=mean(drawLL$sigmaU[,(steps-ind):steps,1])
+
 ###Plot Density of Slope
 pBw <- 0.01
 dLLb<-density(drawLL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
-  
+###Density of STD Dev on TurnRatio
+dsigLL=density(drawLL$sigmaU[,(steps-ind):steps,1])  
+dsigDL=density(drawDL$sigmaU[,(steps-ind):steps,1])  
+dsigNL=density(drawNL$sigmaU[,(steps-ind):steps,1])  
+
+###Plot DATA Density of Slope
+pBw <- 0.2
+dDatLLb<-density(dataLL$turn/ dataLL$bearing ,kernel="gaussian",bw=pBw)
+dDatNLb<-density(dataNL$turn/ dataNL$bearing,kernel="gaussian",bw=pBw)
+dDatDLb<-density(dataDL$turn/ dataDL$bearing,kernel="gaussian",bw=pBw)
+
+
   ##### ######################
   ### MAIN FIGURE ############
   ################################  
@@ -268,11 +281,18 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
   
   
   ##Density Estimation
-  plot(dNLb,col=colourLegL[1],xlim=c(0.5,1.2),lwd=4,lty=1,ylim=c(0,20),
+  plot(dNLb,col=colourLegL[1],xlim=c(0.0,2),lwd=4,lty=1,ylim=c(0,18),
        main=NA, #"Density Inference of Turn-To-Prey Slope ",
        xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
   lines(dLLb,col=colourLegL[2],xlim=c(0.5,1.2),lwd=4,lty=2)
   lines(dDLb,col=colourLegL[3],xlim=c(0.5,1.2),lwd=4,lty=3)
+  
+  #lines(dDatNLb,col=colourLegL[1],xlim=c(0.5,1.2),lwd=2,lty=1,ylim=c(0,20),
+  #     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+  #     xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  #lines(dDatLLb,col=colourLegL[2],xlim=c(0.5,1.2),lwd=2,lty=2)
+  #lines(dDatDLb,col=colourLegL[3],xlim=c(0.5,1.2),lwd=2,lty=3)
+  
   legend("topright",
          legend=c(  expression (),
                     bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]))  ),
@@ -286,11 +306,23 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
   ### PLot Scatter with regression lines with Conf intervals##
   dev.off()
 
+  
 
-
-
-
-
+# DATA Turn Ratio
+################################  
+pdf(file= paste(strPlotExportPath,"/stat/fig4S3_stat_TurnRatioHistogram.pdf",sep=""),width=7,height=7,title="First Turn To prey / Turn Ratio")
+  
+ #### PLOT Histogram from DATA
+  layout(matrix(c(1,2,3),3,1, byrow = FALSE))
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(3.95,4.75,1,1))
+  
+  hist(dataLL$turn/ dataLL$bearing,breaks=seq(0,2,0.2),col=colourR[2],main="LF",xlab=NA,cex=cex,cex.axis=cex)
+  hist(dataNL$turn/ dataNL$bearing,breaks=seq(0,2,0.2),col=colourR[1],main="NF",xlab=NA,cex=cex,cex.axis=cex)
+  hist(dataDL$turn/ dataDL$bearing,breaks=seq(0,2,0.2),col=colourR[3],main="DF",xlab=NA,cex=cex,cex.axis=cex)
+  mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio") )
+dev.off()
+  
 ###################### Further Turn Analysis #########################
 ##### Check out Undershoot Consistency - Ratio of Angle to Prey At start and end of bout ####
   layout(matrix(c(1,2,3),3,1, byrow = FALSE))
@@ -333,9 +365,6 @@ dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 
 
 
-
-
-
 pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_Cap",G_THRES_CAPTURE_SPEED,"Strike",flagWithCaptureStrike,"_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 #pdf(file= paste(strPlotExportPath,"/stat/boxplot_UndershootRatio_RandSub_SetC.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
 
@@ -344,6 +373,43 @@ boxplot(datTurnVsPreyNL[,"Turn"]/datTurnVsPreyNL[,"OnSetAngleToPrey"],
         datTurnVsPreyDL[,"Turn"]/datTurnVsPreyDL[,"OnSetAngleToPrey"],
         names=c("NL","LL","DL"),main="Undershoot slope ",col=colourH,ylim=c(0,2.0) )
 dev.off()
+
+
+
+
+### Onset/ DETECTION Angle Density supplementary angle figure
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig4S1-DetectionAngleDensity.pdf",sep=""))
+### Show Speed Fit ###
+outer = FALSE
+line = 1 ## SubFig Label Params
+lineAxis = 2.7
+lineXAxis = 3.0
+cex = 1.4
+adj  = 3.5
+padj <- -8.0
+las <- 1
+
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(4.5,4.3,0.5,1))
+
+
+plot(density(lFirstBoutPoints$NL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[1],xlim=c(-120.0,120),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
+lines(density(lFirstBoutPoints$LL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[2],xlim=c(-120.0,120),lwd=3,lty=2)
+lines(density(lFirstBoutPoints$DL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[3],xlim=c(-120.0,120),lwd=3,lty=3,main=NA)
+
+legend("topleft",
+       legend=c(  expression (),
+                  bquote(NF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$NL))  ),
+                  bquote(LF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$LL))  ),
+                  bquote(DF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$DL))  )
+       ), 
+       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
+mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Prey azimuth upon detection  " ) )  )
+#mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=c
+dev.off()
+
 #strPlotName <-  paste(strPlotExportPath,"/stat_TurnVsBearing_GPEstimate-tauMax",tauRangeA,"Rho",rhoMaxA,".pdf",sep="")
 #pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 #myplot_res(1000)
