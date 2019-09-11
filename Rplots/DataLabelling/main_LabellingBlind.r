@@ -17,43 +17,9 @@ library("MASS");
 ##FIX 4443 to fail with strike
 ####################
 
+source("config_lib.R")
 
-## GLOBAL VARS ###
-## Required Variables - Locations 
-# Home Desktop
-#setwd("/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData")
-#strVideoFilePath  <- "/media/extStore/ExpData/zebrapreyCap/AnalysisSet/"
-#strTrackerPath    <- "/home/klagogia1/workspace/build-zebraprey_track-Release/" 
-#strTrackeroutPath <- "/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
-#strTrackInputPath <- "/media/extStore//kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
-#strDatDir        <- "./dat/TrackedSessionA" ##Where Are the Imported RData Stored
-#strDataExportDir <- "./out/"
-
-# 
-# # 
-# # ## Office PC
-# setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-# strVideoFilePath  <- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
-# strTrackerPath    <- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
-# strTrackeroutPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/"
-# #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
-# strTrackInputPath <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Where to source the Tracker csv files from 
-# strDatDir        <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
-# strDataExportDir <- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
-
-# 
-# ## Laptop
-# 
-# ## Office PC SABINA
-# setwd("/home/sabina/zfishLabel/")
-# strVideoFilePath  <- "/media/sabina/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
-# #strVideoFilePath  <- "/media/sabina/zfishDataAlpha/AnalysisSetAlpha/" 
-# #strTrackerPath    <- "/home/sabina/zfishLabel/build-zebraprey_track-Desktop_Qt_5_9_2_GCC_64bit-Release/"
-# strTrackerPath    <- "/home/sabina/zfishLabel/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
-# strTrackeroutPath <- "/home/sabina/zfishLabel/out/"
-# strTrackInputPath <- "/media/sabina/LinuxDat/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from 
-# strDatDir        <- "./dat/" ##Where Are the Imported RData Stored
-# strDataExportDir <- "./out/"
+setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video

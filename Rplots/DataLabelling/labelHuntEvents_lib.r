@@ -45,21 +45,43 @@ huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10
 
 
 ##Loads the Latest Labelled Hunt Events Set - Centralize Here so Changes Propagate To scripts
+## Removes Thos Labelled As Dublicate OR Non Hunt Events
+## Notes : Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
 getLabelledHuntEventsSet <- function()
 {
   strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"
-  message(paste(" Loading Hunt Event List to Analyse... "))
+  message(paste(" Loading Hunt Event List to Analyse... ",strProcDataFileName))
   #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
   datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
   
   ##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
+  #AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
   vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
+  vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Experiments Less than 4(larvae)*2(cond)*3(groups)=24
   
   ##We Can Choose To Exclude The Fish That Produced No Hunting Events
   datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) 
                                                        #& datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL")
                                                           ,]
-  return(datHuntLabelledEventsSB)
+  
+  ##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
+  datHuntLabelledEventsSB_filtered <- datHuntLabelledEventsSB [
+    with(datHuntLabelledEventsSB, ( convertToScoreLabel(huntScore) != "Not_HuntMode/Delete" &
+                                    convertToScoreLabel(huntScore) != "Duplicate/Overlapping" &
+                                    (endFrame - startFrame) > 40 ) |  ## limit min event dur to ~100ms
+           eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
+  
+  
+  #datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID) & 
+  #                                                                                !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
+  
+  ## Check Event Number in Strange List
+  for (dID in vWeirdDataSetID )
+    print(NROW(unique(datHuntLabelledEventsSB_filtered[datHuntLabelledEventsSB_filtered$dataSetID ==  dID ,]$expID)))
+  
+  
+  
+  return(datHuntLabelledEventsSB_filtered)
 }
 
 

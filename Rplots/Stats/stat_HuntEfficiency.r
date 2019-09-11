@@ -90,7 +90,7 @@ datatest=list(Success=datFishSuccessRate$Success,
 
 varnames1=c("q","p","t","f","r")
 burn_in=1000;
-steps=100000;
+steps=20000;
 thin=10;
 chains=3
 
@@ -160,7 +160,11 @@ save(draw,file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",se
 ###MAIN OUTPUT PLOT ##
 
 
+
+
+
 load(file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
+
 
 strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
 pdf(strPlotName,width=14,height=14,
