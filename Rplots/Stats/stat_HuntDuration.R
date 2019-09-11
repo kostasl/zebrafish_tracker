@@ -462,7 +462,7 @@ muEpiDur_NL <- GammaShapeSamples(drawHD_NL,nS)*GammaScaleSamples(drawHD_NL,nS)/G
 muEpiDur_DL <- GammaShapeSamples(drawHD_DL,nS)*GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS
 muEpiDur_LL <- GammaShapeSamples(drawHD_LL,nS)*GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS
 
-pBW <- 0.20
+pBW <- 0.25
 densEpiDur_NE <- density(muEpiDur_NE,bw=pBW)
 densEpiDur_LE <- density(muEpiDur_LE,bw=pBW)
 densEpiDur_DE <- density(muEpiDur_DE,bw=pBW)
@@ -562,24 +562,58 @@ mtext("I",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 #### Show Density Of Hunt Episode Duration per Hunt Event ####
 ## PLot Expected Duration - as the Gamma Mean 
+## RAW Hunt Duration DATA 
+plot(density(datHEvent_NE$DurationFrames/G_APPROXFPS ),type='l',xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+lines(density(datHEvent_LE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+lines(density(datHEvent_DE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
 
-plot(densEpiDur_NE,type='l',xlim=c(0,8),ylim=c(0,1),lty=lineTypeL[1],col=colourHLine[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
-lines(densEpiDur_LE,xlim=c(0,8),col=colourHLine[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
-lines(densEpiDur_DE,xlim=c(0,8),col=colourHLine[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
-
-lines(densEpiDur_LL,xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[2],lwd=4,ylab=NA,xlab=NA)
-lines(densEpiDur_DL,xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[3],lwd=4,ylab=NA,xlab=NA)
-lines(densEpiDur_NL,xlim=c(0,8),lty=lineTypeL[2],col=colourHLine[1],lwd=4,ylab=NA,xlab=NA)
+lines(density(datHEvent_LL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[2],lwd=4,ylab=NA,xlab=NA)
+lines(density(datHEvent_DL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[3],lwd=4,ylab=NA,xlab=NA)
+lines(density(datHEvent_NL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA)
 legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), seg.len=3.5,
        col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
-mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated duration of each hunt episode  (sec)") )  )
+mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Measured duration of each hunt episode  (sec)") )  )
+
 mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
 mtext("J",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+
 
 dev.off()
 
 #### END OF MAIN PLOT ###
 #########################
+
+
+######### Gamma Episode Duration plot ###
+pdf(file= paste(strPlotExportPath,"/stat/fig2S_statModelGammaHuntEpisodeDurations.pdf",sep=""),width = 14,height = 7)
+
+layout(matrix(c(1,1,2,2), 1,4, byrow = TRUE))
+##Margin: (Bottom,Left,Top,Right )
+par(mar = c(3.9,4.7,1,1))
+
+  plot(densEpiDur_NE,type='l',xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(density(datHEvent_NE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[1],lty=lineTypeL[1],lwd=2,ylab=NA,xlab=NA)
+  lines(densEpiDur_LE,xlim=c(0,6),col=colourLegL[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHEvent_LE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[2],lty=lineTypeL[1],lwd=2,ylab=NA,xlab=NA)
+  lines(densEpiDur_DE,xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHEvent_DE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[1],lwd=2,ylab=NA,xlab=NA)
+  
+  
+  plot(densEpiDur_LL,xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[2],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHEvent_LL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[2],lwd=2,ylab=NA,xlab=NA)
+  lines(densEpiDur_DL,xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[3],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHEvent_DL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[3],lwd=2,ylab=NA,xlab=NA)
+  lines(densEpiDur_NL,xlim=c(0,8),lty=lineTypeL[2],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHEvent_NL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[1],lwd=2,ylab=NA,xlab=NA)
+  
+  legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), seg.len=3.5,
+         col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated duration of each hunt episode  (sec)") )  )
+  mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
+  
+#  mtext("J",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+dev.off()  
+
 
 ###Courtesy of https://stackoverflow.com/questions/40851328/compute-area-under-density-estimation-curve-i-e-probability
 getProbOfInterval  <- function(densEpiDur,xmin,xmax)
@@ -596,7 +630,62 @@ getProbOfInterval  <- function(densEpiDur,xmin,xmax)
   
   return(p.scaled)
 }
+### DURATION DATA Comparison
+##Check the duration that contains 95% of LE Values 
+pLEMx <- quantile(datHEvent_LE$DurationFrames/G_APPROXFPS,probs=0.95)
+##Compare Percentage to Other Groups
+getProbOfInterval(density(datHEvent_DE$DurationFrames/G_APPROXFPS),0,pLEMx) ##73% of huntdurations in DE
+getProbOfInterval(density(datHEvent_NE$DurationFrames/G_APPROXFPS),0,pLEMx) ## 69% in NE
 
+
+##LIVE FED DATA
+pLLMx <- quantile(datHEvent_LL$DurationFrames/G_APPROXFPS,probs=0.95)
+##Compare Percentage to Other Groups
+getProbOfInterval(density(datHEvent_DL$DurationFrames/G_APPROXFPS),0,pLLMx) ##73% of huntdurations in DE
+getProbOfInterval(density(datHEvent_NL$DurationFrames/G_APPROXFPS),0,pLLMx) ## 69% in NE
+
+##Modulation By Prey at the 95th percentile
+getProbOfInterval(density(datHEvent_LL$DurationFrames/G_APPROXFPS),0,quantile(datHEvent_LE$DurationFrames/G_APPROXFPS,probs=0.80)) ## LL On 95% point of LE
+getProbOfInterval(density(datHEvent_NL$DurationFrames/G_APPROXFPS),0,quantile(datHEvent_NE$DurationFrames/G_APPROXFPS,probs=0.80)) ## LL On 95% point of LE
+getProbOfInterval(density(datHEvent_DL$DurationFrames/G_APPROXFPS),0,quantile(datHEvent_DE$DurationFrames/G_APPROXFPS,probs=0.80)) ## LL On 95% point of LE
+
+###Means 
+errLE<- sd(datHEvent_LE$DurationFrames/G_APPROXFPS) /sqrt(NROW(datHEvent_LE$DurationFrames) )
+errDE <- sd(datHEvent_DE$DurationFrames/G_APPROXFPS) /sqrt(NROW(datHEvent_DE$DurationFrames) )
+errNE <- sd(datHEvent_NE$DurationFrames/G_APPROXFPS) /sqrt(NROW(datHEvent_NE$DurationFrames) )
+
+message("LE D mean:",mean(datHEvent_LE$DurationFrames/G_APPROXFPS),"+SEM:",errLE,"\n",
+        "DE D mean:",mean(datHEvent_DE$DurationFrames/G_APPROXFPS),"+SEM:",errDE,"\n",
+        "NE D mean:",mean(datHEvent_NE$DurationFrames/G_APPROXFPS),"+SEM:",errNE)
+
+
+
+errLL<- sd(datHEvent_LL$DurationFrames/G_APPROXFPS) /sqrt(NROW(datHEvent_LL$DurationFrames) )
+errDL <- sd(datHEvent_DL$DurationFrames/G_APPROXFPS) /sqrt(NROW(datHEvent_DL$DurationFrames) )
+errNL <- sd(datHEvent_NL$DurationFrames/G_APPROXFPS) /sqrt(NROW(datHEvent_NL$DurationFrames) )
+
+message("LL D mean:",mean(datHEvent_LL$DurationFrames/G_APPROXFPS),"+SEM:",errLL,"\n",
+      "DL D mean:",mean(datHEvent_DL$DurationFrames/G_APPROXFPS),"+SEM:",errDL,"\n",
+      "NL D mean:",mean(datHEvent_NL$DurationFrames/G_APPROXFPS),"+SEM:",errNL)
+
+
+message("LL D median:",median(datHEvent_LL$DurationFrames/G_APPROXFPS),"+SEM:",errLL,"\n",
+        "DL D median:",median(datHEvent_DL$DurationFrames/G_APPROXFPS),"+SEM:",errDL,"\n",
+        "NL D median:",median(datHEvent_NL$DurationFrames/G_APPROXFPS),"+SEM:",errNL)
+
+
+quantile(datHEvent_LE$DurationFrames/G_APPROXFPS,p=0.95)
+quantile(datHEvent_LL$DurationFrames/G_APPROXFPS,p=0.95)
+
+quantile(datHEvent_NE$DurationFrames/G_APPROXFPS,p=0.95)
+quantile(datHEvent_NL$DurationFrames/G_APPROXFPS,p=0.95)
+
+
+quantile(datHEvent_DE$DurationFrames/G_APPROXFPS,p=0.95)
+quantile(datHEvent_DL$DurationFrames/G_APPROXFPS,p=0.95)
+
+
+## MODEL ###
 ##Check the duration that contains 95% of LE Values 
 pLEMx <- quantile(muEpiDur_LE,probs=0.95)
 ##Compare Percentage to Other Groups
@@ -609,6 +698,15 @@ pLLMx <- quantile(muEpiDur_LL,probs=0.95)
 getProbOfInterval(densEpiDur_DL,0,pLLMx) ##73% of huntdurations in DE
 getProbOfInterval(densEpiDur_NL,0,pLLMx) ## 69% in NE
 
+quantile(muEpiDur_LE,probs=0.95)
+getProbOfInterval(densEpiDur_LE,0,pLEMx) ##73% of huntdurations in DE
+quantile(muEpiDur_LL,probs=0.95)
+
+quantile(muEpiDur_NE,probs=0.95)
+quantile(muEpiDur_NL,probs=0.95)
+
+quantile(muEpiDur_DE,probs=0.80)
+quantile(muEpiDur_DL,probs=0.80)
 
 ### Evoked - Spontaneous Overlap
 getProbOfInterval(densEpiDur_LL,0,pLEMx) - 0.95 ##73% of huntdurations in DE
