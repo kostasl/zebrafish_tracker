@@ -432,6 +432,23 @@ HLarvaHuntGammaShape_DL <- tail(drawDurDL$r[,,schain],plotsamples)
 HLarvaHuntGammaShape_NE <- tail(drawDurNE$r[,,schain],plotsamples);
 HLarvaHuntGammaShape_NL <- tail(drawDurNL$r[,,schain],plotsamples)
 
+## Mean Duration - Mean -ve Binomial Distribution on number of frames - q here is prob of failure, rnumber of successes
+muHDur_LE <- ((1-tail(drawDurLE$q[,,schain],plotsamples))*tail(drawDurLE$r[,,schain],plotsamples)/(tail(drawDurLE$q[,,schain],plotsamples)))/G_APPROXFPS;
+muHDur_LL <- ((1-tail(drawDurLL$q[,,schain],plotsamples))*tail(drawDurLL$r[,,schain],plotsamples)/(tail(drawDurLL$q[,,schain],plotsamples)))/G_APPROXFPS;
+muHDur_DE <- ((1-tail(drawDurDE$q[,,schain],plotsamples))*tail(drawDurDE$r[,,schain],plotsamples)/(tail(drawDurDE$q[,,schain],plotsamples)))/G_APPROXFPS;
+muHDur_DL <- ((1-tail(drawDurDL$q[,,schain],plotsamples))*tail(drawDurDL$r[,,schain],plotsamples)/(tail(drawDurDL$q[,,schain],plotsamples)))/G_APPROXFPS;
+muHDur_NE <- ((1-tail(drawDurNE$q[,,schain],plotsamples))*tail(drawDurNE$r[,,schain],plotsamples)/(tail(drawDurNE$q[,,schain],plotsamples)))/G_APPROXFPS;
+muHDur_NL <- ((1-tail(drawDurNL$q[,,schain],plotsamples))*tail(drawDurNL$r[,,schain],plotsamples)/(tail(drawDurNL$q[,,schain],plotsamples)))/G_APPROXFPS;
+
+##Calc Densities of Mean Duration ###
+pBW <- 0.5
+densDur_LE <- density(muHDur_LE,bw=pBW)
+densDur_NE <- density(muHDur_NE,bw=pBW)
+densDur_DE <- density(muHDur_DE,bw=pBW)
+densDur_DL <- density(muHDur_DL,bw=pBW*4)
+densDur_LL <- density(muHDur_LL,bw=pBW*4)
+densDur_NL <- density(muHDur_NL,bw=pBW*4)
+
 
 # These Functions Obtain nS Samples from each of the Posteriors of the Modelled hunt events of separate Larva, 
 nS <- 300
@@ -452,7 +469,7 @@ densEpiDur_DL <- density(muEpiDur_DL,bw=pBW)
 ## MAIN PLOT ###
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
-pdf(file= paste(strPlotExportPath,"/stat/fig2.B_statComparePoissonHuntDurations",".pdf",sep=""),width = 14,height = 7)
+pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",".pdf",sep=""),width = 14,height = 7)
   outer = FALSE
   line = 1 ## SubFig Label Params
   lineAxis = 3.2
@@ -539,21 +556,18 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2.B_statComparePoissonHuntDurations"
   plotConnectedHuntDuration(datHuntStat,vDat,strCondTags)
   mtext("I",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj+3,cex.main=cex,cex=cex)
   
+  ###ESTimate Mean Duration - From -Ve Binomial.
+  plot(densDur_NE,type='l',xlim=c(0,80),ylim=c(0,0.4),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(densDur_LE,col=colourLegL[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+  lines(densDur_DE,col=colourLegL[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+  ##Evoked
+  lines(densDur_NL,col=colourLegL[1],lty=lineTypeL[2],lwd=4,ylab=NA,xlab=NA)
+  lines(densDur_LL,col=colourLegL[2],lty=lineTypeL[2],lwd=4,ylab=NA,xlab=NA)
+  lines(densDur_DL,col=colourLegL[3],lty=lineTypeL[2],lwd=4,ylab=NA,xlab=NA)
   
-  #### Show Density Of Hunt Episode Duration per Hunt Event ####
-  ## PLot Expected Duration - as the Gamma Mean 
-  ## RAW Hunt Duration DATA 
-  plot(density(datHEvent_NE$DurationFrames/G_APPROXFPS ),type='l',xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
-  lines(density(datHEvent_LE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
-  lines(density(datHEvent_DE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
-  
-  lines(density(datHEvent_LL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[2],lwd=4,ylab=NA,xlab=NA)
-  lines(density(datHEvent_DL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[3],lwd=4,ylab=NA,xlab=NA)
-  lines(density(datHEvent_NL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA)
   legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), seg.len=3.5,
          col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Measured duration of each hunt episode  (sec)") )  )
-  
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated total time spent hunting per larva (sec)") )  )
   mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
   mtext("J",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
@@ -564,7 +578,28 @@ dev.off()
 #########################
 
 
-######### Gamma Episode Duration plot ###
+#### Show Density Of Hunt Episode Duration per Hunt Event - ####
+## PLot Expected Duration - as the Gamma Mean 
+## RAW Hunt Duration DATA 
+pdf(file= paste(strPlotExportPath,"/stat/fig2S3_statEpisodeDurations.pdf",sep=""),width = 7,height = 7)
+par(mar = c(3.9,4.7,1,1))
+
+  plot(density(datHEvent_NE$DurationFrames/G_APPROXFPS ),type='l',xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(density(datHEvent_LE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHEvent_DE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
+  
+  lines(density(datHEvent_LL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[2],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHEvent_DL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[3],lwd=4,ylab=NA,xlab=NA)
+  lines(density(datHEvent_NL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA)
+  legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), seg.len=3.5,
+         col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Measured duration of each hunt episode  (sec)") )  )
+  mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
+#  mtext("J",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+
+dev.off()
+
+######### Gamma Episode Duration plot - Compared to Data ###
 pdf(file= paste(strPlotExportPath,"/stat/fig2S_statModelGammaHuntEpisodeDurations.pdf",sep=""),width = 14,height = 7)
 
 layout(matrix(c(1,1,2,2), 1,4, byrow = TRUE))

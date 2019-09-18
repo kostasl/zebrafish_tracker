@@ -68,7 +68,7 @@ for  (g in 1:2)
   sigma[1,2] ~ dunif(0,2) ##the low cap speed sigma 
 
   ## High speed Capture Cluster
-  mu[2,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
+  mu[2,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey ##precision=1/sigma^2
   mu[2,2] ~ dnorm(35,1)T(mu[1,2],) ##cap speed
   sigma[2,2] ~ dunif(0,10) ##the high cap speed sigma 
 
