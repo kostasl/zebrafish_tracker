@@ -1,5 +1,7 @@
-# README #
+# README Zebrafish Behaviour Analysis Software #
 
+@author : Konstantinos Lagogiannis
+Developed while postdoc in Martin Meyer's lab, KCL
 
 ### What is this repository for? ###
 
@@ -19,7 +21,7 @@ The directory where the data csv files are exported must have  format EXP_N_YYYY
  * The video begins paused -  use to left mouse clicks to define a new region in the image over which you want to count the larvae.
  * Define the regions of interest using two left mouse click for each region. The red box defines the region over which the larvae are counted-tracked and recorded.
 
-####Control keys for tracker during Run time :
+### Control keys for tracker during Run time :
  * Press p to pause Image. once paused:
  *  s to save snapshots in CSV outdir pics subfolder.
  *  2 Left Clicks to define the 2 points of region-of interest for tracking.
@@ -27,7 +29,7 @@ The directory where the data csv files are exported must have  format EXP_N_YYYY
  *  t Start Tracking
  *  q Exit Quit application
 
-##Output
+## Output
 The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the order by which the ROI was created. First ROI 1, 2nd ROI gets V2_... For each ROI n it generates the following three types of file:
 
 * Vn_pos.csv -> contains summary counts of the number of blobs, and the number of tracks identified on each video frame.
@@ -78,5 +80,5 @@ Wait until the video(s) have been tracked in full, the tracks will be displayed 
 
 ### Who do I talk to? ###
 
-* Repo owner or admin
+* Repo owner or admin (kostasl)
 * Other community or team contact
