@@ -7,10 +7,11 @@
 #            
 ## NOTES : The processing sequence of data:
 ##    *   Hunt Events are extracted from All tracking data using eye vergence theeshold
+##    *   Hunting Events Bouts are analysed and saved in huntEpisodeAnalysis_MotionBoutDataXXX file - 
 ##    *   Then each hunt event is checked and Labelled According to outcome - The start-End frame adjusted 
 ###   *   Succesful hunt episodes are retracked in supervised manner we can analyse in finer detail -
 ##    *  The bouts from each retracked  hunt episode are extracted / and labelled according to seauence 
-##    *   Motion bouts were then validated and noted the position of mouth and prey just prior to capture
+##    *   Motion bouts were then validated and noted the position of mouth and prey just prior to capture - Appended to huntEpisodeAnalysis_MotionBoutDataXXX_Validated
 ##    *   From there a new data list that compunes capture info with First turn behaviour at the onset of hunting is created :
 ##        Confusingly named it is called the firstboutpoints, with latest filename :  huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated
 # Consider What the Hunt Ratio Is On a No Show Larva? Currently Set To 0 - 

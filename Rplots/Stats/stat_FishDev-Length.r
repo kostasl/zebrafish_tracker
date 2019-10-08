@@ -199,4 +199,5 @@ mtext("N",at="topleft",outer=F,side=2,col="black",las=las,font=2,line=line,padj=
 dev.off()
 
 #######PLOT RESULTS
+t.test(dSizeNF)
 
