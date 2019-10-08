@@ -128,9 +128,9 @@ datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTra
 lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"//huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated",".rds",sep="")) 
 
 ### Capture Speed vs Distance to prey ###
-datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"],CaptureDuration= (lFirstBoutPoints$NL[,"CaptureStrikeEndFrame"]-lFirstBoutPoints$NL[,"CaptureStrikeFrame"])/G_APPROXFPS ) )
-datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"],CaptureDuration= (lFirstBoutPoints$LL[,"CaptureStrikeEndFrame"]-lFirstBoutPoints$LL[,"CaptureStrikeFrame"])/G_APPROXFPS  )
-datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"],CaptureDuration= (lFirstBoutPoints$DL[,"CaptureStrikeEndFrame"]-lFirstBoutPoints$DL[,"CaptureStrikeFrame"])/G_APPROXFPS  )
+datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"],CaptureDuration= (lFirstBoutPoints$NL[,"CaptureBoutEndFrame"]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"])/G_APPROXFPS ) )
+datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"],CaptureDuration= (lFirstBoutPoints$LL[,"CaptureBoutEndFrame"]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"])/G_APPROXFPS  )
+datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"],CaptureDuration= (lFirstBoutPoints$DL[,"CaptureBoutEndFrame"]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"])/G_APPROXFPS  )
 
 ###Subset Validated Only
 

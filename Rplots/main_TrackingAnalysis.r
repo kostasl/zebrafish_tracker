@@ -5,6 +5,14 @@
 #            Otherwise, a non appearing fish counts towards the group mean since its tested for a fixed amount of time (10mins each fish)
 # 14-12-17 :  Added MotionTrajectory Analysis - PathLengths/Speed/Ratio #frames(Speed>0) over All ANalysed Event Frames Of A Larva 
 #            
+## NOTES : The processing sequence of data:
+##    *   Hunt Events are extracted from All tracking data using eye vergence theeshold
+##    *   Then each hunt event is checked and Labelled According to outcome - The start-End frame adjusted 
+###   *   Succesful hunt episodes are retracked in supervised manner we can analyse in finer detail -
+##    *  The bouts from each retracked  hunt episode are extracted / and labelled according to seauence 
+##    *   Motion bouts were then validated and noted the position of mouth and prey just prior to capture
+##    *   From there a new data list that compunes capture info with First turn behaviour at the onset of hunting is created :
+##        Confusingly named it is called the firstboutpoints, with latest filename :  huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated
 # Consider What the Hunt Ratio Is On a No Show Larva? Currently Set To 0 - 
 #TODO: Add Colour Marker of Hunting On Trajectories
 # ## Pio Eykolo Na diaspasoume to Atomo Para mia prokatalipsi ##
@@ -19,7 +27,7 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
-setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 
 source("HuntingEventAnalysis.r")
 source("TrajectoryAnalysis.r")
