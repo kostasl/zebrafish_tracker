@@ -125,12 +125,12 @@ strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig4_stat_modelMixCa
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
-lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
+lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"//huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated",".rds",sep="")) 
 
 ### Capture Speed vs Distance to prey ###
-datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
-datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] )
-datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] )
+datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"],CaptureDuration= (lFirstBoutPoints$NL[,"CaptureStrikeEndFrame"]-lFirstBoutPoints$NL[,"CaptureStrikeFrame"])/G_APPROXFPS ) )
+datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"],CaptureDuration= (lFirstBoutPoints$LL[,"CaptureStrikeEndFrame"]-lFirstBoutPoints$LL[,"CaptureStrikeFrame"])/G_APPROXFPS  )
+datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"],CaptureDuration= (lFirstBoutPoints$DL[,"CaptureStrikeEndFrame"]-lFirstBoutPoints$DL[,"CaptureStrikeFrame"])/G_APPROXFPS  )
 
 ###Subset Validated Only
 
@@ -222,11 +222,11 @@ lClustScore_NF$pchL[lClustScore_NF$fastClustScore > 0.7] <- 16
 lClustScore_DF <- list(fastClustScore=apply(draw_DF$mID[, (900):1000,1][,],1,mean) ,RegistarIdx=datDistanceVsStrikeSpeed_DL$RegistarIdx,pchL=rep_len(1,NROW(datDistanceVsStrikeSpeed_DL)))
 lClustScore_DF$pchL[lClustScore_DF$fastClustScore > 0.7] <- 16
 
-##Make SPeed Density Of Each Cluster
+##Make Distance Density Of Each Cluster
 dens_dist_NF_fast <- density(datDistanceVsStrikeSpeed_NL$DistanceToPrey[lClustScore_NF$pchL == 16])
 dens_dist_NF_slow <- density(datDistanceVsStrikeSpeed_NL$DistanceToPrey[lClustScore_NF$pchL == 1])
 
-##Make SPeed Density Of Each Cluster
+##Make Distance Density Of Each Cluster
 dens_dist_LF_fast <- density(datDistanceVsStrikeSpeed_LL$DistanceToPrey[lClustScore_LF$pchL == 16])
 dens_dist_LF_slow <- density(datDistanceVsStrikeSpeed_LL$DistanceToPrey[lClustScore_LF$pchL == 1])
 
@@ -608,11 +608,85 @@ dev.off()
 
 
 
-  
-
-
 
 #### Plot Prey Location  ###########
 ## The Original list if the lFirstBout data from runHuntepisode analysis
 source("plotTrackScatterAndDensities.r")
 #plotCaptureBoutPreyPositions
+
+##########################################################
+########## GAPE TIMING - Capture Strike Duration #########
+##########################################################
+
+
+### Make Gape - Timing Estimates for Fast Captures
+##These can be compared with Estimated time from frame durations of tracked hunt episodes- 
+gape_timing_comp_LF <- datDistanceVsStrikeSpeed_LL$DistanceToPrey[lClustScore_LF$pchL == 16]/datDistanceVsStrikeSpeed_LL$CaptureSpeed[lClustScore_LF$pchL == 16]
+gape_timing_comp_NF <- datDistanceVsStrikeSpeed_NL$DistanceToPrey[lClustScore_NF$pchL == 16]/datDistanceVsStrikeSpeed_NL$CaptureSpeed[lClustScore_NF$pchL == 16]
+gape_timing_comp_DF <- datDistanceVsStrikeSpeed_DL$DistanceToPrey[lClustScore_DF$pchL == 16]/datDistanceVsStrikeSpeed_DL$CaptureSpeed[lClustScore_DF$pchL == 16]
+
+dens_timing_LF_fast <- density(gape_timing_comp_LF,bw=0.002)
+dens_timing_NF_fast <- density(gape_timing_comp_NF,bw=0.002)
+dens_timing_DF_fast <- density(gape_timing_comp_DF,bw=0.002)
+
+### Compare To Bout Duration ###
+
+##Select the fast Capture/Strikes And Check duration 
+dens_captiming_LF_fast <- density(datDistanceVsStrikeSpeed_LL$CaptureDuration[lClustScore_LF$pchL == 16],bw=0.1)
+dens_captiming_NF_fast <- density(datDistanceVsStrikeSpeed_NL$CaptureDuration[lClustScore_NF$pchL == 16],bw=0.1)
+dens_captiming_DF_fast <- density(datDistanceVsStrikeSpeed_DL$CaptureDuration[lClustScore_DF$pchL == 16],bw=0.1)
+
+###
+layout(matrix(c(1,2),2,1, byrow = TRUE))
+##Margin: (Bottom,Left,Top,Right )
+#par(mar = c(5,4.5,3,1))
+par(mar = c(4.5,4.7,2,1))
+
+
+plot(dens_timing_LF_fast,col=colourLegL[2],lwd=2,main="Capture peak speed/distance to prey")
+lines(dens_timing_NF_fast,col=colourLegL[1],lwd=2)
+lines(dens_timing_DF_fast,col=colourLegL[3],lwd=2)
+
+plot(dens_captiming_LF_fast,col=colourLegL[2],lwd=3,main="Capture swim Duration")
+lines(dens_captiming_NF_fast,col=colourLegL[1],lwd=3)
+lines(dens_captiming_DF_fast,col=colourLegL[3],lwd=3)
+
+
+plot(datDistanceVsStrikeSpeed_LL$CaptureDuration,datDistanceVsStrikeSpeed_LL$CaptureSpeed)
+
+
+## I ve extracted MotionBoutData on Time to peak speed and distance travelled --
+
+plot( lFirstBoutPoints$DL[,"PeakSpeedDistance"],lFirstBoutPoints$DL[,"DistanceToPrey"])
+plot( lFirstBoutPoints$LL[,"PeakSpeedDistance"],lFirstBoutPoints$LL[,"DistanceToPrey"])
+
+
+plot( lFirstBoutPoints$LL[,"CaptureSpeed"],lFirstBoutPoints$LL[,"NFramesToPeakSpeed"])
+plot( lFirstBoutPoints$NL[,"CaptureSpeed"],lFirstBoutPoints$NL[,"NFramesToPeakSpeed"])
+
+
+###Time Until Min Distance to Prey
+plot(density((lFirstBoutPoints$LL[,"ColisionFrame"]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"])/G_APPROXFPS ),xlim=c(0,1),col=colourLegL[2],main="All captures")
+lines(density((lFirstBoutPoints$NL[,"ColisionFrame"]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"])/G_APPROXFPS,na.rm=T),col=colourLegL[1])
+lines(density((lFirstBoutPoints$DL[,"ColisionFrame"]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"])/G_APPROXFPS,na.rm=T),col=colourLegL[3])
+
+###Time Until Min Distance to Prey
+plot(density((lFirstBoutPoints$LL[,"ColisionFrame"][lClustScore_LF$pchL == 16]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"][lClustScore_LF$pchL == 16])/G_APPROXFPS ),xlim=c(0,1),col=colourLegL[2],main="fast")
+lines(density((lFirstBoutPoints$NL[,"ColisionFrame"][lClustScore_NF$pchL == 16]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"][lClustScore_NF$pchL == 16])/G_APPROXFPS,na.rm=T),col=colourLegL[1])
+lines(density((lFirstBoutPoints$DL[,"ColisionFrame"][lClustScore_DF$pchL == 16]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"][lClustScore_DF$pchL == 16])/G_APPROXFPS,na.rm=T),col=colourLegL[3])
+
+timeToHit_LF <- (lFirstBoutPoints$LL[,"ColisionFrame"][lClustScore_LF$pchL == 16]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"][lClustScore_LF$pchL == 16])/G_APPROXFPS 
+timeToHit_NF <-(lFirstBoutPoints$NL[,"ColisionFrame"][lClustScore_NF$pchL == 16]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"][lClustScore_NF$pchL == 16])/G_APPROXFPS
+timeToHit_DF <- (lFirstBoutPoints$DL[,"ColisionFrame"][lClustScore_DF$pchL == 16]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"][lClustScore_DF$pchL == 16])/G_APPROXFPS
+
+
+### Time to Hit Prey Should be invariant to Distance from prey in FAST captures - Gape Timing
+###
+layout(matrix(c(1,2,3),3,1, byrow = TRUE))
+plot( lFirstBoutPoints$LL[,"DistanceToPrey"][lClustScore_LF$pchL == 16],timeToHit_LF,xlim=c(0,0.5),pch=pchL[1],ylim=c(0,0.6))
+plot( lFirstBoutPoints$NL[,"DistanceToPrey"][lClustScore_NF$pchL == 16],timeToHit_NF,pch=pchL[2],xlim=c(0,0.5),ylim=c(0,0.6))
+plot( lFirstBoutPoints$DL[,"DistanceToPrey"][lClustScore_DF$pchL == 16],timeToHit_DF,pch=pchL[3],xlim=c(0,0.5),ylim=c(0,0.6))
+
+sd( (lFirstBoutPoints$LL[,"ColisionFrame"][lClustScore_LF$pchL == 16]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"][lClustScore_LF$pchL == 16])/G_APPROXFPS )
+sd((lFirstBoutPoints$NL[,"ColisionFrame"][lClustScore_NF$pchL == 16]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"][lClustScore_NF$pchL == 16])/G_APPROXFPS,na.rm=T ) 
+sd((lFirstBoutPoints$DL[,"ColisionFrame"][lClustScore_DF$pchL == 16]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"][lClustScore_DF$pchL == 16])/G_APPROXFPS,na.rm=T)

@@ -1,6 +1,6 @@
 ##'  Kostas Lagogiannis 
 ##' April 2019 
-##' Validate the capture strike data that was automatically detected from the retracked huntevents : - Manually label mouth position, prey position at capture bout
+##' Validate the capture strike data that was automatically detected from the retracked huntevents :
 ##' * after running runHuntEpisodeAnalysis.r, a bout detection list for each of the hunt episodes is used to obtain what the undershoot 
 ##' turn was on firstbout, and link it to the final, capture bout intensity.
 ##' these data are then used in statistical models to establish relationships between capture speed, distance to prey, eye vergence and undershoot on 1st turn to prey
@@ -14,7 +14,7 @@ source("HuntingEventAnalysis_lib.r")
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 ## The Original list if the lFirstBout data from runHuntepisode analysis
-datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
+datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"huntEpisodeAnalysis_MotionBoutData_peakSpeedExtended_Validated.rds"))  #"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
 
 #datHuntEventAllGroupToValidate <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
 ##Save a backup before changing anything
@@ -210,7 +210,7 @@ for (idx in idxRegValidated )
   for (idxBout in row.names(datMotionBouts) )
   {
     oldVal <- datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm
-    ##Find the 1st frame when speed goes below threshold after larva centroid has passed prey item
+    ##Locate end of capture bout:Find the 1st frame when speed goes below threshold after larva centroid has passed prey item
     idxSpeedLow    <- idxTouchDown+min(which(vEventSpeed_smooth_mm[idxTouchDown:datMotionBoutsToValidate[idxBout,]$vMotionBout_Off] < G_THRES_MOTION_BOUT_SPEED),na.rm=T)  ##Find frame where larva closest to prey - assume this is the capture frame
     if (!is.integer (idxSpeedLow)) ##If low speed thres not hit, then just take the end of the bout
       idxSpeedLow <- datMotionBoutsToValidate[idxBout,]$vMotionBout_Off
@@ -221,7 +221,16 @@ for (idx in idxRegValidated )
     datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:idxSpeedLow] ,na.rm=TRUE )
     stopifnot(is.numeric(datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm) | is.infinite((datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm)))
     
-  
+    
+    ##Save The Frame/time of peak speed ##
+    datMotionBoutsToValidate[idxBout,"vMotionFramesToPeakSpeed"] =  which(vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:idxSpeedLow] == max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:idxSpeedLow] ,na.rm=TRUE ) )
+
+    ##Save The integrated distance travelled At time of Peak Speed
+    datMotionBoutsToValidate[idxBout,"vMotionPeakSpeed_displacement_px"] = sum(vEventSpeed_smooth[1:datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_frame])
+    
+    ##Save the Frame/time Of min Dist to prey ##
+    datMotionBoutsToValidate[idxBout,"PreyMinDistance_frame"] <- idxTouchDown
+    
     datPlaybackHuntEvent[datMotionBouts$vMotionBout_On:datMotionBouts$vMotionBout_Off, ]$PreyID <- 1
     datPlaybackHuntEvent[datMotionBouts$vMotionBout_On:datMotionBouts$vMotionBout_Off, ]$Prey_X <- datMotionBouts$vd_PreyX  
     datPlaybackHuntEvent[datMotionBouts$vMotionBout_On:datMotionBouts$vMotionBout_Off, ]$Prey_Y <- datMotionBouts$vd_PreyY
@@ -300,7 +309,7 @@ segments(datMotionBouts$vd_MouthX,512-datMotionBouts$vd_MouthY,x,512-y,cex=1, ma
 segments(datMotionBouts$vd_MouthX,512-datMotionBouts$vd_MouthY,xp,512-yp,cex=1, main="",col="magenta")
 
 ##Update Saved Data
-saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds",sep="")) ##Save With Dataset Idx Identifier
+saveRDS(datMotionBoutsToValidate,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_peakSpeedExtended_Validated.rds",sep="")) ##Save With Dataset Idx Identifier
 
 ## Recalc First Bout Data based on Validated Info ###
 strGroupID <- levels(datTrackedEventsRegister$groupID)
@@ -316,21 +325,32 @@ for (gp in strGroupID)
   datMotionBoutCombined$boutRank <- as.numeric(datMotionBoutCombined$boutRank)
   datMotionBoutTurnToPrey <- datMotionBoutCombined[abs(datMotionBoutCombined$OnSetAngleToPrey) >= abs(datMotionBoutCombined$OffSetAngleToPrey) , ]
   datMotionBoutTurnToPrey <- datMotionBoutTurnToPrey[!is.na(datMotionBoutTurnToPrey$RegistarIdx),]
-  c
+  
+  
+  
   ## Relates First turn to prey to final capture strike parameters  ##
   ##
   lFirstBoutPoints[[gp]] <- cbind(OnSetAngleToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey,
-                                  OnSetDistanceToPrey = datMotionBoutTurnToPrey[datMotionBoutTurnToPrey$turnSeq == 1 ,]$vMotionBoutDistanceToPrey_mm,
                                   Turn= datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$OnSetAngleToPrey - datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1,]$OffSetAngleToPrey
                                   , RegistarIdx=datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx,
                                   CaptureSpeed = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                           datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm,
+                                  ColisionFrame = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                          datMotionBoutCombined$boutRank == 1 ,]$PreyMinDistance_frame, ##Min Dist to prey (centroid) Hit time in frames
+                                  NFramesToPeakSpeed = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                          datMotionBoutCombined$boutRank == 1 ,]$vMotionFramesToPeakSpeed, ## Time until speed Peaks (Accelleration)
+                                  PeakSpeedDistance = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                           datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_displacement_px*DIM_MMPERPX, ##Dist travelled until peak speed 
+                                  
                                   DistanceToPrey = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                             datMotionBoutCombined$boutRank == 1 ,]$vMotionBoutDistanceToPrey_mm,
                                   doesCaptureStrike=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                                datMotionBoutCombined$boutRank == 1 ,]$vMotionPeakSpeed_mm >= G_THRES_CAPTURE_SPEED ),
-                                  CaptureStrikeFrame=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                  CaptureBoutStartFrame=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                                 datMotionBoutCombined$boutRank == 1 ,]$vMotionBout_On  ),
+                                  CaptureBoutEndFrame=( datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
+                                                                                datMotionBoutCombined$boutRank == 1 ,]$vMotionBout_Off  ),
+                                  
                                   CaptureStrikeEyeVergence = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
                                                                                       datMotionBoutCombined$boutRank == 1 ,]$OnSetEyeVergence,
                                   Validated = datMotionBoutCombined[ datMotionBoutCombined$RegistarIdx %in% datMotionBoutTurnToPrey[ datMotionBoutTurnToPrey$turnSeq == 1 ,]$RegistarIdx  &
@@ -340,7 +360,11 @@ for (gp in strGroupID)
 }
 
 ##Save List on First Bout Data
-saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="") ) #Processed Registry on which we add )
+saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated",".rds",sep="") ) #Processed Registry on which we add )
+
+
+###get distance travelled at peak speed - ie Accellaration - 
+## Peak speed should be close to prey position - Which We can compare to the distance to prey 
 
 
 
