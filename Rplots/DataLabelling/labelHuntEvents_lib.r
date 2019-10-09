@@ -49,7 +49,9 @@ huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10
 ## Notes : Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
 getLabelledHuntEventsSet <- function()
 {
+  
   strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"
+  assign("file_LabelledHuntEventsSet", paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ), envir = .GlobalEnv)
   message(paste(" Loading Hunt Event List to Analyse... ",strProcDataFileName))
   #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
   datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))

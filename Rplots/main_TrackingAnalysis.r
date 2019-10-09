@@ -14,7 +14,16 @@
 ##    *   Motion bouts were then validated and noted the position of mouth and prey just prior to capture - Appended to huntEpisodeAnalysis_MotionBoutDataXXX_Validated
 ##    *   From there a new data list that compunes capture info with First turn behaviour at the onset of hunting is created :
 ##        Confusingly named it is called the firstboutpoints, with latest filename :  huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated
-# Consider What the Hunt Ratio Is On a No Show Larva? Currently Set To 0 - 
+## 
+### -- Clarifying the extracted data :
+### 1st Pass Tracked Data is in : "datAllFramesFix1_Ds-5-19.RData"
+##  2nd Pass Retracked (Successfull)  hunt events are in : datAllHuntEventAnalysisFrames_setC.RData, with a register datTrackedEventsRegister: setn_huntEventsTrackAnalysis_Register_ToValidate.rds
+##  The Bout data After analysis of Retracked Events are in : huntEpisodeAnalysis_MotionBoutData_ToValidate.rds 
+##  Data is then Labelled and register saved in :  "setn15-HuntEvents-SB-Updated-Merged3" loaded from getLabelledHuntEventsSet() function - LIst of labels : vHuntEventLabels
+##  and once validated by manually adding position mouth and prey position these become: huntEpisodeAnalysis_MotionBoutData_peakSpeedExtended_Validated.rds - A manually recorded file of the labels also exists zebrafishtrackeData/HuntEvents_Retracked/boutValidate/manualRecs.txt
+##  From there the Initial Turn and Capture Behaviour are linked in the lFirstBoutPoints : huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated.rds
+
+
 #TODO: Add Colour Marker of Hunting On Trajectories
 # ## Pio Eykolo Na diaspasoume to Atomo Para mia prokatalipsi ##
 library(tools)

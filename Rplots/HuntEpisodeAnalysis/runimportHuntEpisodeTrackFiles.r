@@ -1,4 +1,4 @@
-###### ## Import THe HUNTEVENT Track Data And Merge Prey And Fish Records ### (Assummes single fish , single/multiple Prey) ##
+###### ## Import THe RETRACKED HUNTEVENT Track Data And Merge Prey And Fish Records ### (Assummes single fish , single/multiple Prey) ##
 ## Kostas L May 2018
 ## After Tracking all events and screening Labelling the identified Hunt Events we run the
 ## labelling process again, now filtering for specific labels in the Hunt Event list - For example the succesfull ones
@@ -8,7 +8,7 @@
 ## A specicif hunt event, with fish and food motion,  can then be played back as a cartoon using the function renderHuntEventPlayback
 ## The list of Analysed Hunt Events Is Given by datTrackedEventsRegister
 ###
-
+## OUTPUT: datAllHuntEventAnalysisFrames_setC.RData
 
 ############# Function to Analyse HuntEpisode tracks Combined With food #########
 ## Import The retracked Hunt/Food Episodes - 
