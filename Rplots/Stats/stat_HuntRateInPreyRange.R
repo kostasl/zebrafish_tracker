@@ -364,6 +364,15 @@ densHPoissonRate_DL <- density( HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL
 densHPoissonRate_NE <- density( HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE,bw=pBW)
 densHPoissonRate_NL <- density( HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL,bw=pBW)
 
+##Mean SEM ##
+muHuntRate_NL <- mean(HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL)
+muHuntRate_LL <- mean(HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL)
+muHuntRate_DL <- mean(HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL)
+
+semHuntRate_NL <- sd(HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL)/sqrt(NROW(HEventHuntGammaRate_NL)*NCOL(HEventHuntGammaRate_NL))
+semHuntRate_LL <- sd(HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL)/sqrt(NROW(HEventHuntGammaRate_LL)*NCOL(HEventHuntGammaRate_LL))
+semHuntRate_DL <- sd(HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL)/sqrt(NROW(HEventHuntGammaRate_DL)*NCOL(HEventHuntGammaRate_DL))
+
 
 Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(datHuntVsPreyNL[,2])[2])
 x <- seq(0.01,Plim,0.05)

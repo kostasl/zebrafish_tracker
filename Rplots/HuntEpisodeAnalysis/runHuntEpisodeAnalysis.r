@@ -1,7 +1,7 @@
 
 ### Hunt Episode Data Extraction and Analysis Scripts 
 ### Kostasl Jul 2018 
-## It is aimed at identified hunt event that have been carefully retracked and imported separatelly from these new Tracked CsV files using runImportHuntEpisodeTrackFiles
+## It is aimed at identified hunt event that have been *carefully retracked* and imported separatelly from these new Tracked CsV files using runImportHuntEpisodeTrackFiles
 ## It provides the data for identifying Bouts using FishSpeed. 
 ## Notes: 
 ## * Gaussian Mixt. Clusters are used to Identify Bout from Speeds, however the BoutOnset-Offset Is then Fixed To Identify When Speed Ramps Up , 
@@ -586,7 +586,8 @@ for (idxH in idxTestSet )# idxTestSet NROW(datTrackedEventsRegister) #1:NROW(dat
 ###################################################################################
 
 ########## SAVE Processed Hunt Events ###########
-if (bSaveNewMotionData)
+## Contains Bout Info On Retracked Events ONly
+if (bSaveNewMotionData) 
   saveRDS(lMotionBoutDat,file=paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC",".rds",sep="") ) #Processed Registry on which we add )
 #datEpisodeMotionBout <- lMotionBoutDat[[1]]
 

@@ -42,6 +42,7 @@ datCaptureBoutsToValidate <- datMotionBoutsToValidate[datMotionBoutsToValidate$b
 ## Exclude the already Validated records
 idxToValidate <- datCaptureBoutsToValidate[is.na(datCaptureBoutsToValidate$MarkValidated), ]$RegistarIdx
 
+#idxToValidate <- {194}
 #idxToValidate <- c(idxReg_DL,idxReg_NL,idxReg_LL)
 
 for (idx in idxToValidate)
@@ -168,10 +169,13 @@ saveRDS(datTrackedEventsRegister, paste(strDataExportDir,"/setn_huntEventsTrackA
 
 
 stop("Done Labelling")
-#### Recalculations Of Bout And 1st Turn To Prey Data ####
+
+#### Recalculations Of Bout And 1st Turn To Prey Data - Using retracked Hunt Events####
 ### Recalc derived bout data / capture speed and angle to prey ###
-##datHuntEventMergedFrames
+## loaded file contains datHuntEventMergedFrames
 load(file=paste(strDataExportDir,"datAllHuntEventAnalysisFrames_setC.RData",sep=""))
+
+
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 
 
@@ -203,7 +207,13 @@ for (idx in idxRegValidated )
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
   vEventSpeed_smooth_mm <- vFs*vEventSpeed_smooth*DIM_MMPERPX
   
-  vDistToPrey          <- sqrt( (datPlaybackHuntEvent$posX -datMotionBouts$vd_PreyX  )^2 + (datPlaybackHuntEvent$posY - datMotionBouts$vd_PreyY)^2   )
+  ## Calc Distance TO Prey, by shifting centroid forward to approx where the Mouth Point is.
+  bearingRad = pi/180*(datPlaybackHuntEvent$BodyAngle-90)##+90+180 - Body Heading
+  posVX = datPlaybackHuntEvent$posX + cos(bearingRad)*DIM_DISTTOMOUTH_PX
+  posVY = datPlaybackHuntEvent$posY + sin(bearingRad)*DIM_DISTTOMOUTH_PX
+  
+  
+  vDistToPrey          <- sqrt( (posVX -datMotionBouts$vd_PreyX  )^2 + (posVY - datMotionBouts$vd_PreyY)^2   )
   idxTouchDown         <- head(which(vDistToPrey == min(vDistToPrey,na.rm=T) ),1) ##Find 1st frame where larva closest to prey - assume this is the capture frame
   
     ## Get peak Capture Speed within capture bout ##
