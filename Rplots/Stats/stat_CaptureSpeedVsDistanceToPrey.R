@@ -643,7 +643,7 @@ layout(matrix(c(1,2),2,1, byrow = TRUE))
 par(mar = c(4.5,4.7,2,1))
 
 
-plot(dens_timing_LF_fast,col=colourLegL[2],lwd=2,main="Capture peak speed/distance to prey")
+plot(dens_timing_LF_fast,col=colourLegL[2],lwd=2,main="Capture distance to prey/peak speed",xlim=c(0,0.2))
 lines(dens_timing_NF_fast,col=colourLegL[1],lwd=2)
 lines(dens_timing_DF_fast,col=colourLegL[3],lwd=2)
 
@@ -656,16 +656,24 @@ plot(datDistanceVsStrikeSpeed_LL$CaptureDuration,datDistanceVsStrikeSpeed_LL$Cap
 
 
 ## The distance Travelled at which peak speed was reached (Paper on other fish larvae suggest this is near the prey)
-plot( lFirstBoutPoints$LL[,"PeakSpeedDistance"][lClustScore_LF$pchL == 16],lFirstBoutPoints$LL[,"CaptureSpeed"][lClustScore_LF$pchL == 16],xlim=c(0,0.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed")
-plot( lFirstBoutPoints$NL[,"PeakSpeedDistance"][lClustScore_NF$pchL == 16],lFirstBoutPoints$NL[,"CaptureSpeed"][lClustScore_NF$pchL == 16],xlim=c(0,0.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed")
-plot( lFirstBoutPoints$DL[,"PeakSpeedDistance"][lClustScore_DF$pchL == 16],lFirstBoutPoints$DL[,"CaptureSpeed"][lClustScore_DF$pchL == 16],xlim=c(0,0.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed")
+## Constant Accelleration - Shown By linear Rel Of Spped To Distance - In Fast Captures
+## THUS Fast Captures Need Distance To Develop !!
+pdf(file= paste(strPlotExportPath,"/stat/stat_SpeedVsRunDistanceToPeakSpeed_DF.pdf",sep=""),width=7,height=14)
+layout(matrix(c(1,2,3),3,1, byrow = TRUE))
+par(mar = c(4.0,4.7,2,1))
+  plot( lFirstBoutPoints$LL[,"PeakSpeedDistance"],lFirstBoutPoints$LL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="Peak Speed and Distance to aquire it (LF)")
+  plot( lFirstBoutPoints$NL[,"PeakSpeedDistance"],lFirstBoutPoints$NL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="NF")
+  plot( lFirstBoutPoints$DL[,"PeakSpeedDistance"],lFirstBoutPoints$DL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="DF")
 
 dev.off()
+
 ## I ve extracted MotionBoutData on Time to peak speed and distance travelled --
 ##Papers suggest peak speed hits close to prey - Here tho - SpeedDistance is displacent of as sum(FishSpeed)
-plot( lFirstBoutPoints$LL[,"PeakSpeedDistance"][lClustScore_LF$pchL == 16],lFirstBoutPoints$LL[,"DistanceToPrey"][lClustScore_LF$pchL == 16],xlim=c(0,0.5),ylim=c(0,0.5),ylab="Dist To Prey",xlab="Dist Travelled to Peak Speed")
-plot( lFirstBoutPoints$NL[,"PeakSpeedDistance"][lClustScore_NF$pchL == 16],lFirstBoutPoints$NL[,"DistanceToPrey"][lClustScore_NF$pchL == 16],xlim=c(0,0.5),ylim=c(0,0.5),ylab="Dist To Prey",xlab="Dist Travelled to Peak Speed")
-plot( lFirstBoutPoints$DL[,"PeakSpeedDistance"][lClustScore_DF$pchL == 16],lFirstBoutPoints$DL[,"DistanceToPrey"][lClustScore_DF$pchL == 16],xlim=c(0,0.5),ylim=c(0,0.5),ylab="Dist To Prey",xlab="Dist Travelled to Peak Speed")
+pdf(file= paste(strPlotExportPath,"/stat/stat_PreyDistanceToPeakSpeedDistance_DF.pdf",sep=""),width=7,height=14)
+  plot( lFirstBoutPoints$LL[,"DistanceToPrey"][lClustScore_LF$pchL == 16],lFirstBoutPoints$LL[,"PeakSpeedDistance"][lClustScore_LF$pchL == 16],xlim=c(0,0.6),ylim=c(0,1.5),xlab="Dist To Prey",ylab="Dist Travelled to Peak Speed")
+  plot( lFirstBoutPoints$NL[,"DistanceToPrey"][lClustScore_NF$pchL == 16],lFirstBoutPoints$NL[,"PeakSpeedDistance"][lClustScore_NF$pchL == 16],xlim=c(0,0.6),ylim=c(0,1.5),xlab="Dist To Prey",ylab="Dist Travelled to Peak Speed")
+  plot( lFirstBoutPoints$DL[,"DistanceToPrey"][lClustScore_DF$pchL == 16],lFirstBoutPoints$DL[,"PeakSpeedDistance"][lClustScore_DF$pchL == 16],xlim=c(0,0.6),ylim=c(0,1.5),xlab="Dist To Prey",ylab="Dist Travelled to Peak Speed")
+dev.off()
 
 cor( lFirstBoutPoints$LL[,"PeakSpeedDistance"][lClustScore_LF$pchL == 16],lFirstBoutPoints$LL[,"DistanceToPrey"][lClustScore_LF$pchL == 16])
 cor( lFirstBoutPoints$NL[,"PeakSpeedDistance"][lClustScore_NF$pchL == 16],lFirstBoutPoints$NL[,"DistanceToPrey"][lClustScore_NF$pchL == 16])
@@ -673,22 +681,22 @@ cor( lFirstBoutPoints$DL[,"PeakSpeedDistance"][lClustScore_DF$pchL == 16],lFirst
 
 
 ##Relationship of Peak Speed to time to reaching (Accellaration)
-
-plot( lFirstBoutPoints$LL[,"CaptureSpeed"],lFirstBoutPoints$LL[,"NFramesToPeakSpeed"]/G_APPROXFPS,xlim=c(-0,70),ylim=c(0,0.5),ylab="sec")
-plot( lFirstBoutPoints$DL[,"CaptureSpeed"],lFirstBoutPoints$DL[,"NFramesToPeakSpeed"]/G_APPROXFPS,xlim=c(-0,70),ylim=c(0,0.5),ylab="sec")
-plot( lFirstBoutPoints$NL[,"CaptureSpeed"],lFirstBoutPoints$NL[,"NFramesToPeakSpeed"]/G_APPROXFPS,xlim=c(-0,70),ylim=c(0,0.5),ylab="sec")
-
+layout(matrix(c(1,2,3),3,1, byrow = TRUE))
+par(mar = c(4.0,4.7,2,1))
+plot( lFirstBoutPoints$LL[,"CaptureSpeed"],lFirstBoutPoints$LL[,"NFramesToPeakSpeed"]/G_APPROXFPS,xlim=c(-0,70),ylim=c(0,0.5),xlab="Capture Speed",ylab="Time to Peak Speed",main="Capture Speed Vs Time to Peak (LF)")
+plot( lFirstBoutPoints$DL[,"CaptureSpeed"],lFirstBoutPoints$DL[,"NFramesToPeakSpeed"]/G_APPROXFPS,xlim=c(-0,70),ylim=c(0,0.5),xlab="Capture Speed",ylab="Time to Peak Speed",main="(DF)")
+plot( lFirstBoutPoints$NL[,"CaptureSpeed"],lFirstBoutPoints$NL[,"NFramesToPeakSpeed"]/G_APPROXFPS,xlim=c(-0,70),ylim=c(0,0.5),xlab="Capture Speed",ylab="Time to Peak Speed",main="(NF)")
 
 
 ###Time Until Min Distance to Prey
 ##Fast CLuster Data points On Time to Hit Prey on capture swim (Time to hit prey - should not covary with distance for a fixed gape timing)
-timeToHit_LF_all <- (lFirstBoutPoints$LL[,"ColisionFrame"]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"])/G_APPROXFPS 
-timeToHit_NF_all <-(lFirstBoutPoints$NL[,"ColisionFrame"]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"])/G_APPROXFPS
-timeToHit_DF_all <- (lFirstBoutPoints$DL[,"ColisionFrame"]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"])/G_APPROXFPS
+timeToHit_LF_all <- datCapture_LL$FramesToHitPrey/G_APPROXFPS 
+timeToHit_NF_all <- datCapture_NL$FramesToHitPrey/G_APPROXFPS   #(lFirstBoutPoints$NL[,"ColisionFrame"]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"])/G_APPROXFPS
+timeToHit_DF_all <- datCapture_DL$FramesToHitPrey/G_APPROXFPS  #(lFirstBoutPoints$DL[,"ColisionFrame"]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"])/G_APPROXFPS
 
-timeToHit_LF_fast <- (lFirstBoutPoints$LL[,"ColisionFrame"][lClustScore_LF$pchL == 16]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"][lClustScore_LF$pchL == 16])/G_APPROXFPS 
-timeToHit_NF_fast <-(lFirstBoutPoints$NL[,"ColisionFrame"][lClustScore_NF$pchL == 16]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"][lClustScore_NF$pchL == 16])/G_APPROXFPS
-timeToHit_DF_fast <- (lFirstBoutPoints$DL[,"ColisionFrame"][lClustScore_DF$pchL == 16]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"][lClustScore_DF$pchL == 16])/G_APPROXFPS
+timeToHit_LF_fast <- (lFirstBoutPoints$LL[,"ColisionFrame"][lClustScore_LF$pchL == 16]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"][lClustScore_LF$pchL == 16])/G_APPROXFPS  # datCapture_LL[datCapture_LL$Cluster == "fast",]$FramesToHitPrey/G_APPROXFPS  #
+timeToHit_NF_fast <- (lFirstBoutPoints$NL[,"ColisionFrame"][lClustScore_NF$pchL == 16]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"][lClustScore_NF$pchL == 16])/G_APPROXFPS ##datCapture_LL[datCapture_NL$Cluster == "fast",]$FramesToHitPrey/G_APPROXFPS#
+timeToHit_DF_fast <- (lFirstBoutPoints$DL[,"ColisionFrame"][lClustScore_DF$pchL == 16]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"][lClustScore_DF$pchL == 16])/G_APPROXFPS #datCapture_DL[datCapture_DL$Cluster == "fast",]$FramesToHitPrey/G_APPROXFPS
 
 ###Time to hit (Min Distance to Prey) All capture Swims 
 plot(density(timeToHit_LF_all ),xlim=c(0,1),col=colourLegL[2],main="All captures",lwd=2,ylim=c(0,20))
@@ -713,9 +721,9 @@ dFirstBoutPointsNF[timeToHit_NF>0.4 & lClustScore_NF$pchL == 16,] ## Check Our O
 colourLegL[5] <- "black"
 layout(matrix(c(1,2,3),3,1, byrow = TRUE))
 par(mar = c(4.0,4.7,2,1))
-plot( lFirstBoutPoints$LL[,"DistanceToPrey"][lClustScore_LF$pchL == 16],timeToHit_LF_fast,xlim=c(0,0.5),col=colourLegL[5],pch=pchL[1],ylim=c(0,0.4),xlab="Distance to prey",ylab="time (sec)",main="Time to hit prey Vs Prey Distance (LF)")
-plot( lFirstBoutPoints$NL[,"DistanceToPrey"][lClustScore_NF$pchL == 16],timeToHit_NF_fast,col=colourLegL[5],pch=pchL[2],xlim=c(0,0.5),ylim=c(0,0.4),xlab=NA,ylab="time (sec)",main="(NF)")
-plot( lFirstBoutPoints$DL[,"DistanceToPrey"][lClustScore_DF$pchL == 16],timeToHit_DF_fast,col=colourLegL[5],pch=pchL[3],xlim=c(0,0.5),ylim=c(0,0.4),xlab="Distance to prey",ylab="time (sec)",main="(DF)")
+plot( lFirstBoutPoints$LL[,"DistanceToPrey"],timeToHit_LF_all,xlim=c(0,0.5),col=colourLegL[5],pch=pchL[1],ylim=c(0,0.4),xlab="Distance to prey",ylab="time (sec)",main="Time to hit prey Vs Prey Distance (LF)")
+plot( lFirstBoutPoints$NL[,"DistanceToPrey"],timeToHit_NF_all,col=colourLegL[5],pch=pchL[2],xlim=c(0,0.5),ylim=c(0,0.4),xlab=NA,ylab="time (sec)",main="(NF)")
+plot( lFirstBoutPoints$DL[,"DistanceToPrey"],timeToHit_DF_all,col=colourLegL[5],pch=pchL[3],xlim=c(0,0.5),ylim=c(0,0.4),xlab="Distance to prey",ylab="time (sec)",main="(DF)")
 
 cor(lFirstBoutPoints$LL[,"DistanceToPrey"][lClustScore_LF$pchL == 16],timeToHit_LF_fast)
 cor(lFirstBoutPoints$NL[,"DistanceToPrey"][lClustScore_NF$pchL == 16][!is.na(timeToHit_NF_fast)],timeToHit_NF_fast[!is.na(timeToHit_NF_fast)])
@@ -733,3 +741,6 @@ cor(lFirstBoutPoints$DL[,"CaptureSpeed"][lClustScore_DF$pchL == 16][!is.na(timeT
 sd( timeToHit_LF_fast,na.rm=T )
 sd( timeToHit_NF_fast,na.rm=T ) 
 sd( timeToHit_DF_fast,na.rm=T ) 
+
+
+###

@@ -82,6 +82,67 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   
 }
 
+## Cobines the clustering with the first Bout Points And Save into New RDS files 
+makeCaptureClusteredData <- function(lFirstBoutPoints,drawClust)
+{
+  draw_NF <- drawClust$NF
+  draw_LF <- drawClust$LF
+  draw_DF <- drawClust$DF
+  ### Capture Speed vs Distance to prey ###
+  datCapture_NL <- data.frame( cbind(DistanceToPrey  = lFirstBoutPoints$NL[,"DistanceToPrey"],
+                                     FramesToHitPrey = (lFirstBoutPoints$NL[,"ColisionFrame"]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"]),
+                                     CaptureSpeed    = lFirstBoutPoints$NL[,"CaptureSpeed"],
+                                     PeakSpeedDistance = lFirstBoutPoints$NL[,"PeakSpeedDistance"],
+                                     Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],
+                                     RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],
+                                     Validated= lFirstBoutPoints$NL[,"Validated"] ) )
+  
+  datCapture_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],
+                                     FramesToHitPrey=(lFirstBoutPoints$LL[,"ColisionFrame"]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"]),
+                                    CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),
+                                    PeakSpeedDistance = lFirstBoutPoints$LL[,"PeakSpeedDistance"],
+                                    Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],
+                                    RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],
+                                    Validated= lFirstBoutPoints$LL[,"Validated"] )
+  
+  datCapture_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],
+                                    FramesToHitPrey=(lFirstBoutPoints$DL[,"ColisionFrame"]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"]),
+                                    CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),
+                                    PeakSpeedDistance = lFirstBoutPoints$DL[,"PeakSpeedDistance"],
+                                    Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],
+                                    RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],
+                                    Validated= lFirstBoutPoints$DL[,"Validated"] )
+  
+  
+  ##Select Validated Only
+  datCapture_NL <- datCapture_NL[datCapture_NL$Validated == 1, ]
+  datCapture_LL <- datCapture_LL[datCapture_LL$Validated == 1, ]
+  datCapture_DL <- datCapture_DL[datCapture_DL$Validated == 1, ]
+  
+  #### Setup Label INdicating Cluster Membership vis point type
+  minClusterLikelyhood <- 0.95 
+  steps <- NROW(draw_LF$mID[1,,1])
+  nsamples <- min(steps,1)
+  ch <- 2 ##Chain Select
+  
+  lClustScore_NF <- list(fastClustScore=apply(draw_NF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_NL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_NL)))
+  lClustScore_NF$pchL[lClustScore_NF$fastClustScore > minClusterLikelyhood] <- 16
+  datCapture_NL <- cbind(datCapture_NL,Cluster=factor(labels=c("slow","fast"),lClustScore_NF$pchL) )
+  
+  lClustScore_LF <- list(fastClustScore=apply(draw_LF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_LL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_LL)))
+  lClustScore_LF$pchL[lClustScore_LF$fastClustScore > minClusterLikelyhood] <- 16
+  datCapture_LL <- cbind(datCapture_LL,Cluster=factor(labels=c("slow","fast"),lClustScore_LF$pchL) )
+  
+  lClustScore_DF <- list(fastClustScore=apply(draw_DF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_DL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_DL)))
+  lClustScore_DF$pchL[lClustScore_DF$fastClustScore > minClusterLikelyhood] <- 16
+  datCapture_DL <- cbind(datCapture_DL,Cluster=factor(labels=c("slow","fast"),lClustScore_DF$pchL) )
+  
+  #### Save New data of hunting stats - now including the cluster classification -
+  saveRDS(datCapture_NL,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_clustered",".rds",sep="")) 
+  saveRDS(datCapture_LL,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered",".rds",sep="")) 
+  saveRDS(datCapture_DL,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered",".rds",sep="")) 
+  message("Saved New FirstBoutData_wCapFrame")
+}
 
 
 
@@ -96,12 +157,12 @@ strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig4_stat_modelMixCa
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
-lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
+lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated",".rds",sep="")) ##Original basic w/out the time-to-reach-prey data : /huntEpisodeAnalysis_FirstBoutData_Validated
 
 ### Capture Speed vs Distance to prey ###
 datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
-datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] )
-datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] )
+datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] ) )
+datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] ) )
 
 ###Subset Validated Only
 
@@ -159,6 +220,9 @@ save(draw_LF,draw_NF,draw_DF,file =paste(strDataExportDir,"stat_CaptSpeedCluster
 load(file =paste(strDataExportDir,"stat_CaptSpeedCluster_RJags.RData",sep=""))
 #### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
 
+##Update The Capture  Bout Data list with the new clustering (huntEpisodeAnalysis_FirstBoutData)
+drawClust <- list(NF=draw_NF,LF=draw_LF,DF=draw_DF)
+makeCaptureClusteredData(lFirstBoutPoints,drawClust)
 
 #######################################################
 ### PLOT  

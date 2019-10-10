@@ -2,6 +2,38 @@
 #### Kostas Lagogiannis 2019 
 ## \brief Make a scipt clarifying the script files used to produce each figure Used in the MS 
 
+
+##Fig 1  Epxperimental TimeLine: manually designed  Inkscape
+
+### Fig 2A ####
+## The kinematics was produced by selecting one of the figure produced
+## from Hunt event analysis loop in : runHuntEpisodeAnalysis.r
+## 
+
+### Fig 2B ####
+## 
+#source("Stats/stat_HuntRateInPreyRange.R")
+#source("Stats/stat_HuntDuration.R")
+
+### Fig 3 ####
+#source("Stats/stat_HuntEfficiency.r")
+
+### Fig 4 ####
+#source("DataLabelling/plotLabelledDataResults.R")
+#source("Stats/stat_CaptureSpeedVsDistanceToPrey.R")
+
+### Fig 5 ####
+#source("Stats/stat_LinRegression_TurnVsBearing.R")
+
+## Fig 6  clustering Speed, TurnRatio and Distance to Prey using 3D 2xGaussian mixture method####
+#source("Stats/stat_ClusterCaptureSpeedVsUndershootAndDistance.r")
+
+### Fig 7 Show Covariance using Gaussian 3D non clustering model aong wit ####
+#source("Stats/stat_CaptureSpeedVsUndershootAndDistance.r")
+
+
+
+
 library(tools)
 library(RColorBrewer);
 library("MASS");
@@ -74,44 +106,45 @@ getSlowClusterGrid <- function(drawMCMC)
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
-lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
+lFirstBoutPoints <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated.rds",sep="")) ##Original :huntEpisodeAnalysis_FirstBoutData_Validated
 
 #### Plot Raw Capture Data Indicating Low/High Speed Clustering for each
 ### Load Pre Calc RJAgs Model Results
 ##   stat_CaptSpeedVsDistance_RJags.RData ##stat_CaptSpeedCluster_RJags.RData
 load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 
-### Capture Speed vs Distance to prey ###
-datCapture_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
-datCapture_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] )
-datCapture_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] )
-##Select Validated Only
-datCapture_NL <- datCapture_NL[datCapture_NL$Validated == 1, ]
-datCapture_LL <- datCapture_LL[datCapture_LL$Validated == 1, ]
-datCapture_DL <- datCapture_DL[datCapture_DL$Validated == 1, ]
+#### LOAD Capture First-Last Bout hunting that include the cluster classification - (made in stat_CaptureSpeedVsDistanceToPrey)
+datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_clustered.rds",sep="")) 
+datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
+datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
 
-#### Setup Label INdicating Cluster Membership vis point type
-minClusterLikelyhood <- 0.95 
-steps <- NROW(draw_LF$mID[1,,1])
-nsamples <- min(steps,1)
-ch <- 2 ##Chain Select
-
-lClustScore_NF <- list(fastClustScore=apply(draw_NF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_NL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_NL)))
-lClustScore_NF$pchL[lClustScore_NF$fastClustScore > minClusterLikelyhood] <- 16
-datCapture_NL <- cbind(datCapture_NL,Cluster=factor(labels=c("slow","fast"),lClustScore_NF$pchL) )
-
-lClustScore_LF <- list(fastClustScore=apply(draw_LF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_LL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_LL)))
-lClustScore_LF$pchL[lClustScore_LF$fastClustScore > minClusterLikelyhood] <- 16
-datCapture_LL <- cbind(datCapture_LL,Cluster=factor(labels=c("slow","fast"),lClustScore_LF$pchL) )
-
-lClustScore_DF <- list(fastClustScore=apply(draw_DF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_DL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_DL)))
-lClustScore_DF$pchL[lClustScore_DF$fastClustScore > minClusterLikelyhood] <- 16
-datCapture_DL <- cbind(datCapture_DL,Cluster=factor(labels=c("slow","fast"),lClustScore_DF$pchL) )
-
-#### Save New data of hunting stats - now including the cluster classification -
-saveRDS(datCapture_NL,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_NL_clustered",".rds",sep="")) 
-saveRDS(datCapture_LL,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_LL_clustered",".rds",sep="")) 
-saveRDS(datCapture_DL,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_DL_clustered",".rds",sep="")) 
+# 
+# ### Capture Speed vs Distance to prey ###
+# datCapture_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
+# datCapture_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] )
+# datCapture_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] )
+# ##Select Validated Only
+# datCapture_NL <- datCapture_NL[datCapture_NL$Validated == 1, ]
+# datCapture_LL <- datCapture_LL[datCapture_LL$Validated == 1, ]
+# datCapture_DL <- datCapture_DL[datCapture_DL$Validated == 1, ]
+# 
+# #### Setup Label INdicating Cluster Membership vis point type
+# minClusterLikelyhood <- 0.95 
+# steps <- NROW(draw_LF$mID[1,,1])
+# nsamples <- min(steps,1)
+# ch <- 2 ##Chain Select
+# 
+# lClustScore_NF <- list(fastClustScore=apply(draw_NF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_NL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_NL)))
+# lClustScore_NF$pchL[lClustScore_NF$fastClustScore > minClusterLikelyhood] <- 16
+# datCapture_NL <- cbind(datCapture_NL,Cluster=factor(labels=c("slow","fast"),lClustScore_NF$pchL) )
+# 
+# lClustScore_LF <- list(fastClustScore=apply(draw_LF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_LL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_LL)))
+# lClustScore_LF$pchL[lClustScore_LF$fastClustScore > minClusterLikelyhood] <- 16
+# datCapture_LL <- cbind(datCapture_LL,Cluster=factor(labels=c("slow","fast"),lClustScore_LF$pchL) )
+# 
+# lClustScore_DF <- list(fastClustScore=apply(draw_DF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_DL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_DL)))
+# lClustScore_DF$pchL[lClustScore_DF$fastClustScore > minClusterLikelyhood] <- 16
+# datCapture_DL <- cbind(datCapture_DL,Cluster=factor(labels=c("slow","fast"),lClustScore_DF$pchL) )
 
 ##############Clustered  Capture Speed Vs Turn Ratio #### 
 #### GGPLOT VERSION ###
@@ -570,38 +603,7 @@ legend("topright",
 dev.off()
 
 
-
-
 ########## END oF CaptureSpeed vs Distance  ###
-
-##Fig 1  Epxperimental TimeLine manually designed  
-
-### Fig 2A ####
-## The kinematics was produced by selecting one of the figure produced
-## from Hunt event analysis loop in : runHuntEpisodeAnalysis.r
-## 
-
-### Fig 2B ####
-## 
-#source("Stats/stat_HuntRateInPreyRange.R")
-#source("Stats/stat_HuntDuration.R")
-
-
-### Fig 3 ####
-#source("Stats/stat_HuntEfficiency.r")
-
-### Fig 4 ####
-#source("DataLabelling/plotLabelledDataResults.R")
-#source("Stats/stat_CaptureSpeedVsDistanceToPrey.R")
-
-### Fig 5 ####
-#source("Stats/stat_LinRegression_TurnVsBearing.R")
-
-## Fig 6  clustering Speed, TurnRatio and Distance to Prey using 3D 2xGaussian mixture method####
-#source("Stats/stat_ClusterCaptureSpeedVsUndershootAndDistance.r")
-
-### Fig 7 Show Covariance using Gaussian 3D non clustering model aong wit ####
-#source("Stats/stat_CaptureSpeedVsUndershootAndDistance.r")
 
 
 
@@ -631,6 +633,60 @@ cex = 1.4
 adj  = 3.5
 padj <- -8.0
 las <- 1
+
+
+####################################################
+##############    # GAPE-TIMING #    #############
+##################################################
+## These plots use the merged FirstBouts-CaptureData from : huntEpisodeAnalysis_FirstBoutData_wCapFrame_XX_clustered
+##  That result after validation from code running validateCaptureStrikeData - which calculates time to hitPrey, speeds etc
+## Once validated the data is re-merged with the clustering Bayssian results
+
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_DistanceVsTimeToHitPrey_NF.pdf",sep=""),width=7,height=7)
+p_NF = ggplot( datCapture_NL, aes( DistanceToPrey,FramesToHitPrey/G_APPROXFPS ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.6) +  ylim(0, 0.4) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.6)) +
+  scale_y_continuous(name="Time to reach prey", limits=c(0, 0.4)) 
+
+ggMarginal(p_NF, x="Distance to prey",y="Time to reach prey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
+
+## time to reach min dist to prey 
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_DistanceVsTimeToHitPrey_LF.pdf",sep=""),width=7,height=7)
+p_LF = ggplot( datCapture_LL, aes( DistanceToPrey,FramesToHitPrey/G_APPROXFPS ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_LF = p_LF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster) ) +  xlim(0, 0.6) +  ylim(0, 0.4) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.6)) +
+  scale_y_continuous(name="Time to reach prey", limits=c(0, 0.4)) 
+
+ggMarginal(p_LF, x="Distance to prey",y="Time to reach prey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
+
+
+## time to reach min dist to prey 
+pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_DistanceVsTimeToHitPrey_DF.pdf",sep=""),width=7,height=7)
+p_DF = ggplot( datCapture_DL, aes( DistanceToPrey,FramesToHitPrey/G_APPROXFPS ,color =Cluster,fill=Cluster)) +
+  ggtitle(NULL) +
+  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+  fill_palette("jco")
+
+p_DF = p_DF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_DL$Cluster) ) +  xlim(0, 0.6) +  ylim(0, 0.4) +
+  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+  scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.6)) +
+  scale_y_continuous(name="Time to reach prey", limits=c(0, 0.4)) 
+
+ggMarginal(p_DF, x="Distance to prey",y="Time to reach prey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+dev.off()
+
 
 
 ### PLOT EMPIRICAL 

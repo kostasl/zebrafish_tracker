@@ -22,6 +22,7 @@ datCaptureBouts <- readRDS(file=paste(strDataExportDir,"/FailedHuntEpisodeAnalys
 #Select The Hunt Events whose capture bouts we have not recorded and validate yet
 idxToValidate <- rownames( datFailedHuntEvents)[!(rownames( datFailedHuntEvents) %in% datCaptureBouts[is.na(datCaptureBouts$MarkValidated)  ]$RegistarIdx)]
 
+
 for (idx in idxToValidate)
 {
   rec <- datFailedHuntEvents[idx,]
@@ -125,12 +126,12 @@ for (idx in idxToValidate)
     {
       newLab <- convertToScoreLabel(as.numeric(strKeyC)-1 ) 
       message(paste("new label:",newLab ) )
-      datFailedHuntEvents[idx,] <- newLab        
+      datHuntEventAllGroupToLabel[idx,] <- newLab        ####Save onto Origianl Full Record Using IDx
     }
     
     ##Save 
     saveRDS(datCaptureBouts,file=paste(strDataExportDir,"/FailedHuntEpisodeAnalysis_CaptureBoutData.rds",sep="")) ##Save With Dataset Idx Identifier
-    saveRDS(datFailedHuntEvents, file_LabelledHuntEventsSet ) ## THis is the Processed Register File On 
+    saveRDS(datHuntEventAllGroupToLabel, file_LabelledHuntEventsSet ) ## THis is the Processed Register File On 
     message("HuntEvent and CaptureBout Files Updated.")
     
   } ##Mark validated

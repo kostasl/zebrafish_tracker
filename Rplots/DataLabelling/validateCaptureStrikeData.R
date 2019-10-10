@@ -181,6 +181,7 @@ source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 
 idxRegValidated <- datMotionBoutsToValidate[!is.na(datMotionBoutsToValidate$MarkValidated) & datMotionBoutsToValidate$MarkValidated == 1,]$RegistarIdx
 
+#idx <- 79
 for (idx in idxRegValidated )
 {
   recReg <- datTrackedEventsRegister[idx,]
@@ -200,7 +201,7 @@ for (idx in idxRegValidated )
   dframe               <- diff(datPlaybackHuntEvent$frameN,lag=1,differences=1)
   dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
   vFs                   <- datPlaybackHuntEvent$fps[1:NROW(dframe)]
-  vEventSpeed_smooth          <- meanf(vDeltaDisplacement[1:NROW(dframe)]/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+  vEventSpeed_smooth          <- meanf(vDeltaDisplacement[1:NROW(dframe)]/dframe,3) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
   vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed_smooth) #meanf(vEventSpeed,100) #
   vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
@@ -209,34 +210,52 @@ for (idx in idxRegValidated )
   
   ## Calc Distance TO Prey, by shifting centroid forward to approx where the Mouth Point is.
   bearingRad = pi/180*(datPlaybackHuntEvent$BodyAngle-90)##+90+180 - Body Heading
-  posVX = datPlaybackHuntEvent$posX + cos(bearingRad)*DIM_DISTTOMOUTH_PX
-  posVY = datPlaybackHuntEvent$posY + sin(bearingRad)*DIM_DISTTOMOUTH_PX
+  posVX = datPlaybackHuntEvent$posX + cos(bearingRad)*DIM_DISTTOMOUTH_PX/2
+  posVY = datPlaybackHuntEvent$posY + sin(bearingRad)*DIM_DISTTOMOUTH_PX/2
   
   
   vDistToPrey          <- sqrt( (posVX -datMotionBouts$vd_PreyX  )^2 + (posVY - datMotionBouts$vd_PreyY)^2   )
-  idxTouchDown         <- head(which(vDistToPrey == min(vDistToPrey,na.rm=T) ),1) ##Find 1st frame where larva closest to prey - assume this is the capture frame
   
     ## Get peak Capture Speed within capture bout ##
   for (idxBout in row.names(datMotionBouts) )
   {
     oldVal <- datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm
-    ##Locate end of capture bout:Find the 1st frame when speed goes below threshold after larva centroid has passed prey item
-    idxSpeedLow    <- idxTouchDown+min(which(vEventSpeed_smooth_mm[idxTouchDown:datMotionBoutsToValidate[idxBout,]$vMotionBout_Off] < G_THRES_MOTION_BOUT_SPEED),na.rm=T)  ##Find frame where larva closest to prey - assume this is the capture frame
-    if (!is.integer (idxSpeedLow)) ##If low speed thres not hit, then just take the end of the bout
-      idxSpeedLow <- datMotionBoutsToValidate[idxBout,]$vMotionBout_Off
+    idxBoutOn <- datMotionBoutsToValidate[idxBout,]$vMotionBout_On
+    idxBoutOff <- min(datMotionBoutsToValidate[idxBout,]$vMotionBout_Off,NROW(vEventSpeed_smooth))
     
-    frameRangeCapt <- (datMotionBoutsToValidate[idxBout,]$vMotionBout_On:   min(datMotionBoutsToValidate[idxBout,]$vMotionBout_Off,
-                                                                                idxSpeedLow+1 ) ) ##Until Speed is low or end of Bout
-    ## Speed over then next 70 frames ##
-    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:idxSpeedLow] ,na.rm=TRUE )
+    distToPreyInBout     <- vDistToPrey[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:datMotionBoutsToValidate[idxBout,]$vMotionBout_Off]
+    ##Find 1st frame wITHIN THIS bOUT where larva closest to prey - usuful when looking at capture frames
+    idxTouchDown         <- datMotionBoutsToValidate[idxBout,]$vMotionBout_On + head(which(distToPreyInBout == min(distToPreyInBout,na.rm=T) ),1) 
+ 
+    stopifnot(!is.na(idxTouchDown))
+    message(idxTouchDown)
+    ##Locate end of capture bout:Find the 1st frame when speed goes below threshold after larva centroid has passed prey item
+    ## Re-Clip Capture Bout Around pEak Speed
+    idxSpeedLowEND    <- idxTouchDown+min(idxBoutOff-idxTouchDown,which(vEventSpeed_smooth_mm[idxTouchDown:idxBoutOff] < G_THRES_MOTION_BOUT_SPEED),na.rm=T)  ##Find frame where larva closest to prey - assume this is the capture frame
+    ##Find Start of the Capture Move, if speed doesnt drop below thresh then assume original boutOn
+    idxSpeedLowBEGIN  <- max( idxBoutOn,idxBoutOn+which(vEventSpeed_smooth_mm[idxBoutOn:idxTouchDown] < G_THRES_MOTION_BOUT_SPEED),na.rm=T)
+                                     ##Find frame where larva closest to prey - assume this is the capture frame
+    ## Debug:   
+    plot(vEventSpeed_smooth); points(idxTouchDown,vEventSpeed_smooth[idxTouchDown],col="red"); points(idxBoutOn,vEventSpeed_smooth[idxBoutOn],col="red",cex=3,pch=3); 
+    points(idxSpeedLowEND,vEventSpeed_smooth[idxSpeedLowEND],col="blue",pch=13,cex=3)
+    points(idxSpeedLowBEGIN,vEventSpeed_smooth[idxSpeedLowBEGIN],col="blue",pch=13,cex=3)
+    
+    if (!is.integer (idxSpeedLow)) ##If low speed thres not hit, then just take the end of the bout
+      idxSpeedLow <- idxBoutOff
+    
+    frameRangeCapt <- (idxBoutOn:   min(idxBoutOff,idxSpeedLowEND+1 ) ) ##Until Speed is low or end of Bout
+    ## MAX Speed over then frames until speed goes down ##
+    datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm <- max( vEventSpeed_smooth_mm[idxBoutOn:idxSpeedLowEND] ,na.rm=TRUE )
     stopifnot(is.numeric(datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm) | is.infinite((datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_mm)))
     
     
     ##Save The Frame/time of peak speed ##
-    datMotionBoutsToValidate[idxBout,"vMotionFramesToPeakSpeed"] =  which(vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:idxSpeedLow] == max( vEventSpeed_smooth_mm[datMotionBoutsToValidate[idxBout,]$vMotionBout_On:idxSpeedLow] ,na.rm=TRUE ) )
+    datMotionBoutsToValidate[idxBout,"vMotionFramesToPeakSpeed"] =  which(vEventSpeed_smooth_mm[idxBoutOn:idxSpeedLowEND] == max( vEventSpeed_smooth_mm[idxBoutOn:idxSpeedLowEND] ,na.rm=TRUE ) )
 
-    ##Save The integrated distance travelled At time of Peak Speed
-    datMotionBoutsToValidate[idxBout,"vMotionPeakSpeed_displacement_px"] = sum(vEventSpeed_smooth[1:datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_frame])
+    ##--Replaced: Save The integrated distance travelled At time of Peak Speed sum(vEventSpeed_smooth[idxBoutOn:idxBoutOn+datMotionBoutsToValidate[idxBout,]$vMotionFramesToPeakSpeed])
+    ###  Distance as straight line between OnBout point and Peak Speed point 
+    datMotionBoutsToValidate[idxBout,"vMotionPeakSpeed_displacement_px"]<- sqrt( (datPlaybackHuntEvent[idxBoutOn,]$posX - datPlaybackHuntEvent[idxBoutOn+datMotionBoutsToValidate[idxBout,]$vMotionFramesToPeakSpeed,]$posX  )^2 + (datPlaybackHuntEvent[idxBoutOn,]$posY - datPlaybackHuntEvent[idxBoutOn+datMotionBoutsToValidate[idxBout,]$vMotionFramesToPeakSpeed,]$posY )^2   ) 
+    stopifnot(is.numeric(datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_displacement_px) | is.infinite((datMotionBoutsToValidate[idxBout,]$vMotionPeakSpeed_displacement_px)))
     
     ##Save the Frame/time Of min Dist to prey ##
     datMotionBoutsToValidate[idxBout,"PreyMinDistance_frame"] <- idxTouchDown
@@ -371,6 +390,17 @@ for (gp in strGroupID)
 
 ##Save List on First Bout Data
 saveRDS(lFirstBoutPoints,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated",".rds",sep="") ) #Processed Registry on which we add )
+
+###Need to Re-Run Merging with Cluster ID
+
+
+### Load Pre Calc Results
+load(file =paste(strDataExportDir,"stat_CaptSpeedCluster_RJags.RData",sep=""))
+#### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
+
+##Update The Capture  Bout Data list with the new clustering (huntEpisodeAnalysis_FirstBoutData)
+drawClust <- list(NF=draw_NF,LF=draw_LF,DF=draw_DF)
+makeCaptureClusteredData(lFirstBoutPoints,drawClust)
 
 
 ###get distance travelled at peak speed - ie Accellaration - 

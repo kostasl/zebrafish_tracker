@@ -7,6 +7,7 @@
 # Note : Can use findLabelledEvent from auxFunctions.r file to obtain Labelled Event ID (ex.  "505/2149") from Using Event Register 
 # Consider What the Hunt Ratio Is On a No Show Larva? Currently Set To 0 - 
 #
+## NOTE : Can Key IN HuntEvent Index And Playback Specific Event ###
 #TODO: Add Colour Marker of Hunting On Trajectories
 # ## Pio Eykolo Na diaspasoume to Atomo Para mia prokatalipsi ##
 ##  925/2769 <- Weird Tail Motin
@@ -19,7 +20,7 @@ library("MASS");
 
 source("config_lib.R")
 
-setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
+#setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
