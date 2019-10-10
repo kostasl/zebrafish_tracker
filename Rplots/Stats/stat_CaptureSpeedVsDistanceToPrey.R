@@ -658,7 +658,7 @@ plot(datDistanceVsStrikeSpeed_LL$CaptureDuration,datDistanceVsStrikeSpeed_LL$Cap
 ## The distance Travelled at which peak speed was reached (Paper on other fish larvae suggest this is near the prey)
 ## Constant Accelleration - Shown By linear Rel Of Spped To Distance - In Fast Captures
 ## THUS Fast Captures Need Distance To Develop !!
-pdf(file= paste(strPlotExportPath,"/stat/stat_SpeedVsRunDistanceToPeakSpeed_DF.pdf",sep=""),width=7,height=14)
+pdf(file= paste(strPlotExportPath,"/stat/stat_Accelleration_SpeedVsRunDistanceToPeakSpeed_DF.pdf",sep=""),width=7,height=14)
 layout(matrix(c(1,2,3),3,1, byrow = TRUE))
 par(mar = c(4.0,4.7,2,1))
   plot( lFirstBoutPoints$LL[,"PeakSpeedDistance"],lFirstBoutPoints$LL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="Peak Speed and Distance to aquire it (LF)")
