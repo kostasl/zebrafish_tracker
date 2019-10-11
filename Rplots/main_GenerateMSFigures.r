@@ -120,33 +120,6 @@ datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_LIVE)
-# 
-# ### Capture Speed vs Distance to prey ###
-# datCapture_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )
-# datCapture_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"] )
-# datCapture_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"] )
-# ##Select Validated Only
-# datCapture_NL <- datCapture_NL[datCapture_NL$Validated == 1, ]
-# datCapture_LL <- datCapture_LL[datCapture_LL$Validated == 1, ]
-# datCapture_DL <- datCapture_DL[datCapture_DL$Validated == 1, ]
-# 
-# #### Setup Label INdicating Cluster Membership vis point type
-# minClusterLikelyhood <- 0.95 
-# steps <- NROW(draw_LF$mID[1,,1])
-# nsamples <- min(steps,1)
-# ch <- 2 ##Chain Select
-# 
-# lClustScore_NF <- list(fastClustScore=apply(draw_NF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_NL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_NL)))
-# lClustScore_NF$pchL[lClustScore_NF$fastClustScore > minClusterLikelyhood] <- 16
-# datCapture_NL <- cbind(datCapture_NL,Cluster=factor(labels=c("slow","fast"),lClustScore_NF$pchL) )
-# 
-# lClustScore_LF <- list(fastClustScore=apply(draw_LF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_LL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_LL)))
-# lClustScore_LF$pchL[lClustScore_LF$fastClustScore > minClusterLikelyhood] <- 16
-# datCapture_LL <- cbind(datCapture_LL,Cluster=factor(labels=c("slow","fast"),lClustScore_LF$pchL) )
-# 
-# lClustScore_DF <- list(fastClustScore=apply(draw_DF$mID[,(steps-nsamples):nsamples,ch],1,mean) ,RegistarIdx=datCapture_DL$RegistarIdx,pchL=rep_len(1,NROW(datCapture_DL)))
-# lClustScore_DF$pchL[lClustScore_DF$fastClustScore > minClusterLikelyhood] <- 16
-# datCapture_DL <- cbind(datCapture_DL,Cluster=factor(labels=c("slow","fast"),lClustScore_DF$pchL) )
 
 ##############Clustered  Capture Speed Vs Turn Ratio #### 
 #### GGPLOT VERSION ###
@@ -689,9 +662,124 @@ p_DF = p_DF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_DL$Cluster
 ggMarginal(p_DF, x="Distance to prey",y="Time to reach prey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 dev.off()
 
+#######################################
+########## HUNT POWER CORRELATIONs ####
+#######################################
+# Check Correlation Of UNdershoot With Hunt POwer
+
+##Take all expID from the successful hunt Events we have extracted hunt variables from 
+vexpID <- list(LF = datTrackedEventsRegister[datCapture_LL$RegistarIdx,]$expID,
+               NF=datTrackedEventsRegister[datCapture_NL$RegistarIdx,]$expID,
+               DF=datTrackedEventsRegister[datCapture_DL$RegistarIdx,]$expID)
+
+#datFishSuccessRate[datFishSuccessRate$expID %in% vexpID$LF, ]$HuntPower
+
+## Add Exp ID Column - Signifying Which Larvae Executed the Capture Success Hunt- 
+datCapture_LF_wExpID <- cbind(datCapture_LL,expID=vexpID$LF)
+datCapture_NF_wExpID <- cbind(datCapture_NL,expID=vexpID$NF)
+datCapture_DF_wExpID <- cbind(datCapture_DL,expID=vexpID$DF)
+
+##Merge Hunt Power To Hunt-Capture Variables 
+datMergedCapAndSuccess_LF <- merge(x=datCapture_LF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+datMergedCapAndSuccess_NF <- merge(x=datCapture_NF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+datMergedCapAndSuccess_DF <- merge(x=datCapture_DF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+
+plot(datMergedCapAndSuccess_LF$CaptureSpeed,datMergedCapAndSuccess_LF$HuntPower,xlim=c(0,80),ylim=c(0,10))
+plot(datMergedCapAndSuccess_NF$CaptureSpeed,datMergedCapAndSuccess_NF$HuntPower,xlim=c(0,80),ylim=c(0,10))
+plot(datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$HuntPower,xlim=c(0,80),ylim=c(0,10))
+
+plot(datMergedCapAndSuccess_LF$DistanceToPrey/datMergedCapAndSuccess_LF$CaptureSpeed,datMergedCapAndSuccess_LF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[2])
+points(datMergedCapAndSuccess_NF$DistanceToPrey/datMergedCapAndSuccess_NF$CaptureSpeed,datMergedCapAndSuccess_NF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[3])
+points(datMergedCapAndSuccess_DF$DistanceToPrey/datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[1])
+
+library(rgl)
+
+mergedCapDat <- rbind(datMergedCapAndSuccess_LF,datMergedCapAndSuccess_DF,datMergedCapAndSuccess_NF)
+##Set Colour
+mergedCapDat[mergedCapDat$groupID == 'LL',]$groupID <- colourLegL[2]
+mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[3]
+mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[1]
+
+huntPowerColour <- rfc(8)
+
+open3d()##mergedCapDat$groupID
+rgl::plot3d( x=mergedCapDat$CaptureSpeed, z=mergedCapDat$DistanceToPrey, y=mergedCapDat$HuntPower, col = huntPowerColour[round(mergedCapDat$HuntPower)] , type = "s", radius = 1.3,
+             xlab="Capture Speed (mm/sec)", zlab="Hunt Power",ylab="Distance to prey (mm)",
+             xlim=c(0.,80), ylim=c(0,0.6), zlim=c(0,10),
+             box = FALSE ,aspect = TRUE
+             #,expand = 1.5
+)
+
+open3d()##mergedCapDat$groupID
+rgl::plot3d( x=datMergedCapAndSuccess_LF$CaptureSpeed, z=datMergedCapAndSuccess_LF$DistanceToPrey, y=datMergedCapAndSuccess_LF$HuntPower, col = huntPowerColour[round(mergedCapDat$HuntPower)] , type = "s", radius = 1.3,
+             xlab="Capture Speed (mm/sec)", ylab="Hunt Power",zlab="Distance to prey (mm)",
+             xlim=c(0.,80), zlim=c(0,0.6), ylim=c(0,10),
+             box = FALSE ,aspect = TRUE
+             #,expand = 1.5
+)
 
 
-### PLOT EMPIRICAL 
+rgl::rgl.viewpoint(60,10)
+
+
+##UNDERSHOOT - POWER
+plot(datMergedCapAndSuccess_LF$Undershoot,datMergedCapAndSuccess_LF$HuntPower,xlim=c(0,2),ylim=c(0,10),col=colourLegL[2],ylab="Hunt Power")
+points(datMergedCapAndSuccess_NF$Undershoot,datMergedCapAndSuccess_NF$HuntPower,xlim=c(0,2),ylim=c(0,10),col=colourLegL[1])
+points(datMergedCapAndSuccess_DF$Undershoot,datMergedCapAndSuccess_DF$HuntPower,xlim=c(0,2),ylim=c(0,10),col=colourLegL[3])
+
+plot(datMergedCapAndSuccess_LF$Undershoot,datMergedCapAndSuccess_LF$Efficiency,xlim=c(0,2),ylim=c(0,1),col=colourLegL[2],ylab="Hunt Efficiency")
+points(datMergedCapAndSuccess_NF$Undershoot,datMergedCapAndSuccess_NF$Efficiency,xlim=c(0,2),ylim=c(0,1),col=colourLegL[1],pch=5)
+points(datMergedCapAndSuccess_DF$Undershoot,datMergedCapAndSuccess_DF$Efficiency,xlim=c(0,2),ylim=c(0,1),col=colourLegL[3],pch=6)
+
+###
+
+
+plot(datMergedCapAndSuccess_LF$DistanceToPrey/datMergedCapAndSuccess_LF$CaptureSpeed,datMergedCapAndSuccess_LF$Efficiency,xlim=c(0,0.04),ylim=c(0,1),col=colourLegL[2])
+points(datMergedCapAndSuccess_NF$DistanceToPrey/datMergedCapAndSuccess_NF$CaptureSpeed,datMergedCapAndSuccess_NF$Efficiency,xlim=c(0,0.04),ylim=c(0,1),col=colourLegL[3],pch=5)
+points(datMergedCapAndSuccess_DF$DistanceToPrey/datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$Efficiency,xlim=c(0,0.04),ylim=c(0,1),col=colourLegL[1],pch=6)
+
+### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
+## ##Make MAtrix
+datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'LL',],{
+                    cbind(Efficiency, #1
+                          #HuntPower, # ## Does not CoVary With Anyhting 
+                         DistanceToPrey, #2
+                         CaptureSpeed, #3
+                         Undershoot, #4
+                         DistanceToPrey*CaptureSpeed, #5
+                         DistanceToPrey*Undershoot, #6
+                         CaptureSpeed*Undershoot, #7
+                         DistanceToPrey*CaptureSpeed*Undershoot #8
+                         )
+  
+})
+
+Ei=eigen(cov(datpolyFactor))
+Ei
+
+## ##Make MAtrix
+datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'NL',],{
+  cbind(Efficiency, #1
+        #HuntPower, # ## Does not CoVary With Anyhting 
+        DistanceToPrey, #2
+        CaptureSpeed, #3
+        Undershoot, #4
+        DistanceToPrey*CaptureSpeed, #5
+        DistanceToPrey*Undershoot, #6
+        CaptureSpeed*Undershoot, #7
+        DistanceToPrey*CaptureSpeed*Undershoot #8
+  )
+  
+})
+
+Ei=eigen(cov(datpolyFactor))
+Ei
+
+
+lm(Efficiency ~ (DistanceToPrey+CaptureSpeed+Undershoot)^3,data=mergedCapDat[mergedCapDat$groupID == 'NL',])
+
+
+## PLOT EMPIRICAL 
 ####
 ########################################################
 ###        Distance Vs Capture speed               ###

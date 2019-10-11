@@ -478,8 +478,9 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
                                           "groupID"=NA,
                                           "dataSetID"=NA) ) #
 
-  vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))  
-  datFishSuccessRate <- cbind(datFishSuccessRate,HuntPower=vScoreIdx)
+  vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiency      <- ((datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))  
+  datFishSuccessRate <- cbind(datFishSuccessRate,HuntPower=vScoreIdx,Efficiency=vEfficiency)
   ##Add Group Label To the resulting Data Frame
   for (e in row.names(tblFishScoresLabelled) )
   {
