@@ -118,6 +118,8 @@ datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
 datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
 
+datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
+datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_LIVE)
 # 
 # ### Capture Speed vs Distance to prey ###
 # datCapture_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"] ) )

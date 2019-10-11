@@ -655,7 +655,8 @@ boxPlotHuntEpisodeDuration <- function(datAllHuntEvent)
 plotHuntPowerDataCDF <- function(datHuntEventAllGroupToLabel)
 {
   datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
-  vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  ## Hunt POwer ##
+  vScoreIdx        <- datFishSuccessRate[,"HuntPower"]  ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
   vEfficiencyRatio <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
   vEfficiencyRatio_Strike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_WS"]))
   vEfficiencyRatio_NStrike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_NS"]))
