@@ -47,7 +47,7 @@ library(ggpubr) ##install.packages("ggpubr")
 
 
 source("config_lib.R")
-setEnvFileLocations("HOME") #OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #OFFICE,#LAPTOP HOME
 
 
 ####################
@@ -119,7 +119,7 @@ datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
 
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
-datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_LIVE)
+datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 
 ##############Clustered  Capture Speed Vs Turn Ratio #### 
 #### GGPLOT VERSION ###
@@ -679,6 +679,19 @@ datCapture_LF_wExpID <- cbind(datCapture_LL,expID=vexpID$LF)
 datCapture_NF_wExpID <- cbind(datCapture_NL,expID=vexpID$NF)
 datCapture_DF_wExpID <- cbind(datCapture_DL,expID=vexpID$DF)
 
+## Merge and normalize
+mergedCapDat <- rbind(datMergedCapAndSuccess_LF,datMergedCapAndSuccess_DF,datMergedCapAndSuccess_NF)
+mergedCapDat$CaptureSpeed_norm <-mergedCapDat$CaptureSpeed/ range(mergedCapDat$CaptureSpeed)[2]
+mergedCapDat$DistanceToPrey_norm <- mergedCapDat$DistanceToPrey/range(mergedCapDat$DistanceToPrey)[2]
+mergedCapDat$Undershoot_norm    <- mergedCapDat$Undershoot/range(mergedCapDat$Undershoot)[2] - 0.5
+mergedCapDat$Undershoot    <- mergedCapDat$Undershoot - 1
+
+##Set Colour
+#mergedCapDat[mergedCapDat$groupID == 'LL',]$groupID <- colourLegL[2]
+#mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[3]
+#mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[1]
+
+
 ##Merge Hunt Power To Hunt-Capture Variables 
 datMergedCapAndSuccess_LF <- merge(x=datCapture_LF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
 datMergedCapAndSuccess_NF <- merge(x=datCapture_NF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
@@ -693,12 +706,6 @@ points(datMergedCapAndSuccess_NF$DistanceToPrey/datMergedCapAndSuccess_NF$Captur
 points(datMergedCapAndSuccess_DF$DistanceToPrey/datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[1])
 
 library(rgl)
-
-mergedCapDat <- rbind(datMergedCapAndSuccess_LF,datMergedCapAndSuccess_DF,datMergedCapAndSuccess_NF)
-##Set Colour
-mergedCapDat[mergedCapDat$groupID == 'LL',]$groupID <- colourLegL[2]
-mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[3]
-mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[1]
 
 huntPowerColour <- rfc(8)
 
@@ -751,12 +758,30 @@ datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'LL',],{
                          CaptureSpeed*Undershoot, #7
                          DistanceToPrey*CaptureSpeed*Undershoot #8
                          )
-  
 })
 
-Ei=eigen(cov(datpolyFactor))
-Ei
+Ei_LF=eigen(cov(datpolyFactor))
+Ei_LF
 
+
+### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
+## ##Make MAtrix
+datpolyFactor_norm <- with(mergedCapDat[mergedCapDat$groupID == 'LL',],{
+  cbind(Efficiency, #1
+        #HuntPower, # ## Does not CoVary With Anyhting 
+        DistanceToPrey_norm, #2
+        CaptureSpeed_norm, #3
+        Undershoot_norm, #4
+        DistanceToPrey_norm*CaptureSpeed_norm, #5
+        DistanceToPrey_norm*Undershoot_norm, #6
+        CaptureSpeed_norm*Undershoot_norm, #7
+        DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm #8
+  )
+})
+
+Ei_LF_norm=eigen(cov(datpolyFactor_norm))
+symnum(cov(datpolyFactor_norm))
+Ei_LF_norm
 ## ##Make MAtrix
 datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'NL',],{
   cbind(Efficiency, #1
@@ -772,9 +797,35 @@ datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'NL',],{
   
 })
 
-Ei=eigen(cov(datpolyFactor))
-Ei
+Ei_NL<-eigen(cov(datpolyFactor))
+Ei_NL
 
+## ##Make MAtrix
+datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'DL',],{
+  cbind(Efficiency, #1
+        #HuntPower, # ## Does not CoVary With Anyhting 
+        DistanceToPrey, #2
+        CaptureSpeed, #3
+        Undershoot, #4
+        DistanceToPrey*CaptureSpeed, #5
+        DistanceToPrey*Undershoot, #6
+        CaptureSpeed*Undershoot, #7
+        DistanceToPrey*CaptureSpeed*Undershoot #8
+  )
+  
+})
+
+Ei_DL <- eigen(cov(datpolyFactor))
+
+### Print Eugen MAtrix
+Ei_LL
+Ei_NL
+Ei_DL
+
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap(x=cov(datpolyFactor), col=col,symm = F)
+
+library(corrplot)
 
 lm(Efficiency ~ (DistanceToPrey+CaptureSpeed+Undershoot)^3,data=mergedCapDat[mergedCapDat$groupID == 'NL',])
 
