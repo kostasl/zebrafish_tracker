@@ -720,8 +720,6 @@ mergedCapDat$AllProd_norm  <- with(mergedCapDat,{ (DistanceToPrey_norm*CaptureSp
 #mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[3]
 #mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[1]
 
-library(rgl)
-
 ### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
 ## ##Make MAtrix
 
@@ -745,27 +743,27 @@ hist(datpolyFactor_norm$Efficiency)
 
 pca_norm <- prcomp(datpolyFactor_norm,scale.=FALSE)
 summary(pca_norm)
-pcAxis <- c(3,5,1)
+pcAxis <- c(1,2,1)
 rawd <- pca_norm$x[,pcAxis]
 biplot(pca_norm,choices=c(1,2))
 
 
 pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2.pdf",sep=""),width=7,height=7)
   
-  plot(rawd[,1], rawd[,2], col=colourLegL[datpolyFactor_norm$Group],pch=pchL[4+datpolyFactor_norm$Group],xlab="PC1",ylab="PC2",xlim=c(-8,5),ylim=c(-10,6))
+  plot(rawd[,1], rawd[,2], col=colourLegL[datpolyFactor_norm$Group],pch=pchL[4+datpolyFactor_norm$Group],xlab="PC1",ylab="PC2",xlim=c(-5,4),ylim=c(-8,4))
   scaleV <- 2
   ##Distance to Prey Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lwd=2)
-  text(0.8*scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[1]^2,-1.3*scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Distance")
+  arrows(0,0,scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lwd=4)
+  text(0.8*scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[1]^2,0.5+1.5*scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Distance")
   ##CaptureSpeed  Component Projection
   arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lwd=2,lty=3)
-  text(0.8*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[1]^2,1.3*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Speed")
+  text(0.8*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[1]^2,-0.5-0.3*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Speed")
   
   ##Undershoot Axis  Component Projection
   arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lty=2)
   text(0.4*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,1.1*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Overshoot")
   arrows(0,0,-scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,-scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lty=2)
-  text(-0.4*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,-1.2*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Undershoot")
+  text(-0.6*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,-1.2*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Undershoot")
   
   ##DistXSpeed Prod Axis  Component Projection
   arrows(0,0,scaleV*pca_norm$rotation[6,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[6,][pcAxis[2]]*pca_norm$sdev[2]^2,col="purple",lty=5)
@@ -773,7 +771,7 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2
   ##EFFICIENCY Prod Axis  Component Projection
   scaleVE <- scaleV
   arrows(0,0,scaleVE*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleVE*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[2]^2,col="blue",lty=2,lwd=2)
-  text(0.4*scaleV*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[1]^2,-0.1+2.1*scaleV*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Efficiency")
+  text(0.4*scaleV*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[1]^2,-0.1+1.1*scaleV*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[2]^2,col="blue",labels="Efficiency")
   legend("bottomleft",legend=c("LF","DF","NF"),pch=pchL[5:7],col=colourLegL) # c(colourH[3],colourH[2])
 
 dev.off()
@@ -795,6 +793,9 @@ theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[9,pcAxis]) #All
 ##PCA
 
 theta(pca_norm$rotation[,1], pca_norm$rotation[,2])
+
+
+library(rgl)
 
 open3d()##mergedCapDat$groupID
 rgl::plot3d( x=rawd[,1], z=rawd[,2], y=rawd[,3], col = colourLegL[datpolyFactor_norm$Group] , type = "s", radius = 0.5,
