@@ -47,8 +47,9 @@ library(ggpubr) ##install.packages("ggpubr")
 
 
 source("config_lib.R")
-setEnvFileLocations("LAPTOP") #OFFICE,#LAPTOP HOME
+setEnvFileLocations("HOME") #OFFICE,#LAPTOP HOME
 
+source("DataLabelling/labelHuntEvents_lib.r")
 
 ####################
 #source("TrackerDataFilesImport.r")
@@ -120,6 +121,20 @@ datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
+
+### PREAMP DONE####
+##################
+
+
+
+
+
+
+
+
+
+
+
 
 ##############Clustered  Capture Speed Vs Turn Ratio #### 
 #### GGPLOT VERSION ###
@@ -679,36 +694,197 @@ datCapture_LF_wExpID <- cbind(datCapture_LL,expID=vexpID$LF)
 datCapture_NF_wExpID <- cbind(datCapture_NL,expID=vexpID$NF)
 datCapture_DF_wExpID <- cbind(datCapture_DL,expID=vexpID$DF)
 
-## Merge and normalize
-mergedCapDat <- rbind(datMergedCapAndSuccess_LF,datMergedCapAndSuccess_DF,datMergedCapAndSuccess_NF)
-mergedCapDat$CaptureSpeed_norm <-mergedCapDat$CaptureSpeed/ range(mergedCapDat$CaptureSpeed)[2]
-mergedCapDat$DistanceToPrey_norm <- mergedCapDat$DistanceToPrey/range(mergedCapDat$DistanceToPrey)[2]
-mergedCapDat$Undershoot_norm    <- mergedCapDat$Undershoot/range(mergedCapDat$Undershoot)[2] - 0.5
-mergedCapDat$Undershoot    <- mergedCapDat$Undershoot - 1
-
-##Set Colour
-#mergedCapDat[mergedCapDat$groupID == 'LL',]$groupID <- colourLegL[2]
-#mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[3]
-#mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[1]
-
 
 ##Merge Hunt Power To Hunt-Capture Variables 
 datMergedCapAndSuccess_LF <- merge(x=datCapture_LF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
 datMergedCapAndSuccess_NF <- merge(x=datCapture_NF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
 datMergedCapAndSuccess_DF <- merge(x=datCapture_DF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
 
-plot(datMergedCapAndSuccess_LF$CaptureSpeed,datMergedCapAndSuccess_LF$HuntPower,xlim=c(0,80),ylim=c(0,10))
-plot(datMergedCapAndSuccess_NF$CaptureSpeed,datMergedCapAndSuccess_NF$HuntPower,xlim=c(0,80),ylim=c(0,10))
-plot(datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$HuntPower,xlim=c(0,80),ylim=c(0,10))
+## Merge 
+mergedCapDat <- rbind(datMergedCapAndSuccess_LF,datMergedCapAndSuccess_DF,datMergedCapAndSuccess_NF)
 
-plot(datMergedCapAndSuccess_LF$DistanceToPrey/datMergedCapAndSuccess_LF$CaptureSpeed,datMergedCapAndSuccess_LF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[2])
-points(datMergedCapAndSuccess_NF$DistanceToPrey/datMergedCapAndSuccess_NF$CaptureSpeed,datMergedCapAndSuccess_NF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[3])
-points(datMergedCapAndSuccess_DF$DistanceToPrey/datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[1])
+mergedCapDat <- mergedCapDat[mergedCapDat$groupID %in% c('LL','DL','NL'),]
+## Normalize  /  Scale SD
+mergedCapDat$Efficiency_norm <-(mergedCapDat$Efficiency)/sd(mergedCapDat$Efficiency)
+mergedCapDat$CaptureSpeed_norm <-(mergedCapDat$CaptureSpeed-mean(mergedCapDat$CaptureSpeed))/sd(mergedCapDat$CaptureSpeed)
+mergedCapDat$DistSpeed_norm <- (mergedCapDat$DistanceToPrey*mergedCapDat$CaptureSpeed -mean(mergedCapDat$DistanceToPrey*mergedCapDat$CaptureSpeed))/sd(mergedCapDat$DistanceToPrey*mergedCapDat$CaptureSpeed)
+mergedCapDat$DistanceToPrey_norm <- (mergedCapDat$DistanceToPrey-mean(mergedCapDat$DistanceToPrey))/sd(mergedCapDat$DistanceToPrey)
+mergedCapDat$Undershoot_norm    <- (mergedCapDat$Undershoot-1)/sd(mergedCapDat$Undershoot)
+mergedCapDat$DistUnder_norm <- with(mergedCapDat,{ (DistanceToPrey_norm*Undershoot_norm - mean(DistanceToPrey_norm*Undershoot_norm) )/sd(DistanceToPrey_norm*Undershoot_norm)  }) 
+mergedCapDat$SpeedUnder_norm <- with(mergedCapDat,{ (CaptureSpeed_norm*Undershoot_norm - mean(CaptureSpeed_norm*Undershoot_norm) )/sd(CaptureSpeed_norm*Undershoot_norm)  }) 
+mergedCapDat$HuntPower_norm    <- (mergedCapDat$HuntPower-mean(mergedCapDat$HuntPower)) /sd(mergedCapDat$HuntPower)
+mergedCapDat$AllProd_norm  <- with(mergedCapDat,{ (DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm -mean(DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm) )/sd(DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm)  })
+  
+##Set Colour
+#mergedCapDat[mergedCapDat$groupID == 'LL',]$groupID <- colourLegL[2]
+#mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[3]
+#mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[1]
 
 library(rgl)
 
-huntPowerColour <- rfc(8)
+### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
+## ##Make MAtrix
 
+### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
+## ##Make MAtrix
+datpolyFactor_norm <- data.frame( with(mergedCapDat,{ #,'DL','NL' mergedCapDat$HuntPower < 5
+  cbind(Efficiency=Efficiency_norm, #1
+        #HuntPower, #2 ## Does not CoVary With Anyhting 
+        Group=as.factor(groupID), #3
+        DistanceToPrey=DistanceToPrey_norm, #4
+        CaptureSpeed_norm, #5
+        Undershoot_norm, #6
+        DistSpeedProd=DistSpeed_norm, #7
+        DistUnderProd=DistUnder_norm, #8
+        SpeedUnderProd=SpeedUnder_norm, #9
+        AllProd=AllProd_norm #10
+        )                                   } )          )
+
+
+hist(datpolyFactor_norm$Efficiency)
+
+pca_norm <- prcomp(datpolyFactor_norm,scale.=FALSE)
+summary(pca_norm)
+pcAxis <- c(3,5,1)
+rawd <- pca_norm$x[,pcAxis]
+biplot(pca_norm,choices=c(1,2))
+
+
+pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2.pdf",sep=""),width=7,height=7)
+  
+  plot(rawd[,1], rawd[,2], col=colourLegL[datpolyFactor_norm$Group],pch=pchL[4+datpolyFactor_norm$Group],xlab="PC1",ylab="PC2",xlim=c(-8,5),ylim=c(-10,6))
+  scaleV <- 2
+  ##Distance to Prey Component Projection
+  arrows(0,0,scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lwd=2)
+  text(0.8*scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[1]^2,-1.3*scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Distance")
+  ##CaptureSpeed  Component Projection
+  arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lwd=2,lty=3)
+  text(0.8*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[1]^2,1.3*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Speed")
+  
+  ##Undershoot Axis  Component Projection
+  arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lty=2)
+  text(0.4*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,1.1*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Overshoot")
+  arrows(0,0,-scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,-scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lty=2)
+  text(-0.4*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,-1.2*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Undershoot")
+  
+  ##DistXSpeed Prod Axis  Component Projection
+  arrows(0,0,scaleV*pca_norm$rotation[6,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[6,][pcAxis[2]]*pca_norm$sdev[2]^2,col="purple",lty=5)
+  
+  ##EFFICIENCY Prod Axis  Component Projection
+  scaleVE <- scaleV
+  arrows(0,0,scaleVE*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleVE*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[2]^2,col="blue",lty=2,lwd=2)
+  text(0.4*scaleV*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[1]^2,-0.1+2.1*scaleV*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Efficiency")
+  legend("bottomleft",legend=c("LF","DF","NF"),pch=pchL[5:7],col=colourLegL) # c(colourH[3],colourH[2])
+
+dev.off()
+
+biplot(pca_norm,choices=c(1,2))
+
+theta <- function (a,b){ return( (180/pi)   *acos( sum(a*b) / ( sqrt(sum(a * a)) * sqrt(sum(b * b)) ) )) }
+
+pcAxis <- c(3,5)
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[1,pcAxis]) #Efficiency
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[2,pcAxis]) #Group
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[3,pcAxis]) #DistanceToPrey
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[4,pcAxis]) #CaptureSpeed_norm
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[5,pcAxis]) #Undershoot_norm
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[6,pcAxis]) #DistSpeedProd
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[7,pcAxis]) #DistUnderProd
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[8,pcAxis]) #SpeedUnderProd
+theta(pca_norm$rotation[1,pcAxis], pca_norm$rotation[9,pcAxis]) #All
+##PCA
+
+theta(pca_norm$rotation[,1], pca_norm$rotation[,2])
+
+open3d()##mergedCapDat$groupID
+rgl::plot3d( x=rawd[,1], z=rawd[,2], y=rawd[,3], col = colourLegL[datpolyFactor_norm$Group] , type = "s", radius = 0.5,
+             xlab="PC1", zlab="PC2",ylab="PC3",
+             xlim=c(-8.,8), ylim=c(-8,8), zlim=c(-8,8),
+             box = FALSE ,aspect = TRUE
+             #,expand = 1.5
+)
+###END PCA PLOT ##
+
+
+
+Ei_LF_norm=eigen(cov(datpolyFactor_norm))
+symnum(cov(datpolyFactor_norm))
+Ei_LF_norm
+## ##Make MAtrix
+datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'NL',],{
+  cbind(Efficiency, #1
+        #HuntPower, # ## Does not CoVary With Anyhting 
+        DistanceToPrey, #2
+        CaptureSpeed, #3
+        Undershoot, #4
+        DistanceToPrey*CaptureSpeed, #5
+        DistanceToPrey*Undershoot, #6
+        CaptureSpeed*Undershoot, #7
+        DistanceToPrey*CaptureSpeed*Undershoot #8
+  )
+  
+})
+
+Ei_NL<-eigen(cov(datpolyFactor))
+Ei_NL
+
+datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'LL',],{
+  cbind(Efficiency, #1
+        #HuntPower, # ## Does not CoVary With Anyhting 
+        DistanceToPrey, #2
+        CaptureSpeed, #3
+        Undershoot, #4
+        DistanceToPrey*CaptureSpeed, #5
+        DistanceToPrey*Undershoot, #6
+        CaptureSpeed*Undershoot, #7
+        DistanceToPrey*CaptureSpeed*Undershoot #8
+  )
+})
+
+
+##Ei_LF=eigen(cov(datpolyFactor))
+pca_LL <- prcomp(datpolyFactor,scale.=TRUE)
+summary(pca_LL)
+biplot(pca_LL)
+
+Ei_LF
+plot(pca_LL)
+
+## ##Make MAtrix
+datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'DL',],{
+  cbind(Efficiency, #1
+        #HuntPower, # ## Does not CoVary With Anyhting 
+        DistanceToPrey, #2
+        CaptureSpeed, #3
+        Undershoot, #4
+        DistanceToPrey*CaptureSpeed, #5
+        DistanceToPrey*Undershoot, #6
+        CaptureSpeed*Undershoot, #7
+        DistanceToPrey*CaptureSpeed*Undershoot #8
+  )
+  
+})
+
+Ei_DL <- eigen(cov(datpolyFactor))
+
+### Print Eugen MAtrix
+Ei_LL
+Ei_NL
+Ei_DL
+
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap(x=cov(datpolyFactor), col=col,symm = F)
+
+library(corrplot)
+
+lm(Efficiency ~ (DistanceToPrey+CaptureSpeed+Undershoot)^3,data=mergedCapDat[mergedCapDat$groupID == 'NL',])
+
+
+
+
+
+
+huntPowerColour <- rfc(8)
 open3d()##mergedCapDat$groupID
 rgl::plot3d( x=mergedCapDat$CaptureSpeed, z=mergedCapDat$DistanceToPrey, y=mergedCapDat$HuntPower, col = huntPowerColour[round(mergedCapDat$HuntPower)] , type = "s", radius = 1.3,
              xlab="Capture Speed (mm/sec)", zlab="Hunt Power",ylab="Distance to prey (mm)",
@@ -745,89 +921,13 @@ plot(datMergedCapAndSuccess_LF$DistanceToPrey/datMergedCapAndSuccess_LF$CaptureS
 points(datMergedCapAndSuccess_NF$DistanceToPrey/datMergedCapAndSuccess_NF$CaptureSpeed,datMergedCapAndSuccess_NF$Efficiency,xlim=c(0,0.04),ylim=c(0,1),col=colourLegL[3],pch=5)
 points(datMergedCapAndSuccess_DF$DistanceToPrey/datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$Efficiency,xlim=c(0,0.04),ylim=c(0,1),col=colourLegL[1],pch=6)
 
-### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
-## ##Make MAtrix
-datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'LL',],{
-                    cbind(Efficiency, #1
-                          #HuntPower, # ## Does not CoVary With Anyhting 
-                         DistanceToPrey, #2
-                         CaptureSpeed, #3
-                         Undershoot, #4
-                         DistanceToPrey*CaptureSpeed, #5
-                         DistanceToPrey*Undershoot, #6
-                         CaptureSpeed*Undershoot, #7
-                         DistanceToPrey*CaptureSpeed*Undershoot #8
-                         )
-})
+#plot(datMergedCapAndSuccess_LF$CaptureSpeed,datMergedCapAndSuccess_LF$HuntPower,xlim=c(0,80),ylim=c(0,10))
+#plot(datMergedCapAndSuccess_NF$CaptureSpeed,datMergedCapAndSuccess_NF$HuntPower,xlim=c(0,80),ylim=c(0,10))
+#plot(datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$HuntPower,xlim=c(0,80),ylim=c(0,10))
 
-Ei_LF=eigen(cov(datpolyFactor))
-Ei_LF
-
-
-### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
-## ##Make MAtrix
-datpolyFactor_norm <- with(mergedCapDat[mergedCapDat$groupID == 'LL',],{
-  cbind(Efficiency, #1
-        #HuntPower, # ## Does not CoVary With Anyhting 
-        DistanceToPrey_norm, #2
-        CaptureSpeed_norm, #3
-        Undershoot_norm, #4
-        DistanceToPrey_norm*CaptureSpeed_norm, #5
-        DistanceToPrey_norm*Undershoot_norm, #6
-        CaptureSpeed_norm*Undershoot_norm, #7
-        DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm #8
-  )
-})
-
-Ei_LF_norm=eigen(cov(datpolyFactor_norm))
-symnum(cov(datpolyFactor_norm))
-Ei_LF_norm
-## ##Make MAtrix
-datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'NL',],{
-  cbind(Efficiency, #1
-        #HuntPower, # ## Does not CoVary With Anyhting 
-        DistanceToPrey, #2
-        CaptureSpeed, #3
-        Undershoot, #4
-        DistanceToPrey*CaptureSpeed, #5
-        DistanceToPrey*Undershoot, #6
-        CaptureSpeed*Undershoot, #7
-        DistanceToPrey*CaptureSpeed*Undershoot #8
-  )
-  
-})
-
-Ei_NL<-eigen(cov(datpolyFactor))
-Ei_NL
-
-## ##Make MAtrix
-datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'DL',],{
-  cbind(Efficiency, #1
-        #HuntPower, # ## Does not CoVary With Anyhting 
-        DistanceToPrey, #2
-        CaptureSpeed, #3
-        Undershoot, #4
-        DistanceToPrey*CaptureSpeed, #5
-        DistanceToPrey*Undershoot, #6
-        CaptureSpeed*Undershoot, #7
-        DistanceToPrey*CaptureSpeed*Undershoot #8
-  )
-  
-})
-
-Ei_DL <- eigen(cov(datpolyFactor))
-
-### Print Eugen MAtrix
-Ei_LL
-Ei_NL
-Ei_DL
-
-col<- colorRampPalette(c("blue", "white", "red"))(20)
-heatmap(x=cov(datpolyFactor), col=col,symm = F)
-
-library(corrplot)
-
-lm(Efficiency ~ (DistanceToPrey+CaptureSpeed+Undershoot)^3,data=mergedCapDat[mergedCapDat$groupID == 'NL',])
+#plot(datMergedCapAndSuccess_LF$DistanceToPrey/datMergedCapAndSuccess_LF$CaptureSpeed,datMergedCapAndSuccess_LF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[2])
+#points(datMergedCapAndSuccess_NF$DistanceToPrey/datMergedCapAndSuccess_NF$CaptureSpeed,datMergedCapAndSuccess_NF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[3])
+#points(datMergedCapAndSuccess_DF$DistanceToPrey/datMergedCapAndSuccess_DF$CaptureSpeed,datMergedCapAndSuccess_DF$HuntPower,xlim=c(0,0.04),ylim=c(0,10),col=colourLegL[1])
 
 
 ## PLOT EMPIRICAL 
