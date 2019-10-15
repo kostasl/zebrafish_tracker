@@ -47,7 +47,7 @@ library(ggpubr) ##install.packages("ggpubr")
 
 
 source("config_lib.R")
-setEnvFileLocations("HOME") #OFFICE,#LAPTOP HOME
+#setEnvFileLocations("LAPTOP") #OFFICE,#LAPTOP HOME
 
 source("DataLabelling/labelHuntEvents_lib.r")
 
@@ -717,8 +717,8 @@ mergedCapDat$AllProd_norm  <- with(mergedCapDat,{ (DistanceToPrey_norm*CaptureSp
   
 ##Set Colour
 #mergedCapDat[mergedCapDat$groupID == 'LL',]$groupID <- colourLegL[2]
-#mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[3]
-#mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[1]
+#mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[1]
+#mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[3]
 
 ### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
 ## ##Make MAtrix
@@ -748,31 +748,35 @@ rawd <- pca_norm$x[,pcAxis]
 biplot(pca_norm,choices=c(1,2))
 
 
-pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2.pdf",sep=""),width=7,height=7)
+pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2_UndershootCOlour.pdf",sep=""),width=7,height=7)
   
-  plot(rawd[,1], rawd[,2], col=colourLegL[datpolyFactor_norm$Group],pch=pchL[4+datpolyFactor_norm$Group],xlab="PC1",ylab="PC2",xlim=c(-5,4),ylim=c(-8,4))
+  plot(rawd[,1], rawd[,2],
+       #col=colourLegL[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
+       col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+datpolyFactor_norm$Group],
+       xlab="PC1",ylab="PC2",xlim=c(-5,3),ylim=c(-6,4)) #xlim=c(-4,4),ylim=c(-4,4)
   scaleV <- 2
   ##Distance to Prey Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lwd=4)
-  text(0.8*scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[1]^2,0.5+1.5*scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Distance")
+  arrows(0,0,scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lwd=4)
+  text(0.8*scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,0.5+1.5*scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Distance")
   ##CaptureSpeed  Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lwd=2,lty=3)
-  text(0.8*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[1]^2,-0.5-0.3*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Speed")
+  arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lwd=2,lty=3)
+  text(0.8*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-0.5-0.3*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Speed")
   
   ##Undershoot Axis  Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lty=2)
-  text(0.4*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,1.1*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Overshoot")
-  arrows(0,0,-scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,-scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,col="black",lty=2)
-  text(-0.6*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[1]^2,-1.2*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[2]^2,labels="Undershoot")
+  arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
+    text(0.4*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,1.1*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Overshoot")
+  arrows(0,0,-scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
+    text(-0.6*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-1.2*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Undershoot")
   
   ##DistXSpeed Prod Axis  Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[6,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleV*pca_norm$rotation[6,][pcAxis[2]]*pca_norm$sdev[2]^2,col="purple",lty=5)
+  arrows(0,0,scaleV*pca_norm$rotation[6,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[6,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="purple",lty=5)
   
   ##EFFICIENCY Prod Axis  Component Projection
   scaleVE <- scaleV
-  arrows(0,0,scaleVE*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[1]^2,scaleVE*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[2]^2,col="blue",lty=2,lwd=2)
-  text(0.4*scaleV*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[1]^2,-0.1+1.1*scaleV*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[2]^2,col="blue",labels="Efficiency")
-  legend("bottomleft",legend=c("LF","DF","NF"),pch=pchL[5:7],col=colourLegL) # c(colourH[3],colourH[2])
+  arrows(0,0,scaleVE*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleVE*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="blue",lty=2,lwd=2)
+  text(0.4*scaleV*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-0.1+1.1*scaleV*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="blue",labels="Efficiency")
+
+  #legend("bottomleft",legend=c("LF","DF","NF"),pch=c(pchL[4+2],pchL[4+3],pchL[4+1]),col=c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
 
 dev.off()
 
