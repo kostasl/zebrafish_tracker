@@ -47,7 +47,7 @@ library(ggpubr) ##install.packages("ggpubr")
 
 
 source("config_lib.R")
-#setEnvFileLocations("LAPTOP") #OFFICE,#LAPTOP HOME
+#setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP HOME
 
 source("DataLabelling/labelHuntEvents_lib.r")
 
@@ -681,7 +681,6 @@ dev.off()
 ########## HUNT POWER CORRELATIONs ####
 #######################################
 # Check Correlation Of UNdershoot With Hunt POwer
-
 ##Take all expID from the successful hunt Events we have extracted hunt variables from 
 vexpID <- list(LF = datTrackedEventsRegister[datCapture_LL$RegistarIdx,]$expID,
                NF=datTrackedEventsRegister[datCapture_NL$RegistarIdx,]$expID,
@@ -715,20 +714,19 @@ mergedCapDat$SpeedUnder_norm <- with(mergedCapDat,{ (CaptureSpeed_norm*Undershoo
 mergedCapDat$HuntPower_norm    <- (mergedCapDat$HuntPower-mean(mergedCapDat$HuntPower)) /sd(mergedCapDat$HuntPower)
 mergedCapDat$AllProd_norm  <- with(mergedCapDat,{ (DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm -mean(DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm) )/sd(DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm)  })
   
-##Set Colour
-#mergedCapDat[mergedCapDat$groupID == 'LL',]$groupID <- colourLegL[2]
-#mergedCapDat[mergedCapDat$groupID == 'NL',]$groupID <- colourLegL[1]
-#mergedCapDat[mergedCapDat$groupID == 'DL',]$groupID <- colourLegL[3]
 
 ### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
 ## ##Make MAtrix
+##Also CHeck OUt varimax and factanal
 
 ### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
 ## ##Make MAtrix
-datpolyFactor_norm <- data.frame( with(mergedCapDat,{ #,'DL','NL' mergedCapDat$HuntPower < 5
+mergedCapDat$groupID <- as.factor(mergedCapDat$groupID)
+mergedCapDat_filt <- mergedCapDat[mergedCapDat$groupID == 'LL',]
+datpolyFactor_norm <- data.frame( with(mergedCapDat_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
   cbind(Efficiency=Efficiency_norm, #1
         #HuntPower, #2 ## Does not CoVary With Anyhting 
-        Group=as.factor(groupID), #3
+        Group=groupID, #3
         DistanceToPrey=DistanceToPrey_norm, #4
         CaptureSpeed_norm, #5
         Undershoot_norm, #6
@@ -739,20 +737,26 @@ datpolyFactor_norm <- data.frame( with(mergedCapDat,{ #,'DL','NL' mergedCapDat$H
         )                                   } )          )
 
 
+## Set Colours
+colClass <- c("#00AFBB", "#E7B800", "#FC4E07")
+colEfficiency <- topo.colors(12, alpha = 1, rev = FALSE) # heat.colors rainbow(12)
+
+
 hist(datpolyFactor_norm$Efficiency)
 
 pca_norm <- prcomp(datpolyFactor_norm,scale.=FALSE)
 summary(pca_norm)
-pcAxis <- c(1,2,1)
+pcAxis <- c(4,5,1)
 rawd <- pca_norm$x[,pcAxis]
-biplot(pca_norm,choices=c(1,2))
+biplot(pca_norm,choices=c(4,5))
 
 
-pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2_UndershootCOlour.pdf",sep=""),width=7,height=7)
+pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2_EfficiencyColour.pdf",sep=""),width=7,height=7)
   
   plot(rawd[,1], rawd[,2],
-       #col=colourLegL[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
-       col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+datpolyFactor_norm$Group],
+       #col=colClass[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
+       col=colEfficiency[round(mergedCapDat_filt$Efficiency*10)], pch=pchL[4+datpolyFactor_norm$Group], 
+       #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+datpolyFactor_norm$Group],
        xlab="PC1",ylab="PC2",xlim=c(-5,3),ylim=c(-6,4)) #xlim=c(-4,4),ylim=c(-4,4)
   scaleV <- 2
   ##Distance to Prey Component Projection
@@ -760,7 +764,7 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2
   text(0.8*scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,0.5+1.5*scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Distance")
   ##CaptureSpeed  Component Projection
   arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lwd=2,lty=3)
-  text(0.8*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-0.5-0.3*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Speed")
+  text(0.8*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-0.5+0.5*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Speed")
   
   ##Undershoot Axis  Component Projection
   arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
@@ -776,11 +780,21 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2
   arrows(0,0,scaleVE*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleVE*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="blue",lty=2,lwd=2)
   text(0.4*scaleV*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-0.1+1.1*scaleV*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="blue",labels="Efficiency")
 
-  #legend("bottomleft",legend=c("LF","DF","NF"),pch=c(pchL[4+2],pchL[4+3],pchL[4+1]),col=c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
-
+  legend("bottomleft",legend=c("LF","DF","NF"),pch=c(pchL[4+2],pchL[4+3],pchL[4+1]),
+         col="black")## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
+  ##Heat Map Scale
+  points(rep(-4,11),seq(-4,-3,1/10),col=colEfficiency,pch=15)
+  
+  #Percentage of Efficiency Variance Explained
+  pcEffVar <- 100*(pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2 + pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2)/sum(pca_norm$rotation[1,][1:NROW(pca_norm$sdev)]*pca_norm$sdev[1:NROW(pca_norm$sdev)]^2)
+  message("%Of Efficiency Variance Explained : ",pcEffVar )
+  
 dev.off()
 
+
+
 biplot(pca_norm,choices=c(1,2))
+
 
 theta <- function (a,b){ return( (180/pi)   *acos( sum(a*b) / ( sqrt(sum(a * a)) * sqrt(sum(b * b)) ) )) }
 
