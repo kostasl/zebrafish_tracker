@@ -709,11 +709,11 @@ mergedCapDat$CaptureSpeed_norm <-(mergedCapDat$CaptureSpeed-mean(mergedCapDat$Ca
 mergedCapDat$DistSpeed_norm <- (mergedCapDat$DistanceToPrey*mergedCapDat$CaptureSpeed -mean(mergedCapDat$DistanceToPrey*mergedCapDat$CaptureSpeed))/sd(mergedCapDat$DistanceToPrey*mergedCapDat$CaptureSpeed)
 mergedCapDat$DistanceToPrey_norm <- (mergedCapDat$DistanceToPrey-mean(mergedCapDat$DistanceToPrey))/sd(mergedCapDat$DistanceToPrey)
 mergedCapDat$Undershoot_norm    <- (mergedCapDat$Undershoot-1)/sd(mergedCapDat$Undershoot)
+mergedCapDat$TimeToHitPrey_norm <-   (mergedCapDat$FramesToHitPrey/G_APPROXFPS - mean(mergedCapDat$FramesToHitPrey/G_APPROXFPS) ) /sd(mergedCapDat$FramesToHitPrey/G_APPROXFPS)
 mergedCapDat$DistUnder_norm <- with(mergedCapDat,{ (DistanceToPrey_norm*Undershoot_norm - mean(DistanceToPrey_norm*Undershoot_norm) )/sd(DistanceToPrey_norm*Undershoot_norm)  }) 
 mergedCapDat$SpeedUnder_norm <- with(mergedCapDat,{ (CaptureSpeed_norm*Undershoot_norm - mean(CaptureSpeed_norm*Undershoot_norm) )/sd(CaptureSpeed_norm*Undershoot_norm)  }) 
 mergedCapDat$HuntPower_norm    <- (mergedCapDat$HuntPower-mean(mergedCapDat$HuntPower)) /sd(mergedCapDat$HuntPower)
 mergedCapDat$AllProd_norm  <- with(mergedCapDat,{ (DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm -mean(DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm) )/sd(DistanceToPrey_norm*CaptureSpeed_norm*Undershoot_norm)  })
-  
 
 ### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
 ## ##Make MAtrix
@@ -722,18 +722,19 @@ mergedCapDat$AllProd_norm  <- with(mergedCapDat,{ (DistanceToPrey_norm*CaptureSp
 ### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
 ## ##Make MAtrix
 mergedCapDat$groupID <- as.factor(mergedCapDat$groupID)
-mergedCapDat_filt <- mergedCapDat[mergedCapDat$groupID == 'LL',]
+mergedCapDat_filt <- mergedCapDat[mergedCapDat$groupID == 'NL',]
 datpolyFactor_norm <- data.frame( with(mergedCapDat_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
   cbind(Efficiency=Efficiency_norm, #1
         #HuntPower, #2 ## Does not CoVary With Anyhting 
-        Group=groupID, #3
+        #Group=groupID, #3
         DistanceToPrey=DistanceToPrey_norm, #4
         CaptureSpeed_norm, #5
         Undershoot_norm, #6
         DistSpeedProd=DistSpeed_norm, #7
-        DistUnderProd=DistUnder_norm, #8
-        SpeedUnderProd=SpeedUnder_norm, #9
-        AllProd=AllProd_norm #10
+        #DistUnderProd=DistUnder_norm, #8
+        #SpeedUnderProd=SpeedUnder_norm, #9
+        TimeToHitPrey=TimeToHitPrey_norm, #10
+        CLuster=Cluster#11
         )                                   } )          )
 
 
@@ -746,50 +747,90 @@ hist(datpolyFactor_norm$Efficiency)
 
 pca_norm <- prcomp(datpolyFactor_norm,scale.=FALSE)
 summary(pca_norm)
-pcAxis <- c(4,5,1)
+pcAxis <- c(3,5,1)
 rawd <- pca_norm$x[,pcAxis]
-biplot(pca_norm,choices=c(4,5))
+
+biplot(pca_norm,choices=c(3,5))
 
 
-pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC1_2_EfficiencyColour.pdf",sep=""),width=7,height=7)
+pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntVariablesAndEfficiencyPC3_5_EfficiencyColour_NF.pdf",sep=""),width=7,height=7)
   
   plot(rawd[,1], rawd[,2],
        #col=colClass[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
-       col=colEfficiency[round(mergedCapDat_filt$Efficiency*10)], pch=pchL[4+datpolyFactor_norm$Group], 
+       col=colEfficiency[round(mergedCapDat_filt$Efficiency*10)], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID) ],
+       #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchL[4+datpolyFactor_norm$Group],
        #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+datpolyFactor_norm$Group],
-       xlab="PC1",ylab="PC2",xlim=c(-5,3),ylim=c(-6,4)) #xlim=c(-4,4),ylim=c(-4,4)
+       #xlab="PC1",ylab="PC2",
+       xlim=c(-2.5,2.5),ylim=c(-2,2.5),
+       xlab=NA,ylab=NA,
+       cex=cex,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
+        mtext(side = 1,cex=cex, line = lineXAxis,  "PC3"   ,cex.main=cex )
+        mtext(side = 2,cex=cex, line = lineAxis, "PC5" ,cex.main=cex)
+
+  
   scaleV <- 2
   ##Distance to Prey Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lwd=4)
-  text(0.8*scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,0.5+1.5*scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Distance")
+  arrows(0,0,scaleV*pca_norm$rotation[2,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[2,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lwd=3)
+  text(0.8*scaleV*pca_norm$rotation[2,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,0.5+1.5*scaleV*pca_norm$rotation[2,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Distance")
   ##CaptureSpeed  Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lwd=2,lty=3)
-  text(0.8*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-0.5+0.5*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Speed")
+  arrows(0,0,scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lwd=2,lty=3)
+  text(1.5*scaleV*pca_norm$rotation[3,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,0.1+0.8*scaleV*pca_norm$rotation[3,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Speed")
   
   ##Undershoot Axis  Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
-    text(0.4*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,1.1*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Overshoot")
-  arrows(0,0,-scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
-    text(-0.6*scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-1.2*scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Undershoot")
+  arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
+    text(0.4*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,1.1*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Overshoot")
+  arrows(0,0,-scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
+    text(-0.6*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-1.2*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Undershoot")
+  
+  ##TimeToHit Prey Prod Axis  Component Projection
+  arrows(0,0,scaleV*pca_norm$rotation[6,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[6,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="orange",lty=5)
   
   ##DistXSpeed Prod Axis  Component Projection
-  arrows(0,0,scaleV*pca_norm$rotation[6,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[6,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="purple",lty=5)
+  arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="purple",lty=5)
   
   ##EFFICIENCY Prod Axis  Component Projection
   scaleVE <- scaleV
   arrows(0,0,scaleVE*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleVE*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="blue",lty=2,lwd=2)
-  text(0.4*scaleV*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,-0.1+1.1*scaleV*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="blue",labels="Efficiency")
+  text(0.4*scaleV*pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,0.1+1.1*scaleV*pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="blue",labels="Efficiency")
 
-  legend("bottomleft",legend=c("LF","DF","NF"),pch=c(pchL[4+2],pchL[4+3],pchL[4+1]),
+  legend("bottomleft",legend=c("LF","NF","DF"),pch=c(pchL[4+2],pchL[4+3],pchL[4+1]),
          col="black")## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
   ##Heat Map Scale
-  points(rep(-4,11),seq(-4,-3,1/10),col=colEfficiency,pch=15)
-  
+  points(seq(1,2,1/10),rep(-2,11),col=colEfficiency,pch=15,cex=3)
+  text(1,-1.8,col="black",labels= prettyNum(min(mergedCapDat_filt$Efficiency),digits=1,format="f" ),cex=cex)
+  text(1+0.5,-1.8,col="black",labels= prettyNum(max(mergedCapDat_filt$Efficiency)/2,digits=1,format="f" ),cex=cex)
+  text(2,-1.8,col="black",labels= prettyNum(max(mergedCapDat_filt$Efficiency),digits=1,format="f" ),cex=cex)
+  max(mergedCapDat_filt$Efficiency)/2
   #Percentage of Efficiency Variance Explained
-  pcEffVar <- 100*(pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2 + pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2)/sum(pca_norm$rotation[1,][1:NROW(pca_norm$sdev)]*pca_norm$sdev[1:NROW(pca_norm$sdev)]^2)
-  message("%Of Efficiency Variance Explained : ",pcEffVar )
+  nComp <- length(pca_norm$sdev)
+  pcEffVar <- ((pca_norm$rotation[1,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]])^2 + (pca_norm$rotation[1,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]])^2)
+  EffVar <- sum((pca_norm$rotation[1,][1:nComp]*pca_norm$sdev[1:nComp])^2)
+  title("PCA ",sub=paste("% of Efficiency Variance Explained : ",prettyNum( 100*pcEffVar/EffVar) ))
+
+  
   
 dev.off()
+  
+  ##%*%pca_norm$rotation[1,]
+  sum(pca_norm$rotation[1,]^2) #Unit vectors
+
+### Calc the Projection of Efficiency on the variance captured by each  PC
+s = 0
+tIdx <- 3 ##Choose Which Variable to Calc The  COntribution to Variance from Each PC 
+Ve <- vector()
+for (i in 1:9)
+{
+  ##Total Efficiency Vairance 
+  s = s + (pca_norm$sdev[i]^2)*sum( ( pca_norm$rotation[,i]*pca_norm$rotation[tIdx,])^2  ) ### * pca_norm$sdev[i
+  ##Efficiency COntribution to Var Of Each PC 
+  Ve[i] <- (pca_norm$sdev[i]^2)*sum( ( pca_norm$rotation[,i]*pca_norm$rotation[tIdx,])^2  )##sum( (pca_norm$rotation[,i]%*%pca_norm$rotation[1,])^2 * pca_norm$sdev[i])^2
+}
+##Now Choose a PC
+
+##CHeck Contribution Of PC to Efficiency Variance
+sum(Ve/s)
+###PLot Relative COntrib To Variance 
+plot((100*Ve/s) ) 
 
 
 
@@ -870,7 +911,7 @@ Ei_LF
 plot(pca_LL)
 
 ## ##Make MAtrix
-datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'DL',],{
+datpolyFactor <- with(mergedCapDat[mergedCapDat$groupID == 'LL',],{
   cbind(Efficiency, #1
         #HuntPower, # ## Does not CoVary With Anyhting 
         DistanceToPrey, #2
