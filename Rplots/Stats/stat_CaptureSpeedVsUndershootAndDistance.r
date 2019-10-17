@@ -170,9 +170,9 @@ for  (l in 1:NLarv)
 ### Make Group Priors 
 for  (g in 1:1)
 {
-  muG[g,1] ~ dnorm(1, 0.0001)T(0.0,2) ##undershoot
+  muG[g,1] ~ dnorm(1, 0.00001)T(0.0,2) ##undershoot
   muG[g,2] ~ dnorm(15,0.00001)T(0,) ##cap speed
-  muG[g,3] ~ dnorm(0.1,0.01)T(0,) ##Distance prey
+  muG[g,3] ~ dnorm(0.1,0.1)T(0,) ##Distance prey
 }
 
 } "
@@ -294,7 +294,7 @@ datCapture_ALL_wExpID <- rbind(datCapture_LF_wExpID,datCapture_NF_wExpID,datCapt
 
 ##
 ##
-steps <- 15000
+steps <- 5000
 nchains <- 3
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -351,9 +351,9 @@ plot(density(tail(draw_LF$muG[,1,,3], 100) ))
 lines(density(tail(draw_NF$muG[,1,,1], 100)))
 lines(density(tail(draw_DF$muG[,1,,1], 100)))
 #Idx: Lid,Variable (1Under),Sample Row,Chain
-plot((draw_LF$muG[,1,,1] ))
-points((draw_LF$muG[,1,,2] ),col="red")
-points((draw_LF$muG[,1,,3] ),col="blue")
+plot((draw_LF$muG[,1,2000:2500,1] ),type='l')
+lines((draw_LF$muG[,1,2000:2500,2] ),col="red")
+lines((draw_LF$muG[,1,2000:2500,3] ),col="blue")
 
 plot(density(draw_LF$mu[9,1,,1] ) )
 
