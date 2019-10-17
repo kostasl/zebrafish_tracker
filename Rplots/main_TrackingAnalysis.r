@@ -39,7 +39,7 @@ source("config_lib.R")
 
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
-source("HuntingEventAnalysis.r")
+source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
 source("DataLabelling/labelHuntEvents_lib.r")
 ########
