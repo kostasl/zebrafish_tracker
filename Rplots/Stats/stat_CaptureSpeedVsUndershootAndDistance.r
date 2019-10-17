@@ -1,7 +1,11 @@
 ### Kostas Lagogiannis 2019-06-24 
+
 ## 3D Gaussian Model for each group, to discover covariance structure in Undershoot to Distance/Speed 
 ## ******** No clustering Between slow and Fast Swims ****** 
 ## I made this to complement the Clustering Method, so as to characterize the overall covariance structure
+## Update 17/10/19 : To Model Group Behaviour we need to model individual larvae behaviour and estimate differences between group behaviour
+##                  ie do not use events to infer changes in group behaviour
+
 
 library(rjags)
 library(runjags)
@@ -93,7 +97,7 @@ plotDistanceClustFit <- function(datDist,drawMCMC,colourIdx,nchain = 1)
 
 initfunct <- function(nchains,N)
 {
-  initlist <- replicate(nchains,list(mID=c(rbinom(N,1,0.5)), ##Base Line Vergence Prior to HuntOn
+  initlist <- replicate(nchains,list(#mID=c(rbinom(N,1,0.5)), 
 #                                     sigma = matrix(c (  c(runif(1,min=0,max=0.1),runif(1,min=0,max=2)),
 #s                                                         c(runif(1,min=0,max=0.1),runif(1,min=0,max=15))  ),nrow=2,byrow=T  ),
 #                                     mu  = matrix(c (  c( rnorm(1,mean=1,sd=sqrt(1/10) ), rnorm(1,mean=8,sd=sqrt(1/2) ) ),
@@ -105,7 +109,77 @@ initfunct <- function(nchains,N)
   return(initlist)
 }
 
-## Non Clustering Model, 3D Gaussian 
+
+
+##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour 
+## Estimating Hunt Behaviour per Larvae before inferring mean group behaviour
+strmodel3Variables_LarvaHuntBehaviour <- "
+var x_rand[NLarv,3];
+
+model {
+
+##Draw capt speed from 2d gaussian
+for (i in 1:N)
+{
+  ##Draw from gaussian model of Each Larva
+  c[i,1:3] ~ dmnorm(mu[Lid[i],],prec[Lid[i], , ]) ## data in column 1 and 2
+  #mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
+  
+}
+
+##Covariance matrix and its inverse -> the precision matrix
+## for each Gaussian in the mixture - Single Gaussian  Here -
+for  (l in 1:NLarv)
+{
+  prec[l,1:3,1:3] <- inverse(cov[l,1:3,1:3])
+  
+  cov[l,1,1] <- sigma[l,1]*sigma[l,1]
+  cov[l,1,2] <- sigma[l,1]*sigma[l,2]*rho[l,1] ## Undershoot-Speed Covar
+  cov[l,1,3] <- sigma[l,1]*sigma[l,3]*rho[l,3] ##Undeshoot-Dist Covar
+  
+  cov[l,2,1] <- sigma[l,1]*sigma[l,2]*rho[l,1] #UNdershoot-Speed
+  cov[l,2,2] <- sigma[l,2]*sigma[l,2]
+  cov[l,2,3] <- sigma[l,2]*sigma[l,3]*rho[l,2] #Speed-Dist Covar
+  
+  cov[l,3,1] <- sigma[l,1]*sigma[l,3]*rho[l,3] ##Undeshoot-Dist Covar
+  cov[l,3,2] <- sigma[l,2]*sigma[l,3]*rho[l,2]
+  cov[l,3,3] <- sigma[l,3]*sigma[l,3]
+  
+  #Sigmainv[g,1:3,1:3] ~ dwish(cov[g,,],3)
+  ###37
+  ##the sum of all the entries in a covariance matrix is the variance of the sum of the n random variables
+  rho[l,1]  ~ dunif(-0.5,0.5) ##The Undershoot Speed covar coefficient
+  rho[l,2] ~ dunif(-0.5,0.5) ##The Speed - Distance covar coefficient
+  rho[l,3] ~ dunif(-0.5,0.5) ##The UNdershoot Distance covar coefficient
+  
+  
+  ## Larva priors Are linked to the Group's Priors
+  mu[l,1] ~ dnorm(muG[1,1], 0.001)T(0.0,2) ##undershoot
+  mu[l,2] ~ dnorm(muG[1,2],0.0001)T(0,) ##cap speed
+  mu[l,3] ~ dnorm(muG[1,3],0.01)T(0,) ##Distance prey
+  
+  sigma[l,1] ~ dunif(0.0,0.30) ##undershoot prey - Keep it narrow within the expected limits
+  sigma[l,2] ~ dunif(0.0,15) ## cap speed sigma 
+  sigma[l,3] ~ dunif(0.0,0.3) ##dist prey - Keep it broad within the expected limits 
+  
+  ## Synthesize data from the distribution for This Larva
+  x_rand[l,] ~ dmnorm(mu[l,],prec[l,,])
+  
+}
+
+### Make Group Priors 
+for  (g in 1:1)
+{
+  muG[g,1] ~ dnorm(1, 0.0001)T(0.0,2) ##undershoot
+  muG[g,2] ~ dnorm(15,0.00001)T(0,) ##cap speed
+  muG[g,3] ~ dnorm(0.1,0.01)T(0,) ##Distance prey
+}
+
+} "
+
+
+
+## Non Clustering Model Grouping Individual Events, 3D Gaussian 
 strmodel_capspeedVsUndershootAndDistance <- "
 var x_rand[2,3];
 
@@ -174,11 +248,11 @@ strModelCovarPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelCaptureSpee
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
-lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="")) 
+lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated.rds",sep="")) 
 
-datTurnVsStrikeSpeed_NL <- data.frame( cbind(Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],OnSetDistance=lFirstBoutPoints$NL[,"OnSetDistanceToPrey"],Validated= lFirstBoutPoints$NL[,"Validated"] )
-datTurnVsStrikeSpeed_LL <- data.frame( cbind(Undershoot=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],OnSetDistance=lFirstBoutPoints$LL[,"OnSetDistanceToPrey"],Validated= lFirstBoutPoints$LL[,"Validated"] )
-datTurnVsStrikeSpeed_DL <- data.frame( cbind(Undershoot=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],OnSetDistance=lFirstBoutPoints$DL[,"OnSetDistanceToPrey"],Validated= lFirstBoutPoints$DL[,"Validated"] )
+datTurnVsStrikeSpeed_NL <- data.frame( cbind(TurnRatio=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],Validated= lFirstBoutPoints$NL[,"Validated"] )
+datTurnVsStrikeSpeed_LL <- data.frame( cbind(TurnRatio=lFirstBoutPoints$LL[,"Turn"]/lFirstBoutPoints$LL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],Validated= lFirstBoutPoints$LL[,"Validated"] )
+datTurnVsStrikeSpeed_DL <- data.frame( cbind(TurnRatio=lFirstBoutPoints$DL[,"Turn"]/lFirstBoutPoints$DL[,"OnSetAngleToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],Validated= lFirstBoutPoints$DL[,"Validated"] )
 
 ###Filter For Hunting Where Prey Is approached into strike distance, rather than Initial Prey Distance being within strike Distance
 #datTurnVsStrikeSpeed_NL <- datTurnVsStrikeSpeed_NL[datTurnVsStrikeSpeed_NL$OnSetDistance > 0.6,]
@@ -196,42 +270,110 @@ datTurnVsStrikeSpeed_DL <- datTurnVsStrikeSpeed_DL[datTurnVsStrikeSpeed_DL$Valid
 
 datTurnVsStrikeSpeed_ALL <- rbind(datTurnVsStrikeSpeed_NL,datTurnVsStrikeSpeed_LL,datTurnVsStrikeSpeed_DL)
 
+
+#### LOAD Capture First-Last Bout hunting that include the cluster classification - (made in stat_CaptureSpeedVsDistanceToPrey)
+datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_clustered.rds",sep="")) 
+datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
+datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
+
+#######################################
+########## PCA  - FACTOR ANALYSIS ####
+#######################################
+# Check Correlation Of UNdershoot With Hunt POwer
+##Take all expID from the successful hunt Events we have extracted hunt variables from 
+vexpID <- list(LF = datTrackedEventsRegister[datCapture_LL$RegistarIdx,]$expID,
+               NF=datTrackedEventsRegister[datCapture_NL$RegistarIdx,]$expID,
+               DF=datTrackedEventsRegister[datCapture_DL$RegistarIdx,]$expID)
+
+## Merge EXP ID
+## Add Exp ID Column - Signifying Which Larvae Executed the Capture Success Hunt- 
+datCapture_LF_wExpID <- cbind(datCapture_LL,expID=vexpID$LF,groupID=2)
+datCapture_NF_wExpID <- cbind(datCapture_NL,expID=vexpID$NF,groupID=3)
+datCapture_DF_wExpID <- cbind(datCapture_DL,expID=vexpID$DF,groupID=1)
+datCapture_ALL_wExpID <- rbind(datCapture_LF_wExpID,datCapture_NF_wExpID,datCapture_DF_wExpID)
+
 ##
 ##
-steps <- 1000
-nchains <- 5
+steps <- 15000
+nchains <- 3
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
-str_vars <- c("mu","rho","cov","sigma","x_rand","mID","mStrikeCount","pS") #Mixture Model
-ldata_LF <- list(c=datTurnVsStrikeSpeed_LL,N=NROW(datTurnVsStrikeSpeed_LL)) ##Live fed
-ldata_NF <- list(c=datTurnVsStrikeSpeed_NL,N=NROW(datTurnVsStrikeSpeed_NL)) ##Not fed
-ldata_DF <- list(c=datTurnVsStrikeSpeed_DL,N=NROW(datTurnVsStrikeSpeed_DL)) ##Dry fed
-ldata_ALL <- list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
+str_vars <- c("mu","rho","cov","sigma","x_rand","muG") #Mixture Model
+##Make Serial Larvae ID, that link each hunt event to an individual larva 
+ldata_LF <- with(datCapture_LF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID)) ) }) ##Live fed
+ldata_NF <- with(datCapture_NF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
+ldata_DF <- with(datCapture_DF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
+ldata_ALL <-with(datCapture_ALL_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ),Gid=groupID ,N=NROW(expID),NLarv=NROW(unique(expID))  ) }) ##Live fed list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
 
 
-jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsUndershootAndDistance), data = ldata_LF, 
-                         n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_LF$N))
+jags_model_LF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_LF, 
+                         n.adapt = 100, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_LF$N))
 update(jags_model_LF, 300)
 draw_LF=jags.samples(jags_model_LF,steps,thin=nthin,variable.names=str_vars)
 
 ## Not Fed
-jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsUndershootAndDistance), data = ldata_NF, 
+jags_model_NF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_NF, 
                          n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_NF$N)) 
 update(jags_model_NF,300)
 draw_NF=jags.samples(jags_model_NF,steps,thin=nthin,variable.names=str_vars)
 
 ## Dry  Fed
-jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsUndershootAndDistance), data = ldata_DF, 
+jags_model_DF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_DF, 
                          n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_DF$N))
 update(jags_model_DF, 300)
 draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
 
-save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
+
+message("Mean LF Und:", prettyNum( mean(sapply(draw_LF$mu[,1,,3],mean)) , digits=3),
+        " Speed : ",prettyNum( mean(sapply(draw_LF$mu[,2,,3],mean)), digits=3),
+        " Distance : ",prettyNum(mean(sapply(draw_LF$mu[,3,,3],mean)), digits=3)
+)
+
+message("Mean NF Und:", prettyNum( mean(sapply(draw_NF$mu[,1,,3],mean)) , digits=3),
+        " Speed : ",prettyNum( mean(sapply(draw_NF$mu[,2,,3],mean)), digits=3),
+        " Distance : ",prettyNum(mean(sapply(draw_NF$mu[,3,,3],mean)), digits=3)
+)
+
+message("Mean DF Und:", prettyNum( mean(sapply(draw_DF$mu[,1,,3],mean)) , digits=3),
+        " Speed : ",prettyNum( mean(sapply(draw_DF$mu[,2,,3],mean)), digits=3),
+        " Distance : ",prettyNum(mean(sapply(draw_DF$mu[,3,,3],mean)), digits=3)
+)
+
+save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
 ## ALL  groups
 #jags_model_ALL <- jags.model(textConnection(strmodel_capspeedVsUndershoot_Mixture), data = ldata_ALL, 
                             #n.adapt = 500, n.chains = 3, quiet = F)
 #update(jags_model_ALL, 300)
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
+
+
+plot(density(tail(draw_LF$muG[,1,,3], 100) ))
+lines(density(tail(draw_NF$muG[,1,,1], 100)))
+lines(density(tail(draw_DF$muG[,1,,1], 100)))
+#Idx: Lid,Variable (1Under),Sample Row,Chain
+plot((draw_LF$muG[,1,,1] ))
+points((draw_LF$muG[,1,,2] ),col="red")
+points((draw_LF$muG[,1,,3] ),col="blue")
+
+plot(density(draw_LF$mu[9,1,,1] ) )
+
+### Estimated For Each Larva - Plot Group Population
+##Plot Distance Density
+plot(density(sapply(draw_LF$mu[,3,,],mean)),col=colourLegL[2] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(draw_NF$mu[,3,,],mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(draw_DF$mu[,3,,],mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+
+##Plot Speed Density
+plot(density(sapply(draw_LF$mu[,2,,],mean)),col=colourLegL[2] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(draw_NF$mu[,2,,],mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(draw_DF$mu[,2,,],mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+
+##Plot Undershoot Density
+plot(density(sapply(draw_LF$mu[,1,,],mean)),col=colourLegL[2] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(draw_NF$mu[,1,,],mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(draw_DF$mu[,1,,],mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+
+
 
 ### Estimate  densities  ###
 
