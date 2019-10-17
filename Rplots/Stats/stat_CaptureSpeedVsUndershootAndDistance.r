@@ -294,8 +294,8 @@ datCapture_ALL_wExpID <- rbind(datCapture_LF_wExpID,datCapture_NF_wExpID,datCapt
 
 ##
 ##
-steps <- 5000
-nchains <- 3
+steps <- 10000
+nchains <- 10
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
 str_vars <- c("mu","rho","cov","sigma","x_rand","muG") #Mixture Model
