@@ -369,9 +369,27 @@ for (i in 1:NROW(draw_LF$mu))
 ### Estimated For Each Larva - Plot Group Population
 ##Plot Distance Density
 stail <- 300
-plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey") ##Mean Group Undershoot From Mean Of Each Larva
-lines(density(sapply(tail(draw_NF$mu[,3,,],stail),mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lines(density(sapply(tail(draw_DF$mu[,3,,],stail) ,mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey",ylim=c(0,6)) ##Mean Group Undershoot From Mean Of Each Larva
+ldist <- list()
+for ( i in (1:28) )
+  ldist[[i]]  <-sapply(tail(draw_LF$mu[i,3,,],stail),mean)
+##Overlay The Density From The Estimated Mean Overshoot Of Each Larva
+lines(density( unlist(lapply(ldist,mean) ) ) )
+
+lines(density(sapply(tail(draw_NF$mu[,3,,],stail),mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+ldist <- list()
+for ( i in (1:28) )
+  ldist[[i]]  <-sapply(tail(draw_NF$mu[i,3,,],stail),mean)
+##Overlay The Density From The Estimated Mean Overshoot Of Each Larva
+lines(density( unlist(lapply(ldist,mean) ) ) )
+
+
+lines(density(sapply(tail(draw_DF$mu[1,3,,],stail) ,mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+ldist <- list()
+for ( i in (1:28) )
+  ldist[[i]]  <-sapply(tail(draw_DF$mu[i,3,,],stail),mean)
+##Overlay The Density From The Estimated Mean Overshoot Of Each Larva
+lines(density( unlist(lapply(ldist,mean) ) ) )
 
 ##Plot Speed Density
 plot(density(sapply(tail(draw_LF$mu[,2,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Capture Speed",ylim=c(0,0.1)) ##Mean Group Undershoot From Mean Of Each Larva
