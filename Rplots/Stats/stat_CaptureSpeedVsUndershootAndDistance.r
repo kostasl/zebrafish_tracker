@@ -123,44 +123,22 @@ for (i in 1:N)
 {
   ##Draw from gaussian model of Each Larva
   c[i,1:3] ~ dmnorm(mu[Lid[i],],prec[Lid[i], , ]) ## data in column 1 and 2
-  #mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
   
 }
+
+
 
 ##Covariance matrix and its inverse -> the precision matrix
 ## for each Gaussian in the mixture - Single Gaussian  Here -
 for  (l in 1:NLarv)
 {
-  prec[l,1:3,1:3] <- inverse(cov[l,1:3,1:3])
-  
-  cov[l,1,1] <- sigma[l,1]*sigma[l,1]
-  cov[l,1,2] <- sigma[l,1]*sigma[l,2]*rho[l,1] ## Undershoot-Speed Covar
-  cov[l,1,3] <- sigma[l,1]*sigma[l,3]*rho[l,3] ##Undeshoot-Dist Covar
-  
-  cov[l,2,1] <- sigma[l,1]*sigma[l,2]*rho[l,1] #UNdershoot-Speed
-  cov[l,2,2] <- sigma[l,2]*sigma[l,2]
-  cov[l,2,3] <- sigma[l,2]*sigma[l,3]*rho[l,2] #Speed-Dist Covar
-  
-  cov[l,3,1] <- sigma[l,1]*sigma[l,3]*rho[l,3] ##Undeshoot-Dist Covar
-  cov[l,3,2] <- sigma[l,2]*sigma[l,3]*rho[l,2]
-  cov[l,3,3] <- sigma[l,3]*sigma[l,3]
-  
-  #Sigmainv[g,1:3,1:3] ~ dwish(cov[g,,],3)
-  ###37
-  ##the sum of all the entries in a covariance matrix is the variance of the sum of the n random variables
-  rho[l,1]  ~ dunif(-0.5,0.5) ##The Undershoot Speed covar coefficient
-  rho[l,2] ~ dunif(-0.5,0.5) ##The Speed - Distance covar coefficient
-  rho[l,3] ~ dunif(-0.5,0.5) ##The UNdershoot Distance covar coefficient
-  
+  prec[l,1:3,1:3] ~ dwish(R,3)
+  cov[l,1:3,1:3]  <- inverse(prec[l,1:3,1:3])  
   
   ## Larva priors Are linked to the Group's Priors
-  mu[l,1] ~ dnorm(muG[1,1], 0.001)T(0.0,2) ##undershoot
-  mu[l,2] ~ dnorm(muG[1,2],0.0001)T(0,) ##cap speed
-  mu[l,3] ~ dnorm(muG[1,3],0.01)T(0,) ##Distance prey
-  
-  sigma[l,1] ~ dunif(0.0,0.30) ##undershoot prey - Keep it narrow within the expected limits
-  sigma[l,2] ~ dunif(0.0,15) ## cap speed sigma 
-  sigma[l,3] ~ dunif(0.0,0.3) ##dist prey - Keep it broad within the expected limits 
+  mu[l,1] ~ dnorm(muG[1,1], tG[1,1]) ##turn ratio
+  mu[l,2] ~ dnorm(muG[1,2], tG[1,2]) ##cap speed
+  mu[l,3] ~ dnorm(muG[1,3], tG[1,3]) ##Distance prey
   
   ## Synthesize data from the distribution for This Larva
   x_rand[l,] ~ dmnorm(mu[l,],prec[l,,])
@@ -173,69 +151,20 @@ for  (g in 1:1)
   muG[g,1] ~ dnorm(1, 0.00001)T(0.0,2) ##undershoot
   muG[g,2] ~ dnorm(15,0.00001)T(0,) ##cap speed
   muG[g,3] ~ dnorm(0.1,0.1)T(0,) ##Distance prey
+  
+  tG[g,1] ~ dgamma(1,1000)
+  tG[g,2] ~ dgamma(1,1000)
+  tG[g,3] ~ dgamma(1,1000)
+}
+
+for(i in 1:3){
+  for(j in 1:3){
+    R[i,j] <- equals(i,j)*1e-4
+  }
 }
 
 } "
 
-
-
-## Non Clustering Model Grouping Individual Events, 3D Gaussian 
-strmodel_capspeedVsUndershootAndDistance <- "
-var x_rand[2,3];
-
-model {
-
-##Draw capt speed from 2d gaussian
-for (i in 1:N)
-{
-  ##Draw from gaussian model  as determined by mod flag
-  c[i,1:3] ~ dmnorm(mu[1,],prec[1, , ]) ## data in column 1 and 2
-  mID[i] ~ dbern(0.5) ##Se Gaussian class membership randomly
-  
-}
-
-##Covariance matrix and its inverse -> the precision matrix
-## for each Gaussian in the mixture - Single Gaussian  Here -
-for  (g in 1:1)
-{
-  prec[g,1:3,1:3] <- inverse(cov[g,1:3,1:3])
-  
-  cov[g,1,1] <- sigma[g,1]*sigma[g,1]
-  cov[g,1,2] <- sigma[g,1]*sigma[g,2]*rho[g,1] ## Undershoot-Speed Covar
-  cov[g,1,3] <- sigma[g,1]*sigma[g,3]*rho[g,3] ##Undeshoot-Dist Covar
-  
-  cov[g,2,1] <- sigma[g,1]*sigma[g,2]*rho[g,1] #UNdershoot-Speed
-  cov[g,2,2] <- sigma[g,2]*sigma[g,2]
-  cov[g,2,3] <- sigma[g,2]*sigma[g,3]*rho[g,2] #Speed-Dist Covar
-  
-  cov[g,3,1] <- sigma[g,1]*sigma[g,3]*rho[g,3] ##Undeshoot-Dist Covar
-  cov[g,3,2] <- sigma[g,2]*sigma[g,3]*rho[g,2]
-  cov[g,3,3] <- sigma[g,3]*sigma[g,3]
-
-  #Sigmainv[g,1:3,1:3] ~ dwish(cov[g,,],3)
-###37
-  ##the sum of all the entries in a covariance matrix is the variance of the sum of the n random variables
-  rho[g,1]  ~ dunif(-0.5,0.5) ##The Undershoot Speed covar coefficient
-  rho[g,2] ~ dunif(-0.5,0.5) ##The Speed - Distance covar coefficient
-  rho[g,3] ~ dunif(-0.5,0.5) ##The UNdershoot Distance covar coefficient
-
-
-  ## Cluster's priors 
-  mu[g,1] ~ dnorm(1, 0.00001)T(0.0,2) ##undershoot
-  mu[g,2] ~ dnorm(15,0.00001)T(0,) ##cap speed
-  mu[g,3] ~ dnorm(0.1,0.01)T(0,) ##Distance prey
-  
-  sigma[g,1] ~ dunif(0.0,0.30) ##undershoot prey - Keep it narrow within the expected limits
-  sigma[g,2] ~ dunif(0.0,15) ## cap speed sigma 
-  sigma[g,3] ~ dunif(0.0,0.3) ##dist prey - Keep it broad within the expected limits 
-
-  ## Synthesize data from the distribution
-  x_rand[g,] ~ dmnorm(mu[1,],prec[1,,])
-
-}
-
-
-} "
 
 
 strModelPDFFileName <- "/stat/UndershootAnalysis/fig7S1-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
@@ -296,11 +225,11 @@ datHuntLarvaStat <- aggregate(datCapture_ALL_wExpID,by=list(datCapture_ALL_wExpI
 
 ##
 ##
-steps <- 3000
-nchains <- 10
+steps <-2000
+nchains <- 3
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
-str_vars <- c("mu","rho","cov","sigma","x_rand","muG") #Mixture Model
+str_vars <- c("mu","cov","x_rand","muG","NLarv") #Mixture Model
 ##Make Serial Larvae ID, that link each hunt event to an individual larva 
 ldata_LF <- with(datCapture_LF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID)) ) }) ##Live fed
 ldata_NF <- with(datCapture_NF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
@@ -352,23 +281,32 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussi
 load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
 
 schain <- 5:10
-plot(density(tail(draw_LF$muG[,1,,1], 150) ),ylim=c(0,7))
-lines(density(tail(draw_NF$muG[,1,,schain], 150)))
-lines(density(tail(draw_DF$muG[,1,,schain], 150)))
+stail <- 300
+plot(density(tail(draw_LF$muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80))
+lines(density(tail(draw_NF$muG[,2,,schain], 150)))
+lines(density(tail(draw_DF$muG[,2,,schain], 150)))
+
+##Prior Vs INdividual Density
+with(draw_LF,{
+  plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80),lwd=2,col="red")
+  for ( i in (1:NROW() ) )
+    lines( density( tail( mu[i,2,,],stail)),lty=2)
+})
+##Covariance 
+### Lid,Matrix i,Matrix j,Sample,chain
+draw_LF$cov[,2,2,1,1]
 
 #Idx: Lid,Variable (1Under),Sample Row,Chain
-plot((tail(draw_LF$muG[,1,,1],1000) ),type='l')
-lines((tail(draw_LF$muG[,1,,2],1000) ),col="red")
-lines((tail(draw_LF$muG[,1,,3],1000) ),col="blue")
+plot((tail(draw_LF$muG[,2,,1],1000) ),type='l')
+lines((tail(draw_LF$muG[,2,,2],1000) ),col="red")
+lines((tail(draw_LF$muG[,2,,3],1000) ),col="blue")
 
 
 plot(density(draw_LF$mu[9,1,,schain] ) )
-for (i in 1:NROW(draw_LF$mu))
-  lines(density(draw_LF$mu[i,1,,schain] ) )
 
 ### Estimated For Each Larva - Plot Group Population
 ##Plot Distance Density
-stail <- 300
+
 plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey",ylim=c(0,6)) ##Mean Group Undershoot From Mean Of Each Larva
 ldist <- list()
 for ( i in (1:28) )
