@@ -159,8 +159,9 @@ for  (g in 1:1)
 
 for(i in 1:3){
   for(j in 1:3){
-    R[i,j] <- equals(i,j)*1e-1
+    R[i,j] <- equals(i,j)*1e-4
   }
+
 }
 
 } "
@@ -279,7 +280,7 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussi
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 
-load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
+#load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
 
 schain <- 5:10
 stail <- 300
@@ -292,25 +293,32 @@ lines(density(tail(draw_LF$muG[,1,,1], 150) ),ylim=c(0,1),xlim=c(0,2))
 lines(density(tail(draw_LF$muG[,1,,2], 150) ),ylim=c(0,1),xlim=c(0,2))
 
 ##Undershoot Posterior Group Vs INdividual Density
-with(draw_LF,{
+with(draw_DF,{
   plot(density(tail(muG[,1,,], 100) ),ylim=c(0,16),xlim=c(0,2),lwd=2,col="red")
   for ( i in (1:NLarv[1] ) )
     lines( density( tail( mu[i,1,,],stail)),lty=2)
 })
 
-##Speed Posterior Group Vs INdividual Density
-with(draw_LF,{
-  plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80),lwd=2,col="red")
-  for ( i in (1:NLarv[1] ) )
-    lines( density( tail( mu[i,2,,],stail)),lty=2)
-})
+
 
 ##Speed Posterior Group Vs INdividual Density
-with(draw_DF,{
-  plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80),lwd=2,col="red")
+with(draw_LF,{
+  plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,60),lwd=2,col="red")
   for ( i in (1:NLarv[1] ) )
     lines( density( tail( mu[i,2,,],stail)),lty=2)
 })
+lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==2,]$CaptureSpeed),col="blue",lwd=2)
+
+
+##Speed Posterior Group Vs INdividual Density
+with(draw_NF,{
+  plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,60),lwd=2,col="red")
+  for ( i in (1:NLarv[1] ) )
+    lines( density( tail( mu[i,2,,],stail)),lty=2)
+})###Empirical
+lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==3,]$CaptureSpeed),col="blue",lwd=2)
+
+
 
 ##Distance Posterior Group Vs INdividual Density
 with(draw_LF,{
@@ -318,6 +326,8 @@ with(draw_LF,{
   for ( i in (1:NLarv[1] ) )
     lines( density( tail( mu[i,3,,],stail)),lty=2)
 })
+
+
 
 ##Covariance 
 ### Lid,Matrix i,Matrix j,Sample,chain
