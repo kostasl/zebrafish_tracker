@@ -148,18 +148,18 @@ for  (l in 1:NLarv)
 ### Make Group Priors 
 for  (g in 1:1)
 {
-  muG[g,1] ~ dnorm(1, 0.00001)T(0.0,2) ##undershoot
-  muG[g,2] ~ dnorm(15,0.00001)T(0,) ##cap speed
-  muG[g,3] ~ dnorm(0.1,0.1)T(0,) ##Distance prey
+  muG[g,1] ~ dnorm(1, 0.01)T(0.0,2) ##turn ratio
+  muG[g,2] ~ dnorm(15,0.001)T(0,) ##cap speed
+  muG[g,3] ~ dnorm(0.1,0.001)T(0,) ##Distance prey
   
-  tG[g,1] ~ dgamma(1,1000)
-  tG[g,2] ~ dgamma(1,1000)
-  tG[g,3] ~ dgamma(1,1000)
+  tG[g,1] ~ dgamma(10,3)
+  tG[g,2] ~ dgamma(10,100)
+  tG[g,3] ~ dgamma(10,5)
 }
 
 for(i in 1:3){
   for(j in 1:3){
-    R[i,j] <- equals(i,j)*1e-4
+    R[i,j] <- equals(i,j)*1e-1
   }
 }
 
@@ -225,7 +225,7 @@ datHuntLarvaStat <- aggregate(datCapture_ALL_wExpID,by=list(datCapture_ALL_wExpI
 
 ##
 ##
-steps <-2000
+steps <-6000
 nchains <- 3
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -255,19 +255,20 @@ update(jags_model_DF, 300)
 draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
 
 
-message("Mean LF Und:", prettyNum( mean(sapply(draw_LF$mu[,1,,3],mean)) , digits=3),
-        " Speed : ",prettyNum( mean(sapply(draw_LF$mu[,2,,3],mean)), digits=3),
-        " Distance : ",prettyNum(mean(sapply(draw_LF$mu[,3,,3],mean)), digits=3)
+message("Mean LF Und:", prettyNum( mean(draw_LF$muG[,1,,]) , digits=3),
+        " Speed : ",prettyNum( mean(draw_LF$muG[,2,,1]), digits=3),
+        " Distance : ",prettyNum(mean(draw_LF$muG[,3,,1]), digits=3)
 )
 
-message("Mean NF Und:", prettyNum( mean(sapply(draw_NF$mu[,1,,3],mean)) , digits=3),
-        " Speed : ",prettyNum( mean(sapply(draw_NF$mu[,2,,3],mean)), digits=3),
-        " Distance : ",prettyNum(mean(sapply(draw_NF$mu[,3,,3],mean)), digits=3)
+
+message("Mean NF Und:", prettyNum( mean(draw_NF$muG[,1,,]) , digits=3),
+        " Speed : ",prettyNum( mean(draw_NF$muG[,2,,1]), digits=3),
+        " Distance : ",prettyNum(mean(draw_NF$muG[,3,,1]), digits=3)
 )
 
-message("Mean DF Und:", prettyNum( mean(sapply(draw_DF$mu[,1,,3],mean)) , digits=3),
-        " Speed : ",prettyNum( mean(sapply(draw_DF$mu[,2,,3],mean)), digits=3),
-        " Distance : ",prettyNum(mean(sapply(draw_DF$mu[,3,,3],mean)), digits=3)
+message("Mean DF Und:", prettyNum( mean(draw_DF$muG[,1,,]) , digits=3),
+        " Speed : ",prettyNum( mean(draw_DF$muG[,2,,1]), digits=3),
+        " Distance : ",prettyNum(mean(draw_DF$muG[,3,,1]), digits=3)
 )
 
 save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
@@ -286,20 +287,46 @@ plot(density(tail(draw_LF$muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80))
 lines(density(tail(draw_NF$muG[,2,,schain], 150)))
 lines(density(tail(draw_DF$muG[,2,,schain], 150)))
 
-##Prior Vs INdividual Density
+plot(density(tail(draw_LF$muG[,1,,3], 150) ),ylim=c(0,1),xlim=c(0,2))
+lines(density(tail(draw_LF$muG[,1,,1], 150) ),ylim=c(0,1),xlim=c(0,2))
+lines(density(tail(draw_LF$muG[,1,,2], 150) ),ylim=c(0,1),xlim=c(0,2))
+
+##Undershoot Posterior Group Vs INdividual Density
+with(draw_LF,{
+  plot(density(tail(muG[,1,,], 100) ),ylim=c(0,16),xlim=c(0,2),lwd=2,col="red")
+  for ( i in (1:NLarv[1] ) )
+    lines( density( tail( mu[i,1,,],stail)),lty=2)
+})
+
+##Speed Posterior Group Vs INdividual Density
 with(draw_LF,{
   plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80),lwd=2,col="red")
-  for ( i in (1:NROW() ) )
+  for ( i in (1:NLarv[1] ) )
     lines( density( tail( mu[i,2,,],stail)),lty=2)
 })
+
+##Speed Posterior Group Vs INdividual Density
+with(draw_DF,{
+  plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80),lwd=2,col="red")
+  for ( i in (1:NLarv[1] ) )
+    lines( density( tail( mu[i,2,,],stail)),lty=2)
+})
+
+##Distance Posterior Group Vs INdividual Density
+with(draw_LF,{
+  plot(density(tail(muG[,3,,1], 100) ),ylim=c(0,16),xlim=c(0,1),lwd=2,col="red")
+  for ( i in (1:NLarv[1] ) )
+    lines( density( tail( mu[i,3,,],stail)),lty=2)
+})
+
 ##Covariance 
 ### Lid,Matrix i,Matrix j,Sample,chain
 draw_LF$cov[,2,2,1,1]
 
 #Idx: Lid,Variable (1Under),Sample Row,Chain
-plot((tail(draw_LF$muG[,2,,1],1000) ),type='l')
-lines((tail(draw_LF$muG[,2,,2],1000) ),col="red")
-lines((tail(draw_LF$muG[,2,,3],1000) ),col="blue")
+plot((tail(draw_LF$muG[,1,,1],1000) ),type='l')
+lines((tail(draw_LF$muG[,1,,2],1000) ),col="red")
+lines((tail(draw_LF$muG[,1,,3],1000) ),col="blue")
 
 
 plot(density(draw_LF$mu[9,1,,schain] ) )
@@ -566,22 +593,22 @@ ntail <- 500
 
 
 datMu3D <-  data.frame( cbind.data.frame(
-                        TurnR=as.numeric( sapply(tail(draw_LF$mu[,1,,],ntail),mean) ) ,
-                        CSpeed=sapply(tail(draw_LF$mu[,2,,],ntail ),mean) ,
-                        Dist=sapply(tail(draw_LF$mu[,3,,],ntail)  ,mean),col=colourHL[2])  )
+                        TurnR=tail(draw_LF$muG[,1,,1], ntail) ,
+                        CSpeed=tail(draw_LF$muG[,2,,1], ntail),
+                        Dist=tail(draw_LF$muG[,3,,1], ntail), col=colourHL[2])  )
+
+datMu3D <- rbind(datMu3D,
+                  data.frame( cbind.data.frame(
+                   TurnR=tail(draw_NF$muG[,1,,1], ntail) ,
+                   CSpeed=tail(draw_NF$muG[,2,,1], ntail),
+                   Dist=tail(draw_NF$muG[,3,,1], ntail), col=colourHL[3])  )
+              )
 
 datMu3D <- rbind(datMu3D,
                  data.frame( cbind.data.frame(
-                   TurnR=as.numeric( sapply(tail(draw_NF$mu[,1,,],ntail),mean) ) ,
-                   CSpeed=sapply(tail(draw_NF$mu[,2,,],ntail ),mean) ,
-                   Dist=sapply(tail(draw_NF$mu[,3,,],ntail)  ,mean),col=colourHL[3])  )
-                 )
-
-datMu3D <- rbind(datMu3D,
-                 data.frame( cbind.data.frame(
-                   TurnR=as.numeric( sapply(tail(draw_DF$mu[,1,,],ntail),mean) ) ,
-                   CSpeed=sapply(tail(draw_DF$mu[,2,,],ntail ),mean) ,
-                   Dist=sapply(tail(draw_DF$mu[,3,,],ntail)  ,mean),col=colourHL[1])  )
+                   TurnR=tail(draw_DF$muG[,1,,1], ntail) ,
+                   CSpeed=tail(draw_DF$muG[,2,,1], ntail),
+                   Dist=tail(draw_DF$muG[,3,,1], ntail), col=colourHL[1])  )
                  
                  )
 
