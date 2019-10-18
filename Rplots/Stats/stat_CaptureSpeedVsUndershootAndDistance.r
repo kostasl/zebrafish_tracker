@@ -291,10 +291,12 @@ datCapture_LF_wExpID <- cbind(datCapture_LL,expID=vexpID$LF,groupID=2)
 datCapture_NF_wExpID <- cbind(datCapture_NL,expID=vexpID$NF,groupID=3)
 datCapture_DF_wExpID <- cbind(datCapture_DL,expID=vexpID$DF,groupID=1)
 datCapture_ALL_wExpID <- rbind(datCapture_LF_wExpID,datCapture_NF_wExpID,datCapture_DF_wExpID)
+###Empirical Distribution
+datHuntLarvaStat <- aggregate(datCapture_ALL_wExpID,by=list(datCapture_ALL_wExpID$expID),mean)
 
 ##
 ##
-steps <- 10000
+steps <- 3000
 nchains <- 10
 nthin <- 2
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -347,32 +349,43 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussi
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 
-plot(density(tail(draw_LF$muG[,1,,3], 100) ))
-lines(density(tail(draw_NF$muG[,1,,1], 100)))
-lines(density(tail(draw_DF$muG[,1,,1], 100)))
-#Idx: Lid,Variable (1Under),Sample Row,Chain
-plot((draw_LF$muG[,1,2000:2500,1] ),type='l')
-lines((draw_LF$muG[,1,2000:2500,2] ),col="red")
-lines((draw_LF$muG[,1,2000:2500,3] ),col="blue")
+load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
 
-plot(density(draw_LF$mu[9,1,,1] ) )
+schain <- 5:10
+plot(density(tail(draw_LF$muG[,1,,1], 150) ),ylim=c(0,7))
+lines(density(tail(draw_NF$muG[,1,,schain], 150)))
+lines(density(tail(draw_DF$muG[,1,,schain], 150)))
+
+#Idx: Lid,Variable (1Under),Sample Row,Chain
+plot((tail(draw_LF$muG[,1,,1],1000) ),type='l')
+lines((tail(draw_LF$muG[,1,,2],1000) ),col="red")
+lines((tail(draw_LF$muG[,1,,3],1000) ),col="blue")
+
+
+plot(density(draw_LF$mu[9,1,,schain] ) )
+for (i in 1:NROW(draw_LF$mu))
+  lines(density(draw_LF$mu[i,1,,schain] ) )
 
 ### Estimated For Each Larva - Plot Group Population
 ##Plot Distance Density
-plot(density(sapply(draw_LF$mu[,3,,],mean)),col=colourLegL[2] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lines(density(sapply(draw_NF$mu[,3,,],mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lines(density(sapply(draw_DF$mu[,3,,],mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+stail <- 300
+plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey") ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(tail(draw_NF$mu[,3,,],stail),mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(tail(draw_DF$mu[,3,,],stail) ,mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 
 ##Plot Speed Density
-plot(density(sapply(draw_LF$mu[,2,,],mean)),col=colourLegL[2] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lines(density(sapply(draw_NF$mu[,2,,],mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lines(density(sapply(draw_DF$mu[,2,,],mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+plot(density(sapply(tail(draw_LF$mu[,2,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Capture Speed",ylim=c(0,0.1)) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(tail(draw_NF$mu[,2,,],stail),mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(tail(draw_DF$mu[,2,,],stail) ,mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 
-##Plot Undershoot Density
-plot(density(sapply(draw_LF$mu[,1,,],mean)),col=colourLegL[2] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lines(density(sapply(draw_NF$mu[,1,,],mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lines(density(sapply(draw_DF$mu[,1,,],mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+##Plot Undershoot Density / Mean Sample point Across larva 
+plot(density(sapply(tail(draw_LF$mu[,1,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Turn ratio") ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(tail(draw_NF$mu[,1,,],stail),mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(tail(draw_DF$mu[,1,,],stail) ,mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 
+#Idx: Lid,Variable (2=SpeedDist Covar),Sample Row,Chain
+## 
+plot(sapply((draw_LF$rho[,2,,1]),mean),type='l')
 
 
 ### Estimate  densities  ###
@@ -588,18 +601,40 @@ dev.off()
 library( rgl )
 #library(plot3D)
 # Static chart
-ntail <- 80
-datMu3D <-  data.frame( cbind.data.frame( TurnR=as.numeric(tail(draw_NF$mu[,1,,1],ntail)),CSpeed=tail(draw_NF$mu[,2,,1],ntail),Dist=tail(draw_NF$mu[,3,,1],ntail),col=colourHL[1])  )
+ntail <- 500
+# datMu3D <-  data.frame( cbind.data.frame( TurnR=as.numeric(tail(draw_NF$mu[,1,,1],ntail)),CSpeed=tail(draw_NF$mu[,2,,1],ntail),Dist=tail(draw_NF$mu[,3,,1],ntail),col=colourHL[1])  )
+# datMu3D <- rbind(datMu3D,
+#                  data.frame( cbind.data.frame( TurnR=tail(draw_LF$mu[,1,,1],ntail),CSpeed=tail(draw_LF$mu[,2,,1],ntail),Dist=tail(draw_LF$mu[,3,,1],ntail),col=colourHL[2])  ))
+# datMu3D <- rbind(datMu3D,
+#                  data.frame( cbind.data.frame( TurnR=tail(draw_DF$mu[,1,,1],ntail),CSpeed=tail(draw_DF$mu[,2,,1],ntail),Dist=tail(draw_DF$mu[,3,,1],ntail),col=colourHL[3])  ))
+
+
+datMu3D <-  data.frame( cbind.data.frame(
+                        TurnR=as.numeric( sapply(tail(draw_LF$mu[,1,,],ntail),mean) ) ,
+                        CSpeed=sapply(tail(draw_LF$mu[,2,,],ntail ),mean) ,
+                        Dist=sapply(tail(draw_LF$mu[,3,,],ntail)  ,mean),col=colourHL[2])  )
+
 datMu3D <- rbind(datMu3D,
-                 data.frame( cbind.data.frame( TurnR=tail(draw_LF$mu[,1,,1],ntail),CSpeed=tail(draw_LF$mu[,2,,1],ntail),Dist=tail(draw_LF$mu[,3,,1],ntail),col=colourHL[2])  ))
+                 data.frame( cbind.data.frame(
+                   TurnR=as.numeric( sapply(tail(draw_NF$mu[,1,,],ntail),mean) ) ,
+                   CSpeed=sapply(tail(draw_NF$mu[,2,,],ntail ),mean) ,
+                   Dist=sapply(tail(draw_NF$mu[,3,,],ntail)  ,mean),col=colourHL[3])  )
+                 )
+
 datMu3D <- rbind(datMu3D,
-                 data.frame( cbind.data.frame( TurnR=tail(draw_DF$mu[,1,,1],ntail),CSpeed=tail(draw_DF$mu[,2,,1],ntail),Dist=tail(draw_DF$mu[,3,,1],ntail),col=colourHL[3])  ))
+                 data.frame( cbind.data.frame(
+                   TurnR=as.numeric( sapply(tail(draw_DF$mu[,1,,],ntail),mean) ) ,
+                   CSpeed=sapply(tail(draw_DF$mu[,2,,],ntail ),mean) ,
+                   Dist=sapply(tail(draw_DF$mu[,3,,],ntail)  ,mean),col=colourHL[1])  )
+                 
+                 )
+
 
 open3d()
 rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
              #xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)",
-             xlab="", ylab="",zlab="",
-             xlim=c(0.5,1.5), ylim=c(10,50), zlim=c(0,0.6),
+             xlab="Turn Ratio", ylab="Speed",zlab="Distance",
+             #xlim=c(0.2,1.8), ylim=c(5,60), zlim=c(0,0.8),
              box = FALSE ,aspect = TRUE
              #,expand = 1.5
              )

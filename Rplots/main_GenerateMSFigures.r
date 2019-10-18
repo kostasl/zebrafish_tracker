@@ -742,6 +742,10 @@ mergedCapDat <- standardizeHuntData(mergedCapDat)
 # Show Stdandardized Efficiency Distribution 
 hist(datHunterStat$Efficiency_norm )
 
+### Plot Undershoot Density
+plot(density(datHunterStat[datHunterStat$groupID == 1,]$Undershoot),lwd=3,col=colourLegL[1],type='l',ylim=c(0,2),main="Empirical Turn-ratio per Larva")
+lines(density(datHunterStat[datHunterStat$groupID == 2,]$Undershoot),lwd=3,col=colourLegL[2])
+lines(density(datHunterStat[datHunterStat$groupID == 3,]$Undershoot),lwd=3,col=colourLegL[3])
 ### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
 ## ##Make MAtrix
 ##Also CHeck OUt varimax and factanal
