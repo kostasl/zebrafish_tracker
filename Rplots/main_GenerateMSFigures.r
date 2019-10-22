@@ -104,6 +104,9 @@ getSlowClusterGrid <- function(drawMCMC)
 }
 
 
+
+
+
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
 #lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
@@ -127,7 +130,7 @@ datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 
 
 
-
+#### BOOTSTRAP - Correlation Of Distance TO Time To Get To Prey
 
 
 

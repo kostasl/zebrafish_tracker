@@ -97,7 +97,7 @@ calcMIEntropy <- function(freqM)
 ##Bootstrap Data analysis from 2 chosen columns of datCapture_NL (lFirstBout)  to get stats on correlations and Mutual Information
 ## Can use Pearson to examine correlations in value, 
 ## Or spearman to examine correlation in rank (ie value increases correlate and not corr not influenced by the absolute value of each data point)
-bootStrap_stat <- function(datCapture_X,datCapture_Y,N,XRange,YRange)
+bootStrap_stat <- function(datCapture_X,datCapture_Y,N,XRange,YRange,corMethod="pearson")
 {
   datCapture <- data.frame(cbind(datCapture_X,datCapture_Y))
   l_sampleXYAnalysis <- list()
@@ -111,7 +111,7 @@ bootStrap_stat <- function(datCapture_X,datCapture_Y,N,XRange,YRange)
     freqM_NF <- InfoCalc_get2DFreq(datSub[,1],datSub[,2],XRange,YRange)
     
     infC <- calcMIEntropy(freqM_NF)
-    corrXY <- cor(datSub[,1],datSub[,2],method="pearson") #method="spearman"
+    corrXY <- cor(datSub[,1],datSub[,2],method=corMethod) #method="spearman"
     l_sampleXYAnalysis[[i]] <- data.frame(MI = infC$MutualInf_XY,entropy_X = infC$H_X,entropy_Y = infC$H_Y,corr=corrXY)
     #inf_LF <-calcMIEntropy(freqM_LF)
     #inf_DF <-calcMIEntropy(freqM_DF)
@@ -127,9 +127,17 @@ lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_Fir
 
 
 #### Load  hunting stats- Generated in main_GenerateMSFigures.r - now including the cluster classification -
-datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_NL_clustered",".rds",sep="")) 
-datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_LL_clustered",".rds",sep="")) 
-datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_DL_clustered",".rds",sep="")) 
+#datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_NL_clustered",".rds",sep="")) 
+#datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_LL_clustered",".rds",sep="")) 
+#datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_DL_clustered",".rds",sep="")) 
+
+
+#### LOAD Capture First-Last Bout hunting that include the cluster classification - (made in stat_CaptureSpeedVsDistanceToPrey)
+##22/10/19- Updated with Time To get To prey INfo 
+datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_clustered.rds",sep="")) 
+datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
+datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
+
 
 #datCapture_NL <- datCapture_NL[datCapture_NL$Cluster == "fast",]
 #datCapture_LL <- datCapture_LL[datCapture_LL$Cluster == "fast",]
@@ -314,10 +322,42 @@ YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Ph
     mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
   
   dev.off()  
+
+  ###
   
   
+  XRange  <- c(0,0.8) #
+  YRange <- c(0,1) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+  ### DENSITIES ####
+  pBw <- 0.02
   
+  datCapture_NL_clust <- datCapture_NL[datCapture_NL$Cluster == "fast",] #datCapture_NL #
+  datCapture_LL_clust <- datCapture_LL[datCapture_LL$Cluster == "fast",]#datCapture_LL# 
+  datCapture_DL_clust <- datCapture_DL[datCapture_DL$Cluster == "fast",] #datCapture_DL# 
   
+  stat_CapDistVsTime_NF <- bootStrap_stat(datCapture_NL_clust$DistanceToPrey,datCapture_NL_clust$FramesToHitPrey/G_APPROXFPS,1000,XRange,YRange,"spearman")
+  stat_CapDistVsTime_LF <- bootStrap_stat(datCapture_LL_clust$DistanceToPrey,datCapture_LL_clust$FramesToHitPrey/G_APPROXFPS,1000,XRange,YRange,"spearman")
+  stat_CapDistVsTime_DF <- bootStrap_stat(datCapture_DL_clust$DistanceToPrey,datCapture_DL_clust$FramesToHitPrey/G_APPROXFPS,1000,XRange,YRange,"spearman")
+  
+  # Plot Speed Vs Distance Correlation - bootstraped Stat ##
+strPlotName = paste(strPlotExportPath,"/stat/fig5_statbootstrap_corrSpearman_DistanceVsTimeToPrey_fastCluster.pdf",sep="")
+pdf(strPlotName,width=7,height=7,title="Correlations In between Distance And Number of Frames to Get to Prey For Fast Capture swims ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.9,4.7,1,1))
+  
+  plot(density(stat_CapDistVsTime_NF$corr,kernel="gaussian",bw=pBw),
+       col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(density(stat_CapDistVsTime_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(stat_CapDistVsTime_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+  
+  # legend("topright",         legend=c(  expression (),
+  #                    bquote(NF~ ''  ),
+  #                    bquote(LF ~ '' ),
+  #                    bquote(DF ~ '' )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+  #         col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of capture speed to prey distance  ") ))
+  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+  
+dev.off()
   
   
   ### CORRELOLAGRAM ###
@@ -397,3 +437,8 @@ mi.empirical(freqM_DF,unit="log2" )
   
 #  return(INFO)
 #}
+  
+  
+  
+  
+  
