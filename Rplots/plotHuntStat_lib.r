@@ -656,7 +656,7 @@ plotHuntPowerDataCDF <- function(datHuntEventAllGroupToLabel)
 {
   datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
   ## Hunt POwer ##
-  vScoreIdx        <- datFishSuccessRate[,"HuntPower"]  ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vScoreIdx        <- datFishSuccessRate[,"HuntPower"] # ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
   vEfficiencyRatio <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
   vEfficiencyRatio_Strike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_WS"]))
   vEfficiencyRatio_NStrike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_NS"]))
@@ -691,8 +691,8 @@ plotHuntPowerDataCDF <- function(datHuntEventAllGroupToLabel)
   plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=cex)
   plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=cex)
   #axis(side=1)
-  mtext(side = 1,cex=1.5, line = 3.5, expression( "Hunt power " ~ N[S]^2/(N[S]+N[F]) ,paste("") )   )
-  mtext(side = 2,cex=1.5, line = 3.5, expression("Cumulative function " ))
+  mtext(side = 1,cex=cex, line = line, expression( "Hunt power " ~ N[S]^2/(N[S]+N[F]) ,paste("") )   )
+  mtext(side = 2,cex=cex, line = line, expression("Cumulative function " ))
   
   legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
          col = colourLegL,pch=pchL,cex=cex+0.2)
@@ -703,7 +703,7 @@ plotHuntPowerDataCDF <- function(datHuntEventAllGroupToLabel)
 
 ## The figure with CDF of hunt efficiency - plotted as power, so as to show differences in actual consumption 
 ## instead of just ratio of success vs fail
-plotHuntEfficiencyDataCDF <- function(datHuntEventAllGroupToLabel)
+plotHuntEfficiencyDataCDF <- function(datHuntEventAllGroupToLabel,showLegend=FALSE)
 {
   datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
   vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
@@ -741,11 +741,13 @@ plotHuntEfficiencyDataCDF <- function(datHuntEventAllGroupToLabel)
   plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=cex)
   plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=cex)
   #axis(side=1)
-  mtext(side = 1,cex=1.5, line = 3.5, expression( "Capture Efficiency  "  ,paste("") )   )
-  mtext(side = 2,cex=1.5, line = 3.5, expression("Cumulative function " ))
-  
-  legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
-         col = colourLegL,pch=pchL,cex=cex+0.2)
+  mtext(side = 1,cex=cex, line = line, expression( "Capture Efficiency  "  ,paste("") )   )
+  mtext(side = 2,cex=cex, line = line, expression("Cumulative function " ))
+  if (showLegend) 
+  {
+    legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+           col = colourLegL,pch=pchL,cex=cex+0.2)
+  }
 }
 
 

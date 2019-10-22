@@ -37,6 +37,7 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
+
 setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")

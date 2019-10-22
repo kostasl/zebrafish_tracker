@@ -4,7 +4,7 @@
 
 source("TrackerDataFilesImport_lib.r")
 source("DataLabelling/labelHuntEvents_lib.r")
-
+source("plotHuntStat_lib.r")
 
 ## The mixture Of Poisson Drawing from Gammaa, gives a negative binomial
 ## ID identifies the group ID of each larva
@@ -162,75 +162,84 @@ save(draw,file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",se
 
 
 
-
 load(file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
 
+#strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
 
-strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
-pdf(strPlotName,width=14,height=14,
-    title="Hunting Rate and Efficiency - Labelled results and Bayesian Inference ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
+strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_HuntSuccessPieChart.pdf",sep="")
+pdf(strPlotName,width=14,height=4.7,
+    title="Hunting Success Labelled results ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
     onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
-#svg(filename=strPlotName,width=8,height=8)
-outer = FALSE
-line = 3.5 ## SubFig Label Params
-lineGroupLabel <- line - 32 ##pie chart group label
-cex = 1.4
-adj  = 0.5
-padj <- -0
-las <- 1
+  #svg(filename=strPlotName,width=8,height=8)
+  outer = FALSE
+  line <- 2.6 ## SubFig Label Params
+  lineGroupLabel <- line - 32 ##pie chart group label
+  cex = 1.4
+  adj  = 0.5
+  padj <- -0
+  las <- 1
+  
+  #layout(matrix(c(1,2,3,4,4,4,5,6,6), 3, 3, byrow = TRUE))
+  layout(matrix(c(1,2,3), 1, 3, byrow = TRUE))
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(3.9,4.3,5.5,1))
+  #colourL <-  c("#66C2A5","#B3B3B3") Fails Colourblind
+  colPaired <- rev(brewer.pal(4,'Paired')) ## chosen for colorblindness
+  colourL <- c(colPaired[1],colPaired[3]) 
+  
+  ## Get Number Of Larvae / 
+  nlNL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "NL",]$expID))
+  nNL <- pieChartLabelledSuccessVsFails(tblResSB,"NL",colourL) #c(colourLegL[1],colourL[2]) 
+  mtext(c(expression(),  bquote("NF ")),
+        at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
+  mtext(c(expression(),  bquote(.(nNL) ~ "Hunt events ")),
+        at="top",  outer=F,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+  mtext(c(expression(),  bquote( .(nlNL) ~ "Larvae" )  ),
+        at="top", outer=F,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
+  #mtext("A",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=3,padj=-11,adj=0,cex=cex,cex.main=4)
+  
+  legend("bottomright",legend=c("Success","Fail"),
+         fill=colourL, #c(colourLegL[1],colourL[2]),
+         col = colourL,
+         bg = "white",cex=cex+0.2,
+         merge=FALSE,horiz=FALSE)
+  
+  
+  ## Get Number Of Larvae
+  nlLL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "LL",]$expID))
+  nLL <- pieChartLabelledSuccessVsFails(tblResSB,"LL",colourL)
+  mtext(c(expression(),  bquote("LF ")),
+        at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
+  mtext(c(expression(),  bquote(.(nLL) ~ "Hunt events ")),
+        at="top",  outer=F,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+  mtext(c(expression(),  bquote( .(nlLL) ~ "Larvae" )  ),
+        at="top", outer=F,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
+  
+  ## Get Number Of Larvae / 
+  nlDL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "DL",]$expID))
+  ##Returns Number of Hunt Events
+  nDL <- pieChartLabelledSuccessVsFails(tblResSB,"DL",colourL) #pieChartLabelledEvents(tblResSB,"DL")
+  mtext(c(expression(),  bquote("DF ")),
+        at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
+  mtext(c(expression(),  bquote(.(nDL) ~ "Hunt events ")),
+        at="top",  outer=F,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
+  mtext(c(expression(),  bquote( .(nlDL) ~ "Larvae" )  ),
+        at="top", outer=F,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
+  #text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
 
-layout(matrix(c(1,2,3,4,4,4,5,6,6), 3, 3, byrow = TRUE))
-##Margin: (Bottom,Left,Top,Right )
-par(mar = c(3.9,4.3,5.5,1))
-#colourL <-  c("#66C2A5","#B3B3B3") Fails Colourblind
-colPaired <- rev(brewer.pal(4,'Paired')) ## chosen for colorblindness
-colourL <- c(colPaired[1],colPaired[3]) 
+dev.off()
 
-## Get Number Of Larvae / 
-nlNL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "NL",]$expID))
-nNL <- pieChartLabelledSuccessVsFails(tblResSB,"NL",colourL) #c(colourLegL[1],colourL[2]) 
-mtext(c(expression(),  bquote("NF ")),
-      at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
-mtext(c(expression(),  bquote(.(nNL) ~ "Hunt events ")),
-      at="top",  outer=F,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
-mtext(c(expression(),  bquote( .(nlNL) ~ "Larvae" )  ),
-      at="top", outer=F,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
-mtext("A",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=3,padj=-11,adj=0,cex=cex,cex.main=4)
+plotWidthIn <- 8
+strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ModelHuntRateAndEfficiency.pdf",sep="")
+pdf(strPlotName,width=plotWidthIn,height=7,
+    title="Hunting Success Baysian Estimation ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
+    onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
 
-legend("bottomright",legend=c("Success","Fail"),
-       fill=colourL, #c(colourLegL[1],colourL[2]),
-       col = colourL,
-       bg = "white",cex=cex+0.2,
-       merge=FALSE,horiz=FALSE)
-
-
-## Get Number Of Larvae
-nlLL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "LL",]$expID))
-nLL <- pieChartLabelledSuccessVsFails(tblResSB,"LL",colourL)
-mtext(c(expression(),  bquote("LF ")),
-      at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
-mtext(c(expression(),  bquote(.(nLL) ~ "Hunt events ")),
-      at="top",  outer=F,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
-mtext(c(expression(),  bquote( .(nlLL) ~ "Larvae" )  ),
-      at="top", outer=F,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
-
-## Get Number Of Larvae / 
-nlDL <- NROW(table(datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID == "DL",]$expID))
-##Returns Number of Hunt Events
-nDL <- pieChartLabelledSuccessVsFails(tblResSB,"DL",colourL) #pieChartLabelledEvents(tblResSB,"DL")
-mtext(c(expression(),  bquote("DF ")),
-      at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
-mtext(c(expression(),  bquote(.(nDL) ~ "Hunt events ")),
-      at="top",  outer=F,side=3,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex=cex)
-mtext(c(expression(),  bquote( .(nlDL) ~ "Larvae" )  ),
-      at="top", outer=F,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
-#text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
-
-
-##Margin: (Bottom,Left,Top,Right )
-par(mar = c(5,6,2,3))
-
-
+  ##Margin: (Bottom,Left,Top,Right )
+  #par(mar = c(5,6,2,3))
+  par(mar = c(4.2,4.8,1.1,1))
+  layout(matrix(c(1,,2), 1, 2, byrow = TRUE))
+  
 ####### Efficiency Inference Plot ## Taken From stat_SyccessVsFailModel.r ####
   nlevels <- 5
   zLL <- kde2d(c(HEventSuccess_LL[,schain]), c(MeanHuntRate_LL[,schain]),n=80)
@@ -245,7 +254,7 @@ par(mar = c(5,6,2,3))
   points(HEventSuccess_NL, MeanHuntRate_NL,col=colourHPoint[1],ylim=Range_ylim,xlim=c(0.1,0.5),pch=pchL[1])
   mtext(side = 1, cex=cex, line = line,expression(paste("Probability of Success (",q,")" ) )  ) 
   mtext(side = 2, cex=cex, line = line, expression(paste("Estimated hunt events/10min (",lambda,")" ) )  )
-  mtext("B",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
+  #mtext("B",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
   
   contour(zDL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
   contour(zLL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
@@ -258,8 +267,14 @@ par(mar = c(5,6,2,3))
                     bquote(LF[""] ~ '#' ~ .(NRecCount_LL)  ),
                     bquote(DF[""] ~ '#' ~ .(NRecCount_DL)  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
          pch=pchL, col=colourLegL)
-  
-  
+dev.off()  
+
+strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ModelConsumption.pdf",sep="")
+pdf(strPlotName,width=plotWidthIn,height=7,
+    title="Estimated Consumption  ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
+    onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
+  #par(mar = c(5,6,2,3))
+  par(mar = c(4.2,4.7,1.1,1))
   #### Consumption
   plot(density(HConsumptionRate_NL),xlim=c(0,8),ylim=c(0,1.5),col=colourLegL[1],lwd=4,lty=1
        ,cex.main =cex,cex.axis=1.5, xlab=NA,ylab=NA,main=NA) #"Mean consumption per larva"
@@ -273,17 +288,39 @@ par(mar = c(5,6,2,3))
          col=colourLegL,lty=c(1,2,3),lwd=4)
   mtext(side = 1, cex=cex, line = line, expression(paste("Estimated consumption (Prey/10min)  ") ))
   mtext(side = 2, cex=cex, line = line, expression("Density function") )
-  mtext("C",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
+#  mtext("C",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
+dev.off()
+
+
+strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ecdf_HuntPower.pdf",sep="")
+pdf(strPlotName,width=plotWidthIn,height=7,
+    title="Hunting Success Baysian Estimation ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
+    onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(4.2,4.7,1.1,1))
   #### Plot Hunt Power ####
   plotHuntPowerDataCDF(datHuntLabelledEventsSB)
-  mtext("D",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
+  #mtext("D",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
   
 dev.off()
 #embed_fonts(strPlotName)
 
 
-
+strPlotName = paste(strPlotExportPath,"/stat/fig3_stat_Efficiency_CDF.pdf",sep="")
+pdf(strPlotName,width=plotWidthIn,height=7, #14*2/3
+    title="Hunting Rate and Efficiency - Labelled results and Bayesian Inference ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
+    onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
   
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(4.2,4.7,1.1,1))
+  plotHuntEfficiencyDataCDF(datHuntLabelledEventsSB)
+
+dev.off()
+#### ##### # ## ## # # # # 
+
+
+
+
+
 ### Plot Covariance of Hunt Rate To Prob Of Success
 fNL <- density((HEventSuccess_NL[,1]*MeanHuntRate_NL[,1]))
 fLL <- density(HEventSuccess_LL[,1]*MeanHuntRate_LL[,1])
@@ -295,19 +332,6 @@ lines(density((HEventSuccess_DL[,1]*MeanHuntRate_NL[,1])),col=colourLegL[3])
 plot(density((HEventSuccess_NL[,1]*MeanHuntRate_LL[,1])),col=colourLegL[2])
 lines(density((HEventSuccess_NL[,1]*MeanHuntRate_NL[,1])),col=colourLegL[1])
 lines(density((HEventSuccess_NL[,1]*MeanHuntRate_DL[,1])),col=colourLegL[3])
-
-
-strPlotName = paste(strPlotExportPath,"/stat/fig3S2_stat_HuntRateAndEfficiency_CDF.pdf",sep="")
-pdf(strPlotName,width=7,height=7,
-    title="Hunting Rate and Efficiency - Labelled results and Bayesian Inference ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
-    onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
-
-##Margin: (Bottom,Left,Top,Right )
-par(mar = c(4.2,4.7,1.1,1))
-plotHuntEfficiencyDataCDF(datHuntLabelledEventsSB)
-
-dev.off()
-
 
 
 

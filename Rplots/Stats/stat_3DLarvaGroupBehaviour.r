@@ -110,6 +110,18 @@ initfunct <- function(nchains,N)
 }
 
 
+plotChk_Undershootfit <- function (draw_F)
+{
+  ##Undershoot Posterior Group Vs INdividual Density
+  with(draw_F,{
+    plot(density(tail(muG[,1,,], stail) ),ylim=c(0,16),xlim=c(0,2),lwd=2,col="red")
+    for ( i in (1:NLarv[1] ) )
+      lines( density( tail( mu[i,1,,],stail)),lty=2)
+    ###Show Inferred Distribution
+    lines(seq(0,2,0.1),dnorm(seq(0,2,0.1),mean=mean( tail(muG[,1,,],stail)),sd=sqrt(mean( tail( 1/tG[,1,,],stail))) ),col="purple",lwd=4)
+    
+  })
+}
 
 ##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour 
 ## Estimating Hunt Behaviour per Larvae before inferring mean group behaviour
@@ -149,18 +161,19 @@ for  (l in 1:NLarv)
 for  (g in 1:1)
 {
   muG[g,1] ~ dnorm(1, 0.01)T(0.0,2) ##turn ratio
-  muG[g,2] ~ dnorm(15,0.001)T(0,) ##cap speed
-  muG[g,3] ~ dnorm(0.1,0.001)T(0,) ##Distance prey
+  muG[g,2] ~ dnorm(25,0.01)T(0,) ##cap speed
+  muG[g,3] ~ dnorm(0.1,0.1)T(0,) ##Distance prey
   
   tG[g,1] ~ dgamma(10,3)
-  tG[g,2] ~ dgamma(10,100)
-  tG[g,3] ~ dgamma(10,5)
+  tG[g,2] ~ dgamma(4,25) ##sd < 20
+  tG[g,3] ~ dgamma(10,3)
 }
 
 for(i in 1:3){
   for(j in 1:3){
-    R[i,j] <- equals(i,j)*1e-1
+    R[i,j] <- equals(i,j)*1e-4
   }
+
 }
 
 } "
@@ -225,11 +238,11 @@ datHuntLarvaStat <- aggregate(datCapture_ALL_wExpID,by=list(datCapture_ALL_wExpI
 
 ##
 ##
-steps <-6000
-nchains <- 3
-nthin <- 2
+steps <-15000
+nchains <- 7
+nthin <- 5
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
-str_vars <- c("mu","cov","x_rand","muG","NLarv") #Mixture Model
+str_vars <- c("mu","cov","x_rand","muG","tG","NLarv") #Mixture Model
 ##Make Serial Larvae ID, that link each hunt event to an individual larva 
 ldata_LF <- with(datCapture_LF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID)) ) }) ##Live fed
 ldata_NF <- with(datCapture_NF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
@@ -279,7 +292,7 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussi
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 
-load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
+#load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
 
 schain <- 5:10
 stail <- 300
@@ -291,42 +304,69 @@ plot(density(tail(draw_LF$muG[,1,,3], 150) ),ylim=c(0,1),xlim=c(0,2))
 lines(density(tail(draw_LF$muG[,1,,1], 150) ),ylim=c(0,1),xlim=c(0,2))
 lines(density(tail(draw_LF$muG[,1,,2], 150) ),ylim=c(0,1),xlim=c(0,2))
 
-##Undershoot Posterior Group Vs INdividual Density
-with(draw_LF,{
-  plot(density(tail(muG[,1,,], 100) ),ylim=c(0,16),xlim=c(0,2),lwd=2,col="red")
-  for ( i in (1:NLarv[1] ) )
-    lines( density( tail( mu[i,1,,],stail)),lty=2)
-})
 
-##Speed Posterior Group Vs INdividual Density
+
+plotChk_Undershootfit(draw_LF)
+##Compare To Empirical - Change group DF,LF,NF-- V Good Match!
+lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==2,]$Undershoot),col="blue",lwd=2)
+plotChk_Undershootfit(draw_DF)
+lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==1,]$Undershoot),col="blue",lwd=2)
+plotChk_Undershootfit(draw_NF)
+lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==3,]$Undershoot),col="blue",lwd=2)
+
+## Speed Posterior Group Vs INdividual Density
 with(draw_LF,{
-  plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80),lwd=2,col="red")
+  plot(density(tail(muG[,2,,], 150) ),ylim=c(0,1),xlim=c(0,60),lwd=2,col="red",main="Speed LF")
   for ( i in (1:NLarv[1] ) )
     lines( density( tail( mu[i,2,,],stail)),lty=2)
+  ###Show Inferred Distribution
+  lines(1:100,dnorm(1:100,mean=mean( tail(muG[,2,,3],stail)),sd=sqrt(mean( tail( 1/tG[,2,,1],stail))) ),col="purple",lwd=4)
 })
+##Compare To Empirical - Change group DF,LF,NF-- V Good Match!
+lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==2,]$CaptureSpeed,bw=2),col="blue",lwd=2)
 
 ##Speed Posterior Group Vs INdividual Density
 with(draw_DF,{
-  plot(density(tail(muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80),lwd=2,col="red")
+  plot(density(tail(muG[,2,,], 150) ),ylim=c(0,1),xlim=c(0,60),lwd=2,col="red",main="Speed DF")
   for ( i in (1:NLarv[1] ) )
     lines( density( tail( mu[i,2,,],stail)),lty=2)
+  ###Show Inferred Distribution
+   lines(1:100,dnorm(1:100,mean=mean( tail(muG[,2,,3],stail)),sd=sqrt(mean( tail( 1/tG[,2,,1],stail)) )) ,col="purple",lwd=4)
 })
+##Compare To Empirical - Change group DF,LF,NF-- V Good Match!
+lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==1,]$CaptureSpeed,bw=2),col="blue",lwd=2)
+
+##Speed Posterior Group Vs INdividual Density
+with(draw_NF,{
+  plot(density(tail(muG[,2,,], 150) ),ylim=c(0,1),xlim=c(0,60),lwd=2,col="red",main="Speed NF")
+  for ( i in (1:NLarv[1] ) )
+    lines( density( tail( mu[i,2,,],stail)),lty=2)
+  ###Show Inferred Distribution
+  lines(1:100,dnorm(1:100,mean=mean( tail(muG[,2,,3],stail)),sd=sqrt(mean( tail( 1/tG[,2,,1],stail))) ),col="purple",lwd=4)
+})
+##Compare To Empirical - Change group DF,LF,NF-- V Good Match!
+lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==3,]$CaptureSpeed,bw=2),col="blue",lwd=2)
+
+
 
 ##Distance Posterior Group Vs INdividual Density
 with(draw_LF,{
   plot(density(tail(muG[,3,,1], 100) ),ylim=c(0,16),xlim=c(0,1),lwd=2,col="red")
   for ( i in (1:NLarv[1] ) )
-    lines( density( tail( mu[i,3,,],stail)),lty=2)
+    lines( density( tail( mu[i,3,,1],stail)),lty=2)
 })
+
+
 
 ##Covariance 
 ### Lid,Matrix i,Matrix j,Sample,chain
 draw_LF$cov[,2,2,1,1]
 
+##CONVERGENCE - CHECK
 #Idx: Lid,Variable (1Under),Sample Row,Chain
-plot((tail(draw_LF$muG[,1,,1],1000) ),type='l')
-lines((tail(draw_LF$muG[,1,,2],1000) ),col="red")
-lines((tail(draw_LF$muG[,1,,3],1000) ),col="blue")
+plot(density(tail(draw_LF$muG[,2,,1],1000) ),type='l')
+lines(density(tail(draw_LF$muG[,2,,2],1000) ),col="red")
+lines(density(tail(draw_LF$muG[,2,,3],1000) ),col="blue")
 
 
 plot(density(draw_LF$mu[9,1,,schain] ) )
@@ -614,13 +654,25 @@ datMu3D <- rbind(datMu3D,
 
 
 open3d()
-rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
+bbox <- par3d('bbox') 
+rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.5,
              #xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)",
-             xlab="Turn Ratio", ylab="Speed",zlab="Distance",
-             #xlim=c(0.2,1.8), ylim=c(5,60), zlim=c(0,0.8),
-             box = FALSE ,aspect = TRUE
+             xlab="", ylab="",zlab="",
+             xlim=c(0.2,1.8), ylim=c(10,50), zlim=c(0,0.8),
+             box = TRUE ,aspect = TRUE,axes=FALSE
              #,expand = 1.5
              )
+box3d()
+title3d(main=NULL)
+rgl::axis3d('x+-',at=seq(0.5,1.5,len=5))
+rgl::axis3d('z-+',at=seq(0.0,0.7,len=8))
+rgl::axis3d('y+-',at=seq(40,10,len=4),labels=rev(seq(10,40,len=4))) 
+
+
+mtext3d("Turn Ratio", "x+-", line = 2, at = NULL, pos = NA) 
+mtext3d("Capture Speed (mm/sec)", "y+-", line = 4, at = NULL, pos = NA) 
+mtext3d("Distance (mm)", "z-+", line = 4, at = NULL, pos = NA) 
+
 
 rgl::rgl.viewpoint(60,10)
 rgl::rgl.viewpoint(45,45)
