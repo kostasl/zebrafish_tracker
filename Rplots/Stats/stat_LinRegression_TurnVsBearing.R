@@ -87,7 +87,7 @@ remove(lFirstBoutPoints) ##Load From File
 
 ## The Original list if the lFirstBout data from runHuntepisode analysis
 datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
-lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_Validated",".rds",sep="") ) #Processed Registry on which we add )
+lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated.rds",sep="") ) #Processed Registry on which we add )
 
 
 ##Add The Empty Test Conditions
@@ -221,18 +221,23 @@ dDatDLb<-density(dataDL$turn/ dataDL$bearing,kernel="gaussian",bw=pBw)
   ##### ######################
   ### MAIN FIGURE ############
   ################################  
-  pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_SetC2.pdf",sep=""),width=14,height=7,title="First Turn To prey / Undershoot Ratio")
+pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_SetC2.pdf",sep="")
+    ,width=7,height=7,
+    title="First Turn To prey / Undershoot Ratio")
   
   outer = FALSE
   line = 1 ## SubFig Label Params
+  line <- 2.6 ## SubFig Label Params
+  lineAxis = line## 3.2    
   cex = 1.4
   adj  = 3.5
   padj <- -16.5
   las <- 1
-  lineAxis = 3.2    
-  layout(matrix(c(1,2),1,2, byrow = FALSE))
+  
+  #layout(matrix(c(1,2),1,2, byrow = FALSE))
   ##Margin: (Bottom,Left,Top,Right )
-  par(mar = c(3.95,4.75,1,1))
+  #par(mar = c(3.95,4.75,1,1))
+  par(mar = c(4.2,4.8,1.1,1))
   plot( datTurnVsPreyDL[,"OnSetAngleToPrey"],datTurnVsPreyDL[,"Turn"],
        main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
        xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
@@ -277,9 +282,14 @@ dDatDLb<-density(dataDL$turn/ dataDL$bearing,kernel="gaussian",bw=pBw)
                            bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
                            bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
          pch=pchL, col=colourLegL,cex=cex)
-  mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  #mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
-  
+dev.off()  
+
+pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_Density.pdf",sep=""),
+    width=7,height=7,
+    title="First Turn To prey / Undershoot Ratio - Posterior Density")
+  par(mar = c(4.2,4.8,1.1,1))
   ##Density Estimation
   plot(dNLb,col=colourLegL[1],xlim=c(0.0,2),lwd=4,lty=1,ylim=c(0,18),
        main=NA, #"Density Inference of Turn-To-Prey Slope ",
@@ -301,10 +311,10 @@ dDatDLb<-density(dataDL$turn/ dataDL$bearing,kernel="gaussian",bw=pBw)
          col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
   mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated turn ratio ",(gamma) ) ))
   mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
-  mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+ # mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
   ### PLot Scatter with regression lines with Conf intervals##
-  dev.off()
+dev.off()
 
   
 
