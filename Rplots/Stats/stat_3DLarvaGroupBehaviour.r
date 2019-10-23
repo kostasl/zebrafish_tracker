@@ -686,9 +686,9 @@ rgl::rgl.viewpoint(0,0)
 #Use : gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=output.pdf fig7_Modelballs3D_SpeedVsTurn_view.pdf
 #rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view.pdf"),fmt="pdf",drawText = FALSE )
 
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view2.pdf"),fmt="pdf",drawText = FALSE )
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view2.tex"),fmt="tex",drawText = TRUE )
-rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view2"),fmt="png" )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view3.pdf"),fmt="pdf",drawText = FALSE )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view3.tex"),fmt="tex",drawText = TRUE )
+rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view3"),fmt="png" )
 
 ## I use the tex Axis doc to combine 3d Fig with axis text. I then compile a pdf, which I import into inkScape (using Cairo to rasterize image), so I can adjust size, add axis labels etc etc.
 ## END OF 3D plot Messing with exporting
