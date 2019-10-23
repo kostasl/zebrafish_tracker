@@ -292,7 +292,7 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussi
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 
-#load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
+load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
 
 schain <- 5:10
 stail <- 300
@@ -306,6 +306,8 @@ lines(density(tail(draw_LF$muG[,1,,2], 150) ),ylim=c(0,1),xlim=c(0,2))
 
 
 
+schain <- 1:7
+stail <- 300
 plotChk_Undershootfit(draw_LF)
 ##Compare To Empirical - Change group DF,LF,NF-- V Good Match!
 lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==2,]$Undershoot),col="blue",lwd=2)
@@ -365,11 +367,10 @@ draw_LF$cov[,2,2,1,1]
 ##CONVERGENCE - CHECK
 #Idx: Lid,Variable (1Under),Sample Row,Chain
 plot(density(tail(draw_LF$muG[,2,,1],1000) ),type='l')
-lines(density(tail(draw_LF$muG[,2,,2],1000) ),col="red")
-lines(density(tail(draw_LF$muG[,2,,3],1000) ),col="blue")
+for (c in schain)
+  lines(density(tail(draw_LF$muG[,2,,c],1000) ),col="red")
 
 
-plot(density(draw_LF$mu[9,1,,schain] ) )
 
 ### Estimated For Each Larva - Plot Group Population
 ##Plot Distance Density
@@ -624,7 +625,7 @@ dev.off()
 library( rgl )
 #library(plot3D)
 # Static chart
-ntail <- 500
+ntail <- 30
 # datMu3D <-  data.frame( cbind.data.frame( TurnR=as.numeric(tail(draw_NF$mu[,1,,1],ntail)),CSpeed=tail(draw_NF$mu[,2,,1],ntail),Dist=tail(draw_NF$mu[,3,,1],ntail),col=colourHL[1])  )
 # datMu3D <- rbind(datMu3D,
 #                  data.frame( cbind.data.frame( TurnR=tail(draw_LF$mu[,1,,1],ntail),CSpeed=tail(draw_LF$mu[,2,,1],ntail),Dist=tail(draw_LF$mu[,3,,1],ntail),col=colourHL[2])  ))
@@ -655,27 +656,27 @@ datMu3D <- rbind(datMu3D,
 
 open3d()
 bbox <- par3d('bbox') 
-rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.5,
+rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
              #xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)",
              xlab="", ylab="",zlab="",
-             xlim=c(0.2,1.8), ylim=c(10,50), zlim=c(0,0.8),
+             xlim=c(0.5,1.5), ylim=c(10,50), zlim=c(0,0.8),
              box = TRUE ,aspect = TRUE,axes=FALSE
              #,expand = 1.5
              )
 box3d()
 title3d(main=NULL)
-rgl::axis3d('x+-',at=seq(0.5,1.5,len=5))
+rgl::axis3d('x+-',at=c(0.5,0.8,1,1.2,1.5))
 rgl::axis3d('z-+',at=seq(0.0,0.7,len=8))
-rgl::axis3d('y+-',at=seq(40,10,len=4),labels=rev(seq(10,40,len=4))) 
+rgl::axis3d('y+-',at=seq(50,10,len=5),labels=rev(seq(10,50,len=5))) 
 
 
 mtext3d("Turn Ratio", "x+-", line = 2, at = NULL, pos = NA) 
-mtext3d("Capture Speed (mm/sec)", "y+-", line = 4, at = NULL, pos = NA) 
-mtext3d("Distance (mm)", "z-+", line = 4, at = NULL, pos = NA) 
+mtext3d("Capture Speed (mm/sec)", "y+-", line = 2, at = NULL, pos = NA) 
+mtext3d("Distance (mm)", "z-+", line = 4, at = NULL, pos = NA,angle=90) 
 
 
-rgl::rgl.viewpoint(60,10)
-rgl::rgl.viewpoint(45,45)
+rgl::rgl.viewpoint(0,-60,fov=35,type = c("userviewpoint") )
+rgl::rgl.viewpoint(0,0)
 
 #decorate3d(
 #           box = TRUE, axes = TRUE, main = NULL, sub = NULL,
@@ -683,9 +684,11 @@ rgl::rgl.viewpoint(45,45)
 
 ###Warning External Editing of PDF may fail. a Ghostscript conversion can fix this: 
 #Use : gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=output.pdf fig7_Modelballs3D_SpeedVsTurn_view.pdf
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view.pdf"),fmt="pdf",drawText = FALSE )
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view.tex"),fmt="tex",drawText = TRUE )
-rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view"),fmt="png" )
+#rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view.pdf"),fmt="pdf",drawText = FALSE )
+
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view2.pdf"),fmt="pdf",drawText = FALSE )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view2.tex"),fmt="tex",drawText = TRUE )
+rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view2"),fmt="png" )
 
 ## I use the tex Axis doc to combine 3d Fig with axis text. I then compile a pdf, which I import into inkScape (using Cairo to rasterize image), so I can adjust size, add axis labels etc etc.
 ## END OF 3D plot Messing with exporting
