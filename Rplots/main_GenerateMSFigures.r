@@ -894,38 +894,40 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColo
        #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchLPCA[as.numeric(mergedCapDat_filt$groupID)],
        #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID)],
        #xlab="PC1",ylab="PC2",
-       xlim=c(-5,5),ylim=c(-3.2,3.2),
+       xlim=c(-4.2,4.2),ylim=c(-3.0,3.2),
        xlab=NA,ylab=NA,
        cex=cex,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
   
-    mtext(side = 1,cex=cex, line = lineXAxis,  "PC1"   ,cex.main=cex )
-    mtext(side = 2,cex=cex, line = lineAxis, "PC2" ,cex.main=cex)
+  mtext(side = 1,cex=cex, line = lineXAxis,  "PC1"   ,cex.main=cex )
+  mtext(side = 2,cex=cex, line = lineAxis, "PC2" ,cex.main=cex)
   
-  contour(densNL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty=2)
-  contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty=2)
-  contour(densDL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty=2)
+  contour(densNL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 1)
+  contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 2)
+  contour(densDL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 3)
   
   scaleV <- 2
   ##Distance to Prey Component Projection
-  arrows(0,0,scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],lwd=3)
+  arrows(0,0,scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+         scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],lwd=3)
   text(0.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
        1.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],labels="Distance")
   ##CaptureSpeed  Component Projection
   arrows(0,0,scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],lwd=3,lty=3)
+         scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],lwd=3,lty=1)
   text(1.2*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
        0.1+0.8*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],labels="Speed")
   
   ##Undershoot Axis  Component Projection
   #arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
   #  text(0.4*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,1.1*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Overshoot")
-  arrows(0,0,-scaleV*pca_Hunter_norm$rotation[4,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,-scaleV*pca_Hunter_norm$rotation[4,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="black",lty=2,lwd=2)
+  arrows(0,0,-scaleV*pca_Hunter_norm$rotation[4,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+         -scaleV*pca_Hunter_norm$rotation[4,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="black",lty=1,lwd=2)
   text(-1.9*scaleV*pca_Hunter_norm$rotation[4,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
        -1.0*scaleV*pca_Hunter_norm$rotation[4,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="black",labels="Undershoot")
   
   ##TimeToHit Prey Prod Axis  Component Projection
   arrows(0,0,scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],lty=5,lwd=3)
+         scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],lty=1,lwd=3)
   text(0.8*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
        1.3*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],labels="t Prey")
   
@@ -934,7 +936,8 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColo
   
   ##EFFICIENCY Prod Axis  Component Projection
   scaleVE <- scaleV
-  arrows(0,0,scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="blue",lty=4,lwd=2)
+  arrows(0,0,scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+         scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="blue",lty=1,lwd=2)
   text(1.8*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
        0.8*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,
        col="blue",labels="Efficiency")
@@ -963,8 +966,8 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColo
   pcEffVar <- ((pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]])^2 + (pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]])^2)
   EffVar <- sum((pca_Hunter_norm$rotation[1,][1:nComp]*pca_Hunter_norm$sdev[1:nComp])^2)
 
-  title(NA,sub=paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), 
-                     " Coeff. variation:",prettyNum(sd(datHunterStat$Efficiency)/mean(datHunterStat$Efficiency) ,digits=2)) )
+  #title(NA,sub=paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), 
+  #                   " Coeff. variation:",prettyNum(sd(datHunterStat$Efficiency)/mean(datHunterStat$Efficiency) ,digits=2)) )
   message("Captured Variance ",prettyNum( 100*(pca_Hunter_norm$sdev[pcAxis[1]]^2 + pca_Hunter_norm$sdev[pcAxis[2]]^2) /sum( pca_Hunter_norm$sdev ^2),digits=3,format="f" ),"%" )
   message(paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), " Coeff. variation:",prettyNum(sd(datHunterStat$Efficiency)/mean(datHunterStat$Efficiency) ,digits=2)))
   
