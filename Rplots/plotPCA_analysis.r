@@ -2,7 +2,7 @@
 #### PCA Analysis ##
 
 
-
+## NOTE "Load required data as in main_GenerateMSFigures.r , Before Calling any plot section
 
 #######################################
 ########## PCA  - FACTOR ANALYSIS ####

@@ -898,6 +898,8 @@ rgl::plot3d( x=rawHd[,1], z=rawHd[,2], y=rawHd[,3], col = colourGroup[datHunterS
              #,expand = 1.5
 )
 ##Add Efficiency Axis
-arrow3d(c(0,0,0),arrow_Efficiency, type = "extrusion", col = "blue",thickness=1)
+arrow3d(c(0,0,0),2*arrow_Efficiency,n=5, type = "rotation", col = "blue",thickness=3,width=0.5)
 ###END PCA PLOT ##
+
+################# Fig 7, 3D Model Plot Is in stat_3DLarvaGroupBehaviour ###
 
