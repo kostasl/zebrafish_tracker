@@ -123,6 +123,31 @@ plotChk_Undershootfit <- function (draw_F)
   })
 }
 
+
+
+
+##Plot Covariance Density of Mean Group Behaviour, given by averaging the covariance of individual larvae
+plotModelCovCoeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
+{
+  
+  ##Covariance 
+  nsam <- NROW(draw_LF$muG[,3,,1])
+  ylimR <- c(0,4)
+  cov_LF <- (draw_LF$cov[,Ci,Cj,(nsam-ntail):nsam,1]/sqrt(draw_LF$cov[,Ci,Ci,(nsam-ntail):nsam,1]*draw_LF$cov[,Cj,Cj,(nsam-ntail):nsam,1]) )
+  cov_NF <- (draw_NF$cov[,Ci,Cj,(nsam-ntail):nsam,1]/sqrt(draw_NF$cov[,Ci,Ci,(nsam-ntail):nsam,1]*draw_NF$cov[,Cj,Cj,(nsam-ntail):nsam,1]) )
+  cov_DF <- (draw_DF$cov[,Ci,Cj,(nsam-ntail):nsam,1]/sqrt(draw_DF$cov[,Ci,Ci,(nsam-ntail):nsam,1]*draw_DF$cov[,Cj,Cj,(nsam-ntail):nsam,1]) )
+  
+  ##Average Over Columns/Samples - Produce Distribution of Mean Cov Of Group -  Across Samples (Vector With n mean points)
+  ##What is the Members Cov On Average?Distibution of E[rho_g] = Sum(rho_i,NLarvae)/NLarvae
+  plot( density( apply(cov_LF,2,"mean"),
+                 from=-1,to=1,n=200,bw=0.1),xlim=c(-1,1) ,col=colourLegL[2],lwd=3,main="",xlab="",ylab="",ylim=ylimR,lty=1)
+  lines(density( apply(cov_NF,2,"mean"),
+                 from=-1,to=1,n=200,bw=0.1),xlim=c(-1,1),col=colourLegL[1],lwd=3,lty=2 )
+  lines(density( apply(cov_DF,2,"mean"),
+                 from=-1,to=1,n=200,bw=0.1),xlim=c(-1,1),col=colourLegL[3],lwd=3,lty=3 )
+}
+
+
 ##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour 
 ## Estimating Hunt Behaviour per Larvae before inferring mean group behaviour
 strmodel3Variables_LarvaHuntBehaviour <- "
@@ -359,12 +384,6 @@ with(draw_LF,{
     lines( density( tail( mu[i,3,,1],stail)),lty=2)
 })
 
-
-
-##Covariance 
-### Lid,Matrix i,Matrix j,Sample,chain
-draw_LF$cov[,2,2,1,1]
-
 ##CONVERGENCE - CHECK
 #Idx: Lid,Variable (1Under),Sample Row,Chain
 plot(density(tail(draw_LF$muG[,2,,1],1000) ),type='l')
@@ -552,67 +571,77 @@ dev.off()
 
       ### COVARIANCES 
       ## Plot the covariance Coefficients##
-  
+
+
+##  Covariance  ##
+nsam <- NROW(draw_LF$muG[,3,,1])
+ntail <- 200
+### Lid,Matrix i,Matrix j,Sample,chain
+
+## Turn-Ratio(1)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),width=7,height=7,
-      title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-     ##Speed TO Distance Covariance Coeff      
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+  ##Speed TO Distance Covariance Coeff      
+  ### Show Speed Fit ###
+  outer = FALSE
+  line = 1 ## SubFig Label Params
+  lineAxis = 2.7
+  lineXAxis = 3.0
+  lineTitle = 0.5
   
-      plot(dNLb_rhoUS,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,5),
-           main=NA, #"Density Inference of Turn-To-Prey Slope ",
-           xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
-      lines(dLLb_rhoUS,col=colourLegL[2],lwd=3,lty=2)
-      lines(dDLb_rhoUS,col=colourLegL[3],lwd=3,lty=3)
-      #lines(dALLb_rhoUS,col=colourLegL[4],lwd=3,lty=4)
-      mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
-      mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and turn ratio "  ))
-      #mtext("C",at="topleft",outer=outer,side=2,col="black",font=2  ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-      
-      ###############
-dev.off()      
-      
-      
-pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsDistance_Covar.pdf"),width=7,height=7,
-      title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-      ##Speed TO Distance Covariance Coeff    
-      plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,5),
-           main=NA, #"Density Inference of Turn-To-Prey Slope ",
-           xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
-      lines(dLLb_rhoSD,col=colourLegL[2],lwd=3,lty=2)
-      lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
-      mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
-      mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-      mtext(side = 3,cex=cex, line = lineTitle, expression("Capture speed and distance to prey"  ))
-      
-      
-      
-      
-      legend("topleft",
-             legend=c(  expression (),
-                        bquote(NF[""] ),
-                        bquote(LF[""] ),
-                        bquote(DF[""]   )
-                        
-             ),
-             lty=c(1,2,3),lwd=3,fill=colourLegL,cex=cex)
-      #mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-dev.off()     
-      
-      
-pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"),width=7,height=7,
-          title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-      ##Speed TO Distance Covariance Coeff
-      plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,5),
-           main=NA, #"Density Inference of Turn-To-Prey Slope ",
-           xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
-      lines(dLLb_rhoUD,col=colourLegL[2],lwd=3,lty=2)
-      lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
-      mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
-      mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-      mtext(side = 3,cex=cex, line = lineTitle, expression("Turn ratio and distance to prey"  ))
-      
-#      mtext("E",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+  cex = 1.4
+  adj  = 3.5
+  padj <- 0.3
+  las <- 1
+  par(mar = c(3.9,4.7,3.5,1))
+  
+  Ci <- 1
+  Cj <- 2
+  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
+  mtext(side = 2,cex=cex,padj=padj, line = lineAxis, expression("Density function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Turn-ratio to capture speed covariance coeff." ) )  )
+  
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF[""] ),
+                    bquote(LF[""] ),
+                    bquote(DF[""]   )
+                    
+         ),
+         lty=c(2,1,3),lwd=3,col=c(colourLegL[1],colourLegL[2],colourLegL[3]),cex=cex)
+
 dev.off()
+
+## Distance(3)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
+
+
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsDistance_Covar.pdf"),width=7,height=7,
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+  par(mar = c(3.9,4.7,3.5,1))
+  Ci <- 2
+  Cj <- 3
+  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Prey distance to capture speed covariance coeff." ) )  )
+dev.off()
+
+## TurnRatio(1)xDistance(3) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
+
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"),width=7,height=7,
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+  par(mar = c(3.9,4.7,3.5,1))
+  Ci <- 1
+  Cj <- 3
+  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Turn-ratio to prey distance covariance coeff." ) )  )
+dev.off()
+
+
+
+
+
 
 ################################## #################
 ### 3D OPENGL plot - Balls Model of Gourp Mean behaviour ##
