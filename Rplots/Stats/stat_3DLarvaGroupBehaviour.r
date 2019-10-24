@@ -218,10 +218,11 @@ datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
 datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
 
-#######################################
-########## PCA  - FACTOR ANALYSIS ####
-#######################################
-# Check Correlation Of UNdershoot With Hunt POwer
+
+###Load PreCalculated Model Results ###
+load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
+
+##Merge Exp IDs - to identify events of individuals
 ##Take all expID from the successful hunt Events we have extracted hunt variables from 
 vexpID <- list(LF = datTrackedEventsRegister[datCapture_LL$RegistarIdx,]$expID,
                NF=datTrackedEventsRegister[datCapture_NL$RegistarIdx,]$expID,
@@ -250,23 +251,24 @@ ldata_DF <- with(datCapture_DF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,Dis
 ldata_ALL <-with(datCapture_ALL_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ),Gid=groupID ,N=NROW(expID),NLarv=NROW(unique(expID))  ) }) ##Live fed list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
 
 
-jags_model_LF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_LF, 
-                         n.adapt = 100, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_LF$N))
-update(jags_model_LF, 300)
-draw_LF=jags.samples(jags_model_LF,steps,thin=nthin,variable.names=str_vars)
-
-## Not Fed
-jags_model_NF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_NF, 
-                         n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_NF$N)) 
-update(jags_model_NF,300)
-draw_NF=jags.samples(jags_model_NF,steps,thin=nthin,variable.names=str_vars)
-
-## Dry  Fed
-jags_model_DF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_DF, 
-                         n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_DF$N))
-update(jags_model_DF, 300)
-draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
-
+### RUN JAGS MODEL ###
+    jags_model_LF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_LF, 
+                             n.adapt = 100, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_LF$N))
+    update(jags_model_LF, 300)
+    draw_LF=jags.samples(jags_model_LF,steps,thin=nthin,variable.names=str_vars)
+    
+    ## Not Fed
+    jags_model_NF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_NF, 
+                             n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_NF$N)) 
+    update(jags_model_NF,300)
+    draw_NF=jags.samples(jags_model_NF,steps,thin=nthin,variable.names=str_vars)
+    
+    ## Dry  Fed
+    jags_model_DF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_DF, 
+                             n.adapt = 500, n.chains = nchains, quiet = F,inits=initfunct(nchains,ldata_DF$N))
+    update(jags_model_DF, 300)
+    draw_DF=jags.samples(jags_model_DF,steps,thin=nthin,variable.names=str_vars)
+####### END OF RUN MODELS ##
 
 message("Mean LF Und:", prettyNum( mean(draw_LF$muG[,1,,]) , digits=3),
         " Speed : ",prettyNum( mean(draw_LF$muG[,2,,1]), digits=3),
@@ -292,7 +294,6 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussi
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
 
 
-load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
 
 schain <- 5:10
 stail <- 300
@@ -613,26 +614,13 @@ pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"
 #      mtext("E",at="topleft",outer=F,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
 dev.off()
 
-
-### 3D density figure of Means ##
-#library(MASS)
-#library(plotly)
-#den3d <- kde2d(x, y)
-#persp(zLLD, box=FALSE)
-## the new part:
-#plot_ly(x=zLLD$x, y=zLLD$y, z=zLLD$z) %>% add_surface()
-
+################################## #################
+### 3D OPENGL plot - Balls Model of Gourp Mean behaviour ##
+#################################
 library( rgl )
-#library(plot3D)
-# Static chart
 ntail <- 30
-# datMu3D <-  data.frame( cbind.data.frame( TurnR=as.numeric(tail(draw_NF$mu[,1,,1],ntail)),CSpeed=tail(draw_NF$mu[,2,,1],ntail),Dist=tail(draw_NF$mu[,3,,1],ntail),col=colourHL[1])  )
-# datMu3D <- rbind(datMu3D,
-#                  data.frame( cbind.data.frame( TurnR=tail(draw_LF$mu[,1,,1],ntail),CSpeed=tail(draw_LF$mu[,2,,1],ntail),Dist=tail(draw_LF$mu[,3,,1],ntail),col=colourHL[2])  ))
-# datMu3D <- rbind(datMu3D,
-#                  data.frame( cbind.data.frame( TurnR=tail(draw_DF$mu[,1,,1],ntail),CSpeed=tail(draw_DF$mu[,2,,1],ntail),Dist=tail(draw_DF$mu[,3,,1],ntail),col=colourHL[3])  ))
 
-
+##Prepare Data
 datMu3D <-  data.frame( cbind.data.frame(
                         TurnR=tail(draw_LF$muG[,1,,1], ntail) ,
                         CSpeed=tail(draw_LF$muG[,2,,1], ntail),
@@ -653,7 +641,7 @@ datMu3D <- rbind(datMu3D,
                  
                  )
 
-
+##Open Window And Plot
 open3d()
 bbox <- par3d('bbox') 
 rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
