@@ -28,6 +28,24 @@ standardizeHuntData <- function(datCapStat)
   })
 }
 
+datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
+#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
+#lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
+lFirstBoutPoints <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated.rds",sep="")) ##Original :huntEpisodeAnalysis_FirstBoutData_Validated
+
+#### Plot Raw Capture Data Indicating Low/High Speed Clustering for each
+### Load Pre Calc RJAgs Model Results
+##   stat_CaptSpeedVsDistance_RJags.RData ##stat_CaptSpeedCluster_RJags.RData
+load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
+
+#### LOAD Capture First-Last Bout hunting that include the cluster classification - (made in stat_CaptureSpeedVsDistanceToPrey)
+datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_clustered.rds",sep="")) 
+datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
+datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
+
+datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
+datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
+
 
 
 # Check Correlation Of UNdershoot With Hunt POwer
@@ -79,7 +97,11 @@ require("graphics")
 colClass <- c("#00AFBB", "#E7B800", "#FC4E07")
 colEfficiency <- hcl.colors(12, alpha = 1, rev = FALSE) # heat.colors rainbow(12)
 colFactrAxes <- hcl.colors(6,palette="RdYlBu")
-colourGroup <- c(colourLegL[3],colourLegL[2],colourLegL[1])
+colourGroup <- c(colourLegL[1],colourLegL[2],colourLegL[3])
+pchLPCA <- c(16,17,15)
+
+
+
 ### PCA ANalysis Of Variance - Finding the Factors That contribute to efficiency
 ## ##Make MAtrix
 ##Also CHeck OUt varimax and factanal
@@ -162,9 +184,9 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColo
     mtext(side = 1,cex=cex, line = lineXAxis,  "PC1"   ,cex.main=cex )
     mtext(side = 2,cex=cex, line = lineAxis, "PC2" ,cex.main=cex)
     
-    contour(densNL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 1)
-    contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 2)
-    contour(densDL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 3)
+    contour(densNL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 2)
+    contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 1)
+    contour(densDL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 3)
     
     scaleV <- 2
     ##Distance to Prey Component Projection
@@ -213,13 +235,14 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColo
     # 
     
     legend("topleft", legend=c(  expression (),
-                                 bquote(DF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 1, ]))  ),
+                                 bquote(NF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 3, ]))  ),
                                  bquote(LF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 2, ]))  ),
-                                 bquote(NF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 3, ]))  )
+                                 bquote(DF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 1, ]))  )
+                                 
                                  #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
     ),
-    pch=pchLPCA,
-    col=colourGroup)## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
+    pch=c(pchLPCA[1],pchLPCA[2],pchLPCA[3]),lty=c(2,1,3),
+    col=c(colourGroup[1],colourGroup[2],colourGroup[3]) )## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
     ##legend("bottomright",legend=c("Slow","Fast"),fill=colClass, col=colClass,title="Cluster")## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
     
     #Percentage of Efficiency Variance Explained
@@ -233,11 +256,6 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColo
     message(paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), " Coeff. variation:",prettyNum(sd(datHunterStat$Efficiency)/mean(datHunterStat$Efficiency) ,digits=2)))
 
 dev.off()
-
-
-
-pchLPCA <- c(15,17,16)
-
 
 
 

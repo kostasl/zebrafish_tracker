@@ -235,29 +235,22 @@ barplot(c(meanMI$MI_NF,meanMI$MI_LF,meanMI$MI_DF),ylim=c(0,1) )
 # 
 # p <- ggplot(data = datXYAnalysis, aes(y = MI ))
 XRange  <- c(0,2) #
-YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
-
-###### UNDERSHOOT TO SPEED
-  stat_CapTurnVsSpeed_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed,10000,XRange,YRange)
-  stat_CapTurnVsSpeed_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,10000,XRange,YRange)
-  stat_CapTurnVsSpeed_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,10000,XRange,YRange)
+YRange  <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+smethod <- "spearman"
+###### UNDERSHOOT TO SPEED - ALL 
+  stat_CapTurnVsSpeed_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed,10000,XRange,YRange,smethod)
+  stat_CapTurnVsSpeed_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,10000,XRange,YRange,smethod)
+  stat_CapTurnVsSpeed_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,10000,XRange,YRange,smethod)
+  
+  stat_CapTurnVsSpeed_fast_NF <- bootStrap_stat(datCapture_NL[datCapture_NL$Cluster == "fast", ]$Undershoot,datCapture_NL[datCapture_NL$Cluster == "fast", ]$CaptureSpeed,10000,XRange,YRange,smethod)
+  stat_CapTurnVsSpeed_fast_LF <- bootStrap_stat(datCapture_LL[datCapture_LL$Cluster == "fast", ]$Undershoot,datCapture_LL[datCapture_LL$Cluster == "fast", ]$CaptureSpeed,10000,XRange,YRange,smethod)
+  stat_CapTurnVsSpeed_fast_DF <- bootStrap_stat(datCapture_DL[datCapture_DL$Cluster == "fast", ]$Undershoot,datCapture_DL[datCapture_DL$Cluster == "fast", ]$CaptureSpeed,10000,XRange,YRange,smethod)
+  
+  stat_CapTurnVsSpeed_slow_NF <- bootStrap_stat(datCapture_NL[datCapture_NL$Cluster == "slow", ]$Undershoot,datCapture_NL[datCapture_NL$Cluster == "slow", ]$CaptureSpeed,10000,XRange,YRange,smethod)
+  stat_CapTurnVsSpeed_slow_LF <- bootStrap_stat(datCapture_LL[datCapture_LL$Cluster == "slow", ]$Undershoot,datCapture_LL[datCapture_LL$Cluster == "slow", ]$CaptureSpeed,10000,XRange,YRange,smethod)
+  stat_CapTurnVsSpeed_slow_DF <- bootStrap_stat(datCapture_DL[datCapture_DL$Cluster == "slow", ]$Undershoot,datCapture_DL[datCapture_DL$Cluster == "slow", ]$CaptureSpeed,10000,XRange,YRange,smethod)
   
   
-  # TURN Vs Capture Speed Mututal INformation 
-  bkSeq <- seq(0,4,0.02)
-  hist(stat_CapTurnVsSpeed_NF$MI,xlim=c(0,3),ylim=c(0,1000),col=colourL[2],breaks = bkSeq ,
-       xlab="MI capture speed and distance to prey", main="Bootstrapped Mutual information")
-  hist(stat_CapTurnVsSpeed_LF$MI,xlim=c(0,3),col=colourL[1],add=TRUE ,breaks = bkSeq)
-  hist(stat_CapTurnVsSpeed_DF$MI,xlim=c(0,3),col=colourL[3],add=TRUE,breaks = bkSeq )
-  
-  
-  
-  # TURN Correlation to Speed / For LF undershooting is combined with faster captures (and more distal) - Not for NF, or DF
-  bkSeq <- seq(-0.8,0.8,0.02)
-  hist(stat_CapTurnVsSpeed_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation turn-ratio vs speed",main="Bootstraped 0.80" )
-  hist(stat_CapTurnVsSpeed_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
-  hist(stat_CapTurnVsSpeed_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
-
   #  PLot Density Turn Vs Speed
   #strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_Spearman_correlation_TurnVsSpeed.pdf",sep="")
   strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsSpeed.pdf",sep="")
@@ -274,6 +267,50 @@ YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Ph
   
   dev.off()  
   
+  #  PLot Density Turn Vs FAST Speed
+  #strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_Spearman_correlation_TurnVsSpeed.pdf",sep="")
+  strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsFastClusterSpeed.pdf",sep="")
+  pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables - turn-ratio vs Fast Cluster capture Speeds",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+    par(mar = c(3.9,4.7,1,1))
+    pBw <- 0.02
+    plot(density(stat_CapTurnVsSpeed_fast_NF$corr,kernel="gaussian",bw=pBw),
+         col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+    lines(density(stat_CapTurnVsSpeed_fast_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+    lines(density(stat_CapTurnVsSpeed_fast_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+    mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of turn-ratio to clustered capture speed") ))
+    mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+  
+  dev.off()  
+  #  PLot Density Turn Vs FAST Speed
+  #strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_Spearman_correlation_TurnVsSpeed.pdf",sep="")
+  strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsSlowClusterSpeed.pdf",sep="")
+  pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables - turn-ratio vs Slow Cluster capture Speeds",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+    par(mar = c(3.9,4.7,1,1))
+    pBw <- 0.02
+    plot(density(stat_CapTurnVsSpeed_slow_NF$corr,kernel="gaussian",bw=pBw),
+         col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+    lines(density(stat_CapTurnVsSpeed_slow_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+    lines(density(stat_CapTurnVsSpeed_slow_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+    mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of turn-ratio to clustered capture speed") ))
+    mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+  dev.off()  
+  
+  
+  
+  # TURN Vs Capture Speed Mututal INformation 
+  bkSeq <- seq(0,4,0.02)
+  hist(stat_CapTurnVsSpeed_NF$MI,xlim=c(0,3),ylim=c(0,1000),col=colourL[2],breaks = bkSeq ,
+       xlab="MI capture speed and distance to prey", main="Bootstrapped Mutual information")
+  hist(stat_CapTurnVsSpeed_LF$MI,xlim=c(0,3),col=colourL[1],add=TRUE ,breaks = bkSeq)
+  hist(stat_CapTurnVsSpeed_DF$MI,xlim=c(0,3),col=colourL[3],add=TRUE,breaks = bkSeq )
+  
+  
+  
+  # TURN Correlation to Speed / For LF undershooting is combined with faster captures (and more distal) - Not for NF, or DF
+  bkSeq <- seq(-0.8,0.8,0.02)
+  hist(stat_CapTurnVsSpeed_NF$corr,xlim=c(-0.8,0.8),ylim=c(0,300),col=colourL[2],breaks = bkSeq,xlab="Pearson's correlation turn-ratio vs speed",main="Bootstraped 0.80" )
+  hist(stat_CapTurnVsSpeed_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
+  hist(stat_CapTurnVsSpeed_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
   
     
   

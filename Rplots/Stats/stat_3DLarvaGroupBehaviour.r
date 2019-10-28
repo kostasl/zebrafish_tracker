@@ -133,18 +133,18 @@ plotModelCovCoeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
   ##Covariance 
   nsam <- NROW(draw_LF$muG[,3,,1])
   ylimR <- c(0,4)
-  cov_LF <- (draw_LF$cov[,Ci,Cj,(nsam-ntail):nsam,1]/sqrt(draw_LF$cov[,Ci,Ci,(nsam-ntail):nsam,1]*draw_LF$cov[,Cj,Cj,(nsam-ntail):nsam,1]) )
-  cov_NF <- (draw_NF$cov[,Ci,Cj,(nsam-ntail):nsam,1]/sqrt(draw_NF$cov[,Ci,Ci,(nsam-ntail):nsam,1]*draw_NF$cov[,Cj,Cj,(nsam-ntail):nsam,1]) )
-  cov_DF <- (draw_DF$cov[,Ci,Cj,(nsam-ntail):nsam,1]/sqrt(draw_DF$cov[,Ci,Ci,(nsam-ntail):nsam,1]*draw_DF$cov[,Cj,Cj,(nsam-ntail):nsam,1]) )
+  cov_LF <- (draw_LF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_LF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_LF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
+  cov_NF <- (draw_NF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_NF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_NF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
+  cov_DF <- (draw_DF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_DF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_DF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
   
   ##Average Over Columns/Samples - Produce Distribution of Mean Cov Of Group -  Across Samples (Vector With n mean points)
   ##What is the Members Cov On Average?Distibution of E[rho_g] = Sum(rho_i,NLarvae)/NLarvae
   plot( density( apply(cov_LF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-1,1) ,col=colourLegL[2],lwd=3,main="",xlab="",ylab="",ylim=ylimR,lty=1)
+                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5) ,col=colourLegL[2],lwd=3,main="",xlab="",ylab="",ylim=ylimR,lty=1)
   lines(density( apply(cov_NF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-1,1),col=colourLegL[1],lwd=3,lty=2 )
+                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5),col=colourLegL[1],lwd=3,lty=2 )
   lines(density( apply(cov_DF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-1,1),col=colourLegL[3],lwd=3,lty=3 )
+                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5),col=colourLegL[3],lwd=3,lty=3 )
 }
 
 
@@ -170,6 +170,7 @@ for (i in 1:N)
 for  (l in 1:NLarv)
 {
   prec[l,1:3,1:3] ~ dwish(R,3)
+  
   cov[l,1:3,1:3]  <- inverse(prec[l,1:3,1:3])  
   
   ## Larva priors Are linked to the Group's Priors
@@ -196,11 +197,13 @@ for  (g in 1:1)
 
 for(i in 1:3){
   for(j in 1:3){
-    R[i,j] <- equals(i,j)*1e-4
-  }
-
+      R[i,j] <- equals(i,j)*1e-4
+    }
 }
-
+  ## Possible to establish Wishart Prior? 
+  #CG[1:3,1:3] ~ dwish(R,3)
+  #covG[1:3,1:3] <- inverse(CG)
+  
 } "
 
 
