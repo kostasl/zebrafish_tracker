@@ -189,7 +189,7 @@ for  (l in 1:NLarv)
 for  (g in 1:1)
 {
   muG[g,1] ~ dnorm(1, 8)T(0.0,2) ##turn ratio
-  muG[g,2] ~ dnorm(25,0.01)T(0,) ##cap speed
+  muG[g,2] ~ dnorm(25,0.001)T(0,) ##cap speed
   muG[g,3] ~ dnorm(0.1,0.1)T(0,) ##Distance prey
   
   tG[g,1] ~ dgamma(10,3)
@@ -210,12 +210,12 @@ for(i in 1:3){
 
 
 
-strModelPDFFileName <- "/stat/UndershootAnalysis/fig7S1-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
-strDataPDFFileName <- "/stat/UndershootAnalysis/fig7-UndershootCaptureSpeedCV_scatter_Valid.pdf"
-strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelCaptureSpeed_Valid.pdf"
-strUndershootDensityPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelUndershoot_Valid.pdf"
-strDistanceDensityPDFFileName <- "/stat/UndershootAnalysis/stat_modelDistance_Valid.pdf"
-strModelCovarPDFFileName <- "/stat/UndershootAnalysis/fig7-stat_modelCaptureSpeedVsUndershootAndDistance_COVar.pdf"
+strModelPDFFileName <- "/stat/fig7S1-stat_modelCaptureSpeedVsUndershootAndDistance_Valid.pdf"
+strDataPDFFileName <- "/stat/fig7-UndershootCaptureSpeedCV_scatter_Valid.pdf"
+strCaptSpeedDensityPDFFileName <- "/stat/fig7-stat_modelCaptureSpeed_Valid.pdf"
+strUndershootDensityPDFFileName <- "/stat/fig7-stat_modelUndershoot_Valid.pdf"
+strDistanceDensityPDFFileName <- "/stat/stat_modelDistance_Valid.pdf"
+strModelCovarPDFFileName <- "/stat/fig7-stat_modelCaptureSpeedVsUndershootAndDistance_COVar.pdf"
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -336,7 +336,6 @@ lines(density(tail(draw_LF$muG[,1,,1], 150) ),ylim=c(0,1),xlim=c(0,2))
 lines(density(tail(draw_LF$muG[,1,,2], 150) ),ylim=c(0,1),xlim=c(0,2))
 
 
- 
 ## Speed Posterior Group Vs INdividual Density
 with(draw_LF,{
   plot(density(tail(muG[,2,,], 150) ),ylim=c(0,1),xlim=c(0,60),lwd=2,col="red",main="Speed LF")
@@ -373,7 +372,7 @@ lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==3,]$CaptureSpeed,bw=2),
 
 
 ##Distance Posterior Group Vs INdividual Density
-with(draw_LF,{
+with(draw_NF,{
   plot(density(tail(muG[,3,,1], 100) ),ylim=c(0,16),xlim=c(0,1),lwd=2,col="red")
   for ( i in (1:NLarv[1] ) )
     lines( density( tail( mu[i,3,,1],stail)),lty=2)
@@ -431,7 +430,7 @@ plot(sapply((draw_LF$rho[,2,,1]),mean),type='l')
 
 load(paste0(strDataExportDir,"stat_CaptSpeedVsUndershootAndDistance_RJags.RData"))
 
-nContours <- 6
+nContours <- 5
 ntail <- 1200 #NROW(draw_NF$mu[1,1,,1])*0.20
 
 
@@ -544,7 +543,7 @@ dev.off()
 ### 3D OPENGL plot - Balls Model of Gourp Mean behaviour ##
 #################################
 library( rgl )
-ntail <- 100
+ntail <- 30
 
 ##Prepare Data
 datMu3D <-  data.frame( cbind.data.frame(
@@ -584,9 +583,9 @@ datMu3D$col  <- as.character( datMu3D$col)
   rgl::axis3d('y+-',at=seq(50,10,len=5),labels=rev(seq(10,50,len=5))) 
   
   
-  mtext3d("Turn Ratio", "x+-", line = 2, at = NULL, pos = NA) 
-  mtext3d("Capture Speed (mm/sec)", "y+-", line = 2, at = NULL, pos = NA) 
-  mtext3d("Distance (mm)", "z-+", line = 4, at = NULL, pos = NA,angle=90) 
+  #mtext3d("Turn Ratio", "x+-", line = 2, at = NULL, pos = NA) 
+  #mtext3d("Capture Speed (mm/sec)", "y+-", line = 2, at = NULL, pos = NA) 
+  #mtext3d("Distance (mm)", "z-+", line = 4, at = NULL, pos = NA,angle=90) 
   
   
   rgl::rgl.viewpoint(0,-60,fov=35,type = c("userviewpoint") )
@@ -600,9 +599,9 @@ datMu3D$col  <- as.character( datMu3D$col)
 #Use : gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=output.pdf fig7_Modelballs3D_SpeedVsTurn_view.pdf
 #rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view.pdf"),fmt="pdf",drawText = FALSE )
 
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view3.pdf"),fmt="pdf",drawText = FALSE )
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view3.tex"),fmt="tex",drawText = TRUE )
-rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view3"),fmt="png" )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view4.pdf"),fmt="pdf",drawText = FALSE )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view4.tex"),fmt="tex",drawText = TRUE )
+rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view4"),fmt="png" )
 
 ## I use the tex Axis doc to combine 3d Fig with axis text. I then compile a pdf, which I import into inkScape (using Cairo to rasterize image), so I can adjust size, add axis labels etc etc.
 ## END OF 3D plot Messing with exporting
@@ -617,128 +616,57 @@ rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D_DistVsTurn_view3
 ## Open Output PDF 
 pdf(file= paste(strPlotExportPath,strModelPDFFileName,sep=""),width=14,height=7,
     title="A 3D statistical model for Capture Strike speed / Turn Ratio / Distance to Prey")
+    
+    ### Show Speed Fit ###
+    outer = FALSE
+    line = 1 ## SubFig Label Params
+    lineAxis = 2.7
+    lineXAxis = 3.0
+    cex = 1.4
+    adj  = 3.5
+    padj <- -8.0
+    las <- 1
+    
+    
+    layout(matrix(c(1,2),1,2, byrow = TRUE))
+    ##Margin: (Bottom,Left,Top,Right )
+    par(mar = c(3.9,4.7,2,1))
+    
+    ## Plot the mean of the 2D Models ##
+    ##Collect Draws from all chains
+    plot(datMu3D$TurnR ,datMu3D$CSpeed,col=datMu3D$col,pch=datMu3D$pch, xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
+    
+    mtext(side = 1,cex=cex, line = lineAxis, expression("Turn ratio" )) #["~gamma~"]"
+    mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
+    #mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
+    
+    contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1,lty=2)
+    contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1,lty=2)
+    contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1,lty=2)
+    
+    legend("topright",
+           legend=c(  expression (),
+                      bquote(NF[""]  ),
+                      bquote(LF[""]  ),
+                      bquote(DF[""]  )
+                      #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+                      ),
+           pch=c(pchL[6],pchL[4],pchL[5]), col=colourLegL,cex=cex)
+    ###############
+    
+    ## Distance To Prey Vs Speed ##
+    plot(datMu3D$Dist,datMu3D$CSpeed,col=datMu3D$col,pch=datMu3D$pch,  xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA ,cex=cex,cex.axis=cex )
   
-  ### Show Speed Fit ###
-  outer = FALSE
-  line = 1 ## SubFig Label Params
-  lineAxis = 2.7
-  lineXAxis = 3.0
-  cex = 1.4
-  adj  = 3.5
-  padj <- -8.0
-  las <- 1
-  
-  
-  layout(matrix(c(1,2,3,4),2,2, byrow = TRUE))
-  ##Margin: (Bottom,Left,Top,Right )
-  par(mar = c(3.9,4.7,2,1))
-  
-  ## Plot the mean of the 2D Models ##
-  ##Collect Draws from all chains
-  plot(datMu3D$TurnR ,datMu3D$CSpeed,col=datMu3D$col,pch=datMu3D$pch, xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
-  
-  #points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
-  #points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
-  #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
-  
-  mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio" )) #["~gamma~"]"
-  mtext(side = 2,cex=cex, line = lineAxis, expression("Capture Speed (mm/sec)  " ))
-  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-  
-  contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  #contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
-  #contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
-  #contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-  
-  legend("topright",
-         legend=c(  expression (),
-                    bquote(NF[""] ~ '#' ~ .(ldata_NF$N)  ),
-                    bquote(LF[""] ~ '#' ~ .(ldata_LF$N)  ),
-                    bquote(DF[""] ~ '#' ~ .(ldata_DF$N)  )
-                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
-                    ),
-         pch=pchL, col=colourLegL,cex=cex)
-  ###############
-  
-  ## Distance To Prey Vs Speed ##
-  plot(datMu3D$Dist,datMu3D$CSpeed,col=datMu3D$col,pch=datMu3D$pch,  xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA ,cex=cex,cex.axis=cex )
-
-  mtext(side = 1,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
-  mtext(side = 2,cex=cex, line = lineAxis, expression(" Capture Speed (mm/sec)" ))
-  
-  contour(zDLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  contour(zLLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  contour(zDLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
-  contour(zLLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
-  contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-  
-  
-  #legend("topleft",
-  #       legend=c(  expression (),
-  #                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-  #                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-  #                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
-  #                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
-  #      ),
-  #       pch=pchL, col=colourLegL)
-  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-  
-  
-  ## Distance To Prey Vs Turn Ratio##
-  plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
-  points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourHPoint[2],pch=pchL[2])
-  points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourHPoint[3],pch=pchL[3])
-  #points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
-  
-  mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
-  mtext(side = 2,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
-  
-  contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-  contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
-  contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
-  contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-  
-  
-  #legend("topright",
-  #       legend=c(  expression (),
-  #                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-  #                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-  #                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
-  #                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
-  #       ),
-  #       pch=pchL, col=colourLegL)
-  mtext("C",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-  
-  
-  
-  ### Show Covar Of Undershoot to Distance  Membership
-  plot(dNLb_rhoUD,col=colourLegL[1],xlim=c(-1,1),ylim=c(0.4,10),lwd=4,lty=1,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex )
-  lines(dLLb_rhoUD,col=colourLegL[2],lwd=3,lty=2)
-  lines(dDLb_rhoUD,col=colourLegL[3],lwd=3,lty=3)
-  #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
-  
-  legend("topleft",
-         legend=c(  expression (),
-                    bquote(NF[""] ~ '#' ~ .(ldata_NF$N)  ),
-                    bquote(LF[""] ~ '#' ~ .(ldata_LF$N)  ),
-                    bquote(DF[""] ~ '#' ~ .(ldata_DF$N)  )
-                    #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
-         ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-         col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
-  
-  mtext(side = 2,cex=cex, line = lineAxis, expression("Density ") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Turn ratio to distance covariance " ) )  )
-  #mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex)
-  mtext("D",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-  
+    mtext(side = 1,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
+    mtext(side = 2,cex=cex, line = lineAxis, expression(" Capture Speed (mm/sec)" ))
+    
+    contour(zDLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1,lty=2)
+    contour(zLLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1,lty=2)
+    contour(zNLS, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1,lty=2)
 
 dev.off()
-
+       
+ 
 ##################################################
 ####################################################
 
@@ -891,7 +819,7 @@ dev.off()
 
 
 ### Onset/ DETECTION Angle Density supplementary angle figure
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig5S1-DetectionAngleDensity.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/fig7S1-stat_3Dmodel_TurnRatioVsSpeedAndDistance.pdf",sep=""))
   ### Show Speed Fit ###
   outer = FALSE
   line = 1 ## SubFig Label Params
@@ -941,99 +869,7 @@ pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig5S2-DetectionAngl
 dev.off()
 ##
 
-# 
-# library(plot3D)
-# dev.off()
-# layout(matrix(c(1,2,3),1,3, byrow = FALSE))
-# 
-# 
-# pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/stat_UndershootSpeedDistance_3Dmodelplot_AB.pdf",sep=""))
-# 
-# scatter3D(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),tail(draw_NF$mu[,2,,],ntail),grid=10,col = colourH[1],
-#           ticktype = "detailed",theta=0,phi=0,box=,type= c("shade", "wire", "dots"),zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),xlab="Undershoot", ylab="Distance",zlab="Speed")
-# 
-# scatter3D(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),tail(draw_LF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[2],
-#           zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
-# 
-# scatter3D(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),tail(draw_DF$mu[,2,,],ntail),ticktype = "detailed",col = colourH[3],
-#           zlim =range(draw_LF$mu[,,,]),xlim =c(0.5,1.5),ylim=c(0,0.5),add=T)
-# 
-# dev.off()
-###
-#install.packages("plotly")
 
-
-
-pdf(file= paste0(strPlotExportPath,"/stat/fig7S1-stat_3Dmodel_TurnRatioVsSpeedAndDistance.pdf"),width=14,height=7,
-    title=" 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-nContours <- 5
-### Show Speed Fit ###
-outer = FALSE
-line = 1 ## SubFig Label Params
-lineAxis = 2.7
-lineXAxis = 3.0
-lineTitle = 0.5
-
-cex = 1.4
-adj  = 3.5
-padj <- -8.0
-las <- 1
-par(mar = c(3.9,4.7,3.5,1))
-
-#layout(matrix(c(1,1,1,2,2,2,3,3,4,4,5,5),2,6, byrow = TRUE))
-layout(matrix(c(1,1,2,2),1,4, byrow = TRUE))
-##Margin: (Bottom,Left,Top,Right )
-
-
-
-## Plot the mean of the 2D Models ##
-##Collect Draws from all chains
-plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1], xlim=c(0.5,1.5),ylim=c(10,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
-points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
-points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
-#points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
-
-mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
-mtext(side = 2,cex=cex, line = lineAxis, expression("Capture speed (mm/sec)  " ))
-#mtext("A",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-
-contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-
-contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
-contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
-contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-
-legend("topright",
-       legend=c(  expression (),
-                  bquote(NF[""] ~ '#' ~ .(ldata_NF$N)  ),
-                  bquote(LF[""] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF[""] ~ '#' ~ .(ldata_DF$N)  )
-                  #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
-       ),
-       pch=pchL, col=colourLegL,cex=cex)
-###############
-
-
-## Distance To Prey Vs Turn Ratio##
-plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,3,,],ntail),col=colourHPoint[1],pch=pchL[1],  xlim=c(0.5,1.5),ylim=c(0,0.5),ylab=NA,xlab=NA,cex=cex,cex.axis=cex  )
-points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,3,,],ntail),col=colourHPoint[2],pch=pchL[2])
-points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,3,,],ntail),col=colourHPoint[3],pch=pchL[3])
-#points(tail(draw_ALL$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[4],pch=pchL[4])
-
-mtext(side = 1,cex=cex, line = lineXAxis, expression("Turn ratio ["~gamma~"]" ))
-mtext(side = 2,cex=cex, line = lineAxis, expression("Distance to prey (mm)  " ))
-
-contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-contour(zDLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL [3],lty=2)
-contour(zLLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
-contour(zNLD, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-
-#mtext("B",at="topleft",outer=outer,side=2,col="black",font=2      ,las=1,line=line,padj=padj,adj=3,cex.main=cex,cex=cex)
-dev.off()
 
 
 ############# Plot Position Of Prey Prior Capture Bout 
