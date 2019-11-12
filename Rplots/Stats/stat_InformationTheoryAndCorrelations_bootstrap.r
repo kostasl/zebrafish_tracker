@@ -164,10 +164,18 @@ datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 
 XRange  <- c(0,0.8) #
 YRange <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+nSamples <- 1000
+  
+stat_Cap_NF <- bootStrap_stat(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,nSamples,XRange,YRange)
+stat_Cap_LF <- bootStrap_stat(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,nSamples,XRange,YRange)
+stat_Cap_DF <- bootStrap_stat(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,nSamples,XRange,YRange)
 
-stat_Cap_NF <- bootStrap_stat(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,1000,XRange,YRange)
-stat_Cap_LF <- bootStrap_stat(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,1000,XRange,YRange)
-stat_Cap_DF <- bootStrap_stat(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,1000,XRange,YRange)
+
+stat_Cap_fast_NF <- bootStrap_stat(datCapture_NL[datCapture_NL$Cluster == "fast",]$DistanceToPrey,datCapture_NL[datCapture_NL$Cluster == "fast",]$CaptureSpeed,nSamples,XRange,YRange)
+stat_Cap_fast_LF <- bootStrap_stat(datCapture_LL[datCapture_LL$Cluster == "fast",]$DistanceToPrey,datCapture_LL[datCapture_LL$Cluster == "fast",]$CaptureSpeed,nSamples,XRange,YRange)
+stat_Cap_fast_DF <- bootStrap_stat(datCapture_DL[datCapture_DL$Cluster == "fast",]$DistanceToPrey,datCapture_DL[datCapture_DL$Cluster == "fast",]$CaptureSpeed,nSamples,XRange,YRange)
+
+
 
 ## Distance Vs Capture Speed Mututal INformation 
 bkSeq <- seq(0,2,0.02)
@@ -198,9 +206,29 @@ hist(stat_Cap_DF$entropy_X,xlim=c(1,4),col=colourL[3], breaks=bkSeq,add=TRUE )
 ### DENSITIES ####
 pBw <- 0.02
 
+
+# Plot Fast_Cluster Speed Vs Distance Correlation - bootstraped Stat ##
+strPlotName = paste(strPlotExportPath,"/stat/fig5S2_statbootstrap_correlationFastClust_SpeedVsDistance.pdf",sep="")
+pdf(strPlotName,width=7,height=7,title="Correlations In Speed/Distance Fast cluster capture data ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.9,4.7,1,1))
+
+  plot(density(stat_Cap_fast_NF$corr,kernel="gaussian",bw=pBw),
+       col=colourLegL[1],xlim=c(0,1),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(density(stat_Cap_fast_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(stat_Cap_fast_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+  
+  # legend("topright",         legend=c(  expression (),
+  #                    bquote(NF~ ''  ),
+  #                    bquote(LF ~ '' ),
+  #                    bquote(DF ~ '' )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+  #         col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of capture speed to prey distance  ") ))
+  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+
+dev.off()
 # Plot Speed Vs Distance Correlation - bootstraped Stat ##
 strPlotName = paste(strPlotExportPath,"/stat/fig5_statbootstrap_correlation_SpeedVsDistance.pdf",sep="")
-pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+pdf(strPlotName,width=7,height=7,title="Correlations In Speed/Distance capture  variables",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
 par(mar = c(3.9,4.7,1,1))
 
   plot(density(stat_Cap_NF$corr,kernel="gaussian",bw=pBw),

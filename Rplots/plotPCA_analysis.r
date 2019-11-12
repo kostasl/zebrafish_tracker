@@ -46,7 +46,9 @@ datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 
-
+## Load the Model Based Larvae Behaviour Estimation
+## lModelEst_LF,lModelEst_NF,lModelEst_DF
+load(file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviourModelPerLarva_.RData"))
 
 # Check Correlation Of UNdershoot With Hunt POwer
 ##Take all expID from the successful hunt Events we have extracted hunt variables from 
@@ -78,6 +80,9 @@ mergedCapDat_mod<-mergedCapDat ##Temp Copy
 mergedCapDat_mod$expID <- as.numeric(as.character(mergedCapDat_mod$expID))
 datHunterStat <- aggregate(mergedCapDat_mod,by=list(mergedCapDat_mod$expID),mean)
 
+datHunterStat_Model <- rbind(data.frame(lModelEst_LF,groupIDF="LL"),
+                             data.frame(lModelEst_NF,groupIDF="NL"),
+                             data.frame(lModelEst_DF,groupIDF="DL"))
 ##Recover Group ID Factor
 datHunterStat$groupIDF <- levels(datTrackedEventsRegister$groupID)[datHunterStat$groupID]
 

@@ -150,6 +150,26 @@ plotModelCovCoeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
 }
 
 
+## Returns estaimes of each larvae behaviour from the Model
+getEstimatesPerLarva <- function(drawG,stail)
+{
+  ldist <- list()
+  lSpeed <- list()
+  lTurnRatio <- list()
+  ##Iterate Through each Larva and get a mean estimate of behaviour according to model
+  for ( i in (1:head(as.numeric(drawG$NLarv),1)) )
+  {
+    lTurnRatio[[i]]  <- sapply(tail(drawG$mu[i,1,,],stail),mean)
+    ldist[[i]]       <- sapply(tail(drawG$mu[i,3,,],stail),mean)
+    lSpeed[[i]]      <- sapply(tail(drawG$mu[i,2,,],stail),mean)
+  }
+  ##Overlay The Density From The Estimated Mean Overshoot Of Each Larva
+  mEstDistToPrey <- unlist(lapply(ldist,mean) )
+  mEstSpeed      <- unlist(lapply(lSpeed,mean) ) 
+  mEstTurnRatio  <- unlist(lapply(lTurnRatio,mean) ) 
+  return(cbind(TurnRatio=mEstTurnRatio, PreyDistance=mEstDistToPrey,CaptureSpeed=mEstSpeed))  
+  
+}
 ##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour 
 ## Estimating Hunt Behaviour per Larvae before inferring mean group behaviour
 strmodel3Variables_LarvaHuntBehaviour <- "
@@ -248,6 +268,16 @@ datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
 datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
 
+##Get Hunt Success
+datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
+datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
+
+##Merge Hunt Power To Hunt-Capture Variables 
+datMergedCapAndSuccess_LF <- merge(x=datCapture_LF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+datMergedCapAndSuccess_NF <- merge(x=datCapture_NF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+datMergedCapAndSuccess_DF <- merge(x=datCapture_DF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+
+## Merge 
 
 ###Load PreCalculated Model Results ###
 load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
@@ -260,9 +290,9 @@ vexpID <- list(LF = datTrackedEventsRegister[datCapture_LL$RegistarIdx,]$expID,
 
 ## Merge EXP ID
 ## Add Exp ID Column - Signifying Which Larvae Executed the Capture Success Hunt- 
-datCapture_LF_wExpID <- cbind(datCapture_LL,expID=vexpID$LF,groupID=2)
-datCapture_NF_wExpID <- cbind(datCapture_NL,expID=vexpID$NF,groupID=3)
-datCapture_DF_wExpID <- cbind(datCapture_DL,expID=vexpID$DF,groupID=1)
+datCapture_LF_wExpID <- cbind(datMergedCapAndSuccess_LF,expID=vexpID$LF,groupID=2)
+datCapture_NF_wExpID <- cbind(datMergedCapAndSuccess_NF,expID=vexpID$NF,groupID=3)
+datCapture_DF_wExpID <- cbind(datMergedCapAndSuccess_DF,expID=vexpID$DF,groupID=1)
 datCapture_ALL_wExpID <- rbind(datCapture_LF_wExpID,datCapture_NF_wExpID,datCapture_DF_wExpID)
 ###Empirical Distribution
 datHuntLarvaStat <- aggregate(datCapture_ALL_wExpID,by=list(datCapture_ALL_wExpID$expID),mean)
@@ -273,12 +303,13 @@ steps <-15000
 nchains <- 7
 nthin <- 5
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
-str_vars <- c("mu","cov","x_rand","muG","tG","NLarv") #Mixture Model
-##Make Serial Larvae ID, that link each hunt event to an individual larva 
-ldata_LF <- with(datCapture_LF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID)) ) }) ##Live fed
-ldata_NF <- with(datCapture_NF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
-ldata_DF <- with(datCapture_DF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
-ldata_ALL <-with(datCapture_ALL_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Lid=as.numeric(as.factor(as.numeric(expID)) ),Gid=groupID ,N=NROW(expID),NLarv=NROW(unique(expID))  ) }) ##Live fed list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
+str_vars <- c("mu","cov","x_rand","muG","tG","NLarv","Lid") #Mixture Model
+##Make Serial Larvae ID, that links each hunt event to an individual larva 
+## Maintain RegIDx so we trace Back
+ldata_LF <- with(datCapture_LF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID)) ) }) ##Live fed
+ldata_NF <- with(datCapture_NF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
+ldata_DF <- with(datCapture_DF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
+ldata_ALL <-with(datCapture_ALL_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ),Gid=groupID ,N=NROW(expID),NLarv=NROW(unique(expID))  ) }) ##Live fed list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
 
 
 ### RUN JAGS MODEL ###
@@ -322,11 +353,11 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussi
                             #n.adapt = 500, n.chains = 3, quiet = F)
 #update(jags_model_ALL, 300)
 #draw_ALL=jags.samples(jags_model_ALL,steps,thin=2,variable.names=str_vars)
-
-
-
 schain <- 5:10
 stail <- 300
+
+
+
 plot(density(tail(draw_LF$muG[,2,,1], 150) ),ylim=c(0,1),xlim=c(0,80))
 lines(density(tail(draw_NF$muG[,2,,schain], 150)))
 lines(density(tail(draw_DF$muG[,2,,schain], 150)))
@@ -385,31 +416,23 @@ for (c in schain)
   lines(density(tail(draw_LF$muG[,2,,c],1000) ),col="red")
 
 
-
-### Estimated For Each Larva - Plot Group Population
+### Obtain Estimated Mean Values For Each Larva & Plot Group Population
 ##Plot Distance Density
-
 plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey",ylim=c(0,6)) ##Mean Group Undershoot From Mean Of Each Larva
-ldist <- list()
-for ( i in (1:28) )
-  ldist[[i]]  <-sapply(tail(draw_LF$mu[i,3,,],stail),mean)
-##Overlay The Density From The Estimated Mean Overshoot Of Each Larva
-lines(density( unlist(lapply(ldist,mean) ) ) )
+lModelEst_LF <- getEstimatesPerLarva(draw_LF,stail)
+lines(density( unlist(lapply(lModelEst_LF[,"PreyDistance"],mean) ) ) )
 
 lines(density(sapply(tail(draw_NF$mu[,3,,],stail),mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-ldist <- list()
-for ( i in (1:28) )
-  ldist[[i]]  <-sapply(tail(draw_NF$mu[i,3,,],stail),mean)
-##Overlay The Density From The Estimated Mean Overshoot Of Each Larva
-lines(density( unlist(lapply(ldist,mean) ) ) )
-
+lModelEst_NF <- getEstimatesPerLarva(draw_NF,stail)
+lines(density( unlist(lapply(lModelEst_NF[,"PreyDistance"],mean) ) ) )
 
 lines(density(sapply(tail(draw_DF$mu[1,3,,],stail) ,mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-ldist <- list()
-for ( i in (1:28) )
-  ldist[[i]]  <-sapply(tail(draw_DF$mu[i,3,,],stail),mean)
-##Overlay The Density From The Estimated Mean Overshoot Of Each Larva
-lines(density( unlist(lapply(ldist,mean) ) ) )
+lModelEst_DF <- getEstimatesPerLarva(draw_DF,stail)
+lines(density( unlist(lapply(lModelEst_DF[,"PreyDistance"],mean) ) ) )
+
+
+
+save(lModelEst_LF,lModelEst_NF,lModelEst_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviourModelPerLarva_.RData"))
 
 ##Plot Speed Density
 plot(density(sapply(tail(draw_LF$mu[,2,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Capture Speed",ylim=c(0,0.1)) ##Mean Group Undershoot From Mean Of Each Larva
@@ -474,7 +497,7 @@ for (i in 2:nchains)
 ### MAIN COVARIANCE PLOT  (Fast Cluster)##
 ###Show covariance In the High Speed Capture Cluster ##
 ##  Covariance  ##
-nsam <- NROW(draw_LF$muG[,3,,1])
+
 ntail <- 200
 ### Lid,Matrix i,Matrix j,Sample,chain
 
