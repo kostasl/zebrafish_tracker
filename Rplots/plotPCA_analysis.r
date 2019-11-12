@@ -35,8 +35,10 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   ## Set Colours
   require("graphics")
   colClass <- c("#00AFBB", "#E7B800", "#FC4E07")
+  
   colEfficiency <- hcl.colors(12, alpha = 1, rev = FALSE) # heat.colors rainbow(12)
   colFactrAxes <- hcl.colors(6,palette="RdYlBu")
+  colAxis <- c("#00AFBB", "#E7B800", "#FC4E07",colFactrAxes[1],colFactrAxes[2],colFactrAxes[3])
   colourGroup <- c(colourLegL[1],colourLegL[2],colourLegL[3])
   pchLPCA <- c(16,17,15)
   
@@ -78,7 +80,7 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
        #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchLPCA[as.numeric(mergedCapDat_filt$groupID)],
        #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID)],
        #xlab="PC1",ylab="PC2",
-       xlim=c(-4.2,4.2),ylim=c(-3.0,3.2),
+       xlim=c(-3.5,4.2),ylim=c(-2.0,2.7),
        xlab=NA,ylab=NA,
        cex=cex/2,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
   
@@ -92,14 +94,14 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   scaleV <- 2
   ##Distance to Prey Component Projection
   arrows(0,0,scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],lwd=3)
+         scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[1],lwd=3)
   text(0.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       1.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],labels="Distance")
+       1.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[1],labels="Distance")
   ##CaptureSpeed  Component Projection
   arrows(0,0,scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],lwd=3,lty=1)
+         scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[2],lwd=3,lty=1)
   text(1.2*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       0.1+0.8*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],labels="Speed")
+       0.1+0.8*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[2],labels="Speed")
   
   ##Undershoot Axis  Component Projection
   #arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
@@ -111,9 +113,9 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   
   ##TimeToHit Prey Prod Axis  Component Projection
   arrows(0,0,scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],lty=1,lwd=3)
+         scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[3],lty=1,lwd=3)
   text(0.8*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       1.3*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],labels="t Prey")
+       1.3*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[3],labels="t Prey")
   
   ##DistXSpeed Prod Axis  Component Projection
   #arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="purple",lty=5)
@@ -121,10 +123,10 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   ##EFFICIENCY Prod Axis  Component Projection
   scaleVE <- scaleV
   arrows(0,0,scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="blue",lty=1,lwd=2)
+         scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[4],lty=1,lwd=2)
   text(1.3*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       1.2*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,
-       col="blue",labels="Efficiency")
+       1.1*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,
+       col=colAxis[4],labels="Efficiency")
   
   ###Heat Map Scale
   #posLeg <- c(3,-3) 
