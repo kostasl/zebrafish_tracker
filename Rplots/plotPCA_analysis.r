@@ -78,8 +78,9 @@ groupLabels <- levels(mergedCapDat$groupID)
 mergedCapDat$groupID <- as.numeric(mergedCapDat$groupID)
 mergedCapDat_mod<-mergedCapDat ##Temp Copy
 mergedCapDat_mod$expID <- as.numeric(as.character(mergedCapDat_mod$expID))
+##Empirical Estimates Of behaviour Per Larvae
 datHunterStat <- aggregate(mergedCapDat_mod,by=list(mergedCapDat_mod$expID),mean)
-
+##
 datHunterStat_Model <- rbind(data.frame(lModelEst_LF,groupIDF="LL"),
                              data.frame(lModelEst_NF,groupIDF="NL"),
                              data.frame(lModelEst_DF,groupIDF="DL"))

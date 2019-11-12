@@ -431,8 +431,16 @@ lModelEst_DF <- getEstimatesPerLarva(draw_DF,stail)
 lines(density( unlist(lapply(lModelEst_DF[,"PreyDistance"],mean) ) ) )
 
 
+##Make Model Estimate Per Larvae Including RegIDx For Back Reference 
 
-save(lModelEst_LF,lModelEst_NF,lModelEst_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviourModelPerLarva_.RData"))
+expID_LF <- unique(datTrackedEventsRegister[ldata_LF$RegIdx[which(ldata_LF$Lid %in% 1:NROW(lModelEst_LF) )],]$expID )
+expID_NF <- unique(datTrackedEventsRegister[ldata_NF$RegIdx[which(ldata_NF$Lid %in% 1:NROW(lModelEst_NF) )],]$expID )
+expID_DF <- unique(datTrackedEventsRegister[ldata_DF$RegIdx[which(ldata_DF$Lid %in% 1:NROW(lModelEst_DF) )],]$expID )
+datHunterStat_Model <- rbind(data.frame(lModelEst_LF,groupIDF="LL",expID=expID_LF),
+                             data.frame(lModelEst_NF,groupIDF="NL",expID=expID_NF),
+                             data.frame(lModelEst_DF,groupIDF="DL",expID=expID_DF))
+
+save(datHunterStat_Model,file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviourModelPerLarva_.RData"))
 
 ##Plot Speed Density
 plot(density(sapply(tail(draw_LF$mu[,2,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Capture Speed",ylim=c(0,0.1)) ##Mean Group Undershoot From Mean Of Each Larva
