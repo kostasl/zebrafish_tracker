@@ -167,7 +167,7 @@ getEstimatesPerLarva <- function(drawG,stail)
   mEstDistToPrey <- unlist(lapply(ldist,mean) )
   mEstSpeed      <- unlist(lapply(lSpeed,mean) ) 
   mEstTurnRatio  <- unlist(lapply(lTurnRatio,mean) ) 
-  return(cbind(TurnRatio=mEstTurnRatio, PreyDistance=mEstDistToPrey,CaptureSpeed=mEstSpeed))  
+  return(cbind(Undershoot=mEstTurnRatio, DistanceToPrey=mEstDistToPrey,CaptureSpeed=mEstSpeed))  
   
 }
 ##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour 
@@ -420,15 +420,15 @@ for (c in schain)
 ##Plot Distance Density
 plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey",ylim=c(0,6)) ##Mean Group Undershoot From Mean Of Each Larva
 lModelEst_LF <- getEstimatesPerLarva(draw_LF,stail)
-lines(density( unlist(lapply(lModelEst_LF[,"PreyDistance"],mean) ) ) )
+lines(density( unlist(lapply(lModelEst_LF[,"DistanceToPrey"],mean) ) ) )
 
 lines(density(sapply(tail(draw_NF$mu[,3,,],stail),mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 lModelEst_NF <- getEstimatesPerLarva(draw_NF,stail)
-lines(density( unlist(lapply(lModelEst_NF[,"PreyDistance"],mean) ) ) )
+lines(density( unlist(lapply(lModelEst_NF[,"DistanceToPrey"],mean) ) ) )
 
 lines(density(sapply(tail(draw_DF$mu[1,3,,],stail) ,mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 lModelEst_DF <- getEstimatesPerLarva(draw_DF,stail)
-lines(density( unlist(lapply(lModelEst_DF[,"PreyDistance"],mean) ) ) )
+lines(density( unlist(lapply(lModelEst_DF[,"DistanceToPrey"],mean) ) ) )
 
 
 ##Make Model Estimate Per Larvae Including RegIDx For Back Reference 
@@ -440,7 +440,7 @@ datHunterStat_Model <- rbind(data.frame(lModelEst_LF,groupIDF="LL",expID=expID_L
                              data.frame(lModelEst_NF,groupIDF="NL",expID=expID_NF),
                              data.frame(lModelEst_DF,groupIDF="DL",expID=expID_DF))
 
-save(datHunterStat_Model,file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviourModelPerLarva_.RData"))
+save(datHunterStat_Model,file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviourModelPerLarva.RData"))
 
 ##Plot Speed Density
 plot(density(sapply(tail(draw_LF$mu[,2,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Capture Speed",ylim=c(0,0.1)) ##Mean Group Undershoot From Mean Of Each Larva
