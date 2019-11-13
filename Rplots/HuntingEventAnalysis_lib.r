@@ -383,7 +383,9 @@ calcHuntStat3 <- function(datHuntEvent)
   ## Hunting Duration Per Episode ##
   
   ##Replace 0s with NA - Ignore 0 Duration Episodes
-  datHuntEventNonZeroEpi <- datHuntEvent[datHuntEvent$endFrame-datHuntEvent$startFrame > 0,]
+  
+  datHuntEventNonZeroEpi <- datHuntEvent[datHuntEvent$endFrame-datHuntEvent$startFrame > 0 &
+                                           datHuntEvent$eventID   != 0 ,]
   ##Events that include Some form of Target tracking 
   datHuntEventPursuitEpi <- datHuntEventNonZeroEpi[grepl("Success",datHuntEventNonZeroEpi$huntScore) | 
                                                      grepl("Fail",datHuntEventNonZeroEpi$huntScore) ,]
@@ -527,7 +529,7 @@ makeHuntStat <- function(datHuntEvent)
   #groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
   strCondTags <- unique(datHuntEvent$groupID)
   datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)
-  
+  datHuntEvent$expID <- factor(datHuntEvent$expID)
   for (i in strCondTags)
   {
     message(paste("#### ProcessGroup ",i," ###############"))
@@ -536,16 +538,27 @@ makeHuntStat <- function(datHuntEvent)
     
     ##Filter Hunt Events ##
     datHuntEventFilt <- datHuntEvent[datHuntEvent$groupID == i,]
-    
-    datHuntEventFilt <- datHuntEventFilt[datHuntEventFilt$huntScore != "NA" &
+    #'These are prefiltered by Score Labels but also selected based on Score in calcHuntStat 
+    datHuntEventFiltH <- datHuntEventFilt[datHuntEventFilt$huntScore != "NA" &
                                            datHuntEventFilt$huntScore != "Not_HuntMode/Delete" &
                                            datHuntEventFilt$huntScore != "Out_Of_Range" &
                                            datHuntEventFilt$huntScore != "Duplicate/Overlapping" &
                                            datHuntEventFilt$huntScore != "Near-Hunt State" |
                                            datHuntEventFilt$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
-    
-    
-    lHuntStat[[i]] <- calcHuntStat3(datHuntEventFilt)
+   
+    # Some Larvae only produced Near-Hunt States- And THus no actual HuntEvents / We need to count their rate as 0 however, and not remove them from record
+    ##The missing ExpID once Filtering For NearHunt State
+    missingExpID <- rownames((table(datHuntEventFilt$expID)))[!(rownames((table(datHuntEventFilt$expID))) %in% rownames((table(datHuntEventFiltH$expID))))] 
+    ##Add An Empty Event For Each of the Missing Larvae after filtering non Hunt Events
+    for (expID in missingExpID )
+    {
+      rec = head(datHuntEventFilt[datHuntEventFilt$expID == expID,])##Pick One Event Of this Larva
+      rec$eventID = 0
+      rec$huntScore = 0
+      datHuntEventFiltH <- rbind(datHuntEventFiltH,rec)##Append Empty Place Holder Event
+    }
+   
+    lHuntStat[[i]] <- calcHuntStat3(datHuntEventFiltH)
   }
   
   datHuntStat = do.call(rbind,lHuntStat)#

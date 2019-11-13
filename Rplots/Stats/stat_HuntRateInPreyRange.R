@@ -23,7 +23,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 ## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
 ## Give geometric
 modelGEventRateGeom="model { 
-q ~ dunif(0.0,1)
+q ~ dunif(0.0,3)
 r ~ dgamma(1,1)
 
 for(j in 1:NTOT){
@@ -46,7 +46,7 @@ mcmc_drawEventCountModels <- function(datHuntVsPrey,preyCountRange,strModelFilen
 {
   varnames1=c("n","q","r")
   burn_in=1000;
-  steps=25000;
+  steps=50000;
   plotsamples = 10000
   thin=2;
   chains = 3
@@ -268,9 +268,9 @@ stopifnot(NROW(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvent
    
 ## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##
 ## Added Larva ID to Check for Correlation Through Time of Day - Surrogate as LarvaID;s increased through the day of the experiment from 1-4
-datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ),datHuntStat[,"vIDLookupTable"]$LL$larvaID )
+datHuntVsPreyLL <- cbind(PreyCount=datHuntStat[,"vHInitialPreyCount"]$LL ,HuntEvents= as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),Duration=as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ),vID=datHuntStat[,"vIDLookupTable"]$LL$larvaID )
 datHuntVsPreyLL <- datHuntVsPreyLL[!is.na(datHuntVsPreyLL[,1]) ,]
-datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ),datHuntStat[,"vIDLookupTable"]$LE$larvaID  )
+datHuntVsPreyLE <- cbind(datHuntStat[,"vHInitialPreyCount"]$LE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LE),Duration=as.numeric(datHuntStat[,"vHDurationPerLarva"]$LE ),datHuntStat[,"vIDLookupTable"]$LE$larvaID  )
 datHuntVsPreyLE <- datHuntVsPreyLE[!is.na(datHuntVsPreyLE[,1]) ,]
 
 
@@ -296,8 +296,11 @@ for (i in 1:4)
 print(vEventCount)
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,1000)
-
+preyCntRange <- c(0,1010)
+nLL <- NROW(datHuntVsPreyLL[datHuntVsPreyLL[,1] >= preyCntRange[1] & datHuntVsPreyLL[,1] <= preyCntRange[2], ])
+nDL <- NROW(datHuntVsPreyDL[datHuntVsPreyDL[,1] >= preyCntRange[1] & datHuntVsPreyDL[,1] <= preyCntRange[2], ])
+nNL <- NROW(datHuntVsPreyNL[datHuntVsPreyNL[,1] >= preyCntRange[1] & datHuntVsPreyNL[,1] <= preyCntRange[2], ])
+message("Analysis includes nLL: ",nLL, " nDL:",nDL," nNL:",nNL)
 ### Rum The Sampler ###
 drawLL2 <- mcmc_drawEventCountModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventRate.tmp")
 drawNL2 <- mcmc_drawEventCountModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventRate.tmp")
@@ -307,6 +310,7 @@ drawNE2 <- mcmc_drawEventCountModels(datHuntVsPreyNE,preyCntRange,"modelGroupEve
 drawDE2 <- mcmc_drawEventCountModels(datHuntVsPreyDE,preyCntRange,"modelGroupEventRate.tmp")
 
 save(drawLL2,drawNL2,drawDL2,drawLE2,drawNE2,drawDE2,file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
+
 
 
 ### Draw Distribution oF Hunt Rates - 
