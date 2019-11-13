@@ -23,7 +23,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 ## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
 ## Give geometric
 modelGEventRateGeom="model { 
-q ~ dunif(0.0,3)
+q ~ dunif(0.0,1)
 r ~ dgamma(1,1)
 
 for(j in 1:NTOT){
@@ -249,7 +249,6 @@ for (dID in vWeirdDataSetID )
 ################# # ## # # 
 
 
-
 ## Get Summarized Hunt Results Per Larva ####
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_LIVE)
@@ -262,8 +261,8 @@ datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_LIVE)
 message( sum(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvents), " Vs ",sum(datHuntStat[,"vHLarvaEventCount"]$LL)  )
 message( sum(datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$HuntEvents), " Vs ",sum(datHuntStat[,"vHLarvaEventCount"]$NL)  )
 message( sum(datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$HuntEvents), " Vs ",sum(datHuntStat[,"vHLarvaEventCount"]$DL)  )
-stopifnot(sum(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvents) == sum(datHuntStat[,"vHLarvaEventCount"]$LL))
-stopifnot(NROW(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvents) == NROW(datHuntStat[,"vHLarvaEventCount"]$LL))
+#stopifnot(sum(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvents) == sum(datHuntStat[,"vHLarvaEventCount"]$LL))
+#stopifnot(NROW(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvents) == NROW(datHuntStat[,"vHLarvaEventCount"]$LL))
 
    
 ## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##

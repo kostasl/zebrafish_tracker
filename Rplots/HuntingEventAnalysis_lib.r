@@ -529,7 +529,7 @@ makeHuntStat <- function(datHuntEvent)
   #groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
   strCondTags <- unique(datHuntEvent$groupID)
   datHuntEvent$huntScore <- convertToScoreLabel( datHuntEvent$huntScore)
-  datHuntEvent$expID <- factor(datHuntEvent$expID)
+  #datHuntEvent$expID <- factor(datHuntEvent$expID) ##Maybe Factor Could resolve issue to count 0 Hunt Events
   for (i in strCondTags)
   {
     message(paste("#### ProcessGroup ",i," ###############"))
@@ -540,9 +540,9 @@ makeHuntStat <- function(datHuntEvent)
     datHuntEventFilt <- datHuntEvent[datHuntEvent$groupID == i,]
     #'These are prefiltered by Score Labels but also selected based on Score in calcHuntStat 
     datHuntEventFiltH <- datHuntEventFilt[datHuntEventFilt$huntScore != "NA" &
-                                           datHuntEventFilt$huntScore != "Not_HuntMode/Delete" &
-                                           datHuntEventFilt$huntScore != "Out_Of_Range" &
-                                           datHuntEventFilt$huntScore != "Duplicate/Overlapping" &
+#                                           datHuntEventFilt$huntScore != "Not_HuntMode/Delete" &
+#                                           datHuntEventFilt$huntScore != "Out_Of_Range" &
+#                                           datHuntEventFilt$huntScore != "Duplicate/Overlapping" &
                                            datHuntEventFilt$huntScore != "Near-Hunt State" |
                                            datHuntEventFilt$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
    

@@ -49,6 +49,8 @@ huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10
 ## Notes : Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
 getLabelledHuntEventsSet <- function()
 {
+#  datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$expID == 4491,] ##Is A lonely NL with no Matching NE
+  
   
   strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"
   assign("file_LabelledHuntEventsSet", paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ), envir = .GlobalEnv)
@@ -58,7 +60,8 @@ getLabelledHuntEventsSet <- function()
   
   ##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
   #AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
-  vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
+  # 4491 <- Is a lonely NL - No Match NE
+  vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411,4491)
   vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Experiments Less than 4(larvae)*2(cond)*3(groups)=24
   
   ##We Can Choose To Exclude The Fish That Produced No Hunting Events
