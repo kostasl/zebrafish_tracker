@@ -70,6 +70,7 @@ getLabelledHuntEventsSet <- function()
   datHuntLabelledEventsSB_filtered <- datHuntLabelledEventsSB [
     with(datHuntLabelledEventsSB, ( convertToScoreLabel(huntScore) != "Not_HuntMode/Delete" &
                                     convertToScoreLabel(huntScore) != "Duplicate/Overlapping" &
+                                    #(endFrame - startFrame) > 40 ) |  ## limit min event dur to ~100ms
                                     (endFrame - startFrame) > 40 ) |  ## limit min event dur to ~100ms
            eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
   
@@ -467,13 +468,22 @@ getHuntSuccessPerFish <- function(datHuntLabelledEvents)
   tblIdxSuccess <- which (grepl("Success",row.names(tblResSB) ) ) 
   tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) ) 
   
+  tblIdxNotHuntMode <- which (grepl("Out_Of_Range",row.names(tblResSB) ) | 
+                              grepl("UnLabelled",row.names(tblResSB) ) | 
+                              grepl("Duplicate",row.names(tblResSB) ) | 
+                              grepl("Near-Hunt State",row.names(tblResSB) ) )  
+  
+  tblIdxEscape <- which (grepl("Escape",row.names(tblResSB) ) ) 
+  tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) ) 
+  
 
   
   datFishSuccessRate <- data.frame( cbind("Success" = rowSums(tblFishScoresLabelled[,tblIdxSuccess]),#tblFishScoresLabelled[,"Success"]+tblFishScoresLabelled[,"Success-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnStrike"]+tblFishScoresLabelled[,"Success-OnStrike-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnApproach"] +tblFishScoresLabelled[,"Success-OnApproach-AfterStrike"],
                                           "Fails_NS"= tblFishScoresLabelled[,"Fail-No Strike"],
                                           "Fails_WS"=tblFishScoresLabelled[,"Fail-With Strike"],
                                           "Fails"= rowSums(tblFishScoresLabelled[,tblIdxFail]),  #tblFishScoresLabelled[,"Fail"]+tblFishScoresLabelled[,"Fail-No Strike"]+tblFishScoresLabelled[,"Fail-With Strike"],
-                                          "HuntEvents"=rowSums(tblFishScoresLabelled[,c(tblIdxSuccess,tblIdxFail)] ),  #rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
+                                          "HuntEvents"=rowSums(tblFishScoresLabelled[, !(1:NCOL(tblFishScoresLabelled) %in% tblIdxNotHuntMode) ] ),  #rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
+                                          "CaptureEvents"=rowSums(tblFishScoresLabelled[,c(tblIdxSuccess,tblIdxFail)] ),  #rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
                                           "expID"=NA,
                                           "groupID"=NA,
                                           "dataSetID"=NA) ) #

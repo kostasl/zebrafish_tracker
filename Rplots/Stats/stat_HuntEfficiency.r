@@ -1,6 +1,8 @@
 ## stat Model Success Vs Failure - Plots Distribution For HuntRate and Success Rate
 # Makes A model Assuming Poisson Rate lambda and Hunt Success Probability q
 # Note: We can exclude the fish that produced no events when excluding eventID == 0- 
+## UPDATE 13/11/19 : Converted from general hunt event rate estimation - to capture attempt estimation
+## ** Efficiency plot reports attempts at target vs Success
 
 source("TrackerDataFilesImport_lib.r")
 source("DataLabelling/labelHuntEvents_lib.r")
@@ -81,10 +83,11 @@ NRecCount_DL <- table(datFishSuccessRate$groupID)["DL"]
 NRecCount_NL <- table(datFishSuccessRate$groupID)["NL"]
 NRecCount_LL <- table(datFishSuccessRate$groupID)["LL"]
 
+
 datatest=list(Success=datFishSuccessRate$Success,
               Fail=datFishSuccessRate$Fails,
               TrackPrey=datFishSuccessRate$Fails+datFishSuccessRate$Success, ##Number of Prey Engangements
-              Events=datFishSuccessRate$HuntEvents, ##Includes No_Target - ie cases where stimuli Trigger Fish HuntMode But no Prey Tracking Seems to take place
+              Events=datFishSuccessRate$CaptureEvents, ######Includes No_Target - ie cases where stimuli Trigger Fish HuntMode But no Prey Tracking Seems to take place
               ID=as.numeric(datFishSuccessRate$groupID),
               NTOT=nrow(datFishSuccessRate));
 
@@ -129,9 +132,10 @@ Range_ylim <- c(1,25)
 cex <- 1.2
 
 ### It looks like Tha Gamma scale is the inverse:  gamma rate!
-HEventHuntGammaRate_LL <-((1-tail(draw$q[2,,schain],plotsamples))/tail(draw$q[2,,schain],plotsamples));
-HEventHuntGammaRate_DL <- ((1-tail(draw$q[1,,schain],plotsamples))/tail(draw$q[1,,schain],plotsamples));      
-HEventHuntGammaRate_NL <- ((1-tail(draw$q[3,,schain],plotsamples))/tail(draw$q[3,,schain],plotsamples));      
+##13/11/19 Spotted difference in GammaRate q/(1-q) was inverse - now matches HuntRateInPreyRange model analysis
+HEventHuntGammaRate_LL <-tail(draw$q[2,,schain],plotsamples)/(1-tail(draw$q[2,,schain],plotsamples));
+HEventHuntGammaRate_DL <- tail(draw$q[1,,schain],plotsamples)/(1-tail(draw$q[1,,schain],plotsamples));      
+HEventHuntGammaRate_NL <- tail(draw$q[3,,schain],plotsamples)/(1-tail(draw$q[3,,schain],plotsamples));      
 HEventHuntGammaShape_LL <- tail(draw$r[2,,schain],plotsamples)
 HEventHuntGammaShape_DL <- tail(draw$r[1,,schain],plotsamples)
 HEventHuntGammaShape_NL <- tail(draw$r[3,,schain],plotsamples)
@@ -141,9 +145,9 @@ HEventSuccess_DL <-tail(draw$p[1,,schain],plotsamples)
 HEventSuccess_NL <-tail(draw$p[3,,schain],plotsamples)
 
 ###Mean Rates As Exp OF Gamma
-MeanHuntRate_LL <- HEventHuntGammaShape_LL*HEventHuntGammaRate_LL
-MeanHuntRate_DL <- HEventHuntGammaShape_DL*HEventHuntGammaRate_DL
-MeanHuntRate_NL <- HEventHuntGammaShape_NL*HEventHuntGammaRate_NL
+MeanHuntRate_LL <- HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL
+MeanHuntRate_DL <- HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL
+MeanHuntRate_NL <- HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL
 
 
 HConsumptionRate_NL <- HEventSuccess_NL*MeanHuntRate_NL
@@ -230,7 +234,7 @@ pdf(strPlotName,width=14,height=4.7,
 dev.off()
 
 plotWidthIn <- 8
-strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ModelHuntRateAndEfficiency.pdf",sep="")
+strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ModelCaptureRateAndEfficiency.pdf",sep="")
 pdf(strPlotName,width=plotWidthIn,height=7,
     title="Hunting Success Baysian Estimation ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
     onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
@@ -238,7 +242,7 @@ pdf(strPlotName,width=plotWidthIn,height=7,
   ##Margin: (Bottom,Left,Top,Right )
   #par(mar = c(5,6,2,3))
   par(mar = c(4.2,4.8,1.1,1))
-  layout(matrix(c(1,,2), 1, 2, byrow = TRUE))
+  #layout(matrix(c(1,,2), 1, 2, byrow = TRUE))
   
 ####### Efficiency Inference Plot ## Taken From stat_SyccessVsFailModel.r ####
   nlevels <- 5
@@ -252,8 +256,8 @@ pdf(strPlotName,width=plotWidthIn,height=7,
        ylab=NA,cex.main =cex,cex.axis=1.5 )#(expression(paste("Hunt Rate ",lambda ) ) )  ) #paste("Hunt Rate", )
   points(HEventSuccess_LL, MeanHuntRate_LL,col=colourHPoint[2],ylim=Range_ylim,xlim=c(0.1,0.5),pch=pchL[2])
   points(HEventSuccess_NL, MeanHuntRate_NL,col=colourHPoint[1],ylim=Range_ylim,xlim=c(0.1,0.5),pch=pchL[1])
-  mtext(side = 1, cex=cex, line = line,expression(paste("Probability of Success (",q,")" ) )  ) 
-  mtext(side = 2, cex=cex, line = line, expression(paste("Estimated hunt events/10min (",lambda,")" ) )  )
+  mtext(side = 1, cex=cex, line = line,expression(paste("Probability of success (",q,")" ) )  ) 
+  mtext(side = 2, cex=cex, line = line, expression(paste("Estimated capture attempts / 10min" ) )  ) #(",lambda,")"
   #mtext("B",at="topleft",outer=F,side=2,col="black",font=2,las=las,line=4,padj=-11,adj=0,cex=cex,cex.main=4)
   
   contour(zDL, drawlabels=FALSE, nlevels=nlevels,add=TRUE)
@@ -267,6 +271,7 @@ pdf(strPlotName,width=plotWidthIn,height=7,
                     bquote(LF[""] ~ '#' ~ .(NRecCount_LL)  ),
                     bquote(DF[""] ~ '#' ~ .(NRecCount_DL)  )  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
          pch=pchL, col=colourLegL)
+
 dev.off()  
 
 strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ModelConsumption.pdf",sep="")

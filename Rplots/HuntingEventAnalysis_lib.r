@@ -383,9 +383,13 @@ calcHuntStat3 <- function(datHuntEvent)
   ## Hunting Duration Per Episode ##
   
   ##Replace 0s with NA - Ignore 0 Duration Episodes
-  datHuntEventNonZeroEpi <- datHuntEvent[datHuntEvent$endFrame-datHuntEvent$startFrame > 0,] 
+  datHuntEventNonZeroEpi <- datHuntEvent[datHuntEvent$endFrame-datHuntEvent$startFrame > 0,]
+  ##Events that include Some form of Target tracking 
+  datHuntEventPursuitEpi <- datHuntEventNonZeroEpi[grepl("Success",datHuntEventNonZeroEpi$huntScore) | 
+                                                     grepl("Fail",datHuntEventNonZeroEpi$huntScore) ,]
   ##Calc number of hunting events stat per Experiment (Convert to numeric so as to select only exp from selected GroupID stats)
   tblHuntsCounts<-table((datHuntEventNonZeroEpi$expID) ) 
+  tblHuntCaptureAttempt <- table((datHuntEventPursuitEpi$expID) ) 
   ##Given An Episode Occured
   tblMeanEpisodeDurationPerLarva  <- tapply(datHuntEventNonZeroEpi$endFrame-datHuntEventNonZeroEpi$startFrame, datHuntEventNonZeroEpi$expID,mean)
   #tblMeanEpisodeDurationPerLarva  <- replace(tblMeanEpisodeDurationPerLarva,is.na(tblMeanEpisodeDurationPerLarva),0) ##Replace NA with 0 -Duration
@@ -477,6 +481,7 @@ calcHuntStat3 <- function(datHuntEvent)
                           vHDurationPerLarva            = tblHuntDurationPerLarva,
                           vmeanHEpisodeDurationPerLarva	= tblMeanEpisodeDurationPerLarva,
                           vHLarvaEventCount             = tblHuntsCounts,
+                          vHLarvaCaptureEventCount      = tblHuntCaptureAttempt,
                           groupHuntEvents               = sum(tblHuntsCounts),
                           meanHuntingEventsPerLarva     = mean(tblHuntsCounts),
                           stdHuntingEventsPerLarva      = sd(tblHuntsCounts),

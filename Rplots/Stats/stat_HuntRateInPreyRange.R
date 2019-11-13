@@ -17,45 +17,6 @@ source("HuntingEventAnalysis_lib.r")
 source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r")
 ##### Do Jags Statistics ###
-modelI="model { 
-qq ~ dnorm(10,0.001)T(0,400)
-tt ~ dnorm(0,0.001)T(0,100)
-
-for(j in 1:NTOT){
-q[j] ~ dnorm(qq,tt) 
-n[j] ~ dpois(q[j])
-}
-}"
-
-modelGEventRatePois="model { 
-q ~ dgamma(1,0.001)
-
-
-for(j in 1:NTOT){
-n[j] ~ dpois(q)
-}
-
-
-}"
-
-modelGEventRateExp="model { 
-q ~ dgamma(1,0.2) #SHape , Rate
-
-for(j in 1:NTOT){
-  n[j] ~  dexp(q)
-
-
-}
-}"
-
-##For a Changing Rate in Low/ High Regime - 
-modelGEventRateWeib="model { 
-q ~ dnorm(10,0.0001)T(0,100)
-
-for(j in 1:NTOT){
-  n[j] ~  dweib(q,rate,shape)
-  }
-}"
 
 
 ## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
@@ -66,7 +27,7 @@ q ~ dunif(0.0,1)
 r ~ dgamma(1,1)
 
 for(j in 1:NTOT){
-  n[j] ~  dnegbin(q,r) ##Model Number Of Hunt Events Per LArvae
+  n[j] ~  dnegbin(q,r) ##Model Number Of Hunt Events Per Larvae
   }
 }"
 
@@ -85,7 +46,7 @@ mcmc_drawEventCountModels <- function(datHuntVsPrey,preyCountRange,strModelFilen
 {
   varnames1=c("n","q","r")
   burn_in=1000;
-  steps=100000;
+  steps=25000;
   plotsamples = 10000
   thin=2;
   chains = 3
@@ -262,27 +223,26 @@ load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",s
 ############ LOAD EVENTS LIst and Fix ####
 ## Warning Set Includes Repeated Test For some LF fish - One In Different Food Density
 ## Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
-strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"  ##Load the merged Frames
+#strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"  ##Load the merged Frames
 message(paste(" Loading Hunt Event List to Analyse... "))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
 
-##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
-datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
-                with(datHuntLabelledEventsSBMerged, ( convertToScoreLabel(huntScore) != "Not_HuntMode/Delete" &
-                                                                 convertToScoreLabel(huntScore) != "Duplicate/Overlapping" &
-                                                                  (endFrame - startFrame) > 200 ) |  ## limit min event dur to 5ms
-                                                                       eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
-
-##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
-#AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
-vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
-vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Exp Less than 4*2*3=24
-##Check For Missing Exp Less than 24 
-
-datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID) & 
-                                                                                !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
+#---Filter Moved into   getLabelledHuntEventsSet() #Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
+  # datHuntLabelledEventsSBMerged_filtered <- datHuntLabelledEventsSBMerged [
+  #                 with(datHuntLabelledEventsSBMerged, ( convertToScoreLabel(huntScore) != "Not_HuntMode/Delete" &
+  #                                                                  convertToScoreLabel(huntScore) != "Duplicate/Overlapping" &
+  #                                                                   (endFrame - startFrame) > 200 ) |  ## limit min event dur to 500ms
+  #                                                                        eventID == 0), ] ## Add the 0 Event, In Case Larva Produced No Events
+  ##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
+  #AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
+   vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411)
+   vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Exp Less than 4*2*3=24
+  # ##Check For Missing Exp Less than 24 
+  # 
+  # datHuntLabelledEventsSBMerged_fixed <- datHuntLabelledEventsSBMerged_filtered[!is.na(datHuntLabelledEventsSBMerged_filtered$groupID) & 
+  #                                                                                 !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
 for (dID in vWeirdDataSetID )
   print(NROW(unique(datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$dataSetID ==  dID ,]$expID)))
 
@@ -292,8 +252,20 @@ for (dID in vWeirdDataSetID )
 
 ## Get Summarized Hunt Results Per Larva ####
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_LIVE)
+   
+##CHECK POINT ## - Hunt Rates between data processors
+##
+## vHLarvaEventCount includes all events regardless of scored outcome or even if they attempted at target --
+## vHLarvaCaptureEventCount includes the count of events that attempted Capture / Either Success or Failed.
+##
+message( sum(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvents), " Vs ",sum(datHuntStat[,"vHLarvaEventCount"]$LL)  )
+message( sum(datFishSuccessRate[datFishSuccessRate$groupID == "NL",]$HuntEvents), " Vs ",sum(datHuntStat[,"vHLarvaEventCount"]$NL)  )
+message( sum(datFishSuccessRate[datFishSuccessRate$groupID == "DL",]$HuntEvents), " Vs ",sum(datHuntStat[,"vHLarvaEventCount"]$DL)  )
+stopifnot(sum(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvents) == sum(datHuntStat[,"vHLarvaEventCount"]$LL))
+stopifnot(NROW(datFishSuccessRate[datFishSuccessRate$groupID == "LL",]$HuntEvents) == NROW(datHuntStat[,"vHLarvaEventCount"]$LL))
 
-
+   
 ## Get Event Counts Within Range  - Along With Total Number of Hunting frames for each Larva##
 ## Added Larva ID to Check for Correlation Through Time of Day - Surrogate as LarvaID;s increased through the day of the experiment from 1-4
 datHuntVsPreyLL <- cbind(datHuntStat[,"vHInitialPreyCount"]$LL , as.numeric(datHuntStat[,"vHLarvaEventCount"]$LL),as.numeric(datHuntStat[,"vHDurationPerLarva"]$LL ),datHuntStat[,"vIDLookupTable"]$LL$larvaID )
@@ -324,7 +296,7 @@ for (i in 1:4)
 print(vEventCount)
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,100)
+preyCntRange <- c(0,1000)
 
 ### Rum The Sampler ###
 drawLL2 <- mcmc_drawEventCountModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventRate.tmp")
@@ -356,6 +328,7 @@ HEventHuntGammaShape_DL <- tail(drawDL2$r[,,schain],plotsamples)
 HEventHuntGammaShape_NE <- tail(drawNE2$r[,,schain],plotsamples);
 HEventHuntGammaShape_NL <- tail(drawNL2$r[,,schain],plotsamples)
 
+## Calculate Hunt Rates ###
 pBW = 0.5
 densHPoissonRate_LL <- density( HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL,bw=pBW)
 densHPoissonRate_LE <- density( HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE,bw=pBW)
@@ -379,7 +352,7 @@ x <- seq(0.01,Plim,0.05)
 
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
-pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf",sep=""),width = 14,height = 7)
+pdf(file= paste(strPlotExportPath,"/stat/fig2A_statComparePoissonHuntRates.pdf",sep=""),width = 14,height = 7)
   ##Now Plot Infered Distributions
   ##Show Alignment with Empirical Distribution of HuntEvent Numbers
   ## Number of Hunt Events Per Larva
@@ -393,7 +366,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf
   
   layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5), 2,6, byrow = TRUE))
   ##Margin: (Bottom,Left,Top,Right )
-  par(mar = c(3.9,4.75,1,1))
+  par(mar = c(4.0,4.75,1,1))
   
   #lineTypeL[1] <- 1
   plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
@@ -405,7 +378,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf
                                    ,bquote( NF["e"] ~ "Model " ) ), 
          col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-  mtext(side = 1,cex=cex, line = lineAxis, "Number of hunt events ")
+  mtext(side = 1,cex=cex, line = lineAxis, "Hunt events / 10 min ")
   mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
   
   
@@ -418,7 +391,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf
                                     ,bquote( LF["e"] ~ "Model " ) ), 
         col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-  mtext(side = 1,cex=cex, line = lineAxis, "Number of hunt events ")
+  mtext(side = 1,cex=cex, line = lineAxis, "Hunt events / 10 min ")
   mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
   
   
@@ -430,7 +403,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf
                                     bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDL)) )
                                     ,bquote( DF["e"] ~ "Model " ) ), 
          col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
-  mtext(side = 1,cex=cex, line = lineAxis, "Number of hunt events ")
+  mtext(side = 1,cex=cex, line = lineAxis, "Hunt events / 10 min ")
   mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
   mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
@@ -457,7 +430,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf
   strCondTags <- c("NE","NL","LE","LL","DE","DL")
   xbarcenters <- boxplot(log10(datHuntVsPreyNE[,2]+1),log10(datHuntVsPreyNL[,2]+1),log10(datHuntVsPreyLE[,2]+1),log10(datHuntVsPreyLL[,2]+1),log10(datHuntVsPreyDE[,2]+1),log10(datHuntVsPreyDL[,2]+1),
           main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2),axes = FALSE,cex=cex,cex.axis=cex  )
-  mtext(side = 2,cex=cex, line =lineAxis, "Number of hunt events " ) #log(N+1)
+  mtext(side = 2,cex=cex, line =lineAxis, "Hunt events / 10 min. " ) #log(N+1)
   vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
   vDat        <- (datHuntStat[,"vHLarvaEventCount"])
   
@@ -487,7 +460,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2_statComparePoissonHuntRates",".pdf
   
   legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")),seg.len=3.5
          , col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=cex,bg="white" )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated hunt rate  (",lambda," )") )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated hunt rate") )  ) #(",lambda," )
   mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
   mtext("E",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 
@@ -562,3 +535,45 @@ plot(f2N) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
 f2L <- fitdist( datHuntVsPreyLL[,2],"nbinom",lower = c(0, 0)) #,start = list(scale = 1, shape = 1)
 plot(f2L) #,start = list(scale = 1, shape = 1) ##Show Diagnostics Of Fitting A EXP using Standard Methods ##
 ## ########
+
+#### NOTES : Old Jags Models Attempted
+
+# modelI="model { 
+# qq ~ dnorm(10,0.001)T(0,400)
+# tt ~ dnorm(0,0.001)T(0,100)
+# 
+# for(j in 1:NTOT){
+# q[j] ~ dnorm(qq,tt) 
+# n[j] ~ dpois(q[j])
+# }
+# }"
+# 
+# modelGEventRatePois="model { 
+# q ~ dgamma(1,0.001)
+# 
+# 
+# for(j in 1:NTOT){
+# n[j] ~ dpois(q)
+# }
+# 
+# 
+# }"
+# 
+# modelGEventRateExp="model { 
+# q ~ dgamma(1,0.2) #SHape , Rate
+# 
+# for(j in 1:NTOT){
+#   n[j] ~  dexp(q)
+# 
+# 
+# }
+# }"
+# 
+# ##For a Changing Rate in Low/ High Regime - 
+# modelGEventRateWeib="model { 
+# q ~ dnorm(10,0.0001)T(0,100)
+# 
+# for(j in 1:NTOT){
+#   n[j] ~  dweib(q,rate,shape)
+#   }
+# }"
