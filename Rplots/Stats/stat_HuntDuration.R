@@ -388,7 +388,7 @@ datHuntDurVsPreyDE <- datHuntDurVsPreyDE[!is.na(datHuntDurVsPreyDE[,1]) & datHun
 
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,100)
+preyCntRange <- c(0,1100)
 plotsamples <- 200
 schain <-1:3
 

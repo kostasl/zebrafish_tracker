@@ -284,6 +284,14 @@ datHuntVsPreyDL <- datHuntVsPreyDL[!is.na(datHuntVsPreyDL[,1]),] ##Remove NA And
 datHuntVsPreyDE <- cbind(datHuntStat[,"vHInitialPreyCount"]$DE , as.numeric(datHuntStat[,"vHLarvaEventCount"]$DE),as.numeric(datHuntStat[,"vHDurationPerLarva"]$DE ),datHuntStat[,"vIDLookupTable"]$DE$larvaID  )
 datHuntVsPreyDE <- datHuntVsPreyDE[!is.na(datHuntVsPreyDE[,1]),] ##Remove NA And High Fliers
 
+### Cut And Examine The data Where There Are Between L and M rotifers Initially
+preyCntRange <- c(0,1100)
+
+datHuntVsPreyLL <- (datHuntVsPreyLL[datHuntVsPreyLL[,1] >= preyCntRange[1] & datHuntVsPreyLL[,1] <= preyCntRange[2], ])
+datHuntVsPreyDL <- (datHuntVsPreyDL[datHuntVsPreyDL[,1] >= preyCntRange[1] & datHuntVsPreyDL[,1] <= preyCntRange[2], ])
+datHuntVsPreyNL <- (datHuntVsPreyNL[datHuntVsPreyNL[,1] >= preyCntRange[1] & datHuntVsPreyNL[,1] <= preyCntRange[2], ])
+
+message("Analysis includes nLL: ",NROW(datHuntVsPreyLL), " nDL:",NROW(datHuntVsPreyDL)," nNL:",NROW(datHuntVsPreyNL))
 
 ## Check Number of Hunt Events For A LarvaID 
 vEventCount <- vector()
@@ -294,12 +302,7 @@ for (i in 1:4)
 }
 print(vEventCount)
 
-### Cut And Examine The data Where There Are Between L and M rotifers Initially
-preyCntRange <- c(0,1010)
-nLL <- NROW(datHuntVsPreyLL[datHuntVsPreyLL[,1] >= preyCntRange[1] & datHuntVsPreyLL[,1] <= preyCntRange[2], ])
-nDL <- NROW(datHuntVsPreyDL[datHuntVsPreyDL[,1] >= preyCntRange[1] & datHuntVsPreyDL[,1] <= preyCntRange[2], ])
-nNL <- NROW(datHuntVsPreyNL[datHuntVsPreyNL[,1] >= preyCntRange[1] & datHuntVsPreyNL[,1] <= preyCntRange[2], ])
-message("Analysis includes nLL: ",nLL, " nDL:",nDL," nNL:",nNL)
+
 ### Rum The Sampler ###
 drawLL2 <- mcmc_drawEventCountModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventRate.tmp")
 drawNL2 <- mcmc_drawEventCountModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventRate.tmp")
@@ -344,6 +347,11 @@ densHPoissonRate_NL <- density( HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL
 muHuntRate_NL <- mean(HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL)
 muHuntRate_LL <- mean(HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL)
 muHuntRate_DL <- mean(HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL)
+
+muHuntRate_NE <- mean(HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE)
+muHuntRate_LE <- mean(HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE)
+muHuntRate_DE <- mean(HEventHuntGammaShape_DE*1/HEventHuntGammaRate_DE)
+
 
 semHuntRate_NL <- sd(HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL)/sqrt(NROW(HEventHuntGammaRate_NL)*NCOL(HEventHuntGammaRate_NL))
 semHuntRate_LL <- sd(HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL)/sqrt(NROW(HEventHuntGammaRate_LL)*NCOL(HEventHuntGammaRate_LL))

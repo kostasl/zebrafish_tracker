@@ -238,6 +238,13 @@ strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ModelCaptureRateAndEffici
 pdf(strPlotName,width=plotWidthIn,height=7,
     title="Hunting Success Baysian Estimation ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
     onefile = TRUE,compress=FALSE) #col=(as.integer(filtereddatAllFrames$expID))
+  outer = FALSE
+  line <- 2.6 ## SubFig Label Params
+  lineGroupLabel <- line - 32 ##pie chart group label
+  cex = 1.4
+  adj  = 0.5
+  padj <- -0
+  las <- 1
 
   ##Margin: (Bottom,Left,Top,Right )
   #par(mar = c(5,6,2,3))
