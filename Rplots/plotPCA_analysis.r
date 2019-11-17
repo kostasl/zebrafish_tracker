@@ -8,7 +8,7 @@
 ########## PCA  - FACTOR ANALYSIS ####
 #######################################
 
-
+source("DataLabelling/labelHuntEvents_lib.r")
 
 ## Used for PCA 
 standardizeHuntData <- function(datCapStat)
@@ -18,12 +18,15 @@ standardizeHuntData <- function(datCapStat)
     Efficiency_norm <- (Efficiency-mean(Efficiency))/sd(Efficiency) 
     HuntPower_norm    <- (HuntPower-mean(HuntPower)) /sd(HuntPower)
     CaptureSpeed_norm <-(CaptureSpeed-mean(CaptureSpeed))/sd(CaptureSpeed)
-    DistSpeed_norm <- (DistanceToPrey*CaptureSpeed -mean(DistanceToPrey*CaptureSpeed))/sd(DistanceToPrey*CaptureSpeed)
-    DistanceToPrey_norm <- (DistanceToPrey-mean(DistanceToPrey))/sd(DistanceToPrey)
     Undershoot_norm    <- (Undershoot-1)/sd(Undershoot)
+    DistanceToPrey_norm <- (DistanceToPrey-mean(DistanceToPrey))/sd(DistanceToPrey)
+    CaptureAttempts_norm <- (CaptureEvents-mean(CaptureEvents)) /sd(CaptureEvents)
     ##Use Centre As The Mean Of The Most Efficient Hunters
     TimeToHitPrey_norm <-   (FramesToHitPrey/G_APPROXFPS - mean(datCapStat[datCapStat$Efficiency >0.5,]$FramesToHitPrey/G_APPROXFPS) ) /sd(FramesToHitPrey/G_APPROXFPS)
+    DistSpeedUnder_norm <- (DistanceToPrey*CaptureSpeed*Undershoot_norm -mean(DistanceToPrey*CaptureSpeed*Undershoot_norm))/sd(DistanceToPrey*CaptureSpeed*Undershoot_norm)
     DistUnder_norm  <- (DistanceToPrey_norm*Undershoot_norm - mean(DistanceToPrey_norm*Undershoot_norm)) /sd(DistanceToPrey_norm*Undershoot_norm)   
+    DistSpeed_norm <- (DistanceToPrey*CaptureSpeed -mean(DistanceToPrey*CaptureSpeed))/sd(DistanceToPrey*CaptureSpeed)
+    SpeedUnder_norm <- (CaptureSpeed*Undershoot_norm -mean(CaptureSpeed*Undershoot_norm))/sd(CaptureSpeed*Undershoot_norm)
     
   })
 }
@@ -159,6 +162,8 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   message(paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), " Coeff. variation:",prettyNum(sd(datHunterStat_norm$Efficiency)/mean(datHunterStat_norm$Efficiency) ,digits=2)))
   
   dev.off()
+  
+  return (pca_Hunter_norm)
 } ##End Of Plot PCA
 
 
@@ -244,14 +249,110 @@ strfilename_model <- "/stat/stat_PCAHuntersBehaviourModelPC1_2_GroupColour_ALL.p
 strfilename_empirical <- "/stat/stat_PCAHuntersBehaviourPC1_2_GroupColour_ALL.pdf"
 
 ######### Show PCA For Hunter / MODEL '#####
-plotPCAPerHunter(datHunterStatModel_norm,strfilename_model)
+pca_Model <- plotPCAPerHunter(datHunterStatModel_norm,strfilename_model)
 ######### Show PCA For Hunter / Empirical '#####
 plotPCAPerHunter(datHunterStat_norm,strfilename_empirical)
 
 
+## PCA Regression ##
+## Choose Optimal Set of Component that yield best prediction of Efficiency
+datHunterStatModel_norm_filt <- datHunterStatModel_norm[datHunterStatModel_norm$CaptureEvents > 5,]
+datPCAHunter_norm <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
+  cbind(Efficiency=Efficiency_norm, #1
+        #Attempts=CaptureAttempts_norm,
+        #HuntPower=HuntPower_norm, #2 ## Does not CoVary With Anyhting 
+        #Group=groupID, #3
+        DistanceToPrey=DistanceToPrey_norm, #4
+        CaptureSpeed_norm, #5
+        Undershoot_norm, #6
+        DistSpeedProd=DistSpeed_norm, #7
+        DistSpeedUnderProd=DistSpeedUnder_norm, #8
+        SpeedUnderhoot=SpeedUnder_norm, #9
+        TimeToHitPrey=TimeToHitPrey_norm #10
+        #Cluster=Cluster#11
+  )                                   } )          )
 
 
 
+### Using Package to Do PCA Regression to Find how much we can explain Efficiency
+require(pls)
+set.seed (2000)
+#datPCAHunter_norm$EfficiencyV <- datHunterStatModel_norm_filt$Efficiency
+pcr_model <- pcr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
+
+summary(pcr_model)
+##Prediction Plot - Very Weak relationship
+predplot(pcr_model,asp=1,line=TRUE)
+
+plot(pcr_model,ncomp = 1:7,plottype = "coef")
+
+plot(datPCAHunter_norm$Efficiency)
+predict(pcr_model,ncomp=7)
+##
+##cite("pls",bib)
+
+plotPCAPerHunter(datHunterStatModel_norm_filt,strfilename_model)
+
+pca_Hunter_norm <- prcomp(datHunterStatModel_norm_filt,scale.=FALSE)
+biplot(pca_Hunter_norm,choices=c(1,4))
+
+
+
+
+
+
+
+
+
+
+
+### Old Way Follows
+
+##Get Eigen Matrix
+Ei_LF_norm=eigen(cov(datPCAHunter_norm))
+pca_Hunter_norm <- prcomp(datPCAHunter_norm,scale.=FALSE)
+biplot(pca_Hunter_norm,choices=c(1,4))
+#Principal Component Analysis and Linear Regression
+p1 <- Ei_LF_norm$vectors[1,1]*datPCAHunter_norm$DistanceToPrey + Ei_LF_norm$vectors[2,1]*datPCAHunter_norm$CaptureSpeed_norm + Ei_LF_norm$vectors[3,1]*datPCAHunter_norm$Undershoot_norm + Ei_LF_norm$vectors[4,1]*datPCAHunter_norm$TimeToHitPrey
+p2 <- Ei_LF_norm$vectors[1,2]*datPCAHunter_norm$DistanceToPrey + Ei_LF_norm$vectors[2,2]*datPCAHunter_norm$CaptureSpeed_norm + Ei_LF_norm$vectors[3,2]*datPCAHunter_norm$Undershoot_norm + Ei_LF_norm$vectors[4,2]*datPCAHunter_norm$TimeToHitPrey
+p3 <- Ei_LF_norm$vectors[1,3]*datPCAHunter_norm$DistanceToPrey + Ei_LF_norm$vectors[2,3]*datPCAHunter_norm$CaptureSpeed_norm + Ei_LF_norm$vectors[3,3]*datPCAHunter_norm$Undershoot_norm + Ei_LF_norm$vectors[4,3]*datPCAHunter_norm$TimeToHitPrey
+p4 <- Ei_LF_norm$vectors[1,4]*datPCAHunter_norm$DistanceToPrey + Ei_LF_norm$vectors[2,4]*datPCAHunter_norm$CaptureSpeed_norm + Ei_LF_norm$vectors[3,3]*datPCAHunter_norm$Undershoot_norm + Ei_LF_norm$vectors[4,4]*datPCAHunter_norm$TimeToHitPrey
+y <- datHunterStatModel_norm$Efficiency_norm
+
+##PCA Reegression
+linRPCA <- lm(formula = y ~ p1 + p2 + p3 + p4 + p1*p2*p3*p4)
+summary(linRPCA)
+
+##PCA Reegression
+linRPCA_M <- lm(formula = y ~ p1 + p2 + p3 + p4 + p1*p2*p3*p4)
+summary(linRPCA)
+
+
+##MakeNew Model
+gammaU <- cbind( Ei_LF_norm$vectors[,1],Ei_LF_norm$vectors[,2],0,0)
+Ei_LF_norm$vectors*gammaU
+plot(linRPCA$coefficients[1]
+     #     +linRPCA$coefficients[2]*p1
+     #     +linRPCA$coefficients[3]*p2
+     #     +linRPCA$coefficients[4]*p3
+     #     +linRPCA$coefficients[5]*p4
+     #     +linRPCA$coefficients[6]*p1*p2
+     +linRPCA$coefficients[9]*p1*p4 
+     ,y)
+
+plot(linRPCA)
+
+
+
+X1 <- datPCAHunter_norm$DistanceToPrey
+X2 <- datPCAHunter_norm$CaptureSpeed_norm
+X3 <- datPCAHunter_norm$Undershoot_norm
+X4 <- datPCAHunter_norm$TimeToHitPrey
+##Std Regression
+linR <- lm(formula = y ~ X1 + X2 + X3 + X4)
+summary(linR)
+
+plot(y,linR$coefficients[1]+ linR$coefficients[2]*X1+ linR$coefficients[3]*X2 + linR$coefficients[3]*X3 + linR$coefficients[4]*X4)
 
 
 
