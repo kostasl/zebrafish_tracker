@@ -257,9 +257,10 @@ plotPCAPerHunter(datHunterStat_norm,strfilename_empirical)
 ## PCA Regression ##
 ## Choose Optimal Set of Component that yield best prediction of Efficiency
 datHunterStatModel_norm_filt <- datHunterStatModel_norm[datHunterStatModel_norm$CaptureEvents > 5,]
-datPCAHunter_norm <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
-  cbind(Efficiency=Efficiency_norm, #1
-        #Attempts=CaptureAttempts_norm,
+##Make Regression With Covariate Products Speed-Distance
+datPCAHunter_norm_Cov <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
+  cbind(Efficiency=Efficiency, #1
+        Attempts=CaptureAttempts_norm, ##Efficiency is fraction of Succsss/Attempts <- Include it so as to remove this variance
         #HuntPower=HuntPower_norm, #2 ## Does not CoVary With Anyhting 
         #Group=groupID, #3
         DistanceToPrey=DistanceToPrey_norm, #4
@@ -272,22 +273,57 @@ datPCAHunter_norm <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL'
         #Cluster=Cluster#11
   )                                   } )          )
 
+## Regression WithOUT Covariate Products Speed-Distance
+datPCAHunter_norm <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
+  cbind(Efficiency=Efficiency, #1
+        Attempts=CaptureAttempts_norm, ##Efficiency is fraction of Succsss/Attempts <- Include it so as to remove this variance
+        #HuntPower=HuntPower_norm, #2 ## Does not CoVary With Anyhting 
+        #Group=groupID, #3
+        DistanceToPrey=DistanceToPrey_norm, #4
+        CaptureSpeed_norm, #5
+        Undershoot_norm, #6
+        #DistSpeedProd=DistSpeed_norm, #7
+        #DistSpeedUnderProd=DistSpeedUnder_norm, #8
+        #SpeedUnderhoot=SpeedUnder_norm, #9
+        TimeToHitPrey=TimeToHitPrey_norm #10
+        #Cluster=Cluster#11
+  )                                   } )          )
 
 
 ### Using Package to Do PCA Regression to Find how much we can explain Efficiency
 require(pls)
 set.seed (2000)
 #datPCAHunter_norm$EfficiencyV <- datHunterStatModel_norm_filt$Efficiency
+pcr_model_prod <- pcr(Efficiency~., data = datPCAHunter_norm_Cov, scale = FALSE, validation = "CV")
 pcr_model <- pcr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
 
+summary(pcr_model_prod)
 summary(pcr_model)
 ##Prediction Plot - Very Weak relationship
-predplot(pcr_model,asp=1,line=TRUE)
+pdf(file= paste(strPlotExportPath,"/stat/efficiency/stat_PCARegPredictEfficiency.pdf",sep=""),width=7,height=7)
+## bottom, left,top, right
+  par(mar = c(5.9,4.3,2,1))
+  predplot(pcr_model_prod,asp=1,ncomp=8,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),main="PC Regression Predicting Efficiency",cex=cex)
+  #predplot(pcr_model,asp=1,ncomp=4,line=TRUE,xlim=c(0,1.0),ylim=c(0,1))
+  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=5) ),xlim=c(0.0,1.0),ylim=c(0,1),col="red",pch=2,cex=cex,asp=1 )
+  legend("bottomright",c("5 Hunt Variables","5+3 Covariates "),pch=c(1,2),col=c("black","red"),cex=cex )
 
-plot(pcr_model,ncomp = 1:7,plottype = "coef")
+dev.off()
+
+  ###The validation results here are root mean squared error of prediction (RMSEP).
+  plot(RMSEP(pcr_model_prod), legendpos = "topright",ylim=c(0.1,0.5))
+  plot(RMSEP(pcr_model), legendpos = "topright",ylim=c(0.1,0.5),add=T)
+  
+  plot(pcr_model, plottype = "scores", comps = 1:3)
+  explvar(pcr_model)
+  explvar(pcr_model_prod)
+  
+  
+plot(pcr_model_prod,ncomp = 1:7,plottype = "coef")
 
 plot(datPCAHunter_norm$Efficiency)
-predict(pcr_model,ncomp=7)
+
+
 ##
 ##cite("pls",bib)
 
@@ -343,17 +379,25 @@ plot(linRPCA$coefficients[1]
 plot(linRPCA)
 
 
-
+###Make/Test a linear Prediction Model
 X1 <- datPCAHunter_norm$DistanceToPrey
 X2 <- datPCAHunter_norm$CaptureSpeed_norm
 X3 <- datPCAHunter_norm$Undershoot_norm
 X4 <- datPCAHunter_norm$TimeToHitPrey
+X5 <- datPCAHunter_norm$Attempts
+y <- datPCAHunter_norm$Efficiency
 ##Std Regression
-linR <- lm(formula = y ~ X1 + X2 + X3 + X4)
+linR <- lm(formula = y ~ X1 + X2 + X3 + X4+X5+X1*X2*X3)
 summary(linR)
 
-plot(y,linR$coefficients[1]+ linR$coefficients[2]*X1+ linR$coefficients[3]*X2 + linR$coefficients[3]*X3 + linR$coefficients[4]*X4)
+plot(y,linR$coefficients[1]+ linR$coefficients[2]*X1+ linR$coefficients[3]*X2 + linR$coefficients[3]*X3 + linR$coefficients[4]*X4 + linR$coefficients[5]*X5 +
+       X1*X2*X3*linR$coefficients[10],
+     xlab="measured Efficiency",ylab="Linear mod. Predicted")
 
+##Add Significant Factors Onaly
+plot(y,linR$coefficients[1]+ linR$coefficients[5]*X5 +
+       X1*X2*X3*linR$coefficients[10],
+     xlab="measured Efficiency",ylab="Linear mod. Predicted")
 
 
 ###Change The Filter Here, Do PCA again and then Locate and plto group Specific
