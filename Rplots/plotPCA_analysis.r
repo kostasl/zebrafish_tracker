@@ -56,6 +56,8 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
           #DistUnderProd=DistUnder_norm, #8
           #SpeedUnderProd=SpeedUnder_norm, #9
           TimeToHitPrey=TimeToHitPrey_norm #10
+          #Attempts=CaptureAttempts_norm
+          
           #Cluster=Cluster#11
     )                                   } )          )
   
@@ -249,7 +251,7 @@ strfilename_model <- "/stat/stat_PCAHuntersBehaviourModelPC1_2_GroupColour_ALL.p
 strfilename_empirical <- "/stat/stat_PCAHuntersBehaviourPC1_2_GroupColour_ALL.pdf"
 
 ######### Show PCA For Hunter / MODEL '#####
-pca_Model <- plotPCAPerHunter(datHunterStatModel_norm,strfilename_model)
+pca_Model <- plotPCAPerHunter(datHunterStatModel_norm_filt,strfilename_model)
 ######### Show PCA For Hunter / Empirical '#####
 plotPCAPerHunter(datHunterStat_norm,strfilename_empirical)
 
