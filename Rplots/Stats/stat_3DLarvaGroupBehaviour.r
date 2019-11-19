@@ -185,7 +185,7 @@ for (i in 1:N)
   
 }
 
-
+  
 
 ##Covariance matrix and its inverse -> the precision matrix
 ## for each Gaussian in the mixture - Single Gaussian  Here -
