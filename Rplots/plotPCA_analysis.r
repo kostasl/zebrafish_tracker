@@ -55,8 +55,8 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
           DistSpeedProd=DistSpeed_norm, #7
           #DistUnderProd=DistUnder_norm, #8
           #SpeedUnderProd=SpeedUnder_norm, #9
-          TimeToHitPrey=TimeToHitPrey_norm #10
-          #Attempts=CaptureAttempts_norm
+          TimeToHitPrey=TimeToHitPrey_norm, #10
+          Attempts=CaptureAttempts_norm
           
           #Cluster=Cluster#11
     )                                   } )          )
@@ -100,8 +100,8 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   ##Distance to Prey Component Projection
   arrows(0,0,scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
          scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[1],lwd=3)
-  text(0.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       1.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[1],labels="Distance")
+  text(1.0*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+       1.2*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[1],labels="Distance")
   ##CaptureSpeed  Component Projection
   arrows(0,0,scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
          scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[2],lwd=3,lty=1)
@@ -122,6 +122,8 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   text(0.8*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
        1.3*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[3],labels="t Prey")
   
+  
+  
   ##DistXSpeed Prod Axis  Component Projection
   #arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="purple",lty=5)
   
@@ -132,6 +134,14 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   text(1.3*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
        1.1*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,
        col=colAxis[4],labels="Efficiency")
+  
+  ##Attempts To Capture   Component Projection
+  arrows(0,0,scaleV*pca_Hunter_norm$rotation[7,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+         scaleV*pca_Hunter_norm$rotation[7,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[5],lty=1,lwd=3)
+  text(0.8*scaleV*pca_Hunter_norm$rotation[7,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+       1.1*scaleV*pca_Hunter_norm$rotation[7,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colAxis[5],labels="Attempts")
+  
+  
   
   ###Heat Map Scale
   #posLeg <- c(3,-3) 
@@ -250,15 +260,17 @@ mergedCapDat <- standardizeHuntData(mergedCapDat) ##Independent Hunt Events
 strfilename_model <- "/stat/stat_PCAHuntersBehaviourModelPC1_2_GroupColour_ALL.pdf"
 strfilename_empirical <- "/stat/stat_PCAHuntersBehaviourPC1_2_GroupColour_ALL.pdf"
 
+
+## PCA Regression ##
+## Choose Optimal Set of Component that yield best prediction of Efficiency
+datHunterStatModel_norm_filt <- datHunterStatModel_norm[datHunterStatModel_norm$CaptureEvents > 5,]
+
 ######### Show PCA For Hunter / MODEL '#####
 pca_Model <- plotPCAPerHunter(datHunterStatModel_norm_filt,strfilename_model)
 ######### Show PCA For Hunter / Empirical '#####
 plotPCAPerHunter(datHunterStat_norm,strfilename_empirical)
 
 
-## PCA Regression ##
-## Choose Optimal Set of Component that yield best prediction of Efficiency
-datHunterStatModel_norm_filt <- datHunterStatModel_norm[datHunterStatModel_norm$CaptureEvents > 5,]
 ##Make Regression With Covariate Products Speed-Distance
 datPCAHunter_norm_Cov <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
   cbind(Efficiency=Efficiency, #1
