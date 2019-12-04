@@ -327,11 +327,13 @@ set.seed (2000)
 pcr_model_prod      <- pcr(Efficiency~., data = datPCAHunter_norm_Cov, scale = FALSE, validation = "CV")
 pcr_model_distSpeed <- pcr(Efficiency~., data = datPCAHunter_norm_distSpeed, scale = FALSE, validation = "CV")
 pcr_model <- pcr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
+plsr_model <- plsr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
 
 summary(pcr_model_prod) ##With All Covariates
 summary(pcr_model_distSpeed) ## With Speed-Dist Covariates
 summary(pcr_model) ## With No Covariates
 
+summary(plsr_model)
 ##Prediction Plot - Very Weak relationship
 pdf(file= paste(strPlotExportPath,"/stat/efficiency/stat_PCARegPredictEfficiency.pdf",sep=""),width=7,height=7)
 ## bottom, left,top, right

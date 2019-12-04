@@ -65,7 +65,7 @@ modelLin <- "model{
   # Prior for beta
   beta[1] ~ dnorm(0,2)
   beta[2] ~  dnorm(1,1/sqrt(sigmaU))T(0.0,2) ##undershoot
-  sigmaU ~ dunif(0.0,0.50)
+  sigmaU ~ dgamma(1, 1) ##dunif(0.0,0.50)
 
   # Prior for the inverse variance
   inv.var   ~  dgamma(5, 2)
