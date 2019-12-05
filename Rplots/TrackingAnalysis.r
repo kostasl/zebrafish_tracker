@@ -66,18 +66,20 @@ source("TrajectoryAnalysis.r")
 source("DataLabelling/labelHuntEvents_lib.r")
 ########
 
+###Replace these With Config
 
-DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
-DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
-G_APPROXFPS              <- 420
-G_THRESHUNTANGLE         <- 19 #Define Min Angle Both Eyes need for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
-G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
-G_MINGAPBETWEENEPISODES  <- 300
-G_MINEPISODEDURATION     <- 100
-PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
+source("config_lib.R")
+#DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
+#DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
+#G_APPROXFPS              <- 420
+#G_THRESHUNTANGLE         <- 19 #Define Min Angle Both Eyes need for a hunting event to be assumed
+#G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+#G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
+#G_MINGAPBETWEENEPISODES  <- 300
+#G_MINEPISODEDURATION     <- 100
+#PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 
-nFrWidth                 <- 50 ## Sliding Window Filter Width
+#nFrWidth                 <- 50 ## Sliding Window Filter Width
 
 
 strDataSetDirectories <- paste(strTrackInputPath, list(
