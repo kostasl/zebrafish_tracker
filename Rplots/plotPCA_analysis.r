@@ -306,21 +306,31 @@ datPCAHunter_norm <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL'
 
 ### Using Package to Do PCA Regression to Find how much we can explain Efficiency
 require(pls)
-set.seed (2000)
+set.seed (20000)
 #datPCAHunter_norm$EfficiencyV <- datHunterStatModel_norm_filt$Efficiency
-pcr_model_prod <- pcr(Efficiency~., data = datPCAHunter_norm_Cov, scale = FALSE, validation = "CV")
-pcr_model <- pcr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
+## PCR Concentrates on the Variance X
+pcr_model_prod <- pcr(Efficiency~., data = datPCAHunter_norm_Cov, scale = FALSE, validation = "CV",segments=10)
+pcr_model <- pcr(Efficiency~ Attempts + DistanceToPrey + CaptureSpeed_norm + Undershoot_norm + TimeToHitPrey ,
+                 data = datPCAHunter_norm, scale = FALSE, validation = "CV",segments=10)
+###Check Out PLSR - Uses Info of Both Efficiency And X - Describes as much as possile of the covariance between Y and X
+plsr_model <- plsr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV",segments=4)
 
 summary(pcr_model_prod)
 summary(pcr_model)
+summary(plsr_model)
+
+plot(pcr_model,plottype="validation",ylim=c(0.1,0.2))
+
+plot(pcr_model_prod,plottype="validation",ylim=c(0.1,0.2))
+
 ##Prediction Plot - Very Weak relationship
 pdf(file= paste(strPlotExportPath,"/stat/efficiency/stat_PCARegPredictEfficiency.pdf",sep=""),width=7,height=7)
 ## bottom, left,top, right
   par(mar = c(5.9,4.3,2,1))
-  predplot(pcr_model_prod,asp=1,ncomp=8,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),main="PC Regression Predicting Efficiency",cex=cex)
+  predplot(pcr_model_prod,asp=1,ncomp=4,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),main="PC Regression Predicting Efficiency",cex=cex)
   #predplot(pcr_model,asp=1,ncomp=4,line=TRUE,xlim=c(0,1.0),ylim=c(0,1))
-  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=5) ),xlim=c(0.0,1.0),ylim=c(0,1),col="red",pch=2,cex=cex,asp=1 )
-  legend("bottomright",c("5 Hunt Variables","5+3 Covariates "),pch=c(1,2),col=c("black","red"),cex=cex )
+  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=2) ),xlim=c(0.0,1.0),ylim=c(0,1),col="red",pch=2,cex=cex,asp=1 )
+  legend("bottomright",c("4/8 components ","2/5 components"),pch=c(1,2),col=c("black","red"),cex=cex )
 
 dev.off()
 
