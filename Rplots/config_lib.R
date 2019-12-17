@@ -79,9 +79,9 @@ pairedPalette["alpha",1:8] <-55 ##Opacity
 colourHPoint <- col2hex(pairedPalette[,c(6,4,2,5,3,1,7)]) ##Transparent For MCMC Samples (Live) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 
 
-pairedPalette["alpha",1:8] <- 5 ##Opacity
+pairedPalette["alpha",1:8] <- 35 ##Opacity
 colourHE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
-pairedPalette["alpha",1:8] <- 5 ##Opacity
+pairedPalette["alpha",1:8] <- 35 ##Opacity
 colourHL <- col2hex(pairedPalette[,c(6,4,2,8)]) ##Transparent For MCMC Samples (Live)
 colourH <- colourHL
 colourP <- c(rgb(0.8,0.01,0.01,0.5),rgb(0.01,0.6,0.01,0.5),rgb(0.01,0.01,0.8,0.5),rgb(0.00,0.00,0.0,0.8)) ##points]
@@ -96,7 +96,7 @@ pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, N
 lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
 
 ## Condition Labels
-strDataLabels <- expression("NF"["s"],"LF"["s"],"DF"["s"],"NF"["e"],"LF"["e"],"DF"["e"] )
+strDataLabels <- expression("NF-s","LF-s","DF-s","NF-e","LF-e","DF-e" )
 
 ## Uses Global assignment operateor <<- to set file locations depending on which system I am running the code on
 setEnvFileLocations <- function(strSetName)

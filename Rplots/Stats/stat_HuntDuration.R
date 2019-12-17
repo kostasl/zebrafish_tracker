@@ -109,7 +109,7 @@ plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpc
   cdfD_N <- ecdf(yDat)
   
   plot(cdfD_N,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0, XLim/G_APPROXFPS),
-       ylim=c(0,1),cex=cex,cex.axis=cex,cex.lab=cex,add=!newPlot)
+       ylim=c(0,1),cex=cex+0.1,cex.axis=cex,cex.lab=cex,add=!newPlot)
   ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
     for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
@@ -124,7 +124,7 @@ plotHuntDurationDistribution_cdf <- function(datHDuration,drawHEvent,lcolour,lpc
       lines(x[1:NROW(cdfM[x])]/G_APPROXFPS,cdfM[x],col=lcolour,lty=lty) #add=TRUE,
     }
   }
-  plot(cdfD_N ,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim/G_APPROXFPS),ylim=c(0,1),cex=cex,cex.axis=cex,cex.lab=cex,add=TRUE)
+  plot(cdfD_N ,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim/G_APPROXFPS),ylim=c(0,1),cex=cex+0.1,cex.axis=cex,cex.lab=cex,add=TRUE)
   
 }
 
@@ -477,6 +477,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
   adj  = 2.5
   padj <- -7.5
   las <- 1
+  plotsamples = 30
   
   layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5), 2,6, byrow = TRUE))
   ##Margin: (Bottom,Left,Top,Right )
@@ -485,10 +486,10 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
   plotHuntDurationDistribution_cdf(datHuntDurVsPreyNE,drawDurNE,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
   plotHuntDurationDistribution_cdf(datHuntDurVsPreyNL,drawDurNL,colourHL[1],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
   legend("bottomright",legend = c(  expression (),
-                                    bquote(NF["s"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyNE))  )
-                                    ,bquote(NF["s"] ~"Model " ), 
-                                    bquote(NF["e"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyNL)) )
-                                    ,bquote( NF["e"] ~ "Model " ) ), 
+                                    bquote("NF-s" ~ 'Data #' ~ .(NROW(datHuntDurVsPreyNE))  )
+                                    ,bquote("NF-s" ~"Model " ), 
+                                    bquote("NF-e" ~ 'Data #' ~ .(NROW(datHuntDurVsPreyNL)) )
+                                    ,bquote( "NF-e" ~ "Model " ) ), 
          col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("F",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec)")
@@ -497,10 +498,10 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
   plotHuntDurationDistribution_cdf(datHuntDurVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
   plotHuntDurationDistribution_cdf(datHuntDurVsPreyLL,drawDurLL,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
   legend("bottomright",legend = c(  expression (),
-                                    bquote(LF["s"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyLE))  )
-                                    ,bquote(LF["s"] ~"Model " ), 
-                                    bquote(LF["e"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyLL)) )
-                                    ,bquote( LF["e"] ~ "Model " ) ),  
+                                    bquote("LF-s" ~ 'Data #' ~ .(NROW(datHuntDurVsPreyLE))  )
+                                    ,bquote("LF-s" ~"Model " ), 
+                                    bquote("LF-e" ~ 'Data #' ~ .(NROW(datHuntDurVsPreyLL)) )
+                                    ,bquote( "LF-e" ~ "Model " ) ),  
          col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("G",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec)")
@@ -509,10 +510,10 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
   plotHuntDurationDistribution_cdf(datHuntDurVsPreyDE,drawDurDE,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
   plotHuntDurationDistribution_cdf(datHuntDurVsPreyDL,drawDurDL,colourHL[3],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE)
   legend("bottomright",legend = c(  expression (),
-                                    bquote(DF["s"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyDE))  )
-                                    ,bquote(DF["s"] ~"Model " ), 
-                                    bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntDurVsPreyDL)) )
-                                    ,bquote( DF["e"] ~ "Model " ) ),  
+                                    bquote("DF-s" ~ 'Data #' ~ .(NROW(datHuntDurVsPreyDE))  )
+                                    ,bquote("DF-s" ~"Model " ), 
+                                    bquote("DF-e" ~ 'Data #' ~ .(NROW(datHuntDurVsPreyDL)) )
+                                    ,bquote( "DF-e" ~ "Model " ) ),  
          col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("H",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec)")
