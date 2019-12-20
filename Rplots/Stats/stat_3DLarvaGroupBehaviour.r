@@ -272,12 +272,6 @@ datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_First
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 
-##Merge Hunt Power To Hunt-Capture Variables 
-datMergedCapAndSuccess_LF <- merge(x=datCapture_LF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
-datMergedCapAndSuccess_NF <- merge(x=datCapture_NF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
-datMergedCapAndSuccess_DF <- merge(x=datCapture_DF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
-
-## Merge 
 
 ###Load PreCalculated Model Results ###
 load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
@@ -288,14 +282,24 @@ vexpID <- list(LF = datTrackedEventsRegister[datCapture_LL$RegistarIdx,]$expID,
                NF=datTrackedEventsRegister[datCapture_NL$RegistarIdx,]$expID,
                DF=datTrackedEventsRegister[datCapture_DL$RegistarIdx,]$expID)
 
+
 ## Merge EXP ID
 ## Add Exp ID Column - Signifying Which Larvae Executed the Capture Success Hunt- 
-datCapture_LF_wExpID <- cbind(datMergedCapAndSuccess_LF,expID=vexpID$LF,groupID=2)
-datCapture_NF_wExpID <- cbind(datMergedCapAndSuccess_NF,expID=vexpID$NF,groupID=3)
-datCapture_DF_wExpID <- cbind(datMergedCapAndSuccess_DF,expID=vexpID$DF,groupID=1)
+datCapture_LF_wExpID <- cbind(datCapture_LL,expID=vexpID$LF,groupID=2)
+datCapture_NF_wExpID <- cbind(datCapture_NL,expID=vexpID$NF,groupID=3)
+datCapture_DF_wExpID <- cbind(datCapture_DL,expID=vexpID$DF,groupID=1)
 datCapture_ALL_wExpID <- rbind(datCapture_LF_wExpID,datCapture_NF_wExpID,datCapture_DF_wExpID)
+
+
+##Merge Hunt Power To Hunt-Capture Variables 
+datMergedCapAndSuccess_LF <- merge(x=datCapture_LF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+datMergedCapAndSuccess_NF <- merge(x=datCapture_NF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+datMergedCapAndSuccess_DF <- merge(x=datCapture_DF_wExpID,y=datFishSuccessRate,by="expID",all.x=TRUE)
+
 ###Empirical Distribution
 datHuntLarvaStat <- aggregate(datCapture_ALL_wExpID,by=list(datCapture_ALL_wExpID$expID),mean)
+
+
 
 ##
 ##
@@ -306,11 +310,17 @@ nthin <- 5
 str_vars <- c("mu","cov","x_rand","muG","tG","NLarv","Lid") #Mixture Model
 ##Make Serial Larvae ID, that links each hunt event to an individual larva 
 ## Maintain RegIDx so we trace Back
-ldata_LF <- with(datCapture_LF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID)) ) }) ##Live fed
-ldata_NF <- with(datCapture_NF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
-ldata_DF <- with(datCapture_DF_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
-ldata_ALL <-with(datCapture_ALL_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ),Gid=groupID ,N=NROW(expID),NLarv=NROW(unique(expID))  ) }) ##Live fed list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
+ldata_LF <- with(datMergedCapAndSuccess_LF, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID)) ) }) ##Live fed
+ldata_NF <- with(datMergedCapAndSuccess_NF, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
+ldata_DF <- with(datMergedCapAndSuccess_DF, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=NROW(unique(expID))  ) }) ##Live fed
+#ldata_ALL <-with(datCapture_ALL_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ),Gid=groupID ,N=NROW(expID),NLarv=NROW(unique(expID))  ) }) ##Live fed list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
 
+
+##Save for Ready to Eat Public Comsumption
+saveRDS(ldata_LF,file=paste0(strDataExportDir,"pubDat/huntEpisodeDataMergedWithLarvalSuccess_LF.rds") )
+saveRDS(ldata_NF,file=paste0(strDataExportDir,"pubDat/huntEpisodeDataMergedWithLarvalSuccess_NF.rds") )
+saveRDS(ldata_DF,file=paste0(strDataExportDir,"pubDat/huntEpisodeDataMergedWithLarvalSuccess_DF.rds") )
+saveRDS(datHuntLarvaStat,file=paste0(strDataExportDir,"pubDat/LarvaEmpiricalMeanHuntBehaviour.rds"))
 
 ### RUN JAGS MODEL ###
     jags_model_LF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_LF, 
@@ -415,7 +425,7 @@ plot(density(tail(draw_LF$muG[,2,,1],1000) ),type='l')
 for (c in schain)
   lines(density(tail(draw_LF$muG[,2,,c],1000) ),col="red")
 
-
+### Compare Group Model To Density Obtain through Mean Estimated Behaviour For Each Larva
 ### Obtain Estimated Mean Values For Each Larva & Plot Group Population
 ##Plot Distance Density
 plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey",ylim=c(0,6)) ##Mean Group Undershoot From Mean Of Each Larva

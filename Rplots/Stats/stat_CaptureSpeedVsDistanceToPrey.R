@@ -13,7 +13,7 @@
 
 ### Stat Model on Capture speed vs undershoot
 library(rjags)
-library(runjags)
+#library(runjags)
 
 source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
@@ -111,8 +111,48 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   
 }
 
+###Added Here to Cluster Based CaptureBouts Based on 2D model
+### TODO: Make Function TO Assign Cluster Label To Capture Data
+## Cobines the clustering with the first Bout Points And Save into New RDS files 
+assignCaptureCluster <- function(lFirstBoutPoints,draw_F)
+{
+  #### Setup Label INdicating Cluster Membership vis point type
+  minClusterLikelyhood <- 0.95 
+  steps <- NROW(draw_F$mID[1,,1])
+  nsamples <- min(steps,1)
+  ch <- 2 ##Chain Select
+  
+  ### Capture Speed vs Distance to prey ###
+  datCapture_F <- data.frame( cbind(DistanceToPrey  = lFirstBoutPoints$NL[,"DistanceToPrey"],
+                                     FramesToHitPrey = (lFirstBoutPoints$NL[,"ColisionFrame"]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"]),
+                                     CaptureSpeed    = lFirstBoutPoints$NL[,"CaptureSpeed"],
+                                     PeakSpeedDistance = lFirstBoutPoints$NL[,"PeakSpeedDistance"],
+                                     Undershoot=lFirstBoutPoints$NL[,"Turn"]/lFirstBoutPoints$NL[,"OnSetAngleToPrey"],
+                                     RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],
+                                     Validated= lFirstBoutPoints$NL[,"Validated"] ) )
+  
+  ##Select Validated Only
+  datCapture_F <- datCapture_F[datCapture_F$Validated == 1, ]
+  
+
+  
+  lClustScore_F <- list(fastClustScore=apply(draw_F$mID[,(steps-nsamples):nsamples,ch],1,mean) ,
+                        RegistarIdx=datCapture_F$RegistarIdx,
+                        pchL=rep_len(1,NROW(datCapture_F))) ##The Symbol used for plotting Slow
+  
+  lClustScore_F$pchL[lClustScore_F$fastClustScore > minClusterLikelyhood] <- 16 ##Fast Cluster Symbol (Also Used for Identifying Fast/Slow)
+  datCapture_F <- cbind(datCapture_F,Cluster=factor(labels=c("slow","fast"),lClustScore_F$pchL) ) ##SetUp Factor for Labelling Fast Slow
+  
+  #### Save New data of hunting stats - now including the cluster classification -
+  #saveRDS(datCapture_NL,file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_2Dclustered",".rds",sep="")) 
+  message("Added cluster ID to capture data")
+  return(datCapture_F)
+}
 
 
+
+
+####
 
 strMainPDFFilename <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeedVsDistToPrey.pdf"; ## Used Fig 4
 strModelVarPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
@@ -149,11 +189,11 @@ datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsS
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
 steps <- 5500 #105500
 str_vars <- c("mu","rho","sigma","cov","x_rand","mID","mStrikeCount","pS","RegistarIdx")
-ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
-ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
+ldata_LF <- list(c=c(datDistanceVsStrikeSpeed_LL),N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
+ldata_NF <- list(c=c(datDistanceVsStrikeSpeed_NL),N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
 ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
 ldata_ALL <- list(c=datDistanceVsStrikeSpeed_ALL,N=NROW(datDistanceVsStrikeSpeed_ALL)) ##Dry fed
-
+#saveRDS(ldata_ALL,file=paste0(strDataExportDir,"pubDat/LarvaEmpiricalMeanHuntBehaviour.rds"))
 
 
 ### RUN MODEL ###
@@ -183,16 +223,19 @@ draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
 save(draw_LF,draw_NF,draw_DF,file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 
 
+##Update The Capture  Bout Data list with the new clustering (huntEpisodeAnalysis_FirstBoutData)
+drawClust <- list(NF=draw_NF,LF=draw_LF,DF=draw_DF)
+makeCaptureClusteredData(lFirstBoutPoints,drawClust)
 
 
 
 
 ### Load Pre Calc Results
-load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
+#load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 #### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
 
 ## Load COvariance (dLLb_rhoSD) - Calculated by 3D model in stat_CaptureSpeedVsUndershootAndDistance ##
-load(file = paste0(strDataExportDir,"stat_CaptSpeedVsDistance_Covariance_RJags.RData"))
+#load(file = paste0(strDataExportDir,"stat_CaptSpeedVsDistance_Covariance_RJags.RData"))
 
 
 #######################################################
@@ -200,8 +243,6 @@ load(file = paste0(strDataExportDir,"stat_CaptSpeedVsDistance_Covariance_RJags.R
 ####
 ########################################################
 ###        Distance Vs Capture speed               ###
-
-
 densNL <-  kde2d(datDistanceVsStrikeSpeed_NL$DistanceToPrey, datDistanceVsStrikeSpeed_NL$CaptureSpeed,n=80)
 densLL <-  kde2d(datDistanceVsStrikeSpeed_LL$DistanceToPrey, datDistanceVsStrikeSpeed_LL$CaptureSpeed,n=80)
 densDL <-  kde2d(datDistanceVsStrikeSpeed_DL$DistanceToPrey, datDistanceVsStrikeSpeed_DL$CaptureSpeed,n=80)
@@ -251,7 +292,6 @@ zDL <- kde2d(c(tail(draw_DF$mu[,1,,],ntail)), c(tail(draw_DF$mu[,2,,],ntail)),n=
 
 
 ## Check out the covar coeffient , compare estimated densities
-
 dLLb_rho_slow <-density(tail(draw_LF$rho[1,,1],ntail),kernel="gaussian",bw=0.05)
 dNLb_rho_slow <-density(tail(draw_NF$rho[1,,1],ntail),kernel="gaussian",bw=0.05)
 dDLb_rho_slow <-density(tail(draw_DF$rho[1,,1],ntail),kernel="gaussian",bw=0.05)
@@ -263,9 +303,9 @@ dDLb_rho_fast <-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 #dALLb_rho <-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 ##dALLb_rho[[2]] <-density(tail(draw_ALL$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 
-dLLb_rho[[2]]<-density(tail(draw_LF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
-dNLb_rho[[2]]<-density(tail(draw_NF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
-dDLb_rho[[2]]<-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.1)
+dLLb_rho <-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
+dNLb_rho <-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
+dDLb_rho <-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
 #dALLb_rho[[2]]<-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
 
 
@@ -290,102 +330,128 @@ dNLb_sigmaC<-density(tail(draw_NF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 #dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
+
+
+
+###MAIN FIgure 4 (ex 5) in MS
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPrey_NF.pdf",sep=""),width=7,height=7)
+  
+  p_NF = ggplot( datCapture_NL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster))  +
+    ggtitle(NULL) +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),
+          axis.text = element_text(family="Helvetica",face="bold", size=16),
+          plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    fill_palette("jco")
+
+  p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+    scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") )
+  
+  contour_fast <- getFastClusterGrid(draw_NF) ## Draw the mvtnorm model fit contour
+  contour_slow <- getSlowClusterGrid(draw_NF)
+  p_NF = p_NF +
+    geom_contour(contour_fast, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
+    geom_contour(contour_slow, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
+    scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.8)) +
+    scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 80)) 
+  #theme_linedraw()
+  
+  ggMarginal(p_NF, x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=FALSE) 
+  
+dev.off()
+
+
+
+
 pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,
     title="A Gaussian clustering statistical model for capture strike speed and distance to prey")
-
-outer = FALSE
-line = 2.8 ## SubFig Label Params
-lineAxis = 2.7
-lineTitle = 2.7
-lineXAxis = 3.0
-cex = 1.4
-adj  = 1.0
-padj <- -8.0
-las <- 1
-nContours <- 5
-npchain<-3
-
-layout(matrix(c(1,1,2,2,3,3,4,4,5,5,6,6),2,6, byrow = TRUE))
-##Margin: (Bottom,Left,Top,Right )
-#par(mar = c(5,4.5,3,1))
-par(mar = c(4.5,4.7,2,1))
-
-plotCaptureSpeedFit(datDistanceVsStrikeSpeed_NL,draw_NF,1,npchain)
-mtext("B",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-#title(main="Model capture Speed")
-plotCaptureSpeedFit(datDistanceVsStrikeSpeed_LL,draw_LF,2,npchain)
-mtext("C",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-plotCaptureSpeedFit(datDistanceVsStrikeSpeed_DL,draw_DF,3,npchain)
-mtext("D",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-
-
-#### ## Probability Density of Strike capture ####
-plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
-     cex=cex,cex.axis=cex )
-lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
-lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
-#lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
-mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high speed capture  ["~p["s"]~"]" ) ) ,cex.main=cex )
-mtext(side = 2,cex=cex, line = lineAxis, expression("Density  function" ))
-
-mtext("E",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-#### ## Probability Density of Strike capture ####
-legend("topleft",
-       legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
-                  #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
-       ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
-
-
-
-## Plot the mean of the 2D Models Cluster ##
-ntail <- 2000
-plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1],
-     xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex )
-#points(tail(draw_NF$mu[2,1,,1],ntail),tail(draw_NF$mu[2,2,,1],ntail),col=colourH[1],pch=pchL[1], xlim=c(0,0.5),ylim=c(10,50),ylab=NA,xlab=NA )
-points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
-#points(tail(draw_LF$mu[2,1,,1],ntail),tail(draw_LF$mu[2,2,,1],ntail),col=colourH[2],pch=pchL[2])
-points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
-#points(tail(draw_DF$mu[2,1,,1],ntail),tail(draw_DF$mu[2,2,,1],ntail),col=colourH[3],pch=pchL[3])
-
-#points(tail(draw_ALL$mu[,1,,1],ntail),tail(draw_ALL$mu[,2,,1],ntail),col=colourH[4],pch=pchL[4])
-
-mtext(side = 1,cex=cex, line = lineXAxis, expression("Distance to prey  ["~delta~"] (mm)" ))
-mtext(side = 2,cex=cex, line = lineAxis, expression("Capture speed (mm/sec)  " ))
-mtext("F",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-
-contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
-contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[3],lty=2)
-contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
-contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
-
-
-legend("topleft",
-       legend=c(  expression (),
-                  bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
-                  bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
-                  bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
-                  #bquote(All ~ '#' ~ .(ldata_ALL$N)  )
-                  ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       pch=pchL, col=colourLegL,cex=cex)
-
-
-
-## Plot COvariance - Calculated by 3D model in stat_CaptureSpeedVsUndershootAndDistance
-plot(dNLb_rhoSD,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
-     main=NA, #"Density Inference of Turn-To-Prey Slope ",
-     xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
-lines(dLLb_rhoSD_fast,col=colourLegL[2],lwd=3,lty=2)
-lines(dDLb_rhoSD,col=colourLegL[3],lwd=3,lty=3)
-mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
-mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
-mtext(side = 3,cex=cex, line = lineTitle-3, expression("Capture distance and speed "  ))
-mtext("G",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  
+  outer = FALSE
+  line = 2.8 ## SubFig Label Params
+  lineAxis = 2.7
+  lineTitle = 2.7
+  lineXAxis = 3.0
+  cex = 1.4
+  adj  = 1.0
+  padj <- -8.0
+  las <- 1
+  nContours <- 5
+  npchain<-3
+  
+  layout(matrix(c(1,1,2,2,3,3,4,4,5,5,6,6),2,6, byrow = TRUE))
+  ##Margin: (Bottom,Left,Top,Right )
+  #par(mar = c(5,4.5,3,1))
+  par(mar = c(4.5,4.7,2,1))
+  
+  plotCaptureSpeedFit(datDistanceVsStrikeSpeed_NL,draw_NF,1,npchain)
+  mtext("B",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  #title(main="Model capture Speed")
+  plotCaptureSpeedFit(datDistanceVsStrikeSpeed_LL,draw_LF,2,npchain)
+  mtext("C",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  plotCaptureSpeedFit(datDistanceVsStrikeSpeed_DL,draw_DF,3,npchain)
+  mtext("D",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  
+  
+  #### ## Probability Density of Strike capture ####
+  plot(density(draw_NF$pS,pBw=0.05),col=colourLegL[1],xlim=c(0,1),ylim=c(0.4,10),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
+       cex=cex,cex.axis=cex )
+  lines(density(draw_LF$pS),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(draw_DF$pS),col=colourLegL[3],lwd=3,lty=3)
+  #lines(density(draw_ALL$pS),col=colourLegL[4],lwd=3,lty=4)
+  mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Probability of high speed capture  ["~p["s"]~"]" ) ) ,cex.main=cex )
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Density  function" ))
+  
+  mtext("E",at="topleft",outer=F,side=2,col="black",font=2,  las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  #### ## Probability Density of Strike capture ####
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+                    bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+                    bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                    #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
+         ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+  
+  
+  
+  ## Plot the estimated distribution of means for each of the Clusters ##
+  ntail <- 2000
+  plot(tail(draw_NF$mu[,1,,],ntail),tail(draw_NF$mu[,2,,],ntail),col=colourHPoint[1],pch=pchL[1],
+       xlim=c(0,0.5),ylim=c(0,50),ylab=NA,xlab=NA,cex=cex,cex.axis=cex )
+  points(tail(draw_LF$mu[,1,,],ntail),tail(draw_LF$mu[,2,,],ntail),col=colourHPoint[2],pch=pchL[2])
+  points(tail(draw_DF$mu[,1,,],ntail),tail(draw_DF$mu[,2,,],ntail),col=colourHPoint[3],pch=pchL[3])
+  mtext(side = 1,cex=cex, line = lineXAxis, expression("Distance to prey (mm)" ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Capture speed (mm/sec)  " ))
+  mtext("F",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  ##Add Density Contours On Top
+  contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col="black",lwd=1)
+  contour(zDL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[3],lty=2)
+  contour(zLL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[2],lty=2)
+  contour(zNL, drawlabels=FALSE, nlevels=nContours,add=TRUE,col=colourLegL[1],lty=2)#contour(zALL, drawlabels=FALSE, nlevels=nContours,add=TRUE)
+  
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF["e"] ~ '#' ~ .(ldata_NF$N)  ),
+                    bquote(LF["e"] ~ '#' ~ .(ldata_LF$N)  ),
+                    bquote(DF["e"] ~ '#' ~ .(ldata_DF$N)  )
+                    #bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+                    ), #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         pch=pchL, col=colourLegL,cex=cex)
+  
+  
+  
+  ## Plot COvariance - Calculated by 3D model in stat_CaptureSpeedVsUndershootAndDistance
+  plot(dNLb_rho,col=colourLegL[1],xlim=c(-1.0,1),lwd=3,lty=1,ylim=c(0,4),
+       main=NA, #"Density Inference of Turn-To-Prey Slope ",
+       xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(dLLb_rho_fast,col=colourLegL[2],lwd=3,lty=2)
+  lines(dDLb_rho,col=colourLegL[3],lwd=3,lty=3)
+  mtext(side = 1,cex=cex, line = lineXAxis, expression("Covariance coefficient"  ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+  mtext(side = 3,cex=cex, line = lineTitle-3, expression("Capture distance and speed "  ))
+  mtext("G",at="topleft",outer=F,side=2,col="black",font=2,     las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 
 dev.off()
 
@@ -524,7 +590,7 @@ mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
   mtext(side = 3,cex=cex, line = lineAxis-2, expression("Fast") )
   mtext("B",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
   
-  dev.off()
+dev.off()
 
 
 
@@ -658,12 +724,12 @@ plot(datDistanceVsStrikeSpeed_LL$CaptureDuration,datDistanceVsStrikeSpeed_LL$Cap
 ## The distance Travelled at which peak speed was reached (Paper on other fish larvae suggest this is near the prey)
 ## Constant Accelleration - Shown By linear Rel Of Spped To Distance - In Fast Captures
 ## THUS Fast Captures Need Distance To Develop !!
-pdf(file= paste(strPlotExportPath,"/stat/stat_Accelleration_SpeedVsRunDistanceToPeakSpeed_DF.pdf",sep=""),width=7,height=14)
-layout(matrix(c(1,2,3),3,1, byrow = TRUE))
+pdf(file= paste(strPlotExportPath,"/stat/stat_Accelleration_SpeedVsRunDistanceToPeakSpeed_ALL.pdf",sep=""),width=9,height=3)
+layout(matrix(c(1,2,3),1,3, byrow = TRUE))
 par(mar = c(4.0,4.7,2,1))
-  plot( lFirstBoutPoints$LL[,"PeakSpeedDistance"],lFirstBoutPoints$LL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="Peak Speed and Distance to aquire it (LF)")
-  plot( lFirstBoutPoints$NL[,"PeakSpeedDistance"],lFirstBoutPoints$NL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="NF")
-  plot( lFirstBoutPoints$DL[,"PeakSpeedDistance"],lFirstBoutPoints$DL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="DF")
+  plot( lFirstBoutPoints$LL[,"PeakSpeedDistance"],lFirstBoutPoints$LL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="Speed vs Distance (LF)",cex=cex)
+  plot( lFirstBoutPoints$NL[,"PeakSpeedDistance"],lFirstBoutPoints$NL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="NF",cex=cex)
+  plot( lFirstBoutPoints$DL[,"PeakSpeedDistance"],lFirstBoutPoints$DL[,"CaptureSpeed"],xlim=c(0,1.5),ylim=c(0,70),ylab="Speed",xlab="Dist Travelled to Peak Speed",main="DF",cex=cex)
 
 dev.off()
 

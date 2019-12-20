@@ -41,8 +41,8 @@ tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) )
 
 ##############################################
   ## Success / Strike Non Strike Percentage ##
-  strPlotName = paste(strPlotExportPath,"/fig5-HuntEventsLabelling-Strike-NoStrike.pdf",sep="")
-  pdf(strPlotName,width=9.2,height=3.6,bg="white",
+  strPlotName = paste(strPlotExportPath,"/fig4-HuntEventsLabelling-Strike-NoStrike_NF.pdf",sep="")
+  pdf(strPlotName,width=5,height=5,bg="white",
       compress=FALSE,onefile = FALSE, 
       title="Breakdown on Fast Vs Slow for Success Vs Failed hunt events - Manual data labels ") #col=(as.integer(filtereddatAllFrames$expID))
   
@@ -54,38 +54,15 @@ tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) )
   las <- 1
   lineGroupLabel <- line -  23##pie chart group label
   
-  layout(matrix(c(1,2,3,4,5,6), 1, 3, byrow = TRUE))
+  #layout(matrix(c(1,2,3,4,5,6), 1, 3, byrow = TRUE))
   ##c(bottom, left, top, right) 
   par(mar = c(3.0,3.5,3,3.2))
   
   colourL <- rev(brewer.pal(4,'Paired'))
   
   pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"NL",NA ) ##colourLegE[1]
-  mtext(c(expression(),  bquote("NF ")),
+  mtext(c(expression(),  bquote(" ")),
         at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
-  
-  
-  #mtext("A",at="topleft", side=3,col="black",font=2,las=0,line=0,padj=0,adj=0,cex=cex)
-  
-  pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"LL",NA)
-  mtext(c(expression(),  bquote("LF ")),
-        at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
-  
-  #mtext("Proportions of labelled capture swim speed  per hunting outcome",
-  #      at="top", outer=outer,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
-  
-  pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"DL",NA)
-  mtext(c(expression(),  bquote("DF ")),
-        at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
-  
-  ### Strike  Vs Non Strike For Capture Swimss
-  
-  #pieChartLabelledStrikeBreakDown(tblResSB,"NL",c("black","white") )
-  #mtext("Overall proportion of capture swim labels ",
-  #      at="top",  outer=outer,side=3,col="black",font=2,las=las,line=line-3,padj=padj,adj=adj-4.0,cex=cex)
-  
-  #pieChartLabelledStrikeBreakDown(tblResSB,"LL",c("black","white"))
-  #pieChartLabelledStrikeBreakDown(tblResSB,"DL",c("black","white"))
   
   par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), mar=c(0, 0, 0, 0), new=TRUE)
   plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
@@ -97,6 +74,44 @@ tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) )
          merge=FALSE,horiz=F,xpd=TRUE)
   
   ##Bottom Row
+  
+  dev.off()
+  #  ############ END OF
+  
+  #mtext("A",at="topleft", side=3,col="black",font=2,las=0,line=0,padj=0,adj=0,cex=cex)
+  ## Success / Strike Non Strike Percentage ##
+  strPlotName = paste(strPlotExportPath,"/fig4-HuntEventsLabelling-Strike-NoStrike_LF.pdf",sep="")
+  pdf(strPlotName,width=5,height=5,bg="white",
+      compress=FALSE,onefile = FALSE, 
+      title="Breakdown on Fast Vs Slow for Success Vs Failed hunt events - Manual data labels ") #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.0,3.5,3,3.2))
+  pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"LL",NA)
+  mtext(c(expression(),  bquote(" ")),
+        at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
+  
+  dev.off()
+  #  ############ END OF
+  
+  #mtext("Proportions of labelled capture swim speed  per hunting outcome",
+  #      at="top", outer=outer,side=3,col="black",font=2,las=las,line=line-2,padj=padj,adj=adj,cex=cex)
+  strPlotName = paste(strPlotExportPath,"/fig4-HuntEventsLabelling-Strike-NoStrike_DF.pdf",sep="")
+  pdf(strPlotName,width=5,height=5,bg="white",
+      compress=FALSE,onefile = FALSE, 
+      title="Breakdown on Fast Vs Slow for Success Vs Failed hunt events - Manual data labels ") #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.0,3.5,3,3.2))
+  pieChartLabelledSuccessVsFails_StrikeBreakDown(tblResSB,"DL",NA)
+  mtext(c(expression(),  bquote(" ")),
+        at="bottom",  outer=F,side=3,col="black",font=2,las=las,line=lineGroupLabel,padj=padj,adj=adj,cex=cex)
+  dev.off()
+  ### Strike  Vs Non Strike For Capture Swimss
+  
+  #pieChartLabelledStrikeBreakDown(tblResSB,"NL",c("black","white") )
+  #mtext("Overall proportion of capture swim labels ",
+  #      at="top",  outer=outer,side=3,col="black",font=2,las=las,line=line-3,padj=padj,adj=adj-4.0,cex=cex)
+  
+  #pieChartLabelledStrikeBreakDown(tblResSB,"LL",c("black","white"))
+  #pieChartLabelledStrikeBreakDown(tblResSB,"DL",c("black","white"))
+  
   #legend(x=-1.08,y=-0.1,legend=c("Fast swim","Slow swim"),title=NA,
   #       fill=c("black","white"), #c(colourLegL[1],colourL[2]),
   #       col = c(colourLegL[1],"white"),

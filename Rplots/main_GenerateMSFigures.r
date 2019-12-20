@@ -134,9 +134,9 @@ lFirstBoutPoints <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_Fi
 load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 
 #### LOAD Capture First-Last Bout hunting that include the cluster classification - (made in stat_CaptureSpeedVsDistanceToPrey)
-datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_clustered.rds",sep="")) 
-datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
-datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
+datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_2Dclustered.rds",sep="")) 
+datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_2Dclustered.rds",sep="")) 
+datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_2Dclustered.rds",sep="")) 
 
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
@@ -299,7 +299,7 @@ dev.off()
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_meanDistanceOfFastCapture.pdf",sep=""),width=7,height=7)
   par(mar = c(3.9,4.7,1,1))
   #### ## Probability Density of Strike capture ####
-  plot(density(tail(draw_NF$mu[2,1,,1],1000)),col=colourLegL[1],xlim=c(0,0.8),ylim=c(0.0,35),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
+  plot(density(tail(draw_NF$mu[2,1,,1],1000)),col=colourLegL[1],xlim=c(0,0.6),ylim=c(0.0,35),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
        cex=cex,cex.axis=cex )
   lines(density(tail(draw_LF$mu[2,1,,1],1000)),col=colourLegL[2],lwd=3,lty=2)
   lines(density(tail(draw_DF$mu[2,1,,1],1000)),col=colourLegL[3],lwd=3,lty=3)
