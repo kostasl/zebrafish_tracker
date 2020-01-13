@@ -23,7 +23,7 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
   xquant <- seq(0,70,1)
   XLIM <- c(0,60)
   YLIM <- c(0,0.15)
-  pdistBW <- 2 ## mm/sec
+  pdistBW <- 5 ## mm/sec
   strKern <- "gaussian"
   #ntail <- NROW(drawMCMC$mu[1,2,,nchain])*0.10
   ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)

@@ -35,8 +35,8 @@ library(here)
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
-#setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-setwd(here())
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+#setwd(here())
 source("config_lib.R")
 
 

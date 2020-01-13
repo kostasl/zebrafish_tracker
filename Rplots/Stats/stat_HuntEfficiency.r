@@ -71,6 +71,8 @@ message(paste(" Loading Hunt Event List to Analyse... "))
 ##Load From Central Function
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 
+#saveRDS(datHuntLabelledEventsSB,file="pub/dat/datHuntLabelledEvents.rds")
+
 datHuntLabelledEventsSB_LIVE <-  datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID %in% c("LL","DL","NL"),]
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_LIVE)
 

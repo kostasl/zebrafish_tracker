@@ -75,26 +75,32 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   
   
   pdf(file= paste(strPlotExportPath,strfilename,sep=""),width=7,height=7)
-  ## bottom, left,top, right
-  par(mar = c(5.9,4.3,2,1))
   
-  plot(rawHd[,1], rawHd[,2],
-       #col=colClass[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
-       #col=colEfficiency[round(datHunterStat$Efficiency*10)], pch=pchLPCA[as.numeric(datHunterStat$groupID) ],
-       col=colourGroup[datHunterStat_norm$groupID ], pch=pchLPCA[as.numeric(datHunterStat_norm$groupID)],
-       #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchLPCA[as.numeric(mergedCapDat_filt$groupID)],
-       #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID)],
-       #xlab="PC1",ylab="PC2",
-       xlim=c(-3.5,4.2),ylim=c(-2.0,2.7),
-       xlab=NA,ylab=NA,
-       cex=cex/2,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
+    xplotRange = xlim=c(-2,3)
+    yplotRange = ylim=c(-2.0,3)
+  
+    ## bottom, left,top, right
+    par(mar = c(4.3,4.3,2,1))
+    
+    plot(rawHd[,1], rawHd[,2],
+         #col=colClass[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
+         #col=colEfficiency[round(datHunterStat$Efficiency*10)], pch=pchLPCA[as.numeric(datHunterStat$groupID) ],
+         col=colourGroup[datHunterStat_norm$groupID ], pch=pchLPCA[as.numeric(datHunterStat_norm$groupID)],
+         #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchLPCA[as.numeric(mergedCapDat_filt$groupID)],
+         #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID)],
+         #xlab="PC1",ylab="PC2",
+         #xlim=c(-3.5,4.2),,
+         xlim=xplotRange,ylim=yplotRange,
+         xlab=NA,ylab=NA,
+         asp=1,
+         cex=cex/1.4,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
   
   mtext(side = 1,cex=cex, line = lineXAxis,  "PC1"   ,cex.main=cex )
   mtext(side = 2,cex=cex, line = lineAxis, "PC2" ,cex.main=cex)
   
-  contour(densNL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 2)
-  contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 1)
-  contour(densDL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 3)
+  contour(densNL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 2, xlim=xplotRange,ylim=yplotRange)
+  contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 1, xlim=xplotRange,ylim=yplotRange)
+  contour(densDL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 3, xlim=xplotRange,ylim=yplotRange)
   
   scaleV <- 2
   ##Distance to Prey Component Projection
@@ -336,18 +342,23 @@ summary(pcr_model) ## With No Covariates
 
 summary(plsr_model)
 ##Prediction Plot - Very Weak relationship
+#"PC Regression - Efficiency Prediction"
 pdf(file= paste(strPlotExportPath,"/stat/efficiency/stat_PCARegPredictEfficiency.pdf",sep=""),width=7,height=7)
 ## bottom, left,top, right
-  par(mar = c(5.9,4.3,2,1))
-  predplot(pcr_model,asp=1,ncomp=5,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),
-           main="PC Regression - Efficiency Prediction",cex=cex,xlab="Measured",ylab="Predicted")
+  par(mar = c(4.3,4.3,2,1))
+  predplot(pcr_model,asp=1,ncomp=5,line=TRUE,xlim=c(0.0,0.8),ylim=c(0,0.8),
+           main=NA,cex=cex,cex.axis=cex,xlab=NA,ylab=NA)
   #predplot(pcr_model,asp=1,ncomp=4,line=TRUE,xlim=c(0,1.0),ylim=c(0,1))
   
-  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=2) ),xlim=c(0.0,1.0),ylim=c(0,1),col="red",pch=2,cex=cex,asp=1 ,xlab="Measured",ylab="Predicted")
-  legend("bottomright",c(paste("5 PCs RMSEP CV",prettyNum(err_model$val[6],digits=2)),
+  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=2) ),xlim=c(0.0,1.0),ylim=c(0,1),
+         col="red",pch=2,cex=cex,asp=1 ,xlab="Measured",ylab="Predicted")
+  legend("topright",c(paste("5 PCs RMSEP CV",prettyNum(err_model$val[6],digits=2)),
                          paste( "2 PCs RMSEP CV",prettyNum(err_model$val[3],digits=2))),
                          pch=c(1,2),col=c("black","red"),cex=cex )
-
+  
+  mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Measured larval capture efficiency" ) ) ,cex.main=cex )
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Predicted larval capture efficiency"  ))
+  
 dev.off()
 
   ###The validation results here are root mean squared error of prediction (RMSEP).
