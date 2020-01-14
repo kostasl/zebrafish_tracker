@@ -270,6 +270,8 @@ pca_Model <- plotPCAPerHunter(datHunterStatModel_norm_filt,strfilename_model)
 ######### Show PCA For Hunter / Empirical '#####
 plotPCAPerHunter(datHunterStat_norm,strfilename_empirical)
 
+datHuntsWithEfficiency_norm_filt <- standardizeHuntData(mergedCapDat_mod[mergedCapDat_mod$CaptureEvents > 2,])
+pca_Model_hunts <- plotPCAPerHunter(datHuntsWithEfficiency_norm_filt,"/stat/testpca.pdf")
 
 ##Make Regression With Covariate Products Speed-Distance
 datPCAHunter_norm_Cov <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
@@ -320,21 +322,55 @@ datPCAHunter_norm <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL'
   )                                   } )          )
 
 
+datPCAHuntEvents_norm <-  data.frame( with(datHuntsWithEfficiency_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
+  cbind(Efficiency=Efficiency, #1
+        Attempts=CaptureAttempts_norm, ##Efficiency is fraction of Succsss/Attempts <- Include it so as to remove this variance
+        #HuntPower=HuntPower_norm, #2 ## Does not CoVary With Anyhting 
+        #Group=groupID, #3
+        DistanceToPrey=DistanceToPrey_norm, #4
+        CaptureSpeed_norm, #5
+        Undershoot_norm, #6
+        #DistSpeedProd=DistSpeed_norm, #7
+        #DistSpeedUnderProd=DistSpeedUnder_norm, #8
+        #SpeedUnderhoot=SpeedUnder_norm, #9
+        TimeToHitPrey=TimeToHitPrey_norm #10
+        #Cluster=Cluster#11
+  )                                   } )          )
+
+
+####### MODEL ####
 ### Using Package to Do PCA Regression to Find how much we can explain Efficiency
 require(pls)
 set.seed (2000)
 #datPCAHunter_norm$EfficiencyV <- datHunterStatModel_norm_filt$Efficiency
 pcr_model_prod      <- pcr(Efficiency~., data = datPCAHunter_norm_Cov, scale = FALSE, validation = "CV")
 pcr_model_distSpeed <- pcr(Efficiency~., data = datPCAHunter_norm_distSpeed, scale = FALSE, validation = "CV")
+
+##This one is used on MS 
 pcr_model <- pcr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
+err_model <- RMSEP(pcr_model,estimate="CV")
+
 plsr_model <- plsr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
 
-err_model <- RMSEP(pcr_model,estimate="CV")
+
+
+
 summary(pcr_model_prod) ##With All Covariates
 summary(pcr_model_distSpeed) ## With Speed-Dist Covariates
 summary(pcr_model) ## With No Covariates
 
 summary(plsr_model)
+
+## Originally We assume Mean Behaviour should predict a larva's capture efficiency
+## What about individual successful hunt event behaviours, do they predict the efficiency of the larva they came from?
+##Hunt Events Indepently
+pcr_model_Hunts     <- cppls(Efficiency ~  CaptureEvents +  CaptureSpeed + DistanceToPrey + Undershoot + CaptureEvents + TimeToHitPrey_norm  
+                           ,data = datHuntsWithEfficiency_norm_filt, scale = TRUE, validation = "CV")##No Mean Beahviour Just associate Individual Successful Hunt with effiency
+summary(pcr_model_Hunts)
+plot(pcr_model_Hunts)
+predplot(pcr_model_Hunts,asp=1,ncomp=5,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),
+         main="Efficiency Prediction based on Hunt Event",cex=cex,xlab="Measured",ylab="Predicted")
+
 ##Prediction Plot - Very Weak relationship
 pdf(file= paste(strPlotExportPath,"/stat/efficiency/stat_PCARegPredictEfficiency.pdf",sep=""),width=7,height=7)
 ## bottom, left,top, right
