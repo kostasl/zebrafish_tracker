@@ -1,16 +1,5 @@
 ### Kostas Lagogiannis 2019-04-17 
-## Discovered relationship between the last bout speed - ie Capture speed and the undershoot ratio -
-## higher undershoot predicts higher capture speeds, while undershoot also seems to predict higher distance from prey 
-##  suggesting that LF stays further away from prey, so it does stronger capture bouts and it is undershoot that allows it to do it.
-## Their ability to judge distance is also revealed in the the eye vergence prior to capture, where there is a relationship between EyeV and distance to prey   is shown 
-## Stohoi:
-## S1 Establish whether undershoot covaries with capture speed
-## S2 Compare cap.Speed vs UNdershoot models between groups - Do they also covary in all groups?
-## S3 compare accuracy of capture speed vs distance to prey between groups (use covariance distributions)
-## Aitiology :
-## 
-## A: Does undershoot explain capture speed and distance to prey accuracy?
-
+## Cluster Capture Bouts (Figure 4 of MS) using a  mixture of two Gaussians 
 ### Stat Model on Capture speed vs undershoot
 library(rjags)
 #library(runjags)
@@ -21,11 +10,10 @@ source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
 
-##### Notes on Covariance Prior , I could have used a wishard :
-## What I do know is that if I assume Omega is my prior guess for covariance
+##### Notes on Covariance Prior , I do not use a wishard (dwish) because this way I can directly and clearly set priors for each cluster:
+##  For dwish, what I do know is that if I assume Omega is my prior guess for covariance
 ## matrix Sigma, then I use the following in JAGS:
-#  invSigma ~ dwish(J*Omega,J) #where J is the degrees of freedom, Omega Prior Guess for
-#and I get the correct prior.
+#  invSigma ~ dwish(J*Omega,J) #where J is the degrees of freedom, Omega Prior Guess and I should get the correct prior. 
 
 strmodel_capspeedVsDistance <- "
 var x_rand[2,2];
@@ -41,7 +29,7 @@ for (i in 1:N)
   
 }
 
-## ????XXXX Fit Bernouli distribution on Number of Hunt |Events that have a high-speed strike ??
+##  Fit Bernouli distribution on Number of Hunt |Events that have a high-speed strike ??
 ## We used  a normal for Probability of Strike Swim 
 pS  ~ dnorm(sum(mID)/N,1000)T(0,1)
 mStrikeCount ~ dbin(pS,N )
@@ -59,9 +47,10 @@ for  (g in 1:2)
   
   ## Priors 
   sigma[g,1] ~ dunif(0,1) ##dist prey - Keep it broad within the expected limits 
-  
   rho[g] ~ dunif(-1,1) ##The covar coefficient
 }
+
+
   ## Low Speed Captcha cluster
   mu[1,1] ~ dnorm(0.5,0.01)T(0.0,) ##Distance prey
   mu[1,2] ~ dnorm(5,1)T(0,) ##cap speed
@@ -591,7 +580,6 @@ mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
   mtext("B",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
   
 dev.off()
-
 
 
 
