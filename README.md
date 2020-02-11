@@ -2,24 +2,51 @@
 
 @author : Konstantinos Lagogiannis
 Developed while postdoc in Martin Meyer's lab, KCL
-
+to analyse data for article "Learning steers the ontogeny of hunting behaviour in larval zebrafish"
+BioArxiv PrePrint: https://doi.org/10.1101/2019.12.19.883157
 ### What is this repository for? ###
 
 * Quick summary
-A software that tracks moving larvae in timelapse videos, exporting 3 data csv files for each region of interest - vial. _N file contains the larvae count per frame, _pos contains position information of identified blobs (most possibly larvae) in the ROI, _pos_track.csv file exports the data from a basic tracking algorithm that attempts to link blobs across frames via track ID. 
-The package further contains a subfolder /matlabscripts, that allows for importing and analysing basic statistics of the exported data. 
-The data is not assumed clean, and some problems from the tracker are dealt with within the those scripts to clear the data.
-* Version
+This is a larval zebrafish behavioural tracking software that processes monochrome IR DarkField highspeed (100-450 fps) images/videos to extract larva body centroid and orientation, Eye angle, tail spine posture and prey count. It also allows for tracking user indicated prey items.
+The tracker exports csv table data files containing pixel coordinates and angles in degrees of tracked items that are located with a ROI.
+The package further contains a subfolder /RPlots, that allows for importing and analysing the tracker data.
+The tracker deals only with extracting information from image pixels, and so filtering and analysis of tracker data is handled externally by those R scripts.
+
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
 
 ### Using the app ###
+The application offers a GUI from which to select input video and where to export the CSV data files.
+These can also be set by command line options allowing to start the tracker through scripts and process multiple video files automatically.
+
+
 User:
  * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
 The directory where the data csv files are exported must have  format EXP_N_YYYYMMDD_Ssec giving the experiment number N (can be a range or anything really),the date when the embryos were collected, and the timelapse frame period in seconds).
 
- * The video begins paused -  use to left mouse clicks to define a new region in the image over which you want to count the larvae.
- * Define the regions of interest using two left mouse click for each region. The red box defines the region over which the larvae are counted-tracked and recorded.
+*Command line options:
+    "{help h usage ? |    | print this help  message}"
+    "{outputdir   o |    | Dir where To save sequence of images }"
+    "{invideofile v |    | Behavioural Video file to analyse }"
+    "{invideolist f |    | A text file listing full path to video files to process}"
+    "{startframe s | 1  | Video Will start by Skipping to this frame}"
+    "{stopframe p | 0  | Video Will stop at this frame}"
+    "{startpaused P | 0  | Start tracking Paused On 1st Frame/Need to Run Manually}"
+    "{duration d | 0  | Number of frames to Track for starting from start frame}"
+    "{logtofile l |    | Filename to save clog stream to }"
+    "{ModelBG b | 0  | Learn and Substract Stationary Objects from Foreground mask}"
+    "{BGThreshold bgthres | 30  | Absolute grey value used to segment BG (g_Segthresh)}"
+    "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
+    "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
+    "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
+    "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)}"
+    "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
+    "{EnableCUDA cuda | 0  | Use CUDA for MOG, and mask processing - if available  }"
+    "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
+    "{EyeHistEqualization histEq | 0  | Use hist. equalization to enhance eye detection contrast  }"
+    "{TrackFish ft | 1  | Track Fish not just the moving prey }"
+    "{MeasureMode M | 0 | Click 2 points to measure distance to prey}"
+
 
 ### Control keys for tracker during Run time :
  * Press p to pause Image. once paused:
@@ -39,27 +66,20 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 
 *Note:* The package of source files contains example MATLAB scripts that can process these output files, plot and extract statistics.
 
-
-
  
 ### How do I get set up? ###
+* Install opencv and compile with flag -D WITH_QT=ON, improves experience and range of available functions.
+http://opencv.org/downloads.html. Latest known opencv version that worked with tracker is OpenCV 3.4.4
+*  Qt4 and above
 
-* Summary of set up
-Install opencv 3.0 / best compiled with with flag -D WITH_QT=ON, improves experience and range of available functions.
-http://opencv.org/downloads.html
+<pre><code>
+sudo apt-get install git libopencv-dev qt5-default g++
+</code></pre>
 
-* Uses a version of cvBlob which is embedded in the package, for independent development.
-* Configuration
-* Dependencies
- openCV3.0 (compilied with WITH_QT support)
- Qt4 and above
-
-        sudo apt-get install git libopencv-dev qt5-default g++
-
-* Building
-        git clone https://github.com/i-git/FIMTrack.git FIMTrack
-        cd larvatrack
-        qmake larvatrack.pro
+* Building the tracker
+        git clone https://github.com/dafishcode/zebrafishtrack
+        cd zebrafishtrack
+        qmake zebraprey_track.pro
         make
 
 

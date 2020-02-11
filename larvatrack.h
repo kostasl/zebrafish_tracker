@@ -18,7 +18,7 @@
 #include <QElapsedTimer>
 #include <QPixmap>
 
-#include <cvBlob/cvblob.h>
+//#include <cvBlob/cvblob.h>
 #include <ltROI.h> //Defines the ROI types
 #include <fishmodel.h>
 #include <foodmodel.h>
@@ -91,7 +91,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 /// \brief UpdateFishModels Use Tracks  to update persistent fishModels
 /// \param vfishmodels
 /// \param fishtracks
-void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks); /// Deprecated
+//void UpdateFishModels(cv::Mat& fullImgIn,fishModels& vfishmodels,cvb::CvTracks& fishtracks); /// Deprecated
 ///Updated Version With Blobs
 void UpdateFishModels(const cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks,unsigned int nFrame,cv::Mat& frameOut);
 void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew); //,cv::Mat& frameOut
@@ -103,7 +103,7 @@ void checkPauseRun(MainWindow* win,int keyboard,unsigned int nFrame);
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame);
 bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,cv::Mat& img);
 int countObjectsviaContours(cv::Mat& srcimg );
-int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea);
+//int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea);
 
 /// Updated Blobs Detector- Fish Specific
 int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs);
@@ -119,8 +119,8 @@ bool resetDataRecording(QFile& outdatafile,QString strpostfix); //Uses Global Fi
 void writeFishDataCSVHeader(QFile& data);
 void writeFoodDataCSVHeader(QFile& data);
 
-int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
-int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
+//int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi);
+//int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi);
 
 ///
 /// \brief findContourClosestToPoint Looks for the inner contour in a 2 level hierarchy that matches the point coords
