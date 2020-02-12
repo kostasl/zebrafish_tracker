@@ -134,9 +134,9 @@ lFirstBoutPoints <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_Fi
 load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 
 #### LOAD Capture First-Last Bout hunting that include the cluster classification - (made in stat_CaptureSpeedVsDistanceToPrey)
-datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_clustered.rds",sep="")) 
-datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_clustered.rds",sep="")) 
-datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_clustered.rds",sep="")) 
+datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_2Dclustered.rds",sep="")) 
+datCapture_LL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_LL_2Dclustered.rds",sep="")) 
+datCapture_DL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_DL_2Dclustered.rds",sep="")) 
 
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
@@ -167,8 +167,14 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
     ggtitle(NULL) +
     theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),
           axis.text = element_text(family="Helvetica",face="bold", size=16),
-          plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
-    fill_palette("jco")
+          plot.margin = unit(c(1,1,1,1), "mm")) + fill_palette("jco") +
+          theme( ##Add the Legend
+            legend.position = c(.95, .95),
+            legend.justification = c("right", "top"),
+            legend.box.just = "right",
+            legend.margin = margin(6, 6, 6, 6)
+          ) 
+          
     
   
   p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
@@ -176,6 +182,9 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
     
   contour_fast <- getFastClusterGrid(draw_NF) ## Draw the mvtnorm model fit contour
   contour_slow <- getSlowClusterGrid(draw_NF)
+  
+  
+  
   p_NF = p_NF +
     geom_contour(contour_fast, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
     geom_contour(contour_slow, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
@@ -183,8 +192,9 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
     scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 80)) 
     #theme_linedraw()
 
-    ggMarginal(p_NF, x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=FALSE) 
+    ggMarginal(p_NF, x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
   
+    
     ##Make Custom Marginal Plot
    #xplot <- ggdensity(datCapture_NL,"DistanceToPrey",  mapping=aes(x="DistanceToPrey",color=datCapture_NL$Cluster), fill = "Cluster") +
     #clean_theme()  + theme(plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
@@ -299,7 +309,7 @@ dev.off()
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_meanDistanceOfFastCapture.pdf",sep=""),width=7,height=7)
   par(mar = c(3.9,4.7,1,1))
   #### ## Probability Density of Strike capture ####
-  plot(density(tail(draw_NF$mu[2,1,,1],1000)),col=colourLegL[1],xlim=c(0,0.8),ylim=c(0.0,35),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
+  plot(density(tail(draw_NF$mu[2,1,,1],1000)),col=colourLegL[1],xlim=c(0,0.6),ylim=c(0.0,35),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA,
        cex=cex,cex.axis=cex )
   lines(density(tail(draw_LF$mu[2,1,,1],1000)),col=colourLegL[2],lwd=3,lty=2)
   lines(density(tail(draw_DF$mu[2,1,,1],1000)),col=colourLegL[3],lwd=3,lty=3)
@@ -385,18 +395,27 @@ pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootAndSpeed_NF.pdf",se
 #layout(matrix(c(1,2,3),1,3, byrow = FALSE))
 # ##Margin: (Bottom,Left,Top,Right )
 #par(mar = c(3.9,4.7,12,1))
-
-p_NF = ggplot( datCapture_NL, aes(Undershoot, CaptureSpeed ,color =Cluster,fill=Cluster)) +
-  ggtitle(NULL) +
-  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
-  fill_palette("jco")
-
-p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
-  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
-  scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
-  scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
-
-ggMarginal(p_NF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+  
+  p_NF = ggplot( datCapture_NL, aes(Undershoot, CaptureSpeed ,color =Cluster,fill=Cluster)) +
+    ggtitle(NULL) +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    fill_palette("jco") +
+    theme( ##Add the Legend
+      legend.position = c(.95, .95),
+      legend.justification = c("right", "top"),
+      legend.box.just = "right",
+      legend.margin = margin(6, 6, 6, 6)
+    )
+  
+  
+  p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+    scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+    scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
+    scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+  
+  p_NF = p_NF + geom_vline(xintercept = 1, linetype="dotted", color = "grey", size=1.0)
+  
+  ggMarginal(p_NF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 dev.off()
 
 
@@ -414,6 +433,8 @@ p_DF = p_DF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_DL$Cluster
   scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
   scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
   scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+
+p_DF = p_DF + geom_vline(xintercept = 1, linetype="dotted", color = "grey", size=1.0)
 
 ggMarginal(p_DF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 dev.off()
@@ -434,6 +455,7 @@ p_LF = p_LF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster
   scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
   scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
   scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+p_LF = p_LF + geom_vline(xintercept = 1, linetype="dotted", color = "grey", size=1.0)
 
 ggMarginal(p_LF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 dev.off()

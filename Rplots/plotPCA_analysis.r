@@ -75,26 +75,32 @@ plotPCAPerHunter <- function(datHunterStat_norm,strfilename)
   
   
   pdf(file= paste(strPlotExportPath,strfilename,sep=""),width=7,height=7)
-  ## bottom, left,top, right
-  par(mar = c(5.9,4.3,2,1))
   
-  plot(rawHd[,1], rawHd[,2],
-       #col=colClass[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
-       #col=colEfficiency[round(datHunterStat$Efficiency*10)], pch=pchLPCA[as.numeric(datHunterStat$groupID) ],
-       col=colourGroup[datHunterStat_norm$groupID ], pch=pchLPCA[as.numeric(datHunterStat_norm$groupID)],
-       #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchLPCA[as.numeric(mergedCapDat_filt$groupID)],
-       #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID)],
-       #xlab="PC1",ylab="PC2",
-       xlim=c(-3.5,4.2),ylim=c(-2.0,2.7),
-       xlab=NA,ylab=NA,
-       cex=cex/2,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
+    xplotRange = xlim=c(-2,3)
+    yplotRange = ylim=c(-2.0,3)
+  
+    ## bottom, left,top, right
+    par(mar = c(4.3,4.3,2,1))
+    
+    plot(rawHd[,1], rawHd[,2],
+         #col=colClass[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
+         #col=colEfficiency[round(datHunterStat$Efficiency*10)], pch=pchLPCA[as.numeric(datHunterStat$groupID) ],
+         col=colourGroup[datHunterStat_norm$groupID ], pch=pchLPCA[as.numeric(datHunterStat_norm$groupID)],
+         #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchLPCA[as.numeric(mergedCapDat_filt$groupID)],
+         #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID)],
+         #xlab="PC1",ylab="PC2",
+         #xlim=c(-3.5,4.2),,
+         xlim=xplotRange,ylim=yplotRange,
+         xlab=NA,ylab=NA,
+         asp=1,
+         cex=cex/1.4,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
   
   mtext(side = 1,cex=cex, line = lineXAxis,  "PC1"   ,cex.main=cex )
   mtext(side = 2,cex=cex, line = lineAxis, "PC2" ,cex.main=cex)
   
-  contour(densNL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 2)
-  contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 1)
-  contour(densDL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 3)
+  contour(densNL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 2, xlim=xplotRange,ylim=yplotRange)
+  contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 1, xlim=xplotRange,ylim=yplotRange)
+  contour(densDL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 3, xlim=xplotRange,ylim=yplotRange)
   
   scaleV <- 2
   ##Distance to Prey Component Projection
@@ -270,6 +276,8 @@ pca_Model <- plotPCAPerHunter(datHunterStatModel_norm_filt,strfilename_model)
 ######### Show PCA For Hunter / Empirical '#####
 plotPCAPerHunter(datHunterStat_norm,strfilename_empirical)
 
+datHuntsWithEfficiency_norm_filt <- standardizeHuntData(mergedCapDat_mod[mergedCapDat_mod$CaptureEvents > 2,])
+pca_Model_hunts <- plotPCAPerHunter(datHuntsWithEfficiency_norm_filt,"/stat/testpca.pdf")
 
 ##Make Regression With Covariate Products Speed-Distance
 datPCAHunter_norm_Cov <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
@@ -320,6 +328,23 @@ datPCAHunter_norm <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL'
   )                                   } )          )
 
 
+datPCAHuntEvents_norm <-  data.frame( with(datHuntsWithEfficiency_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
+  cbind(Efficiency=Efficiency, #1
+        Attempts=CaptureAttempts_norm, ##Efficiency is fraction of Succsss/Attempts <- Include it so as to remove this variance
+        #HuntPower=HuntPower_norm, #2 ## Does not CoVary With Anyhting 
+        #Group=groupID, #3
+        DistanceToPrey=DistanceToPrey_norm, #4
+        CaptureSpeed_norm, #5
+        Undershoot_norm, #6
+        #DistSpeedProd=DistSpeed_norm, #7
+        #DistSpeedUnderProd=DistSpeedUnder_norm, #8
+        #SpeedUnderhoot=SpeedUnder_norm, #9
+        TimeToHitPrey=TimeToHitPrey_norm #10
+        #Cluster=Cluster#11
+  )                                   } )          )
+
+
+####### MODEL ####
 ### Using Package to Do PCA Regression to Find how much we can explain Efficiency
 require(pls)
 set.seed (20000)
@@ -341,29 +366,50 @@ plot(pcr_model_prod,plottype="validation",ylim=c(0.1,0.2))
 
 pcr_model_prod      <- pcr(Efficiency~., data = datPCAHunter_norm_Cov, scale = FALSE, validation = "CV")
 pcr_model_distSpeed <- pcr(Efficiency~., data = datPCAHunter_norm_distSpeed, scale = FALSE, validation = "CV")
+
+##This one is used on MS 
 pcr_model <- pcr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
+err_model <- RMSEP(pcr_model,estimate="CV")
+
 plsr_model <- plsr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
 
-err_model <- RMSEP(pcr_model,estimate="CV")
+
+
+
 summary(pcr_model_prod) ##With All Covariates
 summary(pcr_model_distSpeed) ## With Speed-Dist Covariates
 summary(pcr_model) ## With No Covariates
 
 summary(plsr_model)
+
+## Originally We assume Mean Behaviour should predict a larva's capture efficiency
+## What about individual successful hunt event behaviours, do they predict the efficiency of the larva they came from?
+##Hunt Events Indepently
+pcr_model_Hunts     <- cppls(Efficiency ~  CaptureEvents +  CaptureSpeed + DistanceToPrey + Undershoot + CaptureEvents + TimeToHitPrey_norm  
+                           ,data = datHuntsWithEfficiency_norm_filt, scale = TRUE, validation = "CV")##No Mean Beahviour Just associate Individual Successful Hunt with effiency
+summary(pcr_model_Hunts)
+plot(pcr_model_Hunts)
+predplot(pcr_model_Hunts,asp=1,ncomp=5,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),
+         main="Efficiency Prediction based on Hunt Event",cex=cex,xlab="Measured",ylab="Predicted")
+
 ##Prediction Plot - Very Weak relationship
+#"PC Regression - Efficiency Prediction"
 pdf(file= paste(strPlotExportPath,"/stat/efficiency/stat_PCARegPredictEfficiency.pdf",sep=""),width=7,height=7)
 ## bottom, left,top, right
-  par(mar = c(5.9,4.3,2,1))
-
-  predplot(pcr_model,asp=1,ncomp=5,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),
-           main="PC Regression - Efficiency Prediction",cex=cex,xlab="Measured",ylab="Predicted")
+  par(mar = c(4.3,4.3,2,1))
+  predplot(pcr_model,asp=1,ncomp=5,line=TRUE,xlim=c(0.0,0.8),ylim=c(0,0.8),
+           main=NA,cex=cex,cex.axis=cex,xlab=NA,ylab=NA)
   #predplot(pcr_model,asp=1,ncomp=4,line=TRUE,xlim=c(0,1.0),ylim=c(0,1))
   
-  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=2) ),xlim=c(0.0,1.0),ylim=c(0,1),col="red",pch=2,cex=cex,asp=1 ,xlab="Measured",ylab="Predicted")
-  legend("bottomright",c(paste("5 PCs RMSEP CV",prettyNum(err_model$val[6],digits=2)),
+  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=2) ),xlim=c(0.0,1.0),ylim=c(0,1),
+         col="red",pch=2,cex=cex,asp=1 ,xlab="Measured",ylab="Predicted")
+  legend("topright",c(paste("5 PCs RMSEP CV",prettyNum(err_model$val[6],digits=2)),
                          paste( "2 PCs RMSEP CV",prettyNum(err_model$val[3],digits=2))),
                          pch=c(1,2),col=c("black","red"),cex=cex )
-
+  
+  mtext(side = 1,cex=cex, line = lineXAxis, expression(paste("Measured larval capture efficiency" ) ) ,cex.main=cex )
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Predicted larval capture efficiency"  ))
+  
 dev.off()
 
   ###The validation results here are root mean squared error of prediction (RMSEP).

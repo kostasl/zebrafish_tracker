@@ -6,7 +6,7 @@
 ## Turns towards prey are also marked, and these need to be towards the prey, but also the turn needs to reduce the bearing to prey by at least 10% / Otherwise it is not considered a turn
 
 library(signal)
-library(MASS)
+#library(MASS)
 library(mclust,quietly = TRUE)
 
 #library(sBIC)

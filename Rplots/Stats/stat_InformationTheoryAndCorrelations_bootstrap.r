@@ -226,6 +226,7 @@ pdf(strPlotName,width=7,height=7,title="Correlations In Speed/Distance Fast clus
   mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
 
 dev.off()
+
 # Plot Speed Vs Distance Correlation - bootstraped Stat ##
 strPlotName = paste(strPlotExportPath,"/stat/fig5_statbootstrap_correlation_SpeedVsDistance.pdf",sep="")
 pdf(strPlotName,width=7,height=7,title="Correlations In Speed/Distance capture  variables",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))

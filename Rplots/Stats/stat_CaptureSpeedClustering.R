@@ -1,17 +1,6 @@
-### Kostas Lagogiannis 2019-04-17 
-## Discovered relationship between the last bout speed - ie Capture speed and the undershoot ratio -
-## higher undershoot predicts higher capture speeds, while undershoot also seems to predict higher distance from prey 
-##  suggesting that LF stays further away from prey, so it does stronger capture bouts and it is undershoot that allows it to do it.
-## Their ability to judge distance is also revealed in the the eye vergence prior to capture, where there is a relationship between EyeV and distance to prey   is shown 
-## Stohoi:
-## S1 Establish whether undershoot covaries with capture speed
-## S2 Compare cap.Speed vs UNdershoot models between groups - Do they also covary in all groups?
-## S3 compare accuracy of capture speed vs distance to prey between groups (use covariance distributions)
-## Aitiology :
-## 
-## A: Does undershoot explain capture speed and distance to prey accuracy?
-
-### Stat Model on Capture speed vs undershoot
+### Kostas Lagogiannis 2019
+## This Model Clusters Capture speeds between fast and slow, based only on speed
+### Stat Model on Capture speed 
 library(rjags)
 library(runjags)
 

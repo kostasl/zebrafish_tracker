@@ -520,16 +520,13 @@ int main(int argc, char *argv[])
     if (parser.has("EyeHistEqualization"))
         bUseHistEqualization = (parser.get<int>("EyeHistEqualization") == 1)?true:false;
 
-
-
     ///Disable OPENCL in case SEG Fault is hit - usually from MOG when running multiple tracker processes
     if (parser.has("DisableOpenCL"))
             if (parser.get<int>("DisableOpenCL") == 1)
             {
                 cv::ocl::setUseOpenCL(false);
                 bUseOpenCL =false;
-            }else
-            {
+            }else{
                 cv::ocl::setUseOpenCL(true);
                 bUseOpenCL =true;
             }
@@ -1586,7 +1583,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         pfishBest->inactiveFrames   = 0; //Reset Counter
     }
 
-   ///Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
+   /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
     ft = vfishmodels.begin();
     while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
     {
@@ -1657,8 +1654,6 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
 
     cv::KeyPoint::convert(vptPrey_next,vPreyKeypoints_next);
 
- //   UpdateFoodModels(frame_grey,vfoodmodels,vPreyKeypoints_next,nFrame);
-
     //update food item Location
         //Loop through points
     for (int i=0;i<(int)vPreyKeypoints_ret.size();i++)
@@ -1667,7 +1662,6 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
             continue; //ignore bad point
         vPreyKeypoints_next.push_back(vPreyKeypoints_ret.at(i)); //fwd the good ones
 //        // find respective food model, update state
-
 //        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next.at(i);
 //        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next.at(i);
 //        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,
@@ -2411,108 +2405,108 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 
 }
 
-int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi)
-{
-    int cnt = 0;
-    int Vcnt = 1;
-    bool bNewFileFlag = true;
+//int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi)
+//{
+//    int cnt = 0;
+//    int Vcnt = 1;
+//    bool bNewFileFlag = true;
 
-    //Loop Over ROI
-    Vcnt++; //Vial Count
-    cnt = 0;
+//    //Loop Over ROI
+//    Vcnt++; //Vial Count
+//    cnt = 0;
 
-    QFile data(filename);
-    if (data.exists())
-        bNewFileFlag = false;
+//    QFile data(filename);
+//    if (data.exists())
+//        bNewFileFlag = false;
 
-    if(data.open(QFile::WriteOnly |QFile::Append))
-    {
-        QTextStream output(&data);
-        if (bNewFileFlag)
-             output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area\n" ;
+//    if(data.open(QFile::WriteOnly |QFile::Append))
+//    {
+//        QTextStream output(&data);
+//        if (bNewFileFlag)
+//             output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area\n" ;
 
-        //Loop Over Blobs
-        for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
-        {
+//        //Loop Over Blobs
+//        for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
+//        {
 
-            cvb::CvBlob* cvB = it->second;
-            cv::Point pnt;
-            pnt.x = cvB->centroid.x;
-            pnt.y = cvB->centroid.y;
+//            cvb::CvBlob* cvB = it->second;
+//            cv::Point pnt;
+//            pnt.x = cvB->centroid.x;
+//            pnt.y = cvB->centroid.y;
 
-            cnt++;
+//            cnt++;
 
-            if (roi.contains(pnt))
-                //Printing the position information
-                output << frameNumber.c_str() << "," << cnt <<","<< cvB->label << "," << cvB->centroid.x <<","<< cvB->centroid.y  <<","<< cvB->area  <<"\n";
-          }
-
-
-       data.close();
-
-      }
+//            if (roi.contains(pnt))
+//                //Printing the position information
+//                output << frameNumber.c_str() << "," << cnt <<","<< cvB->label << "," << cvB->centroid.x <<","<< cvB->centroid.y  <<","<< cvB->area  <<"\n";
+//          }
 
 
-    return cnt;
-}
+//       data.close();
 
-//Saves the total Number of Counted Blobs and Tracks only
-int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi)
-{
-
-    bool bNewFileFlag = true;
-    int cnt = 0;
-    int Larvacnt = 0;
-    cnt++;
-    //cv::Rect iroi = (cv::Rect)(*it);
-
-    QFile data(filename);
-    if (data.exists())
-        bNewFileFlag = false;
-
-    if(data.open(QFile::WriteOnly |QFile::Append))
-    {
-
-        int blobCount = 0;
-        int trackCount = 0;
-
-        //Count Blobs in ROI
-        for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
-        {
-            cvb::CvBlob* blob = it->second;
-            cv::Point pnt;
-            pnt.x = blob->centroid.x;
-            pnt.y = blob->centroid.y;
-
-            if (roi.contains(pnt))
-                blobCount++;
-        }
-
-        //Count Tracks in ROI
-        for (cvb::CvTracks::const_iterator it = tracks.begin(); it!=tracks.end(); ++it)
-        {
-            cvb::CvTrack* track = it->second;
-            cv::Point pnt;
-            pnt.x = track->centroid.x;
-            pnt.y = track->centroid.y;
-
-            if (roi.contains(pnt))
-                trackCount++;
-        }
+//      }
 
 
-        QTextStream output(&data);
-        if (bNewFileFlag)
-             output << "frameN,blobN,TracksN \n";
+//    return cnt;
+//}
 
-        output << frameNumber.c_str() << "," << blobCount << "," << trackCount <<"\n";
-        Larvacnt +=blobCount;
-        data.close();
-    }
+////Saves the total Number of Counted Blobs and Tracks only
+//int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi)
+//{
+
+//    bool bNewFileFlag = true;
+//    int cnt = 0;
+//    int Larvacnt = 0;
+//    cnt++;
+//    //cv::Rect iroi = (cv::Rect)(*it);
+
+//    QFile data(filename);
+//    if (data.exists())
+//        bNewFileFlag = false;
+
+//    if(data.open(QFile::WriteOnly |QFile::Append))
+//    {
+
+//        int blobCount = 0;
+//        int trackCount = 0;
+
+//        //Count Blobs in ROI
+//        for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
+//        {
+//            cvb::CvBlob* blob = it->second;
+//            cv::Point pnt;
+//            pnt.x = blob->centroid.x;
+//            pnt.y = blob->centroid.y;
+
+//            if (roi.contains(pnt))
+//                blobCount++;
+//        }
+
+//        //Count Tracks in ROI
+//        for (cvb::CvTracks::const_iterator it = tracks.begin(); it!=tracks.end(); ++it)
+//        {
+//            cvb::CvTrack* track = it->second;
+//            cv::Point pnt;
+//            pnt.x = track->centroid.x;
+//            pnt.y = track->centroid.y;
+
+//            if (roi.contains(pnt))
+//                trackCount++;
+//        }
 
 
-    return Larvacnt;
-}
+//        QTextStream output(&data);
+//        if (bNewFileFlag)
+//             output << "frameN,blobN,TracksN \n";
+
+//        output << frameNumber.c_str() << "," << blobCount << "," << trackCount <<"\n";
+//        Larvacnt +=blobCount;
+//        data.close();
+//    }
+
+
+//    return Larvacnt;
+//}
 
 
 //std::vector<cvb::CvBlob*> getBlobsinROI(cvb::CvBlobs& blobs)
@@ -2723,7 +2717,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
         {
             cnt++;
             fishModel* pfish = it->second;
-            cvb::CvLabel cvL = it->first;
+            //cvb::CvLabel cvL = it->first;
 
             if (iroi.contains(pfish->ptRotCentre))
             {

@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include <cvBlob/cvblob.h>
+//#include <cvBlob/cvblob.h>
 #include <QDebug>
 //#include <QApplication>
 
@@ -107,7 +107,7 @@ public:
 
   zftID ID; /// Uid Of this Fish Instance
 
-  cvb::CvLabel blobLabel; //Legacy BlobLabel
+  //cvb::CvLabel blobLabel; //Legacy BlobLabel
 
   std::vector<cv::Point> contour;
   std::vector<cv::Point> coreHull; /// core Body shape- no tail

@@ -61,7 +61,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     stepUpdate = 1.0; // with fast rate and slow down with updates
     inactiveFrames  = 0;
     this->ID        = blob.hash() ;
-    this->blobLabel = blob.hash();
+    //this->blobLabel = blob.hash();
 
     zTrack.id       = this->ID;
 

@@ -71,6 +71,8 @@ message(paste(" Loading Hunt Event List to Analyse... "))
 ##Load From Central Function
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 
+#saveRDS(datHuntLabelledEventsSB,file="pub/dat/datHuntLabelledEvents.rds")
+
 datHuntLabelledEventsSB_LIVE <-  datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID %in% c("LL","DL","NL"),]
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_LIVE)
 
@@ -107,7 +109,8 @@ m=jags.model(file=strModelName,data=datatest,n.chains=chains);
 update(m,burn_in)
 draw=jags.samples(m,steps,thin=thin,variable.names=varnames1)
 
-
+## Save Samples 
+save(draw,file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
 #######PLOT RESULTS
 #X11()
 colourH <- c("#0303E663","#03B30363","#E6030363")
@@ -160,7 +163,6 @@ HCovRateAndEfficiency_NL <- cor( tail(HEventSuccess_NL[,chain],plotsamples),tail
 HCovRateAndEfficiency_LL <- cor( tail(HEventSuccess_LL[,chain],plotsamples),tail(MeanHuntRate_LL[,chain],plotsamples) )
 HCovRateAndEfficiency_DL <- cor( tail(HEventSuccess_DL[,chain],plotsamples),tail(MeanHuntRate_DL[,chain],plotsamples) )
 
-save(draw,file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
 ###MAIN OUTPUT PLOT ##
 
 

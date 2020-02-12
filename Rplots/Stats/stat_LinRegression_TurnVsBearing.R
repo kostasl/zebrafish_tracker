@@ -2,7 +2,7 @@
 ###  Estimates the hidden function of Turn Vs Bearing To Prey - Linear Regression gives pdf of slope param.  - 
 ## Tried both a Non-parametric Gaussian Process with Bayesian Inference (Failed) But Also a simple Linear Model
 ## Requires the lFirstBoutPoints list of dataframes - which is constucted in 
-
+source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
@@ -245,8 +245,8 @@ pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_SetC
        xlim=c(-100,100),
        ylim=c(-100,100),
        col=colourP[3] ,pch=pchL[3],cex=cex,cex.axis=cex) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
-  mtext(side = 1,cex=cex, line = lineAxis, expression("Bearing To prey prior to turn "~(theta^degree) ))
-  mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey "~(phi^degree) ))
+  mtext(side = 1,cex=cex, line = lineAxis, expression("Prey azimuth prior to turn ("~theta^degree~")" ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey ("~phi^degree~")" ))
   
   #text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
   abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourLegL[3],lwd=1.5,lty=2) ##Fit Line / Regression

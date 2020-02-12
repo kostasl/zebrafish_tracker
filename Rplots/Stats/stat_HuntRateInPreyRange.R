@@ -80,7 +80,7 @@ plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpc
 
   cdfD_N <- ecdf(datHEventCount[,2])
 
-  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=cex,cex.axis=cex,cex.lab=cex,add=!newPlot)
+  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=cex+0.1,cex.axis=cex,cex.lab=cex,add=!newPlot)
   ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
   for (c in 1:NROW(drawHEvent$q[1,1,])) {
     for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
@@ -89,7 +89,7 @@ plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour,lpc
       lines(x,cumsum(cdfM),col=lcolour,lty=lty) #add=TRUE,
     }
   }
-  plot(cdfD_N,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=cex,cex.axis=cex,cex.lab=cex,add=TRUE)
+  plot(cdfD_N,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=cex+0.1,cex.axis=cex,cex.lab=cex,add=TRUE)
   #axis(side = 4)
   #mtext(side = 4, line = 2.1, 'Counts')
   ### Draw Distribution oF Hunt Rates - 
@@ -313,6 +313,7 @@ drawDE2 <- mcmc_drawEventCountModels(datHuntVsPreyDE,preyCntRange,"modelGroupEve
 
 save(drawLL2,drawNL2,drawDL2,drawLE2,drawNE2,drawDE2,file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
 
+load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",sep=""))
 
 
 ### Draw Distribution oF Hunt Rates - 
@@ -374,7 +375,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2A_statComparePoissonHuntRates.pdf",
   adj  = 2.5
   padj <- -7.5
   las <- 1
-  
+  plotsamples = 30
   layout(matrix(c(1,1,2,2,3,3,4,4,4,5,5,5), 2,6, byrow = TRUE))
   ##Margin: (Bottom,Left,Top,Right )
   par(mar = c(4.0,4.75,1,1))
@@ -383,11 +384,17 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2A_statComparePoissonHuntRates.pdf",
   plotEventCountDistribution_cdf(datHuntVsPreyNE,drawNE2,colourHE[1],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
   plotEventCountDistribution_cdf(datHuntVsPreyNL,drawNL2,colourHL[1],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE )
   legend("bottomright",legend = c(  expression (),
-                                    bquote(NF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyNE))  )
-                                   ,bquote(NF["s"] ~"Model " ), 
-                                   bquote(NF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyNL)) )
-                                   ,bquote( NF["e"] ~ "Model " ) ), 
+                                    bquote("NF-s" ~ 'Data #' ~ .(NROW(datHuntVsPreyNE))  )
+                                   ,bquote("NF-s" ~"Model " ), 
+                                   bquote("NF-e" ~ 'Data #' ~ .(NROW(datHuntVsPreyNL)) )
+                                   ,bquote( "NF-e" ~ "Model " ) ), 
          col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
+  
+  legend(x=50,y=0.6,legend = c(  expression (),
+                                    bquote("Spontaneous"),
+                                    bquote("Evoked")),
+       col=c(colourP[4],colourP[4]), pch=c(pchL[1],pchL[3]),lty=c(NA,NA),lwd=2,cex=cex,bg="white" )
+  
   mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   mtext(side = 1,cex=cex, line = lineAxis, "Hunt events / 10 min ")
   mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
@@ -396,10 +403,10 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2A_statComparePoissonHuntRates.pdf",
   plotEventCountDistribution_cdf(datHuntVsPreyLE,drawLE2,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
   plotEventCountDistribution_cdf(datHuntVsPreyLL,drawLL2,colourHL[2],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE )
   legend("bottomright",legend = c(  expression (),
-                                    bquote(LF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyLE))  )
-                                    ,bquote(LF["s"] ~"Model " ), 
-                                    bquote(LF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyLL)) )
-                                    ,bquote( LF["e"] ~ "Model " ) ), 
+                                    bquote("LF-s" ~ 'Data #' ~ .(NROW(datHuntVsPreyLE))  )
+                                    ,bquote("LF-s" ~"Model " ), 
+                                    bquote("LF-e" ~ 'Data #' ~ .(NROW(datHuntVsPreyLL)) )
+                                    ,bquote( "LF-e" ~ "Model " ) ), 
         col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   mtext(side = 1,cex=cex, line = lineAxis, "Hunt events / 10 min ")
@@ -409,10 +416,10 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2A_statComparePoissonHuntRates.pdf",
   plotEventCountDistribution_cdf(datHuntVsPreyDE,drawDE2,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE  )
   plotEventCountDistribution_cdf(datHuntVsPreyDL,drawDL2,colourHL[3],pchL[3],lineTypeL[2],Plim,plotsamples,newPlot=FALSE  )
   legend("bottomright",legend = c(  expression (),
-                                    bquote(DF["s"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDE))  )
-                                    ,bquote(DF["s"] ~"Model " ), 
-                                    bquote(DF["e"] ~ 'Data #' ~ .(NROW(datHuntVsPreyDL)) )
-                                    ,bquote( DF["e"] ~ "Model " ) ), 
+                                    bquote("DF-s" ~ 'Data #' ~ .(NROW(datHuntVsPreyDE))  )
+                                    ,bquote("DF-s" ~"Model " ), ##DF["s"]
+                                    bquote("DF-e" ~ 'Data #' ~ .(NROW(datHuntVsPreyDL)) )
+                                    ,bquote( "DF-e" ~ "Model " ) ), 
          col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext(side = 1,cex=cex, line = lineAxis, "Hunt events / 10 min ")
   mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
@@ -471,7 +478,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2A_statComparePoissonHuntRates.pdf",
   
   legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")),seg.len=3.5
          , col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=cex,bg="white" )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated hunt rate") )  ) #(",lambda," )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated hunt rate (N/10min)") )  ) #(",lambda," )
   mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
   mtext("E",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 

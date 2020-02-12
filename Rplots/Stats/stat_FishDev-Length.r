@@ -12,7 +12,7 @@ modelNorm="model {
          
          for(i in 1:3) {
              mu[i]   ~ dunif(3,6 ) ## Mean length in mm
-             prec[i] ~ dunif(0,50) ##dgamma(1,1) ##
+             prec[i] ~ dunif(0,20) ##dgamma(1,1) ##
              sigma[i] <- sqrt(1/prec[i]) 
         }
 
@@ -87,9 +87,9 @@ dmodelSizeNF <- density(draw$mu[which(strGroupID == "NL"),,],bw=0.01)
 dmodelSizeLF <- density(draw$mu[which(strGroupID == "LL"),,],bw=0.01)
 dmodelSizeDF <- density(draw$mu[which(strGroupID == "DL"),,],bw=0.01)
 
-dSizeNF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,bw=0.05)
-dSizeLF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX,bw=0.05)
-dSizeDF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "DL"),]$LengthPx *DIM_MMPERPX,bw=0.05)
+dSizeNF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,bw=0.1)
+dSizeLF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX,bw=0.1)
+dSizeDF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "DL"),]$LengthPx *DIM_MMPERPX,bw=0.1)
 
 
 #lines(dmodelSizeLF,col=colourHLine[2] , xlim=c(3,6),lty=2 ,lwd=2   )
@@ -101,7 +101,7 @@ XLIM <- c(3.5,5)
 YLIM <- c(0,3)
 pdistBW <- 2 ## mm/sec
 strKern <- "gaussian"
-ntail <- 100 #nrow(draw$mu[which(strGroupID == "NL"),,])*0.5
+ntail <- 20 #nrow(draw$mu[which(strGroupID == "NL"),,])*0.5
 norm <- max(dSizeNF$y)
 
 modelNorm <- max(dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),,],1),
@@ -136,7 +136,7 @@ las <- 1
     lines(xquant,
          dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail-i,],1),
                                   sd=tail(draw$sigma[which(strGroupID == "NL"),ntail-i,],1))
-         ,type='l', col=colourHLine[1],lwd=1,lty=1)
+         ,type='l', col=colourHLine[1],lwd=2,lty=1)
   }
   lines(dSizeNF,col="black",lwd=4,lty=2)
   mtext(side = 1,cex=cex, line = lineAxis, expression("Larval length (mm) " ) )

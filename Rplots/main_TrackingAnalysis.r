@@ -30,11 +30,13 @@ library(tools)
 library(RColorBrewer);
 library("MASS");
 library(extrafont) ##For Font Embdedding in PDF, Run import_fonts() after install
+library(here)
 #library(data.table) ##Required for rBindList
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+#setwd(here())
 source("config_lib.R")
 
 

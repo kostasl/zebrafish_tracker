@@ -9,10 +9,10 @@ CONFIG += c++11
 CONFIG += warn_off
 
 SOURCES += main.cpp \
-    cvBlob/cvcontour.cpp \
-    cvBlob/cvcolor.cpp \
-    cvBlob/cvblob.cpp \
-    cvBlob/cvaux.cpp \
+    #cvBlob/cvcontour.cpp \
+    #cvBlob/cvcolor.cpp \
+    #cvBlob/cvblob.cpp \
+    #cvBlob/cvaux.cpp \
     GUI/QtOpencvCore.cpp \
     GUI/mainwindow.cpp \
     fishmodel.cpp \
@@ -83,17 +83,16 @@ QMAKE_LFLAGS_RPATH=
 include(deployment.pri)
 
 
-OTHER_FILES += \
-    ../cvblob/cvBlob/cvBlobLib.pro.user \
-    cvBlob/cvBlobLib.pro.user \
-    cvBlob/cvBlobLib.pro~ \
-    cvBlob/CMakeLists.txt
+#OTHER_FILES += \
+#    ../cvblob/cvBlob/cvBlobLib.pro.user \
+#    cvBlob/cvBlobLib.pro.user \
+#    cvBlob/cvBlobLib.pro~ \
+#    cvBlob/CMakeLists.txt
 
 SUBDIRS += \
     cvBlob/cvBlobLib.pro
 
 HEADERS += \
-    cvBlob/cvblob.h \
     larvatrack.h \
     ltROI.h \
     GUI/QtOpencvCore.hpp \
@@ -118,6 +117,7 @@ FORMS += \
     GUI/mainwindow.ui
 
 DISTFILES += \
+    README.md \
     img/fishbodyb_tmp.pgm \
     zebraprey_track.supp \
     img/fishbody_tmp9.pgm
