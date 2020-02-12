@@ -1450,7 +1450,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         int bestAngle;
         double  maxMatchScore = 0.0;
         bModelFound = false;
-        int iTemplRow = 0; //Starting Search Point For Template
+        int iTemplRow = iLastKnownGoodTemplateRow; //Starting Search Point For Template
         int iTemplCol = 0;
 
         //Check Through Models And Find The Closest Fish To This FishBlob
@@ -1525,7 +1525,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         {
             //Check Template Match Score
             ptSearch = fishblob->pt;
-             iTemplRow = 0; //Starting Search Point For Template
+            // Suitable template has not been found yet for this model, starting search Point For Template can be were we left off, as a suitable
+             iTemplRow = iLastKnownGoodTemplateRow ;
              iTemplCol = 0;
             pwindow_main->LogEvent("No Fish model found for blob");
             cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done

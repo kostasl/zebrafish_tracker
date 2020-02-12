@@ -992,6 +992,14 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+// Public method for Base code to update gui with new value of template Threshold
+void MainWindow::updateTemplateThres()
+{
+
+    //Calls on_spinBoxTemplateThres_valueChanged();
+    this->ui->spinBoxTemplateThres->setValue(gTemplateMatchThreshold*100.0);
+}
+
 void MainWindow::on_spinBoxTemplateThres_valueChanged(int arg1)
 {
  double newTMatchThresh = (double)arg1/100.0;

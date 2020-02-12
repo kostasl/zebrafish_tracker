@@ -385,19 +385,16 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 
   if (startRow != ibestMatchRow) //Store Best Row Match
   {
-      std::stringstream ss;
-      // Log As Message //
+      std::stringstream ss;       // Log As Message //
       ss << "Ch. Templ. Row:" << startRow << " -> "  << ibestMatchRow;
       pwindow_main->LogEvent(QString::fromStdString(ss.str()));
-
       startRow = ibestMatchRow;
-      //matchColIdx = ibestMatch;
-      //cv::imshow("Templ",templ_rot);
   }
 
 // Check if template match passes user set threshold
  if (maxGVal < gTemplateMatchThreshold)
  {
+     iTemplateMatchFailCounter++; //INcrease Count Of Failures
     // Choose next row Randomly
      startRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
      startCol = 0;
@@ -413,9 +410,18 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
      }
      pwindow_main->LogEvent(QString::fromStdString(ss.str()));
 
- }else // If template matched then stay on the same template row
+ }else{ // If template matched then stay on the same template row
      startRow = ibestMatchRow;
+     iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
+ }
 
+ // Check if we are stuck with Too Many Template Match Fails, then Warn and lower match threshold.
+ if (iTemplateMatchFailCounter > gnumberOfTemplatesInCache)
+ {
+    gTemplateMatchThreshold -= gTemplateMatchThreshold*0.02;
+    pwindow_main->LogEvent("[warning] Too many template match failures, lowering match threshold.");
+    pwindow_main->updateTemplateThres();
+ }
 
  if (templ_rot.cols > 0 && templ_rot.rows > 0)
          //cv::imshow("MTemplate",templ_rot);
@@ -484,6 +490,12 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     cv::Mat mFishTemplate_local;// = FishTemplateCache.getMat(cv::ACCESS_WRITE);
     cv::rectangle(mFishTemplate_local,rectblankcv,CV_RGB(0,0,0),CV_FILLED); //Blank It OUt
 
+    if (idxTempl < 1)
+    {
+        pwindow_main->LogEvent("[Error] Attempted to delete Template with invalid ID (0)");
+        return (0);
+    }
+
     //If Removing Last Row, Then Its Simple
     //Shrink Template
     if (idxTempl == (gnumberOfTemplatesInCache-1))
@@ -512,7 +524,7 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     }
 
     // DEBUG //
-    cv::imshow("Updated Fish Template Cache",FishTemplateCache(cv::Rect(0,0,mxDim,FishTemplateCache.rows)));
+    //cv::imshow("Updated Fish Template Cache",FishTemplateCache(cv::Rect(0,0,mxDim,FishTemplateCache.rows)));
 
     return 1;
 }

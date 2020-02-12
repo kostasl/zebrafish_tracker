@@ -39,6 +39,7 @@ public:
     void tickProgress();
     void setTotalFrames(uint FrameCount);
     void UpdateTailSegSizeSpinBox(float fTailSize);
+    void updateTemplateThres();
     void LogEvent(QString strMessage);
     void SetTrackerState(int stateID);
 
