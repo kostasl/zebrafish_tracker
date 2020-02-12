@@ -233,12 +233,6 @@ pdf(strPlotName,width=14,height=4.7,
 
 dev.off()
 
-### Compare Rates of Capture Attempt (hunt rate~) difference 
-(mean(MeanHuntRate_LL)-mean(MeanHuntRate_NL) ) /mean(MeanHuntRate_NL)
-### Compare Hunt Efficiency difference 
-(mean(HEventSuccess_LL)-mean(HEventSuccess_NL) ) /mean(HEventSuccess_NL)
-
-
 plotWidthIn <- 8
 strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ModelCaptureRateAndEfficiency.pdf",sep="")
 pdf(strPlotName,width=plotWidthIn,height=7,

@@ -287,6 +287,22 @@ datPCAHunter_norm_Cov <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL',
         #Cluster=Cluster#11
   )                                   } )          )
 
+## Regression Only  Speed-Distance Covariate Added
+datPCAHunter_norm_distSpeed <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
+  cbind(Efficiency=Efficiency, #1
+        Attempts=CaptureAttempts_norm, ##Efficiency is fraction of Succsss/Attempts <- Include it so as to remove this variance
+        #HuntPower=HuntPower_norm, #2 ## Does not CoVary With Anyhting 
+        #Group=groupID, #3
+        DistanceToPrey=DistanceToPrey_norm, #4
+        CaptureSpeed_norm, #5
+        Undershoot_norm, #6
+        DistSpeedProd=DistSpeed_norm, #7
+        #DistSpeedUnderProd=DistSpeedUnder_norm, #8
+        #SpeedUnderhoot=SpeedUnder_norm, #9
+        TimeToHitPrey=TimeToHitPrey_norm #10
+        #Cluster=Cluster#11
+  )                                   } )          )
+
 ## Regression WithOUT Covariate Products Speed-Distance
 datPCAHunter_norm <- data.frame( with(datHunterStatModel_norm_filt,{ #,'DL','NL' mergedCapDat$HuntPower < 5
   cbind(Efficiency=Efficiency, #1
@@ -323,14 +339,30 @@ plot(pcr_model,plottype="validation",ylim=c(0.1,0.2))
 
 plot(pcr_model_prod,plottype="validation",ylim=c(0.1,0.2))
 
+pcr_model_prod      <- pcr(Efficiency~., data = datPCAHunter_norm_Cov, scale = FALSE, validation = "CV")
+pcr_model_distSpeed <- pcr(Efficiency~., data = datPCAHunter_norm_distSpeed, scale = FALSE, validation = "CV")
+pcr_model <- pcr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
+plsr_model <- plsr(Efficiency~., data = datPCAHunter_norm, scale = FALSE, validation = "CV")
+
+err_model <- RMSEP(pcr_model,estimate="CV")
+summary(pcr_model_prod) ##With All Covariates
+summary(pcr_model_distSpeed) ## With Speed-Dist Covariates
+summary(pcr_model) ## With No Covariates
+
+summary(plsr_model)
 ##Prediction Plot - Very Weak relationship
 pdf(file= paste(strPlotExportPath,"/stat/efficiency/stat_PCARegPredictEfficiency.pdf",sep=""),width=7,height=7)
 ## bottom, left,top, right
   par(mar = c(5.9,4.3,2,1))
-  predplot(pcr_model_prod,asp=1,ncomp=4,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),main="PC Regression Predicting Efficiency",cex=cex)
+
+  predplot(pcr_model,asp=1,ncomp=5,line=TRUE,xlim=c(0.0,1.0),ylim=c(0,1),
+           main="PC Regression - Efficiency Prediction",cex=cex,xlab="Measured",ylab="Predicted")
   #predplot(pcr_model,asp=1,ncomp=4,line=TRUE,xlim=c(0,1.0),ylim=c(0,1))
-  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=2) ),xlim=c(0.0,1.0),ylim=c(0,1),col="red",pch=2,cex=cex,asp=1 )
-  legend("bottomright",c("4/8 components ","2/5 components"),pch=c(1,2),col=c("black","red"),cex=cex )
+  
+  points(cbind(datPCAHunter_norm$Efficiency,predict(pcr_model,ncomp=2) ),xlim=c(0.0,1.0),ylim=c(0,1),col="red",pch=2,cex=cex,asp=1 ,xlab="Measured",ylab="Predicted")
+  legend("bottomright",c(paste("5 PCs RMSEP CV",prettyNum(err_model$val[6],digits=2)),
+                         paste( "2 PCs RMSEP CV",prettyNum(err_model$val[3],digits=2))),
+                         pch=c(1,2),col=c("black","red"),cex=cex )
 
 dev.off()
 
