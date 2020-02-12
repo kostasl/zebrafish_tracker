@@ -363,6 +363,65 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
 
 } //END PROCESSMASKS
 
+/// \brief Find Contours Max Inflection point/Sharpest point
+/// Traces the Point/Idx of the sharpest contour point, then it Smooths and Simplifies the curve (contour)
+/// Adding the Sharp point back into the curve
+/// \returns idx Of Sharp point in the curve provided
+int findPointOfMaxCurvature(std::vector<cv::Point>& curve)
+{
+
+    ///// SMOOTH COntours /////
+    vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
+    PolyLineSplit(curve,curvex,curvey);
+
+    std::vector<double> X,XX,Y,YY;
+    std::vector<double> dXY;
+
+    getdXcurve(curvex,sigma,smoothx,X,XX,gGaussian,dgGaussian,d2gGaussian,false);
+    getdXcurve(curvey,sigma,smoothy,Y,YY,gGaussian,dgGaussian,d2gGaussian,false);
+
+    dXY.resize(X.size());
+
+    /// Find Tail As POint Of Maximum Curvature dXY
+    int idxMin2 = 0;
+    int idxMin  = 0;
+    double maxVal=0.0;
+    double minVal=10000.0;
+    cv::Point ptSharp,ptSharp2,ptHead,ptHead2,ptTail;
+
+    for (int j=0; j<X.size(); j++) {
+       dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
+       maxVal = dXY[j];
+
+       if (dXY[j] < minVal) //Detect Tail
+       {
+           idxMin2 = idxMin;//Save As 2nd Smallest
+           idxMin = j;
+           minVal = dXY[j];
+       }
+    }//for loop
+
+    ptSharp = curve[idxMin]; //Most Likely Tail Point
+    ptSharp2 = curve[idxMin2]; //This Could Be Head
+
+    ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
+    PolyLineMerge(curve,resampledcurveX,resampledcurveY);
+
+
+    //Find Where Tail Point Is In the Resampled (Reduced) Contour
+    int idxTail = findIndexClosesttoPoint(curve,ptSharp);
+
+    //Put Tail Back to Curve In CAse it Got Smoothed Out
+    std::vector<cv::Point>::iterator it = curve.begin();
+    it += idxTail;
+    curve.insert(it,ptSharp);
+
+    return(idxTail);
+}
+/// END OF Max INflection Tail Detect ///
+
+
+
 
 ///
 /// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features
@@ -378,234 +437,177 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
 void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
 {
 
-int max_thresh = 255;
-cv::Mat frameImg_gray;
-cv::Mat threshold_output_COMB;
-cv::Mat maskFGImg; //The FG Mask - After Combining Threshold Detection
+    int max_thresh = 255;
+    cv::Mat frameImg_gray;
+    cv::Mat threshold_output_COMB;
+    cv::Mat maskFGImg; //The FG Mask - After Combining Threshold Detection
 
-//cv::imshow("MOG2 Mask Raw",maskFGImg);
+    //cv::imshow("MOG2 Mask Raw",maskFGImg);
 
-std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
+    std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
+    cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
 
-///////////////// MOG Mask Is not Used Currently //
-/////get rid of noise/food marks
-////Apply Open Operation dilate(erode())
-//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
-//////jOIN bLOB Do Close : erode(dilate())
-//cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
+    ///////////////// MOG Mask Is not Used Currently //
+    /////get rid of noise/food marks
+    ////Apply Open Operation dilate(erode())
+    //cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
+    //////jOIN bLOB Do Close : erode(dilate())
+    //cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
 
-/////////// MOG Mask Is not Used Currently //
-
-
-///// Convert image to gray, Mask and
-//cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
-frameImg.copyTo(frameImg_gray); //Its Grey Anyway
+    /////////// MOG Mask Is not Used Currently //
 
 
-///Remove Pixel Noise
-///
-///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.
-///        dst – Output image with the same size and type as src .
-///       templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels
-////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels
-///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
-///
-//cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
-
-//frameImg_gray = frameImg.clone();
-//cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
-
-outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
+    ///// Convert image to gray, Mask and
+    //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
+    frameImg.copyTo(frameImg_gray); //Its Grey Anyway
 
 
-//- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
-if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
-{
-    cv::Mat fgMask_dilate; //Expand The MOG Mask And Intersect with Threshold
-    //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpenfish,cv::Point(-1,-1),1);
-#if defined(USE_CUDA)
-    if (bUseGPU) //Dilate The MOG Mask , and Combine
+    ///Remove Pixel Noise
+    ///
+    ///* src – Input 8-bit 1-channel, 2-channel or 3-channel image.
+    ///        dst – Output image with the same size and type as src .
+    ///       templateWindowSize – Size in pixels of the template patch that is used to compute weights. Should be odd. Recommended value 7 pixels
+    ////        searchWindowSize – Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time. Recommended value 21 pixels
+    ///        h – Parameter regulating filter strength. Big h value perfectly removes noise but also removes image details, smaller h value preserves details but also preserves some noise
+    ///
+    //cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
+
+    //frameImg_gray = frameImg.clone();
+    //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
+
+    outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
+
+
+    //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
+    if (bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
     {
-        gpu_DilateFilter->apply(dframe_mask,dframe_mask); //Use Global GPU Mat to run dilation
-        cv::cuda::bitwise_and(dframe_mask,dframe_thres,dframe_mask);
-        dframe_mask.download(maskFGImg); //Transfer processed Mask Back To CPU Memory
-    }else {
-        cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
-        //cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
+        cv::Mat fgMask_dilate; //Expand The MOG Mask And Intersect with Threshold
+        //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpenfish,cv::Point(-1,-1),1);
+    #if defined(USE_CUDA)
+        if (bUseGPU) //Dilate The MOG Mask , and Combine
+        {
+            gpu_DilateFilter->apply(dframe_mask,dframe_mask); //Use Global GPU Mat to run dilation
+            cv::cuda::bitwise_and(dframe_mask,dframe_thres,dframe_mask);
+            dframe_mask.download(maskFGImg); //Transfer processed Mask Back To CPU Memory
+        }else {
+            cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
+            //cv::bitwise_and(threshold_output,fgMask_dilate,maskFGImg); //Combine
+        }
+
+    #else
+
+        //cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1);
+        //BG Model Exists So Use it For Food Mask
+        cv::morphologyEx(fgMask,outFoodMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //
+
+        fgMask.copyTo(maskFGImg);
+    #endif
+    } //If BGModelling
+    else //No BG Modelling
+    {
+       //fgMask.copyTo(maskFGImg); //Use the same for Food processing
+       cv::threshold( frameImg_gray, outFoodMask, g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+       cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+
+       //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
+       cv::morphologyEx(fgMask,maskFGImg,cv::MORPH_CLOSE,kernelClose,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+    //
+    // Move this to process mask
+    //#if defined(USE_CUDA)
+    //     if (bUseGPU)
+    //        dframe_thres.download(threshold_output);
+    //#endif
     }
 
-#else
-
-    //cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1);
-    //BG Model Exists So Use it For Food Mask
-    cv::morphologyEx(fgMask,outFoodMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //
-
-    fgMask.copyTo(maskFGImg);
-#endif
-} //If BGModelling
-else //No BG Modelling
-{
-   //fgMask.copyTo(maskFGImg); //Use the same for Food processing
-   cv::threshold( frameImg_gray, outFoodMask, g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-   cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
-
-   //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
-   cv::morphologyEx(fgMask,maskFGImg,cv::MORPH_CLOSE,kernelClose,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
-//
-// Move this to process mask
-//#if defined(USE_CUDA)
-//     if (bUseGPU)
-//        dframe_thres.download(threshold_output);
-//#endif
-}
 
 
+    //cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
 
-//cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
+    //cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1); //Dilate
 
-//cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1); //Dilate
+    /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
+    //frameImg_gray.copyTo(frameImg_gray,maskFGImg);
+    //cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
+    //ADAPTIVE_THRESH_MEAN_C
 
-/// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
-//frameImg_gray.copyTo(frameImg_gray,maskFGImg);
-//cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
-//ADAPTIVE_THRESH_MEAN_C
-
-/////////////////Make Hollow Mask
-//make Inner Fish MAsk /More Accurate Way
-//cv::threshold( frameImg_gray, threshold_output_H, g_SegInnerthreshMult * g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
-//cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),g_SegInnerthreshMult);
-//Substract Inner from Outer
-//cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
-///////////////////
-
-
-//Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-//cv::dilate(maskFGImg,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
-cv::morphologyEx(maskFGImg,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
-
-/// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
-/// //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
-outfishbodycontours.clear();
-std::vector<std::vector<cv::Point> > fishbodycontours;
-std::vector<cv::Vec4i> fishbodyhierarchy;
-
-//Then Use ThresholdImage TO Trace More detailed Contours
-//cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
-cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-
-//Make Food Mask OUt Of FG Model /After Removing Noise
+    /////////////////Make Hollow Mask
+    //make Inner Fish MAsk /More Accurate Way
+    //cv::threshold( frameImg_gray, threshold_output_H, g_SegInnerthreshMult * g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
+    //cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),g_SegInnerthreshMult);
+    //Substract Inner from Outer
+    //cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
+    ///////////////////
 
 
-///Draw Only the largest contours that should belong to fish
-/// \todo Other Match Shapes Could be used here
-/// \todo Use WaterShed - Let MOG mask Be FG label and then watershed
-//int idxFishContour = -1;
-std::vector<cv::Point> curve; // THe Fish Contour to use for new Mask
-for (int kk=0; kk< (int)fishbodycontours.size();kk++)
-{
-    curve.clear();
+    //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
+    //cv::dilate(maskFGImg,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
+    cv::morphologyEx(maskFGImg,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
 
+    /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
+    /// //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
+    outfishbodycontours.clear();
+    std::vector<std::vector<cv::Point> > fishbodycontours;
+    std::vector<cv::Vec4i> fishbodyhierarchy;
+
+    //Then Use ThresholdImage TO Trace More detailed Contours
+    //cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
+    cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+    //Make Food Mask OUt Of FG Model /After Removing Noise
+
+
+    ///Draw Only the largest contours that should belong to fish
+    /// \todo Other Match Shapes Could be used here
+    /// \todo Use WaterShed - Let MOG mask Be FG label and then watershed
+    //int idxFishContour = -1;
+    std::vector<cv::Point> curve; // THe Fish Contour to use for new Mask
+    for (int kk=0; kk< (int)fishbodycontours.size();kk++)
+    {
+        curve.clear();
         ///Filter for what looks like a fish //
         /// Can use many methods here such as match shapes / Hashing etc.
-
         //Find Parent Contour
         if (fishbodyhierarchy[kk][3] != -1) // Need to have no parent
            continue;
         if (fishbodyhierarchy[kk][2] == -1)  // Need to have child
             continue;
 
-        /// Lets try simple area filter - Assume no large object need to be BG substracted
+        // Lets try simple area filter - Assume no large object need to be BG substracted
         uint area  = cv::contourArea(fishbodycontours[kk]);
 
-
-
         cv::Point centroid;
-        ///Check Area and then  Find the thresholded Fish Contour std::max(dMeanBlobArea*8,(double)thresh_fishblobarea)
-        if (area >  thresh_fishblobarea && area <= thresh_maxfishblobarea) //If Contour Is large Enough then Must be fish
+
+        /// DO BASIC Contour Filtering for Fish Like Features //
+        // Area check and then  Find the thresholded Fish Contour std::max(dMeanBlobArea*8,(double)thresh_fishblobarea)
+        if (area <  thresh_fishblobarea || area > thresh_maxfishblobarea) //If Contour Is large Enough then Must be fish
+            continue; //skip to next Contour
+
+        // Check Centroid is in ROI - Find Centroi
+        cv::Moments moments =  cv::moments(fishbodycontours[kk]);
+        centroid.x = moments.m10/moments.m00;
+        centroid.y = moments.m01/moments.m00;
+        //If Contained In ROI
+        for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
         {
-            cv::Moments moments =  cv::moments(fishbodycontours[kk]);
-
-            centroid.x = moments.m10/moments.m00;
-            centroid.y = moments.m01/moments.m00;
-            //If Contained In ROI
-            for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+            ltROI iroi = (ltROI)(*it);
+            //Keypoint is in ROI so Add To Masked
+            if (iroi.contains(centroid,gszTemplateImg.width))
             {
-                ltROI iroi = (ltROI)(*it);
-                //Keypoint is in ROI so Add To Masked
-                if (iroi.contains(centroid,gszTemplateImg.width))
-                {
-                     curve = fishbodycontours[kk];
-                     vFilteredFishbodycontours.push_back(curve);
-                     outfishbodyhierarchy.push_back(fishbodyhierarchy[kk]); //Save Hierarchy Too
-                }
+                 curve = fishbodycontours[kk];
+                 vFilteredFishbodycontours.push_back(curve);
+                 outfishbodyhierarchy.push_back(fishbodyhierarchy[kk]); //Save Hierarchy Too
             }
-
-//            curve = fishbodycontours[kk];
-            //std::vector<cv::RotatedRect> rectFeatures;
-            //Add Blob To candidate Region of interest Mask
-            //idxFishContour = findMatchingContour(fishbodycontours,fishbodyhierarchy,centroid,-1,fgMaskcontours[kk],rectFeatures);
-            //std::clog << " cntr area :" << area << std::endl;
         }
 
-        //If curve is empty then  Small Area Contour will be skipped
-
-        ///Skip Very Small Curves
-        if (curve.size() < gcFishContourSize/2)
+        //Skip Very Small Curves //If curve is empty then  Small Area Contour will be skipped
+        if ((int)curve.size() < gcFishContourSize/2)
             continue;
 
         assert(M % 2 == 1); //M is an odd number
+        // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
+        int idxTail = findPointOfMaxCurvature(curve);
 
-        ///// SMOOTH COntours /////
-
-        vector<double> curvex,curvey,smoothx,smoothy,resampledcurveX,resampledcurveY ;
-        PolyLineSplit(curve,curvex,curvey);
-
-        std::vector<double> X,XX,Y,YY;
-        std::vector<double> dXY;
-
-        getdXcurve(curvex,sigma,smoothx,X,XX,gGaussian,dgGaussian,d2gGaussian,false);
-        getdXcurve(curvey,sigma,smoothy,Y,YY,gGaussian,dgGaussian,d2gGaussian,false);
-
-        dXY.resize(X.size());
-        /// Find Tail As POint Of Maximum Curvature dXY
-        int idxMin2 = 0;
-        int idxMin  = 0;
-        double maxVal=0.0;
-        double minVal=10000.0;
-        cv::Point ptSharp,ptSharp2,ptHead,ptHead2,ptTail;
-
-        for (int j=0; j<X.size(); j++) {
-           dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
-           //if (dXY[j] > maxVal)
-           //{
-//               idxMax = j;
-               maxVal = dXY[j];
-  //         }
-
-           if (dXY[j] < minVal) //Detect Tail
-           {
-               idxMin2 = idxMin;//Save As 2nd Smallest
-               idxMin = j;
-               minVal = dXY[j];
-           }
-        }
-
-        ptSharp = curve[idxMin]; //Most Likely Tail Point
-        ptSharp2 = curve[idxMin2]; //This Could Be Head
-
-        ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY, gcFishContourSize,false);
-        PolyLineMerge(curve,resampledcurveX,resampledcurveY);
-
-
-        //Find Where Tail Point Is In the Resampled (Reduced) Contour
-        int idxTail = findIndexClosesttoPoint(curve,ptSharp);
-
-        //Put Tail Back to Curve In CAse it Got Smoothed Out
-        std::vector<cv::Point>::iterator it = curve.begin();
-        it += idxTail;
-        curve.insert(it,ptSharp);
-
-        //Copy with Tail At zero index
+        // Copy with a reshuffling of TailPoint to the zero index
         vector<cv::Point> vcurveR( curve.begin() + idxTail ,curve.end());
         vcurveR.insert(vcurveR.end(),curve.begin(),curve.begin() + std::max(0,idxTail) );
 
@@ -695,7 +697,7 @@ for (int kk=0; kk< (int)fishbodycontours.size();kk++)
         cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),cv::FILLED); //
         //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),5);
 
-} //For Each Fish Contour
+    } //For Each Fish Contour
 
      //Erase Fish From Food Mask Using Original Contour (Not Smoothed
      //cv::drawContours( outFoodMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
