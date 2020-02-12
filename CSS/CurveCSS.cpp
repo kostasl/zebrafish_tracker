@@ -230,7 +230,8 @@ vector<int> ComputeCSSImageMaximas(const vector<double>& contourx_, const vector
 	
 	map<int,double> maximas;
 	
-	Mat_<Vec3b> img(500,200,Vec3b(0,0,0)), contourimg(350,350,Vec3b(0,0,0));
+    Mat_<Vec3b> img(500,200,Vec3b(0,0,0));
+    //Mat_<Vec3b> contourimg(350,350,Vec3b(0,0,0));
 	bool done = false;
 //#pragma omp parallel for
 	for (int i=0; i<490; i++) {
@@ -239,16 +240,16 @@ vector<int> ComputeCSSImageMaximas(const vector<double>& contourx_, const vector
 			vector<double> kappa, smoothx, smoothy;
 			ComputeCurveCSS(contourx, contoury, kappa, smoothx, smoothy,sigma);
 			
-//			vector<vector<Point> > contours(1);
-//			PolyLineMerge(contours[0], smoothx, smoothy);
-//			contourimg = Vec3b(0,0,0);
-//			drawContours(contourimg, contours, 0, Scalar(255,255,255), CV_FILLED);
+//            vector<vector<Point> > contours(1);
+//            PolyLineMerge(contours[0], smoothx, smoothy);
+//            contourimg = Vec3b(0,0,0);
+//            drawContours(contourimg, contours, 0, Scalar(255,255,255), CV_FILLED);
 			
 			vector<int> crossings = FindCSSInterestPoints(kappa);
 			if (crossings.size() > 0) {
 				for (int c=0; c<crossings.size(); c++) {
 					img(i,crossings[c]) = Vec3b(255,0,0);
-//					circle(contourimg, contours[0][crossings[c]], 5, Scalar(0,0,255), CV_FILLED);
+                    //circle(contourimg, contours[0][crossings[c]], 3, Scalar(255,0,0), CV_FILLED);
 					
 					if (c < crossings.size()-1) {
 						if (fabs(crossings[c] - crossings[c+1]) < 5.0) {
@@ -263,7 +264,7 @@ vector<int> ComputeCSSImageMaximas(const vector<double>& contourx_, const vector
 				}
 //				char buf[128]; sprintf(buf, "evolution_%05d.png", i);
 //				imwrite(buf, contourimg);
-//				imshow("evolution", contourimg);
+//                imshow("evolution", contourimg);
 //				waitKey(30);
 			} else {
 				done = true;
@@ -295,7 +296,7 @@ vector<int> ComputeCSSImageMaximas(const vector<double>& contourx_, const vector
 	}
 //	Mat zoom; resize(img,zoom,Size(img.rows*2,img.cols*2));
 	imshow("css image",img);
-	waitKey();
+//	waitKey();
 	return maximasv;
 }
 

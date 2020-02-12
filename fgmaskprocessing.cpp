@@ -367,7 +367,7 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
 /// Traces the Point/Idx of the sharpest contour point, then it Smooths and Simplifies the curve (contour)
 /// Adding the Sharp point back into the curve
 /// \returns idx Of Sharp point in the curve provided
-int findPointOfMaxCurvature(std::vector<cv::Point>& curve)
+int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector<cv::Point>& curve)
 {
 
     ///// SMOOTH COntours /////
@@ -379,6 +379,19 @@ int findPointOfMaxCurvature(std::vector<cv::Point>& curve)
 
     getdXcurve(curvex,sigma,smoothx,X,XX,gGaussian,dgGaussian,d2gGaussian,false);
     getdXcurve(curvey,sigma,smoothy,Y,YY,gGaussian,dgGaussian,d2gGaussian,false);
+
+
+    vector<int> vidxMax = ComputeCSSImageMaximas(curvex,curvey,smoothx,smoothy);
+
+    vector<vector<Point> > contours(1);
+    PolyLineMerge(contours[0], smoothx, smoothy);
+    cv::Mat contourimg;
+    fgMask.copyTo(contourimg);
+    cv::drawContours(contourimg, contours, 0, Scalar(255,255,255),1, cv::LINE_8);
+    for (vector<int>::iterator itr = vidxMax.begin(); itr!=vidxMax.end(); ++itr) {
+        cv::circle(contourimg, contours[0][*itr],4,CV_RGB(255,255,255),cv::FILLED);
+    }
+    cv::imshow("contour",contourimg);
 
     dXY.resize(X.size());
 
@@ -605,7 +618,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
 
         assert(M % 2 == 1); //M is an odd number
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
-        int idxTail = findPointOfMaxCurvature(curve);
+        int idxTail = findPointOfMaxCurvature(frameImg, fgMask, curve);
 
         // Copy with a reshuffling of TailPoint to the zero index
         vector<cv::Point> vcurveR( curve.begin() + idxTail ,curve.end());
