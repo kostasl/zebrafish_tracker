@@ -117,8 +117,17 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     if (findBestMatch)
         pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
 
-
+   /// iLastKnownGoodTemplateRow will change to the row that matched the tracked larva
+    int iLastTemplateRow = iLastKnownGoodTemplateRow;
     int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
+
+    //Log Change of Template Row
+    if (iLastTemplateRow != iLastKnownGoodTemplateRow)
+    {
+        std::stringstream ss;
+        ss << "Changed template row to: -> "  << iLastKnownGoodTemplateRow;
+        pwindow_main->LogEvent(QString::fromStdString(ss.str()));
+    }
 
     detectedAngle =AngleIdx*gFishTemplateAngleSteps;
 
@@ -291,6 +300,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
   if (!bTemplateSearchThroughRows) //Do not Search Subsequent Template Rows
       iScanRowLimit = std::min(templSz.height*startRow + templRegion.height,imgtemplCache.rows) ;
 
+  // Run through croping/extracting each template sized window from the larger image
   for (int j=templSz.height*startRow; j<iScanRowLimit;j+=templRegion.height) //Remove for Speed Optimization.
   {
       templRegion.y    = j;
@@ -313,11 +323,10 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 #endif         //Convolution  // CV_TM_SQDIFF_NORMED Poor Matching
 
         //Assume Value < 0.7 is non Fish,
-
         if (maxGVal < maxVal)
         {
             maxGVal         = maxVal;
-            ptGmaxLoc       = ptmaxLoc; //The calling Function needts reposition maxLoc To the global Frame
+            ptGmaxLoc       = ptmaxLoc; //The calling Function needs to reposition maxLoc To the global Frame
             matchColIdx     = Colidx;
             ibestMatchRow   = idRow;
             matchScore      = maxVal; //Save Score Of Best Match
@@ -386,10 +395,10 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
       //cv::imshow("Templ",templ_rot);
   }
 
-
+// Check if template match passes user set threshold
  if (maxGVal < gTemplateMatchThreshold)
  {
-
+    // Choose next row Randomly
      startRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
      startCol = 0;
 
@@ -404,7 +413,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
      }
      pwindow_main->LogEvent(QString::fromStdString(ss.str()));
 
- }else
+ }else // If template matched then stay on the same template row
      startRow = ibestMatchRow;
 
 
