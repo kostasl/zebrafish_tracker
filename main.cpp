@@ -39,9 +39,10 @@
   ///  * Second method of Ellipsoid fitting, using a fast algorithm on edge points
   ///  * Changes template Match region, wide for new blobs, narrow for known fish - Can track at 50fps (06/2018)
   ///  * Combines blob tracking with optic flow at the point of food particle (using Lucas-Kanade) to improve track of prey motion near fish
-  ///  * Tail spine is tracking with both, sequential intensity scanning and a variational approach on fitting smoothed fish contour angle and length (estimates fish's tail size)
- ///
- ///  \remark OutputFiles
+ ///   * Tail spine is tracking with both, sequential intensity scanning and a variational approach on fitting smoothed fish contour angle and length (estimates fish's tail size)
+ ///   * Detect tail and Head points of candidate fish contours: extend tail mask to improve tail spine fitting /Use head pt to inform template matching search region for speed optimizing of larva tracing.
+
+///  \remark OutputFiles
  ///  Data processing:
  ///  * Added Record of Food Count at regular intervals on each video in case, so that even if no fish is being tracked ROI
  ///    the evolution of prey Count in time can be observed. saveTracks outputs a count of prey numbers at a regular interval 1sec, it shows up with fishID 0
@@ -1388,10 +1389,14 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         //Save only when tracking - And Not While Paused
         if (bTracking && !bPaused && bRecordToFile)
         {
-            saveTracks(vfishmodels,vfoodmodels,outfishdatafile,frameNumberString);
-            saveFoodTracks(vfishmodels,vfoodmodels,outfooddatafile,frameNumberString);
+            if (!saveTracks(vfishmodels,vfoodmodels,outfishdatafile,frameNumberString))
+            {
+                bRecordToFile = false;
+                bPaused = true; //Pause So user Knows Saving Is disabled
+            }
+            if (!saveFoodTracks(vfishmodels,vfoodmodels,outfooddatafile,frameNumberString))
+                bRecordToFile = false;
         }
-
 
         checkPauseRun(&window_main,keyboard,nFrame);
 

@@ -252,7 +252,7 @@ vector<int> ComputeCSSImageMaximas(const vector<double>& contourx_, const vector
                     //circle(contourimg, contours[0][crossings[c]], 3, Scalar(255,0,0), CV_FILLED);
 					
 					if (c < crossings.size()-1) {
-						if (fabs(crossings[c] - crossings[c+1]) < 5.0) {
+                        if (fabs(crossings[c] - crossings[c+1]) < 5.0) {
 							//this is a maxima
 							int idx = (crossings[c] + crossings[c+1]) / 2;
 //#pragma omp critical

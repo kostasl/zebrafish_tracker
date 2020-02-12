@@ -87,6 +87,6 @@ int iTemplateMatchFailCounter   = 0; //Counts the number of consecutive times te
 
 ///Global Variables
  double sigma = 3.0;
- int M = round((3.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
+ int M = round((4.0*sigma+1.0) / 2.0) * 2 - 1; //Gaussian Kernel Size
 
 const QString gsEyeDetectorFilename = "RLEyeDetector.xml";

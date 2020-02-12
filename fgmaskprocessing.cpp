@@ -380,9 +380,8 @@ int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector
     getdXcurve(curvex,sigma,smoothx,X,XX,gGaussian,dgGaussian,d2gGaussian,false);
     getdXcurve(curvey,sigma,smoothy,Y,YY,gGaussian,dgGaussian,d2gGaussian,false);
 
-
-    vector<int> vidxMax = ComputeCSSImageMaximas(curvex,curvey,smoothx,smoothy);
-
+    //Finds Inwards Curvature points that exceed a threshold, defined as the maximal curvature points
+/*    vector<int> vidxMax = ComputeCSSImageMaximas(curvex,curvey,smoothx,smoothy);
     vector<vector<Point> > contours(1);
     PolyLineMerge(contours[0], smoothx, smoothy);
     cv::Mat contourimg;
@@ -392,7 +391,7 @@ int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector
         cv::circle(contourimg, contours[0][*itr],4,CV_RGB(255,255,255),cv::FILLED);
     }
     cv::imshow("contour",contourimg);
-
+*/
     dXY.resize(X.size());
 
     /// Find Tail As POint Of Maximum Curvature dXY
@@ -402,7 +401,7 @@ int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector
     double minVal=10000.0;
     cv::Point ptSharp,ptSharp2,ptHead,ptHead2,ptTail;
 
-    for (int j=0; j<X.size(); j++) {
+    for (int j=0; j<(int)X.size(); j++) {
        dXY[j] = (X[j]*X[j] + Y[j]*Y[j]);
        maxVal = dXY[j];
 
@@ -433,13 +432,85 @@ int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector
 }
 /// END OF Max INflection Tail Detect ///
 
+/// \brief Returns the index of the point furthest away from the provided tail point idx on the curve
+/// That furthest from the tail position is likely the larva's head
+int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Point ptCentroid, cv::Point& ptHead,cv::Point& ptTail)
+{
+    cv::Point ptHead2;
+    int retIdx;
+    // Copy with a reshuffling of TailPoint to the zero index
+    vector<cv::Point> vcurveR( curve.begin() + idxTail ,curve.end());
+    vcurveR.insert(vcurveR.end(),curve.begin(),curve.begin() + std::max(0,idxTail) );
 
+    /// Find Head-Tail Point As Point Of Maximum Arc Length //
+    //1st Approach is the noddy Way, n!
+    int maxLen = 0;
+    int lenA,lenB; //Arc Lenght ClockWise, And AntiClockWise
+    int idxA,idxB,idxT;
+    for (uint j=0; j < 2 ; j++) //Isolate to 1st found Tail Point
+    {
+        for (uint k=j+2; k< vcurveR.size(); k++)
+        {
+            vector<cv::Point>::const_iterator first = vcurveR.begin() + j;
+            vector<cv::Point>::const_iterator last = vcurveR.begin() + k;
+            vector<cv::Point>::const_iterator end = vcurveR.end();
+            vector<cv::Point> vArc(first, last); //Copy Points Over And Test For arc Length
+            vector<cv::Point> vArcRev(last, end); //Copy Points Over And Test For arc Length
 
+             lenA = cv::arcLength(vArc,false);
+             lenB = cv::arcLength(vArcRev,false); //Count Remaining Arc
+
+            if (lenA >= lenB) //This Should Continuously Rise /
+             {
+                idxT = k;
+                break; //Crossed Over Mid Arc / So Distal point Found
+             }
+        }//Search Across Points Ahead Of Starting Point
+
+        //Is this the Longest Arc Found So Far? Save it , and Test new Starting Point
+        if (lenA > maxLen)
+        {
+            maxLen = lenA;
+            idxA = j; //Save the Curve Point Pair
+            idxB = idxT;
+        }
+    }
+    //
+    //Check Which curve point is closest to the TailInflection Candidate - Initially Mark As Tail
+    if (norm(curve[idxTail]-vcurveR[idxA]) < norm(curve[idxTail]-vcurveR[idxB]) )
+    {
+        ptTail = vcurveR[idxA];
+        ptHead = vcurveR[idxB];
+        ptHead2 = vcurveR[idxB-1];
+        retIdx = idxB;
+    }
+    else
+    {
+        ptTail = vcurveR[idxB];
+        ptHead = vcurveR[idxA];
+        ptHead2 = vcurveR[idxA-1];
+        retIdx = idxA;
+    }
+     //Verify Head Point is closest to the Centroid (COM) than tail / Otherwise Switch
+    if (norm(ptTail-ptCentroid)  < norm(ptHead-ptCentroid))
+    {
+        cv::Point temp = ptTail;
+        ptTail = ptHead;
+        ptHead = temp;
+    }
+
+    //Replace Old Curve
+    curve = vcurveR;
+
+    return retIdx; //Return Head Idx in Curve
+}
 
 ///
 /// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features
 /// This is to recover Background substraction errors -
-/// It then uses the fixed image to Find contours *main Internal and External fish contours* using on Masked Image Showing Fish Outline
+/// * Filters contours for area, to pickup fish like ones
+/// * Smooths large contour curves and identies maximum curve point as tail (sharp change in curvature)
+/// *The opposite (antipode) point to the tail in curve is identified as the head.
 /// \param frameImg - Raw Input camera input in Mat - colour or gray -
 /// \param fgMask - Modified Enhanced FG Mask Image
 /// \param outFishMask - Mask Enhanced for Fish Blob Detection
@@ -533,25 +604,6 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
     }
 
 
-
-    //cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
-
-    //cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1); //Dilate
-
-    /// MASK FG ROI Region After Thresholding Masks - This Should Enforce ROI on Blob Detection  //
-    //frameImg_gray.copyTo(frameImg_gray,maskFGImg);
-    //cv::adaptiveThreshold(frameImg_gray, threshold_output,max_thresh,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,g_Segthresh,0); //Last Param Is const substracted from mean
-    //ADAPTIVE_THRESH_MEAN_C
-
-    /////////////////Make Hollow Mask
-    //make Inner Fish MAsk /More Accurate Way
-    //cv::threshold( frameImg_gray, threshold_output_H, g_SegInnerthreshMult * g_Segthresh, max_thresh, cv::THRESH_BINARY ); //Log Threshold Image
-    //cv::dilate(threshold_output,threshold_output,kernelOpenfish,cv::Point(-1,-1),g_SegInnerthreshMult);
-    //Substract Inner from Outer
-    //cv::bitwise_xor(threshold_output,threshold_output_H,threshold_output_COMB);
-    ///////////////////
-
-
     //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
     //cv::dilate(maskFGImg,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
     cv::morphologyEx(maskFGImg,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
@@ -617,89 +669,18 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
             continue;
 
         assert(M % 2 == 1); //M is an odd number
+        //Find Tail Point- As the one with the sharpest Angle
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
         int idxTail = findPointOfMaxCurvature(frameImg, fgMask, curve);
+        int idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
 
-        // Copy with a reshuffling of TailPoint to the zero index
-        vector<cv::Point> vcurveR( curve.begin() + idxTail ,curve.end());
-        vcurveR.insert(vcurveR.end(),curve.begin(),curve.begin() + std::max(0,idxTail) );
-
-        /// Find Head-Tail Point As Point Of Maximum Arc Lenght //
-        //1st Approach is the noddy Way, n!
-        int maxLen = 0;
-        int lenA,lenB; //Arc Lenght ClockWise, And AntiClockWise
-        int idxA,idxB,idxT;
-        for (uint j=0; j < 2 ; j++) //Isolate to 1st found Tail Point
-        {
-            for (uint k=j+2; k< vcurveR.size(); k++)
-            {
-                vector<cv::Point>::const_iterator first = vcurveR.begin() + j;
-                vector<cv::Point>::const_iterator last = vcurveR.begin() + k;
-                vector<cv::Point>::const_iterator end = vcurveR.end();
-                vector<cv::Point> vArc(first, last); //Copy Points Over And Test For arc Length
-                vector<cv::Point> vArcRev(last, end); //Copy Points Over And Test For arc Length
-
-                 lenA = cv::arcLength(vArc,false);
-                 lenB = cv::arcLength(vArcRev,false); //Count Remaining Arc
-
-                if (lenA >= lenB) //This Should Continuously Rise /
-                 {
-                    idxT = k;
-                    break; //Crossed Over Mid Arc / So Distal point Found
-                 }
-
-            }//Search Across Points Ahead Of Starting Point
-
-            //Is this the Longest Arc Found So Far? Save it , and Test new Starting Point
-            if (lenA > maxLen)
-            {
-                maxLen = lenA;
-                idxA = j; //Save the Curve Point Pair
-                idxB = idxT;
-            }
-
-        }
-        //
-        //Check Which curve point is closest to the TailInflection Candidate - Initially Mark As Tail
-        if (norm(curve[idxTail]-vcurveR[idxA]) < norm(curve[idxTail]-vcurveR[idxB]) )
-        {
-            ptTail = vcurveR[idxA];
-            ptHead = vcurveR[idxB];
-            ptHead2 = vcurveR[idxB-1];
-        }
-        else
-        {
-            ptTail = vcurveR[idxB];
-            ptHead = vcurveR[idxA];
-            ptHead2 = vcurveR[idxA-1];
-        }
-         //Verify Head Point is closest to the Centroid (COM) than tail / Otherwise Switch
-        if (norm(ptTail-centroid)  < norm(ptHead-centroid))
-        {
-            cv::Point temp = ptTail;
-            ptTail = ptHead;
-            ptHead = temp;
-        }
-
-
-        //Replace Old Curve
-        curve = vcurveR;
-
-        /// \todo move this to some object prop, use ArcLength for fish Size Estimates
+        /// \todo Check Template Matching Around Head / Verify Contour Belongs to fish
         gptHead = ptHead; //Hack To Get position For Template
 
-        ///////////// END SMOOTHING
-
-        ///\todo Make Contour Fish Like - Extend Tail ///
-        //Find Tail Point- As the one with the sharpest Angle
-
+        /// \todo Conditionally add this Contour to output if it matches template.
         outfishbodycontours.push_back(curve);
-        /////COMBINE - DRAW CONTOURS
-        //Could Check if fishblob are contained (Doesn't matter if they are updated or not -
-        // they should still fall within contour - )
 
-        ///\bug can get freezing / long pauses on drawContours for unknown reasons.
-
+        ///  COMBINE - DRAW CONTOURS
         //Draw New Smoothed One - the idx should be the last one in the vector
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED); //
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
@@ -712,19 +693,9 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
 
     } //For Each Fish Contour
 
-     //Erase Fish From Food Mask Using Original Contour (Not Smoothed
-     //cv::drawContours( outFoodMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(0,0,0),cv::FILLED);
-
-    //Merge Smoothed Contour Thresholded with BGMAsk //Add the masks so as to enhance fish features
-    //cv::bitwise_or(outFishMask,maskFGImg,maskFGImg);
-    //cv::bitwise_xor(outFishMask,maskFGImg,outFoodMask); //Exclude fish from Food Blob Detection
-    //maskfishOnly.copyTo(maskFGImg);
-
-    //threshold_output.copyTo(frameDebugD);
 
     if (bshowMask)
     {
-
         #if defined(USE_CUDA)
             if (bUseGPU) dframe_thres.download(threshold_output);
         #endif
@@ -736,15 +707,12 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
        if (!fgMask.empty())
            cv::imshow("BG Model",fgMask);
 
-
     }
 
     // Release Should is done automatically anyway
     threshold_output_COMB.release();
-
-
 }
-
+// End of Enhance Mask
 
 ///
 /// \brief updateBGFrame Update BG model for a fixed number of frames / Construct Accumulated Model -

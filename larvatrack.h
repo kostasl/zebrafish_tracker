@@ -174,6 +174,15 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& maskFGImg,cv::Mat& outFishMas
 ///
 int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt);
 
+/// \brief locates tail by taking curve derivaties
+///
+int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector<cv::Point>& curve);
+
+/// \brief Returns the index of the point furthest away from the provided tail point idx on the curve
+/// That furthest from the tail position is likely the larva's head
+int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Point ptCentroid, cv::Point& ptHead,cv::Point& ptTail);
+
+
 /// \brief Find point Furthest Along closed outline contour
 /// Assume points belong to closed contour - find max distance between points
 /// traversing clock and anticlockwise
