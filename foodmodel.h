@@ -6,7 +6,7 @@
 //#include <QApplication>
 
 //#include "larvatrack.h" //If included here it causes circular search if fishModel Defs.
-#include "config.h"
+//#include "config.h"
 #include "ellipse_detect.h"
 #include "zfttracks.h"
 

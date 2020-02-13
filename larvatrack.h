@@ -44,17 +44,14 @@
 
 
 class MainWindow;
-
+class fishModel;
+class vfish;
 
 typedef cv::KeyPoint zftblob;
 typedef std::vector<zftblob> zftblobs;
 
 //typedef cv::KeyPoint zftblob;
 //typedef std::vector<zftblob> zftblobs;
-
-
-
-
 
 
 
@@ -235,10 +232,6 @@ template <class T, class S, class C>
 void clearpq2(std::priority_queue<T, S, C>& q){
     q=std::priority_queue<T, S, C>();
 }
-
-
-
-
 
 
 

@@ -31,6 +31,8 @@ SOURCES += main.cpp \
 
 RESOURCES += qml.qrc
 
+RC_ICONS = myappico.ico
+
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
 PKGCONFIG += opencv #or whatever package here

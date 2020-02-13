@@ -45,6 +45,7 @@
 #include <iostream>
 #include <cstdlib>
 
+#include <config.h>
 #include <larvatrack.h>
 
 namespace QtOpencvCore

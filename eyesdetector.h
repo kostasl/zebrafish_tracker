@@ -81,9 +81,10 @@ typedef struct EyeDetectorState
 class EyesDetector
 {
 public:
+    EyesDetector();
     EyesDetector(ulong  ValD1,ulong  ValD2,ulong ValD3):mStateValue( ValD1,std::vector<std::vector<double>>(ValD2,std::vector<double>(ValD3)) ){} //Rows - number of segthres to explore - Cols - Vergence state descriptors
     EyesDetector(int RangeValThres_min,int RangeValThres_max,int AngleVal_min,int AngleVal_max);
-    EyesDetector();
+
     tEyeDetectorState getCurrentState();
     void setCurrentState(tEyeDetectorState State);
     ~EyesDetector();
@@ -140,6 +141,7 @@ private:
     bool bExploreMove;
     tEyeDetectorState currentState;
     std::default_random_engine generator;
+    QString gsEyeDetectorFilename = "RLEyeDetector.xml";
 
 };
 

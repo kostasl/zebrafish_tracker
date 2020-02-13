@@ -15,7 +15,7 @@
 ///
 
 /// \brief DrawNextAction- Implements policy and returns action as a move in state space (ie increases or decreases the threshold)
-/// this action must then be passed on to the "envinment" here the fitting of ellipsoids -
+/// this action must then be passed on to the "environment" here the fitting of ellipsoids -
 /// the fit score and eye v angle determine the next state - which needs to be passed to UpdateStateValue before drawing the next Action
 /// \returns a modified currentState reflecting the action taken in the state space based on (greedy policy)
 tEyeDetectorState EyesDetector::DrawNextAction(tEyeDetectorState currentState)
@@ -163,6 +163,8 @@ baseIdxRow = RangeValThres_min;
 
  /// Load Archived values if they Exists
  /// Load Saved Learned Behaviour
+  assert(gsEyeDetectorFilename.size() > 0);
+  qDebug() << "Load EyeDetector State:" << gsEyeDetectorFilename;
   std::ifstream is(gsEyeDetectorFilename.toStdString());
   if (is.is_open())
   {
