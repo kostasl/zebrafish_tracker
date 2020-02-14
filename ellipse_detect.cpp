@@ -797,9 +797,8 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     std::vector<std::vector<cv::Point>> vEyes;
 
-    //Find Parent Contour
-    int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,2,vt,ve);
-    int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,2,vt,ve);
+
+
 
 
     cv::RotatedRect rcLEye,rcREye;
@@ -813,21 +812,6 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     // Here is a heurestic approach combines the opencv ability to detect ellipses , with the noisy fast ellipsoid detection method that returns goodness of fit
     // Draw an ellipsoid onto the edge images, and then try to fit edges to ellipsoid
-    /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
-    if (iLEye != -1)
-    {
-        cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
-        if (vLEyeHull.size() > 4)
-        {
-            vEyes.push_back(vLEyeHull);
-            rcLEye =  cv::fitEllipse(vLEyeHull);
-            tDetectedEllipsoid dEll(rcLEye,10);
-            lEll.fitscore       = dEll.fitscore;
-            lEll.rectEllipse    = dEll.rectEllipse;
-            qEllipsoids.push(dEll); //Add As last resort candidate
-            //cv::ellipse(imgEdge_local, lEll.rectEllipse ,CV_RGB(255,255,255),1);
-        }
-    }
 
 //    //Check if Std Ellipse Finding Worked / Otherwise Try Method 2
 //    int mjAxis1 = std::max(lEll.rectEllipse.size.width, lEll.rectEllipse.size.height);
@@ -837,18 +821,17 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
         vedgePoints_all.clear();
 
-        //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
-        try
-        {
-            //imgEdge_local = cv::Mat::zeros(imgUpsampled_gray.rows,imgUpsampled_gray.cols,CV_8UC1);
-           // cv::Canny( imgIn_thres, imgEdge_local, gi_CannyThresSmall,gi_CannyThres  );
-        }
-        catch (char* e)
-        {
-            pwindow_main->LogEvent("Error detectEllipses  L Eye Canny processing ");
-            std::cerr << e << std::endl;
+//        //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
+//        try
+//        {
 
-        }
+//        }
+//        catch (char* e)
+//        {
+//            pwindow_main->LogEvent("Error detectEllipses  L Eye Canny processing ");
+//            std::cerr << e << std::endl;
+
+//        }
         //outHeadFrameMonitor = imgEdge_local.clone();
         //Make coloured Version for Display
         cv::cvtColor( imgEdge_local, outHeadFrameMonitor, cv::COLOR_GRAY2RGB);
@@ -867,11 +850,25 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         }
         //imgEdge_local.copyTo(imgEdge_dbg);
         if (qEllipsoids.size() == 0 )
+        {   //qDebug() << " L Eye Ellipse Detection Failed";
+            /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
+            int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,2,vt,ve);
+            if (iLEye != -1)
+            {
+                cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
+                if (vLEyeHull.size() > 4)
+                {
+                    vEyes.push_back(vLEyeHull);
+                    rcLEye =  cv::fitEllipse(vLEyeHull);
+                    tDetectedEllipsoid dEll(rcLEye,10);
+                    lEll.fitscore       = dEll.fitscore;
+                    lEll.rectEllipse    = dEll.rectEllipse;
+                    qEllipsoids.push(dEll); //Add As last resort candidate
+                    //cv::ellipse(imgEdge_local, lEll.rectEllipse ,CV_RGB(255,255,255),1);
+                }
+            }
+        }
         //    qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
-        //else
-            qDebug() << " L Eye Backup Ellipse Failed";
-
-    //}
 
 
     ///Store Left Eye And Draw Detected Ellipsoid
@@ -890,7 +887,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         ret++;
 
         ///Draw Left Eye Rectangle
-        fLAngleEstimate += drawExtendedMajorAxis(outHeadFrameMonitor,lEll,CV_RGB(0,250,0));
+        //fLAngleEstimate += drawExtendedMajorAxis(outHeadFrameMonitor,lEll,CV_RGB(0,250,0));
 
         qEllipsoids.pop(); //Remove Drawn Ellipsoid
     }
@@ -907,22 +904,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
      while (qEllipsoids.size() > 0)
          qEllipsoids.pop(); //Empty All Other Candidates
 
-     /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
-    if (iREye != -1)
-    {
 
-        cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
-        if (vREyeHull.size() > 4)
-        {
-              vEyes.push_back(vREyeHull);
-              rcREye =  cv::fitEllipse(vREyeHull);
-              tDetectedEllipsoid dEll(rcREye,10); //Make with a above threshold score
-              rEll.fitscore       = dEll.fitscore;
-              rEll.rectEllipse    = dEll.rectEllipse;
-              qEllipsoids.push(dEll); //Add As last resort candidate
-              //cv::ellipse(imgEdge_local, rEll.rectEllipse ,CV_RGB(255,255,255),1);
-        }
-    }
 
         /// Cover Left half of the image
         //outHeadFrameMonitor = imgEdge_local.clone();
@@ -938,9 +920,29 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
             getEdgePoints(imgEdge_local_REye,vedgePoints_all);
             detectEllipse(imgEdge_local_REye,vedgePoints_all,qEllipsoids);
         }
+        //Use Default Method - If Fast Algo Not Used/ Or it Failed
         if (qEllipsoids.size() == 0 )
-//            qDebug() << " R Eye Backup Ellipse Failed";
-            pwindow_main->LogEvent("R Eye Backup Ellipse Failed ");
+        {//pwindow_main->LogEvent("R Eye Backup Ellipse Failed ");
+            /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
+           int iREye = findMatchingContour(contours_canny,hierarchy_canny,ptREyeMid,2,vt,ve);
+           if (iREye != -1)
+           {
+
+               cv::convexHull( cv::Mat(contours_canny[iREye]), vREyeHull, false );
+               if (vREyeHull.size() > 4)
+               {
+                     vEyes.push_back(vREyeHull);
+                     rcREye =  cv::fitEllipse(vREyeHull);
+                     tDetectedEllipsoid dEll(rcREye,10); //Make with a above threshold score
+                     rEll.fitscore       = dEll.fitscore;
+                     rEll.rectEllipse    = dEll.rectEllipse;
+                     qEllipsoids.push(dEll); //Add As last resort candidate
+                     //cv::ellipse(imgEdge_local, rEll.rectEllipse ,CV_RGB(255,255,255),1);
+               }
+           }
+        }//Use STD Eye Method
+
+
 
             //qDebug() << " R Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
         //else
@@ -959,11 +961,8 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         vRellipses.push_back(rEll);
         ret++;
 
-
-        fRAngleEstimate += drawExtendedMajorAxis(outHeadFrameMonitor,rEll,CV_RGB(0,250,0));
-
-
-       // fAngleEstimate += rEll.getEyeAngle();
+       // fRAngleEstimate += drawExtendedMajorAxis(outHeadFrameMonitor,rEll,CV_RGB(0,250,0));
+         // fAngleEstimate += rEll.getEyeAngle();
 
        // while (qEllipsoids.size() > 0)//Empty All Other Candidates
          qEllipsoids.pop();

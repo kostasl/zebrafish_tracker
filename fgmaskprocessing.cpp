@@ -686,13 +686,15 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
         ///  COMBINE - DRAW CONTOURS
         ///\bug drawContours produces freezing sometimes
         //Draw New Smoothed One - the idx should be the last one in the vector
-        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED); //
+        cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::LINE_8); //
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
         cv::circle(outFishMask, (ptTail-ptHead)/30+ptTail,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
-        ///Can Freezing and artifacts on head appearing as food
-        cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),cv::FILLED); //
+        ///\bug Can cause Freezing when drawFilled and artifacts on head appearing as food
+        /// It is significantly slowing down the routine
+        //Removed For Perf:cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255),3,cv::LINE_8); //
+
         //cv::drawContours( outFoodMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(0,0,0),5);
 
     } //For Each Fish Contour

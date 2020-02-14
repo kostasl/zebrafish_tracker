@@ -185,6 +185,7 @@ extern bool bFitSpineToTail ; // Runs The Contour And Tail Fitting Spine Optimiz
 extern bool bStartFrameChanged  ; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 
 extern bool bRenderToDisplay ; ///Updates Screen to User When True
+extern bool bRenderWithAlpha; ///Blend Drawings so a A Transparency Effect is produced
 extern bool bDrawFoodBlob    ; ///Draw circle around identified food blobs (prior to model matching)
 extern bool bOffLineTracking ; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 extern bool bBlindSourceTracking ; /// Used for Data Labelling, so as to hide the data source/group/condition
@@ -323,6 +324,7 @@ class trackerState
 
   //Screen Render Options//
   bool bRenderToDisplay ; ///Updates Screen to User When True
+  bool bRenderWithAlpha;
   bool bOffLineTracking ; ///Skip Frequent Display Updates So as to  Speed Up Tracking
   bool bDrawFoodBlob    ; ///Draw circle around identified food blobs (prior to model matching)
   int trackFnt;  //Font for Reporting - Tracking

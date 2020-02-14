@@ -888,7 +888,10 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     }
 
     //Blank Drawing Canvas for output - We then Blend with original Image
-    outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
+    if (bRenderWithAlpha)
+        outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
+    else
+        outframe = frame.clone();
 
 
         //Pass Processed bgMask which Is then passed on to enhanceMask
@@ -897,7 +900,9 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         double alpha = 0.5;
         if (bRenderToDisplay)
         {
-            cv::addWeighted(frame,1.0,outframe,1.0-alpha,0.0,outframe);
+            //Simulated Alpha Channels Causes delays!
+            if (bRenderWithAlpha)
+                cv::addWeighted(frame,1.0,outframe,1.0-alpha,0.0,outframe);
 
             ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
             rect_pasteregion.width = outframeHeadEyeDetect.cols;
@@ -1049,7 +1054,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              {
                  //If Yes then assign the fish with the overlapping blob the template Match Score
                 bModelFound = true;
-                ptSearch = pfish->ptRotCentre; //((cv::Point)fishblob->pt-gptHead)/3+gptHead;
+                ptSearch = pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
                 iTemplRow = pfish->idxTemplateRow;
                 iTemplCol = pfish->idxTemplateCol;
                 maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);

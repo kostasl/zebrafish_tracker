@@ -110,11 +110,12 @@ bool bMouseLButtonDown;
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 bool bStoreThisTemplate             = false;
 bool bDraggingTemplateCentre        = false;
-bool bUseEllipseEdgeFittingMethod   = false; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
-bool bFitSpineToTail = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
+bool bUseEllipseEdgeFittingMethod   = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+bool bFitSpineToTail                = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 bool bStartFrameChanged         = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 
 bool bRenderToDisplay           = true; ///Updates Screen to User When True
+bool bRenderWithAlpha           = false;
 bool bDrawFoodBlob              = false; ///Draw circle around identified food blobs (prior to model matching)
 bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition

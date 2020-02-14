@@ -269,7 +269,7 @@ void MainWindow::LogEvent(QString strMessage)
     std::clog << gTimer.elapsed()/60000 << " #" << nFrame-1 << " " << strMessage.toStdString() << std::endl;
 
     try{
-        if ((gTimer.elapsed()/60000) % 1 == 0 ) //Scroll To Bottom Every 3 sec
+        if ((gTimer.elapsed()/60000) % 3 == 0 ) //Scroll To Bottom Every 3 sec
             this->ui->listView->scrollToBottom();
     }
     catch (char* e)
