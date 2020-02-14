@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-#define ZTF_FISHCONTOURSIZE          90
+#define ZTF_FISHCONTOURSIZE          40
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #define EYE_SEG_SAMPLE_POINTS_COUNT 20
@@ -57,7 +57,12 @@
 
 #include <opencv2/core/ocl.hpp> //For setting setUseOpenCL
 
-
+/// For State Saving //
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/xml.hpp>
+#include "cereal/types/vector.hpp"
+#include <fstream>
+///
 
 /// VIDEO AND BACKGROUND PROCESSING //
 extern float gfVidfps;

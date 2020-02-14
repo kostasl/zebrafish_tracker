@@ -6,6 +6,10 @@
  *  Created by Roy Shilkrot on 11/28/12.
  *
  */
+///\notes KL 2020 : Paper on shape recognition from normalized positions of contour curves
+/// Use ComputeCSSImageMaximas on contour will show an image of this analysis as in paper:
+/// "Shape similarity retrieval under a$ne transforms Farzin" Mokhtarian & AAbbasi, 2002
+///
 
 using namespace std;
 using namespace cv;

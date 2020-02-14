@@ -134,8 +134,11 @@ std::string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
 uint uiStartFrame = 1;
 uint uiStopFrame = 0;
 
-double sigma = 3.0;
-int M = static_cast<int>(round((4.0*sigma+1.0) / 2.0)) * 2 - 1; //Gaussian Kernel Size
+
+// Gaussian Curve Smoothing Kernels For fish Contour//
+std::vector<double> gGaussian,dgGaussian,d2gGaussian;
+double sigma = 6.0;
+int M = static_cast<int>(round((18.0*sigma+1.0) / 2.0)) * 2 - 1; //Gaussian Kernel Size
 
 
 
@@ -148,10 +151,6 @@ int M = static_cast<int>(round((4.0*sigma+1.0) / 2.0)) * 2 - 1; //Gaussian Kerne
 int trackFnt = CV_FONT_HERSHEY_SIMPLEX;  //Font for Reporting - Tracking
 float trackFntScale = 0.6f;
 
-
-
-// Gaussian Curve Smoothing Kernels For fish Contour//
-std::vector<double> gGaussian,dgGaussian,d2gGaussian;
 
 QElapsedTimer gTimer;
 QFile outfishdatafile;

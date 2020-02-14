@@ -380,8 +380,9 @@ int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector
     getdXcurve(curvex,sigma,smoothx,X,XX,gGaussian,dgGaussian,d2gGaussian,false);
     getdXcurve(curvey,sigma,smoothy,Y,YY,gGaussian,dgGaussian,d2gGaussian,false);
 
-    //Finds Inwards Curvature points that exceed a threshold, defined as the maximal curvature points
-/*    vector<int> vidxMax = ComputeCSSImageMaximas(curvex,curvey,smoothx,smoothy);
+/// Curve Signature Analysis ///
+/*    //Finds Inwards Curvature points that exceed a threshold, defined as the maximal curvature points
+    vector<int> vidxMax = ComputeCSSImageMaximas(curvex,curvey,smoothx,smoothy);
     vector<vector<Point> > contours(1);
     PolyLineMerge(contours[0], smoothx, smoothy);
     cv::Mat contourimg;
@@ -392,6 +393,8 @@ int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector
     }
     cv::imshow("contour",contourimg);
 */
+/// End OF Curve Analysis //
+
     dXY.resize(X.size());
 
     /// Find Tail As POint Of Maximum Curvature dXY
