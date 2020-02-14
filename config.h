@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-#define ZTF_FISHCONTOURSIZE          40
+#define ZTF_FISHCONTOURSIZE          80//40
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #define EYE_SEG_SAMPLE_POINTS_COUNT 20
@@ -60,8 +60,12 @@
 /// For State Saving //
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/xml.hpp>
-#include "cereal/types/vector.hpp"
+#include <cereal/types/vector.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/common.hpp>
 #include <fstream>
+
+
 ///
 
 /// VIDEO AND BACKGROUND PROCESSING //
@@ -252,16 +256,121 @@ extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 //cv::Ptr<cv::GeneralizedHoughGuil> pGHTGuil;
 
 
-//Rect Roi Keep Away from L-R Edges to Avoid Tracking IR lightRing Edges
-extern cv::Point ptROI1;
-extern cv::Point ptROI2;
-extern cv::Point ptROI3;
-extern cv::Point ptROI4;
 
 /// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
 extern cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
 
 extern ltROIlist vRoi;
+//Rect Roi Keep Away from L-R Edges to Avoid Tracking IR lightRing Edges
+extern  cv::Point ptROI1 ;
+extern  cv::Point ptROI2;
+extern cv::Point ptROI3 ;
+extern cv::Point ptROI4 ;
+
+
+class trackerState
+{
+ public:
+ trackerState();
+ void saveState(std::string strFilename);
+ void loadState(std::string strFilename);
+
+
+  int keyboard; //input from keyboard
+  int screenx,screeny;
+  // Option Flags //
+  bool bshowMask; //True will show the BGSubstracted IMage/Processed Mask
+  bool bStartPaused;
+  bool bTracking;
+  bool bTrackFood;
+  bool bAddPreyManually ;
+  bool bMeasure2pDistance ; /// A mode allowing 2point distance measurement
+  bool bTrackFish;
+  bool bRecordToFile;
+  bool bSaveImages;
+  bool bPaused;
+  bool bUseEllipseEdgeFittingMethod  ; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+  bool bFitSpineToTail ; // Runs The Contour And Tail Fitting Spine Optimization Algorith
+  bool bApplyFishMaskBeforeFeatureDetection; ///Pass the masked image of the fish to the feature detector
+  bool bSkipExisting   ; /// If A Tracker DataFile Exists Then Skip This Video
+  bool bMakeCustomROIRegion; /// Allows uset to set Custom ROI
+  bool bUseMaskedFishForSpineDetect; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
+  bool bTemplateSearchThroughRows; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
+  bool bRemovePixelNoise; //Run Gaussian Filter Noise Reduction During Tracking
+  bool bUseGPU;
+  bool bUseOpenCL;
+  bool bUseHistEqualization; //To enhance to contrast in Eye Ellipse detection
+  std::string strTemplateImg; ///Load From Resource
+  bool bBlindSourceTracking ; /// Used for Data Labelling, so as to hide the data source/group/condition
+  bool bStaticAccumulatedBGMaskRemove ; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+  bool bUseBGModelling ; ///Use BG Modelling TO Segment FG Objects
+  bool gbUpdateBGModel ; //When Set a new BGModel Is learned at the beginning of the next video
+  bool gbUpdateBGModelOnAllVids; //When Set a new BGModel Is learned at the beginning of the next video
+
+
+  //Rect/Polygon Roi Keep Away from L-R Edges to Avoid Tracking IR lightRing Edges
+  std::shared_ptr<std::vector<tROIpt>> userROI;
+
+  std::string  gstroutDirCSV;//The Output Directory
+  std::string  gstrinDirVid;
+  std::string  gstrvidFilename;
+
+
+  //Contours Shaping
+  double curveSmoothKernelSigma;
+  int curveSmoothKernelSize_M; //Gaussian Kernel Size
+
+
+  //Screen Render Options//
+  bool bRenderToDisplay ; ///Updates Screen to User When True
+  bool bOffLineTracking ; ///Skip Frequent Display Updates So as to  Speed Up Tracking
+  bool bDrawFoodBlob    ; ///Draw circle around identified food blobs (prior to model matching)
+  int trackFnt;  //Font for Reporting - Tracking
+  float trackFntScale;
+
+
+  ///Transient Action States //
+  bool bMouseLButtonDown;
+  bool b1stPointSet;
+  bool bROIChanged;
+  bool bExiting;
+  bool bStoreThisTemplate ;
+  bool bEyesDetected ; ///Flip True to save eye shape feature for future detection
+  bool bDraggingTemplateCentre ;
+  bool bStartFrameChanged  ; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
+ //bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
+
+
+  ///Specific To the Tracked Video Options//
+  uint uiStartFrame;
+  uint uiStopFrame;
+  QString outfilename;
+  std::string gstrwinName;
+
+    /// overload size operator / return full state object size
+     size_t size() const _GLIBCXX_NOEXCEPT
+    { return 1; //mStateValue.size()*mStateValue[1].size()*mStateValue[1][1].size();
+     }
+
+ // This method lets cereal know which data members to serialize
+   template<class Archive>
+   void serialize(Archive & archive)
+   {
+     archive(gstrwinName,CEREAL_NVP(gstroutDirCSV),CEREAL_NVP(gstrinDirVid),gstrvidFilename,
+            bStartPaused,userROI,bRecordToFile,bTrackFish,bSaveImages,bUseEllipseEdgeFittingMethod,
+            bTemplateSearchThroughRows,bApplyFishMaskBeforeFeatureDetection,bUseOpenCL,bUseGPU,bBlindSourceTracking,bStaticAccumulatedBGMaskRemove,
+            gbUpdateBGModel,gbUpdateBGModelOnAllVids,bFitSpineToTail,bUseMaskedFishForSpineDetect,bUseHistEqualization,bRemovePixelNoise,bMeasure2pDistance,bAddPreyManually,
+            bRenderToDisplay,bOffLineTracking,bDrawFoodBlob,curveSmoothKernelSigma,curveSmoothKernelSize_M
+            ); // serialize things by passing them to the archive
+     //archive();
+     //archive(CEREAL_NVP(userROI));
+   }
+
+private:
+   std::string strStateFilename = "trackerState.xml";
+protected:
+};
+
 /// INIT FUNCTIONS ///
 
 /// \brief Load Q Resources

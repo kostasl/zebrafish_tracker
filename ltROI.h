@@ -8,20 +8,51 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/xml.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/tuple.hpp>
+#include <cereal/types/memory.hpp>
+
+
+//Inherit and Add Serialization
+class tROIpt: public cv::Point
+{
+    public:
+
+    tROIpt():cv::Point(){};
+
+    // This method lets cereal know which data members to serialize
+      template<class Archive>
+      void serialize(Archive & archive)
+      {
+        archive(CEREAL_NVP(x)); // serialize things by passing them to the archive
+        archive(CEREAL_NVP(y)); // serialize things by passing them to the archive
+      }
+
+};
+
+
+
 /// \typedef ltROI Custom  ROIs
 /// \brief  Tracker Region of interest - used to define vials
 typedef struct tRoi
 {
+
+
     enum RoiType {Circle, Polygon};
 
     RoiType mType;
     std::vector<cv::Point> vPoints;
 
     cv::Point centre;
+
     cv::Scalar mColor = CV_RGB(255,5,5);
     unsigned int radius;
 
 public:
+    tRoi(); //Constructor
+
     inline int x()
     {
         return centre.x;
@@ -130,7 +161,20 @@ public:
             return (centre == c2.centre && radius == c2.radius);
     }
 
+    // This method lets cereal know which data members to serialize
+      template<class Archive>
+      void serialize(Archive & archive)
+      {
+        archive(CEREAL_NVP(centre)); // serialize things by passing them to the archive
+      }
+
+
 } ltROI; //Object to define region of interest
+
+//Need to register As archivable classes
+//CEREAL_REGISTER_TYPE(ltROI);
+//CEREAL_REGISTER_TYPE(tROIpt);
+
 
 /// \typedef ltROIlist
 ///

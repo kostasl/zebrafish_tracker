@@ -756,25 +756,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     /// Estimate Eye Segmentation threshold from sample points in Image
     std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
-    int ilFloodSeed = imgUpsampled_gray.at<uchar>(ptLEyeMid)+1;
-    //int irFloodSeed=imgUpsampled_gray.at<uchar>(ptREyeMid)+1;
-    //int stepL = (ilFloodSeed - ilFloodRange)/gi_minEllipseMajor;
-    //int stepR = (irFloodSeed - ilFloodRange)/gi_minEllipseMajor;
-    //Assist by Filling Holes IN Eye Shape - Use Fill
-   // cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0);
-    //cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(2*(ilFloodRange+1)-ilFloodSeed)),cv::Scalar(abs(iuFloodRange-ilFloodSeed)),CV_FLOODFILL_FIXED_RANGE);
-    //cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(2*(ilFloodRange+1)-irFloodSeed)),cv::Scalar(abs(iuFloodRange-irFloodSeed)),CV_FLOODFILL_FIXED_RANGE);
-//    cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(ilFloodSeed)/10),cv::Scalar(abs(ilFloodSeed)/10),CV_FLOODFILL_FIXED_RANGE);
-//    cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(abs(irFloodSeed)/10),cv::Scalar(abs(irFloodSeed)/10),CV_FLOODFILL_FIXED_RANGE);
-
-
-
-    //cv::floodFill(imgUpsampled_gray, ptLEyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(stepL),cv::Scalar(stepL));
-    //cv::floodFill(imgUpsampled_gray, ptREyeMid, cv::Scalar(iThresEyeSeg+1),0,cv::Scalar(stepR),cv::Scalar(stepR));
-
-
-
-    // Do Multiple Thresholding Of Masked Image to Obtain Segmented Eyes //
+      // Do Multiple Thresholding Of Masked Image to Obtain Segmented Eyes //
     cv::Mat imgIn_thres2;
     cv::Mat imgIn_thres3,imgFishHead_Lapl2,imgFishHead_Lapl3;
     cv::threshold(imgUpsampled_gray, imgIn_thres,viThresEyeSeg[0],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
@@ -878,8 +860,11 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         cv::rectangle(imgEdge_local_LEye,r,cv::Scalar(0),-1);
         //cv::imshow("REyeCover",imgEdge_local);
 
-        getEdgePoints(imgEdge_local_LEye,vedgePoints_all);
-        detectEllipse(imgEdge_local_LEye,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
+        if (bUseEllipseEdgeFittingMethod)
+        {
+            getEdgePoints(imgEdge_local_LEye,vedgePoints_all);
+            detectEllipse(imgEdge_local_LEye,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
+        }
         //imgEdge_local.copyTo(imgEdge_dbg);
         if (qEllipsoids.size() == 0 )
         //    qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
@@ -948,8 +933,11 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         cv::rectangle(imgEdge_local_REye,rl,cv::Scalar(0),-1);
         //cv::imshow("LEyeCover",imgEdge_local);
 
-        getEdgePoints(imgEdge_local_REye,vedgePoints_all);
-        detectEllipse(imgEdge_local_REye,vedgePoints_all,qEllipsoids);
+        if (bUseEllipseEdgeFittingMethod)
+        {
+            getEdgePoints(imgEdge_local_REye,vedgePoints_all);
+            detectEllipse(imgEdge_local_REye,vedgePoints_all,qEllipsoids);
+        }
         if (qEllipsoids.size() == 0 )
 //            qDebug() << " R Eye Backup Ellipse Failed";
             pwindow_main->LogEvent("R Eye Backup Ellipse Failed ");

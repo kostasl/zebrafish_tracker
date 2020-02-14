@@ -3018,10 +3018,12 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               /// Returns imgFishHeadProcessed Upsampled with ellipses drawns, and imgFishHeadSeg - the processed edges img used
               /// to detect the eyes
               ///
-              int ret = detectEyeEllipses(imgFishHead,vellLeft,vellRight,imgFishHeadSeg,imgFishHeadProcessed);
+              int ret = 0;
               std::stringstream ss;
+              ret = detectEyeEllipses(imgFishHead,vellLeft,vellRight,imgFishHeadSeg,imgFishHeadProcessed);
 
-            if (ret < 2 | gUserReward < 0)
+
+            if ((ret < 2 | gUserReward < 0) )
             {
                 ss << " Eye Detection Error - Check Threshold";
                 window_main.LogEvent(QString::fromStdString(ss.str()));
@@ -3140,20 +3142,12 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 //                   pwindow_main->LogEvent(QString("[info] new lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
                }
 #endif
-
-
                 //cv::imshow("BlurredFish",maskedfishFeature_blur);
               }
              /// END OF Fit Spine ////
-
-
-
               //Eye Detection Ret > 0
-
     } //For eAch Fish Model
-
-
-        bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
+    bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
 
 
 

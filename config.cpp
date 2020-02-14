@@ -1,6 +1,10 @@
 #include <config.h>
 
 
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/xml.hpp>
+#include "cereal/types/vector.hpp"
+#include <fstream>
 
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 410;
@@ -222,6 +226,8 @@ uint gi_MaxFoodID; //Declared in Model Header Files
 
 class MainWindow;
 extern MainWindow pwindow_main;
+
+
 
 
 /// \brief Load Q Resources
@@ -533,4 +539,47 @@ int initDetectionTemplates()
     int ifileCount = loadTemplatesFromDirectory(gstroutDirCSV + QString("/templates/"));
     return (ifileCount+nTemplatesToLoad);
     /// END OF FISH TEMPLATES ///
+}
+
+/// State Class Methods //
+
+trackerState::trackerState()
+{
+
+}
+
+
+void trackerState::saveState(std::string strFilename)
+{
+    std::ofstream os(strFilename);
+    cereal::XMLOutputArchive archive(os);
+    this->serialize(archive); //save State Values
+
+    os.flush();
+
+}
+
+void trackerState::loadState(std::string strFilename)
+{
+
+    /// Load Archived values if they Exists
+    /// Load Saved Learned Behaviour
+     assert(strFilename > 0);
+     qDebug() << "Load tracker State:" << QString::fromStdString(strFilename);
+     std::ifstream is(strFilename);
+     if (is.is_open())
+     {
+
+       try
+         {
+           cereal::XMLInputArchive archive(is);
+           archive(userROI); //Load State Value
+
+         }catch (QString e)
+         {
+                 qDebug() << "Failed to open Tracker State file:" << e;
+         }
+
+
+     }
 }

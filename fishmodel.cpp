@@ -804,14 +804,14 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),CV_FONT_NORMAL,0.4,colour,1);
 #endif
 
-
-
+    ///Draw a center Point
+    cv::circle(outframe,this->bodyRotBound.center,5,colour,1);
 
     ///Draw a Red Rotated Frame around Detected Body
-    cv::Point2f boundBoxPnts[4];
-    this->bodyRotBound.points(boundBoxPnts);
-    for (int j=0; j<4;j++) //Rectangle Body
-        cv::line(outframe,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,colour,1);
+    //cv::Point2f boundBoxPnts[4];
+    //this->bodyRotBound.points(boundBoxPnts);
+    //for (int j=0; j<4;j++) //Rectangle Body
+    //   cv::line(outframe,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,colour,1);
 
 }
 
@@ -831,8 +831,6 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
     const int step_size = this->c_spineSegL;
 
     //const int c_tailscanAngle = gFitTailIntensityScanAngleDeg;
-
-
     if (inactiveFrames > 0)
         return; //Do not Calculate For Inactive Fish
 
@@ -841,26 +839,17 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
     int angle; //In Deg of Where The spline point is looking towards - Used by Ellipse Arc Drawing
 
     //cv::Mat frameimg_Blur;
-
-
-    //imgframeIn.convertTo(frameimg_Blur,CV_32F,1./255);
-    //draw_inv=ones-draw_inv;
-
     //cv::GaussianBlur(imgframeIn,frameimg_Blur,cv::Size(5,5),5,5);
     //cv::imshow("IntensitTailFit",frameimg_Blur);
 
     std::vector<cv::Point> ellipse_pts; //Holds the Drawn Arc Points around the last spine Point
-    //cv::imshow("BlurSpine",frameimg_Blur);
 
-    for(unsigned int k=1;k<AP_N;k++){ //Loop Through Spine Points
+    for(unsigned int k=1;k<AP_N;k++)
+    { //Loop Through Spine Points
         ellipse_pts.clear();
 
 
-        //Get Angl
-        //angle = (atan2(tgt.y,tgt.x) +_CV_PI)/CV_PI*180.0; //Find towards Next Point Angle In Degrees
-
         angle = spline[k-1].angleRad/CV_PI*180.0-90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
-        //angle = spline[k].angleRad/CV_PI*180.0; //Get Angle In Degrees for Arc Drawing Around THe point this Spine Was looking At initially
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y), cv::Size(step_size,step_size), 0, angle-c_tailscanAngle, angle+c_tailscanAngle, 2, ellipse_pts);
 
@@ -874,7 +863,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
         uint iTailArcMoment     = 0;
         uint iPxIntensity       = 0;
         uint iSumPxIntensity    = 1;
-
+        // Loop Integrate Mass //
         for(int idx=0;idx<(int)ellipse_pts.size();idx++){
             //Obtain Value From Image at Point on Arc - Boundit in case it goes outside image
             int x = std::min(frameimg_Blur.cols,std::max(1,ellipse_pts[idx].x));
@@ -884,43 +873,25 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
             //Use idx As Angle /Position
             iTailArcMoment  += idx*iPxIntensity;
             iSumPxIntensity += iPxIntensity;
-
-//            //If New Maximum Found THen Update Spline Point to point to this and Update Previous Spline Point's angle
-//            if(iPxIntensity>=pxValMax){ //Gt Or Equal - Othewise Points Get Stuck between frames int the black Bg when loc = 0
-//                spline[k].x     = ellipse_pts[idx].x;
-//                spline[k].y     = ellipse_pts[idx].y;
-//                ///Get Arc tan and Translate back to 0 being the Vertical Axis
-//                spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
-//                //spline[k].angleRad = spline[k-1].angleRad;
-//                //Constrain Large Deviations
-//                if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/3.0)
-//                    spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
-//                pxValMax=iPxIntensity; //Save as New Maximum Point
-//            }
         } //Loop Through Arc Sample Points
 
         //Update Spline to COM (Centre Of Mass) And Set As New Spline Point
         uint comIdx = iTailArcMoment/iSumPxIntensity;
         spline[k].x     = ellipse_pts[comIdx].x;
         spline[k].y     = ellipse_pts[comIdx].y;
-        ///Get Arc tan and Translate back to 0 being the Vertical Axis
+        /// Get Arc tan and Translate back to 0 being the Vertical Axis
         if (k==1) //1st point Always points in the opposite direction of the body
             spline[k-1].angleRad    = (this->bearingRads)-CV_PI ; //  //Spine Looks In Opposite Direction
         else
             spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2.0; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
-        //spline[k].angleRad = spline[k-1].angleRad;
 
         //Constrain Large Deviations
         if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/2.0)
            spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
 
-        //out<<tgt<<' '<<angle<<' '<<tmp_pts[k]<<' '<<loc<<' '<<index<<' '<<ellipse_pts.size()<<endl;
-
-        //anchor_pts[k]=tmp_pts[k];
     }
 
 }
-
 
 
 

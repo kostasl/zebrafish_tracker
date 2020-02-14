@@ -684,6 +684,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
         outfishbodycontours.push_back(curve);
 
         ///  COMBINE - DRAW CONTOURS
+        ///\bug drawContours produces freezing sometimes
         //Draw New Smoothed One - the idx should be the last one in the vector
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), cv::FILLED); //
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
