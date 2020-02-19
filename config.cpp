@@ -52,11 +52,14 @@ int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has
 int gi_FoodModelNumberLimit = 250; /// Maximum Number of Food Objects /Prey To track
 bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
 
+/// Eye Tracking Params
+bool bUseEllipseEdgeFittingMethod   = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
 int gi_CannyThres           = 150;
 int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
 int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
 int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
+int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
 int giEyeIsolationMaskRadius = 10; ///Mask circle between eyes
 int gi_VotesEllipseThres        = 9; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
 int gthresEyeSeg                = 3; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
@@ -110,7 +113,6 @@ bool bMouseLButtonDown;
 bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
 bool bStoreThisTemplate             = false;
 bool bDraggingTemplateCentre        = false;
-bool bUseEllipseEdgeFittingMethod   = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
 bool bFitSpineToTail                = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
 bool bStartFrameChanged         = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 

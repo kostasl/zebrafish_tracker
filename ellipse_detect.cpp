@@ -67,6 +67,7 @@
 //extern MainWindow window_main;
 extern MainWindow* pwindow_main;
 
+//extern bool bUseEllipseEdgeFittingMethod;
 extern bool bUseHistEqualization;
 extern int gi_CannyThresSmall;
 extern int gi_CannyThres;
@@ -653,6 +654,63 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
     return vretThresholds;
 }
 
+
+
+/// \brief Detect All likely Eye ellipsoids in the Image region and return List with N best matches
+tEllipsoids getBestEllipsoidFits(cv::Mat& imgRegion)
+{
+    if (bUseEllipseEdgeFittingMethod)
+    {
+        getEdgePoints(imgEdge_local_LEye,vedgePoints_all);
+        detectEllipse(imgEdge_local_LEye,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
+    }
+    //imgEdge_local.copyTo(imgEdge_dbg);
+    if (qEllipsoids.size() == 0 )
+    {   //qDebug() << " L Eye Ellipse Detection Failed";
+        /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
+        int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,2,vt,ve);
+        if (iLEye != -1)
+        {
+            cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
+            if (vLEyeHull.size() > 4)
+            {
+                vEyes.push_back(vLEyeHull);
+                rcLEye =  cv::fitEllipse(vLEyeHull);
+                tDetectedEllipsoid dEll(rcLEye,10);
+                lEll.fitscore       = dEll.fitscore;
+                lEll.rectEllipse    = dEll.rectEllipse;
+                qEllipsoids.push(dEll); //Add As last resort candidate
+                //cv::ellipse(imgEdge_local, lEll.rectEllipse ,CV_RGB(255,255,255),1);
+            }
+        }
+    }
+    //    qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
+
+
+///Store Left Eye (Optional :Draw Detected Ellipsoid)
+float fLAngleEstimate = 0.0;
+int iLSamples = qEllipsoids.size();
+//Take the top 10 Ellipsoids and pass them on the vellipses collection
+while (qEllipsoids.size() > max(0,iLSamples-gi_MaxEllipseSamples) )
+{
+    //Pick Best Match For this Eye from to of Priority List
+    lEll = qEllipsoids.top();
+    //Draw it
+    //drawEllipse(img_colour,lEll);
+
+    //Store it To Output Vector
+    lEll.cLabel = 'L';
+    vLellipses.push_back(lEll);
+    ret++;
+
+    ///Draw Left Eye Rectangle
+    //fLAngleEstimate += drawExtendedMajorAxis(outHeadFrameMonitor,lEll,CV_RGB(0,250,0));
+
+    qEllipsoids.pop(); //Remove Drawn Ellipsoid
+}
+
+}
+
 ///
 /// \brief detectEyeEllipses - Upsamples image Detects Eyes - Used oN Head Isolated Image
 ///         Uses multiple thresholds to segment eyes and create egdes image.
@@ -798,9 +856,6 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     std::vector<std::vector<cv::Point>> vEyes;
 
 
-
-
-
     cv::RotatedRect rcLEye,rcREye;
     //Make Debug Img
     cv::cvtColor( imgUpsampled_gray,img_colour, cv::COLOR_GRAY2RGB);
@@ -871,10 +926,11 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         //    qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
 
 
-    ///Store Left Eye And Draw Detected Ellipsoid
+    ///Store Left Eye (Optional :Draw Detected Ellipsoid)
     float fLAngleEstimate = 0.0;
     int iLSamples = qEllipsoids.size();
-    while (qEllipsoids.size() > 0)
+    //Take the top 10 Ellipsoids and pass them on the vellipses collection
+    while (qEllipsoids.size() > max(0,iLSamples-gi_MaxEllipseSamples) )
     {
         //Pick Best Match For this Eye from to of Priority List
         lEll = qEllipsoids.top();
@@ -952,7 +1008,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     // Check If Found and Draw R Eye //
 
-    while (qEllipsoids.size() > 0)
+    while (qEllipsoids.size() >  max(0,iRSamples-gi_MaxEllipseSamples))
     {
         rEll = qEllipsoids.top();
         //drawEllipse(img_colour,rEll);

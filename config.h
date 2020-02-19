@@ -121,6 +121,7 @@ extern int gi_maxEllipseMajor; /// thres  for Eye Ellipse Detection methods
 extern int gi_minEllipseMajor; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
 extern int gi_minEllipseMinor; //The threshold in ellipse detection for how slim an ellipsoid can be
 extern int gi_VotesEllipseThres; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
+extern int gi_MaxEllipseSamples; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
 extern int gthresEyeSeg; //Central Threshold For Eye Segmentation In Isolated Head IMage
 extern int gthresEyeSegL; //Lower Eye Seg Threshold
 extern int gnumberOfTemplatesInCache; //INcreases As new Are Added
