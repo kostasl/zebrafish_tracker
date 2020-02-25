@@ -277,6 +277,7 @@ class trackerState
  void saveState(std::string strFilename);
  void loadState(std::string strFilename);
 
+  enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
 
   int keyboard; //input from keyboard
   int screenx,screeny;
