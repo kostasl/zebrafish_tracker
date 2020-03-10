@@ -388,7 +388,7 @@ dev.off()
 
 
 ### Onset/ DETECTION Angle Density supplementary angle figure
-pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig4S1-DetectionAngleDensity.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/stat/UndershootAnalysis/fig4S1-DetectionAngleDensity_LF.pdf",sep=""))
 ### Show Speed Fit ###
 outer = FALSE
 line = 1 ## SubFig Label Params
@@ -403,17 +403,17 @@ las <- 1
 par(mar = c(4.5,4.3,0.5,1))
 
 
-plot(density(lFirstBoutPoints$NL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[1],xlim=c(-120.0,120),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
-lines(density(lFirstBoutPoints$LL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[2],xlim=c(-120.0,120),lwd=3,lty=2)
-lines(density(lFirstBoutPoints$DL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[3],xlim=c(-120.0,120),lwd=3,lty=3,main=NA)
+#plot(density(lFirstBoutPoints$NL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[1],xlim=c(-120.0,120),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
+plot(density(lFirstBoutPoints$LL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[2],xlim=c(-120.0,120),lwd=3,lty=2,main=NA,xlab=NA,ylab=NA)
+#lines(density(lFirstBoutPoints$DL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[3],xlim=c(-120.0,120),lwd=3,lty=3,main=NA)
 
 legend("topleft",
        legend=c(  expression (),
-                  bquote(NF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$NL))  ),
-                  bquote(LF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$LL))  ),
-                  bquote(DF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$DL))  )
-       ), 
-       col=colourLegL,lty=c(1,2,3,4),lwd=3,cex=cex)
+                  #bquote(NF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$NL))  ),
+                  bquote(LF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$LL))  ) ),
+                  #bquote(DF[""] ~ '#' ~ .(NROW(lFirstBoutPoints$DL))  )
+       
+       col=colourLegL[2],lty=c(2,3,4),lwd=3,cex=cex)
 
 mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
 mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Prey azimuth upon detection  " ) )  )
@@ -509,3 +509,95 @@ dev.off()
 # 	tau <- pow(sigma, -2)
 # 	sigma ~ dunif(0, 100)
 # }"
+
+
+
+
+
+
+
+
+
+
+
+####
+## LF Only for MM grant proposal 
+
+pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_SetC2_LF.pdf",sep="")
+    ,width=7,height=7,
+    title="First Turn To prey / Undershoot Ratio")
+
+outer = FALSE
+line = 1 ## SubFig Label Params
+line <- 2.6 ## SubFig Label Params
+lineAxis = line## 3.2    
+cex = 1.4
+adj  = 3.5
+padj <- -16.5
+las <- 1
+
+#layout(matrix(c(1,2),1,2, byrow = FALSE))
+##Margin: (Bottom,Left,Top,Right )
+#par(mar = c(3.95,4.75,1,1))
+par(mar = c(4.2,4.8,1.1,1))
+plot( datTurnVsPreyLL[,"OnSetAngleToPrey"],datTurnVsPreyLL[,"Turn"],
+      main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
+      xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
+      ylab=NA,#expression("Bearing To Prey After Turn "~(theta^degree) ),
+      xlim=c(-100,100),
+      ylim=c(-100,100),
+      col=colourP[2] ,pch=pchL[2],cex=cex,cex.axis=cex) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+mtext(side = 1,cex=cex, line = lineAxis, expression("Prey azimuth prior to turn ("~theta^degree~")" ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey ("~phi^degree~")" ))
+
+abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourLegL[2],lwd=1.5,lty=2)
+abline(a=muLLa,b=muLLb,col=colourLegL[2],lwd=4.0,lty=1.5) ##Fit Line / Regression
+
+##Guiding lines / Draw 0 Vertical Line
+segments(0,-100,0,100); segments(-100,0,100,0); segments(-100,-100,100,100,lwd=1,lty=2);
+
+legend("topleft",
+       legend=c(  expression (),
+                  
+                  bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  )),
+                     #paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       pch=pchL[2], col=colourLegL[2],cex=cex)
+#mtext("C",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+
+dev.off()  
+
+pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_Density_LF.pdf",sep=""),
+    width=7,height=7,
+    title="First Turn To prey / Undershoot Ratio - Posterior Density")
+par(mar = c(4.2,4.8,1.1,1))
+##Density Estimation
+#plot(dNLb,col=colourLegL[1],xlim=c(0.0,2),lwd=4,lty=1,ylim=c(0,18),
+     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+     xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+
+plot(dLLb,col=colourLegL[2],lwd=4,lty=2,xlim=c(0.0,2),ylim=c(0,18),
+      main=NA, #"Density Inference of Turn-To-Prey Slope ",
+      xlab=NA,ylab=NA,cex=cex,cex.axis=cex)
+
+#lines(dDatNLb,col=colourLegL[1],xlim=c(0.5,1.2),lwd=2,lty=1,ylim=c(0,20),
+#     main=NA, #"Density Inference of Turn-To-Prey Slope ",
+#     xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+#lines(dDatLLb,col=colourLegL[2],xlim=c(0.5,1.2),lwd=2,lty=2)
+#lines(dDatDLb,col=colourLegL[3],xlim=c(0.5,1.2),lwd=2,lty=3)
+
+legend("topright",
+       legend=c(  expression (),
+                  bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  )
+                  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL[2],lty=c(2),lwd=3,cex=cex)
+mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated turn ratio ",(gamma) ) ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
+# mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+
+### PLot Scatter with regression lines with Conf intervals##
+dev.off()
+
+
+
+
+

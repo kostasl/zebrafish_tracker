@@ -376,6 +376,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
                 cv::morphologyEx(bgStaticMask,bgStaticMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),4); //
                 cv::bitwise_not ( bgStaticMask, bgStaticMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
 
+
                 //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
                 if (compString(invideoname,nextvideoname) < 3 && !gbUpdateBGModelOnAllVids)
                     gbUpdateBGModel = false; //Turn Off BG Updates
@@ -493,6 +494,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
         /// \brief processMasks
+        cv::imshow("FG Image", frame_gray - gframeBGImage);
         processMasks(frame_gray,bgStaticMask,fgMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
