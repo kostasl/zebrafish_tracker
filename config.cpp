@@ -9,12 +9,12 @@
 /// VIDEO AND BACKGROUND PROCESSING //
 float gfVidfps                  = 410;
 const unsigned int MOGhistory   = 100;//Use 100 frames Distributed across the video length To Find What the BGModel is
-double gdMOGBGRatio             = 0.75; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
+double gdMOGBGRatio             = 0.05; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
 
 //Processing Loop delay
 uint cFrameDelayms              = 1;
 
-const double dLearningRate                = 1.0/(4.0*MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
+const double dLearningRate                = 0.2;//1.0/(2.0*MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
 const double dLearningRateNominal         = 0.001;
 double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
@@ -121,8 +121,8 @@ bool bRenderWithAlpha           = false;
 bool bDrawFoodBlob              = false; ///Draw circle around identified food blobs (prior to model matching)
 bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
 bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
-bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
-bool bUseBGModelling                    = true; ///Use BG Modelling TO Segment FG Objects
+bool bStaticAccumulatedBGMaskRemove       = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
 bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
 bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
@@ -175,6 +175,7 @@ QString gstroutDirCSV,gstrinDirVid,gstrvidFilename; //The Output Directory
 //Global Matrices Used to show debug images
 cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
 cv::Mat gframeCurrent,gframeLast; //Updated in processVideo Global Var Holding Copy of current and previous frame - usefull for opticflows
+cv::Mat gframeBGImage;
 
 //Morphological Kernels
 cv::Mat kernelOpen;

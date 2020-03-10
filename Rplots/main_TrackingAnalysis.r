@@ -40,7 +40,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
 
-setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")

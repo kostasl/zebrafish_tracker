@@ -167,40 +167,29 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
                   //  break;
                    continue;
                }
-            }
-            else {//Frame Grabbed - Process It
+            } //If Failed to Grab frame
+            else
+            {//Frame Grabbed - Process It
 
                 //Get Frame Position From Vid Sam
                 nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
                 window_main.nFrame = nFrame; //Update Window
                 window_main.tickProgress();
-
-/// Ignore ROI When Modelling BG//
-//                ///Make Global Roi on 1st frame if it doesn't prexist
-//                if (vRoi.size() == 0)
-//                {
-//                    ptROI2.x = frame.cols/2;
-//                    ptROI2.y = gszTemplateImg.height/3;
-//                //Add Global Roi - Center - Radius
-//                    ltROI newROI(cv::Point(frame.cols/2,frame.rows/2),ptROI2);
-//                    addROI(newROI);
-
-//                    Check If FG Mask Has Been Created - And Make A new One
-                   if (bgMask.cols == 0)
-                   {
-                        bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
-                        // Add Roi To Mask Otherwise Make On Based oN ROI
+//              Check If FG Mask Has Been Created - And Make A new One
+               if (bgMask.cols == 0)
+               {
+                    bgMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
+                    // Add Roi To Mask Otherwise Make On Based oN ROI
 //                        cv::circle(bgMask,newROI.centre,newROI.radius,CV_RGB(255,255,255),-1);
-                   }
-//                }
-                if (bgAcc.empty()) //Make EMpty Mask
+               }
+               if (bgAcc.empty()) //Make EMpty Mask
                     bgAcc = cv::Mat::zeros(frame.rows,frame.cols,CV_32FC(bgMask.channels()) ); //AccumWeight Result needs to be CV_32FC
 
-                frame.copyTo(frame,bgMask);
-                cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
+               frame.copyTo(frame,bgMask);
+               cv::cvtColor( frame, frame_gray, cv::COLOR_BGR2GRAY);
 
-                updateBGFrame(frame_gray, bgAcc, nFrame, MOGhistoryLength);
-            }
+               updateBGFrame(frame_gray, bgAcc, nFrame, MOGhistoryLength);
+            }//Frame Grabbed
 
 
            checkPauseRun(&window_main,keyboard,nFrame);
@@ -225,12 +214,15 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
         cv::morphologyEx(bgMask,bgMask, cv::MORPH_CLOSE, kernelDilateMOGMask,cv::Point(-1,-1),1);
 
-        pwindow_main->showVideoFrame(bgMask,nFrame);
+        pMOG2->getBackgroundImage(gframeBGImage);
+        pwindow_main->showVideoFrame(gframeBGImage,nFrame);
 
 
+        cv::imshow("BGImage",gframeBGImage);
         //delete capture object
         capture.release();
 
+        // Save The background image
 
 
 
@@ -327,7 +319,8 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
       {
             //No Static Mask - But Combine With threshold So MOG Ghosts Are Erased
            ///TODO make into and mask , and isolate threshold mask around fish
-            cv::bitwise_or(fgMOGMask,threshold_output,fgMOGMask);
+           //cv::bitwise_or(fgMOGMask,threshold_output,fgMOGMask); //Do not Combine with Threshold
+
             //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
             if (bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
             {
@@ -546,7 +539,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
 
     ///// Convert image to gray, Mask and
     //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
-    frameImg.copyTo(frameImg_gray); //Its Grey Anyway
+      (frameImg_gray - gframeBGImage).cop; //Remove BG Image
 
 
     ///Remove Pixel Noise
@@ -730,7 +723,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
 ///
 bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,uint MOGhistory)
 {
-
+    cv::Mat bgMaskThresholded;
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
     bool ret = true;
@@ -744,11 +737,13 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
    // cv::equalizeHist( frame, frame );
     //Update MOG,filter pixel noise and Combine Static Mask
     processMasks(frameImg_gray,bgAcc,bgMask,dLearningRate); //Applies MOG if bUseBGModelling is on
- ///Enhance Ma
+    ///Enhance Mask With Fish Shape
     enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+
+    pwindow_main->showVideoFrame(bgMask,nFrame);
     //Accumulate things that look like food / so we can isolate the stationary ones
-    cv::threshold( frameImg_gray, bgMask, g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-    cv::accumulateWeighted(bgMask,bgAcc,dBGMaskAccumulateSpeed);
+    cv::threshold( frameImg_gray, bgMaskThresholded, g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+    cv::accumulateWeighted(bgMaskThresholded,bgAcc,dBGMaskAccumulateSpeed);
     //Also Learn A pic of the stable features - Found In FoodMask - ie Fish Removed
 
 
@@ -756,9 +751,9 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
 
     //DEBUG //
     //cv::imshow("foodMask",fgFoodMask);
-    bgAcc.convertTo(bgMask, CV_8U);
+    //bgAcc.convertTo(bgMask, CV_8U);
 
-    pwindow_main->showVideoFrame(bgMask,nFrame);
+
     //cv::imshow("Accumulated Bg Model",bgAcc);
 
     //pMOG->apply(frame, fgMaskMOG,dLearningRate);

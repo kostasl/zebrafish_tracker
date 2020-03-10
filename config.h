@@ -240,6 +240,7 @@ extern cv::Rect rect_pasteregion;
 //Global Matrices Used to show debug images
 extern cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
 extern cv::Mat gframeCurrent,gframeLast; //Updated in processVideo Global Var Holding Copy of current and previous frame - usefull for opticflows
+extern cv::Mat gframeBGImage;
 
 //Morphological Kernels
 extern cv::Mat kernelOpen;
