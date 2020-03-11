@@ -249,8 +249,11 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
  cv::Mat threshold_output;
 
 
+ ////  Obtain FG IMage: Substract MOG Extracted BG Image //
+  cv::Mat frameFG(frameImg_gray - gframeBGImage); //Remove BG Image
+
  //If We are during the Static Mask Accumulation phase ie (fgStaticMaskIn.type() !=  CV_8U) then Produce the Threshold Image
- cv::threshold( frameImg_gray, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+ cv::threshold( frameFG, threshold_output, g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
 ///The CUDA code below Needs to Be Revised
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
@@ -319,7 +322,7 @@ void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskI
       {
             //No Static Mask - But Combine With threshold So MOG Ghosts Are Erased
            ///TODO make into and mask , and isolate threshold mask around fish
-           //cv::bitwise_or(fgMOGMask,threshold_output,fgMOGMask); //Do not Combine with Threshold
+           cv::bitwise_or(fgMOGMask,threshold_output,fgMOGMask); //Do not Combine with Threshold
 
             //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
             if (bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
@@ -508,9 +511,9 @@ int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Po
 /// * Smooths large contour curves and identies maximum curve point as tail (sharp change in curvature)
 /// *The opposite (antipode) point to the tail in curve is identified as the head.
 /// \param frameImg - Raw Input camera input in Mat - colour or gray -
-/// \param fgMask - Modified Enhanced FG Mask Image
-/// \param outFishMask - Mask Enhanced for Fish Blob Detection
-/// \param outFoodMask Enhanced for Food Blob Detection
+/// \param fgMask - (IN) FG Mask Image from processMask
+/// \param outFishMask -(OUT) Mask Enhanced for Fish Blob Detection
+/// \param outFoodMask -(OUT) Enhanced for Food Blob Detection
 /// \todo Cross Check Fish Contour With Model Position
 /// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
 /// Note: Should Use MOG Mask for Blob Detect, But . But thresholded IMg For Countour FInding
@@ -534,13 +537,6 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
     //////jOIN bLOB Do Close : erode(dilate())
     //cv::morphologyEx(maskFGImg,maskFGImg, cv::MORPH_CLOSE, kernelClose,cv::Point(-1,-1),2);
 
-    /////////// MOG Mask Is not Used Currently //
-
-
-    ///// Convert image to gray, Mask and
-    //cv::cvtColor( frameImg, frameImg_gray, cv::COLOR_BGR2GRAY );
-      (frameImg_gray - gframeBGImage).cop; //Remove BG Image
-
 
     ///Remove Pixel Noise
     ///
@@ -552,7 +548,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
     ///
     //cv::fastNlMeansDenoising(InputArray src, OutputArray dst, float h=3, int templateWindowSize=7, int searchWindowSize=21
 
-    //frameImg_gray = frameImg.clone();
+    frameImg_gray = frameImg.clone();//frameImg.clone();
     //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
 
     outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
@@ -586,7 +582,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
     else //No BG Modelling
     {
        //fgMask.copyTo(maskFGImg); //Use the same for Food processing
-       cv::threshold( frameImg_gray, outFoodMask, g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+       cv::threshold( fgMask, outFoodMask, g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
        cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
        //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
