@@ -656,25 +656,41 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
 
 /// \TODO Finish THis code Clean Up
 /// \brief Detect All likely Eye ellipsoids in the Image region and return List with N best matches
-tEllipsoids getBestEllipsoidFits(cv::Mat& imgRegion)
+void getBestEllipsoidFits(cv::Mat& imgRegion,std::priority_queue<tDetectedEllipsoid>& qEllipsoids)
 {
+    tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
+    vedgePoints_all.clear();
+
+    std::vector<std::vector<cv::Point> > contours_canny;
+    std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
+
+
     if (bUseEllipseEdgeFittingMethod)
     {
-        getEdgePoints(imgEdge_local_LEye,vedgePoints_all);
-        detectEllipse(imgEdge_local_LEye,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
+        getEdgePoints(imgRegion,vedgePoints_all);
+        detectEllipse(imgRegion,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
     }
-    //imgEdge_local.copyTo(imgEdge_dbg);
+
+    ///If The STD method Failed Or is inactivated then Use CVs contour and Ellipsoid method
     if (qEllipsoids.size() == 0 )
     {   //qDebug() << " L Eye Ellipse Detection Failed";
         /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
-        int iLEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,2,vt,ve);
-        if (iLEye != -1)
+        cv::findContours(imgRegion, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+        int iEye = findMatchingContour(contours_canny,hierarchy_canny,ptLEyeMid,2,vt,ve);
+        if (iEye != -1)
         {
-            cv::convexHull( cv::Mat(contours_canny[iLEye]), vLEyeHull, false );
-            if (vLEyeHull.size() > 4)
+
+            std::vector<cv::Point> vEyeHull; //Eye Hull Shape
+
+            std::vector<std::vector<cv::Point>> vEyes;
+            cv::RotatedRect rcLEye,rcREye;
+
+            cv::convexHull( cv::Mat(contours_canny[iEye]), vEyeHull, false );
+            if (vEyeHull.size() > 4)
             {
-                vEyes.push_back(vLEyeHull);
-                rcLEye =  cv::fitEllipse(vLEyeHull);
+                vEyes.push_back(vEyeHull);
+                rcLEye =  cv::fitEllipse(vEyeHull);
                 tDetectedEllipsoid dEll(rcLEye,10);
                 lEll.fitscore       = dEll.fitscore;
                 lEll.rectEllipse    = dEll.rectEllipse;
@@ -863,6 +879,8 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     while (qEllipsoids.size() > 0)
         qEllipsoids.pop(); //Empty All Other Candidates
 
+        //Make coloured Version for Display
+        cv::cvtColor( imgEdge_local, outHeadFrameMonitor, cv::COLOR_GRAY2RGB);
 
     // Here is a heurestic approach combines the opencv ability to detect ellipses , with the noisy fast ellipsoid detection method that returns goodness of fit
     // Draw an ellipsoid onto the edge images, and then try to fit edges to ellipsoid
@@ -872,9 +890,16 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 //    if (mjAxis1 < gi_minEllipseMajor || mjAxis1 > gi_maxEllipseMajor || lEll.fitscore < 10)
 //    {
 
-        tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
-        vedgePoints_all.clear();
+        cv::Mat imgEdge_local_LEye = imgEdge_local.clone();
 
+        //COVER Right Eye
+        cv::Rect r(imgEdge_local.cols/2,0,imgIn_thres.cols,imgIn_thres.rows);
+        //imgEdge.copyTo(imgEdge_local);
+        cv::rectangle(imgEdge_local_LEye,r,cv::Scalar(0),-1);
+        //cv::imshow("REyeCover",imgEdge_local);
+
+
+        vedgePoints_all = getBestEllipsoidFits(imgEdge_local_LEye);
 //        //If Contour Finding Fails Then Take Raw Edge points and mask L/R half of image
 //        try
 //        {
@@ -886,16 +911,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 //            std::cerr << e << std::endl;
 
 //        }
-        //outHeadFrameMonitor = imgEdge_local.clone();
-        //Make coloured Version for Display
-        cv::cvtColor( imgEdge_local, outHeadFrameMonitor, cv::COLOR_GRAY2RGB);
 
-        cv::Mat imgEdge_local_LEye = imgEdge_local.clone();
-        //COVER Right Eye
-        cv::Rect r(imgEdge_local.cols/2,0,imgIn_thres.cols,imgIn_thres.rows);
-        //imgEdge.copyTo(imgEdge_local);
-        cv::rectangle(imgEdge_local_LEye,r,cv::Scalar(0),-1);
-        //cv::imshow("REyeCover",imgEdge_local);
 
         if (bUseEllipseEdgeFittingMethod)
         {
