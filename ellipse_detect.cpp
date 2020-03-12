@@ -654,8 +654,7 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
     return vretThresholds;
 }
 
-
-
+/// \TODO Finish THis code Clean Up
 /// \brief Detect All likely Eye ellipsoids in the Image region and return List with N best matches
 tEllipsoids getBestEllipsoidFits(cv::Mat& imgRegion)
 {
