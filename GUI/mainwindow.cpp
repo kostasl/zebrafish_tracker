@@ -138,7 +138,7 @@ void MainWindow::createSpinBoxes()
 
 
     this->ui->spinBoxFishThres->installEventFilter(this);
-    this->ui->spinBoxFishThres->setRange(19,100); //Too low Below 19 App Stalls -- Too many Large Objects Appear
+    this->ui->spinBoxFishThres->setRange(1,100); //Too low Below 19 App Stalls -- Too many Large Objects Appear
     this->ui->spinBoxFishThres->setValue(g_Segthresh);
 
 
