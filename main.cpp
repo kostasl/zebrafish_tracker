@@ -494,7 +494,9 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
         /// \brief processMasks
+#if _DEBUG
         cv::imshow("FG Image", frame_gray - gframeBGImage);
+#endif
         processMasks(frame_gray,bgStaticMask,fgMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
 
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
@@ -3023,7 +3025,6 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               cv::Point ptMask(ptRotCenter.x,ptRotCenter.y+4);
               imgFishHead           = imgFishAnterior_Norm(rectFishHeadBound);
 
-
               /// EYE DETECTION Report Results to Output Frame //
               /// Returns imgFishHeadProcessed Upsampled with ellipses drawns, and imgFishHeadSeg - the processed edges img used
               /// to detect the eyes
@@ -3032,14 +3033,15 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               std::stringstream ss;
               ret = detectEyeEllipses(imgFishHead,vellLeft,vellRight,imgFishHeadSeg,imgFishHeadProcessed);
 
-
-            if ((ret < 2 | gUserReward < 0) )
-            {
-                ss << " Eye Detection Error - Check Threshold";
-                window_main.LogEvent(QString::fromStdString(ss.str()));
+              if ((ret < 2 | gUserReward < 0) )
+              {
                 fish->nFailedEyeDetectionCount++;
-                //std::clog << ss.str() << std::endl;
-            }
+                if ((fish->nFailedEyeDetectionCount % 100)==0)
+                {
+                    ss << "-#" << fish->nFailedEyeDetectionCount << " Eye Detection Error - Check Threshold";
+                    window_main.LogEvent(QString::fromStdString(ss.str()));
+                }
+              }
 
               //Copy Detected Ellipse Frame To The Output Frame
               if (imgFishHeadProcessed.u)
@@ -3092,9 +3094,6 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
               //ss.str(""); //Empty String
-
-
-
 
               //Check If Too Many Eye Detection Failures - Then Switch Template
               if (fish->nFailedEyeDetectionCount > 40)

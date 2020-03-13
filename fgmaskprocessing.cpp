@@ -217,8 +217,9 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         pMOG2->getBackgroundImage(gframeBGImage);
         pwindow_main->showVideoFrame(gframeBGImage,nFrame);
 
-
+#if defined(DEBUG)
         cv::imshow("BGImage",gframeBGImage);
+#endif
         //delete capture object
         capture.release();
 

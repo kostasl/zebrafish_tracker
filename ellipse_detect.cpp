@@ -635,12 +635,12 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
         //Get 3 values starting from Approx Median Value moving up the intensity
         std::sort(veyeSegSamples.begin(),veyeSegSamples.end());
 
-        int idx = (int)veyeSegSamples.size()*0.85 + gthresEyeSeg;
+        int idx = (int)veyeSegSamples.size()*0.75 + gthresEyeSeg;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
 
-        idx = (int)veyeSegSamples.size()*0.65 + gthresEyeSegL;
+        idx = (int)veyeSegSamples.size()*0.55 + gthresEyeSegL;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
@@ -677,7 +677,7 @@ void getBestEllipsoidFits(cv::Mat& imgRegion,std::priority_queue<tDetectedEllips
     ///If The STD method Failed Or is inactivated then Use CVs contour and Ellipsoid method
     if (qEllipsoids.size() == 0 )
     {   //qDebug() << " L Eye Ellipse Detection Failed";
-        //Find Eye On Left Side
+        //Find Eye On Left Side / as brightest spot
         double minVal,maxVal;
         cv::Point ptMax,ptMin;
         cv::minMaxLoc(imgRegion,&minVal,&maxVal,&ptMin,&ptMax);
@@ -866,6 +866,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     if (qEllipsoids.size() > 0)
     {
         ret++;
+        vLellipses.push_back(lEllMean);
         drawExtendedMajorAxis(img_colour,lEllMean,CV_RGB(250,0,0));
     }
     ///// End oF LEft Eye Trace ///
@@ -892,6 +893,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     if (qEllipsoids.size() > 0)
     {
         ret++;
+        vRellipses.push_back(rEllMean);
         drawExtendedMajorAxis(img_colour,rEllMean,CV_RGB(250,50,50));
     }
 
