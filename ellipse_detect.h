@@ -9,8 +9,14 @@
 #include <opencv2/video/background_segm.hpp>
 #include <queue>
 
+#include <config.h>
+
 //fwd declaration of vector of DetectedEllispods
 //class tEllipsoids;
+
+class tDetectedEllipsoid; //Fwd decl
+typedef std::vector<tDetectedEllipsoid> tEllipsoids;
+typedef std::priority_queue<tDetectedEllipsoid> tRankQueueEllipsoids;
 
 ///\note Consistency between pts and RotRect is not checked
 typedef struct tDetectedEllipsoid{
@@ -26,8 +32,57 @@ typedef struct tDetectedEllipsoid{
 
     }
 
+    //Constructor for instantiating an average Ellipsoid using the N ellipsoids from Queue
+    tDetectedEllipsoid(tRankQueueEllipsoids& rankedEllipsoids,int nMaxSamples):tDetectedEllipsoid()
+    {
+
+
+        int iRSamples =rankedEllipsoids.size();//Total Samples
+        nsamples = 0; //Samples included in Estimate
+        tDetectedEllipsoid ellipsoid;
+        tEllipsoids vellipses;
+
+        while (rankedEllipsoids.size() >  max(0,iRSamples-nMaxSamples))
+        {
+            ellipsoid = rankedEllipsoids.top();
+
+            if (ellipsoid.ptAxisMj1.y > ellipsoid.ptAxisMj2.y)
+            { //ptAxisMj1 is lower than ptAxisMj2
+                ptAxisMj1.y +=  ellipsoid.ptAxisMj1.y ;
+                ptAxisMj1.x +=  ellipsoid.ptAxisMj1.x ;
+                ptAxisMj2.y +=  ellipsoid.ptAxisMj2.y ;
+                ptAxisMj2.x +=  ellipsoid.ptAxisMj2.x ;
+            }
+            else
+           {
+               ptAxisMj1.y +=  ellipsoid.ptAxisMj2.y;
+               ptAxisMj1.x +=  ellipsoid.ptAxisMj2.x;
+               ptAxisMj2.y +=  ellipsoid.ptAxisMj1.y;
+               ptAxisMj2.x +=  ellipsoid.ptAxisMj1.x;
+          }
+
+            fitscore += ellipsoid.fitscore;
+            rankedEllipsoids.pop();
+            nsamples++;
+        }//Loop Through TOp Ranking Ellipsoids
+
+        //Calc empirical mean /
+        ptAxisMj1.y = ptAxisMj1.y / (float)nsamples;
+        ptAxisMj1.x = ptAxisMj1.x / (float)nsamples;
+        ptAxisMj2.y = ptAxisMj2.y / (float)nsamples;
+        ptAxisMj2.x = ptAxisMj2.x / (float)nsamples;
+
+        fitscore = fitscore/ (float)nsamples;
+
+        cv::Point2f mjAxisLine = ptAxisMj2-ptAxisMj1;
+        /// \todo set the other bounding rect points accordingly
+        this->rectEllipse.angle = std::atan2(mjAxisLine.y,mjAxisLine.x) * 180.0/CV_PI+90.0;
+
+    }//Constuctor With Rank Q
+
+
     //Initialiazes object using mean values from vector of ellipsoids provided
-    tDetectedEllipsoid(const std::vector<tDetectedEllipsoid>& vEll):tDetectedEllipsoid()
+    tDetectedEllipsoid(const tEllipsoids& vEll):tDetectedEllipsoid()
     {
         //Iterate all ellipsoids and obtain mean values
 
@@ -56,7 +111,6 @@ typedef struct tDetectedEllipsoid{
         } //lOOP through all ellipsoids
 
         //Calc empirical mean /
-
         ptAxisMj1.y = ptAxisMj1.y / (float)nsamples;
         ptAxisMj1.x = ptAxisMj1.x / (float)nsamples;
         ptAxisMj2.y = ptAxisMj2.y / (float)nsamples;
@@ -140,7 +194,8 @@ typedef struct tDetectedEllipsoid{
 
 } tDetectedEllipsoid;
 
-typedef std::vector<tDetectedEllipsoid> tEllipsoids;
+
+
 
 
 //Operator for Priority Ordering
@@ -157,7 +212,7 @@ typedef std::vector<tEllipsoidEdge> tEllipsoidEdges;
 
 //int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses);
 //int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses);
-int detectEllipse(tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetectedEllipsoid>& qEllipsoids);
+int detectEllipse(tEllipsoidEdges& vedgePoints_all, tRankQueueEllipsoids& qEllipsoids);
 ///
 /// \brief detectEllipses Search For Ellipsoids around the position of the eyes in the fish head isolated image
 int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRellipses,cv::Mat& outHeadFrameMonitor,cv::Mat& outHeadFrameProc);

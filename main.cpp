@@ -2640,148 +2640,151 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 }
 
 
-///
-/// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
-/// \param contours source array in which to search
-/// \param hierarchy
-/// \param pt - Position around which we are searching
-/// \param level - The required hierarchy level description of the contour being searched for
-/// \param matchhull approx shape we are looking for
-/// \param fittedEllipse Not Used - pointer to array of Rotated rect fitted ellipsoids
-/// \return Index of *child*/Leaf contour closest to point
-///
-int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
-                              std::vector<cv::Vec4i>& hierarchy,
-                              cv::Point pt,
-                              int level,
-                              std::vector<cv::Point>& matchhull,
-                              std::vector<cv::RotatedRect>& outfittedEllipse)
-{
-    int idxContour           = -1;
-    bool bContourfound       = false;
-    int mindistToCentroid    = +10000; //Start Far
-    int distToCentroid       = +10000;
-    int matchContourDistance = 10000;
+/////
+///// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
+///// \param contours source array in which to search
+///// \param hierarchy
+///// \param pt - Position around which we are searching
+///// \param level - The required hierarchy level description of the contour being searched for
+///// \param matchhull approx shape we are looking for
+///// \param fittedEllipse Not Used - pointer to array of Rotated rect fitted ellipsoids
+///// \return Index of *child*/Leaf contour closest to point
+/////
+//int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
+//                              std::vector<cv::Vec4i>& hierarchy,
+//                              cv::Point pt,
+//                              int level,
+//                              std::vector<cv::Point>* matchhull = nullptr,
+//                              std::vector<cv::RotatedRect>* outfittedEllipse = nullptr)
+//{
+//    int idxContour           = -1;
+//    bool bContourfound       = false;
+//    int mindistToCentroid    = +10000; //Start Far
+//    int distToCentroid       = +10000;
+//    int matchContourDistance = 10000;
 
-    int tArea = 0;
-    int sArea = 0;
+//    int tArea = 0;
+//    int sArea = 0;
 
-    int tLength = 0;
-    int sLength = 0;
+//    int tLength = 0;
+//    int sLength = 0;
 
-    double dHudist = 0.0; //Shape Distance Hu moments distance measure from OpenCV
+//    double dHudist = 0.0; //Shape Distance Hu moments distance measure from OpenCV
 
-    /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
-   ///Search Through Contours - Draw contours + hull results
+//    /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
+//   ///Search Through Contours - Draw contours + hull results
 
-   ///Find Contour with Min Distance in shape and space -attach to closest contour
-   //In Not found Search Again By distance tp Full Contour
-       //Find Closest Contour
-       for( int i = 0; i< (int)contours.size(); i++ )
-       {
+//   ///Find Contour with Min Distance in shape and space -attach to closest contour
+//   //In Not found Search Again By distance tp Full Contour
+//       //Find Closest Contour
+//       for( int i = 0; i< (int)contours.size(); i++ )
+//       {
 
-          //Filter According to desired Level
-          if (level == 0) /////Only Process Parent Contours
-          {
-            if (hierarchy[i][3] != -1) // Need to have no parent
-               continue;
-            if (hierarchy[i][2] == -1)  // Need to have child
-                continue;
-            assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
-          }
+//          //Filter According to desired Level
+//          if (level == 0) /////Only Process Parent Contours
+//          {
+//            if (hierarchy[i][3] != -1) // Need to have no parent
+//               continue;
+//            if (hierarchy[i][2] == -1)  // Need to have child
+//                continue;
+//            assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
+//          }
 
-          if (level == 1) /////Only Process Child Contours
-          {
-              if (hierarchy[i][3] == -1) // Need to have a parent
-                  continue;
-//                   //Parent should be root
-//                   if (hierarchy[hierarchy[i][3]][3] != -1)
-//                       continue;
-          }
+//          if (level == 1) /////Only Process Child Contours
+//          {
+//              if (hierarchy[i][3] == -1) // Need to have a parent
+//                  continue;
+////                   //Parent should be root
+////                   if (hierarchy[hierarchy[i][3]][3] != -1)
+////                       continue;
+//          }
 
-          if (level == 2) ////Needs to be top Level Contour
-          {
-              if (hierarchy[i][3] != -1) // No Parent Contour
-                  continue;
-//                   //Parent should be root
-//                   if (hierarchy[hierarchy[i][3]][3] != -1)
-//                       continue;
-          }
-
-
-
-          //It returns positive (inside), negative (outside), or zero (on an edge)
-          //Invert Sign and then Rank From Smallest to largest distance
-          if (contours[i].size() > 0)
-            matchContourDistance = distToCentroid = -cv::pointPolygonTest(contours[i],pt,true);
-
-          //Measure Space Mod -Penalize Outside contour Hits - Convert Outside Contour Distances to X times further +ve (penalize)
-          //Make Distance alway positive
-          //matchContourDistance = (distToCentroid<0)?abs(distToCentroid)*20:distToCentroid;
-          // qDebug() << "-c" << i << " D:" <<  distToCentroid;
+//          if (level == 2) ////Needs to be top Level Contour
+//          {
+//              if (hierarchy[i][3] != -1) // No Parent Contour
+//                  continue;
+////                   //Parent should be root
+////                   if (hierarchy[hierarchy[i][3]][3] != -1)
+////                       continue;
+//          }
 
 
-          ///Match Shape -
-          /// \warning  If initial Shape Is not eye like this may be stuck into rejecting shapes
-          // If A shape is provided
-          //Find Contour Shape Similar to the one previously used for eye(ellipsoid)
-          if (matchhull.size() > 5 && gOptimizeShapeMatching) //Only If Shape has been initialized/Given
-          {
-               dHudist = cv::matchShapes(matchhull,contours[i],CV_CONTOURS_MATCH_I2,0.0);
-               matchContourDistance += dHudist*10.0; //Add Shape Distance onto / X Scale so it obtains relative importance
-               // Now Check That distance is not too far otherwise reject shape
-               //if (matchContourDistance > 1.0)
-               //    continue; //Next Shape/Contour
-               //qDebug() << "HuDist:" << dHudist*10.0;
-             //Check Area
 
-               tArea = cv::contourArea(matchhull);
-               sArea = cv::contourArea(contours[i]);
+//          //It returns positive (inside), negative (outside), or zero (on an edge)
+//          //Invert Sign and then Rank From Smallest to largest distance
+//          if (contours[i].size() > 0)
+//            matchContourDistance = distToCentroid = -cv::pointPolygonTest(contours[i],pt,true);
 
-               tLength = cv::arcLength(matchhull,true);
-               sLength = cv::arcLength(contours[i],true);
-
-               //Add Difference in Area to Score
-               matchContourDistance += (abs(tArea - sArea));
-              // qDebug() << "AreaDist:" << abs(tArea - sArea);
-
-               matchContourDistance += abs(tLength - sLength);
-               //qDebug() << "LengthDist:" << abs(tLength - sLength);
-
-          }
+//          //Measure Space Mod -Penalize Outside contour Hits - Convert Outside Contour Distances to X times further +ve (penalize)
+//          //Make Distance alway positive
+//          //matchContourDistance = (distToCentroid<0)?abs(distToCentroid)*20:distToCentroid;
+//          // qDebug() << "-c" << i << " D:" <<  distToCentroid;
 
 
-          //Only Update if Spatial Distance is smaller but also moving from outside to inside of the shape
-          //-ve is outside - 0 on border -
-          //if(mindistToCentroid <= 0 && distToCentroid >= 0))
-          {
-               if (matchContourDistance < mindistToCentroid)
-               {
-                   //Otherwise Keep As blob Contour
-                   idxContour = i;
-                   mindistToCentroid = matchContourDistance;//New Min
+//          ///Match Shape -
+//          /// \warning  If initial Shape Is not eye like this may be stuck into rejecting shapes
+//          // If A shape is provided
+//          //Find Contour Shape Similar to the one previously used for eye(ellipsoid)
+//          if (matchhull != nullptr)
+//          {
+//              if (matchhull->size() > 5 && gOptimizeShapeMatching) //Only If Shape has been initialized/Given
+//              {
+//                   dHudist = cv::matchShapes(*matchhull,contours[i],CV_CONTOURS_MATCH_I2,0.0);
+//                   matchContourDistance += dHudist*10.0; //Add Shape Distance onto / X Scale so it obtains relative importance
+//                   // Now Check That distance is not too far otherwise reject shape
+//                   //if (matchContourDistance > 1.0)
+//                   //    continue; //Next Shape/Contour
+//                   //qDebug() << "HuDist:" << dHudist*10.0;
+//                 //Check Area
 
-                   //qDebug() << "-----MinTD:"<< matchContourDistance << "<- HDist:" << dHudist << " Sp:" << distToCentroid << "AreaDist:" << abs(tArea - sArea) << "LengthDist:" << abs(tLength - sLength);
+//                   tArea = cv::contourArea(*matchhull);
+//                   sArea = cv::contourArea(contours[i]);
 
-                   //Reject match 0 in case contour is not actually there
-                   //if (matchContourDistance < gi_ThresholdMatching)
-                        bContourfound = true;
-               }
-           }
-       }
+//                   tLength = cv::arcLength(*matchhull,true);
+//                   sLength = cv::arcLength(contours[i],true);
+
+//                   //Add Difference in Area to Score
+//                   matchContourDistance += (abs(tArea - sArea));
+//                  // qDebug() << "AreaDist:" << abs(tArea - sArea);
+
+//                   matchContourDistance += abs(tLength - sLength);
+//                   //qDebug() << "LengthDist:" << abs(tLength - sLength);
+
+//              }
+//          } // If Hull To Search For is provided
 
 
-   if (!bContourfound)
-   {
-       std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
-       idxContour = -1;
-   }
-      //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
+//          //Only Update if Spatial Distance is smaller but also moving from outside to inside of the shape
+//          //-ve is outside - 0 on border -
+//          //if(mindistToCentroid <= 0 && distToCentroid >= 0))
+//          {
+//               if (matchContourDistance < mindistToCentroid)
+//               {
+//                   //Otherwise Keep As blob Contour
+//                   idxContour = i;
+//                   mindistToCentroid = matchContourDistance;//New Min
 
-   assert(idxContour < (int)contours.size());
+//                   //qDebug() << "-----MinTD:"<< matchContourDistance << "<- HDist:" << dHudist << " Sp:" << distToCentroid << "AreaDist:" << abs(tArea - sArea) << "LengthDist:" << abs(tLength - sLength);
 
-   return idxContour;
-}
+//                   //Reject match 0 in case contour is not actually there
+//                   //if (matchContourDistance < gi_ThresholdMatching)
+//                        bContourfound = true;
+//               }
+//           }
+//       }
+
+
+//   if (!bContourfound)
+//   {
+//       std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
+//       idxContour = -1;
+//   }
+//      //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
+
+//   assert(idxContour < (int)contours.size());
+
+//   return idxContour;
+//}
 
 ///
 /// \brief findIndexClosesttoPoint Returns Contour Index Closest To point pt
