@@ -56,6 +56,23 @@ The directory where the data csv files are exported must have  format EXP_N_YYYY
  *  t Start Tracking
  *  q Exit Quit application
 
+ 
+### How do I get set up? ###
+* Install opencv and compile with flag -D WITH_QT=ON, improves experience and range of available functions.
+http://opencv.org/downloads.html. Latest known opencv version that worked with tracker is OpenCV 3.4.4
+*  Qt4 and above
+
+```
+sudo apt-get install git libopencv-dev qt5-default g++
+```
+
+* Building the tracker
+```
+git clone https://github.com/dafishcode/zebrafishtrack
+cd zebrafishtrack
+qmake zebraprey_track.pro
+make
+```
 ## Output
 The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the order by which the ROI was created. First ROI 1, 2nd ROI gets V2_... For each ROI n it generates the following three types of file:
 
@@ -65,32 +82,6 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 * if the Save-Mode is enabled (via pressing the s key) then a subfolder named "pics" will contain an image per frame of the tracked video. This can be then combined into a new "tracked" video with avcodec or ffmpeg.
 
 *Note:* The package of source files contains example MATLAB scripts that can process these output files, plot and extract statistics.
-
- 
-### How do I get set up? ###
-* Install opencv and compile with flag -D WITH_QT=ON, improves experience and range of available functions.
-http://opencv.org/downloads.html. Latest known opencv version that worked with tracker is OpenCV 3.4.4
-*  Qt4 and above
-
-<pre><code>
-sudo apt-get install git libopencv-dev qt5-default g++
-</code></pre>
-
-* Building the tracker
-        git clone https://github.com/dafishcode/zebrafishtrack
-        cd zebrafishtrack
-        qmake zebraprey_track.pro
-        make
-
-
-* How to run tests
-get videos with vials,
-save videos in correct folder naming.make output folders, run application from build folder. Choose video(s) (more than one can be selected if they are in sequence), choose output file location, set regions of interest, click r (run) and then t (track).
-
-Wait until the video(s) have been tracked in full, the tracks will be displayed on screen realtime as the tracker is processing the video.
-
-* Deployment instructions
-
 
 ### Contribution guidelines ###
 
