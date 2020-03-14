@@ -508,7 +508,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         /// //
 
         if (bApplyFishMaskBeforeFeatureDetection)
-            frame_gray.copyTo(fgFishImgMasked,fgFishMask); //fgFishMask //Use Enhanced Mask
+            frame_gray.copyTo(fgFishImgMasked,fgMask); //fgFishMask //Use Enhanced Mask
         else
             frame_gray.copyTo(fgFishImgMasked); //fgFishMask //Use Enhanced Mask
 
