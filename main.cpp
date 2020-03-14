@@ -498,19 +498,17 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         cv::imshow("FG Image", frame_gray - gframeBGImage);
 #endif
         processMasks(frame_gray,bgStaticMask,fgMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
-
-        enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+        enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy); //Generates separate masks for Fish/Prey and Draws Fish Contourmask
 
         //Combine Roi Mask Only For The foodMask
         cv::bitwise_and(bgROIMask,fgFoodMask,fgFoodMask);
 
 
-        /// //
-
+        /// Choose FG image prior to template matching
         if (bApplyFishMaskBeforeFeatureDetection)
-            frame_gray.copyTo(fgFishImgMasked,fgMask); //fgFishMask //Use Enhanced Mask
+            frame_gray.copyTo(fgFishImgMasked,fgMask); //fgMask / NOT fish Mask //Use Enhanced Mask
         else
-            frame_gray.copyTo(fgFishImgMasked); //fgFishMask //Use Enhanced Mask
+            frame_gray.copyTo(fgFishImgMasked); //Full Frame Image Used
 
 
         cv::Mat maskedImg_gray;
