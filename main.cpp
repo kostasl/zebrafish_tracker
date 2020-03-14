@@ -122,16 +122,11 @@ fishModels vfishmodels; //Vector containing live fish models
 foodModels vfoodmodels;
 pointPairs vMeasureLines; //Point pairs defining line distances
 
+trackerState gTrackerState;
 
 int main(int argc, char *argv[])
 {
     gTimer.start();
-
-    bROIChanged = true;
-    bPaused = false;
-    bshowMask = false;
-    bTracking = true; //Start By Tracking by default
-    bExiting    = false;
 
     QStringList inVidFileNames; //List of Video Files to Process
 
@@ -465,7 +460,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     if (bMeasure2pDistance)
         drawUserDefinedPoints(outframe);
     //Redraw ROI Mask
-    if (bROIChanged)
+    if (gTrackerState.bROIChanged)
     {
         bgROIMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
         vRoi.at(0).drawMask(bgROIMask);
@@ -476,7 +471,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
     //cvb::CvBlobs blobs;
     ///DO Tracking
-    if (bTracking)
+    if (gTrackerState.bTracking)
     {
        //Simple Solution was to Use Contours To measure LUarvae
         //cvtColo frame_grey
@@ -522,7 +517,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         ///Update Fish Models Against Image and Tracks - Obtain Bearing Angle Using Template
         //Can Use Fish Masked - But Templates Dont Include The masking
         //UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
-        if (bTrackFish)
+        if (gTrackerState.bTrackFish)
         {
             UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
             //If A fish Is Detected Then Draw Its tracks
@@ -541,7 +536,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         ///\todo Keep A Global List of all tracks?
 
         /// Isolate Head, Get Eye models, and Get and draw Spine model
-        if (nLarva > 0 &&  (bTrackFish))
+        if (nLarva > 0 &&  (gTrackerState.bTrackFish))
             //An Image Of the Full Fish Is best In this Case
             //Do Not Use Masked Fish Image For Spine Fitting
             detectZfishFeatures(window_main, frame_gray,outframe,frameHead,outframeHeadEyeDetected,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
@@ -549,12 +544,12 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         ///////  Process Food Blobs ////
         // Process Food blobs
 
-        if (bTrackFood)
+        if (gTrackerState.bTrackFood)
         {
             processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,true); //Make New Food Models based on identified Blob
 
-            if (nFrame > gcMinFoodModelActiveFrames)
+            if (nFrame > gTrackerState.gcMinFoodModelActiveFrames)
             {
                 processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
                 UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
@@ -615,13 +610,13 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
     ///
     /// \brief drawFrameText
-    if (bRenderToDisplay)
+    if (gTrackerState.bRenderToDisplay)
     {
         drawFrameText(window_main,nFrame,nLarva,nFood,outframe);
 
     }
 
-    if (bshowMask && bTracking)
+    if (gTrackerState.bshowMask && gTrackerState.bTracking)
         cv::imshow("Isolated Fish",fgFishImgMasked);
 
     fgFishImgMasked.release();
@@ -703,7 +698,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     //fgMask.copyTo(fgMaskMOG);
     //fgMask.copyTo(fgMaskGMG);
 
-    bPaused = false;
+    gTrackerState.bPaused = false;
     //Make Variation of FileNames for other Output
 
     //QString trkoutFileCSV = outFileCSV;
@@ -782,15 +777,15 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         {
             nFrame = window_main.nFrame;
             capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
-            bPaused = true;
-            bTracking = bTracking; //Do Not Change
+            gTrackerState.bPaused = true;
+            gTrackerState.bTracking = gTrackerState.bTracking; //Do Not Change
             //bStartFrameChanged = false; //This is Reset Once The frame Is captured
             //Since we are jumping Frames - The fish Models Are invalidated / Delete
             ReleaseFishModels(vfishmodels);
             ReleaseFoodModels(vfoodmodels);
         }
 
-        if (!bPaused  )
+        if (!gTrackerState.bPaused  )
         {
             nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
             window_main.nFrame = nFrame; //Update The Frame Value Stored in Tracker Window
@@ -798,16 +793,16 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         }
 
 
-        if (nFrame == startFrameCount && !bPaused) //Only Switch Tracking On When Running Vid.
+        if (nFrame == startFrameCount && !gTrackerState.bPaused) //Only Switch Tracking On When Running Vid.
         {
-            bTracking = true;
+            gTrackerState.bTracking = true;
         }
 
          frameNumberString = QString("%1").arg(nFrame, 5, 10, QChar('0')); //QString::number(nFrame); //QString::number(nFrame); //Update Display String Holding FrameNumber
 
-    if (!bPaused || bStartFrameChanged)
+    if (!gTrackerState.bPaused || gTrackerState.bStartFrameChanged)
     {
-        bStartFrameChanged = false; //Reset
+        gTrackerState.bStartFrameChanged = false; //Reset
 
         try //Try To Read The Image of that video Frame
         {
@@ -868,17 +863,17 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     } //If Not Paused //
 
     //Check If StopFrame Reached And Pause
-    if (nFrame == stopFrame && stopFrame > 0 && !bPaused)
+    if (nFrame == stopFrame && stopFrame > 0 && !gTrackerState.bPaused)
     {
-         bPaused = true; //Stop Here
+         gTrackerState.bPaused = true; //Stop Here
          std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;
          pwindow_main->LogEvent(QString(">>Stop Frame Reached - Video Paused<<"));
     }
 
     //Pause on 1st Frame If Flag Start Paused is set
-    if (bStartPaused && nFrame == startFrameCount && !bPaused)
+    if (gTrackerState.bStartPaused && nFrame == startFrameCount && !gTrackerState.bPaused)
     {
-        bPaused =true; //Start Paused //Now Controlled By bstartPaused
+        gTrackerState.bPaused =true; //Start Paused //Now Controlled By bstartPaused
         pwindow_main->LogEvent(QString("[info]>> Video Paused<<"));
     }
 
@@ -890,7 +885,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     }
 
     //Blank Drawing Canvas for output - We then Blend with original Image
-    if (bRenderWithAlpha)
+    if (gTrackerState.bRenderWithAlpha)
         outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
     else
         outframe = frame.clone();
@@ -900,10 +895,10 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     processFrame(window_main,frame,bgStaticMask,nFrame,outframe,outframeHeadEyeDetect,outframeHead);
 
         double alpha = 0.5;
-        if (bRenderToDisplay)
+        if (gTrackerState.bRenderToDisplay)
         {
             //Simulated Alpha Channels Causes delays!
-            if (bRenderWithAlpha)
+            if (gTrackerState.bRenderWithAlpha)
                 cv::addWeighted(frame,1.0,outframe,1.0-alpha,0.0,outframe);
 
             ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
@@ -920,12 +915,12 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
         // Switch Off Render To Display If In Offline Tracking Mode
         //-Placed Here to Allow 1Frame Short Toggles Of Rendering
-        bRenderToDisplay = !bOffLineTracking;
+        gTrackerState.bRenderToDisplay = !gTrackerState.bOffLineTracking;
         //frame.copyTo(frameDebugD);
         //cv::imshow("Debug D",frameDebugD);
 
         /// Report Memory Usage Periodically - Every realtime Second//
-        if (!bPaused && (nFrame % (uint)gfVidfps) == 0 || !bPaused && nFrame == 2)
+        if (!gTrackerState.bPaused && (nFrame % (uint)gfVidfps) == 0 || !bPaused && nFrame == 2)
         {
             double rss,vm;
             process_mem_usage(vm, rss);
@@ -940,8 +935,8 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
             otLastUpdate.restart();
             // Render Next Frame To Display
-            if (bOffLineTracking)
-                bRenderToDisplay = true;
+            if (gTrackerState.bOffLineTracking)
+                gTrackerState.bRenderToDisplay = true;
 
             ss.str(std::string()); //Clear
           //Report MOG Mixtures
@@ -950,7 +945,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
         }
 
-        if (bSaveImages)
+        if (gTrackerState.bSaveImages)
         {
             cv::putText(frameDebugD, "REC", cv::Point(15, 20),
                     cv::FONT_HERSHEY_SIMPLEX, 0.8 , cv::Scalar(250,250,0));
@@ -958,7 +953,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         }
 
 
-        if (bshowMask)
+        if (gTrackerState.bshowMask)
         {
            // cv::imshow(gstrwinName + " FG Mask", fgMask);
             //cv::imshow(gstrwinName + " FG Fish Mask", fgMaskFish);
@@ -969,15 +964,15 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         //cv::imshow("Debug C",frameDebugC);
 
         //Save only when tracking - And Not While Paused
-        if (bTracking && !bPaused && bRecordToFile)
+        if (gTrackerState.bTracking && !gTrackerState.bPaused && gTrackerState.bRecordToFile)
         {
             if (!saveTracks(vfishmodels,vfoodmodels,outfishdatafile,frameNumberString))
             {
-                bRecordToFile = false;
-                bPaused = true; //Pause So user Knows Saving Is disabled
+                gTrackerState.bRecordToFile = false;
+                gTrackerState.bPaused = true; //Pause So user Knows Saving Is disabled
             }
             if (!saveFoodTracks(vfishmodels,vfoodmodels,outfooddatafile,frameNumberString))
-                bRecordToFile = false;
+                gTrackerState.bRecordToFile = false;
         }
 
         checkPauseRun(&window_main,keyboard,nFrame);
@@ -1501,14 +1496,14 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'p')
     {
         //frame.copyTo(frameCpy);
-        bPaused = true;
+        gTrackerState.bPaused = true;
 
         std::cout << "Paused" << endl;
     }
 
     if ((char)keyboard == 'q')
     {
-        bExiting = true;
+        gTrackerState.bExiting = true;
         pwindow_main->LogEvent("[info] User Terminated Tracker- Bye!");
         std::cout << "Quit" << endl;
     }
@@ -1523,7 +1518,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     if ((char)keyboard == 't') //Toggle Tracking
     {
-        if (!bTracking)
+        if (!gTrackerState.bTracking)
         {
             iLastKnownGoodTemplateRow = 0; //Reset Row
             iFishAngleOffset = 0;
@@ -1531,14 +1526,14 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         }else
             pwindow_main->LogEvent(QString("Tracking OFF"));
 
-        bTracking = !bTracking;
+        gTrackerState.bTracking = !gTrackerState.bTracking;
     }
 
     if ((char)keyboard == 'f') //Toggle FOOD Tracking
     {
-        bTrackFood=!bTrackFood;
+        gTrackerState.bTrackFood=!gTrackerState.bTrackFood;
 
-        if (bTrackFood)
+        if (gTrackerState.bTrackFood)
             pwindow_main->LogEvent(QString("Track food ON"));
         else
             pwindow_main->LogEvent(QString("Track food OFF"));
@@ -1562,8 +1557,8 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 's')
     {
         std::cout << "Save Image" << endl;
-        bSaveImages = !bSaveImages;
-        if (bSaveImages)
+        gTrackerState.bSaveImages = !gTrackerState.bSaveImages;
+        if (gTrackerState.bSaveImages)
             win->saveScreenShot();
 
     }
@@ -1571,8 +1566,8 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'r')
     {
         std::cout << "Run" << endl;
-        bPaused = false;
-        bStartFrameChanged = false;
+        gTrackerState.bPaused = false;
+        gTrackerState.bStartFrameChanged = false;
         gTimer.start();
     }
 
@@ -1592,7 +1587,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     if ((char)keyboard == 'd')
     {
-      bOffLineTracking = !bOffLineTracking; //Main Loop Will handle this
+      gTrackerState.bOffLineTracking = !gTrackerState.bOffLineTracking; //Main Loop Will handle this
       if (bOffLineTracking)
         pwindow_main->LogEvent(QString(">> Offline Tracking Mode ON <<"));
       else
@@ -1602,8 +1597,8 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     if ((char)keyboard == 'w')
     {
-      bRecordToFile = !bRecordToFile; //Main Loop Will handle this
-      if (bRecordToFile)
+      gTrackerState.bRecordToFile = !gTrackerState.bRecordToFile; //Main Loop Will handle this
+      if (gTrackerState.bRecordToFile)
       {
         pwindow_main->LogEvent(QString(">> [DISABLED] Recording Tracks ON - New File <<"));
         ///Code Moved TO MainWindow GUI
@@ -1616,9 +1611,9 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'P')
     {
 
-        bAddPreyManually = !bAddPreyManually;
+        gTrackerState.bAddPreyManually = !gTrackerState.bAddPreyManually;
 
-        if (bAddPreyManually)
+        if (gTrackerState.bAddPreyManually)
             pwindow_main->LogEvent(QString(">> Manual Prey Adding ON <<"));
         else
             pwindow_main->LogEvent(QString("<< Manual Prey Adding OFF >>"));
@@ -1627,12 +1622,12 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     /// Measure Distance In straight Line Mode
     if ((char)keyboard == 'M')
     {
-       bMeasure2pDistance= !bMeasure2pDistance;
-       if (bMeasure2pDistance)
+       gTrackerState.bMeasure2pDistance= !gTrackerState.bMeasure2pDistance;
+       if (gTrackerState.bMeasure2pDistance)
        {
            pwindow_main->LogEvent(QString(">> Manual Distance Measurement ON <<"));
            pwindow_main->SetTrackerState(7);
-           bPaused = true;
+           gTrackerState.bPaused = true;
        }
        else
            pwindow_main->LogEvent(QString("<< Manual Distance Measurement  OFF >>"));
@@ -1641,7 +1636,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
 
     if ((char)keyboard == 'q')
-        bExiting = true; //Main Loop Will handle this
+        gTrackerState.bExiting = true; //Main Loop Will handle this
          //break;
 
 
@@ -1660,26 +1655,26 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'm')
     {
              std::cout << "Show Mask" << std::endl;
-             bshowMask = !bshowMask;
+             gTrackerState.bshowMask = !gTrackerState.bshowMask;
     }
 
     ///Flip Save Feature On - This Will last only for a single frame
     if ((char)keyboard == 'e')
     {
              std::cout << "Save Eye Feature on next frame" << std::endl;
-             bEyesDetected = true;
+             gTrackerState.bEyesDetected = true;
     }
 
 
     if ((char)keyboard == 'T')
     {
              std::cout << "Store next Image as Template" << std::endl;
-             bStoreThisTemplate = !bStoreThisTemplate;
+             gTrackerState.bStoreThisTemplate = !gTrackerState.bStoreThisTemplate;
     }
 
     if ((char)keyboard == 'D')
     {
-        bStoreThisTemplate = false;
+        gTrackerState.bStoreThisTemplate = false;
         std::stringstream ss;
         ss << "Delete Currently Used Template Image idx:" << iLastKnownGoodTemplateRow;
         pwindow_main->LogEvent(QString::fromStdString(ss.str()));
@@ -1689,7 +1684,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     if ((char)keyboard == 'z')
     {
-        bStoreThisTemplate = false;
+        gTrackerState.bStoreThisTemplate = false;
         std::stringstream ss;
         int iNewTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
         ss << "Reset Used Template idx:" << iLastKnownGoodTemplateRow << " to " << iNewTemplateRow;
@@ -1744,7 +1739,7 @@ void checkPauseRun(MainWindow* win, int keyboard,unsigned int nFrame)
             //Wait Until Key to unpause is pressed
             //
 
-    if (bPaused)
+    if (gTrackerState.bPaused)
     { //Spend more time processing GUI events when Paused
         //keyboard = cv::waitKey( 1 );
         QTime dieTime= QTime::currentTime().addMSecs(20);
@@ -2387,7 +2382,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
         bMouseLButtonDown = true;
          //ROI is locked once tracking begins
         ///CHANGE ROI Only when Paused and ONCE
-        if (bPaused && !bROIChanged)
+        if (gTrackerState.bPaused && !gTrackerState.bROIChanged)
         { //Change 1st Point if not set or If 2nd one has been set
              if ( b1stPointSet == false)
              {
@@ -2426,7 +2421,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
         mousepnt.y = y;
        std::cout << "Right button of the mouse is clicked - Delete ROI position (" << x << ", " << y << ")" <<std::endl;
 
-        if (bPaused && !bROIChanged)
+        if (gTrackerState.bPaused && !gTrackerState.bROIChanged)
         {
             deleteROI(mousepnt);
             drawAllROI(frameDebugC);
@@ -2505,7 +2500,7 @@ void drawAllROI(cv::Mat& frame)
         iroi.draw(frame);
 
         //Mark a centre to show that Tracking is ON / this ROI is being Tracked/Recorded
-         if (bTracking)
+         if (gTrackerState.bTracking)
          {
              cv::Point pt1;
              pt1.x = iroi.centre.x;

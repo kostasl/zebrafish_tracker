@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "config.h"
 #include "larvatrack.h" //For resetDataRecording()
 #include "QtOpencvCore.hpp"
 #include <QStringListModel>
@@ -13,13 +14,15 @@ extern fishModels vfishmodels; //Vector containing live fish models
 extern foodModels vfoodmodels; //Vector containing live fish models
 extern pointPairs vMeasureLines; //vector of point pairs/ user defined lines
 
+extern trackerState gTrackerState;
+
 std::pair<cv::Point,cv::Point> userPointPair; //The currently defined point pair prior to adding to list
 
-extern bool bPaused;
-extern bool bStoreThisTemplate;
-extern bool bDraggingTemplateCentre;
-extern bool bStartFrameChanged;
-extern bool bBlindSourceTracking;// Do Not Show File Names
+//extern bool bPaused;
+//extern bool bStoreThisTemplate;
+//extern bool bDraggingTemplateCentre;
+//extern bool bStartFrameChanged;
+//extern bool bBlindSourceTracking;// Do Not Show File Names
 extern int g_Segthresh;
 extern int g_SegFoodThesMax; //Food Segmentation Threshold
 extern int gthresEyeSeg;
@@ -32,7 +35,7 @@ extern int gFishBoundBoxSize;
 extern double gTemplateMatchThreshold;
 extern double gdMOGBGRatio;
 extern bool bTrackFood;
-extern bool bTracking;
+//extern bool bTracking;
 extern bool bExiting;
 extern bool bROIChanged;//Signalled So Mask ROI Can be drawn Again In ProcessFrame
 extern bool bRecordToFile;
@@ -109,7 +112,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->ui->horizontalSlider->installEventFilter(this);
 
-    this->ui->actionTrack_Fish->setChecked(bTracking);
+    this->ui->actionTrack_Fish->setChecked(gTrackerState.bTracking);
     this->ui->checkBoxGPU->setChecked(bUseGPU);
     this->ui->checkBoxMOG->setChecked(bUseBGModelling);
     this->ui->checkBoxNoiseFilter->setChecked(bRemovePixelNoise);
@@ -130,27 +133,27 @@ void MainWindow::createSpinBoxes()
 
     this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setRange(-500,500); //-Ve Values Allow for lowering Avg Threshold
-    this->ui->spinBoxEyeThres->setValue(gthresEyeSeg);
+    this->ui->spinBoxEyeThres->setValue(gTrackerState.gthresEyeSeg);
 
-    this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
-    this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
+    this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
+    this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
 
 
 
     this->ui->spinBoxFishThres->installEventFilter(this);
     this->ui->spinBoxFishThres->setRange(1,100); //Too low Below 19 App Stalls -- Too many Large Objects Appear
-    this->ui->spinBoxFishThres->setValue(g_Segthresh);
+    this->ui->spinBoxFishThres->setValue(gTrackerState.g_Segthresh);
 
 
 
     this->ui->spinBoxMinEllipse->installEventFilter(this);
     this->ui->spinBoxMinEllipse->setRange(5,22);
-    this->ui->spinBoxMinEllipse->setValue(gi_minEllipseMajor);
+    this->ui->spinBoxMinEllipse->setValue(gTrackerState.gi_minEllipseMajor);
 
 
     this->ui->spinBoxMaxEllipse->installEventFilter(this);
     this->ui->spinBoxMaxEllipse->setRange(15,35);
-    this->ui->spinBoxMaxEllipse->setValue(gi_maxEllipseMajor);
+    this->ui->spinBoxMaxEllipse->setValue(gTrackerState.gi_maxEllipseMajor);
 
 
 //    this->ui->spinBoxSpineSegSize->installEventFilter(this);
@@ -158,9 +161,9 @@ void MainWindow::createSpinBoxes()
 //    this->ui->spinBoxSpineSegSize->setValue(gFishTailSpineSegmentLength);
 
     //These spinBoxes Use Slots For Events
-    this->ui->spinBoxTemplateThres->setValue(gTemplateMatchThreshold*100.0);
+    this->ui->spinBoxTemplateThres->setValue(gTrackerState.gTemplateMatchThreshold*100.0);
 
-    this->ui->spinBoxMOGBGRatio->setValue(gdMOGBGRatio*100.0);
+    this->ui->spinBoxMOGBGRatio->setValue(gTrackerState.gdMOGBGRatio*100.0);
 
 
     //this->connect(this->ui->spinBoxEyeThres, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this->ui->spinBoxEyeThres, &QSlider::setValue);
@@ -286,7 +289,7 @@ void MainWindow::SetTrackerState(int stateID)
         case 0: //paused
         {
             this->statusBar()->showMessage(tr("Paused, press r to resume"));
-            bPaused = true;
+            gTrackerState.bPaused = true;
         }
         break;
         case 1:
@@ -424,11 +427,11 @@ void MainWindow::showCVimg(cv::Mat& img)
 void MainWindow::UpdateSpinBoxToValue()
 {
 
-    this->ui->spinBoxEyeThres->setValue(gthresEyeSeg);
-    this->ui->spinBoxFishThres->setValue(g_Segthresh);
+    this->ui->spinBoxEyeThres->setValue(gTrackerState.gthresEyeSeg);
+    this->ui->spinBoxFishThres->setValue(gTrackerState.g_Segthresh);
 
-    this->ui->spinBoxFoodThresMax->setValue(g_SegFoodThesMax);
-    this->ui->spinBoxFoodThresMin->setValue(g_SegFoodThesMin);
+    this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
+    this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
 
 }
 
@@ -501,9 +504,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             key =  strkey.at(0);
 
          //Cancel Any Drag Event Going On
-         if (bDraggingTemplateCentre)
+         if (gTrackerState.bDraggingTemplateCentre)
          {
-            bDraggingTemplateCentre = false;
+            gTrackerState.bDraggingTemplateCentre = false;
             LogEvent("[info] Cancelled Template Adjustment");
          }
 
@@ -521,8 +524,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                  nFrame = ui->spinBoxFrame->value();
                  this->ui->horizontalSlider->setValue( ui->spinBoxFrame->value());
 
-                 bStartFrameChanged = true;
-                 bPaused = false; //For 1 Frame and it will pause again at new frame
+                 gTrackerState.bStartFrameChanged = true;
+                 gTrackerState.bPaused = false; //For 1 Frame and it will pause again at new frame
                  event->accept();
 
                  return true;// We VE handled the event
@@ -623,13 +626,13 @@ void MainWindow::handleSliderChange(QEvent* event)
 
     if (event->type() == QEvent::MouseButtonPress)
     {
-        bPaused = true;
+        gTrackerState.bPaused = true;
     }
 
     if (event->type() == QEvent::MouseButtonRelease)
     {
-        bStartFrameChanged = true;
-        bPaused = false;
+        gTrackerState.bStartFrameChanged = true;
+        gTrackerState.bPaused = false;
         nFrame = this->ui->horizontalSlider->value();
         this->ui->spinBoxFrame->setValue(nFrame);
     }
@@ -696,7 +699,7 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
     cv::Point ptMouse((int)ptImg.x(),(int)ptImg.y());
 
     //qDebug() << "Mouse Mv";
-    if (bDraggingTemplateCentre ) //bDraggingTemplateCentre
+    if (gTrackerState.bDraggingTemplateCentre ) //bDraggingTemplateCentre
     {
          //qDebug() << "Dragging";
         // this->ui->graphicsView->mapToScene( mouseEvent->pos().x(),mouseEvent->pos().y() );
@@ -832,10 +835,10 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
     cv::Point ptMouse(ptImg.x(),ptImg.y());
 
     //Already Dragging - Terminate And Save Template
-    if (bDraggingTemplateCentre)
+    if (gTrackerState.bDraggingTemplateCentre)
     {
-        bStoreThisTemplate = true;
-        bDraggingTemplateCentre = false;
+        gTrackerState.bStoreThisTemplate = true;
+        gTrackerState.bDraggingTemplateCentre = false;
         //bSceneMouseLButtonDown = false; //Act as Button Released With This Press
         qDebug() << "Store New Template position";
     }
@@ -970,7 +973,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
             fishModel* fish = (*it).second;
             if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
             {
-                bDraggingTemplateCentre = true;
+                gTrackerState.bDraggingTemplateCentre = true;
                 LogEvent("[info] Adjust Template from position ON- Start Dragging");
                 this->statusBar()->showMessage(tr("Adjust fish detection template position"));
                 qDebug() << "Start Dragging Fish Bound from position x: " << ptMouse.x << " y:" << ptMouse.y;
@@ -1025,7 +1028,7 @@ void MainWindow::on_spinBoxMOGBGRatio_valueChanged(int arg1)
 void MainWindow::on_actionTrack_Fish_triggered(bool checked)
 {
 
-    if (!bTracking)
+    if (!gTrackerState.bTracking)
     {
         //iLastKnownGoodTemplateRow = 0; //Reset Row
         //iLastKnownGoodTemplateCol = 0;
@@ -1037,7 +1040,7 @@ void MainWindow::on_actionTrack_Fish_triggered(bool checked)
         this->ui->actionTrack_Fish->setChecked(false);
     }
 
-    bTracking=!bTracking;
+    gTrackerState.bTracking=!gTrackerState.bTracking;
 
 
 }
@@ -1088,17 +1091,17 @@ void MainWindow::on_actionQuit_triggered()
 
 void MainWindow::on_actionStart_tracking_triggered()
 {
-    if (bPaused)
+    if (gTrackerState.bPaused)
         LogEvent("[info] Running");
 
-    bPaused = false;
+    gTrackerState.bPaused = false;
 
 }
 
 void MainWindow::on_actionPaus_tracking_p_triggered()
 {
-    bPaused = true;
-    if (bPaused)
+    gTrackerState.bPaused = true;
+    if (gTrackerState.bPaused)
     LogEvent("[info] Paused");
 
 }

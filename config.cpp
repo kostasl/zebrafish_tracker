@@ -550,6 +550,109 @@ int initDetectionTemplates()
 trackerState::trackerState()
 {
 
+    bROIChanged = true;
+    bPaused    = false;
+    bshowMask  = false;
+    bTracking  = true; //Start By Tracking by default
+    bExiting   = false;
+
+
+    /// VIDEO AND BACKGROUND PROCESSING //
+    gfVidfps                  = 410;
+
+    gdMOGBGRatio             = 0.05; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
+
+    //Processing Loop delay
+    cFrameDelayms              = 1;
+
+    dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
+
+
+    /// Segmentation / threshold  Params
+    g_Segthresh             = 15; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+    g_SegFoodThesMin        = 16; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
+    g_SegFoodThesMax        = g_Segthresh+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
+    g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
+    g_BGthresh              = 10; //BG threshold segmentation
+    gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
+    gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
+
+    /// Eye Tracking Params
+    bUseEllipseEdgeFittingMethod   = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+    gi_CannyThres           = 150;
+    gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
+    gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
+    gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+    gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
+    gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
+    giEyeIsolationMaskRadius = 10; ///Mask circle between eyes
+    gi_VotesEllipseThres        = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
+    gthresEyeSeg                = -3; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
+    gthresEyeSegL               = 2;
+    gnumberOfTemplatesInCache   = 0; //INcreases As new Are Added
+    gDisplacementThreshold    = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
+    gFishBoundBoxSize           = 24; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
+    gFishTailSpineSegmentLength     = gc_FishTailSpineSegmentLength_init;
+
+
+    ///Fish Features Detection Params
+    gFishTemplateAngleSteps     = 1;
+    gEyeTemplateAngleSteps      = 5;
+    iEyeMaskSepWidth            = 25; //5 px width vertical line separates the eyes for segmentation
+    eyeStepIncrement         = 0.1;
+    gTemplateMatchThreshold  = 0.89; //If not higher than 0.9 The fish body can be matched at extremeties
+    iLastKnownGoodTemplateRow   = 0;
+    iFishAngleOffset            = 0;
+    gUserReward              = 0; //User feedback for reinforcement learning
+    iTemplateMatchFailCounter   = 0; //Counts the number of consecutive times template failed to match
+    //using namespace std;
+
+
+    // Global Control Vars ///
+    bool bTracking          = true;
+    bool bTrackFood         = true;
+    bool bAddPreyManually   = false;
+    bool bMeasure2pDistance = true; /// A mode allowing 2point distance measurement
+    bool bTrackFish         = true;
+    bool bRecordToFile      = true;
+    bool bSaveImages         = false;
+
+//    bool b1stPointSet;
+//    bool bMouseLButtonDown;
+    //bool bSaveBlobsToFile; //Check in fnct processBlobs - saves output CSV
+
+    bool bEyesDetected = false; ///Flip True to save eye shape feature for future detection
+    bool bStoreThisTemplate             = false;
+    bool bDraggingTemplateCentre        = false;
+    bool bFitSpineToTail                = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
+    bool bStartFrameChanged         = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
+
+    bool bRenderToDisplay           = true; ///Updates Screen to User When True
+    bool bRenderWithAlpha           = false;
+    bool bDrawFoodBlob              = false; ///Draw circle around identified food blobs (prior to model matching)
+    bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
+    bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
+    bool bStaticAccumulatedBGMaskRemove       = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+    bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
+    bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
+    bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
+    bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
+    bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
+    bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
+    bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
+    bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
+    bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
+    bool bUseGPU                              = false;
+    bool bUseOpenCL                           = true;
+    bool bUseHistEqualization                 = true; //To enhance to contrast in Eye Ellipse detection
+    /// \todo Make this path relative or embed resource
+    //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
+    std::string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
+
+    uint uiStartFrame = 1;
+    uint uiStopFrame = 0;
+
+
 }
 
 
