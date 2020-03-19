@@ -5,7 +5,7 @@
 
 extern cv::Mat frameDebugC;
 extern cv::Size gszTemplateImg;
-extern double eyeStepIncrement;
+//extern double eyeStepIncrement;
 
 //extern int gFishTailSpineSegmentLength;
 //extern int gFitTailIntensityScanAngleDeg;
@@ -36,7 +36,7 @@ fishModel::fishModel()
         zTrack.colour = CV_RGB(255,0,0);
         leftEyeTheta          = 0; //In Degrees - A Value that looks wrong to show its not initialized
         rightEyeTheta         = 0; //In Degrees
-        c_spineSegL           = gFishTailSpineSegmentLength;
+        c_spineSegL           = gTrackerState.gFishTailSpineSegmentLength;
 }
 
 
@@ -464,7 +464,7 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
     }
 
     //Reset Step size to default
-     stepUpdate = eyeStepIncrement;
+     stepUpdate = gTrackerState.eyeStepIncrement;
 
  return (retPerfScore);
 
@@ -557,7 +557,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
     ///Optimization only Render Point If Displaced Enough from Last One
-    if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)
+    if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
     {
         this->zTrack.pointStackRender.push_back(bcentre);
         this->zTrack.active++;
@@ -631,7 +631,7 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
     int cntSolved   = 0; //Number of Cycles Solution Is acceptable
     double dVarScale    = 1.0;
     //Do A number of Passes Before  Convergence //&& (dfitPtError_total/contour.size() > 8)
-    while (cntpass < gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
+    while (cntpass < gTrackerState.gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
     {
         //Converged But Error Is still Large per Countour Point Then Jolt
         if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > c_fitErrorPerContourPoint) //Time Out Convergece Count
@@ -664,7 +664,7 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
 
         cntpass++;
         ///For Annealing
-        dTemp = (double)cntpass/gMaxFitIterations;
+        dTemp = (double)cntpass/gTrackerState.gMaxFitIterations;
         //Prob Of Acceptance P = exp(-(sn-s)/T) >= drand
         ///
         dfitPtError_total_last  = dfitPtError_total;
@@ -795,7 +795,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     QString strlbl("A: " + QString::number(bestAngleinDeg));
 
     cv::Scalar colour;
-    if (this->templateScore >= gTemplateMatchThreshold)
+    if (this->templateScore >= gTrackerState.gTemplateMatchThreshold)
         colour = CV_RGB(250,250,0);
     else
         colour = CV_RGB(30,30,250);
@@ -1056,7 +1056,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
     int cntSolved   = 0; //Number of Cycles Solution Is acceptable
     double dVarScale    = 1.0;
     //Do A number of Passes Before  Convergence //&& (dfitPtError_total/contour.size() > 8)
-    while (cntpass < gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
+    while (cntpass < gTrackerState.gMaxFitIterations && (cntStuck < 5) && (cntSolved < 3) )
     {
         //Converged But Error Is still Large per Countour Point Then Jolt
         if (std::abs(dDifffitPtError_total) < 0.01 && dfitPtError_total/contour.size() > 10) //Time Out Convergece Count
@@ -1089,7 +1089,7 @@ double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vec
 
         cntpass++;
         ///For Annealing
-        dTemp = (double)cntpass/gMaxFitIterations;
+        dTemp = (double)cntpass/gTrackerState.gMaxFitIterations;
         //Prob Of Acceptance P = exp(-(sn-s)/T) >= drand
         ///
         dfitPtError_total_last  = dfitPtError_total;

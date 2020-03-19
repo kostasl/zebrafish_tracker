@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 {
     gTimer.start();
 
-    QStringList inVidFileNames; //List of Video Files to Process
+
 
 
     // Get the rdbuf of clog.
@@ -187,11 +187,11 @@ int main(int argc, char *argv[])
     ssMsg << "-Make Sure QT can be found : use export LD_LIBRARY_PATH= path to Qt/5.11.1/gcc_64/lib/  " << std::endl;
     parser.about(ssMsg.str() );
 
-    initGlobalParams(parser,inVidFileNames);
+    gTrackerState.initGlobalParams(parser,gTrackerState.inVidFileNames);
 
     //If No video Files have been loaded then Give GUI to User //
-    if (inVidFileNames.empty())
-            inVidFileNames =QFileDialog::getOpenFileNames(nullptr, "Select videos to Process",gstrinDirVid.toStdString().c_str(),
+    if (gTrackerState.inVidFileNames.empty())
+            gTrackerState.inVidFileNames =QFileDialog::getOpenFileNames(nullptr, "Select videos to Process",gTrackerState.gstrinDirVid.c_str(),
                                                           "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", nullptr, nullptr);
 
     // get the applications dir path and expose it to QML
@@ -210,7 +210,8 @@ int main(int argc, char *argv[])
 #endif
 
     frameDebugC = cv::Mat::zeros(640, 480, CV_8U);
-    initROI();
+    //Setup Default ROI
+    gTrackerState.initROI();
 
     /// create Background Subtractor objects
     //(int history=500, double varThreshold=16, bool detectShadows=true
@@ -227,8 +228,11 @@ int main(int argc, char *argv[])
    /// Start Tracking of Video Files ///
    try{
         //app.exec();
-        std::clog << gTimer.elapsed()/60000.0 << " >>> Start frame: " << uiStartFrame << " StopFrame: " << uiStopFrame << " <<<<<<<<<"  << std::endl;
-        trackVideofiles(window_main,gstroutDirCSV,inVidFileNames,uiStartFrame,uiStopFrame);
+        std::clog << gTimer.elapsed()/60000.0 << " >>> Start frame: " << gTrackerState.uiStartFrame << " StopFrame: " << gTrackerState.uiStopFrame << " <<<<<<<<<"  << std::endl;
+        trackVideofiles(window_main,QString::fromStdString(gTrackerState.gstroutDirCSV),
+                        gTrackerState.inVidFileNames,
+                        gTrackerState.uiStartFrame,gTrackerState.uiStopFrame);
+
 
     }catch (char *e)
     {
@@ -319,7 +323,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
     QString nextvideoname;
     //Show Video list to process
     //std::cout << "Video List To process:" <<std::endl;
-    if (!bBlindSourceTracking)
+    if (!gTrackerState.bBlindSourceTracking)
     {
         window_main.LogEvent("Video List To process:");
         for (int i = 0; i<invideonames.size(); ++i)
@@ -331,7 +335,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
     }
 
     //Go through Each Image/Video - Hold Last Frame N , make it the start of the next vid.
-    for (int i = 0; i<invideonames.size() && !bExiting; ++i)
+    for (int i = 0; i<invideonames.size() && !gTrackerState.bExiting; ++i)
     {
 
        //Empty Vector of Fish Models - and Reset ID Counter // gi_MaxFoodID = gi_MaxFishID = 1; - Done In Release
@@ -341,7 +345,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        invideoname = invideonames.at(i);
 
        nextvideoname = invideonames.at(std::min(invideonames.size()-1,i+1));
-       gstrvidFilename = invideoname; //Global
+       gTrackerState.gstrvidFilename = invideoname.toStdString(); //Global
 
        std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() << " StartFrame: " << istartFrame << std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
@@ -349,7 +353,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
        ///Open Output File Check If We Skip Processed Files
        if ( !openDataFile(outputFileName,invideoname,outfishdatafile) )
        {
-            if (bSkipExisting) //Failed Due to Skip Flag
+            if (gTrackerState.bSkipExisting) //Failed Due to Skip Flag
                  continue; //Do Next File
        }else
            writeFishDataCSVHeader(outfishdatafile);
@@ -362,10 +366,10 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
-       if ((bUseBGModelling && gbUpdateBGModel) || (bUseBGModelling && gbUpdateBGModelOnAllVids) )
+       if ((gTrackerState.bUseBGModelling && gTrackerState.gbUpdateBGModel) || (gTrackerState.bUseBGModelling && gTrackerState.gbUpdateBGModelOnAllVids) )
        {
            //If BG Model Returns >1 frames
-            if (getBGModelFromVideo(bgStaticMask, window_main,invideoname,outfilename,MOGhistory))
+            if (getBGModelFromVideo(bgStaticMask, window_main,invideoname,gTrackerState.outfilename,gTrackerState.MOGhistory))
             {
                 cv::dilate(bgStaticMask,bgStaticMask,kernelDilateMOGMask,cv::Point(-1,-1),2);
                 cv::morphologyEx(bgStaticMask,bgStaticMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),4); //
@@ -373,18 +377,18 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
 
                 //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
-                if (compString(invideoname,nextvideoname) < 3 && !gbUpdateBGModelOnAllVids)
-                    gbUpdateBGModel = false; //Turn Off BG Updates
+                if (compString(invideoname,nextvideoname) < 3 && !gTrackerState.gbUpdateBGModelOnAllVids)
+                    gTrackerState.gbUpdateBGModel = false; //Turn Off BG Updates
             }
 
        }
 
         //Next File Is Different Experiment, Update The BG
        if (compString(invideoname,nextvideoname) > 2  )
-           gbUpdateBGModel = true;
+           gTrackerState.gbUpdateBGModel = true;
 
        QFileInfo fiVidFile(invideoname);
-       if (bBlindSourceTracking)
+       if (gTrackerState.bBlindSourceTracking)
           window_main.setWindowTitle("Labelling Hunt Event");
        else
          window_main.setWindowTitle("Tracking:" + fiVidFile.completeBaseName() );
@@ -404,7 +408,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
         if (ret == 1)
         {
-            if (!bSkipExisting)
+            if (!gTrackerState.bSkipExisting)
                 std::cerr << gTimer.elapsed()/60000.0 << " Error Occurred Could not open data file for last video" << std::endl;
             else
                 window_main.LogEvent(" Skipping  previously processed Video."); // std::cerr << gTimer.elapsed()/60000.0 << " Error Occurred Could not process last video" << std::endl;
@@ -454,16 +458,16 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
 
     ///DRAW ROI
-    if (bRenderToDisplay)
+    if (gTrackerState.bRenderToDisplay)
         drawAllROI(outframe);
 
-    if (bMeasure2pDistance)
+    if (gTrackerState.bMeasure2pDistance)
         drawUserDefinedPoints(outframe);
     //Redraw ROI Mask
     if (gTrackerState.bROIChanged)
     {
         bgROIMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
-        vRoi.at(0).drawMask(bgROIMask);
+        gTrackerState.vRoi.at(0).drawMask(bgROIMask);
     }
 
 
@@ -492,7 +496,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 #if _DEBUG
         cv::imshow("FG Image", frame_gray - gframeBGImage);
 #endif
-        processMasks(frame_gray,bgStaticMask,fgMask,dLearningRateNominal); //Applies MOG if bUseBGModelling is on
+        processMasks(frame_gray,bgStaticMask,fgMask,gTrackerState.dLearningRateNominal); //Applies MOG if bUseBGModelling is on
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy); //Generates separate masks for Fish/Prey and Draws Fish Contourmask
 
         //Combine Roi Mask Only For The foodMask
@@ -500,7 +504,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
 
         /// Choose FG image prior to template matching
-        if (bApplyFishMaskBeforeFeatureDetection)
+        if (gTrackerState.bApplyFishMaskBeforeFeatureDetection)
             frame_gray.copyTo(fgFishImgMasked,fgMask); //fgMask / NOT fish Mask //Use Enhanced Mask
         else
             frame_gray.copyTo(fgFishImgMasked); //Full Frame Image Used
@@ -522,11 +526,11 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
             //If A fish Is Detected Then Draw Its tracks
             fishModels::iterator ft = vfishmodels.begin();
-            while (ft != vfishmodels.end() && bRenderToDisplay) //Render All Fish
+            while (ft != vfishmodels.end() && gTrackerState.bRenderToDisplay) //Render All Fish
             {
                 fishModel* pfish = ft->second;
                 assert(pfish);
-                zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,trackFntScale+0.2 );
+                zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,gTrackerState.trackFntScale+0.2 );
                 ++ft;
             }
         }
@@ -568,7 +572,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             ///Draw Food Tracks
             foodModels::iterator ft = vfoodmodels.begin();
             nFood = 0;
-            while (ft != vfoodmodels.end() && bRenderToDisplay)
+            while (ft != vfoodmodels.end() && gTrackerState.bRenderToDisplay)
             {
 
                 foodModel* pfood = ft->second;
@@ -582,16 +586,16 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 }
 
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, CV_FONT_HERSHEY_PLAIN, trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, gTrackerState.trackFnt, gTrackerState.trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
 
                 else{
                 if (pfood->isActive)
                 {
                         nFood++; //only count the rendered Food Items ie. Active Ones
-                        zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_CIRCLE , CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                        zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_CIRCLE , gTrackerState.trackFnt,gTrackerState.trackFntScale );
                 }
                     else
-                        zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX , CV_FONT_HERSHEY_PLAIN,trackFntScale );
+                        zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX ,gTrackerState.trackFnt ,gTrackerState.trackFntScale );
                  }
                 ++ft;
 
@@ -654,14 +658,14 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
                CV_RGB(10,10,10), CV_FILLED,LINE_8);
     cv::putText(outframe, frameNumberString.toStdString(),  cv::Point(15, 15),
-            trackFnt, trackFntScale ,  CV_RGB(150,80,50));
+            gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(150,80,50));
 
     //Count on Original Frame
     std::stringstream strCount;
     strCount << "Nf:" << (nLarva) << " Nr:" << nFood;
     cv::rectangle(outframe, cv::Point(10, 25), cv::Point(80,45),  CV_RGB(10,10,10), CV_FILLED);
     cv::putText(outframe, strCount.str(), cv::Point(15, 38),
-           trackFnt, trackFntScale ,  CV_RGB(150,80,50));
+           gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(150,80,50));
 
 /*
  *     //Report Time
@@ -687,7 +691,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     otLastUpdate.start();
     //Speed that stationary objects are removed
     cv::Mat frame,outframe,outframeHeadEyeDetect,outframeHead; //bgROIMask,bgMaskWithRoi
-    outframeHead                = cv::Mat::zeros(gszTemplateImg.height,gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
+    outframeHead                = cv::Mat::zeros(gTrackerState.gszTemplateImg.height,gTrackerState.gszTemplateImg.width,CV_8UC1); //Initiatialize to Avoid SegFaults
 
     unsigned int nFrame         = 0;
     unsigned int nErrorFrames   = 0;
@@ -699,14 +703,10 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     //fgMask.copyTo(fgMaskGMG);
 
     gTrackerState.bPaused = false;
-    //Make Variation of FileNames for other Output
 
-    //QString trkoutFileCSV = outFileCSV;
 
     //Make Global Roi on 1st frame if it doesn't prexist
     //Check If FG Mask Has Been Created - And Make A new One
-
-
 
     //create the capture object
     cv::VideoCapture capture(videoFilename.toStdString());
@@ -720,11 +720,8 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     }
 
 
-    gfVidfps  = capture.get(CAP_PROP_FPS);
+    gTrackerState.setVidFps( capture.get(CAP_PROP_FPS) );
 
-    gcMaxFoodModelInactiveFrames  = gfVidfps*2; //Number of frames inactive (Not Matched to a Blob) until track is deleted
-    gcMinFoodModelActiveFrames    = gfVidfps/5;
-    gFoodReportInterval           = gfVidfps; //Report Food every second
 
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     window_main.setTotalFrames(totFrames);
@@ -738,7 +735,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         return 0;
     }
 
-    if (!bBlindSourceTracking)
+    if (!gTrackerState.bBlindSourceTracking)
     {
         QFileInfo vidFileInfo(videoFilename);
         window_main.LogEvent(" **Begin Processing: " + vidFileInfo.completeBaseName());
@@ -746,9 +743,9 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
      }else
         window_main.LogEvent("** Begin Processing of video file ** ");
 
-    window_main.stroutDirCSV = gstroutDirCSV;
+    window_main.stroutDirCSV = QString::fromStdString( gTrackerState.gstroutDirCSV);
     window_main.vidFilename = videoFilename;
-    QString strMsg(  " Vid Fps:" + QString::number(gfVidfps) + " Total frames:" + QString::number(totFrames) + " Start:" + QString::number(startFrameCount));
+    QString strMsg(  " Vid Fps:" + QString::number(gTrackerState.gfVidfps) + " Total frames:" + QString::number(totFrames) + " Start:" + QString::number(startFrameCount));
     window_main.LogEvent(strMsg);
 
 
@@ -760,7 +757,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
    // if (!openDataFile(trkoutFileCSV,videoFilename,outdatafile))
    //     return 1;
 
-    outfilename = outdatafile.fileName();
+    gTrackerState.outfilename = outdatafile.fileName();
 
     capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
     nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
@@ -768,12 +765,12 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     window_main.nFrame = nFrame;
 
     //read input data. ESC or 'q' for quitting
-    while( !bExiting && (char)keyboard != 27 )
+    while( !gTrackerState.bExiting && (char)gTrackerState.keyboard != 27 )
     {
 
         /// Flow Control Code  - For When Looking at Specific Frame Region ///
         // 1st Check If user changed Frame - and go to that frame
-        if (bStartFrameChanged)
+        if (gTrackerState.bStartFrameChanged)
         {
             nFrame = window_main.nFrame;
             capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
@@ -833,7 +830,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                    else
                    {
                        std::clog << gTimer.elapsed()/60000.0 << " [info] processVideo loop done on frame: " << nFrame << std::endl;
-                         ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+                         ::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
                    }
                    //continue;
                    break;
@@ -873,7 +870,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     //Pause on 1st Frame If Flag Start Paused is set
     if (gTrackerState.bStartPaused && nFrame == startFrameCount && !gTrackerState.bPaused)
     {
-        gTrackerState.bPaused =true; //Start Paused //Now Controlled By bstartPaused
+        gTrackerState.bPaused = true; //Start Paused //Now Controlled By bstartPaused
         pwindow_main->LogEvent(QString("[info]>> Video Paused<<"));
     }
 
@@ -902,10 +899,10 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                 cv::addWeighted(frame,1.0,outframe,1.0-alpha,0.0,outframe);
 
             ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
-            rect_pasteregion.width = outframeHeadEyeDetect.cols;
-            rect_pasteregion.height = outframeHeadEyeDetect.rows;
+            gTrackerState.rect_pasteregion.width = outframeHeadEyeDetect.cols;
+            gTrackerState.rect_pasteregion.height = outframeHeadEyeDetect.rows;
             if (outframeHeadEyeDetect.u)
-              outframeHeadEyeDetect.copyTo(outframe(rect_pasteregion) ) ;
+              outframeHeadEyeDetect.copyTo(outframe(gTrackerState.rect_pasteregion) ) ;
 
 //          cv::imshow("headDetect",outframeHeadEyeDetect);
 
@@ -920,7 +917,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         //cv::imshow("Debug D",frameDebugD);
 
         /// Report Memory Usage Periodically - Every realtime Second//
-        if (!gTrackerState.bPaused && (nFrame % (uint)gfVidfps) == 0 || !bPaused && nFrame == 2)
+        if (!gTrackerState.bPaused && (nFrame % (uint)gTrackerState.gfVidfps) == 0 || !gTrackerState.bPaused && nFrame == 2)
         {
             double rss,vm;
             process_mem_usage(vm, rss);
@@ -929,7 +926,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
             std::stringstream ss;
             ss.precision(4);
-            float fFps = gfVidfps/((float)otLastUpdate.elapsed()/1000.0);
+            float fFps = gTrackerState.gfVidfps/((float)otLastUpdate.elapsed()/1000.0);
             ss  << " [Progress] " << nFrame <<"/" << totFrames << " fps:" <<  fFps << " D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
             window_main.LogEvent(QString::fromStdString(ss.str()));
 
@@ -949,7 +946,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         {
             cv::putText(frameDebugD, "REC", cv::Point(15, 20),
                     cv::FONT_HERSHEY_SIMPLEX, 0.8 , cv::Scalar(250,250,0));
-            ::saveImage(frameNumberString,gstroutDirCSV,videoFilename,outframe);
+            ::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
         }
 
 
@@ -975,7 +972,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                 gTrackerState.bRecordToFile = false;
         }
 
-        checkPauseRun(&window_main,keyboard,nFrame);
+        checkPauseRun(&window_main,gTrackerState.keyboard,nFrame);
 
 
     } //main While loop
@@ -1032,7 +1029,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         int bestAngle;
         double  maxMatchScore = 0.0;
         bModelFound = false;
-        int iTemplRow = iLastKnownGoodTemplateRow; //Starting Search Point For Template
+        int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
         int iTemplCol = 0;
 
         //Check Through Models And Find The Closest Fish To This FishBlob
@@ -1057,7 +1054,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
 
                 //Failed? Try the blob Head (From Enhance Mask) Detected position
-                if ( maxMatchScore < gTemplateMatchThreshold)
+                if ( maxMatchScore < gTrackerState.gTemplateMatchThreshold)
                 {
                   ptSearch = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
                   maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
@@ -1065,28 +1062,28 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 pfish->templateScore = maxMatchScore;
                 //pfish->idxTemplateRow = iTemplRow; pfish->idxTemplateCol = iTemplCol;
 
-                 if ( maxMatchScore >= gTemplateMatchThreshold)
+                 if ( maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
                  {
                      //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                     ///Update Model State
                     // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
-                    if (!bStoreThisTemplate && !bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
+                    if (!gTrackerState.bStoreThisTemplate && !gTrackerState.bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
                     {
-                        pfish->updateState(fishblob,maxMatchScore,bestAngle+iFishAngleOffset,ptbcentre,nFrame,gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
+                        pfish->updateState(fishblob,maxMatchScore,bestAngle+gTrackerState.iFishAngleOffset,ptbcentre,nFrame,gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
                     }
                     else
                     { //Rotate Template Box - Since this cannot be done Manually
-                        pfish->bearingAngle   = (bestAngle+iFishAngleOffset);
-                        pfish->bearingRads   =  (bestAngle+iFishAngleOffset)*CV_PI/180.0;
+                        pfish->bearingAngle   = (bestAngle+gTrackerState.iFishAngleOffset);
+                        pfish->bearingRads   =  (bestAngle+gTrackerState.iFishAngleOffset)*CV_PI/180.0;
                     }
 
                  }
                  else //Below Thres Match Score
                  {
                        //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
-                       if (pfish->inactiveFrames > gcMaxFishModelInactiveFrames)
-                           iFishAngleOffset = 0;
-                         qDebug() << nFrame << " Guessing next TemplCol:" << iFishAngleOffset;
+                       if (pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)
+                           gTrackerState.iFishAngleOffset = 0;
+                         qDebug() << nFrame << " Guessing next TemplCol:" << gTrackerState.iFishAngleOffset;
                  }
 
                  ////////  Write Angle / Show Box  //////
@@ -1108,20 +1105,20 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //Check Template Match Score
             ptSearch = fishblob->pt;
             // Suitable template has not been found yet for this model, starting search Point For Template can be were we left off, as a suitable
-             iTemplRow = iLastKnownGoodTemplateRow ;
+             iTemplRow = gTrackerState.iLastKnownGoodTemplateRow ;
              iTemplCol = 0;
             pwindow_main->LogEvent("No Fish model found for blob");
             cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
             maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
             //If New Blob Looks Like A Fish, Then Make  A New Model
-            if (maxMatchScore > gTemplateMatchThreshold*0.90)
+            if (maxMatchScore > gTrackerState.gTemplateMatchThreshold*0.90)
             {
                 //Make new fish Model
                fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
-               fish->ID = ++gi_MaxFishID;
+               fish->ID = ++gTrackerState.gi_MaxFishID;
                fish->idxTemplateRow = iTemplRow;
                fish->idxTemplateCol = iTemplCol;
-               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
+               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
 
                vfishmodels.insert(IDFishModel(fish->ID,fish));
                qfishrank.push(fish); //Add To Priority Queue
@@ -1133,7 +1130,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
         }
 //        //Report No Fish
-        if (!bModelFound && maxMatchScore < gTemplateMatchThreshold )
+        if (!bModelFound && maxMatchScore < gTrackerState.gTemplateMatchThreshold )
         {
             std::clog << nFrame << "# Tscore:" << maxMatchScore << " No good match for Fish Found " << std::endl;
 
@@ -1148,7 +1145,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     {
             pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
             ///Check If fish Model Is In ROI //
-            for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+            for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
             {
                 ltROI iroi = (ltROI)(*it);
                 if (!iroi.contains(pfishBest->ptRotCentre,pfishBest->bodyRotBound.size.width+pfishBest->bodyRotBound.size.height ))
@@ -1179,7 +1176,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
             //If We found one then Delete the other instances waiting for a match - 1 Fish Tracker
-            if (bModelFound || pfish->inactiveFrames > gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
+            if (bModelFound || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
             {
                 std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << "Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
                 ft = vfishmodels.erase(ft);
@@ -1322,7 +1319,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
             cv::Point2f ptfoodCentroid = pfood->zTrack.centroid;
 
             //Initial score Is high and drops with penalties
-            int iMatchScore = gMaxClusterRadiusFoodToBlob*2; //Reset to 5So We Can Rank this Match
+            int iMatchScore = gTrackerState.gMaxClusterRadiusFoodToBlob*2; //Reset to 5So We Can Rank this Match
 
             float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
             float fbdist = norm(ptfoodCentroid-ptblobCentroid);
@@ -1408,13 +1405,13 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     /// Unmatched Keypoints/blobs handling -create new Food Models ///
     // Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
     //If There Are more Blobs Remaining / New Objects Allowed (Currently OFF for OpticFlow, and we are below the Count Limit
-    if (bAllowNew && (vfoodblobs_spare.size() > 1) && (vfoodmodels.size() < gi_FoodModelNumberLimit) )
+    if (bAllowNew && (vfoodblobs_spare.size() > 1) && (vfoodmodels.size() < gTrackerState.gi_FoodModelNumberLimit) )
     {
         zfdblob* foodblob= &vfoodblobs_spare[0]; //Take the 1st one Available And Make A food Model For it
         pfood = pwindow_main->getFoodItemAtLocation(foodblob->pt); //Check for dublicated
         if (!pfood) //IF no dublicate Item there, then make new
         {
-            pfood = new foodModel(*foodblob ,++gi_MaxFoodID);
+            pfood = new foodModel(*foodblob ,++gTrackerState.gi_MaxFoodID);
             pfood->blobMatchScore = 0;
             vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
             //_DEBUG
@@ -1492,6 +1489,7 @@ bool checkKeypointExistsAndRemove(zfdblobs& vfoodblobs_spare,zfdblob& FoodBlob)
 void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 {
 
+    gTrackerState.keyboard = keyboard;
     //implemend Pause
     if ((char)keyboard == 'p')
     {
@@ -1510,18 +1508,18 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     //Make Frame rate faster
     if ((char)keyboard == '+')
-        cFrameDelayms--;
+        gTrackerState.cFrameDelayms--;
     //Slower
     if ((char)keyboard == '-')
-        cFrameDelayms++;
+        gTrackerState.cFrameDelayms++;
 
 
     if ((char)keyboard == 't') //Toggle Tracking
     {
         if (!gTrackerState.bTracking)
         {
-            iLastKnownGoodTemplateRow = 0; //Reset Row
-            iFishAngleOffset = 0;
+            gTrackerState.iLastKnownGoodTemplateRow = 0; //Reset Row
+            gTrackerState.iFishAngleOffset = 0;
             pwindow_main->LogEvent(QString("Tracking ON"));
         }else
             pwindow_main->LogEvent(QString("Tracking OFF"));
@@ -1541,16 +1539,16 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     if ((char)keyboard == '[') //Rotate Template AntiClock Wise
     {
-        iFishAngleOffset--;
-        iFishAngleOffset = max(-180,iFishAngleOffset);
-        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(iFishAngleOffset)  );
+        gTrackerState.iFishAngleOffset--;
+        gTrackerState.iFishAngleOffset = max(-180,gTrackerState.iFishAngleOffset);
+        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(gTrackerState.iFishAngleOffset)  );
     }
 
     if ((char)keyboard == ']') //Rotate Template ClockWise
     {
-        iFishAngleOffset++;
-        iFishAngleOffset = min(180, iFishAngleOffset);
-        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(iFishAngleOffset)  );
+        gTrackerState.iFishAngleOffset++;
+        gTrackerState.iFishAngleOffset = min(180, gTrackerState.iFishAngleOffset);
+        pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(gTrackerState.iFishAngleOffset)  );
     }
 
 
@@ -1578,7 +1576,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
              {
                  fishModel* fish = (*it).second;
                    //Let ReleaseTracks Handle This
-                 fish->c_spineSegL = gFishTailSpineSegmentLength;
+                 fish->c_spineSegL = gTrackerState.gFishTailSpineSegmentLength;
                  fish->resetSpine();
              }
              //ReleaseFishModels(vfishmodels);
@@ -1588,7 +1586,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == 'd')
     {
       gTrackerState.bOffLineTracking = !gTrackerState.bOffLineTracking; //Main Loop Will handle this
-      if (bOffLineTracking)
+      if (gTrackerState.bOffLineTracking)
         pwindow_main->LogEvent(QString(">> Offline Tracking Mode ON <<"));
       else
         pwindow_main->LogEvent(QString("<< Offline Tracking Mode OFF >>"));
@@ -1636,7 +1634,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
 
     if ((char)keyboard == 'q')
-        gTrackerState.bExiting = true; //Main Loop Will handle this
+         gTrackerState.bExiting = true; //Main Loop Will handle this
          //break;
 
 
@@ -1654,55 +1652,55 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     //Toggle Show the masked - where blob id really happens
     if ((char)keyboard == 'm')
     {
-             std::cout << "Show Mask" << std::endl;
-             gTrackerState.bshowMask = !gTrackerState.bshowMask;
+         std::cout << "Show Mask" << std::endl;
+         gTrackerState.bshowMask = !gTrackerState.bshowMask;
     }
 
     ///Flip Save Feature On - This Will last only for a single frame
     if ((char)keyboard == 'e')
     {
-             std::cout << "Save Eye Feature on next frame" << std::endl;
-             gTrackerState.bEyesDetected = true;
+         std::cout << "Save Eye Feature on next frame" << std::endl;
+         gTrackerState.bEyesDetected = true;
     }
 
 
     if ((char)keyboard == 'T')
     {
-             std::cout << "Store next Image as Template" << std::endl;
-             gTrackerState.bStoreThisTemplate = !gTrackerState.bStoreThisTemplate;
+         std::cout << "Store next Image as Template" << std::endl;
+         gTrackerState.bStoreThisTemplate = !gTrackerState.bStoreThisTemplate;
     }
 
     if ((char)keyboard == 'D')
     {
         gTrackerState.bStoreThisTemplate = false;
         std::stringstream ss;
-        ss << "Delete Currently Used Template Image idx:" << iLastKnownGoodTemplateRow;
+        ss << "Delete Currently Used Template Image idx:" << gTrackerState.iLastKnownGoodTemplateRow;
         pwindow_main->LogEvent(QString::fromStdString(ss.str()));
-        deleteTemplateRow(gLastfishimg_template,gFishTemplateCache,iLastKnownGoodTemplateRow);
-        iLastKnownGoodTemplateRow = 0;
+        deleteTemplateRow(gLastfishimg_template,gFishTemplateCache,gTrackerState.iLastKnownGoodTemplateRow);
+        gTrackerState.iLastKnownGoodTemplateRow = 0;
     }
 
     if ((char)keyboard == 'z')
     {
         gTrackerState.bStoreThisTemplate = false;
         std::stringstream ss;
-        int iNewTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
-        ss << "Reset Used Template idx:" << iLastKnownGoodTemplateRow << " to " << iNewTemplateRow;
+        int iNewTemplateRow = (rand() % static_cast<int>(gTrackerState.gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
+        ss << "Reset Used Template idx:" << gTrackerState.iLastKnownGoodTemplateRow << " to " << iNewTemplateRow;
 
 
         pwindow_main->LogEvent(QString::fromStdString(ss.str()));
-        iLastKnownGoodTemplateRow = iNewTemplateRow;
-        iFishAngleOffset = 0;
+        gTrackerState.iLastKnownGoodTemplateRow = iNewTemplateRow;
+        gTrackerState.iFishAngleOffset = 0;
     }
 
     if ((char)keyboard == 'x')
     {
-        gUserReward = -1000;
+        gTrackerState.gUserReward = -1000;
         pwindow_main->LogEvent("User -ve Reward ");
     }
     if ((char)keyboard == 'a')
     {
-        gUserReward = +1000;
+        gTrackerState.gUserReward = +1000;
         pwindow_main->LogEvent("User +ve Reward ");
     }
 
@@ -1832,8 +1830,8 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
     // Filter by Area.
     params.filterByArea = true;
-    params.minArea = thresh_fishblobarea/2.0;
-    params.maxArea = thresh_maxfishblobarea;
+    params.minArea = gTrackerState.thresh_fishblobarea/2.0;
+    params.maxArea = gTrackerState.thresh_maxfishblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
@@ -1860,13 +1858,13 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
 
         ///Go Through Each ROI and Render Blobs -
         unsigned int RoiID = 0;
-        for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+        for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
         {
             ltROI iroi = (ltROI)(*it);
             RoiID++;
             //Keypoint is in ROI so Add To Masked
 
-            if (iroi.contains(kp.pt,gszTemplateImg.width ))
+            if (iroi.contains(kp.pt,gTrackerState.gszTemplateImg.width ))
                      ptFishblobs.push_back(kp);
 
             //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
@@ -1926,14 +1924,14 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     params.filterByConvexity    = false;
 
 
-    params.maxThreshold = g_SegFoodThesMax; //Use this Scanning to detect smaller Food Items
-    params.minThreshold = g_SegFoodThesMin;
+    params.maxThreshold = gTrackerState.g_SegFoodThesMax; //Use this Scanning to detect smaller Food Items
+    params.minThreshold = gTrackerState.g_SegFoodThesMin;
     params.thresholdStep = 4;
 
     // Filter by Area.
     params.filterByArea = true;
     params.minArea = 0;
-    params.maxArea = gthres_maxfoodblobarea;
+    params.maxArea = gTrackerState.gthres_maxfoodblobarea;
 
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
@@ -1941,7 +1939,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     params.maxInertiaRatio      = 1.0;
     params.minInertiaRatio      = 0.1;
 
-    params.minDistBetweenBlobs = gMaxClusterRadiusFoodToBlob/2;
+    params.minDistBetweenBlobs = gTrackerState.gMaxClusterRadiusFoodToBlob/2;
 
     //params.filterByInertia = true;
 
@@ -1961,7 +1959,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 
         ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
         unsigned int RoiID = 0;
-        for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+        for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
         {
             ltROI iroi = (ltROI)(*it);
             RoiID++;
@@ -1978,7 +1976,7 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 
     // Draw detected blobs as red circles.
     // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
-    if (bDrawFoodBlob)
+    if (gTrackerState.bDrawFoodBlob)
         cv::drawKeypoints( frameOut, ptFoodblobs, frameOut, cv::Scalar(0,120,200), cv::DrawMatchesFlags::DEFAULT );
 
 
@@ -2142,7 +2140,7 @@ void writeFishDataCSVHeader(QFile& data)
     /// Write Header //
     QTextStream output(&data);
     output << "frameN \t ROI \t fishID \t AngleDeg \t Centroid_X \t Centroid_Y \t EyeLDeg \t EyeRDeg \t ThetaSpine_0 \t ";
-    for (int i=1;i<gFishTailSpineSegmentCount;i++)
+    for (int i=1;i<gTrackerState.gFishTailSpineSegmentCount;i++)
         output <<  "DThetaSpine_" << i << "\t";
 
     output << " tailSegmentLength";
@@ -2199,7 +2197,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
             newFile = true;
         }else{
             //File Exists
-            if (bSkipExisting)
+            if (gTrackerState.bSkipExisting)
             {
                 pwindow_main->LogEvent("[warning] Output File Exists and SkipExisting Mode is on.");
                 std::cerr << "Skipping Previously Tracked Video File" << std::endl;
@@ -2231,7 +2229,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
         return false;
     }else {
         //New File
-        if (!bBlindSourceTracking)
+        if (!gTrackerState.bBlindSourceTracking)
         std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
 
         //output.flush();
@@ -2247,7 +2245,7 @@ bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString st
 void closeDataFile(QFile& data)
 {
     data.close();
-    if (bBlindSourceTracking)
+    if (gTrackerState.bBlindSourceTracking)
         std::clog << gTimer.elapsed()/60000 << " Closed Output File " << std::endl;
     else
         std::clog << gTimer.elapsed()/60000 << " Closed Output File " << data.fileName().toStdString() << std::endl;
@@ -2255,7 +2253,7 @@ void closeDataFile(QFile& data)
 
 void removeDataFile(QFile& data)
 {
-    if (bBlindSourceTracking)
+    if (gTrackerState.bBlindSourceTracking)
         std::clog << gTimer.elapsed()/60000 << "[Warning] Deleting Output File " << std::endl;
     else
         std::clog << gTimer.elapsed()/60000 << "[Warning] Deleting Output File " << data.fileName().toStdString() << std::endl;
@@ -2286,7 +2284,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
     }
 
     //Loop Over ROI
-    for (ltROIlist::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    for (ltROIlist::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
     {
         cnt = 1;
         Vcnt++;
@@ -2318,7 +2316,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
 
         //Regular Timed entry - in the absence of fish
          //If there is are no fish Then Add a regular Entry denoting the number of prey
-        if (bTrackFood && vfish.size() == 0 && (frameNumber.toUInt()%gFoodReportInterval == 0 || frameNumber.toUInt()==1))
+        if (gTrackerState.bTrackFood && vfish.size() == 0 && (frameNumber.toUInt()%gTrackerState.gFoodReportInterval == 0 || frameNumber.toUInt()==1))
         {
             //make Null Fish
             fishModel* pNullfish = new fishModel();
@@ -2375,33 +2373,33 @@ int saveFoodTracks(fishModels& vfish,foodModels& vfood,QFile& fooddata,QString f
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
 
-    cv::Point ptMouse(x,y);
+     cv::Point ptMouse(x,y);
 
      if  ( event == cv::EVENT_LBUTTONDOWN )
      {
-        bMouseLButtonDown = true;
+        gTrackerState.bMouseLButtonDown = true;
          //ROI is locked once tracking begins
         ///CHANGE ROI Only when Paused and ONCE
         if (gTrackerState.bPaused && !gTrackerState.bROIChanged)
         { //Change 1st Point if not set or If 2nd one has been set
-             if ( b1stPointSet == false)
+             if ( gTrackerState.b1stPointSet == false)
              {
-                ptROI1.x = x;
-                ptROI1.y = y;
+                gTrackerState.ptROI1.x = x;
+                gTrackerState.ptROI1.y = y;
                 //cv::circle(frameDebugA,ptROI1,3,cv::Scalar(255,0,0),1);
 
-                b1stPointSet = true;
+                gTrackerState.b1stPointSet = true;
              }
              else //Second & Final Point
              {
-                ptROI2.x = x;
-                ptROI2.y = y;
-                ltROI newROI(ptROI1,ptROI2);
+                gTrackerState.ptROI2.x = x;
+                gTrackerState.ptROI2.y = y;
+                ltROI newROI(gTrackerState.ptROI1, gTrackerState.ptROI2);
                 //roi = newROI;
 
                 addROI(newROI);
                 //drawROI(frame);
-                b1stPointSet = false; //Rotate To 1st Point Again
+                gTrackerState.b1stPointSet = false; //Rotate To 1st Point Again
              }
         }
 
@@ -2412,7 +2410,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 
      if (event == cv::EVENT_LBUTTONUP)
      {
-        bMouseLButtonDown = false;
+        gTrackerState.bMouseLButtonDown = false;
      }
      else if  ( event == cv::EVENT_RBUTTONDOWN )
      {
@@ -2450,8 +2448,8 @@ void CallBackHistFunc(int event, int x, int y, int flags, void* userdata)
             mousepnt.x = x;
             mousepnt.y = y;
 
-            gthresEyeSeg = x;
-            std::cout << "Eye Threshold Set to:" << gthresEyeSeg << std::endl;
+            gTrackerState.gthresEyeSeg = x;
+            std::cout << "Eye Threshold Set to:" << gTrackerState.gthresEyeSeg << std::endl;
     }
 }
 
@@ -2459,27 +2457,27 @@ void addROI(ltROI& newRoi)
 {
     //std::vector<cv::Rect>::iterator it= vRoi.end();
     //vRoi.insert(it,newRoi);
-    vRoi.push_back(newRoi);
+    gTrackerState.vRoi.push_back(newRoi);
     //Draw the 2 points
-    cv::circle(frameDebugC,ptROI1,3,cv::Scalar(255,0,0),1);
-    cv::circle(frameDebugC,ptROI2,3,cv::Scalar(255,0,0),1);
+    //cv::circle(frameDebugC,ptROI1,3,cv::Scalar(255,0,0),1);
+    //cv::circle(frameDebugC,ptROI2,3,cv::Scalar(255,0,0),1);
 
-   std::cout << "Added, total:" << vRoi.size() <<std::endl;
+   std::cout << "Added, total:" << gTrackerState.vRoi.size() <<std::endl;
 
 }
 
 void deleteROI(cv::Point mousePos)
 {
-    std::vector<ltROI>::iterator it = vRoi.begin();
+    std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin();
 
-    while(it != vRoi.end())
+    while(it != gTrackerState.vRoi.end())
     {
         ltROI* roi=&(*it);
 
         if (roi->contains(mousePos))
         {
             std::vector<ltROI>::iterator tmp = it;
-            vRoi.erase(tmp);
+            gTrackerState.vRoi.erase(tmp);
            std::cout << "Deleted:" << roi->x() << " " << roi->y() <<std::endl;
             break;
         }
@@ -2492,7 +2490,7 @@ void deleteROI(cv::Point mousePos)
 void drawAllROI(cv::Mat& frame)
 {
     //frameCpy.copyTo(frame); //Restore Original IMage
-    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
     {
 
         ltROI iroi = (ltROI)(*it);
@@ -2861,7 +2859,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     cv::Mat fishTailFixed;
 
  ///Do not Use MaskedFish For Spine maskedfishImg_gray / + Fixed Contrast
-    if (bUseMaskedFishForSpineDetect)
+    if (gTrackerState.bUseMaskedFishForSpineDetect)
         fishTailFixed = maskedfishImg_gray*2.2;
     else
         fishTailFixed = maskedImg_gray*2.2;
@@ -2895,8 +2893,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
           //Draw A general Region Where the FIsh Is located,
           cv::Point centre = fish->ptRotCentre; //top_left + rotCentre;
           //cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
-          cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centre.x-gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centre.y-gFishBoundBoxSize)));
-          cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centre.x+gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centre.y+gFishBoundBoxSize)));
+          cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
+          cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centre.x+gTrackerState.gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centre.y+gTrackerState.gFishBoundBoxSize)));
 
           cv::Rect rectFish(pBound1,pBound2);
 
@@ -2990,18 +2988,18 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
 
               /// Store Norm Image as Template - If Flag Is set
-              if (bStoreThisTemplate)
+              if (gTrackerState.bStoreThisTemplate)
               {   std::stringstream ssMsg;
                   //Cut Down To Template Size
                   imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
-                  addTemplateToCache(imgFishAnterior,gFishTemplateCache,gnumberOfTemplatesInCache);
+                  addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
                   //Try This New Template On the Next Search
-                  iLastKnownGoodTemplateRow = gnumberOfTemplatesInCache-1;
-                  fish->idxTemplateRow = iLastKnownGoodTemplateRow;
+                  gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
+                  fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
                   window_main.saveTemplateImage(imgFishAnterior);
-                  ssMsg << "New Template Added, count is now #"<<gnumberOfTemplatesInCache << " NewRowIdx: " << iLastKnownGoodTemplateRow;
+                  ssMsg << "New Template Added, count is now #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
                   window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
-                  bStoreThisTemplate = false;
+                  gTrackerState.bStoreThisTemplate = false;
               }
 
 
@@ -3026,7 +3024,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               std::stringstream ss;
               ret = detectEyeEllipses(imgFishHead,vellLeft,vellRight,imgFishHeadSeg,imgFishHeadProcessed);
 
-              if ((ret < 2 | gUserReward < 0) )
+              if ((ret < 2 | gTrackerState.gUserReward < 0) )
               {
                 fish->nFailedEyeDetectionCount++;
                 if ((fish->nFailedEyeDetectionCount % 100)==0)
@@ -3046,12 +3044,12 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               /// Pass detected Ellipses to Update the fish model's Eye State //
               /// Make Fit score count very little
-              double fitScoreReward = 0.0000*fish->updateEyeState(vellLeft,vellRight)+ gUserReward;
-              gUserReward = 0.0; //Reset User Provided Rewards
+              double fitScoreReward = 0.0000*fish->updateEyeState(vellLeft,vellRight)+ gTrackerState.gUserReward;
+              gTrackerState.gUserReward = 0.0; //Reset User Provided Rewards
               //qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
-              current_eyeState.iSegThres1        = gthresEyeSeg; //Update to what the environment state is
-              current_eyeState.iDSegThres2       = gthresEyeSeg-gthresEyeSegL;
+              current_eyeState.iSegThres1        = gTrackerState.gthresEyeSeg; //Update to what the environment state is
+              current_eyeState.iDSegThres2       = gTrackerState.gthresEyeSeg-gTrackerState.gthresEyeSegL;
               current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);
               //Test - Add Target Vector
               //fitScoreReward += -10.0*abs(40.25 - fish->leftEyeTheta) -10.0*abs(34.7 - fish->rightEyeTheta);
@@ -3076,13 +3074,13 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               {
                   ss.str(""); //Empty String
                   ss << "L:" << fish->leftEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-45,rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
                   ss.str(""); //Empty String
                   ss << "R:"  << fish->rightEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-45,rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
                   ss.str(""); //Empty String
                   ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0; //Store to global variable
-                  cv::putText(fullImgOut,ss.str(),cv::Point(rect_pasteregion.br().x-45,rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }
 
 
@@ -3097,7 +3095,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
               /// SPINE Fitting And Drawing ///
               /// \note two methods
-              if (contours_body.size() > 0 && bFitSpineToTail)
+              if (contours_body.size() > 0 && gTrackerState.bFitSpineToTail)
               {
               //Look for Top Level Contour
 
@@ -3111,19 +3109,19 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                /// Use Contour Variational Fitting to distance from spine - Adjusts spine segment length to tail contour length
                /// \note If done on all frames is converges on Local Minima where the tail is fit in the body contour.
 #ifdef _USEPERIODICSPINETOCONTOUR_TEST
-               if (pwindow_main->nFrame == uiStartFrame || (pwindow_main->nFrame % 4  ) == 0)//((uint)gfVidfps/4)
+               if (pwindow_main->nFrame == gTrackerState.uiStartFrame || (pwindow_main->nFrame % 4  ) == 0)//((uint)gfVidfps/4)
                {
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)
                    {
                         double err_sp0 = fish->fitSpineToContour2(maskedImg_gray,contours_body,0,idxFish);
                    }
-                   gFishTailSpineSegmentLength <- fish->c_spineSegL;
+                   gTrackerState.gFishTailSpineSegmentLength <- fish->c_spineSegL;
                    pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                    //qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
                }
                /// Main Method Uses Pixel Intensity //
-               fish->fitSpineToIntensity(maskedfishFeature_blur,gFitTailIntensityScanAngleDeg);
+               fish->fitSpineToIntensity(maskedfishFeature_blur,gTrackerState.gFitTailIntensityScanAngleDeg);
                fish->drawSpine(fullImgOut);
 
                //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
@@ -3131,8 +3129,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                /// \todo Make this parameter threshold formal
                if (abs(fish->lastTailFitError) > fish->c_fitErrorPerContourPoint)
                {
-                   gFishTailSpineSegmentLength = gc_FishTailSpineSegmentLength_init;
-                   fish->c_spineSegL = gFishTailSpineSegmentLength ;
+                   gTrackerState.gFishTailSpineSegmentLength = gTrackerState.gc_FishTailSpineSegmentLength_init;
+                   fish->c_spineSegL = gTrackerState.gFishTailSpineSegmentLength ;
                    pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
 
                    //fish->resetSpine(); //No Solution Found So Reset
@@ -3149,7 +3147,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
              /// END OF Fit Spine ////
               //Eye Detection Ret > 0
     } //For eAch Fish Model
-    bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
+    gTrackerState.bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
 
 
 
@@ -3228,30 +3226,30 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 void thresh_callback(int, void* )
 {
 
-    if (g_BGthresh % 2 == 0)
-        g_BGthresh ++;
+    if (gTrackerState.g_BGthresh % 2 == 0)
+        gTrackerState.g_BGthresh ++;
 
-    if (g_Segthresh <= 3) g_Segthresh = 3;
+    if (gTrackerState.g_Segthresh <= 3) gTrackerState.g_Segthresh = 3;
 
-    if (g_Segthresh%2 == 0)
-        g_Segthresh++;
+    if (gTrackerState.g_Segthresh%2 == 0)
+        gTrackerState.g_Segthresh++;
 
-    if (gi_CannyThres <2)
-        gi_CannyThres = 2;
+    if (gTrackerState.gi_CannyThres <2)
+        gTrackerState.gi_CannyThres = 2;
 
   //  Aperture size should be odd between 3 and 7 in function Canny
-    if (gi_CannyThresSmall % 2 == 0)
-        gi_CannyThresSmall ++;
-    if (gi_CannyThresSmall <3)
-        gi_CannyThresSmall =3;
-    if (gi_CannyThresSmall >7)
-        gi_CannyThresSmall =7;
+    if (gTrackerState.gi_CannyThresSmall % 2 == 0)
+        gTrackerState.gi_CannyThresSmall ++;
+    if (gTrackerState.gi_CannyThresSmall <3)
+        gTrackerState.gi_CannyThresSmall =3;
+    if (gTrackerState.gi_CannyThresSmall >7)
+        gTrackerState.gi_CannyThresSmall =7;
 
 
     for (fishModels::iterator ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
     {
          fishModel* pfish = ft->second;
-         pfish->c_spineSegL           = gFishTailSpineSegmentLength;
+         pfish->c_spineSegL           = gTrackerState.gFishTailSpineSegmentLength;
 
 
     }

@@ -24,13 +24,14 @@
 /// can be converted to baysian sampler, to fit a model parameters
 
 extern int gthresEyeSeg;
+extern trackerState gTrackerState;
 
 typedef unsigned long ulong;
 typedef std::vector<std::vector< std::vector<double> > > tStateValueMatrix;
 typedef struct EyeDetectorState
 {
     EyeDetectorState(){
-        iSegThres1 = gthresEyeSeg;
+        iSegThres1 = gTrackerState.gthresEyeSeg;
         iDSegThres2 = 1;
         yEyePosition = 7;
         VergenceState = 1;

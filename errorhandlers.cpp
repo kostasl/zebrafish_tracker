@@ -15,7 +15,7 @@ void on_sigabrt (int signum)
     void *array[10];
     size_t size;
 
-    std::cerr << std::endl << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
+    std::cerr << std::endl << "While Processing :"  << gTrackerState.outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
     std::cerr << std::endl << ">>>> Simple SIG ABORT Handler Triggered <<<<<" << std::endl;
     // get void*'s for all entries on the stack
     size = backtrace(array, 10);
@@ -54,7 +54,7 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext)
 
      uc = (sig_ucontext_t *)ucontext;
 
-     std::cerr << "While Processing :"  << outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
+     std::cerr << "While Processing :"  << gTrackerState.outfilename.toStdString() << " frame:" << pwindow_main->nFrame << std::endl;
      std::cerr << ">>>>  SIG SEG Handler with Demangling was Triggered <<<<<" << std::endl;
 
      closeDataFile(outfishdatafile);

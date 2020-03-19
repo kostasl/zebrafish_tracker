@@ -62,7 +62,7 @@ void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
 
     float fDistToNewPosition = cv::norm(fblob.pt-this->zTrack.centroid);
 
-    if (fDistToNewPosition > gMaxClusterRadiusFoodToBlob)
+    if (fDistToNewPosition > gTrackerState.gMaxClusterRadiusFoodToBlob)
     {
          qDebug() << "Prey " << this->ID << " match too far d: " << fDistToNewPosition << " Mscore :" << matchScore;
          //return;
@@ -83,7 +83,7 @@ void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
     zTrack.boundingBox.width = 12;
     zTrack.boundingBox.height = 12;
     //Establish stable initial phase before removing new flag
-    if (activeFrames > gcMinFoodModelActiveFrames && isNew)
+    if (activeFrames > gTrackerState.gcMinFoodModelActiveFrames && isNew)
     {
         isNew = false; //Having succeded to achieve n consec. active frames this food item is established
         inactiveFrames = 0; //Reset Counter Of inactive Frames
@@ -91,7 +91,7 @@ void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
     ///Trick - Update is called when fooditem has been matched, yet we use the
     /// the update to check if it has been inactive for too long- if found on next frame it will become active again
     //Although it may have been found here, it is still marked inactive until the next round
-    isActive = (inactiveFrames < gcMaxFoodModelInactiveFrames) && !isNew;
+    isActive = (inactiveFrames < gTrackerState.gcMaxFoodModelInactiveFrames) && !isNew;
 
 
 
@@ -104,7 +104,7 @@ void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
     }
     this->zTrack.inactive = inactiveFrames;
     ///Optimization only Render Point If Displaced Enough from Last One
-    if (this->zTrack.effectiveDisplacement > gDisplacementThreshold)
+    if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
     {
         this->zTrack.pointStackRender.push_back(bcentre);
         //this->zTrack.active++;
@@ -207,7 +207,7 @@ int foodModel::getActiveFoodCount(foodModels& vfoodmodels)
         assert(pfood);
 
         // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob - Except If Food is being Tracked
-        if (pfood->activeFrames < gcMinFoodModelActiveFrames && (!pfood->isTargeted))
+        if (pfood->activeFrames < gTrackerState.gcMinFoodModelActiveFrames && (!pfood->isTargeted))
         {
             ++ft; //Item Is not Counted
             continue;
@@ -226,8 +226,8 @@ bool foodModel::isUnused()
 {
     bool bLost =  (!this->isActive
                  && !this->isNew
-                 || this->inactiveFrames > gcMaxFoodModelInactiveFrames
-                 || (this->activeFrames < gcMinFoodModelActiveFrames && this->inactiveFrames > gcMaxFoodModelInactiveFrames/2))
+                 || this->inactiveFrames > gTrackerState.gcMaxFoodModelInactiveFrames
+                 || (this->activeFrames < gTrackerState.gcMinFoodModelActiveFrames && this->inactiveFrames > gTrackerState.gcMaxFoodModelInactiveFrames/2))
                  && (this->isTargeted == false);
 
             return bLost;

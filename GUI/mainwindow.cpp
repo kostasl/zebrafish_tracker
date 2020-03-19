@@ -113,11 +113,11 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->horizontalSlider->installEventFilter(this);
 
     this->ui->actionTrack_Fish->setChecked(gTrackerState.bTracking);
-    this->ui->checkBoxGPU->setChecked(bUseGPU);
-    this->ui->checkBoxMOG->setChecked(bUseBGModelling);
-    this->ui->checkBoxNoiseFilter->setChecked(bRemovePixelNoise);
+    this->ui->checkBoxGPU->setChecked(gTrackerState.bUseGPU);
+    this->ui->checkBoxMOG->setChecked(gTrackerState.bUseBGModelling);
+    this->ui->checkBoxNoiseFilter->setChecked(gTrackerState.bRemovePixelNoise);
 
-    this->ui->checkBoxHistEqualizer->setChecked(bUseHistEqualization);
+    this->ui->checkBoxHistEqualizer->setChecked(gTrackerState.bUseHistEqualization);
 
     createSpinBoxes();
     nFrame = 0;
@@ -329,7 +329,7 @@ foodModel* MainWindow::getFoodItemAtLocation(cv::Point ptLocation)
 
         foodModel* pfood = (*it).second;
         //if (pfood->zTrack.boundingBox.contains(ptLocation) ) //Clicked On Fish Box
-        if (cv::norm(pfood->zfoodblob.pt - (cv::Point2f)ptLocation) < gMaxClusterRadiusFoodToBlob ) //Clicked On Fish Box
+        if (cv::norm(pfood->zfoodblob.pt - (cv::Point2f)ptLocation) < gTrackerState.gMaxClusterRadiusFoodToBlob ) //Clicked On Fish Box
         {
             rfood = pfood; //Found and return clicked Food Item
         }
@@ -442,26 +442,26 @@ void MainWindow::eyevalueChanged(int i)
     if (bSceneMouseLButtonDown)
         LogEvent(QString("Changed Eye Seg Threshold:") + QString::number(i));
 
-    gthresEyeSeg = i;
+    gTrackerState.gthresEyeSeg = i;
 }
 
 void MainWindow::fishvalueChanged(int i)
 {
     qDebug() << "fish SpinBox gave " << i;
     LogEvent(QString("Changed Fish BG Threshold:") + QString::number(i));
-    g_Segthresh = i;
+    gTrackerState.g_Segthresh = i;
 
  }
 
 void MainWindow::maxEllipseSizevalueChanged(int i)
 {
-    gi_maxEllipseMajor = i;
+    gTrackerState.gi_maxEllipseMajor = i;
     LogEvent(QString("changed Max Ellipse to:") + QString::number(i));
 }
 
 void MainWindow::minEllipseSizevalueChanged(int i)
 {
-    gi_minEllipseMajor = i;
+    gTrackerState.gi_minEllipseMajor = i;
     LogEvent(QString("changed Min Ellipse changed to:") + QString::number(i));
 }
 
@@ -730,16 +730,15 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 
     if (bDraggingRoiPoint)
     {   //Update Point - Bound it from Periphery - OtherWise TemplateMatch Fails due to Small Image Crop at boundary
-        ptDrag->x = std::max(gFishBoundBoxSize/4, std::min(frameScene.cols - gFishBoundBoxSize/4,ptMouse.x));
-        ptDrag->y = std::max(gFishBoundBoxSize/4, std::min(frameScene.rows - gFishBoundBoxSize/4,ptMouse.y));
-        bROIChanged = true;
+        ptDrag->x = std::max(gTrackerState.gFishBoundBoxSize/4, std::min(frameScene.cols - gTrackerState.gFishBoundBoxSize/4,ptMouse.x));
+        ptDrag->y = std::max(gTrackerState.gFishBoundBoxSize/4, std::min(frameScene.rows - gTrackerState.gFishBoundBoxSize/4,ptMouse.y));
+        gTrackerState.bROIChanged = true;
     }
     else
         ptDrag = 0;
 
-
     //Check If Around ROI Points
-    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
     {
         ltROI* iroi = &(*it);
         for (std::vector<cv::Point>::iterator it = iroi->vPoints.begin() ; it != iroi->vPoints.end(); ++it)
@@ -800,7 +799,7 @@ void MainWindow::reportUserMeasurement(cv::Point ptMouse)
                 QString(",") + QString::number(userPointPair.second.x) +
                 QString(",") + QString::number(userPointPair.second.y) +
                 QString(",") + QString::number(nFrame) +
-                QString(",") + QString::number(uiStopFrame) +
+                QString(",") + QString::number(gTrackerState.uiStopFrame) +
                 QString(",") + QString::number(fg_EyeVergence)+
                 QString("]");
 
@@ -847,14 +846,14 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
         if (mouseEvent->buttons() == Qt::LeftButton)
         {
             bSceneMouseLButtonDown = true;
-            if (bAddPreyManually)
+            if (gTrackerState.bAddPreyManually)
             {
-                foodModel* pfood = new foodModel(cv::KeyPoint(ptMouse,1),++gi_MaxFoodID  );
+                foodModel* pfood = new foodModel(cv::KeyPoint(ptMouse,1),++gTrackerState.gi_MaxFoodID  );
                 pfood->blobMatchScore = 0;
                 vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
             }
 
-            if (bMeasure2pDistance)
+            if (gTrackerState.bMeasure2pDistance)
             {
 
                 reportUserMeasurement(ptMouse);
@@ -866,7 +865,7 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
             if (food) //Only delete non targeted item
                 if (!food->isTargeted)
                 {
-                    food->inactiveFrames = gcMaxFoodModelInactiveFrames+1;
+                    food->inactiveFrames = gTrackerState.gcMaxFoodModelInactiveFrames+1;
                     food->isActive = false;
                     LogEvent("[info] Clicked to deactivate Food Item");
                 }
@@ -880,7 +879,7 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 
 
     //Check If Around ROI Points
-    for (std::vector<ltROI>::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
+    for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
     {
 
         ltROI* iroi = &(*it);
@@ -1000,25 +999,25 @@ void MainWindow::updateTemplateThres()
 {
 
     //Calls on_spinBoxTemplateThres_valueChanged();
-    this->ui->spinBoxTemplateThres->setValue(gTemplateMatchThreshold*100.0);
+    this->ui->spinBoxTemplateThres->setValue(gTrackerState.gTemplateMatchThreshold*100.0);
 }
 
 void MainWindow::on_spinBoxTemplateThres_valueChanged(int arg1)
 {
  double newTMatchThresh = (double)arg1/100.0;
- gTemplateMatchThreshold = newTMatchThresh;
+ gTrackerState.gTemplateMatchThreshold = newTMatchThresh;
  LogEvent(QString("[info] Changed Template Match Thres:" ) + QString::number(newTMatchThresh,'g',4) ) ;
 }
 
 void MainWindow::on_spinBoxMOGBGRatio_valueChanged(int arg1)
 {
     double newBGRatio = (double)arg1/100.0;
-    gdMOGBGRatio = newBGRatio; //Updated Value Takes effect in processFrame and in updateBGFrame
+    gTrackerState.gdMOGBGRatio = newBGRatio; //Updated Value Takes effect in processFrame and in updateBGFrame
 
     if (pMOG2)
     {
-       pMOG2->setBackgroundRatio(gdMOGBGRatio);
-       LogEvent(QString("[info] Changed MOG BG Ratio: " ) + QString::number(gdMOGBGRatio,'g',4) ) ;
+       pMOG2->setBackgroundRatio(gTrackerState.gdMOGBGRatio);
+       LogEvent(QString("[info] Changed MOG BG Ratio: " ) + QString::number(gTrackerState.gdMOGBGRatio,'g',4) ) ;
 
     }
 
@@ -1048,8 +1047,8 @@ void MainWindow::on_actionTrack_Fish_triggered(bool checked)
 
 void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
 {
-    bRecordToFile = checked;
-    if (bRecordToFile)
+    gTrackerState.bRecordToFile = checked;
+    if (gTrackerState.bRecordToFile)
     {
       LogEvent(QString(">> Recording Tracks ON - New File <<"));
 
@@ -1078,12 +1077,12 @@ void MainWindow::on_actionRecord_Tracks_to_File_w_triggered(bool checked)
 void MainWindow::on_actionTrack_Food_triggered(bool checked)
 {
 
-    bTrackFood = checked;
+    gTrackerState.bTrackFood = checked;
 }
 
 void MainWindow::on_actionQuit_triggered()
 {
-    bExiting = true;
+    gTrackerState.bExiting = true;
     LogEvent("[info] User Terminated - Bye!");
 }
 
@@ -1107,13 +1106,14 @@ void MainWindow::on_actionPaus_tracking_p_triggered()
 }
 void MainWindow::on_actionPaus_tracking_p_triggered(bool checked)
 {
+
 }
 
 
 void MainWindow::on_checkBoxGPU_toggled(bool checked)
 {
-    bUseGPU = checked;
-    if (bUseGPU)
+    gTrackerState.bUseGPU = checked;
+    if (gTrackerState.bUseGPU)
         LogEvent("[info] GPU use is ON");
     else
         LogEvent("[info] GPU use is OFF");
@@ -1121,8 +1121,8 @@ void MainWindow::on_checkBoxGPU_toggled(bool checked)
 
 void MainWindow::on_checkBoxMOG_toggled(bool checked)
 {
-    bUseBGModelling = checked;
-    if (bUseBGModelling)
+    gTrackerState.bUseBGModelling = checked;
+    if (gTrackerState.bUseBGModelling)
             LogEvent("[info] Use Of MOG for BG Model is ON");
         else
             LogEvent("[info] Use Of MOG for BG Model is OFF");
@@ -1130,8 +1130,8 @@ void MainWindow::on_checkBoxMOG_toggled(bool checked)
 
 void MainWindow::on_checkBoxNoiseFilter_toggled(bool checked)
 {
-    bRemovePixelNoise = checked;
-    if (bRemovePixelNoise)
+    gTrackerState.bRemovePixelNoise = checked;
+    if (gTrackerState.bRemovePixelNoise)
             LogEvent("[info] Pixel Noise Filtering is ON");
         else
             LogEvent("[info] Pixel Noise Filtering is OFF");
@@ -1179,12 +1179,12 @@ void MainWindow::UpdateTailSegSizeSpinBox(float fTailSize)
 
 void MainWindow::on_spinBoxFoodThresMin_valueChanged(int arg1)
 {
-    g_SegFoodThesMin = arg1;
+    gTrackerState.g_SegFoodThesMin = arg1;
 }
 
 void MainWindow::on_spinBoxFoodThresMax_valueChanged(int arg1)
 {
-    g_SegFoodThesMax = arg1;
+    gTrackerState.g_SegFoodThesMax = arg1;
 }
 
 void MainWindow::on_spinBoxSpineSegSize_valueChanged(int arg1)
@@ -1195,7 +1195,7 @@ void MainWindow::tailSizevalueChanged(float i)
 {
     qDebug() << "Tails SpinBox gave " << i;
     LogEvent(QString("Tail Segment Size changed:") + QString::number(i));
-    gFishTailSpineSegmentLength = i;
+    gTrackerState.gFishTailSpineSegmentLength = i;
     //Update All fish Model's spine Length
     fishModels::iterator ft = vfishmodels.begin();
     while (ft != vfishmodels.end() ) //Render All Fish
@@ -1221,7 +1221,7 @@ void MainWindow::on_doubleSpinBoxSpineSegSize_valueChanged(double arg1)
 
 void MainWindow::on_checkBoxHistEqualizer_clicked(bool checked)
 {
-    bUseHistEqualization = checked;
+    gTrackerState.bUseHistEqualization = checked;
 }
 
 void MainWindow::on_checkBoxMOG_stateChanged(int arg1)
@@ -1247,5 +1247,5 @@ void MainWindow::on_checkBoxHistEqualizer_stateChanged(int arg1)
 /// \brief Change the eye Mask Width betwee eyes
 void MainWindow::on_spinBoxEyeMaskW_valueChanged(int arg1)
 {
-    iEyeMaskSepWidth = arg1;
+    gTrackerState.iEyeMaskSepWidth = arg1;
 }

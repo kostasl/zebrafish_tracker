@@ -1,7 +1,8 @@
-##3-09-2018
+## kostasl 3-09-2018
 ###  Estimates the hidden function of Turn Vs Bearing To Prey - Linear Regression gives pdf of slope param.  - 
 ## Tried both a Non-parametric Gaussian Process with Bayesian Inference (Failed) But Also a simple Linear Model
 ## Requires the lFirstBoutPoints list of dataframes - which is constucted in 
+## 18-03-19 Update : Add confidence 5% intervals 
 source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
@@ -220,6 +221,7 @@ dDatDLb<-density(dataDL$turn/ dataDL$bearing,kernel="gaussian",bw=pBw)
 
   ##### ######################
   ### MAIN FIGURE ############
+  
   ################################  
 pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_SetC2.pdf",sep="")
     ,width=7,height=7,
@@ -249,29 +251,28 @@ pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_SetC
   mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey ("~phi^degree~")" ))
   
   #text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
-  abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourLegL[3],lwd=1.5,lty=2) ##Fit Line / Regression
+  ##abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourLegL[3],lwd=1.5,lty=2) ##Fit Line / Regression
   abline(a=muDLa,b=muDLb,col=colourLegL[3],lwd=4.0) ##Fit Line / Regression
-  #abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[1],lwd=4.0) ##Fit Line / Regression
-  #abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[1],lwd=4.0) ##Fit Line / Regression
+  abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[1],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[1],col=colourLegE[3],lwd=4.0) ##Fit Line / Regression
+  abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[2],col=colourLegE[3],lwd=4.0) ##Fit Line / Regression
   
   #abline( lsfit(lFirstBoutPoints[["DL"]][,2], lFirstBoutPoints[["DL"]][,1] ) ,col=colourH[1],lwd=2.0)
   ##LL
   points(datTurnVsPreyLL[,"OnSetAngleToPrey"],datTurnVsPreyLL[,"Turn"],pch=pchL[2],col=colourP[2],cex=1.2)
   #text(lFirstBoutPoints[["LL"]][,1]+2,lFirstBoutPoints[["LL"]][,2]+5,labels=lFirstBoutPoints[["LL"]][,3],cex=0.8,col="darkgreen")
-  abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourLegL[2],lwd=1.5,lty=2)
+  #abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourLegL[2],lwd=1.5,lty=2)
   abline(a=muLLa,b=muLLb,col=colourLegL[2],lwd=4.0,lty=1.5) ##Fit Line / Regression
-  #abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[2],lwd=4.0) ##Fit Line / Regression
-  #abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[2],lwd=4.0) ##Fit Line / Regression
+  abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[1],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[1],col=colourLegE[2],lwd=4.0) ##Fit Line / Regression
+  abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[2],col=colourLegE[2],lwd=4.0) ##Fit Line / Regression
   
   #abline(lsfit(lFirstBoutPoints[["LL"]][,2], lFirstBoutPoints[["LL"]][,1] ) ,col=colourH[2],lwd=2.0)
   ##NL
   points( datTurnVsPreyNL[,"OnSetAngleToPrey"],datTurnVsPreyNL[,"Turn"],pch=pchL[1],col=colourP[1])
   #text(lFirstBoutPoints[["NL"]][,1]+2,lFirstBoutPoints[["NL"]][,2]+5,labels=lFirstBoutPoints[["NL"]][,3],cex=0.8,col="darkred")
-  abline(lm(datTurnVsPreyNL[,"Turn"] ~ datTurnVsPreyNL[,"OnSetAngleToPrey"]),col=colourLegL[1],lwd=1.5,lty=2)
+  #abline(lm(datTurnVsPreyNL[,"Turn"] ~ datTurnVsPreyNL[,"OnSetAngleToPrey"]),col=colourLegL[1],lwd=1.5,lty=2)
   abline(a=muNLa,b=muNLb,col=colourLegL[1],lwd=4.0) ##Fit Line / Regression
-  #abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[2],col=colourR[3],lwd=4.0) ##Fit Line / Regression
-  #abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,])[3],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,])[3],col=colourR[3],lwd=4.0) ##Fit Line / Regression
-  #abline( lsfit(lFirstBoutPoints[["NL"]][,2], lFirstBoutPoints[["NL"]][,1] ) ,col=colourH[3],lwd=2.0)
+  abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[1],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[1],col=colourLegE[1],lwd=4.0) ##Fit Line / Regression
+  abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[2],col=colourLegE[1],lwd=4.0) ##Fit Line / Regression
   
   ##Guiding lines / Draw 0 Vertical Line
   segments(0,-100,0,100); segments(-100,0,100,0); segments(-100,-100,100,100,lwd=1,lty=2);
@@ -316,7 +317,134 @@ pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_Dens
   ### PLot Scatter with regression lines with Conf intervals##
 dev.off()
 
+##############################################
+### Individually Plotted Turn Ratios With   ##
+## With COFINDENCE Intervals 5%             ##
+##############################################
+pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_DF.pdf",sep="")
+    ,width=7,height=7,
+    title="First Turn To prey / Undershoot Ratio Dry Fed Group")
   
+  outer = FALSE
+  line = 1 ## SubFig Label Params
+  line <- 2.6 ## SubFig Label Params
+  lineAxis = line## 3.2    
+  cex = 1.4
+  adj  = 3.5
+  padj <- -16.5
+  las <- 1
+  
+  par(mar = c(4.2,4.8,1.1,1))
+  plot( datTurnVsPreyDL[,"OnSetAngleToPrey"],datTurnVsPreyDL[,"Turn"],
+        main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
+        xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
+        ylab=NA,#expression("Bearing To Prey After Turn "~(theta^degree) ),
+        xlim=c(-100,100),
+        ylim=c(-100,100),
+        col=colourP[3] ,pch=pchL[3],cex=cex,cex.axis=cex) ##boutSeq The order In Which The Occurred Coloured from Dark To Lighter
+  
+  #text(lFirstBoutPoints[["DL"]][,1]+2,lFirstBoutPoints[["DL"]][,2]+5,labels=lFirstBoutPoints[["DL"]][,3],cex=0.8,col="darkblue")
+  ##abline(lm(datTurnVsPreyDL[,"Turn"] ~ datTurnVsPreyDL[,"OnSetAngleToPrey"]),col=colourLegL[3],lwd=1.5,lty=2) ##Fit Line / Regression
+  abline(a=muDLa,b=muDLb,col=colourLegL[3],lwd=4.0) ##Fit Line / Regression
+  abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[1],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[1],col=colourLegE[3],lwd=4.0) ##Fit Line / Regression
+  abline(a=quantile(drawDL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[2],b=quantile(drawDL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[2],col=colourLegE[3],lwd=4.0) ##Fit Line / Regression
+  ##Guiding lines / Draw 0 Vertical Line
+  segments(0,-100,0,100); segments(-100,0,100,0); segments(-100,-100,100,100,lwd=1,lty=2);
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL[3],lty=NA,pch=pchL[3],lwd=3,cex=cex)
+  
+  mtext(side = 1,cex=cex, line = lineAxis, expression("Prey azimuth prior to turn ("~theta^degree~")" ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey ("~phi^degree~")" ))
+  
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_NF.pdf",sep="")
+    ,width=7,height=7,
+    title="First Turn To prey / Undershoot Ratio NOT Fed Group")
+
+outer = FALSE
+line = 1 ## SubFig Label Params
+line <- 2.6 ## SubFig Label Params
+lineAxis = line## 3.2    
+cex = 1.4
+adj  = 3.5
+padj <- -16.5
+las <- 1
+
+par(mar = c(4.2,4.8,1.1,1))
+plot( datTurnVsPreyNL[,"OnSetAngleToPrey"],datTurnVsPreyNL[,"Turn"],pch=pchL[1],col=colourP[1],
+      main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
+      xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
+      ylab=NA,#expression("Bearing To Prey After Turn "~(theta^degree) ),
+      xlim=c(-100,100),
+      ylim=c(-100,100),
+      cex=cex,cex.axis=cex  )
+
+#text(lFirstBoutPoints[["NL"]][,1]+2,lFirstBoutPoints[["NL"]][,2]+5,labels=lFirstBoutPoints[["NL"]][,3],cex=0.8,col="darkred")
+#abline(lm(datTurnVsPreyNL[,"Turn"] ~ datTurnVsPreyNL[,"OnSetAngleToPrey"]),col=colourLegL[1],lwd=1.5,lty=2)
+abline(a=muNLa,b=muNLb,col=colourLegL[1],lwd=4.0) ##Fit Line / Regression
+abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[1],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[1],col=colourLegE[1],lwd=4.0) ##Fit Line / Regression
+abline(a=quantile(drawNL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[2],b=quantile(drawNL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[2],col=colourLegE[1],lwd=4.0) ##Fit Line / Regression
+
+##Guiding lines / Draw 0 Vertical Line
+segments(0,-100,0,100); segments(-100,0,100,0); segments(-100,-100,100,100,lwd=1,lty=2);
+
+legend("topleft",
+       legend=c(  expression (),
+                  bquote(NF["e"] ~ '#' ~ .(NROW(datTurnVsPreyNL[,"Turn"]) ) ) ) , ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+       col=colourLegL[1],lty=NA,pch=pchL[1],lwd=3,cex=cex)
+
+mtext(side = 1,cex=cex, line = lineAxis, expression("Prey azimuth prior to turn ("~theta^degree~")" ))
+mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey ("~phi^degree~")" ))
+
+dev.off()
+
+
+pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_LF.pdf",sep="")
+    ,width=7,height=7,
+    title="First Turn To prey / Undershoot Ratio Live Fed Group")
+  
+  outer = FALSE
+  line = 1 ## SubFig Label Params
+  line <- 2.6 ## SubFig Label Params
+  lineAxis = line## 3.2    
+  cex = 1.4
+  adj  = 3.5
+  padj <- -16.5
+  las <- 1
+  
+  par(mar = c(4.2,4.8,1.1,1))
+  
+  plot(datTurnVsPreyLL[,"OnSetAngleToPrey"],datTurnVsPreyLL[,"Turn"],pch=pchL[2],col=colourP[2],
+         main=NA,#paste("Turn Size Vs Bearing To Prey ", sep=""),
+         xlab=NA,#expression("Bearing To Prey Prior Turn "~(phi^degree) ),
+         ylab=NA,#expression("Bearing To Prey After Turn "~(theta^degree) ),
+         xlim=c(-100,100),
+         ylim=c(-100,100),
+         cex=cex,cex.axis=cex )
+    #text(lFirstBoutPoints[["LL"]][,1]+2,lFirstBoutPoints[["LL"]][,2]+5,labels=lFirstBoutPoints[["LL"]][,3],cex=0.8,col="darkgreen")
+    #abline(lm(datTurnVsPreyLL[,"Turn"] ~ datTurnVsPreyLL[,"OnSetAngleToPrey"]),col=colourLegL[2],lwd=1.5,lty=2)
+    abline(a=muLLa,b=muLLb,col=colourLegL[2],lwd=4.0,lty=1.5) ##Fit Line / Regression
+    abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[1],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[1],col=colourLegE[2],lwd=4.0) ##Fit Line / Regression
+    abline(a=quantile(drawLL$beta[,(steps-ind):steps,1][1,],p=c(0.05, 0.95))[2],b=quantile(drawLL$beta[,(steps-ind):steps,1][2,],p=c(0.05, 0.95))[2],col=colourLegE[2],lwd=4.0) ##Fit Line / Regression
+  
+  ##Guiding lines / Draw 0 Vertical Line
+  segments(0,-100,0,100); segments(-100,0,100,0); segments(-100,-100,100,100,lwd=1,lty=2);
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL[2],lty=NA,pch=pchL[2],lwd=3,cex=cex)
+  
+  mtext(side = 1,cex=cex, line = lineAxis, expression("Prey azimuth prior to turn ("~theta^degree~")" ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey ("~phi^degree~")" ))
+
+dev.off()
+
 
 # DATA Turn Ratio
 ################################  

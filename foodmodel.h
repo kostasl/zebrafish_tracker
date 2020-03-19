@@ -11,7 +11,8 @@
 #include "zfttracks.h"
 
 extern float gDisplacementThreshold;
-extern uint gi_MaxFoodID;
+//extern uint gi_MaxFoodID;
+extern trackerState gTrackerState;
 
 typedef cv::KeyPoint zfdblob;
 typedef std::vector<zfdblob> zfdblobs;
@@ -81,7 +82,7 @@ inline void ReleaseFoodModels(foodModels &vfood)
       delete pfood;
   }
   vfood.clear();
-  gi_MaxFoodID = 1; //Reset COunter from Where IDs are drawn
+  gTrackerState.gi_MaxFoodID = 1; //Reset COunter from Where IDs are drawn
 }
 
 

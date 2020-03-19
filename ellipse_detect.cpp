@@ -340,10 +340,10 @@ float drawExtendedMajorAxis(cv::Mat& outHeadFrameMonitor,tDetectedEllipsoid& ell
 /// \todo check image bounds
 int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::priority_queue<tDetectedEllipsoid>& qEllipsoids)
 {
-    const int minEllipseMajor   = gi_minEllipseMajor;
-    const int maxEllipseMajor   = gi_maxEllipseMajor;
-    const int minMinorEllipse   = gi_minEllipseMinor;
-    int thresMinVotes     = gi_VotesEllipseThres;
+    const int minEllipseMajor   = gTrackerState.gi_minEllipseMajor;
+    const int maxEllipseMajor   = gTrackerState.gi_maxEllipseMajor;
+    const int minMinorEllipse   = gTrackerState.gi_minEllipseMinor;
+    int thresMinVotes     = gTrackerState.gi_VotesEllipseThres;
 
     const int accLength = vedgePoints_all.size();
     int accumulator[accLength]; //The Score Holding (Histogram ) Array - Each index is a Minor Axis Length
@@ -566,7 +566,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
     } //Loop through all  point as 1st point pair (Prob: pairs can be repeated)
 
 
-    gi_VotesEllipseThres = 0.80*Highest2dVotes;//Adapt Threshold To Best Score
+    gTrackerState.gi_VotesEllipseThres = 0.80*Highest2dVotes;//Adapt Threshold To Best Score
 //    std::clog << "ThresVot:" << gi_VotesEllipseThres << std::endl;
 
 
@@ -586,7 +586,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
 std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal)
 {
         const int isampleN = EYE_SEG_SAMPLE_POINTS_COUNT;
-        const int voffset = giHeadIsolationMaskVOffset+1;
+        const int voffset = gTrackerState.giHeadIsolationMaskVOffset+1;
 
         int iThresEyeSeg = 0;
         minVal = 255;
@@ -635,12 +635,12 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
         //Get 3 values starting from Approx Median Value moving up the intensity
         std::sort(veyeSegSamples.begin(),veyeSegSamples.end());
 
-        int idx = (int)veyeSegSamples.size()*0.75 + gthresEyeSeg;
+        int idx = (int)veyeSegSamples.size()*0.75 + gTrackerState.gthresEyeSeg;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
 
-        idx = (int)veyeSegSamples.size()*0.55 + gthresEyeSegL;
+        idx = (int)veyeSegSamples.size()*0.55 + gTrackerState.gthresEyeSegL;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
@@ -668,7 +668,7 @@ void getBestEllipsoidFits(cv::Mat& imgRegion,std::priority_queue<tDetectedEllips
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
 
-    if (bUseEllipseEdgeFittingMethod)
+    if (gTrackerState.bUseEllipseEdgeFittingMethod)
     {
         getEdgePoints(imgRegion,vedgePoints_all);
         detectEllipse(imgRegion,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
@@ -755,16 +755,16 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
     /// Make Mask regions to Separate Eyes //
     cv::Point ptMaskCntr = cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
-    cv::RotatedRect rectMidEllipse = cv::RotatedRect(ptMaskCntr,cv::Size2f(iEyeMaskSepWidth,imgUpsampled_gray.rows+26),0);
+    cv::RotatedRect rectMidEllipse = cv::RotatedRect(ptMaskCntr,cv::Size2f(gTrackerState.iEyeMaskSepWidth,imgUpsampled_gray.rows+26),0);
 
     // Locate Eye Points //
     ///COVER Right Eye - Find Left EYE //
     cv::Rect rRightMask(imgUpsampled_gray.cols/2,0,imgUpsampled_gray.cols,imgUpsampled_gray.rows);
     cv::Mat imgEyeDiscover = imgUpsampled_gray.clone();
     // Make Body Mask For bOth //
-    cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),giHeadIsolationMaskVOffset,CV_RGB(0,250,50),CV_FILLED); //Mask Body
+    cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),gTrackerState.giHeadIsolationMaskVOffset,CV_RGB(0,250,50),CV_FILLED); //Mask Body
     //Make Inner eye Mask, covering back edges for both - Place centre on edge of Body Mask vertically, and centre horizontally
-    cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,250,50),CV_FILLED); //Mask Body
+    cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-gTrackerState.giHeadIsolationMaskVOffset),gTrackerState.giEyeIsolationMaskRadius,CV_RGB(0,250,50),CV_FILLED); //Mask Body
 
     ///COVER Right Eye - Find Left EYE //
     cv::Mat imgEyeCover = imgEyeDiscover.clone();
@@ -792,7 +792,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
      //cv::Mat hist_equalized_image;
 
     /// Equalize Histogram to Enhance Contrast
-    if (bUseHistEqualization)
+    if (gTrackerState.bUseHistEqualization)
         cv::equalizeHist(imgUpsampled_gray, imgUpsampled_gray);
 
     /// Estimate Eye Segmentation threshold from sample points in Image
@@ -816,7 +816,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     /// Make Mask regions to Separate Eyes //
     //Add Thick Mid line to erase inner Eye Edges and artefacts
     cv::line(imgEdge_local,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes with line111
-    cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),giHeadIsolationMaskVOffset,CV_RGB(0,0,0),CV_FILLED); //Mask Body
+    cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),gTrackerState.giHeadIsolationMaskVOffset,CV_RGB(0,0,0),CV_FILLED); //Mask Body
     //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
     cv::ellipse(imgEdge_local,rectMidEllipse,CV_RGB(0,0,0),CV_FILLED ) ; //Mask the body and between eye edges
 
@@ -862,7 +862,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     ///Store Left Eye (Optional :Draw Detected Ellipsoid)
     //Make Mean Ellipsoid from List of Ellipses
-    tDetectedEllipsoid lEllMean(qEllipsoids,gi_MaxEllipseSamples);
+    tDetectedEllipsoid lEllMean(qEllipsoids,gTrackerState.gi_MaxEllipseSamples);
     if (qEllipsoids.size() > 0)
     {
         ret++;
@@ -889,7 +889,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     getBestEllipsoidFits(imgEdge_local_REye,qEllipsoids);
 
     //Initialize One Ellipse That is the mean of all detected ellipsoids
-    tDetectedEllipsoid rEllMean(qEllipsoids,gi_MaxEllipseSamples);
+    tDetectedEllipsoid rEllMean(qEllipsoids,gTrackerState.gi_MaxEllipseSamples);
     if (qEllipsoids.size() > 0)
     {
         ret++;
@@ -916,7 +916,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     /// Show Eye Points to User ///
     /// Show Masks with nominal width//
     cv::line(img_colour,ptcentre,cv::Point(img_colour.cols/2,0),CV_RGB(0,250,50),1);//Split Eyes iEyeMaskSepWidth
-    cv::circle(img_colour,cv::Point(img_colour.cols/2,img_colour.rows),giHeadIsolationMaskVOffset,CV_RGB(0,250,50),1); //Mask Body
+    cv::circle(img_colour,cv::Point(img_colour.cols/2,img_colour.rows),gTrackerState.giHeadIsolationMaskVOffset,CV_RGB(0,250,50),1); //Mask Body
     //Make Inner eye Mask, covering back edges for both - Place centre on edge of Body Mask vertically, and centre horizontally
     cv::ellipse(img_colour,rectMidEllipse,CV_RGB(0,250,250),1 ) ;
 
@@ -1038,7 +1038,7 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
            cv::putText(hist_image,"H",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
         }
 
-        if (gthresEyeSeg == b)
+        if (gTrackerState.gthresEyeSeg == b)
         {
            cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),8,CV_RGB(150,150,150),CV_FILLED);
            cv::putText(hist_image,"T",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);

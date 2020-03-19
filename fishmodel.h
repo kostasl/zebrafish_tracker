@@ -17,9 +17,10 @@
 
 
 
-extern float gDisplacementThreshold;
-extern int gFishTailSpineSegmentLength;
-extern uint gi_MaxFishID;
+//extern float gDisplacementThreshold;
+//extern int gFishTailSpineSegmentLength;
+//extern uint gi_MaxFishID;
+extern trackerState gTrackerState;
 
 //extern const int gFishTailSpineSegmentCount;
 
@@ -225,7 +226,7 @@ inline void ReleaseFishModels(fishModels &fishes)
       delete fish;
   }
   fishes.clear();
-  gi_MaxFishID = 1; //Reset ID Counter
+  gTrackerState.gi_MaxFishID = 1; //Reset ID Counter
 }
 
 

@@ -89,11 +89,11 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
 
     cv::Point pBound1,pBound2;
-    int iSearchRegionSize = gFishBoundBoxSize;
+    int iSearchRegionSize = gTrackerState.gFishBoundBoxSize;
 
 //If We are not Following A known Fish, then Expand the Search Region
     if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 2*gFishBoundBoxSize;
+       iSearchRegionSize = 2*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));
@@ -129,7 +129,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
         pwindow_main->LogEvent(QString::fromStdString(ss.str()));
     }
 
-    detectedAngle =AngleIdx*gFishTemplateAngleSteps;
+    detectedAngle =AngleIdx*gTrackerState.gFishTemplateAngleSteps;
 
     cv::Point top_left  = pBound1+gptmaxLoc; //Get top Left Corner Of Template Detected Region
     detectedPoint = top_left + rotCentre; //Get Centre Of Template Detection Region - Used for Tracking
@@ -297,7 +297,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
   /// \note For Speed Up - We Remove Running Through All Rows - Stick to LastKnown Good Row- And Let Random switch when this fails take Care Of Changing Row
   int iScanRowLimit = imgtemplCache.rows;
 
-  if (!bTemplateSearchThroughRows) //Do not Search Subsequent Template Rows
+  if (!gTrackerState.bTemplateSearchThroughRows) //Do not Search Subsequent Template Rows
       iScanRowLimit = std::min(templSz.height*startRow + templRegion.height,imgtemplCache.rows) ;
 
   // Run through croping/extracting each template sized window from the larger image
@@ -351,7 +351,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
     //Dont scan all Rows Just Check If Found on this One before Proceeding
 
    ///Check If Matching Exceeeds threshold And Stop Loops - Return Found Column Idx//
-   if (maxGVal >= gTemplateMatchThreshold && maxGVal > 0.1) //!findFirstMatch
+   if (maxGVal >= gTrackerState.gTemplateMatchThreshold && maxGVal > 0.1) //!findFirstMatch
    {
        //Save Results To Output
        //matchScore    = maxGVal;
@@ -367,17 +367,13 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
    templRegion.x        = 0; //ReStart from 1st col
 
 
-
 //   else{ //Nothing Found YEt-- Proceed To Next Template variation
 //       matchColIdx  = 0;
 //       matchScore   = maxGVal;
 //       locations_tl = cv::Point(0,0);
 //       //Didnt Find Template /Try Next Row
 //       //startRow = 0;//Start From Top Of All Templates On Next Search
-
-
 //   }
-
 
 
  } //Loop Through Rows - Starting From Last Call Best Match Row
@@ -392,16 +388,16 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
   }
 
 // Check if template match passes user set threshold
- if (maxGVal < gTemplateMatchThreshold)
+ if (maxGVal < gTrackerState.gTemplateMatchThreshold)
  {
-     iTemplateMatchFailCounter++; //INcrease Count Of Failures
+     gTrackerState.iTemplateMatchFailCounter++; //INcrease Count Of Failures
     // Choose next row Randomly
-     startRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
+     startRow = (rand() % static_cast<int>(gTrackerState.gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
      startCol = 0;
 
      std::stringstream ss;
      // Log As Message //
-     if (ibestMatchRow < gnumberOfTemplatesInCache)
+     if (ibestMatchRow < gTrackerState.gnumberOfTemplatesInCache)
         ss << "Found row:" << ibestMatchRow << " but gives Low Match-pick next Randomly ->"  << startRow;
      else
      {
@@ -412,13 +408,13 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 
  }else{ // If template matched then stay on the same template row
      startRow = ibestMatchRow;
-     iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
+     gTrackerState.iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
  }
 
  // Check if we are stuck with Too Many Template Match Fails, then Warn and lower match threshold.
- if (iTemplateMatchFailCounter > gnumberOfTemplatesInCache)
+ if (gTrackerState.iTemplateMatchFailCounter > gTrackerState.gnumberOfTemplatesInCache)
  {
-    gTemplateMatchThreshold -= gTemplateMatchThreshold*0.02;
+    gTrackerState.gTemplateMatchThreshold -= gTrackerState.gTemplateMatchThreshold*0.02;
     pwindow_main->LogEvent("[warning] Too many template match failures, lowering match threshold.");
     pwindow_main->updateTemplateThres();
  }
@@ -443,7 +439,7 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
     //Make Variations And store in template Cache
     cv::Mat fishTemplateVar;
     cv::Mat mtCacheRow,mtEnlargedCache;
-    makeTemplateVar(imgTempl,fishTemplateVar, gFishTemplateAngleSteps);
+    makeTemplateVar(imgTempl,fishTemplateVar, gTrackerState.gFishTemplateAngleSteps);
 
     ///Initialize The Cache if this the 1st Template added
     if (idxTempl == 0)
@@ -462,14 +458,14 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
      //Fill The Last (New Row) In The Cache
     mtCacheRow = FishTemplateCache(cv::Rect(0,fishTemplateVar.rows*(idxTempl),fishTemplateVar.cols,fishTemplateVar.rows));
     fishTemplateVar.copyTo(mtCacheRow); //Copy To Row In CAche
-    gnumberOfTemplatesInCache++; //Increment Count
+    gTrackerState.gnumberOfTemplatesInCache++; //Increment Count
 
     // DEBUG //
     //cv::imshow("Fish Template",FishTemplateCache(cv::Rect(0,0,std::max(imgTempl.cols,imgTempl.rows),FishTemplateCache.rows) ));
     //cv::imshow("Templ",imgTempl);
     //  //
 
-    std::clog << "New Template added, Templ. Count now:" << gnumberOfTemplatesInCache << std::endl;
+    std::clog << "New Template added, Templ. Count now:" << gTrackerState.gnumberOfTemplatesInCache << std::endl;
 
 
    return ++idxTempl;
@@ -498,10 +494,10 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 
     //If Removing Last Row, Then Its Simple
     //Shrink Template
-    if (idxTempl == (gnumberOfTemplatesInCache-1))
+    if (idxTempl == (gTrackerState.gnumberOfTemplatesInCache-1))
     {
         FishTemplateCache  = FishTemplateCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl)));
-        gnumberOfTemplatesInCache--;
+        gTrackerState.gnumberOfTemplatesInCache--;
     }else //Other Wise, We need to Cut and stich
     {
         //Cut In 2- Halves and rejoin
@@ -515,7 +511,7 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 
         cv::Mat mtShrankCache   = cv::Mat::zeros(FishTemplateCache.rows-mxDim,FishTemplateCache.cols,CV_8UC1);
 
-        gnumberOfTemplatesInCache--;
+        gTrackerState.gnumberOfTemplatesInCache--;
         mTop.copyTo(mtShrankCache(cv::Rect(0,0,FishTemplateCache.cols,mxDim*(idxTempl))));
         mBottom.copyTo( mtShrankCache( cv::Rect(0,mTop.rows,FishTemplateCache.cols,mtShrankCache.rows-mTop.rows) ));
         mtShrankCache.copyTo(FishTemplateCache);
@@ -553,7 +549,7 @@ int loadTemplatesFromDirectory(QString strDir)
 
           qDebug() << "*Load Template: " << filename;
           templFrame  = loadImage(filepath);
-          addTemplateToCache(templFrame,gFishTemplateCache,gnumberOfTemplatesInCache);
+          addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
           fileCount++;
         }
 
