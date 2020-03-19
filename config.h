@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-#define ZTF_FISHCONTOURSIZE          80//40
+#define ZTF_FISHCONTOURSIZE          60//40
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #define EYE_SEG_SAMPLE_POINTS_COUNT 20
