@@ -230,10 +230,10 @@ class trackerState
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
-      bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector
+      bool bApplyFishMaskBeforeFeatureDetection = false; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
-      bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked Fish Image- Which Could Be problematic if The contour is not detected Well
+      bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the FG Fish Image -
       bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
       bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
       bool bUseGPU                              = false;
@@ -295,7 +295,7 @@ class trackerState
       //   CV_FONT_HERSHEY_TRIPLEX, CV_FONT_HERSHEY_COMPLEX_SMALL,
       //   CV_FONT_HERSHEY_SCRIPT_SIMPLEX, CV_FONT_HERSHEY_SCRIPT_COMPLEX
       const int trackFnt = CV_FONT_HERSHEY_SIMPLEX;  //Font for Reporting - Tracking
-      const float trackFntScale = 0.6f;
+      const float trackFntScale = 0.4f;
       /// Contour Shaping Gaussian Kernels //
       std::vector<double> gGaussian,dgGaussian,d2gGaussian;
       double dGaussContourKernelSigma = 6.0;

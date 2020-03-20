@@ -246,22 +246,20 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 /// \param frame_gray //Current greyScale Frame - Noise May be Removed If filtering Is Set To On
 /// \param bgStaticMaskInOut The mask provided to processFrame, Includes Static Objects and ROI Region
 ///
-void processMasks(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskInOut,double dLearningRate)
+void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskInOut,cv::Mat& fgFrameOut,double dLearningRate)
 {
  const int max_thresh = 255;
  cv::Mat fgMOGMask;
- cv::Mat frameFG;
- cv::Mat threshold_output;
-
+  cv::Mat threshold_output;
 
  ////  Obtain FG IMage: Substract MOG Extracted BG Image //
  if (gTrackerState.bUseBGModelling)
-  frameFG = frameImg_gray - gframeBGImage; //Remove BG Image
+  fgFrameOut = frameImg_gray - gframeBGImage; //Remove BG Image
  else
-  frameFG  = frameImg_gray;
+  fgFrameOut  = frameImg_gray;
 
  //If We are during the Static Mask Accumulation phase ie (fgStaticMaskIn.type() !=  CV_8U) then Produce the Threshold Image
- cv::threshold( frameFG, threshold_output, gTrackerState.g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+ cv::threshold( fgFrameOut, threshold_output, gTrackerState.g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
 /// \todo: The CUDA code below Needs to Be Revised so it matches the Non-Cuda Process
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
@@ -579,7 +577,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
     else //No BG Modelling
     {
        //fgMask.copyTo(maskFGImg); //Use the same for Food processing
-       cv::threshold( fgMask, outFoodMask, gTrackerState.g_SegFoodThesMin , max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+       cv::threshold( fgMask, outFoodMask, gTrackerState.g_SegFoodThesMin , gTrackerState.g_SegFoodThesMax , cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
        cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
        //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
@@ -731,17 +729,17 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
 
 
     // Detect Food at Lower Thresh //
-    cv::Mat bgMask,fgFishMask,fgFoodMask;
+    cv::Mat bgMask,fgFishMask,fgFoodMask,fgFrameImg;
 
    // cv::equalizeHist( frame, frame );
     //Update MOG,filter pixel noise and Combine Static Mask
-    processMasks(frameImg_gray,bgAcc,bgMask,gTrackerState.dLearningRate); //Applies MOG if bUseBGModelling is on
+    extractFGMask(frameImg_gray,bgAcc,bgMask,fgFrameImg,gTrackerState.dLearningRate); //Applies MOG if bUseBGModelling is on
     ///Enhance Mask With Fish Shape
-    enhanceMask(frameImg_gray,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+    enhanceMask(fgFrameImg,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
 
     pwindow_main->showVideoFrame(bgMask,nFrame);
     //Accumulate things that look like food / so we can isolate the stationary ones
-    cv::threshold( frameImg_gray, bgMaskThresholded, gTrackerState.g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold( fgFrameImg, bgMaskThresholded, gTrackerState.g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
     cv::accumulateWeighted(bgMaskThresholded,bgAcc,gTrackerState.dBGMaskAccumulateSpeed);
 
     return ret; //If False then tell calling function to stop updating

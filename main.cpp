@@ -426,7 +426,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 ///
 void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStaticMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHeadEyeDetected,cv::Mat& frameHead)
 {
-    cv::Mat frame_gray,fgMask,fgFishMask,fgFishImgMasked;
+    cv::Mat frame_gray,fgMask,fgFishMask,fgFishImgMasked,fgImgFrame;
     cv::Mat fgFoodMask,bgROIMask;
 
 
@@ -490,37 +490,38 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         frame_gray.copyTo(gframeCurrent); //Copy To global Frame
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
-        /// \brief processMasks
-#if defined(_DEBUG)
-        cv::imshow("FG Image", frame_gray - gframeBGImage);
-#endif
-        processMasks(frame_gray,bgStaticMask,fgMask,gTrackerState.dLearningRateNominal); //Applies MOG BgModellingFlag is set
+        /// \brief processMasks - Returns FG mask And Image -
+        extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,gTrackerState.dLearningRateNominal); //Applies MOG if BGModelling Flag is set
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy); //Generates separate masks for Fish/Prey and Draws Fish Contourmask
 
         //Combine Roi Mask Only For The foodMask
         cv::bitwise_and(bgROIMask,fgFoodMask,fgFoodMask);
 
         /// Choose FG image prior to template matching
+        /// \note this can fail badly if Mask is thick outline of larva/or a bad match hidding features
         if (gTrackerState.bApplyFishMaskBeforeFeatureDetection)
-            frame_gray.copyTo(fgFishImgMasked,fgMask); //fgMask / NOT fish Mask //Use Enhanced Mask
+            fgImgFrame.copyTo(fgFishImgMasked,fgFishMask); //fgMask / NOT fish Mask //Use Enhanced Mask
         else
-            frame_gray.copyTo(fgFishImgMasked); //Full Frame Image Used
+            fgImgFrame.copyTo(fgFishImgMasked);
 
+//        cv::Mat maskedImg_gray;
+//        /// Convert image to gray and blur it
+//        cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
 
-        cv::Mat maskedImg_gray;
-        /// Convert image to gray and blur it
-        cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
-
-
-        //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
-        processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
 
         ///Update Fish Models Against Image and Tracks - Obtain Bearing Angle Using Template
         //Can Use Fish Masked - But Templates Dont Include The masking
         //UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
         if (gTrackerState.bTrackFish)
         {
-            UpdateFishModels(maskedImg_gray,vfishmodels,ptFishblobs,nFrame,outframe);
+            //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
+            processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
+            cv::imshow("MaskedImg FishModel",fgImgFrame);
+            // Check Blobs With Template And Update Fish Model
+            UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
+            /// Isolate Head, Get Eye models, and Get and draw Spine model
+            detectZfishFeatures(window_main, frame_gray,outframe,frameHead,outframeHeadEyeDetected, fgFishImgMasked, fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+
             //If A fish Is Detected Then Draw Its tracks
             fishModels::iterator ft = vfishmodels.begin();
             while (ft != vfishmodels.end() && gTrackerState.bRenderToDisplay) //Render All Fish
@@ -534,13 +535,6 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         nLarva = vfishmodels.size();
 
-        ///\todo Keep A Global List of all tracks?
-
-        /// Isolate Head, Get Eye models, and Get and draw Spine model
-        if (nLarva > 0 &&  (gTrackerState.bTrackFish))
-            //An Image Of the Full Fish Is best In this Case
-            //Do Not Use Masked Fish Image For Spine Fitting
-            detectZfishFeatures(window_main, frame_gray,outframe,frameHead,outframeHeadEyeDetected,fgFishImgMasked,fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
         ///////  Process Food Blobs ////
         // Process Food blobs
@@ -548,12 +542,12 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         if (gTrackerState.bTrackFood)
         {
             processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
-            UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,true); //Make New Food Models based on identified Blob
+            UpdateFoodModels(fgImgFrame,vfoodmodels,ptFoodblobs,nFrame,true); //Make New Food Models based on identified Blob
 
             if (nFrame > gTrackerState.gcMinFoodModelActiveFrames)
             {
                 processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
-                UpdateFoodModels(maskedImg_gray,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
+                UpdateFoodModels(fgImgFrame,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
             }
 
             //else
@@ -562,8 +556,6 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             //cv::drawKeypoints(outframe,ptFoodblobs)
             if (ptFoodblobs.size() >0)
                 cv::drawKeypoints( outframe, ptFoodblobs, outframe, cv::Scalar(20,70,255,60), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-
-
 
 
             ///Draw Food Tracks
@@ -583,7 +575,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 }
 
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
-                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, gTrackerState.trackFnt, gTrackerState.trackFntScale*1.2 ); //| CV_TRACK_RENDER_BOUNDING_BOX
+                    zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, gTrackerState.trackFnt, gTrackerState.trackFntScale*1.1 ); //| CV_TRACK_RENDER_BOUNDING_BOX
 
                 else{
                 if (pfood->isActive)
@@ -618,7 +610,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     }
 
     if (gTrackerState.bshowMask && gTrackerState.bTracking)
-        cv::imshow("Isolated Fish",fgFishImgMasked);
+        cv::imshow("Segmented FG with Fish",fgFishImgMasked);
 
     fgFishImgMasked.release();
     fgFishMask.release();
@@ -1805,12 +1797,12 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
 /// Updated Blob Processing
 /// \brief processFishBlobs Finds blobs that belong to fish
 /// \param frame
-/// \param maskimg
+/// \param maskFishimg
 /// \param frameOut //Output Image With FishBlob Rendered
 /// \param ptFishblobs opencv keypoints vector of the Fish
 /// \return
 ///
-int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs)
+int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs)
 {
 
     std::vector<cv::KeyPoint> keypoints;
@@ -1844,7 +1836,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vect
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
     // Critical To Provide the Mask Image and not the full frame //
-    detector->detect( maskimg, keypoints); //frameMask
+    detector->detect( maskFishimg, keypoints); //frameMask
 
     //Mask Is Ignored so Custom Solution Required
     //for (cv::KeyPoint &kp : keypoints)
@@ -2809,26 +2801,11 @@ return iminIdx;
 /// \return
 ///
 /// // \todo Optimize by re using fish contours already obtained in enhance fish mask
-void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Mat& fullImgOut,cv::Mat& imgFishHeadSeg,cv::Mat& outimgFishHeadProcessed, cv::Mat& maskedfishImg_gray, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
+void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::Mat& fullImgOut,cv::Mat& imgFishHeadSeg,cv::Mat& outimgFishHeadProcessed,
+                         cv::Mat& maskedfishImg_gray, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
 
-
-//////No Longer Used Vars
-    //        cv::RNG rng(12345);
-    //    cv::Mat maskfishFeature,framelapl,framelapl_buffer;
-//    cv::Mat frameCanny;
-    //    cv::Mat grad,grad_x, grad_y;
-    //    std::vector<std::vector<cv::Point> >hull( contours_body.size() );
-    //std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
-    //std::vector<cv::Vec4i> hierarchy_laplace; //Contour Relationships  [Next, Previous, First_Child, Parent]
-    /// Memory Crash on vector Init
-    //std::vector<std::vector<cv::Point> > contours_laplace_clear; //For contours without markers
-    //std::vector<cv::Vec4i> hierarchy_laplace_clear; //Contour Relationships  [Next, Previous, First_Child, Parent]
-    //std::vector<std::vector<cv::Point> > fishfeatureContours( contours_laplace.size() );
-
-/////////////////
-
-    cv::Mat maskedImg_gray;
+    cv::Mat frame_gray;
     cv::Mat maskedfishFeature_blur;
     // Memory Crash When Clearing Stack Here //
     //cv::Mat imgFishHeadSeg; //Thresholded / Or Edge Image Used In Detect Ellipses
@@ -2838,6 +2815,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     //For Head Img//
     cv::Mat  imgFishAnterior,imgFishAnterior_Norm,imgFishHead,imgFishHeadProcessed; //imgTmp imgFishHeadEdge
 
+    //Threshold The Match Check Bounds Within Image
+    cv::Rect imgBounds(0,0,fullImgIn.cols,fullImgIn.rows);
 
     cv::Mat fullImg_colour;
     fullImgIn.convertTo(fullImg_colour,CV_8UC3);
@@ -2846,27 +2825,19 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 
     /// Convert image to gray and blur it
     if (fullImgIn.depth() != CV_8U)
-    {
-        cv::cvtColor( fullImgIn, maskedImg_gray, cv::COLOR_BGR2GRAY );
-
-    }
+        cv::cvtColor( fullImgIn, frame_gray, cv::COLOR_BGR2GRAY );
     else
-        maskedImg_gray = fullImgIn; //Tautology
+        frame_gray = fullImgIn; //Tautology
 
-    cv::Mat fishTailFixed;
+    cv::Mat frameFGIncreasedContrast;
 
  ///Do not Use MaskedFish For Spine maskedfishImg_gray / + Fixed Contrast
     if (gTrackerState.bUseMaskedFishForSpineDetect)
-        fishTailFixed = maskedfishImg_gray*2.2;
+        frameFGIncreasedContrast = maskedfishImg_gray*2.2;
     else
-        fishTailFixed = maskedImg_gray*2.2;
+        frameFGIncreasedContrast = frame_gray*2.2;
 
-    cv::GaussianBlur(fishTailFixed,maskedfishFeature_blur,cv::Size(11,11),7,7);
-
-    //cv::imshow("BlugTail",maskedfishFeature_blur);
-    //cv::imshow("ContrastTail",fishTailFixed);
-    //Make image having masked all fish
-    //maskedImg_gray.copyTo(maskedfishImg_gray,maskfishFGImg); //Mask The Laplacian //Input Already Masked
+    cv::GaussianBlur(frameFGIncreasedContrast,maskedfishFeature_blur,cv::Size(11,11),7,7);
 
 
     ////Template Matching Is already Done On Fish Blob/Object
@@ -2890,8 +2861,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
           //Draw A general Region Where the FIsh Is located,
           cv::Point centre = fish->ptRotCentre; //top_left + rotCentre;
           //cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
-          cv::Point pBound1 = cv::Point(max(0,min(maskedImg_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
-          cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centre.x+gTrackerState.gFishBoundBoxSize)), max(0,min(maskedImg_gray.rows,centre.y+gTrackerState.gFishBoundBoxSize)));
+          cv::Point pBound1 = cv::Point(max(0,min(frame_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)), max(0,min(frame_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
+          cv::Point pBound2 = cv::Point(max(0,min(frame_gray.cols,centre.x+gTrackerState.gFishBoundBoxSize)), max(0,min(frame_gray.rows,centre.y+gTrackerState.gFishBoundBoxSize)));
 
           cv::Rect rectFish(pBound1,pBound2);
 
@@ -2948,41 +2919,25 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
            tEllipsoids vellLeft;
            tEllipsoids vellRight;
 
-
-
-           //maskedImg_gray.copyTo(imgTmp); //imgTmp Contain full frame Image in Gray
-           //Threshold The Match Check Bounds Within Image
-           cv::Rect imgBounds(0,0,maskedImg_gray.cols,maskedImg_gray.rows);
-
            if (!( //Looks Like a fish is found, now Check Bounds // gmaxVal > gTemplateMatchThreshold &&
                imgBounds.contains(rectfishAnteriorBound.br()) &&
                    imgBounds.contains(rectfishAnteriorBound.tl())))
                continue; //This Fish Is out Of Bounds /
 
-              maskedImg_gray(rectfishAnteriorBound).copyTo(imgFishAnterior);
+           // Use the FG Image to extract Head Frame
+              maskedfishImg_gray(rectfishAnteriorBound).copyTo(imgFishAnterior);
 //              if (bUseEllipseEdgeFittingMethod)
 //                frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
               //get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
               ///\note The centre of the Bounding Box could also do
 
 
-              //cv::Point ptRotCenter = cv::Point(szFishAnteriorNorm.width/2,szFishAnteriorNorm.height/2);
-              //cv::Point ptRotCenter = cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2);
               ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
               cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
-             // ptRotCenter.x = ptRotCenter.x*cos(bestAngleinDeg*M_PI/180.0);
-             // ptRotCenter.y = ptRotCenter.y*sin(bestAngleinDeg*M_PI/180.0);
-
               Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
-              //cv::Mat Mrot = cv::getRotationMatrix2D(-fishRotHeadBox.center,bestAngleinDeg,1.0); //Rotate Upwards
-
               ///Make Rotation Transformation
               //Need to fix size of Upright/Normed Image
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
-
-//if (bUseEllipseEdgeFittingMethod)
-//              cv::warpAffine(imgFishHeadEdge,imgFishHeadEdge,Mrot,szFishAnteriorNorm);
-
 
               /// Store Norm Image as Template - If Flag Is set
               if (gTrackerState.bStoreThisTemplate)
@@ -3020,7 +2975,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               int ret = 0;
               std::stringstream ss;
               ret = detectEyeEllipses(imgFishHead,vellLeft,vellRight,imgFishHeadSeg,imgFishHeadProcessed);
-
+              // Check if at both Eyes have been detected
               if ((ret < 2 | gTrackerState.gUserReward < 0) )
               {
                 fish->nFailedEyeDetectionCount++;
@@ -3039,9 +2994,10 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //if (gthresEyeSeg < 0)
               //    gUserReward = -500;
 
+              /// Auto Eye Threshold Adjustment And Learning ///
               /// Pass detected Ellipses to Update the fish model's Eye State //
-              /// Make Fit score count very little
-              double fitScoreReward = 0.0000*fish->updateEyeState(vellLeft,vellRight)+ gTrackerState.gUserReward;
+              //  Make Fit score count very little
+              double fitScoreReward = 0.001*fish->updateEyeState(vellLeft,vellRight)+ gTrackerState.gUserReward;
               gTrackerState.gUserReward = 0.0; //Reset User Provided Rewards
               //qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
@@ -3057,6 +3013,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
               //gthresEyeSeg = new_eyeState.iSegThres1; //Action Sets a partial state -> Update threshold as indicated by algorithm
               //gthresEyeSegL = new_eyeState.iSegThres1-new_eyeState.iDSegThres2;
               pwindow_main->UpdateSpinBoxToValue();
+              /// END OF Auto Seg Param Learning
 
               ///  Print Out Values //
               /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
@@ -3080,8 +3037,6 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                   cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
               }
 
-
-              //ss.str(""); //Empty String
 
               //Check If Too Many Eye Detection Failures - Then Switch Template
               if (fish->nFailedEyeDetectionCount > 40)
@@ -3111,7 +3066,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
                    int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
                    if (idxFish>=0)
                    {
-                        double err_sp0 = fish->fitSpineToContour2(maskedImg_gray,contours_body,0,idxFish);
+                        double err_sp0 = fish->fitSpineToContour2(frame_gray,contours_body,0,idxFish);
                    }
                    gTrackerState.gFishTailSpineSegmentLength <- fish->c_spineSegL;
                    pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
@@ -3210,7 +3165,7 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
     //assert(maskedImg_gray.u->refcount == 2); //1 Ref Comes From InpuTIMgs
 
 
-    maskedImg_gray.release();
+    frame_gray.release();
 
 
 
