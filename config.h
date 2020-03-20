@@ -218,7 +218,7 @@ class trackerState
       bool bEyesDetected                  = false; ///Flip True to save eye shape feature for future detection
       bool bStoreThisTemplate             = false;
       bool bDraggingTemplateCentre        = false;
-      bool bFitSpineToTail                = true; // Runs The Contour And Tail Fitting Spine Optimization Algorith
+
       bool bStartFrameChanged         = false; /// When True, the Video Processing loop stops /and reloads video starting from new Start Position
 
       bool bRenderToDisplay           = true; ///Updates Screen to User When True
@@ -231,6 +231,8 @@ class trackerState
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool bApplyFishMaskBeforeFeatureDetection = false; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
+      bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
+      bool bUseContourToFitSpine                = false; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
       bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the FG Fish Image -
@@ -247,7 +249,7 @@ class trackerState
       ///Specific To the Tracked Video Options//
       uint uiStartFrame = 1;
       uint uiStopFrame = 0;
-
+      uint iSpineContourFitFramePeriod         = 20; //Check that Tail Fitting Matches Contour Every X Frames
 
       /// Segmentation / threshold  Params
       int g_Segthresh             = 15; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
