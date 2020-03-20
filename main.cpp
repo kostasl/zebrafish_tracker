@@ -1,3 +1,4 @@
+
 ///*
 /// \title Zebrafish tracker used in combination with darkfield IR illumination
 /// \date Jun 2018
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
         "{startpaused P | 0  | Start tracking Paused On 1st Frame/Need to Run Manually}"
         "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
-        "{ModelBG b | 0  | Learn and Substract Stationary Objects from Foreground mask}"
+        "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
         "{BGThreshold bgthres | 30  | Absolute grey value used to segment BG (g_Segthresh)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
@@ -375,13 +376,12 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
                 cv::morphologyEx(bgStaticMask,bgStaticMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),4); //
                 cv::bitwise_not ( bgStaticMask, bgStaticMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
 
-
                 //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model
                 if (compString(invideoname,nextvideoname) < 3 && !gTrackerState.gbUpdateBGModelOnAllVids)
                     gTrackerState.gbUpdateBGModel = false; //Turn Off BG Updates
             }
 
-       }
+       } // If modelling BG Prior To Starting the Video
 
         //Next File Is Different Experiment, Update The BG
        if (compString(invideoname,nextvideoname) > 2  )
@@ -489,19 +489,16 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         gframeCurrent.copyTo(gframeLast);
         frame_gray.copyTo(gframeCurrent); //Copy To global Frame
 
-
-
         /// DO BG-FG SEGMENTATION MASKING and processing///
         /// \brief processMasks
-#if _DEBUG
+#if defined(_DEBUG)
         cv::imshow("FG Image", frame_gray - gframeBGImage);
 #endif
-        processMasks(frame_gray,bgStaticMask,fgMask,gTrackerState.dLearningRateNominal); //Applies MOG if bUseBGModelling is on
+        processMasks(frame_gray,bgStaticMask,fgMask,gTrackerState.dLearningRateNominal); //Applies MOG BgModellingFlag is set
         enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy); //Generates separate masks for Fish/Prey and Draws Fish Contourmask
 
         //Combine Roi Mask Only For The foodMask
         cv::bitwise_and(bgROIMask,fgFoodMask,fgFoodMask);
-
 
         /// Choose FG image prior to template matching
         if (gTrackerState.bApplyFishMaskBeforeFeatureDetection)
@@ -2783,12 +2780,12 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 /// \brief findIndexClosesttoPoint Returns Contour Index Closest To point pt
 /// \param vPointChain
 /// \param pt
-/// \return Index of Vector Point closest to pt
+/// \return Index of Vector Point closest to pt ,  or -1 if point too far 200px
 ///
 int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt)
 {
-    double dMindist = 10000.0;
-    int iminIdx = 0;
+    double dMindist = 200.0;
+    int iminIdx = -1;
     for (int i=0;i<vPointChain.size();i++)
     {
         double ddist = cv::norm(vPointChain[i]-pt);

@@ -88,7 +88,7 @@ typedef std::pair<cv::Point,cv::Point>  pointPair;
 typedef std::vector<pointPair > pointPairs;
 
 // Gaussian Curve Smoothing Kernels For fish Contour//
-extern std::vector<double> gGaussian,dgGaussian,d2gGaussian;
+//extern std::vector<double> gGaussian,dgGaussian,d2gGaussian;
 
 extern QElapsedTimer gTimer;
 extern QFile outfishdatafile;
@@ -138,7 +138,7 @@ class trackerState
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
       const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
-      const double dLearningRateNominal         = 0.05; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
+      const double dLearningRateNominal         = 0.0001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
 
       //Processing Loop delay
       uint cFrameDelayms              = 1;
@@ -298,6 +298,8 @@ class trackerState
       const float trackFntScale = 0.6f;
       /// Contour Shaping Gaussian Kernels //
       std::vector<double> gGaussian,dgGaussian,d2gGaussian;
+      double dGaussContourKernelSigma = 6.0;
+      int dGaussContourKernelSize = static_cast<int>(round((18.0*dGaussContourKernelSigma +1.0) / 2.0)) * 2 - 1; //Gaussian Kernel Size
 
       // List of ROIs
       ltROIlist vRoi;

@@ -1,6 +1,7 @@
 #ifndef LARVATRACK_H
 #define LARVATRACK_H
 
+
 #include <config.h>
 #include <iostream>
 #include <sstream>
@@ -30,6 +31,8 @@
 #include <ios>
 #include <fstream>
 
+
+#define _DEBUG
 
 // Tail fitting, Use a complementary method to intensity to fit a spine to contour
 // Useful as it can detect large deviations of tail from fish contour
@@ -173,7 +176,7 @@ int findIndexClosesttoPoint(std::vector<cv::Point> vPointChain,cv::Point pt);
 
 /// \brief locates tail by taking curve derivaties
 ///
-int findPointOfMaxCurvature(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector<cv::Point>& curve);
+int smoothContour(const cv::Mat& frameImg, cv::Mat& fgMask,std::vector<cv::Point>& curve);
 
 /// \brief Returns the index of the point furthest away from the provided tail point idx on the curve
 /// That furthest from the tail position is likely the larva's head

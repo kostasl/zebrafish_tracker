@@ -6,9 +6,7 @@
 #include <fstream>
 
 // Gaussian Curve Smoothing Kernels For fish Contour//
-std::vector<double> gGaussian,dgGaussian,d2gGaussian;
-double sigma = 6.0;
-int M = static_cast<int>(round((18.0*sigma+1.0) / 2.0)) * 2 - 1; //Gaussian Kernel Size
+//std::vector<double> gGaussian,dgGaussian,d2gGaussian;
 
 
 
@@ -405,7 +403,8 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     kernelClose         = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
 
     /// create Gaussian Smoothing kernels for Contour //
-    getGaussianDerivs(sigma,M,gGaussian,dgGaussian,d2gGaussian);
+    assert(gTrackerState.dGaussContourKernelSize % 2 == 1); //M is an odd number
+    getGaussianDerivs(dGaussContourKernelSigma,dGaussContourKernelSize,gGaussian,dgGaussian,d2gGaussian);
 
 }
 /// END OF INIT GLOBAL PARAMS //

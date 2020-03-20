@@ -18,33 +18,7 @@ extern trackerState gTrackerState;
 
 std::pair<cv::Point,cv::Point> userPointPair; //The currently defined point pair prior to adding to list
 
-//extern bool bPaused;
-//extern bool bStoreThisTemplate;
-//extern bool bDraggingTemplateCentre;
-//extern bool bStartFrameChanged;
-//extern bool bBlindSourceTracking;// Do Not Show File Names
-extern int g_Segthresh;
-extern int g_SegFoodThesMax; //Food Segmentation Threshold
-extern int gthresEyeSeg;
-extern int gi_maxEllipseMajor;
-extern int gi_minEllipseMajor;
-extern uint uiStopFrame;
 extern QElapsedTimer gTimer;
-extern ltROIlist vRoi;
-extern int gFishBoundBoxSize;
-extern double gTemplateMatchThreshold;
-extern double gdMOGBGRatio;
-extern bool bTrackFood;
-//extern bool bTracking;
-extern bool bExiting;
-extern bool bROIChanged;//Signalled So Mask ROI Can be drawn Again In ProcessFrame
-extern bool bRecordToFile;
-extern bool bRemovePixelNoise;
-extern bool bUseBGModelling;
-extern bool bUseGPU;
-extern bool bUseHistEqualization; //For eye Segmentation
-extern bool bAddPreyManually; //In this mode, a left click adds a new prey item
-extern bool bMeasure2pDistance; //In this mode clicks are interpred as measurement points
 
 bool bSceneMouseLButtonDown;
 bool bDraggingRoiPoint;
