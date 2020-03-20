@@ -520,7 +520,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             // Check Blobs With Template And Update Fish Model
             UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
             /// Isolate Head, Get Eye models, and Get and draw Spine model
-            detectZfishFeatures(window_main, frame_gray,outframe,frameHead,outframeHeadEyeDetected, fgFishImgMasked, fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+            detectZfishFeatures(window_main, fgFishImgMasked,outframe,frameHead,outframeHeadEyeDetected, fgFishImgMasked, fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
 
             //If A fish Is Detected Then Draw Its tracks
             fishModels::iterator ft = vfishmodels.begin();
@@ -1049,6 +1049,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                   maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
                 }
                 pfish->templateScore = maxMatchScore;
+                pfish->tailTopPoint = gptTail;
                 //pfish->idxTemplateRow = iTemplRow; pfish->idxTemplateCol = iTemplCol;
 
                  if ( maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
@@ -2804,13 +2805,11 @@ return iminIdx;
 void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::Mat& fullImgOut,cv::Mat& imgFishHeadSeg,cv::Mat& outimgFishHeadProcessed,
                          cv::Mat& maskedfishImg_gray, std::vector<std::vector<cv::Point> >& contours_body,std::vector<cv::Vec4i>& hierarchy_body)
 {
-
     cv::Mat frame_gray;
     cv::Mat maskedfishFeature_blur;
     // Memory Crash When Clearing Stack Here //
     //cv::Mat imgFishHeadSeg; //Thresholded / Or Edge Image Used In Detect Ellipses
     cv::Mat Mrot;
-
 
     //For Head Img//
     cv::Mat  imgFishAnterior,imgFishAnterior_Norm,imgFishHead,imgFishHeadProcessed; //imgTmp imgFishHeadEdge
@@ -2818,9 +2817,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
     //Threshold The Match Check Bounds Within Image
     cv::Rect imgBounds(0,0,fullImgIn.cols,fullImgIn.rows);
 
-    cv::Mat fullImg_colour;
-    fullImgIn.convertTo(fullImg_colour,CV_8UC3);
-
+    //cv::Mat fullImg_colour;
+    //fullImgIn.convertTo(fullImg_colour,CV_8UC3);
     //fullImg_colour.copyTo(frameDebugC);
 
     /// Convert image to gray and blur it
@@ -2837,7 +2835,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
     else
         frameFGIncreasedContrast = frame_gray*2.2;
 
-    cv::GaussianBlur(frameFGIncreasedContrast,maskedfishFeature_blur,cv::Size(11,11),7,7);
+    cv::GaussianBlur(frameFGIncreasedContrast,maskedfishFeature_blur,cv::Size(5,5),3,3);
 
 
     ////Template Matching Is already Done On Fish Blob/Object
@@ -2851,7 +2849,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
     for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
     //for (int z=0;z<vfishmodels.size();z++) //  fishModel* fish = vfishmodels[z];
     {
-
           fishModel* fish = (*it).second;
 
           //fish->bearingAngle   = AngleIdx;
@@ -3073,7 +3070,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 //                 pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                    pwindow_main->LogEvent(QString("[warning] lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
                    //fish->resetSpine(); //No Solution Found So Reset
-                   pwindow_main->LogEvent("[info] Reset Spine");
+                   //pwindow_main->LogEvent("[info] Reset Spine");
                    fish->lastTailFitError = 0;
                }
 
@@ -3082,7 +3079,16 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                fish->drawSpine(fullImgOut);
 
 
+#if defined(_DEBUG)
+               //Show Contour against Which We are fitting the tail
+               int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+               if (idxFish>=0)
+                   cv::drawContours(fullImgOut,contours_body,idxFish,CV_RGB(200,0,60),1,8,hierarchy_body);
+#endif
+
+#if defined(_DEBUG)
                 cv::imshow("BlurredFish",maskedfishFeature_blur);
+#endif
               }
              /// END OF Fit Spine ////
               //Eye Detection Ret > 0

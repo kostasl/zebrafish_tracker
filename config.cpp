@@ -21,7 +21,6 @@ std::ofstream foutLog;//Used for Logging To File
 //std::string gstrwinName = "FishFrame";
 
 
-
 //Global Matrices Used to show debug images
 cv::Mat frameDebugA,frameDebugB,frameDebugC,frameDebugD;
 cv::Mat gframeCurrent,gframeLast; //Updated in processVideo Global Var Holding Copy of current and previous frame - usefull for opticflows
@@ -62,7 +61,7 @@ cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 //cv::Ptr<cv::GeneralizedHoughGuil> pGHTGuil;
 
 /// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
-cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
+cv::Point gptHead,gptTail; //Candidate Fish Contour Position Of HEad - Use for template Detect
 
 //For Inset Pasting
 //cv::Rect rect_pasteregion;

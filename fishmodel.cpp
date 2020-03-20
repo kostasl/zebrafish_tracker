@@ -5,6 +5,8 @@
 
 extern cv::Mat frameDebugC;
 extern cv::Size gszTemplateImg;
+extern cv::Point gptTail,gptHead;
+
 //extern double eyeStepIncrement;
 
 //extern int gFishTailSpineSegmentLength;
@@ -123,7 +125,9 @@ return leftEye.rectEllipse.angle;
 ///
 void fishModel::resetSpine()
 {
-    //
+    //Reset Legth
+    c_spineSegL =  gTrackerState.gc_FishTailSpineSegmentLength_init;
+
     this->spline.clear();
     spline.reserve(c_spinePoints);
 
@@ -680,7 +684,10 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
             // Invert so minimum is at centre of contour
             dResiduals[i] = -pointPolygonTest(contour, cv::Point2f(tmpspline[i].x,tmpspline[i].y), true );
             //Add Extra Grad Info/Cost for small segLength / thus pulling to longer spine length
-            dResiduals[i] -= (0.5)*c_MaxSpineLengthLimit/tmpspline[i].spineSegLength;
+            dResiduals[i] -= (0.0)*c_MaxSpineLengthLimit/tmpspline[i].spineSegLength;
+            // Push to get Tail Pt Coincide with Last spine point
+            double distToTailTip = cv::norm( gptTail - cv::Point(tmpspline[tmpspline.size()-1].x,tmpspline[tmpspline.size()-1].y) );
+            dResiduals[i] -= (0.05)*distToTailTip ;
            // double penalty = dResiduals[i]*0.10; //Calc Scaled Penalty
            // for (int s=0;s<tmpspline.size();s++)
            // {
@@ -703,8 +710,6 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
                     //Got towards smaller Distance
                     dGradf[k]           += dResiduals[i]*dJacobian[i][k]; //Error Grad - gives Gradient in Cspace vars to Total error
                 }
-
-
             }
 
         }//Loop Through All Contour (Data points)

@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-#define ZTF_FISHCONTOURSIZE          60//40
+#define ZTF_FISHCONTOURSIZE          120//40
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #define EYE_SEG_SAMPLE_POINTS_COUNT 20
@@ -104,7 +104,7 @@ extern cv::Mat gframeCurrent,gframeLast; //Updated in processVideo Global Var Ho
 extern cv::Mat gframeBGImage;
 
 /// \todo using a global var is a quick hack to transfer info from blob/Mask processing to fishmodel / Need to change the Blob Struct to do this properly
-extern cv::Point gptHead; //Candidate Fish Contour Position Of HEad - Use for template Detect
+extern cv::Point gptHead,gptTail; //Candidate Fish Contour Position Of HEad - Use for template Detect
 
 //extern ltROIlist vRoi;
 //Rect Roi Keep Away from L-R Edges to Avoid Tracking IR lightRing Edges
@@ -232,7 +232,7 @@ class trackerState
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool bApplyFishMaskBeforeFeatureDetection = false; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
       bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
-      bool bUseContourToFitSpine                = false; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
+      bool bUseContourToFitSpine                = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
       bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the FG Fish Image -

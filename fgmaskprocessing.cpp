@@ -662,6 +662,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
             idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
             /// \todo Check Template Matching Around Head / Verify Contour Belongs to fish
             gptHead = ptHead; //Hack To Get position For Template
+            gptTail = ptTail;
         }else
             gptHead.x = 0; gptHead.y = 0;
 
