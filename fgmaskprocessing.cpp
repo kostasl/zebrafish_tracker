@@ -691,7 +691,6 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
         #if defined(USE_CUDA)
             if (bUseGPU) dframe_thres.download(threshold_output);
         #endif
-
        cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
        maskFGImg.convertTo(maskFGImg, outFoodMask.type());
        cv::imshow("MorphMask Source",maskFGImg);

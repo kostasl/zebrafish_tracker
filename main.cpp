@@ -516,7 +516,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         {
             //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
             processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
-            cv::imshow("MaskedImg FishModel",fgImgFrame);
+
             // Check Blobs With Template And Update Fish Model
             UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
             /// Isolate Head, Get Eye models, and Get and draw Spine model

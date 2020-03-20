@@ -32,7 +32,7 @@
 #include <fstream>
 
 
-#define _DEBUG
+#undef _DEBUG
 
 // Tail fitting, Use a complementary method to intensity to fit a spine to contour
 // Useful as it can detect large deviations of tail from fish contour
