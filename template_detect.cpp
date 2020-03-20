@@ -414,7 +414,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
  // Check if we are stuck with Too Many Template Match Fails, then Warn and lower match threshold.
  if (gTrackerState.iTemplateMatchFailCounter > gTrackerState.gnumberOfTemplatesInCache)
  {
-    gTrackerState.gTemplateMatchThreshold -= gTrackerState.gTemplateMatchThreshold*0.02;
+    gTrackerState.gTemplateMatchThreshold -= gTrackerState.gTemplateMatchThreshold*0.001;
     pwindow_main->LogEvent("[warning] Too many template match failures, lowering match threshold.");
     pwindow_main->updateTemplateThres();
  }
