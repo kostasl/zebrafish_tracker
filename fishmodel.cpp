@@ -67,7 +67,6 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 
     zTrack.id       = this->ID;
 
-
     this->zfishBlob = blob; //Copy Localy
     //this->track     = NULL;
     this->bearingRads = bestTemplateOrientation*CV_PI/180.0;
@@ -77,10 +76,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
    // this->coreTriangle[2].x = this->zfishBlob.pt.x;
     //this->coreTriangle[2].y = this->zfishBlob.pt.y;
 
-
     templateScore           = 0;
     this->resetSpine();
-
 }
 
 fishModel::~fishModel()

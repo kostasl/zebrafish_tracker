@@ -408,6 +408,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 
  }else{ // If template matched then stay on the same template row
      startRow = ibestMatchRow;
+     //gTrackerState.gTemplateMatchThreshold += gTrackerState.gTemplateMatchThreshold*0.001;
      gTrackerState.iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
  }
 
@@ -417,6 +418,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
     gTrackerState.gTemplateMatchThreshold -= gTrackerState.gTemplateMatchThreshold*0.001;
     pwindow_main->LogEvent("[warning] Too many template match failures, lowering match threshold.");
     pwindow_main->updateTemplateThres();
+    gTrackerState.iTemplateMatchFailCounter = 0; //Restart Counting With New Threshold
  }
 
  if (templ_rot.cols > 0 && templ_rot.rows > 0)
