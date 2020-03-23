@@ -64,7 +64,7 @@ extern MainWindow* pwindow_main;
 
 
 
-extern bool bStaticAccumulatedBGMaskRemove;
+
 
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
     extern cv::cuda::GpuMat dframe_gray;
@@ -241,10 +241,13 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
 
 ///
-/// \brief processMasks Can Filter Pixel noise from frame_gray, Adds the BGModel Mask to a static mask, Can use Noise filtering to improve FG segmentation
-/// Combines Static Mask With MOG Mask before returning bgMaskInOut
+/// \brief processMasks Updates BG Model, Can Filter Pixel noise from frame_gray, Adds threshold and BGModel Masks, and it will also mask the BGModel-Mask with the Static mask if bStaticAccumulatedBGMaskRemove  Option Flag is set,
+/// if bRemovePixelNoise, then Noise filtering is used to improve FG segmentation (causes slowdown)
+/// \returns bgMaskInOut - the combined FG object masks depending on user options
 /// \param frame_gray //Current greyScale Frame - Noise May be Removed If filtering Is Set To On
-/// \param bgStaticMaskInOut The mask provided to processFrame, Includes Static Objects and ROI Region
+/// \param bgStaticMaskInOut The mask provided to processFrame, Includes Static Objects and ROI Region - if bStaticAccumulatedBGMaskRemove is T, then static mask is combined
+/// \param fgFrameOut Returns the Image Of the FG objects only - Can include Fish and moving Prey
+/// \param dLearningRate - The speed which MOG learns FG Objects -Set to slow when tracking so fish does not fade when stationary (will be picked up from Threshold mask)
 ///
 void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskInOut,cv::Mat& fgFrameOut,double dLearningRate)
 {
@@ -259,6 +262,7 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
   fgFrameOut  = frameImg_gray;
 
  //If We are during the Static Mask Accumulation phase ie (fgStaticMaskIn.type() !=  CV_8U) then Produce the Threshold Image
+ // The threshold mask is blended with OR with the MOG mask.
  cv::threshold( fgFrameOut, threshold_output, gTrackerState.g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
 /// \todo: The CUDA code below Needs to Be Revised so it matches the Non-Cuda Process
@@ -277,7 +281,7 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
              {
                  try{
                         pMOG2->apply(dframe_gray,dframe_mask,gTrackerState.dLearningRate);
-                    dframe_mask.download(fgMask);
+                    dframe_mask.download(fgMOGMask);
                  }catch(...)
                  {
                      pwindow_main->LogEvent("[Error] CUDA MOG2 failed");
@@ -292,7 +296,7 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
              if (gTrackerState.bUseBGModelling)
              {
                try{
-                   pMOG2->apply(frame_gray,fgMask,gTrackerState.dLearningRate);
+                   pMOG2->apply(frame_gray,fgMOGMask,gTrackerState.dLearningRate);
                }catch(...)
                {
                    std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
@@ -302,10 +306,11 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
                }
              }//BGModel
          }
-#else //NO GPU VERSION
+#else //// NON GPU VERSION
+      // Remove Pixel Noise
       if (gTrackerState.bRemovePixelNoise)
               cv::fastNlMeansDenoising(frameImg_gray, frameImg_gray,2.0,7, 21);
-            //Check If BG Ratio Changed
+      //Update BG Model - If not stuck on same frame by being paused
       if (gTrackerState.bUseBGModelling)
       {
         try{
@@ -321,42 +326,29 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
             pwindow_main->LogEvent("[Error] MOG2 failed, probably multiple threads using OCL, switching OFF");
             cv::ocl::setUseOpenCL(false); //When Running Multiple Threads That Use BG Substractor - An SEGFault is hit in OpenCL
         }
-      }//BGModel
+      }
+
 #endif
 
       if (gTrackerState.bUseBGModelling ) //MOG Mask Exists
       {
             //No Static Mask - But Combine With threshold So MOG Ghosts Are Erased
            ///TODO make into and mask , and isolate threshold mask around fish
-           cv::bitwise_or(fgMOGMask,threshold_output,fgMOGMask); //Do not Combine with Threshold
+           cv::bitwise_or(fgMOGMask,threshold_output,fgMaskInOut); //Do not Combine with Threshold
 
-            //Combine Masks and Remove Stationary Learned Pixels From Mask If Option Is Set
+            //Combine Static Mask and Remove Stationary Learned Pixels From Mask If Option Is Set
             if (gTrackerState.bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
-            {
-              //  cv::bitwise_or(threshold_output,fgMask,maskFGImg); //Combine / Additive for FishFG
-                  cv::bitwise_and(fgStaticMaskIn,fgMOGMask,fgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
-            }else //Missing Static Mask So just return MOG & Threshold
-              fgMOGMask.copyTo(fgMaskInOut);
-
+                  cv::bitwise_and(fgStaticMaskIn,fgMaskInOut,fgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
        }else{  // No MOG Mask Exists so simply Use thresh Only to Detect FG Fish Mask Detect
-
           //Returning The thresholded image is only required when No BGMask Exists
          if (gTrackerState.bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)
             cv::bitwise_and(fgStaticMaskIn,threshold_output,fgMaskInOut);
-         else //No Static Mask here so return the thresholded one
+         else //No Static Mask here and no BG Model, so simply return the thresholded one
              threshold_output.copyTo(fgMaskInOut);
       } //Threshold Only Available
 
-
-      //Add Purely Thresholded Mask Where Fish Is
-      //fishModel* pfish = NULL;
-      //fishModels::iterator ft;
-      // for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
-      //{
-      //}
-
-
-     if (gTrackerState.bshowMask && !fgStaticMaskIn.empty())
+      // Show Masks for Debuging purposes
+      if (gTrackerState.bshowMask && !fgStaticMaskIn.empty())
         cv::imshow("StaticMask",fgStaticMaskIn);
       if (gTrackerState.bshowMask && !fgMOGMask.empty())
         cv::imshow("MOGMask",fgMOGMask);
@@ -517,43 +509,14 @@ int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Po
     return retIdx; //Return Head Idx in Curve
 }
 
-///
-/// \brief enhanceFishMask Looks for fish countours and draws them onto the FG mask so as to enhance features
-/// This is to recover Background substraction errors -
-/// * Filters contours for area, to pickup fish like ones
-/// * Smooths large contour curves and identies maximum curve point as tail (sharp change in curvature)
-/// *The opposite (antipode) point to the tail in curve is identified as the head.
-/// \param frameImg - Raw Input camera input in Mat - colour or gray -
-/// \param fgMask - (IN) FG Mask Image from processMask
-/// \param outFishMask -(OUT) Mask Enhanced for Fish Blob Detection
-/// \param outFoodMask -(OUT) Enhanced for Food Blob Detection
-/// \todo Cross Check Fish Contour With Model Position
-/// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
-/// Note: Should Use MOG Mask for Blob Detect, But . But thresholded IMg For Countour FInding
-void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
+/// \brief handles the processing of Prey Item Mask such that prey detection can be improved.
+void getPreyMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFoodMask)
 {
 
-    int max_thresh = 255;
-    cv::Mat frameImg_gray;
-    cv::Mat threshold_output_COMB;
-    cv::Mat maskFGImg; //The FG Mask - After Combining Threshold Detection
-
-    //cv::imshow("MOG2 Mask Raw",maskFGImg);
-
-    std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
-    cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
-
-    frameImg_gray = frameImg.clone();//frameImg.clone();
-    //cv::GaussianBlur(frameImg_gray,frameImg_blur,cv::Size(3,3),0);
-
-    outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
-
-
+    /// Handle Food Mask ///
     //- Can Run Also Without THe BG Learning - But will detect imobile debri and noise MOG!
     if (gTrackerState.bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
     {
-        cv::Mat fgMask_dilate; //Expand The MOG Mask And Intersect with Threshold
-        //cv::morphologyEx(fgMask,fgMask_dilate,cv::MORPH_OPEN,kernelOpenfish,cv::Point(-1,-1),1);
     #if defined(USE_CUDA)
         if (bUseGPU) //Dilate The MOG Mask , and Combine
         {
@@ -566,22 +529,18 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
         }
 
     #else
-
-        //cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1);
+       //cv::dilate(fgMask,outFoodMask,kernelDilateMOGMask,cv::Point(-1,-1),1);
         //BG Model Exists So Use it For Food Mask
         cv::morphologyEx(fgMask,outFoodMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //
-
-        fgMask.copyTo(maskFGImg);
     #endif
     } //If BGModelling
-    else //No BG Modelling
+    else //No BG Modelling //Use Thresholding To Separate Food Items
     {
-       //fgMask.copyTo(maskFGImg); //Use the same for Food processing
-       cv::threshold( fgMask, outFoodMask, gTrackerState.g_SegFoodThesMin , gTrackerState.g_SegFoodThesMax , cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-       cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+       cv::threshold( frameImg, outFoodMask, gTrackerState.g_SegFoodThesMin , gTrackerState.g_SegFoodThesMax , cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+       //cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
 
        //cv::dilate(fgMask,fgMask_dilate,kernelDilateMOGMask,cv::Point(-1,-1),1);
-       cv::morphologyEx(fgMask,maskFGImg,cv::MORPH_CLOSE,kernelClose,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
+       //cv::morphologyEx(fgMask,maskFGImg,cv::MORPH_CLOSE,kernelClose,cv::Point(-1,-1),1); //cv::MORPH_CLOSE
     //
     // Move this to process mask
     //#if defined(USE_CUDA)
@@ -591,9 +550,42 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
     }
 
 
+
+}
+///
+/// \brief enhanceMask Attempts to separate Prey and Fish Masks
+/// It Looks for fish countours and draws them onto the FG mask so as to isolate the Fish and enhance features
+/// * Filters contours for area, to pickup fish like ones
+/// * Smooths large contour curves and identies maximum curve point as tail (sharp change in curvature)
+/// *The opposite (antipode) point to the tail in curve is identified as the head.
+/// \param frameImg - Raw Input camera input in Mat - colour or gray -
+/// \param fgMask - (IN) FG Mask Image from processMask
+/// \param outFishMask -(OUT) Mask Enhanced for Fish Blob Detection
+/// \param outFoodMask -(OUT) Enhanced for Food Blob Detection
+/// \todo Cross Check Fish Contour With Model Position
+/// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
+/// Note: Should Use MOG Mask for Blob Detect, But . But thresholded IMg For Countour FInding
+void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours, std::vector<cv::Vec4i>& outfishbodyhierarchy)
+{
+
+    cv::Mat frameImg_gray;
+    cv::Mat fgEdgeMask;
+
+
+    //cv::imshow("MOG2 Mask Raw",maskFGImg);
+
+    std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
+    cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
+
+    frameImg_gray = frameImg.clone();//frameImg.clone();
+
+    // Check this Again / What is it doing?
+    getPreyMask(frameImg_gray,fgMask,outFoodMask);
+    //Make Empty Canvas to Draw Fish Mask
+    outFishMask = cv::Mat::zeros(frameImg_gray.rows,frameImg_gray.cols,CV_8UC1);
+
     //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
-    //cv::dilate(maskFGImg,threshold_output,kernelOpenfish,cv::Point(-1,-1),1);
-    cv::morphologyEx(maskFGImg,threshold_output_COMB, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
+    cv::morphologyEx(fgMask,fgEdgeMask, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
 
     /// Find contours main Internal and External contour using on Masked Image Showing Fish Outline
     /// //Used RETR_CCOMP that only considers 1 level children hierachy - I use the 1st child to obtain the body contour of the fish
@@ -603,7 +595,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
 
     //Then Use ThresholdImage TO Trace More detailed Contours
     //cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
-    cv::findContours( threshold_output_COMB, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 
     ///Draw Only the largest contours that should belong to fish
@@ -653,6 +645,8 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
         if ((int)curve.size() < gTrackerState.gcFishContourSize/2)
             continue;
 
+        /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
+
         //Find Tail Point- As the one with the sharpest Angle
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
         int idxTail,idxHead ;
@@ -673,8 +667,8 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
         ///\bug drawContours produces freezing sometimes
         //Draw New Smoothed One - the idx should be the last one in the vector
         cv::drawContours( outFishMask, outfishbodycontours, (int)outfishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
-         //Add Trailing Expansion to the mask- In Case End bit of tail is not showing
-        cv::circle(outFishMask, (ptTail-ptHead)/30+ptTail,4,CV_RGB(255,255,255),cv::FILLED);
+         //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
+        cv::circle(outFishMask, ptTail,4,CV_RGB(255,255,255),cv::FILLED);
 
         //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
         ///\bug Can cause Freezing when drawFilled and artifacts on head appearing as food
@@ -692,8 +686,6 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
             if (bUseGPU) dframe_thres.download(threshold_output);
         #endif
        cv::imshow("Food Mask",outFoodMask); //Hollow Blobs For Detecting Food
-       maskFGImg.convertTo(maskFGImg, outFoodMask.type());
-       cv::imshow("MorphMask Source",maskFGImg);
        cv::imshow("Fish Mask",outFishMask);
        if (!fgMask.empty())
            cv::imshow("BG Model",fgMask);
@@ -706,7 +698,7 @@ void enhanceMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,c
 
 
     // Release Should is done automatically anyway
-    threshold_output_COMB.release();
+    fgEdgeMask.release();
 }
 // End of Enhance Mask
 
@@ -735,7 +727,7 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
     //Update MOG,filter pixel noise and Combine Static Mask
     extractFGMask(frameImg_gray,bgAcc,bgMask,fgFrameImg,gTrackerState.dLearningRate); //Applies MOG if bUseBGModelling is on
     ///Enhance Mask With Fish Shape
-    enhanceMask(fgFrameImg,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
+    enhanceMasks(fgFrameImg,bgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy);
 
     pwindow_main->showVideoFrame(bgMask,nFrame);
     //Accumulate things that look like food / so we can isolate the stationary ones

@@ -491,11 +491,16 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         /// DO BG-FG SEGMENTATION MASKING and processing///
         /// \brief processMasks - Returns FG mask And Image -
-        extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,gTrackerState.dLearningRateNominal); //Applies MOG if BGModelling Flag is set
-        enhanceMask(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy); //Generates separate masks for Fish/Prey and Draws Fish Contourmask
+        if (gTrackerState.bPaused) //Stop Mask Learning If Paused on the same Frame
+            extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,0.0); //No BGModel Updating
+        else
+            extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,gTrackerState.dLearningRateNominal); //Applies MOG if BGModelling Flag is set
+
+        enhanceMasks(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy); //Generates separate masks for Fish/Prey and Draws Fish Contourmask
 
         //Combine Roi Mask Only For The foodMask
-        cv::bitwise_and(bgROIMask,fgFoodMask,fgFoodMask);
+        if (!fgFoodMask.empty())
+            cv::bitwise_and(bgROIMask,fgFoodMask,fgFoodMask);
 
         /// Choose FG image prior to template matching
         /// \note this can fail badly if Mask is thick outline of larva/or a bad match hidding features
@@ -1838,7 +1843,6 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,std::
 
     // Critical To Provide the Mask Image and not the full frame //
     detector->detect( maskFishimg, keypoints); //frameMask
-
     //Mask Is Ignored so Custom Solution Required
     //for (cv::KeyPoint &kp : keypoints)
     ptFishblobs.clear();
