@@ -496,7 +496,9 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         else
             extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,gTrackerState.dLearningRateNominal); //Applies MOG if BGModelling Flag is set
 
-        enhanceMasks(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours, fishbodyhierarchy); //Generates separate masks for Fish/Prey and Draws Fish Contourmask
+        //Generates separate masks for Fish/Prey and Draws Fish Contourmask
+        // Returns Fish Locations/Keypoints
+        enhanceMasks(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours,ptFishblobs);
 
         //Combine Roi Mask Only For The foodMask
         if (!fgFoodMask.empty())
@@ -509,18 +511,14 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         else
             fgImgFrame.copyTo(fgFishImgMasked);
 
-//        cv::Mat maskedImg_gray;
-//        /// Convert image to gray and blur it
-//        cv::cvtColor( frame, maskedImg_gray, cv::COLOR_BGR2GRAY );
-
-
         ///Update Fish Models Against Image and Tracks - Obtain Bearing Angle Using Template
         //Can Use Fish Masked - But Templates Dont Include The masking
         //UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
         if (gTrackerState.bTrackFish)
         {
             //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
-            processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
+            // Blob Detect No Longer Needed - Keypoints detect from Mask Processing - faster processing//
+            //processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
 
             // Check Blobs With Template And Update Fish Model
             UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
@@ -1808,10 +1806,11 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
 /// \param ptFishblobs opencv keypoints vector of the Fish
 /// \return
 ///
-int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs)
+int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,zftblobs& ptFishblobs)
 {
 
     std::vector<cv::KeyPoint> keypoints;
+
     //std::vector<cv::KeyPoint> keypoints_in_ROI;
     cv::SimpleBlobDetector::Params params;
 
@@ -1888,7 +1887,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,std::
 /// \return
 /// \note Draws Blue circle around food blob, with relative size
 ///
-int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs)
+int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs)
 {
 
     cv::Mat frameMasked;
@@ -2092,17 +2091,26 @@ int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
 
 //}
 
-
-ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt)
+bool pointIsInROI(cv::Point pt,float objectRadius = 1.0)
 {
+    if (ltGetFirstROIContainingPoint(gTrackerState.vRoi,pt,objectRadius) == nullptr )
+        return false;
+    else
+        return true;
+
+}
+
+ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt,float objectRadius = 1.0)
+{
+    ltROI* iroi = nullptr;
     for (ltROIlist::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
-        ltROI* iroi = &(*it);
-        if (iroi->contains(pnt))
-                return iroi;
+        iroi = &(*it);
+        if (iroi->contains(pnt,objectRadius))
+               break; //Exit Loop And Return pointer to roi
     }
 
-    return 0; //Couldn't find it
+    return iroi; //Couldn't find it
 }
 
 ///

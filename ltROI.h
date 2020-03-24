@@ -190,7 +190,8 @@ void drawUserDefinedPoints(cv::Mat& frame);
 /// \brief Loop Over ROI
 /// \params vRoi list
 /// \params pnt to check membership for
-ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt);
-
+ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt,float objectRadius );
+// Check if point is contained in any ROI found int the  global list of ROIs
+bool pointIsInROI(cv::Point pt,float objectRadius ); //
 
 #endif // LTROI_H

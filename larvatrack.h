@@ -106,8 +106,8 @@ int countObjectsviaContours(cv::Mat& srcimg );
 //int processBlobs(IplImage* srcframeImg,cv::Mat& maskimg,cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString outDirCSV,std::string& frameNumberString,double& dMeanBlobArea);
 
 /// Updated Blobs Detector- Fish Specific
-int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFishblobs);
-int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,std::vector<cv::KeyPoint>& ptFoodblobs);
+int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFishblobs);
+int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs);
 
 int saveTracks(fishModels& vfish,foodModels& vfood, QFile& data, QString frameNumber);
 int saveFoodTracks(fishModels& vfish,foodModels& vfood, QFile& fooddata,QString frameNumber);
