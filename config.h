@@ -176,6 +176,7 @@ class trackerState
       std::shared_ptr<std::vector<tROIpt>> userROI;
 
       std::string  gstroutDirCSV;//Tracker's Output Directory
+      std::string  gstroutDirTemplates;//Tracker's Source Of Larva Head Image Templates Library
       std::string  gstrinDirVid;
       QStringList inVidFileNames; //List of Video Files to Process
       std::string  gstrvidFilename; //Currently Tracked Vid
@@ -303,8 +304,12 @@ class trackerState
       double dGaussContourKernelSigma = 6.0;
       int dGaussContourKernelSize = static_cast<int>(round((18.0*dGaussContourKernelSigma +1.0) / 2.0)) * 2 - 1; //Gaussian Kernel Size
 
+
       // List of ROIs
       ltROIlist vRoi;
+      //list of template images
+      std::vector<cv::Mat> vTemplImg;
+
       cv::Point ptROI1,ptROI2,ptROI3,ptROI4;
 
 

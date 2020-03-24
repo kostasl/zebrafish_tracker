@@ -1040,7 +1040,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              {
                  //If Yes then assign the fish with the overlapping blob the template Match Score
                 bModelFound = true;
-                ptSearch = pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
+                //Search using blob, because fish last position may have difted far-
+                ptSearch = pfish->zfishBlob.pt; //pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
                 iTemplRow = pfish->idxTemplateRow;
                 iTemplCol = pfish->idxTemplateCol;
                 maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
@@ -1049,6 +1050,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 if ( maxMatchScore < gTrackerState.gTemplateMatchThreshold)
                 {
                   ptSearch = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
+                  ptbcentre = ptSearch;
                   maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
                 }
                 pfish->templateScore = maxMatchScore;
@@ -1076,6 +1078,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                        //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
                        if (pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)
                            gTrackerState.iFishAngleOffset = 0;
+                           gTrackerState.iLastKnownGoodTemplateRow = 0;
                          qDebug() << nFrame << " Guessing next TemplCol:" << gTrackerState.iFishAngleOffset;
                  }
 
@@ -1102,6 +1105,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              iTemplCol = 0;
             pwindow_main->LogEvent("No Fish model found for blob");
             cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
+            ptbcentre = ptSearch;
             maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
             //If New Blob Looks Like A Fish, Then Make  A New Model
             if (maxMatchScore > gTrackerState.gTemplateMatchThreshold*0.90)

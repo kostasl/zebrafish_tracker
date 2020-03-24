@@ -93,7 +93,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
 //If We are not Following A known Fish, then Expand the Search Region
     if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 2*gTrackerState.gFishBoundBoxSize;
+       iSearchRegionSize = 5*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));
@@ -308,7 +308,8 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
       //for (int i=templSz.width*startCol; i<imgtempl.cols;i+=templRegion.width)
 
       ///Limit Search To Within FIXED (15) Degrees/Templates from Starting Col.Point If Not Searching From The top
-      while(templRegion.x < imgtemplCache.cols && ((Colidx-startCol) < TEMPLATE_COL_SEARCH_REGION || startCol==0)){
+      while(templRegion.x < imgtemplCache.cols && ((Colidx-startCol) < TEMPLATE_COL_SEARCH_REGION || startCol==0))
+      {
         //Obtain next Template At Angle
          imgtemplCache(templRegion).copyTo(templ_rot) ;
 
@@ -348,23 +349,23 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
       } //Loop Through Columns/Angle
 
 
-    //Dont scan all Rows Just Check If Found on this One before Proceeding
+        //Dont scan all Rows Just Check If Found on this One before Proceeding
 
-   ///Check If Matching Exceeeds threshold And Stop Loops - Return Found Column Idx//
-   if (maxGVal >= gTrackerState.gTemplateMatchThreshold && maxGVal > 0.1) //!findFirstMatch
-   {
-       //Save Results To Output
-       //matchScore    = maxGVal;
-       //locations_tl  = ptGmaxLoc;
-       startCol = matchColIdx; //Save AS Best - For next Iteration - Only If Exceeds Threshold
-       break; ///Stop The loop Rows search Here
+       ///Check If Matching Exceeds threshold And Stop Loops - Return Found Column Idx//
+       if (maxGVal >= gTrackerState.gTemplateMatchThreshold && maxGVal > 0.1) //!findFirstMatch
+       {
+           //Save Results To Output
+           //matchScore    = maxGVal;
+           //locations_tl  = ptGmaxLoc;
+           startCol = matchColIdx; //Save AS Best - For next Iteration - Only If Exceeds Threshold
+           break; ///Stop The loop Rows search Here
 
-    }else //Reset StartCol Hint, So Next Time The whole Cache Row is scanned
-        startCol = 0;
+        }else //Reset StartCol Hint, So Next Time The whole Cache Row is scanned
+            startCol = 0;
 
-   idRow++;             //We Start Again From The Next Row
-   Colidx               = 0;
-   templRegion.x        = 0; //ReStart from 1st col
+       idRow++;             //We Start Again From The Next Row
+       Colidx               = 0;
+       templRegion.x        = 0; //ReStart from 1st col
 
 
 //   else{ //Nothing Found YEt-- Proceed To Next Template variation
@@ -527,12 +528,37 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     return 1;
 }
 
+/// Make Average Image For Classifier
+cv::Mat makeMeanTemplateImage(std::vector<cv::Mat> vTemplImg)
+{
+    cv::Mat img_meanTempl = cv::Mat::zeros(vTemplImg[0].rows,vTemplImg[0].cols,CV_32FC(vTemplImg[0].channels()) ); //AccumWeight Result needs to be CV_32FC
+    cv::Mat imgsample;
+    std::vector<cv::Mat>::iterator it;
+    for (it = vTemplImg.begin();it != vTemplImg.end();++it)
+    {
+        imgsample = (*it);
 
+        //if (img_meanTempl.empty())
+        //    img_meanTempl=imgsample;
+        //else
+        //    img_meanTempl+=imgsample;
 
+        cv::accumulateWeighted(imgsample*1.5,img_meanTempl,1.0/(float)vTemplImg.size());
+    }
+
+    //img_meanTempl = img_meanTempl*(1.0/(float)vTemplImg.size());
+    img_meanTempl.convertTo(img_meanTempl,vTemplImg[0].type());
+    cv::imshow("Templ Mean",img_meanTempl);
+    return (img_meanTempl);
+}
+
+/// \brief Loads all images from target dir and adds them to templateCache
 int loadTemplatesFromDirectory(QString strDir)
 {
     QDir dirTempl(strDir);
+
     cv::Mat templFrame;
+
     int fileCount = 0;
     if (!dirTempl.exists())
     {
@@ -551,9 +577,14 @@ int loadTemplatesFromDirectory(QString strDir)
 
           qDebug() << "*Load Template: " << filename;
           templFrame  = loadImage(filepath);
+          //Save to Glogal List
+          gTrackerState.vTemplImg.push_back(templFrame);
           addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
           fileCount++;
         }
+        //Make Mean Fish And Add to Cache
+         templFrame = makeMeanTemplateImage(gTrackerState.vTemplImg);
+         addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
 
 
          qDebug() << "Loaded # " << fileCount << "Templates";

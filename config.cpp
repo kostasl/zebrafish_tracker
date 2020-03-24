@@ -187,8 +187,9 @@ int initDetectionTemplates()
     gTrackerState.rect_pasteregion.width = gszTemplateImg.width*2; //For the upsampled image
     gTrackerState.rect_pasteregion.height = gszTemplateImg.height*2;
 
-    int ifileCount = loadTemplatesFromDirectory(QString::fromStdString(gTrackerState.gstroutDirCSV.append("/templates/")));
-    return (ifileCount+gTrackerState.nTemplatesToLoad);
+    gTrackerState.gstroutDirTemplates = gTrackerState.gstroutDirCSV + ("/templates/");
+    int ifileCount = loadTemplatesFromDirectory(QString::fromStdString(  gTrackerState.gstroutDirTemplates) );
+    return (gTrackerState.gnumberOfTemplatesInCache);
     /// END OF FISH TEMPLATES ///
 }
 
