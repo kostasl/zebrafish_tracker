@@ -39,9 +39,9 @@
 
 //#include <opencv2/cudaimgproc.hpp> //Template Matching \todo Compile OpenCv With CUDA Support
 
-extern double gTemplateMatchThreshold;
-extern int gFishTemplateAngleSteps;
-extern int gnumberOfTemplatesInCache;
+//extern double gTemplateMatchThreshold;
+//extern int gFishTemplateAngleSteps;
+//extern int gnumberOfTemplatesInCache;
 extern cv::Mat gFishTemplateCache;
 extern cv::Mat gLastfishimg_template; // The last Template Image Used
 extern MainWindow* pwindow_main;

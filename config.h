@@ -166,7 +166,7 @@ class trackerState
       const int thActive                            = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
       const int gc_FishTailSpineSegmentLength_init  = 9;
       int gFoodReportInterval                       = (int)gfVidfps;
-      const int nTemplatesToLoad                    = 19; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+      const int nTemplatesToLoad                    = 9; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
       const int gi_FoodModelNumberLimit             = 250; // Maximum Number of Food Objects /Prey To track
 
       int keyboard; //input from keyboard
