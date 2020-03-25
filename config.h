@@ -79,7 +79,7 @@ extern cv::Mat kernelOpen;
 extern cv::Mat kernelDilateMOGMask;
 extern cv::Mat kernelOpenfish;
 extern cv::Mat kernelClose;
-extern cv::Mat gLastfishimg_template;// OUr Fish Image Template
+
 extern cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
 
 
@@ -172,6 +172,7 @@ class trackerState
       int keyboard; //input from keyboard
       int screenx,screeny;
 
+      cv::Mat gLastfishimg_template;
       //Rect/Polygon Roi Keep Away from L-R Edges to Avoid Tracking IR lightRing Edges
       std::shared_ptr<std::vector<tROIpt>> userROI;
 

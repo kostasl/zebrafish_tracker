@@ -48,6 +48,9 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     double gpu_matchTemplate(cv::Mat templ_h,cv::cuda::GpuMat& image_h,cv::Point& ptBestMatch);
 #endif
 
+///\brief Compiles Mean Image from List of Mat template Images by accummulating the matrices
+cv::Mat makeMeanTemplateImage(std::vector<cv::Mat> vTemplImg);
+
 //expandTemplateCache(newTemplateImage)
 //templatefindFishInImage()
 #endif // TEMPLATE_DETECT_H

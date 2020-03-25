@@ -43,7 +43,6 @@
 //extern int gFishTemplateAngleSteps;
 //extern int gnumberOfTemplatesInCache;
 extern cv::Mat gFishTemplateCache;
-extern cv::Mat gLastfishimg_template; // The last Template Image Used
 extern MainWindow* pwindow_main;
 extern bool bTemplateSearchThroughRows;
 
@@ -69,16 +68,17 @@ static cv::Mat loadImage(const std::string& name)
 double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,int& iLastKnownGoodTemplateCol,int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut )
 {
     /// Fix Bounds For Search point such that search temaplte region is not smaller than template size
-    pt.x = (pt.x <= gLastfishimg_template.cols)?(gLastfishimg_template.cols/2): pt.x;
-    pt.x = (maskedImg_gray.cols-pt.x <= gLastfishimg_template.cols/2)?maskedImg_gray.cols-gLastfishimg_template.cols/2: pt.x;
+    pt.x = (pt.x <= gTrackerState.gLastfishimg_template.cols)?(gTrackerState.gLastfishimg_template.cols/2): pt.x;
+    pt.x = (maskedImg_gray.cols-pt.x <= gTrackerState.gLastfishimg_template.cols/2)?maskedImg_gray.cols-gTrackerState.gLastfishimg_template.cols/2: pt.x;
 
-    pt.y = (pt.y <= gLastfishimg_template.rows/2)?(gLastfishimg_template.rows/2): pt.y;
-    pt.y = (maskedImg_gray.rows-pt.y <= gLastfishimg_template.rows/2)?maskedImg_gray.rows-gLastfishimg_template.rows/2: pt.y;
+    pt.y = (pt.y <= gTrackerState.gLastfishimg_template.rows/2)?(gTrackerState.gLastfishimg_template.rows/2): pt.y;
+    pt.y = (maskedImg_gray.rows-pt.y <= gTrackerState.gLastfishimg_template.rows/2)?maskedImg_gray.rows-gTrackerState.gLastfishimg_template.rows/2: pt.y;
     ///
 
     double maxMatchScore =0; //
     cv::Point gptmaxLoc; //point Of Bestr Match
-    cv::Size szTempIcon(std::max(gLastfishimg_template.cols,gLastfishimg_template.rows),std::max(gLastfishimg_template.cols,gLastfishimg_template.rows));
+    cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows));
+    assert(szTempIcon.width > 5 && szTempIcon.height> 5);
     cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
     ///
     /// Check If Track Centre Point Contains An image that matches a fish template
@@ -537,13 +537,13 @@ cv::Mat makeMeanTemplateImage(std::vector<cv::Mat> vTemplImg)
     for (it = vTemplImg.begin();it != vTemplImg.end();++it)
     {
         imgsample = (*it);
+        try {
+             cv::accumulateWeighted(imgsample*1.5,img_meanTempl,1.0/(float)vTemplImg.size());
+        } catch (...) {
+            pwindow_main->LogEvent("[Error] Making mean template image - check all templates match in size.");
 
-        //if (img_meanTempl.empty())
-        //    img_meanTempl=imgsample;
-        //else
-        //    img_meanTempl+=imgsample;
+        }
 
-        cv::accumulateWeighted(imgsample*1.5,img_meanTempl,1.0/(float)vTemplImg.size());
     }
 
     //img_meanTempl = img_meanTempl*(1.0/(float)vTemplImg.size());
@@ -582,9 +582,6 @@ int loadTemplatesFromDirectory(QString strDir)
           addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
           fileCount++;
         }
-        //Make Mean Fish And Add to Cache
-         templFrame = makeMeanTemplateImage(gTrackerState.vTemplImg);
-         addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
 
 
          qDebug() << "Loaded # " << fileCount << "Templates";

@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
     kernelOpenfish.release();
     kernelDilateMOGMask.release();
     kernelOpen.release();
-    gLastfishimg_template.release();
+
 
     gFishTemplateCache.release();
 
@@ -1038,10 +1038,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
              if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 )
              {
-                 //If Yes then assign the fish with the overlapping blob the template Match Score
-                bModelFound = true;
-                //Search using blob, because fish last position may have difted far-
-                ptSearch = pfish->zfishBlob.pt; //pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
+                //Search first Using Fish Model Position/ last position may not have difted far-
+                ptSearch = pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
                 iTemplRow = pfish->idxTemplateRow;
                 iTemplCol = pfish->idxTemplateCol;
                 maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
@@ -1056,9 +1054,12 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 pfish->templateScore = maxMatchScore;
                 pfish->tailTopPoint = gptTail;
                 //pfish->idxTemplateRow = iTemplRow; pfish->idxTemplateCol = iTemplCol;
-
+                //Check If Fish Detected Via Template
                  if ( maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
                  {
+                     //If Yes then assign the fish with the overlapping blob the template Match Score
+                    bModelFound = true;
+
                      //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                     ///Update Model State
                     // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
@@ -1073,8 +1074,9 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     }
 
                  }
-                 else //Below Thres Match Score
+                 else //Could not detect the tempalte for this fish model - Below Thres Match Score
                  {
+                        pfish->inactiveFrames++; //Could not detect it so Increase time this model has failed to get detected
                        //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
                        if (pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)
                            gTrackerState.iFishAngleOffset = 0;
@@ -1096,12 +1098,13 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
        //then still create new model as this could be a fish we have not seen before -
        // And we avoid getting stuck searching for best model
        //
-        if (!bModelFound) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
+       if (!bModelFound) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
         {
             //Check Template Match Score
             ptSearch = fishblob->pt;
             // Suitable template has not been found yet for this model, starting search Point For Template can be were we left off, as a suitable
-             iTemplRow = gTrackerState.iLastKnownGoodTemplateRow ;
+            //Set To Zero So as to increase search Area around blob center
+             iTemplRow = 0;//gTrackerState.iLastKnownGoodTemplateRow ;
              iTemplCol = 0;
             pwindow_main->LogEvent("No Fish model found for blob");
             cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
@@ -1141,23 +1144,20 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     while (pfishBest==0 && qfishrank.size() > 0) //If Not In ROI Then Skip
     {
             pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
-            ///Check If fish Model Is In ROI //
-            for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
+            if (!pointIsInROI(pfishBest->ptRotCentre,pfishBest->bodyRotBound.size.width)                     )
             {
-                ltROI iroi = (ltROI)(*it);
-                if (!iroi.contains(pfishBest->ptRotCentre,pfishBest->bodyRotBound.size.width+pfishBest->bodyRotBound.size.height ))
-                {
-                    qfishrank.pop();
-                    pfishBest = 0;
-                }
-             }
+                qfishrank.pop();
+                pfishBest = 0;
+            }
    }//Search For Best Model
-
+   // A fish model has been found / Evaluate
    if (pfishBest)
    {
         //qfishrank.pop();//Remove From Priority Queue Rank
         maxTemplateScore = pfishBest->templateScore;
-        pfishBest->inactiveFrames   = 0; //Reset Counter
+        //If top Match fish has also had template Match, then reset inactive frames
+        if (maxTemplateScore > gTrackerState.gTemplateMatchThreshold)
+            pfishBest->inactiveFrames   = 0; //Reset Counter
     }
 
    /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
@@ -1673,7 +1673,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         std::stringstream ss;
         ss << "Delete Currently Used Template Image idx:" << gTrackerState.iLastKnownGoodTemplateRow;
         pwindow_main->LogEvent(QString::fromStdString(ss.str()));
-        deleteTemplateRow(gLastfishimg_template,gFishTemplateCache,gTrackerState.iLastKnownGoodTemplateRow);
+        deleteTemplateRow(gTrackerState.gLastfishimg_template,gFishTemplateCache,gTrackerState.iLastKnownGoodTemplateRow);
         gTrackerState.iLastKnownGoodTemplateRow = 0;
     }
 
@@ -2856,7 +2856,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
     ////Template Matching Is already Done On Fish Blob/Object
     //Pick The largest dimension and Make A Square
-    cv::Size szTempIcon(std::max(gLastfishimg_template.cols,gLastfishimg_template.rows),std::max(gLastfishimg_template.cols,gLastfishimg_template.rows));
+    cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows));
    // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
 
 
@@ -2886,7 +2886,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
           ///Update Template Box Bound
           int bestAngleinDeg = fish->bearingAngle;
-          cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gLastfishimg_template.cols,gLastfishimg_template.rows),bestAngleinDeg);
+          cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),bestAngleinDeg);
           /// Save Anterior Bound
           fish->bodyRotBound = fishRotAnteriorBox;
 
@@ -2904,7 +2904,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
           //cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(155,155,15),1);
 
           //Make A rectangle that surrounds part of the image that has been template matched
-          cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(gLastfishimg_template.cols/2+3,gLastfishimg_template.cols/2+3),bestAngleinDeg);
+          cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(gTrackerState.gLastfishimg_template.cols/2+3,gTrackerState.gLastfishimg_template.cols/2+3),bestAngleinDeg);
 
           // Get Image Region Where the template Match occured
           //- Expand image so as to be able to fit the template When Rotated Orthonormally
@@ -2916,7 +2916,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
           //Define Regions and Sizes for extracting Orthonormal Fish
           //Top Left Corner of templateSized Rect relative to Rectangle Centered in Normed Img
-          cv::Size szTemplateImg = gLastfishimg_template.size();
+          cv::Size szTemplateImg = gTrackerState.gLastfishimg_template.size();
           //cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
           cv::Point ptTopLeftTemplate(rectfishAnteriorBound.width/2-szTemplateImg.width/2,rectfishAnteriorBound.height/2-szTemplateImg.height/2);
 
