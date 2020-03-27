@@ -654,9 +654,10 @@ void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,
 
     //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
     // Can invert Fish Mask And Apply on to Food Mask
-    cv::Mat fgNonFish;
-    bitwise_not(outFishMask,fgNonFish);
-    bitwise_and(outFoodMask,fgNonFish,outFoodMask);
+    // Fish Mask Is Only Outline And So it Does not Erase fish
+//    cv::Mat fgNonFish;
+//    bitwise_not(outFishMask,fgNonFish);
+//    bitwise_and(outFoodMask,fgNonFish,outFoodMask);
 
     outfishbodycontours = vFilteredFishbodycontours;
 

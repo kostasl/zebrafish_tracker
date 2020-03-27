@@ -7,18 +7,27 @@
 #include <QDebug>
 //#include <QApplication>
 
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+
 //#include "larvatrack.h" //If included here it causes circular search if fishModel Defs.
 
 
 static int lastFoodID = 0;
 
 
-foodModel::foodModel()
+preyModel::preyModel()
 {
 lastFoodID++;
 inactiveFrames = 0;
 activeFrames = 0;
 blobMatchScore = 0;
+
+muTurn = 0.0; //Mean Turn Angle De
+sigmaTurn = 15.0;
+muPropulsion = 1.0;
+sigmaPropulsion = 0.01;
+
 this->ID = lastFoodID;
 ROIID = 0;
 isTargeted = false; //Saves Location To Data File When True
@@ -26,7 +35,7 @@ isNew = true;
 
 }
 
-foodModel::foodModel(zfdblob blob,zfdID ID):foodModel()
+preyModel::preyModel(zfdblob blob,zfdID ID):preyModel()
 {
     inactiveFrames = 0;
     activeFrames = 0;
@@ -37,8 +46,13 @@ foodModel::foodModel(zfdblob blob,zfdID ID):foodModel()
     zTrack.colour = CV_RGB(20,170,20);
     zTrack.centroid = blob.pt;
 
-
-
+    headingTheta = M_PI;
+    velocity.x = 0.0;
+    velocity.y = 0.0;
+    df_propulsion =  muPropulsion+gsl_ran_gaussian(gTrackerState.r,sigmaPropulsion ); // g2prop.random(); //(float)random(-50,50)/1000.0f;
+    df_friction = 0.75;  /// Water Drag Force Coefficient / (prop to velocity)
+    omegaDeg = 0; //Angular Velocity In Degrees
+    mass     = 1.0; //Assume unity mass initially
 
     zTrack.boundingBox.x = blob.pt.x - 6;
     zTrack.boundingBox.y = blob.pt.y - 6;
@@ -50,14 +64,61 @@ foodModel::foodModel(zfdblob blob,zfdID ID):foodModel()
 }
 
 
-foodModel::~foodModel()
+preyModel::~preyModel()
 {
     zTrack.pointStack.clear();
     zTrack.pointStackRender.clear();
 
 }
 
-void foodModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius)
+/// \brief Models prey as a particle with propulsion force F and heading Theta moving in 2D space
+///
+void preyModel::predictMove()
+{
+
+//    //Draw Random Heading Change (Degrees)
+//       dTheta = gTurn.random();//(float)random(-2,-2)/100.0;
+//       //Update Angular Speed //With turn Drag
+//       gTurn.setMean(5.0); //Reset Mean
+
+//       //bounce off the border
+//       if (current_position.X >= (matrix.width()-1)|| current_position.X <= 0)
+//       {
+//         velocity.X = -(df_propulsion/mass)*cos(headingTheta);
+//         dTheta += 90;
+//         gTurn.move(40);//Change the mean turning angle randomly
+//         //gTurn.move(sgn(velocity.X)*0.001 ); //Change the mean turning angle randomly
+//       }
+//       if (current_position.Y >= (matrix.height()-1) || current_position.Y <= 0 )
+//       {
+
+//         velocity.Y = (df_propulsion/mass)*sin(headingTheta);
+//         gTurn.move(40);//Change the mean turning angle randomly
+//       }
+//       omegaDeg +=dTheta-df_friction*omegaDeg*0.5; //Update Angular Speed //Assume A Turn Drag too
+//       omegaDeg = max(-25,min(omegaDeg,25)); //Maximum Angular Velocity
+
+//       //Update Heading in Rads
+//       headingTheta += omegaDeg*(M_PI/180.0);//% (float)TWO_PI;
+//       headingTheta = (float)((int)(headingTheta*100.0) % (int)(TWO_PI*100.0))/100.0;
+
+//       // Draw random in propulsion (Random 2D walk)
+
+
+//       //Calc velocity update with Drag Forces
+//       velocity.X += max(-MAX_VELOCITY,min( (df_propulsion/mass)*cos(headingTheta)-df_friction*pow(velocity.X,1),MAX_VELOCITY) ) ;
+//       velocity.Y += max(-MAX_VELOCITY,min( (df_propulsion/mass)*sin(headingTheta) -df_friction*pow(velocity.Y,1),MAX_VELOCITY) ) ;
+
+//       current_position.X += velocity.X ;
+//       current_position.Y += velocity.Y;
+
+
+//       //Bound Position
+//       current_position.X = max(0.0,min(current_position.X,matrix.width()-1));
+//       current_position.Y = max(0.0,min(current_position.Y,matrix.height()-1));
+
+}
+void preyModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius)
 {
 
     float fDistToNewPosition = cv::norm(fblob.pt-this->zTrack.centroid);
@@ -139,7 +200,7 @@ std::ostream& operator<<(std::ostream& out, const foodModels& v)
     //while (ft != v.end())
     for (int i =0;i<v.size();i++)
     {
-        foodModel* pfood = v.at(i);
+        preyModel* pfood = v.at(i);
 
          if (pfood->isTargeted) //Only Log The Marked Food
          {
@@ -177,7 +238,7 @@ QTextStream& operator<<(QTextStream& out, const foodModels& v)
     //while (ft != vfoodmodels.end())
     for (int i =0;i<v.size();i++)
     {
-        foodModel* pfood = (foodModel*)v.at(i);
+        preyModel* pfood = (preyModel*)v.at(i);
 
          if (pfood->isTargeted) //Only Log The Marked Food
          {
@@ -196,14 +257,14 @@ QTextStream& operator<<(QTextStream& out, const foodModels& v)
 /// \param vfoodmodels
 /// \return
 ///
-int foodModel::getActiveFoodCount(foodModels& vfoodmodels)
+int preyModel::getActiveFoodCount(foodModels& vfoodmodels)
 {
     int retNfood = 0;
     foodModels::iterator ft = vfoodmodels.begin();
 
     while (ft != vfoodmodels.end())
     {
-        foodModel* pfood = ft->second;
+        preyModel* pfood = ft->second;
         assert(pfood);
 
         // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob - Except If Food is being Tracked
@@ -222,7 +283,7 @@ return retNfood;
 
 
 /// Logic for when food item should be deleted
-bool foodModel::isUnused()
+bool preyModel::isUnused()
 {
     bool bLost =  (!this->isActive
                  && !this->isNew

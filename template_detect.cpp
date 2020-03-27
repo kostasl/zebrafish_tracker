@@ -548,7 +548,7 @@ cv::Mat makeMeanTemplateImage(std::vector<cv::Mat> vTemplImg)
 
     //img_meanTempl = img_meanTempl*(1.0/(float)vTemplImg.size());
     img_meanTempl.convertTo(img_meanTempl,vTemplImg[0].type());
-    cv::imshow("Templ Mean",img_meanTempl);
+
     return (img_meanTempl);
 }
 

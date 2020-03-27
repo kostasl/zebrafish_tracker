@@ -70,6 +70,8 @@
 #include <errorhandlers.h> // My Custom Mem Fault Handling Functions and Debug
 
 #include <random>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 #include <string.h>
 
@@ -544,7 +546,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         if (gTrackerState.bTrackFood)
         {
-            processFoodBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
+            processPreyBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(fgImgFrame,vfoodmodels,ptFoodblobs,nFrame,true); //Make New Food Models based on identified Blob
 
             if (nFrame > gTrackerState.gcMinFoodModelActiveFrames)
@@ -567,7 +569,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             while (ft != vfoodmodels.end() && gTrackerState.bRenderToDisplay)
             {
 
-                foodModel* pfood = ft->second;
+                preyModel* pfood = ft->second;
                 assert(pfood);
 
                 // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob - Except If Food is being Tracked
@@ -1212,7 +1214,7 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
    // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
    std::vector<float>    voutError;
 
-   foodModel* pfood = NULL;
+   preyModel* pfood = NULL;
    foodModels::iterator ft;
 
     //Fill POint Vector From foodmodel vector
@@ -1259,10 +1261,10 @@ return retCount;
 struct foodBlobMatch
 {
     int score;
-    foodModel* pFoodObject;
+    preyModel* pFoodObject;
     zfdblob*   pFoodBlob;
 
-    foodBlobMatch(foodModel* pFood,  zfdblob* pBlob,int inscore) : pFoodObject(pFood), pFoodBlob(pBlob),score(inscore) {}
+    foodBlobMatch(preyModel* pFood,  zfdblob* pBlob,int inscore) : pFoodObject(pFood), pFoodBlob(pBlob),score(inscore) {}
 
     bool operator < (const foodBlobMatch& pair) const
     {
@@ -1284,7 +1286,7 @@ struct foodBlobMatch
 void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew=true)
 {
     qfoodModels qfoodrank;
-    foodModel* pfood = NULL;
+    preyModel* pfood = NULL;
 
     foodModels::iterator ft;
     //Make Triplet of Score, and foodModel, zfdBlob
@@ -1408,7 +1410,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         pfood = pwindow_main->getFoodItemAtLocation(foodblob->pt); //Check for dublicated
         if (!pfood) //IF no dublicate Item there, then make new
         {
-            pfood = new foodModel(*foodblob ,++gTrackerState.gi_MaxFoodID);
+            pfood = new preyModel(*foodblob ,++gTrackerState.gi_MaxFoodID);
             pfood->blobMatchScore = 0;
             vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
             //_DEBUG
@@ -1891,7 +1893,7 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,zftbl
 /// \return
 /// \note Draws Blue circle around food blob, with relative size
 ///
-int processFoodBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs)
+int processPreyBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs)
 {
 
     cv::Mat frameMasked;
@@ -2313,7 +2315,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
                 //+active; ///< Indicates number of frames that has been active from last inactive period.
                 //+ inactive; ///< Indicates number of frames that has been missing.
                 output << frameNumber << "\t" << Vcnt  << "\t" << (*pfish);
-                output << "\t" << foodModel::getActiveFoodCount(vfood) << "\n";
+                output << "\t" << preyModel::getActiveFoodCount(vfood) << "\n";
             }
             //Empty Memory Once Logged
             pfish->zTrack.pointStack.clear();
@@ -2330,7 +2332,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
             pNullfish->resetSpine();
 
             output << frameNumber << "\t" << Vcnt  << "\t" << (*pNullfish);
-            output << "\t" << foodModel::getActiveFoodCount(vfood) << "\n";
+            output << "\t" << preyModel::getActiveFoodCount(vfood) << "\n";
             delete pNullfish;
         }
 
@@ -2356,7 +2358,7 @@ int saveFoodTracks(fishModels& vfish,foodModels& vfood,QFile& fooddata,QString f
     while (ft != vfoodmodels.end())
     //for (int i =0;i<v.size();i++)
     {
-        foodModel* pfood = ft->second;
+        preyModel* pfood = ft->second;
 
          if (pfood->isTargeted) //Only Log The Marked Food
          {
@@ -2537,12 +2539,16 @@ void drawUserDefinedPoints(cv::Mat& frame)
 /// \param hierarchy
 /// \param pt - Position around which we are searching
 /// \param level - The required hierarchy level description of the contour being searched for
+/// - if -1 (default) do not check hierarchy,
+/// - 0 only parent contours
+/// - 1 Needs to Have a parent
+/// - level == 2 Needs to be top Level Contour
 /// \return Index of *child*/Leaf contour closest to point
 ///
 int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
                               std::vector<cv::Vec4i>& hierarchy,
                               cv::Point pt,
-                              int level)
+                              int level=-1)
 {
     int idxContour           = -1;
     bool bContourfound       = false;
@@ -2550,9 +2556,8 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
     int distToCentroid       = +10000;
     int matchContourDistance = 10000;
 
-    ///Jump Over Strange Error
-    if (hierarchy.size() !=contours.size())
-        return -1;
+
+    assert((level > 0) &&  hierarchy.size() ==contours.size() || level ==-1  );
 
 
     /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
@@ -2565,7 +2570,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
        {
 
           //Filter According to desired Level
-          if (level == 0) /////Only Process Parent Contours
+          if (level == 0) /// Only Process Parent Contours
           {
             if (hierarchy[i][3] != -1) // Need to have no parent
                continue;
@@ -2574,7 +2579,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
             assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
           }
 
-          if (level == 1) /////Only Process Child Contours
+          if (level == 1) // Only Process Child Contours
           {
               if (hierarchy[i][3] == -1) // Need to have a parent
                   continue;
@@ -2583,7 +2588,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 //                       continue;
           }
 
-          if (level == 2) ////Needs to be top Level Contour
+          if (level == 2) // Needs to be top Level Contour
           {
               if (hierarchy[i][3] != -1) // No Parent Contour
                   continue;
@@ -2623,7 +2628,8 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
                         bContourfound = true;
                }
            }
-       }
+
+       } //Loop through Contours
 
 
    if (!bContourfound)
@@ -3066,7 +3072,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                /// \note If done on all frames is converges on Local Minima where the tail is fit in the body contour.
                if (gTrackerState.bUseContourToFitSpine && (pwindow_main->nFrame == gTrackerState.uiStartFrame || (pwindow_main->nFrame % gTrackerState.iSpineContourFitFramePeriod  ) == 0))//((uint)gfVidfps/4)
                {
-                   int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                   //Do not Use Hierarchy
+                   int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,-1);
                    if (idxFish>=0)
                    {
                       double err_sp0 = fish->fitSpineToContour2(frame_gray,contours_body,0,idxFish);

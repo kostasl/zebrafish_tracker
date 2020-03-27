@@ -293,15 +293,15 @@ void MainWindow::SetTrackerState(int stateID)
 /// \param ptLocation
 /// \return
 ///
-foodModel* MainWindow::getFoodItemAtLocation(cv::Point ptLocation)
+preyModel* MainWindow::getFoodItemAtLocation(cv::Point ptLocation)
 {
-    foodModel* rfood = NULL;
+    preyModel* rfood = NULL;
 
     ///Check First if Clicking On Food Item
     for (foodModels::iterator it=vfoodmodels.begin(); it!=vfoodmodels.end(); ++it)
     {
 
-        foodModel* pfood = (*it).second;
+        preyModel* pfood = (*it).second;
         //if (pfood->zTrack.boundingBox.contains(ptLocation) ) //Clicked On Fish Box
         if (cv::norm(pfood->zfoodblob.pt - (cv::Point2f)ptLocation) < gTrackerState.gMaxClusterRadiusFoodToBlob ) //Clicked On Fish Box
         {
@@ -822,7 +822,7 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
             bSceneMouseLButtonDown = true;
             if (gTrackerState.bAddPreyManually)
             {
-                foodModel* pfood = new foodModel(cv::KeyPoint(ptMouse,1),++gTrackerState.gi_MaxFoodID  );
+                preyModel* pfood = new preyModel(cv::KeyPoint(ptMouse,1),++gTrackerState.gi_MaxFoodID  );
                 pfood->blobMatchScore = 0;
                 vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
             }
@@ -835,7 +835,7 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
         }
 
         if (mouseEvent->buttons() == Qt::RightButton){
-            foodModel* food = getFoodItemAtLocation(ptMouse);
+            preyModel* food = getFoodItemAtLocation(ptMouse);
             if (food) //Only delete non targeted item
                 if (!food->isTargeted)
                 {
@@ -915,7 +915,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
 
     cv::Point ptMouse((int)ptImg.x(),(int)ptImg.y());
     bool bFoodItemClicked = false;
-    foodModel* food = getFoodItemAtLocation(ptMouse);
+    preyModel* food = getFoodItemAtLocation(ptMouse);
 
     if (food && mouseEvent->buttons() == Qt::LeftButton)
     {

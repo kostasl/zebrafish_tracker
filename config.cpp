@@ -218,6 +218,12 @@ trackerState::trackerState()
     bTracking   = true; //Start By Tracking by default
     bExiting    = false;
 
+    /* create a generator chosen by the
+        environment variable GSL_RNG_TYPE */
+     gsl_rng_env_setup();
+
+     T = gsl_rng_default;
+     r = gsl_rng_alloc (T);
 
 
 }

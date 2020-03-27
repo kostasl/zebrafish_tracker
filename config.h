@@ -65,6 +65,9 @@
 #include <cereal/types/common.hpp>
 #include <fstream>
 
+//Random
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 /// Fish Detection CV BG Model //
 extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
@@ -150,10 +153,10 @@ class trackerState
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
       const unsigned int thresh_fishblobarea      = 350; //Min area above which to Filter The fish blobs
-      const unsigned int thresh_maxfishblobarea = 2550; //Min area above which to Filter The fish blobs
-      const unsigned int gthres_maxfoodblobarea = thresh_fishblobarea/3;
+      const unsigned int thresh_maxfishblobarea     = 2550; //Min area above which to Filter The fish blobs
+      const unsigned int gthres_maxfoodblobarea     = thresh_fishblobarea/3;
 
-      const int gFitTailIntensityScanAngleDeg   = 40; //
+      const int gFitTailIntensityScanAngleDeg   = 60; //
       const int gFishTailSpineSegmentCount      = ZTF_TAILSPINECOUNT;
       const int gcFishContourSize               = ZTF_FISHCONTOURSIZE;
       const int gMaxFitIterations               = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
@@ -255,7 +258,7 @@ class trackerState
 
       /// Segmentation / threshold  Params
       int g_Segthresh             = 15; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
-      int g_SegFoodThesMin        = 16; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
+      int g_SegFoodThesMin        = 10; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegFoodThesMax        = g_Segthresh+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
       int g_BGthresh              = 10; //BG threshold segmentation
@@ -291,7 +294,9 @@ class trackerState
       int iTemplateMatchFailCounter   = 0; //Counts the number of consecutive times template failed to match
       //using namespace std;
 
-
+      /// Random Number Generator
+      const gsl_rng_type * T;
+      gsl_rng * r;
 
       // Other fonts:
       //   CV_FONT_HERSHEY_SIMPLEX, CV_FONT_HERSHEY_PLAIN,

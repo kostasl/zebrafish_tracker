@@ -20,9 +20,9 @@ SOURCES += main.cpp \
     GUI/TrackerScene.cpp \
     #GUI/TrackerScene.cpp
     ellipse_detect.cpp \
+    preymodel.cpp \
     template_detect.cpp \
     zfttracks.cpp \
-    foodmodel.cpp \
     fgmaskprocessing.cpp \
     errorhandlers.cpp \
     config.cpp \
@@ -35,7 +35,7 @@ RC_ICONS = myappico.ico
 
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
-PKGCONFIG += opencv #or whatever package here
+PKGCONFIG += opencv gsl #or whatever package here
 
 ##pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3)
 #pkg-config --list-all
@@ -60,7 +60,7 @@ PKGCONFIG += opencv #or whatever package here
 #LIBS += -L /media/kostasl/D445GB_ext4/opt/OpenCV/opencv-3.4.4/build/lib  #Home
 #LIBS += -L /home/kostasl/OpenCV/opencv-3.3.1/build/lib #Office
 #LIBS += `pkg-config opencv --libs`
-
+#LIBS +=-lgsl -lgslcblas -lm
 
 QMAKE_CFLAGS_DEBUG += -v -da -Q
 QMAKE_CFLAGS += -rdynamic

@@ -107,7 +107,7 @@ int countObjectsviaContours(cv::Mat& srcimg );
 
 /// Updated Blobs Detector- Fish Specific
 int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFishblobs);
-int processFoodBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs);
+int processPreyBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs);
 
 int saveTracks(fishModels& vfish,foodModels& vfood, QFile& data, QString frameNumber);
 int saveFoodTracks(fishModels& vfish,foodModels& vfood, QFile& fooddata,QString frameNumber);

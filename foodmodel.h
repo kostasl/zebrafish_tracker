@@ -17,18 +17,19 @@ extern trackerState gTrackerState;
 typedef cv::KeyPoint zfdblob;
 typedef std::vector<zfdblob> zfdblobs;
 
-class foodModel; //fwd definition
+class preyModel; //fwd definition
 
-typedef std::map<zfdID,foodModel* > foodModels;
-typedef std::pair<zfdID, foodModel* > IDFoodModel;
+typedef std::map<zfdID,preyModel* > foodModels;
+typedef std::pair<zfdID, preyModel* > IDFoodModel;
 
 
-class foodModel
+class preyModel
 {
 public:
-    foodModel();
-    foodModel(zfdblob blob,zfdID ID);
-    ~foodModel();
+    preyModel();
+    preyModel(zfdblob blob,zfdID ID);
+    ~preyModel();
+    void predictMove();// Draws Prediction Of next position
     void updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius);
     static int getActiveFoodCount(foodModels& vfoodmodels);
     bool isUnused(); //Contains the logic of when to delete food item
@@ -40,6 +41,24 @@ public:
     zfdblob  zfoodblob;
     int blobMatchScore;
     zftTrack zTrack;
+
+
+    zfdblob previous_position;
+    cv::Point2f velocity;
+    float omegaDeg;
+
+    float headingTheta;
+    float muPropulsion;
+    float sigmaPropulsion;
+    float df_propulsion;
+    float df_friction;
+    float mass;
+    float dTheta;
+    float muTurn;
+    float sigmaTurn;
+    uint16_t color;
+    uint16_t BGcolor;
+
     unsigned int nLastUpdateFrame; ///<-Holds the frame Number of the last State Update
     bool isTargeted;
     bool isActive;
@@ -55,13 +74,13 @@ QTextStream& operator<<(QTextStream& out, const foodModels& h);
 //Top Item Is one With Least Penalty (Score)
 class CompareFoodScore {
     public:
-    bool operator()(foodModel*& t1, foodModel*& t2) // Returns true if t1 is less than t2 /Ordering Highest 1st
+    bool operator()(preyModel*& t1, preyModel*& t2) // Returns true if t1 is less than t2 /Ordering Highest 1st
     {
        return t1->blobMatchScore < t2->blobMatchScore;
     }
 };
 
-typedef std::priority_queue<foodModel*,std::vector<foodModel*>,CompareFoodScore> qfoodModels;
+typedef std::priority_queue<preyModel*,std::vector<preyModel*>,CompareFoodScore> qfoodModels;
 
 /// \fn inline void cvReleaseFoodModels(fishModels &fishes)
 /// \brief Clear Fish LIst
@@ -71,7 +90,7 @@ inline void ReleaseFoodModels(foodModels &vfood)
 {
   for (foodModels::iterator it=vfood.begin(); it!=vfood.end(); ++it)
   {
-      foodModel* pfood = (*it).second;
+      preyModel* pfood = (*it).second;
         //Let ReleaseTracks Handle This
 //      if (fish->track)
 //      {

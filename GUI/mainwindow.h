@@ -43,7 +43,7 @@ public:
     void LogEvent(QString strMessage);
     void SetTrackerState(int stateID);
 
-    foodModel* getFoodItemAtLocation(cv::Point ptLocation); //Return Pointer to food object at under scene loc coordinates indicated
+    preyModel* getFoodItemAtLocation(cv::Point ptLocation); //Return Pointer to food object at under scene loc coordinates indicated
     unsigned int nFrame = 0;
     unsigned int nTotalFrameCount = 0;
 
