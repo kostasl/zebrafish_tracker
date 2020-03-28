@@ -4,13 +4,27 @@ output:
   html_document:
     df_print: paged
 ---
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, used for learning and testing ideas around Kalman Filters.
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, used for learning and testing ideas around Kalman Filters. 
+I am reading Fundamentals of Kalman Filtering : A Practical Approach 3rd edition by Paul Zarchan and Howard Musoff, which offers example code in Fortran. I am reimplementing some examples for learning purposes here and keeping some notes on the way.
 
+### Simulating White Noise
+First relevant example I noticed, found on pg 30,is on simulating a simple low-pass filter that is driven under white noise. 
+Power spectral density is given by the Fourrier transform of the autocorrelation function. 
+One simple and useful form for the power spectral density is that of white noise, in which the power spectral density is constant or $\Phi_xx = \Phi_0$.
+The autocorrelation function for white noise is a delta function given by $\phi_xx = \Phi_0 \delta(t)$ (white noise)
+Although white noise is not physically realizable, it can serve as an invaluable approximation for situations in which a disturbing noise is wide bandwidth
+compared to the system bandwidth.
 
-Make Low pass filter with pseudowhite noise-
-y'=(x-y)/T
+The example here shows you how to scale the Gaussian noise source so as to approximate the relevant whitenoise *constant powersprectral density* (ex. $\Phi_0=1$), and second that it shows that it applies the 2nd Order Runge-Kutta to integrate the filter's evolution.
+
+Make Low pass filter with pseudowhite noise:
+\[y'=(x-y)/T\],
+with transfer function in the s-domail : \[\frac{X(s)}{Y(s)} = K(s) =\frac{1}{1+sT} =  =\frac{1}{1+s/\omega_0} \], the filter's cut-off frequency being $\omega_0 = 1/T$.
 If x is white noise, then the mean square value of the output of the filter can
-also be shown to be : E[y^2(τ)] = \\Phi_0 (1-\exp(-2t/T))/2T
+also be shown to be : $E[y^2(τ)] = \Phi_0 (1-\exp(-2t/T))/2T$
+
+The standard deviation of the pseudowhite noise (actual white noise over an infinite bandwidth has infinite standard deviation) is related to the desired white noise spectral density $\Phi_0$ and integration interval h according to $\sigma=\sqrt{(\Phi_0/h)}$, where h it the time step of the simulation and Phi_0 has dimensions of units squared per hertz.
+
 The following is an example of a low passfilter output driven by by simulated whitenoise, used to confirm that 68% of responses should be within in sigma of the mean (here zero).
 
 ```{r}
@@ -21,6 +35,7 @@ t=0
 h = 0.01 ##INtegration TimeStep
 sig=sqrt(Phi_0/h) ##scaled Sigma for PseudoRandom White nOise
 tLim = 4.999 ##Total Simulation Time
+x = vector()
 y = vector()
 y[1] = 0.0
 sigP= vector()
@@ -48,11 +63,26 @@ lines(sigP,type='l',lty=3,lw=3)
 lines(sigM,type='l',lty=3,lw=3)
 legend("topright",lty=c(3,2),col=c("black","red"),legend=c("WT in","Filter out"))
 ```
-The low-pass filter is integrated with timestep h, but critically the integration is done using 2nd order runge-kutta, instead of simply using euler step derivatives.
 
+The low-pass filter is integrated with timestep h, while the integration is done using 2nd order runge-kutta, instead of simply using euler step derivatives. The 1sigma lines are enveloping the signal. Reducing tau increases the cut-off frequency of the filter, thus letting more noise through.
+The integration interval is always chosen to be at least several times
+smaller than the smallest time constant $\tau$ $(h << tau)$ in order to get correct answers with numerical integration techniques), the noise will look white to the system. Thus if the difference in  timescale whitenoise to the timestep is large, then it the expected output of the filter should fall within the 1sigma envelope 68%time.
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+## State Space Notation 
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+The standard way of representing these systems uses matrix notation :
+\[\dot{\bf{x}}  = \bf{Fx} + Gu + w  \], where $u$ is the input vector and $w$ the noise.
+The 1st order LP filter from above put in to this form would simply be F=-1/T,G=0,w=\eta/T.
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+When $F$ is time-invariant then there exists  a *transition * or fundamental matrix able to propagate the state forward from $t_k$ to $t_{k+1}$ as $x(t_{k+1})=\Phi(t_{k+1}-t_{k})x(t_k)$.
+One simple way is through the inverse Laplace tranform of : 
+\[ \Phi(t) = \mathcal{L}^-1[(sI-F)^-1]   \]
+or via Taylor series expansion:
+\[ \Phi(t) = \exp^Ft = I +Ft + (Ft)^2/2! + \cdots (Ft)^n/n! + \cdots  \]
+
+Once we have the fundamental matrix we do not have to integrate differential equations to propagate the states forward.
+We can propagate states forward by matrix multiplication.
+In Kalman filtering we have to propagate state estimates ahead by one sampling time. If we have an exact
+expression for the fundamental matrix, we will be able to perform the propagation
+by matrix multiplication. When an exact fundamental matrix is not available, we
+will have to resort to numerical integration to propagate ahead the state estimates.
