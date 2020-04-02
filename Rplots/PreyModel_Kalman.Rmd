@@ -5,7 +5,7 @@ output:
     df_print: paged
 ---
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, used for learning and testing ideas around Kalman Filters. 
-I am reading Fundamentals of Kalman Filtering : A Practical Approach 3rd edition by Paul Zarchan and Howard Musoff, which offers example code in Fortran. I am reimplementing some examples for learning purposes here and keeping some notes on the way.
+I am reading Fundamentals of Kalman Filtering : A Practical Approach 3rd edition by Paul Zarchan and Howard Musoff [3], which offers example code in Fortran. I am reimplementing some examples for learning purposes here and keeping some notes on the way.
 
 ### Simulating White Noise
 First relevant example I noticed, found on pg 30,is on simulating a simple low-pass filter that is driven under white noise. 
@@ -139,7 +139,7 @@ As more measurements are taken k gets larger, and the error in the estimate caus
 
 ### 1st order recursive filter
 
-the two gains of a first-order or two-state recursive least-squares filter can be shown to be 
+the two gains of a first-order or two-state recursive least-squares filter can be shown(see [1]) to be 
 \[K_{1_k} = \frac{ 2(2k-1) }{ k(k+1) } \]
 \[ K_{2_k} =  \frac{6}{k(k+1)T_s} \] for $k=1 \cdots n$.
 
@@ -154,3 +154,88 @@ projected forward to the current time plus a gain multiplied by the residual or
 
 Formulas can also be derived, using techniques similar to those used on the zeroth-order filter of the preceding section, describing
 the variance of the error  in the estimates caused by noise in both states (i.e., $P_{11}$ and $P_{22}$ ) of the first-order filter.
+
+Overall in all up to the three filters the recursive form has the same structure in that the new state estimate is always
+the old state estimate projected forward to the current time plus a gain times a residual.
+
+We can see from Figs. 3.34 and 3.35 that, from a measurement noise reduction point of view, it is best to use as low an order filter
+as possible because that will tend to reduce the error in the estimate caused by measurement noise.
+However, we also know from Table 3.4 that if we make the order of the filter too low there might be excessive truncation error (KL : model bias ).
+*In each case the best-order filter to use will depend on the number of measurements to be
+taken and the actual order of the signal.*
+ 
+
+## General filter class : The g-h / $\alpha-\beta$ filters ( [2])
+
+The *key insight* is that we form estimates from the measurement and prediction by forming some kind of blend of the prediction and measurement.
+The Kalman and the least-squares filters belong to a general class of filters known as the g-h filter or the α-β filter. 
+$g$ and $h$ refer to the two scaling factors that we used in our example.
+$g$ is the scaling we used for the measurement  ($x^*$ in our example), and $h$ is the scaling for the change in measurement over time.
+$\alpha$ and $\beta$ are  different names used for these same factors.
+
+Each filter has a different way of assigning values to $g$ and $h$, but otherwise the algorithms are identical. For
+example, the Benedict-Bordner filter assigns a constant to $g$ and $h$, constrained to a certain range of values.
+Other filters such as the Kalman will vary g and h dynamically at each time step.
+The general rules are: 
+
+* Multiple data points are more accurate than one data point, so throw nothing away no matter how
+inaccurate it is.
+* Always choose a number part way between two data points to create a more accurate estimate.
+* Predict the next measurement and rate of change based on the current estimate and how much we
+think it will change.
+* The new estimate is then chosen as part way between the prediction and next measurement scaled by
+how accurate each is.
+
+
+## Polynomial Kalman Filters 
+
+We saw that the recursive least-squares filter provided
+the exact same estimates, for a given number of measurements, as the batch-
+processing least-squares filter. In this chapter we will first provide the general
+equations for the discrete Kalman filter and then show under what conditions it is
+completely equivalent to the recursive least-squares filter.
+We will also demonstrate the divergence problem with the Kalman filter, but we will show that there are a
+variety of engineering fixes.
+
+To apply Kalman-filtering theory, our model of the real world must be described by a set of differential equations. These equations must be cast in
+matrix or state-space form as :
+\[ \mathbf{ \dot{x}} = \mathbf{Fx + Gu + w} \], where x is a column vector with the states of the system, $F$ the system dynamics
+matrix, $u$ is a known vector, which is sometimes called the control vector, and $w$
+is a white-noise process, which is also expressed as a vector.
+There is a process-noise matrix $\mathcal{Q}$ that is related to the process-noise vector according to : 
+\[\mathbf{Q} = \mathbb{E}[\mathbf{ww^T}] \],
+which is sometimes used as a device for telling the filter that we know the filter’s model of the real world is not precise.
+The Kalman-filter formulation requires that the measurements be linearly related to the states according to :
+\[  \mathbf{z} = \mathbf{Hx +v}  \]
+where $ \mathbf{z} $ is the measurement vector, $ \mathbf{H}$ is the measurement matrix that relates the state to the measurement, and $ \mathbf{v}$ is white measurement noise, which is also expressed as a vector.
+
+
+The discrete Kalman-filtering equation is given by : 
+\[ \mathbf{ \hat{x}_k } = \Phi_k  \hat{x}_{k-1} + G_k u_{k-1} + K_k(z_k - H \Phi_k \hat{x}_{k-1} - H G_k u_{k-1})\]
+where $\Phi_k$ is the discrete version of the fundamental matrix (see sections above) evaluated as $\Phi_k = \Phi(T_s) $,
+where $K_k$ represents the Kalman gain matrix and $G_k$ is obtained from 
+\[G_k = \int_0^{T_s} \Phi (\tau)G d\tau \]
+if $u_{k-1}$ is assumed to be constant between sampling instants.
+The Kalman gains are computed, while the filter is operating, from the matrix Riccati equations.
+The Riccati equations are a set of recursive matrix equations given by :
+\[ M_k = \Phi_k P_{k-1} \Phi^T_k + Q_k \]
+\[K_k = M_k H^T (HM_k H^T + R_k)^{-1}\]
+\[ P_k = I - K_k H)M_k \]
+where $P_k$ is a covariance matrix representing errors in the state estimates (i.e., variance of truth minus estimate) after an update and M k is the covariance matrix representing errors in the state estimates before an update.
+The discrete process-noise matrix $Q$ k can be found from the continuous process-noise matrix $Q$ and the
+fundamental matrix according to
+\[ Q_k = \int^{T_s}_0 \Phi(\tau)Q \Phi(\tau) d\tau\] ( KL:Corrected for  $d\tau$ )
+To start the Riccati equations, we need an initial covariance matrix $P_0$.
+
+The gain of the Kalman filter *is chosen to minimize the variance of the error in the estimate.*
+The Riccati equations are simply an iterative way of finding the optimal gain at each time
+step.
+
+
+
+## References 
+
+1. Kalman and Bayesian Filters in Python, Roger R Labbe Jr
+2. Morrison, N., Introduction to Sequential Smoothing and Prediction, McGraw–Hill,
+New York, 1969, pp. 339–376.
+3. Fundamentals of Kalman Filtering: A practical approach, 3rd ed., Paul Zarchan, Howard Musoff
