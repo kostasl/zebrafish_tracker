@@ -238,20 +238,22 @@ g_h_filter <- function(pdata,x0,dx,g,h,dt=1)
 mufps = 410
 
 datPrey = read.csv2("dat/AutoSet450fps_01-02-18_WTNotFed1Roti_3751_004_food_1.csv",header=TRUE,sep = "\t",as.is =c(1,2,3,4,5,6,7),colClasses="numeric",dec="." )
-table(datPrey$FoodID)
-datPreyItem <- datPrey[datPrey$FoodID == "54",]
+##Pick A random Prey
+vPreyIDs = as.numeric(names(table(datPrey$FoodID))) 
+datPreyItem <- datPrey[datPrey$FoodID == sample(vPreyIDs,1),]
 
 x0=as.numeric(head(datPreyItem$Centroid_X,1))+1
+y0=as.numeric(head(datPreyItem$Centroid_Y,1))+1
 dx=0.01
-g= 1/10 ##Measurement Scaling - 2orders Larger than h works best 
+g= 1/100 ##Measurement Scaling - 2orders Larger than h works best 
 h = 1/1000## Prediction Scaling - Gain Smaller when highly noisy environment
 dt = mufps/3 ##Filter TimeStep
 
 ## Add Noise To Prey Position Measurements
 N <- NROW(datPreyItem$Centroid_X)
 NoisePoints = N/100
-NoiseX = cbind(round(runif(n=NoisePoints,min=1,max=N)), rnorm(n=NoisePoints,mean=5,sd=10))
-NoiseY = cbind(round(runif(n=NoisePoints,min=1,max=N)), rnorm(n=NoisePoints,mean=5,sd=10))
+NoiseX = cbind(round(runif(n=NoisePoints,min=1,max=N)), rnorm(n=NoisePoints,mean=5,sd=30))
+NoiseY = cbind(round(runif(n=NoisePoints,min=1,max=N)), rnorm(n=NoisePoints,mean=5,sd=30))
 datBrokenX = datPreyItem$Centroid_X
 datBrokenX[NoiseX[,1]] = datBrokenX[NoiseX[,1]] + NoiseX[,2]
 
@@ -259,7 +261,7 @@ datBrokenY = datPreyItem$Centroid_Y
 datBrokenY[NoiseY[,1]] = datBrokenY[NoiseY[,1]] + NoiseY[,2]
 
 datFilteredX = g_h_filter(datBrokenX,x0,dx,g,h,dt)
-datFilteredY = g_h_filter(datBrokenY,x0,dx,g,h,dt)
+datFilteredY = g_h_filter(datBrokenY,y0,dx,g,h,dt)
 
 #Plot the X movement Signal+Noise and Filtered
 plot(datBrokenX,lty=1,type='l',lwd=3)
@@ -273,9 +275,9 @@ lines(datFilteredY,lty=2,col="red",lwd=2)
 
 
 ## Plot 2D prey Motion and filtered signal 
-plot(datPreyItem$Centroid_X,datPreyItem$Centroid_Y)
+plot(datPreyItem$Centroid_X,datPreyItem$Centroid_Y,xlim=c(0,500),ylim=c(0,500))
 lines(datBrokenX,datBrokenY,lty=2,col="grey",lwd=1)
-lines(datFilteredX,datFilteredY,lty=2,col="green",lwd=2)
+lines(datFilteredX,datFilteredY,lty=2,col="red",lwd=2)
 ##Combined
 ```
 
