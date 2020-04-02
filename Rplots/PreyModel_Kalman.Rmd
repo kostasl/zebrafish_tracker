@@ -242,10 +242,10 @@ table(datPrey$FoodID)
 datPreyItem <- datPrey[datPrey$FoodID == "54",]
 
 x0=as.numeric(head(datPreyItem$Centroid_X,1))+1
-dx=1
+dx=0.01
 g= 1/10 ##Measurement Scaling - 2orders Larger than h works best 
 h = 1/1000## Prediction Scaling - Gain Smaller when highly noisy environment
-dt = 1/(mufps)
+dt = mufps/3 ##Filter TimeStep
 
 ## Add Noise To Prey Position Measurements
 N <- NROW(datPreyItem$Centroid_X)
@@ -309,6 +309,7 @@ lines(datFilteredX,lty=2,col="red",lwd=2)
 ```
 
 [1]:The g-h filter is not one filter - it is a classification for a family of filters.
+The Benedict-Bordner filter was invented to minimize the transient error in this example, where $\dot{x}$ makes a step jump.
 Eli Brookner in Tracking and Kalman Filtering Made Easy lists 11, and I am sure there are more.
 Not only that, but each type of filter has numerous subtypes.
 Each filter is differentiated by how g and h are chosen. So there is no ’one size fits all’ advice that I
