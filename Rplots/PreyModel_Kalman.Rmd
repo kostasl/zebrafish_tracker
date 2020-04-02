@@ -6,6 +6,9 @@ output:
 ---
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, used for learning and testing ideas around Kalman Filters. 
 I am reading Fundamentals of Kalman Filtering : A Practical Approach 3rd edition by Paul Zarchan and Howard Musoff [3], which offers example code in Fortran. I am reimplementing some examples for learning purposes here and keeping some notes on the way.
+I am also looking across to the more practical guide in [1].
+
+Any estimation problem consists of forming an estimate, here $\hat{x}$ of a hidden state via observable measurements, denoted $x^*$.
 
 ### Simulating White Noise
 First relevant example I noticed, found on pg 30,is on simulating a simple low-pass filter that is driven under white noise. 
@@ -82,8 +85,8 @@ or via Taylor series expansion:
 
 Once we have the fundamental matrix we do not have to integrate differential equations to propagate the states forward.
 We can propagate states forward by matrix multiplication.
-In Kalman filtering we have to propagate state estimates ahead by one sampling time. If we have an exact
-expression for the fundamental matrix, we will be able to perform the propagation
+In Kalman filtering we have to propagate state estimates ahead by one sampling time. 
+If we have an exact expression for the fundamental matrix, we will be able to perform the propagation
 by matrix multiplication. When an exact fundamental matrix is not available, we
 will have to resort to numerical integration to propagate ahead the state estimates.
 
@@ -186,6 +189,133 @@ think it will change.
 * The new estimate is then chosen as part way between the prediction and next measurement scaled by
 how accurate each is.
 
+General Algorithm :
+
+1. Initialization
+    1. Initialize the state of the filter
+    2. Initialize our belief in the state
+2. Predict
+    1. Use system behavior to predict state at the next time step
+    2. Adjust belief to account for the uncertainty in prediction
+3. Update
+    1. Get a measurement and associated belief about its accuracy
+    2. Compute residual between estimated state and measurement
+    3. New estimate is somewhere on the residual line
+
+The state is initialized with $\mathbb{x_0}$ , the initial estimate.
+We then enter a loop, predicting the state for time or step $k$ from the values from time (or step) $k − 1$. We then get the measurement
+$\mathbb{z_k}$ and choose some intermediate point between the measurements and prediction, creating the estimate $\mathbb{x_k}$.
+
+Here is a generic implementation of such a filter:
+```{r}
+
+g_h_filter <- function(pdata,x0,dx,g,h,dt=1)
+{
+  x_est = x0
+  res = vector()
+  
+  for(z in pdata)
+  {
+    ##Prediction Step
+    x_pred <- x_est +(dx*dt)
+    dx = dx
+    
+    #Update step
+    residual = z -x_pred
+    dx = dx +h*(residual/dt)
+    x_est = x_pred + g*residual
+    
+    ##print(x_est)
+    res = append(res,x_est)
+  }
+  ##print(res)
+  return(res)
+}
+
+##Test the filter with prey data
+##Load Prey Data
+## Load Prey Trajectory Data
+mufps = 410
+
+datPrey = read.csv2("dat/AutoSet450fps_01-02-18_WTNotFed1Roti_3751_004_food_1.csv",header=TRUE,sep = "\t",as.is =c(1,2,3,4,5,6,7),colClasses="numeric",dec="." )
+table(datPrey$FoodID)
+datPreyItem <- datPrey[datPrey$FoodID == "54",]
+
+x0=as.numeric(head(datPreyItem$Centroid_X,1))+1
+dx=1
+g= 1/10 ##Measurement Scaling - 2orders Larger than h works best 
+h = 1/1000## Prediction Scaling - Gain Smaller when highly noisy environment
+dt = 1/(mufps)
+
+## Add Noise To Prey Position Measurements
+N <- NROW(datPreyItem$Centroid_X)
+NoisePoints = N/100
+NoiseX = cbind(round(runif(n=NoisePoints,min=1,max=N)), rnorm(n=NoisePoints,mean=5,sd=10))
+NoiseY = cbind(round(runif(n=NoisePoints,min=1,max=N)), rnorm(n=NoisePoints,mean=5,sd=10))
+datBrokenX = datPreyItem$Centroid_X
+datBrokenX[NoiseX[,1]] = datBrokenX[NoiseX[,1]] + NoiseX[,2]
+
+datBrokenY = datPreyItem$Centroid_Y
+datBrokenY[NoiseY[,1]] = datBrokenY[NoiseY[,1]] + NoiseY[,2]
+
+datFilteredX = g_h_filter(datBrokenX,x0,dx,g,h,dt)
+datFilteredY = g_h_filter(datBrokenY,x0,dx,g,h,dt)
+
+#Plot the X movement Signal+Noise and Filtered
+plot(datBrokenX,lty=1,type='l',lwd=3)
+lines(datPreyItem$Centroid_X,lty=5,type='l',lwd=4,col="green")
+lines(datFilteredX,lty=2,col="red",lwd=2)
+
+## plot The Y movement Signals + Filtered 
+plot(datBrokenY,lty=1,type='l',lwd=3)
+lines(datPreyItem$Centroid_Y,lty=5,type='l',lwd=4,col="green")
+lines(datFilteredY,lty=2,col="red",lwd=2)
+
+
+## Plot 2D prey Motion and filtered signal 
+plot(datPreyItem$Centroid_X,datPreyItem$Centroid_Y)
+lines(datBrokenX,datBrokenY,lty=2,col="grey",lwd=1)
+lines(datFilteredX,datFilteredY,lty=2,col="green",lwd=2)
+##Combined
+```
+
+These simple fits to data of tracked blob prey trajectories that have been corrupted by noise show that indeed even a simple application of
+a g-h filter on each of x and y position trajectories separately can work, given low values of gains $g=1/10^2$ and lower prediction gain $h= 1/10^3$.
+With larger values of $h$, for example h=1/10 the estimated signal becomes very sensitive to noise, and tracks the noisy signal, larger values of up to $g=1/10$ seem to still provide good signal tracking results, yet as $g=8/10$ increases then it becomes obvious that the noisy measurements are closely followed.
+
+```{r}
+g= 8/10 ##Measurement Scaling - 2orders Larger than h works best 
+h = 1/1000## Prediction Scaling - Gain Smaller when highly noisy environment
+datFilteredX = g_h_filter(datBrokenX,x0,dx,g,h,dt)
+
+#Plot the X movement Signal+Noise and Filtered
+plot(datBrokenX,lty=1,type='l',lwd=3)
+lines(datPreyItem$Centroid_X,lty=5,type='l',lwd=4,col="green")
+lines(datFilteredX,lty=2,col="red",lwd=2)
+
+```
+
+Letting $g=1/10$ and increasing the $h = 8/10$, has similar effects, only now it is the prediction  that is dominated by the noise. 
+
+```{r}
+g= 1/10 ##Measurement Scaling - 2orders Larger than h works best 
+h = 8/10## Prediction Scaling - Gain Smaller when highly noisy environment
+datFilteredX = g_h_filter(datBrokenX,x0,dx,g,h,dt)
+
+#Plot the X movement Signal+Noise and Filtered
+plot(datBrokenX,lty=1,type='l',lwd=3)
+lines(datPreyItem$Centroid_X,lty=5,type='l',lwd=4,col="green")
+lines(datFilteredX,lty=2,col="red",lwd=2)
+```
+
+[1]:The g-h filter is not one filter - it is a classification for a family of filters.
+Eli Brookner in Tracking and Kalman Filtering Made Easy lists 11, and I am sure there are more.
+Not only that, but each type of filter has numerous subtypes.
+Each filter is differentiated by how g and h are chosen. So there is no ’one size fits all’ advice that I
+can give here.
+Some filters set g and h as constants, others vary them dynamically. 
+*The Kalman filter varies them dynamically at each step.*
+Some filters allow g and h to take any value within a range, others constrain one to be dependent on the other by some function $f (.)$ , where $g = f ( h )$ .
 
 ## Polynomial Kalman Filters 
 
@@ -232,6 +362,17 @@ The Riccati equations are simply an iterative way of finding the optimal gain at
 step.
 
 
+## A Prey motion model 
+
+Here I load prey data and re-implemend the model I made for the VR prey stimulus screen, and use it as my prediction/plant/process model.
+```{r}
+
+## Show Prey Trajectory
+plot(datPreyItem$Centroid_X,type="l",ylim=c(0,480)) ##,xlim=c(0,580),
+lines(datPreyItem$Centroid_Y,type="l",col="blue",lty=2)
+
+
+```
 
 ## References 
 
@@ -239,3 +380,254 @@ step.
 2. Morrison, N., Introduction to Sequential Smoothing and Prediction, McGraw–Hill,
 New York, 1969, pp. 339–376.
 3. Fundamentals of Kalman Filtering: A practical approach, 3rd ed., Paul Zarchan, Howard Musoff
+
+## Appendix 
+
+#### VR Prey Model 
+Code for virtual prey model projected on a 2D matrix LED display driven by Arduino.
+
+```{cpp}
+// \author : Konstantinos Lagogiannis March 2020
+// \bref : firmware for displaying virtual prey on an NeoPixel LED Matrix 
+// to conduct experiments on larval zebrafish hunting.
+// A moving dot represents prey. Prey is modelled using kinematic equations for heading and propulsion force (rotifer motor drive)
+
+#include <Gaussian.h> //For Drawing Random Gaussian No. /Note: If it gives Math.h missing, edit the Gaussian.h header and replace with "math.h"
+#include <Adafruit_GFX.h>
+#include <Adafruit_NeoMatrix.h>
+#include <Adafruit_NeoPixel.h>
+#ifndef PSTR
+ #define PSTR // Make Arduino Due happy
+#endif
+
+#define PIN 6
+#define N_PREY 5
+#define MAX_VELOCITY 0.05
+#undef _DEBUG
+const int screenW = 44;
+const int screenH = 11;
+
+static inline int8_t sgn(int val) {
+ if (val < 0) return -1;
+ if (val==0) return 0;
+ return 1;
+}
+
+// MATRIX DECLARATION:
+// Parameter 1 = width of NeoPixel matrix
+// Parameter 2 = height of matrix
+// Parameter 3 = pin number (most are valid)
+// Parameter 4 = matrix layout flags, add together as needed:
+//   NEO_MATRIX_TOP, NEO_MATRIX_BOTTOM, NEO_MATRIX_LEFT, NEO_MATRIX_RIGHT:
+//     Position of the FIRST LED in the matrix; pick two, e.g.
+//     NEO_MATRIX_TOP + NEO_MATRIX_LEFT for the top-left corner.
+//   NEO_MATRIX_ROWS, NEO_MATRIX_COLUMNS: LEDs are arranged in horizontal
+//     rows or in vertical columns, respectively; pick one or the other.
+//   NEO_MATRIX_PROGRESSIVE, NEO_MATRIX_ZIGZAG: all rows/columns proceed
+//     in the same order, or alternate lines reverse direction; pick one.
+//   See example below for these values in action.
+// Parameter 5 = pixel type flags, add together as needed:
+//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+//   NEO_GRBW    Pixels are wired for GRBW bitstream (RGB+W NeoPixel products)
+//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+
+
+// Example for NeoPixel Shield.  In this application we'd like to use it
+// as a 5x8 tall matrix, with the USB port positioned at the top of the
+// Arduino.  When held that way, the first pixel is at the top right, and
+// lines are arranged in columns, progressive order.  The shield uses
+// 800 KHz (v2) pixels that expect GRB color data.
+Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(screenW, screenH, PIN,
+  NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
+  NEO_MATRIX_ROWS + NEO_MATRIX_ZIGZAG,
+  NEO_GRB            + NEO_KHZ800);
+
+// Define Basic Colour palette
+const uint16_t colors[] = {
+  matrix.Color(50, 50, 50),matrix.Color(200, 200, 200),matrix.Color(255, 0, 0), matrix.Color(0, 255, 0), matrix.Color(0, 0, 255) };
+
+const uint16_t BGCOLOUR = matrix.Color(20, 10, 10);
+
+typedef struct Point {
+  Point(){X=0.0f;Y=0.0f;}
+  Point(float iX, float iY){X=iX;Y=iY;}
+  float X;
+  float Y;
+} t_point;
+
+
+typedef struct Prey {
+  public:
+  t_point current_position;
+  t_point previous_position;
+  t_point velocity;
+  float omegaDeg;
+  float headingTheta;
+  float df_propulsion;
+  float df_friction;
+  float mass;
+  float dTheta;
+  uint16_t color;
+  uint16_t BGcolor;
+  
+  //Default Constructor
+  Prey()
+  {
+     current_position.X = 22;
+     current_position.Y = 5;
+     headingTheta = M_PI;
+     velocity.X = 0.0;
+     velocity.Y = 0.0;
+     df_propulsion = g2prop.random(); //(float)random(-50,50)/1000.0f;
+     df_friction = 0.75;  /// Water Drag Force Coefficient / (prop to velocity)
+     omegaDeg = 0;
+     mass    = 1.0; //Assume unity mass initially
+     color   = matrix.Color(random(60,250), random(20,250), random(20,250));
+     BGcolor = BGCOLOUR; //matrix.Color(random(200,250), random(200,250), random(10,10));
+  }
+
+
+  
+  void move()
+  {
+    //Draw Random Heading Change (Degrees)
+    dTheta = gTurn.random();//(float)random(-2,-2)/100.0;
+    //Update Angular Speed //With turn Drag
+    gTurn.setMean(5.0); //Reset Mean
+
+    //bounce off the border
+    if (current_position.X >= (matrix.width()-1)|| current_position.X <= 0)
+    {
+      velocity.X = -(df_propulsion/mass)*cos(headingTheta);
+      dTheta += 90;
+      gTurn.move(40);//Change the mean turning angle randomly
+      //gTurn.move(sgn(velocity.X)*0.001 ); //Change the mean turning angle randomly
+    }
+    if (current_position.Y >= (matrix.height()-1) || current_position.Y <= 0 )
+    {
+      
+      velocity.Y = (df_propulsion/mass)*sin(headingTheta);
+      gTurn.move(40);//Change the mean turning angle randomly
+    }
+    omegaDeg +=dTheta-df_friction*omegaDeg*0.5; //Update Angular Speed //Assume A Turn Drag too
+    omegaDeg = max(-25,min(omegaDeg,25)); //Maximum Angular Velocity
+    
+    //Update Heading in Rads
+    headingTheta += omegaDeg*(M_PI/180.0);//% (float)TWO_PI;
+    headingTheta = (float)((int)(headingTheta*100.0) % (int)(TWO_PI*100.0))/100.0;
+    
+    // Draw random in propulsion (Random 2D walk)
+    
+    
+    //Calc velocity update with Drag Forces
+    velocity.X += max(-MAX_VELOCITY,min( (df_propulsion/mass)*cos(headingTheta)-df_friction*pow(velocity.X,1),MAX_VELOCITY) ) ; 
+    velocity.Y += max(-MAX_VELOCITY,min( (df_propulsion/mass)*sin(headingTheta) -df_friction*pow(velocity.Y,1),MAX_VELOCITY) ) ; 
+    
+    current_position.X += velocity.X ;
+    current_position.Y += velocity.Y;
+
+
+
+    //Bound Position
+    current_position.X = max(0.0,min(current_position.X,matrix.width()-1));
+    current_position.Y = max(0.0,min(current_position.Y,matrix.height()-1));
+
+    
+  }
+
+  // Renders the prey to The LED matrix screen
+  void draw()
+  {
+  
+    // Reset Previous Position TO BG
+    matrix.drawPixel(previous_position.X,previous_position.Y,BGcolor);
+    // Draw New Prey Position
+    matrix.drawPixel(current_position.X,current_position.Y,color);
+  
+    previous_position = current_position;
+  }
+  
+  private:
+  //Gaussian Distribution for random Turn Angles (Degrees)
+  Gaussian gTurn = Gaussian(random(-1,1), 15); //Let there Exist Biased Prey for turn
+  Gaussian g2prop = Gaussian(1, 0.01);
+  
+  
+} t_prey;
+
+
+
+
+t_prey prey[N_PREY];
+
+
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  Serial.print("\n\nStarting Virtual Prey driver programs for N:");
+  Serial.println(N_PREY);
+  
+  matrix.begin();
+  matrix.setTextWrap(false);
+  matrix.setBrightness(5);
+  matrix.setTextColor(colors[0]);
+  randomSeed(analogRead(0));
+  matrix.fillScreen(0); //colors[0]
+
+  //Initialize Prey
+  for (int i=0;i<N_PREY;i++)
+  {
+    prey[i].current_position.X = 22;
+    prey[i].current_position.Y = 5;
+    //Randomize Initial Heading
+    prey[i].headingTheta = random(-M_PI*10.0,M_PI*10.0)/10.0; //Initial Heading clockwise,0Rad is right, pi/2 -> down, PI -> left
+    
+     Serial.print(prey[i].df_propulsion );//= 0.3; //Set Initial Propeller Force
+    
+  }
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+ //matrix.fillScreen(colors[0]);
+ 
+
+ // Top Left Mark Pixel
+ matrix.drawPixel(0,0,colors[3]);
+ 
+  //for (int i=0;i<matrix.width();i++)
+ {
+  //matrix.setBrightness(70);
+  
+  //newPt.X = max(0,min(oldPt.X + dX,matrix.width()));
+  //newPt.Y = max(0,min(oldPt.Y + dY,matrix.height()));
+  for (int i=0;i<N_PREY;i++)
+  {
+    prey[i].move();
+    prey[i].draw();
+
+  }
+    
+ #ifdef _DEBUG
+  Serial.print(prey[0].headingTheta*180.0/M_PI);
+  Serial.print("\t");
+  Serial.print(prey[0].omegaDeg);
+  Serial.print("\t");
+  Serial.print(prey[0].dTheta);
+  Serial.print("\t");
+  Serial.println(sqrt(pow(prey[0].velocity.X,2)+pow(prey[0].velocity.Y,2)) );
+ #endif
+  
+  matrix.show();
+  delay(100);
+ }
+ 
+  //setCursor(x, 0);
+
+
+}
+```
