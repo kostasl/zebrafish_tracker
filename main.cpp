@@ -552,8 +552,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             //For those foodModels which have not been updated/ Optic Flow may provide a new position Estimate
              if (nFrame > gTrackerState.gcMinFoodModelActiveFrames)
              {
-//                    processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
-//                    UpdateFoodModels(fgImgFrame,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
+                    processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
+                    UpdateFoodModels(fgImgFrame,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
              }
 
             //cv::drawKeypoints(outframe,ptFoodblobs)
