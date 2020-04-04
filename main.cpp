@@ -446,6 +446,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
     QString frameNumberString;
     frameNumberString = QString::number(nFrame);
+    gTrackerState.uiCurrentFrame = nFrame;
 
     assert(!frame.empty());
 
@@ -548,15 +549,12 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         {
             processPreyBlobs(frame_gray,fgFoodMask, outframe , ptFoodblobs); //Use Just The Mask
             UpdateFoodModels(fgImgFrame,vfoodmodels,ptFoodblobs,nFrame,true); //Make New Food Models based on identified Blob
-
-            if (nFrame > gTrackerState.gcMinFoodModelActiveFrames)
-            {
-                processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
-                UpdateFoodModels(fgImgFrame,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
-            }
-
-            //else
-            //cv::imshow("Food Mask",fgFoodMask); //Hollow Blobs For Detecting Food
+            //For those foodModels which have not been updated/ Optic Flow may provide a new position Estimate
+             if (nFrame > gTrackerState.gcMinFoodModelActiveFrames)
+             {
+//                    processFoodOpticFlow(frame_gray, gframeLast ,vfoodmodels,nFrame,ptFoodblobs ); // Use Optic Flow
+//                    UpdateFoodModels(fgImgFrame,vfoodmodels,ptFoodblobs,nFrame,false); //Update but no new Food models
+             }
 
             //cv::drawKeypoints(outframe,ptFoodblobs)
             if (ptFoodblobs.size() >0)
@@ -575,8 +573,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                 // Render Food that has been on for A Min of Active frames / Skip unstable Detected Food Blob - Except If Food is being Tracked
                 if ( (pfood->isNew) && (!pfood->isTargeted))
                 {
-                    ++ft; //Item Is not Counted
-                    continue;
+                    //++ft; //Item Is not Counted
+                    //continue;
                 }
 
                 if (pfood->isTargeted) //Draw Track Only on Targetted Food
@@ -1313,22 +1311,22 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         //Score Distance To Each Food
         for ( ft  = vfoodmodels.begin(); ft!=vfoodmodels.end(); ++ft)
         {
-             pfood = ft->second;
+            pfood = ft->second;
             pfood->blobMatchScore = 0 ;
             cv::Point2f ptfoodCentroid = pfood->zTrack.centroid;
 
-            //Initial score Is high and drops with penalties
+            assert(!isnan(ptfoodCentroid.x));
+            //Initial score Is high (xMax Blob Distance ~ 12 ) and drops with penalties
             int iMatchScore = gTrackerState.gMaxClusterRadiusFoodToBlob*2; //Reset to 5So We Can Rank this Match
 
             float overlap = pfood->zfoodblob.overlap(pfood->zfoodblob,*foodblob);
             float fbdist = norm(ptfoodCentroid-ptblobCentroid);
 
-            ///TODO Can add Directional comparison - motion accross frames should be similar
-            /// Also a gaussian model of speed, size, direction - tuned to each foodobject could be nice here
+            if (fbdist > gTrackerState.gMaxClusterRadiusFoodToBlob)
+                continue; //Do not consider Blobs Further than Max Catchment Area
 
             //Penalize Distance in px moved since last seen
-
-            iMatchScore -= exp(2* fbdist/ (nFrame - pfood->nLastUpdateFrame + 1) ) ;
+            iMatchScore -= exp(0.05* fbdist/ (nFrame - pfood->nLastUpdateFrame + 1) ) ;
 
             //Penalize Size Mismatch
             iMatchScore -= 2.0*abs(pfood->zfoodblob.size - foodblob->size);
@@ -1392,7 +1390,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         if (blobAvailable && (pair.pFoodObject->nLastUpdateFrame - nFrame) > 0 )
         {
             // Update Food Item Based oN best Blob Match
-            pair.pFoodObject->activeFrames ++; //Increase Count Of Consecutive Active Frames
+            //pair.pFoodObject->activeFrames ++; //Increase Count Of Consecutive Active Frames
             pair.pFoodObject->updateState(foodblobMatched,0, foodblobMatched.pt,nFrame, pair.score,foodblobMatched.size);
             iMatchCount++;
            // blobConsumed = true;
@@ -1411,6 +1409,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         if (!pfood) //IF no dublicate Item there, then make new
         {
             pfood = new preyModel(*foodblob ,++gTrackerState.gi_MaxFoodID);
+            pfood->nLastUpdateFrame = nFrame;
             pfood->blobMatchScore = 0;
             vfoodmodels.insert(IDFoodModel(pfood->ID,pfood));
             //_DEBUG
@@ -1430,7 +1429,7 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     {
         pfood = ft->second;
         //Delete If Not Active for Long Enough between inactive periods / Track Unstable
-         if (pfood->isUnused())
+        if (pfood->isUnused())
         {
             ft = vfoodmodels.erase(ft);
             //_DEBUG
@@ -1443,8 +1442,8 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         {//If this Model Has not Been Used Here
             if (pfood->nLastUpdateFrame-nFrame > 1)
             {
-                //pfood->activeFrames = 0; //Reset Count Of Consecutive Active Frames
-                pfood->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+                //Item Has been lost , Let it evolve/Run using prediction
+                pfood->updateState(pfood->zfoodblob ,0,pfood->predictMove(),nFrame,-500,0);
             }
         }
 

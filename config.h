@@ -163,9 +163,9 @@ class trackerState
       const int giHeadIsolationMaskVOffset      = 24; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
       int gcMaxFishModelInactiveFrames          = 150; //Number of frames inactive until track is deleted
-      int gcMaxFoodModelInactiveFrames          = gfVidfps*2; //Number of frames inactive (Not Matched to a Blob) until track is deleted
-      int gcMinFoodModelActiveFrames            = gfVidfps/10; //Min Number of consecutive frames it needs to be active  otherwise its deleted
-      const int gMaxClusterRadiusFoodToBlob     = 6;
+      int gcMaxFoodModelInactiveFrames          = gfVidfps/5; //Number of frames inactive (Not Matched to a Blob) until track is deleted
+      int gcMinFoodModelActiveFrames            = gfVidfps/20; //Min Number of consecutive frames it needs to be active  otherwise its deleted
+      const int gMaxClusterRadiusFoodToBlob     = 20;
       const int thActive                            = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
       const int gc_FishTailSpineSegmentLength_init  = 9;
       int gFoodReportInterval                       = (int)gfVidfps;
@@ -252,6 +252,7 @@ class trackerState
       std::string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
 
       ///Specific To the Tracked Video Options//
+      uint uiCurrentFrame = 1;
       uint uiStartFrame = 1;
       uint uiStopFrame = 0;
       uint iSpineContourFitFramePeriod         = 20; //Check that Tail Fitting Matches Contour Every X Frames

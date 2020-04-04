@@ -27,7 +27,7 @@ muTurn = 0.0; //Mean Turn Angle De
 sigmaTurn = 15.0;
 muPropulsion = 1.0;
 sigmaPropulsion = 0.01;
-
+nLastUpdateFrame = gTrackerState.uiCurrentFrame;
 this->ID = lastFoodID;
 ROIID = 0;
 isTargeted = false; //Saves Location To Data File When True
@@ -37,9 +37,7 @@ isNew = true;
 
 preyModel::preyModel(zfdblob blob,zfdID ID):preyModel()
 {
-    inactiveFrames = 0;
-    activeFrames = 0;
-    blobMatchScore = 0;
+
     this->ID = ID;
 
     zTrack.id   = this->ID;
@@ -65,6 +63,10 @@ preyModel::preyModel(zfdblob blob,zfdID ID):preyModel()
 
 //    zTrack.boundingBox = cv::Rect(blob.pt.x - 5,blob.pt.y - 5,5,5);
     this->zfoodblob = blob;
+    // Add point to track  - \todo make this into a funct
+    zTrack.centroid = blob.pt;
+    this->zTrack.pointStackRender.push_back(blob.pt);
+    this->zTrack.pointStack.push_back(blob.pt);
 }
 
 
@@ -77,8 +79,14 @@ preyModel::~preyModel()
 
 /// \brief Models prey as a particle with propulsion force F and heading Theta moving in 2D space
 ///
-void preyModel::predictMove()
+cv::Point2f preyModel::predictMove()
 {
+
+    //Prediction Step
+    ptPredicted.x = ptEstimated.x +(dx*dt);
+    ptPredicted.y = ptEstimated.y +(dy*dt);
+
+    return (ptPredicted);
 
 //    //Draw Random Heading Change (Degrees)
 //       dTheta = gTurn.random();//(float)random(-2,-2)/100.0;
@@ -133,25 +141,31 @@ cv::Point2f preyModel::alpha_beta_TrackingFilter_step(cv::Point2f blobPt)
     cv::Point2f res;
     double dResidual = 0.0;
 
+    assert( !( isnan(blobPt.x) || isnan(blobPt.y) ) );
+
     //Prediction Step
-    ptPredicted.x <- ptEstimated.x +(dx*dt);
-    ptPredicted.y <- ptEstimated.y +(dy*dt);
+    ptPredicted.x = ptEstimated.x +(dx*dt);
+    ptPredicted.y = ptEstimated.y +(dy*dt);
+
+    assert( !( isnan(ptPredicted.x) || isnan(ptPredicted.y) ) );
 
     //#Update step / X
-    dResidual = blobPt.x -ptPredicted.x;
-    dx = dx +h*(dResidual/dt);
+    dResidual   = blobPt.x - ptPredicted.x;
+    dx          = dx +h*(dResidual/dt);
+    assert( ! isnan(dx));
     ptEstimated.x = ptPredicted.x + g*dResidual;
 
     //#Update step / Y
-    dResidual = blobPt.y -ptPredicted.y;
-    dy = dy +h*(dResidual/dt);
+    dResidual   = blobPt.y - ptPredicted.y;
+    dy          = dy +h*(dResidual/dt);
+    assert( ! isnan(dy));
     ptEstimated.y = ptPredicted.y + g*dResidual;
 
 
     // Make New prey item position Estimate
-    res.x =  ptEstimated.x;
-    res.y =  ptEstimated.y;
+    res = ptEstimated;
 
+    assert( !( isnan(ptEstimated.x) || isnan(ptEstimated.y) ) );
     //##print(res)
 
     return(res);
@@ -161,52 +175,66 @@ cv::Point2f preyModel::alpha_beta_TrackingFilter_step(cv::Point2f blobPt)
 void preyModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius)
 {
 
-    cv::Point2f ptFiltered = alpha_beta_TrackingFilter_step(bcentre);
 
-    float fDistToNewPosition = cv::norm(ptFiltered,this->zTrack.centroid );
+    float fDistToNewPosition = cv::norm(bcentre-this->zTrack.centroid );
     if (fDistToNewPosition > gTrackerState.gMaxClusterRadiusFoodToBlob)
     {
          qDebug() << "Prey " << this->ID << " match too far d: " << fDistToNewPosition << " Mscore :" << matchScore;
-         //return;
+         return;
     }
-
-
-    blobMatchScore = matchScore;
-    nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
-    this->zfoodblob      = fblob;
-    this->zTrack.pointStack.push_back(ptFiltered);
-    this->zTrack.effectiveDisplacement = fDistToNewPosition;
-
-
-    this->zTrack.centroid = ptFiltered;//fblob->pt; //Or Maybe bcentre
-    this->blobRadius = szradius;
-    zTrack.boundingBox.x = ptFiltered.x - 6;
-    zTrack.boundingBox.y = ptFiltered.y - 6;
-    zTrack.boundingBox.width = 12;
-    zTrack.boundingBox.height = 12;
+    //Make sense of State
+    if (matchScore > 0)
+    {
+        activeFrames++;
+    }
+    else
+    {
+        inactiveFrames ++; //Increment Time This Model Has Not Been Active
+        activeFrames = 0; //Reset Count Of Consecutive Active Frames
+    }
     //Establish stable initial phase before removing new flag
     if (activeFrames > gTrackerState.gcMinFoodModelActiveFrames && isNew)
     {
         isNew = false; //Having succeded to achieve n consec. active frames this food item is established
         inactiveFrames = 0; //Reset Counter Of inactive Frames
     }
-    ///Trick - Update is called when fooditem has been matched, yet we use the
-    /// the update to check if it has been inactive for too long- if found on next frame it will become active again
+
+    ///Trick 2: Only mark as active if blob size is > 1 , otherwise we may be just tracking pixel flow
+    /// Filter out activity based on optic flow only/where a blob cannot be seen/ but tracking a video pixel nontheless
+    //if (fblob.size > 1)
+    //    inactiveFrames = 0; //Reset Counter Of inactive Frames
+
+    this->zTrack.inactive = inactiveFrames;
+
     //Although it may have been found here, it is still marked inactive until the next round
     isActive = (inactiveFrames < gTrackerState.gcMaxFoodModelInactiveFrames) && !isNew;
 
 
+    //Time Since Last recorded Move
+    dt = std::max((uint)nFrame - this->nLastUpdateFrame,(uint)1);
+    cv::Point2f ptFiltered = alpha_beta_TrackingFilter_step(bcentre);
 
-    ///Trick 2: Only mark as active if blob size is > 1 , otherwise we may be just tracking pixel flow
-    /// Filter out activity based on optic flow only/where a blob cannot be seen/ but tracking a video pixel nontheless
-    if (fblob.size > 1)
-        inactiveFrames = 0; //Reset Counter Of inactive Frames
-    else {
-       inactiveFrames++;
-    }
-    this->zTrack.inactive = inactiveFrames;
+
+    blobMatchScore = matchScore;
+    nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
+    this->zfoodblob      = fblob;
+    this->zTrack.centroid = ptFiltered;//fblob->pt; //Or Maybe bcentre
+    this->zTrack.pointStack.push_back(ptFiltered);
+    this->zTrack.effectiveDisplacement = fDistToNewPosition;
+
+
+    this->blobRadius = szradius;
+    zTrack.boundingBox.x = this->zTrack.centroid.x - 6;
+    zTrack.boundingBox.y = this->zTrack.centroid.y - 6;
+    zTrack.boundingBox.width = 12;
+    zTrack.boundingBox.height = 12;
+
+    ///Trick - Update is called when fooditem has been matched, yet we use the
+    /// the update to check if it has been inactive for too long- if found on next frame it will become active again
+
     ///Optimization only Render Point If Displaced Enough from Last One
-    if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
+    double fDistFromLastRenderPos = cv::norm(this->zTrack.centroid - (cv::Point2f)this->zTrack.pointStackRender.back() );
+    if ( fDistFromLastRenderPos  > gTrackerState.gDisplacementThreshold)
     {
         this->zTrack.pointStackRender.push_back(ptFiltered);
         //this->zTrack.active++;

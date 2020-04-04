@@ -30,7 +30,7 @@ public:
     preyModel(zfdblob blob,zfdID ID);
     ~preyModel();
 
-    void predictMove();// Draws Prediction Of next position
+    cv::Point2f  predictMove();// Draws Prediction Of next position
     void updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius);
     static int getActiveFoodCount(foodModels& vfoodmodels);
     bool isUnused(); //Contains the logic of when to delete food item
@@ -71,7 +71,8 @@ public:
     cv::Point2f ptPredicted;
     double dx = 0.01;
     double dy = 0.01;
-    double dt = gTrackerState.gfVidfps/3; // Filter TimeStep
+    // These values have been tested in R using pre-recorded Prey Data
+    double dt = 1.0;//gTrackerState.gfVidfps/3; // Filter TimeStep
     constexpr static const double g = 1.0/100.0; //Measurement Scaling - 2orders Larger than h works best
     constexpr static const double h = 1.0/1000.0; //Prediction Scaling - Gain Smaller when highly noisy environment
 

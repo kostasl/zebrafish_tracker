@@ -232,7 +232,7 @@ void trackerState::setVidFps(float fps)
 {
     gfVidfps                      = fps;
     gcMaxFoodModelInactiveFrames  = gfVidfps*2; //Number of frames inactive (Not Matched to a Blob) until track is deleted
-    gcMinFoodModelActiveFrames    = gfVidfps/5;
+    gcMinFoodModelActiveFrames    = gfVidfps/20;
     gFoodReportInterval           = gfVidfps; //Report Food every second
 
 }
