@@ -29,6 +29,7 @@ public:
     preyModel();
     preyModel(zfdblob blob,zfdID ID);
     ~preyModel();
+
     void predictMove();// Draws Prediction Of next position
     void updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius);
     static int getActiveFoodCount(foodModels& vfoodmodels);
@@ -63,6 +64,18 @@ public:
     bool isTargeted;
     bool isActive;
     bool isNew;
+
+    private:
+    cv::Point2f alpha_beta_TrackingFilter_step(cv::Point2f blobPt); //Filter Position Updates based on a simple tuned g-h filter
+    cv::Point2f ptEstimated; //Filter Internal Vars
+    cv::Point2f ptPredicted;
+    double dx = 0.01;
+    double dy = 0.01;
+    double dt = gTrackerState.gfVidfps/3; // Filter TimeStep
+    constexpr static const double g = 1.0/100.0; //Measurement Scaling - 2orders Larger than h works best
+    constexpr static const double h = 1.0/1000.0; //Prediction Scaling - Gain Smaller when highly noisy environment
+
+
 };
 
 

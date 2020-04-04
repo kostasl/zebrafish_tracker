@@ -46,6 +46,10 @@ preyModel::preyModel(zfdblob blob,zfdID ID):preyModel()
     zTrack.colour = CV_RGB(20,170,20);
     zTrack.centroid = blob.pt;
 
+    //Initialize Filter Estimate to x0,y0
+    ptEstimated = ptPredicted =  blob.pt;
+
+
     headingTheta = M_PI;
     velocity.x = 0.0;
     velocity.y = 0.0;
@@ -118,11 +122,48 @@ void preyModel::predictMove()
 //       current_position.Y = max(0.0,min(current_position.Y,matrix.height()-1));
 
 }
+
+/// \brief Implements a simple position filtering technique using a G-H Filter, such as tracking between subsequent frames is improved,
+/// removing any sudden jumps and noise from the estimated prey position
+///
+cv::Point2f preyModel::alpha_beta_TrackingFilter_step(cv::Point2f blobPt)
+{
+
+
+    cv::Point2f res;
+    double dResidual = 0.0;
+
+    //Prediction Step
+    ptPredicted.x <- ptEstimated.x +(dx*dt);
+    ptPredicted.y <- ptEstimated.y +(dy*dt);
+
+    //#Update step / X
+    dResidual = blobPt.x -ptPredicted.x;
+    dx = dx +h*(dResidual/dt);
+    ptEstimated.x = ptPredicted.x + g*dResidual;
+
+    //#Update step / Y
+    dResidual = blobPt.y -ptPredicted.y;
+    dy = dy +h*(dResidual/dt);
+    ptEstimated.y = ptPredicted.y + g*dResidual;
+
+
+    // Make New prey item position Estimate
+    res.x =  ptEstimated.x;
+    res.y =  ptEstimated.y;
+
+    //##print(res)
+
+    return(res);
+
+}
+
 void preyModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigned int nFrame,int matchScore,float szradius)
 {
 
-    float fDistToNewPosition = cv::norm(fblob.pt-this->zTrack.centroid);
+    cv::Point2f ptFiltered = alpha_beta_TrackingFilter_step(bcentre);
 
+    float fDistToNewPosition = cv::norm(ptFiltered,this->zTrack.centroid );
     if (fDistToNewPosition > gTrackerState.gMaxClusterRadiusFoodToBlob)
     {
          qDebug() << "Prey " << this->ID << " match too far d: " << fDistToNewPosition << " Mscore :" << matchScore;
@@ -133,14 +174,14 @@ void preyModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
     blobMatchScore = matchScore;
     nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
     this->zfoodblob      = fblob;
-    this->zTrack.pointStack.push_back(bcentre);
+    this->zTrack.pointStack.push_back(ptFiltered);
     this->zTrack.effectiveDisplacement = fDistToNewPosition;
 
 
-    this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
+    this->zTrack.centroid = ptFiltered;//fblob->pt; //Or Maybe bcentre
     this->blobRadius = szradius;
-    zTrack.boundingBox.x = bcentre.x - 6;
-    zTrack.boundingBox.y = bcentre.y - 6;
+    zTrack.boundingBox.x = ptFiltered.x - 6;
+    zTrack.boundingBox.y = ptFiltered.y - 6;
     zTrack.boundingBox.width = 12;
     zTrack.boundingBox.height = 12;
     //Establish stable initial phase before removing new flag
@@ -167,9 +208,8 @@ void preyModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
     {
-        this->zTrack.pointStackRender.push_back(bcentre);
+        this->zTrack.pointStackRender.push_back(ptFiltered);
         //this->zTrack.active++;
-
         //this->zTrack.inactive = 0;
     }else {
         //this->zTrack.inactive++;
