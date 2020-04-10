@@ -328,6 +328,24 @@ lines(datFilteredX,lty=2,col="red",lwd=2)
 *I implemented the g-h filter algorithm to the tracking of prey in the behavioural tracker*. It works well to remove sudden changes to the prey position,  and in addition it can be used to predict prey motion, based on last $\dot{x}$ estimates.
 Yet, if the signal/blob position is lost for while and itdeviates away, then when it is found again we see oscillations of the estimated position about the real prey position. This is is effectively the same as having an $x_0$ that is far from the true signal, and initially oscillates before it settles.
 
+## A Bayesian discrete filter
+Let $\mathcal{L}$ denote the likelyhood pdf (pmf) given a measurement $z$, and $||f(x)||$ is the normalized of $f(x)$, so as it becomes a pdf.
+Then the filter equations are :
+
+\[\mathbf{\hat{x} = x * f_x(.)}    \text{ Predict Step} \]
+\[\mathbf{x = || \mathcal{L} . \hat{x} ||} \text{ Update Step} \]
+
+The algorithm is :
+
+1.Initialization
+  1. Initialize our belief in the state
+2.Predict
+  1. Based on the system behavior, predict state for the next time step
+  2. Adjust belief to account for the uncertainty in prediction
+3. Update
+  1. Get a measurement and associated belief about its accuracy
+  2. Compute how likely it is the measurement matches each state
+  3. Update state belief with this likelihood
 
 
 ## Polynomial Kalman Filters 
