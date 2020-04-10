@@ -231,7 +231,21 @@ g_h_filter <- function(pdata,x0,dx,g,h,dt=1)
   ##print(res)
   return(res)
 }
+```
 
+[1]:The g-h filter is not one filter - it is a classification for a family of filters.
+The Benedict-Bordner filter was invented to minimize the transient error in this example, where $\dot{x}$ makes a step jump.
+Eli Brookner in Tracking and Kalman Filtering Made Easy lists 11, and I am sure there are more.
+Not only that, but each type of filter has numerous subtypes.
+Each filter is differentiated by how g and h are chosen. So there is no ’one size fits all’ advice that I
+can give here.
+Some filters set g and h as constants, others vary them dynamically. 
+*The Kalman filter varies them dynamically at each step.*
+Some filters allow g and h to take any value within a range, others constrain one to be dependent on the other by some function $f (.)$ , where $g = f ( h )$ .
+
+## Testing a g-h filter on prey motion data
+
+```{r}
 ##Test the filter with prey data
 ##Load Prey Data
 ## Load Prey Trajectory Data
@@ -310,25 +324,20 @@ lines(datPreyItem$Centroid_X,lty=5,type='l',lwd=4,col="green")
 lines(datFilteredX,lty=2,col="red",lwd=2)
 ```
 
-[1]:The g-h filter is not one filter - it is a classification for a family of filters.
-The Benedict-Bordner filter was invented to minimize the transient error in this example, where $\dot{x}$ makes a step jump.
-Eli Brookner in Tracking and Kalman Filtering Made Easy lists 11, and I am sure there are more.
-Not only that, but each type of filter has numerous subtypes.
-Each filter is differentiated by how g and h are chosen. So there is no ’one size fits all’ advice that I
-can give here.
-Some filters set g and h as constants, others vary them dynamically. 
-*The Kalman filter varies them dynamically at each step.*
-Some filters allow g and h to take any value within a range, others constrain one to be dependent on the other by some function $f (.)$ , where $g = f ( h )$ .
+
+*I implemented the g-h filter algorithm to the tracking of prey in the behavioural tracker*. It works well to remove sudden changes to the prey position,  and in addition it can be used to predict prey motion, based on last $\dot{x}$ estimates.
+Yet, if the signal/blob position is lost for while and itdeviates away, then when it is found again we see oscillations of the estimated position about the real prey position. This is is effectively the same as having an $x_0$ that is far from the true signal, and initially oscillates before it settles.
+
+
 
 ## Polynomial Kalman Filters 
 
 We saw that the recursive least-squares filter provided
 the exact same estimates, for a given number of measurements, as the batch-
-processing least-squares filter. In this chapter we will first provide the general
-equations for the discrete Kalman filter and then show under what conditions it is
-completely equivalent to the recursive least-squares filter.
+processing least-squares filter. Here we will first provide the general equations for the discrete Kalman filter and then show under what conditions it is
+completely equivalent to the recursive least-squares filter. 
 We will also demonstrate the divergence problem with the Kalman filter, but we will show that there are a
-variety of engineering fixes.
+variety of engineering fixes. 
 
 To apply Kalman-filtering theory, our model of the real world must be described by a set of differential equations. These equations must be cast in
 matrix or state-space form as :
@@ -364,8 +373,12 @@ The gain of the Kalman filter *is chosen to minimize the variance of the error i
 The Riccati equations are simply an iterative way of finding the optimal gain at each time
 step.
 
-
-## A Prey motion model 
+A polynomial Kalman filter with zero process-noise and infinite initial covariance matrix is identical to
+a recursive least-squares filter of the same order.
+Having an initial covariance matrix that is infinite means that we have no a priori information on how to initialize the filter state.
+Thus, the first gain of first-order polynomial Kalman and recursive least-squares filters is identical.
+ 
+## Testing a filter on prey motion data
 
 Here I load prey data and re-implemend the model I made for the VR prey stimulus screen, and use it as my prediction/plant/process model.
 ```{r}
