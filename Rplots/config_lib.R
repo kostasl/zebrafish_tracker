@@ -14,7 +14,7 @@
 ## detected huntevent register ("setn15-HuntEvents-SB-Updated-Merged2)
 #####################
 #library(MASS)
-
+library(RColorBrewer);
 
 ####################
 ##Convert RGB Values To HEX Colour Val.

@@ -245,15 +245,70 @@ Some filters allow g and h to take any value within a range, others constrain on
 
 ## Testing a g-h filter on prey motion data
 
+We tracked N Rotifers from a single prey hunting experiment, and obtained the x-y positions of their blobs, between subsequent frames taken at 410 fps on average. Here we load this data set, add noise and examine the ability of a g-h filter to remove some abrupt random, and uncorrelated position noise.
+
+First we load the data, and look at the distribution of speeds in terms of mm per sec
 ```{r}
 ##Test the filter with prey data
 ##Load Prey Data
 ## Load Prey Trajectory Data
-mufps = 410
+source("config_lib.R") 
+##Plot display Config 
+line = 8.3; lineAxis = 3.0; cex = 1.4; adj  = -3; padj <- -7.2; las <- 1;
+##Note It Returns Mean of Vector values centrered at x , with a window width k
+meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);  return(tproc)} #tproc=rep(NA,n);
+## Returns the diff between a points in the vector and a point k positions ahead of it 
+## Note result vector, shorter than t by  n-k
+lagDiff <- function(t,k) {n=length(t);  k=min(k,n); tproc=vector(length = n-k);   for(i in 1:(n-k)){  tproc[i]= t[min(n, i+k)] -t[i]   };  return(tproc);};
+mufps = G_APPROXFPS
 
 datPrey = read.csv2("dat/AutoSet450fps_01-02-18_WTNotFed1Roti_3751_004_food_1.csv",header=TRUE,sep = "\t",as.is =c(1,2,3,4,5,6,7),colClasses="numeric",dec="." )
-##Pick A random Prey
+
+
+## Show Prey Speed Histograms ##
 vPreyIDs = as.numeric(names(table(datPrey$FoodID))) 
+lPreySpeedDens = list()
+lPreySpeedStat = list()
+
+n = 1
+for (pID in vPreyIDs){
+  datPreyItem <- datPrey[datPrey$FoodID == pID,]  
+  x0=as.numeric(head(datPreyItem$Centroid_X,1))+1
+  y0=as.numeric(head(datPreyItem$Centroid_Y,1))+1
+  
+  vPreyDispl_mm = cumsum(sqrt( (diff(datPreyItem$Centroid_X)  )^2 + (diff(datPreyItem$Centroid_Y) )^2   )) *DIM_MMPERPX
+  ## Speed estimate in terms of displacement between 2 points separated by 1 sec in time, starting from 1st point, againt pt 1 sec ahead of time  in terms   of Get Speed As displacement in A Second
+  vPreySpeed_mm = lagDiff(vPreyDispl_mm,G_APPROXFPS)
+  ##Get speed density when Prey Is moving (ie speed Above min)
+  vMotSpeed <- vPreySpeed_mm[vPreySpeed_mm > 0.05]
+  lPreySpeedDens[[n]] =density(vMotSpeed)
+  lPreySpeedStat[[n]] <- list( mean=mean(vMotSpeed), sdE=sd(vMotSpeed)/sqrt(NROW(vMotSpeed))  )
+  n=n+1
+}
+datPreyStat <- data.frame(do.call("rbind",lPreySpeedStat))
+  
+## Plot Densities of Rotifer Speed
+plot(lPreySpeedDens[[1]],type='l')
+for (dens in lPreySpeedDens)
+{
+  lines(dens)
+}
+## Plot Hist of Mean Prey Speeds
+hist(unlist(datPreyStat[,1]),breaks=10,main=paste("mean prey speeds=",mean(unlist(datPreyStat[,1])))   )
+
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+pdf(file= paste(strPlotExportPath,"/stat/stat_MeanPreySpeeds.pdf" ,sep=""),width = 7,height = 7)
+  plot(density(unlist(datPreyStat[,1]),bw=0.1),lwd=3,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,cex.lab=cex )
+  mtext(side = 1, cex=cex, line = lineAxis,expression(paste("Mean prey travel speed (mm/sec)" ) )  ) 
+  mtext(side = 2, cex=cex, line = lineAxis, expression(paste("Density" ) )  ) #(",lambda,")"
+dev.off()
+
+
+```
+
+Then We select a prey item at random, and add noise and filter :
+```{r}
+##Pick A random Prey
 datPreyItem <- datPrey[datPrey$FoodID == sample(vPreyIDs,1),]
 
 x0=as.numeric(head(datPreyItem$Centroid_X,1))+1
@@ -292,7 +347,10 @@ lines(datFilteredY,lty=2,col="red",lwd=2)
 plot(datPreyItem$Centroid_X,datPreyItem$Centroid_Y,xlim=c(0,500),ylim=c(0,500))
 lines(datBrokenX,datBrokenY,lty=2,col="grey",lwd=1)
 lines(datFilteredX,datFilteredY,lty=2,col="red",lwd=2)
-##Combined
+
+
+
+
 ```
 
 These simple fits to data of tracked blob prey trajectories that have been corrupted by noise show that indeed even a simple application of
