@@ -197,6 +197,8 @@ void preyModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
     {
         isNew = false; //Having succeded to achieve n consec. active frames this food item is established
         inactiveFrames = 0; //Reset Counter Of inactive Frames
+        if (gTrackerState.bTrackAllPrey)
+            isTargeted = true; //StartTracking
     }
 
     ///Trick 2: Only mark as active if blob size is > 1 , otherwise we may be just tracking pixel flow
@@ -356,8 +358,8 @@ bool preyModel::isUnused()
     bool bLost =  (!this->isActive
                  && !this->isNew
                  || this->inactiveFrames > gTrackerState.gcMaxFoodModelInactiveFrames
-                 || (this->activeFrames < gTrackerState.gcMinFoodModelActiveFrames && this->inactiveFrames > gTrackerState.gcMaxFoodModelInactiveFrames/2))
-                 && (this->isTargeted == false);
+                 || (this->activeFrames < gTrackerState.gcMinFoodModelActiveFrames && this->inactiveFrames > gTrackerState.gcMaxFoodModelInactiveFrames/2));
+                 //&& (this->isTargeted == false); //Cannot Be erased if it is being Tracked
 
             return bLost;
 }

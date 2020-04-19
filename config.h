@@ -165,7 +165,7 @@ class trackerState
       int gcMaxFishModelInactiveFrames          = 150; //Number of frames inactive until track is deleted
       int gcMaxFoodModelInactiveFrames          = gfVidfps/5; //Number of frames inactive (Not Matched to a Blob) until track is deleted
       int gcMinFoodModelActiveFrames            = gfVidfps/20; //Min Number of consecutive frames it needs to be active  otherwise its deleted
-      const int gMaxClusterRadiusFoodToBlob     = 20;
+      const int gMaxClusterRadiusFoodToBlob     = 4;
       const int thActive                            = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
       const int gc_FishTailSpineSegmentLength_init  = 9;
       int gFoodReportInterval                       = (int)gfVidfps;
@@ -211,6 +211,7 @@ class trackerState
       bool bAddPreyManually   = false;
       bool bMeasure2pDistance = true; /// A mode allowing 2point distance measurement
       bool bTrackFish         = true;
+      bool bTrackAllPrey      = true; ///Track All detected Prey Models/Once established Active
       bool bRecordToFile      = true;
       bool bSaveImages            = false;
       bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour
@@ -288,7 +289,7 @@ class trackerState
       int gEyeTemplateAngleSteps      = 5;
       int iEyeMaskSepWidth            = 25; //5 px width vertical line separates the eyes for segmentation
       double eyeStepIncrement         = 0.1;
-      double gTemplateMatchThreshold  = 0.89; //If not higher than 0.9 The fish body can be matched at extremeties
+      double gTemplateMatchThreshold  = 0.80; //If not higher than 0.9 The fish body can be matched at extremeties
       int iLastKnownGoodTemplateRow   = 0;
       int iFishAngleOffset            = 0;
       double gUserReward              = 0; //User feedback for reinforcement learning

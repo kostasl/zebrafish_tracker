@@ -132,8 +132,6 @@ int main(int argc, char *argv[])
     gTimer.start();
 
 
-
-
     // Get the rdbuf of clog.
     // We will need it to reset the value before exiting.
     auto old_rdbufclog = std::clog.rdbuf();
@@ -1442,8 +1440,9 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
         {//If this Model Has not Been Used Here
             if (pfood->nLastUpdateFrame-nFrame > 1)
             {
-                //Item Has been lost , Let it evolve/Run using prediction
+                //Item Has been lost , Let it evolve/Run using prediction - but increase inactiveFrames
                 pfood->updateState(pfood->zfoodblob ,0,pfood->predictMove(),nFrame,-500,0);
+
             }
         }
 

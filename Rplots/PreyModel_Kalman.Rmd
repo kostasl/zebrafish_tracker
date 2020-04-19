@@ -294,14 +294,14 @@ for (dens in lPreySpeedDens)
   lines(dens)
 }
 ## Plot Hist of Mean Prey Speeds
-hist(unlist(datPreyStat[,1]),breaks=10,main=paste("mean prey speeds=",mean(unlist(datPreyStat[,1])))   )
+hist(unlist(datPreyStat[,1]),breaks=10,main=paste("mean prey speeds=",prettyNum( mean(unlist(datPreyStat[,1])) )," SEM",prettyNum( sd(unlist(datPreyStat[,1]))/sqrt(NROW(datPreyStat[,1]))  ) )  )
 
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
-pdf(file= paste(strPlotExportPath,"/stat/stat_MeanPreySpeeds.pdf" ,sep=""),width = 7,height = 7)
+#pdf(file= paste(strPlotExportPath,"/stat/stat_MeanPreySpeeds.pdf" ,sep=""),width = 7,height = 7)
   plot(density(unlist(datPreyStat[,1]),bw=0.1),lwd=3,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,cex.lab=cex )
   mtext(side = 1, cex=cex, line = lineAxis,expression(paste("Mean prey travel speed (mm/sec)" ) )  ) 
   mtext(side = 2, cex=cex, line = lineAxis, expression(paste("Density" ) )  ) #(",lambda,")"
-dev.off()
+#dev.off()
 
 
 ```
