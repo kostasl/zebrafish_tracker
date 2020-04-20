@@ -276,7 +276,7 @@ class trackerState
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int giEyeIsolationMaskRadius        = 10; ///Mask circle between eyes
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -3; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
+      int gthresEyeSeg                    = -10; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
       int gthresEyeSegL                   = 2;
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold          = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /

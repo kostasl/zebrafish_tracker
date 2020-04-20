@@ -262,9 +262,28 @@ meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[
 lagDiff <- function(t,k) {n=length(t);  k=min(k,n); tproc=vector(length = n-k);   for(i in 1:(n-k)){  tproc[i]= t[min(n, i+k)] -t[i]   };  return(tproc);};
 mufps = G_APPROXFPS
 
-datPrey = read.csv2("dat/AutoSet450fps_01-02-18_WTNotFed1Roti_3751_004_food_1.csv",header=TRUE,sep = "\t",as.is =c(1,2,3,4,5,6,7),colClasses="numeric",dec="." )
+#Location of prey motion track files, each containing tracklets from approx 20-30 rotifers 
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots/")
+loadPreyTracks <- function()
+{
+  preyFile = list.files("dat/",pattern=".csv"); ##list("AutoSet450fps_15-02-18_WTDryFed4Roti_4071_003_food_1.csv","AutoSet450fps_15-02-18_WTDryFed3Roti_4061_003_food_1.cs  v","AutoSet420fps_30-11-17_WTNotFed2Roti_252_006_food_1.csv","AutoSet450fps_14-06-18_WTNotFed5Roti_4491_001_food_1.csv")
+  ldatPrey = list()
+  n=1
+  for (fileD in preyFile)
+  {
+    ldatPrey[[n]] = read.csv2(paste0("dat/",fileD),header=TRUE,sep = "\t",as.is =c(1,2,3,4,5,6,7),colClasses="numeric",dec="." )
+    ##Modify PpreyID so there is no clash betweet tracked Items Between different Experiments
+    if (n>1)
+      ldatPrey[[n]]$FoodID = ldatPrey[[n]]$FoodID + max(ldatPrey[[n-1]]$FoodID);
+    
+  n = n + 1
+  }
+  datPrey <- do.call(rbind,ldatPrey)
+  return(datPrey)
+}
 
-
+datPrey <- loadPreyTracks()
+save(datPrey,file="dat/preyTracks.RData")
 ## Show Prey Speed Histograms ##
 vPreyIDs = as.numeric(names(table(datPrey$FoodID))) 
 lPreySpeedDens = list()
@@ -281,9 +300,13 @@ for (pID in vPreyIDs){
   vPreySpeed_mm = lagDiff(vPreyDispl_mm,G_APPROXFPS)
   ##Get speed density when Prey Is moving (ie speed Above min)
   vMotSpeed <- vPreySpeed_mm[vPreySpeed_mm > 0.05]
-  lPreySpeedDens[[n]] =density(vMotSpeed)
-  lPreySpeedStat[[n]] <- list( mean=mean(vMotSpeed), sdE=sd(vMotSpeed)/sqrt(NROW(vMotSpeed))  )
-  n=n+1
+  ## Select Only frames where prey is moving  
+  if (NROW(vMotSpeed) > 10)
+  {
+    lPreySpeedDens[[n]] =density(vMotSpeed)
+    lPreySpeedStat[[n]] <- list( mean=mean(vMotSpeed), sdE=sd(vMotSpeed)/sqrt(NROW(vMotSpeed))  )
+    n=n+1
+  }
 }
 datPreyStat <- data.frame(do.call("rbind",lPreySpeedStat))
   
@@ -297,11 +320,11 @@ for (dens in lPreySpeedDens)
 hist(unlist(datPreyStat[,1]),breaks=10,main=paste("mean prey speeds=",prettyNum( mean(unlist(datPreyStat[,1])) )," SEM",prettyNum( sd(unlist(datPreyStat[,1]))/sqrt(NROW(datPreyStat[,1]))  ) )  )
 
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
-#pdf(file= paste(strPlotExportPath,"/stat/stat_MeanPreySpeeds.pdf" ,sep=""),width = 7,height = 7)
-  plot(density(unlist(datPreyStat[,1]),bw=0.1),lwd=3,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,cex.lab=cex )
+pdf(file= paste(strPlotExportPath,"/stat/stat_MeanPreySpeeds252_006.pdf" ,sep=""),width = 7,height = 7)
+  plot(density(unlist(datPreyStat[,1]),bw=0.08),lwd=3,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,cex.lab=cex )
   mtext(side = 1, cex=cex, line = lineAxis,expression(paste("Mean prey travel speed (mm/sec)" ) )  ) 
-  mtext(side = 2, cex=cex, line = lineAxis, expression(paste("Density" ) )  ) #(",lambda,")"
-#dev.off()
+  mtext(side = 2, cex=cex, line = lineAxis-0.5, expression(paste("Density" ) )  ) #(",lambda,")"
+dev.off()
 
 
 ```
@@ -387,7 +410,22 @@ lines(datFilteredX,lty=2,col="red",lwd=2)
 Yet, if the signal/blob position is lost for while and itdeviates away, then when it is found again we see oscillations of the estimated position about the real prey position. This is is effectively the same as having an $x_0$ that is far from the true signal, and initially oscillates before it settles.
 
 ## A Bayesian discrete filter
-Let $\mathcal{L}$ denote the likelyhood pdf (pmf) given a measurement $z$, and $||f(x)||$ is the normalized of $f(x)$, so as it becomes a pdf.
+Baysian probability theory allows us to compute probabilities of being in state $x_i$, at time $i$, given a measurement $z$ by utilizing the inverse: the probability of measuring $z$ given we are in state $x_i$.
+We write Bayes formulation of updating posterior probabilities in terms of distributions $p(x)$ applied to a tracking problem. we let  
+$x_i$ denote the position at step $i$, and $z$ be the measurement. Hence, we want to know $\mathcal P ( x_i | z )$ , that is, the probability
+of target (prey) being at $x_i$, at step $i$ given the measurement $z$.
+\[
+p(x_i | z) = \frac{p(z|x_i)p(x_i)}{p(z)}.
+\]
+which often also appears as :
+\[
+p(A| B) = \frac{p(B|A)p(A)}{\int p(B|A_j)p(A_j)dA_j},
+\]
+with the denominator being usually impossible to compute, but in practice it just a normalization term over which we can sum.
+$p(z|x_i)$ represents the likelyhood ($\mathcal{L}$) pdf (pmf) of given a measurement $z$ at $x_i$. 
+The denominator $p ( z )$, is the probability of getting the measurement $z$ without taking the location into account. It is often called the evidence. We compute that by taking the sum of $x$, which is  how we compute the normalization! 
+
+Let $||f(x)||$ be the normalized of $f(x)$, so as it becomes a pdf.
 Then the filter equations are :
 
 \[\mathbf{\hat{x} = x * f_x(.)}    \text{ Predict Step} \]
@@ -407,10 +445,15 @@ The algorithm is :
 
 
 ## Polynomial Kalman Filters 
+(combined from both [1] and [3])
+ Kalman filter equations *assume the noise is normally distributed*, and perform sub-optimally if this is not true. Designers for mission critical filters, such as the filters on space-craft, need to master a lot of theory and empirical knowledge about the performance of the sensors on their
+spacecraft.
 
-We saw that the recursive least-squares filter provided
-the exact same estimates, for a given number of measurements, as the batch-
-processing least-squares filter. Here we will first provide the general equations for the discrete Kalman filter and then show under what conditions it is
+In this section we learn how to use Gaussians to implement a Bayesian filter. Instead of the g-h filter view, Kalman filter can also be seen as a Bayesian filter that uses Gaussians.
+
+Earlier, we saw that the recursive least-squares filter provided the exact same estimates, for a given number of measurements, as the batch-
+processing least-squares filter.
+Here we will first provide the general equations for the discrete Kalman filter and then show under what conditions it is
 completely equivalent to the recursive least-squares filter. 
 We will also demonstrate the divergence problem with the Kalman filter, but we will show that there are a
 variety of engineering fixes. 
