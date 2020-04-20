@@ -372,9 +372,8 @@ lines(datBrokenX,datBrokenY,lty=2,col="grey",lwd=1)
 lines(datFilteredX,datFilteredY,lty=2,col="red",lwd=2)
 
 
-
-
 ```
+
 
 These simple fits to data of tracked blob prey trajectories that have been corrupted by noise show that indeed even a simple application of
 a g-h filter on each of x and y position trajectories separately can work, given low values of gains $g=1/10^2$ and lower prediction gain $h= 1/10^3$.
@@ -409,6 +408,27 @@ lines(datFilteredX,lty=2,col="red",lwd=2)
 *I implemented the g-h filter algorithm to the tracking of prey in the behavioural tracker*. It works well to remove sudden changes to the prey position,  and in addition it can be used to predict prey motion, based on last $\dot{x}$ estimates.
 Yet, if the signal/blob position is lost for while and itdeviates away, then when it is found again we see oscillations of the estimated position about the real prey position. This is is effectively the same as having an $x_0$ that is far from the true signal, and initially oscillates before it settles.
 
+
+
+## Estimate how prey speed affect predator aiming against capture distance
+Given the above prey speed estimates, we can calculate how much such speeds can effect a larva's ability to accurately aim towards a rotifer it is tracking down, for a distance capture distance from where it executes its capture manoeuver. Assume larva move straight towards its heading angle $\theta$ when executing a capture bout, while prey is located at angle $\phi$.
+
+\[
+\frac{d\theta}{dr}=\frac{x}{r^2cos(\theta)}
+\]
+
+```{r}
+aimDeflectionAngle<- function(preyspeed,boutInterval,captureDistance,CaptureAimingAngle) return(preyspeed*boutInterval/((captureDistance^2)*cos(CaptureAimingAngle*pi/180))*(180/pi));
+
+preyspeed = 0.5 ##Mm/sec
+boutInterval = 0.100
+captureDistance = 0.25 ##mm
+CaptureAimingAngle= 0 ##Larva's Initial Aiming angle prior to Prey Moving 
+ 
+print(aimDeflectionAngle(preyspeed,boutInterval,captureDistance,CaptureAimingAngle))
+print(aimDeflectionAngle(preyspeed,boutInterval,captureDistance*2,CaptureAimingAngle))
+```
+
 ## A Bayesian discrete filter
 Baysian probability theory allows us to compute probabilities of being in state $x_i$, at time $i$, given a measurement $z$ by utilizing the inverse: the probability of measuring $z$ given we are in state $x_i$.
 We write Bayes formulation of updating posterior probabilities in terms of distributions $p(x)$ applied to a tracking problem. we let  
@@ -430,6 +450,7 @@ Then the filter equations are :
 
 \[\mathbf{\hat{x} = x * f_x(.)}    \text{ Predict Step} \]
 \[\mathbf{x = || \mathcal{L} . \hat{x} ||} \text{ Update Step} \]
+where, $\mathbf{\hat{x}}$ is the prior ,$f_x(.)$ is the process model.
 
 The algorithm is :
 
