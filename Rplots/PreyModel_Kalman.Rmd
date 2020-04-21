@@ -417,16 +417,21 @@ Given the above prey speed estimates, we can calculate how much such speeds can 
 \frac{d\theta}{dr}=\frac{x}{r^2cos(\theta)}
 \]
 
+Next we compare how the angle to prey, and thus the aiming, during an interbout interval of duration $t_b$, under prey motion with speed $s_p$ moving horizontally across the visual field of the larva.
+Given the prey travels $\beta$ distance during the interbout interval, changing the distance $r$ to it can severly affect the change azimuth to the prey, when the prey is very close to the larva.
 ```{r}
+## Function to Compute the derivative of Prey Azimuth as distance to prey changes for a prey located preyspeed*PauseTime Off Midline axis 
 aimDeflectionAngle<- function(preyspeed,boutInterval,captureDistance,CaptureAimingAngle) return(preyspeed*boutInterval/((captureDistance^2)*cos(CaptureAimingAngle*pi/180))*(180/pi));
 
 preyspeed = 0.5 ##Mm/sec
-boutInterval = 0.100
-captureDistance = 0.25 ##mm
+boutInterval = 0.200
+captureDistanceNear = 0.25 ##mm
+captureDistanceFar = 0.4 ##mm
 CaptureAimingAngle= 0 ##Larva's Initial Aiming angle prior to Prey Moving 
- 
-print(aimDeflectionAngle(preyspeed,boutInterval,captureDistance,CaptureAimingAngle))
-print(aimDeflectionAngle(preyspeed,boutInterval,captureDistance*2,CaptureAimingAngle))
+
+print(paste0("Prey at small distance ",captureDistanceNear,"mm : ",aimDeflectionAngle(preyspeed,boutInterval,captureDistanceNear,CaptureAimingAngle) ) )
+print(paste0("Prey large distance ",captureDistanceFar,"mm : ", aimDeflectionAngle(preyspeed,boutInterval,captureDistanceFar,CaptureAimingAngle) ) )
+
 ```
 
 ## A Bayesian discrete filter
