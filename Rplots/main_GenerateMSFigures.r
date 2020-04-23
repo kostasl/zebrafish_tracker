@@ -794,118 +794,123 @@ datPCAHunter_norm <- data.frame( with(datHunterStat,{ #,'DL','NL' mergedCapDat$H
         #Cluster=Cluster#11
   )                                   } )          )
 
-  
-  ###
-  pca_Hunter_norm <- prcomp(datPCAHunter_norm,scale.=FALSE)
-  summary(pca_Hunter_norm)
-  pcAxis <- c(1,2,3)
-  rawHd <- pca_Hunter_norm$x[,pcAxis]
-  
-  biplot(pca_Hunter_norm,choices=c(1,2))
 
-  densNL <-  kde2d(rawHd[,1][datHunterStat$groupID == 3], rawHd[,2][datHunterStat$groupID == 3],n=80)
-  densLL <-  kde2d(rawHd[,1][datHunterStat$groupID == 2], rawHd[,2][datHunterStat$groupID == 2],n=80)
-  densDL <-  kde2d(rawHd[,1][datHunterStat$groupID == 1], rawHd[,2][datHunterStat$groupID == 1],n=80)
-  
-  
-  scaleV <- 2
-  scaleVE <- scaleV
-  
-  
-  arrow_Efficiency <- c(scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-                        scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,
-                        scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[3]]*pca_Hunter_norm$sdev[pcAxis[3]]^2)
-  
-  
-  ##This plot is repeated in plotPCA_analysis 
-pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColour_ALL.pdf",sep=""),width=7,height=7)
-  ## bottom, left,top, right
-  par(mar = c(5.9,4.3,2,1))
-  
-  plot(rawHd[,1], rawHd[,2],
-       #col=colClass[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
-       #col=colEfficiency[round(datHunterStat$Efficiency*10)], pch=pchLPCA[as.numeric(datHunterStat$groupID) ],
-       col=colourGroup[datHunterStat$groupID ], pch=pchLPCA[as.numeric(datHunterStat$groupID)],
-       #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchLPCA[as.numeric(mergedCapDat_filt$groupID)],
-       #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID)],
-       #xlab="PC1",ylab="PC2",
-       xlim=c(-4.2,4.2),ylim=c(-3.0,3.2),
-       xlab=NA,ylab=NA,
-       cex=cex,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
-  
-  mtext(side = 1,cex=cex, line = lineXAxis,  "PC1"   ,cex.main=cex )
-  mtext(side = 2,cex=cex, line = lineAxis, "PC2" ,cex.main=cex)
-  
-  contour(densNL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 1)
-  contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 2)
-  contour(densDL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 3)
-  
-  ##Distance to Prey Component Projection
-  arrows(0,0,scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],lwd=3)
-  text(0.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       1.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],labels="Distance")
-  ##CaptureSpeed  Component Projection
-  arrows(0,0,scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],lwd=3,lty=1)
-  text(1.2*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       0.1+0.8*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],labels="Speed")
-  
-  ##Undershoot Axis  Component Projection
-  #arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
-  #  text(0.4*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,1.1*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Overshoot")
-  arrows(0,0,-scaleV*pca_Hunter_norm$rotation[4,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         -scaleV*pca_Hunter_norm$rotation[4,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="black",lty=1,lwd=2)
-  text(-1.9*scaleV*pca_Hunter_norm$rotation[4,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       -1.0*scaleV*pca_Hunter_norm$rotation[4,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="black",labels="Undershoot")
-  
-  ##TimeToHit Prey Prod Axis  Component Projection
-  arrows(0,0,scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-         scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],lty=1,lwd=3)
-  text(0.8*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       1.3*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],labels="t Prey")
-  
-  ##DistXSpeed Prod Axis  Component Projection
-  #arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="purple",lty=5)
-  
-  ##EFFICIENCY Prod Axis  Component Projection
+source("plotPCA_lib.r")
+######### Show PCA For Hunter / Empirical '#####
+plotPCAPerHunter(datHunterStat[datHunterStat$CaptureEvents > MIN_CAPTURE_EVENTS_PCA,],"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColour_ALL.pdf")
 
-  arrows(0,0,arrow_Efficiency[1],
-         arrow_Efficiency[2],col="blue",lty=1,lwd=2)
-  text(1.8*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
-       0.8*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,
-       col="blue",labels="Efficiency")
-  
-  ###Heat Map Scale
-    #posLeg <- c(3,-3) 
-    #points(seq(posLeg[1],posLeg[1]+2,2/10),rep(posLeg[2],11),col=colEfficiency,pch=15,cex=3)
-    #text(posLeg[1]-0.1,posLeg[2]+0.3,col="black",labels= prettyNum(min(datHunterStat$Efficiency),digits=1,format="f" ),cex=cex)
-    #text(posLeg[1]+1,posLeg[2]+0.3,col="black",labels= prettyNum(max(datHunterStat$Efficiency)/2,digits=1,format="f" ),cex=cex)
-    #text(posLeg[1]+2,posLeg[2]+0.3,col="black",labels= prettyNum(max(datHunterStat$Efficiency),digits=1,format="f" ),cex=cex)
-    #max(mergedCapDat_filt$Efficiency)/2
-  # 
-  
-  legend("topleft", legend=c(  expression (),
-                               bquote(DF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 1, ]))  ),
-                               bquote(LF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 2, ]))  ),
-                               bquote(NF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 3, ]))  )
-                               #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
-        ),
-         pch=pchLPCA,
-         col=colourGroup)## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
-  ##legend("bottomright",legend=c("Slow","Fast"),fill=colClass, col=colClass,title="Cluster")## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
-  
-  #Percentage of Efficiency Variance Explained
-  nComp <- length(pca_Hunter_norm$sdev)
-  pcEffVar <- ((pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]])^2 + (pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]])^2)
-  EffVar <- sum((pca_Hunter_norm$rotation[1,][1:nComp]*pca_Hunter_norm$sdev[1:nComp])^2)
-
-  #title(NA,sub=paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), 
-  #                   " Coeff. variation:",prettyNum(sd(datHunterStat$Efficiency)/mean(datHunterStat$Efficiency) ,digits=2)) )
-  message("Captured Variance ",prettyNum( 100*(pca_Hunter_norm$sdev[pcAxis[1]]^2 + pca_Hunter_norm$sdev[pcAxis[2]]^2) /sum( pca_Hunter_norm$sdev ^2),digits=3,format="f" ),"%" )
-  message(paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), " Coeff. variation:",prettyNum(sd(datHunterStat$Efficiency)/mean(datHunterStat$Efficiency) ,digits=2)))
-  
-dev.off()
+#   ###
+#   pca_Hunter_norm <- prcomp(datPCAHunter_norm,scale.=FALSE)
+#   summary(pca_Hunter_norm)
+#   pcAxis <- c(1,2,3)
+#   rawHd <- pca_Hunter_norm$x[,pcAxis]
+#   
+#   biplot(pca_Hunter_norm,choices=c(1,2))
+# 
+#   densNL <-  kde2d(rawHd[,1][datHunterStat$groupID == 3], rawHd[,2][datHunterStat$groupID == 3],n=80)
+#   densLL <-  kde2d(rawHd[,1][datHunterStat$groupID == 2], rawHd[,2][datHunterStat$groupID == 2],n=80)
+#   densDL <-  kde2d(rawHd[,1][datHunterStat$groupID == 1], rawHd[,2][datHunterStat$groupID == 1],n=80)
+#   
+#   
+#   scaleV <- 2
+#   scaleVE <- scaleV
+#   
+#   
+#   arrow_Efficiency <- c(scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#                         scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,
+#                         scaleVE*pca_Hunter_norm$rotation[1,][pcAxis[3]]*pca_Hunter_norm$sdev[pcAxis[3]]^2)
+#   
+#   
+#   
+#   ##This plot is repeated in plotPCA_analysis 
+# pdf(file= paste(strPlotExportPath,"/stat/stat_PCAHuntersBehaviourPC1_2_GroupColour_ALL.pdf",sep=""),width=7,height=7)
+#   ## bottom, left,top, right
+#   par(mar = c(5.9,4.3,2,1))
+#   
+#   plot(rawHd[,1], rawHd[,2],
+#        #col=colClass[1+as.numeric(mergedCapDat$Undershoot > 1)], pch=pchL[4+datpolyFactor_norm$Group], 
+#        #col=colEfficiency[round(datHunterStat$Efficiency*10)], pch=pchLPCA[as.numeric(datHunterStat$groupID) ],
+#        col=colourGroup[datHunterStat$groupID ], pch=pchLPCA[as.numeric(datHunterStat$groupID)],
+#        #col=colClass[as.numeric(mergedCapDat_filt$Cluster)], pch=pchLPCA[as.numeric(mergedCapDat_filt$groupID)],
+#        #col=colourLegL[datpolyFactor_norm$Group], pch=pchL[4+as.numeric(mergedCapDat_filt$groupID)],
+#        #xlab="PC1",ylab="PC2",
+#        xlim=c(-4.2,4.2),ylim=c(-3.0,3.2),
+#        xlab=NA,ylab=NA,
+#        cex=cex,cex.axis=cex ) #xlim=c(-4,4),ylim=c(-4,4)
+#   
+#   mtext(side = 1,cex=cex, line = lineXAxis,  "PC1"   ,cex.main=cex )
+#   mtext(side = 2,cex=cex, line = lineAxis, "PC2" ,cex.main=cex)
+#   
+#   contour(densNL,add=TRUE,col=colourGroup[1],nlevels=4,lwd=2,lty= 1)
+#   contour(densLL,add=TRUE,col=colourGroup[2],nlevels=4,lwd=2,lty= 2)
+#   contour(densDL,add=TRUE,col=colourGroup[3],nlevels=4,lwd=2,lty= 3)
+#   
+#   ##Distance to Prey Component Projection
+#   arrows(0,0,scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#          scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],lwd=3)
+#   text(0.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#        1.7*scaleV*pca_Hunter_norm$rotation[2,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[1],labels="Distance")
+#   ##CaptureSpeed  Component Projection
+#   arrows(0,0,scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#          scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],lwd=3,lty=1)
+#   text(1.2*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#        0.1+0.8*scaleV*pca_Hunter_norm$rotation[3,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[2],labels="Speed")
+#   
+#   ##Undershoot Axis  Component Projection
+#   #arrows(0,0,scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="black",lty=2)
+#   #  text(0.4*scaleV*pca_norm$rotation[4,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,1.1*scaleV*pca_norm$rotation[4,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,labels="Overshoot")
+#   arrows(0,0,-scaleV*pca_Hunter_norm$rotation[4,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#          -scaleV*pca_Hunter_norm$rotation[4,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="black",lty=1,lwd=2)
+#   text(-1.9*scaleV*pca_Hunter_norm$rotation[4,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#        -1.0*scaleV*pca_Hunter_norm$rotation[4,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col="black",labels="Undershoot")
+#   
+#   ##TimeToHit Prey Prod Axis  Component Projection
+#   arrows(0,0,scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#          scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],lty=1,lwd=3)
+#   text(0.8*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#        1.3*scaleV*pca_Hunter_norm$rotation[6,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,col=colFactrAxes[6],labels="t Prey")
+#   
+#   ##DistXSpeed Prod Axis  Component Projection
+#   #arrows(0,0,scaleV*pca_norm$rotation[5,][pcAxis[1]]*pca_norm$sdev[pcAxis[1]]^2,scaleV*pca_norm$rotation[5,][pcAxis[2]]*pca_norm$sdev[pcAxis[2]]^2,col="purple",lty=5)
+#   
+#   ##EFFICIENCY Prod Axis  Component Projection
+# 
+#   arrows(0,0,arrow_Efficiency[1],
+#          arrow_Efficiency[2],col="blue",lty=1,lwd=2)
+#   text(1.8*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]]^2,
+#        0.8*scaleV*pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]]^2,
+#        col="blue",labels="Efficiency")
+#   
+#   ###Heat Map Scale
+#     #posLeg <- c(3,-3) 
+#     #points(seq(posLeg[1],posLeg[1]+2,2/10),rep(posLeg[2],11),col=colEfficiency,pch=15,cex=3)
+#     #text(posLeg[1]-0.1,posLeg[2]+0.3,col="black",labels= prettyNum(min(datHunterStat$Efficiency),digits=1,format="f" ),cex=cex)
+#     #text(posLeg[1]+1,posLeg[2]+0.3,col="black",labels= prettyNum(max(datHunterStat$Efficiency)/2,digits=1,format="f" ),cex=cex)
+#     #text(posLeg[1]+2,posLeg[2]+0.3,col="black",labels= prettyNum(max(datHunterStat$Efficiency),digits=1,format="f" ),cex=cex)
+#     #max(mergedCapDat_filt$Efficiency)/2
+#   # 
+#   
+#   legend("topleft", legend=c(  expression (),
+#                                bquote(DF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 1, ]))  ),
+#                                bquote(LF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 2, ]))  ),
+#                                bquote(NF[""] ~ '#' ~ .(NROW(datHunterStat[datHunterStat$groupID == 3, ]))  )
+#                                #,bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
+#         ),
+#          pch=pchLPCA,
+#          col=colourGroup)## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
+#   ##legend("bottomright",legend=c("Slow","Fast"),fill=colClass, col=colClass,title="Cluster")## c(colourLegL[2],colourLegL[3],colourLegL[1])) # c(colourH[3],colourH[2])
+#   
+#   #Percentage of Efficiency Variance Explained
+#   nComp <- length(pca_Hunter_norm$sdev)
+#   pcEffVar <- ((pca_Hunter_norm$rotation[1,][pcAxis[1]]*pca_Hunter_norm$sdev[pcAxis[1]])^2 + (pca_Hunter_norm$rotation[1,][pcAxis[2]]*pca_Hunter_norm$sdev[pcAxis[2]])^2)
+#   EffVar <- sum((pca_Hunter_norm$rotation[1,][1:nComp]*pca_Hunter_norm$sdev[1:nComp])^2)
+# 
+#   #title(NA,sub=paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), 
+#   #                   " Coeff. variation:",prettyNum(sd(datHunterStat$Efficiency)/mean(datHunterStat$Efficiency) ,digits=2)) )
+#   message("Captured Variance ",prettyNum( 100*(pca_Hunter_norm$sdev[pcAxis[1]]^2 + pca_Hunter_norm$sdev[pcAxis[2]]^2) /sum( pca_Hunter_norm$sdev ^2),digits=3,format="f" ),"%" )
+#   message(paste(" Efficiency variance captured: ",prettyNum( 100*pcEffVar/EffVar,digits=3), " Coeff. variation:",prettyNum(sd(datHunterStat$Efficiency)/mean(datHunterStat$Efficiency) ,digits=2)))
+#   
+# dev.off()
 
 
 

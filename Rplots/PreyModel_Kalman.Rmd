@@ -429,7 +429,7 @@ aimDeflectionAngle<- function(preyspeed,boutInterval,captureDistance,PreyAzimuth
 }
 
 
-preyspeed = 0.0 ##Mm/sec
+preyspeed = 0.25 ##Mm/sec
 boutInterval = 0.200
 captureDistanceNear = 0.25 ##mm
 captureDistanceFar = captureDistanceNear*2 ##mm
@@ -451,7 +451,7 @@ s <- seq((preyspeed),1,by=1/10)
 mp <- expand.grid(r=r,preyspeed=s)
 for(i in  1:NROW(mp) )
 {
-y[i] <- aimDeflectionAngle((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)*(180/pi)  
+  y[i] <- aimDeflectionAngle((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)*(180/pi)  
 }
 
 ## Plot the derivative across different r prey distances for various prey offsets

@@ -51,7 +51,7 @@ nEyeFilterWidth          <- nFrWidth*2
 MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
 MIN_BOUT_PAUSE           <- 25
 G_MIN_BOUTSCORE          <- 1 ##Number of coincident event needed to detect bout in frame - (a combo of Tail Fq, Centroid Speed,Turn speed)
-
+MIN_CAPTURE_EVENTS_PCA   <- 5 ## Make HuntBehaviour PCA Using Larvae that have at least 5 Hunt Events
 ## Plot Options ##
 FONTSZ_AXISLAB <- 1.2
 FONTSZ_AXIS    <- 1.2 ##Axis Tik Number Size
