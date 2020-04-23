@@ -281,9 +281,11 @@ loadPreyTracks <- function()
   datPrey <- do.call(rbind,ldatPrey)
   return(datPrey)
 }
-
-datPrey <- loadPreyTracks()
-save(datPrey,file="dat/preyTracks.RData")
+## Make Data File
+##datPrey <- loadPreyTracks()
+##save(datPrey,file="dat/preyTracks.RData")
+##Load Data File
+load(file="dat/preyTracks.RData")
 ## Show Prey Speed Histograms ##
 vPreyIDs = as.numeric(names(table(datPrey$FoodID))) 
 lPreySpeedDens = list()
@@ -311,25 +313,25 @@ for (pID in vPreyIDs){
 datPreyStat <- data.frame(do.call("rbind",lPreySpeedStat))
   
 ## Plot Densities of Rotifer Speed
-plot(lPreySpeedDens[[1]],type='l')
-for (dens in lPreySpeedDens)
-{
-  lines(dens)
-}
+#plot(lPreySpeedDens[[1]],type='l')
+#for (dens in lPreySpeedDens)
+#  lines(dens);
+
 ## Plot Hist of Mean Prey Speeds
 hist(unlist(datPreyStat[,1]),breaks=10,main=paste("mean prey speeds=",prettyNum( mean(unlist(datPreyStat[,1])) )," SEM",prettyNum( sd(unlist(datPreyStat[,1]))/sqrt(NROW(datPreyStat[,1]))  ) )  )
 
+
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
-pdf(file= paste(strPlotExportPath,"/stat/stat_MeanPreySpeeds252_006.pdf" ,sep=""),width = 7,height = 7)
+#pdf(file= paste(strPlotExportPath,"/stat/stat_MeanPreySpeeds252_006.pdf" ,sep=""),width = 7,height = 7)
   plot(density(unlist(datPreyStat[,1]),bw=0.08),lwd=3,main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,cex.lab=cex )
   mtext(side = 1, cex=cex, line = lineAxis,expression(paste("Mean prey travel speed (mm/sec)" ) )  ) 
   mtext(side = 2, cex=cex, line = lineAxis-0.5, expression(paste("Density" ) )  ) #(",lambda,")"
-dev.off()
+#dev.off()
 
 
 ```
 
-Then We select a prey item at random, and add noise and filter :
+Then we select a prey item at random, and add noise and filter :
 ```{r}
 ##Pick A random Prey
 datPreyItem <- datPrey[datPrey$FoodID == sample(vPreyIDs,1),]
@@ -421,16 +423,47 @@ Next we compare how the angle to prey, and thus the aiming, during an interbout 
 Given the prey travels $\beta$ distance during the interbout interval, changing the distance $r$ to it can severly affect the change azimuth to the prey, when the prey is very close to the larva.
 ```{r}
 ## Function to Compute the derivative of Prey Azimuth as distance to prey changes for a prey located preyspeed*PauseTime Off Midline axis 
-aimDeflectionAngle<- function(preyspeed,boutInterval,captureDistance,CaptureAimingAngle) return(preyspeed*boutInterval/((captureDistance^2)*cos(CaptureAimingAngle*pi/180))*(180/pi));
+aimDeflectionAngle<- function(preyspeed,boutInterval,captureDistance,PreyAzimuth)
+{beta <- preyspeed*boutInterval
+  return(beta/((captureDistance^2)*sqrt(1-  (beta^2)/captureDistance^2) ))
+}
 
-preyspeed = 0.5 ##Mm/sec
+
+preyspeed = 0.0 ##Mm/sec
 boutInterval = 0.200
 captureDistanceNear = 0.25 ##mm
-captureDistanceFar = 0.4 ##mm
-CaptureAimingAngle= 0 ##Larva's Initial Aiming angle prior to Prey Moving 
+captureDistanceFar = captureDistanceNear*2 ##mm
+PreyAzimuth= 0 ##Larva's Initial Aiming angle prior to Prey Moving 
 
-print(paste0("Prey at small distance ",captureDistanceNear,"mm : ",aimDeflectionAngle(preyspeed,boutInterval,captureDistanceNear,CaptureAimingAngle) ) )
-print(paste0("Prey large distance ",captureDistanceFar,"mm : ", aimDeflectionAngle(preyspeed,boutInterval,captureDistanceFar,CaptureAimingAngle) ) )
+
+print(paste0("dtheta/dr at small distance ",captureDistanceNear,"mm : ",aimDeflectionAngle(preyspeed,boutInterval,captureDistanceNear,PreyAzimuth)*(180/pi)) )
+thetaNear <- asin(preyspeed*boutInterval/(captureDistanceNear) ) *180/pi
+DthetaNear <- (asin(preyspeed*boutInterval/(captureDistanceNear) ) - asin(preyspeed*boutInterval/(captureDistanceNear-captureDistanceNear*0.01) ))*180/pi
+print(paste0( "Angle theta at Near Distance: ", asin(preyspeed*boutInterval/(captureDistanceNear) ) *180/pi ) )
+print(paste0("dtheta/dr at 2x distance ",captureDistanceFar,"mm : ", aimDeflectionAngle(preyspeed,boutInterval,captureDistanceFar,PreyAzimuth)*(180/pi) ) )
+print(paste0("Angle theta at Far Distance: ", asin(preyspeed*boutInterval/(captureDistanceFar))*180/pi ) );
+
+## Plot derivatives Across different R, for fixed prey Speed
+preyspeed = 0.00 ##Mm/sec
+#r <- seq((preyspeed*boutInterval),(preyspeed*boutInterval*5),by=1/20) ##Use Speed to Relate to R
+r <- seq((0.2),0.6,by=1/20) ##Use Speed to Relate to R
+s <- seq((preyspeed),1,by=1/10)
+mp <- expand.grid(r=r,preyspeed=s)
+for(i in  1:NROW(mp) )
+{
+y[i] <- aimDeflectionAngle((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)*(180/pi)  
+}
+
+## Plot the derivative across different r prey distances for various prey offsets
+plot(mp$r,y,ylim=c(0,500),xlab="Prey distance mm",ylab="dθ/dr speed of azimuth change" )
+## Faster Prey Speed
+ySlow <- aimDeflectionAngle(s[1],boutInterval,r,PreyAzimuth)*(180/pi) 
+## Plot the derivative across different r prey distances for fixed B
+lines(r,ySlow,ylim=c(0,500),col="blue" )
+yFast <- aimDeflectionAngle(tail(s,1),boutInterval,r,PreyAzimuth)*(180/pi) 
+## Plot the derivative across different r prey distances for fixed B
+lines(r,yFast,ylim=c(0,500),col="red" )
+
 
 ```
 
