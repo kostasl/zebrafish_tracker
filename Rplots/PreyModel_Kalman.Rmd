@@ -423,49 +423,100 @@ Next we compare how the angle to prey, and thus the aiming, during an interbout 
 Given the prey travels $\beta$ distance during the interbout interval, changing the distance $r$ to it can severly affect the change azimuth to the prey, when the prey is very close to the larva.
 ```{r}
 ## Function to Compute the derivative of Prey Azimuth as distance to prey changes for a prey located preyspeed*PauseTime Off Midline axis 
-aimDeflectionAngle<- function(preyspeed,boutInterval,captureDistance,PreyAzimuth)
-{beta <- preyspeed*boutInterval
-  return(beta/((captureDistance^2)*sqrt(1-  (beta^2)/captureDistance^2) ))
+DerivAimingAngleWithDistance_dthetadr<- function(preyspeed,boutInterval,captureDistance,PreyAzimuth)
+{
+  r <- captureDistance 
+  beta <- r*sin(PreyAzimuth)  #preyspeed*boutInterval
+  return( -beta/( (r^2)*sqrt(1-  (beta^2)/(r^2) ) ))
 }
 
+DerivAimingAngleWithPosition_dthetadbeta<- function(preyspeed,boutInterval,captureDistance,PreyAzimuth)
+{
+  r <- captureDistance 
+  b <- r*sin(PreyAzimuth) #r*sin(PreyAzimuth) 
+ # res <- -(b^2)/( ((1 - (b^2) /(r^2) ) ^(3/2)) * (r^4) ) - 1/ ( sqrt(1 - (b^2) /(r^2) ) * r^2)
+  res <-   1/ ( sqrt(1 - (b^2) /(r^2) ) * r)
+  return(res )
+}
 
-preyspeed = 0.25 ##Mm/sec
+##This simply calculates the change in Prey Azimuth Between two positions defined prior and After BoutInterval, given prey Speed
+DeltaAimingAngleAgainstPreyMotion <- function(preyspeed,boutInterval,captureDistance,PreyAzimuth)
+{
+  b_init = captureDistance*sin(PreyAzimuth) #r*sin(PreyAzimuth)  X
+  alpha_init = captureDistance*cos(PreyAzimuth) ##Y - Assume This does not change with prey motion - Only B
+  b_final = b_init+preyspeed*boutInterval ## Move Prey Horizontally By distance of Speed*Time
+  r_final = sqrt(b_final^2 + alpha_init^2)
+  PreyAzimuthFinal = asin(b_final/r_final)
+  return( (PreyAzimuthFinal-PreyAzimuth) )
+}
+
+preyspeed = 0.5 ##Mm/sec
 boutInterval = 0.200
-captureDistanceNear = 0.25 ##mm
-captureDistanceFar = captureDistanceNear*2 ##mm
-PreyAzimuth= 0 ##Larva's Initial Aiming angle prior to Prey Moving 
+captureDistanceNear = 0.2 ##mm
+captureDistanceFar = 0.45 ##mm
 
+PreyAzimuthNear =  asin((preyspeed*boutInterval)/captureDistanceNear)  ##20*(pi/180) ##Larva's Initial Aiming angle prior to Prey Moving 
+PreyAzimuthFar =  asin((preyspeed*boutInterval)/captureDistanceFar)  ##20*(pi/180) ##Larva's Initial Aiming angle prior to Prey Moving 
+PreyAzimuth = 2*(pi/180)
 
-print(paste0("dtheta/dr at small distance ",captureDistanceNear,"mm : ",aimDeflectionAngle(preyspeed,boutInterval,captureDistanceNear,PreyAzimuth)*(180/pi)) )
+## Dtheta/Dr ##
+print(paste0("dtheta/dr at small distance ",captureDistanceNear,"mm : ",DerivAimingAngleWithDistance_dthetadr(preyspeed,boutInterval,captureDistanceNear,PreyAzimuth)*(180/pi)) )
 thetaNear <- asin(preyspeed*boutInterval/(captureDistanceNear) ) *180/pi
 DthetaNear <- (asin(preyspeed*boutInterval/(captureDistanceNear) ) - asin(preyspeed*boutInterval/(captureDistanceNear-captureDistanceNear*0.01) ))*180/pi
 print(paste0( "Angle theta at Near Distance: ", asin(preyspeed*boutInterval/(captureDistanceNear) ) *180/pi ) )
-print(paste0("dtheta/dr at 2x distance ",captureDistanceFar,"mm : ", aimDeflectionAngle(preyspeed,boutInterval,captureDistanceFar,PreyAzimuth)*(180/pi) ) )
+print(paste0("dtheta/dr at 2x distance ",captureDistanceFar,"mm : ", DerivAimingAngleWithDistance_dthetadr(preyspeed,boutInterval,captureDistanceFar,PreyAzimuth)*(180/pi) ) )
 print(paste0("Angle theta at Far Distance: ", asin(preyspeed*boutInterval/(captureDistanceFar))*180/pi ) );
 
-## Plot derivatives Across different R, for fixed prey Speed
-preyspeed = 0.00 ##Mm/sec
+print(paste0("Change in theta at FAR Dist: ", DeltaAimingAngleAgainstPreyMotion(preyspeed,boutInterval,captureDistanceFar,PreyAzimuth)*(180/pi) ) );
+print(paste0("Change in theta at NEAR Dist: ", DeltaAimingAngleAgainstPreyMotion(preyspeed,boutInterval,captureDistanceNear,PreyAzimuth)*(180/pi) ) );
+
+## Plot derivatives Across different R, And prey Speeds
+preyspeedR = range(0.01,0.5) ##Mm/sec
 #r <- seq((preyspeed*boutInterval),(preyspeed*boutInterval*5),by=1/20) ##Use Speed to Relate to R
-r <- seq((0.2),0.6,by=1/20) ##Use Speed to Relate to R
-s <- seq((preyspeed),1,by=1/10)
-mp <- expand.grid(r=r,preyspeed=s)
+r <- seq((0.05),1.0,by=1/20) #Distances to Prey Use Speed to Relate to R
+s <- seq(preyspeedR[1],preyspeedR[2],by=preyspeedR[2]/10) ##Prey Speed Range
+mp <- expand.grid(r=r,preyspeed=s) ##Make All comb or r and s
+DeltaTheta = vector() ##Holds the Sampled Dtheta
+y = vector() ##Holds the Linearized model Results
 for(i in  1:NROW(mp) )
 {
-  y[i] <- aimDeflectionAngle((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)*(180/pi)  
+  pPreyAzimuth =  asin( ( mp[i,]$preyspeed*boutInterval) / (mp[i,]$r) )
+  dthetadr <- DerivAimingAngleWithDistance_dthetadr((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)
+  dthetadb <- DerivAimingAngleWithPosition_dthetadbeta((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)
+  b_init = captureDistance*sin(PreyAzimuth) #r*sin(PreyAzimuth)  X
+  Db <- (mp[i,]$preyspeed*boutInterval)
+  DrDb <- (sqrt(Db^2+mp[i,]$r^2)-mp[i,]$r)/Db ##Get Change In R, due to Dbeta - R Increases with Db
+  ##Estimate Angle Change Using PartDeriv, assuming Change in Dr 
+  y[i] <- (180/pi)*(dthetadr*DrDb*0 + dthetadb)*Db ##*cos(PreyAzimuth
+  DeltaTheta[i] <- DeltaAimingAngleAgainstPreyMotion((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)*(180/pi)
 }
 
-## Plot the derivative across different r prey distances for various prey offsets
-plot(mp$r,y,ylim=c(0,500),xlab="Prey distance mm",ylab="dθ/dr speed of azimuth change" )
-## Faster Prey Speed
-ySlow <- aimDeflectionAngle(s[1],boutInterval,r,PreyAzimuth)*(180/pi) 
-## Plot the derivative across different r prey distances for fixed B
-lines(r,ySlow,ylim=c(0,500),col="blue" )
-yFast <- aimDeflectionAngle(tail(s,1),boutInterval,r,PreyAzimuth)*(180/pi) 
-## Plot the derivative across different r prey distances for fixed B
-lines(r,yFast,ylim=c(0,500),col="red" )
+paletta <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
+colSp <- c(paletta(NROW(s)),"#FF0000");
+### Sampled DeltaTheta from Positions Geometry
+plot(mp$r,DeltaTheta,xlab="Initial prey distance r (mm)",ylab="Change in azimuth due to prey motion",xlim=c(0.0,0.6),pch=2,cex.axis=cex,cex=0.7,ylim=c(0.0,80) ) #
+##  plot Across different Speeds
+for (speed in s)
+{
+  idx = which(mp$preyspeed == speed)
+  lines(mp$r[idx],y[idx],xlab="Prey distance mm",
+        xlim=c(0.0,0.6),pch=3,
+        main="Compare Theory To Δθ",
+        col=colSp[which(s == speed)]) ##Theory
+  points(mp$r[idx],DeltaTheta[idx],pch=20,col=colSp[which(s == speed)])
+  
+}
+##Plot Heat Map Legend
+    x <- tail(r,1)/2+(1:NROW(s)/130) ##Make Narrow 1/2 length bar
+    points(x,rep(60,NROW(x) ),pch=15,col=colSp,cex=1.5)
+    text( x[1]+(x[1]-tail(x,1))/2 +strwidth("Prey speed")*0.8  ,64,labels="Prey speed",col="black",font=2.2)  ##0 V Angle
+    text(x[1],55,labels=s[1],col="black",font=2.2)  ##0 V Angle
+    txtW <- strwidth(paste(s[1])) /2 ##Text Width For Centre Aligment 
+    text(tail(x,1)+txtW/2,55,labels=tail(s,1),col="black",font=2.2)  ##0 V Angle
 
 
 ```
+
 
 ## A Bayesian discrete filter
 Baysian probability theory allows us to compute probabilities of being in state $x_i$, at time $i$, given a measurement $z$ by utilizing the inverse: the probability of measuring $z$ given we are in state $x_i$.
