@@ -807,7 +807,7 @@ plotPCAPerHunter(datHunterStat[datHunterStat$CaptureEvents > MIN_CAPTURE_EVENTS_
 #   
 #   biplot(pca_Hunter_norm,choices=c(1,2))
 # 
-#   densNL <-  kde2d(rawHd[,1][datHunterStat$groupID == 3], rawHd[,2][datHunterStat$groupID == 3],n=80)
+#   densNL <-  kde2d(rawHd[,1][datHunterStat  $groupID == 3], rawHd[,2][datHunterStat$groupID == 3],n=80)
 #   densLL <-  kde2d(rawHd[,1][datHunterStat$groupID == 2], rawHd[,2][datHunterStat$groupID == 2],n=80)
 #   densDL <-  kde2d(rawHd[,1][datHunterStat$groupID == 1], rawHd[,2][datHunterStat$groupID == 1],n=80)
 #   
