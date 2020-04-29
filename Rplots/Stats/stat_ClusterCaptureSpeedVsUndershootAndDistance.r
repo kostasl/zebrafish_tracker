@@ -20,7 +20,7 @@ source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
-
+source("plotTrackScatterAndDensities.r")
 
 ## Plots the Data Density and the 2 Gaussians fititng high and low speed capture swims
 plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
@@ -602,7 +602,16 @@ dev.off()
 
 ############# Plot Position Of Prey Prior Capture Bout 
 
-pdf(file= paste(strPlotExportPath,"/PreyPositionPriorCapture_Validated.pdf",sep=""))
+pdf(file= paste(strPlotExportPath,"/PreyPositionPriorCapture_Validated.pdf",sep="" ), width=14,height=7)
 
-plotCaptureBoutPreyPositions()
+  layout(matrix(c(1,2),1,2, byrow = TRUE))
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(3.9,4.7,2,1))
+
+  plotCaptureBoutPreyPositions()
+  plotPreyAzimuthAtCapture()  
+dev.off()
+
+pdf(file= paste(strPlotExportPath,"/PreyAzimuthPriorCapture_Validated.pdf",sep=""))
+  plotPreyAzimuthAtCapture()  
 dev.off()

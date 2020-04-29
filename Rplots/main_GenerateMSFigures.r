@@ -680,7 +680,7 @@ p_NF = ggplot( datCapture_NL, aes( DistanceToPrey,FramesToHitPrey/G_APPROXFPS ,c
 p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.6) +  ylim(0, 0.4) +
   scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
   scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.6)) +
-  scale_y_continuous(name="Time to reach prey", limits=c(0, 0.4)) 
+  scale_y_continuous(name="Time to reach prey (sec)", limits=c(0, 0.4)) 
 
 ggMarginal(p_NF, x="Distance to prey",y="Time to reach prey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 dev.off()
@@ -695,7 +695,7 @@ p_LF = ggplot( datCapture_LL, aes( DistanceToPrey,FramesToHitPrey/G_APPROXFPS ,c
 p_LF = p_LF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster) ) +  xlim(0, 0.6) +  ylim(0, 0.4) +
   scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
   scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.6)) +
-  scale_y_continuous(name="Time to reach prey", limits=c(0, 0.4)) 
+  scale_y_continuous(name="Time to reach prey (sec)", limits=c(0, 0.4)) 
 
 ggMarginal(p_LF, x="Distance to prey",y="Time to reach prey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 dev.off()
@@ -711,7 +711,7 @@ p_DF = ggplot( datCapture_DL, aes( DistanceToPrey,FramesToHitPrey/G_APPROXFPS ,c
 p_DF = p_DF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_DL$Cluster) ) +  xlim(0, 0.6) +  ylim(0, 0.4) +
   scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
   scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.6)) +
-  scale_y_continuous(name="Time to reach prey", limits=c(0, 0.4)) 
+  scale_y_continuous(name="Time to reach prey (sec)", limits=c(0, 0.4)) 
 
 ggMarginal(p_DF, x="Distance to prey",y="Time to reach prey", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 dev.off()

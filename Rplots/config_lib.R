@@ -145,3 +145,9 @@ setEnvFileLocations <- function(strSetName)
 }
   
 ## GLOBAL VARS ###
+
+## Util FUNCT ##
+ProbValLessThan <- function(pPDF,X){ idxVal <- which(pPDF$x < X); return(sum(pPDF$y[idxVal][1:NROW(diff(pPDF$x[idxVal]))]*diff(pPDF$x[idxVal]) ));}
+ProbValGreaterThan <- function(pPDF,X){ idxVal <- which(pPDF$x > X); return(sum(pPDF$y[idxVal][1:NROW(diff(pPDF$x[idxVal]))]*diff(pPDF$x[idxVal]) ));}
+
+

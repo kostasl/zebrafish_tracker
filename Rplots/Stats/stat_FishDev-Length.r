@@ -87,10 +87,31 @@ dmodelSizeNF <- density(draw$mu[which(strGroupID == "NL"),,],bw=0.01)
 dmodelSizeLF <- density(draw$mu[which(strGroupID == "LL"),,],bw=0.01)
 dmodelSizeDF <- density(draw$mu[which(strGroupID == "DL"),,],bw=0.01)
 
+## Comparisons of Estimated Means
+dmodelSizeNFVsLF <- density(draw$mu[which(strGroupID == "NL"),,]-draw$mu[which(strGroupID == "LL"),,],bw=0.01)
+dmodelSizeDFVsLF <- density(draw$mu[which(strGroupID == "DL"),,]-draw$mu[which(strGroupID == "LL"),,],bw=0.01)
+dmodelSizeNFVsDF <- density(draw$mu[which(strGroupID == "NL"),,]-draw$mu[which(strGroupID == "DL"),,],bw=0.01)
+
+##Is LF Larger?
+ProbValLessThan(dmodelSizeNFVsLF,0) 
+plot(dmodelSizeNFVsLF)
+ProbValLessThan(dmodelSizeDFVsLF,0) 
+  ProbValLessThan(dmodelSizeNFVsDF,0) 
+
+
+##Significance test
+t.test(x=datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,
+       y=datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,conf.level = 0.95)
+
+##Data 
 dSizeNF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,bw=0.1)
 dSizeLF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX,bw=0.1)
 dSizeDF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "DL"),]$LengthPx *DIM_MMPERPX,bw=0.1)
 
+dSizeNFVsLF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX-
+                         datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX,bw=0.1)
+ProbValLessThan(dSizeNFVsLF,0)
+plot(dSizeNFVsLF)
 
 #lines(dmodelSizeLF,col=colourHLine[2] , xlim=c(3,6),lty=2 ,lwd=2   )
 #lines(dmodelSizeNF,col=colourHLine[1],lty=2,lwd=2)

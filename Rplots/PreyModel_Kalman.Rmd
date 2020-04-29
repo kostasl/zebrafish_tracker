@@ -515,6 +515,7 @@ s <- seq(preyspeedR[1],preyspeedR[2],by=(preyspeedR[2]-preyspeedR[1])/5) ##Prey 
 mp <- expand.grid(r=r,preyspeed=s) ##Make All comb or r and s
 DeltaTheta = vector() ##Holds the Sampled Dtheta
 y = vector() ##Holds the Linearized model Results
+predError = vector()
 for(i in  1:NROW(mp) )
 {
   pPreyAzimuth =  asin( ( mp[i,]$preyspeed*boutInterval) / (mp[i,]$r) )
@@ -522,15 +523,32 @@ for(i in  1:NROW(mp) )
   dthetadb <- DerivAimingAngleWithPosition_dthetadbeta((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)
   b_init = captureDistance*sin(PreyAzimuth) #r*sin(PreyAzimuth)  X
   Db <- (mp[i,]$preyspeed*boutInterval)
-  DrDb <- (sqrt(Db^2+mp[i,]$r^2)-mp[i,]$r)/Db ##Get Change In R, due to Dbeta - R Increases with Db
+  DrDb <- 1/sqrt(Db^2+mp[i,]$r^2)###(sqrt(Db^2+mp[i,]$r^2)-mp[i,]$r)/Db ##Get Change In R, due to Dbeta - R Increases with Db
   ##Estimate Angle Change Using PartDeriv, assuming Change in Dr 
-  y[i] <- (180/pi)*(dthetadr*DrDb*0 + dthetadb)*Db ##*cos(PreyAzimuth
+  y[i] <- (180/pi)*(dthetadr*DrDb + dthetadb)*Db ##*cos(PreyAzimuth
   DeltaTheta[i] <- DeltaAimingAngleAgainstPreyMotion((mp[i,]$preyspeed),boutInterval,(mp[i,]$r),PreyAzimuth)*(180/pi)
+  predError[i] <- y[i] - DeltaTheta[i] ##Calculate Distance Between Prediction And Actual
 }
+
 
 paletta <- colorRampPalette(rev(brewer.pal(9,'YlOrRd')));
 colSp <- c(paletta(9),"#FF0000");
 
+  plot(mp$r[idx],y[idx],xlab="Prey distance mm",
+          xlim=c(0.0,0.6),pch=3,
+          main="Compare Theory To Δθ",
+          col=colSp[which(s == speed)]) ##Theory
+  ##  plot Across different Speeds
+plot(mp$r,predError)
+  for (speed in s)
+  {
+    idx = which(mp$preyspeed == speed)
+    points(mp$r[idx],predError[idx],pch=20,col=colSp[which(s == speed)])
+  }
+##Calc Avg Pred Error for points r > min Distance
+print(sum(predError[which(mp$r > 0.2)]/NROW(which(mp$r > 0.2))))
+print( paste("maximum pred error:", max(predError[which(mp$r > 0.1)] ) )  )
+hist(predError[which(mp$r > 0.1)])
 ### plot Linearized Model and Sampled DeltaTheta from Positions Geometry Across speeds and Distance
 plotPreyDistanceSpeedResults()
 

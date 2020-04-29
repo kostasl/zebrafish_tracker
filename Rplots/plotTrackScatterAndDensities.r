@@ -716,6 +716,57 @@ getCaptureBoutPreyPosition <- function (datMotionBoutsToValidate,groupID)
   return (data.frame( cbind(preyX,preyY,vAngleToPrey,vDistToPrey)) )
 }
 
+plotPreyAzimuthAtCapture <- function(newPlot = T)
+{
+  datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
+  ##LOad so as to disambiguate the GroupdID
+  strDataFileName <-paste("setn15-HuntEvents-SB-Updated-Merged2",sep="") ##To Which To Save After Loading
+  datHuntEventAllGroupToValidate <-readRDS(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".rds",sep="" )) ##Save With Dataset Idx Identifier
+  
+  strGroupID <- c(unique(datHuntEventAllGroupToValidate$groupID))
+  
+  preyCapPos_LF <- (getCaptureBoutPreyPosition(datMotionBoutsToValidate,2))
+  preyCapPos_DF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,1)
+  preyCapPos_NF <- getCaptureBoutPreyPosition(datMotionBoutsToValidate,3)
+  densNF <- density(preyCapPos_NF$vAngleToPrey)
+  densLF <- density(preyCapPos_LF$vAngleToPrey)
+  densDF <- density(preyCapPos_DF$vAngleToPrey)
+  
+  #plot(densDF$x,densDF$y - densLF$y)
+  ## Quantiles - Show more than 50% of data located between -20/ +20 degrees
+  
+  quantNF <- quantile(preyCapPos_NF$vAngleToPrey)
+  quantLF <- quantile(preyCapPos_LF$vAngleToPrey)
+  quantDF <- quantile(preyCapPos_DF$vAngleToPrey)
+  print(quantNF)
+  print(quantLF)
+  print(quantDF)
+  
+  plot(densNF,col=colourLegL[1],lty=2,lwd=3,cex.axis=cex,main=NA,xlab=NA,ylab=NA,ylim=c(0,0.050),xlim=c(-50,50))
+  lines(densLF,col=colourLegL[2],lty=1,lwd=3,cex.axis=cex,main=NA,xlab=NA,ylab=NA)
+  lines(densDF,col=colourLegL[3],lty=3,lwd=3,cex.axis=cex,main=NA,xlab=NA,ylab=NA)
+  
+  mtext(side = 1, cex=cex, line = lineAxis,expression(paste("Prey azimuth prior to capture (",theta^o,")") )) 
+  mtext(side = 2, cex=cex, line = lineAxis,expression(paste("Density") )) 
+
+  legend("topright",
+         legend=c(  expression (),
+                    bquote(NF ~ '#' ~ .(NROW(preyCapPos_NF) ) ),
+                    bquote(LF ~ '#' ~ .(NROW(preyCapPos_LF))  ),
+                    bquote(DF ~ '#' ~ .(NROW(preyCapPos_DF) )  )
+                    #, bquote(ALL ~ '#' ~ .(ldata_ALL$N)  )
+         ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL,lty=c(2,1,3),lwd=3)
+  ##Add the quantiles 25%-75%
+  #points(quantNF[2],densNF$y[ head(which(densNF$x >=  quantNF[2]),1) ],col=colourLegL[1] )
+  #points(quantNF[4],densNF$y[ head(which(densNF$x >=  quantNF[4]),1) ],col=colourLegL[1]  )
+  #points(quantLF[2],densLF$y[ head(which(densLF$x >=  quantLF[2]),1) ],col=colourLegL[2]  )
+  #points(quantLF[4],densLF$y[ head(which(densLF$x >=  quantLF[4]),1) ],col=colourLegL[2] )
+  #points(quantDF[2],densDF$y[ head(which(densDF$x >=  quantDF[2]),1) ],col=colourLegL[3]  )
+  #points(quantDF[4],densDF$y[ head(which(densDF$x >=  quantDF[4]),1) ],col=colourLegL[3]  )
+
+}
+
 ## plot The Prey Locations Prior to Capture in relation to the head of the larvae##
 ## The Radar Figure With the Prey Positions Prior To Capture
 plotCaptureBoutPreyPositions <- function(newPlot = T)
@@ -755,7 +806,7 @@ plotCaptureBoutPreyPositions <- function(newPlot = T)
     plot(1,type='n',xlim=c(-(Range+4*txtW)*DIM_MMPERPX,(Range+4*txtW)*DIM_MMPERPX ) ,
          ylim=c(-(Range+4*txtW)*DIM_MMPERPX,(Range+4*txtW)*DIM_MMPERPX ),
          main="Prey position prior to capture swim ",
-         xlab=NA,ylab=NA)
+         xlab=NA,ylab=NA,xaxt='n',yaxt='n', ann=FALSE)
     rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bgColor)
     
     ## Make Vertical HeadOn Lline
