@@ -318,7 +318,7 @@ load(file =paste(strDataExportDir,"stat_HuntRateInPreyRange_nbinomRJags.RData",s
 
 ### Draw Distribution oF Hunt Rates - 
 ## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
-plotsamples <- 200
+plotsamples <- 5000
 schain <-1:3
 
 ### The Prob Of Success p from NegBinom translates to Gamma Rate p/(1-p), or scale: (1-p)/p
@@ -344,7 +344,22 @@ densHPoissonRate_DL <- density( HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL
 densHPoissonRate_NE <- density( HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE,bw=pBW)
 densHPoissonRate_NL <- density( HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL,bw=pBW)
 
-##Mean SEM ##
+## Compare  Hunt Rates Means 
+message("Obtain Kernel Density Estimate for Mean Rate Difference from posterior samples")
+HPoissonRateDiff_LLVsNL <- HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL-HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL
+HPoissonRateDiff_LLVsDL <- HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL-HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL
+HPoissonRateDiff_NLVsDL <- HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL-HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL
+HPoissonRateDiff_LLVsLL <- HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL-sample(HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL) ##Chance Control
+
+HPoissonRateDiff_LEVsNE <- HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE-HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE
+HPoissonRateDiff_LEVsDE <- HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE-HEventHuntGammaShape_DE*1/HEventHuntGammaRate_DE
+HPoissonRateDiff_NEVsDE <- HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE-HEventHuntGammaShape_DE*1/HEventHuntGammaRate_DE
+
+densHPoissonRate_LLVsNL <- density(HPoissonRateDiff_LLVsNL ,bw=pBW)
+densHPoissonRate_LLVsDL <- density(HPoissonRateDiff_LLVsDL ,bw=pBW)
+
+##Mean hunt Rate + SEM ##
+message("Calculate Mean Rate from posterior samples")
 muHuntRate_NL <- mean(HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL)
 muHuntRate_LL <- mean(HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL)
 muHuntRate_DL <- mean(HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL)
@@ -353,10 +368,40 @@ muHuntRate_NE <- mean(HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE)
 muHuntRate_LE <- mean(HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE)
 muHuntRate_DE <- mean(HEventHuntGammaShape_DE*1/HEventHuntGammaRate_DE)
 
+## Comparisons 
+message("Calculate Mean Rate Difference between Groups  ")
+muHuntRate_LLvsNL <- mean(HPoissonRateDiff_LLVsNL)
+muHuntRate_LLvsDL <- mean(HPoissonRateDiff_LLVsDL)
 
-semHuntRate_NL <- sd(HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL)/sqrt(NROW(HEventHuntGammaRate_NL)*NCOL(HEventHuntGammaRate_NL))
-semHuntRate_LL <- sd(HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL)/sqrt(NROW(HEventHuntGammaRate_LL)*NCOL(HEventHuntGammaRate_LL))
-semHuntRate_DL <- sd(HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL)/sqrt(NROW(HEventHuntGammaRate_DL)*NCOL(HEventHuntGammaRate_DL))
+message("Calculate Probability of Observing higher Rate between samples drawn from groups (Ie larvae)")
+P_LLgtNL <- length(HPoissonRateDiff_LLVsNL[HPoissonRateDiff_LLVsNL > 0])/length(HPoissonRateDiff_LLVsNL)
+P_LLgtDL <- length(HPoissonRateDiff_LLVsDL[HPoissonRateDiff_LLVsDL > 0])/length(HPoissonRateDiff_LLVsDL)
+P_NLgtDL <- length(HPoissonRateDiff_NLVsDL[HPoissonRateDiff_NLVsDL > 0])/length(HPoissonRateDiff_NLVsDL)
+P_LLgtLL <- length(HPoissonRateDiff_LLVsLL[HPoissonRateDiff_LLVsLL > 0])/length(HPoissonRateDiff_LLVsLL) #Chance Control
+
+P_LEgtNE <- length(HPoissonRateDiff_LEVsNE[HPoissonRateDiff_LEVsNE > 0])/length(HPoissonRateDiff_LEVsNE)
+P_LEgtDE <- length(HPoissonRateDiff_LLVsDL[HPoissonRateDiff_LEVsDE > 0])/length(HPoissonRateDiff_LEVsDE)
+P_NEgtDE <- length(HPoissonRateDiff_NEVsDE[HPoissonRateDiff_NEVsDE > 0])/length(HPoissonRateDiff_NEVsDE)
+
+message("P(LL > NL):",prettyNum(P_LLgtNL),", P(LL > DL):",prettyNum(P_LLgtDL))
+message("P(NE > LE):",prettyNum(1-P_LEgtNE),", P(NE > DE):",prettyNum(P_NEgtDE))
+
+## SEM
+semHuntRate_NL <- sd(HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL)/sqrt(length(HEventHuntGammaRate_NL))
+semHuntRate_LL <- sd(HEventHuntGammaShape_LL*1/HEventHuntGammaRate_LL)/sqrt(length(HEventHuntGammaRate_LL))
+semHuntRate_DL <- sd(HEventHuntGammaShape_DL*1/HEventHuntGammaRate_DL)/sqrt(length(HEventHuntGammaRate_DL))
+
+semHuntRate_NE <- sd(HEventHuntGammaShape_NE*1/HEventHuntGammaRate_NE)/sqrt(length(HEventHuntGammaRate_NE))
+semHuntRate_LE <- sd(HEventHuntGammaShape_LE*1/HEventHuntGammaRate_LE)/sqrt(length(HEventHuntGammaRate_LE))
+semHuntRate_DE <- sd(HEventHuntGammaShape_DE*1/HEventHuntGammaRate_DE)/sqrt(length(HEventHuntGammaRate_DE))
+
+message("Estimate Mean hunt Rate LL:",prettyNum(muHuntRate_LL,digits=3)," SEM:",prettyNum(semHuntRate_LL,digits=3) )
+message("Estimate Mean hunt Rate NL:",prettyNum(muHuntRate_NL,digits=3)," SEM:",prettyNum(semHuntRate_NL,digits=3) )
+message("Estimate Mean hunt Rate DL:",prettyNum(muHuntRate_DL,digits=4)," SEM:",prettyNum(semHuntRate_DL,digits=3) )
+
+message("Estimate Mean hunt Rate LE:",prettyNum(muHuntRate_LE,digits=3)," SEM:",prettyNum(semHuntRate_LE,digits=3) )
+message("Estimate Mean hunt Rate NE:",prettyNum(muHuntRate_NE,digits=3)," SEM:",prettyNum(semHuntRate_NE,digits=3) )
+message("Estimate Mean hunt Rate DE:",prettyNum(muHuntRate_DE,digits=3)," SEM:",prettyNum(semHuntRate_DE,digits=3) )
 
 
 Plim <- max(range(datHuntVsPreyLL[,2])[2],range(datHuntVsPreyDL[,2])[2],range(datHuntVsPreyNL[,2])[2])

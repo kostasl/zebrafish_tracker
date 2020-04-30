@@ -214,7 +214,7 @@ dLLbVsDF <- density(drawLL$beta[,(steps-ind):steps,1][2,]-drawDL$beta[,(steps-in
 dNLbVsDF <- density(drawNL$beta[,(steps-ind):steps,1][2,]-drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dNLbVsNF <- density(drawNL$beta[,(steps-ind):steps,1][2,]-sample(drawNL$beta[,(steps-ind):steps,1][2,]),kernel="gaussian",bw=pBw)
 
-print( paste("Prob that LF pooled data have lower undershoot than NF:", ProbValLessThan(dLLbVsNF,0) ))
+print( paste("Prob that LF pooled data have stronger undershoot than NF:", ProbValLessThan(dLLbVsNF,0)))
 print( paste("Prob that LF pooled data have lower undershoot than DF:", ProbValLessThan(dLLbVsDF,0) ))
 print( paste("Prob that NF pooled data have lower undershoot than DF:", ProbValLessThan(dNLbVsDF,0) ))
 print( paste("(Control-Validation)Prob that NF pooled data have lower undershoot than DN:", ProbValLessThan(dNLbVsNF,0) ))
@@ -224,11 +224,14 @@ dsigLL=density(drawLL$sigmaU[,(steps-ind):steps,1])
 dsigDL=density(drawDL$sigmaU[,(steps-ind):steps,1])  
 dsigNL=density(drawNL$sigmaU[,(steps-ind):steps,1])  
 
+gammaLL <- dataLL$turn/ dataLL$bearing
+gammaNL <- dataNL$turn/ dataNL$bearing
+gammaDL <- dataNL$turn/ dataNL$bearing
 ###Plot DATA Density of Slope
 pBw <- 0.2
-dDatLLb<-density(dataLL$turn/ dataLL$bearing ,kernel="gaussian",bw=pBw)
-dDatNLb<-density(dataNL$turn/ dataNL$bearing,kernel="gaussian",bw=pBw)
-dDatDLb<-density(dataDL$turn/ dataDL$bearing,kernel="gaussian",bw=pBw)
+dDatLLb<-density(gammaLL,kernel="gaussian",bw=pBw)
+dDatNLb<-density(gammaNL,kernel="gaussian",bw=pBw)
+dDatDLb<-density(gammaDL,kernel="gaussian",bw=pBw)
 
 
 

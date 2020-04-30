@@ -149,5 +149,6 @@ setEnvFileLocations <- function(strSetName)
 ## Util FUNCT ##
 ProbValLessThan <- function(pPDF,X){ idxVal <- which(pPDF$x < X); return(sum(pPDF$y[idxVal][1:NROW(diff(pPDF$x[idxVal]))]*diff(pPDF$x[idxVal]) ));}
 ProbValGreaterThan <- function(pPDF,X){ idxVal <- which(pPDF$x > X); return(sum(pPDF$y[idxVal][1:NROW(diff(pPDF$x[idxVal]))]*diff(pPDF$x[idxVal]) ));}
+ProbValEqualZero <- function(pPDF){ idxVal <- which(pPDF$x >= -min(abs(pPDF$x)) & pPDF$x <= min(abs(pPDF$x))); return(sum(pPDF$y[idxVal][1:NROW(diff(pPDF$x[idxVal]))]*diff(pPDF$x[idxVal]) ));}
 
 
