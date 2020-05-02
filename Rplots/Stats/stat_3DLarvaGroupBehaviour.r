@@ -420,14 +420,14 @@ with(draw_NF,{
 })
 
 ##CONVERGENCE - CHECK
-#Idx: Lid,Variable (1Under),Sample Row,Chain
+#Idx: Lid,Variable (1Under),Sample Row,Chain - 
 plot(density(tail(draw_LF$muG[,2,,1],1000) ),type='l')
 for (c in schain)
   lines(density(tail(draw_LF$muG[,2,,c],1000) ),col="red")
 
 ### Compare Group Model To Density Obtain through Mean Estimated Behaviour For Each Larva
 ### Obtain Estimated Mean Values For Each Larva & Plot Group Population
-##Plot Distance Density
+## Plot Distance Density
 plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey",ylim=c(0,6)) ##Mean Group Undershoot From Mean Of Each Larva
 lModelEst_LF <- getEstimatesPerLarva(draw_LF,stail)
 lines(density( unlist(lapply(lModelEst_LF[,"DistanceToPrey"],mean) ) ) )
@@ -436,7 +436,7 @@ lines(density(sapply(tail(draw_NF$mu[,3,,],stail),mean)),col=colourLegL[1] ,lwd=
 lModelEst_NF <- getEstimatesPerLarva(draw_NF,stail)
 lines(density( unlist(lapply(lModelEst_NF[,"DistanceToPrey"],mean) ) ) )
 
-lines(density(sapply(tail(draw_DF$mu[1,3,,],stail) ,mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+lines(density(sapply(tail(draw_DF$mu[,3,,],stail) ,mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 lModelEst_DF <- getEstimatesPerLarva(draw_DF,stail)
 lines(density( unlist(lapply(lModelEst_DF[,"DistanceToPrey"],mean) ) ) )
 
@@ -461,6 +461,69 @@ lines(density(sapply(tail(draw_DF$mu[,2,,],stail) ,mean)),col=colourLegL[1] ,lwd
 plot(density(sapply(tail(draw_LF$mu[,1,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Turn ratio") ##Mean Group Undershoot From Mean Of Each Larva
 lines(density(sapply(tail(draw_NF$mu[,1,,],stail),mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 lines(density(sapply(tail(draw_DF$mu[,1,,],stail) ,mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
+
+## Compare Models - Group Behaviour In Probs
+message("Compare Group Behaviours - Model Based")#draw_DF$muG[,3,,1]
+
+drawCapSpeedLFVsNF <- tail(draw_LF$muG[,2,,],stail)-tail(draw_NF$muG[,2,,],stail)
+drawCapSpeedLFVsDF <- tail(draw_LF$muG[,2,,],stail)-tail(draw_DF$muG[,2,,],stail)
+drawCapSpeedNFVsDF <- tail(draw_NF$muG[,2,,],stail)-tail(draw_DF$muG[,2,,],stail)
+message("Mean Cap Speed LF:",prettyNum( mean(tail(draw_LF$muG[,2,,],stail) ), digits=3) )
+message("Mean Cap Speed DF:",prettyNum( mean(tail(draw_DF$muG[,2,,],stail) ), digits=3) )
+message("Mean Cap Speed NF:",prettyNum( mean(tail(draw_NF$muG[,2,,],stail) ), digits=3) )
+
+message("Mean diff Cap Speed LF-NF:",prettyNum( mean(drawCapSpeedLFVsNF),digits=3) )
+message("Mean diff Cap Speed LF-DF:",prettyNum( mean(drawCapSpeedLFVsDF),digits=3) )
+message("Mean diff Cap Speed NF-DF:",prettyNum( mean(drawCapSpeedNFVsDF),digits=3) )
+
+## Probability Of Differences ##
+PCapSpeed_LFgtNF <- length(drawCapSpeedLFVsNF[drawCapSpeedLFVsNF > 0])/length(drawCapSpeedLFVsNF) ## ProbValLessThan(dLLbVsNF,0)
+PCapSpeed_LFgtDF <- length(drawCapSpeedLFVsDF[drawCapSpeedLFVsDF > 0])/length(drawCapSpeedLFVsDF) ## ProbValLessThan(dLLbVsNF,0)
+PCapSpeed_DFgtNF <- 1-length(drawCapSpeedNFVsDF[drawCapSpeedNFVsDF > 0])/length(drawCapSpeedNFVsDF) ## ProbValLessThan(dLLbVsNF,0)
+message("Prob that LF Capt Speed > NF: ",prettyNum(PCapSpeed_LFgtNF,digits=3))
+message("Prob that LF Capt Speed > DF: ",prettyNum(PCapSpeed_LFgtDF,digits=3))
+message("Prob that DF Capt Speed > NF: ",prettyNum(PCapSpeed_DFgtNF,digits=3))
+
+## Turn Ratio ##
+drawTurnRatioLFVsNF <- tail(draw_LF$muG[,1,,],stail)-tail(draw_NF$muG[,1,,],stail)
+drawTurnRatioLFVsDF <- tail(draw_LF$muG[,1,,],stail)-tail(draw_DF$muG[,1,,],stail)
+drawTurnRatioNFVsDF <- tail(draw_NF$muG[,1,,],stail)-tail(draw_DF$muG[,1,,],stail)
+message("Mean TurRatio LF:",prettyNum( mean(tail(draw_LF$muG[,1,,],stail) ), digits=3) )
+message("Mean TurRatio DF:",prettyNum( mean(tail(draw_DF$muG[,1,,],stail) ), digits=3) )
+message("Mean TurRatio NF:",prettyNum( mean(tail(draw_NF$muG[,1,,],stail) ), digits=3) )
+
+message("Mean diff TurRatio LF-NF:",prettyNum( mean(drawTurnRatioLFVsNF),digits=3) )
+message("Mean diff TurRatio LF-DF:",prettyNum( mean(drawTurnRatioLFVsDF),digits=3) )
+message("Mean diff TurRatio NF-DF:",prettyNum( mean(drawTurnRatioNFVsDF),digits=3) )
+
+## Prob - Diff in Turnration -ve means Higher Undershoot For LF
+PUndershoot_LFgtNF <- length(drawTurnRatioLFVsNF[drawTurnRatioLFVsNF < 0])/length(drawTurnRatioLFVsNF) ## ProbValLessThan(dLLbVsNF,0)
+PUndershoot_LFgtDF <- length(drawTurnRatioLFVsDF[drawTurnRatioLFVsDF < 0])/length(drawTurnRatioLFVsDF) ## ProbValLessThan(dLLbVsNF,0)
+PUndershoot_DFgtNF <- 1-length(drawTurnRatioNFVsDF[drawTurnRatioNFVsDF < 0])/length(drawTurnRatioNFVsDF) ## ProbValLessThan(dLLbVsNF,0)
+
+message("Prob that LF Undershoot > NF: ",prettyNum(PUndershoot_LFgtNF,digits=3))
+message("Prob that LF Undershoot > DF: ",prettyNum(PUndershoot_LFgtDF,digits=3))
+message("Prob that DF Undershoot > NF: ",prettyNum(PUndershoot_DFgtNF,digits=3))
+
+## Compare Distance 
+drawCapDistLFVsNF <- tail(draw_LF$muG[,3,,],stail)-tail(draw_NF$muG[,3,,],stail)
+drawCapDistLFVsDF <- tail(draw_LF$muG[,3,,],stail)-tail(draw_DF$muG[,3,,],stail)
+drawCapDistNFVsDF <- tail(draw_NF$muG[,3,,],stail)-tail(draw_DF$muG[,3,,],stail)
+message("Mean Cap Dist LF:",prettyNum( mean(tail(draw_LF$muG[,3,,],stail) ), digits=3) )
+message("Mean Cap Dist DF:",prettyNum( mean(tail(draw_DF$muG[,3,,],stail) ), digits=3) )
+message("Mean Cap Dist NF:",prettyNum( mean(tail(draw_NF$muG[,3,,],stail) ), digits=3) )
+message("Mean diff Cap Dist LF-NF:",prettyNum( mean(drawCapDistLFVsNF),digits=3) )
+message("Mean diff Cap Dist LF-DF:",prettyNum( mean(drawCapDistLFVsDF),digits=3) )
+message("Mean diff Cap Dist NF-DF:",prettyNum( mean(drawCapDistNFVsDF),digits=3) )
+
+## Prob - Diff in Turnration -ve means Higher Undershoot For LF
+PCapDist_LFgtNF <- length(drawCapDistLFVsNF[drawCapDistLFVsNF > 0])/length(drawCapDistLFVsNF) ## ProbValLessThan(dLLbVsNF,0)
+PCapDist_LFgtDF <- length(drawCapDistLFVsDF[drawCapDistLFVsDF > 0])/length(drawCapDistLFVsDF) ## ProbValLessThan(dLLbVsNF,0)
+PCapDist_NFgtDF <- length(drawCapDistNFVsDF[drawCapDistNFVsDF > 0])/length(drawCapDistNFVsDF) ## ProbValLessThan(dLLbVsNF,0)
+message("Prob that LF Cap Dist > NF: ",prettyNum(PCapDist_LFgtNF,digits=3))
+message("Prob that LF Cap Dist > DF: ",prettyNum(PCapDist_LFgtDF,digits=3))
+message("Prob that NF Cap Dist > DF: ",prettyNum(PCapDist_NFgtDF,digits=3))
+
 
 #Idx: Lid,Variable (2=SpeedDist Covar),Sample Row,Chain
 ## 
@@ -584,33 +647,33 @@ dev.off()
 ### 3D OPENGL plot - Balls Model of Gourp Mean behaviour ##
 #################################
 library( rgl )
-ntail <- 30
+ntail <- 100
 
 ##Prepare Data
 datMu3D <-  data.frame( cbind.data.frame(
-                        TurnR=tail(draw_LF$muG[,1,,1], ntail) ,
-                        CSpeed=tail(draw_LF$muG[,2,,1], ntail),
-                        Dist=tail(draw_LF$muG[,3,,1], ntail), col=colourLegL[2],pch=pchL[4],group="LF" )  )
+                        TurnR=tail(c(draw_LF$muG[,1,,]), ntail) ,
+                        CSpeed=tail(c(draw_LF$muG[,2,,]), ntail) ,
+                        Dist=tail(c(draw_LF$muG[,3,,]), ntail), col=colourLegL[2],pch=pchL[4],group="LF" )  )
 
 datMu3D <- rbind(datMu3D,
                   data.frame( cbind.data.frame(
-                   TurnR=tail(draw_NF$muG[,1,,1], ntail) ,
-                   CSpeed=tail(draw_NF$muG[,2,,1], ntail),
-                   Dist=tail(draw_NF$muG[,3,,1], ntail), col=colourLegL[1],pch=pchL[6]),group="NF"  )
+                   TurnR=tail(c(draw_NF$muG[,1,,]), ntail) ,
+                   CSpeed=tail(c(draw_NF$muG[,2,,]), ntail),
+                   Dist=tail(c(draw_NF$muG[,3,,]), ntail), col=colourLegL[1],pch=pchL[6]),group="NF"  )
               )
 
 datMu3D <- rbind(datMu3D,
                  data.frame( cbind.data.frame(
-                   TurnR=tail(draw_DF$muG[,1,,1], ntail) ,
-                   CSpeed=tail(draw_DF$muG[,2,,1], ntail),
-                   Dist=tail(draw_DF$muG[,3,,1], ntail), col=colourLegL[3],pch=pchL[5],group="DF")  )
+                   TurnR=tail(c(draw_DF$muG[,1,,1]), ntail) ,
+                   CSpeed=tail(c(draw_DF$muG[,2,,1]), ntail),
+                   Dist=tail(c(draw_DF$muG[,3,,1]), ntail), col=colourLegL[3],pch=pchL[5],group="DF")  )
                  )
 datMu3D$col  <- as.character( datMu3D$col)
   
   ##Open Window And Plot
   open3d()
   bbox <- par3d('bbox') 
-  rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
+  rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.1,
                #xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)",
                xlab="", ylab="",zlab="",
                xlim=c(0.5,1.5), ylim=c(10,50), zlim=c(0,0.8),

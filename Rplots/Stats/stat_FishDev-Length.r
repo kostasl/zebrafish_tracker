@@ -45,6 +45,12 @@ modelNorm="model {
 datFlatPxLength <- read.csv(file= paste(strDataExportDir,"/FishLength_Updated2.csv",sep=""))
 message(paste(" Loading Measured fish length in pixels data ... "))
 
+#datFlatPxLength <- read.csv(file= paste(strDataExportDir,"/FishLength_Updated2.csv",sep=""))
+
+## The scriptlet to run the labelling process on a set of expID is found in auxFunctions.r
+datFlatPxLength <- readRDS(file= paste(strDataExportDir,"/FishLength_Updated3.rds",sep=""))
+message(paste(" Loading Measured fish length in pixels data ... "))
+
 
 ## Extrach the groupID - GroupName Convention we have been using 
 ## Recalc First Bout Data based on Validated Info ###
@@ -60,7 +66,8 @@ strGroupID <- levels(datTrackedEventsRegister$groupID)
 # names(datFlatFrame) <- c("LengthPx","groupID")
 # datFlatFrame <- datFlatFrame[!is.na(datFlatFrame$LengthPx), ]
 # 
-
+datFlatPxLength <- datFlatPxLength[datFlatPxLength$groupID %in% c(1,2,3),]
+datFlatPxLength$LengthPx <- as.numeric(datFlatPxLength$LengthPx)
 
 Jagsdata=list(groupID=datFlatPxLength$groupID,
               LarvaLength=datFlatPxLength$LengthPx*DIM_MMPERPX, 

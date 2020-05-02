@@ -306,6 +306,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterMembership.pdf",sep=""
 dev.off()
 
 
+
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_meanDistanceOfFastCapture.pdf",sep=""),width=7,height=7)
   par(mar = c(3.9,4.7,1,1))
   #### ## Probability Density of Strike capture ####

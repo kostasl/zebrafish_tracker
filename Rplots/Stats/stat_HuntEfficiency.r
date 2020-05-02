@@ -163,10 +163,39 @@ HCovRateAndEfficiency_NL <- cor( tail(HEventSuccess_NL[,chain],plotsamples),tail
 HCovRateAndEfficiency_LL <- cor( tail(HEventSuccess_LL[,chain],plotsamples),tail(MeanHuntRate_LL[,chain],plotsamples) )
 HCovRateAndEfficiency_DL <- cor( tail(HEventSuccess_DL[,chain],plotsamples),tail(MeanHuntRate_DL[,chain],plotsamples) )
 
+
+### Compare Rates of Capture Attempt (hunt rate~) difference 
+message("Mean Capture Attempts LL:",prettyNum(mean(MeanHuntRate_LL),digits=3), " DL:",prettyNum(mean(MeanHuntRate_DL),digits=3), " NL:",prettyNum(mean(MeanHuntRate_NL),digits=3 ) ) 
+message("Compare mean Hunt Rate LL-NL:", (mean(MeanHuntRate_LL)-mean(MeanHuntRate_NL) )  )
+### Compare Hunt Efficiency difference 
+HEventSuccess_LLVsNL <- HEventSuccess_LL - HEventSuccess_NL
+HEventSuccess_LLVsDL <- HEventSuccess_LL - HEventSuccess_DL
+HEventSuccess_NLVsDL <- HEventSuccess_NL - HEventSuccess_DL
+message("Compare mean Hunt Efficiency LL-NL:", (mean(HEventSuccess_LLVsNL) )  )
+message("Compare mean Hunt Efficiency LL-DL:", (mean(HEventSuccess_LLVsDL) )  )
+
+P_LLgtNL <- length(HEventSuccess_LLVsNL[HEventSuccess_LLVsNL >  0])/length(HEventSuccess_LLVsNL)
+P_LLgtDL <- length(HEventSuccess_LLVsDL[HEventSuccess_LLVsDL >  0])/length(HEventSuccess_LLVsDL)
+P_NLgtDL <- length(HEventSuccess_NLVsDL[HEventSuccess_NLVsDL >  0])/length(HEventSuccess_NLVsDL)
+message("Prob that LF group is More efficient than NF:",P_LLgtNL, " and DF:", P_LLgtDL)
+message("Prob that NF is More Efficient than DF:",prettyNum(P_NLgtDL),digits=3 ) 
+## Compare Capture Attempts
+### Mean Rates As Exp OF Gamma
+MeanHuntRate_LLvsNL <- MeanHuntRate_LL - MeanHuntRate_NL 
+MeanHuntRate_LLvsDL <- MeanHuntRate_LL - MeanHuntRate_DL 
+MeanHuntRate_NLvsDL <- MeanHuntRate_NL - MeanHuntRate_DL 
+P_LLgtNL <- length(MeanHuntRate_LLvsNL[MeanHuntRate_LLvsNL >  0])/length(MeanHuntRate_LLvsNL)
+P_LLgtDL <- length(MeanHuntRate_LLvsDL[MeanHuntRate_LLvsDL >  0])/length(MeanHuntRate_LLvsDL)
+P_NLgtDL <- length(MeanHuntRate_NLvsDL[MeanHuntRate_NLvsDL >  0])/length(MeanHuntRate_NLvsDL)
+message("Prob that LF group Attempts More than NF:",prettyNum(P_LLgtNL,3), " and DF:", prettyNum(P_LLgtDL,3), " NF>DF",prettyNum(P_NLgtDL,3) )
+
+HConsumptionRate_NL <- HEventSuccess_NL*MeanHuntRate_NL
+HConsumptionRate_LL <- HEventSuccess_LL*MeanHuntRate_LL
+HConsumptionRate_DL <- HEventSuccess_DL*MeanHuntRate_DL
+
+
+
 ###MAIN OUTPUT PLOT ##
-
-
-
 
 load(file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
 
@@ -234,11 +263,6 @@ pdf(strPlotName,width=14,height=4.7,
   #text(x=1.4,y=-0.8,labels = "SB",cex=1.5)  
 
 dev.off()
-
-### Compare Rates of Capture Attempt (hunt rate~) difference 
-(mean(MeanHuntRate_LL)-mean(MeanHuntRate_NL) ) /mean(MeanHuntRate_NL)
-### Compare Hunt Efficiency difference 
-(mean(HEventSuccess_LL)-mean(HEventSuccess_NL) ) /mean(HEventSuccess_NL)
 
 
 plotWidthIn <- 8

@@ -72,7 +72,7 @@ mcmc_drawHuntDurationModels <- function(datHuntVsPrey,preyCountRange,strModelFil
   burn_in=1000;
   steps=100000;
   plotsamples = 10000
-  thin=2;
+  thin=4;
   chains = 3
   
   
@@ -440,7 +440,13 @@ muHDur_DL <- ((1-tail(drawDurDL$q[,,schain],plotsamples))*tail(drawDurDL$r[,,sch
 muHDur_NE <- ((1-tail(drawDurNE$q[,,schain],plotsamples))*tail(drawDurNE$r[,,schain],plotsamples)/(tail(drawDurNE$q[,,schain],plotsamples)))/G_APPROXFPS;
 muHDur_NL <- ((1-tail(drawDurNL$q[,,schain],plotsamples))*tail(drawDurNL$r[,,schain],plotsamples)/(tail(drawDurNL$q[,,schain],plotsamples)))/G_APPROXFPS;
 
-##Calc Densities of Mean Duration ###
+## Comparisons
+muHDur_LEVsNE <- muHDur_LE - muHDur_NE
+muHDur_LEVsDE <- muHDur_LE - muHDur_DE
+muHDur_LLVsNL <- muHDur_LL - muHDur_NL
+muHDur_LLVsDL <- muHDur_LL - muHDur_DL
+
+##Calc Densities of Mean total hunt Duration per larva ###
 pBW <- 0.5
 densDur_LE <- density(muHDur_LE,bw=pBW)
 densDur_NE <- density(muHDur_NE,bw=pBW)
@@ -449,6 +455,14 @@ densDur_DL <- density(muHDur_DL,bw=pBW*4)
 densDur_LL <- density(muHDur_LL,bw=pBW*4)
 densDur_NL <- density(muHDur_NL,bw=pBW*4)
 
+##Calc Probablity of LF duration being shorter
+message("Calculate prob of LF hunt duration being shorter")
+P_LLgtNL <- length(muHDur_LLVsNL[muHDur_LLVsNL < 0])/length(muHDur_LLVsNL)
+P_LLgtDL <- length(muHDur_LLVsDL[muHDur_LLVsDL < 0])/length(muHDur_LLVsDL)
+message("LL is shorter to DL with P=",prettyNum(P_LLgtDL,digits=3)," and LL < NL:",prettyNum(P_LLgtNL,digits=3))
+P_LEgtNE <- length(muHDur_LEVsNE[muHDur_LEVsNE < 0])/length(muHDur_LEVsNE)
+P_LEgtDE <- length(muHDur_LEVsDE[muHDur_LEVsDE < 0])/length(muHDur_LEVsDE)
+message("LE is shorter to DE with P=",prettyNum(P_LEgtDE,digits=3)," and LE < NE:",prettyNum(P_LEgtNE,digits=3))
 
 # These Functions Obtain nS Samples from each of the Posteriors of the Modelled hunt events of separate Larva, 
 nS <- 300
@@ -466,6 +480,8 @@ densEpiDur_DE <- density(muEpiDur_DE,bw=pBW)
 densEpiDur_NL <- density(muEpiDur_NL,bw=pBW)
 densEpiDur_LL <- density(muEpiDur_LL,bw=pBW)
 densEpiDur_DL <- density(muEpiDur_DL,bw=pBW)
+
+
 ## MAIN PLOT ###
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events
@@ -492,7 +508,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
                                     ,bquote( "NF-e" ~ "Model " ) ), 
          col=c(colourP[4], colourLegE[1],colourP[4],colourLegL[1]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("F",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-  mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec)")
+  mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec / 10 min.)")
   mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
   
   plotHuntDurationDistribution_cdf(datHuntDurVsPreyLE,drawDurLE,colourHE[2],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
@@ -504,7 +520,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
                                     ,bquote( "LF-e" ~ "Model " ) ),  
          col=c(colourP[4], colourLegE[2],colourP[4],colourLegL[2]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("G",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-  mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec)")
+  mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec / 10 min.)")
   mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
   
   plotHuntDurationDistribution_cdf(datHuntDurVsPreyDE,drawDurDE,colourHE[3],pchL[1],lineTypeL[2],Plim,plotsamples,newPlot=TRUE)
@@ -516,7 +532,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
                                     ,bquote( "DF-e" ~ "Model " ) ),  
          col=c(colourP[4], colourLegE[3],colourP[4],colourLegL[3]), pch=c(pchL[1],NA,pchL[3],NA),lty=c(NA,1),lwd=2,cex=cex,bg="white" )
   mtext("H",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
-  mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec)")
+  mtext(side = 1,cex=cex, line = lineAxis, " Total time spent hunting (sec / 10 min.)")
   mtext(side = 2,cex=cex, line = lineAxis, " Cumulative function ")
   
   ######
@@ -545,7 +561,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
   xbarcenters <- boxplot(log10( (datHuntDurVsPreyNE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntDurVsPreyNL[,3]+1)/G_APPROXFPS ),log10( (datHuntDurVsPreyLE[,3]+1)/G_APPROXFPS ),
                          log10( ( datHuntDurVsPreyLL[,3]+1 )/G_APPROXFPS ),log10(( datHuntDurVsPreyDE[,3]+1)/G_APPROXFPS ) ,log10( ( datHuntDurVsPreyDL[,3]+1)/G_APPROXFPS ),
                          main=NA,notch=TRUE,col=colourD,names=strCondTags,ylim=c(0,2.5),axes = FALSE,cex=cex,cex.axis=cex,cex.lab=cex  )
-  mtext(side = 2,cex=cex, line =lineAxis, "Total hunting time  (sec) ") #log( (D+1)/fps
+  mtext(side = 2,cex=cex, line =lineAxis, "Total hunting time  (sec / 10 min.) ") #log( (D+1)/fps
   vIDTable    <- datHuntStat[,"vIDLookupTable"] ##vIDTable$DL <- vIDTable$DL[vIDTable$DL$expID!=3830,]
   ##Take Frame duration Values for each group and Divide by Framerate
   vDat        <- rapply(datHuntStat[,"vHDurationPerLarva"],function(x){return (x/G_APPROXFPS) },how="replace")
@@ -568,7 +584,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig2B_statComparePoissonHuntDurations",
   
   legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), seg.len=3.5,
          col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated total time spent hunting per larva (sec)") )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated total hunting time per larva (sec / 10 min.)") )  )
   mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
   mtext("J",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   

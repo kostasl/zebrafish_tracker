@@ -4,6 +4,11 @@
 library(rjags)
 #library(runjags)
 
+library(ggplot2) ##install.packages("ggplot2")
+library(ggExtra)##  install.packages("ggExtra") ##devtools::install_github("daattali/ggExtra").
+library(cowplot)
+library(ggpubr) ##install.packages("ggpubr")
+
 source("config_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
@@ -184,6 +189,7 @@ ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_D
 ldata_ALL <- list(c=datDistanceVsStrikeSpeed_ALL,N=NROW(datDistanceVsStrikeSpeed_ALL)) ##Dry fed
 #saveRDS(ldata_ALL,file=paste0(strDataExportDir,"pubDat/LarvaEmpiricalMeanHuntBehaviour.rds"))
 
+load(paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
 
 ### RUN MODEL ###
 jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_LF, 
@@ -319,8 +325,27 @@ dNLb_sigmaC<-density(tail(draw_NF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 dDLb_sigmaC<-density(tail(draw_DF$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 #dALLb_sigmaC<-density(tail(draw_ALL$sigma[,2,,1],ntail),kernel="gaussian",bw=1)
 
+### Compare Estimate Probability Qs
+drawPs_LF <- tail(draw_LF$pS,1000)
+drawPs_DF <- tail(draw_DF$pS,1000)
+drawPs_NF <- tail(draw_NF$pS,1000) 
+message("Mean  Capture Strike Prob. p_s LF:",prettyNum( mean(drawPs_LF),digits=3 ),
+        " NF:",prettyNum( mean(drawPs_NF) ,digits=3 ),
+        " DF:",prettyNum( mean(drawPs_DF) ,digits=3 )
+        )
 
+drawPs_LFVsNF <- drawPs_LF - drawPs_NF
+drawPs_LFVsDF <- drawPs_LF - drawPs_DF
+drawPs_NFVsDF <- drawPs_NF - drawPs_DF
 
+ProbCaptStrike_LFvsNF <- length(drawPs_LFVsNF[drawPs_LFVsNF > 0])/length(drawPs_LFVsNF)
+ProbCaptStrike_LFvsDF <- length(drawPs_LFVsDF[drawPs_LFVsDF > 0])/length(drawPs_LFVsDF)
+ProbCaptStrike_NFvsDF <- length(drawPs_NFVsDF[drawPs_NFVsDF > 0])/length(drawPs_NFVsDF)
+message("Compare Probability ps LF > NF:",prettyNum(ProbCaptStrike_LFvsNF,digits=3)  )
+message("Compare Probability ps LF > DF:",prettyNum(ProbCaptStrike_LFvsDF,digits=3)  )
+message("Compare Probability ps NF > DF:",prettyNum(ProbCaptStrike_NFvsDF,digits=3)  )
+
+mean(tail(draw_LF$pS,1000))
 
 ###MAIN FIgure 4 (ex 5) in MS
 pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPrey_NF.pdf",sep=""),width=7,height=7)
@@ -349,8 +374,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_clusterCaptureSpeedVsDistToPr
 dev.off()
 
 
-
-
+### Plot Combined Multi plot of bout clustering ##
 pdf(file= paste(strPlotExportPath,strMainPDFFilename,sep=""),width=14,height=7,
     title="A Gaussian clustering statistical model for capture strike speed and distance to prey")
   

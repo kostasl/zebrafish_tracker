@@ -208,15 +208,24 @@ dLLb<-density(drawLL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dNLb<-density(drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 dDLb<-density(drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
 
+## Compare Turn Ration Between Groups 
 ##Add Density That LF undershoot More than NF/DF
-dLLbVsNF <- density((drawLL$beta[,(steps-ind):steps,1][2,]-0.2)-drawNL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
-dLLbVsDF <- density(drawLL$beta[,(steps-ind):steps,1][2,]-drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
-dNLbVsDF <- density(drawNL$beta[,(steps-ind):steps,1][2,]-drawDL$beta[,(steps-ind):steps,1][2,],kernel="gaussian",bw=pBw)
+turnRatio_LFvsNF <- (drawLL$beta[,(steps-ind):steps,1][2,])-drawNL$beta[,(steps-ind):steps,1][2,]
+turnRatio_LFvsDF <- (drawLL$beta[,(steps-ind):steps,1][2,])-drawDL$beta[,(steps-ind):steps,1][2,]
+turnRatio_NFvsDF <- (drawNL$beta[,(steps-ind):steps,1][2,])-drawDL$beta[,(steps-ind):steps,1][2,]
+
+dLLbVsNF <- density(turnRatio_LFvsNF,kernel="gaussian",bw=pBw)
+dLLbVsDF <- density(turnRatio_LFvsDF,kernel="gaussian",bw=pBw)
+dNLbVsDF <- density(turnRatio_NFvsDF,kernel="gaussian",bw=pBw)
 dNLbVsNF <- density(drawNL$beta[,(steps-ind):steps,1][2,]-sample(drawNL$beta[,(steps-ind):steps,1][2,]),kernel="gaussian",bw=pBw)
 
-print( paste("Prob that LF pooled data have stronger undershoot than NF:", ProbValLessThan(dLLbVsNF,0)))
-print( paste("Prob that LF pooled data have lower undershoot than DF:", ProbValLessThan(dLLbVsDF,0) ))
-print( paste("Prob that NF pooled data have lower undershoot than DF:", ProbValLessThan(dNLbVsDF,0) ))
+PUndershoot_LFgtNF <- length(turnRatio_LFvsNF[turnRatio_LFvsNF < 0])/length(turnRatio_LFvsNF) ## ProbValLessThan(dLLbVsNF,0)
+PUndershoot_LFgtDF <- length(turnRatio_LFvsDF[turnRatio_LFvsDF < 0])/length(turnRatio_LFvsDF) ## ProbValLessThan(dLLbVsNF,0)
+PUndershoot_NFgtDF <- length(turnRatio_NFvsDF[turnRatio_NFvsDF < 0])/length(turnRatio_NFvsDF) ## ProbValLessThan(dLLbVsNF,0)
+
+print( paste("Prob that LF pooled data have stronger undershoot than NF:", PUndershoot_LFgtNF ) )
+print( paste("Prob that LF pooled data have lower undershoot than DF:", PUndershoot_LFgtDF ) )
+print( paste("Prob that NF pooled data have lower undershoot than DF:", PUndershoot_NFgtDF ) )
 print( paste("(Control-Validation)Prob that NF pooled data have lower undershoot than DN:", ProbValLessThan(dNLbVsNF,0) ))
 
 ###Density of STD Dev on TurnRatio
@@ -330,7 +339,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_Dens
   mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
  # mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
-  print(paste("LF has different mean with Prob "))]
+  print(paste("LF has different mean with Prob "))
   ProbValLessThan(dLLb,0.7)
   ### PLot Scatter with regression lines with Conf intervals##
 dev.off()

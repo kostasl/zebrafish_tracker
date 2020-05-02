@@ -734,6 +734,14 @@ plotHuntEfficiencyDataCDF <- function(datHuntEventAllGroupToLabel,showLegend=FAL
   cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)
   
   
+  message("LL:")
+  print(quantile(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio))
+  
+  message("NL:")
+  print(quantile(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio))
+  message("DL:")
+  print(quantile(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio) )
+  
   #par(mar = c(3.9,4.3,1,1)) 
   plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],xlim=c(0,1),pch=pchL[1],ylim=c(0.03,1.01),
        main=NA,ylab=NA,  xlab=NA,cex.main =cex,cex.axis=cex,cex=cex )
