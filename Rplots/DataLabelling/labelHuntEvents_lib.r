@@ -58,6 +58,7 @@ getLabelledHuntEventsSet <- function()
   #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
   datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
   
+  #saveRDS(datHuntLabelledEventsSB,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
   ##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
   #AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
   # 4491 <- Is a lonely NL - No Match NE
@@ -165,7 +166,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame, "ExpID:",rec$expID ) )
     ##--
-    strArgs = paste(" --HideDataSource=0 MeasureMode=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    strArgs = paste(" --HideDataSource=0 --MeasureMode=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
     message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
     if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
       stop(paste("Tracker software not found in :",strTrackerPath ))

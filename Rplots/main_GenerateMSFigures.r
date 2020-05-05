@@ -17,6 +17,7 @@
 
 ### Fig 3 ####
 #source("Stats/stat_HuntEfficiency.r")
+#source("Datalabelling/main_MeasureLengthBlind.r")
 
 ### Fig 4 ####
 #source("DataLabelling/plotLabelledDataResults.R")
@@ -147,6 +148,36 @@ datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 
 
 
+### FIG 3 SUPP FIG HPI Corr-Larva Size
+
+## Bootstrap correlation Analysis - Hunt Power Against Development/Nutrition Measured from Larval Std. Length
+## Save To summary Stat Output - Used By generate figure 
+datSuccessVsSize <- readRDS(file= paste(strDataExportDir,"/FishLengthVsHuntSuccess.rds",sep=""))
+
+XRange <- c(3.9,5)
+YRange <- c(0,5)
+pBw <- 0.05
+stat_SizeVsHuntPower_NF <- bootStrap_stat(datSuccessVsSize.NF$Lengthmm,datSuccessVsSize.NF$HuntPower,1000,XRange,YRange,"spearman")
+stat_SizeVsHuntPower_LF <- bootStrap_stat(datSuccessVsSize.LF$Lengthmm,datSuccessVsSize.LF$HuntPower,1000,XRange,YRange,"spearman")
+stat_SizeVsHuntPower_DF <- bootStrap_stat(datSuccessVsSize.DF$Lengthmm,datSuccessVsSize.DF$HuntPower,1000,XRange,YRange,"spearman")
+
+pdf(paste0(strPlotExportPath,"/stat/fig3S1_stat_LarvalLengthsToHPI_Correlation.pdf"),width=7,height=7,title="Correlation Larval size to Hunt Success (HPI) ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+    par(mar = c(3.9,4.7,1,1))
+    
+    plot(density(stat_SizeVsHuntPower_NF$corr,kernel="gaussian",bw=pBw),
+         col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,7),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+    lines(density(stat_SizeVsHuntPower_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+    lines(density(stat_SizeVsHuntPower_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+    mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of hunt success (HPI) to larval length  ") ))
+    mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+    
+    
+    legend("topright",   legend=c( paste0("NF # ",  NROW(datSuccessVsSize.NF$expID) ),
+                                   paste0("LF # " , NROW(datSuccessVsSize.LF$expID) ),
+                                   paste0("DF # " , NROW(datSuccessVsSize.DF$expID) )
+    ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+    col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
+dev.off() 
 
 
 
