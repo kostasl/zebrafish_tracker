@@ -134,19 +134,72 @@ plotModelCovCoeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
   
   ##Covariance 
   nsam <- NROW(draw_LF$muG[,3,,1])
-  ylimR <- c(0,4)
-  cov_LF <- (draw_LF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_LF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_LF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
-  cov_NF <- (draw_NF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_NF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_NF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
-  cov_DF <- (draw_DF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_DF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_DF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
+  ylimR <- c(0,10)
+  nchains <- 1:7
+  cov_coeff <- list()
+  cov_coeff$LF <- (draw_LF$cov[,Ci,Cj,(nsam-ntail):nsam,nchains]/( sqrt(draw_LF$cov[,Ci,Ci,(nsam-ntail):nsam,nchains])*sqrt(draw_LF$cov[,Cj,Cj,(nsam-ntail):nsam,nchains]) )   )
+  cov_coeff$NF <- (draw_NF$cov[,Ci,Cj,(nsam-ntail):nsam,nchains]/sqrt(draw_NF$cov[,Ci,Ci,(nsam-ntail):nsam,nchains]*draw_NF$cov[,Cj,Cj,(nsam-ntail):nsam,nchains]) )
+  cov_coeff$DF <- (draw_DF$cov[,Ci,Cj,(nsam-ntail):nsam,nchains]/sqrt(draw_DF$cov[,Ci,Ci,(nsam-ntail):nsam,nchains]*draw_DF$cov[,Cj,Cj,(nsam-ntail):nsam,nchains]) )
+  
+  ## Get Posterior Sample Differences Between Groups
+  cov_coeff_LFVsNF <- tail(cov_coeff$LF,ntail*NROW(nchains)) - tail(cov_coeff$NF,ntail*NROW(nchains))
+  cov_coeff_LFVsDF <- tail(cov_coeff$LF,ntail*NROW(nchains)) - tail(cov_coeff$DF,ntail*NROW(nchains))
+  cov_coeff_NFVsDF <- tail(cov_coeff$NF,ntail*NROW(nchains)) - tail(cov_DF_coeff,ntail*NROW(nchains))
+  #cov_LF$ij <- t(data.frame(draw_LF$cov[,Ci,Cj,,] ))   cov_LF$ii <- t(data.frame(draw_LF$cov[,Ci,Ci,,]))   cov_LF$jj <- t(data.frame(draw_LF$cov[,Cj,Cj,,]))
+  ##Calculate Posterior Density Of Covar Coefficient rho
+  #cov_LF$coeff <- cov_LF$ij/sqrt(cov_LF$ii*cov_LF$jj)
   
   ##Average Over Columns/Samples - Produce Distribution of Mean Cov Of Group -  Across Samples (Vector With n mean points)
   ##What is the Members Cov On Average?Distibution of E[rho_g] = Sum(rho_i,NLarvae)/NLarvae
-  plot( density( apply(cov_LF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5) ,col=colourLegL[2],lwd=3,main="",xlab="",ylab="",ylim=ylimR,lty=1)
-  lines(density( apply(cov_NF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5),col=colourLegL[1],lwd=3,lty=2 )
-  lines(density( apply(cov_DF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5),col=colourLegL[3],lwd=3,lty=3 )
+  message("E[rho_g] Covar LF:",mean(apply(cov_coeff$LF,1,"mean") ) )
+  message("E[rho_g] Covar NF:",mean(apply(cov_coeff$NF,1,"mean") ) )
+  message("E[rho_g] Covar DF:",mean(apply(cov_coeff$DF,1,"mean") ) )
+  message("Calculate Probabilities that covariance is DF > LF > NF ")
+  P_LFGreaterThanZero <- length(cov_coeff$LF[cov_coeff$LF > 0])/length(cov_coeff$LF)
+  P_NFGreaterThanZero <- length(cov_coeff$NF[cov_coeff$NF > 0])/length(cov_coeff$NF)
+  P_DFGreaterThanZero <- length(cov_coeff$DF[cov_coeff$DF > 0])/length(cov_coeff$DF)
+  P_LFGreaterThanNF <- length(cov_coeff_LFVsNF[cov_coeff_LFVsNF > 0])/length(cov_coeff_LFVsNF)
+  P_LFGreaterThanDF <- length(cov_coeff_LFVsDF[cov_coeff_LFVsDF > 0])/length(cov_coeff_LFVsDF)
+  message("Prob Mean group covar LF > 0:",P_LFGreaterThanZero)
+  message("Prob Mean group covar NF > 0:",P_NFGreaterThanZero)
+  message("Prob Mean group covar DF > 0:",P_DFGreaterThanZero)
+  message("Prob Mean group covar LF > NF:",P_LFGreaterThanNF)
+  message("Prob Mean group covar DF > LF:",1-P_LFGreaterThanDF)
+  
+  ###Distribution Of Estimated mean Covariances Per Group
+  ## Apply mean per sample / across larvae
+  pBW <- 0.02
+  XRange <- c(-0.5,0.5)
+  plot( density(apply(cov_coeff$LF,2,"mean"),
+                from=-1,to=1,n=200,bw=pBW),xlim=XRange ,col=colourLegL[2],lwd=3,main=NA,xlab=NA,ylab=NA,ylim=ylimR,lty=1,cex=cex,cex.axis=cex)
+  lines(density( apply(cov_coeff$NF,2,"mean"),
+                 from=-1,to=1,n=200,bw=pBW),xlim=XRange,col=colourLegL[1],lwd=3,lty=2 )
+  lines(density( apply(cov_coeff$DF,2,"mean"),
+                 from=-1,to=1,n=200,bw=pBW),xlim=XRange,col=colourLegL[3],lwd=3,lty=3 )
+  
+  return(cov_coeff)
+
+  ## Plot Covariance - Straight
+  #plot( density(draw_LF$cov[,Cj,Ci,(nsam-ntail):nsam,nchains],
+  #              from=-1,to=1,n=200,bw=pBW),xlim=c(-1,1) ,col=colourLegL[2],lwd=3,main="",xlab="",ylab="",ylim=ylimR,lty=1)
+  #lines(density( draw_NF$cov[,Ci,Cj,(nsam-ntail):nsam,nchains],
+  #               from=-1,to=1,n=200,bw=pBW),xlim=c(-0.5,0.5),col=colourLegL[1],lwd=3,lty=2 )
+  #lines(density( draw_DF$cov[,Ci,Cj,(nsam-ntail):nsam,nchains],
+  #               from=-1,to=1,n=200,bw=pBW),xlim=c(-0.5,0.5),col=colourLegL[3],lwd=3,lty=3 )
+  
+  ###Distribution Of Mean Covariance Per Larva
+  #plot( density(apply(cov_LF_coeff,1,"mean"),
+  #              from=-1,to=1,n=200),xlim=c(-1,1) ,col=colourLegL[2],lwd=3,main=NA,xlab=NA,ylab=NA,ylim=ylimR,lty=1)
+  #lines(density( apply(cov_NF,1,"mean"),
+  #               from=-1,to=1,n=200),xlim=c(-0.5,0.5),col=colourLegL[1],lwd=3,lty=2 )
+  #lines(density( apply(cov_DF,1,"mean"),
+  #               from=-1,to=1,n=200),xlim=c(-0.5,0.5),col=colourLegL[3],lwd=3,lty=3 )
+  
+  
+  
+ 
+  #hist(apply(cov_LF_coeff,1,"mean"),breaks=5   )
+  #hist(apply(cov_DF_coeff,1,"mean"),breaks=5   ) 
 }
 
 
@@ -583,7 +636,7 @@ ntail <- 200
 ### Lid,Matrix i,Matrix j,Sample,chain
 
 ## Turn-Ratio(1)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
-pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),width=7,height=7,
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
   ##Speed TO Distance Covariance Coeff      
   ### Show Speed Fit ###
@@ -598,13 +651,13 @@ pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),w
   padj <- 0.3
   las <- 1
   par(mar = c(3.9,4.7,3.5,1))
-  
+  layout(matrix(c(1,2),1,2, byrow = TRUE))
   Ci <- 1
   Cj <- 2
-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
+  cov_coeff_SpeedTurnRatio <-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
   mtext(side = 2,cex=cex,padj=padj, line = lineAxis, expression("Density function") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Turn-ratio to capture speed covariance coeff." ) )  )
-  
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Est. group turn-ratio to capture speed covariance" ) )  )
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
   
   legend("topleft",
          legend=c(  expression (),
@@ -614,31 +667,115 @@ pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),w
                     
          ),
          lty=c(2,1,3),lwd=3,col=c(colourLegL[1],colourLegL[2],colourLegL[3]),cex=cex)
+  
+  
+  ## plot ecdf
+  plot(ecdf(apply(cov_coeff_SpeedTurnRatio$LF,1,"mean")),col=colourLegL[2],main=NA,pch=pchL[4],xlab=NA,ylab=NA,cex=cex,cex.axis=cex)
+  lines(ecdf(apply(cov_coeff_SpeedTurnRatio$NF,1,"mean")),col=colourLegL[1],pch=pchL[6],cex=cex)
+  lines(ecdf(apply(cov_coeff_SpeedTurnRatio$DF,1,"mean")),col=colourLegL[3],pch=pchL[5],cex=cex)
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Est. turn-ratio to capture speed covariance per larva" ) )  )
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  nNF <- dim(cov_coeff_SpeedTurnRatio$NF)[1]
+  nLF <- dim(cov_coeff_SpeedTurnRatio$LF)[1]
+  nDF <- dim(cov_coeff_SpeedTurnRatio$DF)[1]
+  
+  legend(x=-1.1,y=1.0,
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF) ),
+                    bquote(LF[""] ~'/'~.(nLF) ),
+                    bquote(DF[""] ~'/'~.(nDF) )
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),title="Group/#Larvae",
+         pch=c(pchL[6],pchL[4],pchL[5]), col=colourLegL,cex=cex)
+  
 dev.off()
 
 ## Distance(3)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
 
 
-pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsDistance_Covar.pdf"),width=7,height=7,
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsDistance_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+
   par(mar = c(3.9,4.7,3.5,1))
+  layout(matrix(c(1,2),1,2, byrow = TRUE))
+  padj <- -0.6
   Ci <- 2
   Cj <- 3
-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
+  cov_coeff <- plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
   mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Prey distance to capture speed covariance coeff." ) )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Est. group covariance of capture speed-distance" ) )  )
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF[""] ),
+                    bquote(LF[""] ),
+                    bquote(DF[""] )
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),
+         lty=c(2,1,3), col=colourLegL,cex=cex,lwd=3)
+
+  ## plot ecdf
+  plot(ecdf(apply(cov_coeff$LF,1,"mean")),col=colourLegL[2],main=NA,pch=pchL[4],xlab=NA,ylab=NA,cex=cex,cex.axis=cex)
+  lines(ecdf(apply(cov_coeff$NF,1,"mean")),col=colourLegL[1],pch=pchL[6],cex=cex)
+  lines(ecdf(apply(cov_coeff$DF,1,"mean")),col=colourLegL[3],pch=pchL[5],cex=cex)
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Est. capture speed-distance covariance per larva" ) )  )
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  nNF <- dim(cov_coeff$NF)[1]
+  nLF <- dim(cov_coeff$LF)[1]
+  nDF <- dim(cov_coeff$DF)[1]
+  
+  legend(x=-1.1,y=1.0,
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF) ),
+                    bquote(LF[""] ~'/'~.(nLF) ),
+                    bquote(DF[""] ~'/'~.(nDF) )
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),title="Group/#Larvae",
+         pch=c(pchL[6],pchL[4],pchL[5]), col=colourLegL,cex=cex)
+  
 dev.off()
+
 
 ## TurnRatio(1)xDistance(3) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
 
-pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"),width=7,height=7,
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
   par(mar = c(3.9,4.7,3.5,1))
+  layout(matrix(c(1,2),1,2, byrow = TRUE))
   Ci <- 1
   Cj <- 3
-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
+  cov_coeff_TurnRatio <-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
   mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Turn-ratio to prey distance covariance coeff." ) )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Est. group covariance turn-ratio to capture distance" ) )  )
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  legend("topleft",
+         legend=c(  expression (),bquote(NF[""] ),bquote(LF[""] ),bquote(DF[""] )),
+         lty=c(2,1,3), col=colourLegL,cex=cex,lwd=3)
+  
+  ## plot ecdf
+  plot(ecdf(apply(cov_coeff_TurnRatio$LF,1,"mean")),col=colourLegL[2],main=NA,pch=pchL[4],xlab=NA,ylab=NA,cex=cex,cex.axis=cex)
+  lines(ecdf(apply(cov_coeff_TurnRatio$NF,1,"mean")),col=colourLegL[1],pch=pchL[6],cex=cex)
+  lines(ecdf(apply(cov_coeff_TurnRatio$DF,1,"mean")),col=colourLegL[3],pch=pchL[5],cex=cex)
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Est. turn-ratio to capture distance covariance per larva" ) )  )
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  #mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Est. turn-ratio to capture distance covariance per larva" ) )  )
+  
+  legend(x=-1.1,y=1.0,
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF) ),
+                    bquote(LF[""] ~'/'~.(nLF) ),
+                    bquote(DF[""] ~'/'~.(nDF) )
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),title="Group/#Larvae",
+         pch=c(pchL[6],pchL[4],pchL[5]), col=colourLegL,cex=cex)
+  
 dev.off()
 
 
@@ -936,7 +1073,6 @@ pdf(file= paste(strPlotExportPath,"/stat/fig7S1-stat_3Dmodel_TurnRatioVsSpeedAnd
   
   ##Margin: (Bottom,Left,Top,Right )
   par(mar = c(4.5,4.3,0.5,1))
-  
   
   plot(density(lFirstBoutPoints$NL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[1],xlim=c(-120.0,120),lwd=3,lty=1,main=NA,xlab=NA,ylab=NA)
   lines(density(lFirstBoutPoints$LL[,"OnSetAngleToPrey"],bw=10),col=colourLegL[2],xlim=c(-120.0,120),lwd=3,lty=2)

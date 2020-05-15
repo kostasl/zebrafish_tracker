@@ -44,7 +44,7 @@ setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
-source("DataLabelling/labelHuntEvents_lib.r")
+source("DataLabelling/labelHuntEvents _lib.r")
 ########
 
 strDataSetDirectories <- paste(strTrackInputPath, list(

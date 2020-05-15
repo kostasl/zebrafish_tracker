@@ -126,6 +126,8 @@ while (Keyc != 'q')
 
 } ## Labelling LOOP
 
+
+
 ## Merge Length With Success
 datFlatPxLength_filterNA <- datFlatPxLength[!is.na(datFlatPxLength$expID) & !is.na(datFlatPxLength$LengthPx), ]
 datFlatPxMeanLength <- aggregate(datFlatPxLength_filterNA,
@@ -134,13 +136,17 @@ datFlatPxMeanLength <- aggregate(datFlatPxLength_filterNA,
 message("Larvae which we Measured their lengths ")
 table(datFlatPxMeanLength$groupID)
 message("Larvae with observed hunt events")
-table(datFishSuccessRate[datFishSuccessRate$HuntEvents > 0,]$groupID)
+table(datFishSuccessRate[datFishSuccessRate$CaptureEvents > 0,]$groupID)
 ## Now Merge Success With Lengths
 datSuccessVsSize <- merge(datFlatPxMeanLength,datFishSuccessRate,by.x="m.expID",by.y="expID" )
 datSuccessVsSize <- datSuccessVsSize[!is.nan(datSuccessVsSize$Efficiency),]
 datSuccessVsSize.LF <- cbind(datSuccessVsSize[datSuccessVsSize$groupID.y == "LL",],Lengthmm=datSuccessVsSize[datSuccessVsSize$groupID.y == "LL",]$LengthPx*DIM_MMPERPX)
 datSuccessVsSize.NF <- cbind(datSuccessVsSize[datSuccessVsSize$groupID.y == "NL",],Lengthmm=datSuccessVsSize[datSuccessVsSize$groupID.y == "NL",]$LengthPx*DIM_MMPERPX)
 datSuccessVsSize.DF <- cbind(datSuccessVsSize[datSuccessVsSize$groupID.y == "DL",],Lengthmm=datSuccessVsSize[datSuccessVsSize$groupID.y == "DL",]$LengthPx*DIM_MMPERPX)
+
+## Spot Missing Records From Merged File##
+datMissingLarvae <- datFishSuccessRate[datFishSuccessRate$CaptureEvents > 0,][ !datFishSuccessRate[datFishSuccessRate$CaptureEvents > 0,]$expID %in% datSuccessVsSize$m.expID,]
+
 ## Save To summary Stat Output - Used By generate figure 
 saveRDS(datSuccessVsSize,file= paste(strDataExportDir,"/FishLengthVsHuntSuccess.rds",sep=""))
 
@@ -208,11 +214,11 @@ pdf(paste0(strPlotExportPath,"/stat/fig3S1_stat_LarvalLengthsToHPI_Correlation.p
   mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
   
   
-  legend("topright",   legend=c( paste0("NF # ",  NROW(datSuccessVsSize_NF$expID) ),
-                                  paste0("LF # " , NROW(datSuccessVsSize_LF$expID) ),
-                                  paste0("DF # " , NROW(datSuccessVsSize_DF$expID) )
-                                  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
-       col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
+  legend("topright",   legend=c( paste0("NF # ",  NROW(datSuccessVsSize.NF$expID) ),
+                                 paste0("LF # " , NROW(datSuccessVsSize.LF$expID) ),
+                                 paste0("DF # " , NROW(datSuccessVsSize.DF$expID) )
+  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+  col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
   
 dev.off() 
  

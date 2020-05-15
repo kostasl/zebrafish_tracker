@@ -734,10 +734,11 @@ plotPreyAzimuthAtCapture <- function(newPlot = T)
   
   #plot(densDF$x,densDF$y - densLF$y)
   ## Quantiles - Show more than 50% of data located between -20/ +20 degrees
+  #plot(density(abs(preyCapPos_NF$vAngleToPrey) ) )
   
-  quantNF <- quantile(preyCapPos_NF$vAngleToPrey)
-  quantLF <- quantile(preyCapPos_LF$vAngleToPrey)
-  quantDF <- quantile(preyCapPos_DF$vAngleToPrey)
+  quantNF <- quantile(abs(preyCapPos_NF$vAngleToPrey) )
+  quantLF <- quantile(abs(preyCapPos_LF$vAngleToPrey) )
+  quantDF <- quantile(abs(preyCapPos_DF$vAngleToPrey) )
   print(quantNF)
   print(quantLF)
   print(quantDF)

@@ -51,7 +51,7 @@ source("config_lib.R")
 #setEnvFileLocations("OFFICE") #OFFICE,#LAPTOP HOME
 
 source("DataLabelling/labelHuntEvents_lib.r")
-
+source("Stats/stat_InformationTheoryAndCorrelations_bootstrap_lib.r")
 ####################
 #source("TrackerDataFilesImport.r")
 ### Hunting Episode Analysis ####
@@ -477,20 +477,59 @@ pdf(file= paste(strPlotExportPath,"/stat/fig6_stat_UndershootAndSpeed_LF.pdf",se
 #layout(matrix(c(1,2,3),1,3, byrow = FALSE))
 # ##Margin: (Bottom,Left,Top,Right )
 #par(mar = c(3.9,4.7,12,1))
-
-p_LF = ggplot( datCapture_LL, aes(Undershoot, CaptureSpeed ,color =Cluster,fill=Cluster)) +
-  ggtitle(NULL) +
-  theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
-  fill_palette("jco")
-
-p_LF = p_LF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
-  scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
-  scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
-  scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
-p_LF = p_LF + geom_vline(xintercept = 1, linetype="dotted", color = "grey", size=1.0)
-
-ggMarginal(p_LF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
+    p_LF = ggplot( datCapture_LL, aes(Undershoot, CaptureSpeed ,color =Cluster,fill=Cluster)) +
+    ggtitle(NULL) +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    fill_palette("jco")
+  
+  p_LF = p_LF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_LL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+    scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") ) +
+    scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 60)) +
+    scale_x_continuous(name="Turn ratio", limits=c(0, 2)) 
+  p_LF = p_LF + geom_vline(xintercept = 1, linetype="dotted", color = "grey", size=1.0)
+  
+  ggMarginal(p_LF, x="Undershoot",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=TRUE) 
 dev.off()
+
+
+### Bootstrap Undershoot Vs Capture Speed ###
+## Repeated here taken from stat_informationTheoryAndCorrelations_bootstrap
+XRange  <- c(0,2) #
+YRange  <- c(0,60) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
+smethod <- "spearman"
+
+stat_CapTurnVsSpeed_NF <- bootStrap_stat(datCapture_NL$Undershoot,datCapture_NL$CaptureSpeed,10000,XRange,YRange,smethod)
+stat_CapTurnVsSpeed_LF <- bootStrap_stat(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,10000,XRange,YRange,smethod)
+stat_CapTurnVsSpeed_DF <- bootStrap_stat(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,10000,XRange,YRange,smethod)
+
+#  PLot Density Turn Vs Speed
+#strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_Spearman_correlation_TurnVsSpeed.pdf",sep="")
+strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsSpeed.pdf",sep="")
+pdf(strPlotName,width=7,height=7,title="Correlations In hunt variables - turn-ratio vs capture Speed",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.9,4.7,1,1))
+  pBw <- 0.02
+  plot(density(stat_CapTurnVsSpeed_NF$corr,kernel="gaussian",bw=pBw),
+       col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(density(stat_CapTurnVsSpeed_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(stat_CapTurnVsSpeed_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of turn-ratio to capture speed  ") ))
+  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+dev.off()  
+
+
+message("Calc Probability that Correlation in LF larvae is higher than DF/NF")
+cor_Diff_LFvsNF <- (stat_CapTurnVsSpeed_LF$corr -  stat_CapTurnVsSpeed_NF$corr)
+cor_Diff_LFvsDF <- (stat_CapTurnVsSpeed_LF$corr -  stat_CapTurnVsSpeed_DF$corr)
+P_cor_UndershootVsSpeed_LF <-  length(stat_CapTurnVsSpeed_LF$corr[stat_CapTurnVsSpeed_LF$corr < 0 ])/length(stat_CapTurnVsSpeed_LF$corr)
+P_cor_UndershootVsSpeed_NF <-  length(stat_CapTurnVsSpeed_NF$corr[stat_CapTurnVsSpeed_NF$corr < 0 ])/length(stat_CapTurnVsSpeed_NF$corr)
+P_cor_UndershootVsSpeed_DF <-  length(stat_CapTurnVsSpeed_DF$corr[stat_CapTurnVsSpeed_DF$corr < 0 ])/length(stat_CapTurnVsSpeed_DF$corr)
+P_cor_UndershootVsSpeed_LFNF <-  length(cor_Diff_LFvsNF[cor_Diff_LFvsNF < 0 ])/length(cor_Diff_LFvsNF)
+P_cor_UndershootVsSpeed_LFDF <-  length(cor_Diff_LFvsDF[cor_Diff_LFvsDF < 0 ])/length(cor_Diff_LFvsDF)
+message("LF Has higher correlation than NF with p=",P_cor_UndershootVsSpeed_LFNF, " and from DF with p=",P_cor_UndershootVsSpeed_LFDF)
+message("LF shows undershoot and capt. speed correlation with p=",P_cor_UndershootVsSpeed_LF)
+message("LF with p=",P_cor_UndershootVsSpeed_LF)
+message("NF with p=",P_cor_UndershootVsSpeed_NF)
+message("DF with p=",P_cor_UndershootVsSpeed_DF)
 
 plot(dens_dist_NF_all,xlim=c(0.0,0.5),col=colourLegL[1],lwd=4,lty=1,ylim=c(0,5),
      main=NA,cex=cex,xlab=NA,ylab=NA)

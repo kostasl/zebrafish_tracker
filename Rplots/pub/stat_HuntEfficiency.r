@@ -69,6 +69,7 @@ message(paste(" Loading Hunt Event List to Analyse... "))
 #datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) & 
 #                                                     datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL") ,]
 ##Load From Central Function
+plotWidthIn <- 8
 datHuntLabelledEventsSB <- getLabelledHuntEventsSet()
 
 datHuntLabelledEventsSB_LIVE <-  datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID %in% c("LL","DL","NL"),]
@@ -233,7 +234,7 @@ pdf(strPlotName,width=14,height=4.7,
 
 dev.off()
 
-plotWidthIn <- 8
+
 strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_ModelCaptureRateAndEfficiency.pdf",sep="")
 pdf(strPlotName,width=plotWidthIn,height=7,
     title="Hunting Success Baysian Estimation ", ##on distribution of hunt rate parameter and probability of success, based on labelled data set
@@ -324,7 +325,7 @@ pdf(strPlotName,width=plotWidthIn,height=7, #14*2/3
   
   ##Margin: (Bottom,Left,Top,Right )
   par(mar = c(4.2,4.7,1.1,1))
-  plotHuntEfficiencyDataCDF(datHuntLabelledEventsSB)
+  plotHuntEfficiencyDataCDF(datHuntLabelledEventsSB,TRUE)
 
 dev.off()
 #### ##### # ## ## # # # # 

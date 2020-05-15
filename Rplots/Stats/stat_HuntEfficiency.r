@@ -111,6 +111,11 @@ draw=jags.samples(m,steps,thin=thin,variable.names=varnames1)
 
 ## Save Samples 
 save(draw,file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
+
+
+## LOAD Samples 
+load(file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
+
 #######PLOT RESULTS
 #X11()
 colourH <- c("#0303E663","#03B30363","#E6030363")
@@ -194,10 +199,7 @@ HConsumptionRate_LL <- HEventSuccess_LL*MeanHuntRate_LL
 HConsumptionRate_DL <- HEventSuccess_DL*MeanHuntRate_DL
 
 
-
 ###MAIN OUTPUT PLOT ##
-
-load(file =paste(strDataExportDir,"stat_huntefficiencyModel_RJags.RData",sep=""))
 
 #strPlotName = paste(strPlotExportPath,"/stat/fig3-stat_HuntRateAndEfficiencyEstimationNegBin_Success.pdf",sep="")
 

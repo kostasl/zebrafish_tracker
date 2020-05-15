@@ -487,25 +487,32 @@ plotPreyDistanceSpeedResults <- function()
     
 }
   
-preyspeed = 0.5 ##Mm/sec
+preyspeed = 1 ##Mm/sec
 boutInterval = 0.200
 captureDistanceNear = 0.2 ##mm
 captureDistanceFar = 0.45 ##mm
 
 PreyAzimuthNear =  asin((preyspeed*boutInterval)/captureDistanceNear)  ##20*(pi/180) ##Larva's Initial Aiming angle prior to Prey Moving 
 PreyAzimuthFar =  asin((preyspeed*boutInterval)/captureDistanceFar)  ##20*(pi/180) ##Larva's Initial Aiming angle prior to Prey Moving 
-PreyAzimuth = 1*(pi/180)
+PreyAzimuth = 0*(pi/180)
 
 ## Dtheta/Dr ##
 print(paste0("dtheta/dr at small distance ",captureDistanceNear,"mm : ",DerivAimingAngleWithDistance_dthetadr(preyspeed,boutInterval,captureDistanceNear,PreyAzimuth)*(180/pi)) )
 thetaNear <- asin(preyspeed*boutInterval/(captureDistanceNear) ) *180/pi
-DthetaNear <- (asin(preyspeed*boutInterval/(captureDistanceNear) ) - asin(preyspeed*boutInterval/(captureDistanceNear-captureDistanceNear*0.01) ))*180/pi
-print(paste0( "Angle theta at Near Distance: ", asin(preyspeed*boutInterval/(captureDistanceNear) ) *180/pi ) )
+DthetaDr_Near <- (asin(preyspeed*boutInterval/(captureDistanceNear) ) - asin(preyspeed*boutInterval/(captureDistanceNear-captureDistanceNear*0.01) )) *180/pi
 print(paste0("dtheta/dr at 2x distance ",captureDistanceFar,"mm : ", DerivAimingAngleWithDistance_dthetadr(preyspeed,boutInterval,captureDistanceFar,PreyAzimuth)*(180/pi) ) )
-print(paste0("Angle theta at Far Distance: ", asin(preyspeed*boutInterval/(captureDistanceFar))*180/pi ) );
 
-print(paste0("Change in theta at FAR Dist: ", DeltaAimingAngleAgainstPreyMotion(preyspeed,boutInterval,captureDistanceFar,PreyAzimuth)*(180/pi) ) );
-print(paste0("Change in theta at NEAR Dist: ", DeltaAimingAngleAgainstPreyMotion(preyspeed,boutInterval,captureDistanceNear,PreyAzimuth)*(180/pi) ) );
+##Calc R after prey from Distance Near, Moves by preyspeed*boutInterval
+R_near <- sqrt(captureDistanceNear^2+(preyspeed*boutInterval)^2)
+R_far <- sqrt(captureDistanceFar^2+(preyspeed*boutInterval)^2)
+DThetaDBeta_Near <-  DeltaAimingAngleAgainstPreyMotion(preyspeed,boutInterval,captureDistanceNear,PreyAzimuth)*(180/pi)
+DThetaDBeta_Far <- DeltaAimingAngleAgainstPreyMotion(preyspeed,boutInterval,captureDistanceFar,PreyAzimuth)*(180/pi)
+##Compare To Calculated From Equation
+print(paste0("Change in theta at ",captureDistanceNear,"mm (Near)  Dist: ", DThetaDBeta_Near ) );
+print(paste0("Change in theta at ",captureDistanceFar ,"mm (Far) Dist: ",  DThetaDBeta_Far)) ;
+DthetaDr <- DThetaDBeta_Near - DThetaDBeta_Far
+print(paste("Calculated Dtheta/Dr :",DthetaDr))
+
 
 ## Calc derivatives Across different R, And prey Speeds
 preyspeedR = range(0.1,1) ##Mm/sec
