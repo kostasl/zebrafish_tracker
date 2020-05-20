@@ -237,8 +237,7 @@ smethod <- "spearman"
   hist(stat_CapTurnVsSpeed_LF$corr,xlim=c(-0.8,0.8),col=colourL[1],add=TRUE ,breaks = bkSeq)
   hist(stat_CapTurnVsSpeed_DF$corr,xlim=c(-0.8,0.8),col=colourL[3],add=TRUE,breaks = bkSeq )
   
-    
-  
+
   
   
 #### UNDERSHOOT TO DISTANCE FROM PREY 
