@@ -61,6 +61,7 @@ getEstimatesPerLarva <- function(drawG,stail)
                Covar_SpeedDist,Covar_SpeedTurn,Covar_DistTurn))  
   
 }
+
 ## Processes The Draw Samples, extracts covariance coeficient, from larva that have more than minEventCount Hunt Events
 getCov_Coeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,minEventCount=0)
 {
@@ -463,6 +464,7 @@ groupSizeLF <-groupSizeNF <- groupSizeDF  <- 60#NROW(unique(expID)
 ldata_LF <- with(datMergedCapAndSuccess_LF, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey,Cluster),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=groupSizeLF)  }) ##Live fed
 ldata_NF <- with(datMergedCapAndSuccess_NF, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey,Cluster),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=groupSizeNF)   }) ##Live fed
 ldata_DF <- with(datMergedCapAndSuccess_DF, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey,Cluster),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=groupSizeDF)   }) ##Live fed
+
 #ldata_ALL <-with(datCapture_ALL_wExpID, {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ),Gid=groupID ,N=NROW(expID),NLarv=NROW(unique(expID))  ) }) ##Live fed list(c=datTurnVsStrikeSpeed_ALL,N=NROW(datTurnVsStrikeSpeed_ALL)) ##Dry fed
 ldata_LF_fast <- with(datMergedCapAndSuccess_LF[datMergedCapAndSuccess_LF$Cluster == "fast",], {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey,Cluster),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=groupSizeLF ) }) ##Live fed
 ldata_NF_fast <- with(datMergedCapAndSuccess_NF[datMergedCapAndSuccess_NF$Cluster == "fast",], {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey,Cluster),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=groupSizeNF ) }) ##Live fed
@@ -472,7 +474,6 @@ ldata_DF_fast <- with(datMergedCapAndSuccess_DF[datMergedCapAndSuccess_DF$Cluste
 ldata_LF_slow <- with(datMergedCapAndSuccess_LF[datMergedCapAndSuccess_LF$Cluster == "slow",], {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey,Cluster),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=groupSizeLF ) }) ##Live fed
 ldata_NF_slow <- with(datMergedCapAndSuccess_NF[datMergedCapAndSuccess_NF$Cluster == "slow",], {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey,Cluster),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=groupSizeNF) }) ##Live fed
 ldata_DF_slow <- with(datMergedCapAndSuccess_DF[datMergedCapAndSuccess_DF$Cluster == "slow",], {list(c=cbind(Undershoot,CaptureSpeed,DistanceToPrey,Cluster),Efficiency=Efficiency,RegIdx=RegistarIdx,Lid=as.numeric(as.factor(as.numeric(expID)) ) ,N=NROW(expID), NLarv=groupSizeDF ) }) ##Live fed
-
 
 
 ##Save for Ready to Eat Public Comsumption
@@ -686,7 +687,6 @@ message("Prob that NF Cap Dist > DF: ",prettyNum(PCapDist_NFgtDF,digits=3))
 
 #Idx: Lid,Variable (2=SpeedDist Covar),Sample Row,Chain
 ## 
-plot(sapply((draw_LF$rho[,2,,1]),mean),type='l')
 
 
 ### Estimate  densities  ###
@@ -937,8 +937,6 @@ dev.off()
 
 
 
-
-
 ### Show covariance In the High Speed Capture Cluster ##
 #### COVARIANCE PLOTS OVER FAST Capture Bouts  ####
 ntail <- 5000
@@ -949,20 +947,22 @@ load(file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_FastCapt
 ## Turn-Ratio(1)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_Fast_SpeedVsTurn_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for FAST Capture Strike speed / Undershoot Ratio / Distance to Prey")
+  plotCovar_SpeedVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
+dev.off()
 
+
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_Fast_SpeedVsDistance_Covar.pdf"),width=14,height=7,
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+  plotCovar_SpeedVsDistance(draw_LF,draw_NF,draw_DF,ntail)
 dev.off()
 
 
 ## TurnRatio(1)xDistance(3) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
-
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_Fast_TurnVsDistance_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for FAST Capture Strike speed / Undershoot Ratio / Distance to Prey")
-
+  plotCovar_DistanceVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
 dev.off()
 #### END OF COVAR Over Fast Capture Only ##
-
-
-
 
 
 #### COVARIANCE PLOTS OVER SLOW Capture Bouts  ####
@@ -971,7 +971,7 @@ load(file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouMode_SLOWCaptu
 ## Turn-Ratio(1)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_Slow_SpeedVsTurn_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for SLOW Capture Strike speed / Undershoot Ratio / Distance to Prey")
-
+  plotCovar_SpeedVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
 dev.off()
 
 ## Distance(3)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
@@ -979,7 +979,7 @@ dev.off()
 
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_Slow_SpeedVsDistance_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for SLOW Capture Strike speed / Undershoot Ratio / Distance to Prey")
-
+  plotCovar_SpeedVsDistance(draw_LF,draw_NF,draw_DF,ntail)
 dev.off()
 
 
@@ -987,15 +987,15 @@ dev.off()
 
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_Slow_TurnVsDistance_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for SLOW Capture Strike speed / Undershoot Ratio / Distance to Prey")
-
+  plotCovar_DistanceVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
 dev.off()
 #### END OF SLOW Capture Covariance ##
 
 
 
-
-
-#### 3D OPENGL plot - Balls Model of Gourp Mean behaviour ##
+##
+##### 3D OPENGL plot - Balls Model of Group Mean behaviour #####
+##
 library( rgl )
 ntail <- 700
 
@@ -1053,9 +1053,9 @@ datMu3D$col  <- as.character( datMu3D$col)
 #Use : gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=output.pdf fig7_Modelballs3D_SpeedVsTurn_view.pdf
 #rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view.pdf"),fmt="pdf",drawText = FALSE )
 
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view4.pdf"),fmt="pdf",drawText = FALSE )
-rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view4.tex"),fmt="tex",drawText = TRUE )
-rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D__Perspective_TurnVsSpeed_view4.png"),fmt="png" )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_view5.pdf"),fmt="pdf",drawText = FALSE )
+rgl::rgl.postscript( paste0(strPlotExportPath,"/fig7_Modelballs3D_Perspective_TurnVsSpeed_doc5.tex"),fmt="tex",drawText = TRUE )
+rgl::rgl.snapshot( paste0(strPlotExportPath,"/fig7_Modelballs3D__Perspective_TurnVsSpeed_view5.png"),fmt="png" )
 
 ## I use the tex Axis doc to combine 3d Fig with axis text. I then compile a pdf, which I import into inkScape (using Cairo to rasterize image), so I can adjust size, add axis labels etc etc.
 ## END OF 3D plot Messing with exporting
@@ -1202,9 +1202,8 @@ lines(density(draw_DF$sigma[clust,3,,1]*draw_DF$sigma[clust,2,,1]*draw_DF$rho[cl
 
 #mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),                             n.iter = 5000)
 
-  ######################################################################
- ###         PLOT EMPIRICAL                              ##############
-#####################################################################
+
+####         PLOT EMPIRICAL                              ##############
 ###        UNdershoot Vs Capture speed               ###
 densNL <-  kde2d(datTurnVsStrikeSpeed_NL$Undershoot, datTurnVsStrikeSpeed_NL$CaptureSpeed,n=80)
 densLL <-  kde2d(datTurnVsStrikeSpeed_LL$Undershoot, datTurnVsStrikeSpeed_LL$CaptureSpeed,n=80)
@@ -1322,7 +1321,7 @@ dev.off()
 plot(lFirstBoutPoints$LL[,"OnSetDistanceToPrey"],lFirstBoutPoints$LL[,"DistanceToPrey"],col=colourLegL[2],pch=pchL[2])
 points(lFirstBoutPoints$NL[,"OnSetDistanceToPrey"],lFirstBoutPoints$NL[,"DistanceToPrey"],col=colourLegL[1],pch=pchL[1])
 points(lFirstBoutPoints$DL[,"OnSetDistanceToPrey"],lFirstBoutPoints$DL[,"DistanceToPrey"],col=colourLegL[3],pch=pchL[3])
-############# 
+
 
 
 ### Onset/ DETECTION Angle Density supplementary angle figure

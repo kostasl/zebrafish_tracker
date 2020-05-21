@@ -19,68 +19,309 @@ source("common_lib.R")
 #source("HuntingEventAnalysis_lib.r")
 
 
-initfunct <- function(nchains,N)
-{
-  initlist <- replicate(nchains,list(
-                                     ".RNG.name"="base::Super-Duper",
-                                     ".RNG.seed"=round(runif(1,0,60000)) ),
-                                     simplify=FALSE)
-  return(initlist)
-}
 
-
-
-## Plot Function for Covariance Density of Mean Group Behaviour, given by averaging the covariance of individual larvae
-plotModelCovCoeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
-{
-  
-  ##Covariance 
-  nsam <- NROW(draw_LF$muG[,3,,1])
-  ylimR <- c(0,4)
-  cov_LF <- (draw_LF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_LF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_LF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
-  cov_NF <- (draw_NF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_NF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_NF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
-  cov_DF <- (draw_DF$cov[,Ci,Cj,(nsam-ntail):nsam,]/sqrt(draw_DF$cov[,Ci,Ci,(nsam-ntail):nsam,]*draw_DF$cov[,Cj,Cj,(nsam-ntail):nsam,]) )
-  
-  ##Average Over Columns/Samples - Produce Distribution of Mean Cov Of Group -  Across Samples (Vector With n mean points)
-  ##What is the Members Cov On Average?Distibution of E[rho_g] = Sum(rho_i,NLarvae)/NLarvae
-  plot( density( apply(cov_LF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5) ,col=colourLegL[2],lwd=3,main="",xlab="",ylab="",ylim=ylimR,lty=1)
-  lines(density( apply(cov_NF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5),col=colourLegL[1],lwd=3,lty=2 )
-  lines(density( apply(cov_DF,2,"mean"),
-                 from=-1,to=1,n=200,bw=0.1),xlim=c(-0.5,0.5),col=colourLegL[3],lwd=3,lty=3 )
-}
-
-
-## Returns estaimes of each larvae behaviour According the Model
+## Returns estaimes of each larvae behaviour from the Model
+## Added Estimates Of Covariance 
 getEstimatesPerLarva <- function(drawG,stail)
 {
+  ##Find perdio of  pattern of LarvaId / So we can infer hunt events per larva
+  maxIdx <- head(which(drawG$Lid == max(drawG$Lid) ),1 )
+  tblEventPerLarva <- table(drawG$Lid[1:maxIdx])
+  
   ldist <- list()
   lSpeed <- list()
   lTurnRatio <- list()
+  lCovar_SpeedDist <- list()
+  lCovar_SpeedTurn <- list()
+  lCovar_DistTurn <- list()
+  nsam <- NROW(drawG$mu[1,1,,])
   ##Iterate Through each Larva and get a mean estimate of behaviour according to model
   for ( i in (1:head(as.numeric(drawG$NLarv),1)) )
   {
     lTurnRatio[[i]]  <- sapply(tail(drawG$mu[i,1,,],stail),mean)
     ldist[[i]]       <- sapply(tail(drawG$mu[i,3,,],stail),mean)
     lSpeed[[i]]      <- sapply(tail(drawG$mu[i,2,,],stail),mean)
+    Ci <- 2;Cj <- 3; ##Speed Distance to Prey Covar Per Larva
+    lCovar_SpeedDist[[i]] <- sapply(  drawG$cov[i,Ci,Cj,(nsam-stail):nsam,]/(sqrt(drawG$cov[i,Ci,Ci,(nsam-stail):nsam,]*drawG$cov[i,Cj,Cj,(nsam-stail):nsam,]) )   ,mean )
+    Ci <- 2;Cj <- 1; ##Speed Turn-Ratio  Covar Per Larva
+    lCovar_SpeedTurn[[i]] <- sapply(  drawG$cov[i,Ci,Cj,(nsam-stail):nsam,]/(sqrt(drawG$cov[i,Ci,Ci,(nsam-stail):nsam,]*drawG$cov[i,Cj,Cj,(nsam-stail):nsam,]) )   ,mean )
+    Ci <- 3;Cj <- 1; ##Speed Turn-Ratio  Covar Per Larva
+    lCovar_DistTurn[[i]] <- sapply(  drawG$cov[i,Ci,Cj,(nsam-stail):nsam,]/(sqrt(drawG$cov[i,Ci,Ci,(nsam-stail):nsam,]*drawG$cov[i,Cj,Cj,(nsam-stail):nsam,]) )   ,mean )
+    
+    
+    #Ci <- 2;Cj <- 3;
+    #lCovar_SpeedDist[[i]] <- (drawG$cov[,Ci,Cj,(nsam-stail):nsam,nchains]/( sqrt(drawG$cov[,Ci,Ci,(nsam-ntail):nsam,nchains])*sqrt(drawG$cov[,Cj,Cj,(nsam-ntail):nsam,nchains]) )   )
   }
   ##Overlay The Density From The Estimated Mean Overshoot Of Each Larva
   mEstDistToPrey <- unlist(lapply(ldist,mean) )
   mEstSpeed      <- unlist(lapply(lSpeed,mean) ) 
   mEstTurnRatio  <- unlist(lapply(lTurnRatio,mean) ) 
-  return(cbind(Undershoot=mEstTurnRatio, DistanceToPrey=mEstDistToPrey,CaptureSpeed=mEstSpeed))  
+  Covar_SpeedDist <- unlist(lapply(lCovar_SpeedDist,mean) ) 
+  Covar_SpeedTurn <- unlist(lapply(lCovar_SpeedTurn,mean) ) 
+  Covar_DistTurn <- unlist(lapply(lCovar_DistTurn,mean) ) 
+  return(cbind(HuntEvents=tblEventPerLarva,Undershoot=mEstTurnRatio, DistanceToPrey=mEstDistToPrey,CaptureSpeed=mEstSpeed,
+               Covar_SpeedDist,Covar_SpeedTurn,Covar_DistTurn))  
   
 }
 
-##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour 
+## Processes The Draw Samples, extracts covariance coeficient, from larva that have more than minEventCount Hunt Events
+getCov_Coeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,minEventCount=0)
+{
+  
+  ##Covariance 
+  nsam <- NROW(draw_LF$muG[,3,,1])
+  ##Select Those with More Than N Hunt Events
+  
+  tblEventPerLarva <- list()
+  maxIdx <- head(which(draw_LF$Lid == max(draw_LF$Lid) ),1 )
+  tblEventPerLarva$LF <- table(draw_LF$Lid[1:maxIdx])
+  maxIdx <- head(which(draw_NF$Lid == max(draw_NF$Lid) ),1 )
+  tblEventPerLarva$NF <- table(draw_NF$Lid[1:maxIdx])
+  maxIdx <- head(which(draw_DF$Lid == max(draw_DF$Lid) ),1 )
+  tblEventPerLarva$DF <- table(draw_DF$Lid[1:maxIdx])
+  
+  ##If Called with Requirement to filter for Larvae that have at least  n Data points   
+  if (minEventCount > 0)
+  {
+    Lid_SubSet <- list(LF=as.numeric(names(tblEventPerLarva$LF[tblEventPerLarva$LF > minEventCount])),
+                       NF=as.numeric(names(tblEventPerLarva$NF[tblEventPerLarva$NF > minEventCount])),
+                       DF=as.numeric(names(tblEventPerLarva$DF[tblEventPerLarva$DF > minEventCount]))
+    )
+  }else ##Alll Estimates so Unscertainty in Estimates can be fully evaluated
+  {
+    
+    Lid_SubSet <- list(LF=1:NROW(draw_LF$mu),
+                       NF=1:NROW(draw_NF$mu),
+                       DF=1:NROW(draw_DF$mu)
+    )
+  }
+  
+  
+  
+  nchains <- 1:7
+  cov_coeff <- list()
+  cov_coeff$LF <- (draw_LF$cov[Lid_SubSet$LF,Ci,Cj,(nsam-ntail):nsam,nchains]/( sqrt(draw_LF$cov[Lid_SubSet$LF,Ci,Ci,(nsam-ntail):nsam,nchains])*sqrt(draw_LF$cov[Lid_SubSet$LF,Cj,Cj,(nsam-ntail):nsam,nchains]) )   )
+  cov_coeff$NF <- (draw_NF$cov[Lid_SubSet$NF,Ci,Cj,(nsam-ntail):nsam,nchains]/sqrt(draw_NF$cov[Lid_SubSet$NF,Ci,Ci,(nsam-ntail):nsam,nchains]*draw_NF$cov[Lid_SubSet$NF,Cj,Cj,(nsam-ntail):nsam,nchains]) )
+  cov_coeff$DF <- (draw_DF$cov[Lid_SubSet$DF,Ci,Cj,(nsam-ntail):nsam,nchains]/sqrt(draw_DF$cov[Lid_SubSet$DF,Ci,Ci,(nsam-ntail):nsam,nchains]*draw_DF$cov[Lid_SubSet$DF,Cj,Cj,(nsam-ntail):nsam,nchains]) )
+  
+  ## Get Posterior Sample Differences Between Groups
+  cov_coeff_LFVsNF <- tail(cov_coeff$LF,ntail*NROW(nchains)) - tail(cov_coeff$NF,ntail*NROW(nchains))
+  cov_coeff_LFVsDF <- tail(cov_coeff$LF,ntail*NROW(nchains)) - tail(cov_coeff$DF,ntail*NROW(nchains))
+  cov_coeff_NFVsDF <- tail(cov_coeff$NF,ntail*NROW(nchains)) - tail(cov_coeff$DF,ntail*NROW(nchains))
+  #cov_LF$ij <- t(data.frame(draw_LF$cov[,Ci,Cj,,] ))   cov_LF$ii <- t(data.frame(draw_LF$cov[,Ci,Ci,,]))   cov_LF$jj <- t(data.frame(draw_LF$cov[,Cj,Cj,,]))
+  ##Calculate Posterior Density Of Covar Coefficient rho
+  #cov_LF$coeff <- cov_LF$ij/sqrt(cov_LF$ii*cov_LF$jj)
+  
+  ##Average Over Columns/Samples - Produce Distribution of Mean Cov Of Group -  Across Samples (Vector With n mean points)
+  ##What is the Members Cov On Average?Distibution of E[rho_g] = Sum(rho_i,NLarvae)/NLarvae
+  message("E[rho_g] Covar LF:",mean(apply(cov_coeff$LF,1,"mean") ) )
+  message("E[rho_g] Covar NF:",mean(apply(cov_coeff$NF,1,"mean") ) )
+  message("E[rho_g] Covar DF:",mean(apply(cov_coeff$DF,1,"mean") ) )
+  message("Prob that we observe a positive covariance in a group :")
+  P_LFGtThanZero <- length(cov_coeff$LF[cov_coeff$NF > 0])/length(cov_coeff$LF)
+  P_NFGtThanZero <- length(cov_coeff$DF[cov_coeff$NF > 0])/length(cov_coeff$NF)
+  P_DFGtThanZero <- length(cov_coeff$DF[cov_coeff$DF > 0])/length(cov_coeff$DF)
+  message("Prob Observe +ve covar in LF > 0 =",P_LFGtThanZero)
+  message("Prob Observe +ve covar in NF > 0 =",P_NFGtThanZero)
+  message("Prob Observe +ve covar in DF > 0 =",P_DFGtThanZero)
+  
+  message("Calculate Probabilities that *mean* covariance of group is positive : ")
+  ##Using length(cov_coeff$NF[cov_coeff$NF > 0])/length(cov_coeff$NF) can give estimate of samling a covariance
+  ##that is above zero in the population'
+  
+  muCovarPerSample <- list()
+  muCovarPerSample$LF <- apply(cov_coeff$LF,2,"mean")
+  muCovarPerSample$NF <- apply(cov_coeff$NF,2,"mean")
+  muCovarPerSample$DF <- apply(cov_coeff$DF,2,"mean")
+  muCovarPerSample$LFvsNF <- muCovarPerSample$LF - muCovarPerSample$NF
+  muCovarPerSample$LFvsDF <- muCovarPerSample$LF - muCovarPerSample$DF
+  P_LFMeanGreaterThanZero <- length(muCovarPerSample$LF[muCovarPerSample$LF >0] )/length(muCovarPerSample$LF)
+  P_NFMeanGreaterThanZero <- length(muCovarPerSample$NF[muCovarPerSample$NF >0] )/length(muCovarPerSample$NF)
+  P_DFMeanGreaterThanZero <- length(muCovarPerSample$DF[muCovarPerSample$DF >0] )/length(muCovarPerSample$DF)
+  P_LFMeanGreaterThanNF <- length(  muCovarPerSample$LFvsNF[  muCovarPerSample$LFvsNF > 0])/length(  muCovarPerSample$LFvsNF)
+  P_LFMeanGreaterThanDF <- length(  muCovarPerSample$LFvsDF[  muCovarPerSample$LFvsDF > 0])/length(  muCovarPerSample$LFvsDF)
+  message("Prob Mean group covar LF > 0= ",P_LFMeanGreaterThanZero)
+  message("Prob Mean group covar NF > 0= ",P_NFMeanGreaterThanZero)
+  message("Prob Mean group covar DF > 0= ",P_DFMeanGreaterThanZero)
+  message("Prob Mean group covar LF > NF= ",P_LFMeanGreaterThanNF)
+  message("Prob Mean group covar DF > LF= ",1-P_LFMeanGreaterThanDF)
+  
+  return(cov_coeff)
+}
+
+## Plots the Data Density and the 2 Gaussians fititng high and low speed capture swims
+plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
+{
+  xquant <- seq(0,70,1)
+  XLIM <- c(0,60)
+  YLIM <- c(0,0.15)
+  pdistBW <- 5 ## mm/sec
+  strKern <- "gaussian"
+  #ntail <- NROW(drawMCMC$mu[1,2,,nchain])*0.10
+  ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
+  
+  plot(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
+  for (i in 1:(ntail-1) )
+  {
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,2,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=1 )
+    #lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,2,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,2,ntail-i,nchain],1)),type='l',col=colourH[colourIdx],lty=2 )
+  }
+  ##Data
+  lines(density(datSpeed$CaptureSpeed,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
+  legend("topright",title="",
+         legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                   paste("Model low speed " ),
+                   paste("Model high speed " )),
+         col=c("black",colourR[4],colourLegL[colourIdx]),lwd=c(3,1,1),lty=c(1,1,2) ) 
+  
+}
+
+
+## Plots the Data Density and the 2 Gaussians fititng high and low speed capture swims
+plotUndeshootClusterFit <- function(datTurn,drawMCMC,colourIdx,nchain = 1)
+{
+  xquant <- seq(0,2,0.02)
+  XLIM <- c(0,2)
+  YLIM <- c(0,3)
+  pdistBW <- 0.1 ## mm/sec
+  strKern <- "gaussian"
+  ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
+  
+  plot(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM,ylim=YLIM ,main=NA)
+  for (i in 1:(ntail-1) )
+  {
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,1,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=1 )
+    #lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,1,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,1,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
+  }
+  
+  lines(density(datTurn$Undershoot,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=XLIM )
+  legend("topright",title="",
+         legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                   paste("Model low speed " ),
+                   paste("Model high speed " )),
+         col=c("black",colourR[4],colourLegL[colourIdx]),lwd=c(3,1,1),lty=c(1,1,2) ) 
+  
+}
+
+
+plotDistanceClustFit <- function(datDist,drawMCMC,colourIdx,nchain = 1)
+{
+  xquant <- seq(-0.1,0.8,0.05)
+  pdistBW <- DIM_MMPERPX ## Manuall annotation  error is at least 1 px error , so smoothing with this bw is relevant
+  strKern <- "gaussian"
+  ntail <- min(50,NROW(drawMCMC$mu[1,1,,1])*0.10)
+  plot(density(datDist$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8),ylim=c(0,5) ,
+       main=NA)
+  for (i in 1:(ntail-1) )
+  {
+    lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[1,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[1,3,ntail-i,nchain],1)),type='l',col=colourHLine[colourIdx],lty=1 )
+    #lines(xquant,dnorm(xquant,mean=tail(drawMCMC$mu[2,3,ntail-i,nchain],1),sd=tail(drawMCMC$sigma[2,3,ntail-i,nchain],1)),type='l',col=colourLegL[colourIdx],lty=2 )
+  }
+  lines(density(datDist$DistanceToPrey,bw=pdistBW,kernel=strKern),col="black",lwd=4,xlim=c(0,0.8) )
+  legend("topright",title=NA,
+         legend=c( paste("Data Density "), #(Bw:",prettyNum(digits=2, pdistBW ),")" ) ,
+                   paste("Model low speed " ),
+                   paste("Model high speed " )),
+         col=c("black",colourR[4],colourLegL[colourIdx]),lwd=c(3,1,1),lty=c(1,1,2) ) 
+  
+}
+
+
+initfunct <- function(nchains,N)
+{
+  initlist <- replicate(nchains,list(#mID=c(rbinom(N,1,0.5)), 
+    #                                     sigma = matrix(c (  c(runif(1,min=0,max=0.1),runif(1,min=0,max=2)),
+    #s                                                         c(runif(1,min=0,max=0.1),runif(1,min=0,max=15))  ),nrow=2,byrow=T  ),
+    #                                     mu  = matrix(c (  c( rnorm(1,mean=1,sd=sqrt(1/10) ), rnorm(1,mean=8,sd=sqrt(1/2) ) ),
+    #                                                        c( rnorm(1,mean=1, sd=sqrt(1/10) ) , rnorm(1,mean=30, sd=sqrt(1/0.1) )    ) )
+    #                                                     ,nrow=2,byrow = T  ),
+    ".RNG.name"="base::Super-Duper",
+    ".RNG.seed"=round(runif(1,0,60000)) ),
+    simplify=FALSE)
+  return(initlist)
+}
+
+
+plotChk_Undershootfit <- function (draw_F)
+{
+  ##Undershoot Posterior Group Vs INdividual Density
+  with(draw_F,{
+    plot(density(tail(muG[,1,,], stail) ),ylim=c(0,16),xlim=c(0,2),lwd=2,col="red")
+    for ( i in (1:NLarv[1] ) )
+      lines( density( tail( mu[i,1,,],stail)),lty=2)
+    ###Show Inferred Distribution
+    lines(seq(0,2,0.1),dnorm(seq(0,2,0.1),mean=mean( tail(muG[,1,,],stail)),sd=sqrt(mean( tail( 1/tG[,1,,],stail))) ),col="purple",lwd=4)
+    
+  })
+  x <- seq(0,2,by=0.05)
+  points(x, 10*dnorm(x,mean=1,sd=1/sqrt(8)),col="red",cex=2 )
+}
+
+##Plot Covariance Density of Mean Group Behaviour, given by averaging the covariance of individual larvae
+plotModelCovCoeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,minEventCount=0,XRange=c(-0.6,0.6))
+{
+  cov_coeff <-getCov_Coeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,minEventCount)
+  ###Distribution Of Estimated mean Covariances Per Group
+  ## Apply mean per sample / across larvae
+  pBW <- 0.005
+  
+  ylimR <- c(0,15)
+  plot( density(apply(cov_coeff$LF,2,"mean"),
+                from=-1,to=1,n=300,bw=pBW),xlim=XRange ,col=colourLegL[2],lwd=3,main=NA,xlab=NA,ylab=NA,ylim=ylimR,lty=1,cex=cex,cex.axis=cex)
+  lines(density( apply(cov_coeff$NF,2,"mean"),
+                 from=-1,to=1,n=300,bw=pBW),xlim=XRange,col=colourLegL[1],lwd=3,lty=2 )
+  lines(density( apply(cov_coeff$DF,2,"mean"),
+                 from=-1,to=1,n=300,bw=pBW),xlim=XRange,col=colourLegL[3],lwd=3,lty=3 )
+  
+  
+  ###Distribution Of Estimated Covariances In Group
+  ## Apply mean per sample / across larvae
+  #pBW <- 0.02
+  #XRange <- c(-0.5,0.5)
+  #plot( density(tail(cov_coeff$LF,ntail*NROW(nchains)),
+  #              from=-1,to=1,n=200,bw=pBW),col=colourLegL[2],lwd=3,main=NA,xlab=NA,ylab=NA,ylim=ylimR,lty=1,cex=cex,cex.axis=cex)
+  #lines(density(tail(cov_coeff$NF,ntail*NROW(nchains) ) ,
+  #               from=-1,to=1,n=200,bw=pBW),xlim=XRange,col=colourLegL[1],lwd=3,lty=2 )
+  #lines(density( tail(cov_coeff$DF,ntail*NROW(nchains) ),
+  #              from=-1,to=1,n=200,bw=pBW),xlim=XRange,col=colourLegL[3],lwd=3,lty=3 )
+  
+  return(cov_coeff)
+}
+
+## Plots ECDF Of Estimated Covariance Values Per Larva, Along with a shaded area of Confidence - Using SD/NEvents Per Larva
+# The e.c.d.f. (empirical cumulative distribution function) Fn is a step function with jumps i/n at observation 
+# values, where i is the number of tied observations at that value.
+plotECDF_withCI <- function(cov_coeff,NEventsPerEstimate,colourPoint,pCh=1,colourShade,NewPlot=FALSE,minHEvents=0)
+{
+  
+  
+  ## plot ecdf / with Confidence Interval About Mean (SEM)
+  if (NewPlot)
+    plot(ecdf(apply(cov_coeff,1,"mean")),col=colourPoint,main=NA,pch=pCh,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,xlim=c(-1,1) )
+  edcdf_covar_SemH <- ecdf( apply(cov_coeff,1,"mean") + apply(cov_coeff,1,"sd")/sqrt(NEventsPerEstimate) )
+  edcdf_covar_SemL <- ecdf(apply(cov_coeff,1,"mean") - apply(cov_coeff,1,"sd")/sqrt(NEventsPerEstimate) )
+  # the unique data values (if there were no ties)
+  xxH <- knots(edcdf_covar_SemH);  xxL <- knots(edcdf_covar_SemL) 
+  ##Join Shaded Areas to Show Std Error About Mean
+  X0 <- c(rev(xxH),xxL)
+  Y0 <- c( edcdf_covar_SemH(rev(xxH) ), edcdf_covar_SemL(xxL) )
+  polygon(X0,Y0,col=colourShade,border=colourPoint)
+  lines(ecdf(apply(cov_coeff,1,"mean")),col=colourPoint,main=NA,pch=pCh,xlab=NA,ylab=NA,cex=cex,cex.axis=cex)
+  #lines(edcdf_covar_SemL,pch=pCh,cex=0.6,col=colourPoint)
+  #lines(edcdf_covar_SemH,pch=pCh,cex=0.6,col=colourPoint)
+  
+  
+}
+
+##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour for (N=60) larva, given k Data points of capture swims
+## Some Larvgae had produced no data 
 ## Estimating Hunt Behaviour per Larvae before inferring mean group behaviour
 strmodel3Variables_LarvaHuntBehaviour <- "
 var x_rand[NLarv,3];
 
 model {
 
-##Draw capt speed from 2d gaussian
+##Draw  speed,turn-ratio,distance from 3d gaussian
 for (i in 1:N)
 {
   ##Draw from gaussian model of Each Larva
@@ -90,12 +331,11 @@ for (i in 1:N)
 
   
 
-##Covariance matrix and its inverse -> the precision matrix
 ## for each Gaussian in the mixture - Single Gaussian  Here -
 for  (l in 1:NLarv)
 {
+  ##Covariance matrix and its inverse -> the precision matrix
   prec[l,1:3,1:3] ~ dwish(R,3)
-  
   cov[l,1:3,1:3]  <- inverse(prec[l,1:3,1:3])  
   
   ## Larva priors Are linked to the Group's Priors
@@ -125,8 +365,12 @@ for(i in 1:3){
       R[i,j] <- equals(i,j)*1e-4
     }
 }
+  ## Possible to establish Wishart Prior? 
+  #CG[1:3,1:3] ~ dwish(R,3)
+  #covG[1:3,1:3] <- inverse(CG)
   
 } "
+
 
 ##
 ##
@@ -138,7 +382,7 @@ str_vars <- c("mu","cov","x_rand","muG","tG","NLarv","Lid") #Mixture Model
 
 getwd()
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-##Contains Serial Larvae ID, that links each hunt event to an individual larva 
+##Contains Serial Larvae ID, that links each hunt event to particular larva 
 ldata_LF  <-  readRDS(file=paste0("dat/huntEpisodeDataMergedWithLarvalSuccess_LF.rds") )
 ldata_NF  <-  readRDS(file=paste0("dat/huntEpisodeDataMergedWithLarvalSuccess_NF.rds") )
 ldata_DF  <-  readRDS(file=paste0("dat/huntEpisodeDataMergedWithLarvalSuccess_DF.rds") )
@@ -183,27 +427,32 @@ save(draw_NF,draw_LF,draw_DF,file = paste0(strDataExportDir,"stat_Larval3DGaussi
 
 
 
-schain <- 5:10 ## Chains used for data visualiazation
-stail <- 300 ## Number Of  Chain Samples to Use for Plots - from the end of the chain
+schain <- 1:7 ## Chains used for data visualiazation
+stail <- 500 ## Number Of  Chain Samples to Use for Plots - from the end of the chain
 
 
 ##CONVERGENCE - CHECK
 ##Each of draw_XX arrays is structured  as
 # Idx: Lid,Variable (1 turnratio,2-speed,3-distance),Sample Row,Chain
-plot(density(tail(draw_LF$muG[,3,,1],1000) ),type='l',main="Distance")
+plot(density(tail(draw_LF$muG[,3,,1],1000) ),type='l',main="Distance - Across Chains")
 for (c in schain)
   lines(density(tail(draw_LF$muG[,3,,c],1000) ),col="red")
 
-plot(density(tail(draw_LF$muG[,2,,1],1000) ),type='l',main="Speed")
+plot(density(tail(draw_LF$muG[,2,,1],1000) ),type='l',main="Speed- Across Chains")
 for (c in schain)
   lines(density(tail(draw_LF$muG[,2,,c],1000) ),col="red")
 
+plot(density(tail(draw_LF$muG[,1,,1],1000) ),type='l',main="Turn Ratio- Across Chains")
+for (c in schain)
+  lines(density(tail(draw_LF$muG[,1,,c],1000) ),col="red")
 
-################################## ###################
-### 3D Display of Group Behaviour MODEL            ##
-###################################################
+
+
+## ############################################### ##
+#### 3D Display of Group Behaviour MODEL          ####
+## ############################################### ##
   library( rgl )
-  ntail <- 30
+  ntail <- 300
   
   ##Prepare Data
   datMu3D <-  data.frame( cbind.data.frame(
@@ -229,7 +478,7 @@ for (c in schain)
   ##Open Window And Plot
   open3d()
   bbox <- par3d('bbox') 
-  rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 1.3,
+  rgl::plot3d( x=datMu3D$TurnR, y=datMu3D$CSpeed, z=datMu3D$Dist, col = datMu3D$col, type = "s", radius = 0.5,
                #xlab="Turn Ratio", ylab="Capture Speed (mm/sec)",zlab="Distance to prey (mm)",
                xlab="Turn Ratio", ylab="Speed",zlab="Distance",
                xlim=c(0.5,1.5), ylim=c(10,50), zlim=c(0,0.8),
@@ -248,9 +497,9 @@ for (c in schain)
   
 
 
-#################################################
+## ############################################# ##
 ## Speed Posterior Group Vs Individual Density
-##############################################
+## ########################################## ##
 ## Live Fed
 with(draw_LF,{
   plot(density(tail(muG[,2,,], 150) ),ylim=c(0,1),xlim=c(0,60),lwd=2,col="red",main="Compare Data to Model - Speed LF")
@@ -287,8 +536,8 @@ with(draw_NF,{
 lines(density(datHuntLarvaStat[datHuntLarvaStat$groupID==3,]$CaptureSpeed,bw=2),col="blue",lwd=2,lty=2)
 
 
-##########
-##Distance Posterior Group Vs INdividual Density
+
+#### Distance Posterior Group Vs INdividual Density
 with(draw_NF,{
   plot(density(tail(muG[,3,,1], 100) ),ylim=c(0,16),xlim=c(0,1),lwd=2,col="red")
   for ( i in (1:NLarv[1] ) )
@@ -321,18 +570,28 @@ plot(density(sapply(tail(draw_LF$mu[,1,,],stail),mean)),col=colourLegL[2] ,lwd=2
 lines(density(sapply(tail(draw_NF$mu[,1,,],stail),mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 lines(density(sapply(tail(draw_DF$mu[,1,,],stail) ,mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 
-##"Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey"
-  Ci <- 2
-  Cj <- 3
-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
-  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Prey distance to capture speed covariance coeff." ) )  )
+
+#### Plot Covariance Analysis ####
+## Turn-Ratio(1)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),width=14,height=7,
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+plotCovar_SpeedVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
+dev.off()
+
+## Distance(3)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
 
 
-#"Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-  Ci <- 1
-  Cj <- 3
-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail)
-  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Turn-ratio to prey distance covariance coeff." ) )  )
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsDistance_Covar.pdf"),width=14,height=7,
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+plotCovar_SpeedVsDistance(draw_LF,draw_NF,draw_DF,ntail)
+dev.off()
+
+
+## TurnRatio(1)xDistance(3) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
+
+pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"),width=14,height=7,
+    title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
+plotCovar_DistanceVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
+dev.off()
+#### END OF ALL Bouts Capture Covariance ##
 
