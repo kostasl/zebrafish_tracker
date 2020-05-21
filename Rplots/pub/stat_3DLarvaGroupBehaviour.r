@@ -20,6 +20,7 @@ source("common_lib.R")
 
 
 
+
 ## Returns estaimes of each larvae behaviour from the Model
 ## Added Estimates Of Covariance 
 getEstimatesPerLarva <- function(drawG,stail)
@@ -227,6 +228,211 @@ plotDistanceClustFit <- function(datDist,drawMCMC,colourIdx,nchain = 1)
 }
 
 
+plotCovar_SpeedVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
+{
+  ## Fig Label Params
+  outer = FALSE
+  line = 1 
+  lineAxis = 4.7
+  lineXAxis = 3.5
+  lineTitle = 0.5
+  
+  cex = 1.4
+  adj  = 3.5
+  padj <- 0.5
+  las <- 1
+  
+  ####       BOTTOM,LEFT,TOP,RIGHT
+  par(mar = c(6.9,5.5,4.5,1))
+  layout(matrix(c(1,1,2,3,4),1,5, byrow = TRUE))
+  Ci <- 1
+  Cj <- 2
+  ##Calculate mean cov. coeff based on larvae that have >1 hunt events 
+  #(For Larvae with n<2 Cov Is meaningless/ and just adds to 0 group mean)
+  cov_coeff <- plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0)
+  mtext(side = 2,cex=cex,padj=padj, line = lineAxis, expression("Density function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group covariance of turn-ratio to capture speed" ) )  )
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  nNF <- dim(cov_coeff$NF)[1]
+  nLF <- dim(cov_coeff$LF)[1]
+  nDF <- dim(cov_coeff$DF)[1]
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF)),
+                    bquote(LF[""] ~'/'~.(nLF)),
+                    bquote(DF[""] ~'/'~.(nDF))
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),
+         lty=c(2,1,3), col=colourLegL,cex=cex,lwd=3)
+  #Get Cov coeff for All larvae regardless of min number of events
+  cov_coeff_SpeedTurnRatio <- getCov_Coeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0)
+  
+  ## plot ecdf / with Confidence Interval About Mean (SEM)
+  par(mar = c(6.9,5.0,4.5,1))
+  plotECDF_withCI(cov_coeff_SpeedTurnRatio$LF,lModelEst_LF[,"HuntEvents"],colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE)
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  ####       BOTTOM,LEFT,TOP,RIGHT
+  #par(mar = c(6.9,2.5,4.5,1))
+  plotECDF_withCI(cov_coeff_SpeedTurnRatio$NF,lModelEst_NF[,"HuntEvents"],colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Covariance of turn-ratio to capture speed per larva" ) )  )
+  plotECDF_withCI(cov_coeff_SpeedTurnRatio$DF,lModelEst_DF[,"HuntEvents"],colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
+  
+  
+  
+  ##Filtered With Larvae having N>X hunt Events
+  #  Covar_SpeedTurnNH <-  HuntModelStat_LF[HuntModelStat_LF[,"HuntEvents"] > 2 ,"Covar_SpeedTurn"]
+  #plot(ecdf(Covar_SpeedTurnNH ),col=colourLegL[2],main=NA,pch=pchL[4],xlab=NA,ylab=NA,cex=cex,cex.axis=cex,xlim=c(-1,1))
+  
+  
+  nNF <- dim(cov_coeff_SpeedTurnRatio$NF)[1]
+  nLF <- dim(cov_coeff_SpeedTurnRatio$LF)[1]
+  nDF <- dim(cov_coeff_SpeedTurnRatio$DF)[1]
+  
+  legend(x=-1.1,y=1.0,
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF) ),
+                    bquote(LF[""] ~'/'~.(nLF) ),
+                    bquote(DF[""] ~'/'~.(nDF) )
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),title="Group/#Larvae",
+         pch=c(pchL[6],pchL[4],pchL[5]), col=colourLegL,cex=cex)
+  
+}
+
+plotCovar_SpeedVsDistance <- function(draw_LF,draw_NF,draw_DF,ntail)
+{
+  
+  par(mar = c(6.9,5.7,4.5,1))
+  layout(matrix(c(1,1,2,3,4),1,5, byrow = TRUE))
+  ## Fig Label Params
+  outer = FALSE
+  line = 1 
+  lineAxis = 4.7
+  lineXAxis = 3.5
+  lineTitle = 0.5
+  
+  cex = 1.4
+  adj  = 3.5
+  padj <- 0.5
+  las <- 1
+  
+  Ci <- 2
+  Cj <- 3
+  cov_coeff <- plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0,XRange=c(-0.4,0.4))
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group covariance of capture speed to distance" ) )  )
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  nNF <- dim(cov_coeff$NF)[1]
+  nLF <- dim(cov_coeff$LF)[1]
+  nDF <- dim(cov_coeff$DF)[1]
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF)),
+                    bquote(LF[""] ~'/'~.(nLF)),
+                    bquote(DF[""] ~'/'~.(nDF))
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),
+         lty=c(2,1,3), col=colourLegL,cex=cex,lwd=3)
+  
+  
+  #Get Cov coeff for All larvae regardless of min number of events
+  cov_coeff <- getCov_Coeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0)
+  
+  par(mar = c(6.9,5.0,4.5,1))
+  ## plot ecdf / with Confidence Interval About Mean (SEM)
+  plotECDF_withCI(cov_coeff$LF,lModelEst_LF[,"HuntEvents"],colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE)
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  plotECDF_withCI(cov_coeff$NF,lModelEst_NF[,"HuntEvents"],colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Larva covariance of capture speed to distance " ) )  )
+  plotECDF_withCI(cov_coeff$DF,lModelEst_DF[,"HuntEvents"],colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
+  
+  
+  
+  nNF <- dim(cov_coeff$NF)[1]
+  nLF <- dim(cov_coeff$LF)[1]
+  nDF <- dim(cov_coeff$DF)[1]
+  
+  legend(x=-1.1,y=1.0,
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF) ),
+                    bquote(LF[""] ~'/'~.(nLF) ),
+                    bquote(DF[""] ~'/'~.(nDF) )
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),title="Group/#Larvae",
+         pch=c(pchL[6],pchL[4],pchL[5]), col=colourLegL,cex=cex)
+  
+}
+
+plotCovar_DistanceVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
+{
+  
+  par(mar = c(6.9,5.7,4.5,1))
+  layout(matrix(c(1,1,2,3,4),1,5, byrow = TRUE))
+  ## Fig Label Params
+  outer = FALSE
+  line = 1 
+  lineAxis = 4.7
+  lineXAxis = 3.5
+  lineTitle = 0.5
+  cex = 1.4
+  adj  = 3.5
+  padj <- 0.5
+  las <- 1
+  
+  Ci <- 1
+  Cj <- 3
+  cov_coeff_TurnRatio <-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0,XRange=c(-0.4,0.4))
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group covariance of turn-ratio to capture distance" ) )  )
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  nNF <- dim(cov_coeff_TurnRatio$NF)[1]
+  nLF <- dim(cov_coeff_TurnRatio$LF)[1]
+  nDF <- dim(cov_coeff_TurnRatio$DF)[1]
+  
+  legend("topleft",
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF)),
+                    bquote(LF[""] ~'/'~.(nLF)),
+                    bquote(DF[""] ~'/'~.(nDF))
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),
+         lty=c(2,1,3), col=colourLegL,cex=cex,lwd=3)
+  
+  cov_coeff_TurnRatio <- getCov_Coeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0)
+  ## plot ecdf
+  par(mar = c(6.9,5.0,4.5,1))
+  ## plot ecdf / with Confidence Interval About Mean (SEM)
+  plotECDF_withCI(cov_coeff_TurnRatio$LF,lModelEst_LF[,"HuntEvents"],colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE)
+  mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
+  
+  plotECDF_withCI(cov_coeff_TurnRatio$NF,lModelEst_NF[,"HuntEvents"],colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Larva covariance of capture distance to turn-ratio " ) )  )
+  plotECDF_withCI(cov_coeff_TurnRatio$DF,lModelEst_DF[,"HuntEvents"],colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
+  
+  nNF <- dim(cov_coeff_TurnRatio$NF)[1]
+  nLF <- dim(cov_coeff_TurnRatio$LF)[1]
+  nDF <- dim(cov_coeff_TurnRatio$DF)[1]
+  
+  legend(x=-1.1,y=1.0,
+         legend=c(  expression (),
+                    bquote(NF[""] ~'/'~.(nNF) ),
+                    bquote(LF[""] ~'/'~.(nLF) ),
+                    bquote(DF[""] ~'/'~.(nDF) )
+                    #, bquote(All ~ '#' ~ .(ldata_ALL$N)  )
+         ),title="Group/#Larvae",
+         pch=c(pchL[6],pchL[4],pchL[5]), col=colourLegL,cex=cex)
+  
+}
+
 initfunct <- function(nchains,N)
 {
   initlist <- replicate(nchains,list(#mID=c(rbinom(N,1,0.5)), 
@@ -274,17 +480,6 @@ plotModelCovCoeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,minEventCount=
                  from=-1,to=1,n=300,bw=pBW),xlim=XRange,col=colourLegL[3],lwd=3,lty=3 )
   
   
-  ###Distribution Of Estimated Covariances In Group
-  ## Apply mean per sample / across larvae
-  #pBW <- 0.02
-  #XRange <- c(-0.5,0.5)
-  #plot( density(tail(cov_coeff$LF,ntail*NROW(nchains)),
-  #              from=-1,to=1,n=200,bw=pBW),col=colourLegL[2],lwd=3,main=NA,xlab=NA,ylab=NA,ylim=ylimR,lty=1,cex=cex,cex.axis=cex)
-  #lines(density(tail(cov_coeff$NF,ntail*NROW(nchains) ) ,
-  #               from=-1,to=1,n=200,bw=pBW),xlim=XRange,col=colourLegL[1],lwd=3,lty=2 )
-  #lines(density( tail(cov_coeff$DF,ntail*NROW(nchains) ),
-  #              from=-1,to=1,n=200,bw=pBW),xlim=XRange,col=colourLegL[3],lwd=3,lty=3 )
-  
   return(cov_coeff)
 }
 
@@ -312,6 +507,7 @@ plotECDF_withCI <- function(cov_coeff,NEventsPerEstimate,colourPoint,pCh=1,colou
   
   
 }
+
 
 ##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour for (N=60) larva, given k Data points of capture swims
 ## Some Larvgae had produced no data 
@@ -387,6 +583,12 @@ ldata_LF  <-  readRDS(file=paste0("dat/huntEpisodeDataMergedWithLarvalSuccess_LF
 ldata_NF  <-  readRDS(file=paste0("dat/huntEpisodeDataMergedWithLarvalSuccess_NF.rds") )
 ldata_DF  <-  readRDS(file=paste0("dat/huntEpisodeDataMergedWithLarvalSuccess_DF.rds") )
 datHuntLarvaStat <- readRDS(file=paste0("dat/LarvaEmpiricalMeanHuntBehaviour.rds"))
+
+
+lModelEst_LF <- getEstimatesPerLarva(draw_LF,stail)
+lModelEst_NF <- getEstimatesPerLarva(draw_NF,stail)
+lModelEst_DF <- getEstimatesPerLarva(draw_DF,stail)
+
 
 ### RUN JAGS MODEL ###
     jags_model_LF <- jags.model(textConnection(strmodel3Variables_LarvaHuntBehaviour), data = ldata_LF, 
@@ -548,15 +750,10 @@ with(draw_NF,{
 ### Obtain Estimated Mean Values For Each Larva & Plot Group Population
 ## Plot Distance Density
 plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2] ,lwd=2,main="Distance to Prey",ylim=c(0,6)) ##Mean Group Undershoot From Mean Of Each Larva
-lModelEst_LF <- getEstimatesPerLarva(draw_LF,stail)
 lines(density( unlist(lapply(lModelEst_LF[,"DistanceToPrey"],mean) ) ) )
-
 lines(density(sapply(tail(draw_NF$mu[,3,,],stail),mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lModelEst_NF <- getEstimatesPerLarva(draw_NF,stail)
 lines(density( unlist(lapply(lModelEst_NF[,"DistanceToPrey"],mean) ) ) )
-
 lines(density(sapply(tail(draw_DF$mu[1,3,,],stail) ,mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
-lModelEst_DF <- getEstimatesPerLarva(draw_DF,stail)
 lines(density( unlist(lapply(lModelEst_DF[,"DistanceToPrey"],mean) ) ) )
 
 
@@ -575,7 +772,7 @@ lines(density(sapply(tail(draw_DF$mu[,1,,],stail) ,mean)),col=colourLegL[1] ,lwd
 ## Turn-Ratio(1)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-plotCovar_SpeedVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
+  plotCovar_SpeedVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
 dev.off()
 
 ## Distance(3)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
@@ -583,7 +780,7 @@ dev.off()
 
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsDistance_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-plotCovar_SpeedVsDistance(draw_LF,draw_NF,draw_DF,ntail)
+  plotCovar_SpeedVsDistance(draw_LF,draw_NF,draw_DF,ntail)
 dev.off()
 
 
@@ -591,7 +788,7 @@ dev.off()
 
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_TurnVsDistance_Covar.pdf"),width=14,height=7,
     title="Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey")
-plotCovar_DistanceVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
+  plotCovar_DistanceVsTurnRatio(draw_LF,draw_NF,draw_DF,ntail)
 dev.off()
 #### END OF ALL Bouts Capture Covariance ##
 
