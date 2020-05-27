@@ -74,25 +74,27 @@ calcMIEntropy <- function(freqM)
 
 
 
-##Bootstrap Data analysis from 2 chosen columns of datCapture_NL (lFirstBout)  to get stats on correlations and Mutual Information
+## Bootstrap Data analysis from 2 chosen columns of datCapture_NL (lFirstBout)  to get stats on correlations and Mutual Information
 ## Can use Pearson to examine correlations in value, 
+## Also Returns a control distribution obtained by suffling the sampled Y columns Breaking pairs against X
 ## Or spearman to examine correlation in rank (ie value increases correlate and not corr not influenced by the absolute value of each data point)
 bootStrap_stat <- function(datCapture_X,datCapture_Y,N,XRange,YRange,corMethod="pearson")
 {
   datCapture <- data.frame(cbind(datCapture_X,datCapture_Y))
+  
   l_sampleXYAnalysis <- list()
   for (i in 1:N)
   {
-    
     #freqM_DF <- InfoCalc_get2DFreq(datCapture_DL$Undershoot,datCapture_DL$CaptureSpeed,XRange,YRange)
     #freqM_LF <- InfoCalc_get2DFreq(datCapture_LL$Undershoot,datCapture_LL$CaptureSpeed,XRange,YRange)
     idxSample <- sample(1:NROW(datCapture),size=floor(NROW(datCapture)*0.80))
     datSub <- datCapture[idxSample,]
+
     freqM_NF <- InfoCalc_get2DFreq(datSub[,1],datSub[,2],XRange,YRange)
-    
-    infC <- calcMIEntropy(freqM_NF)
+    infC <- calcMIEntropy(freqM_NF) ##Mutail INformation
     corrXY <- cor(datSub[,1],datSub[,2],method=corMethod) #method="spearman"
-    l_sampleXYAnalysis[[i]] <- data.frame(MI = infC$MutualInf_XY,entropy_X = infC$H_X,entropy_Y = infC$H_Y,corr=corrXY)
+    corrXY_suffled <- cor(datSub[,1],sample(datSub[,2]) ,method=corMethod) ## Calculate Control Corr By Suffling the data
+    l_sampleXYAnalysis[[i]] <- data.frame(MI = infC$MutualInf_XY,entropy_X = infC$H_X,entropy_Y = infC$H_Y,corr=corrXY,corr_suffled=corrXY_suffled)
     #inf_LF <-calcMIEntropy(freqM_LF)
     #inf_DF <-calcMIEntropy(freqM_DF)
   }

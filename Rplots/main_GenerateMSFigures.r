@@ -29,8 +29,9 @@
 ## Fig 6  clustering Speed, TurnRatio and Distance to Prey using 3D 2xGaussian mixture method####
 #source("Stats/stat_ClusterCaptureSpeedVsUndershootAndDistance.r")
 
-### Fig 7 Show Covariance using Gaussian 3D non clustering model aong wit ####
-#source("Stats/stat_CaptureSpeedVsUndershootAndDistance.r")
+### Fig 7 Show Covariance using Gaussian 3D (not clustering on capture speed) model - ####
+# The  Covariance plots are in the original model file:
+#source("Stats/stat_3DLarvaGroupBehaviour.r")
 
 
 
@@ -40,6 +41,7 @@ library(RColorBrewer);
 library("MASS");
 library(extrafont) ##For F
 library(mvtnorm)
+library(boot) ## BootStrapping
 
 library(ggplot2) ##install.packages("ggplot2")
 library(ggExtra)##  install.packages("ggExtra") ##devtools::install_github("daattali/ggExtra").
@@ -133,6 +135,14 @@ lFirstBoutPoints <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_Fi
 ### Load Pre Calc RJAgs Model Results
 ##   stat_CaptSpeedVsDistance_RJags.RData ##stat_CaptSpeedCluster_RJags.RData
 load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
+##Calc Model Covariance
+ntail <- 1500
+fastClusterCovarSamples<-list()
+fastClusterCovarSamples$LF <-tail(draw_LF$rho[2,,],ntail)
+fastClusterCovarSamples$NF <-tail(draw_NF$rho[2,,],ntail)
+fastClusterCovarSamples$DF <-tail(draw_DF$rho[2,,],ntail)
+fastClusterCovarSamples$LFvsDF <- tail(fastClusterCovarSamples$LF , ntail)- tail(fastClusterCovarSamples$DF,ntail)
+fastClusterCovarSamples$LFvsNF <- tail(fastClusterCovarSamples$LF , ntail)- tail(fastClusterCovarSamples$NF,ntail)
 
 #### LOAD Capture First-Last Bout hunting that include the cluster classification - (made in stat_CaptureSpeedVsDistanceToPrey)
 datCapture_NL <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_NL_2Dclustered.rds",sep="")) 
@@ -153,6 +163,8 @@ datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 ## Bootstrap correlation Analysis - Hunt Power Against Development/Nutrition Measured from Larval Std. Length
 ## Save To summary Stat Output - Used By generate figure 
 datSuccessVsSize <- readRDS(file= paste(strDataExportDir,"/FishLengthVsHuntSuccess.rds",sep=""))
+#\Todo Loaded Structure datSuccessVsSize - Is not how it is expected below 
+
 
 XRange <- c(3.9,5)
 YRange <- c(0,5)
@@ -181,11 +193,228 @@ dev.off()
 
 
 
+#### Fig 4 Supplemental - Covariance ####
+nSamples <- 10000
+
+stat_Cap_NF <- bootStrap_stat(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,nSamples,XRange,YRange)
+stat_Cap_LF <- bootStrap_stat(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,nSamples,XRange,YRange)
+stat_Cap_DF <- bootStrap_stat(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,nSamples,XRange,YRange)
+
+stat_Cap_fast_NF <- bootStrap_stat(datCapture_NL[datCapture_NL$Cluster == "fast",]$DistanceToPrey,datCapture_NL[datCapture_NL$Cluster == "fast",]$CaptureSpeed,nSamples,XRange,YRange)
+stat_Cap_fast_LF <- bootStrap_stat(datCapture_LL[datCapture_LL$Cluster == "fast",]$DistanceToPrey,datCapture_LL[datCapture_LL$Cluster == "fast",]$CaptureSpeed,nSamples,XRange,YRange)
+stat_Cap_fast_DF <- bootStrap_stat(datCapture_DL[datCapture_DL$Cluster == "fast",]$DistanceToPrey,datCapture_DL[datCapture_DL$Cluster == "fast",]$CaptureSpeed,nSamples,XRange,YRange)
+
+## Fast CLuster Covariance
+
+ntail <- 700
+# Plot Fast_Cluster Speed Vs Distance Correlation - bootstraped Stat ##
+dLLb_rho_fast <-density(fastClusterCovarSamples$LF,kernel="gaussian",bw=0.05)
+dNLb_rho_fast <-density(fastClusterCovarSamples$NF,kernel="gaussian",bw=0.05)
+dDLb_rho_fast <-density(fastClusterCovarSamples$DF,kernel="gaussian",bw=0.05)
+
+strPlotName = paste(strPlotExportPath,"/stat/fig4S1_FastClust_SpeedVsDistanceCovar.pdf",sep="")
+pdf(strPlotName,width=14,height=7,
+    title="Esimating Covariance of capture Speed-Distance in fast capture swims / A.Model Cluster B.Bootstrap Correlation    ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  
+  ##Margin: (Bottom,Left,Top,Right )
+  par(mar = c(3.9,4.7,1,1))
+  pBw <- 0.01
+  ## Compare Bootstrap And Model COvariance - Fast Cluster 
+  layout(matrix(c(1,2),1,2, byrow = TRUE))
+  
+  
+  plot(dNLb_rho_fast,col=colourLegL[1],xlim=c(-0.6,0.6),lwd=3,lty=1,ylim=c(0,10),
+       main=NA, #"Density Inference of Turn-To-Prey Slope ",
+       xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(dLLb_rho_fast,col=colourLegL[2],lwd=3,lty=2)
+  lines(dDLb_rho_fast,col=colourLegL[3],lwd=3,lty=3)
+  mtext(side = 1,cex=cex, line = lineXAxis, expression("Model-estimated speed-distance correlation in fast cluster"  ))
+  mtext(side = 2,cex=cex, line = lineAxis, expression("Density function " ))
+  
+  #mtext(side = 3,cex=cex, line = lineTitle-3, expression("Capture distance and speed "  ))
+  mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+  legend("topleft",         legend=c(  expression (),
+                                        bquote(NF~ ''  ),
+                                        bquote(LF ~ '' ),
+                                        bquote(DF ~ '' )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+         col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
+  ##Boot Strap
+  plot(density(stat_Cap_fast_NF$corr,kernel="gaussian",bw=pBw),
+       col=colourLegL[1],lwd=3,lty=1,xlim=c(-0.6,0.6),ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(density(stat_Cap_fast_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(stat_Cap_fast_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Bootstrapped correlation of speed-distance in fast cluster") ))
+  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+  mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
+
+dev.off()
+  ##Do Stat Associated With Plot
+  
+  message("Cluster Model Covariance - Probabilities")
+  message("Prob Fast-cluster Cov NF > 0 : ", NROW(fastClusterCovarSamples$NF[fastClusterCovarSamples$NF>0])/length(fastClusterCovarSamples$NF) )
+  message("Prob Fast-cluster Cov LF > 0 : ", NROW(fastClusterCovarSamples$LF[fastClusterCovarSamples$LF>0])/length(fastClusterCovarSamples$LF) )
+  message("Prob Fast-cluster Cov DF > 0 : ", NROW(fastClusterCovarSamples$DF[fastClusterCovarSamples$DF>0])/length(fastClusterCovarSamples$DF) )
+  message("Prob Fast-cluster Cov LF > DF : ", length(fastClusterCovarSamples$LFvsDF[fastClusterCovarSamples$LFvsDF>0]) / length(fastClusterCovarSamples$LFvsDF) )
+  message("Prob Fast-cluster Cov LF > NF : ", length(fastClusterCovarSamples$LFvsNF[fastClusterCovarSamples$LFvsNF>0]) / length(fastClusterCovarSamples$LFvsNF) )
+  
+  message("BootStrapped Covariance")
+  message("Estimate Prob of NF > 0 : ", NROW(stat_Cap_fast_NF[stat_Cap_fast_NF$corr>0,])/NROW(stat_Cap_fast_NF) )
+  message("Estimate Prob of LF > 0 : ", NROW(stat_Cap_fast_LF[stat_Cap_fast_LF$corr>0,])/NROW(stat_Cap_fast_LF) )
+  message("Estimate Prob of DF > 0 : ", NROW(stat_Cap_fast_DF[stat_Cap_fast_DF$corr>0,])/NROW(stat_Cap_fast_DF) )
+  
+  ## LF Has Higher Correlation than Control
+  corrDiff_LFvsDF <- stat_Cap_fast_LF$corr - stat_Cap_fast_DF$corr
+  corrDiff_LFvsNF <- stat_Cap_fast_LF$corr - stat_Cap_fast_NF$corr  
+  message("Estimate Prob of LF > DF : ",NROW(corrDiff_LFvsDF[corrDiff_LFvsDF > 0])/NROW(corrDiff_LFvsDF) )
+  message("Estimate Prob of LF > NF : ", NROW(corrDiff_LFvsNF[corrDiff_LFvsNF > 0])/NROW(corrDiff_LFvsNF) )
+  
+  
+  test_FastClustCorr_NF <- t.test(stat_Cap_fast_NF$corr,stat_Cap_fast_NF$corr_suffled,alternative=c("greater"))
+  test_FastClustCorr_LF <- t.test(stat_Cap_fast_LF$corr,stat_Cap_fast_LF$corr_suffled,alternative=c("greater"))
+  test_FastClustCorr_DF <- t.test(stat_Cap_fast_DF$corr,stat_Cap_fast_DF$corr_suffled,alternative=c("greater"))
+  test_FastClustCorr_LFvsDF <- t.test(stat_Cap_fast_LF$corr,stat_Cap_fast_DF$corr,alternative=c("greater"))
+  test_FastClustCorr_LFvsNF <- t.test(stat_Cap_fast_LF$corr,stat_Cap_fast_NF$corr,alternative=c("greater"))
+  message("T-test bootstrapped  Speed-Dist Corr  Fast Clust : NF corr is > 0 p=",test_FastClustCorr_NF$p.value )
+  message("T-test bootstrapped  Speed-Dist  Corr Fast Clust : LF corr is > 0 p=",test_FastClustCorr_LF$p.value ) ##*** Significant
+  message("T-test bootstrapped  Speed-Dist  Corr Fast Clust  : DF corr is > 0 p=",test_FastClustCorr_DF$p.value )
+  message("T-test bootstrapped  Speed-Dist  Corr Fast Clust  : LF corr is > NF p=",test_FastClustCorr_LFvsNF$p.value )
+  message("T-test bootstrapped  Speed-Dist  Corr Fast Clust  : LF corr is > DF p=",test_FastClustCorr_LFvsDF$p.value )
+
+  ##LF Shows Higher Correlation Than DF
+  t.test(stat_Cap_fast_LF$corr,stat_Cap_fast_DF$corr,alternative=c("greater"),paired=FALSE ) # "two.sided"
+  ##LF Shows Higher Correlation Than NF
+  t.test(stat_Cap_fast_LF$corr,stat_Cap_fast_NF$corr,alternative=c("greater"),paired=FALSE ) # "two.sided"
+##END OF COVAR Fast Capture Swim
+  
+
+#### Covar All Captures Bootstrap ###
+# Plot Speed Vs Distance Correlation - bootstraped Stat ## 
+##Also Found in InfoTheoryBootstra[ ]
+strPlotName = paste(strPlotExportPath,"/stat/fig4_statbootstrap_correlation_SpeedVsDistance.pdf",sep="")
+pdf(strPlotName,width=7,height=7,title="Correlations In Speed/Distance capture  variables",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.9,4.7,1,1))
+  
+  plot(density(stat_Cap_NF$corr,kernel="gaussian",bw=pBw),
+       col=colourLegL[1],xlim=c(0,1),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(density(stat_Cap_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(stat_Cap_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of capture speed to prey distance  ") ))
+  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+
+dev.off()
+
+## Use BootStrap Library 
+boot(cbind(DistanceToPrey=datCapture_NL$DistanceToPrey,CaptureSpeed=datCapture_NL$CaptureSpeed),R=1000,sim="ordinary",statistic=cor)
+
+##Correlation Tests
+##Note that Pearsons Assumes these are independent 
+corrDistSpeed_NF <- cor.test(datCapture_NL$DistanceToPrey,datCapture_NL$CaptureSpeed,alternative="greater",method = "pearson")
+corrDistSpeed_LF <-  cor.test(datCapture_LL$DistanceToPrey,datCapture_LL$CaptureSpeed,alternative="greater",method = "pearson")
+corrDistSpeed_DF <- cor.test(datCapture_DL$DistanceToPrey,datCapture_DL$CaptureSpeed,alternative="greater",method = "pearson")
+message("Pearson Corr Test: NF corr is > 0 p=",corrDistSpeed_NF$p.value )
+message("Pearson Corr Test: LF corr is > 0 p=",corrDistSpeed_LF$p.value ) ##*** Significant
+message("Pearson Corr Test: DF corr is > 0 p=",corrDistSpeed_DF$p.value )
+
+
+## Do stat Associated With Plot
+message("BootStrapped Covariance")
+message("Estimate Prob of NF > 0 : ", NROW(stat_Cap_NF[stat_Cap_NF$corr>0,])/NROW(stat_Cap_NF) )
+message("Estimate Prob of LF > 0 : ", NROW(stat_Cap_LF[stat_Cap_LF$corr>0,])/NROW(stat_Cap_LF) )
+message("Estimate Prob of DF > 0 : ", NROW(stat_Cap_DF[stat_Cap_DF$corr>0,])/NROW(stat_Cap_DF) )
+
+t_boot_speedVsDist_NF <- t.test( stat_Cap_NF$corr, stat_Cap_NF$corr_suffled, alternative=c("greater") )
+t_boot_speedVsDist_LF <- t.test( stat_Cap_LF$corr, stat_Cap_LF$corr_suffled, alternative=c("greater") )
+t_boot_speedVsDist_DF <- t.test( stat_Cap_DF$corr, stat_Cap_DF$corr_suffled, alternative=c("greater") )
+message("T-test bootstrapped Corr Test: NF corr is > 0 p=",t_boot_speedVsDist_NF$p.value )
+message("T-test bootstrapped  Corr Test: LF corr is > 0 p=",t_boot_speedVsDist_LF$p.value ) ##*** Significant
+message("T-test bootstrapped  Corr Test: DF corr is > 0 p=",t_boot_speedVsDist_DF$p.value )
+
+t.test( stat_Cap_LF$corr, alternative=c("greater") )
 
 
 
 
+#### FIG 4 I - Time-To Hit Prey Vs Distance Boot Strapped Covariance
 
+corrDiff_LFvsDF <- stat_Cap_LF$corr - stat_Cap_DF$corr
+corrDiff_LFvsNF <- stat_Cap_LF$corr - stat_Cap_NF$corr  
+message("Estimate Prob of LF > DF : ",NROW(corrDiff_LFvsDF[corrDiff_LFvsDF > 0])/NROW(corrDiff_LFvsDF) )
+message("Estimate Prob of LF > NF : ", NROW(corrDiff_LFvsNF[corrDiff_LFvsNF > 0])/NROW(corrDiff_LFvsNF) )
+
+##Test Control Bootstraps
+plot(density(stat_Cap_NF$corr_suffled),col="red")
+lines(density(stat_Cap_NF$corr))
+lines(density(stat_Cap_DF$corr))
+lines(density(stat_Cap_LF$corr))
+lines(density(stat_Cap_LF$corr_suffled),col="green")
+lines(density(stat_Cap_DF$corr_suffled),col="blue")
+
+stat_CapDistVsTime_NF <- bootStrap_stat(stat_Cap_fast_NF$DistanceToPrey,stat_Cap_fast_NF$FramesToHitPrey/G_APPROXFPS,10000,XRange,YRange,"spearman")
+stat_CapDistVsTime_LF <- bootStrap_stat(stat_Cap_fast_LF$DistanceToPrey,stat_Cap_fast_LF$FramesToHitPrey/G_APPROXFPS,10000,XRange,YRange,"spearman")
+stat_CapDistVsTime_DF <- bootStrap_stat(stat_Cap_fast_DF$DistanceToPrey,stat_Cap_fast_DF$FramesToHitPrey/G_APPROXFPS,10000,XRange,YRange,"spearman")
+
+# Plot Speed Vs Distance Correlation - bootstraped Stat ##
+strPlotName = paste(strPlotExportPath,"/stat/fig4I_statbootstrap_corrSpearman_DistanceVsTimeToPrey_fastCluster.pdf",sep="")
+pdf(strPlotName,width=7,height=7,title="Correlations In between Distance And Number of Frames to Get to Prey For Fast Capture swims ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
+  par(mar = c(3.9,4.7,1,1))
+
+  plot(density(stat_CapDistVsTime_NF$corr,kernel="gaussian",bw=pBw),
+     col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
+  lines(density(stat_CapDistVsTime_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
+  lines(density(stat_CapDistVsTime_DF$corr,kernel="gaussian",bw=pBw),col=colourLegL[3],lwd=3,lty=3)
+
+# legend("topright",         legend=c(  expression (),
+#                    bquote(NF~ ''  ),
+#                    bquote(LF ~ '' ),
+#                    bquote(DF ~ '' )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
+#         col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of time to hit prey and distance") ))
+  mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
+dev.off()
+
+message("Mean Spearman Correlation Values")
+message("E[NF corr] = ",mean(stat_CapDistVsTime_NF$corr))
+message("E[LF corr] = ",mean(stat_CapDistVsTime_LF$corr))
+message("E[DF corr] = ",mean(stat_CapDistVsTime_DF$corr))
+
+
+## Use BootStrap Library 
+boot(cbind(DistanceToPrey=datCapture_NL$DistanceToPrey,CaptureSpeed=datCapture_NL$CaptureSpeed),R=1000,sim="ordinary",statistic=cor)
+
+##Correlation Tests
+##Note that Pearsons Assumes these are independent 
+corrDistTime_NF <- cor.test(datCapture_NL$DistanceToPrey,datCapture_NL$FramesToHitPrey/G_APPROXFPS,alternative="greater",method = "spearman")
+corrDistTime_LF <- cor.test(datCapture_LL$DistanceToPrey,datCapture_LL$FramesToHitPrey/G_APPROXFPS,alternative="greater",method = "spearman")
+corrDistTime_DF <- cor.test(datCapture_DL$DistanceToPrey,datCapture_DL$FramesToHitPrey/G_APPROXFPS,alternative="greater",method = "spearman")
+
+message("Spearman Corr Test: NF corr is > 0 p=",corrDistTime_NF$p.value )
+message("Spearman Corr Test: LF corr is > 0 p=",corrDistTime_LF$p.value ) ##*** Significant
+message("Spearman Corr Test: DF corr is > 0 p=",corrDistTime_DF$p.value )
+
+message("Calculate Probabilities and Significance (Prob Of Rejecting Alternative Hypothesis)")
+message("NF correlation mean is NOT zero ***p=", t.test(stat_CapDistVsTime_NF$corr,alternative = "two.sided")["p.value"] )
+message("LF correlation mean is NOT zero ***p=", t.test(stat_CapDistVsTime_LF$corr,alternative = "two.sided")["p.value"] )
+message("DF correlation mean is not zero ***p=", t.test(stat_CapDistVsTime_DF$corr,alternative = "two.sided")["p.value"] )
+message("NF is less than DF  ***p=", t.test(stat_CapDistVsTime_DF$corr,stat_CapDistVsTime_NF$corr,alternative = "greater")["p.value"] )
+
+message("Estimate Probabilities")
+stat_CapDistVsTime_LFvsNF <- stat_CapDistVsTime_LF$corr-stat_CapDistVsTime_NF$corr
+stat_CapDistVsTime_LFvsDF <- stat_CapDistVsTime_LF$corr-stat_CapDistVsTime_DF$corr
+stat_CapDistVsTime_NFvsDF <- stat_CapDistVsTime_NF$corr-stat_CapDistVsTime_DF$corr
+message("P[NF > 0] =", NROW(stat_CapDistVsTime_NF$corr[stat_CapDistVsTime_NF$corr > 0 ])/NROW(stat_CapDistVsTime_NF$corr))
+message("P[LF > 0] =", NROW(stat_CapDistVsTime_LF$corr[stat_CapDistVsTime_LF$corr > 0 ])/NROW(stat_CapDistVsTime_LF$corr))
+message("P[DF > 0] =", NROW(stat_CapDistVsTime_DF$corr[stat_CapDistVsTime_DF$corr > 0 ])/NROW(stat_CapDistVsTime_DF$corr))
+
+message("P[LF < NF] =", NROW(stat_CapDistVsTime_LFvsNF[stat_CapDistVsTime_LFvsNF < 0 ])/NROW(stat_CapDistVsTime_LFvsNF))
+message("P[LF < DF] =", NROW(stat_CapDistVsTime_LFvsDF[stat_CapDistVsTime_LFvsDF < 0 ])/NROW(stat_CapDistVsTime_LFvsDF))
+message("P[NF < DF] =", NROW(stat_CapDistVsTime_NFvsDF[stat_CapDistVsTime_NFvsDF < 0 ])/NROW(stat_CapDistVsTime_NFvsDF))
+
+message("LF < DF **p=", t.test(stat_CapDistVsTime_LF$corr,stat_CapDistVsTime_DF$corr,alternative = "less")["p.value"])
+message("LF < NF **p=", t.test(stat_CapDistVsTime_LF$corr,stat_CapDistVsTime_NF$corr,alternative = "less")["p.value"])
+
+
+###
 ##############Clustered  Capture Speed Vs Turn Ratio #### 
 #### GGPLOT VERSION ###
 

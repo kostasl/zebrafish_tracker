@@ -102,9 +102,8 @@ hist(stat_Cap_DF$entropy_X,xlim=c(1,4),col=colourL[3], breaks=bkSeq,add=TRUE )
 ### DENSITIES ####
 pBw <- 0.02
 
-
 # Plot Fast_Cluster Speed Vs Distance Correlation - bootstraped Stat ##
-strPlotName = paste(strPlotExportPath,"/stat/fig5S2_statbootstrap_correlationFastClust_SpeedVsDistance.pdf",sep="")
+strPlotName = paste(strPlotExportPath,"/stat/fig4S1_statbootstrap_correlationFastClust_SpeedVsDistance.pdf",sep="")
 pdf(strPlotName,width=7,height=7,title="Correlations In Speed/Distance Fast cluster capture data ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
   par(mar = c(3.9,4.7,1,1))
 
@@ -296,12 +295,12 @@ smethod <- "spearman"
   datCapture_LL_clust <- datCapture_LL[datCapture_LL$Cluster == "fast",]#datCapture_LL# 
   datCapture_DL_clust <- datCapture_DL[datCapture_DL$Cluster == "fast",] #datCapture_DL# 
   
-  stat_CapDistVsTime_NF <- bootStrap_stat(datCapture_NL_clust$DistanceToPrey,datCapture_NL_clust$FramesToHitPrey/G_APPROXFPS,1000,XRange,YRange,"spearman")
-  stat_CapDistVsTime_LF <- bootStrap_stat(datCapture_LL_clust$DistanceToPrey,datCapture_LL_clust$FramesToHitPrey/G_APPROXFPS,1000,XRange,YRange,"spearman")
-  stat_CapDistVsTime_DF <- bootStrap_stat(datCapture_DL_clust$DistanceToPrey,datCapture_DL_clust$FramesToHitPrey/G_APPROXFPS,1000,XRange,YRange,"spearman")
+  stat_CapDistVsTime_NF <- bootStrap_stat(datCapture_NL_clust$DistanceToPrey,datCapture_NL_clust$FramesToHitPrey/G_APPROXFPS,10000,XRange,YRange,"spearman")
+  stat_CapDistVsTime_LF <- bootStrap_stat(datCapture_LL_clust$DistanceToPrey,datCapture_LL_clust$FramesToHitPrey/G_APPROXFPS,10000,XRange,YRange,"spearman")
+  stat_CapDistVsTime_DF <- bootStrap_stat(datCapture_DL_clust$DistanceToPrey,datCapture_DL_clust$FramesToHitPrey/G_APPROXFPS,10000,XRange,YRange,"spearman")
   
   # Plot Speed Vs Distance Correlation - bootstraped Stat ##
-strPlotName = paste(strPlotExportPath,"/stat/fig5_statbootstrap_corrSpearman_DistanceVsTimeToPrey_fastCluster.pdf",sep="")
+strPlotName = paste(strPlotExportPath,"/stat/fig4I_statbootstrap_corrSpearman_DistanceVsTimeToPrey_fastCluster.pdf",sep="")
 pdf(strPlotName,width=7,height=7,title="Correlations In between Distance And Number of Frames to Get to Prey For Fast Capture swims ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
   par(mar = c(3.9,4.7,1,1))
   
@@ -315,7 +314,7 @@ pdf(strPlotName,width=7,height=7,title="Correlations In between Distance And Num
   #                    bquote(LF ~ '' ),
   #                    bquote(DF ~ '' )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
   #         col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
-  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of capture speed to prey distance  ") ))
+  mtext(side = 1,cex=cex,cex.main=cex, line = lineXAxis, expression(paste("Correlation of time to hit prey and distance") ))
   mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
   
 dev.off()

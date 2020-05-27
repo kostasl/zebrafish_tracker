@@ -298,9 +298,9 @@ dDLb_rho_fast <-density(tail(draw_DF$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 #dALLb_rho <-density(tail(draw_ALL$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 ##dALLb_rho[[2]] <-density(tail(draw_ALL$rho[2,,1],ntail),kernel="gaussian",bw=0.05)
 
-dLLb_rho <-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
-dNLb_rho <-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
-dDLb_rho <-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=0.1)
+dLLb_rho <-density(tail(draw_LF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
+dNLb_rho <-density(tail(draw_NF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
+dDLb_rho <-density(tail(draw_DF$rho[,,1],ntail),kernel="gaussian",bw=0.05)
 #dALLb_rho[[2]]<-density(tail(draw_ALL$rho[1,,1],ntail),kernel="gaussian",bw=0.1)
 
 
@@ -561,7 +561,7 @@ mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
 
 
   
-  ## Plot the COVARIANCE ##
+#### plot Model COVARIANCE For Each Cluster ####
   pdf(file= paste(strPlotExportPath,strModelCoVarPDFFilename,sep=""),width=14,height=7,
       title="A statistical model for Covariance of Capture speed to Distance to prey")
   
@@ -604,6 +604,9 @@ mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,p
   mtext("B",at="topleft",side=2,col="black",font=2,las=las,line=line,padj=-18,adj=adj,cex=cex)
   
 dev.off()
+
+
+
 
 
 

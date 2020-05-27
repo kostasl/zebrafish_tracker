@@ -17,14 +17,23 @@ source("TrackerDataFilesImport_lib.r")
 source("HuntingEventAnalysis_lib.r")
 
 
+## Extract from RJags Draws the Number of HuntEvents per Larva
+getHuntEventCountPerLarva <- function(drawG,ntail)
+{
+  maxIdx <- head(which(drawG$Lid == max(drawG$Lid) ),1 )
+  tblEventPerLarva <- table(drawG$Lid[1:maxIdx])
+  nLarv <- NROW(drawG$mu[,1,1,])
+  vHuntEventCount <- c(tblEventPerLarva, rep(0,nLarv-NROW(tblEventPerLarva)))  
+  
+  return(vHuntEventCount)
+}
 
 ## Returns estaimes of each larvae behaviour from the Model
 ## Added Estimates Of Covariance 
-getEstimatesPerLarva <- function(drawG,stail)
+getEstimatesPerLarva <- function(drawG,stail=500)
 {
   ##Find perdio of  pattern of LarvaId / So we can infer hunt events per larva
-  maxIdx <- head(which(drawG$Lid == max(drawG$Lid) ),1 )
-  tblEventPerLarva <- table(drawG$Lid[1:maxIdx])
+  vHuntEventCount <- getHuntEventCountPerLarva(drawG,stail)
   
   ldist <- list()
   lSpeed <- list()
@@ -33,6 +42,7 @@ getEstimatesPerLarva <- function(drawG,stail)
   lCovar_SpeedTurn <- list()
   lCovar_DistTurn <- list()
   nsam <- NROW(drawG$mu[1,1,,])
+  
   ##Iterate Through each Larva and get a mean estimate of behaviour according to model
   for ( i in (1:head(as.numeric(drawG$NLarv),1)) )
   {
@@ -57,8 +67,9 @@ getEstimatesPerLarva <- function(drawG,stail)
   Covar_SpeedDist <- unlist(lapply(lCovar_SpeedDist,mean) ) 
   Covar_SpeedTurn <- unlist(lapply(lCovar_SpeedTurn,mean) ) 
   Covar_DistTurn <- unlist(lapply(lCovar_DistTurn,mean) ) 
-  return(cbind(HuntEvents=tblEventPerLarva,Undershoot=mEstTurnRatio, DistanceToPrey=mEstDistToPrey,CaptureSpeed=mEstSpeed,
-               Covar_SpeedDist,Covar_SpeedTurn,Covar_DistTurn))  
+  
+  return( cbind(HuntEvents=vHuntEventCount,Undershoot=mEstTurnRatio, DistanceToPrey=mEstDistToPrey,CaptureSpeed=mEstSpeed,
+               Covar_SpeedDist,Covar_SpeedTurn,Covar_DistTurn) )  
   
 }
 
@@ -112,15 +123,15 @@ getCov_Coeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,minEventCount=0)
   
   ##Average Over Columns/Samples - Produce Distribution of Mean Cov Of Group -  Across Samples (Vector With n mean points)
   ##What is the Members Cov On Average?Distibution of E[rho_g] = Sum(rho_i,NLarvae)/NLarvae
-  message("E[rho_g] Covar LF:",mean(apply(cov_coeff$LF,1,"mean") ) )
   message("E[rho_g] Covar NF:",mean(apply(cov_coeff$NF,1,"mean") ) )
+  message("E[rho_g] Covar LF:",mean(apply(cov_coeff$LF,1,"mean") ) )
   message("E[rho_g] Covar DF:",mean(apply(cov_coeff$DF,1,"mean") ) )
   message("Prob that we observe a positive covariance in a group :")
-  P_LFGtThanZero <- length(cov_coeff$LF[cov_coeff$NF > 0])/length(cov_coeff$LF)
-  P_NFGtThanZero <- length(cov_coeff$DF[cov_coeff$NF > 0])/length(cov_coeff$NF)
+  P_LFGtThanZero <- length(cov_coeff$LF[cov_coeff$LF > 0])/length(cov_coeff$LF)
+  P_NFGtThanZero <- length(cov_coeff$NF[cov_coeff$NF > 0])/length(cov_coeff$NF)
   P_DFGtThanZero <- length(cov_coeff$DF[cov_coeff$DF > 0])/length(cov_coeff$DF)
-  message("Prob Observe +ve covar in LF > 0 =",P_LFGtThanZero)
   message("Prob Observe +ve covar in NF > 0 =",P_NFGtThanZero)
+  message("Prob Observe +ve covar in LF > 0 =",P_LFGtThanZero)
   message("Prob Observe +ve covar in DF > 0 =",P_DFGtThanZero)
   
   message("Calculate Probabilities that *mean* covariance of group is positive : ")
@@ -138,8 +149,8 @@ getCov_Coeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,minEventCount=0)
   P_DFMeanGreaterThanZero <- length(muCovarPerSample$DF[muCovarPerSample$DF >0] )/length(muCovarPerSample$DF)
   P_LFMeanGreaterThanNF <- length(  muCovarPerSample$LFvsNF[  muCovarPerSample$LFvsNF > 0])/length(  muCovarPerSample$LFvsNF)
   P_LFMeanGreaterThanDF <- length(  muCovarPerSample$LFvsDF[  muCovarPerSample$LFvsDF > 0])/length(  muCovarPerSample$LFvsDF)
-  message("Prob Mean group covar LF > 0= ",P_LFMeanGreaterThanZero)
   message("Prob Mean group covar NF > 0= ",P_NFMeanGreaterThanZero)
+  message("Prob Mean group covar LF > 0= ",P_LFMeanGreaterThanZero)
   message("Prob Mean group covar DF > 0= ",P_DFMeanGreaterThanZero)
   message("Prob Mean group covar LF > NF= ",P_LFMeanGreaterThanNF)
   message("Prob Mean group covar DF > LF= ",1-P_LFMeanGreaterThanDF)
@@ -255,6 +266,13 @@ plotCovar_SpeedVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
   nLF <- dim(cov_coeff$LF)[1]
   nDF <- dim(cov_coeff$DF)[1]
   
+  ##Find perdio of  pattern of LarvaId / So we can infer hunt events per larva
+  tblEventPerLarva <- list()
+  tblEventPerLarva$LF <- getHuntEventCountPerLarva(draw_LF,ntail)
+  tblEventPerLarva$DF <- getHuntEventCountPerLarva(draw_DF,ntail)
+  tblEventPerLarva$NF <- getHuntEventCountPerLarva(draw_NF,ntail)
+  
+  
   legend("topleft",
          legend=c(  expression (),
                     bquote(NF[""] ~'/'~.(nNF)),
@@ -268,14 +286,17 @@ plotCovar_SpeedVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
   
   ## plot ecdf / with Confidence Interval About Mean (SEM)
   par(mar = c(6.9,5.0,4.5,1))
-  plotECDF_withCI(cov_coeff_SpeedTurnRatio$LF,lModelEst_LF[,"HuntEvents"],colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE)
+  message("LF")
+  plotECDF_withCI(cov_coeff_SpeedTurnRatio$LF,tblEventPerLarva$LF,colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE,CutOffThres=0.1)
   mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
   mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
   ####       BOTTOM,LEFT,TOP,RIGHT
   #par(mar = c(6.9,2.5,4.5,1))
-  plotECDF_withCI(cov_coeff_SpeedTurnRatio$NF,lModelEst_NF[,"HuntEvents"],colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
+  message("NF")
+  plotECDF_withCI(cov_coeff_SpeedTurnRatio$NF,tblEventPerLarva$NF,colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE,CutOffThres=0.1)
   mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Covariance of turn-ratio to capture speed per larva" ) )  )
-  plotECDF_withCI(cov_coeff_SpeedTurnRatio$DF,lModelEst_DF[,"HuntEvents"],colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
+  message("DF")
+  plotECDF_withCI(cov_coeff_SpeedTurnRatio$DF,tblEventPerLarva$DF,colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE,CutOffThres=0.1)
   
   
   
@@ -325,6 +346,15 @@ plotCovar_SpeedVsDistance <- function(draw_LF,draw_NF,draw_DF,ntail)
   nLF <- dim(cov_coeff$LF)[1]
   nDF <- dim(cov_coeff$DF)[1]
   
+  ##Find perdio of  pattern of LarvaId / So we can infer hunt events per larva
+  maxIdx <- head(which(draw_LF$Lid == max(draw_LF$Lid) ),1 )
+  tblEventPerLarva <- list()
+  tblEventPerLarva$LF <- table(draw_LF$Lid[1:maxIdx])
+  maxIdx <- head(which(draw_DF$Lid == max(draw_DF$Lid) ),1 )
+  tblEventPerLarva$DF <- table(draw_DF$Lid[1:maxIdx])
+  maxIdx <- head(which(draw_NF$Lid == max(draw_NF$Lid) ),1 )
+  tblEventPerLarva$NF <- table(draw_NF$Lid[1:maxIdx])
+  
   legend("topleft",
          legend=c(  expression (),
                     bquote(NF[""] ~'/'~.(nNF)),
@@ -347,13 +377,15 @@ plotCovar_SpeedVsDistance <- function(draw_LF,draw_NF,draw_DF,ntail)
   
   par(mar = c(6.9,5.0,4.5,1))
   ## plot ecdf / with Confidence Interval About Mean (SEM)
-  plotECDF_withCI(cov_coeff$LF,lModelEst_LF[,"HuntEvents"],colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE)
+  message("LF")
+  plotECDF_withCI(cov_coeff$LF,tblEventPerLarva$LF,colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE)
   mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
   mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
-  
-  plotECDF_withCI(cov_coeff$NF,lModelEst_NF[,"HuntEvents"],colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
+  message("NF")
+  plotECDF_withCI(cov_coeff$NF,tblEventPerLarva$NF,colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
   mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Larva covariance of capture speed to distance " ) )  )
-  plotECDF_withCI(cov_coeff$DF,lModelEst_DF[,"HuntEvents"],colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
+  message("DF")
+  plotECDF_withCI(cov_coeff$DF,tblEventPerLarva$DF,colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
   
   
   
@@ -399,6 +431,16 @@ plotCovar_DistanceVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
   nLF <- dim(cov_coeff_TurnRatio$LF)[1]
   nDF <- dim(cov_coeff_TurnRatio$DF)[1]
   
+  
+  ##Find perdio of  pattern of LarvaId / So we can infer hunt events per larva
+  maxIdx <- head(which(draw_LF$Lid == max(draw_LF$Lid) ),1 )
+  tblEventPerLarva <- list()
+  tblEventPerLarva$LF <- table(draw_LF$Lid[1:maxIdx])
+  maxIdx <- head(which(draw_DF$Lid == max(draw_DF$Lid) ),1 )
+  tblEventPerLarva$DF <- table(draw_DF$Lid[1:maxIdx])
+  maxIdx <- head(which(draw_NF$Lid == max(draw_NF$Lid) ),1 )
+  tblEventPerLarva$NF <- table(draw_NF$Lid[1:maxIdx])
+  
   legend("topleft",
          legend=c(  expression (),
                     bquote(NF[""] ~'/'~.(nNF)),
@@ -412,13 +454,15 @@ plotCovar_DistanceVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
   ## plot ecdf
   par(mar = c(6.9,5.0,4.5,1))
   ## plot ecdf / with Confidence Interval About Mean (SEM)
-  plotECDF_withCI(cov_coeff_TurnRatio$LF,lModelEst_LF[,"HuntEvents"],colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE)
+  message("LF")
+  plotECDF_withCI(cov_coeff_TurnRatio$LF,tblEventPerLarva$LF,colourLegL[2],pchL[4],colourHLine[2],NewPlot=TRUE)
   mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Cumulative function") )
   mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
-  
-  plotECDF_withCI(cov_coeff_TurnRatio$NF,lModelEst_NF[,"HuntEvents"],colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
+  message("NF")
+  plotECDF_withCI(cov_coeff_TurnRatio$NF,tblEventPerLarva$NF,colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
   mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Larva covariance of capture distance to turn-ratio " ) )  )
-  plotECDF_withCI(cov_coeff_TurnRatio$DF,lModelEst_DF[,"HuntEvents"],colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
+  message("DF")
+  plotECDF_withCI(cov_coeff_TurnRatio$DF,tblEventPerLarva$DF,colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
   
   nNF <- dim(cov_coeff_TurnRatio$NF)[1]
   nLF <- dim(cov_coeff_TurnRatio$LF)[1]
@@ -499,26 +543,40 @@ plotModelCovCoeff <- function(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,minEventCount=
 ## Plots ECDF Of Estimated Covariance Values Per Larva, Along with a shaded area of Confidence - Using SD/NEvents Per Larva
 # The e.c.d.f. (empirical cumulative distribution function) Fn is a step function with jumps i/n at observation 
 # values, where i is the number of tied observations at that value.
-plotECDF_withCI <- function(cov_coeff,NEventsPerEstimate,colourPoint,pCh=1,colourShade,NewPlot=FALSE,minHEvents=0)
+plotECDF_withCI <- function(cov_coeff,NEventsPerEstimate,colourPoint,pCh=1,colourShade,NewPlot=FALSE,minHEvents=0,CutOffThres=0.1)
 {
 
-  
   ## plot ecdf / with Confidence Interval About Mean (SEM)
+  meanCovarEst <- apply(cov_coeff,1,"mean")
   if (NewPlot)
-    plot(ecdf(apply(cov_coeff,1,"mean")),col=colourPoint,main=NA,pch=pCh,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,xlim=c(-1,1) )
-  edcdf_covar_SemH <- ecdf( apply(cov_coeff,1,"mean") + apply(cov_coeff,1,"sd")/sqrt(NEventsPerEstimate) )
-  edcdf_covar_SemL <- ecdf(apply(cov_coeff,1,"mean") - apply(cov_coeff,1,"sd")/sqrt(NEventsPerEstimate) )
+    plot(ecdf(meanCovarEst),col=colourPoint,main=NA,pch=pCh,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,xlim=c(-1,1) )
+  ##Get Bounded SD Confidence intervals
+  edcdf_covar_SemH <- ecdf( sapply(meanCovarEst +  1.0*apply(cov_coeff,1,"sd"),min,1 ) )  ##/sqrt(NEventsPerEstimate)
+  edcdf_covar_SemL <- ecdf( sapply( meanCovarEst - 1.0*apply(cov_coeff,1,"sd"),max,-1 ) )  ##/sqrt(NEventsPerEstimate)
   # the unique data values (if there were no ties)
   xxH <- knots(edcdf_covar_SemH);  xxL <- knots(edcdf_covar_SemL) 
   ##Join Shaded Areas to Show Std Error About Mean
   X0 <- c(rev(xxH),xxL)
   Y0 <- c( edcdf_covar_SemH(rev(xxH) ), edcdf_covar_SemL(xxL) )
   polygon(X0,Y0,col=colourShade,border=colourPoint)
-  lines(ecdf(apply(cov_coeff,1,"mean")),col=colourPoint,main=NA,pch=pCh,xlab=NA,ylab=NA,cex=cex,cex.axis=cex)
+  lines(ecdf(meanCovarEst),col=colourPoint,main=NA,pch=pCh,xlab=NA,ylab=NA,cex=cex,cex.axis=cex)
   #lines(edcdf_covar_SemL,pch=pCh,cex=0.6,col=colourPoint)
   #lines(edcdf_covar_SemH,pch=pCh,cex=0.6,col=colourPoint)
+  message(" Fraction of larvae with +ve covariance > ",CutOffThres," is ",
+          NROW(meanCovarEst[meanCovarEst >CutOffThres]),"/",
+          NROW(meanCovarEst),"=",NROW(meanCovarEst[meanCovarEst >CutOffThres])/NROW(meanCovarEst))
+  
+  message(" Fraction of larvae with -ve covariance < -",CutOffThres," is ",
+          NROW(meanCovarEst[meanCovarEst < -CutOffThres]),"/",
+          NROW(meanCovarEst),"=",NROW(meanCovarEst[meanCovarEst < -CutOffThres])/NROW(meanCovarEst))
   
   
+  ##Estimate Probability of finding larva with positive covariance
+  message("Conditioned on larva with ",minHEvents," capture events")
+  IdxLarvaWithEvents <- which(NEventsPerEstimate > minHEvents)
+  message("Prob of finding larva with Covar > ",CutOffThres, " = ",  NROW(cov_coeff[cov_coeff[IdxLarvaWithEvents,,] > CutOffThres])/NROW(cov_coeff[cov_coeff[IdxLarvaWithEvents,,] > -2]) )
+  message("Prob of finding larva with Covar < -",CutOffThres, " = ",  NROW(cov_coeff[cov_coeff[IdxLarvaWithEvents,,] < -CutOffThres])/NROW(cov_coeff[cov_coeff[IdxLarvaWithEvents,,] < 2]) )
+
 }
 
 ##  3D Gaussian Hierarchical  Model of Larvae Hunt Behaviour for (N=60) larva, given k Data points of capture swims
@@ -591,7 +649,12 @@ strModelCovarPDFFileName <- "/stat/fig7-stat_modelCaptureSpeedVsUndershootAndDis
 
 
 ### Load PreCalculated Model Results ###
-load(paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouModel_RJags.RData"))
+load(file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouMode_All60_CapturesOnly_RJags.RData"))
+
+lModelEst_LF <- getEstimatesPerLarva(draw_LF,ntail)
+lModelEst_NF <- getEstimatesPerLarva(draw_NF,ntail)
+lModelEst_DF <- getEstimatesPerLarva(draw_DF,ntail)
+
 
 datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds","",sep="") ) ## THis is the Processed Register File On 
 #lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
@@ -811,15 +874,12 @@ save(datHunterStat_Model,file = paste0(strDataExportDir,"stat_Larval3DGaussianBe
 ### Obtain Estimated Mean Values For Each Larva & Plot Group Population
 ## Plot Distance Density
 plot(density(sapply(tail(draw_LF$mu[,3,,],stail),mean)),col=colourLegL[2],lty=1 ,lwd=3,main="Distance to Prey Group Post. Vs Mean Larv. post.",ylim=c(0,6)) ##Mean Group Undershoot From Mean Of Each Larva
-lModelEst_LF <- getEstimatesPerLarva(draw_LF,stail)
 lines(density( unlist(lapply(lModelEst_LF[,"DistanceToPrey"],mean) ) ),lty=2,col=colourLegL[2],lwd=2 )
 
 lines(density(sapply(tail(draw_NF$mu[,3,,],stail),mean)),col=colourLegL[1] ,lty=1 ,lwd=3) ##Mean Group Undershoot From Mean Of Each Larva
-lModelEst_NF <- getEstimatesPerLarva(draw_NF,stail)
 lines(density( unlist(lapply(lModelEst_NF[,"DistanceToPrey"],mean) ) ),col=colourLegL[1],lty=2,lwd=2 )
 
 lines(density(sapply(tail(draw_DF$mu[,3,,],stail) ,mean)),col=colourLegL[3] ,lty=1,lwd=3) ##Mean Group Undershoot From Mean Of Each Larva
-lModelEst_DF <- getEstimatesPerLarva(draw_DF,stail)
 lines(density( unlist(lapply(lModelEst_DF[,"DistanceToPrey"],mean) ) ),col=colourLegL[3],lty=2,lwd=2 )
 
 ## Plot Model Speed Density
@@ -855,6 +915,7 @@ message("Prob that LF Capt Speed > DF: ",prettyNum(PCapSpeed_LFgtDF,digits=3))
 message("Prob that DF Capt Speed > NF: ",prettyNum(PCapSpeed_DFgtNF,digits=3))
 
 ## Turn Ratio ##
+drawTurnRatioLF     <- tail(draw_LF$muG[,1,,],stail)
 drawTurnRatioLFVsNF <- tail(draw_LF$muG[,1,,],stail)-tail(draw_NF$muG[,1,,],stail)
 drawTurnRatioLFVsDF <- tail(draw_LF$muG[,1,,],stail)-tail(draw_DF$muG[,1,,],stail)
 drawTurnRatioNFVsDF <- tail(draw_NF$muG[,1,,],stail)-tail(draw_DF$muG[,1,,],stail)
@@ -867,10 +928,13 @@ message("Mean diff TurRatio LF-DF:",prettyNum( mean(drawTurnRatioLFVsDF),digits=
 message("Mean diff TurRatio NF-DF:",prettyNum( mean(drawTurnRatioNFVsDF),digits=3) )
 
 ## Prob - Diff in Turnration -ve means Higher Undershoot For LF
+PUndershoot_LF <- length(drawTurnRatioLFVsNF[drawTurnRatioLFVsNF < 0])/length(drawTurnRatioLFVsNF) ## ProbValLessThan(dLLbVsNF,0)
 PUndershoot_LFgtNF <- length(drawTurnRatioLFVsNF[drawTurnRatioLFVsNF < 0])/length(drawTurnRatioLFVsNF) ## ProbValLessThan(dLLbVsNF,0)
 PUndershoot_LFgtDF <- length(drawTurnRatioLFVsDF[drawTurnRatioLFVsDF < 0])/length(drawTurnRatioLFVsDF) ## ProbValLessThan(dLLbVsNF,0)
 PUndershoot_DFgtNF <- 1-length(drawTurnRatioNFVsDF[drawTurnRatioNFVsDF < 0])/length(drawTurnRatioNFVsDF) ## ProbValLessThan(dLLbVsNF,0)
 
+
+message("Prob that LF TURN Ration < 1: ",prettyNum(length(drawTurnRatioLF[drawTurnRatioLF < 1])/length(drawTurnRatioLF),digits=3))
 message("Prob that LF Undershoot > NF: ",prettyNum(PUndershoot_LFgtNF,digits=3))
 message("Prob that LF Undershoot > DF: ",prettyNum(PUndershoot_LFgtDF,digits=3))
 message("Prob that DF Undershoot > NF: ",prettyNum(PUndershoot_DFgtNF,digits=3))
@@ -930,6 +994,7 @@ for (i in 2:nchains)
 #### MAIN COVARIANCE PLOT  ##
 #### COVARIANCE PLOTS OVER ALL Capture Bouts Fast/Slow ####
 load(file = paste0(strDataExportDir,"stat_Larval3DGaussianBehaviouMode_All60_CapturesOnly_RJags.RData"))
+ntail <- 1200 
 
 ## Turn-Ratio(1)xSpeed(2) Covariance Coeff: Calc as rho=Cij/(sigmai*sigmaj)
 pdf(file= paste0(strPlotExportPath,"/stat/stat_3dmodel_SpeedVsTurn_Covar.pdf"),width=14,height=7,

@@ -31,6 +31,7 @@ library(RColorBrewer);
 library("MASS");
 library(extrafont) ##For Font Embdedding in PDF, Run import_fonts() after install
 library(here)
+library(boot)
 #library(data.table) ##Required for rBindList
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
