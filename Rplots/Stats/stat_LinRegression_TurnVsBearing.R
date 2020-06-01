@@ -248,7 +248,7 @@ dDatDLb<-density(gammaDL,kernel="gaussian",bw=pBw)
   ### MAIN FIGURE ############
   
   ################################  
-pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_SetC2.pdf",sep="")
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_SetC2.pdf",sep="")
     ,width=7,height=7,
     title="First Turn To prey / Undershoot Ratio")
   
@@ -312,7 +312,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_SetC
   
 dev.off()  
 
-pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_Density.pdf",sep=""),
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_Density.pdf",sep=""),
     width=7,height=7,
     title="First Turn To prey / Undershoot Ratio - Posterior Density")
   par(mar = c(4.2,4.8,1.1,1))
@@ -335,7 +335,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_Dens
                     bquote(LF["e"] ~ '#' ~ .(NROW(datTurnVsPreyLL[,"Turn"]))  ),
                     bquote(DF["e"] ~ '#' ~ .(NROW(datTurnVsPreyDL[,"Turn"]))  )  ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
          col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated turn ratio ",(gamma) ) ))
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated mean turn-ratio (",gamma,")" ) ))
   mtext(side = 2,cex=cex, line = lineAxis, expression("Density function") )
  # mtext("D",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
   
@@ -348,7 +348,7 @@ dev.off()
 ### Individually Plotted Turn Ratios With   ##
 ## With COFINDENCE Intervals 5%             ##
 ##############################################
-pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_DF.pdf",sep="")
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_DF.pdf",sep="")
     ,width=7,height=7,
     title="First Turn To prey / Undershoot Ratio Dry Fed Group")
   
@@ -389,7 +389,7 @@ pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_DF.p
 dev.off()
 
 
-pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_NF.pdf",sep="")
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_NF.pdf",sep="")
     ,width=7,height=7,
     title="First Turn To prey / Undershoot Ratio NOT Fed Group")
 
@@ -431,7 +431,7 @@ mtext(side = 2,cex=cex, line = lineAxis, expression("Turn to prey ("~phi^degree~
 dev.off()
 
 
-pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_LF.pdf",sep="")
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_LF.pdf",sep="")
     ,width=7,height=7,
     title="First Turn To prey / Undershoot Ratio Live Fed Group")
   
@@ -678,7 +678,7 @@ dev.off()
 ####
 ## LF Only for MM grant proposal 
 
-pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_SetC2_LF.pdf",sep="")
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_SetC2_LF.pdf",sep="")
     ,width=7,height=7,
     title="First Turn To prey / Undershoot Ratio")
 
@@ -721,7 +721,7 @@ legend("topleft",
 
 dev.off()  
 
-pdf(file= paste(strPlotExportPath,"/stat/fig4_stat_UndershootLinRegressions_Density_LF.pdf",sep=""),
+pdf(file= paste(strPlotExportPath,"/stat/fig5_stat_UndershootLinRegressions_Density_LF.pdf",sep=""),
     width=7,height=7,
     title="First Turn To prey / Undershoot Ratio - Posterior Density")
 par(mar = c(4.2,4.8,1.1,1))
