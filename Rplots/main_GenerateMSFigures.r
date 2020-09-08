@@ -163,15 +163,29 @@ datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB)
 ## Bootstrap correlation Analysis - Hunt Power Against Development/Nutrition Measured from Larval Std. Length
 ## Save To summary Stat Output - Used By generate figure 
 datSuccessVsSize <- readRDS(file= paste(strDataExportDir,"/FishLengthVsHuntSuccess.rds",sep=""))
-#\Todo Loaded Structure datSuccessVsSize - Is not how it is expected below 
+#\Loaded Structure datSuccessVsSize - Simplify Group Calls
+datSuccessVsSize.NF <- datSuccessVsSize[datSuccessVsSize$groupID.y =="NL",]
+datSuccessVsSize.LF <- datSuccessVsSize[datSuccessVsSize$groupID.y =="LL",]
+datSuccessVsSize.DF <- datSuccessVsSize[datSuccessVsSize$groupID.y =="DL",]
 
+#
+datexp_SuccessVsSize<-datSuccessVsSize[,c(1,2,5,10,11,13,14)]
+names(datexp_SuccessVsSize)[1] <- "expID"
+names(datexp_SuccessVsSize)[2] <- "Length_mm"
+datexp_SuccessVsSize[,2] <- datexp_SuccessVsSize[,2]*DIM_MMPERPX
+write.csv(datexp_SuccessVsSize,file= paste(strDataExportDir,"/fig3S1_LengthVsHuntSuccess.csv",sep=""))
+
+#\Loaded Structure datSuccessVsSize - Simplify Group Calls
+dSuccessVsSize.NF <- datexp_SuccessVsSize[datexp_SuccessVsSize$groupID.y =="NL",]
+dSuccessVsSize.LF <- datexp_SuccessVsSize[datexp_SuccessVsSize$groupID.y =="LL",]
+dSuccessVsSize.DF <- datexp_SuccessVsSize[datexp_SuccessVsSize$groupID.y =="DL",]
 
 XRange <- c(3.9,5)
 YRange <- c(0,5)
 pBw <- 0.05
-stat_SizeVsHuntPower_NF <- bootStrap_stat(datSuccessVsSize.NF$Lengthmm,datSuccessVsSize.NF$HuntPower,1000,XRange,YRange,"spearman")
-stat_SizeVsHuntPower_LF <- bootStrap_stat(datSuccessVsSize.LF$Lengthmm,datSuccessVsSize.LF$HuntPower,1000,XRange,YRange,"spearman")
-stat_SizeVsHuntPower_DF <- bootStrap_stat(datSuccessVsSize.DF$Lengthmm,datSuccessVsSize.DF$HuntPower,1000,XRange,YRange,"spearman")
+stat_SizeVsHuntPower_NF <- bootStrap_stat(dSuccessVsSize.NF$Length_mm,dSuccessVsSize.NF$HuntPower,1000,XRange,YRange,"spearman")
+stat_SizeVsHuntPower_LF <- bootStrap_stat(dSuccessVsSize.LF$Length_mm,dSuccessVsSize.LF$HuntPower,1000,XRange,YRange,"spearman")
+stat_SizeVsHuntPower_DF <- bootStrap_stat(dSuccessVsSize.DF$Length_mm,dSuccessVsSize.DF$HuntPower,1000,XRange,YRange,"spearman")
 
 pdf(paste0(strPlotExportPath,"/stat/fig3S1_stat_LarvalLengthsToHPI_Correlation.pdf"),width=7,height=7,title="Correlation Larval size to Hunt Success (HPI) ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
     par(mar = c(3.9,4.7,1,1))
@@ -184,14 +198,21 @@ pdf(paste0(strPlotExportPath,"/stat/fig3S1_stat_LarvalLengthsToHPI_Correlation.p
     mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
     
     
-    legend("topright",   legend=c( paste0("NF # ",  NROW(datSuccessVsSize.NF$expID) ),
-                                   paste0("LF # " , NROW(datSuccessVsSize.LF$expID) ),
-                                   paste0("DF # " , NROW(datSuccessVsSize.DF$expID) )
+    legend("topright",   legend=c( paste0("NF # ",  NROW(dSuccessVsSize.NF$expID) ),
+                                   paste0("LF # " , NROW(dSuccessVsSize.LF$expID) ),
+                                   paste0("DF # " , NROW(dSuccessVsSize.DF$expID) )
     ), ##paste(c("DL n=","LL n=","NL n="),c(NROW(lFirstBoutPoints[["DL"]][,1]),NROW(lFirstBoutPoints[["LL"]][,1]) ,NROW(lFirstBoutPoints[["NL"]][,1] ) ) )
     col=colourLegL,lty=c(1,2,3),lwd=3,cex=cex)
 dev.off() 
 
+### Add Stat Test ###
+message("LF Corr of Larval Size to Hunting Ability Is +ve")
+t.test(stat_SizeVsHuntPower_LF$corr,alternative=c("greater"),paired=FALSE ) # "two.sided"
+t.test(stat_SizeVsHuntPower_NF$corr,alternative=c("greater"),paired=FALSE ) # "two.sided"
+t.test(stat_SizeVsHuntPower_DF$corr,alternative=c("greater"),paired=FALSE ) # "two.sided"
 
+
+t.test(stat_SizeVsHuntPower_LF$corr,stat_Cap_fast_DF$corr,alternative=c("greater"),paired=FALSE ) # "two.sided"
 
 #### Fig 4 Supplemental - Covariance ####
 nSamples <- 10000
@@ -207,15 +228,26 @@ stat_Cap_fast_DF <- bootStrap_stat(datCapture_DL[datCapture_DL$Cluster == "fast"
 ## Fast CLuster Covariance
 
 ntail <- 700
+
 # Plot Fast_Cluster Speed Vs Distance Correlation - bootstraped Stat ##
 dLLb_rho_fast <-density(fastClusterCovarSamples$LF,kernel="gaussian",bw=0.05)
 dNLb_rho_fast <-density(fastClusterCovarSamples$NF,kernel="gaussian",bw=0.05)
 dDLb_rho_fast <-density(fastClusterCovarSamples$DF,kernel="gaussian",bw=0.05)
 
+
 strPlotName = paste(strPlotExportPath,"/stat/fig4S1_FastClust_SpeedVsDistanceCovar.pdf",sep="")
 pdf(strPlotName,width=14,height=7,
     title="Esimating Covariance of capture Speed-Distance in fast capture swims / A.Model Cluster B.Bootstrap Correlation    ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
-  
+
+outer = FALSE
+line = 1 ## SubFig Label Params
+lineAxis = 2.4
+lineXAxis = 3.0
+cex = 1.4
+adj  = 3.5
+padj <- -16.0
+las <- 1
+
   ##Margin: (Bottom,Left,Top,Right )
   par(mar = c(3.9,4.7,1,1))
   pBw <- 0.01

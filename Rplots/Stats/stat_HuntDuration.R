@@ -482,6 +482,10 @@ densEpiDur_LL <- density(muEpiDur_LL,bw=pBW)
 densEpiDur_DL <- density(muEpiDur_DL,bw=pBW)
 
 
+##Calc Probablity of LF duration being shorter
+message("Calculate prob of LF hunt EPISODE duration being shorter")
+## Add Calc Here
+
 ## MAIN PLOT ###
 #### HUNT EVENT PER LARVA PLOT #####
 ## Comprehensive Plot On Number of Hunt Events

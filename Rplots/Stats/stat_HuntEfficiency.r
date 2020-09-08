@@ -358,7 +358,7 @@ pdf(strPlotName,width=plotWidthIn,height=7, #14*2/3
   
   ##Margin: (Bottom,Left,Top,Right )
   par(mar = c(4.2,4.7,1.1,1))
-  plotHuntEfficiencyDataCDF(datHuntLabelledEventsSB)
+  plotHuntEfficiencyDataCDF(datHuntLabelledEventsSB,showLegend = TRUE)
 
 dev.off()
 #### ##### # ## ## # # # # 

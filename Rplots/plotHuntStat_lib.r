@@ -694,7 +694,7 @@ plotHuntPowerDataCDF <- function(datHuntEventAllGroupToLabel)
   mtext(side = 1,cex=cex, line = line, expression( "Hunt power " ~ N[S]^2/(N[S]+N[F]) ,paste("") )   )
   mtext(side = 2,cex=cex, line = line, expression("Cumulative function " ))
   
-  legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+  legend("bottomright",legend=paste(c("NF #","LF #","DF #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
          col = colourLegL,pch=pchL,cex=cex+0.2)
 }
 
@@ -753,7 +753,7 @@ plotHuntEfficiencyDataCDF <- function(datHuntEventAllGroupToLabel,showLegend=FAL
   mtext(side = 2,cex=cex, line = line, expression("Cumulative function " ))
   if (showLegend) 
   {
-    legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+    legend("bottomright",legend=paste(c("NF #","LF #","DF #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
            col = colourLegL,pch=pchL,cex=cex+0.2)
   }
 }

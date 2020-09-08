@@ -50,7 +50,7 @@ message(paste(" Loading Measured fish length in pixels data ... "))
 ## The scriptlet to run the labelling process on a set of expID is found in auxFunctions.r
 datFlatPxLength <- readRDS(file= paste(strDataExportDir,"/FishLength_Updated3.rds",sep=""))
 message(paste(" Loading Measured fish length in pixels data ... "))
-
+write.csv(datFlatPxLength,file= paste(strDataExportDir,"/FishSTDLengths_AllGroups.csv",sep=""))
 
 ## Extrach the groupID - GroupName Convention we have been using 
 ## Recalc First Bout Data based on Validated Info ###
@@ -88,6 +88,12 @@ close(fileConn)
 sizemodel=jags.model(file=strModelName,data=Jagsdata,n.chains=chains);
 update(sizemodel,burn_in)
 draw=jags.samples(sizemodel,steps,thin=thin,variable.names=varnames1)
+
+
+message("Mean NF Std. Length:", mean(tail(draw$mu[which(strGroupID == "NL"),,],500) )  )
+message("Mean LF Std. Length:", mean(tail(draw$mu[which(strGroupID == "LL"),,],500) )  )
+message("Mean DF Std. Length:", mean(tail(draw$mu[which(strGroupID == "DL"),,],500) )  )
+
 
 ##
 dmodelSizeNF <- density(draw$mu[which(strGroupID == "NL"),,],bw=0.01)
