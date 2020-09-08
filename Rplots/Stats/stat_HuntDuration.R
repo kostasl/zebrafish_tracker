@@ -37,7 +37,7 @@ close(fileConn)
 modelEventDuration="model { 
 
 for(j in 1:NTOT){
-d[j] ~ dgamma(s[hidx[j]],r[hidx[j]]) #dgamma( r-shape , lambda-Rate) λ^rx^(r−1)*exp(−λx)/Gamma(r)
+d[j] ~ dgamma(s[hidx[j]],r[hidx[j]])   #dgamma( r-shape , lambda-Rate) λ^rx^(r−1)*exp(−λx)/Gamma(r)
 }
 
 ## Init Prior Per Larva ##
@@ -244,6 +244,23 @@ initLarvaHuntDurfunct <- function(nchains,N)
   return(initlist)
 }
 
+
+
+###Courtesy of https://stackoverflow.com/questions/40851328/compute-area-under-density-estimation-curve-i-e-probability
+getProbOfInterval  <- function(densEpiDur,xmin,xmax)
+{
+  #### Calculate Percentiles and Compare Results
+  xx <- densEpiDur$x  ## 512 evenly spaced points on [min(x) - 3 * d$bw, max(x) + 3 * d$bw]
+  yy <- densEpiDur$y ## 512 density values for `xx`
+  dx <- xx[2L] - xx[1L]  ## spacing / bin size
+  
+  afunct <- approxfun(xx, yy)
+  Const <- integrate(afunct, min(xx), max(xx))$value 
+  p.unscaled <- integrate(afunct, xmin, min(xmax,max(xx) ) ) $value
+  p.scaled <- p.unscaled / Const
+  
+  return(p.scaled)
+}
 
 ####### Function Returns Hunt Event Durations for Group ID, excluding events 0 (Food Count Event) 
 getHuntEventDuration <- function(datLabelled,strGroupID)
@@ -455,15 +472,17 @@ densDur_DL <- density(muHDur_DL,bw=pBW*4)
 densDur_LL <- density(muHDur_LL,bw=pBW*4)
 densDur_NL <- density(muHDur_NL,bw=pBW*4)
 
+
 ##Calc Probablity of LF duration being shorter
-message("Calculate prob of LF hunt duration being shorter")
+message("Calculate probability of LF hunt duration being shorter")
 P_LLgtNL <- length(muHDur_LLVsNL[muHDur_LLVsNL < 0])/length(muHDur_LLVsNL)
 P_LLgtDL <- length(muHDur_LLVsDL[muHDur_LLVsDL < 0])/length(muHDur_LLVsDL)
-message("LL is shorter to DL with P=",prettyNum(P_LLgtDL,digits=3)," and LL < NL:",prettyNum(P_LLgtNL,digits=3))
+message("Evoked LF is shorter to DL with P=",prettyNum(P_LLgtDL,digits=3)," and LL < NL:",prettyNum(P_LLgtNL,digits=3))
 P_LEgtNE <- length(muHDur_LEVsNE[muHDur_LEVsNE < 0])/length(muHDur_LEVsNE)
 P_LEgtDE <- length(muHDur_LEVsDE[muHDur_LEVsDE < 0])/length(muHDur_LEVsDE)
-message("LE is shorter to DE with P=",prettyNum(P_LEgtDE,digits=3)," and LE < NE:",prettyNum(P_LEgtNE,digits=3))
+message("Spontaneous LF is shorter to DF with P=",prettyNum(P_LEgtDE,digits=3)," and LF < NF:",prettyNum(P_LEgtNE,digits=3))
 
+## Model Estimated Episode Duration ##
 # These Functions Obtain nS Samples from each of the Posteriors of the Modelled hunt events of separate Larva, 
 nS <- 300
 muEpiDur_NE <- GammaShapeSamples(drawHD_NE,nS)*GammaScaleSamples(drawHD_NE,nS)/G_APPROXFPS
@@ -473,7 +492,7 @@ muEpiDur_NL <- GammaShapeSamples(drawHD_NL,nS)*GammaScaleSamples(drawHD_NL,nS)/G
 muEpiDur_DL <- GammaShapeSamples(drawHD_DL,nS)*GammaScaleSamples(drawHD_DL,nS)/G_APPROXFPS
 muEpiDur_LL <- GammaShapeSamples(drawHD_LL,nS)*GammaScaleSamples(drawHD_LL,nS)/G_APPROXFPS
 
-pBW <- 0.25
+pBW <- 0.20
 densEpiDur_NE <- density(muEpiDur_NE,bw=pBW)
 densEpiDur_LE <- density(muEpiDur_LE,bw=pBW)
 densEpiDur_DE <- density(muEpiDur_DE,bw=pBW)
@@ -620,54 +639,105 @@ par(mar = c(3.9,4.7,1,1))
 
 dev.off()
 
-######### Gamma Episode Duration plot - Compared to Data ###
-pdf(file= paste(strPlotExportPath,"/stat/fig2S_statModelGammaHuntEpisodeDurations.pdf",sep=""),width = 14,height = 7)
+#### Fig 2 Supplementary Figure 1 - ###
+######### Gamma Model- Estimate mean Duration of Hunt Episodes plot - Compared to Data ###
+pdf(file= paste(strPlotExportPath,"/stat/fig2S1_statEpisodeDurationsModelAndEmpirical.pdf",sep=""),width = 14,height = 7)
 
-layout(matrix(c(1,1,2,2), 1,4, byrow = TRUE))
+layout(matrix(c(1,4,2,5,3,6), 3,2, byrow = TRUE))
 ##Margin: (Bottom,Left,Top,Right )
 par(mar = c(3.9,4.7,1,1))
 
+  ## Data Kernel Density
+  pBW = 0.25
+  #  plot(densEpiDur_NE,type='l',xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  plot(density(datHEvent_NE$DurationFrames/G_APPROXFPS,bw=pBW ),xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[1],lwd=3,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(density(datHEvent_NL$DurationFrames/G_APPROXFPS,bw=pBW ),xlim=c(0,6),col=colourLegL[1],lty=lineTypeL[2],lwd=3,ylab=NA,xlab=NA)
+  
+  legend("topright",legend = c(  expression (),
+                                    bquote("NF-s" ~ '#' ~ .(NROW(datHEvent_NE$DurationFrames))  ),
+                                    bquote("NF-e" ~ '#' ~ .(NROW(datHEvent_NL$DurationFrames) ) )
+                                   ),col=colourLegL[1],lwd=3,lty=c( lineTypeL[1], lineTypeL[2]), seg.len=3.5 ) 
+         
+  
+  plot(density(datHEvent_LE$DurationFrames/G_APPROXFPS,bw=pBW ),xlim=c(0,6),ylim=c(0,1),col=colourLegL[2],lty=lineTypeL[1],lwd=3,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(density(datHEvent_LL$DurationFrames/G_APPROXFPS, bw=pBW),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[2],lwd=3,ylab=NA,xlab=NA)
+  mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
+  
+  
+  legend("topright",legend = c(  expression (),
+                                 bquote("LF-s" ~ '#' ~ .(NROW(datHEvent_LE$DurationFrames))  ),
+                                 bquote("LF-e" ~ '#' ~ .(NROW(datHEvent_LL$DurationFrames) ) )
+  ),col=colourLegL[2],lwd=3,lty=c( lineTypeL[1], lineTypeL[2]), seg.len=3.5 ) 
+  
+  
+  
+  plot(density(datHEvent_DE$DurationFrames/G_APPROXFPS,bw=pBW ),xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[3],lwd=3,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(density(datHEvent_DL$DurationFrames/G_APPROXFPS,bw=pBW ),xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[2],lwd=3,ylab=NA,xlab=NA)
+  legend("topright",legend = c(  expression (),
+                                 bquote("DF-s" ~ '#' ~ .(NROW(datHEvent_DE$DurationFrames))  ),
+                                 bquote("DF-e" ~ '#' ~ .(NROW(datHEvent_DL$DurationFrames) ) )
+  ),col=colourLegL[3],lwd=3,lty=c( lineTypeL[1], lineTypeL[2]), seg.len=3.5 ) 
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Hunt episode duration (sec)") )  )  
+    
+  ## Model ##
   plot(densEpiDur_NE,type='l',xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
-  lines(density(datHEvent_NE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[1],lty=lineTypeL[1],lwd=2,ylab=NA,xlab=NA)
-  lines(densEpiDur_LE,xlim=c(0,6),col=colourLegL[2],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
-  lines(density(datHEvent_LE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[2],lty=lineTypeL[1],lwd=2,ylab=NA,xlab=NA)
-  lines(densEpiDur_DE,xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[1],lwd=4,ylab=NA,xlab=NA)
-  lines(density(datHEvent_DE$DurationFrames/G_APPROXFPS ),xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[1],lwd=2,ylab=NA,xlab=NA)
-  
-  
-  plot(densEpiDur_LL,xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[2],lwd=4,ylab=NA,xlab=NA)
-  lines(density(datHEvent_LL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[2],lwd=2,ylab=NA,xlab=NA)
-  lines(densEpiDur_DL,xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[3],lwd=4,ylab=NA,xlab=NA)
-  lines(density(datHEvent_DL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[3],lwd=2,ylab=NA,xlab=NA)
   lines(densEpiDur_NL,xlim=c(0,8),lty=lineTypeL[2],col=colourLegL[1],lwd=4,ylab=NA,xlab=NA)
-  lines(density(datHEvent_NL$DurationFrames/G_APPROXFPS ),xlim=c(0,6),lty=lineTypeL[2],col=colourLegL[1],lwd=2,ylab=NA,xlab=NA)
   
   legend("topright",legend = c(paste("Spontaneous " ),paste("Evoked ")), seg.len=3.5,
-         col=c(colourR[4], colourR[4]),lty=c(2,1),lwd=4,cex=1.1,bg="white" )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated duration of each hunt episode  (sec)") )  )
-  mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
+         col=c(colourR[4], colourR[4]),lty=c(lineTypeL[1],lineTypeL[2]),lwd=4,cex=1.1,bg="white" )#title="Estimated mean rate"
+  
+  
+  plot(densEpiDur_LE,xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[2],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(densEpiDur_LL,xlim=c(0,6),col=colourLegL[2],lty=lineTypeL[2],lwd=4,ylab=NA,xlab=NA)
+  plot(densEpiDur_DE,xlim=c(0,6),ylim=c(0,1),lty=lineTypeL[1],col=colourLegL[3],lwd=4,ylab=NA,xlab=NA,main=NA,cex=cex,cex.axis=cex,cex.lab=cex)
+  lines(densEpiDur_DL,xlim=c(0,6),col=colourLegL[3],lty=lineTypeL[2],lwd=4,ylab=NA,xlab=NA)
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated mean hunt episode duration (sec)") )  )
   
 #  mtext("J",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=padj,adj=adj,cex.main=cex,cex=cex)
 dev.off()  
-
-
-###Courtesy of https://stackoverflow.com/questions/40851328/compute-area-under-density-estimation-curve-i-e-probability
-getProbOfInterval  <- function(densEpiDur,xmin,xmax)
-{
-  #### Calculate Percentiles and Compare Results
-  xx <- densEpiDur$x  ## 512 evenly spaced points on [min(x) - 3 * d$bw, max(x) + 3 * d$bw]
-  yy <- densEpiDur$y ## 512 density values for `xx`
-  dx <- xx[2L] - xx[1L]  ## spacing / bin size
   
-  afunct <- approxfun(xx, yy)
-  Const <- integrate(afunct, min(xx), max(xx))$value 
-  p.unscaled <- integrate(afunct, xmin, min(xmax,max(xx) ) ) $value
-  p.scaled <- p.unscaled / Const
+  ### Estimate Probabilities Comparing Episode Durations ###
+  ##Calc Probablity of LF duration being shorter
+  message("Mean Change of Episode Duration Between Spontaneous And Evoked Episodes")
+  ntail <- 30000
+  muEpiDur_NF_EvsS <- tail(muEpiDur_NL,ntail) - tail(muEpiDur_NE,ntail)
+  muEpiDur_LF_EvsS <- tail(muEpiDur_LL,ntail) - tail(muEpiDur_LE,ntail)
+  muEpiDur_DF_EvsS <- tail(muEpiDur_DL,ntail) - tail(muEpiDur_DE,ntail)
+  message("Calculate prob of Evoked hunt episode duration being shorter")
+  P_NF_EVsS <- length(muEpiDur_NF_EvsS[muEpiDur_NF_EvsS > 0 ])/length(muEpiDur_NF_EvsS)
+  P_LF_EVsS <- length(muEpiDur_LF_EvsS[muEpiDur_LF_EvsS > 0 ])/length(muEpiDur_LF_EvsS)
+  P_DF_EVsS <- length(muEpiDur_DF_EvsS[muEpiDur_DF_EvsS > 0 ])/length(muEpiDur_DF_EvsS)
   
-  return(p.scaled)
-}
+  message("Increase in NF from Spontaneous (", prettyNum( mean(tail(muEpiDur_NE,ntail)),digits=4),") to Evoked (", prettyNum( mean(tail(muEpiDur_NL,ntail)),digits=4),")  : ", prettyNum( mean(muEpiDur_NF_EvsS),digits=4)," P=",prettyNum(P_NF_EVsS,digits=3)  ) 
+  message("Increase in LF from Spontaneous (", prettyNum( mean(tail(muEpiDur_LE,ntail)),digits=4),") to Evoked (", prettyNum( mean(tail(muEpiDur_LL,ntail)),digits=4),")  : ", prettyNum( mean(muEpiDur_LF_EvsS),digits=4)," P=",prettyNum(P_LF_EVsS,digits=3)  ) 
+  message("Increase in DF from Spontaneous (", prettyNum( mean(tail(muEpiDur_DE,ntail)),digits=4),") to Evoked (", prettyNum( mean(tail(muEpiDur_DL,ntail)),digits=4),")  : ", prettyNum( mean(muEpiDur_DF_EvsS),digits=4)," P=",prettyNum(P_DF_EVsS,digits=3)  ) 
+  
+  message("Calculate prob of LF Evoked hunt episode duration being shorter than controls")
+  muEpiSpontDur_LFvsNF <- tail(muEpiDur_LE,ntail) - tail(muEpiDur_NE,ntail)
+  muEpiSpontDur_LFvsDF <- tail(muEpiDur_LE,ntail) - tail(muEpiDur_DE,ntail)
+  muEpiEvokedDur_LFvsNF <- tail(muEpiDur_LL,ntail) - tail(muEpiDur_NL,ntail)
+  muEpiEvokedDur_LFvsDF <- tail(muEpiDur_LL,ntail) - tail(muEpiDur_DL,ntail)
+  
+  P_Spont_LFLessThanNF <- length(muEpiSpontDur_LFvsNF[muEpiSpontDur_LFvsNF < 0 ])/length(muEpiSpontDur_LFvsNF)
+  P_Spont_LFLessThanDF <- length(muEpiSpontDur_LFvsDF[muEpiSpontDur_LFvsDF < 0 ])/length(muEpiSpontDur_LFvsDF)
+  message("LF Spontaneous Events Shorter than NF (LF-NF=",prettyNum(mean(muEpiSpontDur_LFvsNF),digits=4),") P=",prettyNum(P_Spont_LFLessThanNF,digits=4) )
+  message("LF Spontaneous Events Shorter than DF (LF-DF=",prettyNum(mean(muEpiSpontDur_LFvsDF),digits=4),") P=",prettyNum(P_Spont_LFLessThanDF,digits=4) )
+  
+  P_Evoked_LFLessThanNF <- length(muEpiEvokedDur_LFvsNF[muEpiEvokedDur_LFvsNF < 0 ])/length(muEpiEvokedDur_LFvsNF)
+  P_Evoked_LFLessThanDF <- length(muEpiEvokedDur_LFvsDF[muEpiEvokedDur_LFvsDF < 0 ])/length(muEpiEvokedDur_LFvsDF)
+  message("LF Evoked Events Shorter than NF (LF-NF:",prettyNum(mean(muEpiEvokedDur_LFvsNF),digits=4),") P=",prettyNum(P_Evoked_LFLessThanNF,digits=4) )
+  message("LF Evoked Events Shorter than DF (LF-DF:",prettyNum(mean(muEpiEvokedDur_LFvsDF),digits=4),") P=",prettyNum(P_Evoked_LFLessThanDF,digits=4) )
+  
+  #message("NF Evoked Events last longer then spontaneous P=",prettyNum(P_NF_EVsS,digits=3) )
+  #message("LF Evoked Events last longer then spontaneous P=",prettyNum(P_LF_EVsS,digits=3) )
+  #message("DF Evoked Events last longer then spontaneous P=",prettyNum(P_DF_EVsS,digits=3) )
+  
+  plot(density(muEpiDur_NF_EvsS),xlim=c(-2,2))
+  
+
 ### DURATION DATA Comparison
 ##Check the duration that contains 95% of LE Values 
+message("Compare 95% of durations intervals ")
 pLEMx <- quantile(datHEvent_LE$DurationFrames/G_APPROXFPS,probs=0.95)
 ##Compare Percentage to Other Groups
 getProbOfInterval(density(datHEvent_DE$DurationFrames/G_APPROXFPS),0,pLEMx) ##73% of huntdurations in DE

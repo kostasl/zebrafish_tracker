@@ -291,9 +291,11 @@ lines(dfoodlevelsLL,lwd=4,lty=1,col=colourLegL[2])
 lines(dfoodlevelsDL,lwd=4,lty=1,col=colourLegL[3])
 
 ## Compare Prey Density ###
-par(mar = c(3.9,4.7,2,1))
+
 strCumPlotName <-  paste(strPlotExportPath,"/stat/fig2S2-InitPreyCount_CDF.pdf",sep="")
 pdf(strCumPlotName,width=8,height=8,title="Compare prey density testing conditions between groups") 
+
+  par(mar = c(3.9,4.7,2,1))
   plot(ecdf(foodlevelsNL),xlim=c(0,60),lwd=4,lty=1,col=colourLegL[1],main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,pch=pchL[1])
   lines(ecdf(foodlevelsLL),xlim=c(0,60),lwd=4,lty=2,pch=pchL[2],col=colourLegL[2],cex=cex)
   lines(ecdf(foodlevelsDL),xlim=c(0,60),lwd=4,lty=3,pch=pchL[3],col=colourLegL[3],cex=cex)
@@ -302,6 +304,7 @@ pdf(strCumPlotName,width=8,height=8,title="Compare prey density testing conditio
   
   legend("bottomright",pch=pchL,cex=cex,
          legend = c(paste("NF #",nDatNL),paste("LF #",nDatLL),paste("DF #",nDatDL)),col=colourLegL)
+  
 dev.off()
 
 ###

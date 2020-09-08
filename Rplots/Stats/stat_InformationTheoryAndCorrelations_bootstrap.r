@@ -191,6 +191,18 @@ smethod <- "spearman"
   
   dev.off()  
   
+  ## Evaluate Probabilities Correlations
+  ## The p-value is the probability that the difference between the sample means is at least as large as what has been observed,
+  ## under the assumption that the population means are equal. p < thres  the null hypothesis is rejected in favor of the alternative hypothesis.
+  message("significance")
+  
+  t.test(x=stat_CapTurnVsSpeed_LF$corr,alternative = "less") #****  LF less than 0
+  t.test(x=stat_CapTurnVsSpeed_NF$corr,alternative = "greater")
+  t.test(x=stat_CapTurnVsSpeed_DF$corr,alternative = "less") #** DF is also less Than zero
+  t.test(x=stat_CapTurnVsSpeed_LF$corr,y=stat_CapTurnVsSpeed_DF$corr,alternative = "less") ##But LF has higher corr  than DF
+  t.test(x=stat_CapTurnVsSpeed_LF$corr,y=stat_CapTurnVsSpeed_NF$corr,alternative = "less") ## LF has higher corr of undersh to dist than NF
+  
+  
   #  PLot Density Turn Vs FAST Speed
   #strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_Spearman_correlation_TurnVsSpeed.pdf",sep="")
   strPlotName = paste(strPlotExportPath,"/stat/fig6_statbootstrap_correlation_TurnVsFastClusterSpeed.pdf",sep="")
@@ -289,7 +301,7 @@ smethod <- "spearman"
   XRange  <- c(0,0.8) #
   YRange <- c(0,1) ##We limit The information Obtained To Reasonable Ranges Of Phi (Vergence Angle)
   ### DENSITIES ####
-  pBw <- 0.02
+  
   
   datCapture_NL_clust <- datCapture_NL[datCapture_NL$Cluster == "fast",] #datCapture_NL #
   datCapture_LL_clust <- datCapture_LL[datCapture_LL$Cluster == "fast",]#datCapture_LL# 
@@ -303,7 +315,7 @@ smethod <- "spearman"
 strPlotName = paste(strPlotExportPath,"/stat/fig4I_statbootstrap_corrSpearman_DistanceVsTimeToPrey_fastCluster.pdf",sep="")
 pdf(strPlotName,width=7,height=7,title="Correlations In between Distance And Number of Frames to Get to Prey For Fast Capture swims ",onefile = TRUE) #col=(as.integer(filtereddatAllFrames$expID))
   par(mar = c(3.9,4.7,1,1))
-  
+  pBw <- 0.02
   plot(density(stat_CapDistVsTime_NF$corr,kernel="gaussian",bw=pBw),
        col=colourLegL[1],xlim=c(-0.5,0.5),lwd=3,lty=1,ylim=c(0,10),main=NA, xlab=NA,ylab=NA,cex=cex,cex.axis=cex) #expression(paste("slope ",gamma) ) )
   lines(density(stat_CapDistVsTime_LF$corr,kernel="gaussian",bw=pBw),col=colourLegL[2],lwd=3,lty=2)
@@ -318,8 +330,11 @@ pdf(strPlotName,width=7,height=7,title="Correlations In between Distance And Num
   mtext(side = 2,cex=cex,cex.main=cex, line = lineAxis, expression("Density function"))
   
 dev.off()
-  
-  
+message("Significance t-test LF < NF" )
+t.test(x=stat_CapDistVsTime_LF$corr,y=stat_CapDistVsTime_NF$corr,alternative="less")
+t.test(x=stat_CapDistVsTime_LF$corr,y=stat_CapDistVsTime_DF$corr,alternative="less")
+t.test(x=stat_CapDistVsTime_NF$corr,y=stat_CapDistVsTime_DF$corr,alternative="less")
+
   ### CORRELOLAGRAM ###
 
 library(corrgram)

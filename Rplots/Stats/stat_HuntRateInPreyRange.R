@@ -380,11 +380,15 @@ P_NLgtDL <- length(HPoissonRateDiff_NLVsDL[HPoissonRateDiff_NLVsDL > 0])/length(
 P_LLgtLL <- length(HPoissonRateDiff_LLVsLL[HPoissonRateDiff_LLVsLL > 0])/length(HPoissonRateDiff_LLVsLL) #Chance Control
 
 P_LEgtNE <- length(HPoissonRateDiff_LEVsNE[HPoissonRateDiff_LEVsNE > 0])/length(HPoissonRateDiff_LEVsNE)
-P_LEgtDE <- length(HPoissonRateDiff_LLVsDL[HPoissonRateDiff_LEVsDE > 0])/length(HPoissonRateDiff_LEVsDE)
+P_LEgtDE <- length(HPoissonRateDiff_LEVsDE[HPoissonRateDiff_LEVsDE > 0])/length(HPoissonRateDiff_LEVsDE)
 P_NEgtDE <- length(HPoissonRateDiff_NEVsDE[HPoissonRateDiff_NEVsDE > 0])/length(HPoissonRateDiff_NEVsDE)
 
 message("P(LL > NL):",prettyNum(P_LLgtNL),", P(LL > DL):",prettyNum(P_LLgtDL))
+message("P(NL > DL):",prettyNum(P_NLgtDL),", P(LL > DL):",prettyNum(P_LLgtDL))
+
 message("P(NE > LE):",prettyNum(1-P_LEgtNE),", P(NE > DE):",prettyNum(P_NEgtDE))
+message("P(LE > DE):",prettyNum(1-P_LEgtDE),", P(LE > DE):",prettyNum(P_LEgtDE))
+message("P(NE > DE):",prettyNum(1-P_LEgtNE),", P(NE > DE):",prettyNum(P_NEgtDE))
 
 ## SEM
 semHuntRate_NL <- sd(HEventHuntGammaShape_NL*1/HEventHuntGammaRate_NL)/sqrt(length(HEventHuntGammaRate_NL))
