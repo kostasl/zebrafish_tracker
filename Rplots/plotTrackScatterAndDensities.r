@@ -713,7 +713,7 @@ getCaptureBoutPreyPosition <- function (datMotionBoutsToValidate,groupID)
   #y <- (d)*sin(2*pi-pi/180 * relAngle[[as.character(f)]] + pi/2)
   
   
-  return (data.frame( cbind(preyX,preyY,vAngleToPrey,vDistToPrey)) )
+  return (data.frame( cbind(preyX,preyY,vAngleToPrey,vDistToPrey,groupID)) )
 }
 
 plotPreyAzimuthAtCapture <- function(newPlot = T)
@@ -735,13 +735,6 @@ plotPreyAzimuthAtCapture <- function(newPlot = T)
   #plot(densDF$x,densDF$y - densLF$y)
   ## Quantiles - Show more than 50% of data located between -20/ +20 degrees
   #plot(density(abs(preyCapPos_NF$vAngleToPrey) ) )
-  
-  quantNF <- quantile(abs(preyCapPos_NF$vAngleToPrey) )
-  quantLF <- quantile(abs(preyCapPos_LF$vAngleToPrey) )
-  quantDF <- quantile(abs(preyCapPos_DF$vAngleToPrey) )
-  print(quantNF)
-  print(quantLF)
-  print(quantDF)
   
   plot(densNF,col=colourLegL[1],lty=2,lwd=3,cex.axis=cex,main=NA,xlab=NA,ylab=NA,ylim=c(0,0.050),xlim=c(-50,50))
   lines(densLF,col=colourLegL[2],lty=1,lwd=3,cex.axis=cex,main=NA,xlab=NA,ylab=NA)
@@ -766,7 +759,25 @@ plotPreyAzimuthAtCapture <- function(newPlot = T)
   #points(quantDF[2],densDF$y[ head(which(densDF$x >=  quantDF[2]),1) ],col=colourLegL[3]  )
   #points(quantDF[4],densDF$y[ head(which(densDF$x >=  quantDF[4]),1) ],col=colourLegL[3]  )
 
-}
+  ## Do Stat Test
+  ## Quantile
+  quantNF <- quantile(abs(preyCapPos_NF$vAngleToPrey) )
+  quantLF <- quantile(abs(preyCapPos_LF$vAngleToPrey) )
+  quantDF <- quantile(abs(preyCapPos_DF$vAngleToPrey) )
+  print(quantNF)
+  print(quantLF)
+  print(quantDF)
+
+  ## To proceed with the verification ANOVA, we must first verify the homoskedasticity (ie test for homogeneity of variances). The software R provides two tests: the Bartlett tes
+    datAllGroup <- rbind(preyCapPos_NF,preyCapPos_DF,preyCapPos_LF)
+    datAllGroup$groupID <- factor(datAllGroup$groupID)
+    bartlett.test(datAllGroup$vAngleToPrey, datAllGroup$groupID)
+    fligner.test(datAllGroup$vAngleToPrey, datAllGroup$groupID) ##p > 0.05 Homogenious 
+    #Can be argued that the variances are homogeneous since p-value > 0.01.
+    fit = lm(formula = datAllGroup$vAngleToPrey ~ datAllGroup$groupID)
+    anova (fit)
+    ## p >0.05 we report as non-siginificant
+  }
 
 ## plot The Prey Locations Prior to Capture in relation to the head of the larvae##
 ## The Radar Figure With the Prey Positions Prior To Capture
