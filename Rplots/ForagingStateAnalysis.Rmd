@@ -1,0 +1,22 @@
+---
+title: "Identifying the role of foraging state on hunt effficiency"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, used for learning and testing ideas around Kalman Filters. 
+
+### Identify state using dispersal
+5s window measure radius encompassing trajectory
+
+```{r}
+## Code 
+```
+
+## State Space Notation 
+
+The standard way of representing these systems uses matrix notation :
+\[\dot{\bf{x}}  = \bf{Fx} + Gu + w  \], where $u$ is the input vector and $w$ the noise.
+The 1st order LP filter from above put in to this form would simply be F=-1/T,G=0,w=\eta/T.
+
