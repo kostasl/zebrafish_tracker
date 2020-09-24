@@ -307,7 +307,16 @@ pdf(strCumPlotName,width=8,height=8,title="Compare prey density testing conditio
   
 dev.off()
 
-###
+## Do Significance tests - Pairwise - 
+preyLevelsPerGroup <-( rbind(cbind(as.integer(datHuntStat[,"vHInitialPreyCount"]$LL),"LF"),
+      cbind(as.integer(datHuntStat[,"vHInitialPreyCount"]$DL),"DF"),
+      cbind(as.integer(datHuntStat[,"vHInitialPreyCount"]$NL),"NF")
+      , cbind(as.integer(rbinom(60, 20, .5)),"TF") ## Just Ranodm Binomial
+      ))
+      
+preyLevelsPerGroup <- data.frame(preyCount=as.integer(preyLevelsPerGroup[,1]),group=as.factor(preyLevelsPerGroup[,2]) )
+pairwise.t.test (preyLevelsPerGroup$preyCount ,preyLevelsPerGroup$group, pool.sd = TRUE,paired=FALSE)
+### Added NS diffe in prey ouunt to Fig Supp
 
 X11()
 myplot_res(4000)

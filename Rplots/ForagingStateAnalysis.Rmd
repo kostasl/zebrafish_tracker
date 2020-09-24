@@ -5,7 +5,20 @@ output:
     df_print: paged
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, used for learning and testing ideas around Kalman Filters. 
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, analysing zebrafish tracking data 
+for foraging state as indicated by Marquez et al 2019.
+Zebrafish appear to spontaneously switch between an exploratory and exploitation phase that grossly defines their behavioural mode. 
+The state can be read out be measuring trajectory dispersal over a fixed period of time (5 sec), 
+According to Marquez et al  2020 Measures of dispersal should appear bimodal, with short dispersals indicating exploitation phase.
+
+Given our behavioural recordings are not continuous, and exclude periods when the larva are swimming around the boundary, it is not certain whether we would be able to detect exploratory phases. These tend to be circling around the border of the petri-dish, as the fish attempts to swim forward. Nevertheless as we are interested in the mode-state under which hunt-events are executed, then we expect that some of these events should be executed during exploratory behaviour and this should be detectable - (dispersal, movement rates etc).
+
+
+  Hypothesis being tested :
+  
+  - Does the execution of the kinematic adaptations of capture efficiency, found in the experience larvae,  depend on foraging state ?
+  - Does experience modify the foraging intervals?
+  - Does expansion of foraging interval explain the higher evoked hunt-rate of the LF group?
 
 ### Identify state using dispersal
 5s window measure radius encompassing trajectory
