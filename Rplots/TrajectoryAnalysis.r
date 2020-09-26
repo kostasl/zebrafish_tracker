@@ -14,6 +14,48 @@
 source("TrackerDataFilesImport_lib.r")
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r") ##For Filter Initialization
 
+meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);return(tproc) }
+
+### We are looking to detect Exploration/Exploitation (as in Marquez et al. 2020)  using a measure
+### of spatial dispersion - calculated for each tracked frame, calculated as the spatial dispersion of trajectory of the preceding X secods
+calcTrajectoryDispersion <- function(datEventFrames,twindowSec=5)
+{
+  start.time <- Sys.time()
+  
+  ## Note, could use combn gen All Combh of positions in trajectory - Here outer is app. faster
+  message(paste("## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##" ) )
+  ##datEventFrames <- datAllFrames[datAllFrames$expID == 218 & datAllFrames$eventID == 2 & datAllFrames$posX != 0,]
+  vDispersionPerFrame <- vector()
+  ## Estimate number of frames for Tsec of video
+  nfrm <- head(datEventFrames$fps,1)*twindowSec
+  ## Loop Through Each Frame and calc Dispersion
+  datEventFrames$posX <- meanf(datEventFrames$posX,10)
+  datEventFrames$posY <- meanf(datEventFrames$posY,10)
+  
+  plot(datEventFrames$posX,datEventFrames$posY)
+  ## \TODO: Do not have to sample all points along trajectory - Sub Sample Spaced out points to Get Dispersion Estimate
+  for (i in nfrm:NROW(datEventFrames) ) ##
+  {
+    vX <- head(datEventFrames[(i-nfrm):i,"posX"],nfrm)
+    vY <- head(datEventFrames[(i-nfrm):i,"posY"],nfrm)
+    ##Find min Radius of circle that could encompass whole trajectory as half of the maximum distance between any two points of the trajectory
+    
+    ## Use outer to compute All to All point X  traj. differences / 
+    mat_posDX <- outer(vX,vX,'-')
+    mat_posDY <- outer(vY,vY,'-') #and Y 
+    # Combine to Find Distances DX DY between all point of trajectory
+    mat_ptDist <- sqrt(mat_posDX^2 + mat_posDY^2)
+    # Radius of Circle Encompassing the two most distant parts of trajectory section
+    vDispersionPerFrame[i] <- max(mat_ptDist)/2 
+  }
+  
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  time.taken
+  
+  plot(vDispersionPerFrame*DIM_MMPERPX)
+}
+  
 ##Provide a data structure with organized processed data extracted from each Recording Event
 calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
 {
@@ -93,6 +135,10 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
   
 }
 
+
+### Returns summary measurements for overall trajectories for each larva 
+## Sinuoisity, Overall distance travelled, Speed (Avg,peak) etc
+#########################################################
 calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 {
   message("## Start Trajectory Analysis For Group ##")
@@ -169,7 +215,8 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      vDeltaXFrames        <- diff(datEventFrames$posX,lag=1,differences=1)
 	      vDeltaYFrames        <- diff(datEventFrames$posY,lag=1,differences=1)
 	      vEventPathLength     <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
-	     
+	      
+	        
 	      dframe               <- diff(datEventFrames$frameN,lag=1,differences=1)
 	      dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - Why is dFrame 0?  
 	      #dEventSpeed          <- vEventPathLength/dframe
@@ -255,6 +302,8 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	      ##Straight Line From start to end 
 	      dShortestPathDisplacement <- sqrt(((datEventFrames[1,]$posX-datEventFrames[NROW(datEventFrames),]$posX)^2+(datEventFrames[1,]$posY-datEventFrames[NROW(datEventFrames),]$posY)^2 ))
 	      
+	      ##
+	      
 	      ###(Actual Path Length Over Shortest Path) 
 	      #SI < 1.05: almost straight
 	      #1.05 ≤ SI <1.25: winding
@@ -270,6 +319,7 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	        message(paste("Sinuosity is NaN, expID:",i,",eventID",k, " Path Length:",dEventTotalDistance, " Shortest Path:",dShortestPathDisplacement) )
 	        
 	      }
+	      
 	      #stopifnot(any(is.nan(dEventSinuosity))==FALSE)
 	     
 	      
@@ -500,6 +550,9 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 
 
 
+### Returns summary measurements for overall trajectories for each larva 
+## Sinuoisity, Overall distance travelled, Speed (Avg,peak) etc
+#########################################################
 
 calcMotionStat2 <- function(datAllFrames,vexpID,vdatasetID)
 {

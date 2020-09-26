@@ -24,7 +24,17 @@ Given our behavioural recordings are not continuous, and exclude periods when th
 5s window measure radius encompassing trajectory
 
 ```{r}
-## Code 
+## Init  Code 
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+#setwd(here())
+source("config_lib.R")
+
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
+load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
+
+
+
 ```
 
 ## State Space Notation 

@@ -259,7 +259,7 @@ plotCovar_SpeedVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
   #(For Larvae with n<2 Cov Is meaningless/ and just adds to 0 group mean)
   cov_coeff <- plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0)
   mtext(side = 2,cex=cex,padj=padj, line = lineAxis, expression("Density function") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group covariance of turn-ratio to capture speed" ) )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group correlation of turn-ratio and capture-speed" ) )  )
   mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
   
   nNF <- dim(cov_coeff$NF)[1]
@@ -294,7 +294,7 @@ plotCovar_SpeedVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
   #par(mar = c(6.9,2.5,4.5,1))
   message("NF")
   plotECDF_withCI(cov_coeff_SpeedTurnRatio$NF,tblEventPerLarva$NF,colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE,CutOffThres=0.1)
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Covariance of turn-ratio to capture speed per larva" ) )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Correlation of turn-ratio and capture-speed per larva" ) )  )
   message("DF")
   plotECDF_withCI(cov_coeff_SpeedTurnRatio$DF,tblEventPerLarva$DF,colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE,CutOffThres=0.1)
   
@@ -339,7 +339,7 @@ plotCovar_SpeedVsDistance <- function(draw_LF,draw_NF,draw_DF,ntail)
   Cj <- 3
   cov_coeff <- plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0,XRange=c(-0.4,0.4))
   mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group covariance of capture speed to distance" ) )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group correlation of capture-speed and distance" ) )  )
   mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
   
   nNF <- dim(cov_coeff$NF)[1]
@@ -383,7 +383,7 @@ plotCovar_SpeedVsDistance <- function(draw_LF,draw_NF,draw_DF,ntail)
   mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
   message("NF")
   plotECDF_withCI(cov_coeff$NF,tblEventPerLarva$NF,colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Larva covariance of capture speed to distance " ) )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Correlation of capture-speed and distance per larva" ) )  )
   message("DF")
   plotECDF_withCI(cov_coeff$DF,tblEventPerLarva$DF,colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
   
@@ -424,7 +424,7 @@ plotCovar_DistanceVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
   Cj <- 3
   cov_coeff_TurnRatio <-  plotModelCovCoeff(Ci,Cj,draw_LF,draw_NF,draw_DF,ntail,0,XRange=c(-0.4,0.4))
   mtext(side = 2,cex=cex, line = lineAxis,padj=padj, expression("Density function") )
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group covariance of turn-ratio to capture distance" ) )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Group correlation of turn-ratio and capture distance" ) )  )
   mtext("A",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
   
   nNF <- dim(cov_coeff_TurnRatio$NF)[1]
@@ -460,7 +460,7 @@ plotCovar_DistanceVsTurnRatio <- function(draw_LF,draw_NF,draw_DF,ntail)
   mtext("B",at="topleft",outer=outer,side=2,col="black",font=2,las=las,line=line,padj=-15,adj=adj,cex.main=cex,cex=cex)
   message("NF")
   plotECDF_withCI(cov_coeff_TurnRatio$NF,tblEventPerLarva$NF,colourLegL[1],pchL[6],colourHLine[1],NewPlot=TRUE)
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Larva covariance of capture distance to turn-ratio " ) )  )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Correlation of capture distance and turn-ratio per larva" ) )  )
   message("DF")
   plotECDF_withCI(cov_coeff_TurnRatio$DF,tblEventPerLarva$DF,colourLegL[3],pchL[5],colourHLine[3],NewPlot=TRUE)
   
