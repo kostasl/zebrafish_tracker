@@ -23,21 +23,98 @@ Given our behavioural recordings are not continuous, and exclude periods when th
 ### Identify state using dispersal
 5s window measure radius encompassing trajectory
 
-```{r}
+```{r Calc Dispersion of Each Trajectory}
+
 ## Init  Code 
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
+source("TrajectoryAnalysis.r")
 
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
 load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
 
 
+  
+vexpID <- unique(datAllFrames$expID)
+e <- vexpID[1]
+##'Add new column
+datAllFrames$Dispersion <- NA
+
+start.time <- Sys.time()
+ 
+datDispersion <- data.frame()
+i = 0;
+
+## For Each Recording Event of each experiment
+  for (e in vexpID)
+  {
+    i = i + 1
+    message(i,". ExpID:",e)
+    
+    
+    stopifnot(is.numeric(e) & e > 0)
+    vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
+  
+    
+    ##For Each Event
+    for (ev in vEventID)
+    {
+      datEventFrames <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == ev & datAllFrames$posX != 0 ,]  
+    
+      meanfps <-  head(datEventFrames$fps,1)
+      groupID <- as.character(unique(datEventFrames$groupID) )
+      message(paste("ExpID:",e,"EventID:",ev,"fps:",meanfps," nFrames:",NROW(datEventFrames)) )
+      #  We may Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
+      #  PROCESS TrackLets #
+      #vTracklets <- unique(datEventFrames$trackletID)
+      
+      if (NROW(datEventFrames) < 10)
+        next() ##No Frames In event - Move to next one
+      
+      vEventDispersion <- calcTrajectoryDispersion(datEventFrames,2) 
+      datEventDispersion <- data.frame(expID=e,eventID=ev,Dispersion=(vEventDispersion),frameRow=as.integer(row.names( datEventFrames))  )
+
+      ##Append to main Dispersion Data Frame
+      datDispersion <- rbind(datEventDispersion,datDispersion)
+      
+      }##For Each Event
+
+    
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+  
+  }#For Each Exp ID
+
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+  
+saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion2sec.rds") )
+
+hist(datDispersion$Dispersion)
+
+```
+## Detect Exploration -Exploitation via dispersion
+ 
+ In Marquez et al. 2019 Ext Fig 3a, the dispersion of each larva is normalized against its own range before the overall (bimodal) distribution is shown.
+ Without normalizing the distrubution looks like this:
+```{r plot dispersion distribution }
+
+hist(datDispersion$Dispersion,breaks=200)
+
+```
+After normalizing for each larva this distrubution looks:
+```{r plot normalized dispersion distribution }
+
+## Normalize For Each Larva and - Plot Again
 
 ```
 
-## State Space Notation 
+ 
+
 
 The standard way of representing these systems uses matrix notation :
 \[\dot{\bf{x}}  = \bf{Fx} + Gu + w  \], where $u$ is the input vector and $w$ the noise.

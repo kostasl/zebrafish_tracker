@@ -18,26 +18,36 @@ meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[
 
 ### We are looking to detect Exploration/Exploitation (as in Marquez et al. 2020)  using a measure
 ### of spatial dispersion - calculated for each tracked frame, calculated as the spatial dispersion of trajectory of the preceding X secods
+## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##"
 calcTrajectoryDispersion <- function(datEventFrames,twindowSec=5)
 {
   start.time <- Sys.time()
   
   ## Note, could use combn gen All Combh of positions in trajectory - Here outer is app. faster
-  message(paste("## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##" ) )
+  #message(paste("## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##" ) )
+  stopifnot(NROW(datEventFrames) > 0)
   ##datEventFrames <- datAllFrames[datAllFrames$expID == 218 & datAllFrames$eventID == 2 & datAllFrames$posX != 0,]
   vDispersionPerFrame <- vector()
   ## Estimate number of frames for Tsec of video
   nfrm <- head(datEventFrames$fps,1)*twindowSec
+  nSpace <- nfrm/4
   ## Loop Through Each Frame and calc Dispersion
   datEventFrames$posX <- meanf(datEventFrames$posX,10)
   datEventFrames$posY <- meanf(datEventFrames$posY,10)
   
-  plot(datEventFrames$posX,datEventFrames$posY)
+  #plot(datEventFrames$posX,datEventFrames$posY)
+  if (nfrm > NROW(datEventFrames))
+  {
+    warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
+    return(NA);
+  }
   ## \TODO: Do not have to sample all points along trajectory - Sub Sample Spaced out points to Get Dispersion Estimate
   for (i in nfrm:NROW(datEventFrames) ) ##
   {
-    vX <- head(datEventFrames[(i-nfrm):i,"posX"],nfrm)
-    vY <- head(datEventFrames[(i-nfrm):i,"posY"],nfrm)
+    ##Skip some intermediates frames to optimize speed - sample equally distant points in  trajectory / instead of every point
+    vIdx <- seq(from=(i-nfrm),by=nSpace,to=i)
+    vX <- head(datEventFrames[vIdx,"posX"],nfrm)
+    vY <- head(datEventFrames[vIdx,"posY"],nfrm)
     ##Find min Radius of circle that could encompass whole trajectory as half of the maximum distance between any two points of the trajectory
     
     ## Use outer to compute All to All point X  traj. differences / 
@@ -47,13 +57,17 @@ calcTrajectoryDispersion <- function(datEventFrames,twindowSec=5)
     mat_ptDist <- sqrt(mat_posDX^2 + mat_posDY^2)
     # Radius of Circle Encompassing the two most distant parts of trajectory section
     vDispersionPerFrame[i] <- max(mat_ptDist)/2 
+    
   }
+  
+#  vRes100 <- vDispersionPerFrame*DIM_MMPERPX
+#  plot(vDispersionPerFrame*DIM_MMPERPX)
   
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
   
-  plot(vDispersionPerFrame*DIM_MMPERPX)
+  return(vDispersionPerFrame*DIM_MMPERPX)
 }
   
 ##Provide a data structure with organized processed data extracted from each Recording Event
