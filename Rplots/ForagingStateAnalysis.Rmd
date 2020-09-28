@@ -103,7 +103,7 @@ hist(datDispersion$Dispersion)
  Without normalizing the distrubution looks like this:
 ```{r plot dispersion distribution }
 
-hist(datDispersion$Dispersion,breaks=200)
+hist(datDispersion$Dispersion,breaks=100)
 
 ```
 After normalizing for each larva this distrubution looks:
@@ -111,6 +111,39 @@ After normalizing for each larva this distrubution looks:
 
 ## Normalize For Each Larva and - Plot Again
 
+datDispersion <- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion5sec.rds") )
+
+vexpID <- unique(datDispersion$expID)
+
+datDispersionNorm <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
+
+  for (e in vexpID)
+  {
+    i = i + 1
+    message(i,". ExpID:",e)
+    
+    stopifnot(is.numeric(e) & e > 0)
+    
+     datExpDisp <- datDispersion[datDispersion$expID == e,]
+     vEventID = unique(datExpDisp$eventID)
+     range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
+     if (!is.na(range_Disp))
+     {
+        datDispersionNorm[datDispersionNorm$expID == e,]$Dispersion_Norm <- datExpDisp$Dispersion/range_Disp[2]
+     }
+     
+  }
+
+datDispersion <- merge(datDispersion,datDispersionNorm,)
+saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion5secNorm.rds") )
+
+
+hist(datDispersionNorm[datDispersionNorm$groupID == 'LE', ]$Dispersion,breaks=100)
+hist(datDispersionNorm[datDispersionNorm$groupID == 'NE', ]$Dispersion,breaks=100)
+
+hist(datDispersionNorm[datDispersionNorm$groupID == 'LL', ]$Dispersion,breaks=100)
+hist(datDispersionNorm[datDispersionNorm$groupID == 'NL', ]$Dispersion,breaks=100)
+hist(datDispersionNorm[datDispersionNorm$groupID == 'DL', ]$Dispersion,breaks=100)
 ```
 
  
