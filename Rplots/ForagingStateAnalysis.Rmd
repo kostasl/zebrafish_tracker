@@ -47,6 +47,7 @@ start.time <- Sys.time()
 datDispersion <- data.frame()
 i = 0;
 
+tsec_timeWindow <- 2
 ## For Each Recording Event of each experiment
   for (e in vexpID)
   {
@@ -55,6 +56,8 @@ i = 0;
     
     
     stopifnot(is.numeric(e) & e > 0)
+    #stopifnot(i < 3) ##Test Run
+    
     vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
   
     
@@ -73,7 +76,7 @@ i = 0;
       if (NROW(datEventFrames) < 10)
         next() ##No Frames In event - Move to next one
       
-      vEventDispersion <- calcTrajectoryDispersion(datEventFrames,2) 
+      vEventDispersion <- calcTrajectoryDispersion(datEventFrames,tsec_timeWindow) 
       datEventDispersion <- data.frame(expID=e,
                                        eventID=ev,
                                        Dispersion=(vEventDispersion),
@@ -101,9 +104,11 @@ i = 0;
   time.taken <- end.time - start.time
   print(time.taken)
   
-saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion2sec.rds") )
+datDispersion <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
+  
+saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
 
-hist(datDispersion$Dispersion)
+hist(datDispersion$Dispersion_norm     )
 
 ```
 ## Detect Exploration -Exploitation via dispersion
@@ -118,13 +123,33 @@ hist(datDispersion$Dispersion,breaks=100)
 After normalizing for each larva this distrubution looks:
 ```{r plot normalized dispersion distribution }
 
+
+hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion_norm,breaks=100)
+hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion_norm,breaks=100)
+hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion_norm,breaks=100)
+
+hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion_norm,breaks=100)
+hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion_norm,breaks=100)
+hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=100)
+```
+
+ 
+
+
+The standard way of representing these systems uses matrix notation :
+\[\dot{\bf{x}}  = \bf{Fx} + Gu + w  \], where $u$ is the input vector and $w$ the noise.
+The 1st order LP filter from above put in to this form would simply be F=-1/T,G=0,w=\eta/T.
+
+
+'''
+
 ## Normalize For Each Larva and - Plot Again
 
 datDispersion <- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion5sec.rds") )
 
 vexpID <- unique(datDispersion$expID)
 
-datDispersionNorm <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
+
 datDispersionNorm$Dispersion_norm <- datDispersionNorm$Dispersion ##Copy To Create New Dataframe column
 
   for (e in vexpID)
@@ -148,18 +173,4 @@ datDispersionNorm$Dispersion_norm <- datDispersionNorm$Dispersion ##Copy To Crea
 saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion5secNorm.rds") )
 
 
-hist(datDispersionNorm[datDispersionNorm$groupID == 'LE', ]$Dispersion,breaks=100)
-hist(datDispersionNorm[datDispersionNorm$groupID == 'NE', ]$Dispersion,breaks=100)
-
-hist(datDispersionNorm[datDispersionNorm$groupID == 'LL', ]$Dispersion,breaks=100)
-hist(datDispersionNorm[datDispersionNorm$groupID == 'NL', ]$Dispersion,breaks=100)
-hist(datDispersionNorm[datDispersionNorm$groupID == 'DL', ]$Dispersion,breaks=100)
-```
-
- 
-
-
-The standard way of representing these systems uses matrix notation :
-\[\dot{\bf{x}}  = \bf{Fx} + Gu + w  \], where $u$ is the input vector and $w$ the noise.
-The 1st order LP filter from above put in to this form would simply be F=-1/T,G=0,w=\eta/T.
 
