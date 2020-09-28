@@ -74,14 +74,23 @@ i = 0;
         next() ##No Frames In event - Move to next one
       
       vEventDispersion <- calcTrajectoryDispersion(datEventFrames,2) 
-      datEventDispersion <- data.frame(expID=e,eventID=ev,Dispersion=(vEventDispersion),frameRow=as.integer(row.names( datEventFrames))  )
+      datEventDispersion <- data.frame(expID=e,
+                                       eventID=ev,
+                                       Dispersion=(vEventDispersion),
+                                       Dispersion_norm=(vEventDispersion),
+                                       frameRow=as.integer(row.names( datEventFrames))  )
 
       ##Append to main Dispersion Data Frame
       datDispersion <- rbind(datEventDispersion,datDispersion)
       
-      }##For Each Event
+    }##For Each Event
 
-    
+  ## \TODO Normalize Dispersion Per Larva Here
+  datExpDisp <- datDispersion[datDispersion$expID == e,]
+  range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
+   if (!is.na(range_Disp))
+      datDispersion[datDispersion$expID == e,]$Dispersion_norm <- datExpDisp$Dispersion/range_Disp[2]
+  
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   print(time.taken)
@@ -116,6 +125,7 @@ datDispersion <- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion
 vexpID <- unique(datDispersion$expID)
 
 datDispersionNorm <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
+datDispersionNorm$Dispersion_norm <- datDispersionNorm$Dispersion ##Copy To Create New Dataframe column
 
   for (e in vexpID)
   {
@@ -129,12 +139,12 @@ datDispersionNorm <- cbind(datDispersion,groupID=datAllFrames[datDispersion$fram
      range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
      if (!is.na(range_Disp))
      {
-        datDispersionNorm[datDispersionNorm$expID == e,]$Dispersion_Norm <- datExpDisp$Dispersion/range_Disp[2]
+        datDispersionNorm[datDispersionNorm$expID == e,]$Dispersion_norm <- datExpDisp$Dispersion/range_Disp[2]
      }
      
   }
 
-datDispersion <- merge(datDispersion,datDispersionNorm,)
+#datDispersion <- merge(datDispersion,datDispersionNorm,)
 saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion5secNorm.rds") )
 
 
