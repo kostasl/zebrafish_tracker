@@ -31,12 +31,13 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
 load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
 
 
-  
+tsec_timeWindow <- 5
+
 vexpID <- unique(datAllFrames$expID)
 e <- vexpID[1]
 ##'Add new column
@@ -47,7 +48,6 @@ start.time <- Sys.time()
 datDispersion <- data.frame()
 i = 0;
 
-tsec_timeWindow <- 2
 ## For Each Recording Event of each experiment
   for (e in vexpID)
   {
@@ -122,8 +122,95 @@ hist(datDispersion$Dispersion,breaks=100)
 ```
 After normalizing for each larva this distrubution looks:
 ```{r plot normalized dispersion distribution }
+  
+
+datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
+AllRange <- range(datDispersion$Dispersion,na.rm=TRUE)
+
+## Normed over all Recorded Dispersions
+hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion/AllRange[2],breaks=100)
+hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion/AllRange[2],breaks=100)
+hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion/AllRange[2],breaks=100)
+
+hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion/AllRange[2],breaks=100)
+hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion/AllRange[2],breaks=100)
+hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion/AllRange[2],breaks=100)
+
+TH_DISP <- 0.12
+
+datExploreTrajectory.LE <- datAllFrames[datDispersion[datDispersion$groupID == 'LE' & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+datExploitTrajectory.LE <- datAllFrames[datDispersion[datDispersion$groupID == 'LE' & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
 
 
+datExploreTrajectory.LL <- datAllFrames[datDispersion[datDispersion$groupID == 'LL' & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+datExploitTrajectory.LL <- datAllFrames[datDispersion[datDispersion$groupID == 'LL' & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+
+datExploreTrajectory.NE <- datAllFrames[datDispersion[datDispersion$groupID == 'NE' & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+datExploitTrajectory.NE <- datAllFrames[datDispersion[datDispersion$groupID == 'NE' & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+
+datExploreTrajectory.NL <- datAllFrames[datDispersion[datDispersion$groupID == 'NL' & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+datExploitTrajectory.NL <- datAllFrames[datDispersion[datDispersion$groupID == 'NL' & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+
+datExploreTrajectory.DE <- datAllFrames[datDispersion[datDispersion$groupID == 'DE' & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+datExploitTrajectory.DE <- datAllFrames[datDispersion[datDispersion$groupID == 'DE' & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+
+datExploreTrajectory.DL <- datAllFrames[datDispersion[datDispersion$groupID == 'DL' & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+datExploitTrajectory.DL <- datAllFrames[datDispersion[datDispersion$groupID == 'DL' & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+
+#Plot Individual Trajectories
+datGroupExploreTraj <- datExploreTrajectory.LL 
+datGroupExploitTraj <- datExploitTrajectory.LL 
+
+vexpID <-  unique(datGroupExploitTraj$exp) 
+
+badd <- FALSE
+i<- 0
+par(mfrow=c(2,NROW(vexpID))) ##MultiPlot Page
+par(mar=c(1,1,1,1))
+layout(matrix(seq(1,NROW(vexpID)), 2,NROW(vexpID) , byrow = TRUE))
+
+for (e in vexpID)
+{
+    if (is.na(e))
+      next()
+  
+    datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == e & !is.na(datGroupExploreTraj$posX),]
+    plot(datTraj$posX,datTraj$posY,type="p",col="blue",cex=0.1)
+    
+    datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == e & !is.na(datGroupExploitTraj$posX),]
+    points(datTraj$posX,datTraj$posY,type="p",col="red",cex=0.1)
+
+    badd <- TRUE
+    #stopifnot(i < 5)
+    i <- i+1
+}
+
+# LF Sporttaneous
+plot(datExploreTrajectory.LE$posX,datExploreTrajectory.LE$posY,type="l",col="red")
+lines(datExploitTrajectory.LE$posX,datExploitTrajectory.LE$posY,type="l",col="blue")
+
+## LF Evoked
+plot(datExploreTrajectory.LL$posX,datExploreTrajectory.LL$posY,type="l",col="red")
+lines(datExploitTrajectory.LL$posX,datExploitTrajectory.LL$posY,type="l",col="blue")
+
+# NE Spontaneous
+plot(datExploreTrajectory.NE$posX,datExploreTrajectory.NE$posY,type="l",col="red")
+lines(datExploitTrajectory.NE$posX,datExploitTrajectory.NE$posY,type="l",col="blue")
+
+# NL Spontaneous
+plot(datExploreTrajectory.NL$posX,datExploreTrajectory.NL$posY,type="l",col="red")
+lines(datExploitTrajectory.NL$posX,datExploitTrajectory.NL$posY,type="l",col="blue")
+
+# DE Spontaneous
+plot(datExploreTrajectory.DE$posX,datExploreTrajectory.DE$posY,type="l",col="red")
+lines(datExploitTrajectory.DE$posX,datExploitTrajectory.DE$posY,type="l",col="blue")
+
+# DL Spontaneous
+plot(datExploreTrajectory.DL$posX,datExploreTrajectory.DL$posY,type="l",col="red")
+lines(datExploitTrajectory.DL$posX,datExploitTrajectory.DL$posY,type="l",col="blue")
+
+
+### Normed Per Larva
 hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion_norm,breaks=100)
 hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion_norm,breaks=100)
 hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion_norm,breaks=100)
