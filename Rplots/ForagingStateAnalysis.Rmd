@@ -35,7 +35,6 @@ setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
 load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
 
-
 tsec_timeWindow <- 5
 
 vexpID <- unique(datAllFrames$expID)
@@ -154,60 +153,48 @@ datExploitTrajectory.NL <- datAllFrames[datDispersion[datDispersion$groupID == '
 datExploreTrajectory.DE <- datAllFrames[datDispersion[datDispersion$groupID == 'DE' & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
 datExploitTrajectory.DE <- datAllFrames[datDispersion[datDispersion$groupID == 'DE' & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
 
-datExploreTrajectory.DL <- datAllFrames[datDispersion[datDispersion$groupID == 'DL' & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
-datExploitTrajectory.DL <- datAllFrames[datDispersion[datDispersion$groupID == 'DL' & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
-
-#Plot Individual Trajectories
-datGroupExploreTraj <- datExploreTrajectory.LL 
-datGroupExploitTraj <- datExploitTrajectory.LL 
-
-vexpID <-  unique(datGroupExploitTraj$exp) 
-
-badd <- FALSE
-i<- 0
-par(mfrow=c(2,NROW(vexpID))) ##MultiPlot Page
-par(mar=c(1,1,1,1))
-layout(matrix(seq(1,NROW(vexpID)), 2,NROW(vexpID) , byrow = TRUE))
-
-for (e in vexpID)
+##
+# Function Plot Individual Trajectories for a group, split between exploration and exploitation
+# given a normalized dispersion measures threshold 
+##
+plotDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, TH_DISP = 0.2)
 {
-    if (is.na(e))
-      next()
-  
-    datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == e & !is.na(datGroupExploreTraj$posX),]
-    plot(datTraj$posX,datTraj$posY,type="p",col="blue",cex=0.1)
+
+   datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+  vexpID <-  unique(datGroupExploitTraj$exp) 
+
+  #par(mfrow=c(2,NROW(vexpID))) ##MultiPlot Page
+  par(mar=c(1,1,1,1))
+  layout(matrix(seq(1,NROW(vexpID)), 2,NROW(vexpID) , byrow = TRUE))
+  i <- 0
+  for (e in vexpID)
+  {
+      if (is.na(e))
+        next()
+      x1  <- seq(0, 550 )
+      y1 <- seq(0, 450 )
+
     
-    datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == e & !is.na(datGroupExploitTraj$posX),]
-    points(datTraj$posX,datTraj$posY,type="p",col="red",cex=0.1)
+      print(e)
+      plot(0,0,ylim=range(y1),xlim=range(x1), type="l",col="red")
+      
+      datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == e & !is.na(datGroupExploreTraj$posX),]
+      if (NROW(datTraj))
+        points(datTraj$posX,datTraj$posY,type="p",col="blue",cex=0.1);
 
-    badd <- TRUE
-    #stopifnot(i < 5)
-    i <- i+1
-}
+      datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == e & !is.na(datGroupExploitTraj$posX),]
+      if (NROW(datTraj))
+        points(datTraj$posX,datTraj$posY,type="p",col="red",cex=0.1)
+  
+      badd <- TRUE
+      #stopifnot(i < 5)
+      i <- i+1
+  } ## For Each Event
+    
+} ## end of plot Functon
 
-# LF Sporttaneous
-plot(datExploreTrajectory.LE$posX,datExploreTrajectory.LE$posY,type="l",col="red")
-lines(datExploitTrajectory.LE$posX,datExploitTrajectory.LE$posY,type="l",col="blue")
-
-## LF Evoked
-plot(datExploreTrajectory.LL$posX,datExploreTrajectory.LL$posY,type="l",col="red")
-lines(datExploitTrajectory.LL$posX,datExploitTrajectory.LL$posY,type="l",col="blue")
-
-# NE Spontaneous
-plot(datExploreTrajectory.NE$posX,datExploreTrajectory.NE$posY,type="l",col="red")
-lines(datExploitTrajectory.NE$posX,datExploitTrajectory.NE$posY,type="l",col="blue")
-
-# NL Spontaneous
-plot(datExploreTrajectory.NL$posX,datExploreTrajectory.NL$posY,type="l",col="red")
-lines(datExploitTrajectory.NL$posX,datExploitTrajectory.NL$posY,type="l",col="blue")
-
-# DE Spontaneous
-plot(datExploreTrajectory.DE$posX,datExploreTrajectory.DE$posY,type="l",col="red")
-lines(datExploitTrajectory.DE$posX,datExploitTrajectory.DE$posY,type="l",col="blue")
-
-# DL Spontaneous
-plot(datExploreTrajectory.DL$posX,datExploreTrajectory.DL$posY,type="l",col="red")
-lines(datExploitTrajectory.DL$posX,datExploitTrajectory.DL$posY,type="l",col="blue")
+plotDispersionTrajectories('LL',datAllFrames,datDispersion , 0.2)
 
 
 ### Normed Per Larva
