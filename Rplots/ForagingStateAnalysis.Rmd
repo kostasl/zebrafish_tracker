@@ -26,17 +26,11 @@ Given our behavioural recordings are not continuous, and exclude periods when th
 
 
 ```{r Function to plot trajectories for each larva, coloured based on dispersion, figures-function, fig.show="hold", out.width="50%", echo=FALSE }
-##
-# Function Plot Individual Trajectories for a group, split between exploration and exploitation
-# given a normalized dispersion measures threshold 
-##
-plotDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, TH_DISP = 0.2)
+## Plot function for scatter plot of colour coded larval trajectories, separated into explore and exploit vectors 
+### 
+plotExploreExploitTrajectories <- function(datGroupExploreTraj,datGroupExploitTraj)
 {
-
-   datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
-  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
   vexpID <-  unique(datGroupExploitTraj$exp) 
-
   #par(mfrow=c(2,NROW(vexpID))) ##MultiPlot Page
   #par(mar=c(1,1,1,1))
   #layout(matrix(seq(1,NROW(vexpID)), 2,NROW(vexpID) , byrow = TRUE))
@@ -45,8 +39,8 @@ plotDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, TH_
   {
       if (is.na(e))
         next()
-      x1  <- seq(0, 550 )
-      y1 <- seq(0, 450 )
+      x1  <- seq(0, 640 )
+      y1 <- seq(0, 550 )
 
       print(e)
       plot(0,0,ylim=range(y1),xlim=range(x1), type="l",col="red",main=paste(groupID,e) )
@@ -64,7 +58,35 @@ plotDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, TH_
       i <- i+1
   } ## For Each Event
     
+}
+##
+# Function Plot Individual Trajectories for a group, split between exploration and exploitation
+# given a *global* normalized dispersion measures threshold 
+##
+plotGlobalNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, TH_DISP = 0.2)
+{
+
+  datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+  ## Call Plot Function
+  plotExploreExploitTrajectories(datGroupExploreTraj,datGroupExploitTraj)
+  
 } ## end of plot Functon
+
+##
+# Function Plot Individual Trajectories for a group, split between exploration and exploitation
+# given a *local* normalized dispersion measures threshold / the classification is relative to the mobility measure of each larvae in each condition 
+##
+plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, TH_DISP = 0.2)
+{
+
+  datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion_norm >= TH_DISP,"frameRow"],]
+  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion_norm < TH_DISP,"frameRow"],]
+  ## Call Plot Function
+  plotExploreExploitTrajectories(datGroupExploreTraj,datGroupExploitTraj)
+  
+} ## end of plot Functon
+
 
 ```
 
@@ -176,18 +198,33 @@ if (NROW(datDispersion) == 0)
 ## Detect Exploration -Exploitation via dispersion
  
  In Marquez et al. 2019 Ext Fig 3a, the dispersion of each larva is normalized against its own range before the overall (bimodal) distribution is shown.
- Using my tracking data I calculated the dispersion at each tracked video frame and plot the distribution to examine if they are bimodal.
+ Using my tracking data I calculated the dispersion at each tracked video frame and plot the distribution to examine if they are bimodal (here using the `r tsec_timeWindow` seconds window).
  
  Without normalizing the distribution is shown on the left, and the normalizd one on the right :
 ```{r histograms of dispersion across groups, fig.show="hold", out.width="50%", echo=FALSE, results='hide'  }
 
 hist(datDispersion$Dispersion,breaks=100,main="(All groups): Dispersion lengths per experiment ",xlab="Dispersion (mm)")
-hist(datDispersion$Dispersion/AllRange[2],breaks=100,main="(All groups): Dispersion lengths normalized to max. across experiment",xlab="Dispersion (norm across all exp.)")
+hist(datDispersion$Dispersion/AllRange[2],breaks=100,main="(All groups): Dispersion  globally normalized",xlab="Dispersion (norm)")
 
 ```
 
 We then plot each experimental group individually, also examining the dispersion in evoked (in the presence of prey) and spontaneous (no prey) conditions separatellly.
-The following dispersions have been normalized to maximum trajectory length found across all experiments:
+Next we plot these for each experimental condition individually (non-Normalized):
+```{r plot dispersion distributions per group, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
+# 
+# ## Normed over all Recorded Dispersions
+ hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion,breaks=100,main="LF Spontaneous",xlab="Dispersion (mm)")
+ hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion,breaks=100,main="NF Spontaneous",xlab="Dispersion (mm)")
+ hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion,breaks=100,main="DF Spontaneous",xlab="Dispersion (mm)")
+
+ hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,breaks=100,main="LF Evoked",xlab="Dispersion (mm)")
+ hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,breaks=100,main="NF Evoked",xlab="Dispersion (mm)")
+ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,breaks=100,main="DF Evoked",xlab="Dispersion (mm)")
+ 
+```
+
+
+For completness, the following dispersions have been normalized to maximum trajectory length found across all experiments:
 - Globally normalized)
 ```{r plot globally normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
 # 
@@ -218,50 +255,96 @@ hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion_norm,breaks=100,m
 The following figures show the tracked trajectories per experiment of each group. Trajectory segments are colour coded according to whether these can be classified as exploration or exploitation based on ta theshold on the normalized dispersion. This threshold is set here to `r thres_dispersion_class ` .
 Red signiifies segments of exploitation, blue is for exploration.
 
-## Evoked conditions
+## Globally normalized
+The dispersion of each experiment is normalized globally and thus classification threhsold for exploitation identifies trajectory segments of spatially restricted motion relative to all larvae across groups
+
+
+### Evoked conditions
 Trajectories of 10min recordings in the presence of prey. Note, in contrast to Marquez et al. 2019, our recodings exclude motion at the boundary of petridish.
 
-### LF - Evoked Trajectories
-```{r,  trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
+#### LF - Evoked Trajectories
+```{r,  global_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
 
-plotDispersionTrajectories('LL',datAllFrames,datDispersion , thres_dispersion_class )
-
-```
-
-### NF - Evoked Trajectories 
-```{r, trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
-
-plotDispersionTrajectories('NL',datAllFrames,datDispersion , thres_dispersion_class )
+plotGlobalNormDispersionTrajectories('LL',datAllFrames,datDispersion , thres_dispersion_class )
 
 ```
 
-### DF - Evoked Trajectories 
-```{r, trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
+#### NF - Evoked Trajectories 
+```{r, global_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
 
-plotDispersionTrajectories('DL',datAllFrames,datDispersion , 0.2)
+plotGlobalNormDispersionTrajectories('NL',datAllFrames,datDispersion , thres_dispersion_class )
+
 ```
 
-## Spontaneous conditions
+#### DF - Evoked Trajectories 
+```{r, global_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
+
+plotGlobalNormDispersionTrajectories('DL',datAllFrames,datDispersion , 0.2)
+```
+
+#### Spontaneous conditions
 ### LF - Spontaneous Trajectories
-```{r,  trajectories-LE, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
+```{r,  global_norm-trajectories-LE, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
 
-plotDispersionTrajectories('LL',datAllFrames,datDispersion , thres_dispersion_class )
-
-```
-
-## NF - Spontaneous Trajectories 
-```{r, trajectories-NE, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
-
-plotDispersionTrajectories('NE',datAllFrames,datDispersion , thres_dispersion_class )
+plotGlobalNormDispersionTrajectories('LL',datAllFrames,datDispersion , thres_dispersion_class )
 
 ```
 
-## DF - Spontaneous Trajectories 
-```{r, trajectories-DE, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
+#### NF - Spontaneous Trajectories 
+```{r, global_norm-trajectories-NE, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
 
-plotDispersionTrajectories('DE',datAllFrames,datDispersion , 0.2)
+plotGlobalNormDispersionTrajectories('NE',datAllFrames,datDispersion , thres_dispersion_class )
+
+```
+
+#### DF - Spontaneous Trajectories 
+```{r, global_norm-trajectories-DE, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
+
+plotGlobalNormDispersionTrajectories('DE',datAllFrames,datDispersion , 0.2)
 ```
 
 
+## Normalized Per Larval experiment
+Note that Spontaneous and Evoked conditions of each larva are considered individually
 
+#### LF - Evoked Trajectories
+```{r,  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
+
+plotExpNormDispersionTrajectories('LL',datAllFrames,datDispersion , thres_dispersion_class )
+
+```
+
+#### NF - Evoked Trajectories 
+```{r, exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
+
+plotExpNormDispersionTrajectories('NL',datAllFrames,datDispersion , thres_dispersion_class )
+
+```
+
+#### DF - Evoked Trajectories 
+```{r, exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
+
+plotExpNormDispersionTrajectories('DL',datAllFrames,datDispersion , 0.2)
+```
+
+#### Spontaneous conditions
+### LF - Spontaneous Trajectories
+```{r,  exp_norm-trajectories-LE, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
+
+plotExpNormDispersionTrajectories('LL',datAllFrames,datDispersion , thres_dispersion_class )
+
+```
+
+#### NF - Spontaneous Trajectories 
+```{r, exp_norm-trajectories-NE, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
+
+plotExpNormDispersionTrajectories('NE',datAllFrames,datDispersion , thres_dispersion_class )
+
+```
+
+#### DF - Spontaneous Trajectories 
+```{r, exp_norm-trajectories-DE, fig.show="hold", out.width="50%", echo=FALSE, results='hide'}
+
+plotExpNormDispersionTrajectories('DE',datAllFrames,datDispersion , 0.2)
+```
 
