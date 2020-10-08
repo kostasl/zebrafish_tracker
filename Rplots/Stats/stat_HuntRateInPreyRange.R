@@ -10,7 +10,7 @@
 
 #library(fitdistrplus) ## Fpr testing Dist. Fit
 
-source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
+#source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
 source("HuntingEventAnalysis_lib.r")
