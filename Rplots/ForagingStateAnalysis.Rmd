@@ -34,6 +34,7 @@ source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
 setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
+## Load datAllFrames
 load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
 load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
 
@@ -46,7 +47,7 @@ AllRange <- range(datDispersion$Dispersion,na.rm=TRUE)
 if (NROW(datDispersion) == 0)
 {
   message("Calculate Trajectory Dispersions")
-  datDispersion <- calcTrajectoryDispersions
+  datDispersion <- calcTrajectoryDispersions(datAllFrames)
 }
 
 ```
@@ -70,15 +71,15 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
       y1 <- seq(0, 550 )
 
       print(e)
-      plot(0,0,ylim=range(y1),xlim=range(x1), type="l",col="red",main=paste(groupID,e) )
+      plot(0,0,ylim=range(y1),xlim=range(x1), type="l", col="red", main=paste(groupID,e) )
       
       datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == e & !is.na(datGroupExploreTraj$posX),]
       if (NROW(datTraj))
-        points(datTraj$posX,datTraj$posY,type="p",col="blue",cex=0.1);
+        points(datTraj$posX,datTraj$posY,type="p", col="blue", cex=0.1);
 
       datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == e & !is.na(datGroupExploitTraj$posX),]
       if (NROW(datTraj))
-        points(datTraj$posX,datTraj$posY,type="p",col="red",cex=0.1)
+        points(datTraj$posX,datTraj$posY,type="p",col="red", cex=0.1)
   
       badd <- TRUE
       #stopifnot(i < 5)
@@ -97,6 +98,12 @@ plotGlobalNormDispersionTrajectories <- function(groupID, datAllFrames, datDispe
   datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
   ## Call Plot Function
   plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj)
+  
+  ## ind Exploration Hunt Events 
+  datExplorationHuntEvents <- datGroupExploreTraj[datGroupExploreTraj$expID == datHuntLabelledEventsSBMerged_fixed$expID &
+                      datGroupExploreTraj$eventID == datHuntLabelledEventsSBMerged_fixed$eventID &
+                        datGroupExploreTraj$frameN == datHuntLabelledEventsSBMerged_fixed$startFrame,
+                      ]  
   
 } ## end of plot Functon
 
@@ -118,7 +125,7 @@ plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersi
 ```
 
 ```{r Calc Dispersion of Each Trajectory}
-calcTrajectoryDispersions <- function()
+calcTrajectoryDispersions <- function(datAllFrames)
 {
 
   datDispersion <- data.frame()
@@ -262,66 +269,111 @@ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=100,m
 # Measure Hunt rate per foraging state
 
 ```{r,  hunt-event foraging state analysis, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-source("DataLabelling/labelHuntEvents_lib.r")
-message(paste(" Loading Hunt Event List to Analyse... "))
-#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#####
+### Combines information across Detected HuntEvents and their outcome, the dispersion of the larval trajectory during which these were
+## initiated  ,and the position at which the hunt-event was initiated
+mergeDispersionWithHuntEvents <- function(datDispersion,datAllFrames)
+{
+  source("DataLabelling/labelHuntEvents_lib.r")
+  message(paste(" Loading Hunt Event List to Analyse... "))
+  #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+  datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
-#datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
-#datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+  start.time <- Sys.time()
+  ## Attach Frame Number to Dispersion Data
+  datDispersion <- cbind(datDispersion,frameN=datAllFrames[datDispersion[,"frameRow"],'frameN'],posX=datAllFrames[datDispersion[,"frameRow"],'posX'],posY=datAllFrames[datDispersion[,"frameRow"],'posY'])
+  
+  ## Extract HUnt Event Foraging State
+  ### 1. Get Dispersion Measure of each hunt event
+  ## MERGE Dispersion With HuntEvent Records
+    # Need to convert to char  GroupID factor( datHuntLabelledEventsSBMerged_fixed$groupID) 
+    datDispersion$groupID <- levels( datDispersion$groupID)[datDispersion$groupID]
+    datHEventDispersion <- merge(datDispersion,datHuntLabelledEventsSBMerged_fixed,all.y=TRUE,by.x=c("frameN","expID","eventID","groupID"),by.y=c("startFrame","expID","eventID","groupID") )
+    ## Add Position In Arena
+    saveRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+    message("Saved to:",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+    
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+  
+  return(datHEventDispersion)
+}
 
-## Attach Frame Number to Dispersion Data
-datDispersion <- cbind(datDispersion,frameN=datAllFrames[datDispersion[,"frameRow"],'frameN'])
+message("Loading from :",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+datHEventDispersion <- readRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
 
-## Extract HUnt Event Foraging State
-### 1. Get Dispersion Measure of each hunt event
-start.time <- Sys.time()
-## MERGE Dispersion With HuntEvent Records
-  # Need to convert to factor the GroupID factor( datHuntLabelledEventsSBMerged_fixed$groupID) 
-  datHEventDispersion <- merge(datDispersion,datHuntLabelledEventsSBMerged_fixed,all.y=TRUE,by.x=c("frameN","expID","eventID"),by.y=c("startFrame","expID","eventID") )
-  saveRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-end.time <- Sys.time()
-time.taken <- end.time - start.time
-print(time.taken)
+## If we have not merged these records before, make them now
+if (!exists("datHEventDispersion"))
+  datHEventDispersion <- mergeDispersionWithHuntEvents(datDispersion,datAllFrames)
+
 ```
 
 Here I will identify the number of hunt events evoked/initiated in each foraging state.
 However, it is natural to expect that since hunt events involve slow prey approach behaviour, which gives low dispersion, a higher hunt-rate is expected in the exploitation state. Yet the time window of foraging state classification is 5 sec, while a hunt episodes last for less than 2 sec (~1sec If i remember correctly, check eLife paper fig).
 Thus the foraging state is associated with slow/ prey approach motion, as a high rate of hunt initiation would cause low dispersion.  
 
-Looking at a historgram normalized dispersion of hunt events it is clear that most of these exist over high dispersion, ie not in exploitation but rather in an exploratory phase!
-
-It looks as if only the NF hunts during an exploitation type of movement.
-
-```{r,  hunt-event-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-
+A list of all tabulated hunt-outcomes 
+```{r, table-all-huntscores}
 ## Get Number of Hunt Events In Exploit / Expore
 table(convertToScoreLabel(datHuntLabelledEventsSBMerged_fixed$huntScore) )
-table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm > 0.2,]$huntScore) )
-table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm <= 0.2,]$huntScore) )
-## Check number of Events missing dispersion Info
-table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm)]$huntScore) )
+```
+can be compared to the subset of hunt-outcomes that are associated with a low normalized dispersion  (<=`r thres_dispersion_class` ) in being in *exploitation* state
 
+```{r, table-Exploration-huntscores}
+table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm <= thres_dispersion_class,]$huntScore) )
+```
+
+and those with larger dispersion indicative of being in the *exploration* foraging state (>`r thres_dispersion_class`)
+
+```{r, table-Exploit-huntscores}
+table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm > thres_dispersion_class,]$huntScore) )
+```
+
+while some hunt-outcomes were not associated with any dispersion measure - missing as trajectory was not long enoughat time of the hunt event
+
+```{r, table-unaccounted-huntscores}
+## Check number of Events missing dispersion Info
+table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm),]$huntScore) )
+```
+
+Looking at a histrgram of normalized dispersion of all hunt events it is clear that most of these exist over high dispersion, ie not in exploitation but rather in an exploratory phase!
+
+```{r,  hunt-event-all-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 hist(datHEventDispersion$Dispersion_norm,main="All group hunt events, ",xlab="Dispersion Norm.",breaks=100)
+```
 
+These next histograms show how dispersion is distributed in each rearing group and looking at whether hunting initiation changes between spontaneous and evoked conditions.
+
+  * It appears as if only the NF hunts during an exploitation type of movement.
+  * LF spontaneous hunt-events occur over exploration (higher dispersion) 
+
+```{r,  hunt-event-group-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 ## Normalized Dispersion In Hunt Events
 ## Check LF
-hist(datHEventDispersion[datHEventDispersion$groupID.y=='LL', ]$Dispersion_norm,breaks=100,main="LF",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID.y=='LL', ]$Dispersion_norm,breaks=100,main="LF Evoked",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID.y=='LE', ]$Dispersion_norm,breaks=100,main="LF Spont",xlab="Dispersion Norm.")
+
 
 ## Check NF
-hist(datHEventDispersion[datHEventDispersion$groupID.y=='NL', ]$Dispersion_norm,breaks=100,main="NF",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID.y=='NL', ]$Dispersion_norm,breaks=100,main="NF Evoked",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID.y=='NE', ]$Dispersion_norm,breaks=100,main="NF Spont",xlab="Dispersion Norm.")
 
 ## Check DF
-hist(datHEventDispersion[datHEventDispersion$groupID.y=='DL', ]$Dispersion_norm,breaks=100,main="DF",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID.y=='DL', ]$Dispersion_norm,breaks=100,main="DF Evoked",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID.y=='DE', ]$Dispersion_norm,breaks=100,main="DF Spont",xlab="Dispersion Norm.")
 
 ```
 
-The same situation is found even if we remove the normalization stage, and look at raw dispersion measures, the low dispersion associated with exploitation phase is rare among hunt-events
+The distributions look similar even if we remove the normalization stage, and look at raw dispersion measures, the low dispersion associated with exploitation phase is rare among hunt-events
 
 ```{r,  hunt-event-dispersion histogram raw, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 ## RAW Dispersion In Hunt Events
+## Check All groups
+hist(datHEventDispersion$Dispersion,breaks=100,main="All groups Hunt-Events",xlab="Dispersion ",xlim=c(0,10))
+
 ## Check LF
 hist(datHEventDispersion[datHEventDispersion$groupID.y=='LL', ]$Dispersion,breaks=100,main="LF",xlab="Dispersion ",xlim=c(0,10))
 
@@ -459,66 +511,67 @@ plotExpNormDispersionTrajectories('DE',datAllFrames,datDispersion , 0.2)
 
 
 
-```{r,spare-code-notes,include=FALSE}
-### Retrieve Dispersion of each Hunt Event
- start.time <- Sys.time()
- i <- 0
- for (i in 1:NROW(datHuntLabelledEventsSBMerged_fixed) )
- {
+```{r spare-code-notes,eval=FALSE, include=FALSE}
+## Retrieve Dispersion of each Hunt Event
+start.time <- Sys.time()
+i <- 0
+for (i in 1:NROW(datHuntLabelledEventsSBMerged_fixed) )
+{
 
-    datHEvent_disp <- datDispersion[datDispersion$expID == datHuntLabelledEventsSBMerged_fixed[i,]$expID & 
-                               datDispersion$eventID == datHuntLabelledEventsSBMerged_fixed[i,]$eventID &  
-                               datDispersion$frameN == datHuntLabelledEventsSBMerged_fixed[i,]$startFrame ,] #
-    #message(datHEvent_disp$expID)  
-   
-    if (NROW(datHEvent_disp) == 0 )
-    {
-      warning("Tracking dispersion data not found for huntevent ",i, "at startframe ",datHuntLabelledEventsSBMerged_fixed[i,]$startFrame )
-      ##Try Again without the start frame - Slower
-      datHEvent_disp <- datDispersion[datDispersion$expID == datHuntLabelledEventsSBMerged_fixed[i,]$expID & 
-                               datDispersion$eventID == datHuntLabelledEventsSBMerged_fixed[i,]$eventID  ,] #
-    }
-    
-    if (NROW(datHEvent_disp) == 0 )
-      warning("Attaching dispersion data for huntevent ",i, " Failed")
-    
-    # Check if Rec Exists
-    if (NROW(datHEvent_disp) == 1 )
-    {
-      
-      vHuntEventDispersion[i] <- datHEvent_disp$Dispersion
-      vHuntEventDispersion_norm[i] <-  datHEvent_disp$Dispersion_norm
-      message(i," Disp:",vHuntEventDispersion[i])
-      
-    }else {
-  
-      ## Multiple rows returned
-      ## FInd Tracking (Dispersion dat) frame that is closest to hunt-event initiation (start frame)
-      idx <- NA
-      with(datHuntLabelledEventsSBMerged_fixed[i,],
-           {
-                 idx <- which(abs(datHEvent_disp$frameN - startFrame) == min(abs(datHEvent_disp$frameN - startFrame) ) )
-                
-                 vHuntEventDispersion_norm[i] <- datHEvent_disp[idx,"Dispersion_norm"]
-                 vHuntEventDispersion[i] <- datHEvent_disp[idx,"Dispersion"]
-                ##This Maybe NA since there are no Dispersion Data In some Occassions
-                ##stopifnot(!is.na(vHuntEventDispersion[i]))
-                message("Found idx ",idx, " Disp ",vHuntEventDispersion[i])
-           })
-      
-    }
+   datHEvent_disp <- datDispersion[datDispersion$expID == datHuntLabelledEventsSBMerged_fixed[i,]$expID &
+                              datDispersion$eventID == datHuntLabelledEventsSBMerged_fixed[i,]$eventID &
+                              datDispersion$frameN == datHuntLabelledEventsSBMerged_fixed[i,]$startFrame ,] #
+   #message(datHEvent_disp$expID)
 
-     #Find Dispersion At start Frame of Hunt Event
-     #
-     print(i)    
-    
+   if (NROW(datHEvent_disp) == 0 )
+   {
+     warning("Tracking dispersion data not found for huntevent ",i, "at startframe ",datHuntLabelledEventsSBMerged_fixed[i,]$startFrame )
+     ##Try Again without the start frame - Slower
+     datHEvent_disp <- datDispersion[datDispersion$expID == datHuntLabelledEventsSBMerged_fixed[i,]$expID &
+                              datDispersion$eventID == datHuntLabelledEventsSBMerged_fixed[i,]$eventID  ,] #
+   }
 
-     #stopifnot(i <11)
- }
- 
-    end.time <- Sys.time()
-    time.taken <- end.time - start.time
-    print(time.taken)
+   if (NROW(datHEvent_disp) == 0 )
+     warning("Attaching dispersion data for huntevent ",i, " Failed")
+
+   # Check if Rec Exists
+   if (NROW(datHEvent_disp) == 1 )
+   {
+
+     vHuntEventDispersion[i] <- datHEvent_disp$Dispersion
+     vHuntEventDispersion_norm[i] <-  datHEvent_disp$Dispersion_norm
+     message(i," Disp:",vHuntEventDispersion[i])
+
+   }else {
+
+     ## Multiple rows returned
+     ## FInd Tracking (Dispersion dat) frame that is closest to hunt-event initiation (start frame)
+     idx <- NA
+     with(datHuntLabelledEventsSBMerged_fixed[i,],
+          {
+                idx <- which(abs(datHEvent_disp$frameN - startFrame) == min(abs(datHEvent_disp$frameN - startFrame) ) )
+
+                vHuntEventDispersion_norm[i] <- datHEvent_disp[idx,"Dispersion_norm"]
+                vHuntEventDispersion[i] <- datHEvent_disp[idx,"Dispersion"]
+               ##This Maybe NA since there are no Dispersion Data In some Occassions
+               ##stopifnot(!is.na(vHuntEventDispersion[i]))
+               message("Found idx ",idx, " Disp ",vHuntEventDispersion[i])
+          })
+
+   }
+
+    #Find Dispersion At start Frame of Hunt Event
+    #
+    print(i)
+
+
+    #stopifnot(i <11)
+}
+
+   end.time <- Sys.time()
+   time.taken <- end.time - start.time
+   print(time.taken)
 
  
 ```
+
