@@ -104,7 +104,11 @@ plotGlobalNormDispersionTrajectories <- function(groupID, datAllFrames, datDispe
                       datGroupExploreTraj$eventID == datHuntLabelledEventsSBMerged_fixed$eventID &
                         datGroupExploreTraj$frameN == datHuntLabelledEventsSBMerged_fixed$startFrame,
                       ]  
-  
+##Add Hunt Events on Map  
+ points(datHEventDispersion[datHEventDispersion$Dispersion/AllRange[2] >= TH_DISP,]$posX,datHEventDispersion[datHEventDispersion$Dispersion/AllRange[2] >= TH_DISP,]$posY,col="blue")
+ points(datHEventDispersion[datHEventDispersion$Dispersion/AllRange[2] < TH_DISP,]$posX,datHEventDispersion[datHEventDispersion$Dispersion/AllRange[2] < TH_DISP,]$posY,col="red")
+
+   
 } ## end of plot Functon
 
 ##
@@ -342,6 +346,7 @@ Looking at a histrgram of normalized dispersion of all hunt events it is clear t
 ```{r,  hunt-event-all-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 hist(datHEventDispersion$Dispersion_norm,main="All group hunt events, ",xlab="Dispersion Norm.",breaks=100)
+
 ```
 
 These next histograms show how dispersion is distributed in each rearing group and looking at whether hunting initiation changes between spontaneous and evoked conditions.
@@ -354,7 +359,6 @@ These next histograms show how dispersion is distributed in each rearing group a
 ## Check LF
 hist(datHEventDispersion[datHEventDispersion$groupID.y=='LL', ]$Dispersion_norm,breaks=100,main="LF Evoked",xlab="Dispersion Norm.")
 hist(datHEventDispersion[datHEventDispersion$groupID.y=='LE', ]$Dispersion_norm,breaks=100,main="LF Spont",xlab="Dispersion Norm.")
-
 
 ## Check NF
 hist(datHEventDispersion[datHEventDispersion$groupID.y=='NL', ]$Dispersion_norm,breaks=100,main="NF Evoked",xlab="Dispersion Norm.")
