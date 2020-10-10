@@ -30,8 +30,8 @@ col2hex <- function(rgbcol) {
 }
 
 
-DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
-DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
+DIM_PXRADIUS       <- 790 #Is the Radius Of the dish In the Video
+DIM_MMPERPX        <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
 DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 G_APPROXFPS              <- 410
@@ -56,14 +56,14 @@ MIN_CAPTURE_EVENTS_PCA   <- 5 ## Make HuntBehaviour PCA Using Larvae that have a
 FONTSZ_AXISLAB <- 1.2
 FONTSZ_AXIS    <- 1.2 ##Axis Tik Number Size
 
-line = 2.8 ## SubFig Label Params
-lineAxis = 2.7
+line      = 2.8 ## SubFig Label Params
+lineAxis  = 2.7
 lineTitle = 2.7
 lineXAxis = 3.0
-cex = 1.4
-adj  = 1.0
-padj <- -8.0
-las <- 1
+cex   = 1.4
+adj   = 1.0
+padj  <- -8.0
+las   <- 1
 
 rfc <- colorRampPalette(rev(brewer.pal(8,'Spectral')));
 r <- c(rfc(7),"#FF0000");
@@ -73,7 +73,7 @@ pairedPalette <- col2rgb(brewer.pal(8,"Paired"),alpha = 1)
 pairedPalette["alpha",1:8] <- 210 ##Opacity
 colourLegE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 colourLegL <- col2hex(pairedPalette[,c(6,4,2,8)]) ##Transparent For MCMC Samples (Live)
-pairedPalette["alpha",1:8] <-30 ##Opacity
+pairedPalette["alpha",1:8] <- 30 ##Opacity
 colourHLine <- col2hex(pairedPalette[,c(6,4,2,5,3,1,7)]) ##Transparent For MCMC Samples (Live) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 pairedPalette["alpha",1:8] <-55 ##Opacity
 colourHPoint <- col2hex(pairedPalette[,c(6,4,2,5,3,1,7)]) ##Transparent For MCMC Samples (Live) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
