@@ -609,6 +609,48 @@ mergeHuntEventRecords <- function(strSrcDir,strExt = "*.RData")
   saveRDS(datHuntEvents,file=paste(strDataExportDir,"/setn",nDat,"-D",first,"-",last,"-HuntEvents-Merged.rds",sep="")  )
 }
 
+##
+## Returns dataframe with  Experiment ID that link the spontaneous and evoked test conditions coming from the same larva
+##
+getSpontaneousEvokedExperimentPairs <- function(datHuntStat)
+{
+  lExpPairs <- list()
+  i <- 1
+  strCondTags <- c("LE","LL","NE","NL","DE","DL")
+  
+  ### Plot Connected Larva Event Counts - To Show Individual Behaviour In Spontaneous Vs Evoked Activity
+  for (gIdx in seq(1,NROW(strCondTags),2)  ) ##Iterated Through LF DF And NF Groups
+  {
+    gE <- strCondTags[gIdx] ##Empty Condution
+    gL <- strCondTags[gIdx+1] ##With ROtifers Test Condition 
+    vRegL <- datHuntStat[,"vIDLookupTable"][[gL]]
+    vRegE <- datHuntStat[,"vIDLookupTable"][[gE]]
+    
+    ## Fix Missing LarvaID: REMOVE FActor Field / Set NAs Which Are really ID 5
+    vRegL[,"larvaID"] <- as.numeric(vRegL[,"larvaID"])
+    vRegE[,"larvaID"] <- as.numeric(vRegE[,"larvaID"])
+    vRegL[is.na(vRegL$larvaID),"larvaID"] <- 5 
+    vRegE[is.na(vRegE$larvaID),"larvaID"] <- 5
+    
+    ## Drop Factors To Skip Errors 
+    vRegL[,"dataSetID"] <- as.numeric(vRegL[,"dataSetID"])
+    vRegE[,"dataSetID"] <- as.numeric(vRegE[,"dataSetID"])
+    
+    for (k in 1:NROW(vRegE) )
+    {
+      e <- vRegE[k,]
+      i <- i + 1
+      EvokedExp <- (vRegL[vRegL$dataSetID == e$dataSetID & vRegL$larvaID == e$larvaID,])
+      if (NROW(EvokedExp) == 0)
+        next() ##Skip If Matched LiveTest Larva Is not Found
+      dexppair <- data.frame(groupID.E = gL, groupID.S = gE, expID.E = as.character(EvokedExp$expID), expID.S = as.character(e$expID) )
+      lExpPairs[[i]] <- dexppair
+    }
+  }
+  datExpPairs <- do.call(rbind,lExpPairs)
+  
+  return(data.frame( datExpPairs) )
+}####
 
 
 ## Handle Export of  Detected Hunt Events to File ###

@@ -54,49 +54,77 @@ if (NROW(datDispersion) == 0)
 
 ```{r Function to plot trajectories for each larva, coloured based on dispersion, figures-function, fig.show="hold", out.width="50%", echo=FALSE }
 
-pairedTrajPalette <- col2hex(col2rgb(brewer.pal(8,"Paired"),alpha = 1))
+pairedTrajPalette <- col2hex(col2rgb(brewer.pal(12,"Paired"),alpha = 1))
 
 ## Plot function for scatter plot of colour coded larval trajectories, separated into explore and exploit vectors 
-### 
-plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents, thin=3)
+###  datExpPairs - expID for Spont and Evoked for each larva
+plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents,datExpPairs, thin=3)
 {
   
-  vexpID <-  unique(datGroupExploitTraj$exp) 
+  #vexpID <-  unique(datGroupExploitTraj$exp) 
   #par(mfrow=c(2,NROW(vexpID))) ##MultiPlot Page
   #par(mar=c(1,1,1,1))
   #layout(matrix(seq(1,NROW(vexpID)), 2,NROW(vexpID) , byrow = TRUE))
   i <- 0
-  for (e in vexpID)
+  for (j in 1:nrow(datExpPairs) )
   {
+      e <- datExpPairs[j,]
       if (is.na(e))
         next()
       x1  <- seq(0, 640 )
       y1  <- seq(0, 550 )
 
-      print(e)
-      plot(0,0,ylim=range(y1),xlim=range(x1), type="l", col="red", main=paste(groupID,e) )
-      
-      datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == e & !is.na(datGroupExploreTraj$posX),]
+      #print(e)
+      plot(0,0,ylim=range(y1),xlim=range(x1), type="l", col="red", main=paste(groupID) )
+      ## Evoked Explore
+      datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == as.character(e$expID.E) & !is.na(datGroupExploreTraj$posX),]
       if (NROW(datTraj))
       {
         idxplot <- seq(1,NROW(datTraj),thin)
         points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p", col=pairedTrajPalette[1], cex=0.1);
       }
+      ## Add Hunt Events on Map
+      # Evoked Exploration
+      datSpotHunts <- datExplorationHuntEvents[datExplorationHuntEvents$expID == as.character(e$expID.E)  & !is.na(datExplorationHuntEvents$expID), ] 
+      points(datSpotHunts$posX, datSpotHunts$posY, col=pairedTrajPalette[2], cex=1.2, pch=17) ## Triangle Explore
+  
+      ## Spontaneous Explore
+      datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == as.character(e$expID.S) & !is.na(datGroupExploreTraj$posX),]
+      if (NROW(datTraj))
+      {
+        idxplot <- seq(1,NROW(datTraj),thin)
+        points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p", col=pairedTrajPalette[3], cex=0.1);
+      }
+      ## Spont Exploration
+      datSpotHunts <- datExplorationHuntEvents[datExplorationHuntEvents$expID == as.character(e$expID.S)  & !is.na(datExplorationHuntEvents$expID), ] 
+      points(datSpotHunts$posX, datSpotHunts$posY, col=pairedTrajPalette[4], cex=1.2, pch=17) ##  Triangle Explore
+  
       
-      datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == e & !is.na(datGroupExploitTraj$posX),]
+      
+      ################
+      ## Evoked Exploit
+      datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == as.character(e$expID.E) & !is.na(datGroupExploitTraj$posX),]
       if (NROW(datTraj))
       {      
         idxplot <- seq(1,NROW(datTraj),thin)
         points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p",col=pairedTrajPalette[5], cex=0.1)
       }
-    
-      ## Add Hunt Events on Map
-      # Exploration
-      datSpotHunts <- datExplorationHuntEvents[datExplorationHuntEvents$expID == as.character( e)  & !is.na(datExplorationHuntEvents$expID), ] 
-      points(datSpotHunts$posX, datSpotHunts$posY, col=pairedTrajPalette[2], cex=1.2, pch=17)
-      ## Exploitation
-      datSpotHunts <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character( e)  & !is.na(datExploitationHuntEvents$expID), ] 
-      points(datSpotHunts$posX, datSpotHunts$posY,col=pairedTrajPalette[6], cex=1.2,pch=15)
+      ## Evoked Exploitation
+      datSpotHunts <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.E)  & !is.na(datExploitationHuntEvents$expID), ] 
+      points(datSpotHunts$posX, datSpotHunts$posY,col=pairedTrajPalette[6], cex=1.2,pch=15) ## Square Evoked
+
+
+      ## Spontaneous Exploit
+      datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == as.character(e$expID.S) & !is.na(datGroupExploitTraj$posX),]
+      if (NROW(datTraj))
+      { 
+        idxplot <- seq(1,NROW(datTraj),thin)
+        points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p",col=pairedTrajPalette[7], cex=0.1)
+      }
+      ## Hunt Episodes Spont Exploitation
+      datSpotHunts <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.S)  & !is.na(datExploitationHuntEvents$expID), ] 
+      points(datSpotHunts$posX, datSpotHunts$posY,col=pairedTrajPalette[8], cex=1.2,pch=15) ## Square Evoked
+  
       
       badd <- TRUE
       #stopifnot(i < 5)
@@ -108,18 +136,18 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
 # Function Plot Individual Trajectories for a group, split between exploration and exploitation
 # given a *global* normalized dispersion measures threshold 
 ##
-plotGlobalNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, datHEventDispersion,TH_DISP = 0.2)
+plotGlobalNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, datHEventDispersion,datExpPairs,TH_DISP = 0.2)
 { 
-  datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
-  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
+  datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID %in% groupID & datDispersion$Dispersion/AllRange[2] >= TH_DISP,"frameRow"],]
+  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID %in% groupID & datDispersion$Dispersion/AllRange[2] < TH_DISP,"frameRow"],]
   
   ## ind Exploration Hunt Events 
   datExplorationHuntEvents <- datHEventDispersion[datHEventDispersion$Dispersion/AllRange[2] >= TH_DISP, ]
-  
   ## ind Exploration Hunt Events 
   datExploitationHuntEvents <- datHEventDispersion[datHEventDispersion$Dispersion/AllRange[2] < TH_DISP, ]
   
-  plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents)
+  
+  plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents,datExpPairs)
   
 } ## end of plot Functon
  
@@ -130,9 +158,10 @@ plotGlobalNormDispersionTrajectories <- function(groupID, datAllFrames, datDispe
 plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersion,datHEventDispersion, TH_DISP = 0.2)
 {
 
-  datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion_norm >= TH_DISP,"frameRow"],]
-  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID == groupID & datDispersion$Dispersion_norm <  TH_DISP,"frameRow"],]
+  datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID %in% groupID & datDispersion$Dispersion_norm >= TH_DISP,"frameRow"],]
+  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID %in% groupID & datDispersion$Dispersion_norm <  TH_DISP,"frameRow"],]
    
+ ## \TODO: Norm per larva in both spont and Evoked
   ## ind Exploration Hunt Events 
   datExplorationHuntEvents <- datHEventDispersion[datHEventDispersion$Dispersion_norm >= TH_DISP, ]
   
@@ -143,6 +172,8 @@ plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersi
   plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents)
 
 } ## end of plot Functon
+
+
 
 
 ```
@@ -308,12 +339,7 @@ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=100,m
 ```
 
 # Measure Hunt rate per foraging state
-
-```{r,  hunt-event foraging state analysis, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-  source("DataLabelling/labelHuntEvents_lib.r")
-  #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-  datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
+```{r,combine-dispersion-with-hunt events, echo=FALSE}
 #####
 ### Combines information across Detected HuntEvents and their outcome, the dispersion of the larval trajectory during which these were
 ## initiated  ,and the position at which the hunt-event was initiated
@@ -339,8 +365,23 @@ mergeDispersionWithHuntEvents <- function(datDispersion,datAllFrames)
   time.taken <- end.time - start.time
   print(time.taken)
   
-  return(datHEventDispersion)
+  return(data.frame(datHEventDispersion ) )
 }
+
+```
+
+
+```{r,  hunt-event foraging state analysis, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+  source("DataLabelling/labelHuntEvents_lib.r")
+  source("HuntingEventAnalysis_lib.r")
+
+  #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+  datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+  ## Link Evoked and Spontaneous Trajectories
+  datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+  datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+
 
 message("Loading from :",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
 datHEventDispersion <- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
@@ -417,13 +458,13 @@ The distributions look similar even if we remove the normalization stage, and lo
 hist(datHEventDispersion$Dispersion,breaks=100,main="All groups Hunt-Events",xlab="Dispersion ",xlim=c(0,10))
 
 ## Check LF
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion,breaks=100,main="LF",xlab="Dispersion ",xlim=c(0,10))
+hist(datHEventDispersion[datHEventDispersion$groupID %in% c('LL','LE'), ]$Dispersion,breaks=100,main="LF",xlab="Dispersion ",xlim=c(0,10))
 
 ## Check NF
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion,breaks=100,main="NF",xlab="Dispersion",xlim=c(0,10))
+hist(datHEventDispersion[datHEventDispersion$groupID %in% c('NL','NE'), ]$Dispersion,breaks=100,main="NF",xlab="Dispersion",xlim=c(0,10))
 
 ## Check DF
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion,breaks=100,main="DF",xlab="Dispersion",xlim=c(0,10))
+hist(datHEventDispersion[datHEventDispersion$groupID %in% c('DL','DE'), ]$Dispersion,breaks=100,main="DF",xlab="Dispersion",xlim=c(0,10))
 
 ```
 
@@ -465,48 +506,24 @@ The dispersion of each experiment is normalized globally and thus classification
 ### Evoked conditions
 Trajectories of 10min recordings in the presence of prey. Note, in contrast to Marquez et al. 2019, our recodings exclude motion at the boundary of petridish.
 
-#### LF - Evoked Trajectories
+#### LF - Evoked+Spont Trajectories
 ```{r,  global_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE }
 
-
-plotGlobalNormDispersionTrajectories('LL', datAllFrames, datDispersion, datHEventDispersion,   thres_dispersion_class )
+plotGlobalNormDispersionTrajectories(c('LL','LE'), datAllFrames, datDispersion, datHEventDispersion, datExpPairs,   thres_dispersion_class )
 
 ```
 
-#### NF - Evoked Trajectories 
+#### NF - Evoked+Spont Trajectories 
 ```{r, global_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
 
-plotGlobalNormDispersionTrajectories('NL',datAllFrames,datDispersion,datHEventDispersion, thres_dispersion_class )
-
+plotGlobalNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class )
 
 ```
 
 #### DF - Evoked Trajectories 
 ```{r, global_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
 
-plotGlobalNormDispersionTrajectories('DL',datAllFrames,datDispersion,datHEventDispersion, 0.2)
-```
-
-#### Spontaneous conditions
-### LF - Spontaneous Trajectories
-```{r,  global_norm-trajectories-LE, fig.show="hold", out.width="50%", echo=FALSE, results='hide' ,cache=TRUE, autodep=TRUE}
-
-plotGlobalNormDispersionTrajectories('LL',datAllFrames,datDispersion,datHEventDispersion, thres_dispersion_class )
-
-```
-
-#### NF - Spontaneous Trajectories 
-```{r, global_norm-trajectories-NE, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
-
-plotGlobalNormDispersionTrajectories('NE',datAllFrames,datDispersion ,datHEventDispersion, thres_dispersion_class )
-
-```
-
-#### DF - Spontaneous Trajectories 
-```{r, global_norm-trajectories-DE, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
-
-plotGlobalNormDispersionTrajectories('DE',datAllFrames,datDispersion,datHEventDispersion , 0.2)
-
+plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class)
 ```
 
 
@@ -514,14 +531,13 @@ plotGlobalNormDispersionTrajectories('DE',datAllFrames,datDispersion,datHEventDi
 Note that Spontaneous and Evoked conditions of each larva are considered individually
 
 #### LF - Evoked Trajectories
-```{r,  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE}
+```{r,  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE}
 
 plotExpNormDispersionTrajectories('LL',datAllFrames,datDispersion ,datHEventDispersion,  thres_dispersion_class )
-
 ```
 
 #### NF - Evoked Trajectories 
-```{r, exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE}
+```{r, exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE}
 
 plotExpNormDispersionTrajectories('NL',datAllFrames,datDispersion ,datHEventDispersion, thres_dispersion_class )
 
@@ -529,34 +545,11 @@ plotExpNormDispersionTrajectories('NL',datAllFrames,datDispersion ,datHEventDisp
 ```
 
 #### DF - Evoked Trajectories 
-```{r, exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
+```{r, exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
 
 plotExpNormDispersionTrajectories('DL',datAllFrames,datDispersion ,datHEventDispersion, 0.2)
 
 ```
-
-#### Spontaneous conditions
-### LF - Spontaneous Trajectories
-```{r,  exp_norm-trajectories-LE, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE }
-
-plotExpNormDispersionTrajectories('LL',datAllFrames,datDispersion , datHEventDispersion,thres_dispersion_class )
-
-```
-
-#### NF - Spontaneous Trajectories 
-```{r, exp_norm-trajectories-NE, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
-
-plotExpNormDispersionTrajectories('NE',datAllFrames,datDispersion , datHEventDispersion,thres_dispersion_class )
-
-```
-
-#### DF - Spontaneous Trajectories 
-```{r, exp_norm-trajectories-DE, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
-
-plotExpNormDispersionTrajectories('DE',datAllFrames,datDispersion,datHEventDispersion , 0.2)
-
-```
-
 
 
 ```{r spare-code-notes,eval=FALSE, include=FALSE}
