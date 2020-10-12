@@ -406,12 +406,15 @@ calcHuntStat3 <- function(datHuntEvent)
   
   
   ###--- Hunt Intervals ---#####
+  # nextHuntFrame can be NA - which will produce wantings for inf when substracting
   nIntervalSamples <- length(datHuntEventNonZeroEpi[!is.na(datHuntEventNonZeroEpi$nextHuntFrame),])
-  tblMeanEpisodeIntervalPerLarva  <- tapply(datHuntEventNonZeroEpi$nextHuntFrame-datHuntEventNonZeroEpi$endFrame, datHuntEventNonZeroEpi$expID,mean,na.rm=TRUE)
-  tblMedianEpisodeIntervalPerLarva<- tapply(datHuntEventNonZeroEpi$nextHuntFrame-datHuntEventNonZeroEpi$endFrame, datHuntEventNonZeroEpi$expID,median,na.rm=TRUE)
-  tblMinEpisodeIntervalPerLarva   <- tapply(datHuntEventNonZeroEpi$nextHuntFrame-datHuntEventNonZeroEpi$endFrame, datHuntEventNonZeroEpi$expID,min,na.rm=TRUE)
-  tblMaxEpisodeIntervalPerLarva   <- tapply(datHuntEventNonZeroEpi$nextHuntFrame-datHuntEventNonZeroEpi$endFrame, datHuntEventNonZeroEpi$expID,max,na.rm=TRUE)
-  
+  with(datHuntEventNonZeroEpi[ !is.na(datHuntEventNonZeroEpi$nextHuntFrame),], { 
+    tblMeanEpisodeIntervalPerLarva  <<- tapply(nextHuntFrame-endFrame, expID,mean,na.rm=TRUE)
+    tblMedianEpisodeIntervalPerLarva <<- tapply(nextHuntFrame-endFrame, expID,median,na.rm=TRUE)
+    tblMinEpisodeIntervalPerLarva   <<- tapply(nextHuntFrame-endFrame, expID,min,na.rm=TRUE)
+    tblMaxEpisodeIntervalPerLarva   <<- tapply(nextHuntFrame-endFrame, expID,max,na.rm=TRUE)
+  })
+  #stopifnot((! is.finite(tblMinEpisodeIntervalPerLarva)))
   #### #### ## # # # # 
   
   ### Hunt Ratio /Need to total Frames For That - if no hunt record then also no TotalRec Frames here!
@@ -558,7 +561,7 @@ makeHuntStat <- function(datHuntEvent)
       datHuntEventFiltH <- rbind(datHuntEventFiltH,rec)##Append Empty Place Holder Event
     }
    
-    lHuntStat[[i]] <- calcHuntStat3(datHuntEventFiltH)
+   lHuntStat[[i]] <- calcHuntStat3(datHuntEventFiltH)
   }
   
   datHuntStat = do.call(rbind,lHuntStat)#

@@ -70,7 +70,7 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
   for (j in 1:nrow(datExpPairs) )
   {
       e <- datExpPairs[j,]
-      if (is.na(e))
+      if (is.na(e$expID.E))
         next()
       x1  <- seq(0, 640 )
       y1  <- seq(0, 550 )
@@ -340,7 +340,7 @@ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=100,m
 ```
 
 # Measure Hunt rate per foraging state
-```{r,combine-dispersion-with-hunt events, echo=FALSE}
+```{r,combine-dispersion-with-hunt events, echo=FALSE,cache=TRUE}
 #####
 ### Combines information across Detected HuntEvents and their outcome, the dispersion of the larval trajectory during which these were
 ## initiated  ,and the position at which the hunt-event was initiated
@@ -372,7 +372,7 @@ mergeDispersionWithHuntEvents <- function(datDispersion,datAllFrames)
 ```
 
 
-```{r,  hunt-event foraging state analysis, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r,  hunt-event foraging state analysis, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,results=FALSE }
   source("DataLabelling/labelHuntEvents_lib.r")
   source("HuntingEventAnalysis_lib.r")
 
