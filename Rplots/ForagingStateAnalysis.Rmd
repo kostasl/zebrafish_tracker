@@ -379,6 +379,7 @@ mergeDispersionWithHuntEvents <- function(datDispersion,datAllFrames)
   #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
   datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
+  ##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
   ## Link Evoked and Spontaneous Trajectories
   datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
   datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
@@ -510,12 +511,15 @@ Trajectories of 10min recordings in the presence of prey. Note, in contrast to M
 #### LF - Evoked+Spont Trajectories
 ```{r,  global_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE }
 
+
 plotGlobalNormDispersionTrajectories(c('LL','LE'), datAllFrames, datDispersion, datHEventDispersion, datExpPairs,   thres_dispersion_class )
+
 
 ```
 
 #### NF - Evoked+Spont Trajectories 
 ```{r, global_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
+
 
 plotGlobalNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class )
 
@@ -525,6 +529,7 @@ plotGlobalNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion,dat
 ```{r, global_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
 
 plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class)
+
 ```
 
 
