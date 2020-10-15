@@ -76,7 +76,7 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
       y1  <- seq(0, 550 )
 
       #print(e)
-      plot(0,0,ylim=range(y1),xlim=range(x1), type="l", col="red", main=paste(groupID) )
+      plot(0,0,ylim=range(y1),xlim=range(x1), type="l", col="red", main=paste(groupID[1],e$expID.E,"/",groupID[2],e$expID.S) )
       ## Evoked Explore
       datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == as.character(e$expID.E) & !is.na(datGroupExploreTraj$posX),]
       if (NROW(datTraj))
@@ -148,7 +148,9 @@ plotGlobalNormDispersionTrajectories <- function(groupID, datAllFrames, datDispe
   datExploitationHuntEvents <- datHEventDispersion[datHEventDispersion$Dispersion/AllRange[2] < TH_DISP, ]
   
   
-  plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents,datExpPairs)
+  plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, 
+                                 datExploitationHuntEvents,
+                                 datExpPairs[datExpPairs$groupID.E %in%  groupID | datExpPairs$groupID.S %in%  groupID, ]) ##Subset to Targeted groups
   
 } ## end of plot Functon
  
@@ -170,7 +172,11 @@ plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersi
   datExploitationHuntEvents <- datHEventDispersion[datHEventDispersion$Dispersion_norm < TH_DISP, ]
   
   ## Call Plot Function - Both Spont And Evoked plotted on same figure
-  plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents,datExpPairs)
+ 
+  plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, 
+                                 datExploitationHuntEvents,
+                                 datExpPairs[datExPairs$groupID.E %in%  groupID | datExPairs$groupID.S %in%  groupID, ]) ##Subset to Targeted groups
+  
 
 } ## end of plot Functon
 
@@ -508,7 +514,10 @@ The dispersion of each experiment is normalized globally and thus classification
 ### Evoked conditions
 Trajectories of 10min recordings in the presence of prey. Note, in contrast to Marquez et al. 2019, our recodings exclude motion at the boundary of petridish.
 
-#### LF - Evoked+Spont Trajectories
+#### LF - Evoked+Sponτaneous larval trajectories
+Eploitation state is shown in *red* and *orange* in evoked and spontaneous test conditions respectivelly, with hunt events shown as squares.
+Exploration state is *blue* and *green* in evoked and spontaneous test conditions respectivelly, , with hunt events shown as triangles.
+
 ```{r,  global_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE }
 
 
@@ -621,4 +630,36 @@ for (i in 1:NROW(datHuntLabelledEventsSBMerged_fixed) )
 
  
 ```
+
+
+### Notes from call with Michael McCoullough from Goodhill lab  (14-10-2020 9.30 am)
+Goodhill is moving the lab to Washington. 
+Michael is staying in Australia, 1yr left. He has imaging data and behavioural data that he wants to explore further. 
+Specifically he was looking into analysing the discrete bout movements, using an eigen decomp and clustering, during prey approach.
+
+Here, I explained the concept of biomechanics on the tail, and neural control - discrete - how many control signals to drive the tail motion?
+Bheavioural classifications do not provide bridge principles to neural control - The biomechanics howeever will. 
+Also he agreed that they find the classifications arbitrary as the behavioural space usually looks continuous (i sent him the Balasz paper).
+
+In this way the maggot community is ahead of the zfish.
+So I gave an overview of the larval biomech, work and the mechanical modes, showed him the chaotic maggots commentary, and encouraged him if he wanted to do a piece similar to the ["Capturing the continuous complexity of behaviour in Caenorhabditis elegans"](https://www.nature.com/articles/s41567-020-01036-8)
+- I can do the biomechanics and driving modes, and he can provide data on the tail modes.
+  
+- Overall he concluded he had not thought about these in this way, and will have a think and get back. His initial aim was an MMC of bout types during prey capture.
+
+-The chat also started by saying I do not like how Neuropaper span across data and do not simply nail the evidence to deepen on a single point. 
+He said he appreciates the approach, and (maybe) during JC people also asked for imaging, but he agrees that this is something to be chased up later.
+
+-Michael presented my paper to their *lab's Journal Club*, he provided me with some feedback: 
+
+bold approach to statistics in case comprehensive step of analysis
+- They really liked the statisical approach
+- Hunt Power - What was the intution behind this? - I explained
+- How do you tease apart dev. and experience?
+  Their recent paper shows capture success goes up through development
+   How we do this, did not come out during JC, but now explained the DF-NF-LF ranking reveals it is not nutrition, but also showed supp figure with HPI-size correlation.
+- Internal State timer - What is the point of having these -
+  KL: You remain in state following up the queus as the come- But abording when later. He liked the idea.
+  
+
 
