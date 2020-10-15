@@ -175,7 +175,7 @@ plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersi
  
   plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, 
                                  datExploitationHuntEvents,
-                                 datExpPairs[datExPairs$groupID.E %in%  groupID | datExPairs$groupID.S %in%  groupID, ]) ##Subset to Targeted groups
+                                 datExpPairs[datExpPairs$groupID.E %in%  groupID | datExpPairs$groupID.S %in%  groupID, ]) ##Subset to Targeted groups
   
 
 } ## end of plot Functon
@@ -549,14 +549,14 @@ plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,dat
 Note that Spontaneous and Evoked conditions of each larva are considered individually
 
 #### LF - Evoked /Spontaneous Trajectories
-```{r,  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE}
+```{r,  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=TRUE}
 
 plotExpNormDispersionTrajectories(c('LL','LE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs,  thres_dispersion_class )
 
 ```
 
 #### NF - Evoked/Spontaneous Trajectories 
-```{r, exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE}
+```{r, exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=TRUE}
 
 
 plotExpNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
@@ -565,7 +565,7 @@ plotExpNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion ,datHE
 ```
 
 #### DF - Evoked/Spontaneous Trajectories 
-```{r, exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
+```{r, exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=TRUE}
 
 
 plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class)
