@@ -524,6 +524,7 @@ Exploration state is *blue* and *green* in evoked and spontaneous test condition
 plotGlobalNormDispersionTrajectories(c('LL','LE'), datAllFrames, datDispersion, datHEventDispersion, datExpPairs,   thres_dispersion_class )
 
 
+
 ```
 
 #### NF - Evoked+Spont Trajectories 
@@ -532,12 +533,14 @@ plotGlobalNormDispersionTrajectories(c('LL','LE'), datAllFrames, datDispersion, 
 
 plotGlobalNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class )
 
+
 ```
 
 #### DF - Evoked Trajectories 
 ```{r, global_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE}
 
 plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class)
+
 
 ```
 
@@ -549,10 +552,12 @@ Note that Spontaneous and Evoked conditions of each larva are considered individ
 ```{r,  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE}
 
 plotExpNormDispersionTrajectories(c('LL','LE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs,  thres_dispersion_class )
+
 ```
 
 #### NF - Evoked/Spontaneous Trajectories 
 ```{r, exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE}
+
 
 plotExpNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
 
@@ -561,6 +566,7 @@ plotExpNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion ,datHE
 
 #### DF - Evoked/Spontaneous Trajectories 
 ```{r, exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
+
 
 plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class)
 
