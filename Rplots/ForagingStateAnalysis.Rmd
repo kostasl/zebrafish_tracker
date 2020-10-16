@@ -78,7 +78,8 @@ if (!exists("datHEventDispersion"))
 ## Merge Max Dispersion on there - If it is not already there
 if (! any(grepl("max_Dispersion",names(datDispersion)) ) )
   datDispersion <<- mergeMaxLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs)
-
+## Check for max Calc Error
+#datDispersion[datDispersion$Dispersion > datDispersion$max_Dispersion,]
 ```
 
 
