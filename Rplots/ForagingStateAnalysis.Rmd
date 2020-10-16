@@ -94,12 +94,14 @@ datDispesionMax_Pairs <- data.frame( rbind(
                                      
 datDispesionMax_Pairs$max <- as.numeric(apply(datDispesionMax_Pairs[,2:3], 1, max,na.rm=TRUE)) ## Add col for Max Dispersion across Spont and Evoked conditions
 ##Make Simple frame for merging with dispersion data
-datMaxDispersionPerLarva <- data.frame(cbind(expID=as.character(datDispesionMax_Pairs$expID),max_Dispersion=as.numeric(datDispesionMax_Pairs$max) ))
+datMaxDispersionPerLarva <- cbind.data.frame(expID=as.character(datDispesionMax_Pairs$expID),max_Dispersion=(datDispesionMax_Pairs$max) )
 datDispersionM <- merge(datDispersion,datMaxDispersionPerLarva,all.x = TRUE,by="expID")
 ## Now Merge onto Dispersion Data 
 saveRDS(datDispersionM,file=paste0(strDataExportDir,"/dispersionperframe_merged_maxLarvaDispersion_",tsec_timeWindow,"sec.rds") )
 message("Saved to:",paste0(strDataExportDir,"/dispersionperframe_merged_maxLarvaDispersion_",tsec_timeWindow,"sec.rds") )
 
+
+hist(datDispersionM$Dispersion/datDispersionM$max_Dispersion)
 
 ```
 
