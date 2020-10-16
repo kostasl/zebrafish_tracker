@@ -31,7 +31,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
-setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 
 ## Load datAllFrames
 load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
@@ -54,8 +54,45 @@ if (NROW(datDispersion) == 0)
 
 ```
 
+```{r,merge maxl arval-dispersion onto dispersion data events, echo=FALSE,cache=TRUE}
+## Attaches the max Dispersion found between both evoked and spontaneous trajectories of each larva
+## This is used so we can combine S/E larval recordings to detect both exploration/ exploitation state - and normalize appropriatelly to the joined trajectrories between tests as if they were ## one 20min recording  
+mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpPairs)
+{
+    ## Merge Max Dispersion per larva Onto Dispersion data (so we can normalize on a per larva basis instead of experiment basis)
+  ## Calc Normalization to Max Dispersion by combining both Spont And Exoked cond per larva
+  ## Find Max Dispersion Per Experiement
+  datDispersionMax <- data.frame(tapply(datDispersion$Dispersion,datDispersion$expID,max,na.rm = TRUE))
+  
+  ## pair each experiemnt with its max dispersion between Spontaneous and Evoked conditions of a larva
+  ## We use this struct to merge with Dispersion data of each frame / So as to normalize approprietelly
+  datDispesionMax_Pairs <-  data.frame.rbind(
+                                           data.frame.cbind(
+                                             expID = as.character(datExpPairs$expID.S) ,
+                                              max_exp_Disp = datDispersionMax[as.character(datExpPairs$expID.S),],
+                                              max_exp_Disp.C = datDispersionMax[as.character(datExpPairs$expID.E),]),
+                                           data.frame.cbind(
+                                                expID = as.character(datExpPairs$expID.E) ,
+                                                max_exp_Disp = datDispersionMax[as.character(datExpPairs$expID.E),],
+                                                max_exp_Disp.C = datDispersionMax[as.character(datExpPairs$expID.S),])
+                                            )
+                                          
+                                       
+  datDispesionMax_Pairs$max <- as.numeric(apply(datDispesionMax_Pairs[,2:3], 1, max,na.rm=TRUE)) ## Add col for Max Dispersion across Spont and Evoked conditions
+  ##Make Simple frame for merging with dispersion data
+  datMaxDispersionPerLarva <- cbind.data.frame(expID=as.character(datDispesionMax_Pairs$expID),max_Dispersion=(datDispesionMax_Pairs$max) )
+  datDispersionM <- merge(datDispersion,datMaxDispersionPerLarva,all.x = TRUE,by="expID")
+  ## Now Merge onto Dispersion Data 
+  saveRDS(datDispersionM,file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
+  message("Saved to:",paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
 
-```{r,  merge hunt events with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,results=FALSE }
+  return(datDispersionM)
+}
+```
+
+
+
+```{r,  merge hunt events and max_dispersion with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,results=FALSE }
   source("DataLabelling/labelHuntEvents_lib.r")
   source("HuntingEventAnalysis_lib.r")
 
@@ -387,9 +424,9 @@ of prey , we may then combine our spontaneous and evoked condition recordings an
 ```{r,dispersion histogram normalized per larva, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ### Dispesions distributions Normalized on Per Larva basis - 
 
-hist(datDispersion[datDispersionM$groupID %in% c('LE','LL'), ]$Dispersion/datDispersion[datDispersionM$groupID %in% c('LE','LL'), ]$max_Dispersion, breaks=100,main="LF S+E ",xlab="Dispersion  (norm per larva)")
-hist(datDispersion[datDispersionM$groupID %in% c('NE','NL'), ]$Dispersion/datDispersion[datDispersionM$groupID %in% c('NE','NL'), ]$max_Dispersion, breaks=100,main="NF S+E",xlab="Dispersion  (norm per larva)")
-hist(datDispersion[datDispersionM$groupID %in% c('DE','DL'), ]$Dispersion/datDispersion[datDispersionM$groupID %in% c('DE','DL'), ]$max_Dispersion, breaks=100,main="DF S+E",xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion/datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$max_Dispersion, breaks=100,main="LF S+E ",xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion/datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$max_Dispersion, breaks=100,main="NF S+E",xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion/datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$max_Dispersion, breaks=100,main="DF S+E",xlab="Dispersion  (norm per larva)")
 
 ```
 
@@ -421,41 +458,6 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
   print(time.taken)
   
   return(data.frame(datHEventDispersion ) )
-}
-
-
-## Attaches the max Dispersion found between both evoked and spontaneous trajectories of each larva
-## This is used so we can combine S/E larval recordings to detect both exploration/ exploitation state - and normalize appropriatelly to the joined trajectrories between tests as if they were ## one 20min recording  
-mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpPairs)
-{
-    ## Merge Max Dispersion per larva Onto Dispersion data (so we can normalize on a per larva basis instead of experiment basis)
-  ## Calc Normalization to Max Dispersion by combining both Spont And Exoked cond per larva
-  ## Find Max Dispersion Per Experiement
-  datDispersionMax <- data.frame(tapply(datDispersion$Dispersion,datDispersion$expID,max,na.rm = TRUE))
-  
-  ## pair each experiemnt with its max dispersion between Spontaneous and Evoked conditions of a larva
-  ## We use this struct to merge with Dispersion data of each frame / So as to normalize approprietelly
-  datDispesionMax_Pairs <-  data.frame.rbind(
-                                           data.frame.cbind(
-                                             expID = as.character(datExpPairs$expID.S) ,
-                                              max_exp_Disp = datDispersionMax[as.character(datExpPairs$expID.S),],
-                                              max_exp_Disp.C = datDispersionMax[as.character(datExpPairs$expID.E),]),
-                                           data.frame.cbind(
-                                                expID = as.character(datExpPairs$expID.E) ,
-                                                max_exp_Disp = datDispersionMax[as.character(datExpPairs$expID.E),],
-                                                max_exp_Disp.C = datDispersionMax[as.character(datExpPairs$expID.S),])
-                                            )
-                                          
-                                       
-  datDispesionMax_Pairs$max <- as.numeric(apply(datDispesionMax_Pairs[,2:3], 1, max,na.rm=TRUE)) ## Add col for Max Dispersion across Spont and Evoked conditions
-  ##Make Simple frame for merging with dispersion data
-  datMaxDispersionPerLarva <- cbind.data.frame(expID=as.character(datDispesionMax_Pairs$expID),max_Dispersion=(datDispesionMax_Pairs$max) )
-  datDispersionM <- merge(datDispersion,datMaxDispersionPerLarva,all.x = TRUE,by="expID")
-  ## Now Merge onto Dispersion Data 
-  saveRDS(datDispersionM,file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
-  message("Saved to:",paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
-
-  return(datDispersionM)
 }
 
 
