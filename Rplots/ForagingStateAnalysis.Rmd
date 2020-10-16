@@ -52,6 +52,58 @@ if (NROW(datDispersion) == 0)
 
 ```
 
+
+```{r,  merge hunt events with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,results=FALSE }
+  source("DataLabelling/labelHuntEvents_lib.r")
+  source("HuntingEventAnalysis_lib.r")
+
+  #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+  datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+  ##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
+  ## Link Evoked and Spontaneous Trajectories
+  datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+  datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+
+
+message("Loading from :",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+datHEventDispersion <- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+
+## If we have not merged these records before, make them now
+if (!exists("datHEventDispersion"))
+  datHEventDispersion <- mergeDispersionWithHuntEvents(datDispersion,datAllFrames)
+
+## Merge Max Dispersion per larva Onto Dispersion data (so we can normalize on a per larva basis instead of experiment basis)
+## Calc Normalization to Max Dispersion by combining both Spont And Exoked cond per larva
+## Find Max Dispersion Per Experiement
+datDispersionMax <- data.frame(tapply(datDispersion$Dispersion,datDispersion$expID,max,na.rm = TRUE))
+
+## pair each experiemnt with its max dispersion between Spontaneous and Evoked conditions of a larva
+## We use this struct to merge with Dispersion data of each frame / So as to normalize approprietelly
+datDispesionMax_Pairs <- data.frame( rbind(
+                                         cbind(
+                                           expID = as.character(datExpPairs$expID.S) ,
+                                            max_exp_Disp = datDispersionMax[as.character(datExpPairs$expID.S),],
+                                            max_exp_Disp.C = datDispersionMax[as.character(datExpPairs$expID.E),]),
+                                         cbind(
+                                              expID = as.character(datExpPairs$expID.E) ,
+                                              max_exp_Disp = datDispersionMax[as.character(datExpPairs$expID.E),],
+                                              max_exp_Disp.C = datDispersionMax[as.character(datExpPairs$expID.S),])
+                                          )
+                                        )
+                                     
+datDispesionMax_Pairs$max <- as.numeric(apply(datDispesionMax_Pairs[,2:3], 1, max,na.rm=TRUE)) ## Add col for Max Dispersion across Spont and Evoked conditions
+##Make Simple frame for merging with dispersion data
+datMaxDispersionPerLarva <- data.frame(cbind(expID=as.character(datDispesionMax_Pairs$expID),max_Dispersion=as.numeric(datDispesionMax_Pairs$max) ))
+datDispersionM <- merge(datDispersion,datMaxDispersionPerLarva,all.x = TRUE,by="expID")
+## Now Merge onto Dispersion Data 
+saveRDS(datDispersionM,file=paste0(strDataExportDir,"/dispersionperframe_merged_maxLarvaDispersion_",tsec_timeWindow,"sec.rds") )
+message("Saved to:",paste0(strDataExportDir,"/dispersionperframe_merged_maxLarvaDispersion_",tsec_timeWindow,"sec.rds") )
+
+
+```
+
+
 ```{r Function to plot trajectories for each larva, coloured based on dispersion, figures-function, fig.show="hold", out.width="50%", echo=FALSE }
 
 pairedTrajPalette <- col2hex(col2rgb(brewer.pal(12,"Paired"),alpha = 1))
@@ -171,7 +223,7 @@ plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersi
   ## ind Exploration Hunt Events 
   datExploitationHuntEvents <- datHEventDispersion[datHEventDispersion$Dispersion_norm < TH_DISP, ]
   
-  ## Call Plot Function - Both Spont And Evoked plotted on same figure
+  ## Call Plot Function - Both Spont And Evoked plo tted on same figure
  
   plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, 
                                  datExploitationHuntEvents,
@@ -297,6 +349,7 @@ hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion,breaks=
 
 ```
 
+
 We then plot each experimental group individually, also examining the dispersion in evoked (in the presence of prey) and spontaneous (no prey) conditions separatellly.
 Next we plot these for each experimental condition individually (non-Normalized):
 ```{r dispersion histograms per group per condition, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
@@ -345,6 +398,18 @@ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=100,m
 
 ```
 
+## Dispersion histograms per larva,  combined Spontaneous and Evoked 
+
+```{r dispersion histograms normalize per larva, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
+
+datExpPairs[datExpPairs$groupID.E == as.character(datDispersion$expID),]$Dispersion_max
+
+hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion,breaks=100,main="LF Evoked+Spont.",xlab="Dispersion (mm)")
+hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion,breaks=100,main="NF Evoked+Spont.",xlab="Dispersion (mm)")
+hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion,breaks=100,main="DF Evoked+Spont.",xlab="Dispersion (mm)")
+
+```
+
 # Measure Hunt rate per foraging state
 ```{r,combine-dispersion-with-hunt events, echo=FALSE,cache=TRUE}
 #####
@@ -378,27 +443,6 @@ mergeDispersionWithHuntEvents <- function(datDispersion,datAllFrames)
 ```
 
 
-```{r,  hunt-event foraging state analysis, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,results=FALSE }
-  source("DataLabelling/labelHuntEvents_lib.r")
-  source("HuntingEventAnalysis_lib.r")
-
-  #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-  datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
-  ##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
-  ## Link Evoked and Spontaneous Trajectories
-  datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
-  datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
-
-
-message("Loading from :",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-datHEventDispersion <- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-
-## If we have not merged these records before, make them now
-if (!exists("datHEventDispersion"))
-  datHEventDispersion <- mergeDispersionWithHuntEvents(datDispersion,datAllFrames)
-
-```
 
 Here I will identify the number of hunt events evoked/initiated in each foraging state.
 However, it is natural to expect that since hunt events involve slow prey approach behaviour, which gives low dispersion, a higher hunt-rate is expected in the exploitation state. Yet the time window of foraging state classification is 5 sec, while a hunt episodes last for less than 2 sec (~1sec If i remember correctly, check eLife paper fig).
@@ -637,35 +681,5 @@ for (i in 1:NROW(datHuntLabelledEventsSBMerged_fixed) )
  
 ```
 
-
-### Notes from call with Michael McCoullough from Goodhill lab  (14-10-2020 9.30 am)
-Goodhill is moving the lab to Washington. 
-Michael is staying in Australia, 1yr left. He has imaging data and behavioural data that he wants to explore further. 
-Specifically he was looking into analysing the discrete bout movements, using an eigen decomp and clustering, during prey approach.
-
-Here, I explained the concept of biomechanics on the tail, and neural control - discrete - how many control signals to drive the tail motion?
-Bheavioural classifications do not provide bridge principles to neural control - The biomechanics howeever will. 
-Also he agreed that they find the classifications arbitrary as the behavioural space usually looks continuous (i sent him the Balasz paper).
-
-In this way the maggot community is ahead of the zfish.
-So I gave an overview of the larval biomech, work and the mechanical modes, showed him the chaotic maggots commentary, and encouraged him if he wanted to do a piece similar to the ["Capturing the continuous complexity of behaviour in Caenorhabditis elegans"](https://www.nature.com/articles/s41567-020-01036-8)
-- I can do the biomechanics and driving modes, and he can provide data on the tail modes.
-  
-- Overall he concluded he had not thought about these in this way, and will have a think and get back. His initial aim was an MMC of bout types during prey capture.
-
--The chat also started by saying I do not like how Neuropaper span across data and do not simply nail the evidence to deepen on a single point. 
-He said he appreciates the approach, and (maybe) during JC people also asked for imaging, but he agrees that this is something to be chased up later.
-
--Michael presented my paper to their *lab's Journal Club*, he provided me with some feedback: 
-
-bold approach to statistics in case comprehensive step of analysis
-- They really liked the statisical approach
-- Hunt Power - What was the intution behind this? - I explained
-- How do you tease apart dev. and experience?
-  Their recent paper shows capture success goes up through development
-   How we do this, did not come out during JC, but now explained the DF-NF-LF ranking reveals it is not nutrition, but also showed supp figure with HPI-size correlation.
-- Internal State timer - What is the point of having these -
-  KL: You remain in state following up the queus as the come- But abording when later. He liked the idea.
-  
 
 
