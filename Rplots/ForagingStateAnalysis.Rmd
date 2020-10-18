@@ -32,7 +32,7 @@ source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
 
-setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 ## Load datAllFrames
 load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
@@ -87,7 +87,7 @@ mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpP
   datDispersionM <- merge(datDispersion,datMaxDispersionPerLarva,all.x = TRUE,by="expID")
   ## Save  dispersion data normalized across Spont and evoked condition for each larva (saves time in future plotting)
   
-  datDispersionM <-  cbind.data.frame(datDispersionM,Dispersion_larval_norm=datDispersionM$Dispersion / datDispersionM$max_larval_Dispersion)
+  datDispersionM <- cbind.data.frame(datDispersionM,Dispersion_larval_norm=datDispersionM$Dispersion / datDispersionM$max_larval_Dispersion)
 
   ## Now Merge onto Dispersion Data 
   saveRDS(datDispersionM,file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
@@ -111,14 +111,19 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
 
   start.time <- Sys.time()
   ## Attach Frame Number to Dispersion Data
-  datDispersion <- cbind(datDispersion,frameN=datAllFrames[datDispersion[,"frameRow"],'frameN'],posX=datAllFrames[datDispersion[,"frameRow"],'posX'],posY=datAllFrames[datDispersion[,"frameRow"],'posY'])
+  datDispersion <- cbind(datDispersion,frameN=datAllFrames[datDispersion[,"frameRow"],'frameN'],
+                         posX=datAllFrames[datDispersion[,"frameRow"],'posX'],
+                         posY=datAllFrames[datDispersion[,"frameRow"],'posY'])
   
   ## Extract HUnt Event Foraging State
   ### 1. Get Dispersion Measure of each hunt event
   ## MERGE Dispersion With HuntEvent Records
     # Need to convert to char  GroupID factor( datHuntLabelledEventsSBMerged_fixed$groupID) 
     datDispersion$groupID <- levels( datDispersion$groupID)[datDispersion$groupID]
-    datHEventDispersion <- merge(datDispersion,datHuntLabelledEventsSBMerged_fixed,all.y=TRUE,by.x=c("frameN","expID","eventID","groupID"),by.y=c("startFrame","expID","eventID","groupID") )
+    datHEventDispersion <- merge(datDispersion,datHuntLabelledEventsSBMerged_fixed,
+                                 all.y=TRUE,
+                                 by.x=c("frameN","expID","eventID","groupID"),
+                                 by.y=c("startFrame","expID","eventID","groupID") )
     ## Add Position In Arena
     saveRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
     message("Saved to:",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
@@ -139,7 +144,7 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
 ```{r,  merge hunt events and max_dispersion with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,results=FALSE }
 source("DataLabelling/labelHuntEvents_lib.r")
 source("HuntingEventAnalysis_lib.r")
-
+  
 
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
@@ -158,10 +163,10 @@ datHEventDispersion <- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwi
 ## If we have not merged these records before, make them now
 if (!exists("datHEventDispersion"))
   datHEventDispersion <- mergeDispersionOntoHuntEvents(datDispersion,datAllFrames,datHuntLabelledEventsSBMerged_fixed)
-
+ 
 
 ## Merge Max Dispersion on there - If it is not already there then Calculate and save 
-#if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | !any(grepl("Dispersion_larval_norm", names(datDispersion)) )  )
+if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | !any(grepl("Dispersion_larval_norm", names(datDispersion)) )  )
   datDispersion <<- mergeMaxLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs)
 ## Check for max Calc Error
 #datDispersion[datDispersion$Dispersion > datDispersion$max_Dispersion,]
@@ -296,7 +301,26 @@ plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersi
 
 } ## end of plot Functon
 
-
+##
+# Function Plot Individual Trajectories for a group, split between exploration and exploitation
+# given based on threshold placed on the normalized dispersion of the trajectories from combined spont and evoked conditions of each larva .
+##
+plotLarvaNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, datHEventDispersion,datExpPairs,TH_DISP = 0.2)
+{ 
+  datGroupExploreTraj <- datAllFrames[datDispersion[datDispersion$groupID %in% groupID & datDispersion$Dispersion_larval_norm >= TH_DISP,"frameRow"],]
+  datGroupExploitTraj <- datAllFrames[datDispersion[datDispersion$groupID %in% groupID & datDispersion$Dispersion_larval_norm < TH_DISP,"frameRow"],]
+  
+  ## ind Exploration Hunt Events 
+  datExplorationHuntEvents <- datHEventDispersion[datHEventDispersion$Dispersion_larval_norm >= TH_DISP, ]
+  ## ind Exploration Hunt Events 
+  datExploitationHuntEvents <- datHEventDispersion[datHEventDispersion$Dispersion_larval_norm < TH_DISP, ]
+  
+  
+  plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, 
+                                 datExploitationHuntEvents,
+                                 datExpPairs[datExpPairs$groupID.E %in%  groupID | datExpPairs$groupID.S %in%  groupID, ]) ##Subset to Targeted groups
+  
+} ##
 
 
 ```
@@ -402,7 +426,7 @@ Perhaps it is best I combine the trajectories of spontaneous and evoked activity
 
 hist(datDispersion$Dispersion,breaks=100,main="(All groups): Dispersion lengths per experiment ",xlab="Dispersion (mm)")
 hist(datDispersion$Dispersion_norm,breaks=100,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm)")
-hist(datDispersion$Dispersion/datDispersion$max_Dispersion,breaks=100,main="(All groups): Dispersion normalized per larva",xlab="Dispersion (larva norm)")
+hist(datDispersion$Dispersion_larval_norm ,breaks=100,main="(All groups): Dispersion normalized per larva",xlab="Dispersion (larva norm)")
 
 ```
 We look at each rearing group separatelly, while combining their evoked and spontaneous conditions
@@ -504,14 +528,17 @@ Then examining the maximum larval dispersions, against which we normalize we fin
 datMaxDispersionPerLarva <- readRDS(file=paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds") )
 
 
-hist(datExpPairs[datExpPairs$groupID %in% c('LE'), ]$max_larval_Dispersion, breaks=100,main="LF Spont ", xlab="Dispersion  (max per larva)")
-hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$max_larval_Dispersion, breaks=100,main="LF Evoked ",xlab="Dispersion  (nmax per larva)")
+hist(rbind(datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_larval_Dispersion,
+     datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'LL' ,]$expID.E, ]$max_larval_Dispersion)
+     , breaks=100,main="LF Larvae ", xlab="Dispersion  (max per larva)",xlim=c(0,10))
 
-hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$max_larval_Dispersion, breaks=100,main="NF Spont ", xlab="Dispersion  (max per larva)")
-hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$max_larval_Dispersion, breaks=100,main="NF Evoked ",xlab="Dispersion  (max per larva)")
+hist(rbind(datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_larval_Dispersion,
+     datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'NL' ,]$expID.E, ]$max_larval_Dispersion)
+     , breaks=100,main="NF Larvae ", xlab="Dispersion  (max per larva)",xlim=c(0,10))
 
-hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$max_larval_Dispersion, breaks=100,main="DF Spont ", xlab="Dispersion  (max per larva)")
-hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$max_larval_Dispersion, breaks=100,main="DF Evoked ",xlab="Dispersion  (max per larva)")
+hist(rbind(datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_larval_Dispersion,
+     datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'DL' ,]$expID.E, ]$max_larval_Dispersion)
+     , breaks=100,main="DF Larvae ", xlab="Dispersion  (max per larva)",xlim=c(0,10))
 
 ```
 
@@ -626,7 +653,7 @@ hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Fail", as.ch
 The following figures show the tracked trajectories per experiment of each group. Trajectory segments are colour coded according to whether these can be classified as exploration or exploitation based on ta theshold on the normalized dispersion. This threshold is set here to `r thres_dispersion_class ` .
 Red signiifies segments of exploitation, blue is for exploration.
 
-## Classifying exploitation/exploration phases based on global threshold 
+## Classifying exploitation/exploration phases based on **global threshold**
 The dispersion of each experiment is normalized globally and thus classification threhsold for exploitation identifies trajectory segments of spatially restricted motion relative to all larvae across groups
 
 ### Evoked conditions
@@ -663,7 +690,37 @@ plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,dat
 ```
 
 
-## Normalized Per Larval experiment
+## Classify based on normalizated larval trajectory dispersions
+
+Note that dispersion is normalized based on the trajectories from Spontaneous and Evoked conditions *combined* for each larva
+
+#### LF - Evoked /Spontaneous Trajectories
+```{r,  larva_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=TRUE}
+
+plotLarvaNormDispersionTrajectories(c('LL','LE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs,  thres_dispersion_class )
+
+```
+
+#### NF - Evoked/Spontaneous Trajectories 
+```{r, larva_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=TRUE}
+
+
+plotLarvaNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
+
+```
+
+#### DF - Evoked/Spontaneous Trajectories 
+```{r, larva_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=TRUE}
+
+
+plotLarvaNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class)
+
+```
+
+
+
+## Classify based on normalizated experiment trajectory dispersion
+
 Note that Spontaneous and Evoked conditions of each larva are considered individually
 
 #### LF - Evoked /Spontaneous Trajectories
