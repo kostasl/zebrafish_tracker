@@ -66,16 +66,17 @@ mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpP
   
   ## pair each experiemnt with its max dispersion between Spontaneous and Evoked conditions of a larva
   ## We use this struct to merge with Dispersion data of each frame / So as to normalize approprietelly
-  datDispesionMax_Pairs <-  data.frame.rbind(
-                                           data.frame.cbind(
+  datDispesionMax_Pairs <-  rbind.data.frame(
+                                           cbind.data.frame(
                                              expID = as.character(datExpPairs$expID.S) ,
                                               max_exp_Disp = datDispersionMax[as.character(datExpPairs$expID.S),],
                                               max_exp_Disp.C = datDispersionMax[as.character(datExpPairs$expID.E),]),
-                                           data.frame.cbind(
+                                           cbind.data.frame(
                                                 expID = as.character(datExpPairs$expID.E) ,
                                                 max_exp_Disp = datDispersionMax[as.character(datExpPairs$expID.E),],
                                                 max_exp_Disp.C = datDispersionMax[as.character(datExpPairs$expID.S),])
                                             )
+                                      
                                           
                                        
   datDispesionMax_Pairs$max <- as.numeric(apply(datDispesionMax_Pairs[,2:3], 1, max,na.rm=TRUE)) ## Add col for Max Dispersion across Spont and Evoked conditions
