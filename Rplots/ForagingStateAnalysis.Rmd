@@ -31,7 +31,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
-setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 
 ## Load datAllFrames
 load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
@@ -40,9 +40,9 @@ load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
 tsec_timeWindow <- 5
 thres_dispersion_class <- 0.2
 
-datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
+#datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
 ## Load Merged With maxDispersion Data
-#datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") ) 
+datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") ) 
 AllRange <- range(datDispersion$Dispersion,na.rm=TRUE)
 
 if (NROW(datDispersion) == 0)
@@ -79,9 +79,13 @@ mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpP
                                           
                                        
   datDispesionMax_Pairs$max <- as.numeric(apply(datDispesionMax_Pairs[,2:3], 1, max,na.rm=TRUE)) ## Add col for Max Dispersion across Spont and Evoked conditions
+  
   ##Make Simple frame for merging with dispersion data
-  datMaxDispersionPerLarva <- cbind.data.frame(expID=as.character(datDispesionMax_Pairs$expID),max_Dispersion=(datDispesionMax_Pairs$max) )
+  datMaxDispersionPerLarva <- cbind.data.frame(expID=as.character(datDispesionMax_Pairs$expID),max_larval_Dispersion=(datDispesionMax_Pairs$max) )
   datDispersionM <- merge(datDispersion,datMaxDispersionPerLarva,all.x = TRUE,by="expID")
+  ## Save  dispersion data normalized across Spont and evoked condition for each larva (saves time in future plotting)
+  datDispersionM$Dispersion_larval_norm <- datDispersionM$Dispersion/datDispersionM$max_larval_Dispersion
+
   ## Now Merge onto Dispersion Data 
   saveRDS(datDispersionM,file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
   message("Saved to:",paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
@@ -112,8 +116,8 @@ datHEventDispersion <- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwi
 if (!exists("datHEventDispersion"))
   datHEventDispersion <- mergeDispersionOntoHuntEvents(datDispersion,datAllFrames,datHuntLabelledEventsSBMerged_fixed)
 
-## Merge Max Dispersion on there - If it is not already there
-if (! any(grepl("max_Dispersion",names(datDispersion)) ) )
+## Merge Max Dispersion on there - If it is not already there then Calculate and save 
+if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | !any(grepl("Dispersion_larval_norm", names(datDispersion)) )  )
   datDispersion <<- mergeMaxLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs)
 ## Check for max Calc Error
 #datDispersion[datDispersion$Dispersion > datDispersion$max_Dispersion,]
@@ -416,7 +420,7 @@ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=100,m
 
 
 
-## Dispersion histograms per larva,  combined Spontaneous and Evoked 
+## Dispersion histograms per larva, combined Spontaneous and Evoked 
 
 Because each larva is recorded in two conditions, and as Marquez et al 2019 report that the foraging state switching can be seen intact both in the presence and in the absence
 of prey , we may then combine our spontaneous and evoked condition recordings and treat them as a single unit,  thus allowing us to  normalize each larvas trajectories to the max dispersion found across both its test conditions.  In this manner each larva's dispersion is examined across a 20min recording session.
@@ -424,11 +428,44 @@ of prey , we may then combine our spontaneous and evoked condition recordings an
 ```{r,dispersion histogram normalized per larva, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ### Dispesions distributions Normalized on Per Larva basis - 
 
-hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion/datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$max_Dispersion, breaks=100,main="LF S+E ",xlab="Dispersion  (norm per larva)")
-hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion/datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$max_Dispersion, breaks=100,main="NF S+E",xlab="Dispersion  (norm per larva)")
-hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion/datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$max_Dispersion, breaks=100,main="DF S+E",xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion_larval_norm, breaks=100,main="LF S+E ",xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion_larval_norm, breaks=100,main="NF S+E",xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion_larval_norm, breaks=100,main="DF S+E",xlab="Dispersion  (norm per larva)")
 
 ```
+
+Separating Spontaneous from Evoked Conditions we see :
+
+```{r,dispersion histogram normalized per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
+### Dispesions distributions Normalized on Per Larva basis - 
+
+hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$Dispersion_larval_norm, breaks=100,main="LF Spont ", xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$Dispersion_larval_norm, breaks=100,main="LF Evoked ",xlab="Dispersion  (norm per larva)")
+
+hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$Dispersion_larval_norm, breaks=100,main="NF Spont ", xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$Dispersion_larval_norm, breaks=100,main="NF Evoked ",xlab="Dispersion  (norm per larva)")
+
+hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$Dispersion_larval_norm, breaks=100,main="DF Spont ", xlab="Dispersion  (norm per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Dispersion_larval_norm, breaks=100,main="DF Evoked ",xlab="Dispersion  (norm per larva)")
+
+```
+
+Then examining the maximum larval dispersions, against which we normalize we find :
+
+```{r,Max-dispersion histogram per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
+### Dispesions distributions Normalized on Per Larva basis - 
+
+hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$max_larval_Dispersion, breaks=100,main="LF Spont ", xlab="Dispersion  (max per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$max_larval_Dispersion, breaks=100,main="LF Evoked ",xlab="Dispersion  (nmax per larva)")
+
+hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$max_larval_Dispersion, breaks=100,main="NF Spont ", xlab="Dispersion  (max per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$max_larval_Dispersion, breaks=100,main="NF Evoked ",xlab="Dispersion  (max per larva)")
+
+hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$max_larval_Dispersion, breaks=100,main="DF Spont ", xlab="Dispersion  (max per larva)")
+hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$max_larval_Dispersion, breaks=100,main="DF Evoked ",xlab="Dispersion  (max per larva)")
+
+```
+
 
 # Measure Hunt rate per foraging state
 ```{r,combine-dispersion-with-hunt events, echo=FALSE,cache=TRUE}
