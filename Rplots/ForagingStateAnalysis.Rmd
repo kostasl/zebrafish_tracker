@@ -54,7 +54,7 @@ if (NROW(datDispersion) == 0)
 
 ```
 
-```{r,merge maxl arval-dispersion onto dispersion data events, echo=FALSE,cache=TRUE}
+```{r,merge max larval-dispersion onto dispersion data events, echo=FALSE,cache=TRUE}
 ## Attaches the max Dispersion found between both evoked and spontaneous trajectories of each larva
 ## This is used so we can combine S/E larval recordings to detect both exploration/ exploitation state - and normalize appropriatelly to the joined trajectrories between tests as if they were ## one 20min recording  
 mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpPairs)
@@ -98,16 +98,16 @@ mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpP
 
 
 ```{r,  merge hunt events and max_dispersion with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,results=FALSE }
-  source("DataLabelling/labelHuntEvents_lib.r")
-  source("HuntingEventAnalysis_lib.r")
+source("DataLabelling/labelHuntEvents_lib.r")
+source("HuntingEventAnalysis_lib.r")
 
-  #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-  datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
-  ##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
-  ## Link Evoked and Spontaneous Trajectories
-  datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
-  datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
+## Link Evoked and Spontaneous Trajectories
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
 
 
 message("Loading from :",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
