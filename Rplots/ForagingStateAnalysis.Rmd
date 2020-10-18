@@ -89,7 +89,9 @@ mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpP
 
   ## Now Merge onto Dispersion Data 
   saveRDS(datDispersionM,file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
+  saveRDS(datMaxDispersionPerLarva,file=paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds") )
   message("Saved to:",paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") )
+  message("Saved to:",paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds") )
 
   return(datDispersionM)
 }
@@ -175,7 +177,7 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
   
       
       
-      ################
+      
       ## Evoked Exploit
       datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == as.character(e$expID.E) & !is.na(datGroupExploitTraj$posX),]
       if (NROW(datTraj))
@@ -435,7 +437,8 @@ hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion_larval_
 
 ```
 
-Separating Spontaneous from Evoked Conditions we see :
+#### Split Spontaneous and Evoked test conditions 
+Separating Spontaneous from Evoked Conditions we see a potential shift toward lower dispersion in the presence of prey:
 
 ```{r,dispersion histogram normalized per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
 ### Dispesions distributions Normalized on Per Larva basis - 
@@ -451,12 +454,16 @@ hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Dispersion_larval_norm,
 
 ```
 
+#### Max Dispersion per larva
 Then examining the maximum larval dispersions, against which we normalize we find :
 
 ```{r,Max-dispersion histogram per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide' }
-### Dispesions distributions Normalized on Per Larva basis - 
+##### Maximum Dispersions Per Larva- 
 
-hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$max_larval_Dispersion, breaks=100,main="LF Spont ", xlab="Dispersion  (max per larva)")
+datMaxDispersionPerLarva <- readRDS(file=paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds") )
+
+
+hist(datExpPairs[datExpPairs$groupID %in% c('LE'), ]$max_larval_Dispersion, breaks=100,main="LF Spont ", xlab="Dispersion  (max per larva)")
 hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$max_larval_Dispersion, breaks=100,main="LF Evoked ",xlab="Dispersion  (nmax per larva)")
 
 hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$max_larval_Dispersion, breaks=100,main="NF Spont ", xlab="Dispersion  (max per larva)")
@@ -470,7 +477,7 @@ hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$max_larval_Dispersion, 
 
 # Measure Hunt rate per foraging state
 ```{r,combine-dispersion-with-hunt events, echo=FALSE,cache=TRUE}
-#####
+
 ### Combines information across Detected HuntEvents and their outcome, the dispersion of the larval trajectory during which these were
 ## initiated  ,and the position at which the hunt-event was initiated
 mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLabelledEventsSBMerged_fixed)
@@ -536,11 +543,12 @@ Looking at a histrgram of normalized dispersion of all hunt events it is clear t
 
 ```{r,  hunt-event-all-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
-hist(datHEventDispersion$Dispersion_norm,main="All group hunt events, ",xlab="Dispersion Norm.",breaks=100)
+hist(datHEventDispersion$Dispersion_norm,main="All group hunt events norm. dispersion, ",xlab="Dispersion Norm. per exp",breaks=100)
+hist(datHEventDispersion$Dispersion_larval_norm,main="All group hunt events norm. dispersion , ",xlab="Dispersion Norm. per larva",breaks=100)
 
 ```
 
-These next histograms show how dispersion is distributed in each rearing group and looking at whether hunting initiation changes between spontaneous and evoked conditions.
+These next histograms show how *normalized larval dispersion* is distributed in each rearing group and looking at whether hunting initiation changes between spontaneous and evoked conditions.
 
   * It appears as if only the NF hunts during an exploitation type of movement.
   * LF spontaneous hunt-events occur over exploration (higher dispersion) 
@@ -548,16 +556,16 @@ These next histograms show how dispersion is distributed in each rearing group a
 ```{r,  hunt-event-group-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 ## Normalized Dispersion In Hunt Events
 ## Check LF
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion_norm,breaks=100,main="LF Evoked",xlab="Dispersion Norm.")
-hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion_norm,breaks=100,main="LF Spont",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion_larval_norm,breaks=100,main="LF Evoked",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion_larval_norm,breaks=100,main="LF Spont",xlab="Dispersion Norm.")
 
 ## Check NF
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion_norm,breaks=100,main="NF Evoked",xlab="Dispersion Norm.")
-hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion_norm,breaks=100,main="NF Spont",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion_larval_norm,breaks=100,main="NF Evoked",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion_larval_norm,breaks=100,main="NF Spont",xlab="Dispersion Norm.")
 
 ## Check DF
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion_norm,breaks=100,main="DF Evoked",xlab="Dispersion Norm.")
-hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion_norm,breaks=100,main="DF Spont",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion_larval_norm,breaks=100,main="DF Evoked",xlab="Dispersion Norm.")
+hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion_larval_norm,breaks=100,main="DF Spont",xlab="Dispersion Norm.")
 
 ```
 
@@ -581,28 +589,28 @@ hist(datHEventDispersion[datHEventDispersion$groupID %in% c('DL','DE'), ]$Disper
 ```
 
 
-## associations between hunt-outcome and foraging state
-Do distributions of dispersion change depending on hunt-outcome ? 
+## Associations between hunt-outcome and foraging state
 
-The historgrams below examine how normalized dispersion distributions shift for each group depending on capture outcome being success/fail
+Do distributions of dispersion change depending on hunt-outcome ? 
+The historgrams below examine how *normalized larval dispersion* distributions shift for each group depending on capture outcome being success/fail
 
 ```{r,  hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 ## RAW Dispersion In Hunt Events
 ## Check LF Successs/Fail Only
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_norm,breaks=100,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1))
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=100,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1))
 
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_norm,breaks=100,main="LF Capture Fail",xlab="Dispersion ",xlim=c(0,1))
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=100,main="LF Capture Fail",xlab="Dispersion ",xlim=c(0,1))
 
 ## Check NF
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_norm,breaks=100,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1))
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=100,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1))
 
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_norm,breaks=100,main="NF Capture Fail",xlab="Dispersion ",xlim=c(0,1))
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=100,main="NF Capture Fail",xlab="Dispersion ",xlim=c(0,1))
 
 ## Check DF
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_norm,breaks=100,main="DF Capture Success",xlab="Dispersion ",xlim=c(0,1))
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=100,main="DF Capture Success",xlab="Dispersion ",xlim=c(0,1))
 
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_norm,breaks=100,main="DF Capture Fail",xlab="Dispersion ",xlim=c(0,1))
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=100,main="DF Capture Fail",xlab="Dispersion ",xlim=c(0,1))
 
 ```
 
