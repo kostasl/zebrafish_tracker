@@ -645,7 +645,7 @@ These suggest that dispersions shift between spont in and evoked conditions diff
   * prey *reduces* dispersion in the experienced group LF
   * prey **increases** dispersion in the experienced group LF
 
-```{r,  hunt-event-group-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r,  hunt-event-group-dispersion densities Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
  ## plot est, Densities Compare Spont to Evoked
 
  ylimUp <- 5
