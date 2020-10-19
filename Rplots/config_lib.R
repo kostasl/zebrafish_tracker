@@ -78,6 +78,11 @@ colourHLine <- col2hex(pairedPalette[,c(6,4,2,5,3,1,7)]) ##Transparent For MCMC 
 pairedPalette["alpha",1:8] <-55 ##Opacity
 colourHPoint <- col2hex(pairedPalette[,c(6,4,2,5,3,1,7)]) ##Transparent For MCMC Samples (Live) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 
+colourDataScheme <- list()
+colourDataScheme[["LF"]] <- list(Spont = colourLegE[2],Evoked = colourLegL[2])
+colourDataScheme[["NF"]] <- list(Spont = colourLegE[1],Evoked = colourLegL[1])
+colourDataScheme[["DF"]] <- list(Spont = colourLegE[3],Evoked = colourLegL[3])
+
 
 pairedPalette["alpha",1:8] <- 35 ##Opacity
 colourHE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
