@@ -427,7 +427,7 @@ Perhaps it is best I combine the trajectories of spontaneous and evoked activity
 
  Without normalizing the distribution is shown on the left, and a version normalized per max dispersion measured in each experiment is on the right :
  
-```{r dispersion histograms across groups, fig.show="hold", out.width="50%", echo=FALSE, results='hide'  }
+```{r dispersion histograms across groups, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
 
 hist(datDispersion$Dispersion,breaks=100,main="(All groups): Dispersion lengths per experiment ",xlab="Dispersion (mm)")
 hist(datDispersion$Dispersion_norm,breaks=100,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm)")
@@ -735,7 +735,7 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$D
 
 The distributions look similar even if we remove the normalization stage, and look at raw dispersion measures, the low dispersion associated with exploitation phase is rare among hunt-events
 
-```{r,  hunt-event-dispersion distribution raw split E-S, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r,  hunt-event-dispersion distribution raw split E-S, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
 BW = 1
  ylimUp <- 1
  plot(density(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF Hunt events  ",xlab="Dispersion (mm)",lty=1  )
@@ -791,7 +791,7 @@ Interstingly, I find evidence for pattern of distinct behaviours among groups :
   * LF Likely no difference between success/Failed episodes - contradicts Marquez et 2019 findings
   * DF Lower dispersion (exploitation state) linked to success
   
-```{r,  hunt-event-dispersion per outcome distributions, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r,  hunt-event-dispersion per outcome distributions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
 BW = 0.08
 ylimUp <- 5
  plot(density(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,
