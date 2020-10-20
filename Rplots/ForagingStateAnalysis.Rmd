@@ -91,7 +91,7 @@ mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpP
                                                max_larval_Dispersion=(datDispesionMax_Pairs$max),
                                                max_exp_Dispersion=(datDispesionMax_Pairs$max_exp_Disp) # Add The max Disp Recorded for this larva
                                                )
-  datDispersionM <- merge(datDispersion,datMaxDispersionPerLarva,all.x = TRUE,by=c("expID","groupID"))
+  datDispersionM <- merge(datDispersion,datMaxDispersionPerLarva,all.x = TRUE,by=c("expID","groupID"),no.dups=FALSE)
   ## Save  dispersion data normalized across Spont and evoked condition for each larva (saves time in future plotting)
   
   datDispersionM <- cbind.data.frame(datDispersionM,Dispersion_larval_norm=datDispersionM$Dispersion / datDispersionM$max_larval_Dispersion)
