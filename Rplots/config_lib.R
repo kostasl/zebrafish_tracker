@@ -99,6 +99,9 @@ colourL <-c("#03B303AF","#E60303AF","#0303E6AF")
 
 pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, NL
 lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
+lineTypeL.DF <- lineTypeL[1]
+lineTypeL.LF <- lineTypeL[2]
+lineTypeL.NF <- lineTypeL[3]
 
 ## Condition Labels
 strDataLabels <- expression("NF-s","LF-s","DF-s","NF-e","LF-e","DF-e" )
