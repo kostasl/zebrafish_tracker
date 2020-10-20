@@ -605,7 +605,7 @@ hist((datMaxDispersionPerLarva.DF),
 
 ```{r,  max-dispersion densities compare groups, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
  ## plot est, Densities Compare Spont to Evoked
-BW <- 1
+ BW <- 1
  ylimUp <- 0.5
  plot(density(datMaxDispersionPerLarva.NF, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Evoked,main="Maximum Dispersion Per Larva  ",xlab="Dispersion (mm)",lty=lineTypeL.NF  )
 lines(density((datMaxDispersionPerLarva.LF), kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Evoked,main=NA,xlab=NA,lty=lineTypeL.LF )
