@@ -44,19 +44,22 @@ thres_dispersion_class <- 0.2
 #Original Dispersion Record per frame
 #datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
 ## Extended Dispersion Merged With maxDispersion Data
-datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") ) 
-AllRange <- range(datDispersion$Dispersion,na.rm=TRUE)
+rm("datDispersion")
+try(
+  datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_maxperLarva_",tsec_timeWindow,"sec.rds") ) 
+)
 
-if (NROW(datDispersion) == 0)
+if (!exists("datDispersion"))
 {
   message("Calculate Trajectory Dispersions")
   datDispersion <- calcTrajectoryDispersions(datAllFrames)
 }
 
+AllRange <- range(datDispersion$Dispersion,na.rm=TRUE)
 
 ```
 
-```{r,merge max larval-dispersion onto dispersion data events, echo=FALSE,cache=TRUE}
+```{r,merge max larval-dispersion onto dispersion data events, echo=FALSE,cache=TRUE,results=FALSE}
 ## Attaches the max Dispersion found between both evoked and spontaneous trajectories of each larva
 ## This is used so we can combine S/E larval recordings to detect both exploration/ exploitation state - and normalize appropriatelly to the joined trajectrories between tests as if they were ## one 20min recording  
 mergeMaxLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpPairs)
@@ -147,7 +150,7 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
 
 
 
-```{r,  merge hunt events and max_dispersion with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,results=FALSE }
+```{r,  merge hunt events and max_dispersion with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,results=FALSE }
 source("DataLabelling/labelHuntEvents_lib.r")
 source("HuntingEventAnalysis_lib.r")
   
@@ -162,7 +165,7 @@ datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
 
 message("Loading from :",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
 try(
-datHEventDispersion <- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+datHEventDispersion <<- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
 )
 
 ## If we have not merged these records before, make them now
@@ -185,7 +188,7 @@ pairedTrajPalette <- col2hex(col2rgb(brewer.pal(12,"Paired"),alpha = 1))
 ## Plot function for scatter plot of colour coded larval trajectories, separated into explore and exploit vectors
 ## with Both Spont And Evoked plotted on same figure
 ###  datExpPairs - expID for Spont and Evoked for each larva
-plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents,datExpPairs, thin=3)
+plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, datExploitationHuntEvents, datDispersion, datExpPairs, thin=3)
 {
   
   #vexpID <-  unique(datGroupExploitTraj$exp) 
@@ -203,7 +206,7 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
 
       #print(e)
       plot(0,0,ylim=range(y1),xlim=range(x1), type="l", col="red", main=paste(groupID[1],e$expID.E,"/",groupID[2],e$expID.S) )
-      ## Evoked Explore
+      ## Evoked Exploration
       datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == as.character(e$expID.E) & !is.na(datGroupExploreTraj$posX),]
       if (NROW(datTraj))
       {
@@ -227,8 +230,6 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
       points(datSpotHunts$posX, datSpotHunts$posY, col=pairedTrajPalette[4], cex=1.2, pch=17) ##  Triangle Explore
   
       
-      
-      
       ## Evoked Exploit
       datTraj <- datGroupExploitTraj[datGroupExploitTraj$expID == as.character(e$expID.E) & !is.na(datGroupExploitTraj$posX),]
       if (NROW(datTraj))
@@ -237,8 +238,8 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
         points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p",col=pairedTrajPalette[5], cex=0.1)
       }
       ## Evoked Exploitation
-      datSpotHunts <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.E)  & !is.na(datExploitationHuntEvents$expID), ] 
-      points(datSpotHunts$posX, datSpotHunts$posY,col=pairedTrajPalette[6], cex=1.2,pch=15) ## Square Evoked
+      datSpotHunts.E <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.E)  & !is.na(datExploitationHuntEvents$expID), ] 
+      points(datSpotHunts.E$posX, datSpotHunts.E$posY,col=pairedTrajPalette[6], cex=1.2,pch=15) ## Square Evoked
 
 
       ## Spontaneous Exploit
@@ -249,11 +250,22 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
         points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p",col=pairedTrajPalette[7], cex=0.1)
       }
       ## Hunt Episodes Spont Exploitation
-      datSpotHunts <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.S)  & !is.na(datExploitationHuntEvents$expID), ] 
-      points(datSpotHunts$posX, datSpotHunts$posY,col=pairedTrajPalette[8], cex=1.2,pch=15) ## Square Evoked
+      datSpotHunts.S <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.S)  & !is.na(datExploitationHuntEvents$expID), ] 
+      points(datSpotHunts.S$posX, datSpotHunts.S$posY,col=pairedTrajPalette[8], cex=1.2,pch=15) ## Square Evoked
   
       
       badd <- TRUE
+      
+      # Add dispersion Time Line
+      datDisp.S <- datDispersion[datDispersion$expID == as.character(e$expID.S) ,]
+      datDisp.E <- datDispersion[datDispersion$expID == as.character(e$expID.E) ,]
+      idxplot.S <- seq(1,NROW(datDisp.S),thin)
+      idxplot.E <- seq(1,NROW(datDisp.E),thin)
+      plot(idxplot.S/G_APPROXFPS ,datDisp.S[idxplot.S,]$Dispersion,type="l" ,ylim=c(0,10),xlim=c(0,( tail(idxplot.E,1)+tail(idxplot.S,1) )/G_APPROXFPS   ),xlab="(sec)",ylab="Dispersal (mm)" )
+      lines((idxplot.E+tail(idxplot.S,1))/G_APPROXFPS ,datDisp.E[idxplot.E,]$Dispersion,type="l",col="red" )
+      
+      ##Add Hunt Event
+      
       #stopifnot(i < 5)
       i <- i+1
   } ## For Each Event
@@ -275,7 +287,7 @@ plotGlobalNormDispersionTrajectories <- function(groupID, datAllFrames, datDispe
   
   
   plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, 
-                                 datExploitationHuntEvents,
+                                 datExploitationHuntEvents,datDispersion,
                                  datExpPairs[datExpPairs$groupID.E %in%  groupID | datExpPairs$groupID.S %in%  groupID, ]) ##Subset to Targeted groups
   
 } ## end of plot Functon
@@ -300,7 +312,7 @@ plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersi
   ## Call Plot Function - Both Spont And Evoked plo tted on same figure
  
   plotExploreExploitTrajectories(groupID,datGroupExploreTraj,datGroupExploitTraj, datExplorationHuntEvents, 
-                                 datExploitationHuntEvents,
+                                 datExploitationHuntEvents,datDispersion,
                                  datExpPairs[datExpPairs$groupID.E %in%  groupID | datExpPairs$groupID.S %in%  groupID, ]) ##Subset to Targeted groups
   
 
