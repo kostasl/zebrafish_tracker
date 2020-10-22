@@ -283,8 +283,8 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
       }
       ## Add Hunt Events on Map
       # Evoked Exploration
-      datSpotHunts <- datExplorationHuntEvents[datExplorationHuntEvents$expID == as.character(e$expID.E)  & !is.na(datExplorationHuntEvents$expID), ] 
-      points(datSpotHunts$posX, datSpotHunts$posY, col=pairedTrajPalette[2], cex=1.2, pch=17) ## Triangle Explore
+      datSpotHunts.E.Explore <- datExplorationHuntEvents[datExplorationHuntEvents$expID == as.character(e$expID.E)  & !is.na(datExplorationHuntEvents$expID), ] 
+      points(datSpotHunts.E.Explore$posX, datSpotHunts.E.Explore$posY, col=pairedTrajPalette[2], cex=1.2, pch=17) ## Triangle Explore
   
       ## Spontaneous Explore
       datTraj <- datGroupExploreTraj[datGroupExploreTraj$expID == as.character(e$expID.S) & !is.na(datGroupExploreTraj$posX),]
@@ -294,8 +294,8 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
         points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p", col=pairedTrajPalette[3], cex=0.1);
       }
       ## Spont Exploration
-      datSpotHunts <- datExplorationHuntEvents[datExplorationHuntEvents$expID == as.character(e$expID.S)  & !is.na(datExplorationHuntEvents$expID), ] 
-      points(datSpotHunts$posX, datSpotHunts$posY, col=pairedTrajPalette[4], cex=1.2, pch=17) ##  Triangle Explore
+      datSpotHunts.S.Explore <- datExplorationHuntEvents[datExplorationHuntEvents$expID == as.character(e$expID.S)  & !is.na(datExplorationHuntEvents$expID), ] 
+      points(datSpotHunts.S.Explore$posX, datSpotHunts.S.Explore$posY, col=pairedTrajPalette[4], cex=1.2, pch=17) ##  Triangle Explore
   
       
       ## Evoked Exploit
@@ -306,8 +306,8 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
         points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p",col=pairedTrajPalette[5], cex=0.1)
       }
       ## Evoked Exploitation
-      datSpotHunts.E <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.E)  & !is.na(datExploitationHuntEvents$expID), ] 
-      points(datSpotHunts.E$posX, datSpotHunts.E$posY,col=pairedTrajPalette[6], cex=1.2,pch=15) ## Square Evoked
+      datSpotHunts.E.Exploit <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.E)  & !is.na(datExploitationHuntEvents$expID), ] 
+      points(datSpotHunts.E.Exploit$posX, datSpotHunts.E.Exploit$posY,col=pairedTrajPalette[6], cex=1.2,pch=15) ## Square Evoked
 
 
       ## Spontaneous Exploit
@@ -318,33 +318,40 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
         points(datTraj[idxplot,]$posX,datTraj[idxplot,]$posY,type="p",col=pairedTrajPalette[7], cex=0.1)
       }
       ## Hunt Episodes Spont Exploitation
-      datSpotHunts.S <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.S)  & !is.na(datExploitationHuntEvents$expID), ] 
-      points(datSpotHunts.S$posX, datSpotHunts.S$posY,col=pairedTrajPalette[8], cex=1.2,pch=15) ## Square Evoked
+      datSpotHunts.S.Exploit <- datExploitationHuntEvents[datExploitationHuntEvents$expID == as.character(e$expID.S)  & !is.na(datExploitationHuntEvents$expID), ] 
+      points(datSpotHunts.S.Exploit$posX, datSpotHunts.S.Exploit$posY,col=pairedTrajPalette[8], cex=1.2,pch=15) ## Square Evoked
   
       
       badd <- TRUE
-      # Add dispersion Time Line
+      ## Add dispersion Time Line + Hunt Events + Norm threshold Threshold
       datDisp.S <- datDispersion[datDispersion$expID == as.character(e$expID.S) ,]
       datDisp.E <- datDispersion[datDispersion$expID == as.character(e$expID.E) ,]
-      idxplot.S <- seq(1,NROW(datDisp.S),thin)
-      idxplot.E <- seq(1,NROW(datDisp.E),thin)
-      datDisp.S.frame <- as.numeric(datDisp.S[idxplot.S,]$frameRow)-min(as.numeric(datDisp.S[idxplot.S,]$frameRow)) #datAllFrames[datDisp.S[idxplot.S,]$frameRow,"frameN" ]
-      datDisp.E.frame <- max(datDisp.S.frame) +  as.numeric(datDisp.E[idxplot.E,]$frameRow)-min(as.numeric(datDisp.E[idxplot.E,]$frameRow)) 
       
-      ##datAllFrames[datDisp.E[idxplot.E,]$frameRow,"frameN" ]
-      ##frameN restarts to 0 for each event
-      plot(datDisp.S.frame/G_APPROXFPS ,datDisp.S[idxplot.S,]$Dispersion,type="l" ,ylim=c(0,10),xlim=c(0,max(datDisp.E.frame,1 )/G_APPROXFPS ),xlab="(sec)",
+      idxplot.S <- seq(min(1,NROW(datDisp.S)),NROW(datDisp.S),thin)
+      idxplot.E <- seq(min(1,NROW(datDisp.S)),NROW(datDisp.E),thin)
+      datDisp.S.frame <- as.numeric(datDisp.S[idxplot.S,]$frameRow)- min((as.numeric(datDisp.S[idxplot.S,]$frameRow) ),na.rm = TRUE ) #datAllFrames[datDisp.S[idxplot.S,]$frameRow,"frameN" ]
+      datDisp.E.frame <- max(datDisp.S.frame,na.rm=TRUE) +  as.numeric(datDisp.E[idxplot.E,]$frameRow)-min(c(as.numeric(datDisp.E[idxplot.E,]$frameRow) ),na.rm = TRUE ) 
+      
+      ##frameN restarts to 0 for each event so best use frameRow
+      plot(datDisp.S.frame/G_APPROXFPS ,datDisp.S[idxplot.S,]$Dispersion,type="l" ,ylim=c(0,10),xlim=c(0,max(c(0,datDisp.E.frame),na.rm =TRUE)/G_APPROXFPS ),xlab="(sec)",
            ylab="Dispersal (mm)", col=colourDataScheme[[ as.character(e$groupID.S)  ]] )
       lines(datDisp.E.frame/G_APPROXFPS, datDisp.E[idxplot.E,]$Dispersion,type="l", col=colourDataScheme[[ as.character(e$groupID.E)  ]] )
       
+      ##All Hunt larva hunt events together
+      datSpotHunts.S <- rbind(datSpotHunts.S.Exploit,datSpotHunts.S.Explore)
+      datSpotHunts.E <- rbind(datSpotHunts.E.Exploit,datSpotHunts.E.Explore)  
+      
       ##Add Hunt Event ##datDisp.S[datDisp.S$frameRow == datSpotHunts.S$frameRow,]$Dispersion <- fails cause Disp data may be missing at hunt event frame
       ## Use FrameRow As timepoint sequence - reset to 0 using min(frameRow) for event, and attach Evoked to the back of spontaneous
-      points( (as.numeric(datSpotHunts.S$frameRow)-min(as.numeric(datDisp.S[idxplot.S,]$frameRow) ) )/G_APPROXFPS, rep(-0.1,times=NROW(datSpotHunts.S$frameN)), cex=1, pch=17)
+      points( (as.numeric(datSpotHunts.S$frameRow)-min(as.numeric(datDisp.S[idxplot.S,]$frameRow),na.rm=TRUE ) )/G_APPROXFPS, rep(-0.1,times=NROW(datSpotHunts.S$frameN)), cex=1, pch=17)
       points( (max(idxplot.S) +  as.numeric(datSpotHunts.E$frameRow)-min(as.numeric(datSpotHunts.E$frameRow)))/G_APPROXFPS, rep(-0.1,times=NROW(datSpotHunts.E$frameN)) ,cex=1,pch=17)
       ##Show Larval Norm Threshold - Draw line
-      thres_Dispersion_mm <- min(datDisp.E[datDisp.E$Dispersion_larval_norm >= TH_DISP, ] $Dispersion,na.rm=TRUE)
-      segments(0,thres_Dispersion_mm,max(datDisp.E.frame,1 )/G_APPROXFPS,thres_Dispersion_mm,lty=3)
-      #stopifnot(i < 5)
+      thres_Dispersion_mm <- min((datDisp.E[datDisp.E$Dispersion_larval_norm >= TH_DISP, ] $Dispersion),na.rm=TRUE )
+      segments(0,thres_Dispersion_mm, max(datDisp.E.frame,na.rm=TRUE)/G_APPROXFPS,
+               thres_Dispersion_mm,lty=3)
+      
+      
+      stopifnot(i < 5)
       i <- i+1
   } ## For Each Event
     
@@ -843,7 +850,7 @@ The following figures show the tracked trajectories per experiment of each group
 Red signiifies segments of exploitation, blue is for exploration.
 
 
-## Classify based on normalizated larval trajectory dispersions
+## Classify based on dispersions normalized on per larval basis 
 
 Note that dispersion is normalized based on the trajectories from Spontaneous and Evoked conditions *combined* for each larva
 
