@@ -326,9 +326,12 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
       ## Add dispersion Time Line + Hunt Events + Norm threshold Threshold
       datDisp.S <- datDispersion[datDispersion$expID == as.character(e$expID.S) ,]
       datDisp.E <- datDispersion[datDispersion$expID == as.character(e$expID.E) ,]
-      
-      idxplot.S <- seq(min(1,NROW(datDisp.S)),NROW(datDisp.S),thin)
-      idxplot.E <- seq(min(1,NROW(datDisp.S)),NROW(datDisp.E),thin)
+      ## Sort by frameRo
+      datDisp.S <- datDisp.S[order( as.numeric(datDisp.S$frameRow) ), ]
+      datDisp.E <- datDisp.E[order( as.numeric(datDisp.E$frameRow) ), ]
+            
+      idxplot.S <- seq(min(1,NROW(datDisp.S)),max(1,NROW(datDisp.S)),thin)
+      idxplot.E <- seq(min(1,NROW(datDisp.S)),max(1,NROW(datDisp.E)) ,thin)
       datDisp.S.frame <- as.numeric(datDisp.S[idxplot.S,]$frameRow)- min((as.numeric(datDisp.S[idxplot.S,]$frameRow) ),na.rm = TRUE ) #datAllFrames[datDisp.S[idxplot.S,]$frameRow,"frameN" ]
       datDisp.E.frame <- max(datDisp.S.frame,na.rm=TRUE) +  as.numeric(datDisp.E[idxplot.E,]$frameRow)-min(c(as.numeric(datDisp.E[idxplot.E,]$frameRow) ),na.rm = TRUE ) 
       
@@ -351,11 +354,11 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
                thres_Dispersion_mm,lty=3)
       
       
-      stopifnot(i < 5)
+      #stopifnot(i < 5)
       i <- i+1
   } ## For Each Event
     
-}
+}## End of Function 
 
 
 ```
