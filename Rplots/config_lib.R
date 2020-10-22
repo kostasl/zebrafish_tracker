@@ -82,6 +82,13 @@ colourDataScheme <- list()
 colourDataScheme[["LF"]] <- list(Spont = colourLegE[2],Evoked = colourLegL[2])
 colourDataScheme[["NF"]] <- list(Spont = colourLegE[1],Evoked = colourLegL[1])
 colourDataScheme[["DF"]] <- list(Spont = colourLegE[3],Evoked = colourLegL[3])
+colourDataScheme[["LL"]] <- colourLegL[2]
+colourDataScheme[["LE"]] <- colourLegE[2]
+colourDataScheme[["NL"]] <- colourLegL[1]
+colourDataScheme[["NE"]] <- colourLegE[1]
+colourDataScheme[["DL"]] <- colourLegL[3]
+colourDataScheme[["DE"]] <- colourLegE[3]
+
 
 
 pairedPalette["alpha",1:8] <- 35 ##Opacity
