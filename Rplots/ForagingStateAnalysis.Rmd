@@ -42,12 +42,12 @@ tsec_timeWindow <- 5
 thres_dispersion_class <- 0.2
 
 #Original Dispersion Record per frame
-datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
+#datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
 ## Extended Dispersion Merged With maxDispersion Data
-#rm("datDispersion")
-#try(
-#  datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds") ) 
-#)
+rm("datDispersion")
+try(
+  datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds") ) 
+)
 
 if (!exists("datDispersion"))
 {
@@ -474,17 +474,17 @@ Perhaps it is best I combine the trajectories of spontaneous and evoked activity
  
 ```{r dispersion histograms across groups, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
 
-hist(datDispersion$Dispersion,breaks=100,main="(All groups): Dispersion lengths per experiment ",xlab="Dispersion (mm)")
-hist(datDispersion$Dispersion_norm,breaks=100,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm)")
-hist(datDispersion$Dispersion_larval_norm ,breaks=100,main="(All groups): Dispersion normalized per larva",xlab="Dispersion (larva norm)")
+hist(datDispersion$Dispersion,breaks=50,main="(All groups): Dispersion lengths per experiment ",xlab="Dispersion (mm)")
+hist(datDispersion$Dispersion_norm,breaks=50,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm)")
+hist(datDispersion$Dispersion_larval_norm ,breaks=50,main="(All groups): Dispersion normalized per larva",xlab="Dispersion (larva norm)")
 
 ```
 We look at each rearing group separatelly, while combining their evoked and spontaneous conditions
 
 ```{r dispersion histograms per group across conditions, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
-hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion,breaks=100,main="LF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$LF$Evoked)
-hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion,breaks=100,main="NF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$NF$Evoked)
-hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion,breaks=100,main="DF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$DF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion,breaks=50,main="LF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$LF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion,breaks=50,main="NF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$NF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion,breaks=50,main="DF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$DF$Evoked)
 
 ```
 
