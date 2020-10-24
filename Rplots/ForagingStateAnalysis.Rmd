@@ -1001,6 +1001,20 @@ I will defer using Stan for this and go for my familiar Jags model implementatio
 library(rjags)
 library(runjags)
 
+initfunct <- function(nchains,N)
+{
+  initlist <- replicate(nchains,list(#mID=c(rbinom(N,1,0.5)), 
+#                                     sigma = matrix(c (  c(runif(1,min=0,max=0.1),runif(1,min=0,max=2)),
+#s                                                         c(runif(1,min=0,max=0.1),runif(1,min=0,max=15))  ),nrow=2,byrow=T  ),
+#                                     mu  = matrix(c (  c( rnorm(1,mean=1,sd=sqrt(1/10) ), rnorm(1,mean=8,sd=sqrt(1/2) ) ),
+#                                                        c( rnorm(1,mean=1, sd=sqrt(1/10) ) , rnorm(1,mean=30, sd=sqrt(1/0.1) )    ) )
+#                                                     ,nrow=2,byrow = T  ),
+                                     ".RNG.name"="base::Super-Duper",
+                                     ".RNG.seed"=round(runif(1,0,60000)) ),
+                                     simplify=FALSE)
+  return(initlist)
+}
+
 strDispersionClusterModel <- "
 model {
     # Likelihood:
@@ -1040,16 +1054,43 @@ dataList_LF = list(
 
 ##
 ##
-steps <-50000
-nchains <- 5
+steps <-500
+nchains <- 2
 nthin <- 10
 #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
 str_vars <- c("mu","tau","clust","pClust","onesRepNclust") #Mixture Model
 
- jags_model_LF <- jags.model(textConnection(strDispersionClusterModel), data = dataList_LF, 
-                             n.adapt = 100, n.chains = nchains, quiet = F) #inits=initfunct(nchains,ldata_LF$N)
- update(jags_model_LF, 300)
- draw_LF=jags.samples(jags_model_LF,steps,thin=nthin,variable.names=str_vars)
+
+# Run the 2 chains in parallel (allowing the run.jags function
+# to control the number of parallel chains). We also use a
+# mutate function to convert the precision to standard deviation:
+results_LF <- run.jags(model=strDispersionClusterModel, n.chains=2,
+                       inits=initfunct(nchains,dataList_LF$N),
+                       thin=nthin,
+                       sample=steps,
+                       data= dataList_LF,
+                       monitor=str_vars,
+                       method="parallel", mutate=list("prec2sd", vars="precision"))
+
+
+
+# View the results using the standard print method:
+results_LF
+
+# Look at some plots of the intercept and slope on a 3x3 grid:
+plot(results_LF, c('trace','histogram','ecdf','crosscorr','key'),
+vars=c("mu","tau","clust","pClust"),layout=c(3,3))
+
+# Write the current model representation to file:
+write.jagsfile(results, file=paste0(strDataExportDir,'jagsModel_clustDispersion_LF.txt') )
+# And re-run the simulation from this point:
+#newresults <- run.jags('mymod.txt')
+
+### Alternativelly use std rjags Running
+# jags_model_LF <- jags.model(textConnection(strDispersionClusterModel), data = dataList_LF, 
+#                             n.adapt = 100, n.chains = nchains, quiet = F) #inits=initfunct(nchains,ldata_LF$N)
+# update(jags_model_LF, 300)
+# draw_LF=jags.samples(jags_model_LF,steps,thin=nthin,variable.names=str_vars)
 
 
 ```
