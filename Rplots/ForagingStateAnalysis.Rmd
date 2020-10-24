@@ -1034,7 +1034,8 @@ model {
 ## TODO: Expand to Group Prior ##
 "
 
-vDispersion.LF <- datDispersion[datDispersion$groupID == 'LL' & !is.na(datDispersion$Dispersion),"Dispersion",]
+nsubsample <- 500
+vDispersion.LF <- sample(datDispersion[datDispersion$groupID == 'LL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
 
 ##Cluster Membership
 N = NROW(vDispersion.LF)
@@ -1070,12 +1071,12 @@ results_LF <- run.jags(model=strDispersionClusterModel, n.chains=2,
                        sample=steps,
                        data= dataList_LF,
                        monitor=str_vars,
-                       method="parallel", mutate=list("prec2sd", vars="precision"))
+                       method="parallel", mutate=list("prec2sd", vars="tau"))
 
 
 
 # View the results using the standard print method:
-results_LF
+summary(results_LF)
 
 # Look at some plots of the intercept and slope on a 3x3 grid:
 plot(results_LF, c('trace','histogram','ecdf','crosscorr','key'),
