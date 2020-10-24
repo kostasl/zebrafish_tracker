@@ -28,7 +28,7 @@ getHuntEventCountPerLarva <- function(drawG,ntail)
   return(vHuntEventCount)
 }
 
-## Returns estaimes of each larvae behaviour from the Model
+## Returns estimates of each larvae behaviour from the Model
 ## Added Estimates Of Covariance 
 getEstimatesPerLarva <- function(drawG,stail=500)
 {

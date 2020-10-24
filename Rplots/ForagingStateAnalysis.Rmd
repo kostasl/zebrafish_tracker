@@ -962,6 +962,98 @@ plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHE
 
 ```
 
+# Dispersion as random process
+
+To study the statistical properties of dispersal and compare them between groups we model disperal data as a markov chain.
+A simple description of such a process is 
+\[
+D_n = D_{n-1} + z_n
+\]
+where $z_n ~ \mathcal{N}(\mu,\sigma)$.
+The parameters of which can be inferred from the data of each larval dispersal measurements.
+Looking at the distributions above it
+appears that, at least for LF there appears to be at least two step-generating distributions $z_n$, which are required to describe the group's dispersal data. Further, it is also evident that the parameters of these distributions change between spontaneous and evoked conditions, at least in the LF group.
+By modelling the data and inferring parameters using Bayesian inference we statistically compare changes in dispersal behaviour between groups and conditions.
+
+Assume that each larva generates a different number of observations, given the difference in the time they are in view. We aim to model the statistics of dispersion of each larva separatelly and then aggregate into a model of the whole group. Difference in the number of observations should be reflected in the uncertainty of parameter estimates.  
+However,given the nature of my data this can be problematic. Dispersion records are not continuous monitoring of behaviour, as there may be gaps between events. 
+The 1st 5sec at the beginning of each larval record is filled with NA values, and thus we may exclude it.
+Alternativelly we may directly model the distribution of $D_n$, rather model the step-generating process $z_n$.
+We begin with this more direct approach to model the distribution of Dispersal data for each larva, assuming these can be clustered using a mixture of $c=2$ Normal distributions for each test condition, such that evoked and spontaneous conditions are modelled separatelly. The separate distributions can be seen as a model of the hidden foraging state of the animal, which emit different motion patterns, and thus modify dispersal differently.
+
+## A group model of larval dispersal data#
+We construct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
+\[
+D^G \sim \mathcal{N}(\mu^G,\sigma^G)\\
+k_c \sim \mathbb{categorical}(\lambda)\\
+d_l \sim \mathcal{N}(\mu_{k[c]},\sigma_{k[c]})
+\]
+where the $\sum^{K}_{k=1}\lambda_k = 1$.
+
+To implement the normal mixture model outlined in the previous section in Stan, the discrete parameters can be summed out of the model.
+If Y is a mixture of K normal distributions with locations μk and scales σk with mixing proportions λ in the unit K-simplex, then 
+\[p_Y\left(y \mid \lambda, \mu, \sigma \right) = \sum_{k=1}^K \lambda_k \, \textsf{normal}\left(y \mid \mu_k, \sigma_k\right).\]
+I will defer using Stan for this and go for my familiar Jags model implementation.
+
+
+```{r dispersion-clusteringmodel,eval=FALSE, include=FALSE}
+
+library(rjags)
+library(runjags)
+
+strDispersionClusterModel <- "
+model {
+    # Likelihood:
+    for( i in 1 : N ) {
+      y[i] ~ dnorm( mu[i] , tau )
+      mu[i] <- muOfClust[ clust[i] ]
+      clust[i] ~ dcat( pClust[1:Nclust] )
+    }
+    # Prior:
+    tau ~ dgamma( 0.01 , 0.01 )
+    for ( clustIdx in 1: Nclust ) {
+      muOfClust[clustIdx] ~ dnorm( 0 , 1.0E-10 )
+    }
+    pClust[1:Nclust] ~ ddirch( onesRepNclust )
+}
+
+## TODO: Expand to Group Prior ##
+"
+
+vDispersion.LF <- datDispersion[datDispersion$groupID == 'LL' & !is.na(datDispersion$Dispersion),"Dispersion",]
+
+##Cluster Membership
+N = NROW(vDispersion.LF)
+Nclust <- 2
+clust = rep(NA,N) 
+clust[which.min(vDispersion.LF)]=1 # smallest value assigned to cluster 1
+clust[which.max(vDispersion.LF)]=2 # highest value assigned to cluster 2 
+
+dataList_LF = list(
+    y = vDispersion.LF ,
+    N = N,
+    Nclust = 2 ,
+    clust = clust ,
+    onesRepNclust = rep(1,Nclust)
+)
+
+
+##
+##
+steps <-50000
+nchains <- 5
+nthin <- 10
+#str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
+str_vars <- c("mu","tau","clust","pClust","onesRepNclust") #Mixture Model
+
+ jags_model_LF <- jags.model(textConnection(strDispersionClusterModel), data = dataList_LF, 
+                             n.adapt = 100, n.chains = nchains, quiet = F) #inits=initfunct(nchains,ldata_LF$N)
+ update(jags_model_LF, 300)
+ draw_LF=jags.samples(jags_model_LF,steps,thin=nthin,variable.names=str_vars)
+
+
+```
+
 
 ```{r spare-code-notes,eval=FALSE, include=FALSE}
 ## Retrieve Dispersion of each Hunt Event
