@@ -1092,7 +1092,8 @@ plotClusterModel <- function(results,vDispersion,groupID)
 
   hist( mucoeff[[3]],xlim=c(0,10), breaks=20,col=colourDataScheme[[groupID]],main=groupID,xlab = "Estimated means of each cluster (mu)" )  
   
-  hist( pClustcoeff[[3]],xlim=c(0,1), breaks=20,col=colourDataScheme[[groupID]],main=groupID,xlab = "Prob. of cluster membership (pClust)" )
+  hist( pClustcoeff[[3]][,1],xlim=c(0,1), breaks=20,col=c("red"),main=groupID,xlab = "Prob. of cluster membership (pClust)" )
+  hist( pClustcoeff[[3]][,2],xlim=c(0,1), breaks=20,col=c("blue"),main=groupID,add=TRUE )
 
 }
 
@@ -1107,7 +1108,6 @@ plotClusterModel(results.LF.E,vDispersion.LF.E,"LL")
 plotClusterModel(results.DF.E,vDispersion.DF.E,"DL")
 # View the results using the standard print method:
 #summary(results.LF.E)
-
 
 
 # Write the current model representation to file:
