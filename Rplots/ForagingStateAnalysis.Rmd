@@ -996,10 +996,11 @@ If Y is a mixture of K normal distributions with locations μk and scales σk wi
 I will defer using Stan for this and go for my familiar Jags model implementation.
 
 
-```{r dispersion-clusteringmodel,eval=FALSE, include=FALSE}
+```{r dispersion-clusteringmodel,fig.show="hold", out.width="33%", eval=FALSE, include=FALSE}
 
 library(rjags)
 library(runjags)
+library('coda')
 
 initfunct <- function(nchains,N)
 {
@@ -1034,69 +1035,93 @@ model {
 ## TODO: Expand to Group Prior ##
 "
 
-nsubsample <- 50000
-vDispersion.LF <- sample(datDispersion[datDispersion$groupID == 'LL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+nsubsample <- 500
+vDispersion.LF.E <- sample(datDispersion[datDispersion$groupID == 'LL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+vDispersion.NF.E <- sample(datDispersion[datDispersion$groupID == 'NL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+vDispersion.DF.E <- sample(datDispersion[datDispersion$groupID == 'DL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
 
-##Cluster Membership
-N = NROW(vDispersion.LF)
-Nclust <- 2
-clust = rep(NA,N) 
-clust[which.min(vDispersion.LF)]=1 # smallest value assigned to cluster 1
-clust[which.max(vDispersion.LF)]=2 # highest value assigned to cluster 2 
+runClusterModel <- function(vDispersion)
+{
+  ##Cluster Membership
+  N = NROW(vDispersion)
+  Nclust <- 2
+  clust = rep(NA,N) 
+  clust[which.min(vDispersion)]=1 # smallest value assigned to cluster 1
+  clust[which.max(vDispersion)]=2 # highest value assigned to cluster 2 
+  
+  dataList = list(
+      y = vDispersion ,
+      N = N,
+      Nclust = 2 ,
+      clust = clust ,
+      onesRepNclust = rep(1,Nclust)
+  )
+  
+  
+  ##
+  ##
+  steps <-100
+  nchains <- 3
+  nthin <- 10
+  #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
+  str_vars <- c("mu","tau","clust","pClust","onesRepNclust") #Mixture Model
+  
+  # Run the 2 chains in parallel (allowing the run.jags function
+  # to control the number of parallel chains). We also use a
+  # mutate function to convert the precision to standard deviation:
+  results <- run.jags(model=strDispersionClusterModel, n.chains=nchains,
+                         inits=initfunct(nchains,dataList$N),
+                         thin=nthin,
+                         sample=steps,
+                         data= dataList,
+                         monitor=str_vars,
+                         method="parallel", mutate=list("prec2sd", vars="tau"))
+ return(results) 
+}
 
-dataList_LF = list(
-    y = vDispersion.LF ,
-    N = N,
-    Nclust = 2 ,
-    clust = clust ,
-    onesRepNclust = rep(1,Nclust)
-)
+plotClusterModel <- function(results,vDispersion,groupID)
+{
+  mucoeff <- as.mcmc.list(results, vars="mu")
+  sigmacoeff <- as.mcmc.list(results, vars="tau")
+  pClustcoeff <- as.mcmc.list(results, vars="pClust")
+  custcoeff <- as.mcmc.list(results, vars="clust")
+  clustID <- sapply(custcoeff[[1]][1,1:500],mean)
+  
+  hist(vDispersion[clustID == 1],xlim=c(0,10), breaks=20,col="red",main=groupID,xlab = "Dispersion (mm)")
+  hist(vDispersion[clustID == 2],xlim=c(0,10), breaks=20,col="blue",add=TRUE)
+
+  hist( mucoeff[[3]],xlim=c(0,10), breaks=20,col=colourDataScheme[[groupID]],main=groupID,xlab = "Estimated means of each cluster (mu)" )  
+  
+  hist( pClustcoeff[[3]],xlim=c(0,1), breaks=20,col=colourDataScheme[[groupID]],main=groupID,xlab = "Prob. of cluster membership (pClust)" )
+
+}
 
 
-##
-##
-steps <-1000
-nchains <- 3
-nthin <- 10
-#str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
-str_vars <- c("mu","tau","clust","pClust","onesRepNclust") #Mixture Model
+results.LF.E <- runClusterModel(vDispersion.LF.E)
+results.NF.E <- runClusterModel(vDispersion.NF.E)
+results.DF.E <- runClusterModel(vDispersion.DF.E)
 
-
-# Run the 2 chains in parallel (allowing the run.jags function
-# to control the number of parallel chains). We also use a
-# mutate function to convert the precision to standard deviation:
-results_LF <- run.jags(model=strDispersionClusterModel, n.chains=2,
-                       inits=initfunct(nchains,dataList_LF$N),
-                       thin=nthin,
-                       sample=steps,
-                       data= dataList_LF,
-                       monitor=str_vars,
-                       method="parallel", mutate=list("prec2sd", vars="tau"))
-
-
-
+##plot Cluster Dist
+plotClusterModel(results.NF.E,vDispersion.NF.E,"NL")
+plotClusterModel(results.LF.E,vDispersion.LF.E,"LL")
+plotClusterModel(results.DF.E,vDispersion.DF.E,"DL")
 # View the results using the standard print method:
-summary(results_LF)
+#summary(results.LF.E)
 
-# Look at some plots of the intercept and slope on a 3x3 grid:
-plot(results_LF, c('trace','histogram','ecdf','crosscorr','key'),
-vars=c("mu","tau","clust","pClust"),layout=c(3,3))
 
-# Extract only the coefficient as an mcmc.list object:
-library('coda')
-mucoeff <- as.mcmc.list(results_LF, vars="mu")
-pClustcoeff <- as.mcmc.list(results_LF, vars="pClust")
-custcoeff <- as.mcmc.list(results_LF, vars="clust")
-
-clustID <- sapply(custcoeff[[1]][1,1:500],mean)
-
-hist(dataList_LF$y[clustID == 1],xlim=c(0,10), breaks=20,col="red")
-hist(dataList_LF$y[clustID == 2],xlim=c(0,10), breaks=20,col="blue",add=TRUE)
 
 # Write the current model representation to file:
-write.jagsfile(results, file=paste0(strDataExportDir,'jagsModel_clustDispersion_LF.txt') )
+write.jagsfile(results.NF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_NL.txt') )
+write.jagsfile(results.LF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_LL.txt') )
+write.jagsfile(results.DF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_DL.txt') )
+
 # And re-run the simulation from this point:
 #newresults <- run.jags('mymod.txt')
+
+# Look at some plots of the intercept and slope on a 3x3 grid:
+plot(results.LF.E, c('trace','histogram','ecdf','crosscorr','key'),
+vars=c("mu","tau","pClust"),layout=c(3,3))
+
 
 ### Alternativelly use std rjags Running
 # jags_model_LF <- jags.model(textConnection(strDispersionClusterModel), data = dataList_LF, 
