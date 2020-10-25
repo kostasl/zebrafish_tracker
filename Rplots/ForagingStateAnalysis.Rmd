@@ -1020,14 +1020,15 @@ strDispersionClusterModel <- "
 model {
     # Likelihood: 
     for( i in 1 : N ) {
-      y[i] ~ dnorm( mu[i] , tau )
-      mu[i] <- muOfClust[ clust[i] ]
+      y[i] ~ dnorm( muOfClust[ clust[i] ], tauOfClust[ clust[i] ] )
+      #mu[i] <-  ]
       clust[i] ~ dcat( pClust[1:Nclust] )
     }
+    
     # Prior:
-    tau ~ dgamma( 0.01 , 0.01 )
     for ( clustIdx in 1: Nclust ) {
-      muOfClust[clustIdx] ~ dnorm( 0 , 1.0E-10 )
+      muOfClust[clustIdx]  ~ dnorm( 0 , 1.0E-10 )
+      tauOfClust[clustIdx] ~ dgamma( 0.01 , 0.01 )
     }
     pClust[1:Nclust] ~ ddirch( onesRepNclust )
 }
@@ -1035,10 +1036,15 @@ model {
 ## TODO: Expand to Group Prior ##
 "
 
-nsubsample <- 500
+nsubsample <- 6000
 vDispersion.LF.E <- sample(datDispersion[datDispersion$groupID == 'LL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
 vDispersion.NF.E <- sample(datDispersion[datDispersion$groupID == 'NL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
 vDispersion.DF.E <- sample(datDispersion[datDispersion$groupID == 'DL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+
+vDispersion.LF.S <- sample(datDispersion[datDispersion$groupID == 'LE' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+vDispersion.NF.S <- sample(datDispersion[datDispersion$groupID == 'NE' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+vDispersion.DF.S <- sample(datDispersion[datDispersion$groupID == 'DE' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+
 
 runClusterModel <- function(vDispersion)
 {
@@ -1060,11 +1066,11 @@ runClusterModel <- function(vDispersion)
   
   ##
   ##
-  steps <-100
+  steps <-500
   nchains <- 3
   nthin <- 10
   #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
-  str_vars <- c("mu","tau","clust","pClust","onesRepNclust") #Mixture Model
+  str_vars <- c("clust","pClust","muOfClust","tauOfClust") #Mixture Model
   
   # Run the 2 chains in parallel (allowing the run.jags function
   # to control the number of parallel chains). We also use a
@@ -1075,25 +1081,37 @@ runClusterModel <- function(vDispersion)
                          sample=steps,
                          data= dataList,
                          monitor=str_vars,
-                         method="parallel", mutate=list("prec2sd", vars="tau"))
+                         method="parallel", mutate=list("prec2sd", vars="tauOfClust"))
  return(results) 
 }
 
 plotClusterModel <- function(results,vDispersion,groupID)
 {
-  mucoeff <- as.mcmc.list(results, vars="mu")
-  sigmacoeff <- as.mcmc.list(results, vars="tau")
+  muOfClustcoeff <- as.mcmc.list(results, vars="muOfClust")
+  tauOfClustcoeff <- as.mcmc.list(results, vars="tauOfClust")
   pClustcoeff <- as.mcmc.list(results, vars="pClust")
   custcoeff <- as.mcmc.list(results, vars="clust")
-  clustID <- sapply(custcoeff[[1]][1,1:500],mean)
-  
-  hist(vDispersion[clustID == 1],xlim=c(0,10), breaks=20,col="red",main=groupID,xlab = "Dispersion (mm)")
-  hist(vDispersion[clustID == 2],xlim=c(0,10), breaks=20,col="blue",add=TRUE)
+  clustID <- round(colMeans(custcoeff[[1]]))
 
-  hist( mucoeff[[3]],xlim=c(0,10), breaks=20,col=colourDataScheme[[groupID]],main=groupID,xlab = "Estimated means of each cluster (mu)" )  
+    #hist( mucoeff[[3]],xlim=c(0,10), breaks=20,col=colourDataScheme[[groupID]],main=groupID,xlab = "Sample Means (mm)" )  
+  tauClustAllChain <- as.data.frame(tauOfClustcoeff[[1]])#rbind( as.data.frame(tauOfClustcoeff[[3]]),as.data.frame(tauOfClustcoeff[[2]]),as.data.frame(tauOfClustcoeff[[1]]))
+  muClustAllChain <- as.data.frame(muOfClustcoeff[[1]])#rbind( as.data.frame(muOfClustcoeff[[3]]),as.data.frame(muOfClustcoeff[[2]]),as.data.frame(muOfClustcoeff[[1]]) )
+  clustCol <- c("red","blue")
+  if ( mean(muClustAllChain$`muOfClust[1]`) > mean(muClustAllChain$`muOfClust[2]`) )
+    clustCol <- rev(clustCol)
+
+  plot(density(vDispersion[clustID == 1]),xlim=c(0,10), col=clustCol[1], main=groupID, xlab = "Dispersion (mm)",lwd=3,lty=1)
+  lines(density(vDispersion[clustID == 2]),xlim=c(0,10), col=clustCol[2],lwd=3,lty=2)
+
   
-  hist( pClustcoeff[[3]][,1],xlim=c(0,1), breaks=20,col=c("red"),main=groupID,xlab = "Prob. of cluster membership (pClust)" )
-  hist( pClustcoeff[[3]][,2],xlim=c(0,1), breaks=20,col=c("blue"),main=groupID,add=TRUE )
+  #hist(muClustAllChain$`muOfClust[1]`,xlim=c(0,10), breaks=10,col=clustCol[1],main=paste("Cluster means", groupID ),xlab = "Estimated means of each cluster (mu)")
+  #hist(muClustAllChain$`muOfClust[2]`,xlim=c(0,10), breaks=10,col=clustCol[2],main=groupID,xlab = NA,add=TRUE)  
+  
+  plot(density(muClustAllChain$`muOfClust[1]`),xlim=c(0,10),,col=clustCol[1],lwd=3,lty=1,main=paste("Cluster means", groupID ),xlab = "Estimated means of each cluster (mu)")
+  lines(density(muClustAllChain$`muOfClust[2]`),xlim=c(0,10),,col=clustCol[2],lwd=3,lty=2)
+  
+  hist( pClustcoeff[[3]][,1],xlim=c(0,1), breaks=10,col=clustCol[1],main=groupID,xlab = "Prob. of cluster membership (pClust)" )
+  hist( pClustcoeff[[3]][,2],xlim=c(0,1), breaks=10,col=clustCol[2],main=groupID,add=TRUE )
 
 }
 
@@ -1102,13 +1120,19 @@ results.LF.E <- runClusterModel(vDispersion.LF.E)
 results.NF.E <- runClusterModel(vDispersion.NF.E)
 results.DF.E <- runClusterModel(vDispersion.DF.E)
 
-##plot Cluster Dist
-plotClusterModel(results.NF.E,vDispersion.NF.E,"NL")
-plotClusterModel(results.LF.E,vDispersion.LF.E,"LL")
-plotClusterModel(results.DF.E,vDispersion.DF.E,"DL")
+
+results.LF.S <- runClusterModel(vDispersion.LF.S)
+results.NF.S <- runClusterModel(vDispersion.NF.S)
+results.DF.S <- runClusterModel(vDispersion.DF.S)
+
+
+##Convergence Check
+ muclustNF <- as.mcmc.list(results.NF.S, vars="muOfClust")
+ plot(muclustNF)
+ 
+ 
 # View the results using the standard print method:
 #summary(results.LF.E)
-
 
 # Write the current model representation to file:
 write.jagsfile(results.NF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_NL.txt') )
@@ -1120,7 +1144,7 @@ write.jagsfile(results.DF.E, file=paste0(strDataExportDir,'jagsModel_clustDisper
 
 # Look at some plots of the intercept and slope on a 3x3 grid:
 plot(results.LF.E, c('trace','histogram','ecdf','crosscorr','key'),
-vars=c("mu","tau","pClust"),layout=c(3,3))
+vars=c("muOfClust","tau","pClust"),layout=c(3,3))
 
 
 ### Alternativelly use std rjags Running
@@ -1131,6 +1155,24 @@ vars=c("mu","tau","pClust"),layout=c(3,3))
 
 
 ```
+
+Next we plot the clustering results from nsampled dispersion data from each group/ condition
+
+```{r dispersion-clustering-results,fig.show="hold", out.width="33%", eval=FALSE, include=FALSE}
+##plot Cluster Dist
+## Evoked
+plotClusterModel(results.NF.E,vDispersion.NF.E,"NL")
+plotClusterModel(results.LF.E,vDispersion.LF.E,"LL")
+plotClusterModel(results.DF.E,vDispersion.DF.E,"DL")
+##Spont
+plotClusterModel(results.NF.S,vDispersion.NF.E,"NE")
+plotClusterModel(results.LF.S,vDispersion.LF.E,"LE")
+plotClusterModel(results.DF.S,vDispersion.DF.E,"DE")
+
+```
+
+
+
 
 
 ```{r spare-code-notes,eval=FALSE, include=FALSE}
