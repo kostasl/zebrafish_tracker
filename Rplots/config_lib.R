@@ -102,7 +102,8 @@ colourR <- c(rgb(0.9,0.01,0.01,0.6),rgb(0.01,0.7,0.01,0.6),rgb(0.01,0.01,0.9,0.6
 pairedPalette["alpha",1:6] <- 200 ##Opacity
 colourD <- col2hex(pairedPalette[,c(5,6,3,4,1,2)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 ##<- c("#E60303AA","#03B303FF","#0303E6AA")
-colourL <-c("#03B303AF","#E60303AF","#0303E6AF")
+colourL        <-c("#03B303AF","#E60303AF","#0303E6AF")
+colourClusters <- c("#00AFBB", "#E7B800", "#FC4E07")
 
 pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, NL
 lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL

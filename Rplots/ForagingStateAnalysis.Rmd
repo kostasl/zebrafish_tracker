@@ -40,6 +40,9 @@ load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
 
 tsec_timeWindow <- 5
 thres_dispersion_class <- 0.2
+##Clustering
+Nclust <- 2
+nsubsampleInterval <- G_APPROXFPS/2
 
 #Original Dispersion Record per frame
 #datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
@@ -962,27 +965,13 @@ plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHE
 
 ```
 
-# Dispersion as random process
+# Clustering dispersal data
 
-To study the statistical properties of dispersal and compare them between groups we model disperal data as a markov chain.
-A simple description of such a process is 
-\[
-D_n = D_{n-1} + z_n
-\]
-where $z_n ~ \mathcal{N}(\mu,\sigma)$.
-The parameters of which can be inferred from the data of each larval dispersal measurements.
-Looking at the distributions above it
-appears that, at least for LF there appears to be at least two step-generating distributions $z_n$, which are required to describe the group's dispersal data. Further, it is also evident that the parameters of these distributions change between spontaneous and evoked conditions, at least in the LF group.
-By modelling the data and inferring parameters using Bayesian inference we statistically compare changes in dispersal behaviour between groups and conditions.
+## Clustering dispersal using mixture of 2 Gaussians
+I made a simple mixture of C=`r Nclust` Gaussians model to cluster the disperal data pooled across larvae. I infer the Gaussian parameters for each group/condition using Bayesian inference and MCMC.  
+Parameter inference is done on the Dispersion data of each group/condition separately,  using dispersion data that has been subsampled to  `r G_APPROXFPS/nsubsampleInterval`sec intervals.
 
-Assume that each larva generates a different number of observations, given the difference in the time they are in view. We aim to model the statistics of dispersion of each larva separatelly and then aggregate into a model of the whole group. Difference in the number of observations should be reflected in the uncertainty of parameter estimates.  
-However,given the nature of my data this can be problematic. Dispersion records are not continuous monitoring of behaviour, as there may be gaps between events. 
-The 1st 5sec at the beginning of each larval record is filled with NA values, and thus we may exclude it.
-Alternativelly we may directly model the distribution of $D_n$, rather model the step-generating process $z_n$.
-We begin with this more direct approach to model the distribution of Dispersal data for each larva, assuming these can be clustered using a mixture of $c=2$ Normal distributions for each test condition, such that evoked and spontaneous conditions are modelled separatelly. The separate distributions can be seen as a model of the hidden foraging state of the animal, which emit different motion patterns, and thus modify dispersal differently.
-
-## A group model of larval dispersal data#
-We construct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
+#### todo: Fix Math model 
 \[
 D^G \sim \mathcal{N}(\mu^G,\sigma^G)\\
 k_c \sim \mathbb{categorical}(\lambda)\\
@@ -990,10 +979,28 @@ d_l \sim \mathcal{N}(\mu_{k[c]},\sigma_{k[c]})
 \]
 where the $\sum^{K}_{k=1}\lambda_k = 1$.
 
-To implement the normal mixture model outlined in the previous section in Stan, the discrete parameters can be summed out of the model.
-If Y is a mixture of K normal distributions with locations μk and scales σk with mixing proportions λ in the unit K-simplex, then 
-\[p_Y\left(y \mid \lambda, \mu, \sigma \right) = \sum_{k=1}^K \lambda_k \, \textsf{normal}\left(y \mid \mu_k, \sigma_k\right).\]
-I will defer using Stan for this and go for my familiar Jags model implementation.
+The model is implemented in RJags and its code is as as follows:
+```{r, dispersal-RJags-pooledData model,include=TRUE}
+strDispersionClusterModel <- "
+model {
+    # Likelihood: 
+    for( i in 1 : N ) {
+      y[i] ~ dnorm( muOfClust[ clust[i] ], tauOfClust[ clust[i] ] )
+      #mu[i] <-  ]
+      clust[i] ~ dcat( pClust[1:Nclust] )
+    }
+    
+    # Prior:
+    for ( clustIdx in 1: Nclust ) {
+      muOfClust[clustIdx]  ~ dnorm( 0 , 1.0E-10 )
+      tauOfClust[clustIdx] ~ dgamma( 0.01 , 0.01 )
+    }
+    pClust[1:Nclust] ~ ddirch( onesRepNclust )
+}
+
+## TODO: Expand to Group Prior ##
+"
+```
 
 
 ```{r dispersion-clusteringmodel,fig.show="hold", out.width="33%", eval=FALSE, include=FALSE}
@@ -1016,34 +1023,20 @@ initfunct <- function(nchains,N)
   return(initlist)
 }
 
-strDispersionClusterModel <- "
-model {
-    # Likelihood: 
-    for( i in 1 : N ) {
-      y[i] ~ dnorm( muOfClust[ clust[i] ], tauOfClust[ clust[i] ] )
-      #mu[i] <-  ]
-      clust[i] ~ dcat( pClust[1:Nclust] )
-    }
-    
-    # Prior:
-    for ( clustIdx in 1: Nclust ) {
-      muOfClust[clustIdx]  ~ dnorm( 0 , 1.0E-10 )
-      tauOfClust[clustIdx] ~ dgamma( 0.01 , 0.01 )
-    }
-    pClust[1:Nclust] ~ ddirch( onesRepNclust )
-}
+#nsubsample <- 10000 
+##Subsample The Dispersion Data into 0.5 sec bins
 
-## TODO: Expand to Group Prior ##
-"
+datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
+datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
 
-nsubsample <- 6000
-vDispersion.LF.E <- sample(datDispersion[datDispersion$groupID == 'LL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
-vDispersion.NF.E <- sample(datDispersion[datDispersion$groupID == 'NL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
-vDispersion.DF.E <- sample(datDispersion[datDispersion$groupID == 'DL' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+vDispersion.LF.E <- datSubDispersion[datSubDispersion$groupID == 'LL',"Dispersion",] 
+#vDispersion.NF.E <- sample(datSubDispersion[datSubDispersion$groupID == 'NL',"Dispersion",] ,min(nsubsample,NROW(datSubDispersion[datSubDispersion$groupID == 'NL',]) )  )
+vDispersion.NF.E <- datSubDispersion[datSubDispersion$groupID == 'NL',"Dispersion",]
+vDispersion.DF.E <- datSubDispersion[datSubDispersion$groupID == 'DL',"Dispersion",]
 
-vDispersion.LF.S <- sample(datDispersion[datDispersion$groupID == 'LE' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
-vDispersion.NF.S <- sample(datDispersion[datDispersion$groupID == 'NE' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
-vDispersion.DF.S <- sample(datDispersion[datDispersion$groupID == 'DE' & !is.na(datDispersion$Dispersion),"Dispersion",],nsubsample)
+vDispersion.LF.S <- datSubDispersion[datSubDispersion$groupID == 'LE',"Dispersion",]
+vDispersion.NF.S <- datSubDispersion[datSubDispersion$groupID == 'NE',"Dispersion",]  
+vDispersion.DF.S <- datSubDispersion[datSubDispersion$groupID == 'DE',"Dispersion",]
 
 
 runClusterModel <- function(vDispersion)
@@ -1085,68 +1078,44 @@ runClusterModel <- function(vDispersion)
  return(results) 
 }
 
-plotClusterModel <- function(results,vDispersion,groupID)
-{
-  muOfClustcoeff <- as.mcmc.list(results, vars="muOfClust")
-  tauOfClustcoeff <- as.mcmc.list(results, vars="tauOfClust")
-  pClustcoeff <- as.mcmc.list(results, vars="pClust")
-  custcoeff <- as.mcmc.list(results, vars="clust")
-  clustID <- round(colMeans(custcoeff[[1]]))
-
-    #hist( mucoeff[[3]],xlim=c(0,10), breaks=20,col=colourDataScheme[[groupID]],main=groupID,xlab = "Sample Means (mm)" )  
-  tauClustAllChain <- as.data.frame(tauOfClustcoeff[[1]])#rbind( as.data.frame(tauOfClustcoeff[[3]]),as.data.frame(tauOfClustcoeff[[2]]),as.data.frame(tauOfClustcoeff[[1]]))
-  muClustAllChain <- as.data.frame(muOfClustcoeff[[1]])#rbind( as.data.frame(muOfClustcoeff[[3]]),as.data.frame(muOfClustcoeff[[2]]),as.data.frame(muOfClustcoeff[[1]]) )
-  clustCol <- c("red","blue")
-  if ( mean(muClustAllChain$`muOfClust[1]`) > mean(muClustAllChain$`muOfClust[2]`) )
-    clustCol <- rev(clustCol)
-
-  plot(density(vDispersion[clustID == 1]),xlim=c(0,10), col=clustCol[1], main=groupID, xlab = "Dispersion (mm)",lwd=3,lty=1)
-  lines(density(vDispersion[clustID == 2]),xlim=c(0,10), col=clustCol[2],lwd=3,lty=2)
-
-  
-  #hist(muClustAllChain$`muOfClust[1]`,xlim=c(0,10), breaks=10,col=clustCol[1],main=paste("Cluster means", groupID ),xlab = "Estimated means of each cluster (mu)")
-  #hist(muClustAllChain$`muOfClust[2]`,xlim=c(0,10), breaks=10,col=clustCol[2],main=groupID,xlab = NA,add=TRUE)  
-  
-  plot(density(muClustAllChain$`muOfClust[1]`),xlim=c(0,10),,col=clustCol[1],lwd=3,lty=1,main=paste("Cluster means", groupID ),xlab = "Estimated means of each cluster (mu)")
-  lines(density(muClustAllChain$`muOfClust[2]`),xlim=c(0,10),,col=clustCol[2],lwd=3,lty=2)
-  
-  hist( pClustcoeff[[3]][,1],xlim=c(0,1), breaks=10,col=clustCol[1],main=groupID,xlab = "Prob. of cluster membership (pClust)" )
-  hist( pClustcoeff[[3]][,2],xlim=c(0,1), breaks=10,col=clustCol[2],main=groupID,add=TRUE )
-
-}
-
+results.NF.E <- runClusterModel(vDispersion.NF.E)
+write.jagsfile(results.NF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_NL.txt') )
+saveRDS(results.NF.E,file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NL.rds') )
 
 results.LF.E <- runClusterModel(vDispersion.LF.E)
-results.NF.E <- runClusterModel(vDispersion.NF.E)
-results.DF.E <- runClusterModel(vDispersion.DF.E)
+write.jagsfile(results.LF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_LL.txt') )
+saveRDS(results.LF.E,file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_LL.rds') )
 
+results.DF.E <- runClusterModel(vDispersion.DF.E)
+write.jagsfile(results.DF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_DL.txt') )
+saveRDS(results.DF.E,file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_DL.rds') )
+
+## Spont
+results.NF.S <- runClusterModel(vDispersion.NF.S)
+write.jagsfile(results.NF.S, file=paste0(strDataExportDir,'jagsModel_clustDispersion_NE.txt') )
+saveRDS(results.NF.S,file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NE.rds') )
 
 results.LF.S <- runClusterModel(vDispersion.LF.S)
-results.NF.S <- runClusterModel(vDispersion.NF.S)
-results.DF.S <- runClusterModel(vDispersion.DF.S)
+write.jagsfile(results.LF.S, file=paste0(strDataExportDir,'jagsModel_clustDispersion_LE.txt') )
+saveRDS(results.LF.S,file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_LE.rds') )
 
+results.DF.S <- runClusterModel(vDispersion.DF.S)
+write.jagsfile(results.DF.S, file=paste0(strDataExportDir,'jagsModel_clustDispersion_DE.txt') )
+saveRDS(results.DF.S,file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_DE.rds') )
 
 ##Convergence Check
- muclustNF <- as.mcmc.list(results.NF.S, vars="muOfClust")
- plot(muclustNF)
- 
- 
+muclustNF <- as.mcmc.list(results.NF.S, vars="muOfClust")
+plot(muclustNF)
+
 # View the results using the standard print method:
 #summary(results.LF.E)
-
 # Write the current model representation to file:
-write.jagsfile(results.NF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_NL.txt') )
-write.jagsfile(results.LF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_LL.txt') )
-write.jagsfile(results.DF.E, file=paste0(strDataExportDir,'jagsModel_clustDispersion_DL.txt') )
-
+#saveRDS(datSubDispersion,file=paste0(strDataExportDir,'jagsModelDispersionData.rds') )
 # And re-run the simulation from this point:
 #newresults <- run.jags('mymod.txt')
-
 # Look at some plots of the intercept and slope on a 3x3 grid:
-plot(results.LF.E, c('trace','histogram','ecdf','crosscorr','key'),
-vars=c("muOfClust","tau","pClust"),layout=c(3,3))
-
-
+#plot(results.LF.E, c('trace','histogram','ecdf','crosscorr','key'),
+#vars=c("muOfClust","tau","pClust"),layout=c(3,3))
 ### Alternativelly use std rjags Running
 # jags_model_LF <- jags.model(textConnection(strDispersionClusterModel), data = dataList_LF, 
 #                             n.adapt = 100, n.chains = nchains, quiet = F) #inits=initfunct(nchains,ldata_LF$N)
@@ -1156,21 +1125,105 @@ vars=c("muOfClust","tau","pClust"),layout=c(3,3))
 
 ```
 
-Next we plot the clustering results from nsampled dispersion data from each group/ condition
+and the clustering results  of each group/condition are summarized in the following figures:
 
-```{r dispersion-clustering-results,fig.show="hold", out.width="33%", eval=FALSE, include=FALSE}
+```{r dispersion-clustering-results,fig.show="hold", out.width="33%", eval=TRUE, include=FALSE}
+
+plotClusterModel <- function(results,vDispersion,groupID)
+{
+  ichain <- 2
+  muOfClustcoeff <- as.mcmc.list(results, vars="muOfClust")
+  tauOfClustcoeff <- as.mcmc.list(results, vars="tauOfClust")
+  pClustcoeff <- as.mcmc.list(results, vars="pClust")
+  custcoeff <- as.mcmc.list(results, vars="clust")
+  clustID <- round(colMeans(custcoeff[[ichain]]))
+
+    #hist( mucoeff[[3]],xlim=c(0,10), breaks=20,col=colourDataScheme[[groupID]],main=groupID,xlab = "Sample Means (mm)" )  
+  tauClustAllChain <- as.data.frame(tauOfClustcoeff[[ichain]])#rbind( as.data.frame(tauOfClustcoeff[[3]]),as.data.frame(tauOfClustcoeff[[2]]),as.data.frame(tauOfClustcoeff[[1]]))
+  muClustAllChain <- as.data.frame(muOfClustcoeff[[ichain]])#rbind( as.data.frame(muOfClustcoeff[[3]]),as.data.frame(muOfClustcoeff[[2]]),as.data.frame(muOfClustcoeff[[1]]) )
+  clustCol <-c(colourClusters[1],colourClusters[2])
+  if ( mean(muClustAllChain$`muOfClust[1]`) > mean(muClustAllChain$`muOfClust[2]`) )
+    clustCol <- rev(clustCol)
+
+  #plot(density(vDispersion[clustID == 1]),xlim=c(0,10), col=clustCol[1], main=groupID, xlab = "Dispersion (mm)",lwd=3,lty=1)
+  #lines(density(vDispersion[clustID == 2]),xlim=c(0,10), col=clustCol[2],lwd=3,lty=2)
+
+  breaksSlots <-  seq(0,12,by=0.15)
+  list_histo <- hist(vDispersion, breaks=breaksSlots, freq=TRUE)
+  hist(vDispersion[clustID == 1],xlim=c(0,10),ylim=c(0,max(list_histo$counts)), breaks=breaksSlots,col=clustCol[1],main=paste("Clustered densities", groupID ),xlab = "Dispersion (mm)",add=TRUE)
+  hist(vDispersion[clustID == 2],xlim=c(0,10), breaks=breaksSlots,col=clustCol[2],main=groupID,xlab = NA,add=TRUE)  
+  
+  plot(density(muClustAllChain$`muOfClust[1]`),xlim=c(0,10),col=clustCol[1],lwd=3,lty=1,main=paste("Cluster means", groupID ),xlab = "Estimated means of each cluster (mu)")
+  lines(density(muClustAllChain$`muOfClust[2]`),xlim=c(0,10),col=clustCol[2],lwd=3,lty=2)
+  
+  breaksProb <- seq(0,1,by=0.01)
+  list_histo <- hist(pClustcoeff[[ichain]],breaks=breaksProb,main=groupID,freq = TRUE)
+  hist( pClustcoeff[[ichain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)), breaks=breaksProb,col=clustCol[1],xlab = "Prob. of cluster membership (pClust)" ,add=TRUE)
+  hist( pClustcoeff[[ichain]][,2],xlim=c(0,1), breaks=breaksProb,col=clustCol[2],main=groupID,add=TRUE )
+
+}
+
+## Load Clustering Results
+if (!exists("results.NF.E"))
+  results.NF.E <<- readRDS(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NL.rds') )
+if (!exists("results.NF.S"))
+  results.NF.S <<- readRDS(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NE.rds') )
+if (!exists("results.LF.E"))
+  results.LF.E <<- readRDS(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_LL.rds') )
+if (!exists("results.LF.S"))
+  results.LF.S <<- readRDS(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_LE.rds') )
+if (!exists("results.DF.E"))
+  results.DF.E <<- readRDS(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_DL.rds') )
+if (!exists("results.DF.S"))
+  results.DF.S <<- readRDS(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_DE.rds') )
+
 ##plot Cluster Dist
 ## Evoked
 plotClusterModel(results.NF.E,vDispersion.NF.E,"NL")
 plotClusterModel(results.LF.E,vDispersion.LF.E,"LL")
 plotClusterModel(results.DF.E,vDispersion.DF.E,"DL")
 ##Spont
-plotClusterModel(results.NF.S,vDispersion.NF.E,"NE")
-plotClusterModel(results.LF.S,vDispersion.LF.E,"LE")
-plotClusterModel(results.DF.S,vDispersion.DF.E,"DE")
+plotClusterModel(results.NF.S,vDispersion.NF.S,"NE")
+plotClusterModel(results.LF.S,vDispersion.LF.S,"LE")
+plotClusterModel(results.DF.S,vDispersion.DF.S,"DE")
 
 ```
 
+
+## Clustering using a hierarchical group model of larval dispersion data
+
+We construct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
+
+
+## Dispersion as random process
+
+Here I investigate on a different formulation of a stochastic dispersal data generating process. 
+To study the statistical properties of dispersal and compare them between groups we model disperal data as a markov chain.
+A simple description of such a process is 
+\[
+D_n = D_{n-1} + z_n
+\]
+where $z_n ~ \mathcal{N}(\mu,\sigma)$.
+The parameters of which can be inferred from the data of each larval dispersal measurements.
+Looking at the distributions above it
+appears that, at least for LF there appears to be at least two step-generating distributions $z_n$, which are required to describe the group's dispersal data. Further, it is also evident that the parameters of these distributions change between spontaneous and evoked conditions, at least in the LF group.
+By modelling the data and inferring parameters using Bayesian inference we statistically compare changes in dispersal behaviour between groups and conditions.
+
+Assume that each larva generates a different number of observations, given the difference in the time they are in view. We aim to model the statistics of dispersion of each larva separatelly and then aggregate into a model of the whole group. Difference in the number of observations should be reflected in the uncertainty of parameter estimates.  
+
+However,given the nature of my data this can be problematic. Dispersion records are not continuous monitoring of behaviour, as there may be gaps between events. 
+The 1st 5sec at the beginning of each larval record is filled with NA values, and thus we may exclude it.
+Alternativelly we may directly model the distribution of $D_n$, rather model the step-generating process $z_n$.
+We begin with this more direct approach to model the distribution of Dispersal data for each larva, assuming these can be clustered using a mixture of $c=2$ Normal distributions for each test condition, such that evoked and spontaneous conditions are modelled separatelly. The separate distributions can be seen as a model of the hidden foraging state of the animal, which emit different motion patterns, and thus modify dispersal differently.
+
+This approach could be complemented by active inference / SPM model
+
+### Model implementantion in Stan
+
+To implement the normal mixture model outlined in the previous section in Stan, the discrete parameters can be summed out of the model.
+If Y is a mixture of K normal distributions with locations μk and scales σk with mixing proportions λ in the unit K-simplex, then 
+\[p_Y\left(y \mid \lambda, \mu, \sigma \right) = \sum_{k=1}^K \lambda_k \, \textsf{normal}\left(y \mid \mu_k, \sigma_k\right).\]
+I will defer using Stan for this and go for my familiar Jags model implementation.
 
 
 
