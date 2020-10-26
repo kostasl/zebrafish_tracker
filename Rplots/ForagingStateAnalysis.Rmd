@@ -1130,6 +1130,9 @@ and the clustering results  of each group/condition are summarized in the follow
 ```{r dispersion-clustering-results,fig.show="hold", out.width="33%", eval=TRUE, include=FALSE}
 library('coda')
 
+datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
+datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
+
 plotClusterModel <- function(results,vDispersion,groupID)
 {
   ichain <- 2
