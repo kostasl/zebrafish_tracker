@@ -1128,6 +1128,7 @@ plot(muclustNF)
 and the clustering results  of each group/condition are summarized in the following figures:
 
 ```{r dispersion-clustering-results,fig.show="hold", out.width="33%", eval=TRUE, include=FALSE}
+library('coda')
 
 plotClusterModel <- function(results,vDispersion,groupID)
 {
