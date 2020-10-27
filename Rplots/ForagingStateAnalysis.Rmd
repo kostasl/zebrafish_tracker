@@ -1024,7 +1024,6 @@ model {
     pClust[1:Nclust] ~ ddirch( onesRepNclust )
 }
 
-## TODO: Expand to Group Prior ##
 "
 ```
 
@@ -1197,18 +1196,22 @@ plotClusterProb <- function(lmcmcRes,clustCol)
 {
    ##plot prob of occupying each cluster
   breaksProb <- seq(0,1,by=0.01)
-  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = TRUE)
-  hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)), breaks=breaksProb,col=clustCol[1],xlab = "Prob. of cluster membership (pClust)" ,add=TRUE)
+  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = TRUE,xlab = "Prob. of cluster membership (pClust)")
+  hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)),
+        breaks=breaksProb,col=clustCol[1]
+        ,xlab = NA, add=TRUE)
   hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,2],xlim=c(0,1), breaks=breaksProb,col=clustCol[2],main=groupID,add=TRUE )
 }
 # Colour Coded Histogram of Dispersion Data Showing plit between Exploit[1] / Explore[2]
 plotClusteredDispersionHist <- function(lmcmcRes,vDispersion,clustCol)
 {
     ## Plot Clustered  Histogram 
-  breaksSlots <-  seq(0,12,by=0.15)
-  list_histo <- hist(vDispersion, breaks=breaksSlots, freq=TRUE)
-  hist(vDispersion[lmcmcRes$clustID == 1],xlim=c(0,10),ylim=c(0,max(list_histo$counts)), breaks=breaksSlots,col=clustCol[1],main=paste("Clustered densities", lmcmcRes$groupID ),xlab = "Dispersion (mm)",add=TRUE)
-  hist(vDispersion[lmcmcRes$clustID == 2],xlim=c(0,10), breaks=breaksSlots,col=clustCol[2],main=groupID,xlab = NA,add=TRUE)  
+  breaksSlots <-  seq(0,10,by=0.5)
+  h0 <- hist(vDispersion, breaks=breaksSlots, freq=TRUE,plot=FALSE)
+  h1 <- hist(vDispersion[lmcmcRes$clustID == 1],xlim=c(0,10),ylim=c(0,max(h0$counts)), breaks=breaksSlots,col=clustCol[1],plot=FALSE)
+  h2 <- hist(vDispersion[lmcmcRes$clustID == 2],xlim=c(0,10), breaks=breaksSlots,col=clustCol[2],main=groupID,xlab = NA,plot=FALSE)  
+  
+  barplot(rbind(h0$counts,h1$counts,h2$counts),beside = TRUE, col = c("white",clustCol),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered densities", lmcmcRes$groupID ),xlab = "Dispersion (mm)")
   
 }
 ## Plot Estimated Mean of each Gaussian
@@ -1294,6 +1297,28 @@ plotClusterModel(results.DF.S,vDispersion.DF.S,"DE")
 <!--![Clustered Dispersion DF Spontaneous ](`r ## knitr::fig_chunk('plot-clustering-results-DF', 'png')`)-->
 
 <!--- ![LF Evoked](`r #knitr::fig_chunk('dispersion-clustering-results', 'png',4:6)`)-->
+## Clustering Using an Negative-Binomial Mixture
+```{r, dispersal-RJags-pooledData model,include=TRUE}
+strDispersionNBClusterModel <- "
+model {
+    # Likelihood: 
+    for( i in 1 : N ) {
+      y[i] ~ dnegbin(q[clust[i] ],r[ clust[i] ]) # Model Number Of Dispersal expansion steps within a recent trajectory timewindow (5 sec)
+      
+      clust[i] ~ dcat( pClust[1:Nclust] )
+    }
+    
+    # Prior:
+    for ( clustIdx in 1: Nclust ) {
+      q[clustIdx]  ~ dunif(0.0,1)
+      r[clustIdx] ~ dgamma(1,1)
+    }
+    pClust[1:Nclust] ~ ddirch( onesRepNclust )
+}
+
+"
+```
+n[j] ~  dnegbin(q,r) ##Model Number Of Hunt Events Per Larvae
 
 ## Clustering using a hierarchical group model of larval dispersion data
 
@@ -1339,12 +1364,20 @@ Here I investigate on a different formulation of a stochastic dispersal data gen
 To study the statistical properties of dispersal and compare them between groups we model disperal data as a markov chain.
 A simple description of such a process is 
 \[
-D_n = D_{n-1} + z_n
+D_n = D_{n-1} + p z_n
 \]
 where $z_n ~ \mathcal{N}(\mu,\sigma)$.
 The parameters of which can be inferred from the data of each larval dispersal measurements.
-Looking at the distributions above it
-appears that, at least for LF there appears to be at least two step-generating distributions $z_n$, which are required to describe the group's dispersal data. Further, it is also evident that the parameters of these distributions change between spontaneous and evoked conditions, at least in the LF group.
+We assume that motion bouts are generated at regular intervals $t\in\{1...n\}$ and each bout motion may either increase the dispersal, measured as the circle encompassing a 5 sec ($k-step$) trajectory, or leave it the same. As as such  disperal lengths are dependent on the sum of a sequence of $k$ bernoulli trials, with $p$ being the probability that dispersion increases by a step size drawn from another distribution (assume Normal), and $q=1-p$ being the probability that the dispersal remains the same - either because a bout did not occur or because bout moved inwards.
+In such a model we will need **to ignore any correlations between step outcomes**, as sequence of step that move inwards the dispersion circle, are less likely to lead to an increase in the next step, as the larva may have moved away from the current dispresion boundary. 
+These  width of these correlations is increased with dispersion length (ie with the history of prior expansion successes.) 
+Thus if we consider the dispersal length to be a sum of Gaussian random variables, then the resulting distribution should be Gaussian (or mixture of, if there is more than one $p$).
+
+Alternativelly, assuming $k$-steps makes each dispersal count, we observe that a certain dispersal length is made up of a sequence of expansion events $e$, where the larva hits the dispersal measuring circle boundary, leaving the rest to of the $n=k-e$ steps to be expansion failures. 
+If we assume that each expansion event increases dispersion by some fixed size $d$, then the *Negative binomial (NB)*  could be applicable here to model the distribution of dispersal lengths. The NB is a discrete probability distribution that models the number of failures in a sequence of independent and identically distributed Bernoulli trials before a specified (non-random) number of successes (denoted $r$) occurs.
+This model  *generally is appropriate where events have positively correlated* occurrences causing a larger variance than if the occurrences were independent, due to a positive covariance term. Here we may model we may model $r$ as being the number of times dispersion did not change, while failures is bout that increases dispersal occurs.
+
+In any case, looking at the distributions above it appears that, at least for LF, there appears to be at least two step-generating distributions $z_n$, which are required to describe the group's dispersal data. Further, it is also evident that the parameters of these distributions change between spontaneous and evoked conditions, at least in the LF group.
 By modelling the data and inferring parameters using Bayesian inference we statistically compare changes in dispersal behaviour between groups and conditions.
 
 Assume that each larva generates a different number of observations, given the difference in the time they are in view. We aim to model the statistics of dispersion of each larva separatelly and then aggregate into a model of the whole group. Difference in the number of observations should be reflected in the uncertainty of parameter estimates.  
