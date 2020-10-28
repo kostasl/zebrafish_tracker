@@ -1129,7 +1129,7 @@ save(list=c("results.DF.S","vDispersion.DF.S"),file=paste0(strDataExportDir,'jag
 
 
 # # And re-run the simulation from this point:
-# results.NF.E <- run.jags(paste0(strDataExportDir,'jagsModel_clustDispersion_NL.txt'),sample=10)
+# results.NF.E <- run.jags(paste0(strDataExportDir,'jagsModel_clustDispersion_NL.txt'),sample=100)
 # save(list=c("results.NF.E","vDispersion.NF.E"),file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NL.RData') )
 # results.NF.S <- run.jags(paste0(strDataExportDir,'jagsModel_clustDispersion_NE.txt'),sample=100)
 # save(list=c("results.NF.S","vDispersion.NF.S"),file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NE.RData') )
@@ -1179,13 +1179,14 @@ getMCMCEstimatedParams <- function(results,groupID,ichain = 2)
 {
   clustcoeff = as.mcmc.list(results, vars="clust")
   tauOfClust = as.mcmc.list(results, vars="tauOfClust")
+  muOfClust = as.mcmc.list(results, vars="muOfClust")
   lret <- list(
   chain =  ichain,
   groupID = groupID,
-  muOfClustcoeff = as.mcmc.list(results, vars="muOfClust"),
+  muOfClustcoeff = muOfClust,
   tauOfClustcoeff = tauOfClust,
-  mean = as.mcmc.list(results, vars="muOfClust"),
-  sd = cbind(tauOfClust$`tauOfClust[1].sd`,tauOfClust$`tauOfClust[2].sd`),
+  mean = muOfClust[[ichain]],
+  sd = cbind(tauOfClust[[ichain]][,3],tauOfClust[[ichain]][,4]), ##Take the precision converted to sd Columns 
   pClustcoeff = as.mcmc.list(results, vars="pClust"),
   clustID = round(colMeans(clustcoeff[[ichain]]) ) 
   )
@@ -1213,12 +1214,13 @@ plotClusteredDispersionHist <- function(lmcmcRes,vDispersion,clustCol)
   ## Plot Clustered  Histogram 
   breaksSlots <-  seq(0,11,by=0.5)
   h0 <- hist(vDispersion, breaks=breaksSlots,plot=FALSE,freq=FALSE) # freq=TRUE,
-  h1 <- hist(vDispersion[lmcmcRes$clustID == 1], breaks=breaksSlots,col=clustCol[1], plot=FALSE,freq=FALSE) #xlim=c(0,10),ylim=c(0,max(h0$counts))
-  h2 <- hist(vDispersion[lmcmcRes$clustID == 2], breaks=breaksSlots,col=clustCol[2],main=groupID,xlab = NA, plot=FALSE,freq=FALSE)  #xlim=c(0,10),
+  h1 <- hist(vDispersion[lmcmcRes$clustID == 1], breaks=breaksSlots, plot=FALSE) #xlim=c(0,10),ylim=c(0,max(h0$counts))
+  h2 <- hist(vDispersion[lmcmcRes$clustID == 2], breaks=breaksSlots,xlab = NA, plot=FALSE)  #xlim=c(0,10),
   
   barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol,"white"),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered densities", lmcmcRes$groupID ),xlab = "Dispersion (mm)")
   
 }
+
 
 ## Plot Estimated Mean of each Gaussian
 plotClusterMeans <- function(lmcmcRes,clustCol)
@@ -1298,17 +1300,17 @@ plotClusterModel <- function(results,vDispersion, groupID,lmcmcRes)
 }
 
 ## Load Gaussian Mixture Clustering Results
-if (!exists("results.NF.E"))
+#if (!exists("results.NF.E"))
    load(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NL.RData') )
-if (!exists("results.NF.S"))
+#if (!exists("results.NF.S"))
    load(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NE.RData') )
-if (!exists("results.LF.E"))
+#if (!exists("results.LF.E"))
    load(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_LL.RData') )
-if (!exists("results.LF.S"))
+#if (!exists("results.LF.S"))
    load(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_LE.RData') )
-if (!exists("results.DF.E"))
+#if (!exists("results.DF.E"))
    load(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_DL.RData') )
-if (!exists("results.DF.S"))
+#if (!exists("results.DF.S"))
    load(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_DE.RData') )
 
 ##plot Cluster Dists
@@ -1322,7 +1324,7 @@ if (!exists("results.DF.S"))
 
 ```
 #### Cluster Dispersal Not-Fed group
-```{r ,plot-clustering-results-NF,fig.show='hold', out.width="33%",dev='png'}
+```{r ,plot-clustering-results-NF,fig.show='hold', out.width="33%",dev='png',warnings=FALSE}
 plotClusterModel(results.NF.E,vDispersion.NF.E, "NL", getMCMCEstimatedParams(results.NF.E,"NL",2))
 plotClusterModel(results.NF.S,vDispersion.NF.S, "NE", getMCMCEstimatedParams(results.NF.S,"NE",2))
 ```
@@ -1461,8 +1463,8 @@ runNBMixClusterModel <- function(vDispersion)
                          thin=nthin,
                          sample=steps,
                          data= dataList,
-                         adapt = 200,
-                         burnin = 500,
+                         adapt = 1000,
+                         burnin = 1000,
                          monitor=str_vars,
                          method="parallel")
  return(results) 
@@ -1490,7 +1492,7 @@ write.jagsfile(results.LF.S, file=paste0(strDataExportDir,'jagsModel_NBMixclustD
 save(list=c("results.LF.S","vDispersion.LF.S"),file=paste0(strDataExportDir,'jagsModelResults_NBMixclustDispersion_LE.RData') )
 
 results.DF.S <- runNBMixClusterModel(vDispersion.DF.S)
-write.jagsfile(results.DF.S, file=paste0(strDataExportDir,'jagsModel_clustDispersion_DE.txt') )
+write.jagsfile(results.DF.S, file=paste0(strDataExportDir,'jagsModel_NBMixclustDispersion_DE.txt') )
 save(list=c("results.DF.S","vDispersion.DF.S"),file=paste0(strDataExportDir,'jagsModelResults_NBMixclustDispersion_DE.RData') )
 
 #plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
@@ -1504,7 +1506,7 @@ save(list=c("results.DF.S","vDispersion.DF.S"),file=paste0(strDataExportDir,'jag
 
 
 ### NF NB Clustering
-```{r ,plot-NBMix-clustering-results-NF,fig.show='hold', out.width="25%",dev='png'}
+```{r ,plot-NBMix-clustering-results-NF,fig.show='hold', out.width="20%",dev='png'}
 plotClusterModel(results.NF.E,vDispersion.NF.E, "NL",getMCMCNBEstimatedParams(results.NF.E,"NL",2))
 plotNBFitcdf(vDispersion.NF.E,getMCMCNBEstimatedParams(results.NF.E,"NL",2))
 plotClusterModel(results.NF.S,vDispersion.NF.S, "NE",getMCMCNBEstimatedParams(results.NF.S,"NE",3))
@@ -1512,15 +1514,15 @@ plotNBFitcdf(vDispersion.NF.S, getMCMCNBEstimatedParams(results.NF.S,"NE",3))
 ```
 
 ### LF NB Clustering
-```{r ,plot-NBMix-clustering-results-LF,fig.show='hold', out.width="25%",dev='png'}
+```{r ,plot-NBMix-clustering-results-LF,fig.show='hold', out.width="20%",dev='png'}
 plotClusterModel(results.LF.E,vDispersion.LF.E, "LL",getMCMCNBEstimatedParams(results.LF.E,"LL",1))
 plotNBFitcdf(vDispersion.LF.E,getMCMCNBEstimatedParams(results.LF.E,"LL",3))
-plotClusterModel(results.LF.S,vDispersion.LF.S, "LE",getMCMCNBEstimatedParams(results.LF.S,"LE",1))
+plotClusterModel(results.LF.S,vDispersion.LF.S, "LE",getMCMCNBEstimatedParams(results.LF.S,"LE",3))
 plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",3))
 ```
 
 ### DF NB Clustering
-```{r ,plot-NBMix-clustering-results-DF,fig.show='hold', out.width="25%",dev='png'}
+```{r ,plot-NBMix-clustering-results-DF,fig.show='hold', out.width="20%",dev='png'}
 plotClusterModel(results.DF.E,vDispersion.DF.E, "DL",getMCMCNBEstimatedParams(results.DF.E,"DL",2))
 plotNBFitcdf(vDispersion.DF.E,getMCMCNBEstimatedParams(results.DF.E,"DL",2))
 plotClusterModel(results.DF.S,vDispersion.DF.S, "DE",getMCMCNBEstimatedParams(results.DF.S,"DE",2))
