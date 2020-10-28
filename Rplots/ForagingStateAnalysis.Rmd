@@ -1192,27 +1192,31 @@ getMCMCEstimatedParams <- function(results,groupID,ichain = 2)
   
   return (lret)
 }
+
+
 plotClusterProb <- function(lmcmcRes,clustCol)
 {
    ##plot prob of occupying each cluster
   breaksProb <- seq(0,1,by=0.01)
-  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = TRUE,xlab = "Prob. of cluster membership (pClust)")
-  hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)),
+  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = TRUE,xlab = "Prob. of cluster membership (pClust)",plot=FALSE )
+  h1<-hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)),
         breaks=breaksProb,col=clustCol[1]
-        ,xlab = NA, add=TRUE)
-  hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,2],xlim=c(0,1), breaks=breaksProb,col=clustCol[2],main=groupID,add=TRUE )
+        ,xlab = NA, add=TRUE,plot=FALSE)
+  h2 <- hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,2],xlim=c(0,1), breaks=breaksProb,col=clustCol[2],main=groupID,add=TRUE,plot=FALSE )
+  
+   barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol,"white"),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered Occupancies", lmcmcRes$groupID ),xlab = "Prob. of cluster membership (pClust)")
 }
 
 # Colour Coded Histogram of Dispersion Data Showing plit between Exploit[1] / Explore[2]
 plotClusteredDispersionHist <- function(lmcmcRes,vDispersion,clustCol)
 {
-    ## Plot Clustered  Histogram 
+  ## Plot Clustered  Histogram 
   breaksSlots <-  seq(0,11,by=0.5)
-  h0 <- hist(vDispersion, breaks=breaksSlots,plot=FALSE) # freq=TRUE,
-  h1 <- hist(vDispersion[lmcmcRes$clustID == 1], breaks=breaksSlots,col=clustCol[1],plot=FALSE) #xlim=c(0,10),ylim=c(0,max(h0$counts))
-  h2 <- hist(vDispersion[lmcmcRes$clustID == 2], breaks=breaksSlots,col=clustCol[2],main=groupID,xlab = NA,plot=FALSE)  #xlim=c(0,10),
+  h0 <- hist(vDispersion, breaks=breaksSlots,plot=FALSE,freq=FALSE) # freq=TRUE,
+  h1 <- hist(vDispersion[lmcmcRes$clustID == 1], breaks=breaksSlots,col=clustCol[1], plot=FALSE,freq=FALSE) #xlim=c(0,10),ylim=c(0,max(h0$counts))
+  h2 <- hist(vDispersion[lmcmcRes$clustID == 2], breaks=breaksSlots,col=clustCol[2],main=groupID,xlab = NA, plot=FALSE,freq=FALSE)  #xlim=c(0,10),
   
-  barplot(rbind(h0$counts,h1$counts,h2$counts),beside = TRUE, col = c("white",clustCol),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered densities", lmcmcRes$groupID ),xlab = "Dispersion (mm)")
+  barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol,"white"),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered densities", lmcmcRes$groupID ),xlab = "Dispersion (mm)")
   
 }
 
@@ -1228,6 +1232,44 @@ plotClusterMeans <- function(lmcmcRes,clustCol)
   plot(density(unlist(muClustAllChain[1]) ) ,xlim=c(0,10),col=clustCol[1],lwd=3,lty=1,main=paste("Cluster means", lmcmcRes$groupID ),xlab = "Estimated means of each cluster (mu)")
   lines(density(unlist(muClustAllChain[2]) ) ,xlim=c(0,10),col=clustCol[2],lwd=3,lty=2)
 
+}
+
+## Compare NegBin To Clustered Data distribution using CDF plots
+plotNBFitcdf <- function(vDispersion,resParams)
+{
+  XLim <- 100
+  x <- seq(0,XLim,1)
+  ntail <- 20
+  clustCol <-c(colourClusters[1],colourClusters[2])
+  if ( mean(resParams$mean[,1])  > mean(resParams$mean[,2]) )
+    clustCol <- rev(clustCol)
+  
+  cdfD_C1 <- ecdf(vDispersion[resParams$clustID == 1]*10)
+  cdfD_C2 <- ecdf(vDispersion[resParams$clustID == 2]*10)
+  plot(cdfD_C1,col="red",pch=5,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1))
+  lines(cdfD_C2,col="blue",pch=5,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1))
+  ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
+  for (c in 1:2) {
+    for (i in (NROW(resDF.S$q[,1])-ntail):NROW(resDF.S$q[,1]) )
+    {
+      cdfM <- dnbinom(x,size=resParams$r[i,c],prob= resParams$q[i,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      lines(x,cumsum(cdfM),col=clustCol[c],lty=1) #add=TRUE,
+    }
+  }
+  ##Model AND Data Densities
+  c<-1
+  plot(((dnbinom(x,size=mean(resParams$r[,c] ), prob= mean(resParams$q[,c]))  ) ), col=clustCol[c],lwd=2,main="NB Model and data distributions",xlim=c(0,XLim),ylim=c(0,2*max(cdfM)),type="l")
+  lines(density(vDispersion[resParams$clustID == c]*10), col=clustCol[c],lty=2,lwd=3)
+  #hist( dnbinom( x, size=1/mean(resParams$r[,c] ), prob = mean(resParams$q[,c]) ) ,col=colourClusters[c],freq=FALSE,breaks=20)
+  #hist(vDispersion[resParams$clustID == c]*10,col=colourClusters[c],freq=FALSE,add=TRUE)
+  
+  c<-2
+  lines((dnbinom(x,size=resParams$r[,c],prob= resParams$q[,c] )),col=clustCol[c],lwd=2)
+  lines(density(vDispersion[resParams$clustID == c]*10),col=clustCol[c],lty=2,lwd=3)
+  #hist( dnbinom(x, size=mean(resParams$r[,c] ), prob= mean(resParams$q[,c]) ) ,col=colourClusters[c],freq=FALSE)
+  #hist(vDispersion[resParams$clustID == c]*10,col=colourClusters[c],freq=FALSE,add=TRUE)
+  legend("topright",legend=c("NB Model","Data"),lty=c(1,2),lw=c(2,3) )
+  legend("bottomright",legend=c("Exploit","Explore"),fill=colourClusters)
 }
 
 # Plot Clustering Dispersion Results #
@@ -1247,10 +1289,12 @@ plotClusterModel <- function(results,vDispersion, groupID,lmcmcRes)
   #lines(density(muClustAllChain$`muOfClust[2]`),xlim=c(0,10),col=clustCol[2],lwd=3,lty=2)
   
   ##plot prob of occupying each cluster
-  breaksProb <- seq(0,1,by=0.01)
-  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = TRUE)
-  hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)), breaks=breaksProb,col=clustCol[1],xlab = "Prob. of cluster membership (pClust)" ,add=TRUE)
-  hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,2],xlim=c(0,1), breaks=breaksProb,col=clustCol[2],main=groupID,add=TRUE )
+  plotClusterProb(lmcmcRes,clustCol)
+  #breaksProb <- seq(0,1,by=0.01)
+  #list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = FALSE)
+  #hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)), breaks=breaksProb,col=clustCol[1],xlab = "Prob. of cluster membership (pClust)" ,add=TRUE,freq=FALSE)
+  #hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,2],xlim=c(0,1), breaks=breaksProb,col=clustCol[2],main=groupID,add=TRUE,freq=FALSE )
+  
 }
 
 ## Load Gaussian Mixture Clustering Results
@@ -1303,7 +1347,11 @@ plotClusterModel(results.DF.S,vDispersion.DF.S, "DE",getMCMCEstimatedParams(resu
 
 Negative binomial is a integer distribution and thus for fitting we discretize the dispesion values in 0.1mm intervals.
 The idea here is to look at the dispersal length as a discrete time stochastic process generating either dispersal expansion events or events that do not expand dispersal
-, thereby looking at the size of dispersal generated during Xsec as of a sum of independent bernoulli random variables. Each dispersal size amounts to a fixed size sequence in which $e$ steps produced expansion and $k$ did not increase dispersion (they were inward for example).
+, thereby looking at the size of dispersal generated during Xsec as of a sum of independent bernoulli random variables. 
+Each dispersal size amounts to a fixed size of $e$ steps that produced dispersal expansion and $k$ did not increase dispersion (they were inward for example).
+<!--From the RJags Manual-->
+The  size  parameterrdoes  not  need  to  be  an  integer.   However  whenris  an  integer,the negative binomial distribution can be interpreted in terms of a series of Bernoulli trials,i.e.independent experiments with a binary outcome where the probability of “success” isp.The number of failures that occur beforersuccesses are achieved has a negative binomialdistribution.The  negative  binomial  distribution  has  mean $r(1−p)/p$ and  variance  $(1−p)r/p^2$.   Itcollapses to a single point if eitherr= 0 orp= 1.  In this case P(Y= 0) = 1.  Conversely,the valuep= 0 is not permitted (even ifr= 0) because “success” in the Bernoulli trials isthen impossible.Both  the  binomial  and  negative  binomial  distributions  can  be  explained  in  terms  ofBernoulli  trials.
+For  the  binomial  distribution the  number  of  trials  is  fixed  andthe number of success is random; *for the negative binomial the number of successes is fixed and the number of trials is random*
 
 Thus we use \[ n[j] ~  dnegbin(q,r) \]
 to model number of disperal step Hunt Events Per Larvae
@@ -1329,7 +1377,7 @@ model {
 "
 
 ## Extracts the monitor values and returns them packaged in a list
-getMCMCNBEstimatedParams <- function(results,groupID,ichain = 2)
+getMCMCNBEstimatedParams <- function(results,groupID,ichain = 2,NBScaling = 1/10)
 {
   clustcoeff = as.mcmc.list(results, vars="clust")
   q =  as.mcmc.list(results, vars="q")
@@ -1339,14 +1387,15 @@ getMCMCNBEstimatedParams <- function(results,groupID,ichain = 2)
   groupID = groupID,
   q = q[[ichain]],
   r = r[[ichain]],
-  mean = q[[ichain]]*r[[ichain]]/(1-q[[ichain]]), ## Calc NB Mean
-  sd = sqrt(q[[ichain]]*r[[ichain]]/(1-q[[ichain]])^2), ## Calc NB Var
+  mean = (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])*NBScaling, ## Calc NB Mean
+  sd = sqrt( (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])^2)*NBScaling, ## Calc NB Var
   pClustcoeff = as.mcmc.list(results, vars="pClust"),
   clustID = round(colMeans(clustcoeff[[ichain]]) ) 
   )
   
   return (lret)
 }
+
 
 ## Load Clustering Results
 #if (!exists("results.NF.E"))
@@ -1365,7 +1414,7 @@ getMCMCNBEstimatedParams <- function(results,groupID,ichain = 2)
 ```
 
 ```{r, dispersal-RJags-NBMixture-Run-model,include=FALSE,eval=FALSE}
-##plot Clus
+## Cluster Using Negative Binomial Model
 library(rjags)
 library(runjags)
 library('coda')
@@ -1444,65 +1493,39 @@ results.DF.S <- runNBMixClusterModel(vDispersion.DF.S)
 write.jagsfile(results.DF.S, file=paste0(strDataExportDir,'jagsModel_clustDispersion_DE.txt') )
 save(list=c("results.DF.S","vDispersion.DF.S"),file=paste0(strDataExportDir,'jagsModelResults_NBMixclustDispersion_DE.RData') )
 
+#plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
 
-plotNBFitcdf <- function(vDispersion,resParams)
-{
-  XLim <- 100
-  x <- seq(0,XLim,1)
-  ntail <- 20
-  cdfD_C1 <- ecdf(vDispersion[resParams$clustID == 1]*10)
-  cdfD_C2 <- ecdf(vDispersion[resParams$clustID == 2]*10)
-  plot(cdfD_C1,col="red",pch=5,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1))
-  lines(cdfD_C2,col="blue",pch=5,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1))
-  ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
-  for (c in 1:2) {
-    for (i in (NROW(resDF.S$q[,1])-ntail):NROW(resDF.S$q[,1]) )
-    {
-      cdfM <- dnbinom(x,size=resParams$r[i,c],prob= resParams$q[i,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
-      lines(x,cumsum(cdfM),col=colourClusters[c],lty=1) #add=TRUE,
-    }
-  }
-  ##Model AND Data Densities
-  c<-1
-  plot((density(dnbinom(x,size=mean(resParams$r[,c] ), prob= mean(resParams$q[,c]))  ) ),col=colourClusters[c],lwd=2,main="NB Model and data distributions")
-  lines(density(vDispersion[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
-  
-  c<-2
-  lines(density(dnbinom(x,size=resParams$r[,c],prob= resParams$q[,c] )),col=colourClusters[c],lwd=2)
-  lines(density(vDispersion[resParams$clustID == c]*10),col=colourClusters[c],lty=2,lwd=2)
-  
-  
-}
-
-
-plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
-
-resParams <- getMCMCNBEstimatedParams(results.LF.S,"LE",2)
-c<-1
-plot(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
-c<-2
-lines(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
+#resParams <- getMCMCNBEstimatedParams(results.LF.S,"LE",2)
+#c<-1
+#plot(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
+#c<-2
+#lines(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
 ```
 
 
-### LF 
+### NF NB Clustering
 ```{r ,plot-NBMix-clustering-results-NF,fig.show='hold', out.width="25%",dev='png'}
 plotClusterModel(results.NF.E,vDispersion.NF.E, "NL",getMCMCNBEstimatedParams(results.NF.E,"NL",2))
 plotNBFitcdf(vDispersion.NF.E,getMCMCNBEstimatedParams(results.NF.E,"NL",2))
-plotClusterModel(results.NF.S,vDispersion.NF.S, "NE",getMCMCNBEstimatedParams(results.NF.S,"NE",2))
-plotNBFitcdf(vDispersion.NF.S, getMCMCNBEstimatedParams(results.NF.S,"NE",2))
+plotClusterModel(results.NF.S,vDispersion.NF.S, "NE",getMCMCNBEstimatedParams(results.NF.S,"NE",3))
+plotNBFitcdf(vDispersion.NF.S, getMCMCNBEstimatedParams(results.NF.S,"NE",3))
 ```
 
-```{r ,plot-NBMix-clustering-results-LF,fig.show='hold', out.width="33%",dev='png'}
-plotClusterModel(results.LF.E,vDispersion.LF.E, "LL",getMCMCNBEstimatedParams(results.LF.E,"LL",2))
-plotClusterModel(results.LF.S,vDispersion.LF.S, "LE",getMCMCNBEstimatedParams(results.LF.S,"LE",2))
+### LF NB Clustering
+```{r ,plot-NBMix-clustering-results-LF,fig.show='hold', out.width="25%",dev='png'}
+plotClusterModel(results.LF.E,vDispersion.LF.E, "LL",getMCMCNBEstimatedParams(results.LF.E,"LL",1))
+plotNBFitcdf(vDispersion.LF.E,getMCMCNBEstimatedParams(results.LF.E,"LL",3))
+plotClusterModel(results.LF.S,vDispersion.LF.S, "LE",getMCMCNBEstimatedParams(results.LF.S,"LE",1))
+plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",3))
 ```
 
-```{r ,plot-NBMix-clustering-results-DF,fig.show='hold', out.width="33%",dev='png'}
-plotClusterModel(results.DF.E,vDispersion.DF.E, "LL",getMCMCNBEstimatedParams(results.DF.E,"DL",2))
-plotClusterModel(results.DF.S,vDispersion.DF.S, "LE",getMCMCNBEstimatedParams(results.DF.S,"DE",2))
+### DF NB Clustering
+```{r ,plot-NBMix-clustering-results-DF,fig.show='hold', out.width="25%",dev='png'}
+plotClusterModel(results.DF.E,vDispersion.DF.E, "DL",getMCMCNBEstimatedParams(results.DF.E,"DL",2))
+plotNBFitcdf(vDispersion.DF.E,getMCMCNBEstimatedParams(results.DF.E,"DL",2))
+plotClusterModel(results.DF.S,vDispersion.DF.S, "DE",getMCMCNBEstimatedParams(results.DF.S,"DE",2))
+plotNBFitcdf(vDispersion.DF.S,getMCMCNBEstimatedParams(results.DF.S,"DE",2))
 ```
-
 
 
 
