@@ -11,6 +11,7 @@ output:
   
 ---
 
+
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, analysing zebrafish tracking data 
 for foraging state as indicated by Marquez et al 2019. I aim to extend my previous work on the experience driven ontogeny of hunting skill [now published in eLife](https://elifesciences.org/articles/55119/figures) 
 Zebrafish appear to spontaneously switch between an exploratory and exploitation phase that grossly defines their behavioural mode. 
@@ -1199,13 +1200,21 @@ plotClusterProb <- function(lmcmcRes,clustCol)
 {
    ##plot prob of occupying each cluster
   breaksProb <- seq(0,1,by=0.01)
-  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = TRUE,xlab = "Prob. of cluster membership (pClust)",plot=FALSE )
-  h1<-hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)),
-        breaks=breaksProb,col=clustCol[1]
-        ,xlab = NA, add=TRUE,plot=FALSE)
-  h2 <- hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,2],xlim=c(0,1), breaks=breaksProb,col=clustCol[2],main=groupID,add=TRUE,plot=FALSE )
+  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = TRUE,plot=FALSE )
+  h1<-hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],ylim=c(0,max(list_histo$counts)), breaks=breaksProb,plot=FALSE) ##Cluster 1 
+  h2 <- hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,2],xlim=c(0,1), breaks=breaksProb,plot=FALSE ) ## ##Cluster 1 
   
-   barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol,"white"),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered Occupancies", lmcmcRes$groupID ),xlab = "Prob. of cluster membership (pClust)")
+  ##Colour Determines which Cluster is fast and slow
+   barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol[1],clustCol[2],"white"),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered Occupancies", lmcmcRes$groupID ),xlab = "Prob. of cluster membership (pClust)")
+   
+   txtLeg <- c("Exploit","Explore")
+   ## Make Legend order match the colour classes
+   ##            being Exploit (Cyan), Explore (Yellow)
+  muClustAllChain <- as.data.frame(lmcmcRes$mean)#rbind(
+  if ( mean(unlist(muClustAllChain[1]) ) > mean(unlist( muClustAllChain[2]) ) )
+    txtLeg<- rev(txtLeg)
+  ##Add legend colouring Clusters correctly
+   legend("topright",legend=txtLeg, fill=clustCol)
 }
 
 # Colour Coded Histogram of Dispersion Data Showing plit between Exploit[1] / Explore[2]
@@ -1252,7 +1261,7 @@ plotNBFitcdf <- function(vDispersion,resParams)
   lines(cdfD_C2,col="blue",pch=5,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1))
   ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
   for (c in 1:2) {
-    for (i in (NROW(resDF.S$q[,1])-ntail):NROW(resDF.S$q[,1]) )
+    for (i in (NROW(resParams$q[,1])-ntail):NROW(resParams$q[,1]) )
     {
       cdfM <- dnbinom(x,size=resParams$r[i,c],prob= resParams$q[i,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
       lines(x,cumsum(cdfM),col=clustCol[c],lty=1) #add=TRUE,
@@ -1280,9 +1289,11 @@ plotClusterModel <- function(results,vDispersion, groupID,lmcmcRes)
 {
   
   muClustAllChain <- as.data.frame(lmcmcRes$mean)#rbind(
-  clustCol <-c(colourClusters[1],colourClusters[2])
+  ## Make Colour code match Low/High Dispersal 
+  ##            being Exploit (Cyan), Explore (Yellow)
+  clustCol <- c(colourClusters[1],colourClusters[2])
   if ( mean(unlist(muClustAllChain[1]) ) > mean(unlist( muClustAllChain[2]) ) )
-    clustCol <- rev(clustCol)
+    clustCol <- rev(clustCol) ##Reverse Colour Order so C1 - has explore colour , and C2 has exploit colour
 
   plotClusteredDispersionHist(lmcmcRes,vDispersion,clustCol)
   ## Plot Estimated Mean of each Gaussian
