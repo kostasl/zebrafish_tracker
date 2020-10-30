@@ -84,7 +84,7 @@ loadDispersionData <- function()
 
 ```
 
-```{r,merge max larval-dispersion onto dispersion data events, echo=FALSE,cache=FALSE,results=FALSE}
+```{r merge max larval-dispersion onto dispersion data events, echo=FALSE,cache=FALSE,results=FALSE}
 ## Attaches the max Dispersion found between both evoked and spontaneous trajectories of each larva
 ## This is used so we can combine S/E larval recordings to detect both exploration/ exploitation state - and normalize appropriatelly to the joined trajectrories between tests as if they were ## one 20min recording  
 mergeRangeOfLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpPairs)
@@ -144,8 +144,7 @@ mergeRangeOfLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,dat
 }
 ```
 
-
-```{r,combine-dispersion-with-hunt events, echo=FALSE,cache=TRUE,results=FALSE}
+```{r combine-dispersion-with-hunt events, echo=FALSE,cache=TRUE,results=FALSE}
 
 ### Combines information across Detected HuntEvents and their outcome, the dispersion of the larval trajectory during which these were
 ## initiated  ,and the position at which the hunt-event was initiated
@@ -185,7 +184,7 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
 
 
 
-```{r,  merge hunt events and max_dispersion with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,results=FALSE,message=FALSE }
+```{r  merge hunt events and max_dispersion with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,results=FALSE,message=FALSE }
 source("DataLabelling/labelHuntEvents_lib.r")
 source("HuntingEventAnalysis_lib.r")
   
@@ -534,7 +533,7 @@ Next we plot these for each experimental condition individually (non-Normalized)
 ```
  
 Smooth estimates using a gaussian kernel show a shift towards exploitation for the pooled *LF* trajectories 
-```{r,dispersion densities per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+```{r dispersion densities per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 loadDispersionData()
  ## plot est, Densities Compare Spont to Evoked
  BW=0.2
@@ -573,7 +572,7 @@ Next, we examine the same dispesions normalized against the maximum dispersion c
 Each measured dispersion is divided by the max dispersion trajectory experiment,
 (ie for each larva  this can be different in evoked or spontaneous conditions).
 
-```{r,plot normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+```{r plot normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ### Normed Per Larva
 
 hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion_norm,breaks=100,main="LF Spontaneous",xlab="Dispersion  (norm per exp.)", col=colourDataScheme$LF$Spont)
@@ -590,7 +589,7 @@ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=100,m
 
 Because each larva is recorded in two conditions, and as Marquez et al 2019 report that the foraging state switching can be seen intact both in the presence and in the absence of prey , we may then combine our spontaneous and evoked condition recordings and treat them as a single unit,  thus allowing us to  normalize each larvas trajectories to the max dispersion found across both its test conditions.  In this manner each larva's dispersion is examined across a 20min recording session.
 
-```{r,dispersion histogram normalized per larva, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+```{r dispersion histogram normalized per larva, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ### Dispesions distributions Normalized on Per Larva basis - 
 
 hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion_larval_norm, breaks=100,main="LF S+E ",xlab="Dispersion  (norm per larva)")
@@ -623,7 +622,7 @@ hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Dispersion_larval_norm,
 
 Next I estimated densities using a gaussian kernel, allowing direct comparison between test conditions shows LF dispersions are modified by the presence of prey.
 
-```{r,dispersion densities normalized per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+```{r dispersion densities normalized per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
  ## plot est, Densities Compare Spont to Evoked
  BW=0.01
  ylimUp <- 5
@@ -644,7 +643,7 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$D
 Then examining the maximum larval dispersions, against which we normalize we find :
 
 #### Histograms of max dispersion per larva
-```{r,Max-dispersion histogram per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+```{r Max-dispersion histogram per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ##### Maximum Dispersions Per Larva- 
 datMaxDispersionPerLarva <- readRDS(file=paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds") )
 nBreaks=20
@@ -679,7 +678,7 @@ hist((datMaxDispersionPerLarva.DF),
 
 #### Compare distribution of max dispersion per larva
 
-```{r,  max-dispersion densities compare groups, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r  max-dispersion densities compare groups, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
  ## plot est, Densities Compare Spont to Evoked
  pBW <- 1
  ylimUp <- 0.5
@@ -698,7 +697,7 @@ while there seems to be some evidence that  LF Larvae explore more in the absenc
 Maybe these could make sense under an expected reward paradigm, given experience.
 
 
-```{r,  max-dispersion per larva densities split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE }
+```{r max-dispersion per larva densities split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE }
  ## plot est, Densities Compare Spont to Evoked
 
  ylimUp <- 0.5
@@ -722,32 +721,32 @@ However, it is natural to expect that since hunt events involve slow prey approa
 Thus the foraging state is associated with slow/ prey approach motion, as a high rate of hunt initiation would cause low dispersion.  
 
 A list of all tabulated hunt-outcomes 
-```{r, table-all-huntscores}
+```{r table-all-huntscores}
 ## Get Number of Hunt Events In Exploit / Expore
 table(convertToScoreLabel(datHuntLabelledEventsSBMerged_fixed$huntScore) )
 ```
 can be compared to the subset of hunt-outcomes that are associated with a low normalized dispersion  (<=`r thres_dispersion_class` ) in being in *exploitation* state
 
-```{r, table-Exploration-huntscores}
+```{r table-Exploration-huntscores}
 table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm <= thres_dispersion_class,]$huntScore) )
 ```
 
 and those with larger dispersion indicative of being in the *exploration* foraging state (>`r thres_dispersion_class`)
 
-```{r, table-Exploit-huntscores}
+```{r table-Exploit-huntscores}
 table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm > thres_dispersion_class,]$huntScore) )
 ```
 
 while some hunt-outcomes were not associated with any dispersion measure - missing as trajectory was not long enoughat time of the hunt event
 
-```{r, table-unaccounted-huntscores}
+```{r table-unaccounted-huntscores}
 ## Check number of Events missing dispersion Info
 table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm),]$huntScore) )
 ```
 
 Looking at a histrgram of normalized dispersion of all hunt events it is clear that most of these exist over high dispersion, ie not in exploitation but rather in an exploratory phase!
 
-```{r,  hunt-event-all-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r  hunt-event-all-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 hist(datHEventDispersion$Dispersion_norm,main="All group hunt events ",xlab="Dispersion normalized per exp",breaks=100)
 hist(datHEventDispersion$Dispersion_larval_norm,main="All group hunt events ",xlab="Dispersion normalized per larva",breaks=100)
@@ -761,7 +760,7 @@ These next histograms show how *normalized larval dispersion* is distributed in 
   * It appears as if only the NF hunts during an exploitation type of movement.
   * LF spontaneous hunt-events occur over exploration (higher dispersion) 
 
-```{r,  hunt-event-group-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r  hunt-event-group-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 ## Normalized Dispersion In Hunt Events
 nBreaks = 30
 ## Check LF
@@ -790,7 +789,7 @@ These suggest that dispersions shift between spont in and evoked conditions diff
 
 Such distinct pattern between group (specifically difference NF-DF) is consistent with previous findings in Lagogiannis et al 2020.
 
-```{r,  hunt-event-group-dispersion Norm split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+```{r  hunt-event-group-dispersion Norm split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
  ## plot est, Densities Compare Spont to Evoked
 
  ylimUp <- 5
@@ -810,7 +809,7 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$D
 
 The distributions look similar even if we remove the normalization stage, and look at raw dispersion measures, the low dispersion associated with exploitation phase is rare among hunt-events
 
-```{r,  hunt-event-dispersion distribution raw split E-S, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+```{r  hunt-event-dispersion distribution raw split E-S, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
 BW = 1
  ylimUp <- 1
  plot(density(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF Hunt events  ",xlab="Dispersion (mm)",lty=1  )
@@ -835,7 +834,7 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$D
 Do distributions of dispersion change depending on hunt-outcome ? 
 The historgrams below examine how *normalized larval dispersion* distributions shift for each group depending on capture outcome being success/fail
 
-```{r,  hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 nBreaks = 30
 ylimUp <- 50
 ## RAW Dispersion In Hunt Events
@@ -866,7 +865,7 @@ Interstingly, I find evidence for pattern of distinct behaviours among groups :
   * LF Likely no difference between success/Failed episodes - contradicts Marquez et 2019 findings
   * DF Lower dispersion (exploitation state) linked to success
   
-```{r,  hunt-event-dispersion per outcome distributions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+```{r  hunt-event-dispersion per outcome distributions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
 BW = 0.08
 ylimUp <- 5
  plot(density(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,
@@ -909,7 +908,7 @@ Here it should be noted that in Marquez et al 2019 "To facilitate comparison acr
 That means this is not a division by the maximum dispersal of each animal, but it also makes use of the minimum.
 
 #### LF - Evoked /Spontaneous Trajectories
-```{r,  larva_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
+```{r  larva_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
 
 loaddatAllFrames()
 loadDispersionData()
@@ -918,13 +917,13 @@ plotLarvaNormDispersionTrajectories(c('LL','LE'),datAllFrames, datDispersion ,da
 ```
 
 #### NF - Evoked/Spontaneous Trajectories 
-```{r, larva_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
+```{r larva_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
 plotLarvaNormDispersionTrajectories(c('NL','NE'),datAllFrames, datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
 
 ```
   
 #### DF - Evoked/Spontaneous Trajectories 
-```{r, larva_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
+```{r larva_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
 
 plotLarvaNormDispersionTrajectories(c('DL','DE'),datAllFrames, datDispersion , datHEventDispersion, datExpPairs, thres_dispersion_class)
 
@@ -942,7 +941,7 @@ Trajectories of 10min recordings in the presence of prey. Note, in contrast to M
 Eploitation state is shown in *red* and *orange* in evoked and spontaneous test conditions respectivelly, with hunt events shown as squares.
 Exploration state is *blue* and *green* in evoked and spontaneous test conditions respectivelly, , with hunt events shown as triangles.
 
-```{r,  global_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE }
+```{r  global_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE }
 loaddatAllFrames()
 loadDispersionData()
 plotGlobalNormDispersionTrajectories(c('LL','LE'), datAllFrames, datDispersion, datHEventDispersion, datExpPairs,   thres_dispersion_class )
@@ -950,14 +949,14 @@ plotGlobalNormDispersionTrajectories(c('LL','LE'), datAllFrames, datDispersion, 
 ```
 
 #### NF - Evoked+Spont Trajectories 
-```{r, global_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
+```{r global_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
 
 plotGlobalNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class )
 
 ```
 
 #### DF - Evoked Trajectories 
-```{r, global_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
+```{r global_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
 
 plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class)
 
@@ -969,7 +968,7 @@ plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,dat
 Note that Spontaneous and Evoked conditions of each larva are considered individually
 
 #### LF - Evoked /Spontaneous Trajectories
-```{r,  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE}
+```{r  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE}
 loaddatAllFrames()
 loadDispersionData()
 plotExpNormDispersionTrajectories(c('LL','LE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs,  thres_dispersion_class )
@@ -977,15 +976,14 @@ plotExpNormDispersionTrajectories(c('LL','LE'),datAllFrames,datDispersion ,datHE
 ```
 
 #### NF - Evoked/Spontaneous Trajectories 
-```{r, exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE}
+```{r exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE}
 
 plotExpNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
-
 
 ```
 
 #### DF - Evoked/Spontaneous Trajectories 
-```{r, exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
+```{r exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
 
 
 plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class)
@@ -1007,7 +1005,7 @@ d_l \sim \mathcal{N}(\mu_{k[c]},\sigma_{k[c]})
 where the $\sum^{K}_{k=1}\lambda_k = 1$.
 
 The model is implemented in RJags and its code is as as follows:
-```{r, dispersal-RJags-GaussianMix-pooled-data model,include=TRUE}
+```{r dispersal-RJags-GaussianMix-pooled-data model,include=TRUE}
 strDispersionClusterModel <- "
 model {
     # Likelihood: 
@@ -1029,12 +1027,12 @@ model {
 ```
 
 
-```{r, dispersion-GaussianMixture-clustering-model, eval=FALSE, include=FALSE}
+```{r dispersion-GaussianMixture-clustering-model, eval=FALSE, include=FALSE}
 
 library(rjags)
 library(runjags)
 library('coda')
-
+print(jags.version())
 initfunct <- function(nchains,N)
 {
   initlist <- replicate(nchains,list(#mID=c(rbinom(N,1,0.5)), 
@@ -1168,7 +1166,7 @@ plot(muclustNF)
 
 and the clustering results  of each group/condition are summarized in the following figures:
 
-```{r, dispersion-clustering-results,fig.show='hide', out.width="33%", eval=TRUE, include=FALSE,cache=FALSE,dev='png'}
+```{r dispersion-clustering-results,fig.show='hide', out.width="33%", eval=TRUE, include=FALSE,cache=FALSE,dev='png'}
 
 library(rjags)
 library(runjags)
@@ -1196,16 +1194,23 @@ getMCMCEstimatedParams <- function(results,groupID,ichain = 2)
 }
 
 
-plotClusterProb <- function(lmcmcRes,clustCol)
+#  clusterIDOffset, and groupIDOffset plot Allows function to work when multiple subgroups are modelled
+# by extracting from these columns pClust[groupID,Clust] : pClust[1,1] pClust[2,1] ... pClust[5,2] pClust[6,2] 
+plotClusterProb <- function(lmcmcRes,clustCol,groupIDOffset=1,clustIDOffset=6)
 {
    ##plot prob of occupying each cluster
-  breaksProb <- seq(0,1,by=0.01)
-  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = TRUE,plot=FALSE )
-  h1<-hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],ylim=c(0,max(list_histo$counts)), breaks=breaksProb,plot=FALSE) ##Cluster 1 
-  h2 <- hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,2],xlim=c(0,1), breaks=breaksProb,plot=FALSE ) ## ##Cluster 1 
+  breaksProb <- seq(0,1.01,by=0.01)
+  list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,plot=FALSE )
+  h1<-hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,groupIDOffset], breaks=breaksProb,plot=FALSE) ##Cluster 1 ylim=c(0,max(list_histo$counts))
+  h2 <- hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,groupIDOffset + clustIDOffset], breaks=breaksProb, plot=FALSE ) ## ##Cluster 1 
   
   ##Colour Determines which Cluster is fast and slow
-   barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol[1],clustCol[2],"white"),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered Occupancies", lmcmcRes$groupID ),xlab = "Prob. of cluster membership (pClust)")
+   barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol[1],clustCol[2],"white"),
+           names.arg = (h1$breaks[-length(h1$breaks)]),
+           main=paste("Clustered Occupancies", lmcmcRes$groupID ),
+           xlab = "Prob. of cluster membership (pClust)"
+           
+           )
    
    txtLeg <- c("Exploit","Explore")
    ## Make Legend order match the colour classes
@@ -1222,9 +1227,9 @@ plotClusteredDispersionHist <- function(lmcmcRes,vDispersion,clustCol)
 {
   ## Plot Clustered  Histogram 
   breaksSlots <-  seq(0,11,by=0.5)
-  h0 <- hist(vDispersion, breaks=breaksSlots,plot=FALSE,freq=FALSE) # freq=TRUE,
+  h0 <- hist(vDispersion, breaks=breaksSlots,plot=FALSE) # freq=TRUE,
   h1 <- hist(vDispersion[lmcmcRes$clustID == 1], breaks=breaksSlots, plot=FALSE) #xlim=c(0,10),ylim=c(0,max(h0$counts))
-  h2 <- hist(vDispersion[lmcmcRes$clustID == 2], breaks=breaksSlots,xlab = NA, plot=FALSE)  #xlim=c(0,10),
+  h2 <- hist(vDispersion[lmcmcRes$clustID == 2], breaks=breaksSlots, plot=FALSE)  #xlim=c(0,10),
   
   barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol,"white"),names.arg = (h1$breaks[-length(h1$breaks)]),main=paste("Clustered densities", lmcmcRes$groupID ),xlab = "Dispersion (mm)")
   
@@ -1269,7 +1274,7 @@ plotNBFitcdf <- function(vDispersion,resParams)
   }
   ##Model AND Data Densities
   c<-1
-  plot(((dnbinom(x,size=mean(resParams$r[,c] ), prob= mean(resParams$q[,c]))  ) ), col=clustCol[c],lwd=2,main="NB Model and data distributions",xlim=c(0,XLim),ylim=c(0,2*max(cdfM)),type="l")
+  plot(((dnbinom(x,size=mean(resParams$r[,c] ), prob= mean(resParams$q[,c]))  ) ), col=clustCol[c],lwd=2,main="NB Model and data distributions",xlim=c(0,XLim),ylim=c(0,2*max(cdfM)),type="l",ylab="Density",xlab="Dispersal (mm)")
   lines(density(vDispersion[resParams$clustID == c]*10), col=clustCol[c],lty=2,lwd=3)
   #hist( dnbinom( x, size=1/mean(resParams$r[,c] ), prob = mean(resParams$q[,c]) ) ,col=colourClusters[c],freq=FALSE,breaks=20)
   #hist(vDispersion[resParams$clustID == c]*10,col=colourClusters[c],freq=FALSE,add=TRUE)
@@ -1335,18 +1340,18 @@ plotClusterModel <- function(results,vDispersion, groupID,lmcmcRes)
 
 ```
 #### Cluster Dispersal Not-Fed group
-```{r ,plot-clustering-results-NF,fig.show='hold', out.width="33%",dev='png',warnings=FALSE}
+```{r plot-clustering-results-NF,fig.show='hold', out.width="33%",dev='png',warnings=FALSE}
 plotClusterModel(results.NF.E,vDispersion.NF.E, "NL", getMCMCEstimatedParams(results.NF.E,"NL",2))
 plotClusterModel(results.NF.S,vDispersion.NF.S, "NE", getMCMCEstimatedParams(results.NF.S,"NE",2))
 ```
 #### Cluster Dispersal Life-Fed group
-```{r,plot-clustering-results-LF,fig.show='hold', out.width="33%",dev='png'}
+```{rplot-clustering-results-LF,fig.show='hold', out.width="33%",dev='png'}
 plotClusterModel(results.LF.E,vDispersion.LF.E, "LL", getMCMCEstimatedParams(results.LF.E,"LL",2))
 plotClusterModel(results.LF.S,vDispersion.LF.S, "LE", getMCMCEstimatedParams(results.LF.S,"LE",2))
 ```
 
 #### Cluster Dispersal Dry-Fed group
-```{r ,plot-clustering-results-DF,fig.show='hold', out.width="33%",dev='png'}
+```{r plot-clustering-results-DF,fig.show='hold', out.width="33%",dev='png'}
 plotClusterModel(results.DF.E,vDispersion.DF.E,"DL",getMCMCEstimatedParams(results.DF.E,"DL",2))
 plotClusterModel(results.DF.S,vDispersion.DF.S, "DE",getMCMCEstimatedParams(results.DF.S,"DE",2))
 ```
@@ -1358,17 +1363,38 @@ plotClusterModel(results.DF.S,vDispersion.DF.S, "DE",getMCMCEstimatedParams(resu
 <!--- ![LF Evoked](`r #knitr::fig_chunk('dispersion-clustering-results', 'png',4:6)`)-->
 ## Clustering Using an Negative-Binomial Mixture
 
-Negative binomial is a integer distribution and thus for fitting we discretize the dispesion values in 0.1mm intervals.
+Negative binomial is a integer distribution and thus for fitting we discretize the dispesion values in 0.1mm intervals. The probability mass function is 
+\[
+f(k;r,p)={\binom {k+r-1}{k}}p^{k}(1-p)^{r}.
+\]
+
 The idea here is to look at the dispersal length as a discrete time stochastic process generating either dispersal expansion events or events that do not expand dispersal
 , thereby looking at the size of dispersal generated during Xsec as of a sum of independent bernoulli random variables. 
 Each dispersal size amounts to a fixed size of $e$ steps that produced dispersal expansion and $k$ did not increase dispersion (they were inward for example).
+
+Yet NB works on integers and our dispersal data is continuous.
+There is way to convert the NB to continuous ([see](3)), as the NB distribution arises as a gamma mixture of Poisson distributions, 
+\[
+(y_t | \lambda_t) \sim \mathtt{Pois}(\lambda_t)
+(\lambda_t | \xi,psi_t) \sim \mathtt{Gamma}(\xi,e^{\psi_t})
+\]
+, whereby marginalizing over the top-level model for ?t, we recover a negative-binomial distribution for yt
+This I used in my previous paper to model hunt-rates. 
+
+Ideally here we would need to model dispersal sizes as a continuous quantity.
+The continuous NB distribution arises by replacing the Poisson distribution with its continuous analog with pdf 
+\[ 
+f(x;\lambda)=a(\lambda)\frac{e^{-\lambda}\lambda^x}{\Gamma(x+1)}
+\]
+for $x\ge0$ where $a(\lambda)$ is a normalizing constant to ensure the density integrates to 1. 
+
 <!--From the RJags Manual-->
 The  size  parameterrdoes  not  need  to  be  an  integer.   However  whenris  an  integer,the negative binomial distribution can be interpreted in terms of a series of Bernoulli trials,i.e.independent experiments with a binary outcome where the probability of “success” isp.The number of failures that occur beforersuccesses are achieved has a negative binomialdistribution.The  negative  binomial  distribution  has  mean $r(1−p)/p$ and  variance  $(1−p)r/p^2$.   Itcollapses to a single point if eitherr= 0 orp= 1.  In this case P(Y= 0) = 1.  Conversely,the valuep= 0 is not permitted (even ifr= 0) because “success” in the Bernoulli trials isthen impossible.Both  the  binomial  and  negative  binomial  distributions  can  be  explained  in  terms  ofBernoulli  trials.
 For  the  binomial  distribution the  number  of  trials  is  fixed  andthe number of success is random; *for the negative binomial the number of successes is fixed and the number of trials is random*
 
 Thus we use \[ n[j] ~  dnegbin(q,r) \]
 to model number of disperal step Hunt Events Per Larvae
-```{r, dispersal-RJags-NBMixture-pooledData model,include=FALSE}
+```{r dispersal-RJags-NBMixture-pooledData model,include=FALSE}
 
 strDispersionNBClusterModel <- "
 model {
@@ -1379,11 +1405,12 @@ model {
       clust[i] ~ dcat( pClust[1:Nclust] )
     }
     
-    # Prior:
+    #  Prior:
     for ( clustIdx in 1: Nclust ) {
       q[clustIdx]  ~ dunif(0.0,1)
       r[clustIdx] ~ dgamma(1,1)
     }
+    #
     pClust[1:Nclust] ~ ddirch( onesRepNclust )
 }
 
@@ -1424,9 +1451,15 @@ getMCMCNBEstimatedParams <- function(results,groupID,ichain = 2,NBScaling = 1/10
    load(file=paste0(strDataExportDir,'jagsModelResults_NBMixclustDispersion_DL.RData') )
 #if (!exists("results.DF.S"))
    load(file=paste0(strDataExportDir,'jagsModelResults_NBMixclustDispersion_DE.RData') )
+   load(file=paste0(strDataExportDir,'jagsModelResults_NBMixclustDispersion_All.RData') )
 ```
 
-```{r, dispersal-RJags-NBMixture-Run-model,include=FALSE,eval=FALSE}
+ References: 
+    1. Pillow, J.W. and Scott, J., 2012. Fully Bayesian inference for neural models with negative-binomial spiking. In Advances in neural information processing systems (pp. 1898-1906).
+    2. Chandra, N.K. and Roy, D., 2012. A continuous version of the negative binomial distribution. Statistica, 72(1), pp.81-92.
+    3. [Stackexchange:Continuous generalization of the negative binomial distribution]( https://stats.stackexchange.com/questions/310676/continuous-generalization-of-the-negative-binomial-distribution/311927)
+
+```{r dispersal-RJags-NBMixture-Run-model,include=FALSE,eval=FALSE}
 ## Cluster Using Negative Binomial Model
 library(rjags)
 library(runjags)
@@ -1506,6 +1539,12 @@ results.DF.S <- runNBMixClusterModel(vDispersion.DF.S)
 write.jagsfile(results.DF.S, file=paste0(strDataExportDir,'jagsModel_NBMixclustDispersion_DE.txt') )
 save(list=c("results.DF.S","vDispersion.DF.S"),file=paste0(strDataExportDir,'jagsModelResults_NBMixclustDispersion_DE.RData') )
 
+## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
+results.All <- runNBMixClusterModel(datSubDispersion$Dispersion)
+write.jagsfile(results.All, file=paste0(strDataExportDir,'jagsModel_NBMixclustDispersion_All.txt') )
+save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,'jagsModelResults_NBMixclustDispersion_All.RData') )
+
+
 #plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
 
 #resParams <- getMCMCNBEstimatedParams(results.LF.S,"LE",2)
@@ -1515,17 +1554,22 @@ save(list=c("results.DF.S","vDispersion.DF.S"),file=paste0(strDataExportDir,'jag
 #lines(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
 ```
 
+### ALL NB Clustering
+```{r plot-NBMix-clustering-results-All,fig.show='hold', out.width="20%",dev='png'}
+plotClusterModel(results.All,datSubDispersion$Dispersion, "LL",getMCMCNBEstimatedParams(results.All,"LL",2))
+plotNBFitcdf(datSubDispersion$Dispersion,getMCMCNBEstimatedParams(results.All,"LL",2))
+```
 
 ### NF NB Clustering
-```{r ,plot-NBMix-clustering-results-NF,fig.show='hold', out.width="20%",dev='png'}
+```{r plot-NBMix-clustering-results-NF,fig.show='hold', out.width="20%",dev='png'}
 plotClusterModel(results.NF.E,vDispersion.NF.E, "NL",getMCMCNBEstimatedParams(results.NF.E,"NL",2))
 plotNBFitcdf(vDispersion.NF.E,getMCMCNBEstimatedParams(results.NF.E,"NL",2))
-plotClusterModel(results.NF.S,vDispersion.NF.S, "NE",getMCMCNBEstimatedParams(results.NF.S,"NE",3))
-plotNBFitcdf(vDispersion.NF.S, getMCMCNBEstimatedParams(results.NF.S,"NE",3))
+plotClusterModel(results.NF.S,vDispersion.NF.S, "NE",getMCMCNBEstimatedParams(results.NF.S,"NE",1))
+plotNBFitcdf(vDispersion.NF.S, getMCMCNBEstimatedParams(results.NF.S,"NE",1))
 ```
 
 ### LF NB Clustering
-```{r ,plot-NBMix-clustering-results-LF,fig.show='hold', out.width="20%",dev='png'}
+```{r plot-NBMix-clustering-results-LF,fig.show='hold', out.width="20%",dev='png'}
 plotClusterModel(results.LF.E,vDispersion.LF.E, "LL",getMCMCNBEstimatedParams(results.LF.E,"LL",1))
 plotNBFitcdf(vDispersion.LF.E,getMCMCNBEstimatedParams(results.LF.E,"LL",3))
 plotClusterModel(results.LF.S,vDispersion.LF.S, "LE",getMCMCNBEstimatedParams(results.LF.S,"LE",3))
@@ -1533,7 +1577,7 @@ plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",3))
 ```
 
 ### DF NB Clustering
-```{r ,plot-NBMix-clustering-results-DF,fig.show='hold', out.width="20%",dev='png'}
+```{r plot-NBMix-clustering-results-DF,fig.show='hold', out.width="20%",dev='png'}
 plotClusterModel(results.DF.E,vDispersion.DF.E, "DL",getMCMCNBEstimatedParams(results.DF.E,"DL",2))
 plotNBFitcdf(vDispersion.DF.E,getMCMCNBEstimatedParams(results.DF.E,"DL",2))
 plotClusterModel(results.DF.S,vDispersion.DF.S, "DE",getMCMCNBEstimatedParams(results.DF.S,"DE",2))
@@ -1544,41 +1588,192 @@ plotNBFitcdf(vDispersion.DF.S,getMCMCNBEstimatedParams(results.DF.S,"DE",2))
 
 ## Clustering using a hierarchical group model of larval dispersion data
 
-We construct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
-
-```{r, dispersal-RJags-Group-model,include=TRUE}
-strDispersionGroupClusterModel <- "
+To compare differences in dispersal between groups It would be best to define consistent models for the clusters that define the exploration and exploitation state by using data across groups. From there we may then compare the relative occupancy in each state depending on test condition and rearing group, such that we can detect changes in behaviour relevant to a global frame of reference. Aims:
+  - Define a clusters for exploit and exploration dispersal using NB model on all data. 
+  - infer cluster occupancy of each condition/group #
+      - Define separate pClust for each condition/group (n=6)
+  - infer mean exploration and explotation dispersals for each group/condition
+  
+Thus we need toconstruct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
+  
+```{r dispersal-RJags-Group-model,include=TRUE}
+  strDispersionGroupClusterModel <- "
+  var initR[1,Nclust];
 model {
-    # Likelihood: 
+    
+    
+     # Likelihood: 
     for( i in 1 : N ) {
-      y[i] ~ dnorm( muOfClust[ clust[i] ], tauOfClust[ clust[i] ] )
-      #mu[i] <-  ]
-      clust[i] ~ dcat( pClust[1:Nclust] )
+      # Model Number Of Dispersal expansion steps within a recent trajectory timewindow (5 sec)
+      y[i] ~ dnegbin(q[clust[i] ],r[ clust[i] ]) 
+      clust[i] ~ dcat( pClust[groupID[i],1:Nclust] )
     }
     
-    # Group Prior:
+    # Top Level Prior:
     for ( clustIdx in 1: Nclust ) {
-      muOfClustG[clustIdx]  ~ dnorm( 0 , 1.0E-10 )
-      tauOfClustG[clustIdx] ~ dgamma( 0.01 , 0.01 )
+      q[clustIdx]  ~ dunif(0.0,1)
+      r[clustIdx] ~ dgamma(1,1)
+      initR[1,clustIdx] <- 1
     }
-    pClustG[1:Nclust] ~ ddirch( onesRepNclust )
     
-    # Larval Priors
-    for ( l in 1: NLarv ) {
-      for ( clustIdx in 1: Nclust ) {
-        muOfClustG[clustIdx]  ~ dnorm( 0 , 1.0E-10 )
-        tauOfClustG[clustIdx] ~ dgamma( 0.01 , 0.01 )
-      }
+    ## Make Separate Prob Cluster priors for each group/condition
+    for ( g in 1: 6 ) {
+      pClust[g,1:Nclust] ~ ddirch( initR )
     }
-    pClustG[1:Nclust] ~ ddirch( onesRepNclust )
-    
+  
+#    # Larval Priors
+#    for ( l in 1: NLarv ) {
+#      for ( clustIdx in 1: Nclust ) {
+#        muOfClustG[clustIdx]  ~ dnorm( 0 , 1.0E-10 )
+#        tauOfClustG[clustIdx] ~ dgamma( 0.01 , 0.01 )
+#      }
+#    }
+#    pClustG[1:Nclust] ~ ddirch( onesRepNclust )
     
 }
 
-## TODO: Expand to Group Prior ##
 "
+
+load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_All.RData') )
 ```
 
+
+```{r dispersal-RJags-NBMixture-AllData-Run-model,include=FALSE,eval=FALSE}
+## Cluster Using Negative Binomial Model
+library(rjags)
+library(runjags)
+library('coda')
+
+initfunct <- function(nchains,N)
+{
+  initlist <- replicate(nchains,list(
+                                     ".RNG.name"="base::Super-Duper",
+                                     ".RNG.seed"=round(runif(1,0,60000)) ),
+                                     simplify=FALSE)
+  return(initlist)
+}
+
+runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
+{
+  ##Make Integer Discrete
+  vDispersion <- round(vDispersion*10.0)
+  
+  N = NROW(vDispersion)
+  ##Cluster Membership
+  Nclust <- 2
+  clust = rep(NA,N) 
+  clust[which.min(vDispersion)]=1 # smallest value assigned to cluster 1
+  clust[which.max(vDispersion)]=2 # highest value assigned to cluster 2 
+  
+  dataList = list(
+      y = vDispersion ,
+      groupID = vGroupID,
+      N = N,
+      Nclust = 2 ,
+      clust = clust ,
+      onesRepNclust = rep(1,Nclust)
+  )
+  ##
+  steps <-100
+  nchains <- 3
+  nthin <- 10
+  #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
+  str_vars <- c("clust","pClust","q","r") #Mixture Model
+    # Run the 2 chains in parallel (allowing the run.jags function
+  # to control the number of parallel chains). We also use a
+  # mutate function to convert the precision to standard deviation:
+  results <- run.jags(model=strDispersionGroupClusterModel, n.chains=nchains,
+                         inits=initfunct(nchains,dataList$N),
+                         thin=nthin,
+                         sample=steps,
+                         data= dataList,
+                         adapt = 100,
+                         burnin = 100,
+                         monitor=str_vars,
+                         method="parallel")
+ return(results) 
+}
+
+
+## Extracts the monitor values and returns them packaged in a list
+getMCMCNBGroupEstimatedParams <- function(results,groupID,ichain = 2,NBScaling = 1/10)
+{
+  clustcoeff = as.mcmc.list(results, vars="clust")
+  q =  as.mcmc.list(results, vars="q")
+  r =  as.mcmc.list(results, vars="r")
+  NBmean = (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])*NBScaling ## Calc NB Mean
+  
+  ## Make Colour code match Low/High Dispersal 
+  ##            being Exploit (Cyan), Explore (Yellow)
+  clustCol <- c(colourClusters[1],colourClusters[2])
+  if ( mean(unlist(NBmean[,1]) ) > mean(unlist( NBmean[,2]) ) )
+    clustCol <- rev(clustCol) ##Reverse Colour Order so C1 - has explore colour , and C2 has exploit colour
+
+  lret <- list(
+  chain =  ichain,
+  groupID = groupID,
+  q = q[[ichain]],
+  r = r[[ichain]],
+  mean = NBmean,
+  sd = sqrt( (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])^2)*NBScaling, ## Calc NB Var
+  pClustcoeff = as.mcmc.list(results, vars="pClust"),
+  clustID = round(colMeans(clustcoeff[[ichain]]) ),
+  clustCol = clustCol
+  )
+  
+  return (lret)
+}
+
+
+datTestSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=2500),] 
+
+## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
+results.All <- runNBMixGroupClusterModel(datTestSubDispersion$Dispersion,as.numeric(datTestSubDispersion$groupID))
+write.jagsfile(results.All, file=paste0(strDataExportDir,'jagsModel_NBMixGroupclustDispersion_All.txt') )
+save(list=c("results.All","datTestSubDispersion"),file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_All.RData') )
+
+#plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
+
+
+#resParams <- getMCMCNBEstimatedParams(results.LF.S,"LE",2)
+#c<-1
+#plot(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
+#c<-2
+#lines(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
+
+```
+
+
+```{r plot-NBMix-Groupclustering-results-All,fig.show='hold', out.width="33%",dev='png'}
+plotClusterModel(results.All,datTestSubDispersion$Dispersion, "All",getMCMCNBGroupEstimatedParams(results.All,"All",2))
+```
+
+#### Spontaneous
+ 
+```{r plot-NBMix-Groupclustering-results-Spontaneous,fig.show='hold', out.width="33%",dev='png'}
+lparamsAll$groupID = "NE"
+plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotClusterProb(lparamsAll,lparamsAll$clustCol ,plotGroup,6)
+lparamsAll$groupID = "LE"
+plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
+lparamsAll$groupID = "DE"
+plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
+```
+#### Evoked
+```{r plot-NBMix-Groupclustering-results-Evoked,fig.show='hold', out.width="33%",dev='png'}
+lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
+lparamsAll$groupID = "NL"
+plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotClusterProb(lparamsAll,lparamsAll$clustCol ,plotGroup,6)
+lparamsAll$groupID = "LL"
+plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
+lparamsAll$groupID = "DL"
+plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
+```
 
 ## Dispersion as random process
 
