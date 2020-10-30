@@ -1196,7 +1196,7 @@ getMCMCEstimatedParams <- function(results,groupID,ichain = 2)
 
 #  clusterIDOffset, and groupIDOffset plot Allows function to work when multiple subgroups are modelled
 # by extracting from these columns pClust[groupID,Clust] : pClust[1,1] pClust[2,1] ... pClust[5,2] pClust[6,2] 
-plotClusterProb <- function(lmcmcRes,clustCol,groupIDOffset=1,clustIDOffset=6)
+plotClusterProb <- function(lmcmcRes,clustCol,groupIDOffset=1,clustIDOffset=1)
 {
    ##plot prob of occupying each cluster
   breaksProb <- seq(0,1.01,by=0.01)
@@ -1634,6 +1634,36 @@ model {
 
 "
 
+## Extracts the monitor values and returns them packaged in a list
+getMCMCNBGroupEstimatedParams <- function(results,groupID,ichain = 2,NBScaling = 1/10)
+{
+  clustcoeff = as.mcmc.list(results, vars="clust")
+  q =  as.mcmc.list(results, vars="q")
+  r =  as.mcmc.list(results, vars="r")
+  NBmean = (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])*NBScaling ## Calc NB Mean
+  
+  ## Make Colour code match Low/High Dispersal 
+  ##            being Exploit (Cyan), Explore (Yellow)
+  clustCol <- c(colourClusters[1],colourClusters[2])
+  if ( mean(unlist(NBmean[,1]) ) > mean(unlist( NBmean[,2]) ) )
+    clustCol <- rev(clustCol) ##Reverse Colour Order so C1 - has explore colour , and C2 has exploit colour
+
+  lret <- list(
+  chain =  ichain,
+  groupID = groupID,
+  q = q[[ichain]],
+  r = r[[ichain]],
+  mean = NBmean,
+  sd = sqrt( (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])^2)*NBScaling, ## Calc NB Var
+  pClustcoeff = as.mcmc.list(results, vars="pClust"),
+  clustID = round(colMeans(clustcoeff[[ichain]]) ),
+  clustCol = clustCol
+  )
+  
+  return (lret)
+}
+
+
 load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_All.RData') )
 ```
 
@@ -1695,36 +1725,6 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
 }
 
 
-## Extracts the monitor values and returns them packaged in a list
-getMCMCNBGroupEstimatedParams <- function(results,groupID,ichain = 2,NBScaling = 1/10)
-{
-  clustcoeff = as.mcmc.list(results, vars="clust")
-  q =  as.mcmc.list(results, vars="q")
-  r =  as.mcmc.list(results, vars="r")
-  NBmean = (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])*NBScaling ## Calc NB Mean
-  
-  ## Make Colour code match Low/High Dispersal 
-  ##            being Exploit (Cyan), Explore (Yellow)
-  clustCol <- c(colourClusters[1],colourClusters[2])
-  if ( mean(unlist(NBmean[,1]) ) > mean(unlist( NBmean[,2]) ) )
-    clustCol <- rev(clustCol) ##Reverse Colour Order so C1 - has explore colour , and C2 has exploit colour
-
-  lret <- list(
-  chain =  ichain,
-  groupID = groupID,
-  q = q[[ichain]],
-  r = r[[ichain]],
-  mean = NBmean,
-  sd = sqrt( (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])^2)*NBScaling, ## Calc NB Var
-  pClustcoeff = as.mcmc.list(results, vars="pClust"),
-  clustID = round(colMeans(clustcoeff[[ichain]]) ),
-  clustCol = clustCol
-  )
-  
-  return (lret)
-}
-
-
 datTestSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=2500),] 
 
 ## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
@@ -1745,7 +1745,8 @@ save(list=c("results.All","datTestSubDispersion"),file=paste0(strDataExportDir,'
 
 
 ```{r plot-NBMix-Groupclustering-results-All,fig.show='hold', out.width="33%",dev='png'}
-plotClusterModel(results.All,datTestSubDispersion$Dispersion, "All",getMCMCNBGroupEstimatedParams(results.All,"All",2))
+lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
+plotClusterModel(results.All,datTestSubDispersion$Dispersion, "All",lparamsAll)
 ```
 
 #### Spontaneous
