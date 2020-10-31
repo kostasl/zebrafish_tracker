@@ -1725,12 +1725,12 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
 }
 
 
-datTestSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=2500),] 
+datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=2500),] 
 
 ## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
-results.All <- runNBMixGroupClusterModel(datTestSubDispersion$Dispersion,as.numeric(datTestSubDispersion$groupID))
+results.All <- runNBMixGroupClusterModel(datSubDispersion$Dispersion,as.numeric(datSubDispersion$groupID))
 write.jagsfile(results.All, file=paste0(strDataExportDir,'jagsModel_NBMixGroupclustDispersion_All.txt') )
-save(list=c("results.All","datTestSubDispersion"),file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_All.RData') )
+save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_All.RData') )
 
 #plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
 
@@ -1743,36 +1743,36 @@ save(list=c("results.All","datTestSubDispersion"),file=paste0(strDataExportDir,'
 
 ```
 
-
+### Results from NB Group clustering 
 ```{r plot-NBMix-Groupclustering-results-All,fig.show='hold', out.width="33%",dev='png'}
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
-plotClusterModel(results.All,datTestSubDispersion$Dispersion, "All",lparamsAll)
+plotClusterModel(results.All,datSubDispersion$Dispersion, "All",lparamsAll)
 ```
 
 #### Spontaneous
  
 ```{r plot-NBMix-Groupclustering-results-Spontaneous,fig.show='hold', out.width="33%",dev='png'}
 lparamsAll$groupID = "NE"
-plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol ,plotGroup,6)
 lparamsAll$groupID = "LE"
-plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
 lparamsAll$groupID = "DE"
-plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
 ```
 #### Evoked
 ```{r plot-NBMix-Groupclustering-results-Evoked,fig.show='hold', out.width="33%",dev='png'}
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 lparamsAll$groupID = "NL"
-plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol ,plotGroup,6)
 lparamsAll$groupID = "LL"
-plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
 lparamsAll$groupID = "DL"
-plotGroup<- which(levels(datTestSubDispersion$groupID)==lparamsAll$groupID)
+plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
 ```
 
