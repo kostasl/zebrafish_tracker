@@ -1506,6 +1506,7 @@ library(rjags)
 library(runjags)
 library('coda')
 
+bQuickTest = TRUE
 initfunct <- function(nchains,N)
 {
   initlist <- replicate(nchains,list(
@@ -1536,7 +1537,10 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
       onesRepNclust = rep(1,Nclust)
   )
   ##
-  steps <-100
+  steps <-500 #500
+  if (bQuickTest)
+    steps <-100 #500
+  
   nchains <- 3
   nthin <- 10
   #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -1556,13 +1560,30 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
  return(results) 
 }
 
-## TODO add the frames of hunt events for easier classification of hunt events : datHEventDispersion$frameRow
-datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=2500),] 
+# add the frames of hunt events for easier classification of hunt events : datHEventDispersion$frameRow
+##Subsample The Dispersion Data into 0.5 sec bins - But Add the hunt Event Frames
+loadDispersionData()
+datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
+datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
+##Quicker Test - Subsampling
+if (bQuickTest)
+  datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=3500),] 
+
+# add the exact frames of hunt events so we can cluster them in exploit/Explore easly datHEventDispersion$frameRow
+# Frame Records of Huntevents not in SubSampled frames
+missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
+# Merge missing hunt Frames onto subsampled dispersion data so we can cluster Hunt Events Specifically
+datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow %in% missinghuntEvents.frameROW,])
+
+missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
+# Merge missing hunt Frames onto subsampled dispersion data so we can cluster Hunt Events Specifically
+datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow %in% missinghuntEvents.frameROW,])
+
 
 ## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
 results.All <- runNBMixGroupClusterModel(datSubDispersion$Dispersion,as.numeric(datSubDispersion$groupID))
-write.jagsfile(results.All, file=paste0(strDataExportDir,'jagsModel_NBMixGroupclustDispersion_All.txt') )
-save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_All.RData') )
+write.jagsfile(results.All, file=paste0(strDataExportDir,'jagsModelTest_NBMixGroupclustDispersion_All.txt') )
+save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
 
 #plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
 
@@ -1726,32 +1747,86 @@ Do distributions of dispersion change depending on hunt-outcome ?
 The historgrams below examine how *normalized larval dispersion* distributions shift for each group depending on capture outcome being success/fail
 
 ```{r hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-nBreaks = 30
+nBreaks = seq(0,1,0.1)
 ylimUp <- 50
 
-which((datSubDispersion$frameRow - datHEventDispersion$frameRow) ==  min(abs(datSubDispersion$frameRow - datHEventDispersion$frameRow),na.rm = TRUE) )
+
+load(file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
+
+#which((datSubDispersion$frameRow - datHEventDispersion$frameRow) ==  min(abs(datSubDispersion$frameRow - datHEventDispersion$frameRow),na.rm = TRUE) )
 ## Merge sparse Clustered Dispersions Results onto full Dispersion Data
-datDispersion[datSubDispersion$frameRow,"clustID"] <- lparamsAll$clustID
+datSubDispersion$clustID <- as.vector(lparamsAll$clustID)
 ##Merge Cluster ID onto Hunt Events
+datHEventDispersion <- merge(datHEventDispersion, cbind(frameRow=datSubDispersion$frameRow,clustID=datSubDispersion$clustID) ,by="frameRow",all.x =TRUE,no.dups = FALSE)
+hist(datHEventDispersion[datHEventDispersion$clustID == 1,"Dispersion" ],col=colourClusters[2],breaks =seq(0,11))
+hist(datHEventDispersion[datHEventDispersion$clustID == 2,"Dispersion" ],col=colourClusters[1],breaks =seq(0,11),add=TRUE)
+
+##Check The cluster with Most Hunt Events (Appears to Be )
+boxplot(Dispersion ~ clustID,data=datHEventDispersion,col=c(colourClusters[2],colourClusters[1]) )
+
+hist(datHEventDispersion[datHEventDispersion$clustID == 1,"clustID" ],col=colourClusters[2],breaks =seq(0,2),main="Count Hunt Events in each cluster")
+hist(datHEventDispersion[datHEventDispersion$clustID == 2,"clustID" ],col=colourClusters[1],breaks =seq(0,2),add=TRUE)
+
 datHEventDispersion[datHEventDispersion$frameRow %in% datSubDispersion$frameRow, ]
 
 ## RAW Dispersion In Hunt Events
 
 ## Check NF
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$NF$Evoked,ylim=c(0,ylimUp))
+## SUCCESS
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
+                           grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
+                           datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp))#colourDataScheme$NF$Evoked
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
+                           grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
+                           datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE)#colourDataScheme$NF$Evoked
 
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$NF$Spont,ylim=c(0,ylimUp))
+##FAIL
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
+                           grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
+                           datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp)) ##colourDataScheme$NF$Spont
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
+                           grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
+                           datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE) ##colourDataScheme$NF$Spont
+
+
 
 ## Check LF Successs/Fail Only
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$LF$Evoked,ylim=c(0,ylimUp))
-
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$LF$Spont,ylim=c(0,ylimUp))
-
+# SUCCESS
+  hist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
+                             grepl("Success", as.character( convertToScoreLabel(datHEventDispersion$huntScore) ) ) &
+                             datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp)) ##colourDataScheme$LF$Evoked
+  hist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
+                             grepl("Success", as.character( convertToScoreLabel(datHEventDispersion$huntScore) ) ) &
+                             datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE) ##colourDataScheme$LF$Evoked
+  
+  
+# FAIL  
+  hist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
+                             grepl("Fail", as.character( convertToScoreLabel(datHEventDispersion$huntScore) ) ) &
+                             datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Fail",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp)) ##colourDataScheme$LF$Evoked
+  hist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
+                             grepl("Fail", as.character( convertToScoreLabel(datHEventDispersion$huntScore) ) ) &
+                             datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Fail",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE) ##colourDataScheme$LF$Evoked
+  
 
 ## Check DF
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$DF$Evoked,ylim=c(0,ylimUp))
+# Success
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL' &
+                           grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
+                           datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp))#colourDataScheme$NF$Evoked
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL' &
+                           grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
+                           datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE)#colourDataScheme$NF$Evoked
 
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$DF$Spont,ylim=c(0,ylimUp))
+
+#FAIL
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL' &
+                           grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
+                           datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Fail",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp))#colourDataScheme$NF$Evoked
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL' &
+                           grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
+                           datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Fail",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE)#colourDataScheme$NF$Evoked
 
 ```
 
