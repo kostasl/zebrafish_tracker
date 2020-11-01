@@ -714,179 +714,6 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$L
  lines(density(datMaxDispersionPerExp.DF.Evoked,kernel="gaussian",na.rm=TRUE,bw=pBW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
 ```
-# Measure Hunt rate per foraging state
-
-Here I will identify the number of hunt events evoked/initiated in each foraging state.
-However, it is natural to expect that since hunt events involve slow prey approach behaviour, which gives low dispersion, a higher hunt-rate is expected in the exploitation state. Yet the time window of foraging state classification is 5 sec, while a hunt episodes last for less than 2 sec (~1sec If i remember correctly, check eLife paper fig).
-Thus the foraging state is associated with slow/ prey approach motion, as a high rate of hunt initiation would cause low dispersion.  
-
-A list of all tabulated hunt-outcomes 
-```{r table-all-huntscores}
-## Get Number of Hunt Events In Exploit / Expore
-table(convertToScoreLabel(datHuntLabelledEventsSBMerged_fixed$huntScore) )
-```
-can be compared to the subset of hunt-outcomes that are associated with a low normalized dispersion  (<=`r thres_dispersion_class` ) in being in *exploitation* state
-
-```{r table-Exploration-huntscores}
-table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm <= thres_dispersion_class,]$huntScore) )
-```
-
-and those with larger dispersion indicative of being in the *exploration* foraging state (>`r thres_dispersion_class`)
-
-```{r table-Exploit-huntscores}
-table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm > thres_dispersion_class,]$huntScore) )
-```
-
-while some hunt-outcomes were not associated with any dispersion measure - missing as trajectory was not long enoughat time of the hunt event
-
-```{r table-unaccounted-huntscores}
-## Check number of Events missing dispersion Info
-table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm),]$huntScore) )
-```
-
-Looking at a histrgram of normalized dispersion of all hunt events it is clear that most of these exist over high dispersion, ie not in exploitation but rather in an exploratory phase!
-
-```{r  hunt-event-all-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-
-hist(datHEventDispersion$Dispersion_norm,main="All group hunt events ",xlab="Dispersion normalized per exp",breaks=100)
-hist(datHEventDispersion$Dispersion_larval_norm,main="All group hunt events ",xlab="Dispersion normalized per larva",breaks=100)
-
-```
-
-### Histograms of hunt-ever dispersions split conditions
- 
-These next histograms show how *normalized larval dispersion* is distributed in each rearing group and looking at whether hunting initiation changes between spontaneous and evoked conditions.
-
-  * It appears as if only the NF hunts during an exploitation type of movement.
-  * LF spontaneous hunt-events occur over exploration (higher dispersion) 
-
-```{r  hunt-event-group-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-## Normalized Dispersion In Hunt Events
-nBreaks = 30
-## Check LF
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Evoked",xlab="Dispersion Norm.",col=colourDataScheme$LF$Evoked)
-hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Spont",xlab="Dispersion Norm.",col=colourDataScheme$LF$Spont)
-
-## Check NF
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Evoked",xlab="Dispersion Norm.",col=colourDataScheme$NF$Evoked)
-hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Spont",xlab="Dispersion Norm.",col=colourDataScheme$NF$Spont)
-
-## Check DF
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Evoked",xlab="Dispersion Norm.",col=colourDataScheme$DF$Evoked)
-hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Spont",xlab="Dispersion Norm.",col=colourDataScheme$NF$Spont)
-
-BW=0.1
-```
-
-### Density estimation - compare conditions
-
-Next, I estimated smoothed densities using a gaussian kernel so I can visualy compare  dispersion between spontaneous and evoked conditions (BW=`r  BW`)
-These suggest that dispersions shift between spont in and evoked conditions differently between groups:
-
-  * prey *does not change* dispersion  in the naive group NF
-  * prey *reduces* dispersion in the experienced group LF
-  * prey **increases** dispersion in the experienced group LF
-
-Such distinct pattern between group (specifically difference NF-DF) is consistent with previous findings in Lagogiannis et al 2020.
-
-```{r  hunt-event-group-dispersion Norm split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
- ## plot est, Densities Compare Spont to Evoked
-
- ylimUp <- 5
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF Hunt events  ",xlab="Dispersion (norm per larva)",lty=1  )
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
-legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
- 
- 
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Spont,main="LF  Hunt events",xlab="Dispersion (norm per larva)",lty=1 )
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
-legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
-
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Spont,main="DF  Hunt events",xlab="Dispersion (norm per larva)",lty=1 )
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
-legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
-```
-
-The distributions look similar even if we remove the normalization stage, and look at raw dispersion measures, the low dispersion associated with exploitation phase is rare among hunt-events
-
-```{r  hunt-event-dispersion distribution raw split E-S, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
-BW = 1
- ylimUp <- 1
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF Hunt events  ",xlab="Dispersion (mm)",lty=1  )
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
-legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
- 
- 
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Spont,main="LF  Hunt events",xlab="Dispersion (mm)",lty=1 )
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
-legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
-
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Spont,main="DF  Hunt events",xlab="Dispersion (mm)",lty=1 )
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
-legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
-
-```
-
-
-## Examine relationship of hunt-outcome to foraging state
-
-### Histograms
-Do distributions of dispersion change depending on hunt-outcome ? 
-The historgrams below examine how *normalized larval dispersion* distributions shift for each group depending on capture outcome being success/fail
-
-```{r hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-nBreaks = 30
-ylimUp <- 50
-## RAW Dispersion In Hunt Events
-
-## Check NF
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$NF$Evoked,ylim=c(0,ylimUp))
-
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$NF$Spont,ylim=c(0,ylimUp))
-
-## Check LF Successs/Fail Only
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$LF$Evoked,ylim=c(0,ylimUp))
-
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$LF$Spont,ylim=c(0,ylimUp))
-
-
-## Check DF
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$DF$Evoked,ylim=c(0,ylimUp))
-
-hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$DF$Spont,ylim=c(0,ylimUp))
-
-```
-
-### Dispersion densities per outcome 
-
-To visually compare dispersions between huntcomes I estimated smoothed distributions from the dispersion data split between Success and Failed hunt-outcomes.
-Interstingly, I find evidence for pattern of distinct behaviours among groups :
-  * NF 
-  * LF Likely no difference between success/Failed episodes - contradicts Marquez et 2019 findings
-  * DF Lower dispersion (exploitation state) linked to success
-  
-```{r  hunt-event-dispersion per outcome distributions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
-BW = 0.08
-ylimUp <- 5
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,
-              kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF Hunt Events  ",xlab="Dispersion (mm)",lty=1  )
- 
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,
-               kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
-legend("topright",c("Success","Fail"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
- 
- 
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Spont,main="LF  Hunt Events",xlab="Dispersion (mm)",lty=1 )
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
-legend("topright",c("Success","Fail"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
-
- plot(density(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Spont,main="DF  Hunt Events",xlab="Dispersion (mm)",lty=1 )
- lines(density(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
-legend("topright",c("Success","Fail"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
-
-```
-
- (BW=`r  BW`)
 
 # Full figure List of trajectories per experiment
 
@@ -1048,10 +875,15 @@ initfunct <- function(nchains,N)
 }
 
 #nsubsample <- 10000 
-##Subsample The Dispersion Data into 0.5 sec bins
+##Subsample The Dispersion Data into 0.5 sec bins - But Add the hunt Event Frames
 loadDispersionData()
 datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
 datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
+# add the exact frames of hunt events so we can cluster them in exploit/Explore easly datHEventDispersion$frameRow
+# Frame Records of Huntevents not in SubSampled frames
+missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
+# Merge missing hunt Frames onto subsampled dispersion data so we can cluster Hunt Events Specifically
+datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow %in% missinghuntEvents.frameROW,])
 
 vDispersion.NF.E <- datSubDispersion[datSubDispersion$groupID == 'NL',"Dispersion",]
 vDispersion.LF.E <- datSubDispersion[datSubDispersion$groupID == 'LL',"Dispersion",] 
@@ -1724,7 +1556,7 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
  return(results) 
 }
 
-
+## TODO add the frames of hunt events for easier classification of hunt events : datHEventDispersion$frameRow
 datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=2500),] 
 
 ## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
@@ -1775,6 +1607,185 @@ lparamsAll$groupID = "DL"
 plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
 ```
+
+# Measure Hunt rate per foraging state
+
+Here I will identify the number of hunt events evoked/initiated in each foraging state.
+However, it is natural to expect that since hunt events involve slow prey approach behaviour, which gives low dispersion, a higher hunt-rate is expected in the exploitation state. Yet the time window of foraging state classification is 5 sec, while a hunt episodes last for less than 2 sec (~1sec If i remember correctly, check eLife paper fig).
+Thus the foraging state is associated with slow/ prey approach motion, as a high rate of hunt initiation would cause low dispersion.  
+
+A list of all tabulated hunt-outcomes 
+```{r table-all-huntscores}
+## Get Number of Hunt Events In Exploit / Expore
+table(convertToScoreLabel(datHuntLabelledEventsSBMerged_fixed$huntScore) )
+```
+
+can be compared to the subset of hunt-outcomes that are associated with a dispersion clustered as being in *exploitation* state
+and those clustered with larger dispersion, indicative of being in the *exploration* foraging state.
+while some hunt-outcomes were not associated with any dispersion measure - missing as trajectory was not long enoughat time of the hunt event
+
+```{r table-Exploration-huntscores,eval=FALSE}
+table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm <= thres_dispersion_class,]$huntScore) )
+```
+```{r table-Exploit-huntscores,eval=FALSE}
+table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm) & datHEventDispersion$Dispersion_norm > thres_dispersion_class,]$huntScore) )
+```
+```{r table-unaccounted-huntscores,eval=FALSE}
+## Check number of Events missing dispersion Info
+table(convertToScoreLabel(datHEventDispersion[!is.na(datHEventDispersion$Dispersion_norm),]$huntScore) )
+```
+
+Just looking at the histogram of normalized dispersion of all hunt events it appears that most of these are not within the lowest of measured dispersion, which could be indicative of exploitation but rather in an exploratory phase!
+
+```{r  hunt-event-all-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+
+hist(datHEventDispersion$Dispersion_norm,main="All group hunt events ",xlab="Dispersion normalized per exp",breaks=100)
+hist(datHEventDispersion$Dispersion_larval_norm,main="All group hunt events ",xlab="Dispersion normalized per larva",breaks=100)
+
+```
+
+### Histograms of hunt-event dispersions split conditions
+ 
+These next histograms show how *normalized larval dispersion* is distributed in each rearing group and looking at whether hunting initiation changes between spontaneous and evoked conditions.
+
+  * It appears as if only the NF hunts during an exploitation type of movement.
+  * LF spontaneous hunt-events occur over exploration (higher dispersion) 
+
+```{r  hunt-event-group-dispersion histogram Norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+## Normalized Dispersion In Hunt Events
+nBreaks = 30
+## Check LF
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Evoked",xlab="Dispersion Norm.",col=colourDataScheme$LF$Evoked)
+hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Spont",xlab="Dispersion Norm.",col=colourDataScheme$LF$Spont)
+
+## Check NF
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Evoked",xlab="Dispersion Norm.",col=colourDataScheme$NF$Evoked)
+hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Spont",xlab="Dispersion Norm.",col=colourDataScheme$NF$Spont)
+
+## Check DF
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Evoked",xlab="Dispersion Norm.",col=colourDataScheme$DF$Evoked)
+hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Spont",xlab="Dispersion Norm.",col=colourDataScheme$NF$Spont)
+
+BW=0.1
+```
+
+### Density estimation - compare conditions
+
+Next, I estimated smoothed densities using a gaussian kernel so I can visualy compare  dispersion between spontaneous and evoked conditions (BW=`r  BW`)
+These suggest that dispersions shift between spont in and evoked conditions differently between groups:
+
+  * prey *does not change* dispersion  in the naive group NF
+  * prey *reduces* dispersion in the experienced group LF
+  * prey **increases** dispersion in the experienced group LF
+
+Such distinct pattern between group (specifically difference NF-DF) is consistent with previous findings in Lagogiannis et al 2020.
+
+```{r  hunt-event-group-dispersion Norm split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+ ## plot est, Densities Compare Spont to Evoked
+
+ ylimUp <- 5
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF Hunt events  ",xlab="Dispersion (norm per larva)",lty=1  )
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
+ 
+ 
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Spont,main="LF  Hunt events",xlab="Dispersion (norm per larva)",lty=1 )
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
+
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Spont,main="DF  Hunt events",xlab="Dispersion (norm per larva)",lty=1 )
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
+```
+
+The distributions look similar even if we remove the normalization stage, and look at raw dispersion measures, the low dispersion associated with exploitation phase is rare among hunt-events
+
+```{r  hunt-event-dispersion distribution raw split E-S, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+BW = 1
+ ylimUp <- 1
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF Hunt events  ",xlab="Dispersion (mm)",lty=1  )
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
+ 
+ 
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Spont,main="LF  Hunt events",xlab="Dispersion (mm)",lty=1 )
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
+
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Spont,main="DF  Hunt events",xlab="Dispersion (mm)",lty=1 )
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
+
+```
+
+
+## Examine relationship of hunt-outcome to foraging state
+
+### Histograms
+Do distributions of dispersion change depending on hunt-outcome ? 
+The historgrams below examine how *normalized larval dispersion* distributions shift for each group depending on capture outcome being success/fail
+
+```{r hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+nBreaks = 30
+ylimUp <- 50
+
+which((datSubDispersion$frameRow - datHEventDispersion$frameRow) ==  min(abs(datSubDispersion$frameRow - datHEventDispersion$frameRow),na.rm = TRUE) )
+## Merge sparse Clustered Dispersions Results onto full Dispersion Data
+datDispersion[datSubDispersion$frameRow,"clustID"] <- lparamsAll$clustID
+##Merge Cluster ID onto Hunt Events
+datHEventDispersion[datHEventDispersion$frameRow %in% datSubDispersion$frameRow, ]
+
+## RAW Dispersion In Hunt Events
+
+## Check NF
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$NF$Evoked,ylim=c(0,ylimUp))
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$NF$Spont,ylim=c(0,ylimUp))
+
+## Check LF Successs/Fail Only
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$LF$Evoked,ylim=c(0,ylimUp))
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$LF$Spont,ylim=c(0,ylimUp))
+
+
+## Check DF
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$DF$Evoked,ylim=c(0,ylimUp))
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,breaks=nBreaks,main="DF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourDataScheme$DF$Spont,ylim=c(0,ylimUp))
+
+```
+
+### Dispersion densities per outcome 
+
+To visually compare dispersions between huntcomes I estimated smoothed distributions from the dispersion data split between Success and Failed hunt-outcomes.
+Interstingly, I find evidence for pattern of distinct behaviours among groups :
+  * NF 
+  * LF Likely no difference between success/Failed episodes - contradicts Marquez et 2019 findings
+  * DF Lower dispersion (exploitation state) linked to success
+  
+```{r  hunt-event-dispersion per outcome distributions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+BW = 0.08
+ylimUp <- 5
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,
+              kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF Hunt Events  ",xlab="Dispersion (mm)",lty=1  )
+ 
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='NL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,
+               kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
+legend("topright",c("Success","Fail"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
+ 
+ 
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Spont,main="LF  Hunt Events",xlab="Dispersion (mm)",lty=1 )
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='LL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
+legend("topright",c("Success","Fail"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
+
+ plot(density(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Spont,main="DF  Hunt Events",xlab="Dispersion (mm)",lty=1 )
+ lines(density(datHEventDispersion[datHEventDispersion$groupID=='DL' & grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) , ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
+legend("topright",c("Success","Fail"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
+
+```
+
+ (BW=`r  BW`)
+
 
 ## Dispersion as random process
 
