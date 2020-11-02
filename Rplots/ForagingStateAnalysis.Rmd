@@ -716,108 +716,6 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$L
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
 ```
 
-# Full figure List of trajectories per experiment
-
-The following figures show the tracked trajectories per experiment of each group.
-Trajectory segments are colour coded according to whether these can be classified as exploration or exploitation based on ta theshold on the normalized dispersion. This threshold is set here to `r thres_dispersion_class ` .
-Red signiifies segments of exploitation, blue is for exploration. 
-The column on the right shows the dispersion measurement along recording time. Note the x-axis is not real time, it is the total time of  concatenated recording events. The horizontal line represents where the exploit/explore dispersal threshold sits for each larva, given its normalized disperal measurements.
-The triangles at the bottom denote hunt-event initiations in relation to dispersal.
-
-  - Observing dispersals and trajectories it becomes clear that during a 10 min recording a larva could be in exploitation phase all the way, and thus the range of dispersals that this larva can produce is most likely not observed. see : 
-   - NL 309/NE 302
-    
-
-
-## Classify based on dispersions normalized on per larval basis 
-
-Note that dispersion is normalized based on the trajectories from Spontaneous and Evoked conditions *combined* for each larva.
-Here it should be noted that in Marquez et al 2019 "To facilitate comparison across animals, the dispersal distance was normalized to the range of each animal."
-That means this is not a division by the maximum dispersal of each animal, but it also makes use of the minimum.
-
-#### LF - Evoked /Spontaneous Trajectories
-```{r  larva_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
-
-loaddatAllFrames()
-loadDispersionData()
-plotLarvaNormDispersionTrajectories(c('LL','LE'),datAllFrames, datDispersion ,datHEventDispersion,datExpPairs,  thres_dispersion_class )
-
-```
-
-#### NF - Evoked/Spontaneous Trajectories 
-```{r larva_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
-plotLarvaNormDispersionTrajectories(c('NL','NE'),datAllFrames, datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
-
-```
-  
-#### DF - Evoked/Spontaneous Trajectories 
-```{r larva_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
-
-plotLarvaNormDispersionTrajectories(c('DL','DE'),datAllFrames, datDispersion , datHEventDispersion, datExpPairs, thres_dispersion_class)
-
-
-```
-
-
-## Classifying exploitation/exploration phases based on **global threshold**
-The dispersion of each experiment is normalized globally and thus classification threhsold for exploitation identifies trajectory segments of spatially restricted motion relative to all larvae across groups
-
-### Evoked conditions
-Trajectories of 10min recordings in the presence of prey. Note, in contrast to Marquez et al. 2019, our recodings exclude motion at the boundary of petridish.
-
-#### LF - Evoked+Sponτaneous larval trajectories
-Eploitation state is shown in *red* and *orange* in evoked and spontaneous test conditions respectivelly, with hunt events shown as squares.
-Exploration state is *blue* and *green* in evoked and spontaneous test conditions respectivelly, , with hunt events shown as triangles.
-
-```{r  global_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE }
-loaddatAllFrames()
-loadDispersionData()
-plotGlobalNormDispersionTrajectories(c('LL','LE'), datAllFrames, datDispersion, datHEventDispersion, datExpPairs,   thres_dispersion_class )
-
-```
-
-#### NF - Evoked+Spont Trajectories 
-```{r global_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
-
-plotGlobalNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class )
-
-```
-
-#### DF - Evoked Trajectories 
-```{r global_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
-
-plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class)
-
-```
-
-
-## Classify based on normalizated experiment trajectory dispersion
-
-Note that Spontaneous and Evoked conditions of each larva are considered individually
-
-#### LF - Evoked /Spontaneous Trajectories
-```{r  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE}
-loaddatAllFrames()
-loadDispersionData()
-plotExpNormDispersionTrajectories(c('LL','LE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs,  thres_dispersion_class )
-
-```
-
-#### NF - Evoked/Spontaneous Trajectories 
-```{r exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE}
-
-plotExpNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
-
-```
-
-#### DF - Evoked/Spontaneous Trajectories 
-```{r exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
-
-
-plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class)
-
-```
-
 # Clustering dispersal data
 
 ## Clustering dispersal using mixture of 2 Gaussians
@@ -1644,6 +1542,11 @@ save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,strOu
 
 I find that **there are clear differences in movement behaviour between the rearing groups**, and how these modify their motion behaviour between spontaneous and evoked conditions. 
 
+  - NF : Evidence for bimodality are not clear, while forcing 2 clusters shows time split almost equally in fast/slow
+  - DF, LF show bimodal dispersions in both Evoked and spontaneous conditions but:
+    - DF modes could be simply no movement vs Moving
+    - LF shows a mode of slow/low dispersal motion and another that is large dispersal - in agreement with Marquez et al. 2019
+  
 ```{r plot-NBMix-Globalclustering-results-All,fig.show='hold', out.width="33%",dev='png'}
 
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
@@ -1654,8 +1557,10 @@ plotClusterModel(results.All,datSubDispersion$Dispersion, "All",lparamsAll)
 ```
 
 #### Spontaneous
+  * NF bimodality is not clear, best do model comparison 
+  * DF, LF show bimodality - but the slow cluster is not the same between the groups/ DF - likely either stops or runs.
  
-```{r plot-NBMix-Groupclustering-results-Spontaneous,fig.show='hold', out.width="33%",dev='png'}
+```{r plot-NBMix-Groupclustering-results-Spontaneous,fig.show='hold', out.width="33%",dev='png',include=FALSE}
 lparamsAll$groupID = "NE"
 plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol ,plotGroup,6)
@@ -1679,7 +1584,7 @@ histClusteredDispersionFrame(datSubDispersion[datSubDispersion$groupID == 'DE',]
 
 ```
 #### Evoked
-```{r plot-NBMix-Groupclustering-results-Evoked,fig.show='hold', out.width="33%",dev='png'}
+```{r plot-NBMix-Groupclustering-results-Evoked,fig.show='hold', out.width="33%",dev='png',include=FALSE}
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 lparamsAll$groupID = "NL"
 plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
@@ -2032,6 +1937,110 @@ To implement the normal mixture model outlined in the previous section in Stan, 
 If Y is a mixture of K normal distributions with locations μk and scales σk with mixing proportions λ in the unit K-simplex, then 
 \[p_Y\left(y \mid \lambda, \mu, \sigma \right) = \sum_{k=1}^K \lambda_k \, \textsf{normal}\left(y \mid \mu_k, \sigma_k\right).\]
 I will defer using Stan for this and go for my familiar Jags model implementation.
+
+
+
+# Full figure List of trajectories per experiment
+
+The following figures show the tracked trajectories per experiment of each group.
+Trajectory segments are colour coded according to whether these can be classified as exploration or exploitation based on ta theshold on the normalized dispersion. This threshold is set here to `r thres_dispersion_class ` .
+Red signiifies segments of exploitation, blue is for exploration. 
+The column on the right shows the dispersion measurement along recording time. Note the x-axis is not real time, it is the total time of  concatenated recording events. The horizontal line represents where the exploit/explore dispersal threshold sits for each larva, given its normalized disperal measurements.
+The triangles at the bottom denote hunt-event initiations in relation to dispersal.
+
+  - Observing dispersals and trajectories it becomes clear that during a 10 min recording a larva could be in exploitation phase all the way, and thus the range of dispersals that this larva can produce is most likely not observed. see : 
+   - NL 309/NE 302
+    
+
+
+## Clustered based on Global NB Mix Model  
+
+Note that dispersion is normalized based on the trajectories from Spontaneous and Evoked conditions *combined* for each larva.
+Here it should be noted that in Marquez et al 2019 "To facilitate comparison across animals, the dispersal distance was normalized to the range of each animal."
+That means this is not a division by the maximum dispersal of each animal, but it also makes use of the minimum.
+
+#### LF - Evoked /Spontaneous Trajectories
+```{r  larva_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
+
+loaddatAllFrames()
+loadDispersionData()
+plotLarvaNormDispersionTrajectories(c('LL','LE'),datAllFrames, datDispersion ,datHEventDispersion,datExpPairs,  thres_dispersion_class )
+
+```
+
+#### NF - Evoked/Spontaneous Trajectories 
+```{r larva_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
+plotLarvaNormDispersionTrajectories(c('NL','NE'),datAllFrames, datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
+
+```
+  
+#### DF - Evoked/Spontaneous Trajectories 
+```{r larva_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
+
+plotLarvaNormDispersionTrajectories(c('DL','DE'),datAllFrames, datDispersion , datHEventDispersion, datExpPairs, thres_dispersion_class)
+
+
+```
+
+
+## Classifying exploitation/exploration phases based on **global threshold**
+The dispersion of each experiment is normalized globally and thus classification threhsold for exploitation identifies trajectory segments of spatially restricted motion relative to all larvae across groups
+
+### Evoked conditions
+Trajectories of 10min recordings in the presence of prey. Note, in contrast to Marquez et al. 2019, our recodings exclude motion at the boundary of petridish.
+
+#### LF - Evoked+Sponτaneous larval trajectories
+Eploitation state is shown in *red* and *orange* in evoked and spontaneous test conditions respectivelly, with hunt events shown as squares.
+Exploration state is *blue* and *green* in evoked and spontaneous test conditions respectivelly, , with hunt events shown as triangles.
+
+```{r  global_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE }
+loaddatAllFrames()
+loadDispersionData()
+plotGlobalNormDispersionTrajectories(c('LL','LE'), datAllFrames, datDispersion, datHEventDispersion, datExpPairs,   thres_dispersion_class )
+
+```
+
+#### NF - Evoked+Spont Trajectories 
+```{r global_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
+
+plotGlobalNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class )
+
+```
+
+#### DF - Evoked Trajectories 
+```{r global_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
+
+plotGlobalNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion,datHEventDispersion,datExpPairs, thres_dispersion_class)
+
+```
+
+
+## Classify based on normalizated experiment trajectory dispersion
+
+Note that Spontaneous and Evoked conditions of each larva are considered individually
+
+#### LF - Evoked /Spontaneous Trajectories
+```{r  exp_norm-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE}
+loaddatAllFrames()
+loadDispersionData()
+plotExpNormDispersionTrajectories(c('LL','LE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs,  thres_dispersion_class )
+
+```
+
+#### NF - Evoked/Spontaneous Trajectories 
+```{r exp_norm-trajectories-NL, fig.show="hold", out.width="50%", echo=FALSE, results='hide',cache=TRUE, autodep=TRUE,eval=FALSE}
+
+plotExpNormDispersionTrajectories(c('NL','NE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class )
+
+```
+
+#### DF - Evoked/Spontaneous Trajectories 
+```{r exp_norm-trajectories-DL, fig.show="hold", out.width="50%", echo=FALSE, results='hide', cache=TRUE, autodep=TRUE,eval=FALSE}
+
+
+plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHEventDispersion,datExpPairs, thres_dispersion_class)
+
+```
 
 
 
