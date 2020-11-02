@@ -1034,13 +1034,13 @@ plotNBFitcdf <- function(vDispersion,resParams)
   ##Model AND Data Densities
   c<-1
   plot(((dnbinom(x,size=mean(resParams$r[,c] ), prob= mean(resParams$q[,c]))  ) ), col=clustCol[c],lwd=2,main="NB Model and data distributions",xlim=c(0,XLim),ylim=c(0,2*max(cdfM)),type="l",ylab="Density",xlab="Dispersal (mm)")
-  lines(density(vDispersion[resParams$clustID == c]*10), col=clustCol[c],lty=2,lwd=3)
+  lines(density(vDispersion[resParams$clustID == c]*10,na.rm=TRUE), col=clustCol[c],lty=2,lwd=3)
   #hist( dnbinom( x, size=1/mean(resParams$r[,c] ), prob = mean(resParams$q[,c]) ) ,col=colourClusters[c],freq=FALSE,breaks=20)
   #hist(vDispersion[resParams$clustID == c]*10,col=colourClusters[c],freq=FALSE,add=TRUE)
   
   c<-2
   lines((dnbinom(x,size=resParams$r[,c],prob= resParams$q[,c] )),col=clustCol[c],lwd=2)
-  lines(density(vDispersion[resParams$clustID == c]*10),col=clustCol[c],lty=2,lwd=3)
+  lines(density(vDispersion[resParams$clustID == c]*10,na.rm=TRUE),col=clustCol[c],lty=2,lwd=3)
   #hist( dnbinom(x, size=mean(resParams$r[,c] ), prob= mean(resParams$q[,c]) ) ,col=colourClusters[c],freq=FALSE)
   #hist(vDispersion[resParams$clustID == c]*10,col=colourClusters[c],freq=FALSE,add=TRUE)
   legend("topright",legend=c("NB Model","Data"),lty=c(1,2),lw=c(2,3) )
@@ -1066,7 +1066,8 @@ plotClusterModel <- function(results,vDispersion, groupID,lmcmcRes)
   #lines(density(muClustAllChain$`muOfClust[2]`),xlim=c(0,10),col=clustCol[2],lwd=3,lty=2)
   
   ##plot prob of occupying each cluster
-  plotClusterProb(lmcmcRes,clustCol)
+  if (groupID != "All")
+    plotClusterProb(lmcmcRes,clustCol)
   #breaksProb <- seq(0,1,by=0.01)
   #list_histo <- hist(lmcmcRes$pClustcoeff[[lmcmcRes$chain]],breaks=breaksProb,main=groupID,freq = FALSE)
   #hist( lmcmcRes$pClustcoeff[[lmcmcRes$chain]][,1],xlim=c(0,1),ylim=c(0,max(list_histo$counts)), breaks=breaksProb,col=clustCol[1],xlab = "Prob. of cluster membership (pClust)" ,add=TRUE,freq=FALSE)
@@ -1553,14 +1554,38 @@ lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 if (!("clustID" %in% names(datSubDispersion))) 
   datSubDispersion$clustID <- as.vector(lparamsAll$clustID)
 
+clustCol <- c(colourClusters[1],colourClusters[2])
+##Validate Colouring - Fast Cluster - Yellow / Slow Cluster Blue
+muC1 <- mean(datSubDispersion[datSubDispersion$clustID == 1,"Dispersion"],na.rm = TRUE)
+muC2 <- mean(datSubDispersion[datSubDispersion$clustID == 2,"Dispersion"],na.rm = TRUE)
+if (muC1>muC2)
+  clustCol <- rev(clustCol)
+
+# Show Count Of Hunt Events Per Cluster Per Exp. Condition
+barplot(table(datSubDispersion$clustID,datSubDispersion$groupID),
+        col=clustCol,
+        main="Frames per cluster/cond-group")
+legend("topleft",legend=(paste("#",table(datSubDispersion$clustID) )),fill=clustCol  )
+
+
+## Sanity Check The cluster with Most Hunt Events (Appears to Be )
+boxplot(Dispersion ~ clustID*groupID,data=datSubDispersion,col=clustCol,  main="Dispersion per cluster",ylab="Dispersion (mm)")
+legend("topright",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=clustCol  )
+
+
+## Plot Histy And Cluster Memberships
 plotClusterModel(results.All,datSubDispersion$Dispersion, "All",lparamsAll)
+plotNBFitcdf(datSubDispersion$Dispersion,lparamsAll)
+
+
 ```
 
 #### Spontaneous
   * NF bimodality is not clear, best do model comparison 
   * DF, LF show bimodality - but the slow cluster is not the same between the groups/ DF - likely either stops or runs.
  
-```{r plot-NBMix-Groupclustering-results-Spontaneous,fig.show='hold', out.width="33%",dev='png',include=FALSE}
+```{r plot-NBMix-Groupclustering-results-Spontaneous,fig.show='hold', out.width="33%",dev='png', include=TRUE,eval=TRUE}
+
 lparamsAll$groupID = "NE"
 plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol ,plotGroup,6)
@@ -1584,7 +1609,8 @@ histClusteredDispersionFrame(datSubDispersion[datSubDispersion$groupID == 'DE',]
 
 ```
 #### Evoked
-```{r plot-NBMix-Groupclustering-results-Evoked,fig.show='hold', out.width="33%",dev='png',include=FALSE}
+```{r plot-NBMix-Groupclustering-results-Evoked,fig.show='hold', out.width="33%",dev='png',include=TRUE,eval=TRUE}
+
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 lparamsAll$groupID = "NL"
 plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
@@ -1608,7 +1634,7 @@ histClusteredDispersionFrame(datSubDispersion[datSubDispersion$groupID == 'DL',]
 
 
 
-## Hierarichal clustering model to reveal difference in larval behaviour
+## Hierarchical clustering model to reveal difference in larval behaviour
 Next we may proceed to construct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
 
 # Hunt-events and foraging state
@@ -1729,6 +1755,8 @@ Do distributions of dispersion change depending on hunt-outcome ?
 The histograms below examine how the NB group model mix clustered dispersion, shown here as *normalized larval dispersion*, distributions shift for each group depending on capture outcome being success/fail.
 ** Note :** results here suggest that the low dispersal cluster, reportedly reflecting an exploitation state, is not associated with more hunt events in the LF group.
 
+We need to evaluate the emission probability of each cluster state in order to establish if hunt-events are more commonly initiated in the exploitation state.It is clear however from the following results, that most hunt events are recorded in the Fast(Explore) cluster, however this is confounded with the duration of each state and thus needs to be evaluated conditionally on foraging state (dispersion cluster).
+
 ```{r load-results-NBGlobal-clustered-verify, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
 source("DataLabelling/labelHuntEvents_lib.r") ##convertToScoreLabel
 nBreaks = seq(0,1,0.1)
@@ -1776,19 +1804,28 @@ if (!("clustID" %in% names(datSubDispersion)))
 datHEventDispersion <- merge(datHEventDispersion, cbind(frameRow=datSubDispersion$frameRow,clustID=datSubDispersion$clustID),
                              by="frameRow",all.x =TRUE,no.dups = FALSE)
 
+# Get the Colour Label Right #
+clustCol <- c(colourClusters[1],colourClusters[2])
+##Validate Colouring - Fast Cluster - Yellow / Slow Cluster Blue
+muC1 <- mean(datHEventDispersion[datHEventDispersion$clustID == 1,"Dispersion"],na.rm = TRUE)
+muC2 <- mean(datHEventDispersion[datHEventDispersion$clustID == 2,"Dispersion"],na.rm = TRUE)
+if (muC1>muC2)
+  clustCol <- rev(clustCol)
+
+
 # Show Count Of Hunt Events Per Cluster Per Exp. Condition
 barplot(table(datHEventDispersion$clustID,datHEventDispersion$groupID),
-        col=c(colourClusters[2],colourClusters[1]),
-        main="Hunt-events per cluster and cond-group")
-legend("topleft",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=c(colourClusters[2],colourClusters[1])  )
+        col=clustCol,
+        main="Hunt-events per cluster and cond-group",ylim=c(0,1000) )
+legend("topleft",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=clustCol )
 
 ## Sanity Check The cluster with Most Hunt Events (Appears to Be )
-boxplot(Dispersion ~ clustID*groupID,data=datHEventDispersion,col=c(colourClusters[2],colourClusters[1]),  main="hunt-event dispersion per cluster",ylab="Dispersion (mm)")
-legend("topright",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=c(colourClusters[2],colourClusters[1])  )
+boxplot(Dispersion ~ clustID*groupID,data=datHEventDispersion,col=clustCol,  main="hunt-event dispersion per cluster",ylab="Dispersion (mm)")
+legend("topright",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=clustCol  )
 
 ## Sanity Check The cluster with Most Hunt Events (Appears to Be )
-boxplot(Dispersion_larval_norm ~ clustID*groupID,data=datHEventDispersion,col=c(colourClusters[2],colourClusters[1]),ylab="Normalized Dispersion per larva" )
-legend("topright",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=c(colourClusters[2],colourClusters[1])  )
+boxplot(Dispersion_larval_norm ~ clustID*groupID,data=datHEventDispersion,col=clustCol,ylab="Normalized Dispersion per larva" )
+legend("topright",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=clustCol  )
 
 ```
 
@@ -1847,19 +1884,19 @@ legend("topright",legend="Failed")
 
 ### Hunt-event clustered dispersions in spontaneous
 
-```{r hunt-outcomes-per-globally clustered dispersions-spontaneous, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r hunt-outcomes-per-globally clustered dispersions-spontaneous, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
 ## Check NF
 ## SUCCESS
-plotClusteredHuntEventsHist(datHEventDispersion[datHEventDispersion$groupID=='NE' ,],
+plotClusteredHuntEventsHist_norm(datHEventDispersion[datHEventDispersion$groupID=='NE' ,],
                       c(colourClusters[2],colourClusters[1]) ) 
 legend("topright",legend="Spontaneous")
 
 ## Check LF 
-plotClusteredHuntEventsHist(datHEventDispersion[datHEventDispersion$groupID=='LE'  ,],
+plotClusteredHuntEventsHist_norm(datHEventDispersion[datHEventDispersion$groupID=='LE'  ,],
                       c(colourClusters[2],colourClusters[1]) ) 
 legend("topright",legend="Spontaneous")
 #DF
-plotClusteredHuntEventsHist(datHEventDispersion[datHEventDispersion$groupID=='DE'  ,],
+plotClusteredHuntEventsHist_norm(datHEventDispersion[datHEventDispersion$groupID=='DE'  ,],
                       c(colourClusters[2],colourClusters[1]) ) 
 legend("topright",legend="Spontaneous")
 
@@ -1982,7 +2019,6 @@ plotLarvaNormDispersionTrajectories(c('DL','DE'),datAllFrames, datDispersion , d
 
 ```
 
-
 ## Classifying exploitation/exploration phases based on **global threshold**
 The dispersion of each experiment is normalized globally and thus classification threhsold for exploitation identifies trajectory segments of spatially restricted motion relative to all larvae across groups
 
@@ -2043,7 +2079,7 @@ plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHE
 ```
 
 
-
+# END
 
 ```{r spare-code-notes,eval=FALSE, include=FALSE}
 ## Retrieve Dispersion of each Hunt Event
