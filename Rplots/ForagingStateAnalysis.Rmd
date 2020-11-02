@@ -1383,7 +1383,6 @@ save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,'jags
 
 
 #plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
-
 #resParams <- getMCMCNBEstimatedParams(results.LF.S,"LE",2)
 #c<-1
 #plot(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
@@ -1423,17 +1422,20 @@ plotNBFitcdf(vDispersion.DF.S,getMCMCNBEstimatedParams(results.DF.S,"DE",2))
 
 
 
-## Clustering using a hierarchical group model of larval dispersion data
+## Clustering across all larval dispersion data using NB mix  - (Global Clustering reference frame)
 
-To compare differences in dispersal between groups It would be best to define consistent models for the clusters that define the exploration and exploitation state by using data across groups. From there we may then compare the relative occupancy in each state depending on test condition and rearing group, such that we can detect changes in behaviour relevant to a global frame of reference. Aims:
+To compare differences in dispersal between groups it would be best to define consistent models for the clusters that define the exploration and exploitation state by using data across groups. 
+From there we may then compare the relative occupancy in each state depending on test condition and rearing group, such that we can detect changes in behaviour relevant to a global frame of reference. Aims:
   - Define a clusters for exploit and exploration dispersal using NB model on all data. 
   - infer cluster occupancy of each condition/group #
       - Define separate pClust for each condition/group (n=6)
   - infer mean exploration and explotation dispersals for each group/condition
+
+Here, instead of clustering each experimental condition/group separatelly, I cluster all the (discretized x10) dispersion data together using a mixture of 2 NB distributions, such that we infer global reference on which to classify exploit/explore dispersal motion patterns. 
+To compare the dispersal behaviour between groups-conditions, I also infer the probability of a dispersion being clustered as as exploit/explore (small/large) for each group-condition. 
+
   
-Thus we need toconstruct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
-  
-```{r dispersal-RJags-Group-model,include=TRUE}
+```{r dispersal-RJags-Global-model,include=TRUE}
 library(rjags)
 library(runjags)
 library('coda')
@@ -1509,7 +1511,7 @@ load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_Al
 ```
 
 
-```{r dispersal-RJags-NBMixture-AllData-Run-model,include=FALSE,eval=FALSE}
+```{r dispersal-RJags-NBMixture-Global-Run-model,include=FALSE,eval=FALSE}
 ## Cluster Using Negative Binomial Model
 
 
@@ -1613,8 +1615,11 @@ save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,strOu
 
 ```
 
-### Results from NB Group clustering 
-```{r plot-NBMix-Groupclustering-results-All,fig.show='hold', out.width="33%",dev='png'}
+### Results from NB global clustering 
+
+I find that **there are clear differences in movement behaviour between the rearing groups**, and how these modify their motion behaviour between spontaneous and evoked conditions. 
+
+```{r plot-NBMix-Globalclustering-results-All,fig.show='hold', out.width="33%",dev='png'}
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 plotClusterModel(results.All,datSubDispersion$Dispersion, "All",lparamsAll)
 ```
@@ -1646,7 +1651,10 @@ plotGroup<- which(levels(datSubDispersion$groupID)==lparamsAll$groupID)
 plotClusterProb(lparamsAll,lparamsAll$clustCol,plotGroup,6)
 ```
 
-# Measure Hunt rate per foraging state
+## Hierarichal clustering model to reveal difference in larval behaviour
+Next we may proceed to construct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
+
+# Hunt-events and foraging state
 
 Here I will identify the number of hunt events evoked/initiated in each foraging state.
 However, it is natural to expect that since hunt events involve slow prey approach behaviour, which gives low dispersion, a higher hunt-rate is expected in the exploitation state. Yet the time window of foraging state classification is 5 sec, while a hunt episodes last for less than 2 sec (~1sec If i remember correctly, check eLife paper fig).
@@ -1757,18 +1765,48 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$D
 ```
 
 
-## Examine relationship of hunt-outcome to *Clustered foraging state*
+## Relationship of hunt-outcome to *Globally clustered foraging state*
 
 ### Histograms
 Do distributions of dispersion change depending on hunt-outcome ? 
 The histograms below examine how the NB group model mix clustered dispersion, shown here as *normalized larval dispersion*, distributions shift for each group depending on capture outcome being success/fail.
 ** Note :** results here suggest that the low dispersal cluster, reportedly reflecting an exploitation state, is not associated with more hunt events in the LF group.
 
-```{r results from clustered dispersion on hunt-events, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r load-results-NBGlobal-clustered-verify, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
 source("DataLabelling/labelHuntEvents_lib.r") ##convertToScoreLabel
 nBreaks = seq(0,1,0.1)
 ylimUp <- 50
 
+# Colour Coded Histogram of Dispersion Data Showing plit between Exploit[1] / Explore[2]
+plotClusteredHuntEventsHist <- function(datHEventDispersion,clustCol)
+{
+  ## Plot Clustered  Histogram 
+  breaksSlots <-  seq(0,11,by=0.5)
+  h0 <- hist(datHEventDispersion$Dispersion, breaks=breaksSlots,plot=FALSE) # freq=TRUE,
+  h1 <- hist(datHEventDispersion[datHEventDispersion$clustID == 1,"Dispersion" ], breaks=breaksSlots, plot=FALSE) #xlim=c(0,10),ylim=c(0,max(h0$counts))
+  h2 <- hist(datHEventDispersion[datHEventDispersion$clustID == 2,"Dispersion" ], breaks=breaksSlots, plot=FALSE)  #xlim=c(0,10),
+  
+  barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol,"white"),names.arg = (h1$breaks[-length(h1$breaks)]),
+          main=paste("Dispersal clustered hunt-events", paste( unique(datHEventDispersion$groupID),collapse="," ) ),
+          xlab = "Dispersion (mm)")
+  
+}
+
+
+# Colour Coded Histogram of Dispersion Data Showing plit between Exploit[1] / Explore[2]
+plotClusteredHuntEventsHist_norm <- function(datHEventDispersion,clustCol)
+{
+  ## Plot Clustered  Histogram 
+  breaksSlots <-  seq(0,1.1,by=0.1)
+  h0 <- hist(datHEventDispersion$Dispersion_larval_norm, breaks=breaksSlots,plot=FALSE) # freq=TRUE,
+  h1 <- hist(datHEventDispersion[datHEventDispersion$clustID == 1,"Dispersion_larval_norm" ], breaks=breaksSlots, plot=FALSE) #xlim=c(0,10),ylim=c(0,max(h0$counts))
+  h2 <- hist(datHEventDispersion[datHEventDispersion$clustID == 2,"Dispersion_larval_norm" ], breaks=breaksSlots, plot=FALSE)  #xlim=c(0,10),
+  
+  barplot(rbind(h1$density,h2$density),beside = FALSE, col = c(clustCol,"white"),names.arg = (h1$breaks[-length(h1$breaks)]),
+          main=paste("Dispersal clustered hunt-events", paste( unique(datHEventDispersion$groupID),collapse="," ) ),
+          xlab = "Dispersion normalized per larval range")
+  
+}
 
 load(file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
 datHEventDispersion <<- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
@@ -1779,17 +1817,31 @@ datSubDispersion$clustID <- as.vector(lparamsAll$clustID)
 ##Merge Cluster ID onto Hunt Events
 datHEventDispersion <- merge(datHEventDispersion, cbind(frameRow=datSubDispersion$frameRow,clustID=datSubDispersion$clustID) ,by="frameRow",all.x =TRUE,no.dups = FALSE)
 
+# Show Count Of Hunt Events Per Cluster Per Exp. Condition
+barplot(table(datHEventDispersion$clustID,datHEventDispersion$groupID),col=c(colourClusters[2],colourClusters[1]),
+        main="Hunt-events per cluster and cond-group")
 
-hist(datHEventDispersion[datHEventDispersion$clustID == 1,"Dispersion" ],col=colourClusters[2],breaks =seq(0,11))
-hist(datHEventDispersion[datHEventDispersion$clustID == 2,"Dispersion" ],col=colourClusters[1],breaks =seq(0,11),add=TRUE)
+## Sanity Check The cluster with Most Hunt Events (Appears to Be )
+boxplot(Dispersion ~ clustID*groupID,data=datHEventDispersion,col=c(colourClusters[2],colourClusters[1]),  main="hunt-event dispersion per cluster",ylab="Dispersion (mm)")
+legend("topright",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=c(colourClusters[2],colourClusters[1])  )
 
-##Check The cluster with Most Hunt Events (Appears to Be )
-boxplot(Dispersion ~ clustID,data=datHEventDispersion,col=c(colourClusters[2],colourClusters[1]) )
+## Sanity Check The cluster with Most Hunt Events (Appears to Be )
+boxplot(Dispersion_larval_norm ~ clustID*groupID,data=datHEventDispersion,col=c(colourClusters[2],colourClusters[1]),ylab="Normalized Dispersion per larva" )
+legend("topright",legend=(paste("#",table(datHEventDispersion$clustID) )),fill=c(colourClusters[2],colourClusters[1])  )
 
-hist(datHEventDispersion[datHEventDispersion$clustID == 1,"clustID" ],col=colourClusters[2],breaks =seq(0,2),main="Count Hunt Events in each cluster")
-hist(datHEventDispersion[datHEventDispersion$clustID == 2,"clustID" ],col=colourClusters[1],breaks =seq(0,2),add=TRUE)
 ```
 
+
+
+
+```{r results-hunt-events dispersion- global clustered, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+
+
+plotClusteredHuntEventsHist(datHEventDispersion,c(colourClusters[2],colourClusters[1]))
+plotClusteredHuntEventsHist_norm(datHEventDispersion,c(colourClusters[2],colourClusters[1]))
+
+
+```
 The clustered colour coded histograms suggest that *dispersion state (exploit/explore) does not affect hunt outcome*. 
 The differences in dispersion of hunt events noticeable between groups reflects the overal dispersal differences they show in Evoked conditions
 These were shown above by clustering the dispersal over the whole trajectory in each experimental condition.
@@ -1797,42 +1849,27 @@ These were shown above by clustering the dispersal over the whole trajectory in 
 ```{r hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 ## Check NF
 ## SUCCESS
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
-                           grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
-                           datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp))#colourDataScheme$NF$Evoked
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
-                           grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
-                           datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE)#colourDataScheme$NF$Evoked
+plotClusteredHuntEventsHist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
+                      grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) ,],
+                      c(colourClusters[2],colourClusters[1]) ) 
+legend("topright",legend="Success")
 
-##FAIL
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
-                           grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
-                           datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp)) ##colourDataScheme$NF$Spont
-
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
-                           grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) )&
-                           datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="NF Capture Failure",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE) ##colourDataScheme$NF$Spont
-
+plotClusteredHuntEventsHist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
+                      grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) ,],
+                      c(colourClusters[2],colourClusters[1]) ) 
+legend("topright",legend="Failed")
 
 
 ## Check LF Successs/Fail Only
-# SUCCESS
-  hist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
-                             grepl("Success", as.character( convertToScoreLabel(datHEventDispersion$huntScore) ) ) &
-                             datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp)) ##colourDataScheme$LF$Evoked
-  hist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
-                             grepl("Success", as.character( convertToScoreLabel(datHEventDispersion$huntScore) ) ) &
-                             datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Success",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE) ##colourDataScheme$LF$Evoked
-  
-  
-# FAIL  
-  hist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
-                             grepl("Fail", as.character( convertToScoreLabel(datHEventDispersion$huntScore) ) ) &
-                             datHEventDispersion$clustID == 1, ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Fail",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[2],ylim=c(0,ylimUp)) ##colourDataScheme$LF$Evoked
-  hist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
-                             grepl("Fail", as.character( convertToScoreLabel(datHEventDispersion$huntScore) ) ) &
-                             datHEventDispersion$clustID == 2, ]$Dispersion_larval_norm,breaks=nBreaks,main="LF Capture Fail",xlab="Dispersion ",xlim=c(0,1),col=colourClusters[1],ylim=c(0,ylimUp),add=TRUE) ##colourDataScheme$LF$Evoked
-  
+plotClusteredHuntEventsHist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
+                      grepl("Success", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) ,],
+                      c(colourClusters[2],colourClusters[1]) ) 
+legend("topright",legend="Success")
+
+plotClusteredHuntEventsHist(datHEventDispersion[datHEventDispersion$groupID=='LL' &
+                      grepl("Fail", as.character(  convertToScoreLabel(datHEventDispersion$huntScore) ) ) ,],
+                      c(colourClusters[2],colourClusters[1]) ) 
+legend("topright",legend="Failed")
 
 ## Check DF
 # Success
