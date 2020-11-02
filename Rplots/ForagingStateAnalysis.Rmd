@@ -184,7 +184,7 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
 
 
 
-```{r  merge hunt events and max_dispersion with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,results=FALSE,message=FALSE }
+```{r  merge hunt-events with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,results=FALSE,message=FALSE }
 source("DataLabelling/labelHuntEvents_lib.r")
 source("HuntingEventAnalysis_lib.r")
   
@@ -957,6 +957,10 @@ save(list=c("results.LF.S","vDispersion.LF.S"),file=paste0(strDataExportDir,'jag
 results.DF.S <- runGaussianMixClusterModel(vDispersion.DF.S)
 write.jagsfile(results.DF.S, file=paste0(strDataExportDir,'jagsModel_clustDispersion_DE.txt') )
 save(list=c("results.DF.S","vDispersion.DF.S"),file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_DE.RData') )
+  
+  resultsGmix.All <- runGaussianMixClusterModel(datSubDispersion$Dispersion)
+  write.jagsfile(resultsGmix.All, file=paste0(strDataExportDir,'jagsModel_clustDispersion_DE.txt') )
+  save(list=c("resultsGmix.All","datSubDispersion"),file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_All.RData') )
 
 
 # # And re-run the simulation from this point:
@@ -998,7 +1002,7 @@ plot(muclustNF)
 
 and the clustering results  of each group/condition are summarized in the following figures:
 
-```{r dispersion-clustering-results,fig.show='hide', out.width="33%", eval=TRUE, include=FALSE,cache=FALSE,dev='png'}
+```{r dispersion-clustering-plot-results,fig.show='hide', out.width="33%", eval=TRUE, include=FALSE,cache=FALSE,dev='png'}
 
 library(rjags)
 library(runjags)
@@ -1147,6 +1151,18 @@ plotClusterModel <- function(results,vDispersion, groupID,lmcmcRes)
   
 }
 
+##plot Cluster Dists
+
+## Evoked
+
+
+#results <- results.NF.E
+#vDispersion <- vDispersion.NF.S
+#groupID <- "NL"
+
+```
+#### Cluster Dispersal Not-Fed group
+```{r plot-clustering-results-NF,fig.show='hold', out.width="33%",dev='png',warnings=FALSE}
 ## Load Gaussian Mixture Clustering Results
 #if (!exists("results.NF.E"))
    load(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_NL.RData') )
@@ -1161,18 +1177,7 @@ plotClusterModel <- function(results,vDispersion, groupID,lmcmcRes)
 #if (!exists("results.DF.S"))
    load(file=paste0(strDataExportDir,'jagsModelResults_clustDispersion_DE.RData') )
 
-##plot Cluster Dists
 
-## Evoked
-
-
-#results <- results.NF.E
-#vDispersion <- vDispersion.NF.S
-#groupID <- "NL"
-
-```
-#### Cluster Dispersal Not-Fed group
-```{r plot-clustering-results-NF,fig.show='hold', out.width="33%",dev='png',warnings=FALSE}
 plotClusterModel(results.NF.E,vDispersion.NF.E, "NL", getMCMCEstimatedParams(results.NF.E,"NL",2))
 plotClusterModel(results.NF.S,vDispersion.NF.S, "NE", getMCMCEstimatedParams(results.NF.S,"NE",2))
 ```
@@ -1429,6 +1434,10 @@ To compare differences in dispersal between groups It would be best to define co
 Thus we need toconstruct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
   
 ```{r dispersal-RJags-Group-model,include=TRUE}
+library(rjags)
+library(runjags)
+library('coda')
+
   strDispersionGroupClusterModel <- "
   var initR[1,Nclust];
 model {
@@ -1502,9 +1511,7 @@ load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_Al
 
 ```{r dispersal-RJags-NBMixture-AllData-Run-model,include=FALSE,eval=FALSE}
 ## Cluster Using Negative Binomial Model
-library(rjags)
-library(runjags)
-library('coda')
+
 
 bQuickTest = TRUE
 initfunct <- function(nchains,N)
@@ -1537,10 +1544,17 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
       onesRepNclust = rep(1,Nclust)
   )
   ##
-  steps <-500 #500
+  nsteps <- 500 #500
+  nadapt <- 4000 #500
+  nburnin <- 1000 #500
+
   if (bQuickTest)
-    steps <-100 #500
-  
+  {
+    nsteps <- 100 #500
+    nadapt <- 4000 #500
+    nburnin <- 1000 #500
+  }
+
   nchains <- 3
   nthin <- 10
   #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
@@ -1550,11 +1564,11 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
   # mutate function to convert the precision to standard deviation:
   results <- run.jags(model=strDispersionGroupClusterModel, n.chains=nchains,
                          inits=initfunct(nchains,dataList$N),
-                         thin=nthin,
-                         sample=steps,
                          data= dataList,
-                         adapt = 100,
-                         burnin = 100,
+                         thin=nthin,
+                         sample=nsteps,
+                         adapt = nadapt,
+                         burnin = nburnin,
                          monitor=str_vars,
                          method="parallel")
  return(results) 
@@ -1565,10 +1579,13 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
 loadDispersionData()
 datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
 datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
+strOutFilename <- "jagsModel_NBMixGroupclustDispersion_All"
 ##Quicker Test - Subsampling
 if (bQuickTest)
-  datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=3500),] 
-
+{
+    datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=3500),] 
+    strOutFilename <- "jagsModel_NBMixTestGroupclustDispersion_All"
+}
 # add the exact frames of hunt events so we can cluster them in exploit/Explore easly datHEventDispersion$frameRow
 # Frame Records of Huntevents not in SubSampled frames
 missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
@@ -1582,8 +1599,8 @@ datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow 
 
 ## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
 results.All <- runNBMixGroupClusterModel(datSubDispersion$Dispersion,as.numeric(datSubDispersion$groupID))
-write.jagsfile(results.All, file=paste0(strDataExportDir,'jagsModelTest_NBMixGroupclustDispersion_All.txt') )
-save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
+write.jagsfile(results.All, file=paste0(strDataExportDir,strOutFilename,'.txt') )
+save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,strOutFilename,'.RData') )
 
 #plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
 
@@ -1740,24 +1757,29 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$D
 ```
 
 
-## Examine relationship of hunt-outcome to foraging state
+## Examine relationship of hunt-outcome to *Clustered foraging state*
 
 ### Histograms
 Do distributions of dispersion change depending on hunt-outcome ? 
-The historgrams below examine how *normalized larval dispersion* distributions shift for each group depending on capture outcome being success/fail
+The histograms below examine how the NB group model mix clustered dispersion, shown here as *normalized larval dispersion*, distributions shift for each group depending on capture outcome being success/fail.
+** Note :** results here suggest that the low dispersal cluster, reportedly reflecting an exploitation state, is not associated with more hunt events in the LF group.
 
-```{r hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r results from clustered dispersion on hunt-events, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+source("DataLabelling/labelHuntEvents_lib.r") ##convertToScoreLabel
 nBreaks = seq(0,1,0.1)
 ylimUp <- 50
 
 
 load(file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
+datHEventDispersion <<- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
 
-#which((datSubDispersion$frameRow - datHEventDispersion$frameRow) ==  min(abs(datSubDispersion$frameRow - datHEventDispersion$frameRow),na.rm = TRUE) )
 ## Merge sparse Clustered Dispersions Results onto full Dispersion Data
+lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 datSubDispersion$clustID <- as.vector(lparamsAll$clustID)
 ##Merge Cluster ID onto Hunt Events
 datHEventDispersion <- merge(datHEventDispersion, cbind(frameRow=datSubDispersion$frameRow,clustID=datSubDispersion$clustID) ,by="frameRow",all.x =TRUE,no.dups = FALSE)
+
+
 hist(datHEventDispersion[datHEventDispersion$clustID == 1,"Dispersion" ],col=colourClusters[2],breaks =seq(0,11))
 hist(datHEventDispersion[datHEventDispersion$clustID == 2,"Dispersion" ],col=colourClusters[1],breaks =seq(0,11),add=TRUE)
 
@@ -1766,11 +1788,13 @@ boxplot(Dispersion ~ clustID,data=datHEventDispersion,col=c(colourClusters[2],co
 
 hist(datHEventDispersion[datHEventDispersion$clustID == 1,"clustID" ],col=colourClusters[2],breaks =seq(0,2),main="Count Hunt Events in each cluster")
 hist(datHEventDispersion[datHEventDispersion$clustID == 2,"clustID" ],col=colourClusters[1],breaks =seq(0,2),add=TRUE)
+```
 
-datHEventDispersion[datHEventDispersion$frameRow %in% datSubDispersion$frameRow, ]
+The clustered colour coded histograms suggest that *dispersion state (exploit/explore) does not affect hunt outcome*. 
+The differences in dispersion of hunt events noticeable between groups reflects the overal dispersal differences they show in Evoked conditions
+These were shown above by clustering the dispersal over the whole trajectory in each experimental condition.
 
-## RAW Dispersion In Hunt Events
-
+```{r hunt-outcome-dispersion histogram norm, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 ## Check NF
 ## SUCCESS
 hist(datHEventDispersion[datHEventDispersion$groupID=='NL' &
