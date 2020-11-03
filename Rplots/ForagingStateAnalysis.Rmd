@@ -1465,15 +1465,21 @@ getMCMCNBGroupEstimatedParams <- function(results,groupID,ichain = 2,NBScaling =
   return (lret)
 }
 
-
-#load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersionAndHuntEvents_All') )
+bQuickTest = TRUE
+strOutFilename <- "jagsModelResults_NBMixGroupclustDispersionAndHuntEvents_All"
+##Quicker Test - Subsampling
+if (bQuickTest)
+{
+    datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=3500),] 
+    strOutFilename <- "jagsModelResults_NBMixTestGroupclustDispersionAndHuntEvents_All"
+}
+load(file=paste0(strDataExportDir,'jagsModelResults_NBMixTestGroupclustDispersionAndHuntEvents_All.RData') )
 ```
 
 
 ```{r dispersal-RJags-NBMixture-Global-Run-model,include=FALSE,eval=FALSE}
 ## Cluster Using Negative Binomial Model
 
-bQuickTest = TRUE
 initfunct <- function(nchains,N)
 {
   initlist <- replicate(nchains,list(
@@ -1485,15 +1491,7 @@ initfunct <- function(nchains,N)
 
 runNBMixGroupClusterModel <- function(vDispersion,vHuntInitiation,vGroupID, bQuickTest = TRUE)
 {
-  
-  if (bQuickTest)
-  {
-    idSample         <- sample(1:NROW(vDispersion),15000)
-    vDispersion      <- vDispersion[idSample]
-    vHuntInitiation  <- vHuntInitiation[idSample]
-    vGroupID         <- vGroupID[idSample]
-  }
-    
+
   ##Make Integer Discrete
   vDispersion <- round(vDispersion*10.0)
   
@@ -1551,13 +1549,7 @@ runNBMixGroupClusterModel <- function(vDispersion,vHuntInitiation,vGroupID, bQui
 loadDispersionData()
 datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
 datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
-strOutFilename <- "jagsModelResults_NBMixGroupclustDispersionAndHuntEvents_All"
-##Quicker Test - Subsampling
-if (bQuickTest)
-{
-    datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=3500),] 
-    strOutFilename <- "jagsModelResults_NBMixTestGroupclustDispersionAndHuntEvents_All"
-}
+
 # add the exact frames of hunt events so we can cluster them in exploit/Explore easly datHEventDispersion$frameRow
 # Frame Records of Huntevents not in SubSampled frames
 missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
@@ -1572,6 +1564,9 @@ datSubDispersion$HuntMode <- 0
 datSubDispersion[datSubDispersion$frameRow %in% datHEventDispersion$frameRow,"HuntMode"] <- 1
 ## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
 
+if (bQuickTest)
+      datSubDispersion   <- sample(datSubDispersion,15000)
+
 results.All <- runNBMixGroupClusterModel(datSubDispersion$Dispersion,
                                          datSubDispersion$HuntMode,
                                          as.numeric(datSubDispersion$groupID),
@@ -1582,17 +1577,12 @@ write.jagsfile(results.All, file=paste0(strDataExportDir,strOutFilename,'.txt') 
 results.All <- run.jags(paste0(strDataExportDir,strOutFilename,'.txt'))
 save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,strOutFilename,'.RData') )
 
-
-
 #plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
-
-
 #resParams <- getMCMCNBEstimatedParams(results.LF.S,"LE",2)
 #c<-1
 #plot(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
 #c<-2
 #lines(density(vDispersion.LF.S[resParams$clustID == c]*10), col=colourClusters[c],lty=2,lwd=2)
-
 ```
 
 ### Results from NB global clustering 
@@ -1811,7 +1801,7 @@ However in the presence of prey (evoked), we find that it is the large dispersal
 
 
 ```{r results-NBGlobal-clustered-hunting-probability, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
-load(file=paste0(strDataExportDir,strOutFilename) )
+load(file=paste0(strDataExportDir,strOutFilename,'.RData') )
 
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 
