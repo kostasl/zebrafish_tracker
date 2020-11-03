@@ -172,6 +172,9 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
     saveRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
     message("Saved to:",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
     
+    nmergemissingEvents <-  NROW(datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),] )
+    if (nmergemissingEvents > 0)
+      warning("** ",nmergemissingEvents, " Hunt Events failed to merge ")
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   print(time.taken)
@@ -1368,24 +1371,26 @@ library('coda')
   var initR[1,Nclust];
 model {
     
-    
      # Likelihood: 
     for( i in 1 : N ) {
       # Model Number Of Dispersal expansion steps within a recent trajectory timewindow (5 sec)
-      y[i] ~ dnegbin(q[clust[i] ],r[ clust[i] ]) 
+      y[i] ~ dnegbin( q[clust[i] ], r[ clust[i] ] ) 
       clust[i] ~ dcat( pClust[groupID[i],1:Nclust] )
+      huntMode[i] ~  dbern( pHunt[ groupID[i],clust[i] ] ) 
     }
     
     # Top Level Prior:
     for ( clustIdx in 1: Nclust ) {
       q[clustIdx]  ~ dunif(0.0,1)
-      r[clustIdx] ~ dgamma(1,1)
+      r[clustIdx]  ~ dgamma(1,1)
       initR[1,clustIdx] <- 1
     }
     
     ## Make Separate Prob Cluster priors for each group/condition
     for ( g in 1: 6 ) {
       pClust[g,1:Nclust] ~ ddirch( initR )
+      pHunt[ g,1 ] ~ dunif(0.0,1) ##Prob Of Hunt Init Per Cluster for each Group
+      pHunt[ g,2 ] ~ dunif(0.0,1) ##Prob Of Hunt Init Per Cluster for each Group
     }
   
 #    # Larval Priors
@@ -1423,6 +1428,7 @@ getMCMCNBGroupEstimatedParams <- function(results,groupID,ichain = 2,NBScaling =
   mean = NBmean,
   sd = sqrt( (1-q[[ichain]])*r[[ichain]]/(q[[ichain]])^2)*NBScaling, ## Calc NB Var
   pClustcoeff = as.mcmc.list(results, vars="pClust"),
+  pHunt = as.mcmc.list(results, vars="pHunt"),
   clustID = round(colMeans(clustcoeff[[ichain]]) ),
   clustCol = clustCol
   )
@@ -1431,13 +1437,12 @@ getMCMCNBGroupEstimatedParams <- function(results,groupID,ichain = 2,NBScaling =
 }
 
 
-load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_All.RData') )
+#load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersion_All.RData') )
 ```
 
 
 ```{r dispersal-RJags-NBMixture-Global-Run-model,include=FALSE,eval=FALSE}
 ## Cluster Using Negative Binomial Model
-
 
 bQuickTest = TRUE
 initfunct <- function(nchains,N)
@@ -1449,8 +1454,17 @@ initfunct <- function(nchains,N)
   return(initlist)
 }
 
-runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
+runNBMixGroupClusterModel <- function(vDispersion,vHuntInitiation,vGroupID, bQuickTest = TRUE)
 {
+  
+  if (bQuickTest)
+  {
+    idSample         <- sample(1:NROW(vDispersion),15000)
+    vDispersion      <- vDispersion[idSample]
+    vHuntInitiation  <- vHuntInitiation[idSample]
+    vGroupID         <- vGroupID[idSample]
+  }
+    
   ##Make Integer Discrete
   vDispersion <- round(vDispersion*10.0)
   
@@ -1463,28 +1477,31 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
   
   dataList = list(
       y = vDispersion ,
+      huntMode = vHuntInitiation,
       groupID = vGroupID,
       N = N,
       Nclust = 2 ,
-      clust = clust ,
+      clust = clust,
       onesRepNclust = rep(1,Nclust)
   )
   ##
   nsteps <- 500 #500
   nadapt <- 4000 #500
   nburnin <- 1000 #500
-
+  nchains <- 3
+  
   if (bQuickTest)
   {
-    nsteps <- 100 #500
-    nadapt <- 4000 #500
-    nburnin <- 1000 #500
+    nsteps <- 200 #
+    nadapt <- 1000 #
+    nburnin <- 1000 #
+    nchains <- 2
   }
 
-  nchains <- 3
+  
   nthin <- 10
   #str_vars <- c("mu","rho","sigma","x_rand") #Basic model 
-  str_vars <- c("clust","pClust","q","r") #Mixture Model
+  str_vars <- c("clust","pClust","pHunt","q","r") #Mixture Model
     # Run the 2 chains in parallel (allowing the run.jags function
   # to control the number of parallel chains). We also use a
   # mutate function to convert the precision to standard deviation:
@@ -1505,12 +1522,12 @@ runNBMixGroupClusterModel <- function(vDispersion,vGroupID)
 loadDispersionData()
 datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
 datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
-strOutFilename <- "jagsModelResults_NBMixGroupclustDispersion_All"
+strOutFilename <- "jagsModelResults_NBMixGroupclustDispersionAndHuntEvents_All"
 ##Quicker Test - Subsampling
 if (bQuickTest)
 {
     datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=3500),] 
-    strOutFilename <- "jagsModelResults_NBMixTestGroupclustDispersion_All"
+    strOutFilename <- "jagsModelResults_NBMixTestGroupclustDispersionAndHuntEvents_All"
 }
 # add the exact frames of hunt events so we can cluster them in exploit/Explore easly datHEventDispersion$frameRow
 # Frame Records of Huntevents not in SubSampled frames
@@ -1521,11 +1538,19 @@ datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow 
 missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
 # Merge missing hunt Frames onto subsampled dispersion data so we can cluster Hunt Events Specifically
 datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow %in% missinghuntEvents.frameROW,])
-
-
+#Add Hunt Initiation Events
+datSubDispersion$HuntMode <- 0
+datSubDispersion[datSubDispersion$frameRow %in% datHEventDispersion$frameRow,"HuntMode"] <- 1
 ## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
-results.All <- runNBMixGroupClusterModel(datSubDispersion$Dispersion,as.numeric(datSubDispersion$groupID))
+
+results.All <- runNBMixGroupClusterModel(datSubDispersion$Dispersion,
+                                         datSubDispersion$HuntMode,
+                                         as.numeric(datSubDispersion$groupID),
+                                         bQuickTest = TRUE)
+
 write.jagsfile(results.All, file=paste0(strDataExportDir,strOutFilename,'.txt') )
+
+
 save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,strOutFilename,'.RData') )
 
 #plotNBFitcdf(vDispersion.LF.S,getMCMCNBEstimatedParams(results.LF.S,"LE",2))
@@ -1801,8 +1826,11 @@ lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 if (!("clustID" %in% names(datSubDispersion)))
   datSubDispersion$clustID <- as.vector(lparamsAll$clustID)
 ##Merge Cluster ID onto Hunt Events
-datHEventDispersion <- merge(datHEventDispersion, cbind(frameRow=datSubDispersion$frameRow,clustID=datSubDispersion$clustID),
-                             by="frameRow",all.x =TRUE,no.dups = FALSE)
+datHEventDispersion <- merge(datHEventDispersion, cbind.data.frame (frameRow=datSubDispersion$frameRow,
+                                                        #expID=datSubDispersion$expID,
+                                                        #groupID=datSubDispersion$expID,
+                                                        clustID=as.numeric(datSubDispersion$clustID) ),
+                             by=c("frameRow"),all.x =TRUE,no.dups = FALSE)
 
 # Get the Colour Label Right #
 clustCol <- c(colourClusters[1],colourClusters[2])
@@ -1812,6 +1840,14 @@ muC2 <- mean(datHEventDispersion[datHEventDispersion$clustID == 2,"Dispersion"],
 if (muC1>muC2)
   clustCol <- rev(clustCol)
 
+## Validation Step That Cluster IDs maintain Meaning - Of low and High Dispersal
+muC1_Hunts <- mean(datDispersion[datDispersion$frameRow %in% datHEventDispersion[datHEventDispersion$clustID == 1,"frameRow"],]$Dispersion,na.rm=TRUE)
+muC2_Hunts <- mean(datDispersion[datDispersion$frameRow %in% datHEventDispersion[datHEventDispersion$clustID == 2,"frameRow"],]$Dispersion,na.rm=TRUE)
+
+muC1_Sub <- mean(datDispersion[datDispersion$frameRow == datSubDispersion[datSubDispersion$clustID == 1,]$frameRow,]$Dispersion,na.rm=TRUE)
+muC2_Sub <- mean(datDispersion[datDispersion$frameRow == datSubDispersion[datSubDispersion$clustID == 2,]$frameRow,]$Dispersion,na.rm=TRUE)
+#
+stopifnot(((muC1_Hunts < muC2_Hunts) & (muC1_Sub < muC2_Sub))  )
 
 # Show Count Of Hunt Events Per Cluster Per Exp. Condition
 barplot(table(datHEventDispersion$clustID,datHEventDispersion$groupID),
