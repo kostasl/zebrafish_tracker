@@ -732,9 +732,41 @@ k_c \sim \mathbb{categorical}(\lambda)\\
 d_l \sim \mathcal{N}(\mu_{k[c]},\sigma_{k[c]})
 \]
 where the $\sum^{K}_{k=1}\lambda_k = 1$.
+```{r clustering-code-setup,eval=TRUE}
+
+library(rjags)
+library(runjags)
+library('coda')
+message("Jags version: ",jags.version())
+
+makeDispersionDataInferenceSet <- function(bQuickTest = FALSE,nsamp=3000)
+{
+  #nsubsample <- 10000 
+  ##Subsample The Dispersion Data into 0.5 sec bins - But Add the hunt Event Frames
+  loadDispersionData()
+  datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
+  datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
+  # add the exact frames of hunt events so we can cluster them in exploit/Explore easly datHEventDispersion$frameRow
+  # Frame Records of Huntevents not in SubSampled frames
+  missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
+  # Merge missing hunt Frames onto subsampled dispersion data so we can cluster Hunt Events Specifically
+  datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow %in% missinghuntEvents.frameROW,])
+  
+  #Add Hunt Initiation Events
+  datSubDispersion$HuntMode <- 0
+  datSubDispersion[datSubDispersion$frameRow %in% datHEventDispersion$frameRow,"HuntMode"] <- 1
+  ## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
+
+  if (bQuickTest)
+      datSubDispersion   <- datSubDispersion[sample(1:NROW(datSubDispersion),nsamp),]
+  
+  return(datSubDispersion)
+}
+
+```
 
 The model is implemented in RJags and its code is as as follows:
-```{r dispersal-RJags-GaussianMix-pooled-data model,include=TRUE}
+```{r dispersal-RJags-GaussianMix-pooled-data model,include=TRUE,ref.label={'clustering-code-setup'}}
 strDispersionClusterModel <- "
 model {
     # Likelihood: 
@@ -756,12 +788,8 @@ model {
 ```
 
 
-```{r dispersion-GaussianMixture-clustering-model, eval=FALSE, include=FALSE}
+```{r dispersion-GaussianMixture-clustering-model, eval=FALSE, include=FALSE,ref.label={'clustering-code-setup'}}
 
-library(rjags)
-library(runjags)
-library('coda')
-print(jags.version())
 initfunct <- function(nchains,N)
 {
   initlist <- replicate(nchains,list(#mID=c(rbinom(N,1,0.5)), 
@@ -776,16 +804,7 @@ initfunct <- function(nchains,N)
   return(initlist)
 }
 
-#nsubsample <- 10000 
-##Subsample The Dispersion Data into 0.5 sec bins - But Add the hunt Event Frames
-loadDispersionData()
-datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
-datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
-# add the exact frames of hunt events so we can cluster them in exploit/Explore easly datHEventDispersion$frameRow
-# Frame Records of Huntevents not in SubSampled frames
-missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
-# Merge missing hunt Frames onto subsampled dispersion data so we can cluster Hunt Events Specifically
-datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow %in% missinghuntEvents.frameROW,])
+datSubDispersion <- makeDispersionDataInferenceSet(FALSE)
 
 vDispersion.NF.E <- datSubDispersion[datSubDispersion$groupID == 'NL',"Dispersion",]
 vDispersion.LF.E <- datSubDispersion[datSubDispersion$groupID == 'LL',"Dispersion",] 
@@ -1546,31 +1565,12 @@ runNBMixGroupClusterModel <- function(vDispersion,vHuntInitiation,vGroupID, bQui
 
 # add the frames of hunt events for easier classification of hunt events : datHEventDispersion$frameRow
 ##Subsample The Dispersion Data into 0.5 sec bins - But Add the hunt Event Frames
-loadDispersionData()
-datSubDispersion  <- datDispersion[ !is.na(datDispersion$Dispersion), ]
-datSubDispersion <- datSubDispersion[seq(1,NROW(datSubDispersion),by=nsubsampleInterval ),]
-
-# add the exact frames of hunt events so we can cluster them in exploit/Explore easly datHEventDispersion$frameRow
-# Frame Records of Huntevents not in SubSampled frames
-missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
-# Merge missing hunt Frames onto subsampled dispersion data so we can cluster Hunt Events Specifically
-datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow %in% missinghuntEvents.frameROW,])
-
-missinghuntEvents.frameROW <- datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),"frameRow"] 
-# Merge missing hunt Frames onto subsampled dispersion data so we can cluster Hunt Events Specifically
-datSubDispersion <- rbind(datSubDispersion,datDispersion[datDispersion$frameRow %in% missinghuntEvents.frameROW,])
-#Add Hunt Initiation Events
-datSubDispersion$HuntMode <- 0
-datSubDispersion[datSubDispersion$frameRow %in% datHEventDispersion$frameRow,"HuntMode"] <- 1
-## Lastly / Model and Cluster All Data so we can then run a relative comparison between groupscompare
-
-if (bQuickTest)
-      datSubDispersion   <- sample(datSubDispersion,15000)
-
+datSubDispersion <- makeDispersionDataInferenceSet(bQuickTest)
+ 
 results.All <- runNBMixGroupClusterModel(datSubDispersion$Dispersion,
                                          datSubDispersion$HuntMode,
                                          as.numeric(datSubDispersion$groupID),
-                                         bQuickTest = TRUE)
+                                         bQuickTest = bQuickTest)
 
 write.jagsfile(results.All, file=paste0(strDataExportDir,strOutFilename,'.txt') )
 
