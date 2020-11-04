@@ -740,7 +740,7 @@ library('coda')
 message("Jags version: ",jags.version())
 message(" For info in runjags check out:doi: 10.18637/jss.v071.i09")
 
-makeDispersionDataInferenceSet <- function(bQuickTest = FALSE,nsamp=3000)
+makeDispersionDataInferenceSet <- function(bQuickTest = FALSE,nsamp=4000)
 {
   #nsubsample <- 10000 
   ##Subsample The Dispersion Data into 0.5 sec bins - But Add the hunt Event Frames
@@ -1425,14 +1425,6 @@ model {
       pHunt[ g,2 ] ~ dunif(0.0,1) ##Prob Of Hunt Init Per Cluster for each Group
     }
   
-#    # Larval Priors
-#    for ( l in 1: NLarv ) {
-#      for ( clustIdx in 1: Nclust ) {
-#        muOfClustG[clustIdx]  ~ dnorm( 0 , 1.0E-10 )
-#        tauOfClustG[clustIdx] ~ dgamma( 0.01 , 0.01 )
-#      }
-#    }
-#    pClustG[1:Nclust] ~ ddirch( onesRepNclust )
     
 }
 
@@ -1468,16 +1460,15 @@ getMCMCNBGroupEstimatedParams <- function(results,groupID,ichain = 2,NBScaling =
   return (lret)
 }
 
-bQuickTest = FALSE
+bQuickTest = TRUE
 strOutFilename <- "jagsModelResults_NBMixGroupclustDispersionAndHuntEvents_All2"
+datSubDispersion <- makeDispersionDataInferenceSet(bQuickTest,10000) 
 ##Quicker Test - Subsampling
-if (bQuickTest)
-{
-    datSubDispersion <- datSubDispersion[sample(1:NROW(datSubDispersion),size=3500),] 
-    strOutFilename <- "jagsModelResults_NBMixTestGroupclustDispersionAndHuntEvents_All"
+if (bQuickTest){
+     strOutFilename <- "jagsModelResults_NBMixTestGroupclustDispersionAndHuntEvents_All2"
 }
 
-load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersionAndHuntEvents_All.RData') )
+#load(file=paste0(strDataExportDir,'jagsModelResults_NBMixGroupclustDispersionAndHuntEvents_All2.RData') )
 ```
 
 
