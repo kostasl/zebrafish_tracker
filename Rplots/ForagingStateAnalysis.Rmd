@@ -1561,7 +1561,7 @@ save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,strOu
 results.All <- autoextend.jags(results.All,max.time = "3hr")
 save(list=c("results.All","datSubDispersion"),file=paste0(strDataExportDir,strOutFilename,'.RData') )
 #extend.jags(results.All, sample = 1000) #Using rjags allows extending without recompiling
-
+  
 ##Run model From File
 #results.All <- run.jags(paste0(strDataExportDir,strOutFilename,'.txt'))
 
