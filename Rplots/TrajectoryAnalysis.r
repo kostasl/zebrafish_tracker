@@ -19,15 +19,17 @@ meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[
 ### We are looking to detect Exploration/Exploitation (as in Marquez et al. 2020)  using a measure
 ### of spatial dispersion - calculated for each tracked frame, calculated as the spatial dispersion of trajectory of the preceding X secods
 ## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##"
-calcTrajectoryDispersion <- function(datEventFrames,twindowSec=5)
+calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
 {
   start.time <- Sys.time()
-  
+  ##Sort by frameRow - so as to Calc recent Distances in correct time sequence  
+  datEventFrames <- datEventFrames[order( as.numeric(datEventFrames$frameN) ),]
   ## Note, could use combn gen All Combh of positions in trajectory - Here outer is app. faster
   #message(paste("## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##" ) )
   stopifnot(NROW(datEventFrames) > 0)
   ##datEventFrames <- datAllFrames[datAllFrames$expID == 218 & datAllFrames$eventID == 2 & datAllFrames$posX != 0,]
   vDispersionPerFrame <- vector()
+  vDistanceTravelledToFrame <- vector()
   ## Estimate number of frames for Tsec of video
   nfrm <- head(datEventFrames$fps,1)*twindowSec
   nSpace <- nfrm/4
@@ -39,7 +41,7 @@ calcTrajectoryDispersion <- function(datEventFrames,twindowSec=5)
   if (nfrm > NROW(datEventFrames))
   {
     warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
-    return(NA);
+    return(list(Dispersion=NA,Length=NA));
   }
   ## \TODO: Do not have to sample all points along trajectory - Sub Sample Spaced out points to Get Dispersion Estimate
   for (i in nfrm:NROW(datEventFrames) ) ##
@@ -57,7 +59,8 @@ calcTrajectoryDispersion <- function(datEventFrames,twindowSec=5)
     mat_ptDist <- sqrt(mat_posDX^2 + mat_posDY^2)
     # Radius of Circle Encompassing the two most distant parts of trajectory section
     vDispersionPerFrame[i] <- max(mat_ptDist)/2 
-    
+    #Calc Path Distance by Summing Successive Point Difference / on Upper Off-Diagonal of distance matrix
+    vDistanceTravelledToFrame[i] <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)])
   }
   
 #  vRes100 <- vDispersionPerFrame*DIM_MMPERPX
@@ -66,8 +69,8 @@ calcTrajectoryDispersion <- function(datEventFrames,twindowSec=5)
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
-  
-  return(vDispersionPerFrame*DIM_MMPERPX)
+  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX)
+  return( lRet)
 }
   
 ##Provide a data structure with organized processed data extracted from each Recording Event

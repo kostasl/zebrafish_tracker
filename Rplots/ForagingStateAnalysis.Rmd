@@ -75,7 +75,7 @@ loaddatAllFrames <- function()
 loadDispersionData <- function()
 {
   try(
-    datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds") ) 
+    datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") ) 
   )
   
   if (!exists("datDispersion"))
@@ -487,7 +487,6 @@ calcTrajectoryDispersions <- function(datAllFrames)
       
       vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
     
-      
       ##For Each Event
       for (ev in vEventID)
       {
@@ -503,11 +502,13 @@ calcTrajectoryDispersions <- function(datAllFrames)
         if (NROW(datEventFrames) < 10)
           next() ##No Frames In event - Move to next one
         
-        vEventDispersion <- calcTrajectoryDispersion(datEventFrames,tsec_timeWindow) 
+        lEventDispersionAndLength <- calcTrajectoryDispersionAndLength(datEventFrames,tsec_timeWindow) 
+        
         datEventDispersion <- data.frame(expID=e,
                                          eventID=ev,
-                                         Dispersion=(vEventDispersion),
-                                         Dispersion_norm=(vEventDispersion),
+                                         Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
+                                         Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
+                                         Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
                                          frameRow=as.integer(row.names( datEventFrames))  )
   
         ##Append to main Dispersion Data Frame
