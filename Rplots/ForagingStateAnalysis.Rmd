@@ -883,8 +883,8 @@ runGaussianMixClusterModel <- function(vDispersion)
       y = vDispersion ,
       N = N,
       Nclust = 2 ,
-      clust = clust ,
-      onesRepNclust = rep(1,Nclust)
+      clust = clust 
+      #onesRepNclust = rep(1,Nclust)
   )
   ##
   ##
@@ -1334,8 +1334,8 @@ runNBMixClusterModel <- function(vDispersion)
       y = vDispersion ,
       N = N,
       Nclust = 2 ,
-      clust = clust ,
-      onesRepNclust = rep(1,Nclust)
+      clust = clust 
+      #onesRepNclust = rep(1,Nclust)
   )
   ##
   steps <-500
@@ -1549,8 +1549,8 @@ runNBMixGroupClusterModel <- function(vDispersion,vHuntInitiation,vGroupID, bQui
       groupID = vGroupID,
       N = N,
       Nclust = 2 ,
-      clust = clust,
-      onesRepNclust = rep(1,Nclust)
+      clust = clust
+      #onesRepNclust = rep(1,Nclust)
   )
   ##
   nsteps <- 500 #500
