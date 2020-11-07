@@ -46,7 +46,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
@@ -303,7 +303,7 @@ plotNBMixGClusteredDispersionTrajectories <- function(groupID, datAllFrames, dat
   lastClustID <- NA
   idxA <- 1:NROW(datDispersion)
   for (i in 1:nsubsampleInterval )
-  {}
+  {
       datDispersion[idxA+i,"clustID"] <- datDispersion[idxA,"clustID"]
   }
     
@@ -569,6 +569,7 @@ loadDispersionData()
 hist(datDispersion$Dispersion,breaks=50,main="(All groups): Dispersion lengths per experiment ",xlab="Dispersion (mm)")
 hist(datDispersion$Dispersion_norm,breaks=50,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm)")
 hist(datDispersion$Dispersion_larval_norm ,breaks=50,main="(All groups): Dispersion normalized per larva",xlab="Dispersion (larva norm)")
+
 
 ```
 We look at each rearing group separatelly, while combining their evoked and spontaneous conditions
@@ -1707,22 +1708,104 @@ histClusteredDispersionFrame(datSubDispersion[datSubDispersion$groupID == 'DL',]
 
 ```
 
-# Trajectory length
+## Trajectory Lengths Distributions 
+
 Within Low dispersions hides a locomotive behaviour of pause, where the larva is not actually moving. We want to explore how experience modifies their locomotion strategy and thus this is best done by examining dispersion in relation to the distance travelled. Particularly I will look into a a state of locomotion pause, when the larva stop moving. 
 
-Thus, similar to the measure of dispersion, we plot the 5sec recent trajectory lengths
+Thus, similar to the measure of dispersion, we plot the 5sec recent trajectory lengths over all movement and over hunt event initiations, side by side:
 
 ```{r length histograms per group across conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide'  }
 loadDispersionData()
 xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,1)
 hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$Length,breaks=xbreaks,main="LF Spont.",xlab="Length (mm)",col=colourDataScheme$LF$Spont)
+hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Length,breaks=xbreaks,main="LF Spont Hunt-events",xlab="Length ",col=colourDataScheme$LF$Spont)
+
+
 hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$Length,breaks=xbreaks,main="LF Evoked.",xlab="Length (mm)",col=colourDataScheme$LF$Evoked)
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Length,breaks=xbreaks,main="LF Evoked Hunt-events",xlab="Length ",col=colourDataScheme$LF$Evoked)
+
 hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$Length,breaks=xbreaks,main="NF Spont.",xlab="Length (mm)",col=colourDataScheme$NF$Spont)
+hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Length,breaks=xbreaks,main="NF Spont Hunt-events",xlab="Length",col=colourDataScheme$NF$Spont)
+
 hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$Length,breaks=xbreaks,main="NF Evoked.",xlab="Length (mm)",col=colourDataScheme$NF$Evoked)
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Length,breaks=xbreaks,main="NF Evoked Hunt-events",xlab="Length",col=colourDataScheme$NF$Evoked)
+
+
 hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$Length,breaks=xbreaks,main="DF Spont.",xlab="Length (mm)",col=colourDataScheme$DF$Spont)
+hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Length,breaks=xbreaks,main="DF Spont Hunt-events",xlab="Length",col=colourDataScheme$DF$Spont)
+
 hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Length,breaks=xbreaks,main="DF Evoked.",xlab="Length (mm)",col=colourDataScheme$DF$Evoked)
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Length,breaks=xbreaks,main="DF Evoked Hunt-events",xlab="Length",col=colourDataScheme$DF$Evoked)
 
 ```
+
+Comparing between general and hunt-event lengths it appears:
+  - LF Show higher motility to controls in both conditions
+  - LF Spont. Shows overal higher motility to controls- Low occupancy in small movement mode
+  - Locomotion in Evoked conditions  shows higher motility, and motion range, than Spontaneous. 
+  - Evoked Hunt events occur over the higher movement sub range than the one observed overall   
+
+To better examine tendencies to move towards dispersing trajectories we need to account for the effect of general motion, ie the length of a trajectory.
+Here I examine recent dispersion as a ratio of recent trajectory length (5 sec window). A ration of 0.5 means larva moved in a straight line, as dispersal is the *radius* not the diameter of the  circle encompassing the recent trajectory
+
+
+```{r  hunt-event-group-length-dispersion histogram , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+## Normalized Dispersion In Hunt Events
+nBreaks <-seq(0,0.5,0.02)
+xbreaks <-seq(0,0.5,0.02)
+
+## Check NF
+hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$Dispersion/ datDispersion[datDispersion$groupID %in% c('NE'), ]$Length,
+     breaks=xbreaks,main="NF Spont.",xlab="Dispersion/Length ",col=colourDataScheme$NF$Spont)
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Dispersion/datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Length,
+     breaks=nBreaks,main="NF Spont Hunt-events",xlab="Length",col=colourDataScheme$NF$Spont)
+
+hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$Dispersion/ datDispersion[datDispersion$groupID %in% c('NL'), ]$Length,
+     breaks=xbreaks,main="NF Evoked",xlab="Dispersion/Length ",col=colourDataScheme$NF$Evoked)
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Dispersion/datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Length,
+     breaks=nBreaks,main="NF Evoked Hunt-events",xlab="Length",col=colourDataScheme$NF$Evoked)
+
+
+## Check LF
+#'Spont
+hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$Dispersion/ datDispersion[datDispersion$groupID %in% c('LE'), ]$Length,
+     breaks=xbreaks,main="LF Spont.",xlab="Dispersion/Length ",col=colourDataScheme$LF$Spont)
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Dispersion/datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Length,
+     breaks=nBreaks,main="LF Spont Hunt-events",xlab="Length ",col=colourDataScheme$LF$Spont)
+
+## Evoked
+hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$Dispersion/ datDispersion[datDispersion$groupID %in% c('LL'), ]$Length,
+     breaks=xbreaks,main="LF Evoked.",xlab="Dispersion/Length ",col=colourDataScheme$LF$Evoked)
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Dispersion/datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Length,
+     breaks=nBreaks,main="LF Evoked Hunt-events",xlab="Length ",col=colourDataScheme$LF$Evoked)
+
+
+## Check DF
+hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$Dispersion/ datDispersion[datDispersion$groupID %in% c('DE'), ]$Length,
+     breaks=xbreaks,main="DF Spont.",xlab="Dispersion/Length ",col=colourDataScheme$DF$Spont)
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Dispersion / datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Length,
+     breaks=nBreaks,main="DF Spont Hunt-events",xlab="Length",col=colourDataScheme$DF$Spont)
+
+hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Dispersion/ datDispersion[datDispersion$groupID %in% c('DL'), ]$Length,
+     breaks=xbreaks,main="DF Evoked",xlab="Dispersion/Length ",col=colourDataScheme$DF$Evoked)
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion/datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Length,breaks=nBreaks,main="DF Evoked Hunt-events",xlab="Length",col=colourDataScheme$DF$Evoked)
+
+
+BW=0.1
+```
+
+
+Lower ratios are indicative of turtuous paths of low dispersion, ie where the larva moves but is generally constrained to the same region.
+
+  - In all trajectories the higherst ratio - indicating straight motion- has the higher occupancy
+  - Across groups, evoked conditions augment the frequency of low ratios, ie low dispersion movement
+  - Ratios over hunt-event initiation suggest that low-dispersal frequencies are relativelly over represented compared to general motility in evoked conditions, but not in spontaneous conditions, ie spontaneous events occur randomly across general motion, in evoked conditions low dispersion motion appears favouroble to hunt-event initiation. 
 
 
 
