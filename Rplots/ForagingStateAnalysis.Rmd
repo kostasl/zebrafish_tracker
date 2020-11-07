@@ -58,9 +58,9 @@ Nclust <- 2
 nsubsampleInterval <- G_APPROXFPS/2
 
 ## Load datAllFrames
-loaddatAllFrames <- function()
+loaddatAllFrames <- function(forceReload = FALSE)
 {
-  if (!exists("datAllFrames"))
+  if (!exists("datAllFrames") | forceReload)
   {
     attach(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
     attach(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
@@ -72,10 +72,12 @@ loaddatAllFrames <- function()
 #datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
 ## Extended Dispersion Merged With maxDispersion Data
 #rm("datDispersion")
-loadDispersionData <- function()
+loadDispersionData <- function(forceReload = FALSE)
 {
   try(
-    datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") ) 
+    ##Check If Already Loaded
+    if (!exists("datDispersion") | forceReload)
+      datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds") ) 
   )
   
   if (!exists("datDispersion"))
@@ -177,7 +179,7 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
     saveRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
     message("Saved to:",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
     
-    nmergemissingEvents <-  NROW(datHEventDispersion[!(datHEventDispersion$frameRow %in% datSubDispersion$frameRow),] )
+    nmergemissingEvents <-  NROW(datHEventDispersion[!(datHEventDispersion$frameRow %in% datDispersion$frameRow),] )
     if (nmergemissingEvents > 0)
       warning("** ",nmergemissingEvents, " Hunt Events failed to merge ")
   end.time <- Sys.time()
@@ -215,6 +217,7 @@ loadDispersionData()
 ## If we have not merged these records before, make them now
 if (!exists("datHEventDispersion"))
 { 
+  loaddatAllFrames()
   datHEventDispersion <- mergeDispersionOntoHuntEvents(datDispersion,datAllFrames,datHuntLabelledEventsSBMerged_fixed)
 }
 
@@ -300,6 +303,7 @@ plotNBMixGClusteredDispersionTrajectories <- function(groupID, datAllFrames, dat
   lastClustID <- NA
   idxA <- 1:NROW(datDispersion)
   for (i in 1:nsubsampleInterval )
+  {}
       datDispersion[idxA+i,"clustID"] <- datDispersion[idxA,"clustID"]
   }
     
@@ -1703,9 +1707,26 @@ histClusteredDispersionFrame(datSubDispersion[datSubDispersion$groupID == 'DL',]
 
 ```
 
+# Trajectory length
+Within Low dispersions hides a locomotive behaviour of pause, where the larva is not actually moving. We want to explore how experience modifies their locomotion strategy and thus this is best done by examining dispersion in relation to the distance travelled. Particularly I will look into a a state of locomotion pause, when the larva stop moving. 
+
+Thus, similar to the measure of dispersion, we plot the 5sec recent trajectory lengths
+
+```{r length histograms per group across conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide'  }
+loadDispersionData()
+xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,1)
+hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$Length,breaks=xbreaks,main="LF Spont.",xlab="Length (mm)",col=colourDataScheme$LF$Spont)
+hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$Length,breaks=xbreaks,main="LF Evoked.",xlab="Length (mm)",col=colourDataScheme$LF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$Length,breaks=xbreaks,main="NF Spont.",xlab="Length (mm)",col=colourDataScheme$NF$Spont)
+hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$Length,breaks=xbreaks,main="NF Evoked.",xlab="Length (mm)",col=colourDataScheme$NF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$Length,breaks=xbreaks,main="DF Spont.",xlab="Length (mm)",col=colourDataScheme$DF$Spont)
+hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Length,breaks=xbreaks,main="DF Evoked.",xlab="Length (mm)",col=colourDataScheme$DF$Evoked)
+
+```
 
 
-## Hierarchical clustering model to reveal difference in larval behaviour
+
+# Hierarchical clustering model to reveal difference in larval locomotion behaviour
 Next we may proceed to construct a hierarchical statistical model to describe the mean group dispersal behaviours in spontaneous and evoked conditions, based on the estimated behaviour of $i=60$ larva from each group $G$.
 
 # Hunt-events and foraging state
