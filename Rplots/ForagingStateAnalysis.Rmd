@@ -1906,36 +1906,6 @@ hist_pathLengthPerDispersion(datDispersion,'DL')
 
 ```
 
-hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
-{
-  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
-  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
-  
-  dispLevel <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=seq(1,11,1))
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),
-  main=strTitle,
-  col=colourDataScheme[[strGroupID]]  )
-  
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
-  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
-  dispLevel <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=seq(1,11,1))
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),main=strTitle,
-       col=colourDataScheme[[strGroupID]]  )
-  
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
-  dispLevel <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=seq(1,11,1))
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),
-       main=strTitle , col=colourDataScheme[[strGroupID]]  )
-}
-
-
 Interestingly, it appears that the invariance principle does hold, the *mean path length depends on size of the observation area $\pi A/C$*, 
 so indeed these paths may have a random walk structure.
 
