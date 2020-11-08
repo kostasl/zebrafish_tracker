@@ -1847,7 +1847,7 @@ plot_meanPathLengthPerDispersion <- function(datDispersion,strGroupID)
   points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1) ),pch=2,cex=0.5 ) #Up Lim
   legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
   
-  boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]])
+  boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
 }
 
 hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
