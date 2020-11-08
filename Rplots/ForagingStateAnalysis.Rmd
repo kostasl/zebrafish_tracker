@@ -1,5 +1,5 @@
 ---
-title: 'Notebook: Identifying the role of foraging state on hunt effficiency'
+title: 'Notebook: Identifying the role of experience on foraging and exploration movement patterns'
 output:
   html_document:
     df_print: paged
@@ -46,7 +46,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
-setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
@@ -1708,7 +1708,7 @@ histClusteredDispersionFrame(datSubDispersion[datSubDispersion$groupID == 'DL',]
 
 ```
 
-## Trajectory Lengths Distributions 
+## Path length to dispersion ratio distributions 
 
 Within Low dispersions hides a locomotive behaviour of pause, where the larva is not actually moving. We want to explore how experience modifies their locomotion strategy and thus this is best done by examining dispersion in relation to the distance travelled. Particularly I will look into a a state of locomotion pause, when the larva stop moving. 
 
@@ -1740,6 +1740,7 @@ hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Length,breaks=xbre
 ```
 
 Comparing between general and hunt-event lengths it appears:
+  - path lengths can be bimodal, like dispersions, in spontaneous conditions
   - LF Show higher motility to controls in both conditions
   - LF Spont. Shows overal higher motility to controls- Low occupancy in small movement mode
   - Locomotion in Evoked conditions  shows higher motility, and motion range, than Spontaneous. 
@@ -1800,13 +1801,99 @@ hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Dispersion/datHEve
 BW=0.1
 ```
 
+These distribution are interesting as they show some well defined structure, especially in spontaneous conditions. They could underly some general well known movement/exploration strategy, which I need to look for.
 
-Lower ratios are indicative of turtuous paths of low dispersion, ie where the larva moves but is generally constrained to the same region.
+Generally, lower ratios are indicative of turtuous paths of low dispersion, ie where the larva moves but is generally constrained to the same region.
 
   - In all trajectories the higherst ratio - indicating straight motion- has the higher occupancy
   - Across groups, evoked conditions augment the frequency of low ratios, ie low dispersion movement
   - Ratios over hunt-event initiation suggest that low-dispersal frequencies are relativelly over represented compared to general motility in evoked conditions, but not in spontaneous conditions, ie spontaneous events occur randomly across general motion, in evoked conditions low dispersion motion appears favouroble to hunt-event initiation. 
 
+
+## Path length per dispersion size
+
+For example, take a random walk until it hits a circle of radius r times the step length. The average number of steps it performs is $r^2$.[citation needed] This fact is the discrete version of the fact that a Wiener process walk is a fractal of Hausdorff dimension 2.[citation needed]
+
+For random walks, the mean length $<s>$ does not depend on the characteristic mean free path ℓ, but only on the ratio between the surface A and the perimeter C—that is $<s>=\pi A/C$
+Thus the corresponding mean values are constrained by the sole free surface to perimeter ratio (see
+[1](https://science.sciencemag.org/content/358/6364/765/tab-figures-data) [2](https://www.nature.com/articles/s41467-019-10455-y) ).
+
+To see such an *invariance principle holds*, where by the mean path length only proportional to the Area/Circumfarence ratio for a random walk,  I look at mean path lengths for a set of fixed dispersion sizes:
+
+```{r  path-length per dispersion , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+## iNvariance Principle Theoretical Mean Path Length
+theoreticalMeanLength <- function(D)
+{
+  A <- pi*(D^2)
+  C <- 2*pi*D
+  return(round(100*( pi*A/C)) /100 )
+}
+## Plot mean path length for each boundary dispersion size 
+# This is to examine the similarity to the random walk invariance principle by which the mean pathlength within a circle of radius r is proportional to pi*A/C
+# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+plot_meanPathLengthPerDispersion <- function(datDispersion,strGroupID)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=seq(1,11,1))
+  strTitle <- paste("Mean path length per dispersion", strGroupID,"#",NROW(datGroupDispersion$dispRange))
+  
+  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
+  plot(vmeanPathLengthPerDispersion,pch=16,main=strTitle,xlab="Circle radius / Dispersion (mm)",
+       ylim=c(0,25),col=colourDataScheme[[strGroupID]] )
+  rpoints <- seq(0.5,11,1)
+  points(rpoints,theoreticalMeanLength(seq(0.5,11,1) ),pch=2,cex=0.8 ) #Low Lim
+  points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1) ),pch=2,cex=0.5 ) #Up Lim
+  points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1) ),pch=2,cex=0.5 ) #Up Lim
+  legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
+  
+  boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]])
+}
+
+hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
+  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
+  
+  dispLevel <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=seq(1,11,1))
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,46,2),
+  main=strTitle,
+  col=colourDataScheme[[strGroupID]]  )
+  
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
+  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
+  dispLevel <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=seq(1,11,1))
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,46,2),main=strTitle,
+       col=colourDataScheme[[strGroupID]]  )
+  
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
+  dispLevel <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=seq(1,11,1))
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,46,2),
+       main=strTitle , col=colourDataScheme[[strGroupID]]  )
+}
+
+## Take Group 
+plot_meanPathLengthPerDispersion(datDispersion,'NE')
+plot_meanPathLengthPerDispersion(datDispersion,'NL')
+plot_meanPathLengthPerDispersion(datDispersion,'LE')
+plot_meanPathLengthPerDispersion(datDispersion,'LL')
+
+plot_meanPathLengthPerDispersion(datDispersion,'DE')
+plot_meanPathLengthPerDispersion(datDispersion,'DL')
+
+
+
+```
+
+Interestingly, it appears that the invariance principle does hold, the *mean path length depends on size of the observation area $\pi A/C$*, 
+so indeed these paths may have a random walk structure.
 
 
 # Hierarchical clustering model to reveal difference in larval locomotion behaviour
