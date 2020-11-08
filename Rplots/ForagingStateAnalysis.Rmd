@@ -1850,6 +1850,62 @@ plot_meanPathLengthPerDispersion <- function(datDispersion,strGroupID)
   boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
 }
 
+## Take Group 
+plot_meanPathLengthPerDispersion(datDispersion,'NE')
+plot_meanPathLengthPerDispersion(datDispersion,'NL')
+plot_meanPathLengthPerDispersion(datDispersion,'LE')
+plot_meanPathLengthPerDispersion(datDispersion,'LL')
+
+plot_meanPathLengthPerDispersion(datDispersion,'DE')
+plot_meanPathLengthPerDispersion(datDispersion,'DL')
+
+
+
+```
+
+##  path-length to dispersion ratios 
+```{r  path-length to dispersion ratio distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+
+hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
+  dispLevel <- cut(datGroupDispersion[,"Dispersion" ],breaks=seq(1,11,1))
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
+
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,46,2),
+  main=strTitle,
+  col=colourDataScheme[[strGroupID]]  )
+  
+  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,46,2),main=strTitle,
+       col=colourDataScheme[[strGroupID]]  )
+  
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,46,2),
+       main=strTitle , col=colourDataScheme[[strGroupID]]  )
+}
+
+
+## Take Group 
+hist_pathLengthPerDispersion(datDispersion,'NE')
+hist_pathLengthPerDispersion(datDispersion,'NL')
+hist_pathLengthPerDispersion(datDispersion,'LE')
+hist_pathLengthPerDispersion(datDispersion,'LL')
+
+hist_pathLengthPerDispersion(datDispersion,'DE')
+hist_pathLengthPerDispersion(datDispersion,'DL')
+
+
+```
+
 hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
 {
   datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
@@ -1879,18 +1935,6 @@ hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
        main=strTitle , col=colourDataScheme[[strGroupID]]  )
 }
 
-## Take Group 
-plot_meanPathLengthPerDispersion(datDispersion,'NE')
-plot_meanPathLengthPerDispersion(datDispersion,'NL')
-plot_meanPathLengthPerDispersion(datDispersion,'LE')
-plot_meanPathLengthPerDispersion(datDispersion,'LL')
-
-plot_meanPathLengthPerDispersion(datDispersion,'DE')
-plot_meanPathLengthPerDispersion(datDispersion,'DL')
-
-
-
-```
 
 Interestingly, it appears that the invariance principle does hold, the *mean path length depends on size of the observation area $\pi A/C$*, 
 so indeed these paths may have a random walk structure.
