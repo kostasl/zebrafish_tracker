@@ -46,7 +46,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
@@ -1822,11 +1822,11 @@ To see such an *invariance principle holds*, where by the mean path length only 
 
 ```{r  path-length per dispersion , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 ## iNvariance Principle Theoretical Mean Path Length
-theoreticalMeanLength <- function(D)
+theoreticalMeanLength <- function(D,propFactor=1.5)
 {
-  A <- pi*(D^2)
-  C <- 2*pi*D
-  return(round(100*( pi*A/C)) /100 )
+  A <- pi*( (D)^2)
+  C <- 2*pi*(D)
+  return(round(100*(propFactor* pi*A/C)) /100 )
 }
 ## Plot mean path length for each boundary dispersion size 
 # This is to examine the similarity to the random walk invariance principle by which the mean pathlength within a circle of radius r is proportional to pi*A/C
@@ -1834,20 +1834,20 @@ theoreticalMeanLength <- function(D)
 plot_meanPathLengthPerDispersion <- function(datDispersion,strGroupID)
 {
   datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  
-  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=seq(1,11,1))
+  dispBreaks <- seq(1,11,0.3)
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
   strTitle <- paste("Mean path length per dispersion", strGroupID,"#",NROW(datGroupDispersion$dispRange))
   
   vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
-  plot(vmeanPathLengthPerDispersion,pch=16,main=strTitle,xlab="Circle radius / Dispersion (mm)",
-       ylim=c(0,25),col=colourDataScheme[[strGroupID]] )
-  rpoints <- seq(0.5,11,1)
-  points(rpoints,theoreticalMeanLength(seq(0.5,11,1) ),pch=2,cex=0.8 ) #Low Lim
+  plot(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)), vmeanPathLengthPerDispersion,pch=16,main=strTitle,xlab="Circle radius / Dispersion (mm)",
+       ylim=c(0,25),xlim=c(0,11),col=colourDataScheme[[strGroupID]] )
+  rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
+  points(rpoints,theoreticalMeanLength(rpoints ),pch=2,cex=0.8 ) #Low Lim
   points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1) ),pch=2,cex=0.5 ) #Up Lim
   points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1) ),pch=2,cex=0.5 ) #Up Lim
   legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
   
-  boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
 }
 
 hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
