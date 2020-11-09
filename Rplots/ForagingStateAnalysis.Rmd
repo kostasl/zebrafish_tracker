@@ -29,6 +29,10 @@ In essense the internal state and the its neural correlates as reported by Marqu
   
 Establishing a correlation of hunting state with the kinematics of efficient hunting can point us to the underlying circuits, because the circuits that correlate with foraging state, but also with capture-success,  have already been examined by Marquez et al 2019. So it would be posssible to use those to guide our search for the circuits that bring about the kinematics adaptations of success. 
 
+In a new twist of this work *I discover structure in the larval trajectories that indicates a random search process*. 
+Indeed although at the microscale larval do not move randomly, but have a rythm, it may well be the case (E.Raposo et al. 2009 ):
+>Therefore, the foraging dynamics that defines the final outcomes of biological encounters becomes in essence a stochastic process (e.g. searches in landscapes
+with low density of food sites).
 
 ### Identify state using dispersal
 5s window measure radius encompassing trajectory
@@ -46,7 +50,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
-setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
@@ -1708,33 +1712,35 @@ histClusteredDispersionFrame(datSubDispersion[datSubDispersion$groupID == 'DL',]
 
 ```
 
-## Path length to dispersion ratio distributions 
+## Path length and dispersion ratio distributions 
 
 Within Low dispersions hides a locomotive behaviour of pause, where the larva is not actually moving. We want to explore how experience modifies their locomotion strategy and thus this is best done by examining dispersion in relation to the distance travelled. Particularly I will look into a a state of locomotion pause, when the larva stop moving. 
 
 Thus, similar to the measure of dispersion, we plot the 5sec recent trajectory lengths over all movement and over hunt event initiations, side by side:
+### Distributions of path length
+
 
 ```{r length histograms per group across conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide'  }
 loadDispersionData()
-xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,1)
-hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$Length,breaks=xbreaks,main="LF Spont.",xlab="Length (mm)",col=colourDataScheme$LF$Spont)
+xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,2)
+h_Length_LE <- hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$Length,breaks=xbreaks,main="LF Spont.",xlab="Length (mm)",col=colourDataScheme$LF$Spont)
 hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Length,breaks=xbreaks,main="LF Spont Hunt-events",xlab="Length ",col=colourDataScheme$LF$Spont)
 
 
-hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$Length,breaks=xbreaks,main="LF Evoked.",xlab="Length (mm)",col=colourDataScheme$LF$Evoked)
+h_Length_LL <- hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$Length,breaks=xbreaks,main="LF Evoked.",xlab="Length (mm)",col=colourDataScheme$LF$Evoked)
 hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Length,breaks=xbreaks,main="LF Evoked Hunt-events",xlab="Length ",col=colourDataScheme$LF$Evoked)
 
-hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$Length,breaks=xbreaks,main="NF Spont.",xlab="Length (mm)",col=colourDataScheme$NF$Spont)
+h_Length_NE <- hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$Length,breaks=xbreaks,main="NF Spont.",xlab="Length (mm)",col=colourDataScheme$NF$Spont)
 hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Length,breaks=xbreaks,main="NF Spont Hunt-events",xlab="Length",col=colourDataScheme$NF$Spont)
 
-hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$Length,breaks=xbreaks,main="NF Evoked.",xlab="Length (mm)",col=colourDataScheme$NF$Evoked)
+h_Length_NL <- hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$Length,breaks=xbreaks,main="NF Evoked.",xlab="Length (mm)",col=colourDataScheme$NF$Evoked)
 hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Length,breaks=xbreaks,main="NF Evoked Hunt-events",xlab="Length",col=colourDataScheme$NF$Evoked)
 
 
-hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$Length,breaks=xbreaks,main="DF Spont.",xlab="Length (mm)",col=colourDataScheme$DF$Spont)
+h_Length_DE <- hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$Length,breaks=xbreaks,main="DF Spont.",xlab="Length (mm)",col=colourDataScheme$DF$Spont)
 hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Length,breaks=xbreaks,main="DF Spont Hunt-events",xlab="Length",col=colourDataScheme$DF$Spont)
 
-hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Length,breaks=xbreaks,main="DF Evoked.",xlab="Length (mm)",col=colourDataScheme$DF$Evoked)
+h_Length_DL <- hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Length,breaks=xbreaks,main="DF Evoked.",xlab="Length (mm)",col=colourDataScheme$DF$Evoked)
 hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Length,breaks=xbreaks,main="DF Evoked Hunt-events",xlab="Length",col=colourDataScheme$DF$Evoked)
 
 ```
@@ -1749,6 +1755,72 @@ Comparing between general and hunt-event lengths it appears:
 To better examine tendencies to move towards dispersing trajectories we need to account for the effect of general motion, ie the length of a trajectory.
 Here I examine recent dispersion as a ratio of recent trajectory length (5 sec window). A ration of 0.5 means larva moved in a straight line, as dispersal is the *radius* not the diameter of the  circle encompassing the recent trajectory
 
+I next plot on logarithmic scale the percentage of each Path length and try to see if a power law like regime exists in the distribution, but also if the presence of prey changes the linear - drop off regime of the distribution. This is inspired by Fig 3 from Viswanathan et al 1999
+
+```{r length log distributions conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide' ,warning=FALSE }
+##DY DX
+getLogPowerSlope <- function (h_Length_G, length_lin_region = 10)
+{ ##linear Region
+  idxFrom <- 7
+  idxTo <- 11
+ # mu<-log10( (100*h_Length_G$counts/sum(h_Length_G$counts))[idxFrom] - (100*h_Length_G$counts/sum(h_Length_G$counts))[idxTo]  /  (h_Length_G$mids[idxTo]-h_Length_G$mids[idxFrom]) )
+  
+  
+  datHist <- data.frame(length=log10(h_Length_G$mids), proportion=log10(100*h_Length_G$counts/sum(h_Length_G$counts) ) )
+  linFit <- lm(proportion~length,data=datHist[!is.infinite(datHist$proportion) & 10^datHist$length >=length_lin_region ,] )
+  
+  y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* (linFit$model$length ) ) )
+  x_linModel <- linFit$model$length
+
+#return (round(mu*100)/100 )
+return(list(coeff=linFit$coefficients[2],ptx_line=x_linModel,pty_line=y_linModel) )
+}
+
+#,log="xy" 
+lLinModel_NE <- getLogPowerSlope(h_Length_NE,10)
+lLinModel_NL <- getLogPowerSlope(h_Length_NL,10)
+plot(log10(h_Length_NE$mids),log10(100*h_Length_NE$counts/sum(h_Length_NE$counts) ),main=paste("NF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$NF$Spont,pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
+points(log10(h_Length_NL$mids),log10(100*h_Length_NL$counts/sum(h_Length_NL$counts) ),
+       #main=paste("NF Evoked. mu:",getLogPowerSlope(h_Length_NL)), 
+       xlab="Length (mm)",col=colourDataScheme$NF$Evoked,pch=16)
+lines(lLinModel_NE$ptx_line,lLinModel_NE$pty_line,lwd=3,col=colourDataScheme$NF$Spont)
+
+lines(lLinModel_NL$ptx_line,lLinModel_NL$pty_line,lwd=3,col=colourDataScheme$NF$Evoked)
+legend("topright",legend=c(paste("Spont μ",format(lLinModel_NE$coeff,digits=2)),paste("Evoked μ",format(lLinModel_NL$coeff,digits=2) ) ),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked) ,pch=c(16,16) )
+
+
+#,log="xy" 
+lLinModel_LE <- getLogPowerSlope(h_Length_LE,14)
+lLinModel_LL <- getLogPowerSlope(h_Length_LL,14)
+plot(log10(h_Length_LE$mids),log10(100*h_Length_LE$counts/sum(h_Length_LE$counts) ),main=paste("LF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$LF$Spont,pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
+points(log10(h_Length_LL$mids),log10(100*h_Length_LL$counts/sum(h_Length_LL$counts) ),
+       #main=paste("NF Evoked. mu:",getLogPowerSlope(h_Length_NL)), 
+       xlab="Length (mm)",col=colourDataScheme$LF$Evoked,pch=16)
+lines(lLinModel_LE$ptx_line,lLinModel_LE$pty_line,lwd=3,col=colourDataScheme$LF$Spont)
+lines(lLinModel_LL$ptx_line,lLinModel_LL$pty_line,lwd=3,col=colourDataScheme$LF$Evoked)
+legend("topright",legend=c(paste("Spont μ",format(lLinModel_LE$coeff,digits=2)), paste("Evoked μ",format(lLinModel_LL$coeff,digits=2) ) ),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked) ,pch=c(16,16) )
+
+
+
+lLinModel_DE <- getLogPowerSlope(h_Length_DE,10)
+lLinModel_DL <- getLogPowerSlope(h_Length_DL,10)
+plot(log10(h_Length_DE$mids),log10(100*h_Length_DE$counts/sum(h_Length_DE$counts) ),main=paste("DF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$DF$Spont,pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
+points(log10(h_Length_DL$mids),log10(100*h_Length_DL$counts/sum(h_Length_DL$counts) ),
+       #main=paste("NF Evoked. mu:",getLogPowerSlope(h_Length_NL)), 
+       xlab="Length (mm)",col=colourDataScheme$DF$Evoked,pch=16)
+lines(lLinModel_DE$ptx_line,lLinModel_DE$pty_line,lwd=3,col=colourDataScheme$DF$Spont)
+lines(lLinModel_DL$ptx_line,lLinModel_DL$pty_line,lwd=3,col=colourDataScheme$DF$Evoked)
+legend("topright",legend=c(paste("Spont μ",format(lLinModel_DE$coeff,digits=2)), paste("Evoked μ",format(lLinModel_DL$coeff,digits=2) ) ),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked) ,pch=c(16,16) )
+
+```
+
+
+
+
+
+No Differences between test conditions can be seen for NF, and generally the linear/ power law like exponent of drop-off is very similar between conditions, unlike the foraging examples reported in Viswanathan et al. 1999
+
+Need to do linear model fit however to examine this question more closely
 
 ```{r  hunt-event-group-length-dispersion histogram , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 ## Normalized Dispersion In Hunt Events
@@ -1818,7 +1890,7 @@ For random walks, the mean length $<s>$ does not depend on the characteristic me
 Thus the corresponding mean values are constrained by the sole free surface to perimeter ratio (see
 [1](https://science.sciencemag.org/content/358/6364/765/tab-figures-data) [2](https://www.nature.com/articles/s41467-019-10455-y) ).
 
-To see such an *invariance principle holds*, where by the mean path length only proportional to the Area/Circumfarence ratio for a random walk,  I look at mean path lengths for a set of fixed dispersion sizes:
+To see such an *invariance principle holds* (see)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], where by the mean path length only proportional to the Area/Circumfarence ratio for a random walk,  I look at mean path lengths for a set of fixed dispersion sizes:
 
 ```{r  path-length per dispersion , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 ## iNvariance Principle Theoretical Mean Path Length
@@ -1908,6 +1980,23 @@ hist_pathLengthPerDispersion(datDispersion,'DL')
 
 Interestingly, it appears that the invariance principle does hold, the *mean path length depends on size of the observation area $\pi A/C$*, 
 so indeed these paths may have a random walk structure.
+
+This is evidence towards the larval trajectories appearing  as a stochastic diffussive process. 
+>What is the most efficient strategy to adopt while searching for randomly placed sites whose
+locations are not apriori known for situations when the searcher has information only about
+its close vicinity? (see  E P Raposo et al 2009)
+
+  - Are these larvae executing Levy walks?
+
+In general the above data suggest that the characteristics  **dynamics governing foraging motion  may  modified by experience **
+
+>From an evolutionary perspective, it is certainly pertinent to ask if efficient encounter rates are driven from selective pressures that systematically force organism adaption toward some optimal (or sub-optimal) solution.
+
+ I need to understand what changes in these walks, in terms of step length -
+ Generally the LF group shows a bimodal distribution of path length  and an increase in the overall path length. which could be indicative of increased number of re-orientations. There is also a decrease in path-length between spontaneous and evoked conditions (most evident in LF )
+
+
+
 
 
 # Hierarchical clustering model to reveal difference in larval locomotion behaviour
