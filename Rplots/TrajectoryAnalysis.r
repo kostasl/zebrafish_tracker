@@ -30,6 +30,8 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   ##datEventFrames <- datAllFrames[datAllFrames$expID == 218 & datAllFrames$eventID == 2 & datAllFrames$posX != 0,]
   vDispersionPerFrame <- vector()
   vDistanceTravelledToFrame <- vector()
+  vMSD <- vector() #Mean Square Displacement of the twindowSec trajectory
+  vSD <- vector() # Square Displacement to the start of the twindowSec trajectory
   ## Estimate number of frames for Tsec of video
   nfrm <- head(datEventFrames$fps,1)*twindowSec
   nSpace <- nfrm/4
@@ -61,6 +63,9 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
     vDispersionPerFrame[i] <- max(mat_ptDist)/2 
     #Calc Path Distance by Summing Successive Point Difference / on Upper Off-Diagonal of distance matrix
     vDistanceTravelledToFrame[i] <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)])
+    #Calc Mean Squared Displacement from initial Point x0,y0 being the mean squared sum of the 1st distance Matrix Row
+    vMSD[i] <- mean(mat_ptDist[1,1:ncol(mat_ptDist)]^2)
+    vSD[i]  <- mat_ptDist[1,ncol(mat_ptDist)]^2 #Squared Distance To point twindowSec  ago
   }
   
 #  vRes100 <- vDispersionPerFrame*DIM_MMPERPX
