@@ -517,6 +517,8 @@ calcTrajectoryDispersions <- function(datAllFrames)
                                          Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
                                          Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
                                          Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
+                                         MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
+                                         SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
                                          frameRow=as.integer(row.names( datEventFrames))  )
   
         ##Append to main Dispersion Data Frame
