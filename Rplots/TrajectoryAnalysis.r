@@ -43,7 +43,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   if (nfrm > NROW(datEventFrames))
   {
     warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
-    return(list(Dispersion=NA,Length=NA));
+    return(list(Dispersion=NA,Length=NA,MSD=NA,SD=NA))
   }
   ## \TODO: Do not have to sample all points along trajectory - Sub Sample Spaced out points to Get Dispersion Estimate
   for (i in nfrm:NROW(datEventFrames) ) ##
@@ -64,8 +64,8 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
     #Calc Path Distance by Summing Successive Point Difference / on Upper Off-Diagonal of distance matrix
     vDistanceTravelledToFrame[i] <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)])
     #Calc Mean Squared Displacement from initial Point x0,y0 being the mean squared sum of the 1st distance Matrix Row
-    vMSD[i] <- mean(mat_ptDist[1,1:ncol(mat_ptDist)]^2)
-    vSD[i]  <- mat_ptDist[1,ncol(mat_ptDist)]^2 #Squared Distance To point twindowSec  ago
+    vMSD[i] <- mean((DIM_MMPERPX*mat_ptDist[1,1:ncol(mat_ptDist)]) ^2)
+    vSD[i]  <- (DIM_MMPERPX*mat_ptDist[1,ncol(mat_ptDist)])^2 #Squared Distance To point twindowSec  ago
   }
   
 #  vRes100 <- vDispersionPerFrame*DIM_MMPERPX
