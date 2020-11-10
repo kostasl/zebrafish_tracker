@@ -50,7 +50,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
@@ -81,7 +81,7 @@ loadDispersionData <- function(forceReload = FALSE)
   try(
     ##Check If Already Loaded
     if (!exists("datDispersion") | forceReload)
-      datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds") ) 
+      datDispersion <<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") ) 
   )
   
   if (!exists("datDispersion"))
