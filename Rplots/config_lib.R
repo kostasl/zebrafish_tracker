@@ -106,7 +106,9 @@ colourL        <-c("#03B303AF","#E60303AF","#0303E6AF")
 colourClusters <- c("#00AFBB", "#E7B800", "#FC4E07")
 
 pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, NL
+pointTypeScheme <- list(DL=pchL[1], LL=pchL[2], NL=pchL[3],DE=pchL[4], LE=pchL[5], NE=pchL[6])
 lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
+lineTypeScheme <- list(DL=lineTypeL[2], LL=lineTypeL[2], NL=lineTypeL[2], DE=lineTypeL[1], LE=lineTypeL[1], NE=lineTypeL[1])
 lineTypeL.DF <- lineTypeL[1]
 lineTypeL.LF <- lineTypeL[2]
 lineTypeL.NF <- lineTypeL[3]

@@ -2125,6 +2125,7 @@ plotLogLogMSD <- function(datDispersion,strG,addPlot=FALSE,powerLawRange = 100)
     
     return(lLinModel_GE)
 }
+
 ##Collect the mean MSD from each Dispersion Calcl integration Window and show mean diffusion
 plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE)
 {
@@ -2135,92 +2136,56 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE)
     vMSD[i] <- lModelwithMSD[[i]]$meanMSD
     vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
   }
+  idxOrder <- order(vTimeWindow)
   if (!addPlot)
   {
-    plot(vTimeWindow,vMSD,xlim=c(0,60),ylim=c(0,70), col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],pch=16)
+    plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=c(0,60),ylim=c(0,70),
+         col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
+         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
   }else
-    points(vTimeWindow,vMSD,xlim=c(0,60),ylim=c(0,70), col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],pch=16)
+    points(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=c(0,60),ylim=c(0,70),
+           col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+           pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
   
-  lines(vTimeWindow,vMSD,xlim=c(0,60),ylim=c(0,70), col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],pch=16)
+  lines(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=c(0,60),ylim=c(0,70), col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+        pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
 }
 
 plotMSDPerIntegrationTime <- function(ldatDispersion,strG,lLinModel)
 {
   bAddPlot <- FALSE
+  lLinModel[[strG]] = list() ##list per twindow integration for this group
   for (tt in names(ldatDispersion))
   {
-    lLinModel[[strG]] <- list() ##list per twindow integration for this group
-    lLinModel[[strG]][[tt]] <- plotLogLogMSD(ldatDispersion[[tt]],strG,bAddPlot)
+    print(tt)
+    lLinModel[[strG]][[as.character(tt)]] = plotLogLogMSD(ldatDispersion[[tt]],strG,bAddPlot)
     bAddPlot <- TRUE
   }
   
   return(lLinModel)
-   
 }
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 lLinModel <- list() ##Start new list Containing The mean Vals per group per time
-lLinModel[["NE"]] <- plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
-lLinModel[["NL"]] <- plotMSDPerIntegrationTime(ldatDispersion,"NL",lLinModel)
-lLinModel[["LE"]] <- plotMSDPerIntegrationTime(ldatDispersion,"LE",lLinModel)
-lLinModel[["LL"]] <- plotMSDPerIntegrationTime(ldatDispersion,"LL",lLinModel)
-lLinModel[["DE"]] <- plotMSDPerIntegrationTime(ldatDispersion,"DE",lLinModel)
-lLinModel[["DL"]] <- plotMSDPerIntegrationTime(ldatDispersion,"DL",lLinModel)
+lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
+lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"NL",lLinModel)
+lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"LE",lLinModel)
+lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"LL",lLinModel)
+lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"DE",lLinModel)
+lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"DL",lLinModel)
 
 plotMSDPerTime(lLinModel[["NE"]])
 plotMSDPerTime(lLinModel[["NL"]],TRUE)
 plotMSDPerTime(lLinModel[["LE"]],TRUE)
-plotMSDPerTime(lLinModel[["LL"]] ,TRUE)
+plotMSDPerTime(lLinModel[["LL"]],TRUE)
 plotMSDPerTime(lLinModel[["DE"]],TRUE)
 plotMSDPerTime(lLinModel[["DL"]],TRUE)
 
-# 
-# lLinModel_NL <- list()
-# lLinModel_NL[["4"]] <- plotLogLogMSD(ldatDispersion[["4"]],"NL",FALSE)
-# lLinModel_NL[["7"]] <- plotLogLogMSD(ldatDispersion[["7"]],"NL",TRUE)
-# lLinModel_NL[["10"]] <- plotLogLogMSD(ldatDispersion[["10"]],"NL",TRUE)
-# lLinModel_NL[["20"]] <- plotLogLogMSD(ldatDispersion[["20"]],"NL",TRUE)
-# lLinModel_NL[["40"]] <- plotLogLogMSD(ldatDispersion[["40"]],"NL",TRUE)
-# 
-# legend("topright", 
-#            legend=c(paste("Spont μ",format(lLinModel_NE[[1]]$coeff,digits=2)),
-#                     paste("Evoked μ",format(lLinModel_NL[[1]]$coeff,digits=2) ) ),
-#        col=c(colourDataScheme$NE ,colourDataScheme$NL) ,pch=c(16,16) )
-# 
-# 
-# lLinModel_LE <- list()
-# lLinModel_LE[["4"]] <- plotLogLogMSD(ldatDispersion[["4"]],"LE",FALSE)
-# lLinModel_LE[["7"]] <- plotLogLogMSD(ldatDispersion[["7"]],"LE",TRUE)
-# lLinModel_LE[["20"]] <- plotLogLogMSD(ldatDispersion[["20"]],"LE",TRUE)
-# lLinModel_LE[["40"]] <- plotLogLogMSD(ldatDispersion[["40"]],"LE",TRUE)
-# 
-# lLinModel_LL <- list()
-# lLinModel_LL[["4"]] <- plotLogLogMSD(ldatDispersion[["4"]],"LL",FALSE)
-# lLinModel_LL[["7"]] <- plotLogLogMSD(ldatDispersion[["7"]],"LL",TRUE)
-# lLinModel_LL[["10"]] <- plotLogLogMSD(ldatDispersion[["10"]],"LL",TRUE)
-# lLinModel_LL[["20"]] <- plotLogLogMSD(ldatDispersion[["20"]],"LL",TRUE)
-# lLinModel_LL[["40"]] <- plotLogLogMSD(ldatDispersion[["40"]],"LL",TRUE)
-# 
-# 
-# legend("topright", 
-#            legend=c(paste("Spont μ",format(lLinModel_LE[[1]]$coeff,digits=2)),
-#                     paste("Evoked μ",format(lLinModel_LL[[1]]$coeff,digits=2) ) ),
-#        col=c(colourDataScheme$LE ,colourDataScheme$LL) ,pch=c(16,16) )
-# 
-# lLinModel_DE <- list()
-# lLinModel_DE[["4"]] <- plotLogLogMSD(ldatDispersion[["4"]],"DE",FALSE)
-# lLinModel_DE[["7"]] <- plotLogLogMSD(ldatDispersion[["7"]],"DE",TRUE)
-# lLinModel_DE[["20"]] <- plotLogLogMSD(ldatDispersion[["10"]],"DE",TRUE)
-# lLinModel_DE[["20"]] <- plotLogLogMSD(ldatDispersion[["20"]],"DE",TRUE)
-# lLinModel_DE[["40"]] <- plotLogLogMSD(ldatDispersion[["40"]],"DE",TRUE)
-# 
-# lLinModel_DL <- list()
-# lLinModel_DL[["4"]] <- plotLogLogMSD(ldatDispersion[["4"]],"DL",FALSE)
-# lLinModel_DL[["7"]] <- plotLogLogMSD(ldatDispersion[["7"]],"DL",TRUE)
-# lLinModel_DL[["10"]] <- plotLogLogMSD(ldatDispersion[["10"]],"DL",TRUE)
-# lLinModel_DL[["20"]] <- plotLogLogMSD(ldatDispersion[["20"]],"DL",TRUE)
-# lLinModel_DL[["40"]] <- plotLogLogMSD(ldatDispersion[["40"]],"DL",TRUE)
-# 
+legend("topright", legend=names(colourDataScheme)[4:9],
+       col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+       pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
 # legend("topright", 
 #            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
 #                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
