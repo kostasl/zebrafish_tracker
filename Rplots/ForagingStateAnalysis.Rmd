@@ -2079,7 +2079,7 @@ In general the above data suggest that the characteristics  **dynamics governing
 ```{r  mean-squared-distance over time , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
 rm(ldatDispersion)
 ldatDispersion <- list()
-vtimeWindows <- c(2,4,6,8,10,20,40)
+vtimeWindows <- c(2,4,6,8,10,15,20,40)
 for (t in vtimeWindows)
   ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
 
@@ -2147,7 +2147,7 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE)
 plotMSDPerIntegrationTime <- function(ldatDispersion,strG,lLinModel)
 {
   bAddPlot <- FALSE
-  for (tt in names(lLinModel_NE))
+  for (tt in names(ldatDispersion))
   {
     lLinModel[[strG]] <- list() ##list per twindow integration for this group
     lLinModel[[strG]][[tt]] <- plotLogLogMSD(ldatDispersion[[tt]],strG,bAddPlot)
@@ -2160,19 +2160,19 @@ plotMSDPerIntegrationTime <- function(ldatDispersion,strG,lLinModel)
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 lLinModel <- list() ##Start new list Containing The mean Vals per group per time
-lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
-lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"NL",lLinModel)
-lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"LL",lLinModel)
-lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"LE",lLinModel)
-lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"DE",lLinModel)
-lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"DL",lLinModel)
+lLinModel[["NE"]] <- plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
+lLinModel[["NL"]] <- plotMSDPerIntegrationTime(ldatDispersion,"NL",lLinModel)
+lLinModel[["LE"]] <- plotMSDPerIntegrationTime(ldatDispersion,"LE",lLinModel)
+lLinModel[["LL"]] <- plotMSDPerIntegrationTime(ldatDispersion,"LL",lLinModel)
+lLinModel[["DE"]] <- plotMSDPerIntegrationTime(ldatDispersion,"DE",lLinModel)
+lLinModel[["DL"]] <- plotMSDPerIntegrationTime(ldatDispersion,"DL",lLinModel)
 
-plotMSDPerTime(lLinModel_NE)
-plotMSDPerTime(lLinModel_NL,TRUE)
-plotMSDPerTime(lLinModel_LE,TRUE)
-plotMSDPerTime(lLinModel_LL,TRUE)
-plotMSDPerTime(lLinModel_DE,TRUE)
-plotMSDPerTime(lLinModel_DL,TRUE)
+plotMSDPerTime(lLinModel[["NE"]])
+plotMSDPerTime(lLinModel[["NL"]],TRUE)
+plotMSDPerTime(lLinModel[["LE"]],TRUE)
+plotMSDPerTime(lLinModel[["LL"]] ,TRUE)
+plotMSDPerTime(lLinModel[["DE"]],TRUE)
+plotMSDPerTime(lLinModel[["DL"]],TRUE)
 
 # 
 # lLinModel_NL <- list()
