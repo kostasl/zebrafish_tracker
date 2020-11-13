@@ -2101,29 +2101,30 @@ In general the above data suggest that the characteristics  **dynamics governing
 ## Mean-Squared-Distance over time is different between groups
 
 ```{r  mean-squared-distance over time , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
-rm(ldatDispersion)
-ldatDispersion <- list()
-#vtimeWindows <- c(2,4,6,8,10,15,20,40,60,80,100,120,180)
-vtimeWindows <- c(2,4,10,20,80)
-for (t in vtimeWindows)
-  ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
 
 
-strG <- 'DE'
-hist(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"MSD"],main=paste(strG,mean(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"MSD"],na.rm=TRUE) ),xlim=c(0,210))
-hist(ldatDispersion[["20"]][ldatDispersion[["20"]]$groupID == strG,"MSD"],main=paste(strG,mean(ldatDispersion[["20"]][ldatDispersion[["20"]]$groupID == strG,"MSD"],na.rm=TRUE) ),xlim=c(0,210))
+#strG <- 'DE'
+#hist(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"MSD"],main=paste(strG,mean(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"MSD"],na.rm=TRUE) ),xlim=c(0,210))
+#hist(ldatDispersion[["20"]][ldatDispersion[["20"]]$groupID == strG,"MSD"],main=paste(strG,mean(ldatDispersion[["20"]][ldatDispersion[["20"]]$groupID == strG,"MSD"],na.rm=TRUE) ),xlim=c(0,210))
 
 
 plotLogLogMSD <- function(datDispersion,strG,addPlot=FALSE,powerLawRange = 100)
 {
-    datGroupDispersion <- datDispersion[datDispersion$groupID %in% strG,]
+    datGroupDispersion <- datDispersion[datDispersion$groupID %in% strG &
+                                          !is.na(datDispersion$MSD),]
     #dispBreaks <- seq(1,max(datDispersion$MSD,na.rm=TRUE)+1,15)
     #datGroupDispersion$dispRange <- cut(datGroupDispersion[,"Dispersion" ],breaks=dispBreaks)
     strTitle <- paste("MSD length (20sec)", strG,"#",NROW(datGroupDispersion))
 
-    xbreaks <-seq(0,max(datDispersion$MSD,na.rm=TRUE)+15,15)
+    #max(datDispersion$MSD,na.rm=TRUE)+15
+    xbreaks <-seq(0,350,15)
     #strDispRange <-levels(datGroupDispersion$dispRange)[dispRange]
     #print(strDispRange) 
+    if (NROW(datGroupDispersion[ ,"MSD"]) == 0)
+    {
+      warning(paste("No rows for MSD ", strG) )
+      return(list(meanMSD=NA,groupID=strG,coeff=NA,ptx_line=NA,pty_line=NA))
+    }
     h_Length_GE <- hist(datGroupDispersion[ ,"MSD"], breaks=xbreaks,plot=FALSE)
     lLinModel_GE <- getLogPowerSlope(h_Length_GE,powerLawRange)
     
@@ -2149,7 +2150,7 @@ plotLogLogMSD <- function(datDispersion,strG,addPlot=FALSE,powerLawRange = 100)
 ##Collect the mean MSD from each Dispersion Calcl integration Window and show mean diffusion
 plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE)
 {
-  xLim <- c(0,200)
+  xLim <- c(0,380)
   vMSD <- vector()
   vTimeWindow <- vector()
   for (i in 1:NROW(lModelwithMSD))
@@ -2187,8 +2188,21 @@ plotMSDPerIntegrationTime <- function(ldatDispersion,strG,lLinModel)
   return(lLinModel)
 }
 
-##Get Distribution of MSD and Mean MSD for each time integration window 
+rm(ldatDispersion)
+ldatDispersion <- list()
 lLinModel <- list() ##Start new list Containing The mean Vals per group per time
+
+vsmallTimeWindows <- c(2,4,5,6,7,8,10,15,20)
+vLargeScaletimeWindows <- c(2,10,40,80,120,180,200,260) #360 No Data
+vtimeWindows <- c(4,10,20,80,200,260,360)
+##Load All
+for (t in vtimeWindows)
+{
+  ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
+}
+
+##Get Distribution of MSD and Mean MSD for each time integration window 
+
 lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
 lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"NL",lLinModel)
 lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"LE",lLinModel)
@@ -2196,7 +2210,7 @@ lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"LL",lLinModel)
 lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"DE",lLinModel)
 lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"DL",lLinModel)
 
-saveRDS(lLinModel,paste0(strDataExportDir,"MSDPerPathDurationSummaryResults.rds"))
+saveRDS(lLinModel,paste0(strDataExportDir,"MSDPerPathDurationSummaryResults2.rds"))
 
   
   plotMSDPerTime(lLinModel[["NE"]])
@@ -2232,34 +2246,66 @@ If the animals moved at constant velocity then path length could be a serrogate 
 
 The resulting plots show **evidence of superdiffusion **!
 ```{r path-length to dispersion invariance - across path-durations}
-# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
-plot_meanPathLengthPerMSD <- function(datDispersion,strGroupID,addPlot=FALSE)
+## iNvariance Principle Theoretical Mean Path Length
+theoreticalMeanLength <- function(D,propFactor=1.5)
 {
-  YLIM <- 100
-  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  dispBreaks <- seq(1,30,1)
-  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Length" ],breaks=dispBreaks)
-  strTitle <- paste("mean MSD per path length", strGroupID,"#",NROW(datGroupDispersion$dispRange))
+  A <- pi*( (D)^2)
+  C <- 2*pi*(D)
+  return(round(100*(propFactor* pi*A/C)) /100 )
+}
+##Integrate time out, and plot MSD per path-length
+# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+plot_meanPathLengthPerMSD <- function(ldatDispersion,strGroupID,addPlot=FALSE)
+{
+  YLIM <- 200
+  dispBreaks <- seq(1,40,4)
+  vmeanMSDPerPathOft <- list()
+  vsdMSDPerPathOft <- list()
+  vcountMSDPerPathOft <- list()
+  for (tt in names(ldatDispersion))
+  {
+    message("Extracting ", strGroupID," t:",tt )
+    datGroupDispersion <- ldatDispersion[[tt]][ldatDispersion[[tt]]$groupID %in% strGroupID & 
+                                                !is.na(ldatDispersion[[tt]]$Length) ,]
+    if (NROW(datGroupDispersion) == 0)
+    {
+      warning("No path length data for ",strGroup," Int(t):",tt)
+      next()
+    }
+    
+    datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Length" ],breaks=dispBreaks)
+    vmeanMSDPerPathOft[[tt]] <- tapply(datGroupDispersion$MSD,datGroupDispersion$dispRange,mean,na.rm=TRUE)
+    vcountMSDPerPathOft[[tt]] <- tapply(datGroupDispersion$MSD,datGroupDispersion$dispRange,NROW)
+    vsdMSDPerPathOft[[tt]] <- tapply(datGroupDispersion$MSD,datGroupDispersion$dispRange,sd,na.rm=TRUE)
+  }
   
-  vmeanPathLengthPerMSD <- tapply(datGroupDispersion$MSD,datGroupDispersion$dispRange,mean,na.rm=TRUE)
+    datmeanMSDPerPathOft <- (do.call(rbind,vmeanMSDPerPathOft))
+    vmeanMSDPerPathOverAllt <- colMeans(datmeanMSDPerPathOft,na.rm=TRUE)
+    vmeanMSDPerPathOverAllt <- as.matrix(vmeanMSDPerPathOverAllt[names(vmeanMSDPerPathOverAllt)]) #Convert to Vector 
+    vmeansdMSDPerPathOverAllt <- as.matrix(colMeans(do.call(rbind,vsdMSDPerPathOft),na.rm=TRUE))
+    vcountMSDPerPathOverAllt <- as.matrix(colSums(do.call(rbind,vcountMSDPerPathOft),na.rm=TRUE))
+    
+    strTitle <- paste("mean MSD per path length", strGroupID,"#")
+  
+  
   if (!addPlot)
   {
-    plot(seq(1,max(dispBreaks),length.out = NROW(vmeanPathLengthPerMSD)),
-         vmeanPathLengthPerMSD,pch=16,main=strTitle,xlab="Path Length (mm)",
+    plot(seq(1,max(dispBreaks),length.out = NROW(vmeanMSDPerPathOverAllt)),
+         vmeanMSDPerPathOverAllt,pch=pointTypeScheme[[strGroupID]],main=strTitle,xlab="Path Length (mm)",
          ylim=c(0,YLIM),xlim=c(0,max(dispBreaks)),col=colourDataScheme[[strGroupID]],cex=0.7 )
   }else
   {
-    points(seq(1,max(dispBreaks),length.out = NROW(vmeanPathLengthPerMSD)),
-         vmeanPathLengthPerMSD,pch=16,main=strTitle,xlab="Path Length (mm)",
+    points(seq(1,max(dispBreaks),length.out = NROW(vmeanMSDPerPathOverAllt)),
+         vmeanMSDPerPathOverAllt,pch=16,main=strTitle,xlab="Path Length (mm)",
          col=colourDataScheme[[strGroupID]],cex=0.7 )
-    lines(seq(1,max(dispBreaks),length.out = NROW(vmeanPathLengthPerMSD)),
-         vmeanPathLengthPerMSD,lwd=1,lty=lineTypeScheme[[strGroupID]])
+    lines(seq(1,max(dispBreaks),length.out = NROW(vmeanMSDPerPathOverAllt)),
+         vmeanMSDPerPathOverAllt,lwd=1,lty=lineTypeScheme[[strGroupID]])
   }
   
   if (!addPlot)
   {
     propFactor <- 1.0
-    rpoints <- seq(0.5,max(dispBreaks), length.out = NROW(vmeanPathLengthPerMSD) )
+    rpoints <- seq(0.5,max(dispBreaks), length.out = NROW(vmeanMSDPerPathOverAllt) )
     points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
     points(seq(2,max(dispBreaks),1),theoreticalMeanLength(seq(2,max(dispBreaks),1),propFactor ),pch=2,cex=0.5 ) #Up Lim
     points(seq(1,max(dispBreaks),1),theoreticalMeanLength(seq(1,max(dispBreaks),1),propFactor ),pch=2,cex=0.5 ) #Up Lim
@@ -2267,33 +2313,73 @@ plot_meanPathLengthPerMSD <- function(datDispersion,strGroupID,addPlot=FALSE)
   }
   
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+    return(list(muMSDPerT=vmeanMSDPerPathOft,sdMSDPerT=vmeansdMSDPerPathOverAllt))
 }
 
-plot_meanPathLengthPerMSD(ldatDispersion[["2"]],'NE')
-plot_meanPathLengthPerMSD(ldatDispersion[["4"]],'NE',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["10"]],'NE',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["2"]],'NL',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["4"]],'NL',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["10"]],'NL',addPlot = TRUE)
+#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerMSD.pdf",sep=""),width=7,height=7)
+## bottom, left,top, right
+#par(mar = c(4.3,4.3,2,1))
+vtimeWindows <- c(2,4,10)
+##Load All
+baddPlot <- FALSE
+lMSDStat <- list()
+## Loop to sequantially load and process Dispersion data across time scales - freeing memory before re-allocating
+for (t in vtimeWindows)
+{ 
+  print (t)
+  rm(ldatDispersion)  
+  ldatDispersion<- list()
+  ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
+  lMSDStat[["NE"]] <- plot_meanPathLengthPerMSD(ldatDispersion,'NE',addPlot=baddPlot)
+  baddPlot <- TRUE
+  lMSDStat[["NL"]] <- plot_meanPathLengthPerMSD(ldatDispersion,'NL',addPlot=baddPlot)
+
+  lMSDStat[["LE"]] <- plot_meanPathLengthPerMSD(ldatDispersion,'LE',addPlot=baddPlot)
+  lMSDStat[["LL"]] <- plot_meanPathLengthPerMSD(ldatDispersion,'LL',addPlot=baddPlot)
+
+  lMSDStat[["DE"]] <- plot_meanPathLengthPerMSD(ldatDispersion,'DE',addPlot=baddPlot)
+  lMSDStat[["DL"]] <- plot_meanPathLengthPerMSD(ldatDispersion,'DL',addPlot=baddPlot)
+
+}
+saveRDS(lMSDStat,paste0(strDataExportDir,"MSDPerPathLengthSummaryResults.rds"))
 
 
-plot_meanPathLengthPerMSD(ldatDispersion[["2"]],'LE')
-plot_meanPathLengthPerMSD(ldatDispersion[["4"]],'LE',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["10"]],'LE',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["2"]],'LL',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["4"]],'LL',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["10"]],'LL',addPlot = TRUE)
+  ##Combined
+   lvmeanPathLengthPerMSD <- list()
+   strG <- "NL"
+   lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
+   plot(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   xtick<-seq(1,NCOL(lvmeanPathLengthPerMSD[[strG]]) )
+   axis(side=1, at=xtick, labels = FALSE)
+    text(x=xtick,  par("usr")[3], 
+     labels = colnames(lvmeanPathLengthPerMSD[[strG]]), srt = 45, pos = 1, xpd = TRUE)
 
+   strG <- "NE"
+   lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   #lines(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]])
+   strG <- "LE"
+   lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   #lines(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]])
+   strG <- "LL"
+   lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   
+  
+   strG <- "DE"
+   lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   
+   strG <- "DL"
+   lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   
+      
+   
+   
 
-plot_meanPathLengthPerMSD(ldatDispersion[["2"]],'DE')
-plot_meanPathLengthPerMSD(ldatDispersion[["4"]],'DE',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["10"]],'DE',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["2"]],'DL',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["4"]],'DL',addPlot = TRUE)
-plot_meanPathLengthPerMSD(ldatDispersion[["10"]],'DL',addPlot = TRUE)
-
-
-
+#dev.off()
 ## Classic Dispersion Growith with Path Length
 #plot_meanPathLengthPerDispersion(ldatDispersion[["2"]],'NE')
 #plot_meanPathLengthPerDispersion(ldatDispersion[["10"]],'NE',addPlot = TRUE)
@@ -2301,13 +2387,6 @@ plot_meanPathLengthPerMSD(ldatDispersion[["10"]],'DL',addPlot = TRUE)
 #plot_meanPathLengthPerDispersion(ldatDispersion[["40"]],'NE',addPlot = TRUE)
 #plot_meanPathLengthPerDispersion(ldatDispersion[["80"]],'NE',addPlot = TRUE)
 #plot_meanPathLengthPerDispersion(ldatDispersion[["120"]],'NE',addPlot = TRUE)
-
-plot_meanPathLengthPerDispersion(ldatDispersion[["2"]],'LE')
-plot_meanPathLengthPerDispersion(ldatDispersion[["10"]],'LE',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(ldatDispersion[["20"]],'LE',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(ldatDispersion[["40"]],'LE',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(ldatDispersion[["80"]],'LE',addPlot = TRUE)
-
 
 ```
 
