@@ -2221,7 +2221,7 @@ for (t in vtimeWindows)
 {
   ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
 
-  lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
+  lLinModel <- processMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
   #lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"NL",lLinModel)
   #lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"LE",lLinModel)
   #lLinModel <- plotMSDPerIntegrationTime(ldatDispersion,"LL",lLinModel)
