@@ -2319,7 +2319,8 @@ plot_meanPathLengthPerMSD <- function(ldatDispersion,strGroupID,addPlot=FALSE)
 #pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerMSD.pdf",sep=""),width=7,height=7)
 ## bottom, left,top, right
 #par(mar = c(4.3,4.3,2,1))
-vtimeWindows <- c(2,4,10)
+vsmallTimeWindows <- c(2,4,5,6,7,8,10,15,20)
+vtimeWindows <- vsmallTimeWindows
 ##Load All
 baddPlot <- FALSE
 lMSDStat <- list()
@@ -2348,32 +2349,34 @@ saveRDS(lMSDStat,paste0(strDataExportDir,"MSDPerPathLengthSummaryResults.rds"))
    lvmeanPathLengthPerMSD <- list()
    strG <- "NL"
    lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
-   plot(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   plot(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",ylim=c(0,150),
+        xlab="Path length (mm) ",ylab="Mean squared displacement")
+   
    xtick<-seq(1,NCOL(lvmeanPathLengthPerMSD[[strG]]) )
    axis(side=1, at=xtick, labels = FALSE)
-    text(x=xtick,  par("usr")[3], 
-     labels = colnames(lvmeanPathLengthPerMSD[[strG]]), srt = 45, pos = 1, xpd = TRUE)
+   text(x=xtick,  par("usr")[3], 
+     labels = colnames(lvmeanPathLengthPerMSD[[strG]]), srt = 25, pos = 2, xpd = TRUE)
 
    strG <- "NE"
    lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
-   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b")
    #lines(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]])
    strG <- "LE"
    lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
-   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b")
    #lines(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]])
    strG <- "LL"
    lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
-   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b")
    
   
    strG <- "DE"
    lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
-   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b")
    
    strG <- "DL"
    lvmeanPathLengthPerMSD[[strG]] <- as.matrix (do.call(rbind, lMSDStat[[strG]]$muMSDPerT) )
-   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],type="b")
+   points(as.vector(lvmeanPathLengthPerMSD[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b")
    
       
    
