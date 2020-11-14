@@ -70,7 +70,7 @@ r <- c(rfc(7),"#FF0000");
 pairedPalette <- col2rgb(brewer.pal(8,"Paired"),alpha = 1)
 ##For the 3 Groups 
 ###  NF, LF, DF , Black Colouring 
-pairedPalette["alpha",1:8] <- 210 ##Opacity
+#pairedPalette["alpha",1:8] <- 210 ##Opacity
 colourLegE <- col2hex(pairedPalette[,c(5,3,1,7)]) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
 colourLegL <- col2hex(pairedPalette[,c(6,4,2,8)]) ##Transparent For MCMC Samples (Live)
 pairedPalette["alpha",1:8] <- 30 ##Opacity
@@ -106,7 +106,7 @@ colourL        <-c("#03B303AF","#E60303AF","#0303E6AF")
 colourClusters <- c("#00AFBB", "#E7B800", "#FC4E07")
 
 pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, NL
-pointTypeScheme <- list(DL=pchL[1], LL=pchL[2], NL=pchL[3],DE=pchL[4], LE=pchL[5], NE=pchL[6])
+pointTypeScheme <- list(DL=pchL[5], LL=pchL[4], NL=pchL[6],DE=pchL[3], LE=pchL[2], NE=pchL[1])
 lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
 lineTypeScheme <- list(DL=lineTypeL[2], LL=lineTypeL[2], NL=lineTypeL[2], DE=lineTypeL[1], LE=lineTypeL[1], NE=lineTypeL[1])
 lineTypeL.DF <- lineTypeL[1]

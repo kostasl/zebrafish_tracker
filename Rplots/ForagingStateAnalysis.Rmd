@@ -2102,8 +2102,7 @@ In general the above data suggest that the characteristics  **dynamics governing
 
 ## Mean-Squared-Displacement over time is different between groups
 
-```{r  mean-squared-distance over time , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-
+```{r  mean-squared-distance over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 #strG <- 'DE'
 #hist(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"MSD"],main=paste(strG,mean(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"MSD"],na.rm=TRUE) ),xlim=c(0,210))
@@ -2147,8 +2146,10 @@ plotLogLogDistribution_MSD <- function(lLinModel_GE,addPlot=FALSE)
     if (!addPlot) 
     {
       plot(lLinModel_GE$xtick,lLinModel_GE$logDistribution,
-         main=paste(" Log-Log percentage of MSD "),
-         xlab="log Length (mm)", col=colourDataScheme[strG][[1]], pch=16,xlim=c(min(lLinModel_GE$xtick)/2,max(lLinModel_GE$xtick)*1.01),ylim=c(-4,3),
+         main=paste(" Log-Log distribution of MSD "),
+         xlab="log_10 Mean Squared Displacent (mm)", col=colourDataScheme[strG][[1]], pch=16,
+         xlim=c(min(lLinModel_GE$xtick),max(lLinModel_GE$xtick)*1.01),
+         ylim=c(-4,3),
          ylab="log N(l) %",xaxt="n" )
         axis(side=1, at=lLinModel_GE$xtick, labels =  as.character(10^lLinModel_GE$xtick))
        #text(x=lLinModel_GE$xtick[seq(0,length(lLinModel_GE$xtick),3)],  par("usr")[3], labels = (10^xtick[seq(0,9,3)]), srt = 45, pos = 1, xpd = TRUE)
@@ -2156,7 +2157,7 @@ plotLogLogDistribution_MSD <- function(lLinModel_GE,addPlot=FALSE)
     {
         points(lLinModel_GE$xtick,lLinModel_GE$logDistribution,
          main=paste(" Log-Log percentage of MSD " ),
-         xlab="log_10 Mean Squared Displacent (mm)", col=colourDataScheme[strG][[1]], pch=16,xlim=c(0,3.0),ylim=c(-4,3), ylab="log N(l) %")
+         xlab="log_10 Mean Squared Displacent (mm)", col=colourDataScheme[strG][[1]], pch=16, ylab="log N(l) %")
     }
     ##Plot Linear Model
     lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strG][[1]])
@@ -2171,14 +2172,18 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE)
   vTimeWindow <- vector()
   for (i in 1:NROW(lModelwithMSD))
   {
-    vMSD[i] <- lModelwithMSD[[i]]$meanMSD
-    vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
+    if (!is.null(lModelwithMSD[[i]]$meanMSD))
+    {
+      vMSD[i] <- lModelwithMSD[[i]]$meanMSD
+      vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
+    }
+   # return(0)
   }
   idxOrder <- order(vTimeWindow)
   xLim <- c(0,max(vTimeWindow ) *1.10 )
   if (!addPlot)
   {
-    plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0,70),
+    plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0,100),
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
@@ -2212,19 +2217,21 @@ processMSDPerIntegrationTime <- function(ldatDispersion,strG,lLinModel,bAddPlot 
 
 makeMSDPathDurationSummary <- function()
 {
-  
+  lMSDSummaryData <- list()
+  # Process Each Time Interval Sequentially
   for (t in vtimeWindows)
   {
     ldatDispersion <- list()
     ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
     
+    ##Make Sub List For Each group - Add the different Time Intervals as sub-lists
     for (strG  in vGroups)
-      lMSDSummaryData <- processMSDPerIntegrationTime(ldatDispersion,strG,lLinModel)
+      lMSDSummaryData <- processMSDPerIntegrationTime(ldatDispersion,strG,lMSDSummaryData)
     
     ##Clear Memory
     rm(ldatDispersion)
   }
-  saveRDS(lLinModel,paste0(strDataExportDir,"MSDPerPathDurationSummaryResults-1-60sec.rds"))
+  saveRDS(lMSDSummaryData,paste0(strDataExportDir,"MSDPerPathDurationSummaryResults-1-180sec.rds"))
   return(lMSDSummaryData)
 }
 # Main Load/Make MSD Distributios and Mean MSD versus time (Path Duration)
@@ -2235,12 +2242,12 @@ lLinModel <- list() ##Start new list Containing The mean Vals per group per time
 vGroups <- c("LL","LE","NL","NE","DL","DE")
 vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60)
 vLargeScaletimeWindows <- c(2,10,40,80,120,180,200,260) #360 No Data
-vtimeWindows <- vsmallTimeWindows# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
+vtimeWindows <- c(vsmallTimeWindows,80,100,120,180)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
 ##Process *  Serially * So we do not run out of memory
 # Results are plotted and Aggregated In lLinModel
-
+rm(lMSDSummaryData)
 try(
-lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"MSDPerPathDurationSummaryResults-1-60sec.rds"))
+lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"MSDPerPathDurationSummaryResults-1-180sec.rds"))
 )
 if (!exists("lMSDSummaryData"))
 {
@@ -2257,6 +2264,11 @@ for (strG  in vGroups)
    bAddPlot <- TRUE
   }
 }
+
+
+```
+
+```{r mean-squared-distance over time , fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
@@ -2276,8 +2288,8 @@ for (strG  in vGroups)
 #                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
 #        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
 
-
 ```
+
 
 The mean of the mean squared displacement shows the astonishing result, ** Movement in absence and presence of prey differs between groups in manner that depends on experience **
 
@@ -2291,9 +2303,9 @@ The distance is measured over an arbitrary starting point chosen to be at some X
 We investigate this over a range of integration periods, from 2 to 10 .. T seconds
 If the animals moved at constant velocity then path length could be a serrogate for time. Instead here we have regular bout movent, with pauses likely possible, and so the different integration times allow us to combine similar path-lengths, which took different times to develop, but nevertheless examine their diffusive properties through MSD, regardless of time.
 
-resulting plots show **evidence of superdiffusion **
+<!--resulting plots show **evidence of superdiffusion **-->
 
-```{r  mean-squared-distance over path-length , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE}
+```{r  mean-squared-distance over path-length , fig.show="hold", out.width="100%", echo=FALSE, cache=TRUE}
 ## iNvariance Principle Theoretical Mean Path Length
 theoreticalMeanLength <- function(D,propFactor=1.5)
 {
@@ -2306,7 +2318,7 @@ theoreticalMeanLength <- function(D,propFactor=1.5)
 process_MSDVsPathLengthData <- function(ldatDispersion,strGroupID,addPlot=FALSE)
 {
   YLIM <- 200
-  dispBreaks <- seq(1,40,4)
+  dispBreaks <- seq(1,40,2)
   vmeanMSDPerPathOft  <- list()
   vsdMSDPerPathOft    <- list()
   vcountMSDPerPathOft <- list()
@@ -2400,18 +2412,19 @@ makeMSDPathLengthSummary <- function ()
     }
   }
   
-  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerPathLengthSummaryResults1-60sec.rds"))
-  saveRDS(datmeanMSDPerPathOft,paste0(strDataExportDir,"datMSDPerPathLengthSummaryResults1-60sec.rds"))
+  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerPathLength2mmSummaryResults1-60sec.rds"))
+  saveRDS(datmeanMSDPerPathOft,paste0(strDataExportDir,"datMSDPerPathLength2mmSummaryResults1-60sec.rds"))
   return(datmeanMSDPerPathOft)
 }
 
 
 ##Try To load Precalc Results
 try(
-{datMSDVsPathlengthSummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerPathLengthSummaryResults1-60sec.rds"));
-lMSDStat <<- readRDS(paste0(strDataExportDir,"lMSDPerPathLengthSummaryResults1-60sec.rds"))}
+{datMSDVsPathlengthSummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerPathLength2mmSummaryResults1-60sec.rds"));
+lMSDStat <<- readRDS(paste0(strDataExportDir,"lMSDPerPathLength2mmSummaryResults1-60sec.rds"))
+}
 )
-if (!exists("lMSDSummaryData"))
+if (!exists("lMSDStat"))
 {
   datMSDVsPathlengthSummaryData <<- makeMSDPathLengthSummary()
 }
@@ -2426,23 +2439,24 @@ for (strG in vGroups)
   xtick <- unique(datMSDVsPathlengthSummaryData[datMSDVsPathlengthSummaryData$groupID == strG,"breaks"]) 
   if (!baddPlot)
   {
-    plot(xtick, datmeanMSDPerPathOft[[strG]],col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
-         xlab="Path length (mm)",ylab="Mean Squared Displacement (mm)",xaxt="n" ,ylim=c(0,120))
+    plot(xtick, log10(datmeanMSDPerPathOft[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
+         xlab="Path length (mm)",ylab="log Mean Squared Displacement (mm)",xaxt="n",yaxt="n" ,ylim=c(0.2,2))
   
-    axis(side=1, at=xtick, labels = names(lMSDStat[["DE"]]$`60`$breaks))  
+    axis(side=1, at=xtick, labels = names(lMSDStat[[strG]]$`2`$breaks))
+    axis(side=2, at=log10(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
   }
   else
-    points(xtick,datmeanMSDPerPathOft[[strG]],col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
+    points(xtick,log10(datmeanMSDPerPathOft[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
   
   baddPlot <- TRUE
 }
   ##Add Theoretical MSD growth vs Time
-  propFactor <- 2.0
-  lines(xtick,theoreticalMeanLength(xtick,propFactor ),pch=2,cex=0.5 ) #Up Lim
+  propFactor <- 1.0
+  lines(xtick ,log10(theoreticalMeanLength(xtick+2.0,propFactor )),pch=18,cex=0.5,type="b" ) #Up Lim
 
-  legend("topleft", legend=names(colourDataScheme)[4:9],
-         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
-         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+  legend("topleft", legend=c(names(colourDataScheme)[4:9],"Theory"),
+         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"black" ),
+         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
 
 
