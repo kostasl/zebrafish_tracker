@@ -2118,7 +2118,7 @@ getLogLogDistributions_MSDAndDispersion <-function(datDispersion,strG,addPlot=FA
 
     #max(datDispersion$MSD,na.rm=TRUE)+15
     xbreaks_MSD <-seq(0,350,15)
-    xbreaks_Dispersion <-seq(0,11,0.5)
+    xbreaks_Dispersion <-seq(0,12,0.5)
     
     #strDispRange <-levels(datGroupDispersion$dispRange)[dispRange]
     #print(strDispRange) 
@@ -2137,13 +2137,13 @@ getLogLogDistributions_MSDAndDispersion <-function(datDispersion,strG,addPlot=FA
     lLinModel_GE <- getLogPowerSlope(h_MSD_GE,powerLawRange)
     lLinModel_GE$groupID <- strG
     lLinModel_GE$xtickMSD <-xtick_MSD
-    lLinModel_GE$logDistribution <-log10(100*h_MSD_GE$counts/sum(h_MSD_GE$counts) )
+    lLinModel_GE$logPMFMSD <-log10(100*h_MSD_GE$counts/sum(h_MSD_GE$counts) )
     lLinModel_GE$meanMSD <- mean(datGroupDispersion[ ,"MSD"],na.rm=TRUE) ##Add Mean MSD for timeWindow
     lLinModel_GE$sdMSD <- sd(datGroupDispersion[ ,"MSD"],na.rm=TRUE) ##Add Mean MSD for timeWindow
     lLinModel_GE$countMSD <- NROW(datGroupDispersion[!is.na(datGroupDispersion$MSD),]) ##Add Mean MSD for timeWindow
     ##Dispersion Stat
     lLinModel_GE$xtickDispersion <-xtick_Dispersion
-    lLinModel_GE$logDistribution <-log10(100*h_Dispersion_GE$counts/sum(h_Dispersion_GE$counts) )
+    lLinModel_GE$logPMFDispersion <-log10(100*h_Dispersion_GE$counts/sum(h_Dispersion_GE$counts) )
     lLinModel_GE$meanDispersion <- mean(datGroupDispersion[ ,"Dispersion"],na.rm=TRUE) ##Add Mean MSD for timeWindow
     lLinModel_GE$sdDispersion <- sd(datGroupDispersion[ ,"Dispersion"],na.rm=TRUE) ##Add Mean MSD for timeWindow
     lLinModel_GE$countDispersion <- NROW(datGroupDispersion[!is.na(datGroupDispersion$Dispersion),]) ##Add Mean MSD for timeWindow
@@ -2159,7 +2159,7 @@ plotLogLogDistribution_MSD <- function(lLinModel_GE,addPlot=FALSE)
     strG <-lLinModel_GE$groupID
     if (!addPlot) 
     {
-      plot(lLinModel_GE$xtickMSD,lLinModel_GE$logDistribution,
+      plot(lLinModel_GE$xtickMSD,lLinModel_GE$logPMFMSD,
          main=paste(" Log-Log distribution of MSD "),
          xlab="log_10 Mean Squared Displacent (mm)", col=colourDataScheme[strG][[1]], pch=16,
          xlim=c(min(lLinModel_GE$xtickMSD),max(lLinModel_GE$xtickMSD)*1.01),
@@ -2169,9 +2169,9 @@ plotLogLogDistribution_MSD <- function(lLinModel_GE,addPlot=FALSE)
        #text(x=lLinModel_GE$xtick[seq(0,length(lLinModel_GE$xtick),3)],  par("usr")[3], labels = (10^xtick[seq(0,9,3)]), srt = 45, pos = 1, xpd = TRUE)
     }else
     {
-        points(lLinModel_GE$xtickMSD,lLinModel_GE$logDistribution,
+        points(lLinModel_GE$xtickMSD,lLinModel_GE$logPMFMSD,
          main=paste(" Log-Log percentage of MSD " ),
-         xlab="log_10 Mean Squared Displacent (mm)", col=colourDataScheme[strG][[1]], pch=16, ylab="log N(l) %")
+         col=colourDataScheme[strG][[1]], pch=16, ylab="log N(l) %")
     }
     ##Plot Linear Model
     lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strG][[1]])
@@ -2254,9 +2254,9 @@ rm(ldatDispersion)
 ldatDispersion <- list()
 lLinModel <- list() ##Start new list Containing The mean Vals per group per time
 vGroups <- c("LL","LE","NL","NE","DL","DE")
-vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60)
+vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60,70)
 vLargeScaletimeWindows <- c(2,10,40,80,120,180,200,260) #360 No Data
-vtimeWindows <- c(vsmallTimeWindows,70,80,90,100,120,180)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
+vtimeWindows <- c(vsmallTimeWindows,80,90,100,120,180)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
 ##Process *  Serially * So we do not run out of memory
 # Results are plotted and Aggregated In lLinModel
 rm(lMSDSummaryData)
@@ -2482,7 +2482,7 @@ Findings:
   1. Spontaneous MSD grows faster than Evoked.
   2. Non-linear MSD regime is evidence of super-diffusion
 
-## Dispersion over time
+## Dispersion over time - Clearly Distinct for LE
 
 In the initial sections I took Marquez et al 2019 regime to estimate dispersions given a 5sec window. But how dispersions change over time is uknown. Lets have a look:
 
@@ -2491,23 +2491,23 @@ In the initial sections I took Marquez et al 2019 regime to estimate dispersions
 ```{r  dispersion over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 ## A Histogram in Log Scale Of MSD scale
-plotLogLogDistribution_MSD <- function(lLinModel_GE,addPlot=FALSE)
+plotLogLogDistribution_Dispersion <- function(lLinModel_GE,addPlot=FALSE)
 {
     strG <-lLinModel_GE$groupID
     if (!addPlot) 
     {
-      plot(lLinModel_GE$xtickDispersion,lLinModel_GE$logDistribution,
+      plot(lLinModel_GE$xtickDispersion,lLinModel_GE$logPMFDispersion,
          main=paste(" Log-Log distribution of Dispersion "),
          xlab="log_10 Dispersion (mm)", col=colourDataScheme[strG][[1]], pch=16,
-         xlim=c(min(lLinModel_GE$xtickDispersion),max(lLinModel_GE$xtickDispersion)*1.01),
+         xlim=c(min(lLinModel_GE$xtickDispersion,na.rm=TRUE),max(lLinModel_GE$xtickDispersion,na.rm=TRUE)*1.01),
          ylim=c(-4,3),
-         ylab="log N(l) %",xaxt="n" )
+         ylab="log N(l) %",xaxt="n" ,type="b")
         axis(side=1, at=lLinModel_GE$xtickDispersion, labels =  as.character(10^lLinModel_GE$xtickDispersion))
        #text(x=lLinModel_GE$xtick[seq(0,length(lLinModel_GE$xtick),3)],  par("usr")[3], labels = (10^xtick[seq(0,9,3)]), srt = 45, pos = 1, xpd = TRUE)
     }else
     {
-        points(lLinModel_GE$xtickDispersion,lLinModel_GE$logDistribution,
-         main=paste(" Log-Log percentage of Dispersion " ),
+        points(lLinModel_GE$xtickDispersion,lLinModel_GE$logPMFDispersion,
+         main=paste(" Log-Log percentage of Dispersion " ),type="b",
          xlab="log_10 Dispersion (mm)", col=colourDataScheme[strG][[1]], pch=16, ylab="log N(l) %")
     }
     ##Plot Linear Model
@@ -2525,7 +2525,7 @@ plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
   {
     if (!is.null(lModelwithDispersion[[i]]$meanDispersion))
     {
-      vMSD[i] <- lModelwithDispersion[[i]]$meanDispersion
+      vDispersion[i] <- lModelwithDispersion[[i]]$meanDispersion
       vTimeWindow[i] <-as.numeric( names(lModelwithDispersion[i]) )
     }
    # return(0)
@@ -2534,7 +2534,7 @@ plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
   xLim <- c(0,max(vTimeWindow ) *1.10 )
   if (!addPlot)
   {
-    plot(vTimeWindow[idxOrder],vDispersionD[idxOrder],xlim=xLim,ylim=c(0,100),
+    plot(vTimeWindow[idxOrder],vDispersion[idxOrder],xlim=xLim,ylim=c(0,13),
          col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="Dispersion (mm)")
@@ -2549,9 +2549,6 @@ plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
 
 # Main Load/Make MSD Distributios and Mean MSD versus time (Path Duration)
 
-rm(ldatDispersion)
-ldatDispersion <- list()
-lLinModel <- list() ##Start new list Containing The mean Vals per group per time
 vGroups <- c("LL","LE","NL","NE","DL","DE")
 vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60)
 vLargeScaletimeWindows <- c(2,10,40,80,120,180,200,260) #360 No Data
@@ -2581,16 +2578,16 @@ for (strG  in vGroups)
 
 ```
 
-```{r mean-squared-distance over time , fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
+```{r mean-squared-distance vs Dispersion , fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
-  plotMSDPerTime(lMSDSummaryData[["NE"]])
-  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE)
-  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE)
-  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE)
-  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE)
-  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["NE"]])
+  plotDispersionPerTime(lMSDSummaryData[["NL"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["LE"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["LL"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["DE"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["DL"]],TRUE)
   
   legend("topright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
@@ -2603,6 +2600,174 @@ for (strG  in vGroups)
 
 ```
 
+As with the development of MSD over time, I also find that Dispersion is distinct for LE, and thus with experience larvae learn when to initiate exploration, (at sooner than  controls) .
+
+## Dispersion Vs MSD
+I obtained similar results when looking at MSD and Dispersion over time. These have obvious links, but is their relationship linear?
+There is a linear relationship of Dispersion against path-length, but this is supralinear for MSD vs path-length, so perhaps they are not linearly related. 
+
+
+```{r  mean-squared-distance over Dispersion , fig.show="hold", out.width="100%", echo=FALSE, cache=TRUE}
+## iNvariance Principle Theoretical Mean Path Length
+theoreticalMeanLength <- function(D,propFactor=1.5)
+{
+  A <- pi*( (D)^2)
+  C <- 2*pi*(D)
+  return(round(100*(propFactor* pi*A/C)) /100 )
+}
+##Integrate time out, and plot MSD per Dispersion size
+# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+process_MSDVsDispersion <- function(ldatDispersion,strGroupID,addPlot=FALSE)
+{
+  YLIM <- 200
+  dispBreaks <- seq(1,13,0.5)
+  vmeanMSDPerPathOft  <- list()
+  vsdMSDPerPathOft    <- list()
+  vcountMSDPerPathOft <- list()
+  message("Extracting ", strGroupID )
+
+  datGroupDispersion <- ldatDispersion[ldatDispersion$groupID %in% strGroupID & 
+                                                !is.na(ldatDispersion$Dispersion) ,]
+  if (NROW(datGroupDispersion) == 0)
+  {
+    warning("No Dispersion path data for ", strGroupID)
+    return(list(muMSDPerT=NA,sdMSDPerT=NA,N=NA,breaks=NA))
+  }
+
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
+  
+  vmeanMSDPerPathOft  <- tapply(datGroupDispersion$MSD,datGroupDispersion$dispRange, mean,na.rm=TRUE)
+  vcountMSDPerPathOft <- tapply(datGroupDispersion$MSD,datGroupDispersion$dispRange, NROW)
+  vsdMSDPerPathOft    <- tapply(datGroupDispersion$MSD,datGroupDispersion$dispRange, sd,na.rm=TRUE)
+  names(dispBreaks)=names(vmeanMSDPerPathOft)
+  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+  return(list(muMSDPerT=vmeanMSDPerPathOft,sdMSDPerT=vsdMSDPerPathOft,N=vcountMSDPerPathOft,breaks=dispBreaks[1:length(vmeanMSDPerPathOft)]  ) )
+}
+
+plot_MSDPerDispersionSummary <- function(lMSDPathLStat)
+{
+  
+    strTitle <- paste("mean MSD per Dispersion size", strGroupID,"#")
+
+  if (!addPlot)
+  {
+    plot(seq(1,max(dispBreaks),length.out = NROW(vmeanMSDPerPathOverAllt)),
+         vmeanMSDPerPathOverAllt,pch=pointTypeScheme[[strGroupID]],main=strTitle,xlab="Dispersion size (mm)",
+         ylim=c(0,YLIM),xlim=c(0,max(dispBreaks)),col=colourDataScheme[[strGroupID]],cex=0.7 )
+  }else
+  {
+    points(seq(1,max(dispBreaks),length.out = NROW(vmeanMSDPerPathOverAllt)),
+         vmeanMSDPerPathOverAllt,pch=16,main=strTitle,xlab="Dispersion size (mm)",
+         col=colourDataScheme[[strGroupID]],cex=0.7 )
+    lines(seq(1,max(dispBreaks),length.out = NROW(vmeanMSDPerPathOverAllt)),
+         vmeanMSDPerPathOverAllt,lwd=1,lty=lineTypeScheme[[strGroupID]])
+  }
+  
+  if (!addPlot)
+  {
+    propFactor <- 1.0
+    rpoints <- seq(0.5,max(dispBreaks), length.out = NROW(vmeanMSDPerPathOverAllt) )
+    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+    points(seq(2,max(dispBreaks),1),theoreticalMeanLength(seq(2,max(dispBreaks),1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    points(seq(1,max(dispBreaks),1),theoreticalMeanLength(seq(1,max(dispBreaks),1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    legend("topleft",pch=c(16,2),legend=c("Data","Linear"),col=c(colourDataScheme[[strGroupID]],"black") )
+  }
+  
+}
+
+#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerMSD.pdf",sep=""),width=7,height=7)
+## bottom, left,top, right
+#par(mar = c(4.3,4.3,2,1))
+makeMSDDispersionSummary <- function ()
+{
+  vtimeWindows <- vsmallTimeWindows #c(1,2,10) #
+  ##Load All
+  baddPlot <- FALSE
+  lMSDStat <- list()
+  datmeanMSDPerPathOft <- data.frame()
+  ## Loop to sequantially load and process Dispersion data across time scales - freeing memory before re-allocating
+  for (strG in vGroups)
+  {
+    lMSDStat[[strG]] <- list()  
+    
+    for (t in vtimeWindows)
+    { 
+      
+      rm(ldatDispersion)   #Clear Mem
+      ldatDispersion<- list()
+      print (t)
+      ##Load MSD /Dispersion/ Path Data
+      ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
+      
+      lMSDStat[[strG]][[as.character(t)]] <- process_MSDVsDispersion(ldatDispersion[[as.character(t)]],strG)
+      
+      #plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
+    
+      datNewTable <- data.frame(do.call(cbind, lMSDStat[[strG]][[as.character(t)]] ))
+      datNewTable$T <- as.character(t)
+      datNewTable$groupID <- strG
+      datmeanMSDPerPathOft <- rbind(datmeanMSDPerPathOft, datNewTable ) 
+      #vmeanMSDPerPathOverAllt <- colMeans(datmeanMSDPerPathOft,na.rm=TRUE)
+      #vmeanMSDPerPathOverAllt <- as.matrix(vmeanMSDPerPathOverAllt[names(vmeanMSDPerPathOverAllt)]) #Convert to Vector 
+      #vmeansdMSDPerPathOverAllt <- as.matrix(colMeans(do.call(rbind,vsdMSDPerPathOft),na.rm=TRUE))
+      #vcountMSDPerPathOverAllt <- as.matrix(colSums(do.call(rbind,vcountMSDPerPathOft),na.rm=TRUE))
+    }
+  }
+  
+  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults1-70sec.rds"))
+  saveRDS(datmeanMSDPerPathOft,paste0(strDataExportDir,"datMSDPerDispersion05mmSummaryResults1-70sec.rds"))
+  return(datmeanMSDPerPathOft)
+}
+
+rm(lMSDDispersionStat)
+##Try To load Precalc Results
+try(
+  {
+    datMSDVsDispersionSummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerDispersion05mmSummaryResults1-70sec.rds"));
+    lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults1-70sec.rds"))
+  }
+)
+if (!exists("lMSDDispersionStat"))
+{
+  datMSDVsDispersionSummaryData <<- makeMSDDispersionSummary()
+}
+
+lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults1-70sec.rds"))
+  
+# PLOT Summary per Path Range - Mean MSD Per Path Length over all T
+baddPlot <- FALSE
+datmeanMSDPerDispersionOft <- list()
+for (strG in vGroups)
+{
+  datmeanMSDPerDispersionOft[[strG]] <- tapply(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"muMSDPerT"] , datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"],mean,na.rm=TRUE)
+  xtick <- unique(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"]) 
+  if (!baddPlot)
+  {
+    plot(xtick, (datmeanMSDPerDispersionOft[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
+         xlab="Dispersion size (mm)",ylab=" Mean Squared Displacement (mm)",xaxt="n" ,ylim=c(0.2,220))
+  
+    axis(side=1, at=xtick, labels = names(lMSDDispersionStat[[strG]]$`2`$breaks))
+    #axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
+  }
+  else
+    points(xtick,(datmeanMSDPerDispersionOft[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
+  
+  baddPlot <- TRUE
+}
+  ##Add Theoretical MSD growth vs Time
+  propFactor <- 1.0
+  lines(xtick ,(theoreticalMeanLength(xtick+2.0,propFactor )),pch=18,cex=0.5,type="b" ) #Up Lim
+
+  legend("topleft", legend=c(names(colourDataScheme)[4:9],"Linear"),
+         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"black" ),
+         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+
+
+
+```
+
+I find that a *supralinear* relationship holds between dispersion and MSD that appears consistent across all groups
+Since Dispersion and Path length are linear, then it follows that MSD and path-length are also supralinear (as shown earlier in)
 # Hunt-events and foraging state
 
 Here I will identify the number of hunt events evoked/initiated in each foraging state.
