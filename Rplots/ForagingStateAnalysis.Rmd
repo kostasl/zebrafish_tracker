@@ -1,7 +1,7 @@
 ---
 title: 'Notebook: Identifying the role of experience on foraging and exploration movement patterns'
 output:
-    html_document:
+  html_document:
     df_print: paged
     params: 
     output_dir: "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/foragingAnalysis"
@@ -1358,7 +1358,7 @@ for (strG  in vGroups)
 
 ```
 
-```{r mean-squared-distance over time , fig.show="hold",fig.cap="Mean squared distance over time for LF spontaneous shows distinctive quick growth" out.width="100%", echo=FALSE, cache=FALSE}
+```{r mean-squared-distance over time , fig.show="hold",fig.cap="Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE}
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
@@ -1659,7 +1659,7 @@ for (strG  in vGroups)
 
 
 
-```{r mean-squared-distance vs Dispersion , fig.cap="Dispersion for LF spontaneous grows distinctively fast, in agreement with MSD" fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
+```{r mean-squared-distance vs Dispersion , fig.cap="Dispersion for LF spontaneous grows distinctively fast, in agreement with MSD", fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
