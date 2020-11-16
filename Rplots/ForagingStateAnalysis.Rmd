@@ -2557,7 +2557,7 @@ vtimeWindows <- c(vsmallTimeWindows,70,80,90,100,120,180)# c(1,2,4) # vsmallTime
 # Results are plotted and Aggregated In lLinModel
 rm(lMSDSummaryData)
 try(
-lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"MSDPerPathDurationSummaryResults-1-180sec.rds"))
+lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"statPerPathDurationSummaryResults-1-180sec.rds"))
 )
 if (!exists("lMSDSummaryData"))
 {
