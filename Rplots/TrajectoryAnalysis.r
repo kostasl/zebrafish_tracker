@@ -16,6 +16,33 @@ source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r") ##For Filter Initializat
 
 meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);return(tproc) }
 
+##A linear Fit Onto a region of a a Histogram
+getLogPowerSlope <- function (h_Length_G, length_lin_region = 10)
+{ ##linear Region
+  idxFrom <- 7
+  idxTo <- 11
+  # mu<-log10( (100*h_Length_G$counts/sum(h_Length_G$counts))[idxFrom] - (100*h_Length_G$counts/sum(h_Length_G$counts))[idxTo]  /  (h_Length_G$mids[idxTo]-h_Length_G$mids[idxFrom]) )
+  
+  if (sum(h_Length_G$counts) == 0)
+  {
+    warning("getLogPowerSlope: No data in histogram!")
+    return(list(coeff=NA,ptx_line=NA,pty_line=NA))
+  }
+  datHist <- data.frame(length=log10(h_Length_G$mids), proportion=log10(100*h_Length_G$counts/sum(h_Length_G$counts) ) )
+  datLM <- datHist[!is.infinite(datHist$proportion) & 10^datHist$length >=length_lin_region ,]
+  linFit <- list()
+  if (NROW(datLM) >0 )
+    linFit <- lm(proportion~length,data=datLM )
+  else
+    linFit <- lm(proportion~length,data=datHist[!is.infinite(datHist$proportion),] )
+  
+  y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* (linFit$model$length ) ) )
+  x_linModel <- linFit$model$length
+  
+  #return (round(mu*100)/100 )
+  return(list(coeff=linFit$coefficients[2],ptx_line=x_linModel,pty_line=y_linModel) )
+}
+
 ### We are looking to detect Exploration/Exploitation (as in Marquez et al. 2020)  using a measure
 ### of spatial dispersion - calculated for each tracked frame, calculated as the spatial dispersion of trajectory of the preceding X secods
 ## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##"
