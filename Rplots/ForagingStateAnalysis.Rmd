@@ -1664,16 +1664,17 @@ plot_ProbOfPathDuration <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion
   {
     plot(log10(vTimeWindow),log10(unlist(lLarvaFraction)),type="b",
          col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]],pch=pointTypeScheme[lMSDGroupSummaryData[[1]]$groupID][[1]],
-         ylim=c(-2,1),xlim=c(0,2.5),ylab="Fraction of larvae ",xlab="Time to escape circular ROI (sec)",xaxt="n" )
+         ylim=c(-2,1),xlim=c(0,2.5),ylab="log fraction of larvae ",xlab="log time to escape circular ROI (sec)",xaxt="n" )
     axis(side=1, at=log10(vTimeWindow), labels =  as.character(vTimeWindow) ) 
   }
-  for (i in 1:ncol(datMeanMSDVsTimePerLarva))
+  #for (i in 1:NROW(lMSDGroupSummaryData))
     lines(log10(vTimeWindow),log10(unlist(lLarvaFraction)),type="b",
           col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]],pch=pointTypeScheme[lMSDGroupSummaryData[[1]]$groupID][[1]])
   
+  ##Add Linear Model On PowerLaw Drop
     lines(x_linModel,y_linModel,lwd=3,col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]])
     
-    message(lMSDGroupSummaryData[[1]]$groupID[[1]], linFit$coefficients )
+    #message(lMSDGroupSummaryData[[1]]$groupID[[1]], linFit$coefficients )
     
     
     
