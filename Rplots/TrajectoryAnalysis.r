@@ -16,7 +16,7 @@ source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r") ##For Filter Initializat
 
 meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);return(tproc) }
 
-##A linear Fit Onto a region of a a Histogram
+##A linear Fit Onto a region of a Histogram
 getLogPowerSlope <- function (h_Length_G, length_lin_region = 10)
 { ##linear Region
   idxFrom <- 7

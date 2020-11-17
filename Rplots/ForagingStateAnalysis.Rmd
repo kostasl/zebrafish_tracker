@@ -1168,17 +1168,20 @@ calcBasicPathStatisticsPerDuration <-function(datDispersion,strG,addPlot=FALSE,p
     strTitle <- paste("MSD length ", strG,"#",NROW(datGroupDispersion))
 
     #max(datDispersion$MSD,na.rm=TRUE)+15
-    xbreaks_MSD <-seq(0,350,15)
-    xbreaks_Dispersion <-seq(0,12,0.5)
-    xbreaks_Length <-seq(0,100,3)
+    xbreaks_MSD        <- seq(0,350,15)
+    xbreaks_Dispersion <- seq(0,12,0.5)
+    xbreaks_Length     <- seq(0,100,3)
     
     #strDispRange <-levels(datGroupDispersion$dispRange)[dispRange]
     #print(strDispRange) 
     if (NROW(datGroupDispersion[ ,"MSD"]) == 0)
     {
       warning(paste("No rows for MSD ", strG) )
-      return(list(meanPooledMSD=NA,groupID=strG,coeff=NA,ptx_line=NA,pty_line=NA))
+      
+      lret<-list(meanPooledMSD=NA,groupID=strG,coeff=NA,ptx_line=NA,pty_line=NA)
+      return(lret )
     }
+    
     h_MSD_GE <- hist(datGroupDispersion[ ,"MSD"], breaks=xbreaks_MSD,plot=FALSE)
     h_Dispersion_GE <- hist(datGroupDispersion[ ,"Dispersion"], breaks=xbreaks_Dispersion,plot=FALSE)
     h_Length_GE <- hist(datGroupDispersion[ ,"Length"], breaks=xbreaks_Length,plot=FALSE)
@@ -1202,7 +1205,6 @@ calcBasicPathStatisticsPerDuration <-function(datDispersion,strG,addPlot=FALSE,p
     lLinModel_GE$sdPooledMSD <- sd(datGroupDispersion[ ,"MSD"],na.rm=TRUE) ##Add Mean MSD for timeWindow
     lLinModel_GE$countPooledMSD <- NROW(datGroupDispersion[!is.na(datGroupDispersion$MSD),]) ##Add Mean MSD for timeWindow
     
-    
     ## Path Length
     ##Dispersion Stat - For Each Larva, And As Group
     lLinModel_GE$xtickPathLength <-xtick_Length
@@ -1215,20 +1217,16 @@ calcBasicPathStatisticsPerDuration <-function(datDispersion,strG,addPlot=FALSE,p
     lLinModel_GE$sdPooledPathLength <- sd(datGroupDispersion[ ,"Length"],na.rm=TRUE) ##Add Mean MSD for timeWindow
     lLinModel_GE$countPooledPathLength <- NROW(datGroupDispersion[!is.na(datGroupDispersion$Length),]) ##Add Mean MSD for timeWindow
     
-    
-    
     ##Dispersion Stat - For Each Larva, And As Group
-    lLinModel_GE$xtickDispersion <-xtick_Dispersion
-    lLinModel_GE$logPMFDispersion <-log10(100*h_Dispersion_GE$counts/sum(h_Dispersion_GE$counts) )
+    lLinModel_GE$xtickDispersion <- xtick_Dispersion
+    lLinModel_GE$logPMFDispersion <- log10(100*h_Dispersion_GE$counts/sum(h_Dispersion_GE$counts) )
     lLinModel_GE$meanDispersionPerLarva <- tapply(datGroupDispersion[ ,"Dispersion"],datGroupDispersion[ ,"expID"],mean)
     lLinModel_GE$sdDispersionPerLarva <- tapply(datGroupDispersion[ ,"Dispersion"],datGroupDispersion[ ,"expID"],sd)
     lLinModel_GE$countDispersionPerLarva <- tapply(datGroupDispersion[ ,"Dispersion"],datGroupDispersion[ ,"expID"],NROW)
 
     lLinModel_GE$meanPooledDispersion <- mean(datGroupDispersion[ ,"Dispersion"],na.rm=TRUE) ##Add Mean MSD for timeWindow
-    lLinModel_GE$sdPooledDispersion <- sd(datGroupDispersion[ ,"Dispersion"],na.rm=TRUE) ##Add Mean MSD for timeWindow
+    lLinModel_GE$sdPooledDispersion   <- sd(datGroupDispersion[ ,"Dispersion"],na.rm=TRUE) ##Add Mean MSD for timeWindow
     lLinModel_GE$countPooledDispersion <- NROW(datGroupDispersion[!is.na(datGroupDispersion$Dispersion),]) ##Add Mean MSD for timeWindow
-    
-    
     
     return(lLinModel_GE)
 }
@@ -1271,9 +1269,9 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
       if (bUsePooledMean)
         vMSD[i] <- lModelwithMSD[[i]]$meanPooledMSD
       else ##Use Group Mean
-        vMSD[i] <- mean(lModelwithMSD[[i]]$meanPooledMSDPerLarva)
+        vMSD[i] <- mean(lModelwithMSD[[i]]$meanMSDPerLarva)
       
-      vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
+      vTimeWindow[i] <- as.numeric( names(lModelwithMSD[i]) )
     }
    # return(0)
   }
@@ -1301,11 +1299,11 @@ processMSDPerIntegrationTime <- function(ldatDispersion,strG,lMSDSummaryData,bAd
   for (tt in names(ldatDispersion))
   {
     message("Processing MSD for ",strG," T:",tt)
-    lMSDSummaryData[[strG]][[as.character(tt)]] = calcBasicPathStatisticsPerDuration(ldatDispersion[[tt]],strG,bAddPlot)
+    lMSDSummaryData[[strG]][[as.character(tt)]] <- calcBasicPathStatisticsPerDuration(ldatDispersion[[tt]],strG,bAddPlot)
     bAddPlot <- TRUE
   }
   
-  return(lLinModel)
+  return(lMSDSummaryData)
 }
 
 makeMSDPathDurationSummary <- function(bParallel=FALSE)
@@ -1332,6 +1330,7 @@ makeMSDPathDurationSummary <- function(bParallel=FALSE)
     ##Clear Memory
     rm(ldatDispersion)
   }
+  
   saveRDS(lMSDSummaryData,paste0(strDataExportDir,"statPerPathDurationSummaryResults-",head(vtimeWindows,1),"-",tail(vtimeWindows,1),"sec.rds"))
   return(lMSDSummaryData)
 }
@@ -1368,11 +1367,12 @@ vGroups <- c("LL","LE","NL","NE","DL","DE")
 vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60,70)
 vLargeScaletimeWindows <- c(2,10,40,80,95,100,120,180,200,260) #360 No Data
 vtimeWindows <- c(vsmallTimeWindows,80,90,95,98,100,120,180,200,260)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
+#vtimeWindows <- c(200,260)
 ##Process *  Serially * So we do not run out of memory
 # Results are plotted and Aggregated In lLinModel
 rm(lMSDSummaryData)
 try(
-lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"statPerPathDurationSummaryResults-1-260sec.rds"))
+  lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"statPerPathDurationSummaryResults-1-260sec.rds"))
 )
 if (!exists("lMSDSummaryData"))
 {
@@ -1396,37 +1396,6 @@ for (strG  in vGroups)
 
 ```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE}
 
-
-##Collect the mean MSD from each Dispersion Calcl integration Window and show mean diffusion
-plotMSDPerLarvaPerTime <- function(lModelwithMSD,addPlot=FALSE)
-{
-  vMSD <- list()
-  vTimeWindow <- vector()
-  for (i in 1:NROW(lModelwithMSD))
-  {
-    if (!is.null(lModelwithMSD[[i]]$meanPooledMSD))
-    {
-        vMSD[i] <- lModelwithMSD[[i]]$meanPooledMSD
-        vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
-    }
-   # return(0)
-  }
-  idxOrder <- order(vTimeWindow)
-  xLim <- c(0,max(vTimeWindow ) *1.10 )
-  if (!addPlot)
-  {
-    plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0,100),
-         col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
-         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
-         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
-  }else
-    points(vTimeWindow[idxOrder],vMSD[idxOrder],
-           col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
-           pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
-  
-  lines(vTimeWindow[idxOrder],vMSD[idxOrder], col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
-        pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
-}
 
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
@@ -1493,16 +1462,17 @@ plotMSDVsTimePerLarva <- function(lModelwithMSD,addPlot=FALSE)
   vTimeWindow <- vector()
   for (i in 1:NROW(lModelwithMSD))
   {
-    if (!is.null(lModelwithMSD[[i]]$meanPooledMSDPerLarva))
+    if (!is.null(lModelwithMSD[[i]]$meanMSDPerLarva))
     {
-        lMSD[[i]] <- lModelwithMSD[[i]]$meanPooledMSDPerLarva
+        lMSD[[i]] <- lModelwithMSD[[i]]$meanMSDPerLarva
         vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
     }
   }
   ##Now plot MSD evolution of each larva
   datMeanMSDVsTimePerLarva <- data.frame(do.call(rbind,lMSD))
   if (!addPlot)
-    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],ylim=c(0,200))
+    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",
+         col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],ylim=c(0,200),xlab="Time (sec)",ylab="MSD (mm)",xlim=c(0,200))
   for (i in 1:ncol(datMeanMSDVsTimePerLarva))
     lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
   
@@ -1565,21 +1535,22 @@ title(main="DL Dispersion ")
 
 
 
-```{r path-length among larvae across time, fig.show="hold",fig.cap="Mean dispersions over path lengths of increasing durations ", out.width="50%", echo=FALSE, cache=FALSE}
+```{r, path-length larval-mean across time, fig.show="hold",fig.cap="Mean group (mean per larva) path-length with increasing duration ", out.width="50%", echo=FALSE, cache=FALSE}
 
-##Collect the mean MSD from each Dispersion Calcl integration Window and show mean diffusion
-plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
+# Collect the mean PathLength from each Dispersion Calcl integration Window and show mean diffusion
+# Path Length Mean
+plotMeanPathLengthVsTime <- function(lModelwithMSD,addPlot=FALSE, bUsePooledMean=TRUE)
 {
-  vMSD <- vector()
+  vPathLength <- vector()
   vTimeWindow <- vector()
   for (i in 1:NROW(lModelwithMSD))
   {
-    if (!is.null(lModelwithMSD[[i]]$meanPooledMSD))
+    if (!is.null(lModelwithMSD[[i]]$meanPooledPathLength))
     {
       if (bUsePooledMean)
-        vMSD[i] <- lModelwithMSD[[i]]$meanPooledMSD
+        vPathLength[i] <- lModelwithMSD[[i]]$meanPooledPathLength
       else ##Use Group Mean
-        vMSD[i] <- mean(lModelwithMSD[[i]]$meanPooledMSDPerLarva)
+        vPathLength[i] <- mean(lModelwithMSD[[i]]$meanPathLength,na.rm=TRUE)
       
       vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
     }
@@ -1589,97 +1560,154 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
   xLim <- c(0,max(vTimeWindow ) *1.10 )
   if (!addPlot)
   {
-    plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0,100),
+    plot(vTimeWindow[idxOrder],vPathLength[idxOrder],xlim=xLim,ylim=c(0,100),
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
-         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
+         xlab="Path duration (sec)", ylab="mean path length (mm)")
   }else
-    points(vTimeWindow[idxOrder],vMSD[idxOrder],
+    points(vTimeWindow[idxOrder],vPathLength[idxOrder],
            col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
            pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
   
-  lines(vTimeWindow[idxOrder],vMSD[idxOrder], col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+  lines(vTimeWindow[idxOrder],vPathLength[idxOrder], col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
 }
 
 
-plotPathVsTimePerLarva <- function(lModelwithMSD,addPlot=FALSE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["NE"]],FALSE,FALSE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["NL"]],TRUE,FALSE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["LE"]],TRUE,FALSE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["LL"]],TRUE,FALSE)
+title(main="Mean group path length ")
+plotMeanPathLengthVsTime(lMSDSummaryData[["DE"]],TRUE,FALSE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["DL"]],TRUE,FALSE)
+
+plotMeanPathLengthVsTime(lMSDSummaryData[["NE"]],FALSE,TRUE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["NL"]],TRUE,TRUE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["LE"]],TRUE,TRUE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["LL"]],TRUE,TRUE)
+title(main="Pooled Mean path length ")
+plotMeanPathLengthVsTime(lMSDSummaryData[["DE"]],TRUE,TRUE)
+plotMeanPathLengthVsTime(lMSDSummaryData[["DL"]],TRUE,TRUE)
+
+
+```
+
+```{r, path-length among larvae across time, fig.show="hold",fig.cap="Distribution of larval mean path-lengths with increasing duration ", out.width="50%", echo=FALSE, cache=FALSE}
+
+## This plots The mean points Per Larvae- Revealing the Distribution
+plotPathVsTimePerLarva <- function(lModelwithMSD, addPlot=FALSE)
 {
   
   lMSD <- list()
   vTimeWindow <- vector()
   for (i in 1:NROW(lModelwithMSD))
   {
-    if (!is.null(lModelwithMSD[[i]]$meanDispersionPerLarva))
+    if (!is.null(lModelwithMSD[[i]]$meanPathLengthPerLarva))
     {
-        lMSD[[i]] <- lModelwithMSD[[i]]$meanDispersionPerLarva
+        lMSD[[i]] <- lModelwithMSD[[i]]$meanPathLengthPerLarva
         vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
     }
   }
   ##Now plot MSD evolution of each larva
   datMeanMSDVsTimePerLarva <- data.frame(do.call(rbind,lMSD))
   if (!addPlot)
-    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],ylim=c(0,13),ylab="Dispersion (mm)",xlab="Time (sec)")
+    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],
+         ylim=c(0,100),xlim=c(0,200),ylab="mean larval path length (mm)",xlab="Time (sec)")
   for (i in 1:ncol(datMeanMSDVsTimePerLarva))
     lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
   
 } 
 
-plotDispersionVsTimePerLarva(lMSDSummaryData[["NE"]],FALSE)
-plotDispersionVsTimePerLarva(lMSDSummaryData[["NL"]],FALSE)
-title(main="NL Dispersion ")
-plotDispersionVsTimePerLarva(lMSDSummaryData[["LE"]],FALSE)
-plotDispersionVsTimePerLarva(lMSDSummaryData[["LL"]],FALSE)
-title(main="LL Dispersion ")
-plotDispersionVsTimePerLarva(lMSDSummaryData[["DE"]],FALSE)
-plotDispersionVsTimePerLarva(lMSDSummaryData[["DL"]],FALSE)
-title(main="DL Dispersion ")  
-```
+plotPathVsTimePerLarva(lMSDSummaryData[["NE"]],FALSE)
+plotPathVsTimePerLarva(lMSDSummaryData[["NL"]],FALSE)
+title(main="NL Mean path length per larva")
+plotPathVsTimePerLarva(lMSDSummaryData[["LE"]],FALSE)
+plotPathVsTimePerLarva(lMSDSummaryData[["LL"]],FALSE)
+title(main="LL Mean path length per larva")
+plotPathVsTimePerLarva(lMSDSummaryData[["DE"]],FALSE)
+plotPathVsTimePerLarva(lMSDSummaryData[["DL"]],FALSE)
+title(main="DL Mean path length per larva")  
 
+```
 
 ## Probability of staying within bounded recording area shows LF move out quickest
 
 The above Dispersion and MSD plots analysed at the level of each larva against time raise gave me the idea that it may be useful to describe differences in the motion between groups in terms of the probability of staying within a bounded area $A$ with increasing time $P(within A | t)$ , or $P_A(t)$.
 This can be calculated through the fraction of points larvae that remain observable with increasing path duration $T$, because larvae are more likely to leave the arena with increasing path-duration, and thus the probaility of observing a path-length longer than $T>X$, can be indicative of difference in how the disperse, or explore space.
+
 ```{r prob-of-path-duration,fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls"}
 
 
-plot_ProbOfPathDuration <- function(lMSDSummaryData,addPlot=FALSE)
+plot_ProbOfPathDuration <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion=12)
 {
  lLarvaFraction <- list()
   vTimeWindow <- vector()
-  for (i in 1:NROW(lMSDSummaryData))
+  for (i in 1:NROW(lMSDGroupSummaryData))
   {
-    if (!is.null(lMSDSummaryData[[i]]$countPooledMSDPerLarva))
-    {
-        lLarvaFraction[[i]] <- nrow(lMSDSummaryData[[i]]$countPooledMSDPerLarva)
-        vTimeWindow[i] <-as.numeric( names(lMSDSummaryData[i]) )
+    if (!is.null(lMSDGroupSummaryData[[i]]$countMSDPerLarva))
+    { ##Divide as a fraction of larval population count with the smalles path duration
+        lLarvaFraction[[i]] <- nrow(lMSDGroupSummaryData[[i]]$countMSDPerLarva)/nrow(lMSDGroupSummaryData[[1]]$countMSDPerLarva)
+        vTimeWindow[i] <-as.numeric( names(lMSDGroupSummaryData[i]) )
     }
   }
+    proportion <- log10(unlist(lLarvaFraction[vTimeWindow > linRegion]))
+    duration <- log10(vTimeWindow[vTimeWindow > linRegion]) 
+    linFit <- lm(proportion ~ duration )
+    #linFit <- lm(proportion~length,data=datHist[!is.infinite(datHist$proportion),] )
+  
+  y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* (linFit$model$duration ) ) )
+  x_linModel <- linFit$model$duration
+  
+  
   if (!addPlot)
-    plot(vTimeWindow,unlist(lLarvaFraction)/lLarvaFraction[[1]],type="b",
-         col=colourDataScheme[lMSDSummaryData[[1]]$groupID][[1]],pch=pointTypeScheme[lMSDSummaryData[[1]]$groupID][[1]],
-         ylim=c(0,1),ylab="Probability of path duration ",xlab="Time (sec)")
+  {
+    plot(log10(vTimeWindow),log10(unlist(lLarvaFraction)),type="b",
+         col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]],pch=pointTypeScheme[lMSDGroupSummaryData[[1]]$groupID][[1]],
+         ylim=c(-2,1),xlim=c(0,2.5),ylab="Fraction of larvae ",xlab="Time to escape circular ROI (sec)",xaxt="n" )
+    axis(side=1, at=log10(vTimeWindow), labels =  as.character(vTimeWindow) ) 
+  }
   for (i in 1:ncol(datMeanMSDVsTimePerLarva))
-    lines(vTimeWindow,unlist(lLarvaFraction)/lLarvaFraction[[1]],type="b",
-          col=colourDataScheme[lMSDSummaryData[[1]]$groupID][[1]],pch=pointTypeScheme[lMSDSummaryData[[1]]$groupID][[1]])
+    lines(log10(vTimeWindow),log10(unlist(lLarvaFraction)),type="b",
+          col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]],pch=pointTypeScheme[lMSDGroupSummaryData[[1]]$groupID][[1]])
+  
+    lines(x_linModel,y_linModel,lwd=3,col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]])
+    
+    message(lMSDGroupSummaryData[[1]]$groupID[[1]], linFit$coefficients )
+    
+    
+    
+    return(linFit)
 } 
+linMod <- list()
+linMod[["NE"]] <- plot_ProbOfPathDuration(lMSDSummaryData[["NE"]])
+linMod[["NL"]] <- plot_ProbOfPathDuration(lMSDSummaryData[["NL"]],TRUE)
 
-plot_ProbOfPathDuration(lMSDSummaryData[["NE"]])
-plot_ProbOfPathDuration(lMSDSummaryData[["NL"]],TRUE)
+linMod[["LE"]] <- plot_ProbOfPathDuration(lMSDSummaryData[["LE"]],TRUE)
+linMod[["LL"]] <- plot_ProbOfPathDuration(lMSDSummaryData[["LL"]],TRUE)
 
-plot_ProbOfPathDuration(lMSDSummaryData[["LE"]],TRUE)
-plot_ProbOfPathDuration(lMSDSummaryData[["LL"]],TRUE)
+linMod[["DE"]] <- plot_ProbOfPathDuration(lMSDSummaryData[["DE"]],TRUE)
+linMod[["DL"]] <- plot_ProbOfPathDuration(lMSDSummaryData[["DL"]],TRUE)
+title(main=" Distribution of path durations ")
 
-plot_ProbOfPathDuration(lMSDSummaryData[["DE"]],TRUE)
-plot_ProbOfPathDuration(lMSDSummaryData[["DL"]],TRUE)
+vLegend<-vector()
+for (i in 4:9)
+  vLegend[i-3] <- paste(names(colourDataScheme)[i],"μ=", format(linMod[[ names(colourDataScheme)[i] ]]$coeff[2],digits=2) )
 
+legend("topright", legend=vLegend,
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
 
 
 ```
 
+The above mean path lengths are equivalent to the mean path length between entering and exiting a circlular region, as the depict the length of path from the time the larva enters the tracking ROI until its exit.
+
 The probability of path duration plot gives some clarity on what is actually happening. We estimate this probability by counting the fraction of larvae that show paths with duration of $T$ (perhaps I could/should be counting the number of paths per larvae maybe?)
 In any case paths above a particular duration, are not generated because the larva has moved out of view by time T, and thus is out of bounds. This is equivalent to measuring Exit times from the ~22mm tracking ROI. Clearly LF are behaving distinctively, with shorter exit times in both Spontaneous and Evoked conditions. The Evoked LF are similar to the spontaneous DF,NF, while **LF larva in absence of prey move out of the region quicker than controls**
+
+Linear fitting to the log-log curves can approximate the power law exponent. 
+
 
 ### MSD to path-length for evidence of super-Diffusion - (Integrate time out)
 
