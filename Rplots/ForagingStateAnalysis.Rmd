@@ -91,7 +91,7 @@ loadDispersionData <- function(forceReload = FALSE)
   {
     message("Calculate Trajectory Dispersions")
     loaddatAllFrames()
-    datDispersion <- calcTrajectoryDispersions(datAllFrames)
+    datDispersion <- calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
   }
   AllRange <<- range(datDispersion$Dispersion,na.rm=TRUE)
 }
@@ -473,7 +473,7 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
 
 
 ```{r Calc Dispersion of Each Trajectory,include=FALSE}
-calcTrajectoryDispersions <- function(datAllFrames)
+calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
 {
 
   datDispersion <- data.frame()
@@ -522,7 +522,8 @@ calcTrajectoryDispersions <- function(datAllFrames)
                                          Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
                                          MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
                                          SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
-                                         frameRow=as.integer(row.names( datEventFrames))  )
+                                         frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
+                                         )
   
         ##Append to main Dispersion Data Frame
         datDispersion <- rbind(datEventDispersion,datDispersion)
@@ -1716,6 +1717,7 @@ Lets now look at how Mean squared distance increases with path length.
 The distance is measured over an arbitrary starting point chosen to be at some X sec in the past. 
 We investigate this over a range of integration periods, from 2 to 10 .. T seconds
 If the animals moved at constant velocity then path length could be a serrogate for time. Instead here we have regular bout movent, with pauses likely possible, and so the different integration times allow us to combine similar path-lengths, which took different times to develop, but nevertheless examine their diffusive properties through MSD, regardless of time.
+
 
 <!--resulting plots show **evidence of superdiffusion **-->
 
