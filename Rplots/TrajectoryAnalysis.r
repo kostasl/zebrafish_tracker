@@ -73,7 +73,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   if (nfrm > NROW(datEventFrames) & (twindowSec > 0) )
   {
     warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
-    return(list(Dispersion=NA,Length=NA,MSD=NA,SD=NA))
+    return(list(Dispersion=NA,Length=NA,MSD=NA,SD=NA,FrameRowID=NA))
   }
   if (twindowSec == 0)  
     nfrm <- NROW(datEventFrames) ##measure acroos Full Path From start to end /Variable time window set to full path duration
