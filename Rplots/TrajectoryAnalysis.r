@@ -16,9 +16,37 @@ source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r") ##For Filter Initializat
 
 meanf <- function(t,k) {n=length(t);tproc=t;k=min(k,n); for(i in (k/2):n) tproc[i]=mean(t[max(1,i-k/2): min(n, i+k/2) ]);return(tproc) }
 
+##A linear Fit Onto a region of a Histogram
+getLogPowerSlope <- function (h_Length_G, length_lin_region = 10)
+{ ##linear Region
+  idxFrom <- 7
+  idxTo <- 11
+  # mu<-log10( (100*h_Length_G$counts/sum(h_Length_G$counts))[idxFrom] - (100*h_Length_G$counts/sum(h_Length_G$counts))[idxTo]  /  (h_Length_G$mids[idxTo]-h_Length_G$mids[idxFrom]) )
+  
+  if (sum(h_Length_G$counts) == 0)
+  {
+    warning("getLogPowerSlope: No data in histogram!")
+    return(list(coeff=NA,ptx_line=NA,pty_line=NA))
+  }
+  datHist <- data.frame(length=log10(h_Length_G$mids), proportion=log10(100*h_Length_G$counts/sum(h_Length_G$counts) ) )
+  datLM <- datHist[!is.infinite(datHist$proportion) & 10^datHist$length >=length_lin_region ,]
+  linFit <- list()
+  if (NROW(datLM) >0 )
+    linFit <- lm(proportion~length,data=datLM )
+  else
+    linFit <- lm(proportion~length,data=datHist[!is.infinite(datHist$proportion),] )
+  
+  y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* (linFit$model$length ) ) )
+  x_linModel <- linFit$model$length
+  
+  #return (round(mu*100)/100 )
+  return(list(coeff=linFit$coefficients[2],ptx_line=x_linModel,pty_line=y_linModel) )
+}
+
 ### We are looking to detect Exploration/Exploitation (as in Marquez et al. 2020)  using a measure
 ### of spatial dispersion - calculated for each tracked frame, calculated as the spatial dispersion of trajectory of the preceding X secods
 ## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##"
+# When twindowSec=0 then It calculates Distances against the from 1st frame of a event's trajectory
 calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
 {
   start.time <- Sys.time()
@@ -32,27 +60,39 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   vDistanceTravelledToFrame <- vector()
   vMSD <- vector() #Mean Square Displacement of the twindowSec trajectory
   vSD <- vector() # Square Displacement to the start of the twindowSec trajectory
+  vFrameRow <- vector()
   ## Estimate number of frames for Tsec of video
   nfrm <- head(datEventFrames$fps,1)*twindowSec
-  nSpace <- nfrm/4
+  nSpace <- head(datEventFrames$fps,1) ##Calc for Every Second
   ## Loop Through Each Frame and calc Dispersion
   datEventFrames$posX <- meanf(datEventFrames$posX,10)
   datEventFrames$posY <- meanf(datEventFrames$posY,10)
   
   #plot(datEventFrames$posX,datEventFrames$posY)
-  if (nfrm > NROW(datEventFrames))
+  #If a fixed Trajectory duration is set then check If Enough Frames are available
+  if (nfrm > NROW(datEventFrames) & (twindowSec > 0) )
   {
     warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
     return(list(Dispersion=NA,Length=NA,MSD=NA,SD=NA))
   }
-  ## \TODO: Do not have to sample all points along trajectory - Sub Sample Spaced out points to Get Dispersion Estimate
+  if (twindowSec == 0)  
+    nfrm <- NROW(datEventFrames) ##measure acroos Full Path From start to end /Variable time window set to full path duration
+  
+  ## Do not have to sample all points along trajectory - Sub Sample Spaced out points to Get Dispersion Estimate
   for (i in nfrm:NROW(datEventFrames) ) ##
   {
-    ##Skip some intermediates frames to optimize speed - sample equally distant points in  trajectory / instead of every point
-    vIdx <- seq(from=(i-nfrm),by=nSpace,to=i)
-    vX <- head(datEventFrames[vIdx,"posX"],nfrm)
-    vY <- head(datEventFrames[vIdx,"posY"],nfrm)
+    # SPACE frames out :Skip some intermediates frames to optimize speed - sample equally distant points in  trajectory / instead of every point
+    vIdx <- 1
+    ##Overide moving time window when twindowSec = - And Start from 1st frame of the path - Thus Thus calculated Windows enlarge as the path gets longer
+    if (twindowSec == 0) 
+      vIdx <- seq(from=1,by=nSpace,to=NROW(datEventFrames)) ##All frames From Start of event to End )
+    else
+      vIdx <- seq(from=(i-nfrm),by=nSpace,to=i) ##Last nfrm
+
+    vX <- datEventFrames[vIdx,"posX"]
+    vY <- datEventFrames[vIdx,"posY"]
     ##Find min Radius of circle that could encompass whole trajectory as half of the maximum distance between any two points of the trajectory
+    vFrameRow[i] <- as.integer(row.names( datEventFrames[i,]))
     
     ## Use outer to compute All to All point X  traj. differences / 
     mat_posDX <- outer(vX,vX,'-')
@@ -74,7 +114,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
-  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,MSD=vMSD,SD=vSD)
+  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
   return( lRet)
 }
   
