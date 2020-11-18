@@ -530,15 +530,15 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
         
       }##For Each Event
   
-    ## \TODO Normalize Dispersion Per Larva Here - Dividing by the maximum dispersion
-    datExpDisp <- datDispersion[datDispersion$expID == e,]
-    range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
-     if (!is.na(range_Disp))
-        datDispersion[datDispersion$expID == e,]$Dispersion_norm <- datExpDisp$Dispersion/range_Disp[2]
+      ## \TODO Normalize Dispersion Per Larva Here - Dividing by the maximum dispersion
+      datExpDisp <- datDispersion[datDispersion$expID == e,]
+      range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
+       if (!is.na(range_Disp))
+          datDispersion[datDispersion$expID == e,]$Dispersion_norm <- datExpDisp$Dispersion/range_Disp[2]
     
-    end.time <- Sys.time()
-    time.taken <- end.time - start.time
-    print(time.taken)
+      end.time <- Sys.time()
+      time.taken <- end.time - start.time
+      print(time.taken)
     
     }#For Each Exp ID
   
