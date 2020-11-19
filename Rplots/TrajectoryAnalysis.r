@@ -43,6 +43,92 @@ getLogPowerSlope <- function (h_Length_G, length_lin_region = 10)
   return(list(coeff=linFit$coefficients[2],ptx_line=x_linModel,pty_line=y_linModel) )
 }
 
+
+
+###```{r Calc Dispersion of Each Trajectory,include=FALSE}
+calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
+{
+  
+  datDispersion <- data.frame()
+  vexpID <- unique(datAllFrames$expID)
+  e <- vexpID[1]
+  ##'Add new column
+  datAllFrames$Dispersion <- NA
+  
+  start.time <- Sys.time()
+  
+  i = 0;
+  
+  ## For Each Recording Event of each experiment
+  for (e in vexpID)
+  {
+    i = i + 1
+    message(i,". ExpID:",e)
+    
+    
+    stopifnot(is.numeric(e) & e > 0)
+    #stopifnot(i < 3) ##Test Run
+    
+    vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
+    
+    ##For Each Event
+    for (ev in vEventID)
+    {
+      datEventFrames <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == ev & datAllFrames$posX != 0 ,]  
+      
+      meanfps <-  head(datEventFrames$fps,1)
+      groupID <- as.character(unique(datEventFrames$groupID) )
+      message(paste("ExpID:",e,"EventID:",ev,"fps:",meanfps," nFrames:",NROW(datEventFrames)) )
+      #  We may Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
+      #  PROCESS TrackLets #
+      #vTracklets <- unique(datEventFrames$trackletID)
+      
+      if (NROW(datEventFrames) < 10)
+        next() ##No Frames In event - Move to next one
+      
+      lEventDispersionAndLength <- calcTrajectoryDispersionAndLength(datEventFrames,tsec_timeWindow) 
+      
+      datEventDispersion <- data.frame(expID=e,
+                                       eventID=ev,
+                                       Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
+                                       Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
+                                       Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
+                                       MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
+                                       SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
+                                       frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
+      )
+      
+      ##Append to main Dispersion Data Frame
+      datDispersion <- rbind(datEventDispersion,datDispersion)
+      
+    }##For Each Event
+    
+    ## \TODO Normalize Dispersion Per Larva Here - Dividing by the maximum dispersion
+    datExpDisp <- datDispersion[datDispersion$expID == e,]
+    range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
+    if (!is.na(range_Disp))
+      datDispersion[datDispersion$expID == e,]$Dispersion_norm <- datExpDisp$Dispersion/range_Disp[2]
+    
+    end.time <- Sys.time()
+    time.taken <- end.time - start.time
+    print(time.taken)
+    
+  }#For Each Exp ID
+  
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+  
+  datDispersion <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
+  
+  saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
+  
+  return (datDispersion)
+} ## Calc Fuction
+
+#hist(datDispersion$Dispersion_norm )
+
+
 ### We are looking to detect Exploration/Exploitation (as in Marquez et al. 2020)  using a measure
 ### of spatial dispersion - calculated for each tracked frame, calculated as the spatial dispersion of trajectory of the preceding X secods
 ## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##"

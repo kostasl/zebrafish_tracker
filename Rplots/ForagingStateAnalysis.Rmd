@@ -52,13 +52,14 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
+source("HuntingEventAnalysis_lib.r")
 
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
 
-tsec_timeWindow <- 5 
+tsec_timeWindow <- 7 
 thres_dispersion_class <- 0.2
 ##Clustering
 Nclust <- 2
@@ -78,8 +79,8 @@ loaddatAllFrames <- function(forceReload = FALSE)
 #Original Dispersion Record per frame
 #datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
 ## Extended Dispersion Merged With maxDispersion Data
-#rm("datDispersion")
-loadDispersionData <- function(forceReload = FALSE)
+# Param tsec_timeWindow=0 default value loads pathstat calculated over the full event length - Not Confined to moving Time Window of X sec
+loadDispersionData <- function(forceReload = FALSE,tsec_timeWindow=0)
 {
   try(
     ##Check If Already Loaded
@@ -91,9 +92,32 @@ loadDispersionData <- function(forceReload = FALSE)
   {
     message("Calculate Trajectory Dispersions")
     loaddatAllFrames()
-    datDispersion <- calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
+    datDispersion <<- calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
   }
   AllRange <<- range(datDispersion$Dispersion,na.rm=TRUE)
+  tsec_timeWindow <<- tsec_timeWindow ##Change Global Ref to Last Call
+  return(datDispersion)
+}
+
+## PathStat Data Merged onto Hunt Event based on initiation frame
+loadHuntEventMergedWithPathStat <- function()
+{
+  
+  datHEventDispersion <- data.frame()
+  message("Loading from :",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+  try(
+    datHEventDispersion <- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+  )
+
+## If we have not merged these records before, make them now
+  if (!exists("datHEventDispersion"))
+  { 
+    loaddatAllFrames()
+    datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+    datHEventDispersion <- mergeDispersionOntoHuntEvents(datDispersion,datAllFrames,datHuntLabelledEventsSBMerged_fixed)
+  }
+  
+  return(datHEventDispersion)
 }
 
 
@@ -102,7 +126,7 @@ loadDispersionData <- function(forceReload = FALSE)
 ```{r merge max larval-dispersion onto dispersion data events, echo=FALSE,cache=FALSE,results=FALSE,warning=FALSE}
 ## Attaches the max Dispersion found between both evoked and spontaneous trajectories of each larva
 ## This is used so we can combine S/E larval recordings to detect both exploration/ exploitation state - and normalize appropriatelly to the joined trajectrories between tests as if they were ## one 20min recording  
-mergeRangeOfLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpPairs)
+mergeRangeOfLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,datExpPairs,tsec_timeWindow=0)
 {
     ## Merge Max Dispersion per larva Onto Dispersion data (so we can normalize on a per larva basis instead of experiment basis)
   ## Calc Normalization to Max Dispersion by combining both Spont And Exoked cond per larva
@@ -159,47 +183,6 @@ mergeRangeOfLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,dat
 }
 ```
 
-```{r combine-dispersion-with-hunt events, echo=FALSE,cache=TRUE,results=FALSE,warning=FALSE}
-
-### Combines information across Detected HuntEvents and their outcome, the dispersion of the larval trajectory during which these were
-## initiated  ,and the position at which the hunt-event was initiated
-mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLabelledEventsSBMerged_fixed)
-{
-  message(paste(" Loading Hunt Event List to Analyse... "))
-
-  start.time <- Sys.time()
-  ## Attach Frame Number to Dispersion Data
-  datDispersion <- cbind(datDispersion,frameN=datAllFrames[datDispersion[,"frameRow"],'frameN'],
-                         posX=datAllFrames[datDispersion[,"frameRow"],'posX'],
-                         posY=datAllFrames[datDispersion[,"frameRow"],'posY'])
-  
-  ## Extract HUnt Event Foraging State
-  ### 1. Get Dispersion Measure of each hunt event
-  ## MERGE Dispersion With HuntEvent Records
-    # Need to convert to char  GroupID factor( datHuntLabelledEventsSBMerged_fixed$groupID) 
-    datDispersion$groupID <- levels( datDispersion$groupID)[datDispersion$groupID]
-    datHEventDispersion <- merge(datDispersion,datHuntLabelledEventsSBMerged_fixed,
-                                 all.y=TRUE,
-                                 by.x=c("frameN","expID","eventID","groupID"),
-                                 by.y=c("startFrame","expID","eventID","groupID") )
-    ## Add Position In Arena
-    saveRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-    message("Saved to:",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-    
-    nmergemissingEvents <-  NROW(datHEventDispersion[!(datHEventDispersion$frameRow %in% datDispersion$frameRow),] )
-    if (nmergemissingEvents > 0)
-      warning("** ",nmergemissingEvents, " Hunt Events failed to merge ")
-  end.time <- Sys.time()
-  time.taken <- end.time - start.time
-  print(time.taken)
-  
-  return(data.frame(datHEventDispersion ) )
-}
-
-
-
-```
-
 
 
 ```{r  merge hunt-events with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,results=FALSE,message=FALSE,warning=FALSE }
@@ -214,25 +197,35 @@ datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file
 ## Link Evoked and Spontaneous Trajectories
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+loadHuntEventMergedWithPathStat()
 
-message("Loading from :",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-try(
-datHEventDispersion <<- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-)
 
-loadDispersionData()
-## If we have not merged these records before, make them now
-if (!exists("datHEventDispersion"))
-{ 
-  loaddatAllFrames()
-  datHEventDispersion <- mergeDispersionOntoHuntEvents(datDispersion,datAllFrames,datHuntLabelledEventsSBMerged_fixed)
+#loadDispersionData(forceReload = TRUE,tsec_timeWindow = 0)
+##Load Dispersion Data, check if data.frame has been extended with larva ranges, and merge if need to  have been added - 
+loadDispersionData_norm <- function(tsec_timeWindow)
+{
+  
+  try( {
+    try(rm("datDispersion"));
+    message("Loading ",file=paste0(strDataExportDir,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds"));
+    datDispersion <<- readRDS(file=paste0(strDataExportDir,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds") ) ;
+    }
+    )
+  ##If the Merged Version is not found then Make one
+  if (!exists("datDispersion"))
+  {
+    datDispersion <- loadDispersionData(forceReload = TRUE,tsec_timeWindow)
+  }
+    ## Merge Max Dispersion on there - If it is not already there then Calculate and save 
+  if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | 
+      !any(grepl("min_larval_Dispersion",names(datDispersion)) ) |
+      !any(grepl("Dispersion_larval_norm", names(datDispersion)) )  )
+    datDispersion <<- mergeRangeOfLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs)
+  
+  return(datDispersion)
 }
 
-## Merge Max Dispersion on there - If it is not already there then Calculate and save 
-if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | 
-    !any(grepl("min_larval_Dispersion",names(datDispersion)) ) |
-    !any(grepl("Dispersion_larval_norm", names(datDispersion)) )  )
-  datDispersion <<- mergeRangeOfLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs)
+loadDispersionData_norm(tsec_timeWindow)
 ## Check for max Calc Error
 #datDispersion[datDispersion$Dispersion > datDispersion$max_Dispersion,]
 ```
@@ -296,8 +289,8 @@ plotExpNormDispersionTrajectories <- function(groupID, datAllFrames, datDispersi
 plotNBMixGClusteredDispersionTrajectories <- function(groupID, datAllFrames, datDispersion, datHEventDispersion,datExpPairs,TH_DISP = 0.2)
 { 
   #load(file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
-  datHEventDispersion <<- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-  
+  #datHEventDispersion <<- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+  datHEventDispersion <<- loadHuntEventMergedWithPathStat()
   ## Merge sparse Clustered Dispersions Results onto full Dispersion Data
   lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
   if (!("clustID" %in% names(datSubDispersion)))
@@ -472,90 +465,6 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
 
 
 
-```{r Calc Dispersion of Each Trajectory,include=FALSE}
-calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
-{
-
-  datDispersion <- data.frame()
-  vexpID <- unique(datAllFrames$expID)
-  e <- vexpID[1]
-  ##'Add new column
-  datAllFrames$Dispersion <- NA
-  
-  start.time <- Sys.time()
-   
-  i = 0;
-
-  ## For Each Recording Event of each experiment
-    for (e in vexpID)
-    {
-      i = i + 1
-      message(i,". ExpID:",e)
-      
-      
-      stopifnot(is.numeric(e) & e > 0)
-      #stopifnot(i < 3) ##Test Run
-      
-      vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
-    
-      ##For Each Event
-      for (ev in vEventID)
-      {
-        datEventFrames <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == ev & datAllFrames$posX != 0 ,]  
-      
-        meanfps <-  head(datEventFrames$fps,1)
-        groupID <- as.character(unique(datEventFrames$groupID) )
-        message(paste("ExpID:",e,"EventID:",ev,"fps:",meanfps," nFrames:",NROW(datEventFrames)) )
-        #  We may Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
-        #  PROCESS TrackLets #
-        #vTracklets <- unique(datEventFrames$trackletID)
-        
-        if (NROW(datEventFrames) < 10)
-          next() ##No Frames In event - Move to next one
-        
-        lEventDispersionAndLength <- calcTrajectoryDispersionAndLength(datEventFrames,tsec_timeWindow) 
-        
-        datEventDispersion <- data.frame(expID=e,
-                                         eventID=ev,
-                                         Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
-                                         Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
-                                         Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
-                                         MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
-                                         SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
-                                         frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
-                                         )
-  
-        ##Append to main Dispersion Data Frame
-        datDispersion <- rbind(datEventDispersion,datDispersion)
-        
-      }##For Each Event
-  
-      ## \TODO Normalize Dispersion Per Larva Here - Dividing by the maximum dispersion
-      datExpDisp <- datDispersion[datDispersion$expID == e,]
-      range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
-       if (!is.na(range_Disp))
-          datDispersion[datDispersion$expID == e,]$Dispersion_norm <- datExpDisp$Dispersion/range_Disp[2]
-    
-      end.time <- Sys.time()
-      time.taken <- end.time - start.time
-      print(time.taken)
-    
-    }#For Each Exp ID
-  
-    end.time <- Sys.time()
-    time.taken <- end.time - start.time
-    print(time.taken)
-    
-  datDispersion <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
-    
-  saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
-  
-  return (datDispersion)
-} ## Calc Fuction
-
-#hist(datDispersion$Dispersion_norm )
-```
-
 ## Detect Exploration -Exploitation via dispersion
  
  In Marquez et al. 2019 Ext Fig 3a, the dispersion of each larva is normalized against its own range before the overall (bimodal) distribution is shown.
@@ -606,26 +515,45 @@ Next we plot these for each experimental condition individually (non-Normalized)
  hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,breaks=100,main="DF Evoked",xlab="Dispersion (mm)",col=colourDataScheme$DF$Evoked)
 ```
  
-Smooth estimates using a gaussian kernel show a shift towards exploitation for the pooled *LF* trajectories 
-```{r dispersion densities per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
-loadDispersionData()
+Smooth estimates using a gaussian kernel show a shift towards exploitation for the pooled *LF* trajectories, measured across the whole event duration (at 1sec intervals):
+
+```{r, dispersion densities WholePath per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+loadDispersionData(TRUE, tsec_timeWindow = 0)
  ## plot est, Densities Compare Spont to Evoked
  BW=0.2
- plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="Dispersion (mm)",lty=1  )
+ plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="Full path Dispersion (mm)",lty=1  )
  lines(density(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
  
-  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="Dispersion (mm)",lty=1 )
+  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="Full path dispersion (mm)",lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
 
- plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="Dispersion (mm)",lty=1 )
+ plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="Full path dispersion (mm)",lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
 
 ```
+These look rather uniform across all groups. But if we examine the dispersion generated over a particular duration time-window, here 20 sec :
 
 
+```{r, dispersion densities 20sec Path per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+loadDispersionData(TRUE, tsec_timeWindow = 20)
+ ## plot est, Densities Compare Spont to Evoked
+ BW=0.2
+ plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="20sec path dispersion (mm)",lty=1  )
+ lines(density(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
+ 
+  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="20sec path dispersion (mm)",lty=1 )
+ lines(density(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
+
+ plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="20sec path dispersion (mm)",lty=1 )
+ lines(density(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
+legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
+
+```
 <!-- For completness, the following dispersions have been normalized to maximum trajectory dispersion found across all experiments (*global normalization*): -->
 ```{r plot globally normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide',include=FALSE,eval=FALSE  }
 
@@ -640,6 +568,9 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$D
  
 ```
 
+Here differences in LF having larger dispersion within the 20sec time-frame are evident, combined with the results of theprevious figures on dispersion over the whole path being uniform, these results imply **LF do not explore the ROI with higher dispersal, but they are quicker to disperse**.
+*In the absence of prey, dispersions grow faster in LF and DF*.
+
 ### Normalized dispersion per experiment
 
 Next, we examine the same dispesions normalized against the maximum dispersion calculated in the trajectory length of the respective experiment.
@@ -648,14 +579,16 @@ Each measured dispersion is divided by the max dispersion trajectory experiment,
 
 ```{r plot normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ### Normed Per Larva
+tsec_timeWindow <- 20
+datDispersion <- loadDispersionData_norm(tsec_timeWindow)
+strXLab <- paste(tsec_timeWindow,"sec Dispersion  (norm per exp.)")
+hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion_norm,breaks=50,main="LF Spontaneous",xlab=strXLab, col=colourDataScheme$LF$Spont)
+hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion_norm,breaks=50,main="NF Spontaneous",xlab=strXLab, col=colourDataScheme$NF$Spont)
+hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion_norm,breaks=50,main="DF Spontaneous",xlab=strXLab, col=colourDataScheme$DF$Spont)
 
-hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion_norm,breaks=100,main="LF Spontaneous",xlab="Dispersion  (norm per exp.)", col=colourDataScheme$LF$Spont)
-hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion_norm,breaks=100,main="NF Spontaneous",xlab="Dispersion  (norm per exp.)", col=colourDataScheme$NF$Spont)
-hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion_norm,breaks=100,main="DF Spontaneous",xlab="Dispersion  (norm per exp.)", col=colourDataScheme$DF$Spont)
-
-hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion_norm,breaks=100,main="LF Evoked",xlab="Dispersion  (norm per exp.)",col=colourDataScheme$LF$Evoked)
-hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion_norm,breaks=100,main="NF Evoked",xlab="Dispersion  (norm per exp.)",col=colourDataScheme$NF$Evoked)
-hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=100,main="DF Evoked",xlab="Dispersion  (norm per exp.)",col=colourDataScheme$DF$Evoked)
+hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion_norm,breaks=50,main="LF Evoked",xlab=strXLab,col=colourDataScheme$LF$Evoked)
+hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion_norm,breaks=50,main="NF Evoked",xlab=strXLab,col=colourDataScheme$NF$Evoked)
+hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion_norm,breaks=50,main="DF Evoked",xlab=strXLab,col=colourDataScheme$DF$Evoked)
 
 ```
 
@@ -714,54 +647,76 @@ legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$D
 ```
 
 #### Maximum dispersion per larva
-Then examining the maximum larval dispersions, against which we normalize we find :
-
-#### Histograms of max dispersion per larva
-```{r Max-dispersion histogram per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
-##### Maximum Dispersions Per Larva- 
-datMaxDispersionPerLarva <- readRDS(file=paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds") )
-nBreaks=20
-ylimUp <- 20
-# extract Evoked to Spont max disp data
-datMaxDispersionPerExp.NF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_exp_Dispersion
-datMaxDispersionPerExp.NF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'NL' ,]$expID.E, ]$max_exp_Dispersion
-
-datMaxDispersionPerExp.LF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_exp_Dispersion 
-datMaxDispersionPerExp.LF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'LL' ,]$expID.E, ]$max_exp_Dispersion
-
-datMaxDispersionPerExp.DF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_exp_Dispersion
-datMaxDispersionPerExp.DF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'DL' ,]$expID.E, ]$max_exp_Dispersion
-
-## Max reported is across NE/NL - so checking either condition would suffice to get the max for each larva
-datMaxDispersionPerLarva.LF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_larval_Dispersion
-datMaxDispersionPerLarva.NF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_larval_Dispersion
-datMaxDispersionPerLarva.DF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_larval_Dispersion 
-
-
-# plot histograms
-hist((datMaxDispersionPerLarva.NF)
-     , breaks=nBreaks,main="NF Larvae ", xlab="Max. dispersion  per larva (mm)",xlim=c(0,10),col=colourDataScheme$NF$Evoked,ylim=c(0,ylimUp))
-
-hist((datMaxDispersionPerLarva.LF)
-     , breaks=nBreaks,main="LF Larvae ", xlab="Max. dispersion  per larva (mm)",xlim=c(0,10),col=colourDataScheme$LF$Evoked,ylim=c(0,ylimUp))
-
-hist((datMaxDispersionPerLarva.DF),
-     breaks=nBreaks,main="DF Larvae ", xlab="Max. dispersion per larva (mm)",xlim=c(0,10),col=colourDataScheme$DF$Evoked,ylim=c(0,ylimUp))
-
-```
+Then examining the maximum larval dispersions over the full event path, we find they look similar between groups :
+I will use these max values to normalize dispersions for each larva (as in Marquez et al 2019).
 
 #### Compare distribution of max dispersion per larva
 
-```{r  max-dispersion densities compare groups, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+Full Path:
+```{r Max-dispersion Full-Path histogram per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the full event trajectories - No time sliding time window " }
+##### Maximum Dispersions Per Larva- 
+hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
+{
+
+  # plot histograms
+  datMaxDispersionPerLarva.NF_hist <- hist((datMaxDispersionPerLarva.NF), breaks=nBreaks ,plot=FALSE)
+  
+  datMaxDispersionPerLarva.LF_hist <- hist((datMaxDispersionPerLarva.LF)
+       , breaks=nBreaks, plot=FALSE)
+  
+  datMaxDispersionPerLarva.DF_hist <- hist((datMaxDispersionPerLarva.DF),
+       breaks=nBreaks,plot=FALSE)
+  
+  plot(datMaxDispersionPerLarva.NF_hist$mids,datMaxDispersionPerLarva.NF_hist$counts, main="Histogram of max-dispersal per larva ",
+                                       xlab="Max. dispersion  per larva (mm)", xlim=XLIM,
+                                       ylab="Number of larvae",
+                                      pch=pointTypeScheme$NL, lty=lineTypeL.NF,
+                                      col=colourDataScheme$NF$Evoked, ylim=c(0,ylimUp),type="b")
+  
+  points(datMaxDispersionPerLarva.NF_hist$mids,datMaxDispersionPerLarva.LF_hist$counts, 
+                                        xlim=XLIM, pch=pointTypeScheme$LL,  col=colourDataScheme$LF$Evoked,lty=lineTypeL.LF, ylim=c(0,ylimUp),type="b")
+  
+  points(datMaxDispersionPerLarva.DF_hist$mids,datMaxDispersionPerLarva.DF_hist$counts, lty=lineTypeL.DF,
+                                       xlim=XLIM,pch=pointTypeScheme$DL,
+                                      col=colourDataScheme$DF$Evoked, ylim=c(0,ylimUp),type="b")
+  
+  legend("topleft",c("NF","LF","DF"),pch=c(pointTypeScheme$NL,pointTypeScheme$LL,pointTypeScheme$DL) , lty=c(lineTypeL.NF,lineTypeL.LF,lineTypeL.DF),col=c(colourDataScheme$NF$Evoked,colourDataScheme$LF$Evoked,colourDataScheme$DF$Evoked),lwd=3 ) 
+}
+
+  datMaxDispersionPerLarva <- readRDS(file=paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds") )
+  nBreaks=seq(0,13,1)
+  ylimUp <- 35
+  XLIM <- c(0,15)
+  # extract Evoked to Spont max disp data
+  datMaxDispersionPerExp.NF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_exp_Dispersion
+  datMaxDispersionPerExp.NF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'NL' ,]$expID.E, ]$max_exp_Dispersion
+  datMaxDispersionPerExp.LF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_exp_Dispersion 
+  datMaxDispersionPerExp.LF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'LL' ,]$expID.E, ]$max_exp_Dispersion
+  datMaxDispersionPerExp.DF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_exp_Dispersion
+  datMaxDispersionPerExp.DF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'DL' ,]$expID.E, ]$max_exp_Dispersion
+  
+  ## Max reported is across NE/NL - so checking either condition would suffice to get the max for each larva
+  datMaxDispersionPerLarva.LF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_larval_Dispersion
+  datMaxDispersionPerLarva.NF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_larval_Dispersion
+  datMaxDispersionPerLarva.DF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_larval_Dispersion 
+  
+
+hist_MaxDispersionPerLarva(0)
+```
+But when confined to a sliding window of say 20 sec
+```{r Max-dispersion 20sec histogram per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the 20sec sliding window of trajectories " }
+hist_MaxDispersionPerLarva(20)
+```
+
+```{r  max-dispersion densities compare groups, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,eval=FALSE }
  ## plot est, Densities Compare Spont to Evoked
- pBW <- 1
- ylimUp <- 0.5
+ pBW <- 0.3
+ ylimUp <- 1
  plot(density(datMaxDispersionPerLarva.NF, kernel="gaussian",na.rm=TRUE, bw=pBW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Evoked,main="Maximum Dispersion Per Larva  ",xlab="Dispersion (mm)",lty=lineTypeL.NF  )
 lines(density((datMaxDispersionPerLarva.LF), kernel="gaussian",na.rm=TRUE,bw=pBW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Evoked,main=NA,xlab=NA,lty=lineTypeL.LF )
 lines(density((datMaxDispersionPerLarva.DF), kernel="gaussian",na.rm=TRUE,bw=pBW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Evoked,main=NA,xlab=NA,lty=lineTypeL.DF )
 
-legend("topright",c("NF","LF","DF"), lty=c(lineTypeL.NF,lineTypeL.LF,lineTypeL.DF),col=c(colourDataScheme$NF$Evoked,colourDataScheme$LF$Evoked,colourDataScheme$DF$Evoked),lwd=3 ) 
-print(pBW)
+
 ```
 
 ##### Compare max dispersion distributions between conditions 
@@ -798,26 +753,23 @@ Thus, similar to the measure of dispersion, we plot the 5sec recent trajectory l
 
 
 ```{r length histograms per group across conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide'  }
+tsec_timeWindow <- 0
 loadDispersionData()
-xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,2)
-h_Length_LE <- hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$Length,breaks=xbreaks,main="LF Spont.",xlab="Length (mm)",col=colourDataScheme$LF$Spont)
-hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Length,breaks=xbreaks,main="LF Spont Hunt-events",xlab="Length ",col=colourDataScheme$LF$Spont)
+xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+2,2)
 
-
-h_Length_LL <- hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$Length,breaks=xbreaks,main="LF Evoked.",xlab="Length (mm)",col=colourDataScheme$LF$Evoked)
-hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Length,breaks=xbreaks,main="LF Evoked Hunt-events",xlab="Length ",col=colourDataScheme$LF$Evoked)
 
 h_Length_NE <- hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$Length,breaks=xbreaks,main="NF Spont.",xlab="Length (mm)",col=colourDataScheme$NF$Spont)
-hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Length,breaks=xbreaks,main="NF Spont Hunt-events",xlab="Length",col=colourDataScheme$NF$Spont)
-
 h_Length_NL <- hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$Length,breaks=xbreaks,main="NF Evoked.",xlab="Length (mm)",col=colourDataScheme$NF$Evoked)
-hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Length,breaks=xbreaks,main="NF Evoked Hunt-events",xlab="Length",col=colourDataScheme$NF$Evoked)
-
-
+h_Length_LE <- hist(datDispersion[datDispersion$groupID %in% c('LE'), ]$Length,breaks=xbreaks,main="LF Spont.",xlab="Length (mm)",col=colourDataScheme$LF$Spont)
+h_Length_LL <- hist(datDispersion[datDispersion$groupID %in% c('LL'), ]$Length,breaks=xbreaks,main="LF Evoked.",xlab="Length (mm)",col=colourDataScheme$LF$Evoked)
 h_Length_DE <- hist(datDispersion[datDispersion$groupID %in% c('DE'), ]$Length,breaks=xbreaks,main="DF Spont.",xlab="Length (mm)",col=colourDataScheme$DF$Spont)
-hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Length,breaks=xbreaks,main="DF Spont Hunt-events",xlab="Length",col=colourDataScheme$DF$Spont)
-
 h_Length_DL <- hist(datDispersion[datDispersion$groupID %in% c('DL'), ]$Length,breaks=xbreaks,main="DF Evoked.",xlab="Length (mm)",col=colourDataScheme$DF$Evoked)
+
+hist(datHEventDispersion[datHEventDispersion$groupID=='NE', ]$Length,breaks=xbreaks,main="NF Spont Hunt-events",xlab="Length",col=colourDataScheme$NF$Spont)
+hist(datHEventDispersion[datHEventDispersion$groupID=='NL', ]$Length,breaks=xbreaks,main="NF Evoked Hunt-events",xlab="Length",col=colourDataScheme$NF$Evoked)
+hist(datHEventDispersion[datHEventDispersion$groupID=='LE', ]$Length,breaks=xbreaks,main="LF Spont Hunt-events",xlab="Length ",col=colourDataScheme$LF$Spont)
+hist(datHEventDispersion[datHEventDispersion$groupID=='LL', ]$Length,breaks=xbreaks,main="LF Evoked Hunt-events",xlab="Length ",col=colourDataScheme$LF$Evoked)
+hist(datHEventDispersion[datHEventDispersion$groupID=='DE', ]$Length,breaks=xbreaks,main="DF Spont Hunt-events",xlab="Length",col=colourDataScheme$DF$Spont)
 hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Length,breaks=xbreaks,main="DF Evoked Hunt-events",xlab="Length",col=colourDataScheme$DF$Evoked)
 
 ```
@@ -836,11 +788,10 @@ I next plot on logarithmic scale the percentage of each Path length and try to s
 
 ```{r length log distributions conditions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' ,warning=FALSE }
 
-
 #,log="xy" 
 lLinModel_NE <- getLogPowerSlope(h_Length_NE,10)
 lLinModel_NL <- getLogPowerSlope(h_Length_NL,10)
-plot(log10(h_Length_NE$mids),log10(100*h_Length_NE$counts/sum(h_Length_NE$counts) ),main=paste("NF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$NF$Spont,pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
+plot(log10(h_Length_NE$mids),log10(100*h_Length_NE$counts/sum(h_Length_NE$counts) ),main=paste("NF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$NF$Spont,pch=16,xlim=c(0,2.5),ylim=c(-4,3), ylab="log N(l) %")
 points(log10(h_Length_NL$mids),log10(100*h_Length_NL$counts/sum(h_Length_NL$counts) ),
        #main=paste("NF Evoked. mu:",getLogPowerSlope(h_Length_NL)), 
        xlab="Length (mm)",col=colourDataScheme$NF$Evoked,pch=16)
@@ -853,7 +804,7 @@ legend("topright",legend=c(paste("Spont μ",format(lLinModel_NE$coeff,digits=2))
 #,log="xy" 
 lLinModel_LE <- getLogPowerSlope(h_Length_LE,14)
 lLinModel_LL <- getLogPowerSlope(h_Length_LL,14)
-plot(log10(h_Length_LE$mids),log10(100*h_Length_LE$counts/sum(h_Length_LE$counts) ),main=paste("LF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$LF$Spont,pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
+plot(log10(h_Length_LE$mids),log10(100*h_Length_LE$counts/sum(h_Length_LE$counts) ),main=paste("LF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$LF$Spont,pch=16,xlim=c(0,2.5),ylim=c(-4,3), ylab="log N(l) %")
 points(log10(h_Length_LL$mids),log10(100*h_Length_LL$counts/sum(h_Length_LL$counts) ),
        #main=paste("NF Evoked. mu:",getLogPowerSlope(h_Length_NL)), 
        xlab="Length (mm)",col=colourDataScheme$LF$Evoked,pch=16)
@@ -865,20 +816,27 @@ legend("topright",legend=c(paste("Spont μ",format(lLinModel_LE$coeff,digits=2))
 
 lLinModel_DE <- getLogPowerSlope(h_Length_DE,10)
 lLinModel_DL <- getLogPowerSlope(h_Length_DL,10)
-plot(log10(h_Length_DE$mids),log10(100*h_Length_DE$counts/sum(h_Length_DE$counts) ),main=paste("DF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$DF$Spont,pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
+plot(log10(h_Length_DE$mids),log10(100*h_Length_DE$counts/sum(h_Length_DE$counts) ),main=paste("DF Log-Log percentage of lengths " ),xlab="log Length (mm)",col=colourDataScheme$DF$Spont,pch=16,xlim=c(0,2.5),ylim=c(-4,3), ylab="log N(l) %")
 points(log10(h_Length_DL$mids),log10(100*h_Length_DL$counts/sum(h_Length_DL$counts) ),
        #main=paste("NF Evoked. mu:",getLogPowerSlope(h_Length_NL)), 
        xlab="Length (mm)",col=colourDataScheme$DF$Evoked,pch=16)
 lines(lLinModel_DE$ptx_line,lLinModel_DE$pty_line,lwd=3,col=colourDataScheme$DF$Spont)
 lines(lLinModel_DL$ptx_line,lLinModel_DL$pty_line,lwd=3,col=colourDataScheme$DF$Evoked)
+
 legend("topright",legend=c(paste("Spont μ",format(lLinModel_DE$coeff,digits=2)), paste("Evoked μ",format(lLinModel_DL$coeff,digits=2) ) ),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked) ,pch=c(16,16) )
 
 ```
 
 I have fitted a standard linear model on the log-log relationship at the drop off, where power-law like relationship appears on the data. 
-No Differences between test conditions can be seen for NF, and generally the linear/ power law like exponent of drop-off is very similar between conditions, unlike the foraging examples reported in Viswanathan et al. 1999. 
+
+(Edited After being corrected for measuring full event path-length -over the fixed ROI boundary- from entering ROI to leaving, where event recording stops) 
+We find that the presence of prey changes the exponent, similarly to the foraging examples reported in Viswanathan et al. 1999.
+Longer paths exist in the absence of prey, as larva spend time hunting within the ROI.
+**In the absence of prey the exponent appears to be near the reportedly "optimal" 2 for NF and LF, but not for DF! **
+<!--No Differences between test conditions can be seen for NF, and generally the linear/ power law like exponent of drop-off is very similar between conditions, unlike the foraging examples reported in Viswanathan et al. 1999.
 This is not over a fixed radius boundary however, but over all paths. I will  look at this question for specific dispersion sizes in future section, first I look at the 
-ratio of dispersion to path-lenth ratio, and find evidence of structure and difference between spont. and evoked events.
+ratio of dispersion to path-lenth ratio, and find evidence of structure and difference between spont. and evoked events. -->
+
 
 ## Path-lenth to dispersion ratios
 
@@ -958,7 +916,8 @@ Normally the mean path-length for the entry and exit from a circle of size $r$ i
 Nevertheless, I may nevertheless examine if such an *invariance principle holds* (see)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], to see if the mean path length with a dispersion $r$ is only proportional to the Area/Circumfarence ratio for a random walk. 
 For this, I look at mean path lengths for a set of fixed dispersion sizes:
 
-```{r  path-length per dispersion , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r,  path-length-20sec duration- per dispersion   , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
+
 ## iNvariance Principle Theoretical Mean Path Length
 theoreticalMeanLength <- function(D,propFactor=1.5)
 {
@@ -972,21 +931,26 @@ theoreticalMeanLength <- function(D,propFactor=1.5)
 plot_meanPathLengthPerDispersion <- function(datDispersion,strGroupID,addPlot=FALSE)
 {
   datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  dispBreaks <- seq(1,11,0.3)
+  dispBreaks <- seq(1,13,0.5)
+  upLIM <- 100
   datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
-  strTitle <- paste("Mean path length per dispersion", strGroupID,"#",NROW(datGroupDispersion$dispRange))
+  
   
   vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
   if (!addPlot)
   {
     plot(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,pch=16,main=strTitle,xlab="Circle radius / Dispersion (mm)",
-         ylim=c(0,45),xlim=c(0,11),col=colourDataScheme[[strGroupID]],cex=0.7 )
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Mean path length <l>",
+         ylim=c(0,upLIM),xlim=c(0,11),col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
+        lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+
   }else
   {
     points(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,pch=16,main=strTitle,xlab="Circle radius / Dispersion (mm)",
-         col=colourDataScheme[[strGroupID]],cex=0.7 )
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
+    
     lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
          vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
   }
@@ -997,26 +961,30 @@ plot_meanPathLengthPerDispersion <- function(datDispersion,strGroupID,addPlot=FA
     points(rpoints,theoreticalMeanLength(rpoints ),pch=2,cex=0.8 ) #Low Lim
     points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1) ),pch=2,cex=0.5 ) #Up Lim
     points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1) ),pch=2,cex=0.5 ) #Up Lim
-    legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
+   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
   }
   
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
 }
 
+tsec_timeWindow <- 20
+datDispersion <- loadDispersionData_norm(tsec_timeWindow)
+strTitle <- paste(tsec_timeWindow,"sec duration paths ")
+
 ## Take Group 
 plot_meanPathLengthPerDispersion(datDispersion,'NE')
-plot_meanPathLengthPerDispersion(datDispersion,'NL')
-
-plot_meanPathLengthPerDispersion(datDispersion,'LE')
-plot_meanPathLengthPerDispersion(datDispersion,'LL')
-
-plot_meanPathLengthPerDispersion(datDispersion,'DE')
-plot_meanPathLengthPerDispersion(datDispersion,'DL')
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE)
+title(strTitle)
 
 ```
 
+In duration confined paths shows that LF evoked paths are longer within the same dispersions sizes to controls. 
 
-I find that the length of every path contained in a dispersion circle with radius $r$ increases linearly with $r$, specifically the relationship appears to be :
+It also appears that the length of every path contained in a dispersion circle with radius $r$ increases linearly with $r$, specifically the relationship appears to be :
 \[
 <s> = \frac{3\pi}{2}  \frac{\pi r^2}{2 \pi r}
 \]
@@ -1031,6 +999,25 @@ I next look at the Log-Log distribution of path-lengths for a specified dispersi
 *Note:* This is not equivalent to looking at the exit time, or time to hit boundary as in the Levy type investigations, becauce here all paths chosen have produced a specific dispersal and it is not that we are looking a the escape from random starting point within the cycle, or the mean escape time upon entering an area nor the mean time to hit two target sites (food items) as in FIG 3 (Viswanathan et al. 2009).
 
 Nevertheless we expect to see that the addition of prey should increase the path-lengths even among paths with the same Dispersion, as response to prey/ prey detection should make paths more turtuous.
+
+
+
+```{r,  path-length-All duration- per dispersion   , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
+
+tsec_timeWindow <- 0
+datDispersion <- loadDispersionData_norm(tsec_timeWindow)
+strTitle <- paste("Whole path ")
+
+## Take Group 
+plot_meanPathLengthPerDispersion(datDispersion,'NE')
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE)
+title(strTitle)
+
+```
 
 ##  Path-length Log-Log distribution per *specific dispersion*
 
@@ -1169,9 +1156,9 @@ calcBasicPathStatisticsPerDuration <-function(datDispersion,strG,addPlot=FALSE,p
     strTitle <- paste("MSD length ", strG,"#",NROW(datGroupDispersion))
 
     #max(datDispersion$MSD,na.rm=TRUE)+15
-    xbreaks_MSD        <- seq(0,350,15)
-    xbreaks_Dispersion <- seq(0,12,0.5)
-    xbreaks_Length     <- seq(0,100,3)
+    xbreaks_MSD        <- seq(0,390,15)
+    xbreaks_Dispersion <- seq(0,13,0.5)
+    xbreaks_Length     <- seq(0,390,3)
     
     #strDispRange <-levels(datGroupDispersion$dispRange)[dispRange]
     #print(strDispRange) 
@@ -1233,7 +1220,7 @@ calcBasicPathStatisticsPerDuration <-function(datDispersion,strG,addPlot=FALSE,p
 }
 
 ## A Histogram in Log Scale Of MSD scale
-plotLogLogDistribution_MSD <- function(lLinModel_GE,addPlot=FALSE)
+plotLogLogDistribution_MSD <- function(lLinModel_GE,tInter,addPlot=FALSE)
 {
     strG <-lLinModel_GE$groupID
     if (!addPlot) 
@@ -1255,6 +1242,10 @@ plotLogLogDistribution_MSD <- function(lLinModel_GE,addPlot=FALSE)
     ##Plot Linear Model
     lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strG][[1]])
   
+    ##Distinctivelly show the Distribution Over All Full duration Paths
+    if (tInter=="0")
+      lines(lLinModel_GE$xtickMSD,lLinModel_GE$logPMFMSD,lwd=3,col="black",lty=2)
+      
     return(lLinModel_GE)
 }
 
@@ -1314,7 +1305,7 @@ makeMSDPathDurationSummary <- function(bParallel=FALSE)
   for (t in vtimeWindows)
   {
     ldatDispersion <- list()
-    ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
+    ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) ##loadDispersionData(forceReload = TRUE,t)
     
     #lMSDSummaryData <- processMSDPathDurationSummary_Parallel(ldatDispersion,strG,lMSDSummaryData)
     ##Make Sub List For Each group - Add the different Time Intervals as sub-lists
@@ -1331,8 +1322,10 @@ makeMSDPathDurationSummary <- function(bParallel=FALSE)
     ##Clear Memory
     rm(ldatDispersion)
   }
-  
+  message("Path stat summary over duration time windows done.")
+  message(paste0(strDataExportDir,"statPerPathDurationSummaryResults-",head(vtimeWindows,1),"-",tail(vtimeWindows,1),"sec.rds"))
   saveRDS(lMSDSummaryData,paste0(strDataExportDir,"statPerPathDurationSummaryResults-",head(vtimeWindows,1),"-",tail(vtimeWindows,1),"sec.rds"))
+  
   return(lMSDSummaryData)
 }
 # Main Load/Make MSD Distributios and Mean MSD versus time (Path Duration)
@@ -1368,12 +1361,13 @@ vGroups <- c("LL","LE","NL","NE","DL","DE")
 vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60,70)
 vLargeScaletimeWindows <- c(2,10,40,80,95,100,120,180,200,260) #360 No Data
 vtimeWindows <- c(vsmallTimeWindows,80,90,95,98,100,120,180,200,260)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
+vtimeWindows <- c(0,2,5,7,8,10,20,40,60,75,80,90,100,120,180,200,280)
 #vtimeWindows <- c(200,260)
 ##Process *  Serially * So we do not run out of memory
 # Results are plotted and Aggregated In lLinModel
 rm(lMSDSummaryData)
 try(
-  lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"statPerPathDurationSummaryResults-1-260sec.rds"))
+  lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"statPerPathDurationSummaryResults-",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
 )
 if (!exists("lMSDSummaryData"))
 {
@@ -1387,13 +1381,24 @@ for (strG  in vGroups)
   bAddPlot <- FALSE
  for (tt in names( lMSDSummaryData[[strG]]) )
   {
-    plotLogLogDistribution_MSD(lMSDSummaryData[[strG]][[as.character(tt)]],bAddPlot )
-   bAddPlot <- TRUE
-  }
+   
+    plotLogLogDistribution_MSD(lMSDSummaryData[[strG]][[as.character(tt)]],tt,bAddPlot )
+    bAddPlot <- TRUE
+ }
+  legend("bottomleft",lty=c(2,NA),pch=c(NA,16),legend=c("Full path",paste("Fixed duration",names( lMSDSummaryData[[strG]])[1],"-",tt )) )
 }
 
 
+
+
+
+
+
 ```
+
+MSD over full event path duration looks the same across groups.
+The duration-contrained MSDs however do not look  similar between conditions and groups:
+  - *LF evoked contains larger MSDs than spontaneous - Same in NF but prob not in DF*
 
 ```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE}
 
@@ -1561,7 +1566,7 @@ plotMeanPathLengthVsTime <- function(lModelwithMSD,addPlot=FALSE, bUsePooledMean
   xLim <- c(0,max(vTimeWindow ) *1.10 )
   if (!addPlot)
   {
-    plot(vTimeWindow[idxOrder],vPathLength[idxOrder],xlim=xLim,ylim=c(0,100),
+    plot(vTimeWindow[idxOrder],vPathLength[idxOrder],xlim=xLim,ylim=c(0,200),
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="mean path length (mm)")
@@ -1594,7 +1599,13 @@ plotMeanPathLengthVsTime(lMSDSummaryData[["DL"]],TRUE,TRUE)
 
 ```
 
-```{r, path-length among larvae across time, fig.show="hold",fig.cap="Distribution of larval mean path-lengths with increasing duration ", out.width="50%", echo=FALSE, cache=FALSE}
+Interestignly, the above plot is representative of the speed of movement over time. The mean distance travelled over long periods of time depends on experience. 
+  - NF show constant speed across time, regardless of how long the duration of path is, They travel more in the presence of prey 
+  - LF change speed over time, Without prey, the speed up after a minute, and with prey they slow down. *(Adaptive behaviour)*
+  - DF, similar to LF  but slower
+
+
+```{r path-length among larvae across time, fig.show="hold",fig.cap="Distribution of larval mean path-lengths with increasing duration ", out.width="50%", echo=FALSE, cache=FALSE}
 
 ## This plots The mean points Per Larvae- Revealing the Distribution
 plotPathVsTimePerLarva <- function(lModelwithMSD, addPlot=FALSE)
@@ -1614,7 +1625,7 @@ plotPathVsTimePerLarva <- function(lModelwithMSD, addPlot=FALSE)
   datMeanMSDVsTimePerLarva <- data.frame(do.call(rbind,lMSD))
   if (!addPlot)
     plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],
-         ylim=c(0,100),xlim=c(0,200),ylab="mean larval path length (mm)",xlab="Time (sec)")
+         ylim=c(0,200),xlim=c(0,200),ylab="mean larval path length (mm)",xlab="Time (sec)")
   for (i in 1:ncol(datMeanMSDVsTimePerLarva))
     lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
   
@@ -1637,7 +1648,7 @@ title(main="DL Mean path length per larva")
 The above Dispersion and MSD plots analysed at the level of each larva against time raise gave me the idea that it may be useful to describe differences in the motion between groups in terms of the probability of staying within a bounded area $A$ with increasing time $P(within A | t)$ , or $P_A(t)$.
 This can be calculated through the fraction of points larvae that remain observable with increasing path duration $T$, because larvae are more likely to leave the arena with increasing path-duration, and thus the probaility of observing a path-length longer than $T>X$, can be indicative of difference in how the disperse, or explore space.
 
-```{r prob-of-path-duration,fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls"}
+```{r prob-of-path-duration, fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls, with an exponent that appears near the optimal 2"}
 
 
 plot_ProbOfPathDuration <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion=12)
@@ -1673,7 +1684,7 @@ plot_ProbOfPathDuration <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion
           col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]],pch=pointTypeScheme[lMSDGroupSummaryData[[1]]$groupID][[1]])
   
   ##Add Linear Model On PowerLaw Drop
-    lines(x_linModel,y_linModel,lwd=3,col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]])
+    lines(x_linModel,y_linModel,lwd=2,lty=2,col=colourDataScheme[lMSDGroupSummaryData[[1]]$groupID][[1]])
     
     #message(lMSDGroupSummaryData[[1]]$groupID[[1]], linFit$coefficients )
     
@@ -1681,6 +1692,7 @@ plot_ProbOfPathDuration <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion
     
     return(linFit)
 } 
+#lMSDSummaryData <- 
 linMod <- list()
 linMod[["NE"]] <- plot_ProbOfPathDuration(lMSDSummaryData[["NE"]])
 linMod[["NL"]] <- plot_ProbOfPathDuration(lMSDSummaryData[["NL"]],TRUE)
@@ -1882,7 +1894,7 @@ for (strG in vGroups)
 ```
 
 Findings:
-  1. Spontaneous MSD grows faster than Evoked.
+  1. Spontaneous MSD grows faster than Evoked - but not for DF.
   2. Non-linear MSD regime is evidence of super-diffusion
 
 Compared to the linear Dispersion to mean-path length relationship (#path-length per dispersion), the MSD to path-length appears to be non-linear.
@@ -1956,8 +1968,8 @@ plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
 
 vGroups <- c("LL","LE","NL","NE","DL","DE")
 vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60)
-vLargeScaletimeWindows <- c(2,10,40,80,120,180,200,260) #360 No Data
-vtimeWindows <- c(vsmallTimeWindows,70,80,90,95,98,100,120,180)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
+vLargeScaletimeWindows <- c(0,2,10,40,80,120,180,200,260) #360 No Data
+#vtimeWindows <- c(vsmallTimeWindows,70,80,90,95,98,100,120,180)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
 ##Process *  Serially * So we do not run out of memory
 # Results are plotted and Aggregated In lLinModel
 
@@ -3273,7 +3285,7 @@ The histograms below examine how the NB group model mix clustered dispersion, sh
 
 We need to evaluate the emission probability of each cluster state in order to establish if hunt-events are more commonly initiated in the exploitation state.It is clear however from the following results, that most hunt events are recorded in the Fast(Explore) cluster, however this is confounded with the duration of each state and thus needs to be evaluated conditionally on foraging state (dispersion cluster).
 
-```{r load-results-NBGlobal-clustered-verify, fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE }
+```{r, load-results-NBGlobal-clustered-verify, fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE }
 source("DataLabelling/labelHuntEvents_lib.r") ##convertToScoreLabel
 nBreaks = seq(0,1,0.1)
 ylimUp <- 50
@@ -3319,8 +3331,8 @@ plotClusteredHuntEventsHist_norm <- function(datHEventDispersion,clustCol)
 }
 
 #load(file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
-datHEventDispersion <<- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-
+datHEventDispersion <- loadHuntEventMergedWithPathStat() 
+ 
 ## Merge sparse Clustered Dispersions Results onto full Dispersion Data
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 if (!("clustID" %in% names(datSubDispersion)))
