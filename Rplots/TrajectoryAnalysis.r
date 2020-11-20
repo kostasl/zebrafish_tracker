@@ -43,6 +43,93 @@ getLogPowerSlope <- function (h_Length_G, length_lin_region = 10)
   return(list(coeff=linFit$coefficients[2],ptx_line=x_linModel,pty_line=y_linModel) )
 }
 
+
+
+###```{r Calc Dispersion of Each Trajectory,include=FALSE}
+calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
+{
+  
+  datDispersion <- data.frame()
+  vexpID <- unique(datAllFrames$expID)
+  e <- vexpID[1]
+  ##'Add new column
+  datAllFrames$Dispersion <- NA
+  
+  start.time <- Sys.time()
+  
+  i = 0;
+  
+  ## For Each Recording Event of each experiment
+  for (e in vexpID)
+  {
+    i = i + 1
+    message(i,". ExpID:",e)
+    
+    
+    stopifnot(is.numeric(e) & e > 0)
+    #stopifnot(i < 3) ##Test Run
+    
+    vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
+    
+    ##For Each Event
+    for (ev in vEventID)
+    {
+      datEventFrames <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == ev & datAllFrames$posX != 0 ,]  
+      
+      meanfps <-  head(datEventFrames$fps,1)
+      groupID <- as.character(unique(datEventFrames$groupID) )
+      message(paste("ExpID:",e,"EventID:",ev,"fps:",meanfps," nFrames:",NROW(datEventFrames)) )
+      #  We may Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
+      #  PROCESS TrackLets #
+      #vTracklets <- unique(datEventFrames$trackletID)
+      
+      if (NROW(datEventFrames) < 10)
+        next() ##No Frames In event - Move to next one
+      
+      lEventDispersionAndLength <- calcTrajectoryDispersionAndLength(datEventFrames,tsec_timeWindow) 
+      
+      datEventDispersion <- data.frame(expID=e,
+                                       eventID=ev,
+                                       Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
+                                       Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
+                                       Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
+                                       DisplacementSq = lEventDispersionAndLength$DisplacementSq, ##Total Distance Travelled
+                                       MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
+                                       SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
+                                       frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
+      )
+      
+      ##Append to main Dispersion Data Frame
+      datDispersion <- rbind(datEventDispersion,datDispersion)
+      
+    }##For Each Event
+    
+    ## \TODO Normalize Dispersion Per Larva Here - Dividing by the maximum dispersion
+    datExpDisp <- datDispersion[datDispersion$expID == e,]
+    range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
+    if (!is.na(range_Disp))
+      datDispersion[datDispersion$expID == e,]$Dispersion_norm <- datExpDisp$Dispersion/range_Disp[2]
+    
+    end.time <- Sys.time()
+    time.taken <- end.time - start.time
+    print(time.taken)
+    
+  }#For Each Exp ID
+  
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+  
+  datDispersion <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
+  
+  saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
+  
+  return (datDispersion)
+} ## Calc Fuction
+
+#hist(datDispersion$Dispersion_norm )
+
+
 ### We are looking to detect Exploration/Exploitation (as in Marquez et al. 2020)  using a measure
 ### of spatial dispersion - calculated for each tracked frame, calculated as the spatial dispersion of trajectory of the preceding X secods
 ## Trajectory Dispersion - as min radius that can encompass the whole trajectory of last twindowSec sec.  ##"
@@ -58,6 +145,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   ##datEventFrames <- datAllFrames[datAllFrames$expID == 218 & datAllFrames$eventID == 2 & datAllFrames$posX != 0,]
   vDispersionPerFrame <- vector()
   vDistanceTravelledToFrame <- vector()
+  vSqDisplacement <- vector()
   vMSD <- vector() #Mean Square Displacement of the twindowSec trajectory
   vSD <- vector() # Square Displacement to the start of the twindowSec trajectory
   vFrameRow <- vector()
@@ -73,7 +161,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   if (nfrm > NROW(datEventFrames) & (twindowSec > 0) )
   {
     warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
-    return(list(Dispersion=NA,Length=NA,MSD=NA,SD=NA,FrameRowID=NA))
+    return(list(Dispersion=NA,Length=NA,DisplacementSq=NA,MSD=NA,SD=NA,FrameRowID=NA))
   }
   if (twindowSec == 0)  
     nfrm <- NROW(datEventFrames) ##measure acroos Full Path From start to end /Variable time window set to full path duration
@@ -103,7 +191,9 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
     vDispersionPerFrame[i] <- max(mat_ptDist)/2 
     #Calc Path Distance by Summing Successive Point Difference / on Upper Off-Diagonal of distance matrix
     vDistanceTravelledToFrame[i] <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)])
-    #Calc Mean Squared Displacement from initial Point x0,y0 being the mean squared sum of the 1st distance Matrix Row
+    #Calc Squared Displacement from initial Point x0,y0 to final (last col in matrix)
+    vSqDisplacement[i] <- ((DIM_MMPERPX*mat_ptDist[1,ncol(mat_ptDist)])^2)
+    ##Calc Mean Path Displacement from initial Point x0,y0 being the mean squared sum of the 1st distance Matrix Row
     vMSD[i] <- mean((DIM_MMPERPX*mat_ptDist[1,1:ncol(mat_ptDist)]) ^2)
     vSD[i]  <- (DIM_MMPERPX*mat_ptDist[1,ncol(mat_ptDist)])^2 #Squared Distance To point twindowSec  ago
   }
@@ -114,7 +204,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
-  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
+  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,DisplacementSq=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
   return( lRet)
 }
   

@@ -65,6 +65,47 @@ loadHuntEvents <- function(strCondTags,dataSetsToProcess)
 }
 
 
+#{r combine-dispersion-with-hunt events, echo=FALSE,cache=TRUE,results=FALSE,warning=FALSE}
+### Combines information across Detected HuntEvents and their outcome, the dispersion of the larval trajectory during which these were
+## initiated  ,and the position at which the hunt-event was initiated
+mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLabelledEventsSBMerged_fixed)
+{
+  message(paste(" Loading Hunt Event List to Analyse... "))
+  
+  start.time <- Sys.time()
+  ## Attach Frame Number to Dispersion Data
+  datDispersion <- cbind(datDispersion,frameN=datAllFrames[datDispersion[,"frameRow"],'frameN'],
+                         posX=datAllFrames[datDispersion[,"frameRow"],'posX'],
+                         posY=datAllFrames[datDispersion[,"frameRow"],'posY'])
+  
+  ## Extract HUnt Event Foraging State
+  ### 1. Get Dispersion Measure of each hunt event
+  ## MERGE Dispersion With HuntEvent Records
+  # Need to convert to char  GroupID factor( datHuntLabelledEventsSBMerged_fixed$groupID) 
+  datDispersion$groupID <- levels( datDispersion$groupID)[datDispersion$groupID]
+  datHEventDispersion <- merge(datDispersion,datHuntLabelledEventsSBMerged_fixed,
+                               all.y=TRUE,
+                               by.x=c("frameN","expID","eventID","groupID"),
+                               by.y=c("startFrame","expID","eventID","groupID") )
+  ## Add Position In Arena
+  saveRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+  message("Saved to:",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+  
+  nmergemissingEvents <-  NROW(datHEventDispersion[!(datHEventDispersion$frameRow %in% datDispersion$frameRow),] )
+  if (nmergemissingEvents > 0)
+    warning("** ",nmergemissingEvents, " Hunt Events failed to merge ")
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+  
+  return(data.frame(datHEventDispersion ) )
+}
+
+
+
+
+
+
 ######################################################### EXTRACT HUNTING EVENTS ##################################
 ##Focus on extracting and Identifying Hunting events - Eye Vergence
 ##Return list of HuntEvents / With start and End Frame / and Video FileName
