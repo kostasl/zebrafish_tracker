@@ -1163,8 +1163,13 @@ A prediction of the theory of *Fickian diffusion is that the mean squared displa
 Any process that is inconsistent with Fick’s laws  is known as anomalous diffusion: super diffusion leads to superlinear
  growth of the mean squared displacement,  whereas subdiffusion leads to sublinear growth (#viswanathan2010fish).
 
+The MSD at time t {\displaystyle t} t is defined as an ensemble average (statistical mechanics): 
+\[
+MSD(t) = \<|\vec{x(t)} - \vec{x_0}|^2 = \frac{1}{N}\sum^{N}_{i=1}|x^{(i)}(t) - x^{(i)}(0)  |^2 \>
+\]
+where N is the number of particles (here trajectories) to be averaged, vector $\vec{x_0}$ is the reference position of the i-th particle and vector $\vec{x(t)}$ is the position fo the i-th particle at time $t$.
 
-```{r  mean-squared-distance over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r  mean-squared-displacement over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 #strG <- 'DE'
 #hist(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"MSD"],main=paste(strG,mean(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"MSD"],na.rm=TRUE) ),xlim=c(0,210))

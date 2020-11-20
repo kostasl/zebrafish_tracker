@@ -159,7 +159,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   if (nfrm > NROW(datEventFrames) & (twindowSec > 0) )
   {
     warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
-    return(list(Dispersion=NA,Length=NA,MSD=NA,SD=NA,FrameRowID=NA))
+    return(list(Dispersion=NA,Length=NA,SqDisplacement=NA,MSD=NA,SD=NA,FrameRowID=NA))
   }
   if (twindowSec == 0)  
     nfrm <- NROW(datEventFrames) ##measure acroos Full Path From start to end /Variable time window set to full path duration
@@ -189,7 +189,9 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
     vDispersionPerFrame[i] <- max(mat_ptDist)/2 
     #Calc Path Distance by Summing Successive Point Difference / on Upper Off-Diagonal of distance matrix
     vDistanceTravelledToFrame[i] <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)])
-    #Calc Mean Squared Displacement from initial Point x0,y0 being the mean squared sum of the 1st distance Matrix Row
+    #Calc Squared Displacement from initial Point x0,y0 to final (last col in matrix)
+    vSqDisplacement[i] <- ((DIM_MMPERPX*mat_ptDist[1,ncol(mat_ptDist)])^2)
+    ##Calc Mean Path Displacement from initial Point x0,y0 being the mean squared sum of the 1st distance Matrix Row
     vMSD[i] <- mean((DIM_MMPERPX*mat_ptDist[1,1:ncol(mat_ptDist)]) ^2)
     vSD[i]  <- (DIM_MMPERPX*mat_ptDist[1,ncol(mat_ptDist)])^2 #Squared Distance To point twindowSec  ago
   }
@@ -200,7 +202,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
-  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
+  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,SqDisplacement=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
   return( lRet)
 }
   
