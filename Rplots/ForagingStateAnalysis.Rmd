@@ -59,7 +59,7 @@ setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
 
-tsec_timeWindow <- 7 
+tsec_timeWindow <- 2 
 thres_dispersion_class <- 0.2
 ##Clustering
 Nclust <- 2

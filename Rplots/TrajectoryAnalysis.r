@@ -93,6 +93,7 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
                                        Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
                                        Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
                                        Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
+                                       DisplacementSq = lEventDispersionAndLength$DisplacementSq, ##Total Distance Travelled
                                        MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
                                        SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
                                        frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
@@ -144,6 +145,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   ##datEventFrames <- datAllFrames[datAllFrames$expID == 218 & datAllFrames$eventID == 2 & datAllFrames$posX != 0,]
   vDispersionPerFrame <- vector()
   vDistanceTravelledToFrame <- vector()
+  vSqDisplacement <- vector()
   vMSD <- vector() #Mean Square Displacement of the twindowSec trajectory
   vSD <- vector() # Square Displacement to the start of the twindowSec trajectory
   vFrameRow <- vector()
@@ -159,7 +161,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   if (nfrm > NROW(datEventFrames) & (twindowSec > 0) )
   {
     warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
-    return(list(Dispersion=NA,Length=NA,SqDisplacement=NA,MSD=NA,SD=NA,FrameRowID=NA))
+    return(list(Dispersion=NA,Length=NA,DisplacementSq=NA,MSD=NA,SD=NA,FrameRowID=NA))
   }
   if (twindowSec == 0)  
     nfrm <- NROW(datEventFrames) ##measure acroos Full Path From start to end /Variable time window set to full path duration
@@ -202,7 +204,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
-  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,SqDisplacement=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
+  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,DisplacementSq=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
   return( lRet)
 }
   
