@@ -88,8 +88,8 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
                                by.x=c("frameN","expID","eventID","groupID"),
                                by.y=c("startFrame","expID","eventID","groupID") )
   ## Add Position In Arena
-  saveRDS(datHEventDispersion,file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-  message("Saved to:",paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+  saveRDS(datHEventDispersion,file=paste0(strDataStore,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
+  message("Saved to:",paste0(strDataStore,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
   
   nmergemissingEvents <-  NROW(datHEventDispersion[!(datHEventDispersion$frameRow %in% datDispersion$frameRow),] )
   if (nmergemissingEvents > 0)

@@ -1,0 +1,43 @@
+---
+title: "Foraging state - Modelling Search patterns"
+author: "Kostas Lagogiannis"
+date: "23/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Dispersion as random process
+
+Here I investigate on a different formulation of a stochastic dispersal data generating process. 
+To study the statistical properties of dispersal and compare them between groups we model disperal data as a markov chain.
+A simple description of such a process is 
+\[
+D_n = D_{n-1} + p z_n
+\]
+where $z_n ~ \mathcal{N}(\mu,\sigma)$.
+The parameters of which can be inferred from the data of each larval dispersal measurements.
+We assume that motion bouts are generated at regular intervals $t\in\{1...n\}$ and each bout motion may either increase the dispersal, measured as the circle encompassing a 5 sec ($k-step$) trajectory, or leave it the same. As as such  disperal lengths are dependent on the sum of a sequence of $k$ bernoulli trials, with $p$ being the probability that dispersion increases by a step size drawn from another distribution (assume Normal), and $q=1-p$ being the probability that the dispersal remains the same - either because a bout did not occur or because bout moved inwards.
+In such a model we will need **to ignore any correlations between step outcomes**, as sequence of step that move inwards the dispersion circle, are less likely to lead to an increase in the next step, as the larva may have moved away from the current dispresion boundary. 
+These  width of these correlations is increased with dispersion length (ie with the history of prior expansion successes.) 
+Thus if we consider the dispersal length to be a sum of Gaussian random variables, then the resulting distribution should be Gaussian (or mixture of, if there is more than one $p$).
+
+Alternativelly, assuming $k$-steps makes each dispersal count, we observe that a certain dispersal length is made up of a sequence of expansion events $e$, where the larva hits the dispersal measuring circle boundary, leaving the rest to of the $n=k-e$ steps to be expansion failures. 
+If we assume that each expansion event increases dispersion by some fixed size $d$, then the *Negative binomial (NB)*  could be applicable here to model the distribution of dispersal lengths. The NB is a discrete probability distribution that models the number of failures in a sequence of independent and identically distributed Bernoulli trials before a specified (non-random) number of successes (denoted $r$) occurs.
+This model  *generally is appropriate where events have positively correlated* occurrences causing a larger variance than if the occurrences were independent, due to a positive covariance term. Here we may model we may model $r$ as being the number of times dispersion did not change, while failures is bout that increases dispersal occurs.
+
+In any case, looking at the distributions above it appears that, at least for LF, there appears to be at least two step-generating distributions $z_n$, which are required to describe the group's dispersal data. Further, it is also evident that the parameters of these distributions change between spontaneous and evoked conditions, at least in the LF group.
+By modelling the data and inferring parameters using Bayesian inference we statistically compare changes in dispersal behaviour between groups and conditions.
+
+Assume that each larva generates a different number of observations, given the difference in the time they are in view. We aim to model the statistics of dispersion of each larva separatelly and then aggregate into a model of the whole group. Difference in the number of observations should be reflected in the uncertainty of parameter estimates.  
+
+However,given the nature of my data this can be problematic. Dispersion records are not continuous monitoring of behaviour, as there may be gaps between events. 
+The 1st 5sec at the beginning of each larval record is filled with NA values, and thus we may exclude it.
+Alternativelly we may directly model the distribution of $D_n$, rather model the step-generating process $z_n$.
+We begin with this more direct approach to model the distribution of Dispersal data for each larva, assuming these can be clustered using a mixture of $c=2$ Normal distributions for each test condition, such that evoked and spontaneous conditions are modelled separatelly. The separate distributions can be seen as a model of the hidden foraging state of the animal, which emit different motion patterns, and thus modify dispersal differently.
+
+This approach could be complemented by active inference / SPM model
+
