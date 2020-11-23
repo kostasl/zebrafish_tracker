@@ -41,6 +41,14 @@ I find that prey scarcity can modify larval general motion patterns in an adapti
 The concept of a characteristic scale is used extensively in statistical physics for describing macroscopic behavior of physical systems. 
 In Levy walks/flights the step lengths (ie straight path lengths) are said tp have no characteristic scale, because they are power-law distributed.
 
+
+In (#humphries2010environmental) it shown that searching animals adaptively adjust their optimal patterns of movement to different environmental resource distributions. 
+It remains uknwown, however, whether the motions patterns arose as due to adaptive behaviour or whether observed patterns were an emergent property of the spatial distribution of prey (#sims2008scaling)
+
+Here use prior prey experience can alter the foraging search patterns in the scarcity and abundance of prey, to test wether changes in search patterns can be are adaptive, and not simply a result of interacting with dense prey environments. Thus if prior expectations on abandunce of prey  can modify motion, then changes in search patterns can be shown to be adaptive.
+Thus we explore whether animals evolved to exploit experience in their search patterns, and whether they can use optimal search strategies such as Levy flights/walks when prey is scarce.
+
+
 # Analysis of trajectory measures
 
 ## Examine dispersion to reveal foraging state as in Marquez et al. 2019
@@ -107,7 +115,7 @@ loadDispersionData <- function(forceReload = FALSE,tsec_timeWindow=0)
 }
 
 ## PathStat Data Merged onto Hunt Event based on initiation frame
-loadHuntEventMergedWithPathStat <- function()
+loadHuntEventMergedWithPathStat <- function(tsec_timeWindow)
 {
   
   datHEventDispersion <- data.frame()
@@ -128,6 +136,7 @@ loadHuntEventMergedWithPathStat <- function()
   if (!exists("datHEventDispersion") | !file.exists(strFile))
   { 
     loaddatAllFrames()
+    datDispersion <- loadDispersionData_norm(tsec_timeWindow)
     datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
     datHEventDispersion <- mergeDispersionOntoHuntEvents(datDispersion,datAllFrames,datHuntLabelledEventsSBMerged_fixed)
   }
@@ -212,7 +221,7 @@ datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file
 ## Link Evoked and Spontaneous Trajectories
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
-loadHuntEventMergedWithPathStat()
+loadHuntEventMergedWithPathStat(5)
 
 
 #loadDispersionData(forceReload = TRUE,tsec_timeWindow = 0)
@@ -777,10 +786,10 @@ Thus, similar to the measure of dispersion, we plot the 5sec recent trajectory l
 
 
 ```{r length histograms per group across conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide'  }
-tsec_timeWindow <- 0
-loadDispersionData()
+tsec_timeWindow <- 5
+datDispersion <- loadDispersionData(tsec_timeWindow)
 xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+2,2)
-datHEventDispersion <- loadHuntEventMergedWithPathStat()
+datHEventDispersion <- loadHuntEventMergedWithPathStat(tsec_timeWindow)
 
 h_Length_NE <- hist(datDispersion[datDispersion$groupID %in% c('NE'), ]$Length,breaks=xbreaks,main="NF Spont.",xlab="Length (mm)",col=colourDataScheme$NF$Spont)
 h_Length_NL <- hist(datDispersion[datDispersion$groupID %in% c('NL'), ]$Length,breaks=xbreaks,main="NF Evoked.",xlab="Length (mm)",col=colourDataScheme$NF$Evoked)
@@ -1545,6 +1554,15 @@ Looking at group mean and pooled means essentially shows the same differences, o
 I then examine the distribution of mean MSD among larvae and find that LE clearly advance to higher MSDs in spontaneous conditions.
 
 
+
+
+
+
+
+
+
+
+
 ```{r dispersion among larvae across time, fig.show="hold",fig.cap="Mean dispersions over path lengths of increasing durations ", out.width="50%", echo=FALSE, cache=FALSE}
 
 plotDispersionVsTimePerLarva <- function(lModelwithMSD,addPlot=FALSE)
@@ -1579,6 +1597,137 @@ plotDispersionVsTimePerLarva(lMSDSummaryData[["DE"]],FALSE)
 plotDispersionVsTimePerLarva(lMSDSummaryData[["DL"]],FALSE)
 title(main="DL Dispersion ")  
 ```
+
+
+
+## Dispersion over time - Clearly Distinct for LE
+
+In the initial sections I took Marquez et al 2019 regime to estimate dispersions given a 5sec window. But how dispersions change over time is uknown. Lets have a look:
+
+
+
+```{r  dispersion over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+
+## A Histogram in Log Scale Of MSD scale
+plotLogLogDistribution_Dispersion <- function(lLinModel_GE,addPlot=FALSE)
+{
+    strG <-lLinModel_GE$groupID
+    if (!addPlot) 
+    {
+      plot(lLinModel_GE$xtickDispersion,lLinModel_GE$logPMFDispersion,
+         main=paste(" Log-Log distribution of Dispersion "),
+         xlab="log_10 Dispersion (mm)", col=colourDataScheme[strG][[1]], pch=16,
+         xlim=c(min(lLinModel_GE$xtickDispersion,na.rm=TRUE),max(lLinModel_GE$xtickDispersion,na.rm=TRUE)*1.01),
+         ylim=c(-4,3),
+         ylab="log N(l) %",xaxt="n" ,type="b")
+        axis(side=1, at=lLinModel_GE$xtickDispersion, labels =  as.character(10^lLinModel_GE$xtickDispersion))
+       #text(x=lLinModel_GE$xtick[seq(0,length(lLinModel_GE$xtick),3)],  par("usr")[3], labels = (10^xtick[seq(0,9,3)]), srt = 45, pos = 1, xpd = TRUE)
+    }else
+    {
+        points(lLinModel_GE$xtickDispersion,lLinModel_GE$logPMFDispersion,
+         main=paste(" Log-Log percentage of Dispersion " ),type="b",
+         xlab="log_10 Dispersion (mm)", col=colourDataScheme[strG][[1]], pch=16, ylab="log N(l) %")
+    }
+    ##Plot Linear Model
+    lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strG][[1]])
+  
+    return(lLinModel_GE)
+}
+
+##Collect the mean MSD from each Dispersion Calcl integration Window and show mean diffusion
+plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
+{
+  vDispersion <- vector()
+  vTimeWindow <- vector()
+  for (i in 1:NROW(lModelwithDispersion))
+  {
+    if (!is.null(lModelwithDispersion[[i]]$meanDispersion))
+    {
+      vDispersion[i] <- lModelwithDispersion[[i]]$meanDispersion
+      vTimeWindow[i] <-as.numeric( names(lModelwithDispersion[i]) )
+    }
+   # return(0)
+  }
+  idxOrder <- order(vTimeWindow)
+  xLim <- c(0,max(vTimeWindow ) *1.10 )
+  if (!addPlot)
+  {
+    plot(vTimeWindow[idxOrder],vDispersion[idxOrder],xlim=xLim,ylim=c(0,13),
+         col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
+         pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]],
+         xlab="Path duration (sec)", ylab="Dispersion (mm)")
+  }else
+    points(vTimeWindow[idxOrder],vDispersion[idxOrder],
+           col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
+           pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]])
+  
+  lines(vTimeWindow[idxOrder],vDispersion[idxOrder], col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
+        pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]])
+}
+
+# Main Load/Make MSD Distributios and Mean MSD versus time (Path Duration)
+
+vGroups <- c("LL","LE","NL","NE","DL","DE")
+vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60)
+vLargeScaletimeWindows <- c(0,2,10,40,80,120,180,200,260) #360 No Data
+#vtimeWindows <- c(vsmallTimeWindows,70,80,90,95,98,100,120,180)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
+##Process *  Serially * So we do not run out of memory
+# Results are plotted and Aggregated In lLinModel
+
+try(
+  {
+  rm(lMSDSummaryData);
+lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"statPerPathDurationSummaryResults-",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+}
+)
+if (!exists("lMSDSummaryData"))
+{ ##Same As Above - Repeated Here IN case we want to run this independently
+  lMSDSummaryData <<- makeMSDPathDurationSummary(vtimeWindows)
+}
+  
+##Now Plot All processed Results results
+for (strG  in vGroups)
+{
+  bAddPlot <- FALSE
+ for (tt in names( lMSDSummaryData[[strG]]) )
+  {
+    plotLogLogDistribution_Dispersion(lMSDSummaryData[[strG]][[as.character(tt)]],bAddPlot )
+   bAddPlot <- TRUE
+  }
+}
+
+
+```
+
+
+
+```{r mean-squared-distance vs Dispersion , fig.cap="Dispersion for LF spontaneous grows distinctively fast, in agreement with MSD", fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
+
+##Get Distribution of MSD and Mean MSD for each time integration window 
+##load Precalc Results
+  plotDispersionPerTime(lMSDSummaryData[["NE"]])
+  plotDispersionPerTime(lMSDSummaryData[["NL"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["LE"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["LL"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["DE"]],TRUE)
+  plotDispersionPerTime(lMSDSummaryData[["DL"]],TRUE)
+  
+  legend("topright", legend=names(colourDataScheme)[4:9],
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+# legend("topright", 
+#            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
+#                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
+#        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
+
+```
+
+:::
+{#figDispersionPerTime}
+
+As with the development of MSD over time, I also find that Dispersion is distinct for LE, and thus with experience larvae learn when to initiate exploration, (at sooner than  controls) .
+
 
 ## Comparing Mean Path Lengths
 
@@ -1646,6 +1795,7 @@ Interestignly, the above plot is representative of the speed of movement over ti
         -*(Show whether this is adaptive behaviour or simply a heteregenous population)*
   - DF, similar to LF  but slower
 
+### Path Length Distributions
 
 ```{r path-length among larvae across time, fig.show="hold",fig.cap="Distribution of larval mean path-lengths with increasing duration ", out.width="50%", echo=FALSE, cache=FALSE}
 
@@ -1696,9 +1846,9 @@ Looking at the mean path length against time of each larva:
 
 *I need to fit linear functions to get distributions of estimated travel-speed per larvae.*
  
-### Path Length Distributions
 
-```{r prob-of-path-duration, fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls, with an exponent that appears near the optimal 2"}
+
+```{r prob-of-path-length, fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls, with an exponent that appears near the optimal 2"}
 
 plot_PathLengthDistribution <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion=12)
 {
@@ -2016,139 +2166,11 @@ for (strG in vGroups)
 ```
 
 Findings:
-  1. Spontaneous MSD grows faster than 
+  1. Spontaneous MSD grows faster than Evoked
   2. Evoked MSDs look very similar between groups
   2. Non-linear MSD regime is evidence of super-diffusion
 
 Compared to the linear Dispersion to mean-path length relationship (#path-length per dispersion), the MSD to path-length appears to be non-linear.
-
-## Dispersion over time - Clearly Distinct for LE
-
-In the initial sections I took Marquez et al 2019 regime to estimate dispersions given a 5sec window. But how dispersions change over time is uknown. Lets have a look:
-
-
-
-```{r  dispersion over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-
-## A Histogram in Log Scale Of MSD scale
-plotLogLogDistribution_Dispersion <- function(lLinModel_GE,addPlot=FALSE)
-{
-    strG <-lLinModel_GE$groupID
-    if (!addPlot) 
-    {
-      plot(lLinModel_GE$xtickDispersion,lLinModel_GE$logPMFDispersion,
-         main=paste(" Log-Log distribution of Dispersion "),
-         xlab="log_10 Dispersion (mm)", col=colourDataScheme[strG][[1]], pch=16,
-         xlim=c(min(lLinModel_GE$xtickDispersion,na.rm=TRUE),max(lLinModel_GE$xtickDispersion,na.rm=TRUE)*1.01),
-         ylim=c(-4,3),
-         ylab="log N(l) %",xaxt="n" ,type="b")
-        axis(side=1, at=lLinModel_GE$xtickDispersion, labels =  as.character(10^lLinModel_GE$xtickDispersion))
-       #text(x=lLinModel_GE$xtick[seq(0,length(lLinModel_GE$xtick),3)],  par("usr")[3], labels = (10^xtick[seq(0,9,3)]), srt = 45, pos = 1, xpd = TRUE)
-    }else
-    {
-        points(lLinModel_GE$xtickDispersion,lLinModel_GE$logPMFDispersion,
-         main=paste(" Log-Log percentage of Dispersion " ),type="b",
-         xlab="log_10 Dispersion (mm)", col=colourDataScheme[strG][[1]], pch=16, ylab="log N(l) %")
-    }
-    ##Plot Linear Model
-    lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strG][[1]])
-  
-    return(lLinModel_GE)
-}
-
-##Collect the mean MSD from each Dispersion Calcl integration Window and show mean diffusion
-plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
-{
-  vDispersion <- vector()
-  vTimeWindow <- vector()
-  for (i in 1:NROW(lModelwithDispersion))
-  {
-    if (!is.null(lModelwithDispersion[[i]]$meanDispersion))
-    {
-      vDispersion[i] <- lModelwithDispersion[[i]]$meanDispersion
-      vTimeWindow[i] <-as.numeric( names(lModelwithDispersion[i]) )
-    }
-   # return(0)
-  }
-  idxOrder <- order(vTimeWindow)
-  xLim <- c(0,max(vTimeWindow ) *1.10 )
-  if (!addPlot)
-  {
-    plot(vTimeWindow[idxOrder],vDispersion[idxOrder],xlim=xLim,ylim=c(0,13),
-         col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
-         pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]],
-         xlab="Path duration (sec)", ylab="Dispersion (mm)")
-  }else
-    points(vTimeWindow[idxOrder],vDispersion[idxOrder],
-           col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
-           pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]])
-  
-  lines(vTimeWindow[idxOrder],vDispersion[idxOrder], col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
-        pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]])
-}
-
-# Main Load/Make MSD Distributios and Mean MSD versus time (Path Duration)
-
-vGroups <- c("LL","LE","NL","NE","DL","DE")
-vsmallTimeWindows <- c(1,2,4,5,6,7,8,10,15,20,30,40,50,60)
-vLargeScaletimeWindows <- c(0,2,10,40,80,120,180,200,260) #360 No Data
-#vtimeWindows <- c(vsmallTimeWindows,70,80,90,95,98,100,120,180)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
-##Process *  Serially * So we do not run out of memory
-# Results are plotted and Aggregated In lLinModel
-
-try(
-  {
-  rm(lMSDSummaryData);
-lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"statPerPathDurationSummaryResults-",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
-}
-)
-if (!exists("lMSDSummaryData"))
-{ ##Same As Above - Repeated Here IN case we want to run this independently
-  lMSDSummaryData <<- makeMSDPathDurationSummary(vtimeWindows)
-}
-  
-##Now Plot All processed Results results
-for (strG  in vGroups)
-{
-  bAddPlot <- FALSE
- for (tt in names( lMSDSummaryData[[strG]]) )
-  {
-    plotLogLogDistribution_Dispersion(lMSDSummaryData[[strG]][[as.character(tt)]],bAddPlot )
-   bAddPlot <- TRUE
-  }
-}
-
-
-```
-
-
-
-```{r mean-squared-distance vs Dispersion , fig.cap="Dispersion for LF spontaneous grows distinctively fast, in agreement with MSD", fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
-
-##Get Distribution of MSD and Mean MSD for each time integration window 
-##load Precalc Results
-  plotDispersionPerTime(lMSDSummaryData[["NE"]])
-  plotDispersionPerTime(lMSDSummaryData[["NL"]],TRUE)
-  plotDispersionPerTime(lMSDSummaryData[["LE"]],TRUE)
-  plotDispersionPerTime(lMSDSummaryData[["LL"]],TRUE)
-  plotDispersionPerTime(lMSDSummaryData[["DE"]],TRUE)
-  plotDispersionPerTime(lMSDSummaryData[["DL"]],TRUE)
-  
-  legend("topright", legend=names(colourDataScheme)[4:9],
-         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
-         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
-
-# legend("topright", 
-#            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
-#                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
-#        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
-
-```
-
-:::
-{#figDispersionPerTime}
-
-As with the development of MSD over time, I also find that Dispersion is distinct for LE, and thus with experience larvae learn when to initiate exploration, (at sooner than  controls) .
 
 ## Dispersion Vs MSD
 I obtained similar results when looking at MSD and Dispersion over time. These have obvious links, but is their relationship linear?
