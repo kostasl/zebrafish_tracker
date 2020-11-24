@@ -68,7 +68,7 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
     
     
     stopifnot(is.numeric(e) & e > 0)
-    stopifnot(i < 3) ##Test Run
+    #stopifnot(i < 3) ##Test Run
     
     vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
     

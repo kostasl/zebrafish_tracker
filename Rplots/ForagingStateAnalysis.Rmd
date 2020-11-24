@@ -149,7 +149,7 @@ generate_DispersionFiles <- function()
 {
   ##Generate Files From Start 
   loaddatAllFrames()
-  for (tt in seq(2,10,2) )
+  for (tt in seq(2,6,2) )
     calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
 }
 ```
