@@ -9,6 +9,16 @@ setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
+loaddatAllFrames <- function(forceReload = FALSE)
+{
+  if (!exists("datAllFrames") | forceReload)
+  {
+    attach(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
+    attach(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
+  }
+}
+
+
 ##Re Run All Path Calculation 
 generate_DispersionFiles <- function(timePointSequence = seq(2,30,2))
 {
