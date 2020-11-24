@@ -5,10 +5,6 @@ date: "20/11/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 # Clustering dispersal data
 
 ## Clustering dispersal using a mixture of 2 Gaussians (*GM Model*)

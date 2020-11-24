@@ -144,7 +144,14 @@ loadHuntEventMergedWithPathStat <- function(tsec_timeWindow)
   return(datHEventDispersion)
 }
 
-
+##Re Run All Path Calculation 
+generate_DispersionFiles <- function()
+{
+  ##Generate Files From Start 
+  loaddatAllFrames()
+  for (tt in seq(2,10,2) )
+    calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
+}
 ```
 
 ```{r merge max larval-dispersion onto dispersion data events, echo=FALSE,cache=FALSE,results=FALSE,warning=FALSE}
@@ -221,7 +228,7 @@ datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file
 ## Link Evoked and Spontaneous Trajectories
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
-loadHuntEventMergedWithPathStat(5)
+datHEventDispersion <<- loadHuntEventMergedWithPathStat(5)
 
 
 #loadDispersionData(forceReload = TRUE,tsec_timeWindow = 0)
@@ -320,7 +327,7 @@ plotNBMixGClusteredDispersionTrajectories <- function(groupID, datAllFrames, dat
 { 
   #load(file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
   #datHEventDispersion <<- readRDS(file=paste0(strDataExportDir,"/huntEvent_mergedwith_Dispersion",tsec_timeWindow,"sec.rds") )
-  datHEventDispersion <<- loadHuntEventMergedWithPathStat()
+  datHEventDispersion <<- loadHuntEventMergedWithPathStat(5)
   ## Merge sparse Clustered Dispersions Results onto full Dispersion Data
   lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
   if (!("clustID" %in% names(datSubDispersion)))
@@ -935,18 +942,27 @@ Generally, lower ratios are indicative of turtuous paths of low dispersion, ie w
 
 ## Path length per dispersion size (Invariance)
 
+
 ### Mean Path length scales with dispersion
 
 *Evidence of invariance*
+
 For example, take a random walk until it hits a circle of radius r times the step length. The average number of steps it performs is $r^2$.[citation needed] 
 This fact is the discrete version of the fact that a Wiener process walk is a fractal of Hausdorff dimension 2.[citation needed]
 
+Usually the mean length of the trajectories inside a domain depends both on the geometry of the system and on the characteristic of the random walk. 
+However, for a diffusive random walk, one that has exponaentially distributed straight paths between two successive scattering evens, it has been established *that mean lengths of the trajectories is independent of the random walk characteristics* and is given by a simple formula (#mazzolo2009invariance). 
 For random walks, the mean length $<s>$ does not depend on the characteristic mean free path ℓ, but only on the ratio between the surface A and the perimeter C—that is $<s>=\pi A/C$
 Thus the corresponding mean values are constrained by the sole free surface to perimeter ratio (see
 [1](https://science.sciencemag.org/content/358/6364/765/tab-figures-data) [2](https://www.nature.com/articles/s41467-019-10455-y) ).
+Therefore I can use this principle to detect for diffusive walks, instead of relying on fitting the statistics of step lenghts to power-laws or exponentials. This can then avoid having to set arbitrary threshold on what is considered straight or a turn/change of direction.
+However, (#mazzolo2009invariance) prove that for any homogeneous stochastic processes the mean length of trjectories is still given by the Cauchy formula, as long as the random walker enters the domain witha distributions that is simply related to that of the random walk. 
 
-Normally the mean path-length for the entry and exit from a circle of size $r$ is measured. Here I have path-lengths whose 2-most distal points  fall on the Dispersal circle-boundary.
-Nevertheless, I may nevertheless examine if such an *invariance principle holds* (see)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], to see if the mean path length with a dispersion $r$ is only proportional to the Area/Circumfarence ratio for a random walk. 
+Normally the mean path-length for the entry and exit from a circle of size $r$ is measured.
+Here I have path-lengths whose 2-most distal points  fall on the Dispersal circle-boundary.
+I will need then to measure the path length between the 2 points that define the  dispersion, and not the path length of the last X sec.
+
+Nevertheless, I may examine if such an *invariance principle holds* (see)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], to see if the mean path length with a dispersion $r$ is only proportional to the Area/Circumfarence ratio for a random walk. 
 For this, I look at mean path lengths for a set of fixed dispersion sizes:
 
 ```{r  path-length-20sec duration- per dispersion   , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
@@ -1032,7 +1048,6 @@ I next look at the Log-Log distribution of path-lengths for a specified dispersi
 *Note:* This is not equivalent to looking at the exit time, or time to hit boundary as in the Levy type investigations, becauce here all paths chosen have produced a specific dispersal and it is not that we are looking a the escape from random starting point within the cycle, or the mean escape time upon entering an area nor the mean time to hit two target sites (food items) as in FIG 3 (Viswanathan et al. 2009).
 
 Nevertheless we expect to see that the addition of prey should increase the path-lengths even among paths with the same Dispersion, as response to prey/ prey detection should make paths more turtuous.
-
 
 
 ```{r  path-length-All duration- per dispersion   , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
@@ -1484,7 +1499,7 @@ The duration-contrained MSDs however do not look  similar between conditions and
 ```
 
 What is clear is that MSD becomes truncated around 10 seconds in, and that the LE grows the fastest. 
-By that time the radius of displacement covered on average for LE is `r sqrt(lMSDSummaryData[["LE"]][["10"]]$meanGroupMSD)`mm, while for NE  `r sqrt(lMSDSummaryData[["NE"]]$[["10"]]$meanGroupMSD)`, for DE `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`
+By that time the radius of displacement covered on average for LE is `r sqrt(lMSDSummaryData[["LE"]][["10"]]$meanGroupMSD)`mm, while for NE  `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`, for DE `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`
 
 ```{r mean-squared-distance distribution over larva , fig.show="hold",fig.cap=" Mean squared distance for paths of increasing duration.", out.width="50%", echo=FALSE, cache=FALSE}
 
@@ -2266,7 +2281,7 @@ makeMSDDispersionSummary <- function ()
       ldatDispersion<- list()
       print (t)
       ##Load MSD /Dispersion/ Path Data
-      ldatDispersion[[as.character(t)]]<- readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",t,"sec.rds") ) 
+      ldatDispersion[[as.character(t)]]<- loadDispersionData(T,t) #readRDS(file=paste0(str,"/foragingState_Dispersion",t,"sec.rds") ) 
       
       lMSDStat[[strG]][[as.character(t)]] <- process_MSDVsDispersion(ldatDispersion[[as.character(t)]],strG)
       
@@ -2343,7 +2358,7 @@ Since Dispersion and Path length are linear, then it follows that MSD and path-l
 
 # Statistical comparison of motion-trajectories 
 
-```{r child = 'ForagingStateAnalysis_ModelFitting.Rmd'}
+```{r child = 'ForagingStateAnalysis_ModelFitting.Rmd',eval=FALSE}
 ##Clustering Code Separated into a sub RMarkdown
 ```
   
@@ -2351,14 +2366,14 @@ Since Dispersion and Path length are linear, then it follows that MSD and path-l
 
 # Identifying states of foraging behaviour
 
-```{r child = 'ForagingStateAnalysis_Clustering.Rmd'}
+```{r child = 'ForagingStateAnalysis_Clustering.Rmd',eval=TRUE}
 ##Clustering Code Separated into a sub RMarkdown
 ```
 
 
 # Hunt initiation and foraging state
 
-```{r child = 'ForagingStateAnalysis_HuntEvents.Rmd'}
+```{r child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
 ## Hunt events with foraging state Clustering results Separated into a sub RMarkdown
 ```
 

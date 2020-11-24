@@ -46,6 +46,7 @@ getLogPowerSlope <- function (h_Length_G, length_lin_region = 10)
 
 
 ###```{r Calc Dispersion of Each Trajectory,include=FALSE}
+##Samples Pathts on 0.5sec intervals on a sliding window of tsec_timeWindow to measure: Dispersion, Path Length, Displacement
 calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
 {
   
@@ -67,7 +68,7 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
     
     
     stopifnot(is.numeric(e) & e > 0)
-    #stopifnot(i < 3) ##Test Run
+    stopifnot(i < 3) ##Test Run
     
     vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
     
@@ -92,6 +93,7 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
                                        eventID=ev,
                                        Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
                                        Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
+                                       DispersionPathLength = lEventDispersionAndLength$DispersionPathLength, ##Length of path connecting the points that define the dispersion Circle
                                        Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
                                        DisplacementSq = lEventDispersionAndLength$DisplacementSq, ##Total Distance Travelled
                                        MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
@@ -144,6 +146,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   stopifnot(NROW(datEventFrames) > 0)
   ##datEventFrames <- datAllFrames[datAllFrames$expID == 218 & datAllFrames$eventID == 2 & datAllFrames$posX != 0,]
   vDispersionPerFrame <- vector()
+  vDispersionPathLength <- vector()
   vDistanceTravelledToFrame <- vector()
   vSqDisplacement <- vector()
   vMSD <- vector() #Mean Square Displacement of the twindowSec trajectory
@@ -151,7 +154,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   vFrameRow <- vector()
   ## Estimate number of frames for Tsec of video
   nfrm <- head(datEventFrames$fps,1)*twindowSec
-  nSpace <- head(datEventFrames$fps,1) ##Calc for Every Second
+  nSpace <- head(datEventFrames$fps,1)/2 ##Calc for Every 0.5sec - Gives good estimate of pathlengths - 
   ## Loop Through Each Frame and calc Dispersion
   datEventFrames$posX <- meanf(datEventFrames$posX,10)
   datEventFrames$posY <- meanf(datEventFrames$posY,10)
@@ -161,7 +164,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   if (nfrm > NROW(datEventFrames) & (twindowSec > 0) )
   {
     warning("Event:",head(datEventFrames$eventID,1)," does not have enough frames to estimate dispersion \n");
-    return(list(Dispersion=NA,Length=NA,DisplacementSq=NA,MSD=NA,SD=NA,FrameRowID=NA))
+    return(list(Dispersion=NA,DispersionPathLength=NA,Length=NA,DisplacementSq=NA,MSD=NA,SD=NA,FrameRowID=NA))
   }
   if (twindowSec == 0)  
     nfrm <- NROW(datEventFrames) ##measure acroos Full Path From start to end /Variable time window set to full path duration
@@ -179,18 +182,29 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
 
     vX <- datEventFrames[vIdx,"posX"]
     vY <- datEventFrames[vIdx,"posY"]
-    ##Find min Radius of circle that could encompass whole trajectory as half of the maximum distance between any two points of the trajectory
+
     vFrameRow[i] <- as.integer(row.names( datEventFrames[i,]))
     
-    ## Use outer to compute All to All point X  traj. differences / 
-    mat_posDX <- outer(vX,vX,'-')
-    mat_posDY <- outer(vY,vY,'-') #and Y 
-    # Combine to Find Distances DX DY between all point of trajectory
-    mat_ptDist <- sqrt(mat_posDX^2 + mat_posDY^2)
-    # Radius of Circle Encompassing the two most distant parts of trajectory section
-    vDispersionPerFrame[i] <- max(mat_ptDist)/2 
+    ##Find min Radius of circle that could encompass whole trajectory as half of the maximum distance between any two points of the trajectory
+      ## Use outer to compute All to All point X  traj. differences / 
+      mat_posDX <- outer(vX,vX,'-')
+      mat_posDY <- outer(vY,vY,'-') #and Y 
+      # Combine to Find Distances DX DY between all point of trajectory
+      mat_ptDist <- sqrt(mat_posDX^2 + mat_posDY^2)
+      # Radius of Circle Encompassing the two most distant parts of trajectory section
+      vDispersionPerFrame[i] <- max(mat_ptDist,na.rm = T)/2 
+    
+    #Calc Path Distance between the furthest dispersion points - Take a pair - x!=y - Avoid the 0 . no matrix case
+    idxDisp <- which(mat_ptDist == max(mat_ptDist,na.rm = T),arr.ind =  T)
+    idxDisp <- head(idxDisp[idxDisp[,1] != idxDisp[,2], ] ,1)
+    matDisp_sub <- mat_ptDist[idxDisp[1]:idxDisp[2],idxDisp[1]:idxDisp[2]] ##Subset to contain only the Path that Made the Max-Dispersion
+    vDispersionPathLength[i] <- sum(matDisp_sub[row(matDisp_sub) == (col(matDisp_sub) - 1)],na.rm = T )
+    
     #Calc Path Distance by Summing Successive Point Difference / on Upper Off-Diagonal of distance matrix
-    vDistanceTravelledToFrame[i] <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)])
+    vDistanceTravelledToFrame[i] <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)],na.rm = T)
+    
+    stopifnot(vDispersionPathLength[i] <= vDistanceTravelledToFrame[i]) ## This should never be the case
+    
     #Calc Squared Displacement from initial Point x0,y0 to final (last col in matrix)
     vSqDisplacement[i] <- ((DIM_MMPERPX*mat_ptDist[1,ncol(mat_ptDist)])^2)
     ##Calc Mean Path Displacement from initial Point x0,y0 being the mean squared sum of the 1st distance Matrix Row
@@ -204,7 +218,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
-  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,DisplacementSq=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
+  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,DispersionPathLength=vDispersionPathLength,Length=vDistanceTravelledToFrame*DIM_MMPERPX,DisplacementSq=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
   return( lRet)
 }
   
