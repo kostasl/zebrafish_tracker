@@ -5,11 +5,6 @@ date: "20/11/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
 The data on dispersion, MSD and mean-path lengths suggest differences between groups. 
 To rigorously compare the different treatments I next fit statistical models to: 
 
