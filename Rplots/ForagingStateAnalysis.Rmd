@@ -61,7 +61,7 @@ Thus we explore whether animals evolved to exploit experience in their search pa
 
 
 
-# Analysis of trajectory measures
+# Analysis of larval trajectories 
 
 ## Examine dispersion to reveal foraging state as in Marquez et al. 2019
 
@@ -1316,6 +1316,98 @@ In general the above data suggest that the characteristics  **dynamics governing
 
 I need to investigate the invariance principle further, and whether it amounts to paths being diffusion/random walks or Levy processes.
 As up to now I was not looking something that is equivalent entry and exit times, or time to hit boundary as in the Levy type investigations, because here all paths chosen have produced a specific dispersal - ie these paths are defined by having the longest distance within the circular domain (which could explain the icreased slope upwards).  and thus are not equivalent to looking at a isotropic entry, as for example  looking at the escape from random starting point within the cycle, or the mean escape time upon entering an area nor the mean time to hit two target sites (food items) as in FIG 3 (Viswanathan et al. 2009).
+
+```{r mean-squared-displacement calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+
+datDispersion<-loadDispersionData(10)
+loaddatAllFrames()
+
+
+vgroupID <- vGroups[2]
+
+calcPathLengthsInDomain <- function(datAllFrames,vgroupID)
+{
+  datGroupTraj <- datAllFrames[datAllFrames$groupID %in% vgroupID & datAllFrames$posX > 0,]
+  ## Calc Dist from Center of domain
+  pDomainCentre <- c(mean(datGroupTraj$posX),mean(datGroupTraj$posY))
+  rDomainRadius <- 5/DIM_MMPERPX
+  
+  datGroupTraj$distToDomainCentre   <- sqrt((datGroupTraj$posX-pDomainCentre[1])^2 + (datGroupTraj$posY-pDomainCentre[2])^2)*DIM_MMPERPX
+  
+  datDomainTrajectories <- datGroupTraj[datGroupTraj$distToDomainCentre <= rDomainRadius*DIM_MMPERPX,]
+  datDomainTrajectories$distToDomainBoundary <- rDomainRadius*DIM_MMPERPX - datDomainTrajectories$distToDomainCentre
+    #hist(datGroupTraj$distToDomainCentre,main=vgroupID)
+  #hist(datDomainTrajectories$distToDomainCentre,main=vgroupID)
+  #smoothScatter(datGroupTraj$posX,datGroupTraj$posY,xlim=c(0,640),ylim=c(0,480))
+  #smoothScatter(datDomainTrajectories$posX,datDomainTrajectories$posY,xlim=c(0,640),ylim=c(0,480))
+  
+  Dframe <- diff(datDomainTrajectories$frameN)
+  
+  datDomainTrajectories$DnextFrame <- NA
+  datDomainTrajectories[1:NROW(Dframe),]$DnextFrame <- Dframe
+  ## Select The frames that Are on the Domain Boundary and Have no Interruption to the next frame - Ie Part of Consecutive Path
+  datBoundaryDomainTrajectories <- datDomainTrajectories[datDomainTrajectories$DnextFrame < 3 & datDomainTrajectories$distToDomainBoundary < 0.3,]
+
+    ##Find Mean Path Duration From Entry to Exit Of the domain
+  entryFramePerLarvaEvent <- tapply(datBoundaryDomainTrajectories$frameN,
+                                    paste0(datBoundaryDomainTrajectories$expID,"-",datBoundaryDomainTrajectories$eventID,"-",datBoundaryDomainTrajectories$trackletID),min )
+  exitFramePerLarvaEvent <- tapply(datBoundaryDomainTrajectories$frameN,
+                                   paste0(datBoundaryDomainTrajectories$expID,"-",datBoundaryDomainTrajectories$eventID,"-",datBoundaryDomainTrajectories$trackletID),max )
+  
+  pathDurations <- (exitFramePerLarvaEvent - entryFramePerLarvaEvent)
+  
+  hist(pathDurations/410,breaks=100,main=vgroupID)
+  
+  lPathDistanceTravelled <- list()
+  lTrackletInfo <- list()
+  
+  ##Calc Path Length for Each Tracklet Identified
+  for (strTrackID in names(pathDurations) )
+  {
+        message("Path length for:",strTrackID)
+        vTrackID <- strsplit(strTrackID,"-")
+        
+        TrackletInfo <- list(expID = vTrackID[[1]][1],EventID=vTrackID[[1]][2],TrackletID=vTrackID[[1]][3] )
+        TrackletInfo$startFrame <- entryFramePerLarvaEvent[[strTrackID]]
+        TrackletInfo$endFrame <-  exitFramePerLarvaEvent[[strTrackID]]
+   
+        datBoundedTracklet <- datDomainTrajectories[datDomainTrajectories$expID == TrackletID$expID &
+                                                            datDomainTrajectories$eventID == TrackletID$EventID &
+                                                            datDomainTrajectories$trackletID == TrackletID$TrackletID &
+                                                            datDomainTrajectories$frameN >= TrackletID$startFrame &
+                                                            datDomainTrajectories$frameN <= TrackletID$endFrame,
+                                                            ]
+             
+        ## Measure Path Length - Can Skip Some Frames To Speed Up Calculation
+        nSpace <- 3
+        vIdx <- seq(from=1,by=nSpace,to=pathDurations[[strTrackID]]) ##Last nfrm
+        vX <- datBoundedTracklet[vIdx,"posX"]
+        vY <- datBoundedTracklet[vIdx,"posY"]
+        mat_posDX <- outer(vX,vX,'-')
+        mat_posDY <- outer(vY,vY,'-') #and Y 
+        # Combine to Find Distances DX DY between all point of trajectory
+        mat_ptDist <- sqrt(mat_posDX^2 + mat_posDY^2)
+        TrackletInfo$pathLength <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)],na.rm = T)*DIM_MMPERPX
+        
+        lTrackletInfo[[strTrackID]] <- TrackletInfo
+  } ##For Each Tracklet
+  
+return(data.frame(do.call(rbind,lTrackletInfo) ) )
+}##END oF FUNCTION
+
+for(g in vGroups)
+  plotpathDurationInDomain(datAllFrames, g)
+
+plot(datBoundaryDomainTrajectories$posX,datBoundaryDomainTrajectories$posY)
+    
+datBoundedTracklet <- datDomainTrajectories[datDomainTrajectories$expID == TrackletID$expID &
+                                                            datDomainTrajectories$eventID == TrackletID$EventID,]
+             
+#plot(datDomainTrajectories$posX,datDomainTrajectories$posY,xlim=c(0,640),ylim=c(0,480),type="l")
+```
+
+
+
 
 
 # Mean-Squared-Displacement over-time is different between groups
