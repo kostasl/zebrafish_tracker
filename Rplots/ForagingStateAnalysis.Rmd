@@ -144,6 +144,22 @@ loadHuntEventMergedWithPathStat <- function(tsec_timeWindow)
   return(datHEventDispersion)
 }
 
+## Check list of foragingStateDispersion files and return vector with the processed and available path-dispersion-msd Analysis timewindows 
+getAvailablePathTimewindows <- function()
+{
+  
+  # Check List of Available Calculated PathMeasure files  (Dispersion etc)
+  # helper function : Convert WildCard to RegExp : glob2rx("foragingState_Dispersion???sec.rds", trim.head = FALSE, trim.tail = TRUE)
+  lAvailableDispersionFiles <- dir(strDataStore, pattern = "foragingState_Dispersion[0-9]{1,3}sec.rds", full.names = FALSE, ignore.case = TRUE)
+  vAvailabletimeWindows <- lapply( lAvailableDispersionFiles,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s)  }  )
+  #Order them and Converr to Number
+  vtimeWindows <- as.integer(unlist(vAvailabletimeWindows[order(as.integer(unlist(vAvailabletimeWindows)))] ) )
+  message("Available timewindows:",paste(vAvailabletimeWindows,collapse=","))
+
+  return (vtimeWindows)
+}
+
+
 ##Re Run All Path Calculation 
 generate_DispersionFiles <- function()
 {
@@ -1159,7 +1175,7 @@ When looking at the overall contained path-length, I find that in the presence o
 
 *Note:* This is not equivalent to looking at the exit time, or time to hit boundary as in the Levy type investigations, because here all paths chosen have produced a specific dispersal - ie these paths are defined by having the longest distance within the circular domain (which could explain the icreased slope upwards).  and thus are not equivalent to looking at a isotropic entry, as for example  looking at the escape from random starting point within the cycle, or the mean escape time upon entering an area nor the mean time to hit two target sites (food items) as in FIG 3 (Viswanathan et al. 2009).
 
-Nevertheless we find that the addition of prey *increase the path-lengths even among paths with the same Dispersion*, as response to prey/ prey detection should make paths more turtuous.
+Nevertheless we find that the addition of prey *LF increase the path-lengths even among paths with the same Dispersion*, as their response to prey/ prey detection makes paths more turtuous (check 10sec paths). Over 50sec paths this increase in path length in evoked conditions is evident across groups.
 
 I next look at the Log-Log distribution of path-lengths for a specified dispersion boundary. 
 
@@ -1533,15 +1549,7 @@ rm(ldatDispersion)
 ldatDispersion <- list()
 lLinModel <- list() ##Start new list Containing The mean Vals per group per time
 
-
-# Check List of Available Calculated PathMeasure files  (Dispersion etc)
-# helper function : Convert WildCard to RegExp : glob2rx("foragingState_Dispersion???sec.rds", trim.head = FALSE, trim.tail = TRUE)
-lAvailableDispersionFiles <- dir(strDataStore, pattern = "foragingState_Dispersion[0-9]{1,3}sec.rds", full.names = FALSE, ignore.case = TRUE)
-vAvailabletimeWindows <- lapply( lAvailableDispersionFiles,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s)  }  )
-#Order them and Converr to Number
-vtimeWindows <- as.integer(unlist(vAvailabletimeWindows[order(as.integer(unlist(vAvailabletimeWindows)))] ) )
-message("Available timewindows:",paste(vAvailabletimeWindows,collapse=","))
-
+vtimeWindows <- getAvailablePathTimewindows()
 rm(lMSDSummaryData)
 try(
   lMSDSummaryData <<- readRDS(paste0(strDataExportDir,"statPerPathDurationSummaryResults-",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
@@ -1553,134 +1561,6 @@ if (!exists("lMSDSummaryData"))
 }
 
 ```
-
-
-```{r mean-squared-displacement Log-Log distributions , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-
-##Now Plot All processed Results results
-for (strG  in vGroups)
-{
-  bAddPlot <- FALSE
- for (tt in names( lMSDSummaryData[[strG]]) )
-  {
-   
-    plotLogLogDistribution_MSD(lMSDSummaryData[[strG]][[as.character(tt)]],tt,bAddPlot )
-    bAddPlot <- TRUE
- }
-  legend("bottomleft",lty=c(2,NA),pch=c(NA,16),legend=c("Full path",paste("Fixed duration",names( lMSDSummaryData[[strG]])[1],"-",tt )) )
-}
-
-```
-
-MSD over full event path duration looks the same across groups.
-The duration-contrained MSDs however do not look  similar between conditions and groups:
-  - *LF evoked contains larger MSDs than spontaneous - Same in NF but prob not in DF*
-
-```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE}
-
-
-
-##Get Distribution of MSD and Mean MSD for each time integration window 
-##load Precalc Results
-  plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE)
-  title(main="Pooled Mean")
-  legend("topright", legend=names(colourDataScheme)[4:9],
-         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
-         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
-
-  
-  plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE)
-  title(main="Group Mean")
-  legend("topright", legend=names(colourDataScheme)[4:9],
-         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
-         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
-# legend("topright", 
-#            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
-#                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
-#        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
-
-```
-
-What is clear is that MSD becomes truncated around 10 seconds in, and that the LE grows the fastest. 
-By that time the radius of displacement covered on average for LE is `r sqrt(lMSDSummaryData[["LE"]][["10"]]$meanGroupMSD)`mm, while for NE  `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`, for DE `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`
-
-```{r mean-squared-distance distribution over larva , fig.show="hold",fig.cap=" Mean squared distance for paths of increasing duration.", out.width="50%", echo=FALSE, cache=FALSE}
-
-##Get Distribution of MSD and Mean MSD for each time integration window 
-##load Precalc Results
-xbreaks = seq(0,210,10)
-t <- as.character(vtimeWindows[9])
-#  hist(lMSDSummaryData[["NE"]][[t]]$meanPooledMSDPerLarva, col=colourDataScheme["NE"][[1]],main=paste("NE",t),breaks=xbreaks)
-#  hist(lMSDSummaryData[["NL"]][[t]]$meanPooledMSDPerLarva, col=colourDataScheme["NL"][[1]],main=paste("NL",t),breaks=xbreaks)
-#  hist(lMSDSummaryData[["LE"]][[t]]$meanPooledMSDPerLarva, col=colourDataScheme["LE"][[1]],main=paste("LE",t),breaks=xbreaks)
-#  hist(lMSDSummaryData[["LL"]][[t]]$meanPooledMSDPerLarva, col=colourDataScheme["LL"][[1]],main=paste("LL",t),breaks=xbreaks)
-#  hist(lMSDSummaryData[["DE"]][[t]]$meanPooledMSDPerLarva, col=colourDataScheme["DE"][[1]],main=paste("DE",t),breaks=xbreaks)
-#  hist(lMSDSummaryData[["DL"]][[t]]$meanPooledMSDPerLarva, col=colourDataScheme["DL"][[1]],main=paste("DL",t),breaks=xbreaks)
-  
-  #plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE)
-  #plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE)
-  #plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE)
-  #plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE)
-  #plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE)
-  
-
-# legend("topright", 
-#            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
-#                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
-#        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
-
-plotMSDVsTimePerLarva <- function(lModelwithMSD,addPlot=FALSE)
-{
-  
-  lMSD <- list()
-  vTimeWindow <- vector()
-  for (i in 1:NROW(lModelwithMSD))
-  {
-    if (!is.null(lModelwithMSD[[i]]$meanMSDPerLarva))
-    {
-        lMSD[[i]] <- lModelwithMSD[[i]]$meanMSDPerLarva
-        vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
-    }
-  }
-  ##Now plot MSD evolution of each larva
-  datMeanMSDVsTimePerLarva <- data.frame(do.call(rbind,lMSD))
-  if (!addPlot)
-    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",
-         col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],ylim=c(0,250),xlab="Time (sec)",ylab="MSD (mm)",xlim=c(0,180))
-  for (i in 1:ncol(datMeanMSDVsTimePerLarva))
-    lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
-  
-} 
-
-plotMSDVsTimePerLarva(lMSDSummaryData[["NE"]],FALSE)
-plotMSDVsTimePerLarva(lMSDSummaryData[["NL"]],FALSE)
-title(main="NL MSD ")
-plotMSDVsTimePerLarva(lMSDSummaryData[["LE"]],FALSE)
-plotMSDVsTimePerLarva(lMSDSummaryData[["LL"]],FALSE)
-title(main="LL MSD ")
-plotMSDVsTimePerLarva(lMSDSummaryData[["DE"]],FALSE)
-plotMSDVsTimePerLarva(lMSDSummaryData[["DL"]],FALSE)
-title(main="DL MSD ")  
-  #legend("topright", legend=names(colourDataScheme)[4:9],
-  #       col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
-  #       pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
-
-```
-
-The mean of the mean squared displacement shows the astonishing result, ** Movement in absence and presence of prey differs between groups in manner that depends on experience **
-Looking at group mean and pooled means essentially shows the same differences, only *group mean shows waves of LE leaving the recording area*.
-I then examine the distribution of mean MSD among larvae and find that LE clearly advance to higher MSDs in spontaneous conditions.
-
 
 
 
@@ -1829,7 +1709,7 @@ for (strG  in vGroups)
 
 
 
-```{r mean-squared-distance vs Dispersion , fig.cap="Dispersion for LF spontaneous grows distinctively fast, in agreement with MSD", fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
+```{r Dispersion over time , fig.cap="Dispersion for LF spontaneous grows distinctively fast, in agreement with MSD", fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
@@ -1986,14 +1866,13 @@ plot_PathLengthDistribution <- function(lMSDGroupSummaryData,addPlot=FALSE,linRe
     vLarvaFraction <- lMSDGroupSummaryData[["0"]]$logPMFPathLength
     vPathLengths  <- lMSDGroupSummaryData[["0"]]$xtickPathLength
     
-    proportion <- log10(unlist(vLarvaFraction[(10^vPathLengths) > linRegion]))
+    proportion <- (unlist(vLarvaFraction[(10^vPathLengths) > linRegion]))
     length <- vPathLengths[(10^vPathLengths) > linRegion]
-    linFit <- lm(proportion ~ length )
+    linFit <- lm(proportion[proportion >0 ] ~ length[proportion >0 ] )
     #linFit <- lm(proportion~length,data=datHist[!is.infinite(datHist$proportion),] )
   
     y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* (linFit$model$length ) ) )
     x_linModel <- linFit$model$length
-  
   
   if (!addPlot)
   {
@@ -2121,6 +2000,119 @@ Linear fitting to the log-log curves can approximate the power law exponent.
 
 
 
+## Mean Squared Displacement - Examining diffusion type
+
+### MSD distributions over full paths
+
+```{r mean-squared-displacement Log-Log distributions , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+
+##Now Plot All processed Results results
+for (strG  in vGroups)
+{
+  bAddPlot <- FALSE
+ for (tt in names( lMSDSummaryData[[strG]]) )
+  {
+   
+    plotLogLogDistribution_MSD(lMSDSummaryData[[strG]][[as.character(tt)]],tt,bAddPlot )
+    bAddPlot <- TRUE
+ }
+  legend("bottomleft",lty=c(2,NA),pch=c(NA,16),legend=c("Full path",paste("Fixed duration",names( lMSDSummaryData[[strG]])[1],"-",tt )) )
+}
+
+```
+
+MSD over full event path duration looks the same across groups.
+
+### MSD over time 
+
+The duration-contrained MSDs however do not look  similar between conditions and groups:
+  - *LF evoked contains larger MSDs than spontaneous - Same in NF but prob not in DF*
+
+```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE}
+
+
+
+##Get Distribution of MSD and Mean MSD for each time integration window 
+##load Precalc Results
+  plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,TRUE)
+  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,TRUE)
+  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,TRUE)
+  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE)
+  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE)
+  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE)
+  title(main="Pooled Mean")
+  legend("topright", legend=names(colourDataScheme)[4:9],
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+  
+  plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE)
+  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,FALSE)
+  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,FALSE)
+  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE)
+  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE)
+  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE)
+  title(main="Group Mean")
+  legend("topright", legend=names(colourDataScheme)[4:9],
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+# legend("topright", 
+#            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
+#                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
+#        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
+
+```
+
+What is clear is that MSD becomes truncated around 10 seconds in, and that the LE grows the fastest. 
+By that time the radius of displacement covered on average for LE is `r sqrt(lMSDSummaryData[["LE"]][["10"]]$meanGroupMSD)`mm, while for NE  `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`, for DE `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`
+
+```{r mean-squared-distance over time distribution over larva , fig.show="hold",fig.cap=" Mean squared distance for paths of increasing duration.", out.width="50%", echo=FALSE, cache=FALSE}
+
+##Get Distribution of MSD and Mean MSD for each time integration window 
+##load Precalc Results
+xbreaks = seq(0,210,10)
+t <- as.character(vtimeWindows[9])
+plotMSDVsTimePerLarva <- function(lModelwithMSD,addPlot=FALSE)
+{
+  
+  lMSD <- list()
+  vTimeWindow <- vector()
+  for (i in 1:NROW(lModelwithMSD))
+  {
+    if (!is.null(lModelwithMSD[[i]]$meanMSDPerLarva))
+    {
+        lMSD[[i]] <- lModelwithMSD[[i]]$meanMSDPerLarva
+        vTimeWindow[i] <-as.numeric( names(lModelwithMSD[i]) )
+    }
+  }
+  ##Now plot MSD evolution of each larva
+  datMeanMSDVsTimePerLarva <- data.frame(do.call(rbind,lMSD))
+  if (!addPlot)
+    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",
+         col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],ylim=c(0,250),xlab="Time (sec)",ylab="MSD (mm)",xlim=c(0,180))
+  for (i in 1:ncol(datMeanMSDVsTimePerLarva))
+    lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
+  
+} 
+
+plotMSDVsTimePerLarva(lMSDSummaryData[["NE"]],FALSE)
+plotMSDVsTimePerLarva(lMSDSummaryData[["NL"]],FALSE)
+title(main="NL MSD ")
+plotMSDVsTimePerLarva(lMSDSummaryData[["LE"]],FALSE)
+plotMSDVsTimePerLarva(lMSDSummaryData[["LL"]],FALSE)
+title(main="LL MSD ")
+plotMSDVsTimePerLarva(lMSDSummaryData[["DE"]],FALSE)
+plotMSDVsTimePerLarva(lMSDSummaryData[["DL"]],FALSE)
+title(main="DL MSD ")  
+  #legend("topright", legend=names(colourDataScheme)[4:9],
+  #       col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+  #       pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+```
+
+The mean of the mean squared displacement shows the astonishing result, ** Movement in absence and presence of prey differs between groups in manner that depends on experience **
+Looking at group mean and pooled means essentially shows the same differences, only *group mean shows waves of LE leaving the recording area*.
+I then examine the distribution of mean MSD among larvae and find that LE clearly advance to higher MSDs in spontaneous conditions.
 
 ### MSD to path-length for evidence of super-Diffusion - (Integrate time out)
 
@@ -2296,7 +2288,7 @@ for (strG in vGroups)
 Findings:
   1. Spontaneous MSD grows faster than Evoked
   2. Evoked MSDs look very similar between groups
-  2. Non-linear MSD regime is evidence of super-diffusion
+  2. Over small path lengths there is signs of a Non-linear MSD regime, which suggests super-diffusion
 
 Compared to the linear Dispersion to mean-path length relationship (#path-length per dispersion), the MSD to path-length appears to be non-linear.
 
