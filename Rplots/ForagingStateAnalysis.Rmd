@@ -45,8 +45,20 @@ In Levy walks/flights the step lengths (ie straight path lengths) are said tp ha
 In (#humphries2010environmental) it shown that searching animals adaptively adjust their optimal patterns of movement to different environmental resource distributions. 
 It remains uknwown, however, whether the motions patterns arose as due to adaptive behaviour or whether observed patterns were an emergent property of the spatial distribution of prey (#sims2008scaling)
 
+>What is the most efficient strategy to adopt while searching for randomly placed sites whose
+locations are not apriori known for situations when the searcher has information only about
+its close vicinity? (see  E P Raposo et al 2009)
+
+  - Are these larvae executing Levy walks?
+
+>From an evolutionary perspective, it is certainly pertinent to ask if efficient encounter rates are driven from selective pressures that systematically force organism adaption toward some optimal (or sub-optimal) solution.
+
 Here use prior prey experience can alter the foraging search patterns in the scarcity and abundance of prey, to test wether changes in search patterns can be are adaptive, and not simply a result of interacting with dense prey environments. Thus if prior expectations on abandunce of prey  can modify motion, then changes in search patterns can be shown to be adaptive.
 Thus we explore whether animals evolved to exploit experience in their search patterns, and whether they can use optimal search strategies such as Levy flights/walks when prey is scarce.
+
+ I need to understand what changes in these walks, in terms of step length -
+ Generally the LF group shows a bimodal distribution of path length  and an increase in the overall path length. which could be indicative of increased number of re-orientations. There is also a decrease in path-length between spontaneous and evoked conditions (most evident in LF )
+
 
 
 # Analysis of trajectory measures
@@ -958,29 +970,28 @@ Generally, lower ratios are indicative of turtuous paths of low dispersion, ie w
   - Ratios over hunt-event initiation suggest that low-dispersal frequencies are relativelly over represented compared to general motility in evoked conditions, but not in spontaneous conditions, ie spontaneous events occur randomly across general motion, in evoked conditions low dispersion motion appears favouroble to hunt-event initiation. 
 
 
-## Path length per dispersion size (Invariance)
-
-
-### Mean Path length scales with dispersion
-
-*Evidence of invariance*
-
-For example, take a random walk until it hits a circle of radius r times the step length. The average number of steps it performs is $r^2$.[citation needed] 
+## Path length per dispersion size (Examine Invariance principle)
+Take a random walk until it hits a circle of radius r times the step length. The average number of steps it performs is $r^2$.[citation needed] 
 This fact is the discrete version of the fact that a Wiener process walk is a fractal of Hausdorff dimension 2.[citation needed]
 
 Usually the mean length of the trajectories inside a domain depends both on the geometry of the system and on the characteristic of the random walk. 
-However, for a diffusive random walk, one that has exponaentially distributed straight paths between two successive scattering evens, it has been established *that mean lengths of the trajectories is independent of the random walk characteristics* and is given by a simple formula (#mazzolo2009invariance). 
+However, for a diffusive random walk, one that has exponentially distributed straight paths between two successive scattering evens, it has been established *that mean lengths of the trajectories is independent of the random walk characteristics* and is given by a simple formula (#mazzolo2009invariance). 
 For random walks, the mean length $<s>$ does not depend on the characteristic mean free path ℓ, but only on the ratio between the surface A and the perimeter C—that is $<s>=\pi A/C$
 Thus the corresponding mean values are constrained by the sole free surface to perimeter ratio (see
 [1](https://science.sciencemag.org/content/358/6364/765/tab-figures-data) [2](https://www.nature.com/articles/s41467-019-10455-y) ).
-Therefore I can use this principle to detect for diffusive walks, instead of relying on fitting the statistics of step lenghts to power-laws or exponentials. This can then avoid having to set arbitrary threshold on what is considered straight or a turn/change of direction.
-However, (#mazzolo2009invariance) prove that for any homogeneous stochastic processes the mean length of trjectories is still given by the Cauchy formula, as long as the random walker enters the domain witha distributions that is simply related to that of the random walk. 
+Therefore *it may be possible to use this principle to detect for diffusive walks*, instead of relying on fitting the statistics of step lenghts to power-laws or exponentials. This can then avoid having to set arbitrary threshold on what is considered straight or a turn/change of direction.
+However, (#mazzolo2009invariance) prove that for any homogeneous stochastic processes the mean length of trajectories is still given by the Cauchy formula, as long as the random walker enters the domain with distributions that are simply related to that of the random walk. 
 
 Normally the mean path-length for the entry and exit from a circle of size $r$ is measured.
 Here I have path-lengths whose 2-most distal points  fall on the Dispersal circle-boundary.
-I will use the path length between the 2 points that define the dispersion, and not the path length of the last X sec.
+I will first examine the mean total path-length contained in the dispersion domain, and then the path length between the 2 points that define the dispersion domain.
 
-Plot for X sec duration paths finds that indeed this *invariance principle holds* (see)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], and the mean path length crossing a dispersion domain with radius $r$ is only proportional to the Area/Circumfarence ratio for a random walk.
+### Mean Path length scales linearly with dispersion
+
+Plot for X sec duration paths finds that indeed a linear relationship similar to (this)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], while the mean path length defining the limits (radius $r$) of the dispersion domain is proportional to the Area/Circumfarence ratio. 
+Yet, this relationship is *not invariant*, as looking at increasing path-integration time windows $X$sec reveals increasing slope of mean-path lengths. 
+Thus suggesting mean path length is not invariant to the particular variations in the timescale at which the animal disperses withing a circle $r$.
+
 The plots below examine both, the total mean path length contained with each dispersion $r$, and the cutting path length - the path between the two points that touch the circles boundary:
 
 ```{r  path-length-2sec duration- per dispersion   , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
@@ -1154,26 +1165,23 @@ title(paste(strTitle," crossing chord " ) )
 
 ```
 
-When looking at short path-durations (2sec) indeed our data shows some agreement with the theoretical mean-path lengths by a factor of 1.5, while the invariance principle holds across all groups in the same way.
+When looking at short path-durations (2sec) indeed our data shows some agreement with the theoretical mean-path lengths by a factor of 1.5, while the linear relationship holds all groups in the same way.
 The length of every path contained in a dispersion circle with radius $r$ increases linearly with $r$, specifically the relationship appears to be :
 \[
 <s> = \frac{3\pi}{2}  \frac{\pi r^2}{2 \pi r}
 \]
 
 When these same dispersion ranges are examined over 50sec path durations we find that a linear relationship still holds, but this slope deviates further from theoretical with increasing mean path lengths. This can be explained as the development of the same dispersions now is much slower, this is apparently partly explained by increasingly tortuous paths from entry to exit of the same $r$ Dispersion circle domains.
+*Thus the linear relationship is not invariant to the path time-scale*
 
-but why? some invariance principle seems to hold similar to the one reported in #blanco2003invariance, at least clearly so in the absence of prey.
+but why? some invariance seems to hold when it comes to the chords defining the dispersion domain, (similar to  #blanco2003invariance), at least clearly so in the absence of prey.
 
 When looking at the overall contained path-length, I find that in the presence of prey increases path-lengths (for > 10sec durations) - most likely as a result of hunting events and prey tracking. 
- This way of looking at such path-data is new.
- Usually mean free paths are measured, as the path between two changes in direction, or the time of entry and exit from a circle bound area.
+But note, that this way of looking at such path-data is new.
+Usually mean free paths are measured, as the path between two changes in direction, or the time of entry and exit from a circle bound area.
  
- It may well have been that path-length could scale as the $<s> \approx  r^2$, but instead,  we find that it scales with $r$, which here is the dispersion radius containing the path.
- The Chord-cutting path-length follow the invariance linear rule more strictly, and that is clear over longer path durations.
- I need to investigate further what this means, and whether it amounts to paths being diffusion/random walks or Levy processes.
- 
-
-*Note:* This is not equivalent to looking at the exit time, or time to hit boundary as in the Levy type investigations, because here all paths chosen have produced a specific dispersal - ie these paths are defined by having the longest distance within the circular domain (which could explain the icreased slope upwards).  and thus are not equivalent to looking at a isotropic entry, as for example  looking at the escape from random starting point within the cycle, or the mean escape time upon entering an area nor the mean time to hit two target sites (food items) as in FIG 3 (Viswanathan et al. 2009).
+it is known that the number of steps scales as the $<s> \approx  r^2$, and here we find that path-length scales with $r$, which here is the dispersion radius containing the path.
+The Chord-cutting path-length, which defines the dispersion size,  follow the invariance linear rule more strictly, and that is clear over longer path durations.
 
 Nevertheless we find that the addition of prey *LF increase the path-lengths even among paths with the same Dispersion*, as their response to prey/ prey detection makes paths more turtuous (check 10sec paths). Over 50sec paths this increase in path length in evoked conditions is evident across groups.
 
@@ -1299,22 +1307,15 @@ hist_pathLengthPerDispersion(datDispersion,'DL')
 
 ```
 
-Interestingly, it appears that the invariance principle does hold, the *mean path length depends on size of the observation area $\pi A/C$*, 
-so indeed these paths may have a random walk structure.
-
-This is evidence towards the larval trajectories appearing  as a stochastic diffussive process. 
->What is the most efficient strategy to adopt while searching for randomly placed sites whose
-locations are not apriori known for situations when the searcher has information only about
-its close vicinity? (see  E P Raposo et al 2009)
-
-  - Are these larvae executing Levy walks?
-
+In summary, over fixed path durations, the*mean path length depends on size of the observation area $\pi A/C$*.
+It is not clear to me if this is evidence towards the larval trajectories appearing  as a stochastic diffussive process, because random straigh line chords would also scale linearly with the spatial domain they cross.
 In general the above data suggest that the characteristics  **dynamics governing foraging motion  may  modified by experience **
 
->From an evolutionary perspective, it is certainly pertinent to ask if efficient encounter rates are driven from selective pressures that systematically force organism adaption toward some optimal (or sub-optimal) solution.
 
- I need to understand what changes in these walks, in terms of step length -
- Generally the LF group shows a bimodal distribution of path length  and an increase in the overall path length. which could be indicative of increased number of re-orientations. There is also a decrease in path-length between spontaneous and evoked conditions (most evident in LF )
+# Invariance-revisited - Path lengths crossing bounded areas
+
+I need to investigate the invariance principle further, and whether it amounts to paths being diffusion/random walks or Levy processes.
+As up to now I was not looking something that is equivalent entry and exit times, or time to hit boundary as in the Levy type investigations, because here all paths chosen have produced a specific dispersal - ie these paths are defined by having the longest distance within the circular domain (which could explain the icreased slope upwards).  and thus are not equivalent to looking at a isotropic entry, as for example  looking at the escape from random starting point within the cycle, or the mean escape time upon entering an area nor the mean time to hit two target sites (food items) as in FIG 3 (Viswanathan et al. 2009).
 
 
 # Mean-Squared-Displacement over-time is different between groups
@@ -2110,7 +2111,7 @@ title(main="DL MSD ")
 
 ```
 
-The mean of the mean squared displacement shows the astonishing result, ** Movement in absence and presence of prey differs between groups in manner that depends on experience **
+The mean of the mean squared displacement confirms the finding:  **Movement in absence and presence of prey differs between groups in manner that depends on experience **
 Looking at group mean and pooled means essentially shows the same differences, only *group mean shows waves of LE leaving the recording area*.
 I then examine the distribution of mean MSD among larvae and find that LE clearly advance to higher MSDs in spontaneous conditions.
 
