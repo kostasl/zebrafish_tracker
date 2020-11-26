@@ -1447,7 +1447,7 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
 }##END oF FUNCTION
   
   lBoundedTrackInfo <- list()
-  DomainRadius <- 5 #mm
+  DomainRadius <- 1 #mm
   for(g in vGroups)
   {
     message("Group:",g)
@@ -1468,11 +1468,14 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
       lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
       for (strGroup in names(lBoundedTrackInfo) )
       {
-          lMeanPathLengthAll[[paste0(strGroup,DomainRadius)]] <- list(muPathLength=mean(unlist(lBoundedTrackInfo[[strGroup]]$pathLength) ),
-                                   sdPathLength=sd(unlist(lBoundedTrackInfo[[strGroup]]$pathLength) ),
-                                   muPathDuration=mean(unlist(lBoundedTrackInfo[[strGroup]]$pathLength) ),
-                                   sdPathDuration=mean(unlist( lBoundedTrackInfo[[strGroup]]$pathLength) ),
-                                   count=(NROW(lBoundedTrackInfo[[strGroup]]) ),
+          datBoundedTrackInfo <- data.frame(lBoundedTrackInfo[[strGroup]])
+          datBoundedTrackInfo <- datBoundedTrackInfo[datBoundedTrackInfo$pathLength > 0.5,] ##Remove Empty , or tiny noisy Paths
+          
+          lMeanPathLengthAll[[paste0(strGroup,DomainRadius)]] <- list(muPathLength=mean(unlist(datBoundedTrackInfo$pathLength) ),
+                                   sdPathLength=sd(unlist(datBoundedTrackInfo$pathLength) ),
+                                   muPathDuration=mean(unlist(datBoundedTrackInfo$pathLength) ),
+                                   sdPathDuration=mean(unlist( datBoundedTrackInfo$pathLength) ),
+                                   count=(NROW(datBoundedTrackInfo) ),
                                    groupID=strGroup,
                                    DomainRadius=DomainRadius)
 
@@ -1480,12 +1483,17 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
       
   }
   datMeanPathLengthAll <- do.call(rbind.data.frame,lMeanPathLengthAll)
-  
+
+  ## Make PLot All groups, Add theoretical Bound  
   plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathLength,ylim=c(0,10),xlim=c(0,10),
        col=unlist(colourDataScheme[ as.character(datMeanPathLengthAll$groupID) ]),
        pch=unlist(pointTypeScheme[ as.character(datMeanPathLengthAll$groupID) ]))
 
-  
+  propFactor <- 1 #0.70
+  rpoints <- seq(1,10, 1 )
+  points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+  # Gives Close agreement to Theoretical , May be underestimating because of aliasing, due to removal of points to speed up sum of path distance
+  ### END PLOT OF MEAN PATH LENTH
   
   #plot(datBoundaryDomainTrajectories$posX,datBoundaryDomainTrajectories$posY)
  #max(unlist(lBoundedTrackInfo[["LL"]]$pathLength) )
