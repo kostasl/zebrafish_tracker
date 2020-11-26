@@ -218,7 +218,7 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
-  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,DispersionPathLength=vDispersionPathLength,Length=vDistanceTravelledToFrame*DIM_MMPERPX,DisplacementSq=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
+  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,DispersionPathLength=vDispersionPathLength*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,DisplacementSq=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
   return( lRet)
 }
   
