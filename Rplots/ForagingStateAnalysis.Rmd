@@ -1444,7 +1444,7 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
     } ##For Each Tracklet
     
   return(data.frame(do.call(rbind,lTrackletInfo) ) )
-  }##END oF FUNCTION
+}##END oF FUNCTION
   
   lBoundedTrackInfo <- list()
   DomainRadius <- 5 #mm
