@@ -2246,7 +2246,6 @@ legend("topright", legend=vLegend,
 
 ```
  
-  I found that *across groups evoked conditions have longer overall paths than spontaneous.* The fitted exponents show evoked condintions having $\mu>2.2$ while spontaneous conditions have $\mu<1.8$, likely because of long tails in the distributions of evoked being caused by engaging with prey.
     
  
 ## Probability of staying within bounded recording area shows LF move out quickest
@@ -2359,7 +2358,7 @@ MSD over full event path duration looks the same across groups.
 The duration-contrained MSDs however do not look  similar between conditions and groups:
   - *LF evoked contains larger MSDs than spontaneous - Same in NF but prob not in DF*
 
-```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE}
+```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="50%"}
 
 
 
@@ -2628,7 +2627,7 @@ I obtained similar results when looking at MSD and Dispersion over time. These h
 There is a linear relationship of Dispersion against path-length, but this is supralinear for MSD vs path-length, so perhaps they are not linearly related. 
 
 
-```{r  mean-squared-distance over Dispersion , fig.show="hold",fig.cap="Non-Linear relationship between dispersal and MSD, is likely evidence of superdiffussion (Disp. is linear to <Path-length>", out.width="100%", echo=FALSE, cache=TRUE}
+```{r  mean-squared-distance over Dispersion , fig.show="hold",fig.cap="Non-Linear relationship between dispersal and MSD, is likely evidence of superdiffussion (Disp. is linear to <Path-length>", out.width="100%", echo=FALSE, cache=TRUE,result=FALSE}
 ## iNvariance Principle Theoretical Mean Path Length
 theoreticalMeanLength <- function(D,propFactor=1.5)
 {
