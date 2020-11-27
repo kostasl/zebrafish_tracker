@@ -5,11 +5,6 @@ date: "23/11/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
 ## Dispersion as random process
 
 Here I investigate on a different formulation of a stochastic dispersal data generating process. 

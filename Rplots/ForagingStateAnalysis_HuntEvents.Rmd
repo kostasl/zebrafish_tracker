@@ -15,6 +15,7 @@ Thus the foraging state is associated with slow/ prey approach motion, as a high
 
 A list of all tabulated hunt-outcomes 
 ```{r table-all-huntscores}
+source("DataLabelling/labelHuntEvents_lib.r")
 ## Get Number of Hunt Events In Exploit / Expore
 table(convertToScoreLabel(datHuntLabelledEventsSBMerged_fixed$huntScore) )
 ```
