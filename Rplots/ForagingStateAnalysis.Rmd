@@ -1942,7 +1942,7 @@ In the initial sections I took Marquez et al 2019 regime to estimate dispersions
 
 
 
-```{r  dispersion over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r  dispersion over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE,results=FALSE,warning=TRUE, cache=TRUE }
 
 ## A Histogram in Log Scale Of MSD scale
 plotLogLogDistribution_Dispersion <- function(lLinModel_GE,addPlot=FALSE)
@@ -1978,8 +1978,8 @@ plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
   for (i in 1:NROW(lModelwithDispersion))
   {
     if (!is.null(lModelwithDispersion[[i]]$meanDispersion))
-    {
-      vDispersion[i] <- lModelwithDispersion[[i]]$meanDispersion
+    {# \TODO CHECK WARNING HERE
+      vDispersion[i] <- mean(lModelwithDispersion[[i]]$meanDispersion)
       vTimeWindow[i] <-as.numeric( names(lModelwithDispersion[i]) )
     }
    # return(0)
@@ -2150,12 +2150,12 @@ plotPathVsTimePerLarva <- function(lModelwithMSD, addPlot=FALSE)
     }
   }
   ##Now plot MSD evolution of each larva
-  datMeanMSDVsTimePerLarva <- data.frame(do.call(rbind,lMSD))
+  datMeanMSDVsTimePerLarva <- (do.call(rbind.data.frame,lMSD))
   if (!addPlot)
-    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],
-         ylim=c(0,200),xlim=c(0,250),ylab="mean larval path length (mm)",xlab="Time (sec)")
+    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],pch=pointTypeScheme[lModelwithMSD[[1]]$groupID][[1]],
+         ylim=c(0,250),xlim=c(0,250),ylab="mean larval path length (mm)",xlab="Time (sec)",)
   for (i in 1:ncol(datMeanMSDVsTimePerLarva))
-    lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
+    lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],pch=pointTypeScheme[lModelwithMSD[[1]]$groupID][[1]])
   
 } 
 
@@ -2184,7 +2184,7 @@ Looking at the mean path length against time of each larva:
  
 
 
-```{r prob-of-path-length, fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls, with an exponent that appears near the optimal 2"}
+```{r prob-of-path-length, fig.cap="Distribution of overall path lengths (regardless of duration) shows likely power laws, with evoked conditions having longer tails, (lower mu < 2) and evoked mu > 2 across groups ",echo=FALSE,include=FALSE}
 
 plot_PathLengthDistribution <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion=12)
 {
@@ -2245,6 +2245,9 @@ legend("topright", legend=vLegend,
 
 
 ```
+ 
+  I found that *across groups evoked conditions have longer overall paths than spontaneous.* The fitted exponents show evoked condintions having $\mu>2.2$ while spontaneous conditions have $\mu<1.8$, likely because of long tails in the distributions of evoked being caused by engaging with prey.
+    
  
 ## Probability of staying within bounded recording area shows LF move out quickest
 
