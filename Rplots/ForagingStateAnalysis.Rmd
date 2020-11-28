@@ -1428,7 +1428,8 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
           ## Measure Path Length - Can Skip Some Frames To Speed Up Calculation
           fps <- unique(datBoundedTracklet$fps)
           TrackletInfo$duration <- pathDurations[[strTrackID]]/fps
-          nSpace <- round(as.integer(fps) / 3)
+          
+          nSpace <- round(as.integer(fps) / 4)
           if (pathDurations[[strTrackID]] < nSpace  )
             nSpace <- max(1,round(pathDurations[[strTrackID]] / 10) )
             
@@ -1442,6 +1443,8 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
           # Combine to Find Distances DX DY between all point of trajectory
           mat_ptDist <- sqrt(mat_posDX^2 + mat_posDY^2)
           TrackletInfo$pathLength <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)],na.rm = T)*DIM_MMPERPX
+          
+          TrackletInfo$meanDistanceToCentre <- mean(datBoundedTracklet$distToDomainCentre)
           
           lTrackletInfo[[strTrackID]] <- TrackletInfo
           
