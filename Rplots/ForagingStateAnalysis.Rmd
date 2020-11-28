@@ -1467,7 +1467,7 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
    }
   
   #### Plot Mean Path Length Per Domain Radius ###
-  lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPaths_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
+  lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
   vAvailableDomainRadius <- lapply( lBoundedTrajectoryFiles,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s)  }  )
   #Order them and Converr to Number
   vAvailableDomainRadius <- as.integer(unlist(vAvailableDomainRadius[order(as.integer(unlist(vAvailableDomainRadius)))] ) )
@@ -1494,9 +1494,9 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
       
   }
   datMeanPathLengthAll <- do.call(rbind.data.frame,lMeanPathLengthAll)
-  saveRDS(datMeanPathLengthAll,file=paste0(strDataExportDir,"/stat_boundedPaths_RAllmm.rds") )
+  saveRDS(datMeanPathLengthAll,file=paste0(strDataExportDir,"/stat_boundedPathsB_RAllmm.rds") )
   
-  datMeanPathLengthAll<-readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_RAllmm.rds"))
+  datMeanPathLengthAll<-readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_RAllmm.rds"))
   ## ***Join 10+11 mm Radius Results ###
   # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathLength <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathLength)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$muPathLength)
   # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$count <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$count)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$count)
@@ -1589,7 +1589,7 @@ for (R in vAvailableDomainRadius)
 {
   
   DomainRadius <- R
-  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
   bAddPlot <- FALSE
   
   for (strGrp in names(lBoundedTrackInfo) )
@@ -1621,7 +1621,7 @@ In the following, the *boundaries at 10 and 11 mm* have been concatenated:
     
 
 ```{r distribution of number of paths per domain sizes,fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Distribution of number of domain crossings, with increasing domain radius shows effect of prey is to constraint movement within smaller central regions, as revealed by the breaking down of the linear invariant regime in evoked conditions. (*Note regions 10+11mm have been concatenated*)"}  
-datMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_RAllmm.rds") )
+datMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_RAllmm.rds") )
 
 bAddPlot<-FALSE
 for (strG in as.character(unique(datMeanPathLengthAll$groupID) ) )
@@ -1632,7 +1632,7 @@ for (strG in as.character(unique(datMeanPathLengthAll$groupID) ) )
   #datGroupMeanPathLength <- datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius < 11,]
   if (!bAddPlot)
   {
-    plot(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),main=strG,ylim=c(0,0.2),
+    plot(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),main=strG,ylim=c(0,0.5),
        xlab="Domain radius (mm)",ylab="fraction of domain crossings",
        col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
   }else
@@ -1641,17 +1641,28 @@ for (strG in as.character(unique(datMeanPathLengthAll$groupID) ) )
           col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
   }
 
-  
-    
-  
   bAddPlot <- TRUE
 }
+
+
 ```
 
 It follows from a simple geometrical argument that domain boudary-crossings would increase as the circumfernce of the domain increases. 
 Interestingly we see that the effect of prey is to constraint the increase in crossings domains larger than ~6 mm, and this is most evident in the NL conditions. 
 *Over all crossings over larger domains become more rare in evoked conditions* for all groups, indicating that longer range travels are supressed, probably reflecting changes in turn-rate that constraint larvae to move within the smaller domains.
 The *LL* somewhat maintain their longer-range paths, which cross larger boundaries.
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r stat-Path-calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
