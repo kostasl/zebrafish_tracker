@@ -29,11 +29,13 @@ col2hex <- function(rgbcol) {
   return(colPal)
 }
 
-
-DIM_PXRADIUS       <- 790 #Is the Radius Of the dish In the Video
+## TRACKER ROI ENDS Approximatelly 7.5 mm from dish egde
+DIM_PXRADIUS       <- 790 #Is the DIAMETER Of the dish In the Video
+DIM_PXDIAMETER       <- 790 #Is the DIAMETER Of the dish In the Video
 DIM_MMPERPX        <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
 DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
+DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 410
 G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered

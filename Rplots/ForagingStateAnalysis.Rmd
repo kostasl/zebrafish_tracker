@@ -182,7 +182,17 @@ generate_DispersionFiles <- function()
 }
 
 
+## iNvariance Principle Theoretical Mean Path Length
+theoreticalMeanLength <- function(D,propFactor=1.0)
+{
+  A <- pi*( (D)^2)
+  C <- 2*pi*(D)
+  return(round(100*(propFactor* pi*A/C)) /100 )
+}
+
 ```
+
+
 
 ```{r merge max larval-dispersion onto dispersion data events, echo=FALSE,cache=FALSE,results=FALSE,warning=FALSE}
 ## Attaches the max Dispersion found between both evoked and spontaneous trajectories of each larva
@@ -824,7 +834,7 @@ Thus, similar to the measure of dispersion, we plot the 5sec recent trajectory l
 
 ```{r length histograms per group across conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide'  }
 tsec_timeWindow <- 5
-datDispersion <- loadDispersionData(tsec_timeWindow)
+datDispersion <- loadDispersionData(F,tsec_timeWindow)
 xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+2,2)
 datHEventDispersion <- loadHuntEventMergedWithPathStat(tsec_timeWindow)
 
@@ -996,13 +1006,6 @@ The plots below examine both, the total mean path length contained with each dis
 
 ```{r  path-length-2sec duration- per dispersion   , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
 
-## iNvariance Principle Theoretical Mean Path Length
-theoreticalMeanLength <- function(D,propFactor=1.0)
-{
-  A <- pi*( (D)^2)
-  C <- 2*pi*(D)
-  return(round(100*(propFactor* pi*A/C)) /100 )
-}
 ## Plot mean path length for each boundary dispersion size 
 # This is to examine the similarity to the random walk invariance principle by which the mean pathlength within a circle of radius r is proportional to pi*A/C
 # ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
@@ -1317,9 +1320,11 @@ In general the above data suggest that the characteristics  **dynamics governing
 I need to investigate the invariance principle further, and whether it amounts to paths being diffusion/random walks or Levy processes.
 As up to now I was not looking something that is equivalent entry and exit times, or time to hit boundary as in the Levy type investigations, because here all paths chosen have produced a specific dispersal - ie these paths are defined by having the longest distance within the circular domain (which could explain the icreased slope upwards).  and thus are not equivalent to looking at a isotropic entry, as for example  looking at the escape from random starting point within the cycle, or the mean escape time upon entering an area nor the mean time to hit two target sites (food items) as in FIG 3 (Viswanathan et al. 2009).
 
-```{r mean-squared-displacement calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
-library (plyr) #Split list, apply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
+```{r path-length-within-domain calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE, fig.cap="Mean path length and duration from paths crossing a circulare domain of radius R, boundary entry to exit. " }
 
+
+library (plyr) #Split list, apply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
+MIN_PATH_LENGTH <- 0.5
 #datDispersion<-loadDispersionData(10)
 loaddatAllFrames()
   
@@ -1328,15 +1333,16 @@ loaddatAllFrames()
   
 calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   {
+    DIM_BOUNDARY_HWIDTH <- 0.3
     CONSECUTIVE_FRAME_THRES <- 2
     datGroupTraj <- datAllFrames[datAllFrames$groupID == vgroupID & datAllFrames$posX > 0,]
     ## Calc Dist from Center of domain
-    pDomainCentre <- c(mean(datGroupTraj$posX),mean(datGroupTraj$posY))
+    pDomainCentre <- c(320,260) #c(mean(datGroupTraj$posX),mean(datGroupTraj$posY))
     rDomainRadius <- DomainRadius/DIM_MMPERPX
     
     datGroupTraj$distToDomainCentre   <- sqrt((datGroupTraj$posX-pDomainCentre[1])^2 + (datGroupTraj$posY-pDomainCentre[2])^2)*DIM_MMPERPX
     
-    datDomainTrajectories <- datGroupTraj[datGroupTraj$distToDomainCentre <= rDomainRadius*DIM_MMPERPX,]
+    datDomainTrajectories <- datGroupTraj[datGroupTraj$distToDomainCentre <= (rDomainRadius*DIM_MMPERPX+DIM_BOUNDARY_HWIDTH),]
     datDomainTrajectories$distToDomainBoundary <- rDomainRadius*DIM_MMPERPX - datDomainTrajectories$distToDomainCentre
       #hist(datGroupTraj$distToDomainCentre,main=vgroupID)
     #hist(datDomainTrajectories$distToDomainCentre,main=vgroupID)
@@ -1379,7 +1385,8 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
     # }
 
     ## Select The frames that Are on the Domain Boundary and Have no Interruption to the next frame - Ie Part of Consecutive Path
-    datBoundaryDomainTrajectories <- datDomainTrajectories[abs(datDomainTrajectories$DnextFrame) <= CONSECUTIVE_FRAME_THRES & datDomainTrajectories$distToDomainBoundary < 0.3,]
+    datBoundaryDomainTrajectories <- datDomainTrajectories[abs(datDomainTrajectories$DnextFrame) <= CONSECUTIVE_FRAME_THRES & 
+                                                             abs(datDomainTrajectories$distToDomainBoundary) < DIM_BOUNDARY_HWIDTH,] #Can be -ve dist to domain as we consider a wide band centered on boundary
 
     ##Find Mean Path Duration From Entry to Exit Of the domain - Group By Exp, Event and Tracklet UID (not the tracker Assigned TrackID)
     entryFramePerLarvaEvent <- tapply(datBoundaryDomainTrajectories$frameN,
@@ -1415,9 +1422,7 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
                                                               datDomainTrajectories$frameN >= TrackletInfo$startFrame &
                                                               datDomainTrajectories$frameN <= TrackletInfo$endFrame,
                                                               ]
-               
-          
-          
+
           
           
           ## Measure Path Length - Can Skip Some Frames To Speed Up Calculation
@@ -1447,66 +1452,202 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
 }##END oF FUNCTION
   
   lBoundedTrackInfo <- list()
-  DomainRadius <- 5 #mm
-  for(g in vGroups)
-  {
-    message("Group:",g)
-    lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
-  }
-  saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
-
+   for (DomainRadius in c(1,2,3,4)) #mm
+   {
+    for(g in vGroups)
+    {
+      message("Group:",g)
+      lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
+    }
+    saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+   }
   
+  #### Plot Mean Path Length Per Domain Radius ###
+  lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPaths_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
+  vAvailableDomainRadius <- lapply( lBoundedTrajectoryFiles,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s)  }  )
+  #Order them and Converr to Number
+  vAvailableDomainRadius <- as.integer(unlist(vAvailableDomainRadius[order(as.integer(unlist(vAvailableDomainRadius)))] ) )
+  message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
   
-  lBoundedTrackInfo <- list()
-  DomainRadius <- 3 #mm
-  for(g in vGroups)
+  lMeanPathLengthAll <- list()
+  for (DomainRadius in vAvailableDomainRadius)
   {
-    message("Group:",g)
-    lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
+      lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
+      for (strGroup in names(lBoundedTrackInfo) )
+      {
+          datBoundedTrackInfo <- data.frame(lBoundedTrackInfo[[strGroup]])
+          datBoundedTrackInfo <- datBoundedTrackInfo[datBoundedTrackInfo$pathLength > MIN_PATH_LENGTH,] ##Remove Empty , or tiny noisy Paths
+          
+          lMeanPathLengthAll[[paste0(strGroup,DomainRadius)]] <- list(muPathLength=mean(unlist(datBoundedTrackInfo$pathLength) ),
+                                   sdPathLength=sd(unlist(datBoundedTrackInfo$pathLength) ),
+                                   muPathDuration=mean(unlist(datBoundedTrackInfo$duration) ),
+                                   sdPathDuration=mean(unlist( datBoundedTrackInfo$pathLength) ),
+                                   count=(NROW(datBoundedTrackInfo) ),
+                                   groupID=strGroup,
+                                   DomainRadius=DomainRadius)
+
+      }
+      
   }
-  saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
+  datMeanPathLengthAll <- do.call(rbind.data.frame,lMeanPathLengthAll)
+  saveRDS(datMeanPathLengthAll,file=paste0(strDataExportDir,"/stat_boundedPaths_RAllmm.rds") )
+  
+  datMeanPathLengthAll<-readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_RAllmm.rds"))
+  ## ***Join 10+11 mm Radius Results ###
+  # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathLength <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathLength)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$muPathLength)
+  # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$count <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$count)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$count)
+  # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathDuration <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathDuration)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$muPathDuration)
+  ## Make PLot All groups, Add theoretical Bound  
+  plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathLength,ylim=c(0,28),xlim=c(0,12),
+       col=unlist(colourDataScheme[ as.character(datMeanPathLengthAll$groupID) ]),
+       pch=unlist(pointTypeScheme[ as.character(datMeanPathLengthAll$groupID) ]),ylab="Mean path length (mm)", xlab="Domain radius (mm)",main="Path length ")
 
-  lBoundedTrackInfo <- list()
-  DomainRadius <- 4 #mm
-  for(g in vGroups)
-  {
-    message("Group:",g)
-    lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
-  }
-  saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
+  propFactor <- 1 #0.70
+  rpoints <- seq(1,12, 1 )
+  points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+  
+  # Gives Close agreement to Theoretical , May be underestimating because of aliasing, due to removal of points to speed up sum of path distance
+  ### END PLOT OF MEAN PATH LENTH
+  
+  ## Make PLot All groups, Add theoretical Bound  
+  plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathDuration,ylim=c(0,28),xlim=c(0,12),
+       col=unlist(colourDataScheme[ as.character(datMeanPathLengthAll$groupID) ]),
+       pch=unlist(pointTypeScheme[ as.character(datMeanPathLengthAll$groupID) ]),ylab="Mean residence time (sec)",xlab="Domain radius (mm)",main="Residence time ")
+
+  propFactor <- 1 #0.70
+  rpoints <- seq(1,10, 1 )
+  points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+  
+```
+  
+The *invariance principle holds, within a restricted region <9mm *, with the mean path length being simply linearly related to the geometrical size of the domain:
+the average value of L is independent of both the mean free path and single-scattering phase function field (as in bacteria see #frangipane2019invariance).
+Well, I believe this verifies that these trajectories are reminiscinent of a stochastic process, likely diffusive (approximates Brownian motion) when the linearity is preserved .
+> Then, the mean length of the trajectories in the domain is independent of the random walk characteristics. 
+Valid for all stochastic processes with finite jumps (thus including a very large variety of physical processes), this exact relation is a strong constraint that links short and long trajectories in confined geometries.
+
+Invariance principles allow:
+>. It is the essence of convenience, for example, to be able to say that the intrinsic behaviour of an appropriate random function is that of Brownian motion. 
+
+Although *all groups show the same exact agreement to invariance principle *, this is not true for the time they spent within the domain. 
+Yet *LF move faster through the domains*, in agreement with earlier results on mean path-length per duration.
 
 
-  lBoundedTrackInfo <- list()
-  DomainRadius <- 6 #mm
-  for(g in vGroups)
-  {
-    message("Group:",g)
-    lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
-  }
-  saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
+Note that tracker ROI is `r format(260*DIM_MMPERPX,digits=3)` mm in diameter, and its circular boundary is approximatelly `r format((DIM_PXDIAMETER-260*2)*DIM_MMPERPX/2,digits=3)` mm away from the dish's wall. Yet, already from a 10mm domain radius (ie ~7mm away from boundary), we find the mean path length falls below the theoretical, indicating that the distribution of path lengths has been modified towards shorter paths, *especially so for the LE group, this is evident from R=7mm onwards.*
+The 11mm radius is near the boundary, falling short by 0.5mm, and it is the biggest area we can analyse
 
+The distribution of path lengths (excluding the < `r MIN_PATH_LENGTH` ) per domain radius is as follows:
+
+```{r plot-loglog-distribution of domain path lengths,fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE}  
+  
+## A Histogram in Log Scale Of MSD scale
+plotLogLogDistribution_PathLength <- function(datBoundedTrack,strG,addPlot=FALSE)
+{
+   
+    strTitle <- paste("R=",unique(datBoundedTrack$DomainRadius),",<l>=",format(mean(datBoundedTrack$pathLength),digits=3 ) )
+    mxbreaks <- seq(0,200,5)
+    hist_D <- hist(datBoundedTrack$pathLength,breaks=mxbreaks, plot=FALSE )  
+    XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
+    if (!addPlot) 
+    {
+      plot(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
+         main=strTitle,
+         xlab="path length (mm)", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],
+         xlim=XLIM,
+         ylim=c(-1,2),
+         ylab="log N(l) %",xaxt="n" ,type="b")
+      
+        
+        axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))
+       #text(x=lLinModel_GE$xtick[seq(0,length(lLinModel_GE$xtick),3)],  par("usr")[3], labels = (10^xtick[seq(0,9,3)]), srt = 45, pos = 1, xpd = TRUE)
+    }else {
+      
+        points(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts)),
+         main=paste(" Distribution of bounded path length " ),type="b",
+         xlab="log_10 path length (mm)", col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]], ylab="log N(l) %" )
+    }
     
-#plot(datBoundaryDomainTrajectories$posX,datBoundaryDomainTrajectories$posY)
+    # Plot Linear Model
+    #lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strG][[1]])
+  
+    #return(lLinModel_GE)
+}
+  
+  
+  
+  #plot(datBoundaryDomainTrajectories$posX,datBoundaryDomainTrajectories$posY)
  #max(unlist(lBoundedTrackInfo[["LL"]]$pathLength) )
-hist(unlist(lBoundedTrackInfo[["NL"]]$pathLength),breaks=seq(0,60,1),ylim=c(0,50),main=paste("NL",mean(unlist(lBoundedTrackInfo[["NL"]]$pathLength))  ) )
-hist(unlist(lBoundedTrackInfo[["NE"]]$pathLength),breaks=seq(0,60,1),ylim=c(0,50),main=paste("NL",mean(unlist(lBoundedTrackInfo[["NE"]]$pathLength))  ) )
+  ## Distributions Should be Resembling the Chort Length Distribution   (see #frangipane2019invariance)
 
 
-hist(unlist(lBoundedTrackInfo[["LL"]]$pathLength),breaks=seq(0,60,1),ylim=c(0,50),main=paste("LL",mean(unlist(lBoundedTrackInfo[["LL"]]$pathLength)) ) )
-hist(unlist(lBoundedTrackInfo[["LE"]]$pathLength),breaks=seq(0,60,1),ylim=c(0,50),main=paste("LE",mean(unlist(lBoundedTrackInfo[["LE"]]$pathLength))  ) )
 
-hist(unlist(lBoundedTrackInfo[["DL"]]$pathLength),breaks=seq(0,60,1),ylim=c(0,50),main=paste("DL",mean(unlist(lBoundedTrackInfo[["DL"]]$pathLength)) ) )
-hist(unlist(lBoundedTrackInfo[["DE"]]$pathLength),breaks=seq(0,60,1),ylim=c(0,50),main=paste("DE",mean(unlist(lBoundedTrackInfo[["DE"]]$pathLength))  ) )
+for (R in vAvailableDomainRadius)
+{
+  
+  DomainRadius <- R
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
+  bAddPlot <- FALSE
+  
+  for (strGrp in names(lBoundedTrackInfo) )
+  {
+      lBoundedTrackInfo[[strGrp]] <- lBoundedTrackInfo[[strGrp]][lBoundedTrackInfo[[strGrp]]$pathLength > MIN_PATH_LENGTH,]
+      
+      datBoundedTrack <- lapply(lBoundedTrackInfo[[strGrp]],unlist) ##Remove Lists from Columns / Convert to vectors
+      plotLogLogDistribution_PathLength(datBoundedTrack,strGrp,addPlot = bAddPlot)
+      bAddPlot <- TRUE
+  }
+  
+}
 
-
-plot(lBoundedTrackInfo[["LL"]]$pathLength,lBoundedTrackInfo[["LL"]]$duration)
+#plot(lBoundedTrackInfo[["LL"]]$pathLength, lBoundedTrackInfo[["LL"]]$duration,ylim=c(0,10),col=colourDataScheme[["LL"]])
+#points(lBoundedTrackInfo[["LE"]]$pathLength, lBoundedTrackInfo[["LE"]]$duration,ylim=c(0,10),pch=2,col=colourDataScheme[["LE"]])
+#points(lBoundedTrackInfo[["NL"]]$pathLength, lBoundedTrackInfo[["NL"]]$duration,ylim=c(0,10),pch=2,col=colourDataScheme[["NL"]])
+#points(lBoundedTrackInfo[["NE"]]$pathLength, lBoundedTrackInfo[["NE"]]$duration,ylim=c(0,10),pch=2,col=colourDataScheme[["NE"]])
 #plot(datDomainTrajectories$posX,datDomainTrajectories$posY,xlim=c(0,640),ylim=c(0,480),type="l")
 ```
 
+## Counting sightings/Paths within regions increasing in size
 
+The falling mean paths lengths, as seen in 11mm, could be a result of failing to detect path entries - into the ROI. This could an artefact of the recording, as the domain reaches the boundary limits where tracker initiates recording/tracking;  the issue being that some trajectories are being missed as the boundary entry zone is too thin to catch all entries into the ROI (in which case I should recalculate with entry zone being a percentage of the domain radius.
+Maybe this is no surprise:
+    - Recorded begins once those external most boundaries, which coincide with the recording ROI,  are crossed.
+    - once in the ROI, Larvae make many more crossings of smaller central regions than the larger one, as a result of long straight paths being more rare.
+    
+In the following, the *boundaries at 10 and 11 mm* have been concatenated:
+    
 
+```{r distribution of number of paths per domain sizes,fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Distribution of number of domain crossings, with increasing domain radius shows effect of prey is to constraint movement within smaller central regions, as revealed by the breaking down of the linear invariant regime in evoked conditions. (*Note regions 10+11mm have been concatenated*)"}  
+datMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_RAllmm.rds") )
 
+bAddPlot<-FALSE
+for (strG in as.character(unique(datMeanPathLengthAll$groupID) ) )
+{
+  datGroupMeanPathLength <- datMeanPathLengthAll[datMeanPathLengthAll$groupID == strG,]
+  ## I Added the counts for the  10+11mm boundary to compensate for ROI edge effects /compensate for Detection Errors
+  #datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius == 10,]$count <- sum(datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius %in% c(10,11),]$count)
+  #datGroupMeanPathLength <- datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius < 11,]
+  if (!bAddPlot)
+  {
+    plot(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),main=strG,ylim=c(0,0.2),
+       xlab="Domain radius (mm)",ylab="fraction of domain crossings",
+       col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
+  }else
+  {
+    lines(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),
+          col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
+  }
 
+  
+    
+  
+  bAddPlot <- TRUE
+}
+```
+
+It follows from a simple geometrical argument that domain boudary-crossings would increase as the circumfernce of the domain increases. 
+Interestingly we see that the effect of prey is to constraint the increase in crossings domains larger than ~6 mm, and this is most evident in the NL conditions. 
+*Over all crossings over larger domains become more rare in evoked conditions* for all groups, indicating that longer range travels are supressed, probably reflecting changes in turn-rate that constraint larvae to move within the smaller domains.
+The *LL* somewhat maintain their longer-range paths, which cross larger boundaries.
 
 # Mean-Squared-Displacement over-time is different between groups
 
@@ -1805,7 +1946,7 @@ In the initial sections I took Marquez et al 2019 regime to estimate dispersions
 
 
 
-```{r  dispersion over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r  dispersion over log-log distribution , fig.show="hold", out.width="50%", echo=FALSE,results=FALSE,warning=TRUE, cache=TRUE }
 
 ## A Histogram in Log Scale Of MSD scale
 plotLogLogDistribution_Dispersion <- function(lLinModel_GE,addPlot=FALSE)
@@ -1841,8 +1982,8 @@ plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
   for (i in 1:NROW(lModelwithDispersion))
   {
     if (!is.null(lModelwithDispersion[[i]]$meanDispersion))
-    {
-      vDispersion[i] <- lModelwithDispersion[[i]]$meanDispersion
+    {# \TODO CHECK WARNING HERE
+      vDispersion[i] <- mean(lModelwithDispersion[[i]]$meanDispersion)
       vTimeWindow[i] <-as.numeric( names(lModelwithDispersion[i]) )
     }
    # return(0)
@@ -1872,7 +2013,7 @@ vLargeScaletimeWindows <- c(0,2,10,40,80,120,180,200,260) #360 No Data
 #vtimeWindows <- c(vsmallTimeWindows,70,80,90,95,98,100,120,180)# c(1,2,4) # vsmallTimeWindows##c(4,10,20,80,200,260,360)
 ##Process *  Serially * So we do not run out of memory
 # Results are plotted and Aggregated In lLinModel
-
+vtimeWindows <- getAvailablePathTimewindows()
 try(
   {
   rm(lMSDSummaryData);
@@ -2013,12 +2154,12 @@ plotPathVsTimePerLarva <- function(lModelwithMSD, addPlot=FALSE)
     }
   }
   ##Now plot MSD evolution of each larva
-  datMeanMSDVsTimePerLarva <- data.frame(do.call(rbind,lMSD))
+  datMeanMSDVsTimePerLarva <- (do.call(rbind.data.frame,lMSD))
   if (!addPlot)
-    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],
-         ylim=c(0,200),xlim=c(0,250),ylab="mean larval path length (mm)",xlab="Time (sec)")
+    plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],pch=pointTypeScheme[lModelwithMSD[[1]]$groupID][[1]],
+         ylim=c(0,250),xlim=c(0,250),ylab="mean larval path length (mm)",xlab="Time (sec)",)
   for (i in 1:ncol(datMeanMSDVsTimePerLarva))
-    lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
+    lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],pch=pointTypeScheme[lModelwithMSD[[1]]$groupID][[1]])
   
 } 
 
@@ -2047,7 +2188,7 @@ Looking at the mean path length against time of each larva:
  
 
 
-```{r prob-of-path-length, fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls, with an exponent that appears near the optimal 2"}
+```{r prob-of-path-length, fig.cap="Distribution of overall path lengths (regardless of duration) shows likely power laws, with evoked conditions having longer tails, (lower mu < 2) and evoked mu > 2 across groups ",echo=FALSE,include=FALSE}
 
 plot_PathLengthDistribution <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion=12)
 {
@@ -2108,6 +2249,8 @@ legend("topright", legend=vLegend,
 
 
 ```
+ 
+    
  
 ## Probability of staying within bounded recording area shows LF move out quickest
 
@@ -2219,7 +2362,7 @@ MSD over full event path duration looks the same across groups.
 The duration-contrained MSDs however do not look  similar between conditions and groups:
   - *LF evoked contains larger MSDs than spontaneous - Same in NF but prob not in DF*
 
-```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE}
+```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="50%"}
 
 
 
@@ -2488,7 +2631,7 @@ I obtained similar results when looking at MSD and Dispersion over time. These h
 There is a linear relationship of Dispersion against path-length, but this is supralinear for MSD vs path-length, so perhaps they are not linearly related. 
 
 
-```{r  mean-squared-distance over Dispersion , fig.show="hold",fig.cap="Non-Linear relationship between dispersal and MSD, is likely evidence of superdiffussion (Disp. is linear to <Path-length>", out.width="100%", echo=FALSE, cache=TRUE}
+```{r  mean-squared-distance over Dispersion , fig.show="hold",fig.cap="Non-Linear relationship between dispersal and MSD, is likely evidence of superdiffussion (Disp. is linear to <Path-length>", out.width="100%", echo=FALSE, cache=TRUE,result=FALSE}
 ## iNvariance Principle Theoretical Mean Path Length
 theoreticalMeanLength <- function(D,propFactor=1.5)
 {
@@ -2654,23 +2797,20 @@ Since Dispersion and Path length are linear, then it follows that MSD and path-l
 
 # Statistical comparison of motion-trajectories 
 
-```{r child = 'ForagingStateAnalysis_ModelFitting.Rmd',eval=FALSE}
+```{r statistical Model-fitting, child='ForagingStateAnalysis_ModelFitting.Rmd',eval=FALSE}
 ##Clustering Code Separated into a sub RMarkdown
 ```
   
 
-
 # Identifying states of foraging behaviour
 
-```{r child = 'ForagingStateAnalysis_Clustering.Rmd',eval=TRUE}
-##Clustering Code Separated into a sub RMarkdown
+```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=TRUE}
 ```
 
 
 # Hunt initiation and foraging state
 
-```{r child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
-## Hunt events with foraging state Clustering results Separated into a sub RMarkdown
+```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
 ```
 
 
@@ -2787,8 +2927,7 @@ plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHE
 
 
 
-```{r child = 'ForagingStateAnalysis_Modelling.Rmd'}
-##Clustering Code Separated into a sub RMarkdown
+```{r ForagingStateAnalysis_Modelling,child = 'ForagingStateAnalysis_Modelling.Rmd'}
 ```
 
 
