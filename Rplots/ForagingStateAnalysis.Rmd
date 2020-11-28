@@ -981,6 +981,7 @@ Generally, lower ratios are indicative of turtuous paths of low dispersion, ie w
 
 
 ## Path length per dispersion size (Examine Invariance principle)
+
 Take a random walk until it hits a circle of radius r times the step length. The average number of steps it performs is $r^2$.[citation needed] 
 This fact is the discrete version of the fact that a Wiener process walk is a fractal of Hausdorff dimension 2.[citation needed]
 
@@ -1004,7 +1005,7 @@ Thus suggesting mean path length is not invariant to the particular variations i
 
 The plots below examine both, the total mean path length contained with each dispersion $r$, and the cutting path length - the path between the two points that touch the circles boundary:
 
-```{r  path-length-2sec duration- per dispersion   , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
+```{r path-length-2sec duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
 
 ## Plot mean path length for each boundary dispersion size 
 # This is to examine the similarity to the random walk invariance principle by which the mean pathlength within a circle of radius r is proportional to pi*A/C
@@ -1190,7 +1191,7 @@ Nevertheless we find that the addition of prey *LF increase the path-lengths eve
 
 I next look at the Log-Log distribution of path-lengths for a specified dispersion boundary. 
 
-```{r  path-length-All duration- per dispersion   , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
+```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
 rm(datDispersion)
 tsec_timeWindow <- 0
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
@@ -1652,19 +1653,7 @@ Interestingly we see that the effect of prey is to constraint the increase in cr
 *Over all crossings over larger domains become more rare in evoked conditions* for all groups, indicating that longer range travels are supressed, probably reflecting changes in turn-rate that constraint larvae to move within the smaller domains.
 The *LL* somewhat maintain their longer-range paths, which cross larger boundaries.
 
-# Mean-Squared-Displacement over-time is different between groups
-
-A prediction of the theory of *Fickian diffusion is that the mean squared displacement of a ‘random walker’ increases linearly with time*, not *super linearly (for example, quadratically) or sublinearly (for example, as the square root).
-Any process that is inconsistent with Fick’s laws  is known as anomalous diffusion: super diffusion leads to superlinear
- growth of the mean squared displacement,  whereas subdiffusion leads to sublinear growth (#viswanathan2010fish).
-
-The MSD at time t {\displaystyle t} t is defined as an ensemble average (statistical mechanics): 
-\[
-MSD(t) = \<|\vec{x(t)} - \vec{x_0}|^2 = \frac{1}{N}\sum^{N}_{i=1}|x^{(i)}(t) - x^{(i)}(0)  |^2 \>
-\]
-where N is the number of particles (here trajectories) to be averaged, vector $\vec{x_0}$ is the reference position of the i-th particle and vector $\vec{x(t)}$ is the position fo the i-th particle at time $t$.
-
-```{r mean-squared-displacement calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r stat-Path-calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
 #strG <- 'DE'
 #hist(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"DisplacementSq"],main=paste(strG,mean(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"DisplacementSq"],na.rm=TRUE) ),xlim=c(0,210))
@@ -1901,9 +1890,9 @@ if (!exists("lMSDSummaryData"))
 
 
 
+## Dispersion over time - Clearly Distinct for LE
 
-
-
+In the initial sections I took Marquez et al 2019 regime to estimate dispersions given a 5sec window. But how dispersions change over time is uknown. Lets have a look:
 
 
 ```{r dispersion among larvae across time, fig.show="hold",fig.cap="Mean dispersions over path lengths of increasing durations ", out.width="50%", echo=FALSE, cache=FALSE}
@@ -1940,12 +1929,6 @@ plotDispersionVsTimePerLarva(lMSDSummaryData[["DE"]],FALSE)
 plotDispersionVsTimePerLarva(lMSDSummaryData[["DL"]],FALSE)
 title(main="DL Dispersion ")  
 ```
-
-
-
-## Dispersion over time - Clearly Distinct for LE
-
-In the initial sections I took Marquez et al 2019 regime to estimate dispersions given a 5sec window. But how dispersions change over time is uknown. Lets have a look:
 
 
 
@@ -2260,7 +2243,7 @@ legend("topright", legend=vLegend,
 The above Dispersion and MSD plots analysed at the level of each larva against time raise gave me the idea that it may be useful to describe differences in the motion between groups in terms of the probability of staying within a bounded area $A$ with increasing time $P(within A | t)$ , or $P_A(t)$.
 This can be calculated through the fraction of points larvae that remain observable with increasing path duration $T$, because larvae are more likely to leave the arena with increasing path-duration, and thus the probaility of observing a path-length longer than $T>X$, can be indicative of difference in how the disperse, or explore space.
 
-```{r prob-of-path-duration, fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls, with an exponent that appears near the optimal 2"}
+```{r prob-of-path-duration, fig.cap="Probability of path duration reveals differences in the amount of time larva dwell within an area. LF spontaneous move out faster than controls, with an exponent that appears near the optimal 2",echo=FALSE,results=FALSE}
 
 
 plot_ProbOfPathDuration <- function(lMSDGroupSummaryData,addPlot=FALSE,linRegion=12)
@@ -2335,11 +2318,21 @@ In any case paths above a particular duration, are not generated because the lar
 Linear fitting to the log-log curves can approximate the power law exponent. 
 
 
+## Mean Squared Displacement - looking for diffusion type
+
+A prediction of the theory of *Fickian diffusion is that the mean squared displacement of a ‘random walker’ increases linearly with time*, not *super linearly (for example, quadratically) or sublinearly (for example, as the square root).
+Any process that is inconsistent with Fick’s laws  is known as anomalous diffusion: super diffusion leads to superlinear
+ growth of the mean squared displacement,  whereas subdiffusion leads to sublinear growth (#viswanathan2010fish).
+
+The MSD at time t {\displaystyle t} t is defined as an ensemble average (statistical mechanics): 
+\[
+MSD(t) = |\vec{x(t)} - \vec{x_0}|^2 = \frac{1}{N}\sum^{N}_{i=1}|x^{(i)}(t) - x^{(i)}(0)  |^2 \>
+\]
+where N is the number of particles (here trajectories) to be averaged, vector $\vec{x_0}$ is the reference position of the i-th particle and vector $\vec{x(t)}$ is the position fo the i-th particle at time $t$.
 
 
-## Mean Squared Displacement - Examining diffusion type
 
-### MSD distributions over full paths
+### MSD distributions over full and time-constrained paths
 
 ```{r mean-squared-displacement Log-Log distributions , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
 
@@ -2573,7 +2566,7 @@ makeMSDPathLengthSummary <- function ()
   return(datmeanPooledMSDPerPathOft)
 }
 
-
+vtimeWindows <- getAvailablePathTimewindows()
 ##Try To load Precalc Results
 try(
 {
@@ -2611,10 +2604,10 @@ for (strG in vGroups)
   baddPlot <- TRUE
 }
   ##Add Theoretical MSD growth vs Time
-  propFactor <- 1.0
-  lines(xtick ,(theoreticalMeanLength(xtick+2.0,propFactor )),pch=18,cex=0.5,type="b" ) #Up Lim
+  propFactor <- 2.0
+  lines(xtick ,(theoreticalMeanLength(xtick+0.0,propFactor )),pch=18,cex=0.5,type="b" ) #Up Lim
 
-  legend("topleft", legend=c(names(colourDataScheme)[4:9],"Theory"),
+  legend("topleft", legend=c(names(colourDataScheme)[4:9],"Linear"),
          col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"black" ),
          pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
@@ -2634,7 +2627,7 @@ I obtained similar results when looking at MSD and Dispersion over time. These h
 There is a linear relationship of Dispersion against path-length, but this is supralinear for MSD vs path-length, so perhaps they are not linearly related. 
 
 
-```{r  mean-squared-distance over Dispersion , fig.show="hold",fig.cap="Non-Linear relationship between dispersal and MSD, is likely evidence of superdiffussion (Disp. is linear to <Path-length>", out.width="100%", echo=FALSE, cache=TRUE,result=FALSE}
+```{r  mean-squared-distance over Dispersion , fig.show="hold",fig.cap="Non-Linear relationship between dispersal and MSD, is likely evidence of superdiffussion (Disp. is linear to <Path-length>", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
 ## iNvariance Principle Theoretical Mean Path Length
 theoreticalMeanLength <- function(D,propFactor=1.5)
 {
@@ -2768,26 +2761,27 @@ for (strG in vGroups)
 {
   datmeanPooledMSDPerDispersionOft[[strG]] <- tapply(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"muMSDPerT"] , datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"],mean,na.rm=TRUE)
   
+  datmeanPooledMeanDisplacementPerDispersionOft <- sqrt(datmeanPooledMSDPerDispersionOft[[strG]])
   xtick <- unique(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"]) 
   xtick <- xtick[!is.na(xtick)]
   if (!baddPlot)
   {
-    plot(xtick, (datmeanPooledMSDPerDispersionOft[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
-         xlab="Dispersion size (mm)",ylab=" Mean Squared Displacement (mm)",xaxt="n" ,ylim=c(0.2,320))
+    plot(xtick, (datmeanPooledMeanDisplacementPerDispersionOft),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
+         xlab="Dispersion size (mm)",ylab=" Mean Displacement (mm)",xaxt="n" ,ylim=c(2,20),log="xy")
   
     axis(side=1, at=xtick, labels = names(lMSDDispersionStat[[strG]]$`2`$breaks))
     #axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
   }
   else
-    points(xtick,(datmeanPooledMSDPerDispersionOft[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
+    points(xtick,(datmeanPooledMeanDisplacementPerDispersionOft),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
   
   baddPlot <- TRUE
 }
   ##Add Theoretical MSD growth vs Time
   propFactor <- 1.0
-  lines(xtick ,(theoreticalMeanLength(xtick+2.0,propFactor )),pch=18,cex=0.5,type="b" ) #Up Lim
+  lines(xtick ,(theoreticalMeanLength(xtick+0.5,propFactor )),pch=18,cex=0.5,type="b" ) #Up Lim
 
-  legend("topleft", legend=c(names(colourDataScheme)[4:9],"Linear"),
+  legend("bottomright", legend=c(names(colourDataScheme)[4:9],"Linear "),
          col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"black" ),
          pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
@@ -2795,8 +2789,9 @@ for (strG in vGroups)
 
 ```
 
-I find that a *supralinear* relationship holds between dispersion and MSD that appears consistent across all groups
-Since Dispersion and Path length are linear, then it follows that MSD and path-length are also supralinear (as shown earlier in)
+I find that a the principle of invariance holds between dispersion and Mean Displacement (calculated as $\sqrt{MSD}$  ) that appears almost consistent across groups.
+Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement, albet some differences between conditions are apparrent,
+*In the absence of prey, mean displacement is likely higher within dispersion sizes of 3-8mm*.
 
 # Statistical comparison of motion-trajectories 
 
@@ -2826,6 +2821,163 @@ If Y is a mixture of K normal distributions with locations μk and scales σk wi
 \[p_Y\left(y \mid \lambda, \mu, \sigma \right) = \sum_{k=1}^K \lambda_k \, \textsf{normal}\left(y \mid \mu_k, \sigma_k\right).\]
 I will defer using Stan for this and go for my familiar Jags model implementation.
 -->
+# Trajectory micro-structure
+
+## Bout-detection and turns
+
+```{r  bout and turn structure , fig.show="hold",fig.cap="Bout Frequency and free paths", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
+
+  require(RWave) 
+  source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
+  
+  MIN_BOUT_TURN_SPEED = 0.25
+  
+  ## Go through Each Trajectory withing each Domain
+  #### Plot Mean Path Length Per Domain Radius ###
+  lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPaths_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
+  vAvailableDomainRadius <- lapply( lBoundedTrajectoryFiles,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s)  }  )
+  #Order them and Converr to Number
+  vAvailableDomainRadius <- as.integer(unlist(vAvailableDomainRadius[order(as.integer(unlist(vAvailableDomainRadius)))] ) )
+  message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
+  
+  lMeanPathLengthAll <- list()
+  vAvailableDomainRadius <- 10
+  for (DomainRadius in vAvailableDomainRadius)
+  {
+      lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
+      for (strGroup in names(lBoundedTrackInfo) )
+      {
+
+      }
+  }
+  TrackLetInfo <- lBoundedTrackInfo$LL["228-2-73",]
+  datDomainTrajectory <- datAllFrames[datAllFrames$expID == as.numeric(TrackLetInfo$expID) &
+                                      datAllFrames$eventID == as.numeric(TrackLetInfo$EventID) &
+                                      datAllFrames$frameN >= as.numeric(TrackLetInfo$startFrame) &
+                                      datAllFrames$frameN <= as.numeric(TrackLetInfo$endFrame) & 
+                                      datAllFrames$posX != 0,  ]
+  
+  
+  
+  ##Get TAIL Tip motion
+  vTailDisp <-  datDomainTrajectory$DThetaSpine_6 + datDomainTrajectory$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7
+  vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
+  vTailDispFilt <- filtfilt(bf_tailClass2,abs( vTailDisp) )  ##Heavily Filtered and Used For Classifying Bouts
+ 
+ #### PROCESS BOUTS ###
+  vDeltaXFrames        <- diff(datDomainTrajectory$posX,lag=1,differences=1)
+  vDeltaYFrames        <- diff(datDomainTrajectory$posY,lag=1,differences=1)
+  vDeltaDisplacement   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2) ## Path Length Calculated As Total Displacement
+  
+  dframe               <- diff(datDomainTrajectory$frameN,lag=1,differences=1)
+  dframe               <- dframe[dframe > 0] ##Clear Any possible Nan - and Convert To Time sec  
+  
+  vEventSpeed          <- meanf(vDeltaDisplacement/dframe,5) ##IN (mm) Divide Displacement By TimeFrame to get Instantentous Speed, Apply Mean Filter Smooth Out 
+  ##Replace NA with 0s
+  vEventSpeed[is.na(vEventSpeed)] = 0
+  vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
+  vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
+  vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
+  vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
+  
+  vDeltaBodyAngle      <- diffPolar(datDomainTrajectory$BodyAngle) #(  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+  vTurnSpeed           <- meanf(vDeltaBodyAngle[1:NROW(dframe)]/dframe,5)
+  vAngleDisplacement   <- cumsum(vDeltaBodyAngle)
+  
+  vTurnSpeed[is.na(vTurnSpeed)] <- 0
+  vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
+
+  ########## BOUT DETECTION #################
+  TurnboutsIdx <- NA
+  MoveboutsIdx <- NA
+  TailboutsIdx <- NA
+  
+  
+  ## Do Wavelet analysis Of Tail End-Edge Motion Displacements - 
+  # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
+  lwlt <- getPowerSpectrumInTime(vTailDisp,Fs)
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,G_THRES_MOTION_BOUT_SPEED) # +min()
+  TailboutsIdx <- detectTailBouts(lwlt$freqMode)
+  
+  
+  
+  ##Note that sensitivity of this Determines detection of 1st turn to Prey
+  TurnboutsIdx <- detectMotionBouts(vTurnSpeed,MIN_BOUT_TURN_SPEED)  ##detectTurnBouts(vTurnSpeed,lwlt$freqMode,MIN_BOUT_TURN_SPEED)
+  
+  
+  MoveboutsIdx  <- c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx ) ##
+  ##Score Detected Frames On Overlapping Detectors
+  tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
+  ##Select Bouts Based On Score. ex. score >= 3 means it Exceeds Speed+Tail Motion+Turn+Tail Motion Thresholds
+  ##Try with G_MIN_BOUTSCORE
+  MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=G_MIN_BOUTSCORE]))
+  if ( NROW(MoveboutsIdx_cleaned) == 0 )
+    MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=(G_MIN_BOUTSCORE-1)]))
+  if ( NROW(MoveboutsIdx_cleaned) == 0 )
+    MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=(G_MIN_BOUTSCORE-2)]))
+  
+  
+  
+  datDomainTrajectory$IndMotionBout <- 0
+  if (length(MoveboutsIdx_cleaned))
+    datDomainTrajectory[MoveboutsIdx_cleaned,]$IndMotionBout <- 1
+  datDomainTrajectory$IndTurnBout <- 0
+  if (length(TurnboutsIdx))
+    datDomainTrajectory[TurnboutsIdx,]$IndTurnBout <- 1
+  
+    ## Identify Blocks of frames belonging to the same turn
+    blockTurnFramesIDs <- split(TurnboutsIdx+as.numeric(TrackLetInfo$startFrame), 
+                                       ##Sum Increments When the following Indicators Of Changing Class Become TRUE (I added Track Splitters when Exp or Event Change)
+                                 cumsum(c(1, diff(TurnboutsIdx) != 1 )  ) 
+    )
+
+    #tblockTurnFramesIDsurnBlock <- rle(datDomainTrajectory$IndTurnBout)
+    
+  datTurnIds <- ldply (blockTurnFramesIDs, data.frame)
+  names(datTurnIds) <- c("TurnID","frameN")
+  turnStartFrame <- tapply(datTurnIds$frameN,datTurnIds$TurnID,min)
+  turnEndFrame <- tapply(datTurnIds$frameN,datTurnIds$TurnID,max)
+  turnMagnitude <- vAngleDisplacement[(turnEndFrame) - as.numeric(TrackLetInfo$startFrame)-1   ] - vAngleDisplacement[(turnStartFrame) - as.numeric(TrackLetInfo$startFrame)  +1 ]
+  datTrackletTurns <- data.frame(turnID=names(turnEndFrame),turnStartFrame,turnEndFrame,turnMagnitude)
+  datTrackletTurns <- datTrackletTurns[!is.na(datTrackletTurns$turnMagnitude), ]
+  
+  
+  plot(datDomainTrajectory$posX,datDomainTrajectory$posY,col=c("black","red","purple")[datDomainTrajectory$IndTurnBout+1] )  
+  ##Check Change IN angle for Turns Detected
+  plot(vAngleDisplacement)
+  points(which(datDomainTrajectory$IndTurnBout == 1),vAngleDisplacement[datDomainTrajectory$IndTurnBout == 1],col="red")
+  
+  
+  
+  plot(vAngleDisplacement)
+  j <- 2
+  idxRange <-  (turnStartFrame[j]):(turnEndFrame[j]) - as.numeric(TrackLetInfo$startFrame)+1
+  points(idxRange,vAngleDisplacement[idxRange],col="red")
+  ##Correct Indicators
+  datDomainTrajectory$IndTurnBout <- 0
+  for (tID in as.character(datTrackletTurns[abs(datTrackletTurns$turnMagnitude) >  5, ]$turnID) )
+  {
+      message(tID,":",datTrackletTurns[tID,]$turnMagnitude)
+    
+      datDomainTrajectory[datDomainTrajectory$frameN >= datTrackletTurns[tID,]$turnStartFrame &
+                        datDomainTrajectory$frameN <= datTrackletTurns[tID,]$turnEndFrame,"IndTurnBout"] = 1
+      
+     # plot(vAngleDisplacement[datTrackletTurns[tID,]$turnStartFrame:datTrackletTurns[tID,]$turnEndFrame] - as.numeric(TrackLetInfo$startFrame)  )
+      
+  }
+  
+  ##Show Turns /Bouts##
+  plot(datDomainTrajectory$posX,datDomainTrajectory$posY,col=c("black","red","purple")[datDomainTrajectory$IndTurnBout+1] )  
+  
+  
+  plot(vEventSpeed_smooth_mm,col=c("black","red","purple")[datDomainTrajectory$IndTurnBout+1],type="b" )  
+  plot(vTurnSpeed,col=c("black","red","purple")[datDomainTrajectory$IndTurnBout+1],pch=2,cex=1) 
+
+  
+  plot(vTailDispFilt,type='l')
+```
+
+
 
 
 # Full figure List of trajectories per experiment
