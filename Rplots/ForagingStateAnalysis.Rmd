@@ -1647,7 +1647,7 @@ for (strG in as.character(unique(datMeanPathLengthAll$groupID) ) )
   #datGroupMeanPathLength <- datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius < 11,]
   if (!bAddPlot)
   {
-    plot(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),ylim=c(0,0.5),xlim=c(0,11),
+    plot(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),ylim=c(0,0.2),xlim=c(0,11),
        xlab="Domain radius (mm)",ylab="fraction of domain crossings",
        col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
   }else
@@ -3059,10 +3059,10 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 
 ```{r  analyse bout structure within domains, fig.show="hold",fig.cap="Distribution of free paths (Straight runs before turning)", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
   ### Analyse Free Paths - Look at distribution Run lengths between turns 
-  DomainRadius <- 6
+  DomainRadius <- 10
 
-  lMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds") )
-  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  lMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_boundedPaths_R",DomainRadius,"mm.rds") )
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
   
   ## Combine data on Motion Bouts with expID and group / So I can compare pooled distributions of Run Lenghts
   lRundf <- list()
@@ -3082,7 +3082,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
                                               DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
                                               expID=rep(groupdomainTracks$expID[[trackID]],n),
                                               EventID=rep(groupdomainTracks$EventID[[trackID]],n),
-                                              TrackletUID=rep(groupdomainTracks$TrackletUID[[trackID]],n),
+                                              TrackletUID=rep(trackID,n),#groupdomainTracks$TrackletUID[[trackID]]
                                               groupID=rep(strGroup,n) )
         
         n = NROW(lMeanPathLengthAll[[trackID]]$datTurns)
@@ -3090,7 +3090,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
                                       DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
                                       expID=rep(groupdomainTracks$expID[[trackID]],n),
                                       EventID=rep(groupdomainTracks$EventID[[trackID]],n),
-                                      TrackletUID=rep(groupdomainTracks$TrackletUID[[trackID]],n),
+                                      TrackletUID=rep(trackID,n), ##groupdomainTracks$TrackletUID[[
                                       groupID=rep(strGroup,n) )
 
       
@@ -3099,21 +3099,60 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   datFreePathPerDomain <- do.call(rbind.data.frame,lRundf)
   datTurnsPerDomain <- do.call(rbind.data.frame,lTurndf)
   
+  
+  
   cD <- as.character(DomainRadius) 
   ldatFreePathD <- list()
   ldatFreePathD[[cD ]] <- datFreePathPerDomain[datFreePathPerDomain$DomainRadius == cD ,]
   
+  ##Split Path Lengths Per Group
   freePathDat <- list()
-  freePathDat[["LL"]] <- ldatFreePathD[[cD ]][ldatFreePathD[[cD ]]$groupID == "LL" & ldatFreePathD[[cD ]]$travelDistance_mm < 30,]
-  freePathDat[["LE"]] <- ldatFreePathD[[cD ]][ldatFreePathD[[cD ]]$groupID == "LE" & ldatFreePathD[[cD ]]$travelDistance_mm < 30,]
+  for (strG in vGroups)
+      freePathDat[[strG]] <- ldatFreePathD[[cD ]][ldatFreePathD[[cD ]]$groupID == strG & ldatFreePathD[[cD ]]$travelDistance_mm < 30,]
   
-  freePathDat[["NL"]] <- ldatFreePathD[[cD ]][ldatFreePathD[[cD ]]$groupID == "NL" & ldatFreePathD[[cD ]]$travelDistance_mm < 30,]
-  freePathDat[["NE"]] <- ldatFreePathD[[cD ]][ldatFreePathD[[cD ]]$groupID == "NE" & ldatFreePathD[[cD ]]$travelDistance_mm < 30,]
   
-  hist(unlist(freePathDat[["LL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+  ## 
+  hist(unlist(freePathDat[["LL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700),xlab="Free Path Length (Straight line)" )
   hist(unlist(freePathDat[["LE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
   hist(unlist(freePathDat[["NL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
   hist(unlist(freePathDat[["NE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+  hist(unlist(freePathDat[["DL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+  hist(unlist(freePathDat[["DE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+
+    
+  ## Count Turns Per Tracklet
+  turnsPerPath <- list()
+  for (strG in vGroups)
+  {
+      turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & datTurnsPerDomain$turnMagnitude > MIN_TURN_SIZE_THRES,],{
+      as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount")) ##COUNT Turns Pewr
+    })
+      names(turnsPerPath[[strG]]) <- ("TurnCount")
+  }
+  
+  
+  
+  maxTurnCountPerGroup <- lapply(turnsPerPath,max,na.rm=T)
+  ####Find the High Turners
+  strG<-"LL"
+  trackletID <- rownames(turnsPerPath[[strG]])[turnsPerPath[[strG]]$TurnCount > 70 & !is.na(turnsPerPath[[strG]]$TurnCount)]
+  
+
+    
+  ##Clip Range
+  #for (strG in vGroups)
+  #  turnsPerPath[[strG]]$TurnCount <- sapply(turnsPerPath[[strG]]$TurnCount,min,c(70),na.rm=T )
+  
+  # Number of Turns Per Path/tracklet crossing domain
+  hist(turnsPerPath[["LL"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
+  hist(turnsPerPath[["LE"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
+  
+  hist(turnsPerPath[["NL"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
+  hist(turnsPerPath[["NE"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
+  
+  hist(turnsPerPath[["DL"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
+  hist(turnsPerPath[["DE"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
+  
   
 ```
 
