@@ -2853,15 +2853,14 @@ I will defer using Stan for this and go for my familiar Jags model implementatio
 
 ```{r  bout and turn structure , fig.show="hold",fig.cap="Bout Frequency and free paths", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
 
-  library(signal)
-  require(Rwave) 
+  #library(signal)
+  #require(Rwave) 
   source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
   
   MIN_BOUT_TURN_SPEED = 0.25
   MIN_PATH_LENGTH <- 0.5 ##Also Set  in Previous Chunk
   MIN_TURN_SIZE_THRES <- 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
   
-    
 getTrajectoryTurnsAndRuns<- function(TrackLetInfo)  
 {
   
@@ -2933,7 +2932,6 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   datTrackletTurns <- datTrackletTurns[!is.na(datTrackletTurns$turnMagnitude), ]
   orderSeq <- order(as.numeric(as.character(datTrackletTurns$turnID)) ) ##Fix Turn Order 
   datTrackletTurns <- datTrackletTurns[orderSeq,]
-
   
   ##Correct Indicators
   datDomainTrajectory$IndTurnBout <- 0
