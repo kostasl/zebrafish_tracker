@@ -6,6 +6,7 @@
 ## Turns towards prey are also marked, and these need to be towards the prey, but also the turn needs to reduce the bearing to prey by at least 10% / Otherwise it is not considered a turn
 
 library(signal)
+library(Rwave)
 #library(MASS)
 library(mclust,quietly = TRUE)
 
@@ -305,13 +306,12 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
 {
  
   
-  return(which(vEventSpeed > minMotionSpeed))
+  return(which(abs(vEventSpeed) > minMotionSpeed))
   
 }
 
 
-##Clusters Fish Speed Measurements into Bout And Non Bout
-##Use 3 For Better Discrimination When  There Are Exist Bouts Of Different Size
+##Simple Threshold to Classify Fish Tail FQ Measurements into Bout And Non Bout
 detectTailBouts <- function(vTailMotionFq)
 {
 
@@ -332,10 +332,10 @@ detectTurnBouts <- function(vTurnSpeed,vTailDispFilt,minTurnSpeed=NA)
   if (is.na(minTurnSpeed))
     minTurnSpeed <- mean(abs(vTurnSpeed))
   
-  nRec <- min(NROW(vTailDispFilt),NROW(vTurnSpeed))
+  nRec <- NROW(vTurnSpeed)# min(NROW(vTailDispFilt),NROW(vTurnSpeed))
   ##Fix Length Differences
   pvEventSpeed <-  abs(vTurnSpeed[1:nRec])
-  pvTailDispFilt <-  abs(vTailDispFilt[1:nRec])
+  #pvTailDispFilt <-  abs(vTailDispFilt[1:nRec])
   #t <- datRenderHuntEvent$frameN
   
   #X11();plot(pvEventSpeed,pvTailDispFilt,type='p')
