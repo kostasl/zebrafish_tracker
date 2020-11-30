@@ -2937,11 +2937,10 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   names(datTurnIds) <- c("turnID","frameN")
   turnStartFrame <- tapply(datTurnIds$frameN,datTurnIds$turnID,min)
   turnEndFrame <- tapply(datTurnIds$frameN,datTurnIds$turnID,max)
-  if (length(datTurnIds) > 2 ){
-    turnMagnitude <- vAngleDisplacement[(turnEndFrame) - as.numeric(TrackLetInfo$startFrame)-1   ] - vAngleDisplacement[(turnStartFrame) - as.numeric(TrackLetInfo$startFrame)  +1 ]
-    }else{
-    turnMagnitude <- 0 #There were No Turns detected
-  }
+  turnMagnitude <- vAngleDisplacement[(turnEndFrame) - as.numeric(TrackLetInfo$startFrame)-1   ] - vAngleDisplacement[(turnStartFrame) - as.numeric(TrackLetInfo$startFrame)  +1 ]
+  if (length(datTurnIds) == 1 )
+    turnMagnitude <- 0 #There were No Turns detected but 1 frame- Handle Exception
+  
   
   datTrackletTurns <- data.frame(turnID=names(turnEndFrame),turnStartFrame,turnEndFrame,turnMagnitude)
   datTrackletTurns <- datTrackletTurns[!is.na(datTrackletTurns$turnMagnitude), ]
@@ -3039,7 +3038,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
       for (strGroup in names(lBoundedTrackInfo) )
       {
 
-        #TrackLetInfo <- lBoundedTrackInfo$LE["227-13-23",]
+        #TrackLetInfo <- lBoundedTrackInfo$LL["228-1-11",]
         for (TrackLetID in rownames(lBoundedTrackInfo[[strGroup]]))
         {
           TrackLetInfo <- lBoundedTrackInfo[[strGroup]][TrackLetID,]
