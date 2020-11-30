@@ -3058,11 +3058,34 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 ```
 
 ```{r  analyse bout structure within domains, fig.show="hold",fig.cap="Distribution of free paths (Straight runs before turning)", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
-  ### Analyse Free Paths - Look at distribution Run lengths between turns 
-  DomainRadius <- 10
 
-  lMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_boundedPaths_R",DomainRadius,"mm.rds") )
-  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
+plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE)  
+{
+   mxbreaks=seq(0,30,1)
+   strTitle <- paste("free path R",DomainRadius)
+ 
+  hist_D <- hist(unlist(datBoundedTrack$travelDistance_mm),breaks=mxbreaks, plot=FALSE )  
+  XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
+  if (!addPlot)
+  {
+  plot(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
+       main=strTitle,
+       xlab="path length (mm)", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],
+       xlim=XLIM,
+       ylim=c(-2,2),
+       ylab="log N(l) %",xaxt="n" ,type="b")
+  }else {
+      points(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts)),type="b",
+      col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]] )
+  }
+  axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))  
+}   
+
+  ### Analyse Free Paths - Look at distribution Run lengths between turns 
+  DomainRadius <- 6
+
+  lMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds") )
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
   
   ## Combine data on Motion Bouts with expID and group / So I can compare pooled distributions of Run Lenghts
   lRundf <- list()
@@ -3112,14 +3135,26 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   
   
   ## 
-  hist(unlist(freePathDat[["LL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700),xlab="Free Path Length (Straight line)" )
-  hist(unlist(freePathDat[["LE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
-  hist(unlist(freePathDat[["NL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
-  hist(unlist(freePathDat[["NE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
-  hist(unlist(freePathDat[["DL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
-  hist(unlist(freePathDat[["DE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+  #hist(unlist(freePathDat[["LL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700),xlab="Free Path Length (Straight line)" )
+  #hist(unlist(freePathDat[["LE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+  #hist(unlist(freePathDat[["NL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+  #hist(unlist(freePathDat[["NE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+  #hist(unlist(freePathDat[["DL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+  #hist(unlist(freePathDat[["DE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
 
-    
+   addPlot <- FALSE
+  for (strG in vGroups)
+  {
+   datBoundedTrack <- freePathDat[[strG]]  
+   plotBoundedFreePath(datBoundedTrack,strG,addPlot)
+   addPlot <- TRUE
+  }
+  
+```
+Suprisingly, no difference between the distributions of free-paths (lengths of straigh runs before a turn), can be seen between groups, for a domain radius of 10mm
+
+```{r path-turn-frequency per domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
+  
   ## Count Turns Per Tracklet
   turnsPerPath <- list()
   for (strG in vGroups)
@@ -3153,9 +3188,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   hist(turnsPerPath[["DL"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
   hist(turnsPerPath[["DE"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
   
-  
 ```
-
 
 
 # Full figure List of trajectories per experiment
