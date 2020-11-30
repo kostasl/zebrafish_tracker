@@ -2937,7 +2937,12 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   names(datTurnIds) <- c("turnID","frameN")
   turnStartFrame <- tapply(datTurnIds$frameN,datTurnIds$turnID,min)
   turnEndFrame <- tapply(datTurnIds$frameN,datTurnIds$turnID,max)
-  turnMagnitude <- vAngleDisplacement[(turnEndFrame) - as.numeric(TrackLetInfo$startFrame)-1   ] - vAngleDisplacement[(turnStartFrame) - as.numeric(TrackLetInfo$startFrame)  +1 ]
+  if (length(datTurnIds) > 2 ){
+    turnMagnitude <- vAngleDisplacement[(turnEndFrame) - as.numeric(TrackLetInfo$startFrame)-1   ] - vAngleDisplacement[(turnStartFrame) - as.numeric(TrackLetInfo$startFrame)  +1 ]
+    }else{
+    turnMagnitude <- 0 #There were No Turns detected
+  }
+  
   datTrackletTurns <- data.frame(turnID=names(turnEndFrame),turnStartFrame,turnEndFrame,turnMagnitude)
   datTrackletTurns <- datTrackletTurns[!is.na(datTrackletTurns$turnMagnitude), ]
   orderSeq <- order(as.numeric(as.character(datTrackletTurns$turnID)) ) ##Fix Turn Order 
@@ -3006,7 +3011,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   #plot(datDomainTrajectory$posX,datDomainTrajectory$posY,
   #     col=c("purple","black","red")[datDomainTrajectory$IndMotionBout+1+(datDomainTrajectory$IndTurnBout > 0)*2],
   #     pch =c(25,20,3)[datDomainTrajectory$IndMotionBout+1+(datDomainTrajectory$IndTurnBout > 0)*2],
-  #     cex=c(0.5,0.5,1.2)[datDomainTrajectory$IndMotionBout+1+(datDomainTrajectory$IndTurnBout > 0)*2] )  
+  #     cex=c(1,1,1.2)[datDomainTrajectory$IndMotionBout+1+(datDomainTrajectory$IndTurnBout > 0)*2] )  
   
   
   
@@ -3024,7 +3029,8 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vAvailableDomainRadius <- getAvailablePathDomainsSizes() 
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
 
-  #vAvailableDomainRadius <- 10
+  
+  vAvailableDomainRadius <- 4
   for (DomainRadius in vAvailableDomainRadius)
   {   
       lMeanPathLengthAll <- list() ##Reset List
@@ -3033,7 +3039,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
       for (strGroup in names(lBoundedTrackInfo) )
       {
 
-        #TrackLetInfo <- lBoundedTrackInfo$LL["228-2-73",]
+        #TrackLetInfo <- lBoundedTrackInfo$LE["227-13-23",]
         for (TrackLetID in rownames(lBoundedTrackInfo[[strGroup]]))
         {
           TrackLetInfo <- lBoundedTrackInfo[[strGroup]][TrackLetID,]
