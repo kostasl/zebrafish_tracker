@@ -2987,10 +2987,12 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vAvailableDomainRadius <- as.integer(unlist(vAvailableDomainRadius[order(as.integer(unlist(vAvailableDomainRadius)))] ) )
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
   
-  lMeanPathLengthAll <- list()
-  vAvailableDomainRadius <- 10
+  
+  #vAvailableDomainRadius <- 10
   for (DomainRadius in vAvailableDomainRadius)
-  {
+  {   
+      lMeanPathLengthAll <- list() ##Reset List
+  
       lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPaths_R",DomainRadius,"mm.rds") )
       for (strGroup in names(lBoundedTrackInfo) )
       {
@@ -3008,6 +3010,8 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
         }##For Each TrackLet/Path in Domain-Radius for a group
 
       }##For Each Group
+      
+      saveRDS(lMeanPathLengthAll,file=paste0(strDataExportDir,"/stat_BOUT_boundedPaths_R",DomainRadius,"mm.rds"))
   }##For Each Domain Radius
   
    for (TrackLetInfo in lBoundedTrackInfo[[strGroup]])
