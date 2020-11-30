@@ -171,6 +171,17 @@ getAvailablePathTimewindows <- function()
   return (vtimeWindows)
 }
 
+getAvailablePathDomainsSizes <- function()
+{
+  #lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
+  lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[[:digit:]]+\\.*[[:digit:]]*mm.rds", full.names = FALSE, ignore.case = TRUE)
+  vAvailableDomainRadius <- lapply( lBoundedTrajectoryFiles,FUN = function(s){  gsub(pattern = ".rds", replacement = "", x = s)  }  )
+  vAvailableDomainRadius <- lapply( vAvailableDomainRadius,FUN = function(s){  gsub(pattern = "[^0-9,.]", replacement = "", x = s)  }  )
+  
+  vAvailableDomainRadius <- as.numeric(unlist(vAvailableDomainRadius[order(as.numeric(unlist(vAvailableDomainRadius)))] ) )
+  
+  return(vAvailableDomainRadius)
+}
 
 ##Re Run All Path Calculation 
 generate_DispersionFiles <- function()
@@ -1468,17 +1479,18 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   
   #### Plot Mean Path Length Per Domain Radius ###
   #lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
-  lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[[:digit:]]+\\.*[[:digit:]]*mm.rds", full.names = FALSE, ignore.case = TRUE)
-  vAvailableDomainRadius <- lapply( lBoundedTrajectoryFiles,FUN = function(s){  gsub(pattern = ".rds", replacement = "", x = s)  }  )
-  vAvailableDomainRadius <- lapply( vAvailableDomainRadius,FUN = function(s){  gsub(pattern = "[^0-9,.]", replacement = "", x = s)  }  )
+  #lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[[:digit:]]+\\.*[[:digit:]]*mm.rds", full.names = FALSE, ignore.case = TRUE)
+  #vAvailableDomainRadius <- lapply( lBoundedTrajectoryFiles,FUN = function(s){  gsub(pattern = ".rds", replacement = "", x = s)  }  )
+  #vAvailableDomainRadius <- lapply( vAvailableDomainRadius,FUN = function(s){  gsub(pattern = "[^0-9,.]", replacement = "", x = s)  }  )
   
+  vAvailableDomainRadius <- getAvailablePathDomainsSizes()
   #Order them and Converr to Number
-  vAvailableDomainRadius <- as.numeric(unlist(vAvailableDomainRadius[order(as.numeric(unlist(vAvailableDomainRadius)))] ) )
+  
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
   
   lMeanPathLengthAll <- list()
   for (DomainRadius in vAvailableDomainRadius)
-  {
+  {#TODO Replace with A list returned from vAvailableDomainRadius
       lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
       for (strGroup in names(lBoundedTrackInfo) )
       {
@@ -2977,17 +2989,16 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   return(list(datTurns=datTrackletTurns,datRuns=datTrackletMotion,Runs_rle=rle(datDomainTrajectory$IndMotionBout),fps=head(datDomainTrajectory$fps,1)  ) )
 }
 
-  
-  
   ## Go through Each Trajectory withing each Domain
   #### Plot Mean Path Length Per Domain Radius ###
-  lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPaths_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
-  vAvailableDomainRadius <- lapply( lBoundedTrajectoryFiles,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s)  }  )
+  #lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPaths_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
+  #vAvailableDomainRadius <- lapply( lBoundedTrajectoryFiles,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s)  }  )
   #Order them and Converr to Number
-  vAvailableDomainRadius <- as.integer(unlist(vAvailableDomainRadius[order(as.integer(unlist(vAvailableDomainRadius)))] ) )
+  #vAvailableDomainRadius <- as.integer(unlist(vAvailableDomainRadius[order(as.integer(unlist(vAvailableDomainRadius)))] ) )
+  
+  vAvailableDomainRadius <- getAvailablePathDomainsSizes() 
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
-  
-  
+
   #vAvailableDomainRadius <- 10
   for (DomainRadius in vAvailableDomainRadius)
   {   
