@@ -2882,8 +2882,8 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
     datDomainTrajectory <- datDomainTrajectory[datDomainTrajectory$trackletID == maxTrackletID,]
   }
   ##Get TAIL Tip motion
-  vTailDisp <-  datDomainTrajectory$DThetaSpine_6 + datDomainTrajectory$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7
-  vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
+  #vTailDisp <-  datDomainTrajectory$DThetaSpine_6 + datDomainTrajectory$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7
+  #vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
   #vTailDispFilt <- filtfilt(bf_tailClass2,abs( vTailDisp) )  ##Heavily Filtered and Used For Classifying Bouts
  
  #### PROCESS BOUTS ###
@@ -2984,20 +2984,20 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   ### PLOT Trajectory Results ##
   plot(datDomainTrajectory$posX,datDomainTrajectory$posY,
        col=c("black","red")[(datDomainTrajectory$BoutFlag>0)+1],
-       pch =c(25,20,3)[(datDomainTrajectory$BoutFlag>0)+1],
-       cex=c(1,1,1.2)[(datDomainTrajectory$BoutFlag>0)+1] )  
+       pch =c(9,25,3)[(datDomainTrajectory$BoutFlag>0)+1],
+       cex=c(1,1)[(datDomainTrajectory$BoutFlag>0)+1] )  
   
   ## Turn  Speed Class
-  plot(as.numeric(TrackLetInfo$startFrame)+1:length(vTurnSpeed), vTurnSpeed,type="l")
-  points(TurnboutsIdx+as.numeric(TrackLetInfo$startFrame),vTurnSpeed[TurnboutsIdx],col="red")
+  #plot(as.numeric(TrackLetInfo$startFrame)+1:length(vTurnSpeed), vTurnSpeed,type="l")
+  #points(TurnboutsIdx+as.numeric(TrackLetInfo$startFrame),vTurnSpeed[TurnboutsIdx],col="red")
 
   ## Motion Speed Class
-  plot(as.numeric(TrackLetInfo$startFrame)+1:length(vEventSpeed), vEventSpeed,type="l")
-  points(boutsIdx+as.numeric(TrackLetInfo$startFrame),vEventSpeed[ boutsIdx],col="red")
+  #plot(as.numeric(TrackLetInfo$startFrame)+1:length(vEventSpeed), vEventSpeed,type="l")
+  #points(boutsIdx+as.numeric(TrackLetInfo$startFrame),vEventSpeed[ boutsIdx],col="red")
   
   ### PLOT Trajectory Results ##
-  plot(datDomainTrajectory$posX,datDomainTrajectory$posY, col=c("black"),      pch =c(20),       cex=c(1) )  
-  points(datDomainTrajectory[boutsIdx,]$posX,datDomainTrajectory[boutsIdx,]$posY,       col=c("red"),       pch =c(20),       cex=c(1) )  
+  #plot(datDomainTrajectory$posX,datDomainTrajectory$posY, col=c("black"),      pch =c(20),       cex=c(1) )  
+  #points(datDomainTrajectory[boutsIdx,]$posX,datDomainTrajectory[boutsIdx,]$posY,       col=c("red"),       pch =c(20),       cex=c(1) )  
 
   ##Add The Frame Duration of Each Mode -Run-Length Encoding (RLE) Between Runs and Turns
   return(datTrackletBouts )
@@ -3023,7 +3023,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
       {
 
         #TrackLetInfo <- lBoundedTrackInfo$LL["228-1-11",] ##Short Problematic
-        TrackLetInfo <- lBoundedTrackInfo$LL["228-1-17",] 
+        #TrackLetInfo <- lBoundedTrackInfo$LL["228-1-17",] 
         for (TrackLetID in rownames(lBoundedTrackInfo[[strGroup]]))
         {
           TrackLetInfo <- lBoundedTrackInfo[[strGroup]][TrackLetID,]
