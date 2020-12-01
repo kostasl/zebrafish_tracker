@@ -3079,7 +3079,7 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE)
 }   
 
   ### Analyse Free Paths - Look at distribution Run lengths between turns 
-  DomainRadius <- 6
+  DomainRadius <- 8
 
   lMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds") )
   lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
@@ -3142,11 +3142,13 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE)
    datBoundedTrack <- freePathDat[[strG]]  
    ##Choose Turn-Motion Bouts, No Stops
    plotBoundedFreePath(datBoundedTrack[datBoundedTrack$boutSeqID >0,],strG,addPlot)
+   message(paste(strG,":",mean(unlist(datBoundedTrack[datBoundedTrack$boutSeqID >0,"travelDistance_mm"])) ) )
    addPlot <- TRUE
   }
   
 ```
-Suprisingly, no difference between the distributions of free-paths (lengths of straigh runs before a turn), can be seen between groups, for a domain radius of 10mm
+Found Difference between the distributions of free-paths (lengths of straight runs before a turn),  between groups, for a domain radius of 7mm
+*- Mean free path highest for LE *
 
 ```{r path-turn-frequency per domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
   
@@ -3191,13 +3193,14 @@ datTurnsPerDomain <- datBoutsPerDomain
   strG<-"LL"
   trackletID <- rownames(turnsPerPath[[strG]])[turnsPerPath[[strG]]$TurnCount > 70 & !is.na(turnsPerPath[[strG]]$TurnCount)]
   
-
-   addPlot <- FALSE
+  ## Compare Number of Turns Per Path
+  addPlot <- FALSE
   for (strG in vGroups)
   {
    datBoundedTrack <- turnsPerPath[[strG]]  
-   plotBoundedPathTurns(datBoundedTrack,strG,addPlot)
+   #plotBoundedPathTurns(datBoundedTrack,strG,addPlot)
    addPlot <- TRUE
+   message(paste(strG,":", mean(unlist( turnsPerPath[[strG]] ),na.rm=TRUE )   ) )
   }
     
   ##Clip Range
@@ -3207,17 +3210,18 @@ datTurnsPerDomain <- datBoutsPerDomain
  ##Turn Magnitude
   for (strG in vGroups)
   {
-    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turn_deg) < 80 & abs(datTurnsPerDomain$turn_deg) > 10 &
+    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turn_deg) < 80 & abs(datTurnsPerDomain$turn_deg) > 1 &
                                     datTurnsPerDomain$boutSeqID >0,] ##No Pause / no-moving Bouts
     hist(datGTurns$turn_deg,breaks=seq(-80,80,2),main=paste(strG,"R",DomainRadius) ) #ylim=c(0,80)
   }
 
 ```
 
-*I do NOT see an apparent difference in turn-frequency distributions or the distribution of free-path lengths!* within the paths in crossing a bounded circular domain.
-But that is strange cause the groups seem to macroscopically behave differently.
-Nevertheless I discover that the turn distributions of spontaneous events show a mode-tendency towards larger turns, near the 35-45 degrees, such as that I have previously found 
-is associated with sucessfull hunt events
+*I see an apparent difference in turn-frequency distributions and in the distribution of free-path lengths for LE* within the paths in crossing a bounded circular domain.
+These are related to the macroscopic observations differently.
+
+I also discover that the turn distributions of spontaneous events show a mode-tendency towards larger turns, near the 35-45 degrees, such as that I have previously found 
+is associated with successful hunt events
 
 
 
