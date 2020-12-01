@@ -3021,7 +3021,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vAvailableDomainRadius <- getAvailablePathDomainsSizes() 
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
 
-  #DomainRadius <- 9.5
+  DomainRadius <- 9.5
   for (DomainRadius in vAvailableDomainRadius)
   {   
       lMeanPathLengthAll <- list() ##Reset List
@@ -3045,13 +3045,12 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 
       }##For Each Group
       
-      saveRDS(lMeanPathLengthAll,file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds"))
+      saveRDS(lMeanPathLengthAll,file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm2.rds"))
   }##For Each Domain Radius
   
-   for (TrackLetInfo in lBoundedTrackInfo[[strGroup]])
-     message(TrackLetInfo)
+  for (TrackLetInfo in lBoundedTrackInfo[[strGroup]])
+    message(TrackLetInfo)
 
-  
   
 ```
 
@@ -3096,35 +3095,32 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE)
       if (is.null(lMeanPathLengthAll[[trackID]]))
         next()
       
-        n = NROW(lMeanPathLengthAll[[trackID]]$datRuns)
+        n = NROW(lMeanPathLengthAll[[trackID]])
         ##Remove Rounding <0 errors
-        lMeanPathLengthAll[[trackID]]$datRuns$travelDistance_mm <- lapply(lMeanPathLengthAll[[trackID]]$datRuns$travelDistance_mm,max,c(0))
-        lRundf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]]$datRuns, 
+        lMeanPathLengthAll[[trackID]]$travelDistance_mm <- lapply(lMeanPathLengthAll[[trackID]]$travelDistance_mm,max,c(0))
+        lRundf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]], 
                                               DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
                                               expID=rep(groupdomainTracks$expID[[trackID]],n),
                                               EventID=rep(groupdomainTracks$EventID[[trackID]],n),
                                               TrackletUID=rep(trackID,n),#groupdomainTracks$TrackletUID[[trackID]]
                                               groupID=rep(strGroup,n) )
         
-        n = NROW(lMeanPathLengthAll[[trackID]]$datTurns)
-        lTurndf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]]$datTurns, 
-                                      DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
-                                      expID=rep(groupdomainTracks$expID[[trackID]],n),
-                                      EventID=rep(groupdomainTracks$EventID[[trackID]],n),
-                                      TrackletUID=rep(trackID,n), ##groupdomainTracks$TrackletUID[[
-                                      groupID=rep(strGroup,n) )
+        #n = NROW(lMeanPathLengthAll[[trackID]]$datTurns)
+        #lTurndf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]]$datTurns, 
+        #                              DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
+        #                              expID=rep(groupdomainTracks$expID[[trackID]],n),
+        #                              EventID=rep(groupdomainTracks$EventID[[trackID]],n),
+        #                              TrackletUID=rep(trackID,n), ##groupdomainTracks$TrackletUID[[
+        #                              groupID=rep(strGroup,n) )
 
       
     }
   }
-  datFreePathPerDomain <- do.call(rbind.data.frame,lRundf)
-  datTurnsPerDomain <- do.call(rbind.data.frame,lTurndf)
-  
-  
+  datBoutsPerDomain <- do.call(rbind.data.frame,lRundf)
   
   cD <- as.character(DomainRadius) 
   ldatFreePathD <- list()
-  ldatFreePathD[[cD ]] <- datFreePathPerDomain[datFreePathPerDomain$DomainRadius == cD ,]
+  ldatFreePathD[[cD ]] <- datBoutsPerDomain[datBoutsPerDomain$DomainRadius == cD ,]
   
   ##Split Path Lengths Per Group
   freePathDat <- list()
@@ -3144,7 +3140,8 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE)
   for (strG in vGroups)
   {
    datBoundedTrack <- freePathDat[[strG]]  
-   plotBoundedFreePath(datBoundedTrack,strG,addPlot)
+   ##Choose Turn-Motion Bouts, No Stops
+   plotBoundedFreePath(datBoundedTrack[datBoundedTrack$boutSeqID >0,],strG,addPlot)
    addPlot <- TRUE
   }
   
@@ -3155,7 +3152,7 @@ Suprisingly, no difference between the distributions of free-paths (lengths of s
   
 plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)  
 {
-   mxbreaks=seq(0,35,1)
+   mxbreaks=seq(0,max(turnsPerPath,na.rm=T),1)
    strTitle <- paste("Number of turns in bounded path R",DomainRadius)
  
   hist_D <- hist(unlist(turnsPerPath$TurnCount),breaks=mxbreaks, plot=FALSE )  
@@ -3175,12 +3172,13 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
   axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))  
 }   
 
+datTurnsPerDomain <- datBoutsPerDomain
 
   ## Count Turns Per Tracklet
   turnsPerPath <- list()
   for (strG in vGroups)
   {
-      turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & datTurnsPerDomain$turnMagnitude > MIN_TURN_SIZE_THRES,],{
+      turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & datTurnsPerDomain$turn_deg > MIN_TURN_SIZE_THRES,],{
       as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount")) ##COUNT Turns Pewr
     })
       names(turnsPerPath[[strG]]) <- ("TurnCount")
@@ -3209,14 +3207,19 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
  ##Turn Magnitude
   for (strG in vGroups)
   {
-    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turnMagnitude) < 180,] 
-    hist(datGTurns$turnMagnitude,breaks=seq(-180,180,2),main=paste(strG,"R",DomainRadius) ) #ylim=c(0,80)
+    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turn_deg) < 80 & abs(datTurnsPerDomain$turn_deg) > 10 &
+                                    datTurnsPerDomain$boutSeqID >0,] ##No Pause / no-moving Bouts
+    hist(datGTurns$turn_deg,breaks=seq(-80,80,2),main=paste(strG,"R",DomainRadius) ) #ylim=c(0,80)
   }
 
 ```
 
-*I do see an apparent difference in turn-frequency distributions or the distribution of free-path lengths!* within the paths in crossing a bounded circular domain.
+*I do NOT see an apparent difference in turn-frequency distributions or the distribution of free-path lengths!* within the paths in crossing a bounded circular domain.
 But that is strange cause the groups seem to macroscopically behave differently.
+Nevertheless I discover that the turn distributions of spontaneous events show a mode-tendency towards larger turns, near the 35-45 degrees, such as that I have previously found 
+is associated with sucessfull hunt events
+
+
 
 # Full figure List of trajectories per experiment
 
