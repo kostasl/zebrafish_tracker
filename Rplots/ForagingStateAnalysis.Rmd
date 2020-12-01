@@ -2982,10 +2982,10 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   datTrackletBouts <- cbind(datTrackletBouts,boutSeqID=rleBoutSequence$values,boutFrames=rleBoutSequence$lengths)
   
   ### PLOT Trajectory Results ##
-  plot(datDomainTrajectory$posX,datDomainTrajectory$posY,
-       col=c("black","red")[(datDomainTrajectory$BoutFlag>0)+1],
-       pch =c(9,25,3)[(datDomainTrajectory$BoutFlag>0)+1],
-       cex=c(1,1)[(datDomainTrajectory$BoutFlag>0)+1] )  
+  #plot(datDomainTrajectory$posX,datDomainTrajectory$posY,
+  #     col=c("black","red")[(datDomainTrajectory$BoutFlag>0)+1],
+  #     pch =c(9,25,3)[(datDomainTrajectory$BoutFlag>0)+1],
+  #     cex=c(1,1)[(datDomainTrajectory$BoutFlag>0)+1] )  
   
   ## Turn  Speed Class
   #plot(as.numeric(TrackLetInfo$startFrame)+1:length(vTurnSpeed), vTurnSpeed,type="l")
