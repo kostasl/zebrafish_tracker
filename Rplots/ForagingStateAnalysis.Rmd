@@ -2951,15 +2951,19 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 #  datMoveIds <- ldply (blockMotionBoutFramesIDs, data.frame)
   names(datBoutBlockIds) <- c("boutID","frameN")
   boutStartFrame <- tapply(datBoutBlockIds$frameN,datBoutBlockIds$boutID,min)
-  boutStartFrame <- sapply((boutStartFrame) - as.numeric(TrackLetInfo$startFrame),max,1) + as.numeric(TrackLetInfo$startFrame) ##Fix Range TO Start form 1
+  boutStartIdx <- sapply((boutStartFrame) - as.numeric(TrackLetInfo$startFrame),max,1)  ##Fix Range TO Start from Idx 1
+  boutStartIdx <- sapply((boutStartIdx),min,length(vPathLength_mm))  ##Fix Range TO Start from Idx 1
+  
   boutEndFrame <- tapply(datBoutBlockIds$frameN,datBoutBlockIds$boutID,max)
-  boutEndFrame <- sapply((boutEndFrame) - as.numeric(TrackLetInfo$startFrame),max,1)+as.numeric(TrackLetInfo$startFrame) ##Fix Range TO Start form 1
-  turn_deg <- vAngleDisplacement[(boutEndFrame) - as.numeric(TrackLetInfo$startFrame) ] - vAngleDisplacement[(boutStartFrame) - as.numeric(TrackLetInfo$startFrame)  ]
-  pathLength_mm <- vPathLength_mm[(boutEndFrame) - as.numeric(TrackLetInfo$startFrame)] - vPathLength_mm[(boutStartFrame) - as.numeric(TrackLetInfo$startFrame)  ]
+  boutEndIdx <- sapply((boutEndFrame) - as.numeric(TrackLetInfo$startFrame),max,1)  ##Fix Range TO Start form 1
+  boutEndIdx <- sapply((boutEndIdx),min,length(vPathLength_mm))  ##Fix Range TO Start from Idx 1
+  
+  turn_deg <- vAngleDisplacement[(boutEndIdx) ] - vAngleDisplacement[(boutStartIdx) ]
+  pathLength_mm <- vPathLength_mm[(boutEndIdx) ] - vPathLength_mm[(boutStartIdx)]
   duration_sec <- (boutEndFrame - boutStartFrame)/head(datDomainTrajectory$fps,1)
   vDeltaXFrames = vDeltaYFrames  <- vector()
   for (i in 1:NROW(boutEndFrame))
-  {##Re Adjust To FramN from IDx increment +1 above
+  {##Re Adjust To FrameN from IDx increment +1 above
     if (boutEndFrame[i] > boutStartFrame[i])
     {
       vDeltaXFrames[i] <- datDomainTrajectory[datDomainTrajectory$frameN == (boutEndFrame[i]),]$posX - datDomainTrajectory[datDomainTrajectory$frameN == (boutStartFrame[i]),]$posX
