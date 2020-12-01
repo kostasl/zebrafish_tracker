@@ -311,6 +311,34 @@ detectMotionBouts <- function(vEventSpeed,minMotionSpeed)
 }
 
 
+##Detect Motion/Turn Events through Changes in Speed, - Connect events within a set frame-window to be a single event
+# Returns data frame of with frameIdxs of start end frames of bound events
+detectMotionBoutsV2 <- function(vEventSpeed,minMotionSpeed,minFramesBetweenEvents)
+{
+  
+  idxBout <-  which(abs(vEventSpeed) > minMotionSpeed)
+  
+  ## Identify Blocks of frames belonging to the same turn
+  blockBoutFramesIDs <- split(idxBout,
+                              ##Sum Increments When the following Indicators Of Changing Class Become TRUE (I added Track Splitters when Exp or Event Change)
+                              cumsum(c(1, diff(idxBout) > minFramesBetweenEvents )  ) 
+  )
+  #tblockTurnFramesIDsurnBlock <- rle(datDomainTrajectory$IndTurnBout)
+  ## Tabulate DEtected Turns 
+  datBoutIDs <- ldply (blockBoutFramesIDs, data.frame)
+  names(datBoutIDs) <- c("boutID","frameIdx")
+  boutStartFrame <- tapply(datBoutIDs$frameIdx,datBoutIDs$boutID,min)
+  boutEndFrame <- tapply(datBoutIDs$frameIdx,datBoutIDs$boutID,max)
+
+  datTrackletBouts <- data.frame(boutID=names(boutEndFrame),boutStartFrame,boutEndFrame)
+  orderSeq <- order(as.numeric(as.character(datTrackletBouts$boutID)) ) ##Fix Turn Order 
+  datTrackletBouts <- datTrackletBouts[orderSeq,]
+  
+  return(datTrackletBouts)
+}
+
+
+
 ##Simple Threshold to Classify Fish Tail FQ Measurements into Bout And Non Bout
 detectTailBouts <- function(vTailMotionFq)
 {

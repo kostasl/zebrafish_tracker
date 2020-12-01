@@ -2858,10 +2858,11 @@ I will defer using Stan for this and go for my familiar Jags model implementatio
   library (plyr) #Split list, apply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
   source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
   
-  MIN_BOUT_TURN_SPEED = 0.25
+  MIN_BOUT_TURN_SPEED = 0.2
+  G_THRES_MOTION_BOUT_SPEED = 0.2
   MIN_PATH_LENGTH <- 0.5 ##Also Set  in Previous Chunk
   MIN_TURN_SIZE_THRES <- 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
-  MIN_GAP_FRAMES_BETWEEN_TURNS <- 10
+  MIN_GAP_FRAMES_BETWEEN_TURNS <- 50
   
 getTrajectoryTurnsAndRuns<- function(TrackLetInfo)  
 {
@@ -2875,15 +2876,14 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   if (length(unique(datDomainTrajectory$trackletID)) > 1)
   {
     warning("*Dublicate track with same Exp, Event and frame range found for TrackletUID:",TrackLetInfo$TrackletUID, ". Selecting longest track for analysis")
-    
-    
+
     tbl_trackSize<-table(datDomainTrajectory$trackletID)
     maxTrackletID <- names(which(tbl_trackSize ==max(tbl_trackSize)))
     datDomainTrajectory <- datDomainTrajectory[datDomainTrajectory$trackletID == maxTrackletID,]
   }
   ##Get TAIL Tip motion
-  #vTailDisp <-  datDomainTrajectory$DThetaSpine_6 + datDomainTrajectory$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7
-  #vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
+  vTailDisp <-  datDomainTrajectory$DThetaSpine_6 + datDomainTrajectory$DThetaSpine_7 #+ datRenderHuntEvent$DThetaSpine_7
+  vTailDisp <- filtfilt(bf_tailClass, clipEyeRange(vTailDisp,-120,120))
   #vTailDispFilt <- filtfilt(bf_tailClass2,abs( vTailDisp) )  ##Heavily Filtered and Used For Classifying Bouts
  
  #### PROCESS BOUTS ###
@@ -2900,12 +2900,12 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vEventSpeed_smooth <- filtfilt(bf_speed, vEventSpeed) #meanf(vEventSpeed,100) #
   vEventSpeed_smooth[vEventSpeed_smooth < 0] <- 0 ## Remove -Ve Values As an artefact of Filtering
   vEventSpeed_smooth[is.na(vEventSpeed_smooth)] = 0
-  #vEventSpeed_smooth_mm <- Fs*vEventSpeed_smooth*DIM_MMPERPX
   
-  vDeltaBodyAngle      <- diffPolar(datDomainTrajectory$BodyAngle) #(  ( 180 +  180/pi * atan2(datRenderPrey$Prey_X -datRenderPrey$posX,datRenderPrey$posY - datRenderPrey$Prey_Y)) -datRenderPrey$BodyAngle    ) %% 360 - 180
+  
+  vDeltaBodyAngle      <- diffPolar(datDomainTrajectory$BodyAngle) 
   vTurnSpeed           <- meanf(vDeltaBodyAngle[1:NROW(dframe)]/dframe,5)
   vAngleDisplacement   <- cumsum(vDeltaBodyAngle)
-  vPathLength_mm          <- cumsum(vEventSpeed_smooth)*DIM_MMPERPX
+  vPathLength_mm       <- cumsum(vEventSpeed_smooth)*DIM_MMPERPX
   
   vTurnSpeed[is.na(vTurnSpeed)] <- 0
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
@@ -2920,102 +2920,87 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   # Returns List Structure will all Relevant Data including Fq Mode Per Time Unit
   #lwlt <- getPowerSpectrumInTime(vTailDisp,Fs)
   ## Let All non Turns Be Moves
-  #MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth_mm,G_THRES_MOTION_BOUT_SPEED) # +min()
+  MoveboutsIdx <- detectMotionBouts(vEventSpeed_smooth,G_THRES_MOTION_BOUT_SPEED) # +min()
   #TailboutsIdx <- detectTailBouts(lwlt$freqMode)
   
   ##Note that sensitivity of this Determines detection of 1st turn to Prey
-  TurnboutsIdx <- detectMotionBouts(vTurnSpeed,MIN_BOUT_TURN_SPEED)  ##detectTurnBouts(vTurnSpeed,lwlt$freqMode,MIN_BOUT_TURN_SPEED)
+  datTrackletBout <- detectMotionBoutsV2(vTurnSpeed+vEventSpeed_smooth,MIN_BOUT_TURN_SPEED,MIN_GAP_FRAMES_BETWEEN_TURNS)  ##detectTurnBouts(vTurnSpeed,lwlt$freqMode,MIN_BOUT_TURN_SPEED)
+  datTrackletBout$boutStartFrame <- datTrackletBout$boutStartFrame + as.numeric(TrackLetInfo$startFrame)
+  datTrackletBout$boutEndFrame <- datTrackletBout$boutEndFrame + as.numeric(TrackLetInfo$startFrame)
+ 
   
-  ## Identify Blocks of frames belonging to the same turn
-  blockTurnFramesIDs <- split(TurnboutsIdx+as.numeric(TrackLetInfo$startFrame), 
-                                     ##Sum Increments When the following Indicators Of Changing Class Become TRUE (I added Track Splitters when Exp or Event Change)
-                               cumsum(c(1, diff(TurnboutsIdx) > MIN_GAP_FRAMES_BETWEEN_TURNS )  ) 
-                              )
-  #tblockTurnFramesIDsurnBlock <- rle(datDomainTrajectory$IndTurnBout)
-  ## Tabulate DEtected Turns 
-  datTurnIds <- ldply (blockTurnFramesIDs, data.frame)
-  names(datTurnIds) <- c("turnID","frameN")
-  turnStartFrame <- tapply(datTurnIds$frameN,datTurnIds$turnID,min)
-  turnEndFrame <- tapply(datTurnIds$frameN,datTurnIds$turnID,max)
-  turnMagnitude <- vAngleDisplacement[(turnEndFrame) - as.numeric(TrackLetInfo$startFrame)-1   ] - vAngleDisplacement[(turnStartFrame) - as.numeric(TrackLetInfo$startFrame)  +1 ]
-  if (length(datTurnIds) == 1 )
-    turnMagnitude <- 0 #There were No Turns detected but 1 frame- Handle Exception
-  
-  
-  datTrackletTurns <- data.frame(turnID=names(turnEndFrame),turnStartFrame,turnEndFrame,turnMagnitude)
-  datTrackletTurns <- datTrackletTurns[!is.na(datTrackletTurns$turnMagnitude), ]
-  orderSeq <- order(as.numeric(as.character(datTrackletTurns$turnID)) ) ##Fix Turn Order 
-  datTrackletTurns <- datTrackletTurns[orderSeq,]
-  
-  
-  #plot(as.numeric(TrackLetInfo$startFrame)+1:length(vTurnSpeed), vTurnSpeed)
-  #points(TurnboutsIdx+as.numeric(TrackLetInfo$startFrame),vTurnSpeed[TurnboutsIdx],col="red")
-  
-  ## Filter Turns And Correct Frame Indicators for turns
-  datDomainTrajectory$IndTurnBout <- 0
-  for (tID in as.character(datTrackletTurns$turnID) )
+  ## Filter Turns Filling in The Gap Frames  And Correct Frame Indicators for turns
+  datDomainTrajectory$BoutFlag <- 0
+  for (tID in as.character(datTrackletBout$boutID) )
   {
-    if (abs(datTrackletTurns[tID,]$turnMagnitude) >  MIN_TURN_SIZE_THRES  )
-    {
-      message("Accept ",tID,":",datTrackletTurns[tID,]$turnMagnitude)
-      datDomainTrajectory[datDomainTrajectory$frameN >= datTrackletTurns[tID,]$turnStartFrame &
-                       datDomainTrajectory$frameN <= datTrackletTurns[tID,]$turnEndFrame,"IndTurnBout"] = as.numeric(tID)
-    }else
-    {
-      message("Reject ",tID,":",datTrackletTurns[tID,]$turnMagnitude)
-      datTrackletTurns <- datTrackletTurns[datTrackletTurns$turnID != tID,]
-    }
+      datDomainTrajectory[datDomainTrajectory$frameN >= datTrackletBout[tID,]$boutStartFrame &
+                       datDomainTrajectory$frameN <= datTrackletBout[tID,]$boutEndFrame,"BoutFlag"] = as.numeric(tID)
       #datDomainTrajectory[TurnboutsIdx,"IndTurnBout"]  = as.numeric(tID)
-      
      #plot(vAngleDisplacement[datTrackletTurns[tID,]$turnStartFrame:datTrackletTurns[tID,]$turnEndFrame] - as.numeric(TrackLetInfo$startFrame)  )
   }
   ##Refresh Vector of Detected Turn Idx to reflect Filtered List
-  TurnboutsIdx <- which(datDomainTrajectory$IndTurnBout > 0)
-  #-------  Process Straight Runs Motion  ---------#
-  ##Exclude The Turns Add the Tail Frequency to detect motion
-  MoveboutsIdx <- 1:NROW(datDomainTrajectory)
-  MoveboutsIdx  <- c(MoveboutsIdx[!(MoveboutsIdx %in% TurnboutsIdx) ]) ###c(TailboutsIdx, MoveboutsIdx,TurnboutsIdx ) ##
-  ##Score Detected Frames On Overlapping Detectors
-  #tblMoveboutsScore<- table(MoveboutsIdx[!is.na(MoveboutsIdx)])
-  ##Select Bouts Based On Score. ex. score >= 3 means it Exceeds Speed+Tail Motion+Turn+Tail Motion Thresholds
-  ##Try with G_MIN_BOUTSCORE
-  # MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=G_MIN_BOUTSCORE]))
-  # if ( NROW(MoveboutsIdx_cleaned) == 0 )
-  #   MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=(G_MIN_BOUTSCORE-1)]))
-  # if ( NROW(MoveboutsIdx_cleaned) == 0 )
-  #   MoveboutsIdx_cleaned <- as.numeric(names(tblMoveboutsScore[tblMoveboutsScore>=(G_MIN_BOUTSCORE-2)]))
+  boutsIdx <- which(datDomainTrajectory$BoutFlag > 0)
 
-  datDomainTrajectory$IndMotionBout <- 0
-  if (length(MoveboutsIdx))
-    datDomainTrajectory[MoveboutsIdx,]$IndMotionBout <- 1
-
-  blockMotionBoutFramesIDs <- split(MoveboutsIdx+as.numeric(TrackLetInfo$startFrame), 
+  ##Now Pass Though All Frames And Add Bout ID -(So we Include Non Bout Frames too )
+  blockBoutFramesIDs <- split(datDomainTrajectory$frameN, 
                                        ##Sum Increments When the following Indicators Of Changing Class Become TRUE (I added Track Splitters when Exp or Event Change)
-                                 cumsum(c(1, diff(MoveboutsIdx) != 1 )  ) 
+                                 cumsum(c(1, diff(datDomainTrajectory$BoutFlag) != 0 )  ) 
                                 )
-    
-  ##Here I should Extract the Straight Movements Only Not Turns
-  datMoveIds <- ldply (blockMotionBoutFramesIDs, data.frame)
-  names(datMoveIds) <- c("motionID","frameN")
-  motionStartFrame <- tapply(datMoveIds$frameN,datMoveIds$motionID,min)
-  motionEndFrame <- tapply(datMoveIds$frameN,datMoveIds$motionID,max)
-  motionMagnitude <- vPathLength_mm[(motionEndFrame) - as.numeric(TrackLetInfo$startFrame)   ] - vPathLength_mm[(motionStartFrame) - as.numeric(TrackLetInfo$startFrame)+ 1 ]
-  datTrackletMotion <- data.frame(motionID=names(motionEndFrame),motionStartFrame,motionEndFrame,travelDistance_mm=motionMagnitude,stringsAsFactors=FALSE)
-  datTrackletMotion <- datTrackletMotion[!is.na(datTrackletMotion$travelDistance_mm), ]
+  datBoutBlockIds <- ldply (blockBoutFramesIDs, data.frame)
+  ##Here Extract The Turn and Displacement of All Motion Bouts,  as classified by changes in Turn or Motion speed -
+#  datMoveIds <- ldply (blockMotionBoutFramesIDs, data.frame)
+  names(datBoutBlockIds) <- c("boutID","frameN")
+  boutStartFrame <- tapply(datBoutBlockIds$frameN,datBoutBlockIds$boutID,min)
+  boutStartFrame <- sapply((boutStartFrame) - as.numeric(TrackLetInfo$startFrame),max,1) + as.numeric(TrackLetInfo$startFrame) ##Fix Range TO Start form 1
+  boutEndFrame <- tapply(datBoutBlockIds$frameN,datBoutBlockIds$boutID,max)
+  boutEndFrame <- sapply((boutEndFrame) - as.numeric(TrackLetInfo$startFrame),max,1)+as.numeric(TrackLetInfo$startFrame) ##Fix Range TO Start form 1
+  turn_deg <- vAngleDisplacement[(boutEndFrame) - as.numeric(TrackLetInfo$startFrame) ] - vAngleDisplacement[(boutStartFrame) - as.numeric(TrackLetInfo$startFrame)  ]
+  pathLength_mm <- vPathLength_mm[(boutEndFrame) - as.numeric(TrackLetInfo$startFrame)] - vPathLength_mm[(boutStartFrame) - as.numeric(TrackLetInfo$startFrame)  ]
+  duration_sec <- (boutEndFrame - boutStartFrame)/head(datDomainTrajectory$fps,1)
+  vDeltaXFrames = vDeltaYFrames  <- vector()
+  for (i in 1:NROW(boutEndFrame))
+  {
+    vDeltaXFrames[i]        <- datDomainTrajectory[datDomainTrajectory$frameN == boutEndFrame[i],]$posX - datDomainTrajectory[datDomainTrajectory$frameN == boutStartFrame[i],]$posX 
+    vDeltaYFrames[i]        <- datDomainTrajectory[datDomainTrajectory$frameN == boutEndFrame[i],]$posY - datDomainTrajectory[datDomainTrajectory$frameN == boutStartFrame[i],]$posY 
+  }
+  travelDistance_mm   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2)*DIM_MMPERPX ## Path Length Calculated As Total Displacement
+  
+
+  if (length(datBoutBlockIds) == 1 )
+  { pathLength_mm <- 0
+    turn_deg <- 0 #There were No Turns detected but 1 frame- Handle Exception
+    travelDistance_mm <- 0
+  }
+
+  datTrackletBouts <- data.frame(boutID=names(boutEndFrame),boutStartFrame,boutEndFrame,duration_sec,travelDistance_mm=travelDistance_mm,pathLength_mm,turn_deg,stringsAsFactors=FALSE)
+  datTrackletBouts <- datTrackletBouts[!is.na(datTrackletBouts$travelDistance_mm), ]
   ##Set to correct order
-  orderSeq <- order(as.numeric(as.character(datTrackletMotion$motionID)) )
-  datTrackletMotion <- datTrackletMotion[orderSeq,]
+  orderSeq <- order(as.numeric(as.character(datTrackletBouts$boutID)) )
+  datTrackletBouts <- datTrackletBouts[orderSeq,]
+  ##Add Bout Sequence IDs and Non Bout IDs (=0) - So we can determine Pauses from Movements
+  rleBoutSequence <- rle(datDomainTrajectory$BoutFlag)
+  datTrackletBouts <- cbind(datTrackletBouts,boutSeqID=rleBoutSequence$values,boutFrames=rleBoutSequence$lengths)
   
   ### PLOT Trajectory Results ##
-  #plot(datDomainTrajectory$posX,datDomainTrajectory$posY,
-  #     col=c("purple","black","red")[datDomainTrajectory$IndMotionBout+1+(datDomainTrajectory$IndTurnBout > 0)*2],
-  #     pch =c(25,20,3)[datDomainTrajectory$IndMotionBout+1+(datDomainTrajectory$IndTurnBout > 0)*2],
-  #     cex=c(1,1,1.2)[datDomainTrajectory$IndMotionBout+1+(datDomainTrajectory$IndTurnBout > 0)*2] )  
+  plot(datDomainTrajectory$posX,datDomainTrajectory$posY,
+       col=c("black","red")[(datDomainTrajectory$BoutFlag>0)+1],
+       pch =c(25,20,3)[(datDomainTrajectory$BoutFlag>0)+1],
+       cex=c(1,1,1.2)[(datDomainTrajectory$BoutFlag>0)+1] )  
   
+  ## Turn  Speed Class
+  plot(as.numeric(TrackLetInfo$startFrame)+1:length(vTurnSpeed), vTurnSpeed,type="l")
+  points(TurnboutsIdx+as.numeric(TrackLetInfo$startFrame),vTurnSpeed[TurnboutsIdx],col="red")
+
+  ## Motion Speed Class
+  plot(as.numeric(TrackLetInfo$startFrame)+1:length(vEventSpeed), vEventSpeed,type="l")
+  points(boutsIdx+as.numeric(TrackLetInfo$startFrame),vEventSpeed[ boutsIdx],col="red")
   
-  
+  ### PLOT Trajectory Results ##
+  plot(datDomainTrajectory$posX,datDomainTrajectory$posY, col=c("black"),      pch =c(20),       cex=c(1) )  
+  points(datDomainTrajectory[boutsIdx,]$posX,datDomainTrajectory[boutsIdx,]$posY,       col=c("red"),       pch =c(20),       cex=c(1) )  
+
   ##Add The Frame Duration of Each Mode -Run-Length Encoding (RLE) Between Runs and Turns
-  return(list(datTurns=datTrackletTurns,datRuns=datTrackletMotion,Runs_rle=rle(datDomainTrajectory$IndMotionBout),fps=head(datDomainTrajectory$fps,1)  ) )
+  return(datTrackletBouts )
 }
 
   ## Go through Each Trajectory withing each Domain
@@ -3029,7 +3014,6 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
 
   
-  vAvailableDomainRadius <- 4
   for (DomainRadius in vAvailableDomainRadius)
   {   
       lMeanPathLengthAll <- list() ##Reset List
@@ -3038,7 +3022,8 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
       for (strGroup in names(lBoundedTrackInfo) )
       {
 
-        #TrackLetInfo <- lBoundedTrackInfo$LL["228-1-11",]
+        #TrackLetInfo <- lBoundedTrackInfo$LL["228-1-11",] ##Short Problematic
+        TrackLetInfo <- lBoundedTrackInfo$LL["228-1-17",] 
         for (TrackLetID in rownames(lBoundedTrackInfo[[strGroup]]))
         {
           TrackLetInfo <- lBoundedTrackInfo[[strGroup]][TrackLetID,]
@@ -3160,6 +3145,29 @@ Suprisingly, no difference between the distributions of free-paths (lengths of s
 
 ```{r path-turn-frequency per domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
   
+plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)  
+{
+   mxbreaks=seq(0,35,1)
+   strTitle <- paste("Number of turns in bounded path R",DomainRadius)
+ 
+  hist_D <- hist(unlist(turnsPerPath$TurnCount),breaks=mxbreaks, plot=FALSE )  
+  XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
+  if (!addPlot)
+  {
+  plot(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
+       main=strTitle,
+       xlab="Turn count ", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],
+       xlim=XLIM,
+       ylim=c(-2,2),
+       ylab="log N(l) %",xaxt="n" ,type="b")
+  }else {
+      points(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts)),type="b",
+      col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]] )
+  }
+  axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))  
+}   
+
+
   ## Count Turns Per Tracklet
   turnsPerPath <- list()
   for (strG in vGroups)
@@ -3178,23 +3186,29 @@ Suprisingly, no difference between the distributions of free-paths (lengths of s
   trackletID <- rownames(turnsPerPath[[strG]])[turnsPerPath[[strG]]$TurnCount > 70 & !is.na(turnsPerPath[[strG]]$TurnCount)]
   
 
+   addPlot <- FALSE
+  for (strG in vGroups)
+  {
+   datBoundedTrack <- turnsPerPath[[strG]]  
+   plotBoundedPathTurns(datBoundedTrack,strG,addPlot)
+   addPlot <- TRUE
+  }
     
   ##Clip Range
   #for (strG in vGroups)
   #  turnsPerPath[[strG]]$TurnCount <- sapply(turnsPerPath[[strG]]$TurnCount,min,c(70),na.rm=T )
   
-  # Number of Turns Per Path/tracklet crossing domain
-  hist(turnsPerPath[["LL"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
-  hist(turnsPerPath[["LE"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
-  
-  hist(turnsPerPath[["NL"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
-  hist(turnsPerPath[["NE"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
-  
-  hist(turnsPerPath[["DL"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
-  hist(turnsPerPath[["DE"]]$TurnCount, breaks=seq(0,35,1),ylim=c(0,200),xlim=c(0,20))
-  
+ ##Turn Magnitude
+  for (strG in vGroups)
+  {
+    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turnMagnitude) < 180,] 
+    hist(datGTurns$turnMagnitude,breaks=seq(-180,180,2),main=paste(strG,"R",DomainRadius) ) #ylim=c(0,80)
+  }
+
 ```
 
+*I do see an apparent difference in turn-frequency distributions or the distribution of free-path lengths!* within the paths in crossing a bounded circular domain.
+But that is strange cause the groups seem to macroscopically behave differently.
 
 # Full figure List of trajectories per experiment
 
