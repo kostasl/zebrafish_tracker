@@ -2951,17 +2951,25 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 #  datMoveIds <- ldply (blockMotionBoutFramesIDs, data.frame)
   names(datBoutBlockIds) <- c("boutID","frameN")
   boutStartFrame <- tapply(datBoutBlockIds$frameN,datBoutBlockIds$boutID,min)
-  boutStartFrame <- sapply((boutStartFrame) - as.numeric(TrackLetInfo$startFrame),max,1) + as.numeric(TrackLetInfo$startFrame) ##Fix Range TO Start form 1
+  boutStartIdx <- sapply((boutStartFrame) - as.numeric(TrackLetInfo$startFrame),max,1)  ##Fix Range TO Start from Idx 1
+  boutStartIdx <- sapply((boutStartIdx),min,length(vPathLength_mm))  ##Fix Range TO Start from Idx 1
+  
   boutEndFrame <- tapply(datBoutBlockIds$frameN,datBoutBlockIds$boutID,max)
-  boutEndFrame <- sapply((boutEndFrame) - as.numeric(TrackLetInfo$startFrame),max,1)+as.numeric(TrackLetInfo$startFrame) ##Fix Range TO Start form 1
-  turn_deg <- vAngleDisplacement[(boutEndFrame) - as.numeric(TrackLetInfo$startFrame) ] - vAngleDisplacement[(boutStartFrame) - as.numeric(TrackLetInfo$startFrame)  ]
-  pathLength_mm <- vPathLength_mm[(boutEndFrame) - as.numeric(TrackLetInfo$startFrame)] - vPathLength_mm[(boutStartFrame) - as.numeric(TrackLetInfo$startFrame)  ]
+  boutEndIdx <- sapply((boutEndFrame) - as.numeric(TrackLetInfo$startFrame),max,1)  ##Fix Range TO Start form 1
+  boutEndIdx <- sapply((boutEndIdx),min,length(vPathLength_mm))  ##Fix Range TO Start from Idx 1
+  
+  turn_deg <- vAngleDisplacement[(boutEndIdx) ] - vAngleDisplacement[(boutStartIdx) ]
+  pathLength_mm <- vPathLength_mm[(boutEndIdx) ] - vPathLength_mm[(boutStartIdx)]
   duration_sec <- (boutEndFrame - boutStartFrame)/head(datDomainTrajectory$fps,1)
   vDeltaXFrames = vDeltaYFrames  <- vector()
   for (i in 1:NROW(boutEndFrame))
-  {
-    vDeltaXFrames[i]        <- datDomainTrajectory[datDomainTrajectory$frameN == boutEndFrame[i],]$posX - datDomainTrajectory[datDomainTrajectory$frameN == boutStartFrame[i],]$posX 
-    vDeltaYFrames[i]        <- datDomainTrajectory[datDomainTrajectory$frameN == boutEndFrame[i],]$posY - datDomainTrajectory[datDomainTrajectory$frameN == boutStartFrame[i],]$posY 
+  {##Re Adjust To FrameN from IDx increment +1 above
+    if (boutEndFrame[i] > boutStartFrame[i])
+    {
+      vDeltaXFrames[i] <- datDomainTrajectory[datDomainTrajectory$frameN == (boutEndFrame[i]),]$posX - datDomainTrajectory[datDomainTrajectory$frameN == (boutStartFrame[i]),]$posX
+      vDeltaYFrames[i] <- datDomainTrajectory[datDomainTrajectory$frameN == (boutEndFrame[i]),]$posY - datDomainTrajectory[datDomainTrajectory$frameN == (boutStartFrame[i]),]$posY      }else{
+        vDeltaXFrames[i] = vDeltaYFrames[i] = 0
+      }
   }
   travelDistance_mm   <- sqrt(vDeltaXFrames^2+vDeltaYFrames^2)*DIM_MMPERPX ## Path Length Calculated As Total Displacement
   
@@ -3013,7 +3021,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vAvailableDomainRadius <- getAvailablePathDomainsSizes() 
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
 
-  
+  #DomainRadius <- 9.5
   for (DomainRadius in vAvailableDomainRadius)
   {   
       lMeanPathLengthAll <- list() ##Reset List
@@ -3023,7 +3031,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
       {
 
         #TrackLetInfo <- lBoundedTrackInfo$LL["228-1-11",] ##Short Problematic
-        #TrackLetInfo <- lBoundedTrackInfo$LL["228-1-17",] 
+        #TrackLetInfo <- lBoundedTrackInfo$LL["228-2-68",] 
         for (TrackLetID in rownames(lBoundedTrackInfo[[strGroup]]))
         {
           TrackLetInfo <- lBoundedTrackInfo[[strGroup]][TrackLetID,]
