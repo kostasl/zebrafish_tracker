@@ -34,6 +34,8 @@ Indeed although at the microscale larval do not move randomly, but have a rythm,
 >Therefore, the foraging dynamics that defines the final outcomes of biological encounters becomes in essence a stochastic process (e.g. searches in landscapes
 with low density of food sites).
 
+
+The *Levy foraging hypothesis* predicts a Levy distribution of move-steps during foraging when prey is scarce, but an exponential distribution when prey is abundant and searching is not required.
 In the absence of prey, the environment signals that prey is scarce, and in such conditions the optimal search strategy would be a Levy walk instead of brownian (#viswanathan1999optimizing).
 *My recordings allow for the examination on whether search strategies are modified in the presence and absence of prey, and how experience of prey may modify these behaviours.*
 I find that prey scarcity can modify larval general motion patterns in an adaptive manner such that larger areas are searched, yet prior experience of prey can strongly affect this behaviour.
@@ -292,9 +294,8 @@ loadDispersionData_norm <- function(tsec_timeWindow)
   if (file.exists(strFile))
   {
   try( {
-    
-    message("Loading ",strFile);
-    datDispersion <<- readRDS(file=strFile ) ;
+      message("Loading ",strFile);
+      datDispersion <<- readRDS(file=strFile ) ;
     }
     )
   }else
@@ -1202,8 +1203,8 @@ Nevertheless we find that the addition of prey *LF increase the path-lengths eve
 
 I next look at the Log-Log distribution of path-lengths for a specified dispersion boundary. 
 
-```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
-rm(datDispersion)
+```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
+
 tsec_timeWindow <- 0
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
 strTitle <- paste("Whole path ")
@@ -2847,9 +2848,12 @@ If Y is a mixture of K normal distributions with locations μk and scales σk wi
 \[p_Y\left(y \mid \lambda, \mu, \sigma \right) = \sum_{k=1}^K \lambda_k \, \textsf{normal}\left(y \mid \mu_k, \sigma_k\right).\]
 I will defer using Stan for this and go for my familiar Jags model implementation.
 -->
-# Trajectory micro-structure
+# Analysis Trajectory micro-structure explains macro movements.
 
 ## Bout-detection and turns
+
+To understand how the macroscopic observations within the domain-constrained paths arise, I take each domain size (R=1...11mm) and analyze paths into bout sequences, measuring the angle change, distance traveled (straight line from start-end of bout), and the path lenght inscribed during the bout. 
+I am looking to see if free path-lengths,  turn-frequency or magnitudes can explain why LE leave the domains quicker than naive larvae.
 
 ```{r  extract bout and turn structure from domain paths,eval=FALSE,out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
 
@@ -2860,10 +2864,11 @@ I will defer using Stan for this and go for my familiar Jags model implementatio
   
   MIN_BOUT_TURN_SPEED = 0.2
   G_THRES_MOTION_BOUT_SPEED = 0.2
-  MIN_PATH_LENGTH <- 0.5 ##Also Set  in Previous Chunk
-  MIN_TURN_SIZE_THRES <- 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
-  MIN_GAP_FRAMES_BETWEEN_TURNS <- 50
-  
+  MIN_PATH_LENGTH     = 0.5 ##Also Set  in Previous Chunk
+  MIN_TURN_SIZE_THRES = 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
+  MIN_GAP_FRAMES_BETWEEN_TURNS = 50
+
+########## BOUT DETECTION #################
 getTrajectoryTurnsAndRuns<- function(TrackLetInfo)  
 {
   ## Some rare and Bizarre Dublication Exist where exp,event, trackID & frame are the same 
@@ -2910,7 +2915,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vTurnSpeed[is.na(vTurnSpeed)] <- 0
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
 
-  ########## BOUT DETECTION #################
+  
   TurnboutsIdx <- NA
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
@@ -3021,12 +3026,14 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vAvailableDomainRadius <- getAvailablePathDomainsSizes() 
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
 
-  DomainRadius <- 9.5
   for (DomainRadius in vAvailableDomainRadius)
   {   
       lMeanPathLengthAll <- list() ##Reset List
   
-      lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+      strFile <- paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds")
+      if ( file.exists(strFile))
+        next() ##Skip Existing
+      lBoundedTrackInfo <- readRDS(file=strFile )
       for (strGroup in names(lBoundedTrackInfo) )
       {
 
@@ -3045,12 +3052,11 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 
       }##For Each Group
       
-      saveRDS(lMeanPathLengthAll,file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm2.rds"))
+      saveRDS(lMeanPathLengthAll,file=strFile)
+      
+
   }##For Each Domain Radius
   
-  for (TrackLetInfo in lBoundedTrackInfo[[strGroup]])
-    message(TrackLetInfo)
-
   
 ```
 
@@ -3078,50 +3084,53 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE)
   axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))  
 }   
 
-  ### Analyse Free Paths - Look at distribution Run lengths between turns 
-  DomainRadius <- 8
-
-  lMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds") )
-  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  ### Analyse Free Paths - Look at distribution Run lengths between turns For Each Domain Size
   
-  ## Combine data on Motion Bouts with expID and group / So I can compare pooled distributions of Run Lenghts
-  lRundf <- list()
-  lTurndf <- list()
-  for (strGroup in names(lBoundedTrackInfo) )
-  {
-    groupdomainTracks <- lBoundedTrackInfo[[strGroup]]
-    for (trackID in rownames( groupdomainTracks ) )
-    {
-      if (is.null(lMeanPathLengthAll[[trackID]]))
-        next()
-      
-        n = NROW(lMeanPathLengthAll[[trackID]])
-        ##Remove Rounding <0 errors
-        lMeanPathLengthAll[[trackID]]$travelDistance_mm <- lapply(lMeanPathLengthAll[[trackID]]$travelDistance_mm,max,c(0))
-        lRundf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]], 
-                                              DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
-                                              expID=rep(groupdomainTracks$expID[[trackID]],n),
-                                              EventID=rep(groupdomainTracks$EventID[[trackID]],n),
-                                              TrackletUID=rep(trackID,n),#groupdomainTracks$TrackletUID[[trackID]]
-                                              groupID=rep(strGroup,n) )
-        
-        #n = NROW(lMeanPathLengthAll[[trackID]]$datTurns)
-        #lTurndf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]]$datTurns, 
-        #                              DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
-        #                              expID=rep(groupdomainTracks$expID[[trackID]],n),
-        #                              EventID=rep(groupdomainTracks$EventID[[trackID]],n),
-        #                              TrackletUID=rep(trackID,n), ##groupdomainTracks$TrackletUID[[
-        #                              groupID=rep(strGroup,n) )
-
-      
-    }
-  }
-  datBoutsPerDomain <- do.call(rbind.data.frame,lRundf)
-  
-  cD <- as.character(DomainRadius) 
+  vAvailableDomainRadius <- getAvailablePathDomainsSizes()
   ldatFreePathD <- list()
-  ldatFreePathD[[cD ]] <- datBoutsPerDomain[datBoutsPerDomain$DomainRadius == cD ,]
+  for (DomainRadius in vAvailableDomainRadius)
+  {
+
+    strBoutAnalysisFile <- paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds")
+    if (!file.exists(strBoutAnalysisFile))
+      next()
+    
+    message("Processing R:",DomainRadius)
+    lMeanPathLengthAll <- readRDS(file=strBoutAnalysisFile )
+    lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+    
+    ## Combine data on Motion Bouts with expID and group / So I can compare pooled distributions of Run Lenghts
+    lRundf <- list()
+    lTurndf <- list()
+    for (strGroup in names(lBoundedTrackInfo) )
+    {
+      groupdomainTracks <- lBoundedTrackInfo[[strGroup]]
+      for (trackID in rownames( groupdomainTracks ) )
+      {
+        if (is.null(lMeanPathLengthAll[[trackID]]))
+          next()
+        
+          n = NROW(lMeanPathLengthAll[[trackID]])
+          ##Remove Rounding <0 errors
+          lMeanPathLengthAll[[trackID]]$travelDistance_mm <- lapply(lMeanPathLengthAll[[trackID]]$travelDistance_mm,max,c(0))
+          lRundf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]], 
+                                                DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
+                                                expID=rep(groupdomainTracks$expID[[trackID]],n),
+                                                EventID=rep(groupdomainTracks$EventID[[trackID]],n),
+                                                TrackletUID=rep(trackID,n),#groupdomainTracks$TrackletUID[[trackID]]
+                                                groupID=rep(strGroup,n) )
+      }
+    }
+    datBoutsPerDomain <- do.call(rbind.data.frame,lRundf)
+    
+    cD <- as.character(DomainRadius) 
   
+    ldatFreePathD[[cD ]] <- datBoutsPerDomain[datBoutsPerDomain$DomainRadius == cD ,]
+  
+  } ##For Each Domain Size
+  saveRDS(ldatFreePathD , file=paste0(strDataExportDir,"/stat_BOUT_freePathPerDomainSize.rds") )
+   
+                 
   ##Split Path Lengths Per Group
   freePathDat <- list()
   for (strG in vGroups)
@@ -3151,7 +3160,8 @@ Found Difference between the distributions of free-paths (lengths of straight ru
 *- Mean free path highest for LE *
 
 ```{r path-turn-frequency per domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
-  
+#  MIN_TURN_SIZE_THRES
+
 plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)  
 {
    mxbreaks=seq(0,max(turnsPerPath,na.rm=T),1)

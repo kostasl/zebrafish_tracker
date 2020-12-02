@@ -246,7 +246,8 @@ plotClusteredHuntEventsHist_norm <- function(datHEventDispersion,clustCol)
 
 #load(file=paste0(strDataExportDir,'jagsModelTestResults_NBMixGroupclustDispersion_All.RData') )
 datHEventDispersion <- loadHuntEventMergedWithPathStat(tsec_timeWindow ) 
- 
+datDispersion <- loadDispersionData_norm(tsec_timeWindow)
+
 ## Merge sparse Clustered Dispersions Results onto full Dispersion Data
 lparamsAll <- getMCMCNBGroupEstimatedParams(results.All,"All",2)
 if (!("clustID" %in% names(datSubDispersion)))
