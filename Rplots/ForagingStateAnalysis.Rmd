@@ -3368,6 +3368,7 @@ Found Difference between the distributions of free-paths (lengths of straight ru
 Number of bouts per free(straight)-path look the same between naive but it appears  *LF execute less bouts within a straight-path* (ie in a straight line before turning). Yet each bout is longer (at least in LE)
 
 Found that *inter-bout intervals are shorter for LF*, but also that long > 2 sec pauses are missing from LF, while naive fish will stay in one place, LF remain active.
+*LF does not do long-pauses between starting to move* as seen in both DF and NF.
 
 
 ```{r path-turn-frequency per domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
