@@ -3282,6 +3282,7 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
     
     addPlot <- TRUE
  }
+ title("Mean distance travelled by each bout")
  
  
  ### PLOT MEAN Free Path LENGTH PATH PER DOMAIN SIZE
@@ -3351,7 +3352,7 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
                              ldatBoutsPerDomain[[cD]]$boutSeqID == 0 &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,"duration_sec"]
     hist(vInterBoutInterval,
-              breaks=seq(0,10,0.1), main=paste("InteBout Interval ",strG," mu:",mean(vInterBoutInterval) )  )
+              breaks=seq(0,10,0.1), main=paste("Inter-Bout Interval ",strG," mu:",mean(vInterBoutInterval) )  )
   }
   
 ```
@@ -3364,7 +3365,7 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
 Found Difference between the distributions of free-paths (lengths of straight runs before a turn),  between groups, for a domain radius of 7mm
 *- Mean free path highest for LE *
 
-Number of bouts per free(straight)-path looks the same
+Number of bouts per free(straight)-path look the same between naive but it appears  *LF execute less bouts within a straight-path* (ie in a straight line before turning). Yet each bout is longer (at least in LE)
 
 Found that *inter-bout intervals are shorter for LF*, but also that long > 2 sec pauses are missing from LF, while naive fish will stay in one place, LF remain active.
 
