@@ -3064,7 +3064,8 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 
 calcFreePathLength <- function(datTrackBouts)
 {
-    if (NROW(datTrackBouts) > 1)
+    datStraightMotionBouts <- datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]
+    if (NROW(datStraightMotionBouts) > 1)
     {
       #  Calc Consecutive Straight Bouts As - Freepath - Assign same FreePathID to bouts between turnss
       blockFreePathBoutIDs <- split(datTrackBouts$boutID, 
