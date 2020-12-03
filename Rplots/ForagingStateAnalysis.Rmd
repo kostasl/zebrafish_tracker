@@ -3065,8 +3065,15 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 calcFreePathLength <- function(datTrackBouts)
 {
     datStraightMotionBouts <- datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]
+    
+    
+    
     if (NROW(datStraightMotionBouts) > 1)
     {
+      # Truncate long decimals -- avoid accumulating small Errors
+      # TODO: Check How pathLength is calculated and truncate the Accumulation of small error
+      datTrackBouts$pathLength_mm     <- as.integer(100*unlist(datTrackBouts$pathLength_mm))/100
+      datTrackBouts$travelDistance_mm <- as.integer(100*unlist(datTrackBouts$travelDistance_mm))/100
       #  Calc Consecutive Straight Bouts As - Freepath - Assign same FreePathID to bouts between turnss
       blockFreePathBoutIDs <- split(datTrackBouts$boutID, 
       # Sum Increments When the following Indicators Of Changing Class Become TRUE (I added Track Splitters when Exp or Event Change)
@@ -3080,12 +3087,18 @@ calcFreePathLength <- function(datTrackBouts)
       # Check freePathIds Correctly Assigned to bouts with the respective boutID 
       stopifnot(any(datTrackBouts[blockFreePathBoutIDs$boutID,]$freePathID == blockFreePathBoutIDs$freePathID) ) 
       # Free Path - (Exclude Turns add active-bouts and Glide-bouts paths going in  straight line)
-      lTrackFreePaths <- tapply(unlist(datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$travelDistance_mm), ##pathLength_mm
-                                unlist(datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$freePathID),sum )
+      lTrackFreePaths <- tapply((datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$travelDistance_mm), ##pathLength_mm
+                                (datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$freePathID),sum )
 
-    }else # Return Path lentgh of the only available Single Bout that is not a turn
-      lTrackFreePaths <- array(datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$pathLength_mm,1)
+    }else # Return Path length of the only available Single Bout that is not a turn
+      lTrackFreePaths <- array(datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$travelDistance_mm,1)
     
+    if (is.null(unlist(lTrackFreePaths) ))
+    {
+      lTrackFreePaths <- NA
+    }else{
+      stopifnot(any(lTrackFreePaths <  5*head(datTrackBouts$DomainRadius,1) ) )
+    }
 
   return(lTrackFreePaths)          
 }
@@ -3176,14 +3189,17 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
     
     cD <- as.character(DomainRadius) 
   
-    ldatBoutsPerDomain[[cD ]] <- datBoutsPerDomain[datBoutsPerDomain$DomainRadius == cD ,]
+    ldatBoutsPerDomain[[cD ]]     <- datBoutsPerDomain[datBoutsPerDomain$DomainRadius == cD ,]
     ldatFreePathsPerDomain[[cD ]] <- datFreePathsPerDomain[datFreePathsPerDomain$DomainRadius == cD ,]
   
   } ##For Each Domain Size
   saveRDS(ldatBoutsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds") )
   saveRDS(ldatFreePathsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds") )
    
-                 
+        
+  
+  
+           
   ##Calculate Mean Bout Length Per Group
   meanBoutLengthPathPerDomain <- list()
    i<- 0
@@ -3193,7 +3209,7 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
     for (strG in vGroups)
     {
         i <- i + 1
-        meanBoutLengthPathPerDomain[[i]] <-list( meanFreePath = mean( unlist(ldatFreePathD[[R]][ldatFreePathD[[R]]$groupID == strG & 
+        meanBoutLengthPathPerDomain[[i]] <-list( meanFreePath = mean( unlist(ldatFreePathD[[R]][ldatFreePathD[[R]]$groupID == strG &
                                                                        ldatFreePathD[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
                                                                    ldatFreePathD[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
                                                  sdFreePath = sd( unlist(ldatFreePathD[[R]][ldatFreePathD[[R]]$groupID == strG & 
@@ -3218,15 +3234,18 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
     for (strG in vGroups)
     {
         i <- i + 1
-        meanFreePathPerDomain[[i]] <-list( meanFreePath = mean(unlist(ldatFreePathsPerDomain[[R]][ldatFreePathsPerDomain[[R]]$groupID == strG,"freePathLength_mm"]), na.rm = T),
-                                                 sdFreePath = sd( unlist(ldatFreePathsPerDomain[[R]][ldatFreePathsPerDomain[[R]]$groupID == strG,"freePathLength_mm"]), na.rm = T),
-                                                 n = NROW(sd( unlist(ldatFreePathsPerDomain[[R]][ldatFreePathsPerDomain[[R]]$groupID == strG ,"freePathLength_mm"]), na.rm = T)),
+        # Include Only Paths With >0 - As 0 means *no free path!*
+        datFreePathsOfGroupInDomain <- ldatFreePathsPerDomain[[R]][ldatFreePathsPerDomain[[R]]$groupID == strG & ldatFreePathsPerDomain[[R]]$freePathLength_mm > 0,]
+        
+        meanFreePathPerDomain[[i]] <- list( meanFreePath = mean(unlist(datFreePathsOfGroupInDomain$freePathLength_mm), na.rm = T),
+                                                 sdFreePath = sd( unlist(datFreePathsOfGroupInDomain$freePathLength_mm), na.rm = T),
+                                                 n = NROW(sd( unlist(datFreePathsOfGroupInDomain$freePathLength_mm), na.rm = T)),
                                                 groupID=strG,
                                                 DomainRadius = as.numeric(R))
     }
   }
  meanFreePathPerDomain <- do.call(rbind.data.frame,meanFreePathPerDomain)
-  
+
  
  
  ### PLOT MEAN BOUT LENGTH PATH PER DOMAIN SIZE
@@ -3265,10 +3284,12 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
  
  
  ## Distribution of Free Path Lengths For Domain Size ##
-   DomainRadius<- 8
+   DomainRadius<- 10
    cD <- as.character(DomainRadius) 
    addPlot <- FALSE
-   maxFreePath <- max(tapply(unlist(ldatFreePathsPerDomain[[cD ]]$freePathLength_mm),ldatFreePathsPerDomain[[cD ]]$groupID,max,na.rm=TRUE))
+   datfreePathPerGroup <- data.frame(cbind(ldatFreePathsPerDomain[[cD ]]$freePathLength_mm, ldatFreePathsPerDomain[[cD ]]$groupID) )
+   maxFreePath <- max(tapply(unlist(ldatFreePathsPerDomain[[cD ]]$freePathLength_mm),
+                             unlist(ldatFreePathsPerDomain[[cD ]]$groupID),max,na.rm=TRUE))
   for (strG in vGroups)
   {
    datBoundedFreePath <- ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG,]
