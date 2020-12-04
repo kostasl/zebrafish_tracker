@@ -3060,8 +3060,8 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   
 ```
 
-```{r  analyse bout structure within domains, fig.show="hold",fig.cap="Distribution of free paths (Straight runs before turning)", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
-
+```{r  analyse bout structure within domains, fig.show="hold",fig.cap="Distribution of free paths (Straight runs before turning)", out.width="50%", echo=FALSE, cache=TRUE, results=TRUE}
+MIN_TURN_SIZE_THRES <- 6
 calcFreePathLength <- function(datTrackBouts)
 {
     datStraightMotionBouts <- datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]
@@ -3140,12 +3140,11 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
 }   # Plot Free Paths Distribution
 
 
-
-
-
-
-  ## Combine Bouts of a Radius onto a Single Data  frame for all Groups /Exp.
-  ### Analyze Free Paths - Look at distribution Run lengths between turns For Each Domain Size
+## Combine Bouts of a Radius onto a Single Data  frame and merge  Groups/Exp ID info
+### Analyze Free Paths - Look at distribution Run lengths between turns For Each Domain Size
+## Does not take long to calculate but in any case Saves Results To output Files :stat_BOUT_PerDomainSize.rds , stat_BOUT_FreePathPerDomainSize.rds
+makeBoutAndFreePathSummary <- function()
+{
   vAvailableDomainRadius <- getAvailablePathDomainsSizes()
   ldatBoutsPerDomain <- list()
   ldatFreePathsPerDomain <- list()
@@ -3201,20 +3200,24 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
     }
     datBoutsPerDomain <- do.call(rbind.data.frame,lRundf)
     datFreePathsPerDomain <- do.call(rbind.data.frame,lFreePathdf)
-    
-    
+
     cD <- as.character(DomainRadius) 
   
-    ldatBoutsPerDomain[[cD ]]     <- datBoutsPerDomain[datBoutsPerDomain$DomainRadius == cD ,]
-    ldatFreePathsPerDomain[[cD ]] <- datFreePathsPerDomain[datFreePathsPerDomain$DomainRadius == cD ,]
+    ldatBoutsPerDomain[[cD]]     <- datBoutsPerDomain[datBoutsPerDomain$DomainRadius == cD ,]
+    ldatFreePathsPerDomain[[cD]] <- datFreePathsPerDomain[datFreePathsPerDomain$DomainRadius == cD ,]
   
   } ##For Each Domain Size
   saveRDS(ldatBoutsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds") )
   saveRDS(ldatFreePathsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds") )
-   
+  
+  return(list(boutsPerDomain=ldatBoutsPerDomain,freePathsPerDomain=ldatFreePathsPerDomain))
+} ##Make Bout And Free Path Per DOmain Summary
         
-  
-  
+if (!file.exists(paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds")))
+  makeBoutAndFreePathSummary()
+
+ldatBoutsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds"))
+ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds"))
            
   ##Calculate Mean Bout Length Per Group
   meanBoutLengthPathPerDomain <- list()
@@ -3337,26 +3340,48 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
    message(paste(strG,"") )
    addPlot <- TRUE
   }
- # Plot Distribution Of Bout Count Per Free Path
+ 
+# Plot Distribution Of Bout Count Per Free Path
+addPlot <- FALSE
  for (strG in vGroups)
- {    vBoutCount <- unlist(ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG &
-                                                   ldatFreePathsPerDomain[[cD ]]$boutCount < 20,]$boutCount)
-       hist(vBoutCount,
-              breaks=50,main=paste("Bout Count",strG," mu:",mean(vBoutCount)) )
+ {    
+   vBoutCount <- unlist(ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG &
+                                                   ldatFreePathsPerDomain[[cD ]]$boutCount >0,]$boutCount)
+   hist_bT <- hist(vBoutCount,  breaks=seq(0,200,1),plot=FALSE )
+       message(paste("Bout Count",strG," mu:",mean(vBoutCount)) )
+    if (!addPlot){
+        plot(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),log="xy",col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b",xlim=c(1,50),
+             xlab="Number of bouts",ylab="Log normalized bout frequency")
+       }
+    else{
+        lines(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+    }
+   addPlot <- TRUE
  }
+ title("Frequency of Bouts between-turns (free-path)")
    
-  ## Interbout Intervals & Pauses
-  for (strG in vGroups)
-  {
+ 
+## Interbout Intervals & Pauses
+addPlot <- FALSE
+for (strG in vGroups)
+{
     vInterBoutInterval <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
                              ldatBoutsPerDomain[[cD]]$boutSeqID == 0 &
-                                ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,"duration_sec"]
-    hist(vInterBoutInterval,
-              breaks=seq(0,10,0.1), main=paste("Inter-Bout Interval ",strG," mu:",mean(vInterBoutInterval) )  )
-  }
-  
+                                ldatBoutsPerDomain[[cD]]$duration_sec > 0 ,"duration_sec"]
+    hist_IBI <- hist(vInterBoutInterval,
+              breaks=seq(0,60,0.2),plot=FALSE   )
+    message(paste("Inter-Bout Interval ",strG," mu:",mean(vInterBoutInterval) ))
+    if (!addPlot){
+        plot(hist_IBI$mids,hist_IBI$counts/sum(hist_IBI$counts),log="xy",col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b",xlim=c(0.1,20),
+             xlab="Inter-bouts interval (sec)",ylab="Log normalized inter-bout interval frequency")
+    }
+    else{
+        lines(hist_IBI$mids,hist_IBI$counts/sum(hist_IBI$counts),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+    }
+   addPlot <- TRUE
+}
+title("Inter-bout interval duration")
 ```
-
 
 
 
@@ -3403,20 +3428,19 @@ datTurnsPerDomain <- datBoutsPerDomain
   runsPerPath <- list()
   for (strG in vGroups)
   {
-      runsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
+      turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
                                                        datTurnsPerDomain$turn_deg > MIN_TURN_SIZE_THRES &
                                                        datTurnsPerDomain$boutSeqID > 0,],{
-      as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount")) ##COUNT Turns Pewr
+      as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount") ) ##COUNT Turns Pewr
     })
       runsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
                                                       datTurnsPerDomain$turn_deg < MIN_TURN_SIZE_THRES & 
                                                       datTurnsPerDomain$boutSeqID > 0,],{ ##boutSeqID > 0 Ensures we are counting Active bouts 
-      as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("RunCount")) ##COUNT Turns Pewr
+      as.data.frame( tapply(TrackletUID,TrackletUID, NROW ),col.names = c("RunCount")) ##COUNT Turns Pewr 
     })
 
-      
-      names(turnsPerPath[[strG]]) <- ("TurnCount")
-      names(runsPerPath[[strG]]) <- ("RunCount")
+   names(turnsPerPath[[strG]]) <- c("TurnCount")
+   names(runsPerPath[[strG]]) <- c("RunCount")
   }
   ## Count Fraction of Bouts Thaty Appears as Turns , aaginst Total Active bouts (runs+Turns)
   turnBoutFraction <- turnsPerPath[[strG]]/(runsPerPath[[strG]]+turnsPerPath[[strG]])
@@ -3441,13 +3465,23 @@ datTurnsPerDomain <- datBoutsPerDomain
   #for (strG in vGroups)
   #  turnsPerPath[[strG]]$TurnCount <- sapply(turnsPerPath[[strG]]$TurnCount,min,c(70),na.rm=T )
   
- ##Turn Magnitude
+ ##Turn Magnitude distributions
+  BW <- 3
+  addPlot <- FALSE
+  par(mfrow=c(3,2))
   for (strG in vGroups)
   {
     datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turn_deg) < 80 & abs(datTurnsPerDomain$turn_deg) > 1 &
                                     datTurnsPerDomain$boutSeqID >0,] ##No Pause / no-moving Bouts
-    hist(datGTurns$turn_deg,breaks=seq(-80,80,2),main=paste(strG,"R",DomainRadius) ) #ylim=c(0,80)
+    hist(datGTurns$turn_deg,breaks=seq(-80,80,2),main=paste(strG) ,xlab="Turn deg") #ylim=c(0,80)
+    #if (!addPlot)
+    #  plot(density(datGTurns$turn_deg,bw=BW ),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],lwd=3,ylim=c(0,0.08),main=strG)
+    #else
+     # lines(density(datGTurns$turn_deg,bw=BW),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],lwd=3)
+    
+    #addPlot <- TRUE
   }
+  mtext(paste("Turns while crossing domain R",DomainRadius), side=3, outer=TRUE, line=-1) 
 
 ```
 
