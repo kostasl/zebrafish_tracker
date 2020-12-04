@@ -3408,7 +3408,7 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
   XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
   if (!addPlot)
   {
-  plot(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
+      plot(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
        main=strTitle,
        xlab="Turn count ", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],
        xlim=XLIM,
@@ -3421,27 +3421,28 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
   axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))  
 }   
 
-datTurnsPerDomain <- datBoutsPerDomain
 
-  ## Count Turns Per Tracklet
-  turnsPerPath <- list()
-  runsPerPath <- list()
-  for (strG in vGroups)
-  {
-      turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
-                                                       datTurnsPerDomain$turn_deg > MIN_TURN_SIZE_THRES &
-                                                       datTurnsPerDomain$boutSeqID > 0,],{
-      as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount") ) ##COUNT Turns Pewr
-    })
-      runsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
-                                                      datTurnsPerDomain$turn_deg < MIN_TURN_SIZE_THRES & 
-                                                      datTurnsPerDomain$boutSeqID > 0,],{ ##boutSeqID > 0 Ensures we are counting Active bouts 
-      as.data.frame( tapply(TrackletUID,TrackletUID, NROW ),col.names = c("RunCount")) ##COUNT Turns Pewr 
-    })
+datTurnsPerDomain <- ldatBoutsPerDomain[["8"]]
 
-   names(turnsPerPath[[strG]]) <- c("TurnCount")
-   names(runsPerPath[[strG]]) <- c("RunCount")
-  }
+## Count Turns Per Tracklet
+turnsPerPath <- list()
+runsPerPath <- list()
+for (strG in vGroups)
+{
+    turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
+                                                     datTurnsPerDomain$turn_deg > MIN_TURN_SIZE_THRES &
+                                                     datTurnsPerDomain$boutSeqID > 0,],{
+    as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount") ) ##COUNT Turns Pewr
+  })
+    runsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
+                                                    datTurnsPerDomain$turn_deg < MIN_TURN_SIZE_THRES & 
+                                                    datTurnsPerDomain$boutSeqID > 0,],{ ##boutSeqID > 0 Ensures we are counting Active bouts 
+    as.data.frame( tapply(TrackletUID,TrackletUID, NROW ),col.names = c("RunCount")) ##COUNT Turns Pewr 
+  })
+
+ names(turnsPerPath[[strG]]) <- c("TurnCount")
+ names(runsPerPath[[strG]]) <- c("RunCount")
+}
   ## Count Fraction of Bouts Thaty Appears as Turns , aaginst Total Active bouts (runs+Turns)
   turnBoutFraction <- turnsPerPath[[strG]]/(runsPerPath[[strG]]+turnsPerPath[[strG]])
   
