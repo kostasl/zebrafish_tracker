@@ -1636,7 +1636,7 @@ Maybe this is no surprise:
 In the following, the *boundaries at 10 and 11 mm* have been concatenated:
     
 
-```{r distribution of number of paths per domain sizes,fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Distribution of number of domain crossings, with increasing domain radius shows effect of prey is to constraint movement within smaller central regions, as revealed by the breaking down of the linear invariant regime in evoked conditions. (*Note regions 10+11mm have been concatenated*)"}  
+```{r distribution of number of paths per domain sizes,fig.show="hold", out.width="100%", echo=FALSE, cache=TRUE,fig.cap="Distribution of number of domain crossings, with increasing domain radius shows effect of prey is to constraint movement within smaller central regions, as revealed by the breaking down of the linear invariant regime in evoked conditions. (*Note regions 10+11mm have been concatenated*)"}  
 datMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_RAllmm.rds") )
 
 bAddPlot<-FALSE
@@ -1680,7 +1680,7 @@ The *LL* somewhat maintain their longer-range paths, which cross larger boundari
 
 
 
-```{r stat-Path-calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r stat-Path-calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE ,warning=FALSE}
 
 #strG <- 'DE'
 #hist(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"DisplacementSq"],main=paste(strG,mean(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"DisplacementSq"],na.rm=TRUE) ),xlim=c(0,210))
@@ -3341,6 +3341,44 @@ ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreeP
    addPlot <- TRUE
   }
  
+   
+ ## Distribution of Free Path Lengths For Domain Size ##
+   DomainRadius<- 4
+   cD <- as.character(DomainRadius) 
+   addPlot <- FALSE
+   #datfreePathPerGroup <- data.frame(cbind(freePathLength_mm=ldatFreePathsPerDomain[[cD]]$freePathLength_mm,boutCount= ldatFreePathsPerDomain[[cD]]$boutCount, groupID=ldatFreePathsPerDomain[[cD ]]$groupID) )
+   maxFreePath <- max(tapply(unlist(ldatFreePathsPerDomain[[cD ]]$freePathLength_mm),
+                             unlist(ldatFreePathsPerDomain[[cD ]]$groupID),max,na.rm=TRUE))
+  for (strG in vGroups)
+  {
+   datBoundedFreePath <- ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG,]
+
+   ##Choose Turn-Motion Bouts, No Stops
+   plotBoundedFreePath(datBoundedFreePath,strG,addPlot,maxFreePath+1)
+   message(paste(strG,"") )
+   addPlot <- TRUE
+  }
+ 
+   
+ ## Distribution of Free Path Lengths For Domain Size ##
+   DomainRadius<- 10
+   cD <- as.character(DomainRadius) 
+   addPlot <- FALSE
+   #datfreePathPerGroup <- data.frame(cbind(freePathLength_mm=ldatFreePathsPerDomain[[cD]]$freePathLength_mm,boutCount= ldatFreePathsPerDomain[[cD]]$boutCount, groupID=ldatFreePathsPerDomain[[cD ]]$groupID) )
+   maxFreePath <- max(tapply(unlist(ldatFreePathsPerDomain[[cD ]]$freePathLength_mm),
+                             unlist(ldatFreePathsPerDomain[[cD ]]$groupID),max,na.rm=TRUE))
+  for (strG in vGroups)
+  {
+   datBoundedFreePath <- ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG,]
+
+   ##Choose Turn-Motion Bouts, No Stops
+   plotBoundedFreePath(datBoundedFreePath,strG,addPlot,maxFreePath+1)
+   message(paste(strG,"") )
+   addPlot <- TRUE
+  }
+ 
+   
+   
 # Plot Distribution Of Bout Count Per Free Path
 addPlot <- FALSE
  for (strG in vGroups)
