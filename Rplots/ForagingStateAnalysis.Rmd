@@ -62,10 +62,12 @@ Thus we explore whether animals evolved to exploit experience in their search pa
  Generally the LF group shows a bimodal distribution of path length  and an increase in the overall path length. which could be indicative of increased number of re-orientations. There is also a decrease in path-length between spontaneous and evoked conditions (most evident in LF )
 
 *Main Findings so far :*
-  1. LF larvae are quicker to disperse (as seen in 20 sec path duration) and larval normalized dispersion (see Marquez et al. 2019) 
-  2. 
-  
 
+  1. LF larvae are quicker to disperse (as seen in 20 sec path duration) and larval normalized dispersion (see Marquez et al. 2019) 
+  2. Path lengths over 5sec are bimodal, like dispersions; clearly for LF. LF show longer pathlengths in 5sec to controls in both conditions (Low occupancy in small path mode). 
+  3. Bimodal path length distribution in Evoked is modified towards longer paths and closing of bimodal gap, and extending path range 
+  4. Evoked Hunt events occur over the shorter movement sub-range/mode of the overall distribution
+  
 # Analysis of larval trajectories 
 
 ## Examine dispersion to reveal foraging state as in Marquez et al. 2019
@@ -744,21 +746,30 @@ I will use these max values to normalize dispersions for each larva (as in Marqu
 #### Compare distribution of max dispersion per larva
 
 Full Path:
-```{r Max-dispersion Full-Path histogram per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the full event trajectories - No time sliding time window " }
+```{r Max-dispersion histogram plots, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the full event trajectories - No time sliding time window,  and 20sec duration paths" }
+
 ##### Maximum Dispersions Per Larva- 
 hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
 {
-
+  XLIM <- c(0,15)
+  strFileName <- paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds")
+  message("Loaded max disp precalc :",strFileName)
+  datMaxDispersionPerLarva <- readRDS(file=strFileName )
+  nBreaks=seq(0,13,1)
+  ylimUp <- 35
+  
+  ## Max reported is across NE/NL - so checking either condition would suffice to get the max for each larva
+  datMaxDispersionPerLarva.LF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_larval_Dispersion
+  datMaxDispersionPerLarva.NF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_larval_Dispersion
+  datMaxDispersionPerLarva.DF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_larval_Dispersion 
+  
   # plot histograms
-  datMaxDispersionPerLarva.NF_hist <- hist((datMaxDispersionPerLarva.NF), breaks=nBreaks ,plot=FALSE)
+  datMaxDispersionPerLarva.NF_hist <- hist((datMaxDispersionPerLarva.NF),breaks=nBreaks, plot=FALSE)
+  datMaxDispersionPerLarva.LF_hist <- hist((datMaxDispersionPerLarva.LF) ,breaks=nBreaks, plot=FALSE)
+  datMaxDispersionPerLarva.DF_hist <- hist((datMaxDispersionPerLarva.DF) ,breaks=nBreaks, plot=FALSE)
   
-  datMaxDispersionPerLarva.LF_hist <- hist((datMaxDispersionPerLarva.LF)
-       , breaks=nBreaks, plot=FALSE)
-  
-  datMaxDispersionPerLarva.DF_hist <- hist((datMaxDispersionPerLarva.DF),
-       breaks=nBreaks,plot=FALSE)
-  
-  plot(datMaxDispersionPerLarva.NF_hist$mids,datMaxDispersionPerLarva.NF_hist$counts, main="Histogram of max-dispersal per larva ",
+  plot(datMaxDispersionPerLarva.NF_hist$mids,datMaxDispersionPerLarva.NF_hist$counts,
+        main=paste("Histogram of max-dispersal per larva ",tsec_timeWindow,"sec"),
                                        xlab="Max. dispersion  per larva (mm)", xlim=XLIM,
                                        ylab="Number of larvae",
                                       pch=pointTypeScheme$NL, lty=lineTypeL.NF,
@@ -774,32 +785,11 @@ hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
   legend("topleft",c("NF","LF","DF"),pch=c(pointTypeScheme$NL,pointTypeScheme$LL,pointTypeScheme$DL) , lty=c(lineTypeL.NF,lineTypeL.LF,lineTypeL.DF),col=c(colourDataScheme$NF$Evoked,colourDataScheme$LF$Evoked,colourDataScheme$DF$Evoked),lwd=3 ) 
 }
 
-  strFileName <- paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds")
-  message("Loaded max disp precalc :",strFileName)
-  datMaxDispersionPerLarva <- readRDS(file=strFileName )
-  nBreaks=seq(0,13,1)
-  ylimUp <- 35
-  XLIM <- c(0,15)
-  # extract Evoked to Spont max disp data
-  datMaxDispersionPerExp.NF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_exp_Dispersion
-  datMaxDispersionPerExp.NF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'NL' ,]$expID.E, ]$max_exp_Dispersion
-  datMaxDispersionPerExp.LF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_exp_Dispersion 
-  datMaxDispersionPerExp.LF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'LL' ,]$expID.E, ]$max_exp_Dispersion
-  datMaxDispersionPerExp.DF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_exp_Dispersion
-  datMaxDispersionPerExp.DF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'DL' ,]$expID.E, ]$max_exp_Dispersion
-  
-  ## Max reported is across NE/NL - so checking either condition would suffice to get the max for each larva
-  datMaxDispersionPerLarva.LF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_larval_Dispersion
-  datMaxDispersionPerLarva.NF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_larval_Dispersion
-  datMaxDispersionPerLarva.DF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_larval_Dispersion 
-  
 
 hist_MaxDispersionPerLarva(0)
-```
-But when confined to a sliding window of say 20 sec
-```{r Max-dispersion 20sec histogram per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the 20sec sliding window of trajectories " }
 hist_MaxDispersionPerLarva(20)
 ```
+
 
 ```{r  max-dispersion densities compare groups, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,eval=FALSE }
  ## plot est, Densities Compare Spont to Evoked
@@ -821,6 +811,16 @@ Maybe these could make sense under an expected reward paradigm, given experience
 
 ```{r max-dispersion per larva densities split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE }
  ## plot est, Densities Compare Spont to Evoked
+
+
+  # # extract Evoked to Spont max disp data
+   datMaxDispersionPerExp.NF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_exp_Dispersion
+   datMaxDispersionPerExp.NF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'NL' ,]$expID.E, ]$max_exp_Dispersion
+   datMaxDispersionPerExp.LF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_exp_Dispersion 
+   datMaxDispersionPerExp.LF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'LL' ,]$expID.E, ]$max_exp_Dispersion
+   datMaxDispersionPerExp.DF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_exp_Dispersion
+   datMaxDispersionPerExp.DF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'DL' ,]$expID.E, ]$max_exp_Dispersion
+   
 
  ylimUp <- 0.5
   pBW <- 1
@@ -869,11 +869,12 @@ hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Length,breaks=xbre
 ```
 
 Comparing between general and hunt-event lengths it appears:
+
   - path lengths can be bimodal, like dispersions, in spontaneous conditions
   - LF Show higher motility to controls in both conditions
   - LF Spont. Shows overal higher motility to controls- Low occupancy in small movement mode
   - Locomotion in Evoked conditions  shows higher motility, and motion range, than Spontaneous. 
-  - Evoked Hunt events occur over the higher movement sub range than the one observed overall   
+  - Evoked Hunt events occur over the shorter movement sub-range/mode of the overall distribution
 
 To better examine tendencies to move towards dispersing trajectories we need to account for the effect of general motion, ie the length of a trajectory.
 Here I examine recent dispersion as a ratio of recent trajectory length (5 sec window). A ration of 0.5 means larva moved in a straight line, as dispersal is the *radius* not the diameter of the  circle encompassing the recent trajectory

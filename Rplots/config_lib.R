@@ -162,7 +162,7 @@ setEnvFileLocations <- function(strSetName)
     strTrackInputPath <<- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
     strDatDir         <<- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
     strDataExportDir  <<- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
-    strDataStore      <<-  "/home/kostasl/nextcloud-client/10/Nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/" ##Where Large Data Is stored because Dropbox-Overflows
+    strDataStore      <<-  "/home/kostasl/Nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/home/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots"
   }  
 }
