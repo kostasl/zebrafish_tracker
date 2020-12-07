@@ -67,6 +67,11 @@ Thus we explore whether animals evolved to exploit experience in their search pa
   2. Path lengths over 5sec are bimodal, like dispersions; clearly for LF. LF show longer pathlengths in 5sec to controls in both conditions (Low occupancy in small path mode). 
   3. Bimodal path length distribution in Evoked is modified towards longer paths and closing of bimodal gap, and extending path range 
   4. Evoked Hunt events occur over the shorter movement sub-range/mode of the overall distribution
+  5. Path lengths are longer in Evoked for the same dispersion size , more clearly so for LF (see also pathL/Dispersion Ratio).
+  6. Invariance of Mean-Path Length when crossing bounded domain r -across groups- is evidence of stochastic process.
+  7. Mean residence time within domain clearly Shorter for LF, and most for LE.
+  8. Path length distributions drop as power-law like after $l> 2 \times r$ (check exponent).
+  
   
 # Analysis of larval trajectories 
 
@@ -783,11 +788,13 @@ hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
                                       col=colourDataScheme$DF$Evoked, ylim=c(0,ylimUp),type="b")
   
   legend("topleft",c("NF","LF","DF"),pch=c(pointTypeScheme$NL,pointTypeScheme$LL,pointTypeScheme$DL) , lty=c(lineTypeL.NF,lineTypeL.LF,lineTypeL.DF),col=c(colourDataScheme$NF$Evoked,colourDataScheme$LF$Evoked,colourDataScheme$DF$Evoked),lwd=3 ) 
+  
+  return(datMaxDispersionPerLarva)
 }
 
 
-hist_MaxDispersionPerLarva(0)
-hist_MaxDispersionPerLarva(20)
+datMaxDispersionPerLarva_All <- hist_MaxDispersionPerLarva(0)
+datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(20)
 ```
 
 
@@ -812,7 +819,7 @@ Maybe these could make sense under an expected reward paradigm, given experience
 ```{r max-dispersion per larva densities split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE }
  ## plot est, Densities Compare Spont to Evoked
 
-
+datMaxDispersionPerLarva <- datMaxDispersionPerLarva_20sec
   # # extract Evoked to Spont max disp data
    datMaxDispersionPerExp.NF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_exp_Dispersion
    datMaxDispersionPerExp.NF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'NL' ,]$expID.E, ]$max_exp_Dispersion
