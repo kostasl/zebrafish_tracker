@@ -61,7 +61,10 @@ Thus we explore whether animals evolved to exploit experience in their search pa
  I need to understand what changes in these walks, in terms of step length -
  Generally the LF group shows a bimodal distribution of path length  and an increase in the overall path length. which could be indicative of increased number of re-orientations. There is also a decrease in path-length between spontaneous and evoked conditions (most evident in LF )
 
-
+*Main Findings so far :*
+  1. LF larvae are quicker to disperse (as seen in 20 sec path duration) and larval normalized dispersion (see Marquez et al. 2019) 
+  2. 
+  
 
 # Analysis of larval trajectories 
 
@@ -272,17 +275,6 @@ mergeRangeOfLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,dat
 ```{r  merge hunt-events with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,results=FALSE,message=FALSE,warning=FALSE }
 source("DataLabelling/labelHuntEvents_lib.r")
 source("HuntingEventAnalysis_lib.r")
-  
-
-#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
-##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
-## Link Evoked and Spontaneous Trajectories
-datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
-datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
-datHEventDispersion <<- loadHuntEventMergedWithPathStat(5)
-
 
 #loadDispersionData(forceReload = TRUE,tsec_timeWindow = 0)
 ##Load Dispersion Data, check if data.frame has been extended with larva ranges, and merge if need to  have been added - 
@@ -313,6 +305,16 @@ loadDispersionData_norm <- function(tsec_timeWindow)
   
   return(datDispersion)
 }
+
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
+## Link Evoked and Spontaneous Trajectories
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+datHEventDispersion <<- loadHuntEventMergedWithPathStat(5)
+
 
 loadDispersionData_norm(tsec_timeWindow)
 ## Check for max Calc Error
