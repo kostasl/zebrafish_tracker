@@ -71,6 +71,8 @@ Thus we explore whether animals evolved to exploit experience in their search pa
   6. Invariance of Mean-Path Length when crossing bounded domain r -across groups- is evidence of stochastic process.
   7. Mean residence time within domain clearly Shorter for LF, and most for LE.
   8. Path length distributions drop as power-law like after $l> 2 \times r$ (check exponent).
+  9. With increasing domain $r$, Spontaneous conditions (all groups), but also LL, show *scale-invariance in the fraction of boundary crossings* against $r$. 
+  
   
   
 # Analysis of larval trajectories 
@@ -2831,9 +2833,8 @@ Thus  not only are Dispersion and mean Path length near linearly related, but so
 *In the absence of prey, mean displacement is likely higher within dispersion sizes of 3-8mm*.
 
 # Statistical comparison of motion-trajectories 
-
+<!--Clustering Code Separated into a sub RMarkdown-->
 ```{r statistical Model-fitting, child='ForagingStateAnalysis_ModelFitting.Rmd',eval=FALSE}
-##Clustering Code Separated into a sub RMarkdown
 ```
   
 
