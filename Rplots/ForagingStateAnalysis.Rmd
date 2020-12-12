@@ -69,9 +69,31 @@ Thus we explore whether animals evolved to exploit experience in their search pa
   4. Evoked Hunt events occur over the shorter movement sub-range/mode of the overall distribution
   5. Path lengths are longer in Evoked for the same dispersion size , more clearly so for LF (see also pathL/Dispersion Ratio).
   6. Invariance of Mean-Path Length when crossing bounded domain r -across groups- is evidence of stochastic process.
-  7. Mean residence time within domain clearly Shorter for LF, and most for LE.
+  7. Mean *residence time* within domain clearly Shorter for LF, and most for LE.
   8. Path length distributions drop as power-law like after $l> 2 \times r$ (check exponent).
-  9. With increasing domain $r$, Spontaneous conditions (all groups), but also LL, show *scale-invariance in the fraction of boundary crossings* against $r$. 
+  9. Distribution Of Path Length Shows Power law drop-off for lengths exceeding the $2*r$ of the domain (chord distrib. seen in [ref].)
+  10. With increasing domain $r$, Spontaneous conditions (all groups), but also LL, show *scale-invariance in the fraction of boundary crossings* against $r$, *but NL,DL prefers <6mm domains*
+  11. *LF disperse faster* than controls, with *LE dispersing the fastest*.
+  12. *LF move faster*, making longer path lengths over time but also leavin the ROI earlier;
+  13. There are almost no paths with more than 40sec duration in LE, but this increases to 130sec for LL. *Probability of path duration clearly drops faster for increasing durations for LE*, than controls
+  14. MSD over path duration clearly higher for LE, with max overshooting within 10sec,rather than 100 as in controls.
+  15. Evidence of super-diffusion as MSD grows supra linearly to path-length (Within some range < 21mm), *MSD growth distinct for LE*
+  16. MSD vs Dispersion are linearly related, with a drop-off in Evoked conditions over large dispersions.
+  17. -Clustering And Bimodality results-.
+  18. Spontaneous Hunt events associated with higher dispersions than Evoked, only for LF. NF, look the same, DF, do the opposite to LF.
+  19. Hunt-outcome is not associated to Dispersion, but only in  LL do all successful events belong to fast-cluster 
+  20. Hunting probability is higher in the large dispersion cluster for all groups.
+  21. **Bout Structure**:
+    1. LF Lower number of of bouts per free-path
+    2. Longer distance traveled per bout *longer bouts*
+    3. Bout durations decrease for LF,NF in evoked conditions, but not for DF.
+    4. Lower number of bouts between turns (maybe)
+    5. LF does not do long-pause/ Waits, in contrast to DF, NF
+    6. Lower mean number of turns when crossing Domain 10mm for DE, and then LL,DL, and then LE- NE has highest
+    7. Increasing turn Modes around 40-50 deg, in spontaneous conditions, across groups. (Surprise as these turn modes are associated with Successful hunts)
+    
+    
+    
   
   
   
@@ -1302,7 +1324,7 @@ hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
   strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
 
   #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),
+  hist(y,breaks=seq(0,max(47,y)+1,2),
   main=strTitle,
   col=colourDataScheme[[strGroupID]]  )
   
@@ -1310,13 +1332,13 @@ hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
   y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
   strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
   #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),main=strTitle,
+  hist(y,breaks=seq(0,max(47,y)+1,2),main=strTitle,
        col=colourDataScheme[[strGroupID]]  )
   
   y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
   strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
   #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),
+  hist(y,breaks=seq(0,max(47,y)+2,2),
        main=strTitle , col=colourDataScheme[[strGroupID]]  )
 }
 
@@ -3450,6 +3472,7 @@ Number of bouts per free(straight)-path look the same between naive but it appea
 Found bimodal distribution and that *inter-bout intervals are shorter for LF*, but also that long > 2 sec pauses are missing from LF, while naive fish will stay in one place, LF remain active.
 *LF do not do long-pauses between starting to move, especially in absence of prey*, which is contrary to what is seen for both DF and NF.
 
+## Turn counts per path
 
 ```{r path-turn-frequency per domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
 #  MIN_TURN_SIZE_THRES
@@ -3474,7 +3497,7 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
       col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]] )
   }
   axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))  
-}   
+}#END OF FUNCTION   
 
 
 datTurnsPerDomain <- ldatBoutsPerDomain[["8"]]
@@ -3555,6 +3578,126 @@ These are related to the macroscopic observations differently.
 I also discover that the turn distributions of spontaneous events show a mode-tendency towards larger turns, near the 35-45 degrees, such as that I have previously found 
 is associated with successful hunt events
 
+
+## Bout Durations
+
+```{r bout-duration per domain size, out.width="33%", echo=FALSE, cache=FALSE, results=FALSE}
+#  MIN_TURN_SIZE_THRES
+#CD is radius of domain
+plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
+{
+    vBoutDuration <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,"duration_sec"]
+    xbreaks <- c(seq(0,0.5,0.02),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
+    
+    #xbreaks <- seq(0,5,0.01)
+    hist_BI <- hist(vBoutDuration,
+              breaks=xbreaks,plot=FALSE)
+    
+    
+    if (!addPlot){
+        plot(hist_BI$mids,hist_BI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             type="b",xlim=c(0.01,3),log="xy",
+             xlab="bout duration (sec)",ylab="Log Density bout duration ")
+    }else{
+        lines(hist_BI$mids,hist_BI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+    }
+   print(paste("Bout Duration ",strG," mu:",mean(vBoutDuration) ))
+}
+
+## Interbout Intervals & Pauses - Density
+addPlot <- FALSE
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'NE',FALSE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'NL',TRUE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'LE',FALSE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'LL',TRUE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'DE',FALSE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'DL',TRUE,cD)
+   
+
+title("Bout duration ")
+
+legend("bottomright", legend=c(names(colourDataScheme)[4:9]),
+         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]) ),
+         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+
+#}
+
+ datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,]
+boxplot(duration_sec ~ groupID,data=datPathBouts,main="Bout duration",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.5) )
+
+# Stat check if differences in bout duration between conditions are true
+t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","duration_sec"])
+t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","duration_sec"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","duration_sec"])
+```
+Hint that in LE bouts last longer, which could also explain the that LE travel quicker.
+The same is true in NF, where presence of prey makes bout duration shorter, but *importantly bout duration in DF does not change between prey and non-prey conditions*.
+
+## Bout distance
+
+```{r bout-distance for fixed domain size, out.width="33%", echo=FALSE, cache=FALSE, results=FALSE}
+#  MIN_TURN_SIZE_THRES
+#CD is radius of domain
+plotBoundedPathBoutDistance <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
+{
+    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"travelDistance_mm"])
+    xbreaks <- c(seq(0,4.5,0.25),seq(4.51,20,0.5)) #,seq(10,60,1)
+    #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
+    
+    #xbreaks <- seq(0,5,0.01)
+    hist_BD <- hist(vBoutDistance, breaks=xbreaks,plot=FALSE)
+    
+    if (!addPlot){
+        plot(hist_BD$mids,hist_BD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             type="b",xlim=c(0.01,15),ylim=c(0.001,50),log="xy",
+             xlab="bout distance (mm)",ylab="Log Density bout distance ")
+    }else{
+        lines(hist_BI$mids,hist_BI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+    }
+   print(paste("Bout Distance ",strG," mu:",mean(vBoutDuration) ))
+}
+
+## Interbout Intervals & Pauses - Density
+addPlot <- FALSE
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'NE',FALSE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'NL',TRUE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'LE',FALSE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'LL',TRUE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'DE',FALSE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'DL',TRUE,cD)
+   
+
+title("Bout Distance ")
+
+legend("bottomright", legend=c(names(colourDataScheme)[4:9]),
+         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]) ),
+         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+
+#}
+
+ datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,]
+ datPathBouts$travelDistance_mm <- unlist(datPathBouts$travelDistance_mm)
+ 
+boxplot(travelDistance_mm ~ groupID,data=datPathBouts,main="Bout Distance",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,3) )
+
+# Stat check if differences in bout duration between conditions are true
+t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","duration_sec"])
+t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","duration_sec"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","duration_sec"])
+```
 
 
 # Full figure List of trajectories per experiment
