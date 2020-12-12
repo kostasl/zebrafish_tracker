@@ -3662,7 +3662,7 @@ plotBoundedPathBoutDistance <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD
              type="b",xlim=c(0.01,15),ylim=c(0.001,50),log="xy",
              xlab="bout distance (mm)",ylab="Log Density bout distance ")
     }else{
-        lines(hist_BI$mids,hist_BI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+        lines(hist_BD$mids,hist_BD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
     }
    print(paste("Bout Distance ",strG," mu:",mean(vBoutDuration) ))
 }
