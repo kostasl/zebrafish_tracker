@@ -3659,12 +3659,12 @@ plotBoundedPathBoutDistance <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD
     
     if (!addPlot){
         plot(hist_BD$mids,hist_BD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
-             type="b",xlim=c(0.01,15),ylim=c(0.001,50),log="xy",
+             type="b",xlim=c(0.1,15),ylim=c(0.001,50),log="xy",
              xlab="bout distance (mm)",ylab="Log Density bout distance ")
     }else{
         lines(hist_BD$mids,hist_BD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
     }
-   print(paste("Bout Distance ",strG," mu:",mean(vBoutDuration) ))
+   print(paste("Bout Distance ",strG," mu:",mean(vBoutDistance) ))
 }
 
 ## Interbout Intervals & Pauses - Density
@@ -3679,7 +3679,7 @@ plotBoundedPathBoutDistance(ldatBoutsPerDomain,'DL',TRUE,cD)
 
 title("Bout Distance ")
 
-legend("bottomright", legend=c(names(colourDataScheme)[4:9]),
+legend("topright", legend=c(names(colourDataScheme)[4:9]),
          col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]) ),
          pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
@@ -3699,6 +3699,8 @@ t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[da
 t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","duration_sec"])
 ```
 
+*Bout distance distribution shows increases for LF, compared to DF and NF. In all groups bout distances are shorter in evoked rather than spontaneous conditions.
+I need to verify that this is not due to hunt events.
 
 # Full figure List of trajectories per experiment
 
