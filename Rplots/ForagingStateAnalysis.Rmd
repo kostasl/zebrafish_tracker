@@ -84,14 +84,14 @@ Thus we explore whether animals evolved to exploit experience in their search pa
   19. Hunt-outcome is not associated to Dispersion, but only in  LL do all successful events belong to fast-cluster 
   20. Hunting probability is higher in the large dispersion cluster for all groups.
   21. **Bout Structure**:
-    1. LF Lower number of of bouts per free-path
-    2. Longer distance traveled per bout *longer bouts*
-    3. Bout durations decrease for LF,NF in evoked conditions, but not for DF.
-    4. Lower number of bouts between turns (maybe)
-    5. LF does not do long-pause/ Waits, in contrast to DF, NF
+    1. LF has Lower number of bouts per free-path
+    2. LF has Longer distance traveled per bout - *longer bouts*
+    3. Bout duration and distances decrease for LF,NF in evoked conditions, but not for DF.
+    4. Lower number of bouts between turns (maybe).
+    5. LF does not do long-pause/ Waits, in contrast to DF, NF.
     6. Lower mean number of turns when crossing Domain 10mm for DE, and then LL,DL, and then LE- NE has highest
     7. Increasing turn Modes around 40-50 deg, in spontaneous conditions, across groups. (Surprise as these turn modes are associated with Successful hunts)
-    
+    8. *Bout Speed increases in absence of prey*, with LF having the fastest bouts on average and DF the slowest.
     
     
   
@@ -3579,9 +3579,9 @@ I also discover that the turn distributions of spontaneous events show a mode-te
 is associated with successful hunt events
 
 
-## Bout Durations
+## Bout durations
 
-```{r bout-duration per domain size, out.width="33%", echo=FALSE, cache=FALSE, results=FALSE}
+```{r bout-duration for a domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
 #  MIN_TURN_SIZE_THRES
 #CD is radius of domain
 plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
@@ -3637,8 +3637,11 @@ t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[da
 t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","duration_sec"])
 t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","duration_sec"])
 ```
-Hint that in LE bouts last longer, which could also explain the that LE travel quicker.
-The same is true in NF, where presence of prey makes bout duration shorter, but *importantly bout duration in DF does not change between prey and non-prey conditions*.
+
+
+It appears that LE and NE bouts last longer, than their respective evoked conditions (LL,NL).
+The *LE, bouts are the longest*, which could also explain why LE travel faster (mean path length for fixed duration is longer).
+The same is true in NF, where presence of prey makes bout duration shorter, but importantly *bout duration in DF does not change between prey and non-prey conditions*.
 
 ## Bout distance
 
@@ -3694,13 +3697,87 @@ boxplot(travelDistance_mm ~ groupID,data=datPathBouts,main="Bout Distance",
         col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,3) )
 
 # Stat check if differences in bout duration between conditions are true
-t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","duration_sec"])
-t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","duration_sec"])
-t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","duration_sec"])
+t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"])
+#t.test(datPathBouts[datPathBouts$groupID == "DL","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
 ```
 
-*Bout distance distribution shows increases for LF, compared to DF and NF. In all groups bout distances are shorter in evoked rather than spontaneous conditions.
-I need to verify that this is not due to hunt events.
+*Bout distances appear longer in LF, compared to DF and NF*.
+In all groups bout distances are shorter in evoked rather than spontaneous conditions. 
+This agrees with spontaneous conditions having longer bout durations.
+I need to verify that this applies to exploratory movements, and i is not simply due to hunt event bouts being shorter in evoked conditions when reacting to prey.
+
+# Bout Speed
+
+```{r bout-speed for fixed domain size, out.width="33%", echo=FALSE, cache=FALSE, results=FALSE}
+#  MIN_TURN_SIZE_THRES
+#CD is radius of domain
+plotBoundedPathBoutSpeed <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
+{
+    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"travelDistance_mm"])
+    
+    vBoutDuration <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"duration_sec"])
+    
+    vBoutSpeed <- vBoutDistance/vBoutDuration
+    xbreaks <- c(seq(0,20,1),seq(20.1,200,5)) #,seq(10,60,1)
+    #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
+    
+    #xbreaks <- seq(0,5,0.01)
+    hist_BS <- hist(vBoutSpeed, breaks=xbreaks,plot=FALSE)
+    
+    if (!addPlot){
+        plot(hist_BS$mids,hist_BS$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             type="b",xlim=c(0.1,55),ylim=c(0.001,50),log="xy",
+             xlab="bout speed (mm/sec)",ylab="Log Density bout speed ")
+    }else{
+        lines(hist_BS$mids,hist_BS$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+    }
+   print(paste("Bout Speed ",strG," mu:",mean(vBoutSpeed,na.rm=T) ))
+}
+
+## Interbout Intervals & Pauses - Density
+addPlot <- FALSE
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'NE',FALSE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'NL',TRUE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'LE',FALSE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'LL',TRUE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'DE',FALSE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'DL',TRUE,cD)
+   
+
+title("Bout Distance ")
+
+legend("topright", legend=c(names(colourDataScheme)[4:9]),
+         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]) ),
+         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+
+#}
+
+ datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,]
+ datPathBouts$travelDistance_mm <- unlist(datPathBouts$travelDistance_mm)
+ 
+boxplot(travelDistance_mm/duration_sec ~ groupID,data=datPathBouts,main="Bout speed",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,40) )
+
+# Stat check if differences in bout duration between conditions are true
+t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"])
+#t.test(datPathBouts[datPathBouts$groupID == "DL","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+```
+**Bout Speed increases in the absence of prey**
+LE produce the fastest bouts (6.9 mm/sec), while DF are slower than naive, which means size does not explain speed increase.
 
 # Full figure List of trajectories per experiment
 
