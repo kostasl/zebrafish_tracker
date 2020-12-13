@@ -3853,7 +3853,7 @@ plotBoundedPathBoutSpeed <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="1
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"duration_sec"])
     
     vBoutSpeed <- vBoutDistance/vBoutDuration
-    xbreaks <- c(seq(0,20,1),seq(20.1,200,5)) #,seq(10,60,1)
+    xbreaks <- c(seq(0.0,20,1),seq(20.1,200,5)) #,seq(10,60,1)
     #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
     
     #xbreaks <- seq(0,5,0.01)
@@ -3861,7 +3861,7 @@ plotBoundedPathBoutSpeed <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="1
     
     if (!addPlot){
         plot(hist_BS$mids,hist_BS$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
-             type="b",xlim=c(0.1,55),ylim=c(0.001,50),log="xy",
+             type="b",xlim=c(0.5,55),ylim=c(0.001,50),log="xy",
              xlab="bout speed (mm/sec)",ylab="Log Density bout speed ")
     }else{
         lines(hist_BS$mids,hist_BS$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
