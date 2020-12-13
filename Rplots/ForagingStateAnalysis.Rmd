@@ -2885,7 +2885,7 @@ I will defer using Stan for this and go for my familiar Jags model implementatio
 
 ## Bout-detection and turns
 
-To understand how the macroscopic observations within the domain-constrained paths arise, I take each domain size (R=1...11mm) and analyze paths into bout sequences, measuring the angle change, distance traveled (straight line from start-end of bout), and the path lenght inscribed during the bout. 
+To reveal how the macroscopic observations within the domain-constrained paths arise, I take each domain size (R=1...11mm) and analyze paths into bout sequences, measuring the angle change, distance traveled (straight line from start-end of bout), and the path lenght inscribed during the bout. 
 I am looking to see if free path-lengths,  turn-frequency or magnitudes can explain why LE leave the domains quicker than naive larvae.
 
 ```{r  extract bout and turn structure from domain paths,eval=FALSE,out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
@@ -3370,7 +3370,7 @@ ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreeP
 
    ##Choose Turn-Motion Bouts, No Stops
    plotBoundedFreePath(datBoundedFreePath,strG,addPlot,maxFreePath+1)
-   message(paste(strG,"") )
+   #message(paste(strG,"") )
    addPlot <- TRUE
   }
  
@@ -3388,7 +3388,7 @@ ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreeP
 
    ##Choose Turn-Motion Bouts, No Stops
    plotBoundedFreePath(datBoundedFreePath,strG,addPlot,maxFreePath+1)
-   message(paste(strG,"") )
+   #message(paste(strG,"") )
    addPlot <- TRUE
   }
  
@@ -3406,7 +3406,7 @@ ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreeP
 
    ##Choose Turn-Motion Bouts, No Stops
    plotBoundedFreePath(datBoundedFreePath,strG,addPlot,maxFreePath+1)
-   message(paste(strG,"") )
+   #message(paste(strG,"") )
    addPlot <- TRUE
   }
  
@@ -3445,7 +3445,9 @@ for (strG in vGroups)
     #xbreaks <- seq(0,5,0.01)
     hist_IBI <- hist(vInterBoutInterval,
               breaks=xbreaks,plot=FALSE   )
-    message(paste("Inter-Bout Interval ",strG," mu:",mean(vInterBoutInterval) ))
+    
+    message(paste("Mean inter-Bout Interval ",strG," :",mean(vInterBoutInterval) ))
+    
     if (!addPlot){
         plot(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
              type="b",xlim=c(0.01,50),log="xy",
@@ -3537,7 +3539,7 @@ for (strG in vGroups)
    datBoundedTrack <- turnsPerPath[[strG]]  
    plotBoundedPathTurns(datBoundedTrack,strG,addPlot)
    addPlot <- TRUE
-   message(paste(strG,":", mean(unlist( turnsPerPath[[strG]] ),na.rm=TRUE )   ) )
+   message(paste("Mean turn count per free-path ",strG,":", mean(unlist( turnsPerPath[[strG]] ),na.rm=TRUE )   ) )
   }
     
   ##Clip Range
@@ -3564,7 +3566,7 @@ for (strG in vGroups)
     addPlot <- i%%2
     i = i +1 
     
-    message(strG," Mean turn when crossing domain R",DomainRadius," mu: ",mean(datGTurns$turn_deg))
+    message(strG," Mean turn when crossing domain R",DomainRadius," : ",mean(datGTurns$turn_deg))
   }
   #mtext(paste("Turns while crossing domain R",DomainRadius), side=3, outer=TRUE, line=-1) 
 
@@ -3625,7 +3627,7 @@ legend("bottomright", legend=c(names(colourDataScheme)[4:9]),
  datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,]
-boxplot(duration_sec ~ groupID,data=datPathBouts,main="Bout duration",
+boxplot(duration_sec ~ groupID,data=datPathBouts,main="Pooled bout durations",
         col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.35) )
 
 # Stat check if differences in bout duration between conditions are true
@@ -3682,7 +3684,7 @@ datMeanBoutDurationPerLarva <- do.call(rbind.data.frame,lmeanBoutDurationPerLarv
 datMeanBoutDurationPerLarva$duration_sec <- as.numeric(datMeanBoutDurationPerLarva$duration_sec)
 
 
-boxplot(duration_sec ~ groupID,data=datMeanBoutDurationPerLarva,main="Mean Bout duration per larva",
+boxplot(duration_sec ~ groupID,data=datMeanBoutDurationPerLarva,main="Mean bout duration per larva",
         col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.35) )
 
 
@@ -3757,17 +3759,81 @@ boxplot(travelDistance_mm ~ groupID,data=datPathBouts,main="Bout Distance",
         col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,3) )
 
 # Stat check if differences in bout duration between conditions are true
-t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","travelDistance_mm"])
-t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
-t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","travelDistance_mm"])
-t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "LE","travelDistance_mm"],datPathBouts[datPathBouts$groupID == "LL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","travelDistance_mm"],datPathBouts[datPathBouts$groupID == "DL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","travelDistance_mm"],datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"])
 #t.test(datPathBouts[datPathBouts$groupID == "DL","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+
+
+
+# Group Bout Duration compared using means per Larva
+datPathBoutsDistance_perLarva <- tapply(unlist(datPathBouts$travelDistance_mm),list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
+
+############################
+# Group Distribution of mean bout duration among larvae- 
+histMeanBoutDistancePerLarva <- function(datPathBoutsDistance_perLarva,strG,addPlot = FALSE)
+{
+xbreaks <- c(seq(0,1,0.1),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    hist_GBD <- hist(datPathBoutsDistance_perLarva[,strG],breaks=xbreaks, plot=FALSE)
+  
+      if (!addPlot){
+          plot(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+               type="b",xlim=c(0.01,3),ylim=c(0.0,10),#log="xy",
+               xlab="bout distance (sec)",ylab=" Density bout distance ")
+      }else{
+          lines(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout distance ",strG," mu:",mean(datPathBoutsDistance_perLarva[,strG],na.rm=TRUE) ))
+}
+
+# Group Distribution of mean bout duration among larvae- 
+densMeanBoutDistancePerLarva <- function(datPathBoutsDistance_perLarva,strG,addPlot = FALSE)
+{
+#xbreaks <- c(seq(0,0.5,0.01),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    dens_GBD <- density(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,strG]),strG],bw=0.2 )
+  
+      if (!addPlot){
+          plot(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],
+               type="l",lwd=3,xlim=c(0.0,3),ylim=c(0.0,5),#log="xy",
+               xlab="bout distance (mm)",ylab=" Density bout distance ",main="mean bout distance per larva")
+      }else{
+          lines(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],type="l",lwd=3) #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout distance ",strG," mu:",mean(datPathBoutsDistance_perLarva[,strG],na.rm=TRUE) ))
+}
+
+# BOXPLOT OF Group Duration
+lmeanBoutDistancePerLarvaInGroup <- list()
+for (strG in vGroups)
+{
+  lmeanBoutDistancePerLarvaInGroup[[strG]] <- 
+    cbind.data.frame( distance_mm=as.numeric(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,strG]) ,strG]),groupID=strG)
+}# For each Group - Plot larval mean bout duration
+datMeanBoutDistancePerLarva <- do.call(rbind.data.frame,lmeanBoutDistancePerLarvaInGroup)
+datMeanBoutDistancePerLarva$distance_mm <- as.numeric(datMeanBoutDistancePerLarva$distance_mm)
+
+
+boxplot(distance_mm ~ groupID,data=datMeanBoutDistancePerLarva,main="Mean bout distance per larva",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,3) )
+
+
+#title("Mean larval bout duration ")
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"NE",FALSE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"NL",TRUE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"LE",FALSE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"LL",TRUE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"DE",FALSE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"DL",TRUE)
+
+#histMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"LL",FALSE)
+
 ```
 
 *Bout distances appear longer in LF, compared to DF and NF*.
-In all groups bout distances are shorter in evoked rather than spontaneous conditions. 
+In all groups bout distances are longer in  spontaneous conditions, and shorter in evoked conditions, except for DF. 
 This agrees with spontaneous conditions having longer bout durations.
-I need to verify that this applies to exploratory movements, and i is not simply due to hunt event bouts being shorter in evoked conditions when reacting to prey.
+I need to verify that this applies to exploratory movements, and i is not simply due to hunt event bouts being shorter in evoked conditions when reacting to prey, but in anycase the DF shows that this is not due to growth, and likely not due to interacting with prey either - because in DF bout distance does not change with test conditions.
 
 # Bout Speed
 
@@ -3835,9 +3901,79 @@ t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[da
 t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","travelDistance_mm"])
 t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"])
 #t.test(datPathBouts[datPathBouts$groupID == "DL","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+
+
+
+# Group Bout Duration compared using means per Larva
+datPathBoutsSpeed_perLarva <- tapply(unlist(datPathBouts$travelDistance_mm)/unlist(datPathBouts$duration_sec),list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
+
+############################
+# Group Distribution of mean bout duration among larvae- 
+histMeanBoutSpeedPerLarva <- function(datPathBoutsSpeed_perLarva,strG,addPlot = FALSE)
+{
+xbreaks <- c(seq(0,10,0.5),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    hist_GBD <- hist(datPathBoutsSpeed_perLarva[,strG],breaks=xbreaks, plot=FALSE)
+  
+      if (!addPlot){
+          plot(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+               type="b",xlim=c(0.01,3),ylim=c(0.0,10),#log="xy",
+               xlab="bout speed (mm/sec)",ylab=" Density bout speed ")
+      }else{
+          lines(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout speed ",strG," mu:",mean(datPathBoutsSpeed_perLarva[,strG],na.rm=TRUE) ))
+}
+
+# Group Distribution of mean bout duration among larvae- 
+densMeanBoutSpeedPerLarva <- function(datPathBoutsSpeed_perLarva,strG,addPlot = FALSE)
+{
+#xbreaks <- c(seq(0,0.5,0.01),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    dens_GBD <- density(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,strG]),strG],bw=1 )
+  
+      if (!addPlot){
+          plot(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],
+               type="l",lwd=3,xlim=c(0.0,15),ylim=c(0.0,1),#log="xy",
+               xlab="bout speed (mm/sec)",ylab=" Density bout speed ",main="mean bout speed per larva")
+      }else{
+          lines(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],type="l",lwd=3) #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout speed ",strG," mu:",mean(datPathBoutsSpeed_perLarva[,strG],na.rm=TRUE) ))
+}
+
+# BOXPLOT OF Group Duration
+lmeanBoutSpeedPerLarvaInGroup <- list()
+for (strG in vGroups)
+{
+  lmeanBoutSpeedPerLarvaInGroup[[strG]] <- 
+    cbind.data.frame( speed_mmsec=as.numeric(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,strG]) ,strG]),groupID=strG)
+}# For each Group - Plot larval mean bout duration
+datMeanBoutSpeedPerLarva <- do.call(rbind.data.frame,lmeanBoutSpeedPerLarvaInGroup)
+datMeanBoutSpeedPerLarva$speed_mmsec <- as.numeric(datMeanBoutSpeedPerLarva$speed_mmsec)
+
+
+boxplot(speed_mmsec ~ groupID,data=datMeanBoutSpeedPerLarva,main="Mean bout speed per larva",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,40) )
+
+
+#title("Mean larval bout duration ")
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"NE",FALSE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"NL",TRUE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"LE",FALSE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"LL",TRUE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"DE",FALSE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"DL",TRUE)
+
+
+
 ```
 **Bout Speed increases in the absence of prey**
-LE produce the fastest bouts (6.9 mm/sec), while DF are slower than naive, which means size does not explain speed increase.
+*LE produce the fastest bouts (6.9 mm/sec)*, while DF are slower than naive, which means size does not explain speed increase.
+It is also shown that DF does not change bout speed with prey abundance, (same is true for distance and speed of DF).
+
+
+
+
+
 
 # Full figure List of trajectories per experiment
 
