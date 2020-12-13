@@ -2862,13 +2862,13 @@ Thus  not only are Dispersion and mean Path length near linearly related, but so
 
 # Identifying states of foraging behaviour
 
-```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=TRUE}
+```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=FALSE}
 ```
 
 
 # Hunt initiation and foraging state
 
-```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
+```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=FALSE}
 ```
 
 
@@ -3591,9 +3591,7 @@ plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,"duration_sec"]
     xbreaks <- c(seq(0,0.5,0.02),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
-    #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
-    
-    #xbreaks <- seq(0,5,0.01)
+
     hist_BI <- hist(vBoutDuration,
               breaks=xbreaks,plot=FALSE)
     
@@ -3616,26 +3614,88 @@ plotBoundedPathBoutDuration(ldatBoutsPerDomain,'LE',FALSE,cD)
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'LL',TRUE,cD)
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'DE',FALSE,cD)
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'DL',TRUE,cD)
-   
-
-title("Bout duration ")
-
+title("Bout duration (Pooled)")
 legend("bottomright", legend=c(names(colourDataScheme)[4:9]),
          col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]) ),
          pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
 #}
 
+# Compare Pooled Bout Durations
  datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,]
 boxplot(duration_sec ~ groupID,data=datPathBouts,main="Bout duration",
-        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.5) )
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.35) )
 
 # Stat check if differences in bout duration between conditions are true
 t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","duration_sec"])
 t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","duration_sec"])
 t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","duration_sec"])
+
+
+
+# Group Bout Duration compared using means per Larva
+datPathBoutsDuration_perLarva <- tapply(datPathBouts$duration_sec,list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
+
+############################
+# Group Distribution of mean bout duration among larvae- 
+histMeanBoutDurationsPerLarva <- function(datPathBoutsDuration_perLarva,strG,addPlot = FALSE)
+{
+xbreaks <- c(seq(0,0.5,0.01),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    hist_GBD <- hist(datPathBoutsDuration_perLarva[,strG],breaks=xbreaks, plot=FALSE)
+  
+      if (!addPlot){
+          plot(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+               type="b",xlim=c(0.01,0.3),ylim=c(0.0,20),#log="xy",
+               xlab="bout duration (sec)",ylab=" Density bout duration ")
+      }else{
+          lines(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout duration ",strG," mu:",mean(datPathBoutsDuration_perLarva[,strG]) ))
+}
+
+# Group Distribution of mean bout duration among larvae- 
+densMeanBoutDurationsPerLarva <- function(datPathBoutsDuration_perLarva,strG,addPlot = FALSE)
+{
+#xbreaks <- c(seq(0,0.5,0.01),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    dens_GBD <- density(datPathBoutsDuration_perLarva[!is.na(datPathBoutsDuration_perLarva[,strG]),strG],bw=0.02 )
+  
+      if (!addPlot){
+          plot(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],
+               type="l",lwd=3,xlim=c(0.01,0.3),ylim=c(0.0,20),#log="xy",
+               xlab="bout duration (sec)",ylab=" Density bout duration ",main="mean bout duration per larva")
+      }else{
+          lines(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],type="l",lwd=3) #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout duration ",strG," mu:",mean(datPathBoutsDuration_perLarva[,strG]) ))
+}
+
+# BOXPLOT OF Group Duration
+lmeanBoutDurationPerLarvaInGroup <- list()
+for (strG in vGroups)
+{
+  lmeanBoutDurationPerLarvaInGroup[[strG]] <- 
+    cbind.data.frame( duration_sec=as.numeric(datPathBoutsDuration_perLarva[!is.na(datPathBoutsDuration_perLarva[,strG]) ,strG]),groupID=strG)
+}# For each Group - Plot larval mean bout duration
+datMeanBoutDurationPerLarva <- do.call(rbind.data.frame,lmeanBoutDurationPerLarvaInGroup)
+datMeanBoutDurationPerLarva$duration_sec <- as.numeric(datMeanBoutDurationPerLarva$duration_sec)
+
+
+boxplot(duration_sec ~ groupID,data=datMeanBoutDurationPerLarva,main="Mean Bout duration per larva",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.35) )
+
+
+#title("Mean larval bout duration ")
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"NE",FALSE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"NL",TRUE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"LE",FALSE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"LL",TRUE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"DE",FALSE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"DL",TRUE)
+
+
+
 ```
 
 
@@ -3645,7 +3705,7 @@ The same is true in NF, where presence of prey makes bout duration shorter, but 
 
 ## Bout distance
 
-```{r bout-distance for fixed domain size, out.width="33%", echo=FALSE, cache=FALSE, results=FALSE}
+```{r bout-distance for fixed domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
 #  MIN_TURN_SIZE_THRES
 #CD is radius of domain
 plotBoundedPathBoutDistance <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
@@ -3711,7 +3771,7 @@ I need to verify that this applies to exploratory movements, and i is not simply
 
 # Bout Speed
 
-```{r bout-speed for fixed domain size, out.width="33%", echo=FALSE, cache=FALSE, results=FALSE}
+```{r bout-speed for fixed domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
 #  MIN_TURN_SIZE_THRES
 #CD is radius of domain
 plotBoundedPathBoutSpeed <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
@@ -3797,7 +3857,9 @@ Note that dispersion is normalized based on the trajectories from Spontaneous an
 Here it should be noted that in Marquez et al 2019 "To facilitate comparison across animals, the dispersal distance was normalized to the range of each animal."
 That means this is not a division by the maximum dispersal of each animal, but it also makes use of the minimum.
 
+
 #### LF - Evoked /Spontaneous Trajectories
+
 ```{r  NBMixClustered-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
 
 loaddatAllFrames()
