@@ -1827,7 +1827,7 @@ plotLogLogDistribution_MSD <- function(lLinModel_GE,tInter,addPlot=FALSE)
 }
 
 ##Calc the mean pooled MSD from each integration Window and show mean diffusion
-plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
+plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogLog=T)
 {
   vMSD <- vector()
   vTimeWindow <- vector()
@@ -1845,11 +1845,17 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
    # return(0)
   }
   idxOrder <- order(vTimeWindow)
-  xLim <- c(0,max(vTimeWindow ) *1.10 )
+  xLim <- c(0.1,max(vTimeWindow ) *1.10 )
   #xLim <- c(2,110 *1.10 ) ##Zero covers -The overall Path Duration
   if (!addPlot)
   {
-    plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0,200),
+    if(!bLogLog)
+          plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0.1,200),
+         col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
+         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
+    else
+        plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0.1,200),log="xy",
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
@@ -1860,9 +1866,13 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
   
   lines(vTimeWindow[idxOrder],vMSD[idxOrder], col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
+
+  vHurst <- log(vTimeWindow[idxOrder])/log(vMSD[idxOrder])
+  message("mean Hurst Exponent:",mean(vHurst[2:length(vHurst)])/2)
+  return(cbind.data.frame(time=vTimeWindow[idxOrder],MSD=vMSD[idxOrder]) )
 }
 
-##Scan Though all Time Integrations in Data and plot histogram and get MSD mean valus
+##Scan Though all Time Integrations in Data and plot histogram and get MSD mean values
 processMSDPerIntegrationTime <- function(ldatDispersion,strG,lMSDSummaryData,bAddPlot = FALSE)
 {
 
@@ -2428,28 +2438,32 @@ The duration-contrained MSDs however do not look  similar between conditions and
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
-  plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE)
+bLog <- TRUE
+  d<- plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,TRUE,bLog)
+  d<- plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,TRUE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,TRUE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE,bLog)
   title(main="Pooled Mean")
-  legend("topright", legend=names(colourDataScheme)[4:9],
+  legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
 
   
-  plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE)
+  d<-plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,FALSE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,FALSE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE,bLog)
+  d<-plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE,bLog)
   title(main="Group Mean")
-  legend("topright", legend=names(colourDataScheme)[4:9],
+  legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+  
+  ##Hurst Exponent per time
+   cbind(d$time, (log(d$time)/log(d$MSD))/2)
 # legend("topright", 
 #            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
 #                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
@@ -2854,8 +2868,12 @@ for (strG in vGroups)
 ```
 
 I find that a the principle of invariance holds between dispersion and Mean Displacement (calculated as $\sqrt{MSD}$  ) that appears almost consistent across groups.
-Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement, albet some differences between conditions are apparrent,
+Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement, albeit some differences between conditions appear to exist,
 *In the absence of prey, mean displacement is likely higher within dispersion sizes of 3-8mm*.
+
+Note, the reason why  mean displacement be larger to dispersion is because dispersion is the *radius containing the path*, and thus the largest mean displacement can only be less or equal to the the diameter, twice the dispersion size.
+
+
 
 # Statistical comparison of motion-trajectories 
 <!--Clustering Code Separated into a sub RMarkdown-->
@@ -3461,7 +3479,7 @@ for (strG in vGroups)
     }
    addPlot <- TRUE
 }
-title("Inter-bout interval duration")
+title("Inter-bout interval ")
 
 
 ```
@@ -3476,6 +3494,11 @@ Number of bouts per free(straight)-path look the same between naive but it appea
 
 Found bimodal distribution and that *inter-bout intervals are shorter for LF*, but also that long > 2 sec pauses are missing from LF, while naive fish will stay in one place, LF remain active.
 *LF do not do long-pauses between starting to move, especially in absence of prey*, which is contrary to what is seen for both DF and NF.
+
+## Correlation of bout length to interbout interval
+
+Analytically if the step-length is decoupled from the pause time then we can treat them separatelly within in a correlated random walk processes (CRWP) 
+
 
 ## Turn counts per path
 
