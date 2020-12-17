@@ -1510,7 +1510,7 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   
 
    lBoundedTrackInfo <- list()
-    for (DomainRadius in c(9,10)) #mm
+    for (DomainRadius in c(9) ) #mm
     {
      for(g in vGroups)
      {
