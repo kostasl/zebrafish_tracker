@@ -11,12 +11,14 @@ output:
   bibliography: ForagingStateAnalysis.bib
 ---
 
+Animals forage in a changing environment, and they must adjust their foraging to these changes. Learning and memory play a key role in making these adjustments.
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook, analysing zebrafish tracking data 
-for foraging state as indicated by Marquez et al 2019. I aim to extend my previous work on the experience driven ontogeny of hunting skill [now published in eLife](https://elifesciences.org/articles/55119/figures) 
-Zebrafish appear to spontaneously switch between an exploratory and exploitation phase that grossly defines their behavioural mode. 
+My current aim to extend my previous work on the experience driven ontogeny of hunting skill [now published in eLife](https://elifesciences.org/articles/55119/figures) to examine the effect of experience on foraging. 
+
+This notebook, initially aimed at analysing zebrafish tracking data for foraging state as indicated by Marquez et al 2019.
+According to Marquez et al  2020, Zebrafish appear to spontaneously switch between an exploratory and exploitation phase that grossly defines their behavioural mode.  
 The state can be read out be measuring trajectory dispersal over a fixed period of time (5 sec), 
-According to Marquez et al  2020 Measures of dispersal should appear bimodal, with short dispersals indicating exploitation phase.
+Measures of dispersal should appear bimodal, with short dispersals indicating exploitation phase.
 
 Given our behavioural recordings are not continuous, and exclude periods when the larva are swimming around the boundary, it is not certain whether we would be able to detect exploratory phases. These tend to be circling around the border of the petri-dish, as the fish attempts to swim forward. Nevertheless as we are interested in the mode-state under which hunt-events are executed, then we expect that some of these events should be executed during exploratory behaviour and this should be detectable - (dispersal, movement rates etc).
 In essense the internal state and the its neural correlates as reported by Marquez et al 2019 can combined with my results on the learned aspects of efficient hunting to study if this foraging state swithcing is also influenced by experience and  whether differences in hunting kinematics correlate with internal state.
@@ -30,10 +32,12 @@ In essense the internal state and the its neural correlates as reported by Marqu
 Establishing a correlation of hunting state with the kinematics of efficient hunting can point us to the underlying circuits, because the circuits that correlate with foraging state, but also with capture-success,  have already been examined by Marquez et al 2019. So it would be posssible to use those to guide our search for the circuits that bring about the kinematics adaptations of success. 
 
 In a new twist of this work *I discover structure in the larval trajectories that indicates a random search process*. 
-Indeed although at the microscale larval do not move randomly, but have a rythm, it may well be the case (E.Raposo et al. 2009 ):
+Indeed although at the micro-scale larval do not move randomly, but have a rythm, it may well be the case (E.Raposo et al. 2009 ):
 >Therefore, the foraging dynamics that defines the final outcomes of biological encounters becomes in essence a stochastic process (e.g. searches in landscapes
 with low density of food sites).
 
+
+The *Levy foraging hypothesis* predicts a Levy distribution of move-steps during foraging when prey is scarce, but an exponential distribution when prey is abundant and searching is not required.
 In the absence of prey, the environment signals that prey is scarce, and in such conditions the optimal search strategy would be a Levy walk instead of brownian (#viswanathan1999optimizing).
 *My recordings allow for the examination on whether search strategies are modified in the presence and absence of prey, and how experience of prey may modify these behaviours.*
 I find that prey scarcity can modify larval general motion patterns in an adaptive manner such that larger areas are searched, yet prior experience of prey can strongly affect this behaviour.
@@ -42,8 +46,8 @@ The concept of a characteristic scale is used extensively in statistical physics
 In Levy walks/flights the step lengths (ie straight path lengths) are said tp have no characteristic scale, because they are power-law distributed.
 
 
-In (#humphries2010environmental) it shown that searching animals adaptively adjust their optimal patterns of movement to different environmental resource distributions. 
-It remains uknwown, however, whether the motions patterns arose as due to adaptive behaviour or whether observed patterns were an emergent property of the spatial distribution of prey (#sims2008scaling)
+In (#humphries2010environmental) it shown that searching animals adaptivelly adjust their optimal patterns of movement to different environmental resource distributions. 
+It remains unknown, however, whether the motions patterns arose as due to adaptive behaviour or whether observed patterns were an emergent property of the spatial distribution of prey (#sims2008scaling) 
 
 >What is the most efficient strategy to adopt while searching for randomly placed sites whose
 locations are not apriori known for situations when the searcher has information only about
@@ -53,14 +57,52 @@ its close vicinity? (see  E P Raposo et al 2009)
 
 >From an evolutionary perspective, it is certainly pertinent to ask if efficient encounter rates are driven from selective pressures that systematically force organism adaption toward some optimal (or sub-optimal) solution.
 
+However (#reynolds2018passive) shows that Levy like walks can arise simply through flowing in a turbulent environemnt and he generally argues that as movement patterns they can be easy and ubiquitous to obtain, and argues that that these are not about evolving optiml searches (#reynolds2015liberating).
+
+
 Here use prior prey experience can alter the foraging search patterns in the scarcity and abundance of prey, to test wether changes in search patterns can be are adaptive, and not simply a result of interacting with dense prey environments. Thus if prior expectations on abandunce of prey  can modify motion, then changes in search patterns can be shown to be adaptive.
 Thus we explore whether animals evolved to exploit experience in their search patterns, and whether they can use optimal search strategies such as Levy flights/walks when prey is scarce.
 
  I need to understand what changes in these walks, in terms of step length -
  Generally the LF group shows a bimodal distribution of path length  and an increase in the overall path length. which could be indicative of increased number of re-orientations. There is also a decrease in path-length between spontaneous and evoked conditions (most evident in LF )
 
+*Main Findings so far :*
 
+  1. LF larvae are quicker to disperse (as seen in 20 sec path duration) and larval normalized dispersion (see Marquez et al. 2019) 
+  2. Path lengths over 5sec are bimodal, like dispersions; clearly for LF. LF show longer pathlengths in 5sec to controls in both conditions (Low occupancy in small path mode). 
+  3. Bimodal path length distribution in Evoked is modified towards longer paths and closing of bimodal gap, and extending path range 
+  4. Evoked Hunt events occur over the shorter movement sub-range/mode of the overall distribution
+  5. Path lengths are longer in Evoked for the same dispersion size , more clearly so for LF (see also pathL/Dispersion Ratio).
+  6. Invariance of Mean-Path Length when crossing bounded domain r -across groups- is evidence of stochastic process.
+  7. Mean *residence time* within domain clearly Shorter for LF, and most for LE.
+  8. Path length distributions drop as power-law like after $l> 2 \times r$ (check exponent).
+  9. Distribution Of Path Length Shows Power law drop-off for lengths exceeding the $2*r$ of the domain (chord distrib. seen in [ref].)
+  10. With increasing domain $r$, Spontaneous conditions (all groups), but also LL, show *scale-invariance in the fraction of boundary crossings* against $r$, *but NL,DL prefers <6mm domains*
+  11. *LF disperse faster* than controls, with *LE dispersing the fastest*.
+  12. *LF move faster*, making longer path lengths over time but also leavin the ROI earlier;
+  13. There are almost no paths with more than 40sec duration in LE, but this increases to 130sec for LL. *Probability of path duration clearly drops faster for increasing durations for LE*, than controls
+  14. MSD over path duration clearly higher for LE, with max overshooting within 10sec,rather than 100 as in controls.
+  15. Evidence of super-diffusion as MSD grows supra linearly to path-length (Within some range < 21mm), *MSD growth distinct for LE*
+  16. MSD vs Dispersion are linearly related, with a drop-off in Evoked conditions over large dispersions.
+  17. -Clustering And Bimodality results-.
+  18. Spontaneous Hunt events associated with higher dispersions than Evoked, only for LF. NF, look the same, DF, do the opposite to LF.
+  19. Hunt-outcome is not associated to Dispersion, but only in  LL do all successful events belong to fast-cluster 
+  20. Hunting probability is higher in the large dispersion cluster for all groups.
+  21. **Bout Structure**:
 
+      - LF has Lower number of bouts per free-path
+      - LF has Longer distance traveled per bout - *longer bouts*
+      - Bout duration and distances decrease for LF,NF in evoked conditions, but not for DF.
+      - Lower number of bouts between turns (maybe).
+      - LF does not do long-pause/ Waits, in contrast to DF, NF.
+      - Lower mean number of turns when crossing Domain 10mm for DE, and then LL,DL, and then LE- NE has highest
+      - Increasing turn Modes around 40-50 deg, in spontaneous conditions, across groups. (Surprise as these turn modes are associated with Successful hunts)
+      - *Bout Speed increases in absence of prey*, with LF having the fastest bouts on average and DF the slowest.
+    
+    
+  
+  
+  
 # Analysis of larval trajectories 
 
 ## Examine dispersion to reveal foraging state as in Marquez et al. 2019
@@ -75,7 +117,7 @@ library('coda')
 message("Jags version: ",jags.version())
 message(" For info in runjags check out:doi: 10.18637/jss.v071.i09")
 
-setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots") ##sOME bUG REQUIRES THAT THIS IS RUN ON CONSOLE MANUALLY 
 #setwd(here())
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
@@ -85,7 +127,7 @@ setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
-
+MIN_PATH_LENGTH <- 0.5
 tsec_timeWindow <- 0 
 thres_dispersion_class <- 0.2
 ##Clustering
@@ -270,17 +312,6 @@ mergeRangeOfLarvalDispersionPerLarvaOntoDispersion <- function(datDispersion,dat
 ```{r  merge hunt-events with dispersion data, fig.show="hold", out.width="50%", echo=FALSE, cache=FALSE,results=FALSE,message=FALSE,warning=FALSE }
 source("DataLabelling/labelHuntEvents_lib.r")
 source("HuntingEventAnalysis_lib.r")
-  
-
-#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
-##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
-## Link Evoked and Spontaneous Trajectories
-datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
-datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
-datHEventDispersion <<- loadHuntEventMergedWithPathStat(5)
-
 
 #loadDispersionData(forceReload = TRUE,tsec_timeWindow = 0)
 ##Load Dispersion Data, check if data.frame has been extended with larva ranges, and merge if need to  have been added - 
@@ -292,9 +323,8 @@ loadDispersionData_norm <- function(tsec_timeWindow)
   if (file.exists(strFile))
   {
   try( {
-    
-    message("Loading ",strFile);
-    datDispersion <<- readRDS(file=strFile ) ;
+      message("Loading ",strFile);
+      datDispersion <<- readRDS(file=strFile ) ;
     }
     )
   }else
@@ -312,6 +342,16 @@ loadDispersionData_norm <- function(tsec_timeWindow)
   
   return(datDispersion)
 }
+
+#load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+
+##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
+## Link Evoked and Spontaneous Trajectories
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+datHEventDispersion <<- loadHuntEventMergedWithPathStat(5)
+
 
 loadDispersionData_norm(tsec_timeWindow)
 ## Check for max Calc Error
@@ -741,21 +781,30 @@ I will use these max values to normalize dispersions for each larva (as in Marqu
 #### Compare distribution of max dispersion per larva
 
 Full Path:
-```{r Max-dispersion Full-Path histogram per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the full event trajectories - No time sliding time window " }
+```{r Max-dispersion histogram plots, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the full event trajectories - No time sliding time window,  and 20sec duration paths" }
+
 ##### Maximum Dispersions Per Larva- 
 hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
 {
-
+  XLIM <- c(0,15)
+  strFileName <- paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds")
+  message("Loaded max disp precalc :",strFileName)
+  datMaxDispersionPerLarva <- readRDS(file=strFileName )
+  nBreaks=seq(0,13,1)
+  ylimUp <- 35
+  
+  ## Max reported is across NE/NL - so checking either condition would suffice to get the max for each larva
+  datMaxDispersionPerLarva.LF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_larval_Dispersion
+  datMaxDispersionPerLarva.NF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_larval_Dispersion
+  datMaxDispersionPerLarva.DF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_larval_Dispersion 
+  
   # plot histograms
-  datMaxDispersionPerLarva.NF_hist <- hist((datMaxDispersionPerLarva.NF), breaks=nBreaks ,plot=FALSE)
+  datMaxDispersionPerLarva.NF_hist <- hist((datMaxDispersionPerLarva.NF),breaks=nBreaks, plot=FALSE)
+  datMaxDispersionPerLarva.LF_hist <- hist((datMaxDispersionPerLarva.LF) ,breaks=nBreaks, plot=FALSE)
+  datMaxDispersionPerLarva.DF_hist <- hist((datMaxDispersionPerLarva.DF) ,breaks=nBreaks, plot=FALSE)
   
-  datMaxDispersionPerLarva.LF_hist <- hist((datMaxDispersionPerLarva.LF)
-       , breaks=nBreaks, plot=FALSE)
-  
-  datMaxDispersionPerLarva.DF_hist <- hist((datMaxDispersionPerLarva.DF),
-       breaks=nBreaks,plot=FALSE)
-  
-  plot(datMaxDispersionPerLarva.NF_hist$mids,datMaxDispersionPerLarva.NF_hist$counts, main="Histogram of max-dispersal per larva ",
+  plot(datMaxDispersionPerLarva.NF_hist$mids,datMaxDispersionPerLarva.NF_hist$counts,
+        main=paste("Histogram of max-dispersal per larva ",tsec_timeWindow,"sec"),
                                        xlab="Max. dispersion  per larva (mm)", xlim=XLIM,
                                        ylab="Number of larvae",
                                       pch=pointTypeScheme$NL, lty=lineTypeL.NF,
@@ -769,34 +818,15 @@ hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
                                       col=colourDataScheme$DF$Evoked, ylim=c(0,ylimUp),type="b")
   
   legend("topleft",c("NF","LF","DF"),pch=c(pointTypeScheme$NL,pointTypeScheme$LL,pointTypeScheme$DL) , lty=c(lineTypeL.NF,lineTypeL.LF,lineTypeL.DF),col=c(colourDataScheme$NF$Evoked,colourDataScheme$LF$Evoked,colourDataScheme$DF$Evoked),lwd=3 ) 
+  
+  return(datMaxDispersionPerLarva)
 }
 
-  strFileName <- paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds")
-  message("Loaded max disp precalc :",strFileName)
-  datMaxDispersionPerLarva <- readRDS(file=strFileName )
-  nBreaks=seq(0,13,1)
-  ylimUp <- 35
-  XLIM <- c(0,15)
-  # extract Evoked to Spont max disp data
-  datMaxDispersionPerExp.NF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_exp_Dispersion
-  datMaxDispersionPerExp.NF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'NL' ,]$expID.E, ]$max_exp_Dispersion
-  datMaxDispersionPerExp.LF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_exp_Dispersion 
-  datMaxDispersionPerExp.LF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'LL' ,]$expID.E, ]$max_exp_Dispersion
-  datMaxDispersionPerExp.DF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_exp_Dispersion
-  datMaxDispersionPerExp.DF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'DL' ,]$expID.E, ]$max_exp_Dispersion
-  
-  ## Max reported is across NE/NL - so checking either condition would suffice to get the max for each larva
-  datMaxDispersionPerLarva.LF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_larval_Dispersion
-  datMaxDispersionPerLarva.NF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_larval_Dispersion
-  datMaxDispersionPerLarva.DF <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_larval_Dispersion 
-  
 
-hist_MaxDispersionPerLarva(0)
+datMaxDispersionPerLarva_All <- hist_MaxDispersionPerLarva(0)
+datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(20)
 ```
-But when confined to a sliding window of say 20 sec
-```{r Max-dispersion 20sec histogram per larva-Split E-S, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the 20sec sliding window of trajectories " }
-hist_MaxDispersionPerLarva(20)
-```
+
 
 ```{r  max-dispersion densities compare groups, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,eval=FALSE }
  ## plot est, Densities Compare Spont to Evoked
@@ -818,6 +848,16 @@ Maybe these could make sense under an expected reward paradigm, given experience
 
 ```{r max-dispersion per larva densities split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE }
  ## plot est, Densities Compare Spont to Evoked
+
+datMaxDispersionPerLarva <- datMaxDispersionPerLarva_20sec
+  # # extract Evoked to Spont max disp data
+   datMaxDispersionPerExp.NF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'NE' ,]$expID.S, ]$max_exp_Dispersion
+   datMaxDispersionPerExp.NF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'NL' ,]$expID.E, ]$max_exp_Dispersion
+   datMaxDispersionPerExp.LF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'LE' ,]$expID.S, ]$max_exp_Dispersion 
+   datMaxDispersionPerExp.LF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'LL' ,]$expID.E, ]$max_exp_Dispersion
+   datMaxDispersionPerExp.DF.Spont <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.S == 'DE' ,]$expID.S, ]$max_exp_Dispersion
+   datMaxDispersionPerExp.DF.Evoked <- datMaxDispersionPerLarva[datMaxDispersionPerLarva$expID %in% datExpPairs[datExpPairs$groupID.E == 'DL' ,]$expID.E, ]$max_exp_Dispersion
+   
 
  ylimUp <- 0.5
   pBW <- 1
@@ -866,11 +906,12 @@ hist(datHEventDispersion[datHEventDispersion$groupID=='DL', ]$Length,breaks=xbre
 ```
 
 Comparing between general and hunt-event lengths it appears:
+
   - path lengths can be bimodal, like dispersions, in spontaneous conditions
   - LF Show higher motility to controls in both conditions
   - LF Spont. Shows overal higher motility to controls- Low occupancy in small movement mode
   - Locomotion in Evoked conditions  shows higher motility, and motion range, than Spontaneous. 
-  - Evoked Hunt events occur over the higher movement sub range than the one observed overall   
+  - Evoked Hunt events occur over the shorter movement sub-range/mode of the overall distribution
 
 To better examine tendencies to move towards dispersing trajectories we need to account for the effect of general motion, ie the length of a trajectory.
 Here I examine recent dispersion as a ratio of recent trajectory length (5 sec window). A ration of 0.5 means larva moved in a straight line, as dispersal is the *radius* not the diameter of the  circle encompassing the recent trajectory
@@ -1202,8 +1243,8 @@ Nevertheless we find that the addition of prey *LF increase the path-lengths eve
 
 I next look at the Log-Log distribution of path-lengths for a specified dispersion boundary. 
 
-```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
-rm(datDispersion)
+```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
+
 tsec_timeWindow <- 0
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
 strTitle <- paste("Whole path ")
@@ -1289,7 +1330,7 @@ hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
   strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
 
   #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),
+  hist(y,breaks=seq(0,max(47,y)+1,2),
   main=strTitle,
   col=colourDataScheme[[strGroupID]]  )
   
@@ -1297,13 +1338,13 @@ hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
   y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
   strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
   #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),main=strTitle,
+  hist(y,breaks=seq(0,max(47,y)+1,2),main=strTitle,
        col=colourDataScheme[[strGroupID]]  )
   
   y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
   strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
   #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,46,2),
+  hist(y,breaks=seq(0,max(47,y)+2,2),
        main=strTitle , col=colourDataScheme[[strGroupID]]  )
 }
 
@@ -1336,7 +1377,7 @@ As up to now I was not looking something that is equivalent entry and exit times
 
 
 library (plyr) #Split list, apply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
-MIN_PATH_LENGTH <- 0.5
+
 #datDispersion<-loadDispersionData(10)
 loaddatAllFrames()
   
@@ -1454,28 +1495,30 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
           
           # Combine to Find Distances DX DY between all point of trajectory
           mat_ptDist <- sqrt(mat_posDX^2 + mat_posDY^2)
-          TrackletInfo$pathLength <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)],na.rm = T)*DIM_MMPERPX
           
+          TrackletInfo$pathLength           <- sum(mat_ptDist[row(mat_ptDist) == (col(mat_ptDist) - 1)],na.rm = T)*DIM_MMPERPX
           TrackletInfo$meanDistanceToCentre <- mean(datBoundedTracklet$distToDomainCentre)
+          TrackletInfo$SqDisplacement       <- ((DIM_MMPERPX*mat_ptDist[1,ncol(mat_ptDist)])^2)
           
           lTrackletInfo[[strTrackID]] <- TrackletInfo
           
-          message("Path length for:",strTrackID," = ",format(TrackletInfo$pathLength,digits = 3),"mm in T:",format(TrackletInfo$duration,digits=3), "sec"  )
+          message("Path length for:",strTrackID, " = ", format(TrackletInfo$pathLength,digits = 3), "mm Displacement:",format(sqrt(TrackletInfo$SqDisplacement),digits = 3), " in T:",format(TrackletInfo$duration,digits=3), "sec"  )
     } ##For Each Tracklet
     
   return(data.frame(do.call(rbind,lTrackletInfo) ) )
 }##END oF FUNCTION
   
-  # lBoundedTrackInfo <- list()
-  #  for (DomainRadius in c(1,2,3,4)) #mm
-  #  {
-  #   for(g in vGroups)
-  #   {
-  #     message("Group:",g)
-  #     lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
-  #   }
-  #   saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
-  #  }
+
+   lBoundedTrackInfo <- list()
+    for (DomainRadius in c(9,10)) #mm
+    {
+     for(g in vGroups)
+     {
+       message("Group:",g)
+       lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
+     }
+     saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+    }
   
   #### Plot Mean Path Length Per Domain Radius ###
   #lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
@@ -1599,7 +1642,7 @@ plotLogLogDistribution_PathLength <- function(datBoundedTrack,strG,addPlot=FALSE
   ## Distributions Should be Resembling the Chort Length Distribution   (see #frangipane2019invariance)
 
 
-
+vAvailableDomainRadius <- getAvailablePathDomainsSizes()
 for (R in vAvailableDomainRadius)
 {
   
@@ -1635,7 +1678,7 @@ Maybe this is no surprise:
 In the following, the *boundaries at 10 and 11 mm* have been concatenated:
     
 
-```{r distribution of number of paths per domain sizes,fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Distribution of number of domain crossings, with increasing domain radius shows effect of prey is to constraint movement within smaller central regions, as revealed by the breaking down of the linear invariant regime in evoked conditions. (*Note regions 10+11mm have been concatenated*)"}  
+```{r distribution of number of paths per domain sizes,fig.show="hold", out.width="100%", echo=FALSE, cache=TRUE,fig.cap="Distribution of number of domain crossings, with increasing domain radius shows effect of prey is to constraint movement within smaller central regions, as revealed by the breaking down of the linear invariant regime in evoked conditions. (*Note regions 10+11mm have been concatenated*)"}  
 datMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_RAllmm.rds") )
 
 bAddPlot<-FALSE
@@ -1679,7 +1722,7 @@ The *LL* somewhat maintain their longer-range paths, which cross larger boundari
 
 
 
-```{r stat-Path-calculations , fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE }
+```{r stat-Path-calculations, echo=FALSE, fig.show="hold", warning=FALSE, cache=TRUE, out.width="50%"}
 
 #strG <- 'DE'
 #hist(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"DisplacementSq"],main=paste(strG,mean(ldatDispersion[["40"]][ldatDispersion[["40"]]$groupID == strG,"DisplacementSq"],na.rm=TRUE) ),xlim=c(0,210))
@@ -1789,7 +1832,7 @@ plotLogLogDistribution_MSD <- function(lLinModel_GE,tInter,addPlot=FALSE)
 }
 
 ##Calc the mean pooled MSD from each integration Window and show mean diffusion
-plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
+plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogLog=T)
 {
   vMSD <- vector()
   vTimeWindow <- vector()
@@ -1807,11 +1850,17 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
    # return(0)
   }
   idxOrder <- order(vTimeWindow)
-  #xLim <- c(0,max(vTimeWindow ) *1.10 )
-  xLim <- c(2,180 *1.10 ) ##Zero covers -The overall Path Duration
+  xLim <- c(1,max(vTimeWindow ) *1.10 )
+  #xLim <- c(2,110 *1.10 ) ##Zero covers -The overall Path Duration
   if (!addPlot)
   {
-    plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0,200),
+    if(!bLogLog)
+          plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0.1,200),
+         col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
+         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
+    else
+        plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0.1,200),log="xy",
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
@@ -1822,9 +1871,13 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE)
   
   lines(vTimeWindow[idxOrder],vMSD[idxOrder], col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
+
+  vHurst <- 0.5*log(vMSD[idxOrder])/log(vTimeWindow[idxOrder])
+  message("mean Hurst Exponent:",mean(vHurst[2:length(vHurst)]))
+  return(cbind.data.frame(time=vTimeWindow[idxOrder][vTimeWindow > 0],MSD=vMSD[idxOrder][vTimeWindow > 0]) )
 }
 
-##Scan Though all Time Integrations in Data and plot histogram and get MSD mean valus
+##Scan Though all Time Integrations in Data and plot histogram and get MSD mean values
 processMSDPerIntegrationTime <- function(ldatDispersion,strG,lMSDSummaryData,bAddPlot = FALSE)
 {
 
@@ -2390,37 +2443,86 @@ The duration-contrained MSDs however do not look  similar between conditions and
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
-  plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE)
-  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE)
+bLog <- TRUE
+lMSDVsTimeData_Pooled <- list()
+## Returns MSD and Time which we can use to calculate Hurst Coefficient
+  lMSDVsTimeData_Pooled[["NE"]] <- plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["NL"]] <- plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["LE"]] <- plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["LL"]] <- plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["DE"]] <- plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["DL"]] <- plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE,bLog)
   title(main="Pooled Mean")
-  legend("topright", legend=names(colourDataScheme)[4:9],
+  legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
 
-  
-  plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE)
-  plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE)
+lMSDVsTimeData_Grouped <- list()  
+  lMSDVsTimeData_Grouped[["NE"]] <- plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["NL"]] <- plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["LE"]] <- plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["LL"]] <- plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["DE"]] <- plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["DL"]] <- plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE,bLog)
   title(main="Group Mean")
-  legend("topright", legend=names(colourDataScheme)[4:9],
+  legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
-# legend("topright", 
-#            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
-#                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
-#        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
+  
+  ##Hurst Exponent per time
+ 
+   
+
 
 ```
 
 What is clear is that MSD becomes truncated around 10 seconds in, and that the LE grows the fastest. 
 By that time the radius of displacement covered on average for LE is `r sqrt(lMSDSummaryData[["LE"]][["10"]]$meanGroupMSD)`mm, while for NE  `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`, for DE `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`
+
+## Identify diffusion type using Hurst coefficients
+
+```{r Hurst coefficient over path durations , fig.show="hold",fig.cap=" Hurst coefficients between the range of 1 > H > 1/2 indicates superdiffusion, while H > 1 indicates Balistic behaviour.", out.width="50%", echo=FALSE, cache=FALSE}
+
+addPlot <- FALSE
+for (strG in vGroups)
+{
+  linFit <- lm(log10(lMSDVsTimeData_Grouped[[strG]]$time) ~ log10(lMSDVsTimeData_Grouped[[strG]]$MSD)  )
+  #plotMSDPerTime(lMSDSummaryData[["LL"]],FALSE,FALSE,bLog)
+  #plot(linFit$model$`log(lMSDVsTimeData_Grouped[["LL"]]$time)`, lin_Mod$fitted.values )
+  y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* (linFit$model$`log10(lMSDVsTimeData_Grouped[[strG]]$MSD)` ) ) )
+  x_linModel <- linFit$model$`log10(lMSDVsTimeData_Grouped[[strG]]$time)`
+  #plot(x_linModel,y_linModel,main=strG,ylim=c(0,2))
+  #points(log10(lMSDVsTimeData_Grouped[[strG]]$time) , log10(lMSDVsTimeData_Grouped[[strG]]$MSD),main=strG)
+
+  vhurstCoeff <- 0.5*log10(lMSDVsTimeData_Grouped[[strG]]$MSD)/log10(lMSDVsTimeData_Grouped[[strG]]$time)
+  n <- length( vhurstCoeff)
+  if (!addPlot)
+    plot( lMSDVsTimeData_Grouped[[strG]]$time[2:n], vhurstCoeff[2:n],
+        ylab="Hurst coefficient (log(MSD)/log(duration))", xlab="Path duration (sec)",type="b",
+        main="Hurst coefficient per path duration (Grouped)", ylim=c(0.5,4), log="xy", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]] )
+  else
+    lines( lMSDVsTimeData_Grouped[[strG]]$time[2:n], vhurstCoeff[2:n],type="b",
+           col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]])
+
+  addPlot <- TRUE
+  message(strG," lin fit Hurst Coeff:",linFit$coefficients[2]/2, " Converge:", mean(tail(vhurstCoeff),na.rm=FALSE ) )
+}
+```
+
+
+The Hurst exponent equals half the slope in the double-log plot of the mean squared displacement versus time for a random walk.
+Alternatively, it equals the slope of the double-log plot of the root mean squared displacement (see #viswanathan2011physics pg. 28)
+
+Intermittent searches typically consist of alternating phases: a Brownian search phase alternating with ballistic relocations. The ballistic relocations help to reduce oversampling, in a manner similar to how Lévy walks help reduce oversampling.
+
+Thus evidence of *Balistic* motion (H>1) are stronger in LE indicating the ontogeny of intermittent search strategies, through balistic relocations. This is a result of experience because in controls the coefficients appear identical in the respective test conditions.
+
+Do intermittent searches correspond to the actual movements of real organisms? Intermittent searches appear to work 
+remarkably well for some species. For example, they may correctly describe the phenomenology of planktivorous fish and ground-foraging birds [304]. Atlantic bluefin tuna (Thunnus thynnus) also appear to switch between two search modes
+[262].
+
+
+## Distribution MSD over time per larva 
 
 ```{r mean-squared-distance over time distribution over larva , fig.show="hold",fig.cap=" Mean squared distance for paths of increasing duration.", out.width="50%", echo=FALSE, cache=FALSE}
 
@@ -2443,13 +2545,30 @@ plotMSDVsTimePerLarva <- function(lModelwithMSD,addPlot=FALSE)
   }
   ##Now plot MSD evolution of each larva
   datMeanMSDVsTimePerLarva <- data.frame(do.call(rbind,lMSD))
+  ##Extract from Column Names the ID part only
+  vExpIDS <- as.vector(lapply(  names(datMeanMSDVsTimePerLarva) ,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s) }))
+  names(datMeanMSDVsTimePerLarva) <- vExpIDS ## Now replace Col names - so we can keep track of Which Larvae has each path
+  ##Calculate The Hurst Coeffcient Indicating the type of diffussion each larva exectutes in the length duration of its path examined/available
+  hurstCoeffPerLarvaPerT <- lapply(datMeanMSDVsTimePerLarva,FUN = function(s){0.5*log10(s)/log10(vTimeWindow) } )
+  datHurstCoeff <- data.frame(do.call(cbind,hurstCoeffPerLarvaPerT))
+  vExpIDS <- as.vector(lapply(  names(datHurstCoeff) ,FUN = function(s){  gsub(pattern = "[^0-9]", replacement = "", x = s) }))
+  names(datHurstCoeff) <- vExpIDS ## Now replace Col names - so we can keep track of Which Larvae has each path
+
   if (!addPlot)
     plot(vTimeWindow,datMeanMSDVsTimePerLarva[,1],type="p",
-         col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],ylim=c(0,250),xlab="Time (sec)",ylab="MSD (mm)",xlim=c(0,180))
+         col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],ylim=c(0,250),xlab="Time (sec)",ylab="MSD (mm)",xlim=c(0,max(vTimeWindow)))
   for (i in 1:ncol(datMeanMSDVsTimePerLarva))
     lines(vTimeWindow,datMeanMSDVsTimePerLarva[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
   
-} 
+  ## plot Hurst Coeff for this Larva
+  plot(vTimeWindow,datHurstCoeff[,1],type="p",
+         col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]],ylim=c(0.1,3),xlab="Time (sec)",ylab="Hurst Coefficient (log(MSD)/log(duration))",xlim=c(0,max(vTimeWindow)),cex=0.5)
+    for (i in 1:ncol(datHurstCoeff))
+    lines(vTimeWindow,datHurstCoeff[,i],type="p",col=colourDataScheme[lModelwithMSD[[1]]$groupID][[1]])
+
+
+  
+} ##Plot Function 
 
 plotMSDVsTimePerLarva(lMSDSummaryData[["NE"]],FALSE)
 plotMSDVsTimePerLarva(lMSDSummaryData[["NL"]],FALSE)
@@ -2469,6 +2588,8 @@ title(main="DL MSD ")
 The mean of the mean squared displacement confirms the finding:  **Movement in absence and presence of prey differs between groups in manner that depends on experience **
 Looking at group mean and pooled means essentially shows the same differences, only *group mean shows waves of LE leaving the recording area*.
 I then examine the distribution of mean MSD among larvae and find that LE clearly advance to higher MSDs in spontaneous conditions.
+
+
 
 ### MSD to path-length for evidence of super-Diffusion - (Integrate time out)
 
@@ -2816,25 +2937,28 @@ for (strG in vGroups)
 ```
 
 I find that a the principle of invariance holds between dispersion and Mean Displacement (calculated as $\sqrt{MSD}$  ) that appears almost consistent across groups.
-Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement, albet some differences between conditions are apparrent,
+Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement, albeit some differences between conditions appear to exist,
 *In the absence of prey, mean displacement is likely higher within dispersion sizes of 3-8mm*.
 
-# Statistical comparison of motion-trajectories 
+Note, the reason why  mean displacement be larger to dispersion is because dispersion is the *radius containing the path*, and thus the largest mean displacement can only be less or equal to the the diameter, twice the dispersion size.
 
+
+
+# Statistical comparison of motion-trajectories 
+<!--Clustering Code Separated into a sub RMarkdown-->
 ```{r statistical Model-fitting, child='ForagingStateAnalysis_ModelFitting.Rmd',eval=FALSE}
-##Clustering Code Separated into a sub RMarkdown
 ```
   
 
 # Identifying states of foraging behaviour
 
-```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=TRUE}
+```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=FALSE}
 ```
 
 
 # Hunt initiation and foraging state
 
-```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
+```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=FALSE}
 ```
 
 
@@ -2847,9 +2971,12 @@ If Y is a mixture of K normal distributions with locations μk and scales σk wi
 \[p_Y\left(y \mid \lambda, \mu, \sigma \right) = \sum_{k=1}^K \lambda_k \, \textsf{normal}\left(y \mid \mu_k, \sigma_k\right).\]
 I will defer using Stan for this and go for my familiar Jags model implementation.
 -->
-# Trajectory micro-structure
+# Analysis Trajectory micro-structure explains macro movements.
 
 ## Bout-detection and turns
+
+To reveal how the macroscopic observations within the domain-constrained paths arise, I take each domain size (R=1...11mm) and analyze paths into bout sequences, measuring the angle change, distance traveled (straight line from start-end of bout), and the path lenght inscribed during the bout. 
+I am looking to see if free path-lengths,  turn-frequency or magnitudes can explain why LE leave the domains quicker than naive larvae.
 
 ```{r  extract bout and turn structure from domain paths,eval=FALSE,out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
 
@@ -2860,10 +2987,11 @@ I will defer using Stan for this and go for my familiar Jags model implementatio
   
   MIN_BOUT_TURN_SPEED = 0.2
   G_THRES_MOTION_BOUT_SPEED = 0.2
-  MIN_PATH_LENGTH <- 0.5 ##Also Set  in Previous Chunk
-  MIN_TURN_SIZE_THRES <- 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
-  MIN_GAP_FRAMES_BETWEEN_TURNS <- 50
-  
+  MIN_PATH_LENGTH     = 0.5 ##Also Set  in Previous Chunk
+  MIN_TURN_SIZE_THRES = 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
+  MIN_GAP_FRAMES_BETWEEN_TURNS = 50
+
+########## BOUT DETECTION #################
 getTrajectoryTurnsAndRuns<- function(TrackLetInfo)  
 {
   ## Some rare and Bizarre Dublication Exist where exp,event, trackID & frame are the same 
@@ -2910,7 +3038,7 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vTurnSpeed[is.na(vTurnSpeed)] <- 0
   vTurnSpeed <- filtfilt(bf_speed, vTurnSpeed)
 
-  ########## BOUT DETECTION #################
+  
   TurnboutsIdx <- NA
   MoveboutsIdx <- NA
   TailboutsIdx <- NA
@@ -3021,12 +3149,14 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   vAvailableDomainRadius <- getAvailablePathDomainsSizes() 
   message("Available Domain sizes:",paste(vAvailableDomainRadius,collapse=","))
 
-  #DomainRadius <- 9.5
   for (DomainRadius in vAvailableDomainRadius)
   {   
       lMeanPathLengthAll <- list() ##Reset List
   
-      lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+      strFile <- paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds")
+      if ( file.exists(strFile))
+        next() ##Skip Existing
+      lBoundedTrackInfo <- readRDS(file=strFile )
       for (strGroup in names(lBoundedTrackInfo) )
       {
 
@@ -3045,24 +3175,77 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 
       }##For Each Group
       
-      saveRDS(lMeanPathLengthAll,file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds"))
-  }##For Each Domain Radius
-  
-   for (TrackLetInfo in lBoundedTrackInfo[[strGroup]])
-     message(TrackLetInfo)
+      saveRDS(lMeanPathLengthAll,file=strFile)
+      
 
+  }##For Each Domain Radius
   
   
 ```
 
-```{r  analyse bout structure within domains, fig.show="hold",fig.cap="Distribution of free paths (Straight runs before turning)", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
-
-plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE)  
+```{r  analyse bout structure within domains, fig.show="hold",fig.cap="Distribution of free paths (Straight runs before turning)", out.width="50%", echo=FALSE, cache=TRUE, results=TRUE}
+MIN_TURN_SIZE_THRES <- 6
+calcFreePathLength <- function(datTrackBouts)
 {
-   mxbreaks=seq(0,30,1)
+    datStraightMotionBouts <- datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]
+    
+    
+    
+    if (NROW(datStraightMotionBouts) > 1)
+    {
+      # Truncate long decimals -- avoid accumulating small Errors
+      # TODO: Check How pathLength is calculated and truncate the Accumulation of small error
+      datTrackBouts$pathLength_mm     <- as.integer(100*unlist(datTrackBouts$pathLength_mm))/100
+      datTrackBouts$travelDistance_mm <- as.integer(100*unlist(datTrackBouts$travelDistance_mm))/100
+      #  Calc Consecutive Straight Bouts As - Freepath - Assign same FreePathID to bouts between turnss
+      blockFreePathBoutIDs <- split(datTrackBouts$boutID, 
+      # Sum Increments When the following Indicators Of Changing Class Become TRUE (I added Track Splitters when Exp or Event Change)
+                             cumsum(c(1, abs(diff(datTrackBouts$turn_deg)) > MIN_TURN_SIZE_THRES )  ) 
+                                    ) 
+      blockFreePathBoutIDs <- ldply (blockFreePathBoutIDs, data.frame)
+      # Here Extract The Turn and Displacement of All Motion Bouts,  as classified by changes in Turn or Motion speed -
+      names(blockFreePathBoutIDs) <- c("freePathID","boutID")
+      # Attach FreePath ID
+      datTrackBouts$freePathID <- blockFreePathBoutIDs$freePathID
+      # Check freePathIds Correctly Assigned to bouts with the respective boutID 
+      stopifnot(any(datTrackBouts[blockFreePathBoutIDs$boutID,]$freePathID == blockFreePathBoutIDs$freePathID) ) 
+      
+      
+      # Free Path - (Exclude Turns add active-bouts and Glide-bouts paths going in  straight line)
+      lTrackFreePaths <- tapply((datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$travelDistance_mm), ##pathLength_mm
+                                (datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$freePathID),sum )
+      
+      lTrackBoutsPerFreePath <- lTrackFreePaths # I need bout count to  have same ROws num. as freepaths, (Can become otherwise if no active bout in free path)
+      lTrackBoutsPerFreePath[1:NROW(lTrackFreePaths)] = 0 #Set Count to zero
+      lTrackBoutsPerFreePath_tmp <- tapply((datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES & datTrackBouts$boutSeqID > 0,  ]$travelDistance_mm), 
+                                (datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES & datTrackBouts$boutSeqID > 0,  ]$freePathID),length )
+      if(!is.numeric(lTrackBoutsPerFreePath_tmp))
+        lTrackBoutsPerFreePath_tmp <- array(0)
+      lTrackBoutsPerFreePath[1:NROW(lTrackBoutsPerFreePath_tmp)] <- lTrackBoutsPerFreePath_tmp
+
+    }else{ # Return Path length of the only available Single Bout that is not a turn
+      lTrackFreePaths       <- array(datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]$travelDistance_mm,1)
+      lTrackBoutsPerFreePath <- array(1)
+    }
+    
+    if (is.null(unlist(lTrackFreePaths) ))
+    {
+      lTrackFreePaths <- NA
+      lTrackBoutsPerFreePath <- NA
+    }else{
+      ## Sanity Check - That these are almost straight - Should not exceed Domain diameterX2
+      stopifnot(any(lTrackFreePaths <  5*head(datTrackBouts$DomainRadius,1) ) )
+    }
+
+  return(list(freePaths=lTrackFreePaths,boutsPerPath=lTrackBoutsPerFreePath) )          
+}
+
+plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)  
+{
+   mxbreaks=seq(0,XLIM,1)
    strTitle <- paste("free path R",DomainRadius)
  
-  hist_D <- hist(unlist(datBoundedTrack$travelDistance_mm),breaks=mxbreaks, plot=FALSE )  
+  hist_D <- hist(unlist(datBoundedTrack$freePathLength_mm),breaks=mxbreaks, plot=FALSE )  
   XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
   if (!addPlot)
   {
@@ -3077,92 +3260,330 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE)
       col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]] )
   }
   axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))  
-}   
+}   # Plot Free Paths Distribution
 
-  ### Analyse Free Paths - Look at distribution Run lengths between turns 
-  DomainRadius <- 6
 
-  lMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds") )
-  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
-  
-  ## Combine data on Motion Bouts with expID and group / So I can compare pooled distributions of Run Lenghts
-  lRundf <- list()
-  lTurndf <- list()
-  for (strGroup in names(lBoundedTrackInfo) )
+## Combine Bouts of a Radius onto a Single Data  frame and merge  Groups/Exp ID info
+### Analyze Free Paths - Look at distribution Run lengths between turns For Each Domain Size
+## Does not take long to calculate but in any case Saves Results To output Files :stat_BOUT_PerDomainSize.rds , stat_BOUT_FreePathPerDomainSize.rds
+makeBoutAndFreePathSummary <- function()
+{
+  vAvailableDomainRadius <- getAvailablePathDomainsSizes()
+  ldatBoutsPerDomain <- list()
+  ldatFreePathsPerDomain <- list()
+  for (DomainRadius in vAvailableDomainRadius)
   {
-    groupdomainTracks <- lBoundedTrackInfo[[strGroup]]
-    for (trackID in rownames( groupdomainTracks ) )
-    {
-      if (is.null(lMeanPathLengthAll[[trackID]]))
-        next()
-      
-        n = NROW(lMeanPathLengthAll[[trackID]]$datRuns)
-        ##Remove Rounding <0 errors
-        lMeanPathLengthAll[[trackID]]$datRuns$travelDistance_mm <- lapply(lMeanPathLengthAll[[trackID]]$datRuns$travelDistance_mm,max,c(0))
-        lRundf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]]$datRuns, 
-                                              DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
-                                              expID=rep(groupdomainTracks$expID[[trackID]],n),
-                                              EventID=rep(groupdomainTracks$EventID[[trackID]],n),
-                                              TrackletUID=rep(trackID,n),#groupdomainTracks$TrackletUID[[trackID]]
-                                              groupID=rep(strGroup,n) )
-        
-        n = NROW(lMeanPathLengthAll[[trackID]]$datTurns)
-        lTurndf[[trackID]] <- cbind.data.frame(lMeanPathLengthAll[[trackID]]$datTurns, 
-                                      DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
-                                      expID=rep(groupdomainTracks$expID[[trackID]],n),
-                                      EventID=rep(groupdomainTracks$EventID[[trackID]],n),
-                                      TrackletUID=rep(trackID,n), ##groupdomainTracks$TrackletUID[[
-                                      groupID=rep(strGroup,n) )
 
-      
+    strBoutAnalysisFile <- paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds")
+    if (!file.exists(strBoutAnalysisFile))
+      next()
+    
+    message("Processing R:",DomainRadius)
+    lMeanPathLengthAll <- readRDS(file=strBoutAnalysisFile )
+    lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+    
+    ## Combine data on Motion Bouts with expID and group / So I can compare pooled distributions of Run Lenghts
+    lRundf <- list()
+    lFreePathdf <- list()
+    for (strGroup in names(lBoundedTrackInfo) )
+    {
+      groupdomainTracks <- lBoundedTrackInfo[[strGroup]]
+      for (trackID in rownames( groupdomainTracks ) )
+      {
+        if (is.null(lMeanPathLengthAll[[trackID]]))
+          next()
+        
+          n = NROW(lMeanPathLengthAll[[trackID]])
+          datTrackBouts <- lMeanPathLengthAll[[trackID]]
+          # Remove Rounding <0 errors
+          datTrackBouts$travelDistance_mm <- lapply(datTrackBouts$travelDistance_mm,max,c(0))
+          datTrackBouts$pathLength_mm <- lapply(datTrackBouts$pathLength_mm,max,c(0))
+           
+        
+          ##Add Exp/Group etc to Bout Info And Append to list
+          lRundf[[trackID]] <- cbind.data.frame(datTrackBouts, 
+                                                DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],n ) ,
+                                                expID=rep(groupdomainTracks$expID[[trackID]],n),
+                                                EventID=rep(groupdomainTracks$EventID[[trackID]],n),
+                                                TrackletUID=rep(trackID,n),#groupdomainTracks$TrackletUID[[trackID]]
+                                                groupID=rep(strGroup,n) )
+          
+          ##Make LIst Of Detected Free Paths Per Domain-Tracklet
+          lTrackFreePaths <- calcFreePathLength(datTrackBouts) ##Uses TravelDistance
+          
+          nP = NROW(lTrackFreePaths$freePaths)
+          lFreePathdf[[trackID]] <- cbind.data.frame(freePathLength_mm=lTrackFreePaths$freePaths, 
+                                                boutCount = lTrackFreePaths$boutsPerPath,
+                                                DomainRadius =rep(groupdomainTracks$DomainRadius[[trackID]],nP ) ,
+                                                expID=rep(groupdomainTracks$expID[[trackID]],nP),
+                                                EventID=rep(groupdomainTracks$EventID[[trackID]],nP),
+                                                TrackletUID=rep(trackID,nP),#groupdomainTracks$TrackletUID[[trackID]]
+                                                groupID=rep(strGroup,nP) )
+      }
+    }
+    datBoutsPerDomain <- do.call(rbind.data.frame,lRundf)
+    datFreePathsPerDomain <- do.call(rbind.data.frame,lFreePathdf)
+
+    cD <- as.character(DomainRadius) 
+  
+    ldatBoutsPerDomain[[cD]]     <- datBoutsPerDomain[datBoutsPerDomain$DomainRadius == cD ,]
+    ldatFreePathsPerDomain[[cD]] <- datFreePathsPerDomain[datFreePathsPerDomain$DomainRadius == cD ,]
+  
+  } ##For Each Domain Size
+  saveRDS(ldatBoutsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds") )
+  saveRDS(ldatFreePathsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds") )
+  
+  return(list(boutsPerDomain=ldatBoutsPerDomain,freePathsPerDomain=ldatFreePathsPerDomain))
+} ##Make Bout And Free Path Per DOmain Summary
+        
+if (!file.exists(paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds")))
+  makeBoutAndFreePathSummary()
+
+ldatBoutsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds"))
+ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds"))
+           
+  ##Calculate Mean Bout Length Per Group
+  meanBoutLengthPathPerDomain <- list()
+   i<- 0
+  for (R in names(ldatFreePathsPerDomain) )
+  {
+    
+    for (strG in vGroups)
+    {
+        i <- i + 1
+        meanBoutLengthPathPerDomain[[i]] <-list( meanBoutDistance = mean( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG &
+                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
+                                                 sdBoutDistancePath = sd( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG & 
+                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
+                                                 n = NROW(sd( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG & 
+                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T)),
+                                                groupID=strG,
+                                                DomainRadius = as.numeric(R))
     }
   }
-  datFreePathPerDomain <- do.call(rbind.data.frame,lRundf)
-  datTurnsPerDomain <- do.call(rbind.data.frame,lTurndf)
+ datmeanBoutLengthPathPerDomain <- do.call(rbind.data.frame,meanBoutLengthPathPerDomain)
   
-  
-  
-  cD <- as.character(DomainRadius) 
-  ldatFreePathD <- list()
-  ldatFreePathD[[cD ]] <- datFreePathPerDomain[datFreePathPerDomain$DomainRadius == cD ,]
-  
-  ##Split Path Lengths Per Group
-  freePathDat <- list()
-  for (strG in vGroups)
-      freePathDat[[strG]] <- ldatFreePathD[[cD ]][ldatFreePathD[[cD ]]$groupID == strG & ldatFreePathD[[cD ]]$travelDistance_mm < 30,]
-  
-  
-  ## 
-  #hist(unlist(freePathDat[["LL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700),xlab="Free Path Length (Straight line)" )
-  #hist(unlist(freePathDat[["LE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
-  #hist(unlist(freePathDat[["NL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
-  #hist(unlist(freePathDat[["NE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
-  #hist(unlist(freePathDat[["DL"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
-  #hist(unlist(freePathDat[["DE"]]$travelDistance_mm), breaks=seq(-1,30,1),ylim=c(0,700) )
+ 
+ ### Mean Free Path
+  meanFreePathPerDomain <- list()
+   i<- 0
+  for (R in names(ldatFreePathsPerDomain) )
+  {
+    
+    for (strG in vGroups)
+    {
+        i <- i + 1
+        # Include Only Paths With >0 - As 0 means *no free path!*
+        datFreePathsOfGroupInDomain <- ldatFreePathsPerDomain[[R]][ldatFreePathsPerDomain[[R]]$groupID == strG & 
+                                                                     ldatFreePathsPerDomain[[R]]$freePathLength_mm > 0 &
+                                                                     ldatFreePathsPerDomain[[R]]$boutCount > 0,] ##Only Count Free Paths That contain at least one active bout
+        
+        meanFreePathPerDomain[[i]] <- list( meanFreePath = mean(unlist(datFreePathsOfGroupInDomain$freePathLength_mm), na.rm = T),
+                                                 sdFreePath = sd( unlist(datFreePathsOfGroupInDomain$freePathLength_mm), na.rm = T),
+                                                 n = NROW(sd( unlist(datFreePathsOfGroupInDomain$freePathLength_mm), na.rm = T)),
+                                                meanBoutsPerPath = mean(unlist(datFreePathsOfGroupInDomain$boutCount), na.rm = T),
+                                                groupID=strG,
+                                                DomainRadius = as.numeric(R))
+    }
+  }
+ meanFreePathPerDomain <- do.call(rbind.data.frame,meanFreePathPerDomain)
 
+ 
+ 
+ ### PLOT MEAN BOUT LENGTH PATH PER DOMAIN SIZE
+ addPlot =FALSE
+ for (strG in vGroups)
+ {
+  if (!addPlot)
+  plot(datmeanBoutLengthPathPerDomain[datmeanBoutLengthPathPerDomain$groupID ==strG,"DomainRadius"],
+       datmeanBoutLengthPathPerDomain[datmeanBoutLengthPathPerDomain$groupID ==strG,"meanBoutDistance"],
+       col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],ylim=c(0,3),ylab="Mean motion-bout distance (mm)",xlab="Domain radius (mm)" )
+  else
+  points(datmeanBoutLengthPathPerDomain[datmeanBoutLengthPathPerDomain$groupID ==strG,"DomainRadius"],
+       datmeanBoutLengthPathPerDomain[datmeanBoutLengthPathPerDomain$groupID ==strG,"meanBoutDistance"],
+       col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]] )
+    
+    addPlot <- TRUE
+ }
+ title("Mean distance travelled by each bout")
+ 
+ 
+ ### PLOT MEAN Free Path LENGTH PATH PER DOMAIN SIZE
+ addPlot =FALSE
+ for (strG in vGroups)
+ {
+    if (!addPlot)
+    plot(meanFreePathPerDomain[meanFreePathPerDomain$groupID ==strG,"DomainRadius"],
+         meanFreePathPerDomain[meanFreePathPerDomain$groupID ==strG,"meanFreePath"],
+         col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],ylim=c(0,3),ylab="Mean free path (mm)",xlab="Domain radius (mm)" )
+    else
+    points(meanFreePathPerDomain[meanFreePathPerDomain$groupID ==strG,"DomainRadius"],
+         meanFreePathPerDomain[meanFreePathPerDomain$groupID ==strG,"meanFreePath"],
+         col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]] )
+      
+      addPlot <- TRUE
+      
+ }
+  title("Mean free-path length ")
+ 
+ ### PLOT MEAN Bout Number Per Path / Per Domain
+ addPlot =FALSE
+ for (strG in vGroups)
+ {
+  
+    if (!addPlot)
+        plot(meanFreePathPerDomain[meanFreePathPerDomain$groupID ==strG,"DomainRadius"],
+         meanFreePathPerDomain[meanFreePathPerDomain$groupID ==strG,"meanBoutsPerPath"],
+         col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],ylim=c(0,5),ylab="bouts per free path  ",xlab="Domain radius (mm)" )
+    else
+      points(meanFreePathPerDomain[meanFreePathPerDomain$groupID ==strG,"DomainRadius"],
+         meanFreePathPerDomain[meanFreePathPerDomain$groupID ==strG,"meanBoutsPerPath"],
+         col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]] )
+      
+      addPlot <- TRUE
+ }
+ title("Mean number of bouts per free-path")
+ 
+ ## Distribution of Free Path Lengths For Domain Size ##
+   DomainRadius<- 8
+   cD <- as.character(DomainRadius) 
    addPlot <- FALSE
+   #datfreePathPerGroup <- data.frame(cbind(freePathLength_mm=ldatFreePathsPerDomain[[cD]]$freePathLength_mm,boutCount= ldatFreePathsPerDomain[[cD]]$boutCount, groupID=ldatFreePathsPerDomain[[cD ]]$groupID) )
+   maxFreePath <- max(tapply(unlist(ldatFreePathsPerDomain[[cD ]]$freePathLength_mm),
+                             unlist(ldatFreePathsPerDomain[[cD ]]$groupID),max,na.rm=TRUE))
   for (strG in vGroups)
   {
-   datBoundedTrack <- freePathDat[[strG]]  
-   plotBoundedFreePath(datBoundedTrack,strG,addPlot)
+   datBoundedFreePath <- ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG,]
+
+   ##Choose Turn-Motion Bouts, No Stops
+   plotBoundedFreePath(datBoundedFreePath,strG,addPlot,maxFreePath+1)
+   #message(paste(strG,"") )
    addPlot <- TRUE
   }
-  
+ 
+   
+ ## Distribution of Free Path Lengths For Domain Size ##
+   DomainRadius<- 4
+   cD <- as.character(DomainRadius) 
+   addPlot <- FALSE
+   #datfreePathPerGroup <- data.frame(cbind(freePathLength_mm=ldatFreePathsPerDomain[[cD]]$freePathLength_mm,boutCount= ldatFreePathsPerDomain[[cD]]$boutCount, groupID=ldatFreePathsPerDomain[[cD ]]$groupID) )
+   maxFreePath <- max(tapply(unlist(ldatFreePathsPerDomain[[cD ]]$freePathLength_mm),
+                             unlist(ldatFreePathsPerDomain[[cD ]]$groupID),max,na.rm=TRUE))
+  for (strG in vGroups)
+  {
+   datBoundedFreePath <- ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG,]
+
+   ##Choose Turn-Motion Bouts, No Stops
+   plotBoundedFreePath(datBoundedFreePath,strG,addPlot,maxFreePath+1)
+   #message(paste(strG,"") )
+   addPlot <- TRUE
+  }
+ 
+   
+ ## Distribution of Free Path Lengths For Domain Size ##
+   DomainRadius<- 10
+   cD <- as.character(DomainRadius) 
+   addPlot <- FALSE
+   #datfreePathPerGroup <- data.frame(cbind(freePathLength_mm=ldatFreePathsPerDomain[[cD]]$freePathLength_mm,boutCount= ldatFreePathsPerDomain[[cD]]$boutCount, groupID=ldatFreePathsPerDomain[[cD ]]$groupID) )
+   maxFreePath <- max(tapply(unlist(ldatFreePathsPerDomain[[cD ]]$freePathLength_mm),
+                             unlist(ldatFreePathsPerDomain[[cD ]]$groupID),max,na.rm=TRUE))
+  for (strG in vGroups)
+  {
+   datBoundedFreePath <- ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG,]
+
+   ##Choose Turn-Motion Bouts, No Stops
+   plotBoundedFreePath(datBoundedFreePath,strG,addPlot,maxFreePath+1)
+   #message(paste(strG,"") )
+   addPlot <- TRUE
+  }
+ 
+   
+   
+# Plot Distribution Of Bout Count Per Free Path
+addPlot <- FALSE
+ for (strG in vGroups)
+ {    
+   vBoutCount <- unlist(ldatFreePathsPerDomain[[cD ]][ldatFreePathsPerDomain[[cD ]]$groupID == strG &
+                                                   ldatFreePathsPerDomain[[cD ]]$boutCount >0,]$boutCount)
+   hist_bT <- hist(vBoutCount,  breaks=seq(0,200,1),plot=FALSE )
+       message(paste("Bout Count",strG," mu:",mean(vBoutCount)) )
+    if (!addPlot){
+        plot(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),log="xy",col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b",xlim=c(1,50),
+             xlab="Number of bouts",ylab="Log normalized bout frequency")
+       }
+    else{
+        lines(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+    }
+   addPlot <- TRUE
+ }
+ title("Frequency of Bouts between-turns (free-path)")
+   
+ 
+## Interbout Intervals & Pauses - Density
+addPlot <- FALSE
+for (strG in vGroups)
+{
+    vInterBoutInterval <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID == 0 &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 50 ,"duration_sec"]
+    xbreaks <- c(seq(0,0.1,0.02),seq(0.11,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
+    
+    #xbreaks <- seq(0,5,0.01)
+    hist_IBI <- hist(vInterBoutInterval,
+              breaks=xbreaks,plot=FALSE   )
+    
+    message(paste("Mean inter-Bout Interval ",strG," :",mean(vInterBoutInterval) ))
+    
+    if (!addPlot){
+        plot(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             type="b",xlim=c(0.01,50),log="xy",
+             xlab="Inter-bouts interval (sec)",ylab="Log Density inter-bout interval ")
+    }
+    else{
+        lines(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+    }
+   addPlot <- TRUE
+}
+title("Inter-bout interval ")
+
+
 ```
-Suprisingly, no difference between the distributions of free-paths (lengths of straigh runs before a turn), can be seen between groups, for a domain radius of 10mm
+
+
+*The length of motion Bout is largest for LE*, while all groups show some reduction in motion-bout length, for LF this is effect is much stronger.
+
+Found Difference between the distributions of free-paths (lengths of straight runs before a turn),  between groups, for a domain radius of 7mm
+*- Mean free path highest for LE *
+
+Number of bouts per free(straight)-path look the same between naive but it appears  *LF execute less bouts within a straight-path* (ie in a straight line before turning). Yet each bout is longer (at least in LE)
+
+Found bimodal distribution and that *inter-bout intervals are shorter for LF*, but also that long > 2 sec pauses are missing from LF, while naive fish will stay in one place, LF remain active.
+*LF do not do long-pauses between starting to move, especially in absence of prey*, which is contrary to what is seen for both DF and NF.
+
+## Correlation of bout length to interbout interval
+
+Analytically if the step-length is decoupled from the pause time then we can treat them separatelly within in a correlated random walk processes (CRWP) 
+
+
+## Turn counts per path
 
 ```{r path-turn-frequency per domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
-  
+#  MIN_TURN_SIZE_THRES
+
 plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)  
 {
-   mxbreaks=seq(0,35,1)
+   mxbreaks=seq(0,max(turnsPerPath,na.rm=T),1)
    strTitle <- paste("Number of turns in bounded path R",DomainRadius)
  
   hist_D <- hist(unlist(turnsPerPath$TurnCount),breaks=mxbreaks, plot=FALSE )  
   XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
   if (!addPlot)
   {
-  plot(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
+      plot(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
        main=strTitle,
        xlab="Turn count ", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],
        xlim=XLIM,
@@ -3173,19 +3594,32 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
       col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]] )
   }
   axis(side=1, at=log10(axisTicks(XLIM,log=TRUE)), labels =  as.character(axisTicks(XLIM,log=TRUE)))  
-}   
+}#END OF FUNCTION   
 
 
-  ## Count Turns Per Tracklet
-  turnsPerPath <- list()
-  for (strG in vGroups)
-  {
-      turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & datTurnsPerDomain$turnMagnitude > MIN_TURN_SIZE_THRES,],{
-      as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount")) ##COUNT Turns Pewr
-    })
-      names(turnsPerPath[[strG]]) <- ("TurnCount")
-  }
-  
+datTurnsPerDomain <- ldatBoutsPerDomain[["8"]]
+
+## Count Turns Per Tracklet
+turnsPerPath <- list()
+runsPerPath <- list()
+for (strG in vGroups)
+{
+    turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
+                                                     datTurnsPerDomain$turn_deg > MIN_TURN_SIZE_THRES &
+                                                     datTurnsPerDomain$boutSeqID > 0,],{
+    as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount") ) ##COUNT Turns Pewr
+  })
+    runsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
+                                                    datTurnsPerDomain$turn_deg < MIN_TURN_SIZE_THRES & 
+                                                    datTurnsPerDomain$boutSeqID > 0,],{ ##boutSeqID > 0 Ensures we are counting Active bouts 
+    as.data.frame( tapply(TrackletUID,TrackletUID, NROW ),col.names = c("RunCount")) ##COUNT Turns Pewr 
+  })
+
+ names(turnsPerPath[[strG]]) <- c("TurnCount")
+ names(runsPerPath[[strG]]) <- c("RunCount")
+}
+  ## Count Fraction of Bouts Thaty Appears as Turns , aaginst Total Active bouts (runs+Turns)
+  turnBoutFraction <- turnsPerPath[[strG]]/(runsPerPath[[strG]]+turnsPerPath[[strG]])
   
   
   maxTurnCountPerGroup <- lapply(turnsPerPath,max,na.rm=T)
@@ -3193,31 +3627,451 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
   strG<-"LL"
   trackletID <- rownames(turnsPerPath[[strG]])[turnsPerPath[[strG]]$TurnCount > 70 & !is.na(turnsPerPath[[strG]]$TurnCount)]
   
-
-   addPlot <- FALSE
+  ## Compare Number of Turns Per Path
+  addPlot <- FALSE
   for (strG in vGroups)
   {
    datBoundedTrack <- turnsPerPath[[strG]]  
    plotBoundedPathTurns(datBoundedTrack,strG,addPlot)
    addPlot <- TRUE
+   message(paste("Mean turn count per free-path ",strG,":", mean(unlist( turnsPerPath[[strG]] ),na.rm=TRUE )   ) )
   }
     
   ##Clip Range
   #for (strG in vGroups)
   #  turnsPerPath[[strG]]$TurnCount <- sapply(turnsPerPath[[strG]]$TurnCount,min,c(70),na.rm=T )
   
- ##Turn Magnitude
+ ##Turn Magnitude distributions
+  BW <- 5
+  addPlot <- FALSE
+  #par(mfrow=c(1,2))
+  i <- 1
   for (strG in vGroups)
   {
-    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turnMagnitude) < 180,] 
-    hist(datGTurns$turnMagnitude,breaks=seq(-180,180,2),main=paste(strG,"R",DomainRadius) ) #ylim=c(0,80)
+    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turn_deg) < 80 & abs(datTurnsPerDomain$turn_deg) > 1 &
+                                    datTurnsPerDomain$boutSeqID >0,] ##No Pause / no-moving Bouts
+    #hist(datGTurns$turn_deg,breaks=seq(-80,80,2),main=paste(strG) ,xlab="Turn deg") #ylim=c(0,80)
+    
+    if (!addPlot)
+      plot(density(datGTurns$turn_deg,bw=BW ),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],lwd=3,ylim=c(0,0.07),xlim=c(-60,60),
+           main=paste(strG,"Turns while crossing domain R",DomainRadius))
+    else
+     lines(density(datGTurns$turn_deg,bw=BW),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],lwd=3)
+   
+    addPlot <- i%%2
+    i = i +1 
+    
+    message(strG," Mean turn when crossing domain R",DomainRadius," : ",mean(datGTurns$turn_deg))
   }
+  #mtext(paste("Turns while crossing domain R",DomainRadius), side=3, outer=TRUE, line=-1) 
 
 ```
 
-*I do see an apparent difference in turn-frequency distributions or the distribution of free-path lengths!* within the paths in crossing a bounded circular domain.
-But that is strange cause the groups seem to macroscopically behave differently.
 
+*I see an apparent difference in turn-frequency distributions and in the distribution of free-path lengths for LE* within the paths in crossing a bounded circular domain.
+- There is also a tiny right turn bias across groups
+These are related to the macroscopic observations differently.
+
+I also discover that the turn distributions of spontaneous events show a mode-tendency towards larger turns, near the 35-45 degrees, such as that I have previously found 
+is associated with successful hunt events
+
+
+## Bout durations
+
+```{r bout-duration for a domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
+#  MIN_TURN_SIZE_THRES
+#CD is radius of domain
+plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
+{
+    vBoutDuration <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,"duration_sec"]
+    xbreaks <- c(seq(0,0.5,0.02),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+
+    hist_BI <- hist(vBoutDuration,
+              breaks=xbreaks,plot=FALSE)
+    
+    
+    if (!addPlot){
+        plot(hist_BI$mids,hist_BI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             type="b",xlim=c(0.01,3),log="xy",
+             xlab="bout duration (sec)",ylab="Log Density bout duration ")
+    }else{
+        lines(hist_BI$mids,hist_BI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+    }
+   print(paste("Bout Duration ",strG," mu:",mean(vBoutDuration) ))
+}
+
+## Interbout Intervals & Pauses - Density
+addPlot <- FALSE
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'NE',FALSE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'NL',TRUE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'LE',FALSE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'LL',TRUE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'DE',FALSE,cD)
+plotBoundedPathBoutDuration(ldatBoutsPerDomain,'DL',TRUE,cD)
+title("Bout duration (Pooled)")
+legend("bottomright", legend=c(names(colourDataScheme)[4:9]),
+         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]) ),
+         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+
+#}
+
+# Compare Pooled Bout Durations
+ datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,]
+boxplot(duration_sec ~ groupID,data=datPathBouts,main="Pooled bout durations",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.35) )
+
+# Stat check if differences in bout duration between conditions are true
+t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","duration_sec"])
+t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","duration_sec"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","duration_sec"])
+
+
+
+# Group Bout Duration compared using means per Larva
+datPathBoutsDuration_perLarva <- tapply(datPathBouts$duration_sec,list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
+
+############################
+# Group Distribution of mean bout duration among larvae- 
+histMeanBoutDurationsPerLarva <- function(datPathBoutsDuration_perLarva,strG,addPlot = FALSE)
+{
+xbreaks <- c(seq(0,0.5,0.01),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    hist_GBD <- hist(datPathBoutsDuration_perLarva[,strG],breaks=xbreaks, plot=FALSE)
+  
+      if (!addPlot){
+          plot(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+               type="b",xlim=c(0.01,0.3),ylim=c(0.0,20),#log="xy",
+               xlab="bout duration (sec)",ylab=" Density bout duration ")
+      }else{
+          lines(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout duration ",strG," mu:",mean(datPathBoutsDuration_perLarva[,strG]) ))
+}
+
+# Group Distribution of mean bout duration among larvae- 
+densMeanBoutDurationsPerLarva <- function(datPathBoutsDuration_perLarva,strG,addPlot = FALSE)
+{
+#xbreaks <- c(seq(0,0.5,0.01),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    dens_GBD <- density(datPathBoutsDuration_perLarva[!is.na(datPathBoutsDuration_perLarva[,strG]),strG],bw=0.02 )
+  
+      if (!addPlot){
+          plot(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],
+               type="l",lwd=3,xlim=c(0.01,0.3),ylim=c(0.0,20),#log="xy",
+               xlab="bout duration (sec)",ylab=" Density bout duration ",main="mean bout duration per larva")
+      }else{
+          lines(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],type="l",lwd=3) #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout duration ",strG," mu:",mean(datPathBoutsDuration_perLarva[,strG]) ))
+}
+
+# BOXPLOT OF Group Duration
+lmeanBoutDurationPerLarvaInGroup <- list()
+for (strG in vGroups)
+{
+  lmeanBoutDurationPerLarvaInGroup[[strG]] <- 
+    cbind.data.frame( duration_sec=as.numeric(datPathBoutsDuration_perLarva[!is.na(datPathBoutsDuration_perLarva[,strG]) ,strG]),groupID=strG)
+}# For each Group - Plot larval mean bout duration
+datMeanBoutDurationPerLarva <- do.call(rbind.data.frame,lmeanBoutDurationPerLarvaInGroup)
+datMeanBoutDurationPerLarva$duration_sec <- as.numeric(datMeanBoutDurationPerLarva$duration_sec)
+
+
+boxplot(duration_sec ~ groupID,data=datMeanBoutDurationPerLarva,main="Mean bout duration per larva",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.35) )
+
+
+#title("Mean larval bout duration ")
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"NE",FALSE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"NL",TRUE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"LE",FALSE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"LL",TRUE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"DE",FALSE)
+densMeanBoutDurationsPerLarva(datPathBoutsDuration_perLarva,"DL",TRUE)
+
+
+
+```
+
+
+It appears that LE and NE bouts last longer, than their respective evoked conditions (LL,NL).
+The *LE, bouts are the longest*, which could also explain why LE travel faster (mean path length for fixed duration is longer).
+The same is true in NF, where presence of prey makes bout duration shorter, but importantly *bout duration in DF does not change between prey and non-prey conditions*.
+
+## Bout distance
+
+```{r bout-distance for fixed domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+#  MIN_TURN_SIZE_THRES
+#CD is radius of domain
+plotBoundedPathBoutDistance <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
+{
+    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"travelDistance_mm"])
+    xbreaks <- c(seq(0,4.5,0.25),seq(4.51,20,0.5)) #,seq(10,60,1)
+    #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
+    
+    #xbreaks <- seq(0,5,0.01)
+    hist_BD <- hist(vBoutDistance, breaks=xbreaks,plot=FALSE)
+    
+    if (!addPlot){
+        plot(hist_BD$mids,hist_BD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             type="b",xlim=c(0.1,15),ylim=c(0.001,50),log="xy",
+             xlab="bout distance (mm)",ylab="Log Density bout distance ")
+    }else{
+        lines(hist_BD$mids,hist_BD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+    }
+   print(paste("Bout Distance ",strG," mu:",mean(vBoutDistance) ))
+}
+
+## Interbout Intervals & Pauses - Density
+addPlot <- FALSE
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'NE',FALSE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'NL',TRUE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'LE',FALSE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'LL',TRUE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'DE',FALSE,cD)
+plotBoundedPathBoutDistance(ldatBoutsPerDomain,'DL',TRUE,cD)
+   
+
+title("Bout Distance ")
+
+legend("topright", legend=c(names(colourDataScheme)[4:9]),
+         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]) ),
+         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+
+#}
+
+ datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,]
+ datPathBouts$travelDistance_mm <- unlist(datPathBouts$travelDistance_mm)
+ 
+boxplot(travelDistance_mm ~ groupID,data=datPathBouts,main="Bout Distance",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,3) )
+
+# Stat check if differences in bout duration between conditions are true
+t.test(datPathBouts[datPathBouts$groupID == "LE","travelDistance_mm"],datPathBouts[datPathBouts$groupID == "LL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","travelDistance_mm"],datPathBouts[datPathBouts$groupID == "DL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","travelDistance_mm"],datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"])
+#t.test(datPathBouts[datPathBouts$groupID == "DL","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+
+
+
+# Group Bout Duration compared using means per Larva
+datPathBoutsDistance_perLarva <- tapply(unlist(datPathBouts$travelDistance_mm),list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
+
+############################
+# Group Distribution of mean bout duration among larvae- 
+histMeanBoutDistancePerLarva <- function(datPathBoutsDistance_perLarva,strG,addPlot = FALSE)
+{
+xbreaks <- c(seq(0,1,0.1),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    hist_GBD <- hist(datPathBoutsDistance_perLarva[,strG],breaks=xbreaks, plot=FALSE)
+  
+      if (!addPlot){
+          plot(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+               type="b",xlim=c(0.01,3),ylim=c(0.0,10),#log="xy",
+               xlab="bout distance (sec)",ylab=" Density bout distance ")
+      }else{
+          lines(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout distance ",strG," mu:",mean(datPathBoutsDistance_perLarva[,strG],na.rm=TRUE) ))
+}
+
+# Group Distribution of mean bout duration among larvae- 
+densMeanBoutDistancePerLarva <- function(datPathBoutsDistance_perLarva,strG,addPlot = FALSE)
+{
+#xbreaks <- c(seq(0,0.5,0.01),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    dens_GBD <- density(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,strG]),strG],bw=0.2 )
+  
+      if (!addPlot){
+          plot(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],
+               type="l",lwd=3,xlim=c(0.0,3),ylim=c(0.0,5),#log="xy",
+               xlab="bout distance (mm)",ylab=" Density bout distance ",main="mean bout distance per larva")
+      }else{
+          lines(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],type="l",lwd=3) #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout distance ",strG," mu:",mean(datPathBoutsDistance_perLarva[,strG],na.rm=TRUE) ))
+}
+
+# BOXPLOT OF Group Duration
+lmeanBoutDistancePerLarvaInGroup <- list()
+for (strG in vGroups)
+{
+  lmeanBoutDistancePerLarvaInGroup[[strG]] <- 
+    cbind.data.frame( distance_mm=as.numeric(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,strG]) ,strG]),groupID=strG)
+}# For each Group - Plot larval mean bout duration
+datMeanBoutDistancePerLarva <- do.call(rbind.data.frame,lmeanBoutDistancePerLarvaInGroup)
+datMeanBoutDistancePerLarva$distance_mm <- as.numeric(datMeanBoutDistancePerLarva$distance_mm)
+
+
+boxplot(distance_mm ~ groupID,data=datMeanBoutDistancePerLarva,main="Mean bout distance per larva",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,3) )
+
+
+#title("Mean larval bout duration ")
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"NE",FALSE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"NL",TRUE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"LE",FALSE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"LL",TRUE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"DE",FALSE)
+densMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"DL",TRUE)
+
+#histMeanBoutDistancePerLarva(datPathBoutsDistance_perLarva,"LL",FALSE)
+
+```
+
+*Bout distances appear longer in LF, compared to DF and NF*.
+In all groups bout distances are longer in  spontaneous conditions, and shorter in evoked conditions, except for DF. 
+This agrees with spontaneous conditions having longer bout durations.
+I need to verify that this applies to exploratory movements, and i is not simply due to hunt event bouts being shorter in evoked conditions when reacting to prey, but in anycase the DF shows that this is not due to growth, and likely not due to interacting with prey either - because in DF bout distance does not change with test conditions.
+
+# Bout Speed
+
+```{r bout-speed for fixed domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+#  MIN_TURN_SIZE_THRES
+#CD is radius of domain
+plotBoundedPathBoutSpeed <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
+{
+    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"travelDistance_mm"])
+    
+    vBoutDuration <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"duration_sec"])
+    
+    vBoutSpeed <- vBoutDistance/vBoutDuration
+    xbreaks <- c(seq(0.0,20,1),seq(20.1,200,5)) #,seq(10,60,1)
+    #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
+    
+    #xbreaks <- seq(0,5,0.01)
+    hist_BS <- hist(vBoutSpeed, breaks=xbreaks,plot=FALSE)
+    
+    if (!addPlot){
+        plot(hist_BS$mids,hist_BS$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             type="b",xlim=c(0.5,55),ylim=c(0.001,50),log="xy",
+             xlab="bout speed (mm/sec)",ylab="Log Density bout speed ")
+    }else{
+        lines(hist_BS$mids,hist_BS$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+    }
+   print(paste("Bout Speed ",strG," mu:",mean(vBoutSpeed,na.rm=T) ))
+}
+
+## Interbout Intervals & Pauses - Density
+addPlot <- FALSE
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'NE',FALSE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'NL',TRUE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'LE',FALSE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'LL',TRUE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'DE',FALSE,cD)
+plotBoundedPathBoutSpeed(ldatBoutsPerDomain,'DL',TRUE,cD)
+   
+
+title("Bout Speed ")
+
+legend("topright", legend=c(names(colourDataScheme)[4:9]),
+         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]) ),
+         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+
+#}
+
+ datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,]
+ datPathBouts$travelDistance_mm <- unlist(datPathBouts$travelDistance_mm)
+ 
+boxplot(travelDistance_mm/duration_sec ~ groupID,data=datPathBouts,main="Bout speed",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,40) )
+
+# Stat check if differences in bout duration between conditions are true
+t.test(datPathBouts[datPathBouts$groupID == "LE","duration_sec"],datPathBouts[datPathBouts$groupID == "LL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "NE","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "DL","travelDistance_mm"])
+t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[datPathBouts$groupID == "NE","travelDistance_mm"])
+#t.test(datPathBouts[datPathBouts$groupID == "DL","duration_sec"],datPathBouts[datPathBouts$groupID == "NL","travelDistance_mm"])
+
+
+
+# Group Bout Duration compared using means per Larva
+datPathBoutsSpeed_perLarva <- tapply(unlist(datPathBouts$travelDistance_mm)/unlist(datPathBouts$duration_sec),list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
+
+############################
+# Group Distribution of mean bout duration among larvae- 
+histMeanBoutSpeedPerLarva <- function(datPathBoutsSpeed_perLarva,strG,addPlot = FALSE)
+{
+xbreaks <- c(seq(0,10,0.5),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    hist_GBD <- hist(datPathBoutsSpeed_perLarva[,strG],breaks=xbreaks, plot=FALSE)
+  
+      if (!addPlot){
+          plot(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+               type="b",xlim=c(0.01,3),ylim=c(0.0,10),#log="xy",
+               xlab="bout speed (mm/sec)",ylab=" Density bout speed ")
+      }else{
+          lines(hist_GBD$mids,hist_GBD$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout speed ",strG," mu:",mean(datPathBoutsSpeed_perLarva[,strG],na.rm=TRUE) ))
+}
+
+# Group Distribution of mean bout duration among larvae- 
+densMeanBoutSpeedPerLarva <- function(datPathBoutsSpeed_perLarva,strG,addPlot = FALSE)
+{
+#xbreaks <- c(seq(0,0.5,0.01),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+    dens_GBD <- density(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,strG]),strG],bw=1 )
+  
+      if (!addPlot){
+          plot(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],
+               type="l",lwd=3,xlim=c(0.0,15),ylim=c(0.0,1),#log="xy",
+               xlab="bout speed (mm/sec)",ylab=" Density bout speed ",main="mean bout speed per larva")
+      }else{
+          lines(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],type="l",lwd=3) #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+      }
+     print(paste("Group bout speed ",strG," mu:",mean(datPathBoutsSpeed_perLarva[,strG],na.rm=TRUE) ))
+}
+
+# BOXPLOT OF Group Duration
+lmeanBoutSpeedPerLarvaInGroup <- list()
+for (strG in vGroups)
+{
+  lmeanBoutSpeedPerLarvaInGroup[[strG]] <- 
+    cbind.data.frame( speed_mmsec=as.numeric(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,strG]) ,strG]),groupID=strG)
+}# For each Group - Plot larval mean bout duration
+datMeanBoutSpeedPerLarva <- do.call(rbind.data.frame,lmeanBoutSpeedPerLarvaInGroup)
+datMeanBoutSpeedPerLarva$speed_mmsec <- as.numeric(datMeanBoutSpeedPerLarva$speed_mmsec)
+
+
+boxplot(speed_mmsec ~ groupID,data=datMeanBoutSpeedPerLarva,main="Mean bout speed per larva",
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,40) )
+
+
+#title("Mean larval bout duration ")
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"NE",FALSE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"NL",TRUE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"LE",FALSE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"LL",TRUE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"DE",FALSE)
+densMeanBoutSpeedPerLarva(datPathBoutsSpeed_perLarva,"DL",TRUE)
+
+
+
+```
+**Bout Speed increases in the absence of prey**
+*LE produce the fastest bouts (6.9 mm/sec)*, while DF are slower than naive, which means size does not explain speed increase.
+It is also shown that DF does not change bout speed with prey abundance, (same is true for distance and speed of DF).
+
+These results may be associated to the circuits underlying the short-term motor learning  by which swim vigour is modified depending on visual feedback (Kawashima et al. ).
+The authors found that such a learned motor-sensory gain is retained after a delay with no stimulus, and scales with the duration of training
+
+For DF, where actions converge this may be linked to adaptation to motor actions that reduce energy expenditure when their actions are futile:
+  - Andalman et al.  found that 1.5–2 week old zebrafish exposed to inescapable shocks would first attempt to escape from these aversive stimuli, but then transitioned into a prolonged state of behavioral passiv- ity—no longer attempting to move because their actions were futile
+  - Mu et al. examined fish in a closed- loop optomotor assay, where the fish’s fictive swimming behavior updated their visual environment (similar to Refs. [31,33]). When the authors suddenly made these swimming behaviors ineffective – no longer influencing the visual environment – fish first attempted vigorous movement before entering into an extended passive state
+  
 # Full figure List of trajectories per experiment
 
 The following figures show the tracked trajectories per experiment of each group.
@@ -3236,7 +4090,9 @@ Note that dispersion is normalized based on the trajectories from Spontaneous an
 Here it should be noted that in Marquez et al 2019 "To facilitate comparison across animals, the dispersal distance was normalized to the range of each animal."
 That means this is not a division by the maximum dispersal of each animal, but it also makes use of the minimum.
 
+
 #### LF - Evoked /Spontaneous Trajectories
+
 ```{r  NBMixClustered-trajectories-LL, fig.show="hold", out.width="50%", echo=FALSE, results='hide' , cache=TRUE, autodep=TRUE,eval=FALSE,warning=FALSE}
 
 loaddatAllFrames()
@@ -3323,6 +4179,14 @@ plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHE
 ```{r ForagingStateAnalysis_Modelling,child = 'ForagingStateAnalysis_Modelling.Rmd'}
 ```
 
+# Final Notes
+
+
+##  Foraging and Predator Avoidance (#stephens2008)
+Foraging may be optimal in terms of maximizing food uptake, but may involve a a balance between other factors such as risk of predation. Discrepancies between optimal foraging models and empirical field data have already been noted (see Phys of Foraging pg 15), which have suiggested trade-offs between optimal foragings and predator risk.
+Thus in these investigations I can include the my data showing how experience shapes the balance between hunt-rate and prey density (the gaussian process model of hunt-rate vs Prey Density).
+
+see also (#dunlap2012tracking) but also (#viswanathan2011physics)
 
 # END
 
