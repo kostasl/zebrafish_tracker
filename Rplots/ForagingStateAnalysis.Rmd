@@ -1845,7 +1845,7 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogL
    # return(0)
   }
   idxOrder <- order(vTimeWindow)
-  xLim <- c(0.1,max(vTimeWindow ) *1.10 )
+  xLim <- c(1,max(vTimeWindow ) *1.10 )
   #xLim <- c(2,110 *1.10 ) ##Zero covers -The overall Path Duration
   if (!addPlot)
   {
@@ -1869,7 +1869,7 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogL
 
   vHurst <- log(vTimeWindow[idxOrder])/log(vMSD[idxOrder])
   message("mean Hurst Exponent:",mean(vHurst[2:length(vHurst)])/2)
-  return(cbind.data.frame(time=vTimeWindow[idxOrder],MSD=vMSD[idxOrder]) )
+  return(cbind.data.frame(time=vTimeWindow[idxOrder][vTimeWindow > 0],MSD=vMSD[idxOrder][vTimeWindow > 0]) )
 }
 
 ##Scan Though all Time Integrations in Data and plot histogram and get MSD mean values
@@ -2439,40 +2439,85 @@ The duration-contrained MSDs however do not look  similar between conditions and
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
 bLog <- TRUE
-  d<- plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,TRUE,bLog)
-  d<- plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,TRUE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,TRUE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE,bLog)
+lMSDVsTimeData_Pooled <- list()
+
+  lMSDVsTimeData_Pooled[["NE"]] <- plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["NL"]] <- plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["LE"]] <- plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["LL"]] <- plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["DE"]] <- plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE,bLog)
+  lMSDVsTimeData_Pooled[["DL"]] <- plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE,bLog)
   title(main="Pooled Mean")
   legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
 
-  
-  d<-plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,FALSE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,FALSE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE,bLog)
-  d<-plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE,bLog)
+lMSDVsTimeData_Grouped <- list()  
+  lMSDVsTimeData_Grouped[["NE"]] <- plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["NL"]] <- plotMSDPerTime(lMSDSummaryData[["NL"]],TRUE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["LE"]] <- plotMSDPerTime(lMSDSummaryData[["LE"]],TRUE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["LL"]] <- plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["DE"]] <- plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE,bLog)
+  lMSDVsTimeData_Grouped[["DL"]] <- plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE,bLog)
   title(main="Group Mean")
   legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
   
   ##Hurst Exponent per time
-   cbind(d$time, (log(d$time)/log(d$MSD))/2)
-# legend("topright", 
-#            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
-#                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
-#        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
+ 
+   
+
 
 ```
 
 What is clear is that MSD becomes truncated around 10 seconds in, and that the LE grows the fastest. 
 By that time the radius of displacement covered on average for LE is `r sqrt(lMSDSummaryData[["LE"]][["10"]]$meanGroupMSD)`mm, while for NE  `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`, for DE `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`
+
+## Identify diffusion type using Hurst coefficients
+
+```{r Hurst coefficient over path durations , fig.show="hold",fig.cap=" Hurst coefficients between the range of 1 > H > 1/2 indicates superdiffusion, while H > 1 indicates Balistic behaviour.", out.width="50%", echo=FALSE, cache=FALSE}
+
+addPlot <- FALSE
+for (strG in vGroups)
+{
+  linFit <- lm(log10(lMSDVsTimeData_Grouped[[strG]]$time) ~ log10(lMSDVsTimeData_Grouped[[strG]]$MSD)  )
+  #plotMSDPerTime(lMSDSummaryData[["LL"]],FALSE,FALSE,bLog)
+  #plot(linFit$model$`log(lMSDVsTimeData_Grouped[["LL"]]$time)`, lin_Mod$fitted.values )
+  y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* (linFit$model$`log10(lMSDVsTimeData_Grouped[[strG]]$MSD)` ) ) )
+  x_linModel <- linFit$model$`log10(lMSDVsTimeData_Grouped[[strG]]$time)`
+  #plot(x_linModel,y_linModel,main=strG,ylim=c(0,2))
+  #points(log10(lMSDVsTimeData_Grouped[[strG]]$time) , log10(lMSDVsTimeData_Grouped[[strG]]$MSD),main=strG)
+
+  vhurstCoeff <- 0.5*log10(lMSDVsTimeData_Grouped[[strG]]$MSD)/log10(lMSDVsTimeData_Grouped[[strG]]$time)
+  n <- length( vhurstCoeff)
+  if (!addPlot)
+    plot( lMSDVsTimeData_Grouped[[strG]]$time[2:n], vhurstCoeff[2:n],
+        ylab="Hurst coefficient (log(MSD)/log(duration))", xlab="Path duration (sec)",type="b",
+        main="Hurst coefficient per path duration", ylim=c(0.5,4), log="xy", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]] )
+  else
+    lines( lMSDVsTimeData_Grouped[[strG]]$time[2:n], vhurstCoeff[2:n],type="b",
+           col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]])
+
+  addPlot <- TRUE
+  message(strG," lin fit Hurst Coeff:",linFit$coefficients[2]/2, " Converge:",mean(tail(vhurstCoeff),na.rm=FALSE ) )
+}
+```
+
+
+The Hurst exponent equals half the slope in the double-log plot of the mean squared displacement versus time for a random walk.
+Alternatively, it equals the slope of the double-log plot of the root mean squared displacement (see #viswanathan2011physics pg. 28)
+
+Intermittent searches typically consist of alternating phases: a Brownian search phase alternating with ballistic relocations. The ballistic relocations help to reduce oversampling, in a manner similar to how Lévy walks help reduce oversampling.
+
+Thus evidence of *Balistic* motion (H>1) are stronger in LE indicating the ontogeny of intermittent search strategies, through balistic relocations. This is a result of experience because in controls the coefficients appear identical in the respective test conditions.
+
+Do intermittent searches correspond to the actual movements of real organisms? Intermittent searches appear to work 
+remarkably well for some species. For example, they may correctly describe the phenomenology of planktivorous fish and ground-foraging birds [304]. Atlantic bluefin tuna (Thunnus thynnus) also appear to switch between two search modes
+[262].
+
+
+## Distribution MSD over time per larva 
 
 ```{r mean-squared-distance over time distribution over larva , fig.show="hold",fig.cap=" Mean squared distance for paths of increasing duration.", out.width="50%", echo=FALSE, cache=FALSE}
 
