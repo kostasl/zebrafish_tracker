@@ -1509,16 +1509,16 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
 }##END oF FUNCTION
   
 
-   lBoundedTrackInfo <- list()
-    for (DomainRadius in c(9) ) #mm
-    {
-     for(g in vGroups)
-     {
-       message("Group:",g)
-       lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
-     }
-     saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
-    }
+#   lBoundedTrackInfo <- list()
+#    for (DomainRadius in c(9) ) #mm
+#    {
+#     for(g in vGroups)
+#     {
+#       message("Group:",g)
+#       lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
+#     }
+#     saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+#    }
   
   #### Plot Mean Path Length Per Domain Radius ###
   #lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
@@ -2769,7 +2769,58 @@ Findings:
 
 Compared to the linear Dispersion to mean-path length relationship (#path-length per dispersion), the MSD to path-length appears to be non-linear.
 
+## MSD While crossing fixed circular Domains
+
+I plot the cdf of MSD for paths crossing a circular domain of a fixed radius $R$ located in the centre of the ROI, and compare groups between conditions. 
+
+```{r MSD-cdf , fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE}
+
+
+cdfplot_pathDisplacementCrossingDomain <- function(DomainRadius)
+{
+    lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+    # 
+    dRad <- DomainRadius #head(unlist(lBoundedTrackInfo[[strG]]$DomainRadius),1 )
+    strG<- "LL"
+    plot(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement) ) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]], main=paste("LF CDF MSD vs duration crossing domain R",dRad),xlab="Displacement (mm)")
+    strG<- "LE"
+    lines(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]])
+    
+    strG<- "NL"
+    plot(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]],main=paste("NF CDF MSD vs duration crossing domain R",dRad),xlab="Displacement  (mm)")
+    strG<- "NE"
+    lines(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]])
+    strG<- "DL"
+    plot(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]],main=paste("DF CDF MSD vs duration crossing domain R",dRad),xlab="Displacement  (mm)")
+    strG<- "DE"
+    lines(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]])
+}
+
+cdfplot_pathDisplacementCrossingDomain(2)
+cdfplot_pathDisplacementCrossingDomain(4)
+cdfplot_pathDisplacementCrossingDomain(9)
+
+```
+
+Evoked conditions are more heavily tailed towards shorter displacements.
+Also it appears that the difference between conditions in NF is stronger, indicating that displacements increase strongly in the absence of prey, as NF seems to sway towards lower displacement in evoked conditions, than others, which could indicate a propensity to stay in region of prey. 
+Because DF and LF show almost identical MSD behaviours, the NF behaviour could interpreted  to be a result of increased risk taking in the presence of prey in response to prior experience of lack of food or due to immediate hunger(although each larva
+has settled with food for 1 hour).
+
+**Note Shorter MSDs in this context indicate that larvae exit the Domain over a shorter chord**, ie without crossing the diameter which is the maximum available displacement (padded by 0.5mm for boundary crossing detection).
+This may be indicative of more tortuous paths, higher turn rates etc.
+
+But results are not scale-free, they depend on the domain radius:
+
+  -  R=10mm I find that evoked-spontaneous differences are minimized for DF, LF, these still exist for NF
+  -  R=9mm *NF* show the strongest responses, with *shorter MSD in evoked*, and longer in spontaneous. *ie. propensity for shorter free paths in presence of prey*
+  -  R=5, again NF stand out with evoked having shorter overall displacement
+  -  R=4 *Surprise:* LF shows the largest E-S difference and skew towards longer MSD, while DF no difference, 
+  -  R=2, the same MSD is NF clearly distinct between E-Spont, but not in DF, LF 
+  -  R=1 NF maintains the E-Spont. Difference! but none of the controls do.
+
 ## Dispersion Vs MSD
+
 I obtained similar results when looking at MSD and Dispersion over time. These have obvious links, but is their relationship linear?
 There is a linear relationship of Dispersion against path-length, but this is supralinear for MSD vs path-length, so perhaps they are not linearly related. 
 
