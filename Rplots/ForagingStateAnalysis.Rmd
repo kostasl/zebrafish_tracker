@@ -94,7 +94,7 @@ Thus we explore whether animals evolved to exploit experience in their search pa
       - LF has Longer distance traveled per bout - *longer bouts*
       - Bout duration and distances decrease for LF,NF in evoked conditions, but not for DF.
       - Lower number of bouts between turns (maybe).
-      - LF does not do long-pause/ Waits, in contrast to DF, NF.
+      - Inter-Bout intervals *show fat-tails for DF and NF* LF does not do long-pause/ Waits, in contrast to DF, NF.
       - Lower mean number of turns when crossing Domain 10mm for DE, and then LL,DL, and then LE- NE has highest
       - Increasing turn Modes around 40-50 deg, in spontaneous conditions, across groups. (Surprise as these turn modes are associated with Successful hunts)
       - *Bout Speed increases in absence of prey*, with LF having the fastest bouts on average and DF the slowest.
@@ -1508,7 +1508,8 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   return(data.frame(do.call(rbind,lTrackletInfo) ) )
 }##END oF FUNCTION
   
-
+# Uncomment to Run Analysis - Warning *Very Slow* It takes hours for each domain size- -
+# This is look Is commented Out After DomainPath Data Is processed - 
 #   lBoundedTrackInfo <- list()
 #    for (DomainRadius in c(9) ) #mm
 #    {
@@ -1594,11 +1595,20 @@ Invariance principles allow:
 Although *all groups show the same exact agreement to invariance principle *, this is not true for the time they spent within the domain. 
 Yet *LF move faster through the domains*, in agreement with earlier results on mean path-length per duration.
 
+Residence time may be reflecting patch exploitation strategy (see Stephens2008):
+>Foraging theory’s models ofpatch exploitation address the balance between cream skimming and thorough exploitation directly.
+Let s be the mean travel time, that is the time it takes our forager to move from one patch to the next. Let t be the patch residence time. The variable t is the variable of interest here because a small t corresponds with *a cream skimming strategy* while a large t implies thorough exploitation.
+
+
 
 Note that tracker ROI is `r format(260*DIM_MMPERPX,digits=3)` mm in diameter, and its circular boundary is approximatelly `r format((DIM_PXDIAMETER-260*2)*DIM_MMPERPX/2,digits=3)` mm away from the dish's wall. Yet, already from a 10mm domain radius (ie ~7mm away from boundary), we find the mean path length falls below the theoretical, indicating that the distribution of path lengths has been modified towards shorter paths, *especially so for the LE group, this is evident from R=7mm onwards.*
 The 11mm radius is near the boundary, falling short by 0.5mm, and it is the biggest area we can analyse
 
 The distribution of path lengths (excluding the < `r MIN_PATH_LENGTH` ) per domain radius is as follows:
+
+
+
+
 
 ```{r plot-loglog-distribution of domain path lengths,fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE}  
   
@@ -2472,16 +2482,36 @@ lMSDVsTimeData_Grouped <- list()
   ##Hurst Exponent per time
  
    
-
+## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails and And MSD per duration
+  strG <- "NL"
+  
+  for (strG in vGroups)
+  {
+   durationBreaks <- seq(0,150,0.05)
+   lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+  vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+  plot(durationBreaks[1:length(durationBreaks)-1],sqrt(vMSDPerDuration),
+       main=paste(strG," domain R path MSD vs duration" ) )
+  hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=seq(0,175,3), 
+       xlim=c(0,50),plot=FALSE )
+   plot(hist_Dur$mids,hist_Dur$counts,log="xy",main=paste(strG," domain R path duration" ))
+  }
+  
+  plot(unlist(lBoundedTrackInfo[[strG]]$duration),sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) )
+  
 
 ```
+
+
 
 What is clear is that MSD becomes truncated around 10 seconds in, and that the LE grows the fastest. 
 By that time the radius of displacement covered on average for LE is `r sqrt(lMSDSummaryData[["LE"]][["10"]]$meanGroupMSD)`mm, while for NE  `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`, for DE `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`
 
+<!---TODO: Take the 0 dispersion data, which contain measurements in reference to path start, and look at msd per path duration so that the number of - Nope lets look at path-duration within fixed domains-->
+
 ## Identify diffusion type using Hurst coefficients
 
-```{r Hurst coefficient over path durations , fig.show="hold",fig.cap=" Hurst coefficients between the range of 1 > H > 1/2 indicates superdiffusion, while H > 1 indicates Balistic behaviour.", out.width="50%", echo=FALSE, cache=FALSE}
+```{r Hurst coefficient over path durations , fig.show="hold",fig.cap=" Hurst coefficients between the range of 1 > H > 1/2 indicates superdiffusion, while H > 1 indicates Balistic behaviour.", out.width="100%", echo=FALSE, cache=FALSE}
 
 addPlot <- FALSE
 for (strG in vGroups)
@@ -2506,6 +2536,8 @@ for (strG in vGroups)
 
   addPlot <- TRUE
   message(strG," lin fit Hurst Coeff:",linFit$coefficients[2]/2, " Converge:", mean(tail(vhurstCoeff),na.rm=FALSE ) )
+  #Balistic H limit
+  segments(0,1,100,1)
 }
 ```
 
@@ -2798,8 +2830,10 @@ cdfplot_pathDisplacementCrossingDomain <- function(DomainRadius)
 
 cdfplot_pathDisplacementCrossingDomain(2)
 cdfplot_pathDisplacementCrossingDomain(4)
-cdfplot_pathDisplacementCrossingDomain(9)
+cdfplot_pathDisplacementCrossingDomain(8)
+cdfplot_pathDisplacementCrossingDomain(10)
 
+hist(lBoundedTrackInfo$LL$duration )
 ```
 
 Evoked conditions are more heavily tailed towards shorter displacements.
@@ -3317,6 +3351,7 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
 ## Combine Bouts of a Radius onto a Single Data  frame and merge  Groups/Exp ID info
 ### Analyze Free Paths - Look at distribution Run lengths between turns For Each Domain Size
 ## Does not take long to calculate but in any case Saves Results To output Files :stat_BOUT_PerDomainSize.rds , stat_BOUT_FreePathPerDomainSize.rds
+
 makeBoutAndFreePathSummary <- function()
 {
   vAvailableDomainRadius <- getAvailablePathDomainsSizes()
@@ -3579,8 +3614,8 @@ for (strG in vGroups)
 {
     vInterBoutInterval <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
                              ldatBoutsPerDomain[[cD]]$boutSeqID == 0 &
-                                ldatBoutsPerDomain[[cD]]$duration_sec < 50 ,"duration_sec"]
-    xbreaks <- c(seq(0,0.1,0.02),seq(0.11,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 500 ,"duration_sec"]
+    xbreaks <- c(seq(0,0.1,0.02),seq(0.11,1,0.1),seq(1.5,500,1)) #,seq(10,60,1)
     #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
     
     #xbreaks <- seq(0,5,0.01)
@@ -3613,7 +3648,9 @@ Found Difference between the distributions of free-paths (lengths of straight ru
 Number of bouts per free(straight)-path look the same between naive but it appears  *LF execute less bouts within a straight-path* (ie in a straight line before turning). Yet each bout is longer (at least in LE)
 
 Found bimodal distribution and that *inter-bout intervals are shorter for LF*, but also that long > 2 sec pauses are missing from LF, while naive fish will stay in one place, LF remain active.
-*LF do not do long-pauses between starting to move, especially in absence of prey*, which is contrary to what is seen for both DF and NF.
+*Evidence of fat-tails for DF and NF*:
+LF do not do long-pauses between starting to move, especially in absence of prey, which is contrary to what is seen for both DF and NF.
+
 
 ## Correlation of bout length to interbout interval
 
@@ -4238,6 +4275,9 @@ Foraging may be optimal in terms of maximizing food uptake, but may involve a a 
 Thus in these investigations I can include the my data showing how experience shapes the balance between hunt-rate and prey density (the gaussian process model of hunt-rate vs Prey Density).
 
 see also (#dunlap2012tracking) but also (#viswanathan2011physics)
+
+special, but we find that the extent of this ‘specialness’ depends on the
+subject’s prior experience of environmental change.
 
 # END
 
