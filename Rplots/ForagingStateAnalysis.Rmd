@@ -75,15 +75,17 @@ Thus we explore whether animals evolved to exploit experience in their search pa
   5. Path lengths are longer in Evoked for the same dispersion size , more clearly so for LF (see also pathL/Dispersion Ratio).
   6. Invariance of Mean-Path Length when crossing bounded domain r -across groups- is evidence of stochastic process.
   7. Mean *residence time* within domain clearly Shorter for LF, and most for LE.
+  7.1 Duration of paths crossing domain have *fat tails except for LE*, suggesting experience increases tendency to search for new patches and not dwell on same spot.
   8. Path length distributions drop as power-law like after $l> 2 \times r$ (check exponent).
   9. Distribution Of Path Length Shows Power law drop-off for lengths exceeding the $2*r$ of the domain (chord distrib. seen in [ref].)
-  10. With increasing domain $r$, Spontaneous conditions (all groups), but also LL, show *scale-invariance in the fraction of boundary crossings* against $r$, *but NL,DL prefers <6mm domains*
+  10. With increasing domain $r$, Spontaneous conditions (all groups), but also LL, show *scale-invariance in the fraction of boundary crossings* against $r$, *but NL,DL prefers <6mm domains* thus confined to search smaller areas.
+   for other patches.
   11. *LF disperse faster* than controls, with *LE dispersing the fastest*.
   12. *LF move faster*, making longer path lengths over time but also leavin the ROI earlier;
-  13. There are almost no paths with more than 40sec duration in LE, but this increases to 130sec for LL. *Probability of path duration clearly drops faster for increasing durations for LE*, than controls
+  13. There are almost no paths with more than 40sec duration in LE, but this increases to 130sec for LL. *Probability of path duration clearly drops faster for increasing duration for LE*, than controls (We also have path durations within Domain R=10mm duration distributions showing less than 50sec)
   14. MSD over path duration clearly higher for LE, with max overshooting within 10sec,rather than 100 as in controls.
   15. Evidence of super-diffusion as MSD grows supra linearly to path-length (Within some range < 21mm), *MSD growth distinct for LE*
-  16. MSD vs Dispersion are linearly related, with a drop-off in Evoked conditions over large dispersions.
+  16. MSD vs Dispersion are linearly related, with a drop-off in Evoked conditions over large dispersion.
   17. -Clustering And Bimodality results-.
   18. Spontaneous Hunt events associated with higher dispersions than Evoked, only for LF. NF, look the same, DF, do the opposite to LF.
   19. Hunt-outcome is not associated to Dispersion, but only in  LL do all successful events belong to fast-cluster 
@@ -2483,25 +2485,31 @@ lMSDVsTimeData_Grouped <- list()
  
    
 ## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails and And MSD per duration
-  strG <- "NL"
+  DomainRadius <- 10
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  for (strG in vGroups[seq(1,6,2)])
+  { 
+     durationBreaks <- seq(0,150,0.05)
+     lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+     
+    vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+    plot(durationBreaks[1:length(durationBreaks)-1],(vMSDPerDuration), xlab="Duration (sec)", ylab="MSD",
+         main=paste(strG," Domain R",DomainRadius," path MSD vs duration" ),
+         col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]]) 
+    
+    strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
   
-  for (strG in vGroups)
-  {
-   durationBreaks <- seq(0,150,0.05)
-   lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
-  vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
-  plot(durationBreaks[1:length(durationBreaks)-1],sqrt(vMSDPerDuration),
-       main=paste(strG," domain R path MSD vs duration" ) )
-  hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=seq(0,175,3), 
-       xlim=c(0,50),plot=FALSE )
-   plot(hist_Dur$mids,hist_Dur$counts,log="xy",main=paste(strG," domain R path duration" ))
+    lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+    vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+    lines(durationBreaks[1:length(durationBreaks)-1],(vMSDPerDuration),
+         col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]],type="p") 
+   
   }
-  
-  plot(unlist(lBoundedTrackInfo[[strG]]$duration),sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) )
-  
 
+  
 ```
-
 
 
 What is clear is that MSD becomes truncated around 10 seconds in, and that the LE grows the fastest. 
@@ -2509,10 +2517,50 @@ By that time the radius of displacement covered on average for LE is `r sqrt(lMS
 
 <!---TODO: Take the 0 dispersion data, which contain measurements in reference to path start, and look at msd per path duration so that the number of - Nope lets look at path-duration within fixed domains-->
 
-## Identify diffusion type using Hurst coefficients
+## Path Duration distribution
+
+```{r,  fig.show="hold",fig.cap="Distribution of path durations crossing circular domain with 20mm Diameter", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="33%" } 
+## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails  
+  DomainRadius <- 10
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  for (strG in vGroups[seq(1,6,2)])
+  { 
+    hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=seq(0,175,3), plot=FALSE )
+    ##Plot Path Duration Distribution 
+    plot(hist_Dur$mids,hist_Dur$density,log="xy",main=paste(strG," domain R",DomainRadius," path duration" ), xlim=c(1,250),
+         ylab="Density", xlab="Duration (sec)", type="b",
+          col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]])
+    
+    strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
+    hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=seq(0,175,3), plot=FALSE )
+    ##Plot Path Duration Distribution 
+    lines(hist_Dur$mids,hist_Dur$density,main=paste(strG," domain R path duration" ), xlim=c(1,250),
+          type="b",
+          col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]])
+  }    
+  
+  
+```
+
+*Long fat-Tails missing from LE*, thus with experience larva learn to not wait and explore their surroundings looking for other patches.
+
+## Identify diffusion type using *Hurst exponents*
+
+The Hurst exponent is referred to as the "index of dependence" or "index of long-range dependence". It quantifies the relative tendency of a time series either to regress strongly to the mean or to cluster in a direction.[5] A value H in the range 0.5–1 indicates a time series with long-term positive autocorrelation, meaning both that a high value in the series will probably be followed by another high value and that the values a long time into the future will also tend to be high. A value in the range 0 – 0.5 indicates a time series with long-term switching between high and low values in adjacent pairs, meaning that a single high value will probably be followed by a low value and that the value after that will tend to be high, with this tendency to switch between high and low values lasting a long time into the future. A value of H=0.5 can indicate a completely uncorrelated series, but in fact it is the value applicable to series for which the autocorrelations at small time lags can be positive or negative but where the absolute values of the autocorrelations decay exponentially quickly to zero. This in contrast to the typically power law decay for the 0.5 < H < 1 and 0 < H < 0.5 cases. 
+
+The basic Hurst exponent can be *related to the expected size of changes, as a function of the lag between observations*, as measured by $E(|X_{t+\tau}-X_t|^2)$. For the generalized form of the coefficient, the exponent here is replaced by a more general term, denoted by $q$. 
+ In particular, the H1 exponent indicates persistent (H1 > ½) or antipersistent (H1 < ½) behavior of the trend. 
+
+Long-range dependence (LRD), also called long memory or long-range persistence, is a phenomenon that may arise in the analysis of spatial or time series data. It relates to the rate of decay of statistical dependence of two points with increasing time interval or spatial distance between the points. A phenomenon is usually considered to have long-range dependence if the dependence decays more slowly than an exponential decay, typically a power-like decay
+
+*see also hurstexp(x, d = 50, display = TRUE)*
 
 ```{r Hurst coefficient over path durations , fig.show="hold",fig.cap=" Hurst coefficients between the range of 1 > H > 1/2 indicates superdiffusion, while H > 1 indicates Balistic behaviour.", out.width="100%", echo=FALSE, cache=FALSE}
 
+## This uses the sliding time window data to estimate MSD per path duration 
+# and thus it does not reprwesent the distribution of path-durations
 addPlot <- FALSE
 for (strG in vGroups)
 {
@@ -2528,8 +2576,8 @@ for (strG in vGroups)
   n <- length( vhurstCoeff)
   if (!addPlot)
     plot( lMSDVsTimeData_Grouped[[strG]]$time[2:n], vhurstCoeff[2:n],
-        ylab="Hurst coefficient (log(MSD)/log(duration))", xlab="Path duration (sec)",type="b",
-        main="Hurst coefficient per path duration (Grouped)", ylim=c(0.5,4), log="xy", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]] )
+        ylab="Hurst coefficient (0.5xlog(MSD)/log(duration))", xlab="time window (sec)",type="b",
+        main="Hurst coefficient per time-window (Grouped)", ylim=c(0.5,4), log="xy", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]] )
   else
     lines( lMSDVsTimeData_Grouped[[strG]]$time[2:n], vhurstCoeff[2:n],type="b",
            col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]])
@@ -2539,19 +2587,58 @@ for (strG in vGroups)
   #Balistic H limit
   segments(0,1,100,1)
 }
+
+## Here I use data from the paths crossing circular  Domain analysis, and calculate msd be duration bin
+# then calculate Hurst coeff for each of those bins (1sec)
+DomainRadius <- 9
+lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+for (strG in vGroups[seq(1,6,2)])
+{ 
+    # EVOKED COnditions (Prey)
+     durationBreaks <- seq(0,150,1)
+     lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+     
+    vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+    vHurst <- 0.5*log(vMSDPerDuration)/log(durationBreaks[1:length(durationBreaks)-1])
+    #vHurst <- vHurst[!is.na(vHurst) & !is.nan(vHurst) & !is.infinite(vHurst) ]    
+    plot(durationBreaks[1:length(durationBreaks)-1],vHurst, xlab="Duration (sec)", ylab="log Hurst (0.5xlog(MSD)/log(duration)",log="xy",xaxt="n",type="b",ylim=c(0.5,4),
+         main=paste(strG," Domain R",DomainRadius," log Hurst Coefficient" ),
+         col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]]) 
+     
+       axis(side=1, at=durationBreaks[1:length(durationBreaks)-1], labels = durationBreaks[1:length(durationBreaks)-1])
+  # Spontaneous  (NO PREY)
+    strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
+    lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+    vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+    vHurst <- 0.5*log(vMSDPerDuration)/log(durationBreaks[1:length(durationBreaks)-1])
+    lines(durationBreaks[1:length(durationBreaks)-1],vHurst,type="b",
+         col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]]) 
+    segments(0,1,150,1)
+}
+
+
+     
 ```
 
 
 The Hurst exponent equals half the slope in the double-log plot of the mean squared displacement versus time for a random walk.
 Alternatively, it equals the slope of the double-log plot of the root mean squared displacement (see #viswanathan2011physics pg. 28)
 
+The Hurst parameter H is a measure of the extent of long-range dependence in a time series (while it has another meaning in the context of self-similar processes). H takes on values from 0 to 1. A value of 0.5 indicates the absence of long-range dependence.[8] The closer H is to 1, the greater the degree of persistence or long-range dependence. H less than 0.5 corresponds to anti-persistency, which as the opposite of LRD indicates strong negative correlation so that the process fluctuates violently. 
+
+Overall I find that the generalized Hurst exponent scales in power-law fashion against time-interval - This is evidence of  *long-range dependence (LRD)*.
+Slowly decaying variances, LRD, and a spectral density obeying a power-law are different manifestations of the property of the underlying covariance stationary process X. 
+
+My results show that In the small timescales <15 sec the exponent indicates persistent behaviour, which is indicative of *Balistic* motion (H>1). These are stronger in LE indicating the ontogeny of intermittent search strategies, through balistic relocations. 
+This is a result of experience because in controls the coefficients appear identical in the respective test conditions.
+
 Intermittent searches typically consist of alternating phases: a Brownian search phase alternating with ballistic relocations. The ballistic relocations help to reduce oversampling, in a manner similar to how Lévy walks help reduce oversampling.
-
-Thus evidence of *Balistic* motion (H>1) are stronger in LE indicating the ontogeny of intermittent search strategies, through balistic relocations. This is a result of experience because in controls the coefficients appear identical in the respective test conditions.
-
 Do intermittent searches correspond to the actual movements of real organisms? Intermittent searches appear to work 
 remarkably well for some species. For example, they may correctly describe the phenomenology of planktivorous fish and ground-foraging birds [304]. Atlantic bluefin tuna (Thunnus thynnus) also appear to switch between two search modes
 [262].
+
 
 
 ## Distribution MSD over time per larva 
@@ -2833,7 +2920,7 @@ cdfplot_pathDisplacementCrossingDomain(4)
 cdfplot_pathDisplacementCrossingDomain(8)
 cdfplot_pathDisplacementCrossingDomain(10)
 
-hist(lBoundedTrackInfo$LL$duration )
+#hist(lBoundedTrackInfo$LL$duration )
 ```
 
 Evoked conditions are more heavily tailed towards shorter displacements.

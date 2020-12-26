@@ -36,3 +36,7 @@ We begin with this more direct approach to model the distribution of Dispersal d
 
 This approach could be complemented by active inference / SPM model
 
+## Fractional Brownian motion
+
+Given the power-law decay of the Hurst exponent with the time-interval this indicates long-range dependence that can be obtained through a fractional Brownian motion (fBm) model.
+In probability theory, fractional Brownian motion (fBm), also called a fractal Brownian motion, is a generalization of Brownian motion. Unlike classical Brownian motion, the increments of fBm need not be independent. fBm is a continuous-time Gaussian process BH(t) on [0, T], that starts at zero, has expectation zero for all t in [0, T], 
