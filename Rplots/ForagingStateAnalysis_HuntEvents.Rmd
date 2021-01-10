@@ -80,7 +80,7 @@ These suggest that dispersions shift between spont in and evoked conditions diff
 
 Such distinct pattern between group (specifically difference NF-DF) is consistent with previous findings in Lagogiannis et al 2020.
 
-```{r  hunt-event-group-dispersion Norm split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+```{r  hunt-event-group-dispersion Norm split conditions, fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE }
  ## plot est, Densities Compare Spont to Evoked
 BW=0.1
  ylimUp <- 5

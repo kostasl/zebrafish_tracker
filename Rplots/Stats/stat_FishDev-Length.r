@@ -42,7 +42,7 @@ modelNorm="model {
 ## As the DF distrution looked wide, and rather bimodal, I measured more larvae to fill in the gaps. 
 ## The new data is in this csv, leaving the posibility to add more. 
 ## The scriptlet to run the labelling process on a set of expID is found in auxFunctions.r
-datFlatPxLength <- read.csv(file= paste(strDataExportDir,"/FishLength_Updated2.csv",sep=""))
+#datFlatPxLength <- read.csv(file= paste(strDataExportDir,"/FishLength_Updated2.csv",sep=""))
 message(paste(" Loading Measured fish length in pixels data ... "))
 
 #datFlatPxLength <- read.csv(file= paste(strDataExportDir,"/FishLength_Updated2.csv",sep=""))

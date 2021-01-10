@@ -130,7 +130,7 @@ setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
 MIN_PATH_LENGTH <- 0.5
-tsec_timeWindow <- 0 
+tsec_timeWindow <- 5 
 thres_dispersion_class <- 0.2
 ##Clustering
 Nclust <- 2
@@ -591,6 +591,9 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
 }## End of Function 
 
 
+
+
+tsec_timeWindow <- 5
 ```
 
 
@@ -613,10 +616,10 @@ Perhaps it is best I combine the trajectories of spontaneous and evoked activity
  Without normalizing the distribution is shown on the left, and a version normalized per max dispersion measured in each experiment is on the right :
  
 ```{r dispersion histograms across groups, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
-loadDispersionData()
+loadDispersionData_norm(tsec_timeWindow)
 
-hist(datDispersion$Dispersion,breaks=50,main="(All groups): Dispersion lengths per experiment ",xlab="Dispersion (mm)")
-hist(datDispersion$Dispersion_norm,breaks=50,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm)")
+hist(datDispersion$Dispersion,breaks=50,main="(All groups): Dispersion lengths per experiment ",xlab=paste("Dispersion (mm/",tsec_timeWindow,")") )
+hist(datDispersion$Dispersion_norm,breaks=50,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm) ")
 hist(datDispersion$Dispersion_larval_norm ,breaks=50,main="(All groups): Dispersion normalized per larva",xlab="Dispersion (larva norm)")
 
 
@@ -624,42 +627,42 @@ hist(datDispersion$Dispersion_larval_norm ,breaks=50,main="(All groups): Dispers
 We look at each rearing group separatelly, while combining their evoked and spontaneous conditions
 
 ```{r dispersion histograms per group across conditions, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
-hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion,breaks=50,main="LF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$LF$Evoked)
-hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion,breaks=50,main="NF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$NF$Evoked)
-hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion,breaks=50,main="DF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$DF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion,breaks=50,main="LF Evoked+Spont.", xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),col=colourDataScheme$LF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion,breaks=50,main="NF Evoked+Spont.",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),col=colourDataScheme$NF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion,breaks=50,main="DF Evoked+Spont.",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),col=colourDataScheme$DF$Evoked)
 
 ```
 
 
-We then plot each experimental group individually, also examining the dispersion in evoked (in the presence of prey) and spontaneous (no prey) conditions separatellly.
+We then plot each experimental group individually, also examining the dispersion in evoked (in the presence of prey) and spontaneous (no prey) conditions separately.
 Next we plot these for each experimental condition individually (non-Normalized):
 ```{r dispersion histograms per group per condition, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
 # 
 # ## Normed over all Recorded Dispersions
- hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion,breaks=100,main="LF Spontaneous",xlab="Dispersion (mm)",col=colourDataScheme$LF$Spont)
- hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion,breaks=100,main="NF Spontaneous",xlab="Dispersion (mm)",col=colourDataScheme$NF$Spont)
- hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion,breaks=100,main="DF Spontaneous",xlab="Dispersion (mm)",col=colourDataScheme$DF$Spont)
+ hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion,breaks=100,main="LF Spontaneous", xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$LF$Spont)
+ hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion,breaks=100,main="NF Spontaneous", xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$NF$Spont)
+ hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion,breaks=100,main="DF Spontaneous", xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$DF$Spont)
 
- hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,breaks=100,main="LF Evoked",xlab="Dispersion (mm)",col=colourDataScheme$LF$Evoked)
- hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,breaks=100,main="NF Evoked",xlab="Dispersion (mm)",col=colourDataScheme$NF$Evoked)
- hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,breaks=100,main="DF Evoked",xlab="Dispersion (mm)",col=colourDataScheme$DF$Evoked)
+ hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,breaks=100,main="LF Evoked",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$LF$Evoked)
+ hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,breaks=100,main="NF Evoked",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$NF$Evoked)
+ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,breaks=100,main="DF Evoked",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$DF$Evoked)
 ```
  
-Smooth estimates using a gaussian kernel show a shift towards exploitation for the pooled *LF* trajectories, measured across the whole event duration (at 1sec intervals):
+Smooth estimates using a Gaussian kernel show a shift towards exploitation for the pooled *LF* trajectories, measured across the whole event duration (at 1sec intervals):
 
 ```{r dispersion densities WholePath per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
-loadDispersionData(TRUE, tsec_timeWindow = 0)
+#loadDispersionData_norm(FALSE, tsec_timeWindow )
  ## plot est, Densities Compare Spont to Evoked
- BW=0.2
- plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="Full path Dispersion (mm)",lty=1  )
+ BW=0.5
+ plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),lty=1  )
  lines(density(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
  
-  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="Full path dispersion (mm)",lty=1 )
+  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
 
- plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="Full path dispersion (mm)",lty=1 )
+ plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
 
@@ -670,16 +673,16 @@ These look rather uniform across all groups. But if we examine the dispersion ge
 ```{r dispersion densities 20sec Path per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 loadDispersionData(TRUE, tsec_timeWindow = 20)
  ## plot est, Densities Compare Spont to Evoked
- BW=0.2
- plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="20sec path dispersion (mm)",lty=1  )
+ BW=0.5 
+ plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="dispersion (mm/20sec)",lty=1  )
  lines(density(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
  
-  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="20sec path dispersion (mm)",lty=1 )
+  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="Dispersion (mm/20sec)",lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
 
- plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="20sec path dispersion (mm)",lty=1 )
+ plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="Dispersion (mm/20sec)",lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
 
@@ -709,7 +712,7 @@ Each measured dispersion is divided by the max dispersion trajectory experiment,
 
 ```{r plot normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ### Normed Per Larva
-tsec_timeWindow <- 20
+
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
 strXLab <- paste(tsec_timeWindow,"sec Dispersion  (norm per exp.)")
 hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion_norm,breaks=50,main="LF Spontaneous",xlab=strXLab, col=colourDataScheme$LF$Spont)
@@ -728,6 +731,7 @@ Because each larva is recorded in two conditions, and as Marquez et al 2019 repo
 
 ```{r dispersion histogram normalized per larva, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ### Dispesions distributions Normalized on Per Larva basis - 
+tsec_timeWindow <-5
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
 hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion_larval_norm, breaks=100,main="LF S+E ",xlab="Dispersion  (norm per larva)")
 hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion_larval_norm, breaks=100,main="NF S+E",xlab="Dispersion  (norm per larva)")
@@ -761,7 +765,7 @@ Next I estimated densities using a gaussian kernel, allowing direct comparison b
 
 ```{r dispersion densities normalized per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
  ## plot est, Densities Compare Spont to Evoked
- BW=0.01
+ BW=0.05
  ylimUp <- 5
  plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF  ",xlab="Dispersion (norm. per larva)",lty=1  )
  lines(density(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
@@ -2517,7 +2521,7 @@ By that time the radius of displacement covered on average for LE is `r sqrt(lMS
 
 <!---TODO: Take the 0 dispersion data, which contain measurements in reference to path start, and look at msd per path duration so that the number of - Nope lets look at path-duration within fixed domains-->
 
-## Path Duration distribution
+## Path Durations within fixed domain R
 
 ```{r,  fig.show="hold",fig.cap="Distribution of path durations crossing circular domain with 20mm Diameter", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="33%" } 
 ## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails  
@@ -2546,7 +2550,7 @@ By that time the radius of displacement covered on average for LE is `r sqrt(lMS
 
 *Long fat-Tails missing from LE*, thus with experience larva learn to not wait and explore their surroundings looking for other patches.
 
-## Identify diffusion type using *Hurst exponents*
+## *Hurst exponents* to Identify diffusion type using 
 
 The Hurst exponent is referred to as the "index of dependence" or "index of long-range dependence". It quantifies the relative tendency of a time series either to regress strongly to the mean or to cluster in a direction.[5] A value H in the range 0.5–1 indicates a time series with long-term positive autocorrelation, meaning both that a high value in the series will probably be followed by another high value and that the values a long time into the future will also tend to be high. A value in the range 0 – 0.5 indicates a time series with long-term switching between high and low values in adjacent pairs, meaning that a single high value will probably be followed by a low value and that the value after that will tend to be high, with this tendency to switch between high and low values lasting a long time into the future. A value of H=0.5 can indicate a completely uncorrelated series, but in fact it is the value applicable to series for which the autocorrelations at small time lags can be positive or negative but where the absolute values of the autocorrelations decay exponentially quickly to zero. This in contrast to the typically power law decay for the 0.5 < H < 1 and 0 < H < 0.5 cases. 
 
@@ -2554,6 +2558,9 @@ The basic Hurst exponent can be *related to the expected size of changes, as a f
  In particular, the H1 exponent indicates persistent (H1 > ½) or antipersistent (H1 < ½) behavior of the trend. 
 
 Long-range dependence (LRD), also called long memory or long-range persistence, is a phenomenon that may arise in the analysis of spatial or time series data. It relates to the rate of decay of statistical dependence of two points with increasing time interval or spatial distance between the points. A phenomenon is usually considered to have long-range dependence if the dependence decays more slowly than an exponential decay, typically a power-like decay
+
+Lévy-modulated correlated random walks are genuinely superdiffusive across multiple spatial and temporal scales, 
+whereas *correlated random walks appear superdiffusive (ballistic) only at short scales. The standard correlated random walk is diffusive at large scales.
 
 *see also hurstexp(x, d = 50, display = TRUE)*
 
@@ -2622,22 +2629,23 @@ for (strG in vGroups[seq(1,6,2)])
      
 ```
 
-
 The Hurst exponent equals half the slope in the double-log plot of the mean squared displacement versus time for a random walk.
 Alternatively, it equals the slope of the double-log plot of the root mean squared displacement (see #viswanathan2011physics pg. 28)
 
 The Hurst parameter H is a measure of the extent of long-range dependence in a time series (while it has another meaning in the context of self-similar processes). H takes on values from 0 to 1. A value of 0.5 indicates the absence of long-range dependence.[8] The closer H is to 1, the greater the degree of persistence or long-range dependence. H less than 0.5 corresponds to anti-persistency, which as the opposite of LRD indicates strong negative correlation so that the process fluctuates violently. 
 
-Overall I find that the generalized Hurst exponent scales in power-law fashion against time-interval - This is evidence of  *long-range dependence (LRD)*.
+*Overall the evidence suggest that movements appear as a Correlated random walk (CRW).*
+The generalized Hurst exponent scales in power-law fashion against time-interval - which is evidence of  *long-range dependence (LRD)*.
 Slowly decaying variances, LRD, and a spectral density obeying a power-law are different manifestations of the property of the underlying covariance stationary process X. 
-
-My results show that In the small timescales <15 sec the exponent indicates persistent behaviour, which is indicative of *Balistic* motion (H>1). These are stronger in LE indicating the ontogeny of intermittent search strategies, through balistic relocations. 
-This is a result of experience because in controls the coefficients appear identical in the respective test conditions.
+Over small timescales <15 sec the exponent indicates persistent behaviour, which is indicative of *Balistic* motion (H>1). These are stronger in LE indicating the ontogeny of intermittent search strategies, through balistic relocations. 
+This is a result of experience because coefficients appear identical between controls in the respective test conditions.
+These look like correlated random walks (CRW), because CRWs appear superdiffusive (ballistic) only at short scales while the standard correlated random walk is diffusive at large scales, as here.
 
 Intermittent searches typically consist of alternating phases: a Brownian search phase alternating with ballistic relocations. The ballistic relocations help to reduce oversampling, in a manner similar to how Lévy walks help reduce oversampling.
 Do intermittent searches correspond to the actual movements of real organisms? Intermittent searches appear to work 
 remarkably well for some species. For example, they may correctly describe the phenomenology of planktivorous fish and ground-foraging birds [304]. Atlantic bluefin tuna (Thunnus thynnus) also appear to switch between two search modes
-[262].
+[262]. 
+An intermittent search strategy would be consistent with Marques et al 2020 assuming a switch between exploitation and exploration mode.
 
 
 
@@ -3114,8 +3122,95 @@ Thus  not only are Dispersion and mean Path length near linearly related, but so
 
 Note, the reason why  mean displacement be larger to dispersion is because dispersion is the *radius containing the path*, and thus the largest mean displacement can only be less or equal to the the diameter, twice the dispersion size.
 
+## MSD Vs Larva Size
 
+How does MSD relate to the Size or developmental time?
+I use Pearson Correlation to check how MSD over time intervals is related to larval size. 
+For MSD at t=5,10,20,50 I bootstrap the correlations and plot their estimated distribution.
 
+TODO: Link Exp IDS between SPOnt And Evoked
+```{r  mean-squared-distance vs larval size, fig.show="hold",fig.cap="Examing if Development can explain MSD - we find negative correlations overal- Larger size/increased development is not behind increased MSD", out.width="33%", echo=FALSE, cache=TRUE, results=FALSE}
+
+library (plyr) #Split list, apply ldply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
+
+source("Stats/stat_InformationTheoryAndCorrelations_bootstrap_lib.r")
+
+datFlatPxLength <- readRDS(file= paste(strDataExportDir,"/FishLength_Updated3.rds",sep=""))
+message(paste(" Loading Measured fish length in pixels data ... "))
+datFlatPxLength <- datFlatPxLength[!is.na(datFlatPxLength$expID) ,]
+datFlatPxLength <- datFlatPxLength[!is.na(datFlatPxLength$LengthPx),]
+
+datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # 
+##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
+# I have only measured Larvae in the Evoked conditions (So I can link to hunt-success)
+# To Look at Correlation To MSD in spontaneous conditions I need to find the respective evoked Experiment
+## Link Evoked and Spontaneous Trajectories
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+
+vMeanCorr <- list()
+datmuMSDtoSize_corr <- list()
+for (strG in vGroups)
+{
+    for (tt in names(lMSDSummaryData[[strG]]))
+    {
+      if (NROW(lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva) == 0)
+        next()
+      vMSD       <- lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva
+      vExpID     <- names(lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva)
+      ##Check If Spontaneous Replace IDs with evoked so we can join Lenghts
+      if (any(vExpID %in% datExpPairs$expID.S) )
+      {
+        vExpID_C <-  as.character(datExpPairs[as.character(datExpPairs$expID.S) %in% vExpID,]$expID.E )
+        ##Fix In case of missing records
+        vMSD <- vMSD[vExpID %in% as.character(datExpPairs$expID.S)]
+        vExpID <- vExpID_C
+      }
+      
+      #vExpID     <- vExpID[vExpID %in% datFlatPxLength$expID]
+      
+      datMSD     <- data.frame(expID=vExpID,meanMSD=vMSD)
+      datMSDvsLength <- merge(datFlatPxLength,datMSD,by.x="expID",by.y="expID")
+      ##plot(datMSDvsLength$LengthPx*DIM_MMPERPX,)
+      
+      YRange <- c(0,150)
+      XRange <- c(0,5)
+      pBw <- 0.05
+      vMeanCorr[[tt]] <- cor(datMSDvsLength$LengthPx*DIM_MMPERPX,datMSDvsLength$meanMSD, method="pearson")
+      
+      ##Selective Plot Of Densities
+      if (tt %in%  c("10","20","50"))
+      {
+        stat_MSDVsSize <- bootStrap_stat(datMSDvsLength$LengthPx*DIM_MMPERPX,datMSDvsLength$meanMSD,1000,XRange,YRange,"pearson")
+        plot(density(stat_MSDVsSize$corr,bw=pBw),main=paste("MSD vs Size ",strG," t",tt),
+             col=colourDataScheme[[strG]],lwd=3,xlim=c(-0.5,0.5))
+      }
+      
+    }
+  ##Summarize Group over time into dataframe
+  datmuMSDtoSize_corr[[strG]] <-  ldply ((vMeanCorr), data.frame)
+  names(datmuMSDtoSize_corr[[strG]]) <- c("t","corr")
+}
+
+## Plot Summarized MSD Correlation Coefficients Against Interval time
+for (g in c(1,3,5))
+{   strG <- vGroups[g]
+    plot(datmuMSDtoSize_corr[[strG]]$t,datmuMSDtoSize_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to larval size"), ylim=c(-0.6,0.6))
+    strG <- vGroups[g+1]
+    points(datmuMSDtoSize_corr[[strG]]$t,datmuMSDtoSize_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to larval size"), ylim=c(-0.6,0.6),cex=1.2)
+
+}
+
+```
+Evidence that Developmental size/time does not explain MSD:
+  
+  * A inverse correlation of size to MSD exists in DF and NF, (like the HPI).
+  * While No apparent correlation in LF of MSD to size
+  
+## MSD vs Hunting Success  
+  
 # Statistical comparison of motion-trajectories 
 <!--Clustering Code Separated into a sub RMarkdown-->
 ```{r statistical Model-fitting, child='ForagingStateAnalysis_ModelFitting.Rmd',eval=FALSE}
@@ -3124,13 +3219,13 @@ Note, the reason why  mean displacement be larger to dispersion is because dispe
 
 # Identifying states of foraging behaviour
 
-```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=FALSE}
+```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=TRUE}
 ```
 
 
 # Hunt initiation and foraging state
 
-```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=FALSE}
+```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
 ```
 
 
@@ -4177,8 +4272,8 @@ t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[da
 # Group Bout Duration compared using means per Larva
 datPathBoutsSpeed_perLarva <- tapply(unlist(datPathBouts$travelDistance_mm)/unlist(datPathBouts$duration_sec),list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
 
-############################
-# Group Distribution of mean bout duration among larvae- 
+#
+## Group Distribution of mean bout duration among larvae- 
 histMeanBoutSpeedPerLarva <- function(datPathBoutsSpeed_perLarva,strG,addPlot = FALSE)
 {
 xbreaks <- c(seq(0,10,0.5),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
