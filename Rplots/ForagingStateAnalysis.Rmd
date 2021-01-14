@@ -3263,8 +3263,8 @@ for (g in c(1,3,5))
     names(datmuMSDtoEHuntEvents_corr[[strG]]) <- c("t","corr")
     plot(datmuMSDtoEHuntEvents_corr[[strG]]$t,datmuMSDtoEHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
        xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to Hunt Rate"), ylim=c(-0.6,0.6))
-    #strG <- vGroups[g+1]
-    points(datmuMSDtoSHuntEvents_corr[[strG]]$t,datmuMSDtoSHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+    strGP <- vGroups[g+1]
+    points(datmuMSDtoSHuntEvents_corr[[strG]]$t,datmuMSDtoSHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strGP]],pch=pointTypeScheme[[strGP]],
        xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to larval size"), ylim=c(-0.6,0.6),cex=1.2)
 
 }
