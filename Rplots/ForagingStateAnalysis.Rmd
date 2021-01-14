@@ -3227,14 +3227,17 @@ for (strG in vGroups)
     }
   ##Summarize Group over time into dataframe
   datmuMSDtoSize_corr[[strG]] <-  ldply ((vMeanMSDVsSizeCorr), data.frame)
-  datmuMSDtoSHuntEvents_corr[[strG]] <-  ldply ((vMeanMSDVsSHuntEvents), data.frame)
-  datmuMSDtoEHuntEvents_corr[[strG]] <-  ldply ((vMeanMSDVsEHuntEvents), data.frame)
   names(datmuMSDtoSize_corr[[strG]]) <- c("t","corr")
+  datmuMSDtoSHuntEvents_corr[[strG]] <-  ldply ((vMeanMSDVsSHuntEvents), data.frame)
+  names(datmuMSDtoSHuntEvents_corr[[strG]]) <- c("t","corr")
+  datmuMSDtoEHuntEvents_corr[[strG]] <-  ldply ((vMeanMSDVsEHuntEvents), data.frame)
+  names(datmuMSDtoEHuntEvents_corr[[strG]]) <- c("t","corr")
 }
 
 ## Plot Summarized MSD Correlation Coefficients Against Interval time
 for (g in c(1,3,5))
 {   strG <- vGroups[g]
+
     plot(datmuMSDtoSize_corr[[strG]]$t,datmuMSDtoSize_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
        xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to larval size"), ylim=c(-0.6,0.6))
     strG <- vGroups[g+1]
@@ -3250,6 +3253,23 @@ Evidence that Developmental size/time does not explain MSD:
   * While No apparent correlation in LF of MSD to size
   
 ## MSD Vs Hunt Rates 
+```{r  mean-squared-distance vs hunt-rate, fig.show="hold",fig.cap=" MSD vs Hunt Rate ", out.width="33%", echo=FALSE, cache=TRUE, results=FALSE}
+
+## Plot Summarized MSD Correlation Coefficients Against Interval time
+for (g in c(1,3,5))
+{ 
+    strG <- vGroups[g]
+    names(datmuMSDtoSHuntEvents_corr[[strG]]) <- c("t","corr")
+    names(datmuMSDtoEHuntEvents_corr[[strG]]) <- c("t","corr")
+    plot(datmuMSDtoEHuntEvents_corr[[strG]]$t,datmuMSDtoEHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to Hunt Rate"), ylim=c(-0.6,0.6))
+    #strG <- vGroups[g+1]
+    points(datmuMSDtoSHuntEvents_corr[[strG]]$t,datmuMSDtoSHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to larval size"), ylim=c(-0.6,0.6),cex=1.2)
+
+}
+
+```
 
 
 ## MSD vs Hunting Success  
