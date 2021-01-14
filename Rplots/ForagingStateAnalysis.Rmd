@@ -3148,8 +3148,13 @@ datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() #
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
 
-vMeanCorr <- list()
+vMeanMSDVsSizeCorr <- list()
+vMeanMSDVsSHuntEvents <- list()
+vMeanMSDVsEHuntEvents <- list()
 datmuMSDtoSize_corr <- list()
+datmuMSDtoSHuntEvents_corr <- list()
+datmuMSDtoEHuntEvents_corr <- list()
+
 for (strG in vGroups)
 {
     for (tt in names(lMSDSummaryData[[strG]]))
@@ -3157,27 +3162,60 @@ for (strG in vGroups)
       if (NROW(lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva) == 0)
         next()
       vMSD       <- lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva
+      
       vExpID     <- names(lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva)
+      vExpID.S <- "" #initialize      
+      vExpID.E <- ""
+      
+      ##Length Is retrieved using Evoked Condition Exp ID
       ##Check If Spontaneous Replace IDs with evoked so we can join Lenghts
-      if (any(vExpID %in% datExpPairs$expID.S) )
+      if (strG %in% datExpPairs$groupID.S)
       {
-        vExpID_C <-  as.character(datExpPairs[as.character(datExpPairs$expID.S) %in% vExpID,]$expID.E )
-        ##Fix In case of missing records
-        vMSD <- vMSD[vExpID %in% as.character(datExpPairs$expID.S)]
-        vExpID <- vExpID_C
+        # Obtain Group Name for Spontaneous and Evoked Conditions
+        strG.S <- as.character(head(datExpPairs[as.character(datExpPairs$expID.S) %in% vExpID,]$groupID.S,1 ))
+        strG.E <- as.character(head(datExpPairs[as.character(datExpPairs$groupID.S) == strG.S,]$groupID.E,1 ))
+        vExpID.E <- as.character(datExpPairs[as.character(datExpPairs$expID.S) %in% vExpID,]$expID.E )
+        vExpID.S <- as.character(datExpPairs[as.character(datExpPairs$expID.E) %in% vExpID.E,]$expID.S ) 
+        
+        ##Fix In case of missing records / Repeated Evoked Exp.
+        vMSD <- vMSD[vExpID %in% as.character(vExpID.S)]
+        vExpID <- vExpID.E
       }
+      
+      # In Evoked conditions
+      if (strG %in% datExpPairs$groupID.E)
+      {
+        strG.E <- as.character(head(datExpPairs[as.character(datExpPairs$expID.E) %in% vExpID,]$groupID.E,1 ))
+        strG.S <- as.character(head(datExpPairs[as.character(datExpPairs$groupID.E) %in% strG.E,]$groupID.S,1 ))
+        ##Need this to Match the extra Evoked Experiments  Associated with the Same Spontaneous One
+        vExpID.S <- as.character(datExpPairs[as.character(datExpPairs$expID.E) %in% vExpID,]$expID.S )
+        vExpID.E <- as.character(datExpPairs[as.character(datExpPairs$expID.S) %in% vExpID.S,]$expID.E )
+        vMSD <- vMSD[vExpID %in% as.character(vExpID.E)]
+        vExpID <- vExpID.E ##Remove those Evoked Repeats - Keep set of 60 
+      }
+
+      ##Retrieve Spont and Evoked Hunt Rate for MSD 
+      vHuntEventCount.S <- datHuntStat[,"vHLarvaEventCount"][[strG.S]][vExpID.S]
+      vHuntEventCount.E <- datHuntStat[,"vHLarvaEventCount"][[strG.E]][vExpID.E]
+
       
       #vExpID     <- vExpID[vExpID %in% datFlatPxLength$expID]
       
-      datMSD     <- data.frame(expID=vExpID,meanMSD=vMSD)
+      datMSD     <- data.frame(expID=vExpID,meanMSD=vMSD,
+                               HuntEvents.S=as.vector(vHuntEventCount.S), 
+                               HuntEvents.E=as.vector(vHuntEventCount.E),
+                               HuntEvents.E.expID=names(vHuntEventCount.E), ##Sanity Check/Validation
+                               HuntEvents.S.expID=names(vHuntEventCount.S))
+      
       datMSDvsLength <- merge(datFlatPxLength,datMSD,by.x="expID",by.y="expID")
       ##plot(datMSDvsLength$LengthPx*DIM_MMPERPX,)
       
       YRange <- c(0,150)
       XRange <- c(0,5)
       pBw <- 0.05
-      vMeanCorr[[tt]] <- cor(datMSDvsLength$LengthPx*DIM_MMPERPX,datMSDvsLength$meanMSD, method="pearson")
-      
+      vMeanMSDVsSizeCorr[[tt]]    <- cor(datMSDvsLength$LengthPx*DIM_MMPERPX, datMSDvsLength$meanMSD, method="pearson")
+      vMeanMSDVsSHuntEvents[[tt]] <- cor(datMSDvsLength$HuntEvents.S, datMSDvsLength$meanMSD, method="pearson")
+      vMeanMSDVsEHuntEvents[[tt]] <- cor(datMSDvsLength$HuntEvents.E, datMSDvsLength$meanMSD, method="pearson")
       ##Selective Plot Of Densities
       if (tt %in%  c("10","20","50"))
       {
@@ -3188,7 +3226,9 @@ for (strG in vGroups)
       
     }
   ##Summarize Group over time into dataframe
-  datmuMSDtoSize_corr[[strG]] <-  ldply ((vMeanCorr), data.frame)
+  datmuMSDtoSize_corr[[strG]] <-  ldply ((vMeanMSDVsSizeCorr), data.frame)
+  datmuMSDtoSHuntEvents_corr[[strG]] <-  ldply ((vMeanMSDVsSHuntEvents), data.frame)
+  datmuMSDtoEHuntEvents_corr[[strG]] <-  ldply ((vMeanMSDVsEHuntEvents), data.frame)
   names(datmuMSDtoSize_corr[[strG]]) <- c("t","corr")
 }
 
@@ -3209,8 +3249,11 @@ Evidence that Developmental size/time does not explain MSD:
   * A inverse correlation of size to MSD exists in DF and NF, (like the HPI).
   * While No apparent correlation in LF of MSD to size
   
+## MSD Vs Hunt Rates 
+
+
 ## MSD vs Hunting Success  
-  
+
 # Statistical comparison of motion-trajectories 
 <!--Clustering Code Separated into a sub RMarkdown-->
 ```{r statistical Model-fitting, child='ForagingStateAnalysis_ModelFitting.Rmd',eval=FALSE}
@@ -4005,7 +4048,7 @@ t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[da
 # Group Bout Duration compared using means per Larva
 datPathBoutsDuration_perLarva <- tapply(datPathBouts$duration_sec,list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
 
-############################
+#
 # Group Distribution of mean bout duration among larvae- 
 histMeanBoutDurationsPerLarva <- function(datPathBoutsDuration_perLarva,strG,addPlot = FALSE)
 {
@@ -4135,7 +4178,7 @@ t.test(datPathBouts[datPathBouts$groupID == "DE","travelDistance_mm"],datPathBou
 # Group Bout Duration compared using means per Larva
 datPathBoutsDistance_perLarva <- tapply(unlist(datPathBouts$travelDistance_mm),list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
 
-############################
+#
 # Group Distribution of mean bout duration among larvae- 
 histMeanBoutDistancePerLarva <- function(datPathBoutsDistance_perLarva,strG,addPlot = FALSE)
 {
