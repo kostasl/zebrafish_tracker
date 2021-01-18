@@ -3128,7 +3128,7 @@ How does MSD relate to the Size or developmental time?
 I use Pearson Correlation to check how MSD over time intervals is related to larval size. 
 For MSD at t=5,10,20,50 I bootstrap the correlations and plot their estimated distribution.
 
-TODO: Link Exp IDS between SPOnt And Evoked
+
 ```{r  mean-squared-distance vs larval size, fig.show="hold",fig.cap="Examing if Development can explain MSD - we find negative correlations overal- Larger size/increased development is not behind increased MSD", out.width="33%", echo=FALSE, cache=TRUE, results=FALSE}
 
 library (plyr) #Split list, apply ldply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
@@ -3147,6 +3147,10 @@ datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() #
 ## Link Evoked and Spontaneous Trajectories
 datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+
+# Save A composite file of Lengths Across Both ExpID
+datLarvaSizes <- merge(datExpPairs,datFlatPxLength,by.y="expID",by.x="expID.E")
+saveRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
 
 vMeanMSDVsSizeCorr <- list()
 vMeanMSDVsSHuntEvents <- list()
@@ -3261,11 +3265,29 @@ for (g in c(1,3,5))
     strG <- vGroups[g]
     names(datmuMSDtoSHuntEvents_corr[[strG]]) <- c("t","corr")
     names(datmuMSDtoEHuntEvents_corr[[strG]]) <- c("t","corr")
+    
     plot(datmuMSDtoEHuntEvents_corr[[strG]]$t,datmuMSDtoEHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
-       xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to Hunt Rate"), ylim=c(-0.6,0.6))
+       xlab="Time",ylab="Pearson Correlation",main=paste(strG," MSD correlation to Hunt Rate"), ylim=c(-0.6,0.6))
+    
     strGP <- vGroups[g+1]
     points(datmuMSDtoSHuntEvents_corr[[strG]]$t,datmuMSDtoSHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strGP]],pch=pointTypeScheme[[strGP]],
-       xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to larval size"), ylim=c(-0.6,0.6),cex=1.2)
+       xlab="Time",ylab="Pearson Correlation", ylim=c(-0.6,0.6),cex=1.2)
+
+}
+
+## Plot Summarized MSD Correlation Coefficients Against Interval time
+for (g in c(2,4,6))
+{ 
+    strG  <- vGroups[g]
+    strGP <- vGroups[g-1]
+    names(datmuMSDtoSHuntEvents_corr[[strG]]) <- c("t","corr")
+    names(datmuMSDtoEHuntEvents_corr[[strG]]) <- c("t","corr")
+    
+    plot(datmuMSDtoEHuntEvents_corr[[strG]]$t,datmuMSDtoEHuntEvents_corr[[strG]]$corr, col=colourDataScheme[[strGP]],
+         pch=pointTypeScheme[[strGP]], xlab="Time", ylab="Pearson Correlation", main=paste(strG," MSD correlation to Hunt Rate"), ylim=c(-0.6,0.6))
+
+    points(datmuMSDtoSHuntEvents_corr[[strG]]$t,datmuMSDtoSHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation", ylim=c(-0.6,0.6),cex=1.2)
 
 }
 
@@ -4263,6 +4285,65 @@ In all groups bout distances are longer in  spontaneous conditions, and shorter 
 This agrees with spontaneous conditions having longer bout durations.
 I need to verify that this applies to exploratory movements, and i is not simply due to hunt event bouts being shorter in evoked conditions when reacting to prey, but in anycase the DF shows that this is not due to growth, and likely not due to interacting with prey either - because in DF bout distance does not change with test conditions.
 
+### Bout Distance Correlation To Larval Size
+
+Examine if development can explain bout distances.
+
+```{r bout-length to larval size correlation, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+datLarvaSize <- readRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
+datPathBoutsDistance_perLarva[,2]
+
+datMeanBoutLengthPerExp <- rbind.data.frame(
+      cbind.data.frame (names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,1]),1]),datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,1]),1]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,2]),2]), datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,2]),2]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,3]),3]), datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,3]),3]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,4]),4]), datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,4]),4]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,5]),5]),datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,5]),5]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,6]),6]),
+            datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,6]),6])
+)
+names(datMeanBoutLengthPerExp)  <- c("expID","meanBoutLength")
+
+saveRDS(datMeanBoutLengthPerExp,file= paste(strDataExportDir,"/meanBoutLengthPerExp.rds",sep=""))
+
+# Combine With Length
+datBoutVsSize.E <- merge(datMeanBoutLengthPerExp,datLarvaSize,by.x="expID",by.y="expID.E")
+datBoutVsSize.S <- merge(datMeanBoutLengthPerExp,datLarvaSize,by.x="expID",by.y="expID.S") 
+
+
+lBoutVsSize_corr <- list()
+llBoutVsSize_corrDens <- list()
+llBoutVsSize_corrSuffDens <- list()
+
+for (g in  c(1,3,5))
+{
+  gStr <- vGroups[g]
+  XRange <- c(3,6)
+  YRange <- c(0,4)
+  
+  lBoutVsSize_corr[[gStr]] <- bootStrap_stat(datBoutVsSize.E[datBoutVsSize.E$groupID.E == gStr,]$LengthPx*DIM_MMPERPX,
+                 datBoutVsSize.E[datBoutVsSize.E$groupID.E == gStr,]$meanBoutLength,1000,XRange,YRange,"spearman" ) #spearman pearson
+  #Obtain Density Of Boot Strapped Correlation
+  llBoutVsSize_corrDens[[gStr]] <- density(lBoutVsSize_corr[[gStr]]$corr)
+  llBoutVsSize_corrSuffDens[[gStr]] <- density(lBoutVsSize_corr[[gStr]]$corr_suffled)
+  
+  gStr <- vGroups[g+1] # Spontaneous
+  lBoutVsSize_corr[[gStr]] <- bootStrap_stat(datBoutVsSize.S[datBoutVsSize.S$groupID.S == gStr,]$LengthPx*DIM_MMPERPX,
+                 datBoutVsSize.S[datBoutVsSize.S$groupID.S == gStr,]$meanBoutLength,1000,XRange,YRange,"spearman" ) #spearman
+
+  #Obtain Density Of Boot Strapped Correlation
+  llBoutVsSize_corrDens[[gStr]] <- density(lBoutVsSize_corr[[gStr]]$corr)
+  llBoutVsSize_corrSuffDens[[gStr]] <- density(lBoutVsSize_corr[[gStr]]$corr_suffled)
+  
+}
+
+for (strG in  vGroups)
+{
+  plot(llBoutVsSize_corrDens[[strG]],main=paste(strG," Bout-length vs larva size correlation "),xlim=c(-0.4,0.4), col=colourDataScheme[strG][[1]],lwd=3 )
+  lines(llBoutVsSize_corrSuffDens[[strG]],lwd=3,lty=2)
+}
+
+```
 # Bout Speed
 
 ```{r bout-speed for fixed domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
