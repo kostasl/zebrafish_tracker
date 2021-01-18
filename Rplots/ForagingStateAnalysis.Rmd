@@ -4288,6 +4288,8 @@ I need to verify that this applies to exploratory movements, and i is not simply
 ### Bout Distance Correlation To Larval Size
 
 Examine if development can explain bout distances.
+I use Spearman correlation in order to reveal whether progressively, the larger the larva is the longer the bouts, as ranked within its rearing group.
+
 
 ```{r bout-length to larval size correlation, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
 datLarvaSize <- readRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
@@ -4339,11 +4341,18 @@ for (g in  c(1,3,5))
 
 for (strG in  vGroups)
 {
-  plot(llBoutVsSize_corrDens[[strG]],main=paste(strG," Bout-length vs larva size correlation "),xlim=c(-0.4,0.4), col=colourDataScheme[strG][[1]],lwd=3 )
+  plot(llBoutVsSize_corrDens[[strG]],main=paste(" mean Bout-length vs larva size correlation "),xlim=c(-0.4,0.4), col=colourDataScheme[strG][[1]],lwd=3 )
   lines(llBoutVsSize_corrSuffDens[[strG]],lwd=3,lty=2)
+  legend("topright",c(strG,"Suffled data"),col=c(colourDataScheme[strG][[1]],"black"),lty=c(1,2),lwd=3 )
 }
 
 ```
+The Ranked correlation of larva size to bout length appears identically positive in both NF and LF: The larger a larva is the longer its bouts both in spontaneous and evoked conditions.
+*However, this correlation goes away in DF*, and larger larva no longer execute longer bouts!
+What is the interpretation of this? 
+
+  - It could be that DF slow down so the stay within the vicinity as their expectation is that the do not need to explore to find food.
+
 # Bout Speed
 
 ```{r bout-speed for fixed domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
@@ -4485,6 +4494,68 @@ The authors found that such a learned motor-sensory gain is retained after a del
 For DF, where actions converge this may be linked to adaptation to motor actions that reduce energy expenditure when their actions are futile:
   - Andalman et al.  found that 1.5–2 week old zebrafish exposed to inescapable shocks would first attempt to escape from these aversive stimuli, but then transitioned into a prolonged state of behavioral passiv- ity—no longer attempting to move because their actions were futile
   - Mu et al. examined fish in a closed- loop optomotor assay, where the fish’s fictive swimming behavior updated their visual environment (similar to Refs. [31,33]). When the authors suddenly made these swimming behaviors ineffective – no longer influencing the visual environment – fish first attempted vigorous movement before entering into an extended passive state
+  
+## Bout Speed Vs Larva Size
+
+```{r bout-length to larval size correlation, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+datLarvaSize <- readRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
+datPathBoutsDistance_perLarva[,2]
+
+datMeanBoutSpeedPerExp <- rbind.data.frame(
+      cbind.data.frame (names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,1]),1]),datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,1]),1]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,2]),2]), datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,2]),2]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,3]),3]), datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,3]),3]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,4]),4]), datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,4]),4]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,5]),5]),datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,5]),5]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,6]),6]),
+            datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,6]),6])
+)
+names(datMeanBoutSpeedPerExp)  <- c("expID","meanBoutSpeed")
+
+saveRDS(datMeanBoutSpeedPerExp,file= paste(strDataExportDir,"/meanBoutSpeedPerExp.rds",sep=""))
+
+# Combine With Length
+datBoutSpeedVsSize.E <- merge(datMeanBoutSpeedPerExp,datLarvaSize,by.x="expID",by.y="expID.E")
+datBoutSpeedVsSize.S <- merge(datMeanBoutSpeedPerExp,datLarvaSize,by.x="expID",by.y="expID.S") 
+
+lBoutSpeedVsSize_corr <- list()
+lBoutSpeedVsSize_corrDens <- list()
+lBoutSpeedVsSize_corrSuffDens <- list()
+
+for (g in  c(1,3,5))
+{
+  gStr <- vGroups[g]
+  XRange <- c(3,6)
+  YRange <- c(0,4)
+  
+  lBoutSpeedVsSize_corr[[gStr]] <- bootStrap_stat(datBoutSpeedVsSize.E[datBoutSpeedVsSize.E$groupID.E == gStr,]$LengthPx*DIM_MMPERPX,
+                 datBoutSpeedVsSize.E[datBoutSpeedVsSize.E$groupID.E == gStr,]$meanBoutSpeed,1000,XRange,YRange,"spearman" ) #spearman pearson
+  #Obtain Density Of Boot Strapped Correlation
+  lBoutSpeedVsSize_corrDens[[gStr]] <- density(lBoutSpeedVsSize_corr[[gStr]]$corr)
+  lBoutSpeedVsSize_corrSuffDens[[gStr]] <- density(lBoutSpeedVsSize_corr[[gStr]]$corr_suffled)
+  
+  gStr <- vGroups[g+1] # Spontaneous
+  lBoutSpeedVsSize_corr[[gStr]] <- bootStrap_stat(datBoutSpeedVsSize.S[datBoutSpeedVsSize.S$groupID.S == gStr,]$LengthPx*DIM_MMPERPX,
+                 datBoutSpeedVsSize.S[datBoutSpeedVsSize.S$groupID.S == gStr,]$meanBoutSpeed,1000,XRange,YRange,"spearman" ) #spearman
+
+  #Obtain Density Of Boot Strapped Correlation
+  lBoutSpeedVsSize_corrDens[[gStr]] <- density(lBoutSpeedVsSize_corr[[gStr]]$corr)
+  lBoutSpeedVsSize_corrSuffDens[[gStr]] <- density(lBoutSpeedVsSize_corr[[gStr]]$corr_suffled)
+  
+}
+
+for (strG in  vGroups)
+{
+  plot(  lBoutSpeedVsSize_corrDens[[strG]], main=paste(" mean Bout-speed vs larva size correlation "), 
+         xlim=c(-0.4,0.4), col=colourDataScheme[strG][[1]],lwd=3 )
+  lines(lBoutSpeedVsSize_corrSuffDens[[strG]],lwd=3,lty=2)
+  legend("topright",c(strG,"Suffled data"),col=c(colourDataScheme[strG][[1]],"black"),lty=c(1,2),lwd=3 )
+}
+
+```
+There is a positive correlation that shows larger larvae tend to have faster bouts. This is correlation is not affected by the presence of prey for NF and LF, but *the strange thing is it seems that the presence of prey changes Bout speed for DF! they are slow down for prey *
+Perhaps this is consistent with their tendency to remain in place, yet why don't NF and LF slow down when prey is there?
+  
   
 # Full figure List of trajectories per experiment
 
