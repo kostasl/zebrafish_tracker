@@ -1,27 +1,29 @@
-### Do Regrasssion of HuntRates Vs Initial Prey using Gaussian Process
+### Do Regresssion of HuntRates Vs Initial Prey using Gaussian Process
 ## The parameters of GP Covariance matrix are estimated using Bayesian inference of the same GP and then these are used
 ## to Calculate the GP (Inverse the Matrix) and Plot
+source("DataLabelling/labelHuntEvents_lib.r")
 
 SE <- function(Xi,Xj, rho,tau) tau^2*exp(-0.5*(Xi - Xj) ^ 2 * rho^2)
 covC <- function(X, Y, rho,tau) outer(X, Y, SE, rho,tau)
 
-plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05){
+plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
   
   ord=order(Xn)
   Xn=Xn[ord] ##Place Points In order so we can draw the Polygon Bands
   Yn=Yn[ord]
   
-  points(Xn,Yn,col=colour, pch=16)
+  points(Xn,Yn,col=colour, pch=pPch)
   x_predict=seq(1,80,0.1)
   Ef=matrix(NA,ncol=length(x_predict),nrow=ind)
   for(j in 1:ind){
-    i=steps-j+1
+    i=steps/thin-j+1
+    ##print(i)
     cov_xx_inv=solve(covC(Xn,Xn,drawY$rho[1,i,1],drawY$tau[1,i,1])+diag(drawY$tau0[1,i,1],length(Xn)))
     Ef[j,] <- covC(x_predict, Xn,drawY$rho[1,i,1],drawY$tau[1,i,1]) %*% cov_xx_inv %*% Yn 
   }
   mu=apply(Ef,2,mean)
   band=apply(Ef,2,quantile,probs=c(qq,1-qq))
-  lines(x_predict,mu,lwd=2,col=colour,xlim=c(0,max(x_predict) ) )
+  lines(x_predict,mu,lwd=3,col=colour,xlim=c(0,max(x_predict) ) )
   polygon(c(x_predict,rev(x_predict)),c(band[1,],rev(band[2,])),col=colour)
 }
 
@@ -42,7 +44,7 @@ model="model {
     for(j in (i+1):N) {
       #Sigma[i,j] <- pow(tau,2) * exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
       ##exp(-0.5*(abs(X1[i]-X2[j])/l)^2)
-      Sigma[i,j] <-  exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
+      Sigma[i,j] <-   pow(tau,2)*exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
         
       Sigma[j,i] <- Sigma[i,j]
     }
@@ -50,9 +52,8 @@ model="model {
  
   alpha=0 
   tau0 ~ dgamma(20,0.5) 
-  tau  ~ dgamma(40,0.5) 
-  rho = 0.06
-  
+  tau  ~ dgamma(250,0.5) 
+  rho ~  dunif(0,0.06) 
 }"
 
 library(rjags)
@@ -60,9 +61,9 @@ fileConn=file("model.tmp")
 writeLines(model,fileConn);
 close(fileConn)
 
-burn_in=100;
-steps=1000;
-thin=1;
+burn_in=140;
+steps=20000;
+thin=2;
 varnames=c("tau","rho","alpha","tau0")
 
 
@@ -71,14 +72,17 @@ preyCntRange <- c(0,80)
 
 #load("./Stats/data/setn-12-D-5-16-datHuntStat.RData")
 
-strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
-datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
+#strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
+#datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+#datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
 #strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 #datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
 
-datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
 
+datHuntLabelledEventsKL <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
+## Link Evoked and Spontaneous Trajectories
+datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
 
 
 ## Get Event Counts Within Range ##
@@ -158,8 +162,11 @@ ind = 10
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
 
 
+tauRangeA <- 250
+Rho <- 0.01
+
 #strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
-strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tauRangeA,".pdf",sep="")
+strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tauRangeA,"-RhoMax",Rho,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 
 
@@ -168,22 +175,24 @@ plot(nFoodLL2,nEventsLL2,col=colourH[1],
      ylab="Number of Hunt Events",
      xlab="Initial Tracker-Estimated Prey Count",
      xlim = preyCntRange,
-     pch=16,
+     pch=pointTypeScheme$LL,
      sub=paste("GP tau:",format(mean(draw[["LL"]]$tau),digits=4 ),
                "tau0:",format(mean(draw[["LL"]]$tau0),digits=4 ) ,
                "rho:",format(mean(draw[["LL"]]$rho),digits=4 ) )  
                )
 
-legend(60,75,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
+legend("topright",legend = c(paste("LF #",nDatLL),paste("NF #",nDatNL),paste("DF #",nDatDL)),
+       col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
+       pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ) )
 
 
-plot_res(ind,draw[["LL"]],nFoodLL2,nEventsLL2,colourH[1],0.05)
+plot_res(ind,draw[["LL"]],nFoodLL2,nEventsLL2,colourH[1],0.05,pointTypeScheme$LL)
 
-plot_res(ind,draw[["NL"]],nFoodNL2,nEventsNL2,colourH[2],0.05)
+plot_res(ind,draw[["NL"]],nFoodNL2,nEventsNL2,colourH[2],0.05,pointTypeScheme$NL)
 
 #plot(nFoodDL2,nEventsDL2,col="blue")
 
-plot_res(ind,draw[["DL"]],nFoodDL2,nEventsDL2,colourH[3],0.05)
+plot_res(ind,draw[["DL"]],nFoodDL2,nEventsDL2,colourH[3],0.05,pointTypeScheme$DL)
 
 #legend(5,700,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
 

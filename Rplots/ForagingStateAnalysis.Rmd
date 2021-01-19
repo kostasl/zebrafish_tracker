@@ -4497,6 +4497,8 @@ For DF, where actions converge this may be linked to adaptation to motor actions
   
 ## Bout Speed Vs Larva Size
 
+Here I bootstrap the correlation of mean larval bout speed and larva size data, in order to obtain a statistics for the correlation.
+
 ```{r bout-length to larval size correlation, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
 datLarvaSize <- readRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
 datPathBoutsDistance_perLarva[,2]
