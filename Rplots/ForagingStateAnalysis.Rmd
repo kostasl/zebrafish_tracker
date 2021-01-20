@@ -3149,7 +3149,7 @@ datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
 datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
 
 # Save A composite file of Lengths Across Both ExpID
-datLarvaSizes <- merge(datExpPairs,datFlatPxLength,by.y="expID",by.x="expID.E")
+datLarvaSize <- merge(datExpPairs,datFlatPxLength,by.y="expID",by.x="expID.E")
 saveRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
 
 vMeanMSDVsSizeCorr <- list()
@@ -4499,7 +4499,7 @@ For DF, where actions converge this may be linked to adaptation to motor actions
 
 Here I bootstrap the correlation of mean larval bout speed and larva size data, in order to obtain a statistics for the correlation.
 
-```{r bout-length to larval size correlation, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+```{r bout-speed to larval size correlation, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
 datLarvaSize <- readRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
 datPathBoutsDistance_perLarva[,2]
 

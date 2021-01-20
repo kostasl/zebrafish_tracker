@@ -3,7 +3,7 @@
 ## to Calculate the GP (Inverse the Matrix) and Plot
 source("DataLabelling/labelHuntEvents_lib.r")
 
-SE <- function(Xi,Xj, rho,tau) tau^2*exp(-0.5*(Xi - Xj) ^ 2 * rho^2)
+SE <- function(Xi,Xj, rho,tau) tau^2*exp(-(Xi - Xj) ^ 2 * rho^2)
 covC <- function(X, Y, rho,tau) outer(X, Y, SE, rho,tau)
 
 plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
@@ -13,7 +13,7 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
   Yn=Yn[ord]
   
   points(Xn,Yn,col=colour, pch=pPch)
-  x_predict=seq(1,80,0.1)
+  x_predict=seq(preyCntRange[1],preyCntRange[2],1)
   Ef=matrix(NA,ncol=length(x_predict),nrow=ind)
   for(j in 1:ind){
     i=steps/thin-j+1
@@ -22,9 +22,14 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
     Ef[j,] <- covC(x_predict, Xn,drawY$rho[1,i,1],drawY$tau[1,i,1]) %*% cov_xx_inv %*% Yn 
   }
   mu=apply(Ef,2,mean)
-  band=apply(Ef,2,quantile,probs=c(qq,1-qq))
+  sd=apply(Ef,2,sd)
+  
+  #band=apply(Ef,2,quantile,probs=c(qq,1-qq))
+  band1= mu + 2*sd
+  band2= mu - 2*sd
   lines(x_predict,mu,lwd=3,col=colour,xlim=c(0,max(x_predict) ) )
-  polygon(c(x_predict,rev(x_predict)),c(band[1,],rev(band[2,])),col=colour)
+  #polygon(c(x_predict,rev(x_predict)),c(band[1,],rev(band[2,])),col=colour)
+  polygon(c(x_predict,rev(x_predict)),c(band1,rev(band2)),col=colour)
 }
 
 
@@ -44,16 +49,16 @@ model="model {
     for(j in (i+1):N) {
       #Sigma[i,j] <- pow(tau,2) * exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
       ##exp(-0.5*(abs(X1[i]-X2[j])/l)^2)
-      Sigma[i,j] <-   pow(tau,2)*exp( - 0.5* pow((food[i] - food[j])*rho, 2) )
+      Sigma[i,j] <-   pow(tau,2)*exp( - pow(rho*(food[i] - food[j]), 2) )
         
       Sigma[j,i] <- Sigma[i,j]
     }
   }
  
   alpha=0 
-  tau0 ~ dgamma(20,0.5) 
-  tau  ~ dgamma(250,0.5) 
-  rho ~  dunif(0,0.06) 
+  tau0 ~ dgamma(250,1) 
+  tau  ~ dgamma(250,1) 
+  rho ~  dgamma(1,1/3) 
 }"
 
 library(rjags)
@@ -62,12 +67,12 @@ writeLines(model,fileConn);
 close(fileConn)
 
 burn_in=140;
-steps=20000;
+steps=10000;
 thin=2;
 varnames=c("tau","rho","alpha","tau0")
 
 
-preyCntRange <- c(0,80)
+preyCntRange <- c(0,65)
 #load("data/setn-12-D-5-16-datHuntStat.RData")
 
 #load("./Stats/data/setn-12-D-5-16-datHuntStat.RData")
@@ -162,8 +167,8 @@ ind = 10
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
 
 
-tauRangeA <- 250
-Rho <- 0.01
+tauRangeA <- 253
+Rho <-1
 
 #strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
 strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tauRangeA,"-RhoMax",Rho,".pdf",sep="")
@@ -186,7 +191,7 @@ legend("topright",legend = c(paste("LF #",nDatLL),paste("NF #",nDatNL),paste("DF
        pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ) )
 
 
-plot_res(ind,draw[["LL"]],nFoodLL2,nEventsLL2,colourH[1],0.05,pointTypeScheme$LL)
+plot_res(ind,draw[["LL"]],nFoodLL2,nEventsLL2, colourH[1],0.05,pointTypeScheme$LL)
 
 plot_res(ind,draw[["NL"]],nFoodNL2,nEventsNL2,colourH[2],0.05,pointTypeScheme$NL)
 
@@ -199,4 +204,5 @@ plot_res(ind,draw[["DL"]],nFoodDL2,nEventsDL2,colourH[3],0.05,pointTypeScheme$DL
 dev.off()
 #points(datSliceLL[,1],datSliceLL[,2],col="black")
 
+save(draw,data,m,file=paste0(strDataExportDir,"/jags_FoodDensityVsHuntRate_GP.RData"))
 
