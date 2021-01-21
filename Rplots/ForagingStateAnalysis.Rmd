@@ -1112,37 +1112,46 @@ plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=
 {
   datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
   dispBreaks <- seq(1,13,1)
-  upLIM <- 50
+  upLIM <- 120
   datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
   ##The Path Connecting the two points that define the Dispersion Circle
   vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
+  vSDPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,sd,na.rm=TRUE)
+  vCountPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,NROW)
+  # Calc Std Error Of Mean 
+  vSEPathLengthPerDispersion <- vSDPathLengthPerDispersion/sqrt(vCountPathLengthPerDispersion)
+  
+  rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
   
   if (!addPlot)
   {
-    plot(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+    plot(rpoints,
          vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Total contained mean path length <l>",
          ylim=c(0,upLIM),xlim=c(0,11),col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
-        lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+    
+        lines(rpoints,
          vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
 
   }else
   {
-    points(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+    points(rpoints,
          vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
          col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
     
-    lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+    lines(rpoints,
          vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
   }
   
+  # Add Straight Line Points - 
   if (!addPlot)
   {
-    rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
     points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
     points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
     points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
    # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
   }
+  # Add Error About Mean
+  arrows(x0=rpoints, y0=vmeanPathLengthPerDispersion-vSEPathLengthPerDispersion, x1=rpoints, y1=vmeanPathLengthPerDispersion+vSEPathLengthPerDispersion, code=3, angle=90, length=0.1, col=colourDataScheme[[strGroupID]], lwd=2)
   
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
 }
@@ -1251,7 +1260,8 @@ I next look at the Log-Log distribution of path-lengths for a specified dispersi
 
 ```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
 
-tsec_timeWindow <- 0
+##Load Non-Time constrained Paths (Sliding windows of t duration) - but instead dispersion calculated on  Full paths duration
+tsec_timeWindow <- 0  
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
 strTitle <- paste("Whole path ")
 
