@@ -1112,7 +1112,9 @@ plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=
 {
   datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
   dispBreaks <- seq(1,13,1)
-  upLIM <- 120
+  upLIM <- 150
+  CEX = 1.0
+  
   datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
   ##The Path Connecting the two points that define the Dispersion Circle
   vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
@@ -1126,8 +1128,9 @@ plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=
   if (!addPlot)
   {
     plot(rpoints,
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Total contained mean path length <l>",
-         ylim=c(0,upLIM),xlim=c(0,11),col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Total contained mean path length <l> (mm)",
+         ylim=c(2,upLIM),xlim=c(0,11),log="y",
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=CEX )
     
         lines(rpoints,
          vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
@@ -1136,22 +1139,23 @@ plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=
   {
     points(rpoints,
          vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
-         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=CEX )
     
     lines(rpoints,
          vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
   }
   
   # Add Straight Line Points - 
-  if (!addPlot)
+  if (!addPlot & propFactor > 0)
   {
     points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
-    points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    lines(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
     points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
    # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
   }
-  # Add Error About Mean
-  arrows(x0=rpoints, y0=vmeanPathLengthPerDispersion-vSEPathLengthPerDispersion, x1=rpoints, y1=vmeanPathLengthPerDispersion+vSEPathLengthPerDispersion, code=3, angle=90, length=0.1, col=colourDataScheme[[strGroupID]], lwd=2)
+  
+  # Add STD Error bar About Mean
+  arrows(x0=rpoints, y0=vmeanPathLengthPerDispersion-vSEPathLengthPerDispersion, x1=rpoints, y1=vmeanPathLengthPerDispersion+vSEPathLengthPerDispersion, code=3, angle=90, length=0.02, col=colourDataScheme[[strGroupID]], lwd=1)
   
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
 }
@@ -1263,17 +1267,24 @@ I next look at the Log-Log distribution of path-lengths for a specified dispersi
 ##Load Non-Time constrained Paths (Sliding windows of t duration) - but instead dispersion calculated on  Full paths duration
 tsec_timeWindow <- 0  
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
-strTitle <- paste("Whole path ")
+strTitle <- paste("Path lengths vs dispersion size")
 
+#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerDispersion_AllPath_log.pdf",sep=""),width=7,height=7)
 ## Take Group 
-plot_meanPathLengthPerDispersion(datDispersion,'NE')
-plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE)
+plot_meanPathLengthPerDispersion(datDispersion,'NE',propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor = 2)
 title(strTitle)
 
+  legend("topleft", legend=names(colourDataScheme)[4:9],
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+  
+#dev.off()
 ```
 
 ##  Path-length Log-Log distribution per *specific dispersion*
@@ -1576,6 +1587,10 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathLength <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathLength)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$muPathLength)
   # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$count <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$count)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$count)
   # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathDuration <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathDuration)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$muPathDuration)
+  
+  
+#pdf(file= paste(strPlotExportPath,"/foraging/InvariancePrinciple_PathLengths.pdf",sep=""),width=7,height=4)
+
   ## Make PLot All groups, Add theoretical Bound  
   plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathLength,ylim=c(0,28),xlim=c(0,12),
        col=unlist(colourDataScheme[ as.character(datMeanPathLengthAll$groupID) ]),
@@ -1584,19 +1599,29 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   propFactor <- 1 #0.70
   rpoints <- seq(1,12, 1 )
   points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+
   
+  
+  legend("topleft", legend=names(colourDataScheme)[4:9],
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+# dev.off()
   # Gives Close agreement to Theoretical , May be underestimating because of aliasing, due to removal of points to speed up sum of path distance
   ### END PLOT OF MEAN PATH LENTH
   
+
+#pdf(file= paste(strPlotExportPath,"/foraging/InvariancePrinciple_ResidenceTime.pdf",sep=""),width=7,height=4)
   ## Make PLot All groups, Add theoretical Bound  
-  plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathDuration,ylim=c(0,28),xlim=c(0,12),
+  plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathDuration,ylim=c(0,20),xlim=c(0,12),
        col=unlist(colourDataScheme[ as.character(datMeanPathLengthAll$groupID) ]),
        pch=unlist(pointTypeScheme[ as.character(datMeanPathLengthAll$groupID) ]),ylab="Mean residence time (sec)",xlab="Domain radius (mm)",main="Residence time ")
 
   propFactor <- 1 #0.70
   rpoints <- seq(1,10, 1 )
   points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
-  
+
+#dev.off()  
 ```
   
 The *invariance principle holds, within a restricted region <9mm *, with the mean path length being simply linearly related to the geometrical size of the domain:
@@ -1707,27 +1732,39 @@ In the following, the *boundaries at 10 and 11 mm* have been concatenated:
 ```{r distribution of number of paths per domain sizes,fig.show="hold", out.width="100%", echo=FALSE, cache=TRUE,fig.cap="Distribution of number of domain crossings, with increasing domain radius shows effect of prey is to constraint movement within smaller central regions, as revealed by the breaking down of the linear invariant regime in evoked conditions. (*Note regions 10+11mm have been concatenated*)"}  
 datMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_RAllmm.rds") )
 
+#pdf(file= paste(strPlotExportPath,"/foraging/InvariancePrinciple_DomainCrossingsDistribution_cdf.pdf",sep=""),width=7,height=5)
+#par(mar = c(3.9,4.0,1,1))
+
 bAddPlot<-FALSE
 for (strG in as.character(unique(datMeanPathLengthAll$groupID) ) )
 {
   datGroupMeanPathLength <- datMeanPathLengthAll[datMeanPathLengthAll$groupID == strG,]
+  #datGroupSEPathLength <- sum(datGroupMeanPathLength$sdPathLength)/sqrt(sum(datGroupMeanPathLength$count))
   ## I Added the counts for the  10+11mm boundary to compensate for ROI edge effects /compensate for Detection Errors
   #datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius == 10,]$count <- sum(datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius %in% c(10,11),]$count)
   #datGroupMeanPathLength <- datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius < 11,]
   if (!bAddPlot)
   {
-    plot(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),ylim=c(0,0.2),xlim=c(0,11),
+    plot(datGroupMeanPathLength$DomainRadius, cumsum(datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count)),
+         ylim=c(0.01,1),xlim=c(0,11),
        xlab="Domain radius (mm)",ylab="fraction of domain crossings",
-       col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
+       col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")#,log="y"
+    segments(x0 = 0,y0=0.5,x1=12,y1=0.5,lty=2,lwd=1)
+    segments(x0 = 0,y0=0.3,x1=12,y1=0.3,lty=2,lwd=1)
   }else
   {
-    lines(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),
+    lines(datGroupMeanPathLength$DomainRadius, cumsum(datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count)),
           col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
   }
-
+  
+  #arrows(x0=datGroupMeanPathLength$DomainRadius, y0=vmeanPathLengthPerDispersion-vSEPathLengthPerDispersion,
+   #      x1=datGroupMeanPathLength$DomainRadius, y1=vmeanPathLengthPerDispersion+vSEPathLengthPerDispersion, code=3, angle=90, length=0.02, col=colourDataScheme[[strGroupID]], lwd=1)
+  
   bAddPlot <- TRUE
 }
+title("CDF of domain crossings")
 
+#dev.off()
 
 ```
 
@@ -1881,12 +1918,12 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogL
   if (!addPlot)
   {
     if(!bLogLog)
-          plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0.1,200),
+          plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(1,200),
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
     else
-        plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0.1,200),log="xy",
+        plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(1,200),log="xy",
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
@@ -2080,13 +2117,13 @@ plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
    # return(0)
   }
   idxOrder <- order(vTimeWindow)
-  xLim <- c(0,max(vTimeWindow ) *1.10 )
+  xLim <- c(1,max(vTimeWindow ) *1.10 )
   if (!addPlot)
   {
     plot(vTimeWindow[idxOrder],vDispersion[idxOrder],xlim=xLim,ylim=c(0,13),
-         col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
+         col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],log="x",
          pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]],
-         xlab="Path duration (sec)", ylab="Dispersion (mm)")
+         xlab="Time window (sec)", ylab="Dispersion (mm)")
   }else
     points(vTimeWindow[idxOrder],vDispersion[idxOrder],
            col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
@@ -2134,7 +2171,9 @@ for (strG  in vGroups)
 
 ```{r Dispersion over time , fig.cap="Dispersion for LF spontaneous grows distinctively fast, in agreement with MSD", fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
 
-##Get Distribution of MSD and Mean MSD for each time integration window 
+#pdf(file= paste(strPlotExportPath,"/foraging/DispersionPerTimewindow_log.pdf",sep=""),width=7,height=5)
+par(mar = c(3.9,4.0,1,1))
+##Get Distribution of MSD  and Mean MSD for each time integration window 
 ##load Precalc Results
   plotDispersionPerTime(lMSDSummaryData[["NE"]])
   plotDispersionPerTime(lMSDSummaryData[["NL"]],TRUE)
@@ -2143,14 +2182,16 @@ for (strG  in vGroups)
   plotDispersionPerTime(lMSDSummaryData[["DE"]],TRUE)
   plotDispersionPerTime(lMSDSummaryData[["DL"]],TRUE)
   
-  legend("topright", legend=names(colourDataScheme)[4:9],
+  legend("topleft", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
-
+title("Dispersion over increasing time windows")
 # legend("topright", 
 #            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
 #                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
 #        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
+
+#dev.off()
 
 ```
 
@@ -2478,10 +2519,14 @@ lMSDVsTimeData_Pooled <- list()
   lMSDVsTimeData_Pooled[["LL"]] <- plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE,bLog)
   lMSDVsTimeData_Pooled[["DE"]] <- plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE,bLog)
   lMSDVsTimeData_Pooled[["DL"]] <- plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE,bLog)
-  title(main="Pooled Mean")
+  title(main="(Pooled) Mean Squared Displacement")
   legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+  
+
+#pdf(file= paste(strPlotExportPath,"/foraging/MSDPerTimeWindow_log.pdf",sep=""),width=7,height=5)
 
 lMSDVsTimeData_Grouped <- list()  
   lMSDVsTimeData_Grouped[["NE"]] <- plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE,bLog)
@@ -2490,13 +2535,13 @@ lMSDVsTimeData_Grouped <- list()
   lMSDVsTimeData_Grouped[["LL"]] <- plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE,bLog)
   lMSDVsTimeData_Grouped[["DE"]] <- plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE,bLog)
   lMSDVsTimeData_Grouped[["DL"]] <- plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE,bLog)
-  title(main="Group Mean")
+  title(main="(Group) Mean Squared Displacement")
   legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
   
   ##Hurst Exponent per time
- 
+ #dev.off()
    
 ## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails and And MSD per duration
   DomainRadius <- 10
@@ -2578,6 +2623,9 @@ whereas *correlated random walks appear superdiffusive (ballistic) only at short
 
 ## This uses the sliding time window data to estimate MSD per path duration 
 # and thus it does not reprwesent the distribution of path-durations
+
+#pdf(file= paste(strPlotExportPath,"/foraging/HurstVsTimewindow_log.pdf",sep=""),width=7,height=5)
+
 addPlot <- FALSE
 for (strG in vGroups)
 {
@@ -2604,6 +2652,8 @@ for (strG in vGroups)
   #Balistic H limit
   segments(0,1,100,1)
 }
+
+#dev.off()
 
 ## Here I use data from the paths crossing circular  Domain analysis, and calculate msd be duration bin
 # then calculate Hurst coeff for each of those bins (1sec)
@@ -2806,9 +2856,6 @@ plot_MSDPerPathLengthSummary <- function(lMSDPathLStat)
   
 }
 
-#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerMSD.pdf",sep=""),width=7,height=7)
-## bottom, left,top, right
-#par(mar = c(4.3,4.3,2,1))
 makeMSDPathLengthSummary <- function ()
 {
   #vtimeWindows <- vsmallTimeWindows #c(1,2,10) #
@@ -2866,7 +2913,13 @@ if (!exists("lMSDStat"))
 
 lMSDStat <<- readRDS(paste0(strDataExportDir,"lMSDPerPathLength2mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
   
+
+
 # PLOT Summary per Path Range - Mean MSD Per Path Length over all T
+#pdf(file= paste(strPlotExportPath,"/foraging/MSDPerPathLength.pdf",sep=""),width=7,height=5)
+## bottom, left,top, right
+par(mar = c(4.3,4.3,2,1))
+
 baddPlot <- FALSE
 datmeanPooledMSDPerPathOft <- list()
 for (strG in vGroups)
@@ -2877,7 +2930,7 @@ for (strG in vGroups)
   if (!baddPlot)
   {
     plot(xtick, (datmeanPooledMSDPerPathOft[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
-         xlab="Path length (mm)",ylab=" Mean Squared Displacement (mm)",xaxt="n" ,ylim=c(0.2,250))
+         xlab="Path length (mm)",ylab=" Mean Squared Displacement (mm)",xaxt="n" ,ylim=c(1,250),log="y")
   
     axis(side=1, at=xtick, labels = names(lMSDStat[[strG]]$`2`$breaks))
     #axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
@@ -2895,7 +2948,7 @@ for (strG in vGroups)
          col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"black" ),
          pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
-
+#dev.off()
 
 ```
 
@@ -2965,6 +3018,7 @@ There is a linear relationship of Dispersion against path-length, but this is su
 
 
 ```{r  mean-squared-distance over Dispersion , fig.show="hold",fig.cap="Non-Linear relationship between dispersal and MSD, is likely evidence of superdiffussion (Disp. is linear to <Path-length>", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
+
 ## iNvariance Principle Theoretical Mean Path Length
 theoreticalMeanLength <- function(D,propFactor=1.5)
 {
@@ -2973,11 +3027,11 @@ theoreticalMeanLength <- function(D,propFactor=1.5)
   return(round(100*(propFactor* pi*A/C)) /100 )
 }
 ##Integrate time out, and plot MSD per Dispersion size
-# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+# ie length to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
 process_MSDVsDispersion <- function(ldatDispersion,strGroupID,addPlot=FALSE)
 {
   YLIM <- 200
-  dispBreaks <- seq(1,13,0.5)
+  dispBreaks <- seq(0,13,0.25)
   vmeanPooledMSDPerPathOft  <- list()
   vsdPooledMSDPerPathOft    <- list()
   vcountPooledMSDPerPathOft <- list()
@@ -2993,18 +3047,23 @@ process_MSDVsDispersion <- function(ldatDispersion,strGroupID,addPlot=FALSE)
 
   datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
   
-  vmeanPooledMSDPerPathOft  <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, mean,na.rm=TRUE)
-  vcountPooledMSDPerPathOft <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, NROW)
-  vsdPooledMSDPerPathOft    <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, sd,na.rm=TRUE)
+  #vmeanPooledMSDPerPathOft  <- tapply(datGroupDispersion$DisplacementSq, datGroupDispersion$dispRange, mean,na.rm=TRUE)
+  vmeanPooledMSDPerPathOft  <- tapply(datGroupDispersion$MSD, datGroupDispersion$dispRange, mean,na.rm=TRUE)
+  vcountPooledMSDPerPathOft <- tapply(datGroupDispersion$MSD, datGroupDispersion$dispRange, NROW)
+  vsdPooledMSDPerPathOft    <- tapply(datGroupDispersion$MSD, datGroupDispersion$dispRange, sd,na.rm=TRUE)
   names(dispBreaks)=names(vmeanPooledMSDPerPathOft)
+  
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
-  return(list(muMSDPerT=vmeanPooledMSDPerPathOft,sdPooledMSDPerT=vsdPooledMSDPerPathOft,N=vcountPooledMSDPerPathOft,breaks=dispBreaks[1:length(vmeanPooledMSDPerPathOft)]  ) )
+  return(list(muMSDPerT=vmeanPooledMSDPerPathOft,
+              sdPooledMSDPerT=vsdPooledMSDPerPathOft,
+              N=vcountPooledMSDPerPathOft,
+              breaks=dispBreaks[1:length(vmeanPooledMSDPerPathOft)]  ) )
 }
 
 plot_MSDPerDispersionSummary <- function(lMSDPathLStat)
 {
   
-    strTitle <- paste("mean MSD per Dispersion size", strGroupID,"#")
+    strTitle <- paste("Root MSD vs dispersion", strGroupID,"#")
 
   if (!addPlot)
   {
@@ -3032,21 +3091,19 @@ plot_MSDPerDispersionSummary <- function(lMSDPathLStat)
   
 }
 
-#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerMSD.pdf",sep=""),width=7,height=7)
-## bottom, left,top, right
-#par(mar = c(4.3,4.3,2,1))
 makeMSDDispersionSummary <- function ()
 {
     ##Load All
   baddPlot <- FALSE
   lMSDStat <- list()
   datmeanPooledMSDPerPathOft <- data.frame()
+  useTimeWindowSubset <-  c(2,3,5,10,20,30)
   ## Loop to sequantially load and process Dispersion data across time scales - freeing memory before re-allocating
   for (strG in vGroups)
   {
     lMSDStat[[strG]] <- list()  
     
-    for (t in vtimeWindows)
+    for (t in useTimeWindowSubset)
     { 
       
       rm(ldatDispersion)   #Clear Mem
@@ -3070,8 +3127,8 @@ makeMSDDispersionSummary <- function ()
     }
   }
   
-  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
-  saveRDS(datmeanPooledMSDPerPathOft,paste0(strDataExportDir,"datMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  saveRDS(datmeanPooledMSDPerPathOft,paste0(strDataExportDir,"datMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
   return(datmeanPooledMSDPerPathOft)
 }
 
@@ -3080,8 +3137,8 @@ makeMSDDispersionSummary <- function ()
 try(
   {
     rm(lMSDDispersionStat)
-    datMSDVsDispersionSummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"));
-    lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+    datMSDVsDispersionSummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"));
+    lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
   }
 )
 if (!exists("lMSDDispersionStat"))
@@ -3089,40 +3146,57 @@ if (!exists("lMSDDispersionStat"))
   datMSDVsDispersionSummaryData <<- makeMSDDispersionSummary()
 }
 
-lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+
   
-# PLOT Summary per Path Range - Mean MSD Per Path Length over all T
-baddPlot <- FALSE
-datmeanPooledMSDPerDispersionOft <- list()
-for (strG in vGroups)
-{
-  datmeanPooledMSDPerDispersionOft[[strG]] <- tapply(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"muMSDPerT"] , datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"],mean,na.rm=TRUE)
-  
-  datmeanPooledMeanDisplacementPerDispersionOft <- sqrt(datmeanPooledMSDPerDispersionOft[[strG]])
-  xtick <- unique(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"]) 
-  xtick <- xtick[!is.na(xtick)]
-  if (!baddPlot)
+#pdf(file= paste(strPlotExportPath,"/foraging/MSDPerDispersion025_F2.pdf",sep=""),width=7,height=5)
+  # c(bottom, left, top, right) gives the number of lines of margin to be specified on the four sides of the plot. 
+  par(mar = c(3.9,4.0,1,1))
+  ## Compare MSD to Dispersal
+  # PLOT Mean MSD Per Dispersion -
+  baddPlot <- FALSE
+  datmeanPooledMSDPerDispersionOft <- list()
+  for (strG in vGroups)
   {
-    plot(xtick, (datmeanPooledMeanDisplacementPerDispersionOft),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
-         xlab="Dispersion size (mm)",ylab=" Mean Displacement (mm)",xaxt="n" ,ylim=c(2,20),log="xy")
-  
-    axis(side=1, at=xtick, labels = names(lMSDDispersionStat[[strG]]$`2`$breaks))
-    #axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
+    datmeanPooledMSDPerDispersionOft[[strG]] <- tapply(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"muMSDPerT"] , datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"],mean,na.rm=TRUE)
+    
+    datmeanPooledMeanDisplacementPerDispersionOft <- sqrt(datmeanPooledMSDPerDispersionOft[[strG]])
+    xtick <- unique(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"]) 
+    xtick <- xtick[!is.na(xtick)]
+    if (!baddPlot)
+    {
+      plot(xtick, (datmeanPooledMeanDisplacementPerDispersionOft),col=colourDataScheme[[strG]],
+           pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
+           xlab="Dispersion size (mm)",ylab="Root Mean Squared Displacement (mm)",xaxt="n", 
+           ylim=c(0,15))
+    
+      axis(side=1, at=xtick, labels =names(lMSDDispersionStat[[strG]]$`2`$breaks))
+      #axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
+    }
+    else
+      points(xtick,(datmeanPooledMeanDisplacementPerDispersionOft),
+             col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
+    
+    baddPlot <- TRUE
   }
-  else
-    points(xtick,(datmeanPooledMeanDisplacementPerDispersionOft),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
-  
-  baddPlot <- TRUE
-}
-  ##Add Theoretical MSD growth vs Time
-  propFactor <- 1.0
-  lines(xtick ,(theoreticalMeanLength(xtick+0.5,propFactor )),pch=18,cex=0.5,type="b" ) #Up Lim
+    ##Add Theoretical MSD growth vs Time
+    propFactor <- 1.0
+    # 1-1 Diagonal (45 Deg)
+    lines(xtick ,xtick,lty=2,cex=0.5,type="l",col="grey",pch=18 ) #Up Lim
+    
+    ##Approx Line Pass Through Data
+    #lines(xtick ,(theoreticalMeanLength(xtick+0.5,propFactor )),pch=18,lty=2,cex=0.5,type="b" ) #
+    
+    legend("bottomright", legend=c(names(colourDataScheme)[4:9],"Linear "),
+           col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"grey" ),
+           pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
-  legend("bottomright", legend=c(names(colourDataScheme)[4:9],"Linear "),
-         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"black" ),
-         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+#dev.off()
 
-
+# Check Against Raw scatter MSD vs Dispersion
+#datD <- datDispersion[!is.na(datDispersion$Dispersion),]
+#datsD <- datD[sample(1:NROW(datD),10000), ]
+#plot(datsD$Dispersion,sqrt(datsD$MSD))
 
 ```
 
@@ -3864,6 +3938,9 @@ ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreeP
   }
  
    
+#pdf(file= paste(strPlotExportPath,"/foraging/freePathBoutFrequency_cdf.pdf",sep=""),width=7,height=5)
+par(mar = c(3.9,4.0,1,1))
+   
    
 # Plot Distribution Of Bout Count Per Free Path
 addPlot <- FALSE
@@ -3874,17 +3951,30 @@ addPlot <- FALSE
    hist_bT <- hist(vBoutCount,  breaks=seq(0,200,1),plot=FALSE )
        message(paste("Bout Count",strG," mu:",mean(vBoutCount)) )
     if (!addPlot){
-        plot(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),log="xy",col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b",xlim=c(1,50),
-             xlab="Number of bouts",ylab="Log normalized bout frequency")
+      
+        #plot(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),log="xy",
+        #     col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b",xlim=c(1,50),
+       #     xlab="Number of bouts",ylab="Log normalized bout frequency")
+        
+          plot(ecdf(vBoutCount), col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+               xlab="Number of bouts",ylab="Cumulative Density Function ",xlim=c(0,15),ylim=c(0.5,1),main=NA)
        }
     else{
-        lines(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+      
+        #lines(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),
+        #      col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+       lines(ecdf(vBoutCount), col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],addPlot=TRUE,main=NA)
     }
    addPlot <- TRUE
  }
  title("Frequency of Bouts between-turns (free-path)")
    
+#dev.off()
  
+
+#pdf(file= paste(strPlotExportPath,"/foraging/InterBoutInterval_cdf.pdf",sep=""),width=7,height=5)
+#par(mar = c(3.9,4.0,1,1))
+
 ## Interbout Intervals & Pauses - Density
 addPlot <- FALSE
 for (strG in vGroups)
@@ -3902,16 +3992,29 @@ for (strG in vGroups)
     message(paste("Mean inter-Bout Interval ",strG," :",mean(vInterBoutInterval) ))
     
     if (!addPlot){
-        plot(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
-             type="b",xlim=c(0.01,50),log="xy",
-             xlab="Inter-bouts interval (sec)",ylab="Log Density inter-bout interval ")
+        #plot(hist_IBI$mids,hist_IBI$density,
+        #     col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+        #     type="b",xlim=c(0.01,50),log="xy",
+        #     xlab="Inter-bouts interval (sec)",ylab="Log Density inter-bout interval ")
+        plot(ecdf(vInterBoutInterval) , col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             do.points = FALSE,lty=lineTypeScheme[strG][[1]],lwd=3,
+             xlim=c(0.01,2.5),#log="xy",
+             xlab="Inter-bouts interval (sec)",ylab="Cumulative Density Function ",main=NA)
+
     }
     else{
-        lines(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+        #lines(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+      #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+       lines( ecdf(vInterBoutInterval) ,col=colourDataScheme[strG][[1]], 
+              pch=pointTypeScheme[strG][[1]],main=NA, lty=lineTypeScheme[strG][[1]],lwd=3) 
     }
+   # points( ecdf(vInterBoutInterval) ,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],main=NA ) 
    addPlot <- TRUE
 }
-title("Inter-bout interval ")
+title("CDF Inter-bout interval ")
+
+#dev.off()
+
 
 
 ```
@@ -4480,7 +4583,7 @@ datMeanBoutSpeedPerLarva$speed_mmsec <- as.numeric(datMeanBoutSpeedPerLarva$spee
 
 
 boxplot(speed_mmsec ~ groupID,data=datMeanBoutSpeedPerLarva,main="Mean bout speed per larva",
-        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,40) )
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,25) )
 
 
 #title("Mean larval bout duration ")
