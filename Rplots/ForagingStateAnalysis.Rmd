@@ -3699,21 +3699,33 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
 }   # Plot Free Paths Distribution
 
 
+library (plyr) #Split list, apply ldply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
+
 ## Combine Bouts of a Radius onto a Single Data  frame and merge  Groups/Exp ID info
 ### Analyze Free Paths - Look at distribution Run lengths between turns For Each Domain Size
 ## Does not take long to calculate but in any case Saves Results To output Files :stat_BOUT_PerDomainSize.rds , stat_BOUT_FreePathPerDomainSize.rds
-
+# TODO: Revise  To Include Bout Mode- Hunt/Search Mode
 makeBoutAndFreePathSummary <- function()
 {
+  # Check Bouts against Hunt Events and Label Bout accordingly
+  #Default Time Window is 5 sec
+  datHEventDispersion <- loadHuntEventMergedWithPathStat(tsec_timeWindow)
+  
   vAvailableDomainRadius <- getAvailablePathDomainsSizes()
   ldatBoutsPerDomain <- list()
   ldatFreePathsPerDomain <- list()
+  
+  
+  
   for (DomainRadius in vAvailableDomainRadius)
   {
 
     strBoutAnalysisFile <- paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds")
     if (!file.exists(strBoutAnalysisFile))
+    {
+      warning("Missing ",strBoutAnalysisFile)
       next()
+    }
     
     message("Processing R:",DomainRadius)
     lMeanPathLengthAll <- readRDS(file=strBoutAnalysisFile )
@@ -3729,9 +3741,30 @@ makeBoutAndFreePathSummary <- function()
       {
         if (is.null(lMeanPathLengthAll[[trackID]]))
           next()
-        
+          
+          expID <- groupdomainTracks$expID[[trackID]] #groupdomainTracks[trackID,"expID"][[1]]
+          eventID <-groupdomainTracks$EventID[[trackID]]# groupdomainTracks[trackID,"EventID"][[1]]
+          
           n = NROW(lMeanPathLengthAll[[trackID]])
           datTrackBouts <- lMeanPathLengthAll[[trackID]]
+          
+          datTrackHuntEvents <- datHEventDispersion[datHEventDispersion$expID == expID &
+                                           datHEventDispersion$eventID == eventID ,  ]
+          
+          datTrackBouts$ForageMode <- factor("Search",levels=c("Search","Hunt","NA"))
+          
+          #If Huntevents Exist Check If bouts Are in Hunt Mode
+          for (idxEvent in 1:NROW(datTrackHuntEvents) )
+          {
+            if (NROW(datTrackHuntEvents) ==0 )
+              break;
+            # Mark Bouts included in Hunt Event -
+            datTrackBouts[datTrackBouts$boutStartFrame >=  datTrackHuntEvents[idxEvent,"frameN"] &
+                          datTrackBouts$boutStartFrame <=  datTrackHuntEvents[idxEvent,"endFrame"]
+                          ,"ForageMode"] <- factor("Hunt",levels=c("Search","Hunt","NA"))
+          }
+
+          
           # Remove Rounding <0 errors
           datTrackBouts$travelDistance_mm <- lapply(datTrackBouts$travelDistance_mm,max,c(0))
           datTrackBouts$pathLength_mm <- lapply(datTrackBouts$pathLength_mm,max,c(0))
@@ -3756,8 +3789,8 @@ makeBoutAndFreePathSummary <- function()
                                                 EventID=rep(groupdomainTracks$EventID[[trackID]],nP),
                                                 TrackletUID=rep(trackID,nP),#groupdomainTracks$TrackletUID[[trackID]]
                                                 groupID=rep(strGroup,nP) )
-      }
-    }
+      }##for (trackID in rownames( groupdomainTracks ) )
+    }##for (strGroup in names(lBoundedTrackInfo) )
     datBoutsPerDomain <- do.call(rbind.data.frame,lRundf)
     datFreePathsPerDomain <- do.call(rbind.data.frame,lFreePathdf)
 
@@ -3767,16 +3800,16 @@ makeBoutAndFreePathSummary <- function()
     ldatFreePathsPerDomain[[cD]] <- datFreePathsPerDomain[datFreePathsPerDomain$DomainRadius == cD ,]
   
   } ##For Each Domain Size
-  saveRDS(ldatBoutsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds") )
+  saveRDS(ldatBoutsPerDomain , file=paste0(strDataExportDir,"/stat_BOUTandMode_PerDomainSize.rds") )
   saveRDS(ldatFreePathsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds") )
   
   return(list(boutsPerDomain=ldatBoutsPerDomain,freePathsPerDomain=ldatFreePathsPerDomain))
 } ##Make Bout And Free Path Per DOmain Summary
         
-if (!file.exists(paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds")))
+if (!file.exists(paste0(strDataExportDir,"/stat_BOUTandMode_PerDomainSize.rds")))
   makeBoutAndFreePathSummary()
 
-ldatBoutsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds"))
+ldatBoutsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUTandMode_PerDomainSize.rds"))
 ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds"))
            
   ##Calculate Mean Bout Length Per Group
@@ -3788,17 +3821,26 @@ ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreeP
     for (strG in vGroups)
     {
         i <- i + 1
-        meanBoutLengthPathPerDomain[[i]] <-list( meanBoutDistance = mean( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG &
-                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
-                                                 sdBoutDistancePath = sd( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG & 
-                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
-                                                 n = NROW(sd( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG & 
-                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T)),
-                                                groupID=strG,
-                                                DomainRadius = as.numeric(R))
+        meanBoutLengthPathPerDomain[[i]] <- 
+          list(meanBoutDistance = mean( unlist( 
+            ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG &
+                                      ldatBoutsPerDomain[[R]]$ForageMode == "Search" &
+                                  ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                  ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
+            
+               sdBoutDistancePath = sd( unlist(ldatBoutsPerDomain[[R]][
+                                                ldatBoutsPerDomain[[R]]$groupID == strG & 
+                                                ldatBoutsPerDomain[[R]]$ForageMode == "Search" &
+                                                ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                                ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
+            
+              n = NROW(sd( unlist(ldatBoutsPerDomain[[R]][
+                                  ldatBoutsPerDomain[[R]]$groupID == strG & 
+                                  ldatBoutsPerDomain[[R]]$ForageMode == "Search" &
+                                  ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                  ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T)),
+              groupID=strG,
+              DomainRadius = as.numeric(R))
     }
   }
  datmeanBoutLengthPathPerDomain <- do.call(rbind.data.frame,meanBoutLengthPathPerDomain)
@@ -3979,7 +4021,9 @@ addPlot <- FALSE
 addPlot <- FALSE
 for (strG in vGroups)
 {
-    vInterBoutInterval <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+    vInterBoutInterval <- ldatBoutsPerDomain[[cD]][
+                            ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                            ldatBoutsPerDomain[[R]]$ForageMode == "Search" &
                              ldatBoutsPerDomain[[cD]]$boutSeqID == 0 &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 500 ,"duration_sec"]
     xbreaks <- c(seq(0,0.1,0.02),seq(0.11,1,0.1),seq(1.5,500,1)) #,seq(10,60,1)
@@ -4065,7 +4109,7 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
 }#END OF FUNCTION   
 
 
-datTurnsPerDomain <- ldatBoutsPerDomain[["8"]]
+datTurnsPerDomain <- ldatBoutsPerDomain[[cD]]
 
 ## Count Turns Per Tracklet
 turnsPerPath <- list()
@@ -4102,13 +4146,23 @@ for (strG in vGroups)
    datBoundedTrack <- turnsPerPath[[strG]]  
    plotBoundedPathTurns(datBoundedTrack,strG,addPlot)
    addPlot <- TRUE
-   message(paste("Mean turn count per free-path ",strG,":", mean(unlist( turnsPerPath[[strG]] ),na.rm=TRUE )   ) )
+   message(paste("Mean turn count per path ",strG,":", mean(unlist( turnsPerPath[[strG]] ),na.rm=TRUE )   ) )
   }
     
   ##Clip Range
   #for (strG in vGroups)
   #  turnsPerPath[[strG]]$TurnCount <- sapply(turnsPerPath[[strG]]$TurnCount,min,c(70),na.rm=T )
   
+```
+
+
+*I see an apparent difference in turn-frequency distributions and in the distribution of free-path lengths for LE* within the paths in crossing a bounded circular domain.
+- There is also a tiny right turn bias across groups
+These are related to the macroscopic observations differently.
+
+### Turn magnitudes per domain path
+
+```{r turn magnitude per domain size, out.width="30%", echo=FALSE, cache=FALSE, results=FALSE}
  ##Turn Magnitude distributions
   BW <- 5
   addPlot <- FALSE
@@ -4132,29 +4186,34 @@ for (strG in vGroups)
     message(strG," Mean turn when crossing domain R",DomainRadius," : ",mean(datGTurns$turn_deg))
   }
   #mtext(paste("Turns while crossing domain R",DomainRadius), side=3, outer=TRUE, line=-1) 
-
 ```
 
-
-*I see an apparent difference in turn-frequency distributions and in the distribution of free-path lengths for LE* within the paths in crossing a bounded circular domain.
-- There is also a tiny right turn bias across groups
-These are related to the macroscopic observations differently.
-
-I also discover that the turn distributions of spontaneous events show a mode-tendency towards larger turns, near the 35-45 degrees, such as that I have previously found 
-is associated with successful hunt events
+I also discover that the turn distributions of *spontaneous events show a mode-tendency towards larger turns*, near the 35-45 degrees,  strangely,  these turns have been previously found to be is associated with successful hunt events.
 
 
 ## Bout durations
 
+Examine if macroscale search behaviour is modified by changing bout duration
+
+For clear search behaviour analysis Bout durations need to be examined without including motion during hunting episodes. This is because
+hunt rates go up in evoked conditions and this may bias bout durations.
+
 ```{r bout-duration for a domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
+
 #  MIN_TURN_SIZE_THRES
 #CD is radius of domain
 plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
 {
-    vBoutDuration <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
-                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
-                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,"duration_sec"]
+    datBouts <- ldatBoutsPerDomain[[cD]][
+              ldatBoutsPerDomain[[cD]]$groupID == strG & 
+              ldatBoutsPerDomain[[cD]]$ForageMode == "Search" &
+              ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+              ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+              ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,]
+    
+    # Label  Hunt Mode Bouts
+        
+    vBoutDuration <- datBouts$duration_sec
     xbreaks <- c(seq(0,0.5,0.02),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
 
     hist_BI <- hist(vBoutDuration,
@@ -4173,6 +4232,9 @@ plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD
 
 ## Interbout Intervals & Pauses - Density
 addPlot <- FALSE
+
+
+
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'NE',FALSE,cD)
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'NL',TRUE,cD)
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'LE',FALSE,cD)
@@ -4275,7 +4337,9 @@ The same is true in NF, where presence of prey makes bout duration shorter, but 
 #CD is radius of domain
 plotBoundedPathBoutDistance <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
 {
-    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][
+                            ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                              ldatBoutsPerDomain[[cD]]$ForageMode == "Search" &
                              ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"travelDistance_mm"])
@@ -4473,12 +4537,16 @@ What is the interpretation of this?
 #CD is radius of domain
 plotBoundedPathBoutSpeed <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
 {
-    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][
+                            ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                            ldatBoutsPerDomain[[cD]]$ForageMode == "Search" &
                              ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"travelDistance_mm"])
     
-    vBoutDuration <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+    vBoutDuration <- unlist(ldatBoutsPerDomain[[cD]][
+                            ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                               ldatBoutsPerDomain[[cD]]$ForageMode == "Search" &
                              ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"duration_sec"])
