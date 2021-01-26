@@ -5,9 +5,75 @@ date: "23/11/2020"
 output: html_document
 ---
 
+# Prey detection and hunt-events
+
+## Prey detection range ($r_v$)
+
+In modeling the random search I will need to establish a range $r_v$ from which point a larva can visually detect and engage in directly moving towards prey.
+I can also check if the prey detection distance has increased for LF.
+
+```{r prey-detection range, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+strRegisterDataFileName <- paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_SetC",".rds",sep="") #Processed Registry
+datTrackedEventsRegister <- readRDS(strRegisterDataFileName) ## THis is the Processed Register File On 
+
+## The Original list if the lFirstBout data from runHuntepisode analysis
+datMotionBoutsToValidate <-readRDS(file=paste0(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_ToValidate.rds") ) 
+lFirstBoutPoints <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated.rds",sep="") ) #
+
+## Only Evoked ( because prey exists)
+addPlot = FALSE
+lGLegend <- list()
+lPreyDetectionDistance <- list()
+for (strG in vGroups[c(1,3,5)])
+{
+  groupID <- which(levels(datTrackedEventsRegister$groupID) == strG)
+ 
+  
+  print(groupID) 
+  datPreyDetectionBout <- datMotionBoutsToValidate[
+                            datMotionBoutsToValidate$turnSeq == 1 & 
+                            datMotionBoutsToValidate$groupID == groupID,]
+
+  lPreyDetectionDistance[[strG]] <- datPreyDetectionBout$vMotionBoutDistanceToPrey_mm
+    
+  lGLegend[[strG]] <- paste(strG, format( mean(datPreyDetectionBout$vMotionBoutDistanceToPrey_mm,na.rm=TRUE),digits=3) ,"+-",
+                                    format(sd(datPreyDetectionBout$vMotionBoutDistanceToPrey_mm,na.rm=TRUE)/sqrt(NROW(datPreyDetectionBout$vMotionBoutDistanceToPrey_mm) ),digits=3),"mm" )
+  
+  if (!addPlot)
+    plot(density(datPreyDetectionBout$vMotionBoutDistanceToPrey_mm),col=colourDataScheme[[strG]],ylim=c(0,0.7),xlim=c(0,5),lwd=3,
+           main="Prey detection distance",xlab="Prey detection distance r_v (mm)")
+  else
+    lines(density(datPreyDetectionBout$vMotionBoutDistanceToPrey_mm),col=colourDataScheme[[strG]],lwd=3,main=NA)
+
+  addPlot <- TRUE
+}
+
+legend("topright",legend=lGLegend,col=unlist(colourDataScheme[c("LL","NL","DL")]),lty=1,lwd=3 )
+
+tLLvsNL<- t.test(lPreyDetectionDistance$LL,lPreyDetectionDistance$NL)
+tLLvsDL <- t.test(lPreyDetectionDistance$LL,lPreyDetectionDistance$DL)
+tNLvsDL <- t.test(lPreyDetectionDistance$NL,lPreyDetectionDistance$DL)
+
+# Box Plot Of Prey detection Distance per Evoked Group
+boxplot(datMotionBoutsToValidate[datMotionBoutsToValidate$turnSeq == 1 ,]$vMotionBoutDistanceToPrey_mm ~ levels(datTrackedEventsRegister$groupID)[datMotionBoutsToValidate[datMotionBoutsToValidate$turnSeq == 1 ,]$groupID],
+       col=unlist(colourDataScheme[c("DL","LL","NL")]), main="Prey detection distance" ,ylab="Distance (mm)",xlab="Evoked group ")
+
+segments(x0=1,y0=4,x1=1.9,y1=4)
+text(1.5,4.2,paste("p=",format(tLLvsDL$p.value,digits=3)) )
+
+segments(x0=2.1,y0=4,x1=3,y1=4)
+text(2.5,4.2,paste("p=",format(tLLvsNL$p.value,digits=3)) )
+
+segments(x0=1,y0=5,x1=3,y1=5)
+text(2,5.2,paste("p=",format(tNLvsDL$p.value,digits=3)) )
+
+```
+
+I have already measured prey speed in my last paper.
 
 
-# Hunt-events and foraging state
+
+## Hunt-events and dispersion-based foraging state
 
 Here I will identify the number of hunt events evoked/initiated in each foraging state.
 However, it is natural to expect that since hunt events involve slow prey approach behaviour, which gives low dispersion, a higher hunt-rate is expected in the exploitation state. Yet the time window of foraging state classification is 5 sec, while a hunt episodes last for less than 2 sec (~1sec If i remember correctly, check eLife paper fig).
