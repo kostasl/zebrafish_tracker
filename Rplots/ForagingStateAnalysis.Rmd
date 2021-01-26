@@ -3392,12 +3392,6 @@ for (g in c(2,4,6))
 ```
 
 
-# Hunt initiation and foraging state
-
-```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
-```
-
-
 <!--
 
 ### Model implementantion in Stan
@@ -3414,6 +3408,13 @@ I will defer using Stan for this and go for my familiar Jags model implementatio
 To reveal how the macroscopic observations within the domain-constrained paths arise, I take each domain size (R=1...11mm) and analyze paths into bout sequences, measuring the angle change, distance traveled (straight line from start-end of bout), and the path lenght inscribed during the bout. 
 I am looking to see if free path-lengths,  turn-frequency or magnitudes can explain why LE leave the domains quicker than naive larvae.
 
+
+
+Used  Min bout turn-speed threshold=`r MIN_BOUT_TURN_SPEED `
+Min bout speed threshold=`r   G_THRES_MOTION_BOUT_SPEED `,
+  minimum turn size criterion/threshold :`r MIN_TURN_SIZE_THRES`,
+  minimum gap between frames `r MIN_GAP_FRAMES_BETWEEN_TURNS`.
+  
 ```{r  extract bout and turn structure from domain paths,eval=FALSE,out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
 
   #library(signal)
@@ -3421,12 +3422,6 @@ I am looking to see if free path-lengths,  turn-frequency or magnitudes can expl
   library (plyr) #Split list, apply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
   source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
   
-  MIN_BOUT_TURN_SPEED = 0.2
-  G_THRES_MOTION_BOUT_SPEED = 0.2
-  MIN_PATH_LENGTH     = 0.5 ##Also Set  in Previous Chunk
-  MIN_TURN_SIZE_THRES = 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
-  MIN_GAP_FRAMES_BETWEEN_TURNS = 50
-
 ########## BOUT DETECTION #################
 getTrajectoryTurnsAndRuns<- function(TrackLetInfo)  
 {
@@ -3621,13 +3616,11 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
 
 I exclude bouts that belong to hunt events in order to reveal bout structure differences when the larvae are searching for prey and remove bias due to differences in hunt rate between spontaneous and evoked conditions.
 
-Used  Min bout turn-speed threshold=`r MIN_BOUT_TURN_SPEED `
-Min bout speed threshold=`r   G_THRES_MOTION_BOUT_SPEED `,
-  minimum turn size criterion/threshold :`r MIN_TURN_SIZE_THRES`,
-  minimum gap between frames `r MIN_GAP_FRAMES_BETWEEN_TURNS`.
 
 ```{r  analyse bout structure within domains, fig.show="hold",fig.cap="Distribution of free paths (Straight runs before turning)", out.width="50%", echo=FALSE, cache=TRUE, results=TRUE}
-MIN_TURN_SIZE_THRES <- 6
+#MIN_TURN_SIZE_THRES <- 6
+BOUT_MODE <- "Search"
+
 calcFreePathLength <- function(datTrackBouts)
 {
     datStraightMotionBouts <- datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]
@@ -4226,7 +4219,6 @@ hunt rates go up in evoked conditions and this may bias bout durations.
 
 ```{r bout-duration for a domain size, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE}
 
-BOUT_MODE <- "Search"
 #  MIN_TURN_SIZE_THRES
 #CD is radius of domain
 plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
@@ -4769,6 +4761,13 @@ for (strG in  vGroups)
 ```
 There is a positive correlation that shows larger larvae tend to have faster bouts. This is correlation is not affected by the presence of prey for NF and LF, but *the strange thing is it seems that the presence of prey changes Bout speed for DF! they are slow down for prey *
 Perhaps this is consistent with their tendency to remain in place, yet why don't NF and LF slow down when prey is there?
+ 
+
+# Hunt initiation and foraging motion
+
+```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
+```
+ 
  
 # Full figure List of trajectories per experiment
 

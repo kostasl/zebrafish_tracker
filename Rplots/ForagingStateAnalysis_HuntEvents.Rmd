@@ -69,8 +69,9 @@ text(2,5.2,paste("p=",format(tNLvsDL$p.value,digits=3)) )
 
 ```
 
-I have already measured prey speed in my last paper.
+I verify above that LF has larger detection range, the detection area has a ratio to the the observation chamber area for LF is  $2*pi*11^2/(2*pi*r_v)$ = `r 11^2/(mean(lPreyDetectionDistance[["LL"]]))^2 `, and `r 11^2/(mean(lPreyDetectionDistance[["NL"]]))^2 ` for NL
 
+I have already measured prey speed in my last paper.
 
 
 ## Hunt-events and dispersion-based foraging state
