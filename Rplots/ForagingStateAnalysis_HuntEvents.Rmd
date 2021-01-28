@@ -7,6 +7,12 @@ output: html_document
 
 # Prey detection and hunt-events
 
+The analysis of the optimal random search algorithm in #Viswanathan1999 includes two key quantities, the radius $r_v$ from which the forager can spot and directly  move towards a target prey, and the mean free path between targets.
+
+From #Bolton2019: Zebrafish typically choose the closest prey item when initiating a hunt sequence.
+The choice of prey item was straightforward. Fish almost invariably chose the closest paramecium in the environment conditioned on the fact that the paramecium was fairly close to its midline in azimuth and significantly above it in altitude.
+There was no particular bias of prey choice in terms of direction or magnitude of velocity (Figure 1—figure sup- plement 2A, bottom panels
+
 ## Prey detection range ($r_v$)
 
 In modeling the random search I will need to establish a range $r_v$ from which point a larva can visually detect and engage in directly moving towards prey.
@@ -73,6 +79,7 @@ I verify above that LF has larger detection range, the detection area has a rati
 
 I have already measured prey speed in my last paper.
 
+# Mean free-path between targets
 
 ## Hunt-events and dispersion-based foraging state
 

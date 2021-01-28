@@ -132,6 +132,7 @@ setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 MIN_PATH_LENGTH <- 0.5
 tsec_timeWindow <- 5 
 thres_dispersion_class <- 0.2
+
 ##Clustering
 Nclust <- 2
 nsubsampleInterval <- G_APPROXFPS/2
@@ -1155,7 +1156,10 @@ plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=
   }
   
   # Add STD Error bar About Mean
-  arrows(x0=rpoints, y0=vmeanPathLengthPerDispersion-vSEPathLengthPerDispersion, x1=rpoints, y1=vmeanPathLengthPerDispersion+vSEPathLengthPerDispersion, code=3, angle=90, length=0.02, col=colourDataScheme[[strGroupID]], lwd=1)
+  if (NROW(rpoints)>0)
+    arrows(x0=rpoints, y0=vmeanPathLengthPerDispersion-vSEPathLengthPerDispersion, 
+         x1=rpoints, y1=vmeanPathLengthPerDispersion+vSEPathLengthPerDispersion, 
+         code=3, angle=90, length=0.02, col=colourDataScheme[[strGroupID]], lwd=1)
   
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
 }
@@ -2506,7 +2510,8 @@ The duration-contrained MSDs however do not look  similar between conditions and
 
 ```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="50%"}
 
-
+DomainRadius <- 8
+cD <- DomainRadius
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
@@ -2544,7 +2549,7 @@ lMSDVsTimeData_Grouped <- list()
  #dev.off()
    
 ## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails and And MSD per duration
-  DomainRadius <- 10
+  
   lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
   for (strG in vGroups[seq(1,6,2)])
   { 
@@ -2576,23 +2581,28 @@ By that time the radius of displacement covered on average for LE is `r sqrt(lMS
 
 <!---TODO: Take the 0 dispersion data, which contain measurements in reference to path start, and look at msd per path duration so that the number of - Nope lets look at path-duration within fixed domains-->
 
-## Path Durations within fixed domain R
+## Path Durations within fixed domain R `r cD`
 
-```{r,  fig.show="hold",fig.cap="Distribution of path durations crossing circular domain with 20mm Diameter", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="33%" } 
+I am using histograms with progressively wider bins, and chose `r cD` based on the upper limit of R within which the invariance principle still holds - indicating that random walk statistics apply.
+
+```{r,  fig.show="hold",fig.cap="Distribution of path durations crossing circular domain with 20mm Diameter", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="80%" } 
 ## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails  
-  DomainRadius <- 10
+  DomainRadius <- cD
+  kBreaks <- c(0,2^seq(0,8)) #seq(0,175,3)
   lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  
   for (strG in vGroups[seq(1,6,2)])
   { 
-    hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=seq(0,175,3), plot=FALSE )
+    hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=kBreaks, plot=FALSE )
     ##Plot Path Duration Distribution 
-    plot(hist_Dur$mids,hist_Dur$density,log="xy",main=paste(strG," domain R",DomainRadius," path duration" ), xlim=c(1,250),
+    plot(hist_Dur$mids,hist_Dur$density,log="xy",main=paste(strG," domain R",DomainRadius," path duration" ), 
+         xlim=c(0.5,250), ylim=c(10^-6,0.5),
          ylab="Density", xlab="Duration (sec)", type="b",
           col=colourDataScheme[[strG]],
           pch=pointTypeScheme[[strG]])
     
     strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
-    hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=seq(0,175,3), plot=FALSE )
+    hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=kBreaks, plot=FALSE )
     ##Plot Path Duration Distribution 
     lines(hist_Dur$mids,hist_Dur$density,main=paste(strG," domain R path duration" ), xlim=c(1,250),
           type="b",
@@ -2604,6 +2614,39 @@ By that time the radius of displacement covered on average for LE is `r sqrt(lMS
 ```
 
 *Long fat-Tails missing from LE*, thus with experience larva learn to not wait and explore their surroundings looking for other patches.
+
+
+
+## Path Length within fixed domain R `r cD`
+
+To detect the rare events as is the case in Levy Walks, I follow the advice to break the histograms at a x2 frequencies, ie $2^{1\cdots 8}$ in this case. This progressive widening of the  bin sizes allows for clearer results indeed in the log log plot.
+
+```{r,  fig.show="hold",fig.cap="Distribution of path length crossing domain R", out.width="80%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="80%" } 
+## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails  
+  DomainRadius <- cD
+  kBreaks <- c(0,2^seq(0,8)) #seq(0,175,3)
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  for (strG in vGroups[seq(1,6,2)])
+  { 
+    hist_Len <- hist(unlist(lBoundedTrackInfo[[strG]]$pathLength),breaks=kBreaks, plot=FALSE )
+    ##Plot Path Duration Distribution 
+    plot(hist_Len$mids,hist_Len$density,log="xy",main=paste(strG," domain R",DomainRadius," path length" ), xlim=c(0.5,250), ylim=c(10^-6,0.5),
+         ylab="Density", xlab="Path length (mm)", type="b",
+          col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]])
+    
+    strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
+    hist_Len <- hist(unlist(lBoundedTrackInfo[[strG]]$pathLength),breaks=kBreaks, plot=FALSE )
+    ##Plot Path Duration Distribution 
+    lines(hist_Len$mids,hist_Len$density, xlim=c(1,250),
+          type="b",
+          col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]])
+  }    
+```
+  
+We find that in LF, the presence of prey can generates the rare occurrence of long path lengths, indicating extended local search patterns within the circular domain `r DomainRadius`
+
 
 ## *Hurst exponents* to Identify diffusion type using 
 
