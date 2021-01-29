@@ -20,6 +20,7 @@ According to Marquez et al  2020, Zebrafish appear to spontaneously switch betwe
 The state can be read out be measuring trajectory dispersal over a fixed period of time (5 sec), 
 Measures of dispersal should appear bimodal, with short dispersals indicating exploitation phase.
 
+
 Given our behavioural recordings are not continuous, and exclude periods when the larva are swimming around the boundary, it is not certain whether we would be able to detect exploratory phases. These tend to be circling around the border of the petri-dish, as the fish attempts to swim forward. Nevertheless as we are interested in the mode-state under which hunt-events are executed, then we expect that some of these events should be executed during exploratory behaviour and this should be detectable - (dispersal, movement rates etc).
 In essense the internal state and the its neural correlates as reported by Marquez et al 2019 can combined with my results on the learned aspects of efficient hunting to study if this foraging state swithcing is also influenced by experience and  whether differences in hunting kinematics correlate with internal state.
 
@@ -38,6 +39,10 @@ with low density of food sites).
 
 
 The *Levy foraging hypothesis* predicts a Levy distribution of move-steps during foraging when prey is scarce, but an exponential distribution when prey is abundant and searching is not required.
+
+PhysOfForage: What is most important is that, over the course of two decades of study, a growing consensus among researchers in the relevant fields holds the view *that many organisms diffuse anomalously*: real organisms rarely have Gaussian probability functions for displacements with a variance that grows linearly in time. Rather, the motion of organisms is rich in variety and surprisingly complex.
+
+
 In the absence of prey, the environment signals that prey is scarce, and in such conditions the optimal search strategy would be a Levy walk instead of brownian (#viswanathan1999optimizing).
 *My recordings allow for the examination on whether search strategies are modified in the presence and absence of prey, and how experience of prey may modify these behaviours.*
 I find that prey scarcity can modify larval general motion patterns in an adaptive manner such that larger areas are searched, yet prior experience of prey can strongly affect this behaviour.
@@ -2506,7 +2511,7 @@ plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow)
    datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGE &
                                           !is.na(datDispersion$DisplacementSq),]
 
-  hist_GDisplacement <- hist_GDisplacement <- hist(sqrt(datGroupDispersion$DisplacementSq ),plot=FALSE ) #,breaks=hist_GDisplacement$breaks
+  hist_GDisplacement <- hist(sqrt(datGroupDispersion$DisplacementSq ),plot=FALSE ) #,breaks=hist_GDisplacement$breaks
   ##Plot Path Duration Distribution 
   lines(hist_GDisplacement$mids,hist_GDisplacement$density, 
           type="b",
@@ -2516,7 +2521,7 @@ plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow)
  
   Emean= mean(sqrt(datGroupDispersion$DisplacementSq ))
   Esd= sd(sqrt(datGroupDispersion$DisplacementSq ))
-  hhNorm <-hist(abs(rnorm(n=12000,mean=Emean,sd=Esd)),plot=FALSE,breaks=hist_GDisplacement$breaks)
+  hhNorm <-hist(abs(rnorm(n=12000,mean=Emean,sd=Esd)),plot=FALSE) # breaks=hist_GDisplacement$breaks
   #lines(hhNorm$mids,hhNorm$density,xlim=c(0.1,20),log="xy",type="b")
   xPt <- seq(0,20,0.1)
   lines(xPt,dnorm(xPt,mean=Emean,sd=Esd),lty=2,lwd=2,pch=3)
@@ -2527,7 +2532,7 @@ plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow)
 
 
 tsec_timeWindow <-1
-datDispersion <- loadDispersionData_norm(tsec_timeWindow,forcereload = FALSE)
+datDispersion <- loadDispersionData_norm(tsec_timeWindow,forcereload = TRUE)
 
 #par(mfrow=c(3,1))
 for (strG in vGroups[seq(2,6,2)])
@@ -2545,6 +2550,7 @@ for (strG in vGroups[seq(2,6,2)])
 ```
 By plotting the empirical step length distribution along with Gaussian that has the same mean and std as the empirical one we can clearly see that the *step lengths have long-fat tails*, ie they larva do not perform simple Brownian motion.
 
+It also appears that LF have shifted to larger displacements than cNF and DF
 
 ## Mean Squared Displacement - looking for diffusion type
 
@@ -2728,6 +2734,11 @@ We find that in LF, the presence of prey can generates the rare occurrence of lo
 
 ## *Hurst exponents* to Identify diffusion type using 
 
+In fractal geometry, the Hurst exponent has been defined by H or by Hq. It quantifies the
+relative tendency of a time series to return strongly to the mean or group in one direction
+(Kleinow, 2002). Depending on the obtained result we can know if a temporal series is persistent or not persistent.
+If persistence is found, it is a sign of the non-existence of white noise, so it could be said that there is some type of dependence between the data, that is, we would be checking if the data behave according to the ordinary Brownian movement or, on the contrary, there is memory within the series of data.
+
 The Hurst exponent is referred to as the "index of dependence" or "index of long-range dependence". It quantifies the relative tendency of a time series either to regress strongly to the mean or to cluster in a direction.[5] A value H in the range 0.5–1 indicates a time series with long-term positive autocorrelation, meaning both that a high value in the series will probably be followed by another high value and that the values a long time into the future will also tend to be high. A value in the range 0 – 0.5 indicates a time series with long-term switching between high and low values in adjacent pairs, meaning that a single high value will probably be followed by a low value and that the value after that will tend to be high, with this tendency to switch between high and low values lasting a long time into the future. A value of H=0.5 can indicate a completely uncorrelated series, but in fact it is the value applicable to series for which the autocorrelations at small time lags can be positive or negative but where the absolute values of the autocorrelations decay exponentially quickly to zero. This in contrast to the typically power law decay for the 0.5 < H < 1 and 0 < H < 0.5 cases. 
 
 The basic Hurst exponent can be *related to the expected size of changes, as a function of the lag between observations*, as measured by $E(|X_{t+\tau}-X_t|^2)$. For the generalized form of the coefficient, the exponent here is replaced by a more general term, denoted by $q$. 
@@ -2739,6 +2750,8 @@ Lévy-modulated correlated random walks are genuinely superdiffusive across mult
 whereas *correlated random walks appear superdiffusive (ballistic) only at short scales. The standard correlated random walk is diffusive at large scales.
 
 *see also hurstexp(x, d = 50, display = TRUE)*
+----
+
 
 ```{r Hurst coefficient over path durations , fig.show="hold",fig.cap=" Hurst coefficients between the range of 1 > H > 1/2 indicates superdiffusion, while H > 1 indicates Balistic behaviour.", out.width="100%", echo=FALSE, cache=FALSE}
 
