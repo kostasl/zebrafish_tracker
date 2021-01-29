@@ -318,12 +318,14 @@ source("HuntingEventAnalysis_lib.r")
 
 #loadDispersionData(forceReload = TRUE,tsec_timeWindow = 0)
 ##Load Dispersion Data, check if data.frame has been extended with larva ranges, and merge if need to  have been added - 
-loadDispersionData_norm <- function(tsec_timeWindow)
+loadDispersionData_norm <- function(tsec_timeWindow,forcereload=TRUE)
 {
   
-  try(rm("datDispersion"),silent=TRUE);
+  if (forcereload)
+    try(rm("datDispersion"),silent=TRUE);
+  
   strFile <- paste0(strDataExportDir,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds")
-  if (file.exists(strFile))
+  if (file.exists(strFile) & !exists("datDispersion")  )
   {
   try( {
       message("Loading ",strFile);
@@ -332,10 +334,11 @@ loadDispersionData_norm <- function(tsec_timeWindow)
     )
   }else
     message("No Dispersion data file found: ", strFile,"Attempting to generate now ...")
-  ##If the Merged Version is not found then Make one
+  
+  ##If the Merged Version is not found then GENERATE IT
   if (!exists("datDispersion") | !file.exists(strFile))
   {
-    datDispersion <- loadDispersionData(forceReload = TRUE,tsec_timeWindow)
+    datDispersion <- loadDispersionData(forceReload = forcereload,tsec_timeWindow)
   }
     ## Merge Max Dispersion on there - If it is not already there then Calculate and save 
   if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | 
@@ -925,7 +928,7 @@ Here I examine recent dispersion as a ratio of recent trajectory length (5 sec w
 
 I next plot on logarithmic scale the percentage of each Path length and try to see if a power law like regime exists in the distribution, but also if the presence of prey changes the linear - drop off regime of the distribution. This is inspired by Fig 3 from Viswanathan et al 1999
 
-```{r length log distributions conditions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' ,warning=FALSE }
+```{r length log distributions conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide' ,warning=FALSE }
 
 #,log="xy" 
 lLinModel_NE <- getLogPowerSlope(h_Length_NE,10)
@@ -1039,7 +1042,7 @@ Generally, lower ratios are indicative of turtuous paths of low dispersion, ie w
   - Ratios over hunt-event initiation suggest that low-dispersal frequencies are relativelly over represented compared to general motility in evoked conditions, but not in spontaneous conditions, ie spontaneous events occur randomly across general motion, in evoked conditions low dispersion motion appears favouroble to hunt-event initiation. 
 
 
-## Path length per dispersion size (Examine Invariance principle)
+# Invariance principle 
 
 Take a random walk until it hits a circle of radius r times the step length. The average number of steps it performs is $r^2$.[citation needed] 
 This fact is the discrete version of the fact that a Wiener process walk is a fractal of Hausdorff dimension 2.[citation needed]
@@ -1051,352 +1054,6 @@ Thus the corresponding mean values are constrained by the sole free surface to p
 [1](https://science.sciencemag.org/content/358/6364/765/tab-figures-data) [2](https://www.nature.com/articles/s41467-019-10455-y) ).
 Therefore *it may be possible to use this principle to detect for diffusive walks*, instead of relying on fitting the statistics of step lenghts to power-laws or exponentials. This can then avoid having to set arbitrary threshold on what is considered straight or a turn/change of direction.
 However, (#mazzolo2009invariance) prove that for any homogeneous stochastic processes the mean length of trajectories is still given by the Cauchy formula, as long as the random walker enters the domain with distributions that are simply related to that of the random walk. 
-
-Normally the mean path-length for the entry and exit from a circle of size $r$ is measured.
-Here I have path-lengths whose 2-most distal points  fall on the Dispersal circle-boundary.
-I will first examine the mean total path-length contained in the dispersion domain, and then the path length between the 2 points that define the dispersion domain.
-
-### Mean Path length scales linearly with dispersion
-
-Plot for X sec duration paths finds that indeed a linear relationship similar to (this)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], while the mean path length defining the limits (radius $r$) of the dispersion domain is proportional to the Area/Circumfarence ratio. 
-Yet, this relationship is *not invariant*, as looking at increasing path-integration time windows $X$sec reveals increasing slope of mean-path lengths. 
-Thus suggesting mean path length is not invariant to the particular variations in the timescale at which the animal disperses withing a circle $r$.
-
-The plots below examine both, the total mean path length contained with each dispersion $r$, and the cutting path length - the path between the two points that touch the circles boundary:
-
-```{r path-length-2sec duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
-
-## Plot mean path length for each boundary dispersion size 
-# This is to examine the similarity to the random walk invariance principle by which the mean pathlength within a circle of radius r is proportional to pi*A/C
-# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
-plot_meanCrossingPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=FALSE, propFactor=1.0)
-{
-  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  dispBreaks <- seq(1,13,1)
-  upLIM <- 50
-  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
-  ##The Path Connecting the two points that define the Dispersion Circle
-  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$DispersionPathLength,datGroupDispersion$dispRange,mean,na.rm=TRUE)*DIM_MMPERPX
-  
-  if (!addPlot)
-  {
-    plot(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Chord mean path length <l>",
-         ylim=c(0,upLIM),xlim=c(0,11),col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
-        lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
-
-  }else
-  {
-    points(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
-         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
-    
-    lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
-  }
-  
-  if (!addPlot)
-  {
-    rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
-    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
-    points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
-    points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
-   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
-  }
-  
-  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
-}
-
-# The mean  Path Length Contained Within each Size of Dispersion
-plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=FALSE, propFactor=1.0)
-{
-  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  dispBreaks <- seq(1,13,1)
-  upLIM <- 150
-  CEX = 1.0
-  
-  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
-  ##The Path Connecting the two points that define the Dispersion Circle
-  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
-  vSDPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,sd,na.rm=TRUE)
-  vCountPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,NROW)
-  # Calc Std Error Of Mean 
-  vSEPathLengthPerDispersion <- vSDPathLengthPerDispersion/sqrt(vCountPathLengthPerDispersion)
-  
-  rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
-  
-  if (!addPlot)
-  {
-    plot(rpoints,
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Total contained mean path length <l> (mm)",
-         ylim=c(2,upLIM),xlim=c(0,11),log="y",
-         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=CEX )
-    
-        lines(rpoints,
-         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
-
-  }else
-  {
-    points(rpoints,
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
-         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=CEX )
-    
-    lines(rpoints,
-         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
-  }
-  
-  # Add Straight Line Points - 
-  if (!addPlot & propFactor > 0)
-  {
-    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
-    lines(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
-    points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
-   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
-  }
-  
-  # Add STD Error bar About Mean
-  if (NROW(rpoints)>0)
-    arrows(x0=rpoints, y0=vmeanPathLengthPerDispersion-vSEPathLengthPerDispersion, 
-         x1=rpoints, y1=vmeanPathLengthPerDispersion+vSEPathLengthPerDispersion, 
-         code=3, angle=90, length=0.02, col=colourDataScheme[[strGroupID]], lwd=1)
-  
-  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
-}
-
-tsec_timeWindow <- 2
-datDispersion <- loadDispersionData(forceReload=T ,tsec_timeWindow)
-strTitle <- paste(tsec_timeWindow,"sec duration paths ")
-
-## Take Group 
-propFactor <- 1.0
-plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-title(strTitle)
-
-## Take Group 
-propFactor <- 1.0
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-title(paste(strTitle," crossing chord " ) ) 
-
-
-
-tsec_timeWindow <- 10
-datDispersion <- loadDispersionData(forceReload = T,tsec_timeWindow)
-strTitle <- paste(tsec_timeWindow,"sec duration paths ")
-
-## Take Group 
-propFactor <- 1.0
-plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-title(strTitle)
-## Take Group 
-propFactor <- 1.0
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-title(paste(strTitle," crossing chord " ) ) 
-
-
-# 
-# tsec_timeWindow <- 50
-# datDispersion <- loadDispersionData(forceReload = T,tsec_timeWindow)
-# strTitle <- paste(tsec_timeWindow,"sec duration paths ")
-# 
-# ## Take Group 
-# propFactor <- 1.0
-# plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-# title(strTitle)
-# 
-# ## Take Group 
-# propFactor <- 1.0
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-# title(paste(strTitle," crossing chord " ) ) 
-
-
-#smoothScatter(datDispersion[datDispersion$groupID == "LE",]$DispersionPathLength,datDispersion[datDispersion$groupID == "LE",]$Dispersion)
-
-```
-
-When looking at short path-durations (2sec) indeed our data shows some agreement with the theoretical mean-path lengths by a factor of 1.5, while the linear relationship holds all groups in the same way.
-The length of every path contained in a dispersion circle with radius $r$ increases linearly with $r$, specifically the relationship appears to be :
-\[
-<s> = \frac{3\pi}{2}  \frac{\pi r^2}{2 \pi r}
-\]
-
-When these same dispersion ranges are examined over 50sec path durations we find that a linear relationship still holds, but this slope deviates further from theoretical with increasing mean path lengths. This can be explained as the development of the same dispersions now is much slower, this is apparently partly explained by increasingly tortuous paths from entry to exit of the same $r$ Dispersion circle domains.
-*Thus the linear relationship is not invariant to the path time-scale*
-
-but why? some invariance seems to hold when it comes to the chords defining the dispersion domain, (similar to  #blanco2003invariance), at least clearly so in the absence of prey.
-
-When looking at the overall contained path-length, I find that in the presence of prey increases path-lengths (for > 10sec durations) - most likely as a result of hunting events and prey tracking. 
-But note, that this way of looking at such path-data is new.
-Usually mean free paths are measured, as the path between two changes in direction, or the time of entry and exit from a circle bound area.
- 
-it is known that the number of steps scales as the $<s> \approx  r^2$, and here we find that path-length scales with $r$, which here is the dispersion radius containing the path.
-The Chord-cutting path-length, which defines the dispersion size,  follow the invariance linear rule more strictly, and that is clear over longer path durations.
-
-Nevertheless we find that the addition of prey *LF increase the path-lengths even among paths with the same Dispersion*, as their response to prey/ prey detection makes paths more turtuous (check 10sec paths). Over 50sec paths this increase in path length in evoked conditions is evident across groups.
-
-I next look at the Log-Log distribution of path-lengths for a specified dispersion boundary. 
-
-```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
-
-##Load Non-Time constrained Paths (Sliding windows of t duration) - but instead dispersion calculated on  Full paths duration
-tsec_timeWindow <- 0  
-datDispersion <- loadDispersionData_norm(tsec_timeWindow)
-strTitle <- paste("Path lengths vs dispersion size")
-
-#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerDispersion_AllPath_log.pdf",sep=""),width=7,height=7)
-## Take Group 
-plot_meanPathLengthPerDispersion(datDispersion,'NE',propFactor = 2)
-plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor = 2)
-plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor = 2)
-plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor = 2)
-plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor = 2)
-plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor = 2)
-title(strTitle)
-
-  legend("topleft", legend=names(colourDataScheme)[4:9],
-         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
-         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
-
-  
-#dev.off()
-```
-
-##  Path-length Log-Log distribution per *specific dispersion*
-
-```{r  path-length for dispersion log-log distribution , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
-#,log="xy" 
-
-plotLogLogPathLengthForFixedDispersion  <- function(datDispersion,strGroupID,dispRange = 10)
-{
-    datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-    dispBreaks <- seq(1,11,0.3)
-    datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
-    strTitle <- paste("Path length per dispersion", strGroupID,"#",NROW(datGroupDispersion$dispRange))
-
-    xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,2)
-    strDispRange <-levels(datGroupDispersion$dispRange)[dispRange]
-    #print(strDispRange) 
-    h_Length_GE <- hist(datGroupDispersion[datGroupDispersion$groupID == strGroupID[1] & datGroupDispersion$dispRange %in% levels(datGroupDispersion$dispRange)[dispRange] , ]$Length,breaks=xbreaks,plot=FALSE)
-    h_Length_GL <- hist(datGroupDispersion[datGroupDispersion$groupID == strGroupID[2] & 
-                                               datGroupDispersion$dispRange %in% levels(datGroupDispersion$dispRange)[dispRange] , ]$Length,breaks=xbreaks,plot=FALSE)
-
-    lLinModel_GE <- getLogPowerSlope(h_Length_GE,10)
-    lLinModel_GL <- getLogPowerSlope(h_Length_GL,10)
-    
-    plot(log10(h_Length_GE$mids),log10(100*h_Length_GE$counts/sum(h_Length_GE$counts) ),
-         main=paste(" Log-Log percentage of lengths for disp:",strDispRange ),
-         xlab="log Length (mm)", col=colourDataScheme[strGroupID[1]][[1]], pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
-    
-    points(log10(h_Length_GL$mids),log10(100*h_Length_GL$counts/sum(h_Length_GL$counts) ),
-           xlab="Length (mm)",col=colourDataScheme[strGroupID[2]][[1]], pch=16)
-    lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strGroupID[1]][[1]])
-    
-    lines(lLinModel_GL$ptx_line,lLinModel_GL$pty_line,lwd=3,col=colourDataScheme[strGroupID[2]][[1]])
-    legend("topright", 
-           legend=c(paste("Spont μ",format(lLinModel_GE$coeff,digits=2)),paste("Evoked μ",format(lLinModel_GL$coeff,digits=2) ) ),col=c(colourDataScheme[strGroupID[2]][[1]] ,colourDataScheme[strGroupID[2]][[1]]) ,pch=c(16,16) )
-
-}
-##Low Dispersal - Larval Size - 4.3mm
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 12)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 12)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 12)
-## 5.2mm
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 15)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 15)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 15)
-##High Range 7.3
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 22)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 22)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 22)
-
-
-
-```
-
-When looking at small dispersion circles $(3.7,4]$ we find here is that the path-lengths increase between spontaneous and evoked conditions, across groups. 
-For larger dispersions cicles $(5.2,5.5]$ we find an effect specific to LF, whereby the food and non food (evoked, spontaneous) conditions differ in a manner shown as in (Viswanathan et al. 2009)!
-
-The way the data is looked at here is different, and exponent $\mu$, shown as the linear power law within the log-log, would not match the investigations from (Viswanathan et al. 2009)
-
-##  Path-length to dispersion ratios fixed dispersion range
-
-```{r  path-length to dispersion ratio distribution , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
-
-hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
-{
-  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
-  dispLevel <- cut(datGroupDispersion[,"Dispersion" ],breaks=seq(1,11,1))
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
-
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,max(47,y)+1,2),
-  main=strTitle,
-  col=colourDataScheme[[strGroupID]]  )
-  
-  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,max(47,y)+1,2),main=strTitle,
-       col=colourDataScheme[[strGroupID]]  )
-  
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,max(47,y)+2,2),
-       main=strTitle , col=colourDataScheme[[strGroupID]]  )
-}
-
-## Take Group 
-hist_pathLengthPerDispersion(datDispersion,'NE')
-hist_pathLengthPerDispersion(datDispersion,'NL')
-
-hist_pathLengthPerDispersion(datDispersion,'LE')
-hist_pathLengthPerDispersion(datDispersion,'LL')
-
-hist_pathLengthPerDispersion(datDispersion,'DE')
-hist_pathLengthPerDispersion(datDispersion,'DL')
-
-
-
-
-```
-
-In summary, over fixed path durations, the*mean path length depends on size of the observation area $\pi A/C$*.
-It is not clear to me if this is evidence towards the larval trajectories appearing  as a stochastic diffussive process, because random straigh line chords would also scale linearly with the spatial domain they cross.
-In general the above data suggest that the characteristics  **dynamics governing foraging motion  may  modified by experience **
 
 
 # Invariance-revisited - Path lengths crossing bounded areas
@@ -1647,12 +1304,367 @@ Let s be the mean travel time, that is the time it takes our forager to move fro
 
 
 Note that tracker ROI is `r format(260*DIM_MMPERPX,digits=3)` mm in diameter, and its circular boundary is approximatelly `r format((DIM_PXDIAMETER-260*2)*DIM_MMPERPX/2,digits=3)` mm away from the dish's wall. Yet, already from a 10mm domain radius (ie ~7mm away from boundary), we find the mean path length falls below the theoretical, indicating that the distribution of path lengths has been modified towards shorter paths, *especially so for the LE group, this is evident from R=7mm onwards.*
-The 11mm radius is near the boundary, falling short by 0.5mm, and it is the biggest area we can analyse
+The 11mm radius is near the boundary, falling short by 0.5mm, and it is the biggest area we can analyse (Distribution of path length examined in later section)
+
+
+## Path length per dispersion size Examined for Invariance
+
+Normally the mean path-length for the entry and exit from a circle of size $r$ is measured.
+Here I have path-lengths whose 2-most distal points  fall on the Dispersal circle-boundary.
+I will first examine the mean total path-length contained in the dispersion domain, and then the path length between the 2 points that define the dispersion domain.
+
+### The Mean length of Fixed-duration paths scales linearly with dispersion
+
+Plot for X sec duration paths finds that indeed a linear relationship similar to (this)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], while the mean path length defining the limits (radius $r$) of the dispersion domain is proportional to the Area/Circumfarence ratio. 
+Yet, this relationship is *not invariant*, as looking at increasing path-integration time windows $X$sec reveals increasing slope of mean-path lengths. 
+Thus suggesting mean path length is not invariant to the particular variations in the timescale at which the animal disperses withing a circle $r$.
+
+The plots below examine both, the total mean path length contained with each dispersion $r$, and the cutting path length (here called *chord*) - the path between the two points that touch the circles boundary:
+
+```{r path-length-2sec duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
+
+## Plot mean path length for each boundary dispersion size 
+# This is to examine the similarity to the random walk invariance principle by which the mean pathlength within a circle of radius r is proportional to pi*A/C
+# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+plot_meanCrossingPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=FALSE, propFactor=1.0)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  dispBreaks <- seq(1,13,1)
+  upLIM <- 50
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
+  ##The Path Connecting the two points that define the Dispersion Circle
+  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$DispersionPathLength,datGroupDispersion$dispRange,mean,na.rm=TRUE)*DIM_MMPERPX
+  
+  if (!addPlot)
+  {
+    plot(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Chord mean path length <l>",
+         ylim=c(0,upLIM),xlim=c(0,11),col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
+        lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+
+  }else
+  {
+    points(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
+    
+    lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+  }
+  
+  if (!addPlot)
+  {
+    rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
+    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+    points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
+  }
+  
+  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+}
+
+# The mean  Path Length Contained Within each Size of Dispersion
+plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=FALSE, propFactor=1.0)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  dispBreaks <- seq(1,13,1)
+  upLIM <- 150
+  CEX = 1.0
+  
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
+  ##The Path Connecting the two points that define the Dispersion Circle
+  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
+  vSDPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,sd,na.rm=TRUE)
+  vCountPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,NROW)
+  # Calc Std Error Of Mean 
+  vSEPathLengthPerDispersion <- vSDPathLengthPerDispersion/sqrt(vCountPathLengthPerDispersion)
+  
+  rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
+  
+  if (!addPlot)
+  {
+    plot(rpoints,
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Total contained mean path length <l> (mm)",
+         ylim=c(2,upLIM),xlim=c(0,11),log="y",
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=CEX )
+    
+        lines(rpoints,
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+
+  }else
+  {
+    points(rpoints,
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=CEX )
+    
+    lines(rpoints,
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+  }
+  
+  # Add Straight Line Points - 
+  if (!addPlot & propFactor > 0)
+  {
+    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+    lines(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
+  }
+  
+  # Add STD Error bar About Mean
+  if (NROW(vSEPathLengthPerDispersion)>0)
+    arrows(x0=rpoints, y0 = vmeanPathLengthPerDispersion - vSEPathLengthPerDispersion, 
+         x1=rpoints, y1 = vmeanPathLengthPerDispersion + vSEPathLengthPerDispersion, 
+         code=3, angle=90, length=0.02, col=colourDataScheme[[strGroupID]], lwd=1)
+  
+  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+}
+
+tsec_timeWindow <- 2
+datDispersion <- loadDispersionData(forceReload=T ,tsec_timeWindow)
+strTitle <- paste(tsec_timeWindow,"sec duration paths ")
+
+## Take Group 
+propFactor <- 1.0
+plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+title(strTitle)
+
+## Take Group 
+propFactor <- 1.0
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+title(paste(strTitle," crossing chord " ) ) 
+
+
+
+tsec_timeWindow <- 10
+datDispersion <- loadDispersionData(forceReload = T,tsec_timeWindow)
+strTitle <- paste(tsec_timeWindow,"sec duration paths ")
+
+## Take Group 
+propFactor <- 1.0
+plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+title(strTitle)
+## Take Group 
+propFactor <- 1.0
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+title(paste(strTitle," crossing chord " ) ) 
+
+
+# 
+# tsec_timeWindow <- 50
+# datDispersion <- loadDispersionData(forceReload = T,tsec_timeWindow)
+# strTitle <- paste(tsec_timeWindow,"sec duration paths ")
+# 
+# ## Take Group 
+# propFactor <- 1.0
+# plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+# title(strTitle)
+# 
+# ## Take Group 
+# propFactor <- 1.0
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+# title(paste(strTitle," crossing chord " ) ) 
+
+
+#smoothScatter(datDispersion[datDispersion$groupID == "LE",]$DispersionPathLength,datDispersion[datDispersion$groupID == "LE",]$Dispersion)
+
+```
+
+Interestingly, the length of time-constrained paths (2sec...50sec) reveal that they grow linearly with Dispersion size. This is true whether we look at the mean path length of the full contained path or just the chord path (path connecting two points that define the dispersion size) and this linear relationship holds across all groups in the same way.
+
+The length of every path contained in a dispersion circle with radius $r$ increases linearly with $r$, specifically the relationship appears to be :
+\[
+<s> = \frac{3\pi}{2}  \frac{\pi r^2}{2 \pi r}
+\]
+
+When examined over 50sec path duration we find that a linear relationship still holds, with the slope changing further. This can be explained as the development of the same dispersions now is much slower, this is apparently partly explained by increasingly tortuous paths from entry to exit of the same $r$ Dispersion circle domains.
+*The linear relationship of dispersion to path-length is not invariant against a path's time-scale*
+
+but why? some invariance seems to hold when it comes to the chords defining the dispersion domain, (similar to  #blanco2003invariance), at least clearly so in the absence of prey.
+
+When looking at the overall contained path-length, I find that in the presence of prey increases path-lengths (for > 10sec durations) - most likely as a result of hunting events and prey tracking. 
+But note, that this way of looking at such path-data is new.
+Usually mean free paths are measured, as the path between two changes in direction, or the time of entry and exit, or mean path (as above) from a circle bound area R.
+ 
+It is known that the number of steps scales as the $<s> \approx  r^2$, and here we find that path-length scales with $r$, which here is the dispersion radius containing the path.
+The Chord-cutting path-length, which defines the dispersion size,  follow a linear rule more strictly, and that is clear over longer path durations.
+
+<!--In summary, over fixed path durations, the*mean path length depends on size of the observation area $\pi A/C$*.
+It is not clear to me if this is evidence towards the larval trajectories appearing  as a stochastic diffussive process, because random straigh line chords would also scale linearly with the spatial domain they cross.
+In general the above data suggest that the characteristics  **dynamics governing foraging motion  may  modified by experience **-->
+
+## Mean Path length per dispersion size different between evoked and spontaneous
+
+```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
+
+##Load Non-Time constrained Paths (Sliding windows of t duration) - but instead dispersion calculated on  Full paths duration
+tsec_timeWindow <- 0  
+datDispersion <- loadDispersionData_norm(tsec_timeWindow)
+strTitle <- paste("Path lengths vs dispersion size")
+
+#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerDispersion_AllPath_log.pdf",sep=""),width=7,height=7)
+## Take Group 
+plot_meanPathLengthPerDispersion(datDispersion,'NE',propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor = 2)
+title(strTitle)
+
+  legend("topleft", legend=names(colourDataScheme)[4:9],
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+  
+#dev.off()
+```
+Here I find that larva in evoked conditions larva show a relative constriction of their expansion when compared to the spontaneous conditions. 
+For the same dispersion size the mean path lengths are longer in evoked conditions, and this can be explained in terms of response to prey.
+
+Thus when we look at paths of varying duration, although the linear relationship between dispersion and mean-path length is maintained the slope is no longer identical between evoked and spontaneous conditions.
+Combined with the fact that for a fixed path duration this relationship is identical between evoked and spontaneous conditions, this suggests that *it takes longer for evoked conditions to produce the same dispersion  as that in evoked
+
+##  Path-length distribution per *dispersion* size
+
+Expanding on the previous plot showing average path lengths, I now take particular dispersion size and examine the distribution of path-lengths contained within:
+
+```{r  path-length for dispersion log-log distribution , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+#,log="xy" 
+
+plotLogLogPathLengthForFixedDispersion  <- function(datDispersion,strGroupID,dispRange = 10)
+{
+    datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+    dispBreaks <- seq(1,11,0.3)
+    datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
+    strTitle <- paste("Path length per dispersion", strGroupID,"#",NROW(datGroupDispersion$dispRange))
+
+    xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,2)
+    strDispRange <-levels(datGroupDispersion$dispRange)[dispRange]
+    #print(strDispRange) 
+    h_Length_GE <- hist(datGroupDispersion[datGroupDispersion$groupID == strGroupID[1] & datGroupDispersion$dispRange %in% levels(datGroupDispersion$dispRange)[dispRange] , ]$Length,breaks=xbreaks,plot=FALSE)
+    h_Length_GL <- hist(datGroupDispersion[datGroupDispersion$groupID == strGroupID[2] & 
+                                               datGroupDispersion$dispRange %in% levels(datGroupDispersion$dispRange)[dispRange] , ]$Length,breaks=xbreaks,plot=FALSE)
+
+    lLinModel_GE <- getLogPowerSlope(h_Length_GE,10)
+    lLinModel_GL <- getLogPowerSlope(h_Length_GL,10)
+    
+    plot(log10(h_Length_GE$mids),log10(100*h_Length_GE$counts/sum(h_Length_GE$counts) ),
+         main=paste(" Log-Log percentage of lengths for disp:",strDispRange ),
+         xlab="log Length (mm)", col=colourDataScheme[strGroupID[1]][[1]], pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
+    
+    points(log10(h_Length_GL$mids),log10(100*h_Length_GL$counts/sum(h_Length_GL$counts) ),
+           xlab="Length (mm)",col=colourDataScheme[strGroupID[2]][[1]], pch=16)
+    lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strGroupID[1]][[1]])
+    
+    lines(lLinModel_GL$ptx_line,lLinModel_GL$pty_line,lwd=3,col=colourDataScheme[strGroupID[2]][[1]])
+    legend("topright", 
+           legend=c(paste("Spont μ",format(lLinModel_GE$coeff,digits=2)),paste("Evoked μ",format(lLinModel_GL$coeff,digits=2) ) ),col=c(colourDataScheme[strGroupID[2]][[1]] ,colourDataScheme[strGroupID[2]][[1]]) ,pch=c(16,16) )
+
+}
+##Low Dispersal - Larval Size - 4.3mm
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 12)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 12)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 12)
+## 5.2mm
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 15)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 15)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 15)
+##High Range 7.3
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 22)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 22)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 22)
+
+
+
+```
+
+When looking at small dispersion circles $(3.7,4]$ we find here is that the path-lengths increase between spontaneous and evoked conditions, across groups. 
+For larger dispersions cicles $(5.2,5.5]$ we find an effect specific to LF, whereby the food and non food (evoked, spontaneous) conditions differ in a manner shown as in (Viswanathan et al. 2009)!
+
+The way the data is looked at here is different, and exponent $\mu$, shown as the linear power law within the log-log, would not match the investigations from (Viswanathan et al. 2009)
+
+##  Path-length to dispersion ratios fixed dispersion range
+- Removed as not informative -
+
+```{r  path-length to dispersion ratio distribution , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE,eval=FALSE }
+
+hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
+  dispLevel <- cut(datGroupDispersion[,"Dispersion" ],breaks=seq(1,11,1))
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
+
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,max(47,y)+1,2),
+  main=strTitle,
+  col=colourDataScheme[[strGroupID]]  )
+  
+  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,max(47,y)+1,2),main=strTitle,
+       col=colourDataScheme[[strGroupID]]  )
+  
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,max(47,y)+2,2),
+       main=strTitle , col=colourDataScheme[[strGroupID]]  )
+}
+
+## Take Group 
+hist_pathLengthPerDispersion(datDispersion,'NE')
+hist_pathLengthPerDispersion(datDispersion,'NL')
+
+hist_pathLengthPerDispersion(datDispersion,'LE')
+hist_pathLengthPerDispersion(datDispersion,'LL')
+
+hist_pathLengthPerDispersion(datDispersion,'DE')
+hist_pathLengthPerDispersion(datDispersion,'DL')
+
+
+
+
+```
+
+## Distribution of path-length per domain R
 
 The distribution of path lengths (excluding the < `r MIN_PATH_LENGTH` ) per domain radius is as follows:
-
-
-
 
 
 ```{r plot-loglog-distribution of domain path lengths,fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE}  
@@ -1662,7 +1674,8 @@ plotLogLogDistribution_PathLength <- function(datBoundedTrack,strG,addPlot=FALSE
 {
    
     strTitle <- paste("R=",unique(datBoundedTrack$DomainRadius),",<l>=",format(mean(datBoundedTrack$pathLength),digits=3 ) )
-    mxbreaks <- seq(0,200,5)
+    mxbreaks <- c(0,2^seq(0,8,1)) ## Do the 2k Binning for clarity over rare events
+    
     hist_D <- hist(datBoundedTrack$pathLength,breaks=mxbreaks, plot=FALSE )  
     XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
     if (!addPlot) 
@@ -2468,6 +2481,71 @@ In any case paths above a particular duration, are not generated because the lar
 Linear fitting to the log-log curves can approximate the power law exponent. 
 
 
+
+## Step-size probability distribution - *Random walk propagators*
+
+The distribution displacement or step length, over a fixed time t will reflect the underlying nature of stochastic process. I have to be aware that due to the Diameter of the ROI, and thus maximum displacement is limited, and thus the distributions is going to  be truncated. For this Reason I look at displacement over a small time frame
+
+For Brownian motion the distribution of step lenghts should be Gaussian, which would show as a rapid decay of step length in log log distribution of displacements in t=1sec. 
+Super-diffusive or Levy processes will have long fat tails.
+
+```{r step-length Distribution,echo=FALSE,results=FALSE}
+
+plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strG &
+                                          !is.na(datDispersion$DisplacementSq),]
+ 
+  hist_GDisplacement <- hist(sqrt(datGroupDispersion$DisplacementSq ),plot=FALSE )
+  #hist_GDisplacement$counts/sum(hist_GDisplacement$counts
+  plot(hist_GDisplacement$mids, hist_GDisplacement$density, log="xy", xlim=c(0.1,20), ylim=c(10^-4,1),
+      ylab="Density ",xlab="log Length (mm)", main=paste("Displacement in t= ",tsec_timeWindow),
+      col=colourDataScheme[strG][[1]], pch=pointTypeScheme[[strG]])
+ ##Evoked Conditions 
+  strGE <- vGroups[which(vGroups == strG  ) - 1] # Find the complementrary Group-Conditions
+   datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGE &
+                                          !is.na(datDispersion$DisplacementSq),]
+
+  hist_GDisplacement <- hist_GDisplacement <- hist(sqrt(datGroupDispersion$DisplacementSq ),plot=FALSE ) #,breaks=hist_GDisplacement$breaks
+  ##Plot Path Duration Distribution 
+  lines(hist_GDisplacement$mids,hist_GDisplacement$density, 
+          type="b",
+          col=colourDataScheme[[strGE]],
+          pch=pointTypeScheme[[strGE]])
+  
+ 
+  Emean= mean(sqrt(datGroupDispersion$DisplacementSq ))
+  Esd= sd(sqrt(datGroupDispersion$DisplacementSq ))
+  hhNorm <-hist(abs(rnorm(n=12000,mean=Emean,sd=Esd)),plot=FALSE,breaks=hist_GDisplacement$breaks)
+  #lines(hhNorm$mids,hhNorm$density,xlim=c(0.1,20),log="xy",type="b")
+  xPt <- seq(0,20,0.1)
+  lines(xPt,dnorm(xPt,mean=Emean,sd=Esd),lty=2,lwd=2,pch=3)
+  
+  legend("bottomleft",legend=c(strG,strGE,"Gaussian"),
+         col=c(colourDataScheme[[strG]],colourDataScheme[[strGE]],"black"), pch=c(pointTypeScheme[[strG]],pointTypeScheme[[strGE]],3) )
+}
+
+
+tsec_timeWindow <-1
+datDispersion <- loadDispersionData_norm(tsec_timeWindow,forcereload = FALSE)
+
+#par(mfrow=c(3,1))
+for (strG in vGroups[seq(2,6,2)])
+{
+  plot_loglogDisplacementWithinT(strG,datDispersion,tsec_timeWindow)
+}
+
+#plot(function(x) dnorm(x, log = TRUE), -60, 50,
+#     main = "log { Normal density }")
+
+
+ 
+
+
+```
+By plotting the empirical step length distribution along with Gaussian that has the same mean and std as the empirical one we can clearly see that the *step lengths have long-fat tails*, ie they larva do not perform simple Brownian motion.
+
+
 ## Mean Squared Displacement - looking for diffusion type
 
 A prediction of the theory of *Fickian diffusion is that the mean squared displacement of a ‘random walker’ increases linearly with time*, not *super linearly (for example, quadratically) or sublinearly (for example, as the square root).
@@ -3243,9 +3321,8 @@ lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion025mmSu
 
 ```
 
-I find that a the principle of invariance holds between dispersion and Mean Displacement (calculated as $\sqrt{MSD}$  ) that appears almost consistent across groups.
-Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement, albeit some differences between conditions appear to exist,
-*In the absence of prey, mean displacement is likely higher within dispersion sizes of 3-8mm*.
+Mean Displacement (calculated as $\sqrt{MSD}$ ) appears consistent against Dispersion, and these two measures are linearly related.
+Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement.
 
 Note, the reason why  mean displacement be larger to dispersion is because dispersion is the *radius containing the path*, and thus the largest mean displacement can only be less or equal to the the diameter, twice the dispersion size.
 
@@ -4042,13 +4119,13 @@ addPlot <- FALSE
        #     xlab="Number of bouts",ylab="Log normalized bout frequency")
         
           plot(ecdf(vBoutCount), col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
-               xlab="Number of bouts",ylab="Cumulative Density Function ",xlim=c(0,15),ylim=c(0.5,1),main=NA)
+               xlab="Number of bouts",ylab="Cumulative Density Function ", xlim=c(0,15),ylim=c(0.5,1), main=NA)
        }
     else{
       
         #lines(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),
         #      col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
-       lines(ecdf(vBoutCount), col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],addPlot=TRUE,main=NA)
+       lines(ecdf(vBoutCount), col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],main=NA)
     }
    addPlot <- TRUE
  }
