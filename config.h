@@ -19,7 +19,6 @@
 #define G_MAX_FOOD_BLOB_LIMIT = 150
 
 
-#include <opencv2/core/core.hpp>
 #include <limits>
 #include <string>
 #include <cmath>

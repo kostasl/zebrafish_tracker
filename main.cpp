@@ -1204,8 +1204,8 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
    std::vector<cv::Point2f> vptPrey_next;
 
 
-    zftblobs vPreyKeypoints_current;
-    zftblobs vPreyKeypoints_ret;
+   zftblobs vPreyKeypoints_current;
+   zftblobs vPreyKeypoints_ret;
    std::vector<uchar> voutStatus;
    // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
    std::vector<float>    voutError;

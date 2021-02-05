@@ -11,9 +11,15 @@ output:
   bibliography: ForagingStateAnalysis.bib
 ---
 
-Animals forage in a changing environment, and they must adjust their foraging to these changes. Learning and memory play a key role in making these adjustments.
 
-My current aim to extend my previous work on the experience driven ontogeny of hunting skill [now published in eLife](https://elifesciences.org/articles/55119/figures) to examine the effect of experience on foraging. 
+
+>For a forager searching for prey in a stable, unchanging environment, prior expectation of when and where to find items will inform a deterministic search pattern (Stephens & Krebs 1986; Houston & McNamara 1999)
+However, foragers in environments that couple complex prey distributions with stochastic dynamics will not be able to attain a universal knowledge of prey availability. This raises the question of how should a forager best search across complex landscapes to optimize the probability of encountering suitable
+prey densities?
+
+The contribution of learning by experience,  may still be crucial in improving the relevance of the search patterns even in fluctuating environments, as experience can embed expectations by shaping the search patterns in relation to prey abundance.
+
+My current aim to extend my previous work on the experience driven ontogeny of hunting skill [now published in eLife](https://elifesciences.org/articles/55119/figures) to examine the effect of experience on foraging motion. 
 
 This notebook, initially aimed at analysing zebrafish tracking data for foraging state as indicated by Marquez et al 2019.
 According to Marquez et al  2020, Zebrafish appear to spontaneously switch between an exploratory and exploitation phase that grossly defines their behavioural mode.  
@@ -39,6 +45,8 @@ with low density of food sites).
 
 
 The *Levy foraging hypothesis* predicts a Levy distribution of move-steps during foraging when prey is scarce, but an exponential distribution when prey is abundant and searching is not required.
+
+Lévy flight increases the probability of encountering new patches (Viswanathan et al . 2000, 2002; Bartumeus et al . 2002). Lévy search strategies are also robust to changes in environmental parameters such as the availability of patchy resources (Raposo et al . 2003; Santos et al . 2004)
 
 PhysOfForage: What is most important is that, over the course of two decades of study, a growing consensus among researchers in the relevant fields holds the view *that many organisms diffuse anomalously*: real organisms rarely have Gaussian probability functions for displacements with a variance that grows linearly in time. Rather, the motion of organisms is rich in variety and surprisingly complex.
 
@@ -157,12 +165,16 @@ loaddatAllFrames <- function(forceReload = FALSE)
 #datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
 ## Extended Dispersion Merged With maxDispersion Data
 # Param tsec_timeWindow=0 default value loads pathstat calculated over the full event length - Not Confined to moving Time Window of X sec
-loadDispersionData <- function(forceReload = FALSE,tsec_timeWindow=0)
+loadDispersionData <- function(forceReload = FALSE, tsec_timeWindow=0)
 {
+  
+    if (datDispersion.Interval != tsec_timeWindow)
+        forceReload <- TRUE
+    
   try(
     ##Check If Already Loaded
     if (!exists("datDispersion") | forceReload)
-      datDispersion <<- readRDS(file=paste0(strDataStore,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") ) 
+      datDispersion <<- readRDS(file=paste0(strDataStore,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
   )
   
   if (!exists("datDispersion"))
@@ -170,9 +182,12 @@ loadDispersionData <- function(forceReload = FALSE,tsec_timeWindow=0)
     message("Calculate Trajectory Dispersions")
     loaddatAllFrames()
     datDispersion <<- calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
+    
   }
   AllRange <<- range(datDispersion$Dispersion,na.rm=TRUE)
-  tsec_timeWindow <<- tsec_timeWindow ##Change Global Ref to Last Call
+  ##Change Global Ref to Last Call
+  datDispersion.Interval <<- tsec_timeWindow
+  ##tsec_timeWindow <<- tsec_timeWindow 
   return(datDispersion)
 }
 
@@ -323,11 +338,15 @@ source("HuntingEventAnalysis_lib.r")
 
 #loadDispersionData(forceReload = TRUE,tsec_timeWindow = 0)
 ##Load Dispersion Data, check if data.frame has been extended with larva ranges, and merge if need to  have been added - 
-loadDispersionData_norm <- function(tsec_timeWindow,forcereload=TRUE)
+loadDispersionData_norm <- function(tsec_timeWindow,forceReload=TRUE)
 {
   
-  if (forcereload)
+  
+  if (datDispersion.Interval != tsec_timeWindow)
+  {
+    forceReload <- TRUE
     try(rm("datDispersion"),silent=TRUE);
+  }
   
   strFile <- paste0(strDataExportDir,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds")
   if (file.exists(strFile) & !exists("datDispersion")  )
@@ -343,7 +362,8 @@ loadDispersionData_norm <- function(tsec_timeWindow,forcereload=TRUE)
   ##If the Merged Version is not found then GENERATE IT
   if (!exists("datDispersion") | !file.exists(strFile))
   {
-    datDispersion <- loadDispersionData(forceReload = forcereload,tsec_timeWindow)
+    datDispersion <- loadDispersionData(forceReload = forceReload, tsec_timeWindow)
+    datDispersion.Interval <<- tsec_timeWindow
   }
     ## Merge Max Dispersion on there - If it is not already there then Calculate and save 
   if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | 
@@ -719,9 +739,9 @@ Next, we examine the same dispesions normalized against the maximum dispersion c
 Each measured dispersion is divided by the max dispersion trajectory experiment,
 (ie for each larva  this can be different in evoked or spontaneous conditions).
 
-```{r plot normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+```{r plot normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' , warning=FALSE}
 ### Normed Per Larva
-
+ 
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
 strXLab <- paste(tsec_timeWindow,"sec Dispersion  (norm per exp.)")
 hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion_norm,breaks=50,main="LF Spontaneous",xlab=strXLab, col=colourDataScheme$LF$Spont)
@@ -2494,37 +2514,65 @@ The distribution displacement or step length, over a fixed time t will reflect t
 For Brownian motion the distribution of step lenghts should be Gaussian, which would show as a rapid decay of step length in log log distribution of displacements in t=1sec. 
 Super-diffusive or Levy processes will have long fat tails.
 
+Here I am using the suggested method of Levy walk detection explained in #sims2007minimizing, where histogram counts are normalized to the sum, and bins follow a $2^k$ width progression, while each bin is normalized so as to calculate density by dividing each normalized count by the bin width.
+
 ```{r step-length Distribution,echo=FALSE,results=FALSE}
 
-plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow)
+plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow,addPlot=FALSE)
 {
+  KBreaks <- c(0,2^seq(0,5,0.5))
   datGroupDispersion <- datDispersion[datDispersion$groupID %in% strG &
                                           !is.na(datDispersion$DisplacementSq),]
  
-  hist_GDisplacement <- hist(sqrt(datGroupDispersion$DisplacementSq ),plot=FALSE )
-  #hist_GDisplacement$counts/sum(hist_GDisplacement$counts
-  plot(hist_GDisplacement$mids, hist_GDisplacement$density, log="xy", xlim=c(0.1,20), ylim=c(10^-4,1),
-      ylab="Density ",xlab="log Length (mm)", main=paste("Displacement in t= ",tsec_timeWindow),
-      col=colourDataScheme[strG][[1]], pch=pointTypeScheme[[strG]])
- ##Evoked Conditions 
-  strGE <- vGroups[which(vGroups == strG  ) - 1] # Find the complementrary Group-Conditions
-   datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGE &
-                                          !is.na(datDispersion$DisplacementSq),]
-
-  hist_GDisplacement <- hist(sqrt(datGroupDispersion$DisplacementSq ),plot=FALSE ) #,breaks=hist_GDisplacement$breaks
-  ##Plot Path Duration Distribution 
-  lines(hist_GDisplacement$mids,hist_GDisplacement$density, 
-          type="b",
-          col=colourDataScheme[[strGE]],
-          pch=pointTypeScheme[[strGE]])
+  hist_GDisplacement <- hist(sqrt(datGroupDispersion$DisplacementSq ),plot=FALSE ,breaks=KBreaks)
+  hist_GDisplacement_norm <- (hist_GDisplacement$counts/sum(hist_GDisplacement$counts))/diff(KBreaks)
   
- 
+  
+  if (addPlot == FALSE)
+  {
+  
+    #hist_GDisplacement$counts/sum(hist_GDisplacement$counts
+    plot(log10(hist_GDisplacement$mids), log10(hist_GDisplacement_norm),  xlim=log10(c(0.2,20)), ylim=log10(c(10^-6,1)), ##log10
+        ylab="Density ",xlab="log Length (mm)", main=paste("Displacement in t= ",tsec_timeWindow),
+        col=colourDataScheme[strG][[1]], pch=pointTypeScheme[[strG]])
+    
+    axXTick <- axisTicks(c(0,20) ,log=TRUE)
+    axis(side=1, at=log10(axXTick), labels =  as.character(axXTick) ) 
+    
+  } else{
+    #hist_GDisplacement$counts/sum(hist_GDisplacement$counts
+    lines(log10(hist_GDisplacement$mids), log10(hist_GDisplacement_norm),
+        col=colourDataScheme[strG][[1]], pch=pointTypeScheme[[strG]],type="b")
+  }
+  
+  ##Plot Linear Model
+  #hist_GDisplacement_norm[hist_GDisplacement_norm > 0] <- (10^-10)
+  X_dat <- log10(hist_GDisplacement$mids[hist_GDisplacement_norm > 0 & KBreaks > 0.5])
+  Y_dat <- log10(hist_GDisplacement_norm[hist_GDisplacement_norm > 0 & KBreaks > 0.5])
+  
+  linFit <- lm(  Y_dat ~ X_dat )  
+  x_linModel <- linFit$model$X_dat
+  y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* x_linModel ) )
+  
+  message(strG," mu is:",linFit$coefficients[2])
+  
+  lines(x_linModel,y_linModel,type="l",lwd=2,lty=2,col="grey")
+  
+  ## Re-Call For Paired condition
+  if (addPlot == FALSE)
+  {
+    ##Evoked Conditions 
+    strGE <- vGroups[which(vGroups == strG  ) - 1] # Find the complementrary Group-Conditions
+    plot_loglogDisplacementWithinT(strGE,datDispersion,tsec_timeWindow,addPlot=TRUE)
+  }
+  
+  ##Add Gaussian Model  
   Emean= mean(sqrt(datGroupDispersion$DisplacementSq ))
   Esd= sd(sqrt(datGroupDispersion$DisplacementSq ))
   hhNorm <-hist(abs(rnorm(n=12000,mean=Emean,sd=Esd)),plot=FALSE) # breaks=hist_GDisplacement$breaks
   #lines(hhNorm$mids,hhNorm$density,xlim=c(0.1,20),log="xy",type="b")
   xPt <- seq(0,20,0.1)
-  lines(xPt,dnorm(xPt,mean=Emean,sd=Esd),lty=2,lwd=2,pch=3)
+  lines(log10(xPt),log10(dnorm(xPt,mean=Emean,sd=Esd)),lty=2,lwd=2,pch=3,col="red")
   
   legend("bottomleft",legend=c(strG,strGE,"Gaussian"),
          col=c(colourDataScheme[[strG]],colourDataScheme[[strGE]],"black"), pch=c(pointTypeScheme[[strG]],pointTypeScheme[[strGE]],3) )
@@ -2532,12 +2580,12 @@ plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow)
 
 
 tsec_timeWindow <-1
-datDispersion <- loadDispersionData_norm(tsec_timeWindow,forcereload = TRUE)
+datDispersion <- loadDispersionData_norm(tsec_timeWindow,forcereload = FALSE)
 
 #par(mfrow=c(3,1))
 for (strG in vGroups[seq(2,6,2)])
 {
-  plot_loglogDisplacementWithinT(strG,datDispersion,tsec_timeWindow)
+  plot_loglogDisplacementWithinT(strG,datDispersion,tsec_timeWindow,addPlot=FALSE)
 }
 
 #plot(function(x) dnorm(x, log = TRUE), -60, 50,
