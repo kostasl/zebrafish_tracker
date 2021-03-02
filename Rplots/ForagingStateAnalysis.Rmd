@@ -11,8 +11,6 @@ output:
   bibliography: ForagingStateAnalysis.bib
 ---
 
-
-
 >For a forager searching for prey in a stable, unchanging environment, prior expectation of when and where to find items will inform a deterministic search pattern (Stephens & Krebs 1986; Houston & McNamara 1999)
 However, foragers in environments that couple complex prey distributions with stochastic dynamics will not be able to attain a universal knowledge of prey availability. This raises the question of how should a forager best search across complex landscapes to optimize the probability of encountering suitable
 prey densities?
@@ -51,7 +49,7 @@ Lévy flight increases the probability of encountering new patches (Viswanathan 
 PhysOfForage: What is most important is that, over the course of two decades of study, a growing consensus among researchers in the relevant fields holds the view *that many organisms diffuse anomalously*: real organisms rarely have Gaussian probability functions for displacements with a variance that grows linearly in time. Rather, the motion of organisms is rich in variety and surprisingly complex.
 
 
-In the absence of prey, the environment signals that prey is scarce, and in such conditions the optimal search strategy would be a Levy walk instead of brownian (#viswanathan1999optimizing).
+In the absence of prey, the environment signals that prey is scarce, and in such conditions the optimal search strategy would be a Levy walk instead of brownian ([@viswanathan1999optimizing]).
 *My recordings allow for the examination on whether search strategies are modified in the presence and absence of prey, and how experience of prey may modify these behaviours.*
 I find that prey scarcity can modify larval general motion patterns in an adaptive manner such that larger areas are searched, yet prior experience of prey can strongly affect this behaviour.
 
@@ -59,7 +57,7 @@ The concept of a characteristic scale is used extensively in statistical physics
 In Levy walks/flights the step lengths (ie straight path lengths) are said tp have no characteristic scale, because they are power-law distributed.
 
 
-In (#humphries2010environmental) it shown that searching animals adaptivelly adjust their optimal patterns of movement to different environmental resource distributions. 
+In ([@humphries2010environmental]) it shown that searching animals adaptivelly adjust their optimal patterns of movement to different environmental resource distributions. 
 It remains unknown, however, whether the motions patterns arose as due to adaptive behaviour or whether observed patterns were an emergent property of the spatial distribution of prey (#sims2008scaling) 
 
 >What is the most efficient strategy to adopt while searching for randomly placed sites whose
@@ -70,8 +68,11 @@ its close vicinity? (see  E P Raposo et al 2009)
 
 >From an evolutionary perspective, it is certainly pertinent to ask if efficient encounter rates are driven from selective pressures that systematically force organism adaption toward some optimal (or sub-optimal) solution.
 
-However (#reynolds2018passive) shows that Levy like walks can arise simply through flowing in a turbulent environemnt and he generally argues that as movement patterns they can be easy and ubiquitous to obtain, and argues that that these are not about evolving optiml searches (#reynolds2015liberating).
+However ([@reynolds2018passive]) shows that Levy like walks can arise simply through flowing in a turbulent environemnt and he generally argues that as movement patterns they can be easy and ubiquitous to obtain, and argues that that these are not about evolving optiml searches ([@reynolds2015liberating]).
 
+#dunn2016brain discover rhombomere oscillator and suggests that spatiotemporal pattern of spontaneous swimming may improve exploration efficiency. They used markov model to show that L-R scheme covers a restricted area more efficiently than a model fish turning left and right randomly without turn history dependence, and reduces diffusion into faraway regions.
+They argue  _ that staying local is good foraging strategy:_
+> the search for food cues represents an energetically favorable program that ensures no nearby resources have been missed.
 
 Here use prior prey experience can alter the foraging search patterns in the scarcity and abundance of prey, to test wether changes in search patterns can be are adaptive, and not simply a result of interacting with dense prey environments. Thus if prior expectations on abandunce of prey  can modify motion, then changes in search patterns can be shown to be adaptive.
 Thus we explore whether animals evolved to exploit experience in their search patterns, and whether they can use optimal search strategies such as Levy flights/walks when prey is scarce.
@@ -129,10 +130,14 @@ Thus we explore whether animals evolved to exploit experience in their search pa
 library(rjags)
 library(runjags)
 library('coda')
+### library(targets) To convert project into Pipeline
 message("Jags version: ",jags.version())
 message(" For info in runjags check out:doi: 10.18637/jss.v071.i09")
 
+
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots") ##sOME bUG REQUIRES THAT THIS IS RUN ON CONSOLE MANUALLY 
+
+
 #setwd(here())
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
@@ -168,9 +173,11 @@ loaddatAllFrames <- function(forceReload = FALSE)
 loadDispersionData <- function(forceReload = FALSE, tsec_timeWindow=0)
 {
   
+  if (exists("Interval")){
     if (datDispersion.Interval != tsec_timeWindow)
         forceReload <- TRUE
-    
+  }
+
   try(
     ##Check If Already Loaded
     if (!exists("datDispersion") | forceReload)
@@ -342,12 +349,14 @@ loadDispersionData_norm <- function(tsec_timeWindow,forceReload=TRUE)
 {
   
   
-  if (datDispersion.Interval != tsec_timeWindow)
+  if (exists("datDispersion.Interval"))
   {
-    forceReload <- TRUE
-    try(rm("datDispersion"),silent=TRUE);
+    if (datDispersion.Interval != tsec_timeWindow)
+    {
+      forceReload <- TRUE
+      try(rm("datDispersion"),silent=TRUE);
+    }
   }
-  
   strFile <- paste0(strDataExportDir,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds")
   if (file.exists(strFile) & !exists("datDispersion")  )
   {
@@ -818,13 +827,21 @@ I will use these max values to normalize dispersions for each larva (as in Marqu
 Full Path:
 ```{r Max-dispersion histogram plots, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the full event trajectories - No time sliding time window,  and 20sec duration paths" }
 
+
 ##### Maximum Dispersions Per Larva- 
 hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
 {
   XLIM <- c(0,15)
   strFileName <- paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds")
-  message("Loaded max disp precalc :",strFileName)
-  datMaxDispersionPerLarva <- readRDS(file=strFileName )
+  datMaxDispersionPerLarva <- data.frame() ##init Variable
+  message("Loading max disp precalc :",strFileName)
+  if (file.exists(strFileName))
+    datMaxDispersionPerLarva <- readRDS(file=strFileName )
+  else{
+    ## Make missing File
+    mergeRangeOfLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs,tsec_timeWindow)
+    datMaxDispersionPerLarva <- readRDS(file=strFileName ) ##Attempt Load Again
+  }
   nBreaks=seq(0,13,1)
   ylimUp <- 35
   
@@ -2889,7 +2906,11 @@ remarkably well for some species. For example, they may correctly describe the p
 [262]. 
 An intermittent search strategy would be consistent with Marques et al 2020 assuming a switch between exploitation and exploration mode.
 
+## Turn direction correlation
 
+**Note:** Persistence and auto-correlation of turn-direction changes with temperature, so good to check differences in autocorrelation of turn-direction.
+
+Check #dunn2016brain
 
 ## Distribution MSD over time per larva 
 
