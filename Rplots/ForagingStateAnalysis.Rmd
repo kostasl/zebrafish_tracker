@@ -137,13 +137,14 @@ message(" For info in runjags check out:doi: 10.18637/jss.v071.i09")
 
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots") ##sOME bUG REQUIRES THAT THIS IS RUN ON CONSOLE MANUALLY 
 
-
 #setwd(here())
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 source("HuntingEventAnalysis_lib.r")
 
+
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
@@ -357,7 +358,7 @@ loadDispersionData_norm <- function(tsec_timeWindow,forceReload=TRUE)
       try(rm("datDispersion"),silent=TRUE);
     }
   }
-  strFile <- paste0(strDataExportDir,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds")
+  strFile <- paste0(strDataStore,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds")
   if (file.exists(strFile) & !exists("datDispersion")  )
   {
   try( {
@@ -366,7 +367,7 @@ loadDispersionData_norm <- function(tsec_timeWindow,forceReload=TRUE)
     }
     )
   }else
-    message("No Dispersion data file found: ", strFile,"Attempting to generate now ...")
+    message("No Dispersion data file found: ", strFile,"\n Attempting to generate now ...")
   
   ##If the Merged Version is not found then GENERATE IT
   if (!exists("datDispersion") | !file.exists(strFile))
@@ -839,6 +840,7 @@ hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
     datMaxDispersionPerLarva <- readRDS(file=strFileName )
   else{
     ## Make missing File
+    datDispersion <- loadDispersionData_norm(tsec_timeWindow)
     mergeRangeOfLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs,tsec_timeWindow)
     datMaxDispersionPerLarva <- readRDS(file=strFileName ) ##Attempt Load Again
   }
@@ -876,6 +878,7 @@ hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
 
 
 datMaxDispersionPerLarva_All <- hist_MaxDispersionPerLarva(0)
+datMaxDispersionPerLarva_5sec <-hist_MaxDispersionPerLarva(5)
 datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(20)
 ```
 
