@@ -1575,7 +1575,7 @@ In general the above data suggest that the characteristics  **dynamics governing
 
 ## Mean Path length per dispersion size different between evoked and spontaneous
 
-```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
+```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths ", warning=FALSE }
 
 ##Load Non-Time constrained Paths (Sliding windows of t duration) - but instead dispersion calculated on  Full paths duration
 tsec_timeWindow <- 0  
