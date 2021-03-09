@@ -366,7 +366,11 @@ loadDispersionData_norm <- function(tsec_timeWindow,forceReload=TRUE)
       datDispersion <<- readRDS(file=strFile ) ;
     }
     )
-  }else
+  }
+  if (exists("datDispersion") )
+    message("Dispersion data already loaded.")
+  
+  if (!file.exists(strFile))
     message("No Dispersion data file found: ", strFile,"\n Attempting to generate now ...")
   
   ##If the Merged Version is not found then GENERATE IT
@@ -879,7 +883,7 @@ hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
 
 datMaxDispersionPerLarva_All <- hist_MaxDispersionPerLarva(0)
 datMaxDispersionPerLarva_5sec <-hist_MaxDispersionPerLarva(5)
-datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(20)
+datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(10)
 ```
 
 
@@ -887,8 +891,8 @@ datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(20)
  ## plot est, Densities Compare Spont to Evoked
  pBW <- 0.3
  ylimUp <- 1
- plot(density(datMaxDispersionPerLarva.NF, kernel="gaussian",na.rm=TRUE, bw=pBW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Evoked,main="Maximum Dispersion Per Larva  ",xlab="Dispersion (mm)",lty=lineTypeL.NF  )
-lines(density((datMaxDispersionPerLarva.LF), kernel="gaussian",na.rm=TRUE,bw=pBW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Evoked,main=NA,xlab=NA,lty=lineTypeL.LF )
+                                                                                                                                   plot(density(datMaxDispersionPerLarva.NF, kernel="gaussian",na.rm=TRUE, bw=pBW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Evoked,main="Maximum Dispersion Per Larva  ",xlab="Dispersion (mm)",lty=lineTypeL.NF  )
+                                                                                                                                  lines(density((datMaxDispersionPerLarva.LF), kernel="gaussian",na.rm=TRUE,bw=pBW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Evoked,main=NA,xlab=NA,lty=lineTypeL.LF )
 lines(density((datMaxDispersionPerLarva.DF), kernel="gaussian",na.rm=TRUE,bw=pBW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Evoked,main=NA,xlab=NA,lty=lineTypeL.DF )
 
 
@@ -2531,7 +2535,7 @@ Linear fitting to the log-log curves can approximate the power law exponent.
 
 The distribution displacement or step length, over a fixed time t will reflect the underlying nature of stochastic process. I have to be aware that due to the Diameter of the ROI, and thus maximum displacement is limited, and thus the distributions is going to  be truncated. For this Reason I look at displacement over a small time frame
 
-For Brownian motion the distribution of step lenghts should be Gaussian, which would show as a rapid decay of step length in log log distribution of displacements in t=1sec. 
+For Brownian motion the distribution of step lengths should be Gaussian, which would show as a rapid decay of step length in log log distribution of displacements in t=1sec. 
 Super-diffusive or Levy processes will have long fat tails.
 
 Here I am using the suggested method of Levy walk detection explained in #sims2007minimizing, where histogram counts are normalized to the sum, and bins follow a $2^k$ width progression, while each bin is normalized so as to calculate density by dividing each normalized count by the bin width.
@@ -2579,28 +2583,31 @@ plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow,ad
   lines(x_linModel,y_linModel,type="l",lwd=2,lty=2,col="grey")
   
   ## Re-Call For Paired condition
+  strGE <- vGroups[which(vGroups == strG  ) - 1] # Find the complementrary Group-Conditions
+  message(strGE)
   if (addPlot == FALSE)
   {
-    ##Evoked Conditions 
-    strGE <- vGroups[which(vGroups == strG  ) - 1] # Find the complementrary Group-Conditions
+    ##Add paired - Evoked Conditions 
     plot_loglogDisplacementWithinT(strGE,datDispersion,tsec_timeWindow,addPlot=TRUE)
+     ## When Pairs Done, Add plot Legend 
+    legend("bottomleft",legend=c(strG,strGE,"Gaussian"),
+         col=c(colourDataScheme[[strG]],colourDataScheme[[strGE]],"black"), pch=c(pointTypeScheme[[strG]], pointTypeScheme[[strGE]],3) )
+
   }
-  
-  ##Add Gaussian Model  
-  Emean= mean(sqrt(datGroupDispersion$DisplacementSq ))
-  Esd= sd(sqrt(datGroupDispersion$DisplacementSq ))
-  hhNorm <-hist(abs(rnorm(n=12000,mean=Emean,sd=Esd)),plot=FALSE) # breaks=hist_GDisplacement$breaks
-  #lines(hhNorm$mids,hhNorm$density,xlim=c(0.1,20),log="xy",type="b")
-  xPt <- seq(0,20,0.1)
-  lines(log10(xPt),log10(dnorm(xPt,mean=Emean,sd=Esd)),lty=2,lwd=2,pch=3,col="red")
-  
-  legend("bottomleft",legend=c(strG,strGE,"Gaussian"),
-         col=c(colourDataScheme[[strG]],colourDataScheme[[strGE]],"black"), pch=c(pointTypeScheme[[strG]],pointTypeScheme[[strGE]],3) )
+   
+    ##Add Gaussian Model  
+    Emean= mean(sqrt(datGroupDispersion$DisplacementSq ))
+    Esd= sd(sqrt(datGroupDispersion$DisplacementSq ))
+    hhNorm <-hist(abs(rnorm(n=12000,mean=Emean,sd=Esd)),plot=FALSE) # breaks=hist_GDisplacement$breaks
+    #lines(hhNorm$mids,hhNorm$density,xlim=c(0.1,20),log="xy",type="b")
+    xPt <- seq(0,20,0.1)
+    lines(log10(xPt),log10(dnorm(xPt,mean=Emean,sd=Esd)),lty=2,lwd=2,pch=3,col="red")
+
 }
 
 
 tsec_timeWindow <-1
-datDispersion <- loadDispersionData_norm(tsec_timeWindow,forcereload = FALSE)
+datDispersion <- loadDispersionData_norm(tsec_timeWindow,forceReload = FALSE)
 
 #par(mfrow=c(3,1))
 for (strG in vGroups[seq(2,6,2)])
