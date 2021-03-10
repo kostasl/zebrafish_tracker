@@ -211,7 +211,6 @@ int initDetectionTemplates()
 
 trackerState::trackerState()
 {
-    bPaused     = true;
     bROIChanged = true;
     bPaused     = false;
     bshowMask   = false;

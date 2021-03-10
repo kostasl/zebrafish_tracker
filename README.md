@@ -61,7 +61,7 @@ The directory where the data csv files are exported must have  format EXP_N_YYYY
 * Dependencies
     - OpenCV
         -Install opencv and compile with flag -D WITH_QT=ON, improves experience and range of available functions.
-        http://opencv.org/downloads.html. Latest known opencv version that worked with tracker is OpenCV 3.4.4
+        https://opencv.org/releases/. Latest known opencv version that worked with tracker is OpenCV 3.4.4
     - GSL dev 2.4
         -Random number generator library
     - QT4 or above

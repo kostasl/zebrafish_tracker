@@ -50,10 +50,18 @@ G_MIN_TURNBOUT_ANGLE     <- 10 ##
 G_THRES_TAILFQ_BOUT      <- 9.5 ##Hz
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
 nEyeFilterWidth          <- nFrWidth*2
+
 MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
 MIN_BOUT_PAUSE           <- 25
 G_MIN_BOUTSCORE          <- 1 ##Number of coincident event needed to detect bout in frame - (a combo of Tail Fq, Centroid Speed,Turn speed)
 MIN_CAPTURE_EVENTS_PCA   <- 5 ## Make HuntBehaviour PCA Using Larvae that have at least 5 Hunt Events
+MIN_BOUT_TURN_SPEED = 0.2
+G_THRES_MOTION_BOUT_SPEED = 0.2
+MIN_PATH_LENGTH     = 0.5 ##Also Set  in Previous Chunk
+MIN_TURN_SIZE_THRES = 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
+MIN_GAP_FRAMES_BETWEEN_TURNS = 50
+
+
 ## Plot Options ##
 FONTSZ_AXISLAB <- 1.2
 FONTSZ_AXIS    <- 1.2 ##Axis Tik Number Size

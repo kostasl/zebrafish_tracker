@@ -11,14 +11,19 @@ output:
   bibliography: ForagingStateAnalysis.bib
 ---
 
-Animals forage in a changing environment, and they must adjust their foraging to these changes. Learning and memory play a key role in making these adjustments.
+>For a forager searching for prey in a stable, unchanging environment, prior expectation of when and where to find items will inform a deterministic search pattern (Stephens & Krebs 1986; Houston & McNamara 1999)
+However, foragers in environments that couple complex prey distributions with stochastic dynamics will not be able to attain a universal knowledge of prey availability. This raises the question of how should a forager best search across complex landscapes to optimize the probability of encountering suitable
+prey densities?
 
-My current aim to extend my previous work on the experience driven ontogeny of hunting skill [now published in eLife](https://elifesciences.org/articles/55119/figures) to examine the effect of experience on foraging. 
+The contribution of learning by experience,  may still be crucial in improving the relevance of the search patterns even in fluctuating environments, as experience can embed expectations by shaping the search patterns in relation to prey abundance.
+
+My current aim to extend my previous work on the experience driven ontogeny of hunting skill [now published in eLife](https://elifesciences.org/articles/55119/figures) to examine the effect of experience on foraging motion. 
 
 This notebook, initially aimed at analysing zebrafish tracking data for foraging state as indicated by Marquez et al 2019.
 According to Marquez et al  2020, Zebrafish appear to spontaneously switch between an exploratory and exploitation phase that grossly defines their behavioural mode.  
 The state can be read out be measuring trajectory dispersal over a fixed period of time (5 sec), 
 Measures of dispersal should appear bimodal, with short dispersals indicating exploitation phase.
+
 
 Given our behavioural recordings are not continuous, and exclude periods when the larva are swimming around the boundary, it is not certain whether we would be able to detect exploratory phases. These tend to be circling around the border of the petri-dish, as the fish attempts to swim forward. Nevertheless as we are interested in the mode-state under which hunt-events are executed, then we expect that some of these events should be executed during exploratory behaviour and this should be detectable - (dispersal, movement rates etc).
 In essense the internal state and the its neural correlates as reported by Marquez et al 2019 can combined with my results on the learned aspects of efficient hunting to study if this foraging state swithcing is also influenced by experience and  whether differences in hunting kinematics correlate with internal state.
@@ -38,7 +43,13 @@ with low density of food sites).
 
 
 The *Levy foraging hypothesis* predicts a Levy distribution of move-steps during foraging when prey is scarce, but an exponential distribution when prey is abundant and searching is not required.
-In the absence of prey, the environment signals that prey is scarce, and in such conditions the optimal search strategy would be a Levy walk instead of brownian (#viswanathan1999optimizing).
+
+Lévy flight increases the probability of encountering new patches (Viswanathan et al . 2000, 2002; Bartumeus et al . 2002). Lévy search strategies are also robust to changes in environmental parameters such as the availability of patchy resources (Raposo et al . 2003; Santos et al . 2004)
+
+PhysOfForage: What is most important is that, over the course of two decades of study, a growing consensus among researchers in the relevant fields holds the view *that many organisms diffuse anomalously*: real organisms rarely have Gaussian probability functions for displacements with a variance that grows linearly in time. Rather, the motion of organisms is rich in variety and surprisingly complex.
+
+
+In the absence of prey, the environment signals that prey is scarce, and in such conditions the optimal search strategy would be a Levy walk instead of brownian ([@viswanathan1999optimizing]).
 *My recordings allow for the examination on whether search strategies are modified in the presence and absence of prey, and how experience of prey may modify these behaviours.*
 I find that prey scarcity can modify larval general motion patterns in an adaptive manner such that larger areas are searched, yet prior experience of prey can strongly affect this behaviour.
 
@@ -46,7 +57,7 @@ The concept of a characteristic scale is used extensively in statistical physics
 In Levy walks/flights the step lengths (ie straight path lengths) are said tp have no characteristic scale, because they are power-law distributed.
 
 
-In (#humphries2010environmental) it shown that searching animals adaptivelly adjust their optimal patterns of movement to different environmental resource distributions. 
+In ([@humphries2010environmental]) it shown that searching animals adaptivelly adjust their optimal patterns of movement to different environmental resource distributions. 
 It remains unknown, however, whether the motions patterns arose as due to adaptive behaviour or whether observed patterns were an emergent property of the spatial distribution of prey (#sims2008scaling) 
 
 >What is the most efficient strategy to adopt while searching for randomly placed sites whose
@@ -57,8 +68,11 @@ its close vicinity? (see  E P Raposo et al 2009)
 
 >From an evolutionary perspective, it is certainly pertinent to ask if efficient encounter rates are driven from selective pressures that systematically force organism adaption toward some optimal (or sub-optimal) solution.
 
-However (#reynolds2018passive) shows that Levy like walks can arise simply through flowing in a turbulent environemnt and he generally argues that as movement patterns they can be easy and ubiquitous to obtain, and argues that that these are not about evolving optiml searches (#reynolds2015liberating).
+However ([@reynolds2018passive]) shows that Levy like walks can arise simply through flowing in a turbulent environemnt and he generally argues that as movement patterns they can be easy and ubiquitous to obtain, and argues that that these are not about evolving optiml searches ([@reynolds2015liberating]).
 
+#dunn2016brain discover rhombomere oscillator and suggests that spatiotemporal pattern of spontaneous swimming may improve exploration efficiency. They used markov model to show that L-R scheme covers a restricted area more efficiently than a model fish turning left and right randomly without turn history dependence, and reduces diffusion into faraway regions.
+They argue  _ that staying local is good foraging strategy:_
+> the search for food cues represents an energetically favorable program that ensures no nearby resources have been missed.
 
 Here use prior prey experience can alter the foraging search patterns in the scarcity and abundance of prey, to test wether changes in search patterns can be are adaptive, and not simply a result of interacting with dense prey environments. Thus if prior expectations on abandunce of prey  can modify motion, then changes in search patterns can be shown to be adaptive.
 Thus we explore whether animals evolved to exploit experience in their search patterns, and whether they can use optimal search strategies such as Levy flights/walks when prey is scarce.
@@ -75,15 +89,17 @@ Thus we explore whether animals evolved to exploit experience in their search pa
   5. Path lengths are longer in Evoked for the same dispersion size , more clearly so for LF (see also pathL/Dispersion Ratio).
   6. Invariance of Mean-Path Length when crossing bounded domain r -across groups- is evidence of stochastic process.
   7. Mean *residence time* within domain clearly Shorter for LF, and most for LE.
+  7.1 Duration of paths crossing domain have *fat tails except for LE*, suggesting experience increases tendency to search for new patches and not dwell on same spot.
   8. Path length distributions drop as power-law like after $l> 2 \times r$ (check exponent).
   9. Distribution Of Path Length Shows Power law drop-off for lengths exceeding the $2*r$ of the domain (chord distrib. seen in [ref].)
-  10. With increasing domain $r$, Spontaneous conditions (all groups), but also LL, show *scale-invariance in the fraction of boundary crossings* against $r$, *but NL,DL prefers <6mm domains*
+  10. With increasing domain $r$, Spontaneous conditions (all groups), but also LL, show *scale-invariance in the fraction of boundary crossings* against $r$, *but NL,DL prefers <6mm domains* thus confined to search smaller areas.
+   for other patches.
   11. *LF disperse faster* than controls, with *LE dispersing the fastest*.
   12. *LF move faster*, making longer path lengths over time but also leavin the ROI earlier;
-  13. There are almost no paths with more than 40sec duration in LE, but this increases to 130sec for LL. *Probability of path duration clearly drops faster for increasing durations for LE*, than controls
+  13. There are almost no paths with more than 40sec duration in LE, but this increases to 130sec for LL. *Probability of path duration clearly drops faster for increasing duration for LE*, than controls (We also have path durations within Domain R=10mm duration distributions showing less than 50sec)
   14. MSD over path duration clearly higher for LE, with max overshooting within 10sec,rather than 100 as in controls.
   15. Evidence of super-diffusion as MSD grows supra linearly to path-length (Within some range < 21mm), *MSD growth distinct for LE*
-  16. MSD vs Dispersion are linearly related, with a drop-off in Evoked conditions over large dispersions.
+  16. MSD vs Dispersion are linearly related, with a drop-off in Evoked conditions over large dispersion.
   17. -Clustering And Bimodality results-.
   18. Spontaneous Hunt events associated with higher dispersions than Evoked, only for LF. NF, look the same, DF, do the opposite to LF.
   19. Hunt-outcome is not associated to Dispersion, but only in  LL do all successful events belong to fast-cluster 
@@ -94,12 +110,12 @@ Thus we explore whether animals evolved to exploit experience in their search pa
       - LF has Longer distance traveled per bout - *longer bouts*
       - Bout duration and distances decrease for LF,NF in evoked conditions, but not for DF.
       - Lower number of bouts between turns (maybe).
-      - LF does not do long-pause/ Waits, in contrast to DF, NF.
+      - Inter-Bout intervals *show fat-tails for DF and NF* LF does not do long-pause/ Waits, in contrast to DF, NF.
       - Lower mean number of turns when crossing Domain 10mm for DE, and then LL,DL, and then LE- NE has highest
       - Increasing turn Modes around 40-50 deg, in spontaneous conditions, across groups. (Surprise as these turn modes are associated with Successful hunts)
       - *Bout Speed increases in absence of prey*, with LF having the fastest bouts on average and DF the slowest.
     
-    
+  22. _Prey Density Effect on Dispersion And MSD_  :
   
   
   
@@ -114,22 +130,28 @@ Thus we explore whether animals evolved to exploit experience in their search pa
 library(rjags)
 library(runjags)
 library('coda')
+### library(targets) To convert project into Pipeline
 message("Jags version: ",jags.version())
 message(" For info in runjags check out:doi: 10.18637/jss.v071.i09")
 
+
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots") ##sOME bUG REQUIRES THAT THIS IS RUN ON CONSOLE MANUALLY 
+
 #setwd(here())
 source("config_lib.R")
 source("TrajectoryAnalysis.r")
 source("HuntingEventAnalysis_lib.r")
 
+
 setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
+
 ## To compile to different destination run:
 # rmarkdown::render("ForagingStateAnalysis.Rmd",output_dir = paste0(strDataExportDir,'../foragingAnalysis') )
 
 MIN_PATH_LENGTH <- 0.5
-tsec_timeWindow <- 0 
+tsec_timeWindow <- 5 
 thres_dispersion_class <- 0.2
+
 ##Clustering
 Nclust <- 2
 nsubsampleInterval <- G_APPROXFPS/2
@@ -144,17 +166,22 @@ loaddatAllFrames <- function(forceReload = FALSE)
   }
 }
 
-
 #Original Dispersion Record per frame
 #datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
 ## Extended Dispersion Merged With maxDispersion Data
 # Param tsec_timeWindow=0 default value loads pathstat calculated over the full event length - Not Confined to moving Time Window of X sec
-loadDispersionData <- function(forceReload = FALSE,tsec_timeWindow=0)
+loadDispersionData <- function(forceReload = FALSE, tsec_timeWindow=0)
 {
+  
+  if (exists("Interval")){
+    if (datDispersion.Interval != tsec_timeWindow)
+        forceReload <- TRUE
+  }
+
   try(
     ##Check If Already Loaded
     if (!exists("datDispersion") | forceReload)
-      datDispersion <<- readRDS(file=paste0(strDataStore,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") ) 
+      datDispersion <<- readRDS(file=paste0(strDataStore,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
   )
   
   if (!exists("datDispersion"))
@@ -162,9 +189,12 @@ loadDispersionData <- function(forceReload = FALSE,tsec_timeWindow=0)
     message("Calculate Trajectory Dispersions")
     loaddatAllFrames()
     datDispersion <<- calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
+    
   }
   AllRange <<- range(datDispersion$Dispersion,na.rm=TRUE)
-  tsec_timeWindow <<- tsec_timeWindow ##Change Global Ref to Last Call
+  ##Change Global Ref to Last Call
+  datDispersion.Interval <<- tsec_timeWindow
+  ##tsec_timeWindow <<- tsec_timeWindow 
   return(datDispersion)
 }
 
@@ -315,24 +345,38 @@ source("HuntingEventAnalysis_lib.r")
 
 #loadDispersionData(forceReload = TRUE,tsec_timeWindow = 0)
 ##Load Dispersion Data, check if data.frame has been extended with larva ranges, and merge if need to  have been added - 
-loadDispersionData_norm <- function(tsec_timeWindow)
+loadDispersionData_norm <- function(tsec_timeWindow,forceReload=TRUE)
 {
   
-  try(rm("datDispersion"),silent=TRUE);
-  strFile <- paste0(strDataExportDir,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds")
-  if (file.exists(strFile))
+  
+  if (exists("datDispersion.Interval"))
+  {
+    if (datDispersion.Interval != tsec_timeWindow)
+    {
+      forceReload <- TRUE
+      try(rm("datDispersion"),silent=TRUE);
+    }
+  }
+  strFile <- paste0(strDataStore,"foragingState_Dispersion_merged_rangeperLarva_",tsec_timeWindow,"sec.rds")
+  if (file.exists(strFile) & !exists("datDispersion")  )
   {
   try( {
       message("Loading ",strFile);
       datDispersion <<- readRDS(file=strFile ) ;
     }
     )
-  }else
-    message("No Dispersion data file found: ", strFile,"Attempting to generate now ...")
-  ##If the Merged Version is not found then Make one
+  }
+  if (exists("datDispersion") )
+    message("Dispersion data already loaded.")
+  
+  if (!file.exists(strFile))
+    message("No Dispersion data file found: ", strFile,"\n Attempting to generate now ...")
+  
+  ##If the Merged Version is not found then GENERATE IT
   if (!exists("datDispersion") | !file.exists(strFile))
   {
-    datDispersion <- loadDispersionData(forceReload = TRUE,tsec_timeWindow)
+    datDispersion <- loadDispersionData(forceReload = forceReload, tsec_timeWindow)
+    datDispersion.Interval <<- tsec_timeWindow
   }
     ## Merge Max Dispersion on there - If it is not already there then Calculate and save 
   if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | 
@@ -589,6 +633,9 @@ plotExploreExploitTrajectories <- function(groupID,datGroupExploreTraj,datGroupE
 }## End of Function 
 
 
+
+
+tsec_timeWindow <- 5
 ```
 
 
@@ -611,10 +658,10 @@ Perhaps it is best I combine the trajectories of spontaneous and evoked activity
  Without normalizing the distribution is shown on the left, and a version normalized per max dispersion measured in each experiment is on the right :
  
 ```{r dispersion histograms across groups, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
-loadDispersionData()
+loadDispersionData_norm(tsec_timeWindow)
 
-hist(datDispersion$Dispersion,breaks=50,main="(All groups): Dispersion lengths per experiment ",xlab="Dispersion (mm)")
-hist(datDispersion$Dispersion_norm,breaks=50,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm)")
+hist(datDispersion$Dispersion,breaks=50,main="(All groups): Dispersion lengths per experiment ",xlab=paste("Dispersion (mm/",tsec_timeWindow,")") )
+hist(datDispersion$Dispersion_norm,breaks=50,main="(All groups): Dispersion normalized",xlab="Dispersion (exp. norm) ")
 hist(datDispersion$Dispersion_larval_norm ,breaks=50,main="(All groups): Dispersion normalized per larva",xlab="Dispersion (larva norm)")
 
 
@@ -622,42 +669,42 @@ hist(datDispersion$Dispersion_larval_norm ,breaks=50,main="(All groups): Dispers
 We look at each rearing group separatelly, while combining their evoked and spontaneous conditions
 
 ```{r dispersion histograms per group across conditions, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
-hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion,breaks=50,main="LF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$LF$Evoked)
-hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion,breaks=50,main="NF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$NF$Evoked)
-hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion,breaks=50,main="DF Evoked+Spont.",xlab="Dispersion (mm)",col=colourDataScheme$DF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion,breaks=50,main="LF Evoked+Spont.", xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),col=colourDataScheme$LF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion,breaks=50,main="NF Evoked+Spont.",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),col=colourDataScheme$NF$Evoked)
+hist(datDispersion[datDispersion$groupID %in% c('DE','DL'), ]$Dispersion,breaks=50,main="DF Evoked+Spont.",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),col=colourDataScheme$DF$Evoked)
 
 ```
 
 
-We then plot each experimental group individually, also examining the dispersion in evoked (in the presence of prey) and spontaneous (no prey) conditions separatellly.
+We then plot each experimental group individually, also examining the dispersion in evoked (in the presence of prey) and spontaneous (no prey) conditions separately.
 Next we plot these for each experimental condition individually (non-Normalized):
 ```{r dispersion histograms per group per condition, fig.show="hold", out.width="33%", echo=FALSE, results='hide'  }
 # 
 # ## Normed over all Recorded Dispersions
- hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion,breaks=100,main="LF Spontaneous",xlab="Dispersion (mm)",col=colourDataScheme$LF$Spont)
- hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion,breaks=100,main="NF Spontaneous",xlab="Dispersion (mm)",col=colourDataScheme$NF$Spont)
- hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion,breaks=100,main="DF Spontaneous",xlab="Dispersion (mm)",col=colourDataScheme$DF$Spont)
+ hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion,breaks=100,main="LF Spontaneous", xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$LF$Spont)
+ hist(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion,breaks=100,main="NF Spontaneous", xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$NF$Spont)
+ hist(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion,breaks=100,main="DF Spontaneous", xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$DF$Spont)
 
- hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,breaks=100,main="LF Evoked",xlab="Dispersion (mm)",col=colourDataScheme$LF$Evoked)
- hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,breaks=100,main="NF Evoked",xlab="Dispersion (mm)",col=colourDataScheme$NF$Evoked)
- hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,breaks=100,main="DF Evoked",xlab="Dispersion (mm)",col=colourDataScheme$DF$Evoked)
+ hist(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,breaks=100,main="LF Evoked",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$LF$Evoked)
+ hist(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,breaks=100,main="NF Evoked",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$NF$Evoked)
+ hist(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,breaks=100,main="DF Evoked",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"), col=colourDataScheme$DF$Evoked)
 ```
  
-Smooth estimates using a gaussian kernel show a shift towards exploitation for the pooled *LF* trajectories, measured across the whole event duration (at 1sec intervals):
+Smooth estimates using a Gaussian kernel show a shift towards exploitation for the pooled *LF* trajectories, measured across the whole event duration (at 1sec intervals):
 
 ```{r dispersion densities WholePath per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
-loadDispersionData(TRUE, tsec_timeWindow = 0)
+#loadDispersionData_norm(FALSE, tsec_timeWindow )
  ## plot est, Densities Compare Spont to Evoked
- BW=0.2
- plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="Full path Dispersion (mm)",lty=1  )
+ BW=0.5
+ plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),lty=1  )
  lines(density(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
  
-  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="Full path dispersion (mm)",lty=1 )
+  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
 
- plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="Full path dispersion (mm)",lty=1 )
+ plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab=paste("Dispersion (mm/",tsec_timeWindow,"s)"),lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
 
@@ -668,16 +715,16 @@ These look rather uniform across all groups. But if we examine the dispersion ge
 ```{r dispersion densities 20sec Path per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 loadDispersionData(TRUE, tsec_timeWindow = 20)
  ## plot est, Densities Compare Spont to Evoked
- BW=0.2
- plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="20sec path dispersion (mm)",lty=1  )
+ BW=0.5 
+ plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,0.7), col=colourDataScheme$NF$Spont,main="NF  ",xlab="dispersion (mm/20sec)",lty=1  )
  lines(density(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$NF$Spont,colourDataScheme$NF$Evoked),lwd=3 ) 
  
-  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="20sec path dispersion (mm)",lty=1 )
+  plot(density(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW), lwd=4, ylim=c(0,0.7),col=colourDataScheme$LF$Spont,main="LF  ",xlab="Dispersion (mm/20sec)",lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'LL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$LF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$LF$Spont,colourDataScheme$LF$Evoked),lwd=3 ) 
 
- plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="20sec path dispersion (mm)",lty=1 )
+ plot(density(datDispersion[datDispersion$groupID == 'DE', ]$Dispersion, kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4, ylim=c(0,0.7),col=colourDataScheme$DF$Spont,main="DF  ",xlab="Dispersion (mm/20sec)",lty=1 )
  lines(density(datDispersion[datDispersion$groupID == 'DL', ]$Dispersion,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$DF$Evoked,main=NA,lty=2 )
 legend("topright",c("Spontaneous","Evoked"), lty=c(1,2),col=c(colourDataScheme$DF$Spont,colourDataScheme$DF$Evoked),lwd=3 ) 
 
@@ -705,9 +752,9 @@ Next, we examine the same dispesions normalized against the maximum dispersion c
 Each measured dispersion is divided by the max dispersion trajectory experiment,
 (ie for each larva  this can be different in evoked or spontaneous conditions).
 
-```{r plot normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
+```{r plot normalized dispersion distributions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' , warning=FALSE}
 ### Normed Per Larva
-tsec_timeWindow <- 20
+ 
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
 strXLab <- paste(tsec_timeWindow,"sec Dispersion  (norm per exp.)")
 hist(datDispersion[datDispersion$groupID == 'LE', ]$Dispersion_norm,breaks=50,main="LF Spontaneous",xlab=strXLab, col=colourDataScheme$LF$Spont)
@@ -726,6 +773,7 @@ Because each larva is recorded in two conditions, and as Marquez et al 2019 repo
 
 ```{r dispersion histogram normalized per larva, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
 ### Dispesions distributions Normalized on Per Larva basis - 
+tsec_timeWindow <-5
 datDispersion <- loadDispersionData_norm(tsec_timeWindow)
 hist(datDispersion[datDispersion$groupID %in% c('LE','LL'), ]$Dispersion_larval_norm, breaks=100,main="LF S+E ",xlab="Dispersion  (norm per larva)")
 hist(datDispersion[datDispersion$groupID %in% c('NE','NL'), ]$Dispersion_larval_norm, breaks=100,main="NF S+E",xlab="Dispersion  (norm per larva)")
@@ -759,7 +807,7 @@ Next I estimated densities using a gaussian kernel, allowing direct comparison b
 
 ```{r dispersion densities normalized per larva-Split E-S, fig.show="hold", out.width="33%", echo=FALSE, results='hide' }
  ## plot est, Densities Compare Spont to Evoked
- BW=0.01
+ BW=0.05
  ylimUp <- 5
  plot(density(datDispersion[datDispersion$groupID == 'NE', ]$Dispersion_larval_norm, kernel="gaussian",na.rm=TRUE, bw=BW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Spont,main="NF  ",xlab="Dispersion (norm. per larva)",lty=1  )
  lines(density(datDispersion[datDispersion$groupID == 'NL', ]$Dispersion_larval_norm,kernel="gaussian",na.rm=TRUE,bw=BW),lwd=4,col=colourDataScheme$NF$Evoked,main=NA,lty=2)
@@ -783,13 +831,22 @@ I will use these max values to normalize dispersions for each larva (as in Marqu
 Full Path:
 ```{r Max-dispersion histogram plots, fig.show="hold", out.width="50%", echo=FALSE, results='hide',fig.cap="Histograms of max dispersion per larva using  the full event trajectories - No time sliding time window,  and 20sec duration paths" }
 
+
 ##### Maximum Dispersions Per Larva- 
 hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
 {
   XLIM <- c(0,15)
   strFileName <- paste0(strDataExportDir,"/foragingState_max_Dispersion_perLarva_",tsec_timeWindow,"sec.rds")
-  message("Loaded max disp precalc :",strFileName)
-  datMaxDispersionPerLarva <- readRDS(file=strFileName )
+  datMaxDispersionPerLarva <- data.frame() ##init Variable
+  message("Loading max disp precalc :",strFileName)
+  if (file.exists(strFileName))
+    datMaxDispersionPerLarva <- readRDS(file=strFileName )
+  else{
+    ## Make missing File
+    datDispersion <- loadDispersionData_norm(tsec_timeWindow)
+    mergeRangeOfLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs,tsec_timeWindow)
+    datMaxDispersionPerLarva <- readRDS(file=strFileName ) ##Attempt Load Again
+  }
   nBreaks=seq(0,13,1)
   ylimUp <- 35
   
@@ -824,7 +881,8 @@ hist_MaxDispersionPerLarva <- function(tsec_timeWindow)
 
 
 datMaxDispersionPerLarva_All <- hist_MaxDispersionPerLarva(0)
-datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(20)
+datMaxDispersionPerLarva_5sec <-hist_MaxDispersionPerLarva(5)
+datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(10)
 ```
 
 
@@ -832,8 +890,8 @@ datMaxDispersionPerLarva_20sec <-hist_MaxDispersionPerLarva(20)
  ## plot est, Densities Compare Spont to Evoked
  pBW <- 0.3
  ylimUp <- 1
- plot(density(datMaxDispersionPerLarva.NF, kernel="gaussian",na.rm=TRUE, bw=pBW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Evoked,main="Maximum Dispersion Per Larva  ",xlab="Dispersion (mm)",lty=lineTypeL.NF  )
-lines(density((datMaxDispersionPerLarva.LF), kernel="gaussian",na.rm=TRUE,bw=pBW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Evoked,main=NA,xlab=NA,lty=lineTypeL.LF )
+                                                                                                                                   plot(density(datMaxDispersionPerLarva.NF, kernel="gaussian",na.rm=TRUE, bw=pBW), lwd=4, ylim=c(0,ylimUp), col=colourDataScheme$NF$Evoked,main="Maximum Dispersion Per Larva  ",xlab="Dispersion (mm)",lty=lineTypeL.NF  )
+                                                                                                                                  lines(density((datMaxDispersionPerLarva.LF), kernel="gaussian",na.rm=TRUE,bw=pBW), lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$LF$Evoked,main=NA,xlab=NA,lty=lineTypeL.LF )
 lines(density((datMaxDispersionPerLarva.DF), kernel="gaussian",na.rm=TRUE,bw=pBW),lwd=4, ylim=c(0,ylimUp),col=colourDataScheme$DF$Evoked,main=NA,xlab=NA,lty=lineTypeL.DF )
 
 
@@ -918,7 +976,7 @@ Here I examine recent dispersion as a ratio of recent trajectory length (5 sec w
 
 I next plot on logarithmic scale the percentage of each Path length and try to see if a power law like regime exists in the distribution, but also if the presence of prey changes the linear - drop off regime of the distribution. This is inspired by Fig 3 from Viswanathan et al 1999
 
-```{r length log distributions conditions, fig.show="hold", out.width="33%", echo=FALSE, results='hide' ,warning=FALSE }
+```{r length log distributions conditions, fig.show="hold", out.width="50%", echo=FALSE, results='hide' ,warning=FALSE }
 
 #,log="xy" 
 lLinModel_NE <- getLogPowerSlope(h_Length_NE,10)
@@ -1032,7 +1090,7 @@ Generally, lower ratios are indicative of turtuous paths of low dispersion, ie w
   - Ratios over hunt-event initiation suggest that low-dispersal frequencies are relativelly over represented compared to general motility in evoked conditions, but not in spontaneous conditions, ie spontaneous events occur randomly across general motion, in evoked conditions low dispersion motion appears favouroble to hunt-event initiation. 
 
 
-## Path length per dispersion size (Examine Invariance principle)
+# Invariance principle 
 
 Take a random walk until it hits a circle of radius r times the step length. The average number of steps it performs is $r^2$.[citation needed] 
 This fact is the discrete version of the fact that a Wiener process walk is a fractal of Hausdorff dimension 2.[citation needed]
@@ -1044,328 +1102,6 @@ Thus the corresponding mean values are constrained by the sole free surface to p
 [1](https://science.sciencemag.org/content/358/6364/765/tab-figures-data) [2](https://www.nature.com/articles/s41467-019-10455-y) ).
 Therefore *it may be possible to use this principle to detect for diffusive walks*, instead of relying on fitting the statistics of step lenghts to power-laws or exponentials. This can then avoid having to set arbitrary threshold on what is considered straight or a turn/change of direction.
 However, (#mazzolo2009invariance) prove that for any homogeneous stochastic processes the mean length of trajectories is still given by the Cauchy formula, as long as the random walker enters the domain with distributions that are simply related to that of the random walk. 
-
-Normally the mean path-length for the entry and exit from a circle of size $r$ is measured.
-Here I have path-lengths whose 2-most distal points  fall on the Dispersal circle-boundary.
-I will first examine the mean total path-length contained in the dispersion domain, and then the path length between the 2 points that define the dispersion domain.
-
-### Mean Path length scales linearly with dispersion
-
-Plot for X sec duration paths finds that indeed a linear relationship similar to (this)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], while the mean path length defining the limits (radius $r$) of the dispersion domain is proportional to the Area/Circumfarence ratio. 
-Yet, this relationship is *not invariant*, as looking at increasing path-integration time windows $X$sec reveals increasing slope of mean-path lengths. 
-Thus suggesting mean path length is not invariant to the particular variations in the timescale at which the animal disperses withing a circle $r$.
-
-The plots below examine both, the total mean path length contained with each dispersion $r$, and the cutting path length - the path between the two points that touch the circles boundary:
-
-```{r path-length-2sec duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
-
-## Plot mean path length for each boundary dispersion size 
-# This is to examine the similarity to the random walk invariance principle by which the mean pathlength within a circle of radius r is proportional to pi*A/C
-# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
-plot_meanCrossingPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=FALSE, propFactor=1.0)
-{
-  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  dispBreaks <- seq(1,13,1)
-  upLIM <- 50
-  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
-  ##The Path Connecting the two points that define the Dispersion Circle
-  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$DispersionPathLength,datGroupDispersion$dispRange,mean,na.rm=TRUE)*DIM_MMPERPX
-  
-  if (!addPlot)
-  {
-    plot(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Chord mean path length <l>",
-         ylim=c(0,upLIM),xlim=c(0,11),col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
-        lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
-
-  }else
-  {
-    points(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
-         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
-    
-    lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
-  }
-  
-  if (!addPlot)
-  {
-    rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
-    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
-    points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
-    points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
-   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
-  }
-  
-  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
-}
-
-# The mean  Path Length Contained Within each Size of Dispersion
-plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=FALSE, propFactor=1.0)
-{
-  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  dispBreaks <- seq(1,13,1)
-  upLIM <- 50
-  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
-  ##The Path Connecting the two points that define the Dispersion Circle
-  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
-  
-  if (!addPlot)
-  {
-    plot(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Total contained mean path length <l>",
-         ylim=c(0,upLIM),xlim=c(0,11),col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
-        lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
-
-  }else
-  {
-    points(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
-         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
-    
-    lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
-         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
-  }
-  
-  if (!addPlot)
-  {
-    rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
-    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
-    points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
-    points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
-   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
-  }
-  
-  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
-}
-
-tsec_timeWindow <- 2
-datDispersion <- loadDispersionData(forceReload=T ,tsec_timeWindow)
-strTitle <- paste(tsec_timeWindow,"sec duration paths ")
-
-## Take Group 
-propFactor <- 1.0
-plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-title(strTitle)
-
-## Take Group 
-propFactor <- 1.0
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-title(paste(strTitle," crossing chord " ) ) 
-
-
-
-tsec_timeWindow <- 10
-datDispersion <- loadDispersionData(forceReload = T,tsec_timeWindow)
-strTitle <- paste(tsec_timeWindow,"sec duration paths ")
-
-## Take Group 
-propFactor <- 1.0
-plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-title(strTitle)
-## Take Group 
-propFactor <- 1.0
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-title(paste(strTitle," crossing chord " ) ) 
-
-
-# 
-# tsec_timeWindow <- 50
-# datDispersion <- loadDispersionData(forceReload = T,tsec_timeWindow)
-# strTitle <- paste(tsec_timeWindow,"sec duration paths ")
-# 
-# ## Take Group 
-# propFactor <- 1.0
-# plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-# plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-# title(strTitle)
-# 
-# ## Take Group 
-# propFactor <- 1.0
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
-# plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
-# title(paste(strTitle," crossing chord " ) ) 
-
-
-#smoothScatter(datDispersion[datDispersion$groupID == "LE",]$DispersionPathLength,datDispersion[datDispersion$groupID == "LE",]$Dispersion)
-
-```
-
-When looking at short path-durations (2sec) indeed our data shows some agreement with the theoretical mean-path lengths by a factor of 1.5, while the linear relationship holds all groups in the same way.
-The length of every path contained in a dispersion circle with radius $r$ increases linearly with $r$, specifically the relationship appears to be :
-\[
-<s> = \frac{3\pi}{2}  \frac{\pi r^2}{2 \pi r}
-\]
-
-When these same dispersion ranges are examined over 50sec path durations we find that a linear relationship still holds, but this slope deviates further from theoretical with increasing mean path lengths. This can be explained as the development of the same dispersions now is much slower, this is apparently partly explained by increasingly tortuous paths from entry to exit of the same $r$ Dispersion circle domains.
-*Thus the linear relationship is not invariant to the path time-scale*
-
-but why? some invariance seems to hold when it comes to the chords defining the dispersion domain, (similar to  #blanco2003invariance), at least clearly so in the absence of prey.
-
-When looking at the overall contained path-length, I find that in the presence of prey increases path-lengths (for > 10sec durations) - most likely as a result of hunting events and prey tracking. 
-But note, that this way of looking at such path-data is new.
-Usually mean free paths are measured, as the path between two changes in direction, or the time of entry and exit from a circle bound area.
- 
-it is known that the number of steps scales as the $<s> \approx  r^2$, and here we find that path-length scales with $r$, which here is the dispersion radius containing the path.
-The Chord-cutting path-length, which defines the dispersion size,  follow the invariance linear rule more strictly, and that is clear over longer path durations.
-
-Nevertheless we find that the addition of prey *LF increase the path-lengths even among paths with the same Dispersion*, as their response to prey/ prey detection makes paths more turtuous (check 10sec paths). Over 50sec paths this increase in path length in evoked conditions is evident across groups.
-
-I next look at the Log-Log distribution of path-lengths for a specified dispersion boundary. 
-
-```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths " }
-
-tsec_timeWindow <- 0
-datDispersion <- loadDispersionData_norm(tsec_timeWindow)
-strTitle <- paste("Whole path ")
-
-## Take Group 
-plot_meanPathLengthPerDispersion(datDispersion,'NE')
-plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE)
-plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE)
-title(strTitle)
-
-```
-
-##  Path-length Log-Log distribution per *specific dispersion*
-
-```{r  path-length for dispersion log-log distribution , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
-#,log="xy" 
-
-plotLogLogPathLengthForFixedDispersion  <- function(datDispersion,strGroupID,dispRange = 10)
-{
-    datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-    dispBreaks <- seq(1,11,0.3)
-    datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
-    strTitle <- paste("Path length per dispersion", strGroupID,"#",NROW(datGroupDispersion$dispRange))
-
-    xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,2)
-    strDispRange <-levels(datGroupDispersion$dispRange)[dispRange]
-    #print(strDispRange) 
-    h_Length_GE <- hist(datGroupDispersion[datGroupDispersion$groupID == strGroupID[1] & datGroupDispersion$dispRange %in% levels(datGroupDispersion$dispRange)[dispRange] , ]$Length,breaks=xbreaks,plot=FALSE)
-    h_Length_GL <- hist(datGroupDispersion[datGroupDispersion$groupID == strGroupID[2] & 
-                                               datGroupDispersion$dispRange %in% levels(datGroupDispersion$dispRange)[dispRange] , ]$Length,breaks=xbreaks,plot=FALSE)
-
-    lLinModel_GE <- getLogPowerSlope(h_Length_GE,10)
-    lLinModel_GL <- getLogPowerSlope(h_Length_GL,10)
-    
-    plot(log10(h_Length_GE$mids),log10(100*h_Length_GE$counts/sum(h_Length_GE$counts) ),
-         main=paste(" Log-Log percentage of lengths for disp:",strDispRange ),
-         xlab="log Length (mm)", col=colourDataScheme[strGroupID[1]][[1]], pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
-    
-    points(log10(h_Length_GL$mids),log10(100*h_Length_GL$counts/sum(h_Length_GL$counts) ),
-           xlab="Length (mm)",col=colourDataScheme[strGroupID[2]][[1]], pch=16)
-    lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strGroupID[1]][[1]])
-    
-    lines(lLinModel_GL$ptx_line,lLinModel_GL$pty_line,lwd=3,col=colourDataScheme[strGroupID[2]][[1]])
-    legend("topright", 
-           legend=c(paste("Spont μ",format(lLinModel_GE$coeff,digits=2)),paste("Evoked μ",format(lLinModel_GL$coeff,digits=2) ) ),col=c(colourDataScheme[strGroupID[2]][[1]] ,colourDataScheme[strGroupID[2]][[1]]) ,pch=c(16,16) )
-
-}
-##Low Dispersal - Larval Size - 4.3mm
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 12)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 12)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 12)
-## 5.2mm
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 15)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 15)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 15)
-##High Range 7.3
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 22)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 22)
-plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 22)
-
-
-
-```
-
-When looking at small dispersion circles $(3.7,4]$ we find here is that the path-lengths increase between spontaneous and evoked conditions, across groups. 
-For larger dispersions cicles $(5.2,5.5]$ we find an effect specific to LF, whereby the food and non food (evoked, spontaneous) conditions differ in a manner shown as in (Viswanathan et al. 2009)!
-
-The way the data is looked at here is different, and exponent $\mu$, shown as the linear power law within the log-log, would not match the investigations from (Viswanathan et al. 2009)
-
-##  Path-length to dispersion ratios fixed dispersion range
-
-```{r  path-length to dispersion ratio distribution , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
-
-hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
-{
-  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
-  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
-  dispLevel <- cut(datGroupDispersion[,"Dispersion" ],breaks=seq(1,11,1))
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
-
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,max(47,y)+1,2),
-  main=strTitle,
-  col=colourDataScheme[[strGroupID]]  )
-  
-  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,max(47,y)+1,2),main=strTitle,
-       col=colourDataScheme[[strGroupID]]  )
-  
-  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
-  strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
-  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
-  hist(y,breaks=seq(0,max(47,y)+2,2),
-       main=strTitle , col=colourDataScheme[[strGroupID]]  )
-}
-
-## Take Group 
-hist_pathLengthPerDispersion(datDispersion,'NE')
-hist_pathLengthPerDispersion(datDispersion,'NL')
-
-hist_pathLengthPerDispersion(datDispersion,'LE')
-hist_pathLengthPerDispersion(datDispersion,'LL')
-
-hist_pathLengthPerDispersion(datDispersion,'DE')
-hist_pathLengthPerDispersion(datDispersion,'DL')
-
-
-
-
-```
-
-In summary, over fixed path durations, the*mean path length depends on size of the observation area $\pi A/C$*.
-It is not clear to me if this is evidence towards the larval trajectories appearing  as a stochastic diffussive process, because random straigh line chords would also scale linearly with the spatial domain they cross.
-In general the above data suggest that the characteristics  **dynamics governing foraging motion  may  modified by experience **
 
 
 # Invariance-revisited - Path lengths crossing bounded areas
@@ -1508,17 +1244,18 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   return(data.frame(do.call(rbind,lTrackletInfo) ) )
 }##END oF FUNCTION
   
-
-   lBoundedTrackInfo <- list()
-    for (DomainRadius in c(9,10)) #mm
-    {
-     for(g in vGroups)
-     {
-       message("Group:",g)
-       lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
-     }
-     saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
-    }
+# Uncomment to Run Analysis - Warning *Very Slow* It takes hours for each domain size- -
+# This is look Is commented Out After DomainPath Data Is processed - 
+#   lBoundedTrackInfo <- list()
+#    for (DomainRadius in c(9) ) #mm
+#    {
+#     for(g in vGroups)
+#     {
+#       message("Group:",g)
+#       lBoundedTrackInfo[[g]] <- calcPathLengthsInDomain(datAllFrames, g, DomainRadius)
+#     }
+#     saveRDS(lBoundedTrackInfo,file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+#    }
   
   #### Plot Mean Path Length Per Domain Radius ###
   #lBoundedTrajectoryFiles <- dir(strDataExportDir, pattern = "stat_boundedPathsB_R[0-9]{1,3}mm.rds", full.names = FALSE, ignore.case = TRUE)
@@ -1559,6 +1296,10 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathLength <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathLength)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$muPathLength)
   # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$count <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$count)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$count)
   # datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathDuration <- (datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 10,]$muPathDuration)+(datMeanPathLengthAll[datMeanPathLengthAll$DomainRadius == 11,]$muPathDuration)
+  
+  
+#pdf(file= paste(strPlotExportPath,"/foraging/InvariancePrinciple_PathLengths.pdf",sep=""),width=7,height=4)
+
   ## Make PLot All groups, Add theoretical Bound  
   plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathLength,ylim=c(0,28),xlim=c(0,12),
        col=unlist(colourDataScheme[ as.character(datMeanPathLengthAll$groupID) ]),
@@ -1567,19 +1308,29 @@ calcPathLengthsInDomain <- function(datAllFrames,vgroupID,DomainRadius)
   propFactor <- 1 #0.70
   rpoints <- seq(1,12, 1 )
   points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+
   
+  
+  legend("topleft", legend=names(colourDataScheme)[4:9],
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+# dev.off()
   # Gives Close agreement to Theoretical , May be underestimating because of aliasing, due to removal of points to speed up sum of path distance
   ### END PLOT OF MEAN PATH LENTH
   
+
+#pdf(file= paste(strPlotExportPath,"/foraging/InvariancePrinciple_ResidenceTime.pdf",sep=""),width=7,height=4)
   ## Make PLot All groups, Add theoretical Bound  
-  plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathDuration,ylim=c(0,28),xlim=c(0,12),
+  plot(datMeanPathLengthAll$DomainRadius,datMeanPathLengthAll$muPathDuration,ylim=c(0,20),xlim=c(0,12),
        col=unlist(colourDataScheme[ as.character(datMeanPathLengthAll$groupID) ]),
        pch=unlist(pointTypeScheme[ as.character(datMeanPathLengthAll$groupID) ]),ylab="Mean residence time (sec)",xlab="Domain radius (mm)",main="Residence time ")
 
   propFactor <- 1 #0.70
   rpoints <- seq(1,10, 1 )
   points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
-  
+
+#dev.off()  
 ```
   
 The *invariance principle holds, within a restricted region <9mm *, with the mean path length being simply linearly related to the geometrical size of the domain:
@@ -1594,11 +1345,375 @@ Invariance principles allow:
 Although *all groups show the same exact agreement to invariance principle *, this is not true for the time they spent within the domain. 
 Yet *LF move faster through the domains*, in agreement with earlier results on mean path-length per duration.
 
+Residence time may be reflecting patch exploitation strategy (see Stephens2008):
+>Foraging theory’s models ofpatch exploitation address the balance between cream skimming and thorough exploitation directly.
+Let s be the mean travel time, that is the time it takes our forager to move from one patch to the next. Let t be the patch residence time. The variable t is the variable of interest here because a small t corresponds with *a cream skimming strategy* while a large t implies thorough exploitation.
+
+
 
 Note that tracker ROI is `r format(260*DIM_MMPERPX,digits=3)` mm in diameter, and its circular boundary is approximatelly `r format((DIM_PXDIAMETER-260*2)*DIM_MMPERPX/2,digits=3)` mm away from the dish's wall. Yet, already from a 10mm domain radius (ie ~7mm away from boundary), we find the mean path length falls below the theoretical, indicating that the distribution of path lengths has been modified towards shorter paths, *especially so for the LE group, this is evident from R=7mm onwards.*
-The 11mm radius is near the boundary, falling short by 0.5mm, and it is the biggest area we can analyse
+The 11mm radius is near the boundary, falling short by 0.5mm, and it is the biggest area we can analyse (Distribution of path length examined in later section)
+
+
+## Path length per dispersion size Examined for Invariance
+
+Normally the mean path-length for the entry and exit from a circle of size $r$ is measured.
+Here I have path-lengths whose 2-most distal points  fall on the Dispersal circle-boundary.
+I will first examine the mean total path-length contained in the dispersion domain, and then the path length between the 2 points that define the dispersion domain.
+
+### The Mean length of Fixed-duration paths scales linearly with dispersion
+
+Plot for X sec duration paths finds that indeed a linear relationship similar to (this)[https://iopscience.iop.org/article/10.1209/epl/i2003-00208-x/meta], while the mean path length defining the limits (radius $r$) of the dispersion domain is proportional to the Area/Circumfarence ratio. 
+Yet, this relationship is *not invariant*, as looking at increasing path-integration time windows $X$sec reveals increasing slope of mean-path lengths. 
+Thus suggesting mean path length is not invariant to the particular variations in the timescale at which the animal disperses withing a circle $r$.
+
+The plots below examine both, the total mean path length contained with each dispersion $r$, and the cutting path length (here called *chord*) - the path between the two points that touch the circles boundary:
+
+```{r path-length-2sec duration- per dispersion, fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE,fig.cap="Mean path length per dispersion size for path-durations 20sec" }
+
+## Plot mean path length for each boundary dispersion size 
+# This is to examine the similarity to the random walk invariance principle by which the mean pathlength within a circle of radius r is proportional to pi*A/C
+# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+plot_meanCrossingPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=FALSE, propFactor=1.0)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  dispBreaks <- seq(1,13,1)
+  upLIM <- 50
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
+  ##The Path Connecting the two points that define the Dispersion Circle
+  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$DispersionPathLength,datGroupDispersion$dispRange,mean,na.rm=TRUE)*DIM_MMPERPX
+  
+  if (!addPlot)
+  {
+    plot(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Chord mean path length <l>",
+         ylim=c(0,upLIM),xlim=c(0,11),col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
+        lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+
+  }else
+  {
+    points(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=0.8 )
+    
+    lines(seq(1,10.5,length.out = NROW(vmeanPathLengthPerDispersion)),
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+  }
+  
+  if (!addPlot)
+  {
+    rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
+    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+    points(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
+  }
+  
+  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+}
+
+# The mean  Path Length Contained Within each Size of Dispersion
+plot_meanPathLengthPerDispersion <- function(datDispersion, strGroupID, addPlot=FALSE, propFactor=1.0)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  dispBreaks <- seq(1,13,1)
+  upLIM <- 150
+  CEX = 1.0
+  
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
+  ##The Path Connecting the two points that define the Dispersion Circle
+  vmeanPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,mean,na.rm=TRUE)
+  vSDPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,sd,na.rm=TRUE)
+  vCountPathLengthPerDispersion <- tapply(datGroupDispersion$Length,datGroupDispersion$dispRange,NROW)
+  # Calc Std Error Of Mean 
+  vSEPathLengthPerDispersion <- vSDPathLengthPerDispersion/sqrt(vCountPathLengthPerDispersion)
+  
+  rpoints <- seq(0.5,10.5, length.out = NROW(vmeanPathLengthPerDispersion) )
+  
+  if (!addPlot)
+  {
+    plot(rpoints,
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",ylab="Total contained mean path length <l> (mm)",
+         ylim=c(2,upLIM),xlim=c(0,11),log="y",
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=CEX )
+    
+        lines(rpoints,
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+
+  }else
+  {
+    points(rpoints,
+         vmeanPathLengthPerDispersion,xlab="Circle radius / Dispersion (mm)",
+         col=colourDataScheme[[strGroupID]],pch=pointTypeScheme[[strGroupID]],cex=CEX )
+    
+    lines(rpoints,
+         vmeanPathLengthPerDispersion,lwd=1,lty=lineTypeScheme[[strGroupID]])
+  }
+  
+  # Add Straight Line Points - 
+  if (!addPlot & propFactor > 0)
+  {
+    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+    lines(seq(2,12,1),theoreticalMeanLength(seq(2,12,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    points(seq(1,11,1),theoreticalMeanLength(seq(1,11,1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+   # legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
+  }
+  
+  # Add STD Error bar About Mean
+  if (NROW(vSEPathLengthPerDispersion)>0)
+    arrows(x0=rpoints, y0 = vmeanPathLengthPerDispersion - vSEPathLengthPerDispersion, 
+         x1=rpoints, y1 = vmeanPathLengthPerDispersion + vSEPathLengthPerDispersion, 
+         code=3, angle=90, length=0.02, col=colourDataScheme[[strGroupID]], lwd=1)
+  
+  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+}
+
+tsec_timeWindow <- 2
+datDispersion <- loadDispersionData(forceReload=T ,tsec_timeWindow)
+strTitle <- paste(tsec_timeWindow,"sec duration paths ")
+
+## Take Group 
+propFactor <- 1.0
+plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+title(strTitle)
+
+## Take Group 
+propFactor <- 1.0
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+title(paste(strTitle," crossing chord " ) ) 
+
+
+
+tsec_timeWindow <- 10
+datDispersion <- loadDispersionData(forceReload = T,tsec_timeWindow)
+strTitle <- paste(tsec_timeWindow,"sec duration paths ")
+
+## Take Group 
+propFactor <- 1.0
+plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+title(strTitle)
+## Take Group 
+propFactor <- 1.0
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+title(paste(strTitle," crossing chord " ) ) 
+
+
+# 
+# tsec_timeWindow <- 50
+# datDispersion <- loadDispersionData(forceReload = T,tsec_timeWindow)
+# strTitle <- paste(tsec_timeWindow,"sec duration paths ")
+# 
+# ## Take Group 
+# propFactor <- 1.0
+# plot_meanPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+# plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+# title(strTitle)
+# 
+# ## Take Group 
+# propFactor <- 1.0
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'NE',addPlot = FALSE, propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor)
+# plot_meanCrossingPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor)
+# title(paste(strTitle," crossing chord " ) ) 
+
+
+#smoothScatter(datDispersion[datDispersion$groupID == "LE",]$DispersionPathLength,datDispersion[datDispersion$groupID == "LE",]$Dispersion)
+
+```
+
+Interestingly, the length of time-constrained paths (2sec...50sec) reveal that they grow linearly with Dispersion size. This is true whether we look at the mean path length of the full contained path or just the chord path (path connecting two points that define the dispersion size) and this linear relationship holds across all groups in the same way.
+
+The length of every path contained in a dispersion circle with radius $r$ increases linearly with $r$, specifically the relationship appears to be :
+\[
+<s> = \frac{3\pi}{2}  \frac{\pi r^2}{2 \pi r}
+\]
+
+When examined over 50sec path duration we find that a linear relationship still holds, with the slope changing further. This can be explained as the development of the same dispersions now is much slower, this is apparently partly explained by increasingly tortuous paths from entry to exit of the same $r$ Dispersion circle domains.
+*The linear relationship of dispersion to path-length is not invariant against a path's time-scale*
+
+but why? some invariance seems to hold when it comes to the chords defining the dispersion domain, (similar to  #blanco2003invariance), at least clearly so in the absence of prey.
+
+When looking at the overall contained path-length, I find that in the presence of prey increases path-lengths (for > 10sec durations) - most likely as a result of hunting events and prey tracking. 
+But note, that this way of looking at such path-data is new.
+Usually mean free paths are measured, as the path between two changes in direction, or the time of entry and exit, or mean path (as above) from a circle bound area R.
+ 
+It is known that the number of steps scales as the $<s> \approx  r^2$, and here we find that path-length scales with $r$, which here is the dispersion radius containing the path.
+The Chord-cutting path-length, which defines the dispersion size,  follow a linear rule more strictly, and that is clear over longer path durations.
+
+<!--In summary, over fixed path durations, the*mean path length depends on size of the observation area $\pi A/C$*.
+It is not clear to me if this is evidence towards the larval trajectories appearing  as a stochastic diffussive process, because random straigh line chords would also scale linearly with the spatial domain they cross.
+In general the above data suggest that the characteristics  **dynamics governing foraging motion  may  modified by experience **-->
+
+## Mean Path length per dispersion size different between evoked and spontaneous
+
+```{r  path-length-All duration- per dispersion, fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE,fig.cap="Mean path length per dispersion size for full event path-lengths ", warning=FALSE }
+
+##Load Non-Time constrained Paths (Sliding windows of t duration) - but instead dispersion calculated on  Full paths duration
+tsec_timeWindow <- 0  
+datDispersion <- loadDispersionData_norm(tsec_timeWindow)
+strTitle <- paste("Path lengths vs dispersion size")
+
+#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerDispersion_AllPath_log.pdf",sep=""),width=7,height=7)
+## Take Group 
+plot_meanPathLengthPerDispersion(datDispersion,'NE',propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'NL',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'LE',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'LL',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'DE',addPlot = TRUE,propFactor = 2)
+plot_meanPathLengthPerDispersion(datDispersion,'DL',addPlot = TRUE,propFactor = 2)
+title(strTitle)
+
+  legend("topleft", legend=names(colourDataScheme)[4:9],
+         col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
+         pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+  
+#dev.off()
+```
+Here I find that larva in evoked conditions larva show a relative constriction of their expansion when compared to the spontaneous conditions. 
+For the same dispersion size the mean path lengths are longer in evoked conditions, and this can be explained in terms of response to prey.
+
+Thus when we look at paths of varying duration, although the linear relationship between dispersion and mean-path length is maintained the slope is no longer identical between evoked and spontaneous conditions.
+Combined with the fact that for a fixed path duration this relationship is identical between evoked and spontaneous conditions, this suggests that *it takes longer for evoked conditions to produce the same dispersion  as that in evoked
+
+##  Path-length distribution per *dispersion* size
+
+Expanding on the previous plot showing average path lengths, I now take particular dispersion size and examine the distribution of path-lengths contained within:
+
+```{r  path-length for dispersion log-log distribution , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE }
+#,log="xy" 
+
+plotLogLogPathLengthForFixedDispersion  <- function(datDispersion,strGroupID,dispRange = 10)
+{
+    datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+    dispBreaks <- seq(1,11,0.3)
+    datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
+    strTitle <- paste("Path length per dispersion", strGroupID,"#",NROW(datGroupDispersion$dispRange))
+
+    xbreaks <-seq(0,max(datDispersion$Length,na.rm=TRUE)+1,2)
+    strDispRange <-levels(datGroupDispersion$dispRange)[dispRange]
+    #print(strDispRange) 
+    h_Length_GE <- hist(datGroupDispersion[datGroupDispersion$groupID == strGroupID[1] & datGroupDispersion$dispRange %in% levels(datGroupDispersion$dispRange)[dispRange] , ]$Length,breaks=xbreaks,plot=FALSE)
+    h_Length_GL <- hist(datGroupDispersion[datGroupDispersion$groupID == strGroupID[2] & 
+                                               datGroupDispersion$dispRange %in% levels(datGroupDispersion$dispRange)[dispRange] , ]$Length,breaks=xbreaks,plot=FALSE)
+
+    lLinModel_GE <- getLogPowerSlope(h_Length_GE,10)
+    lLinModel_GL <- getLogPowerSlope(h_Length_GL,10)
+    
+    plot(log10(h_Length_GE$mids),log10(100*h_Length_GE$counts/sum(h_Length_GE$counts) ),
+         main=paste(" Log-Log percentage of lengths for disp:",strDispRange ),
+         xlab="log Length (mm)", col=colourDataScheme[strGroupID[1]][[1]], pch=16,xlim=c(0,2.0),ylim=c(-4,3), ylab="log N(l) %")
+    
+    points(log10(h_Length_GL$mids),log10(100*h_Length_GL$counts/sum(h_Length_GL$counts) ),
+           xlab="Length (mm)",col=colourDataScheme[strGroupID[2]][[1]], pch=16)
+    lines(lLinModel_GE$ptx_line,lLinModel_GE$pty_line,lwd=3,col=colourDataScheme[strGroupID[1]][[1]])
+    
+    lines(lLinModel_GL$ptx_line,lLinModel_GL$pty_line,lwd=3,col=colourDataScheme[strGroupID[2]][[1]])
+    legend("topright", 
+           legend=c(paste("Spont μ",format(lLinModel_GE$coeff,digits=2)),paste("Evoked μ",format(lLinModel_GL$coeff,digits=2) ) ),col=c(colourDataScheme[strGroupID[2]][[1]] ,colourDataScheme[strGroupID[2]][[1]]) ,pch=c(16,16) )
+
+}
+##Low Dispersal - Larval Size - 4.3mm
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 12)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 12)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 12)
+## 5.2mm
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 15)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 15)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 15)
+##High Range 7.3
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("NE","NL"),dispRange = 22)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("LE","LL"),dispRange = 22)
+plotLogLogPathLengthForFixedDispersion(datDispersion,c("DE","DL"),dispRange = 22)
+
+
+
+```
+
+When looking at small dispersion circles $(3.7,4]$ we find here is that the path-lengths increase between spontaneous and evoked conditions, across groups. 
+For larger dispersions cicles $(5.2,5.5]$ we find an effect specific to LF, whereby the food and non food (evoked, spontaneous) conditions differ in a manner shown as in (Viswanathan et al. 2009)!
+
+The way the data is looked at here is different, and exponent $\mu$, shown as the linear power law within the log-log, would not match the investigations from (Viswanathan et al. 2009)
+
+##  Path-length to dispersion ratios fixed dispersion range
+- Removed as not informative -
+
+```{r  path-length to dispersion ratio distribution , fig.show="hold", out.width="33%", echo=FALSE, cache=TRUE,eval=FALSE }
+
+hist_pathLengthPerDispersion <- function(datDispersion,strGroupID)
+{
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strGroupID,]
+  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
+  dispLevel <- cut(datGroupDispersion[,"Dispersion" ],breaks=seq(1,11,1))
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=3-4mm l",theoreticalMeanLength(3),"-", theoreticalMeanLength(4), "<s>=",mean(y,na.rm=TRUE) )
+
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,max(47,y)+1,2),
+  main=strTitle,
+  col=colourDataScheme[[strGroupID]]  )
+  
+  ##get Dispersion Levels, as discrete circles with thing 1mm boundary
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(4,5]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=4-5mm l~",theoreticalMeanLength(4),"-", theoreticalMeanLength(5), "<s>=",mean(y,na.rm=TRUE) )
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,max(47,y)+1,2),main=strTitle,
+       col=colourDataScheme[[strGroupID]]  )
+  
+  y <- datGroupDispersion[!is.na(dispLevel) & dispLevel == '(5,6]',"Length"]
+  strTitle <- paste( strGroupID,"#",NROW(y),"D=5-6mm l~",theoreticalMeanLength(5),"-", theoreticalMeanLength(6), "<s>=",mean(y,na.rm=TRUE) )
+  #x <- datDispersion[!is.na(dispLevel) & dispLevel == '(3,4]',"Dispersion"]
+  hist(y,breaks=seq(0,max(47,y)+2,2),
+       main=strTitle , col=colourDataScheme[[strGroupID]]  )
+}
+
+## Take Group 
+hist_pathLengthPerDispersion(datDispersion,'NE')
+hist_pathLengthPerDispersion(datDispersion,'NL')
+
+hist_pathLengthPerDispersion(datDispersion,'LE')
+hist_pathLengthPerDispersion(datDispersion,'LL')
+
+hist_pathLengthPerDispersion(datDispersion,'DE')
+hist_pathLengthPerDispersion(datDispersion,'DL')
+
+
+
+
+```
+
+## Distribution of path-length per domain R
 
 The distribution of path lengths (excluding the < `r MIN_PATH_LENGTH` ) per domain radius is as follows:
+
 
 ```{r plot-loglog-distribution of domain path lengths,fig.show="hold", out.width="50%", echo=FALSE, cache=TRUE}  
   
@@ -1607,7 +1722,8 @@ plotLogLogDistribution_PathLength <- function(datBoundedTrack,strG,addPlot=FALSE
 {
    
     strTitle <- paste("R=",unique(datBoundedTrack$DomainRadius),",<l>=",format(mean(datBoundedTrack$pathLength),digits=3 ) )
-    mxbreaks <- seq(0,200,5)
+    mxbreaks <- c(0,2^seq(0,8,1)) ## Do the 2k Binning for clarity over rare events
+    
     hist_D <- hist(datBoundedTrack$pathLength,breaks=mxbreaks, plot=FALSE )  
     XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
     if (!addPlot) 
@@ -1681,27 +1797,39 @@ In the following, the *boundaries at 10 and 11 mm* have been concatenated:
 ```{r distribution of number of paths per domain sizes,fig.show="hold", out.width="100%", echo=FALSE, cache=TRUE,fig.cap="Distribution of number of domain crossings, with increasing domain radius shows effect of prey is to constraint movement within smaller central regions, as revealed by the breaking down of the linear invariant regime in evoked conditions. (*Note regions 10+11mm have been concatenated*)"}  
 datMeanPathLengthAll <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_RAllmm.rds") )
 
+#pdf(file= paste(strPlotExportPath,"/foraging/InvariancePrinciple_DomainCrossingsDistribution_cdf.pdf",sep=""),width=7,height=5)
+#par(mar = c(3.9,4.0,1,1))
+
 bAddPlot<-FALSE
 for (strG in as.character(unique(datMeanPathLengthAll$groupID) ) )
 {
   datGroupMeanPathLength <- datMeanPathLengthAll[datMeanPathLengthAll$groupID == strG,]
+  #datGroupSEPathLength <- sum(datGroupMeanPathLength$sdPathLength)/sqrt(sum(datGroupMeanPathLength$count))
   ## I Added the counts for the  10+11mm boundary to compensate for ROI edge effects /compensate for Detection Errors
   #datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius == 10,]$count <- sum(datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius %in% c(10,11),]$count)
   #datGroupMeanPathLength <- datGroupMeanPathLength[datGroupMeanPathLength$DomainRadius < 11,]
   if (!bAddPlot)
   {
-    plot(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),ylim=c(0,0.2),xlim=c(0,11),
+    plot(datGroupMeanPathLength$DomainRadius, cumsum(datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count)),
+         ylim=c(0.01,1),xlim=c(0,11),
        xlab="Domain radius (mm)",ylab="fraction of domain crossings",
-       col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
+       col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")#,log="y"
+    segments(x0 = 0,y0=0.5,x1=12,y1=0.5,lty=2,lwd=1)
+    segments(x0 = 0,y0=0.3,x1=12,y1=0.3,lty=2,lwd=1)
   }else
   {
-    lines(datGroupMeanPathLength$DomainRadius,datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count),
+    lines(datGroupMeanPathLength$DomainRadius, cumsum(datGroupMeanPathLength$count/sum(datGroupMeanPathLength$count)),
           col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],type="b")
   }
-
+  
+  #arrows(x0=datGroupMeanPathLength$DomainRadius, y0=vmeanPathLengthPerDispersion-vSEPathLengthPerDispersion,
+   #      x1=datGroupMeanPathLength$DomainRadius, y1=vmeanPathLengthPerDispersion+vSEPathLengthPerDispersion, code=3, angle=90, length=0.02, col=colourDataScheme[[strGroupID]], lwd=1)
+  
   bAddPlot <- TRUE
 }
+title("CDF of domain crossings")
 
+#dev.off()
 
 ```
 
@@ -1855,12 +1983,12 @@ plotMSDPerTime <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogL
   if (!addPlot)
   {
     if(!bLogLog)
-          plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0.1,200),
+          plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(1,200),
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
     else
-        plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(0.1,200),log="xy",
+        plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(1,200),log="xy",
          col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
          pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
          xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
@@ -2054,13 +2182,13 @@ plotDispersionPerTime <- function(lModelwithDispersion,addPlot=FALSE)
    # return(0)
   }
   idxOrder <- order(vTimeWindow)
-  xLim <- c(0,max(vTimeWindow ) *1.10 )
+  xLim <- c(1,max(vTimeWindow ) *1.10 )
   if (!addPlot)
   {
     plot(vTimeWindow[idxOrder],vDispersion[idxOrder],xlim=xLim,ylim=c(0,13),
-         col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
+         col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],log="x",
          pch=pointTypeScheme[[lModelwithDispersion[[1]]$groupID]],
-         xlab="Path duration (sec)", ylab="Dispersion (mm)")
+         xlab="Time window (sec)", ylab="Dispersion (mm)")
   }else
     points(vTimeWindow[idxOrder],vDispersion[idxOrder],
            col=colourDataScheme[[lModelwithDispersion[[1]]$groupID]],
@@ -2108,7 +2236,9 @@ for (strG  in vGroups)
 
 ```{r Dispersion over time , fig.cap="Dispersion for LF spontaneous grows distinctively fast, in agreement with MSD", fig.show="hold", out.width="100%", echo=FALSE, cache=FALSE}
 
-##Get Distribution of MSD and Mean MSD for each time integration window 
+#pdf(file= paste(strPlotExportPath,"/foraging/DispersionPerTimewindow_log.pdf",sep=""),width=7,height=5)
+par(mar = c(3.9,4.0,1,1))
+##Get Distribution of MSD  and Mean MSD for each time integration window 
 ##load Precalc Results
   plotDispersionPerTime(lMSDSummaryData[["NE"]])
   plotDispersionPerTime(lMSDSummaryData[["NL"]],TRUE)
@@ -2117,14 +2247,16 @@ for (strG  in vGroups)
   plotDispersionPerTime(lMSDSummaryData[["DE"]],TRUE)
   plotDispersionPerTime(lMSDSummaryData[["DL"]],TRUE)
   
-  legend("topright", legend=names(colourDataScheme)[4:9],
+  legend("topleft", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
-
+title("Dispersion over increasing time windows")
 # legend("topright", 
 #            legend=c(paste("Spont μ",format(lLinModel_DE[[1]]$coeff,digits=2)),
 #                     paste("Evoked μ",format(lLinModel_DL[[1]]$coeff,digits=2) ) ),
 #        col=c(colourDataScheme$DE ,colourDataScheme$DL) ,pch=c(16,16) )
+
+#dev.off()
 
 ```
 
@@ -2397,6 +2529,103 @@ In any case paths above a particular duration, are not generated because the lar
 Linear fitting to the log-log curves can approximate the power law exponent. 
 
 
+
+## Step-size probability distribution - *Random walk propagators*
+
+The distribution displacement or step length, over a fixed time t will reflect the underlying nature of stochastic process. I have to be aware that due to the Diameter of the ROI, and thus maximum displacement is limited, and thus the distributions is going to  be truncated. For this Reason I look at displacement over a small time frame
+
+For Brownian motion the distribution of step lengths should be Gaussian, which would show as a rapid decay of step length in log log distribution of displacements in t=1sec. 
+Super-diffusive or Levy processes will have long fat tails.
+
+Here I am using the suggested method of Levy walk detection explained in #sims2007minimizing, where histogram counts are normalized to the sum, and bins follow a $2^k$ width progression, while each bin is normalized so as to calculate density by dividing each normalized count by the bin width.
+
+```{r step-length Distribution,echo=FALSE,results=FALSE}
+
+plot_loglogDisplacementWithinT <- function(strG,datDispersion,tsec_timeWindow,addPlot=FALSE)
+{
+  KBreaks <- c(0,2^seq(0,5,0.5))
+  datGroupDispersion <- datDispersion[datDispersion$groupID %in% strG &
+                                          !is.na(datDispersion$DisplacementSq),]
+ 
+  hist_GDisplacement <- hist(sqrt(datGroupDispersion$DisplacementSq ),plot=FALSE ,breaks=KBreaks)
+  hist_GDisplacement_norm <- (hist_GDisplacement$counts/sum(hist_GDisplacement$counts))/diff(KBreaks)
+  
+  
+  if (addPlot == FALSE)
+  {
+  
+    #hist_GDisplacement$counts/sum(hist_GDisplacement$counts
+    plot(log10(hist_GDisplacement$mids), log10(hist_GDisplacement_norm),  xlim=log10(c(0.2,20)), ylim=log10(c(10^-6,1)), ##log10
+        ylab="Density ",xlab="log Length (mm)", main=paste("Displacement in t= ",tsec_timeWindow),
+        col=colourDataScheme[strG][[1]], pch=pointTypeScheme[[strG]])
+    
+    axXTick <- axisTicks(c(0,20) ,log=TRUE)
+    axis(side=1, at=log10(axXTick), labels =  as.character(axXTick) ) 
+    
+  } else{
+    #hist_GDisplacement$counts/sum(hist_GDisplacement$counts
+    lines(log10(hist_GDisplacement$mids), log10(hist_GDisplacement_norm),
+        col=colourDataScheme[strG][[1]], pch=pointTypeScheme[[strG]],type="b")
+  }
+  
+  ##Plot Linear Model
+  #hist_GDisplacement_norm[hist_GDisplacement_norm > 0] <- (10^-10)
+  X_dat <- log10(hist_GDisplacement$mids[hist_GDisplacement_norm > 0 & KBreaks > 0.5])
+  Y_dat <- log10(hist_GDisplacement_norm[hist_GDisplacement_norm > 0 & KBreaks > 0.5])
+  
+  linFit <- lm(  Y_dat ~ X_dat )  
+  x_linModel <- linFit$model$X_dat
+  y_linModel <- (linFit$coefficients[1] + (linFit$coefficients[2]* x_linModel ) )
+  
+  message(strG," mu is:",linFit$coefficients[2])
+  
+  lines(x_linModel,y_linModel,type="l",lwd=2,lty=2,col="grey")
+  
+  ## Re-Call For Paired condition
+  strGE <- vGroups[which(vGroups == strG  ) - 1] # Find the complementrary Group-Conditions
+  message(strGE)
+  if (addPlot == FALSE)
+  {
+    ##Add paired - Evoked Conditions 
+    plot_loglogDisplacementWithinT(strGE,datDispersion,tsec_timeWindow,addPlot=TRUE)
+     ## When Pairs Done, Add plot Legend 
+    legend("bottomleft",legend=c(strG,strGE,"Gaussian"),
+         col=c(colourDataScheme[[strG]],colourDataScheme[[strGE]],"black"), pch=c(pointTypeScheme[[strG]], pointTypeScheme[[strGE]],3) )
+
+  }
+   
+    ##Add Gaussian Model  
+    Emean= mean(sqrt(datGroupDispersion$DisplacementSq ))
+    Esd= sd(sqrt(datGroupDispersion$DisplacementSq ))
+    hhNorm <-hist(abs(rnorm(n=12000,mean=Emean,sd=Esd)),plot=FALSE) # breaks=hist_GDisplacement$breaks
+    #lines(hhNorm$mids,hhNorm$density,xlim=c(0.1,20),log="xy",type="b")
+    xPt <- seq(0,20,0.1)
+    lines(log10(xPt),log10(dnorm(xPt,mean=Emean,sd=Esd)),lty=2,lwd=2,pch=3,col="red")
+
+}
+
+
+tsec_timeWindow <-1
+datDispersion <- loadDispersionData_norm(tsec_timeWindow,forceReload = FALSE)
+
+#par(mfrow=c(3,1))
+for (strG in vGroups[seq(2,6,2)])
+{
+  plot_loglogDisplacementWithinT(strG,datDispersion,tsec_timeWindow,addPlot=FALSE)
+}
+
+#plot(function(x) dnorm(x, log = TRUE), -60, 50,
+#     main = "log { Normal density }")
+
+
+ 
+
+
+```
+By plotting the empirical step length distribution along with Gaussian that has the same mean and std as the empirical one we can clearly see that the *step lengths have long-fat tails*, ie they larva do not perform simple Brownian motion.
+
+It also appears that LF have shifted to larger displacements than cNF and DF
+
 ## Mean Squared Displacement - looking for diffusion type
 
 A prediction of the theory of *Fickian diffusion is that the mean squared displacement of a ‘random walker’ increases linearly with time*, not *super linearly (for example, quadratically) or sublinearly (for example, as the square root).
@@ -2439,7 +2668,8 @@ The duration-contrained MSDs however do not look  similar between conditions and
 
 ```{r mean-squared-distance over time on pooled data, fig.show="hold",fig.cap="Pooled Mean squared distance over time for LF spontaneous shows distinctive quick growth", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="50%"}
 
-
+DomainRadius <- 8
+cD <- DomainRadius
 
 ##Get Distribution of MSD and Mean MSD for each time integration window 
 ##load Precalc Results
@@ -2452,10 +2682,14 @@ lMSDVsTimeData_Pooled <- list()
   lMSDVsTimeData_Pooled[["LL"]] <- plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,TRUE,bLog)
   lMSDVsTimeData_Pooled[["DE"]] <- plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,TRUE,bLog)
   lMSDVsTimeData_Pooled[["DL"]] <- plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,TRUE,bLog)
-  title(main="Pooled Mean")
+  title(main="(Pooled) Mean Squared Displacement")
   legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
+
+  
+
+#pdf(file= paste(strPlotExportPath,"/foraging/MSDPerTimeWindow_log.pdf",sep=""),width=7,height=5)
 
 lMSDVsTimeData_Grouped <- list()  
   lMSDVsTimeData_Grouped[["NE"]] <- plotMSDPerTime(lMSDSummaryData[["NE"]],FALSE,FALSE,bLog)
@@ -2464,24 +2698,141 @@ lMSDVsTimeData_Grouped <- list()
   lMSDVsTimeData_Grouped[["LL"]] <- plotMSDPerTime(lMSDSummaryData[["LL"]],TRUE,FALSE,bLog)
   lMSDVsTimeData_Grouped[["DE"]] <- plotMSDPerTime(lMSDSummaryData[["DE"]],TRUE,FALSE,bLog)
   lMSDVsTimeData_Grouped[["DL"]] <- plotMSDPerTime(lMSDSummaryData[["DL"]],TRUE,FALSE,bLog)
-  title(main="Group Mean")
+  title(main="(Group) Mean Squared Displacement")
   legend("bottomright", legend=names(colourDataScheme)[4:9],
          col=unlist(colourDataScheme[names(colourDataScheme)[4:9]]),
          pch=unlist(pointTypeScheme[names(colourDataScheme)[4:9]]) )
   
   ##Hurst Exponent per time
- 
+ #dev.off()
    
+## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails and And MSD per duration
+  
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  for (strG in vGroups[seq(1,6,2)])
+  { 
+     durationBreaks <- seq(0,150,0.05)
+     lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+     
+    vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+    plot(durationBreaks[1:length(durationBreaks)-1],(vMSDPerDuration), xlab="Duration (sec)", ylab="MSD",
+         main=paste(strG," Domain R",DomainRadius," path MSD vs duration" ),
+         col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]]) 
+    
+    strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
+  
+    lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+    vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+    lines(durationBreaks[1:length(durationBreaks)-1],(vMSDPerDuration),
+         col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]],type="p") 
+   
+  }
 
-
+  
 ```
+
 
 What is clear is that MSD becomes truncated around 10 seconds in, and that the LE grows the fastest. 
 By that time the radius of displacement covered on average for LE is `r sqrt(lMSDSummaryData[["LE"]][["10"]]$meanGroupMSD)`mm, while for NE  `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`, for DE `r sqrt(lMSDSummaryData[["NE"]][["10"]]$meanGroupMSD)`
 
-## Identify diffusion type using Hurst coefficients
+<!---TODO: Take the 0 dispersion data, which contain measurements in reference to path start, and look at msd per path duration so that the number of - Nope lets look at path-duration within fixed domains-->
 
-```{r Hurst coefficient over path durations , fig.show="hold",fig.cap=" Hurst coefficients between the range of 1 > H > 1/2 indicates superdiffusion, while H > 1 indicates Balistic behaviour.", out.width="50%", echo=FALSE, cache=FALSE}
+## Path Durations within fixed domain R `r cD`
+
+I am using histograms with progressively wider bins, and chose `r cD` based on the upper limit of R within which the invariance principle still holds - indicating that random walk statistics apply.
+
+```{r,  fig.show="hold",fig.cap="Distribution of path durations crossing circular domain with 20mm Diameter", out.width="100%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="80%" } 
+## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails  
+  DomainRadius <- cD
+  kBreaks <- c(0,2^seq(0,8)) #seq(0,175,3)
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  
+  for (strG in vGroups[seq(1,6,2)])
+  { 
+    hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=kBreaks, plot=FALSE )
+    ##Plot Path Duration Distribution 
+    plot(hist_Dur$mids,hist_Dur$density,log="xy",main=paste(strG," domain R",DomainRadius," path duration" ), 
+         xlim=c(0.5,250), ylim=c(10^-6,0.5),
+         ylab="Density", xlab="Duration (sec)", type="b",
+          col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]])
+    
+    strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
+    hist_Dur <- hist(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=kBreaks, plot=FALSE )
+    ##Plot Path Duration Distribution 
+    lines(hist_Dur$mids,hist_Dur$density,main=paste(strG," domain R path duration" ), xlim=c(1,250),
+          type="b",
+          col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]])
+  }    
+  
+  
+```
+
+*Long fat-Tails missing from LE*, thus with experience larva learn to not wait and explore their surroundings looking for other patches.
+
+
+
+## Path Length within fixed domain R `r cD`
+
+To detect the rare events as is the case in Levy Walks, I follow the advice to break the histograms at a x2 frequencies, ie $2^{1\cdots 8}$ in this case. This progressive widening of the  bin sizes allows for clearer results indeed in the log log plot.
+
+```{r,  fig.show="hold",fig.cap="Distribution of path length crossing domain R", out.width="80%", echo=FALSE, cache=FALSE,fig.show="hold", out.width="80%" } 
+## Use the Fixed Domain Data Paths to examine Durations distribution for fat-tails  
+  DomainRadius <- cD
+  kBreaks <- c(0,2^seq(0,8)) #seq(0,175,3)
+  lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+  for (strG in vGroups[seq(1,6,2)])
+  { 
+    hist_Len <- hist(unlist(lBoundedTrackInfo[[strG]]$pathLength),breaks=kBreaks, plot=FALSE )
+    ##Plot Path Duration Distribution 
+    plot(hist_Len$mids,hist_Len$density,log="xy",main=paste(strG," domain R",DomainRadius," path length" ), xlim=c(0.5,250), ylim=c(10^-6,0.5),
+         ylab="Density", xlab="Path length (mm)", type="b",
+          col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]])
+    
+    strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
+    hist_Len <- hist(unlist(lBoundedTrackInfo[[strG]]$pathLength),breaks=kBreaks, plot=FALSE )
+    ##Plot Path Duration Distribution 
+    lines(hist_Len$mids,hist_Len$density, xlim=c(1,250),
+          type="b",
+          col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]])
+  }    
+```
+  
+We find that in LF, the presence of prey can generates the rare occurrence of long path lengths, indicating extended local search patterns within the circular domain `r DomainRadius`
+
+
+## *Hurst exponents* to Identify diffusion type using 
+
+In fractal geometry, the Hurst exponent has been defined by H or by Hq. It quantifies the
+relative tendency of a time series to return strongly to the mean or group in one direction
+(Kleinow, 2002). Depending on the obtained result we can know if a temporal series is persistent or not persistent.
+If persistence is found, it is a sign of the non-existence of white noise, so it could be said that there is some type of dependence between the data, that is, we would be checking if the data behave according to the ordinary Brownian movement or, on the contrary, there is memory within the series of data.
+
+The Hurst exponent is referred to as the "index of dependence" or "index of long-range dependence". It quantifies the relative tendency of a time series either to regress strongly to the mean or to cluster in a direction.[5] A value H in the range 0.5–1 indicates a time series with long-term positive autocorrelation, meaning both that a high value in the series will probably be followed by another high value and that the values a long time into the future will also tend to be high. A value in the range 0 – 0.5 indicates a time series with long-term switching between high and low values in adjacent pairs, meaning that a single high value will probably be followed by a low value and that the value after that will tend to be high, with this tendency to switch between high and low values lasting a long time into the future. A value of H=0.5 can indicate a completely uncorrelated series, but in fact it is the value applicable to series for which the autocorrelations at small time lags can be positive or negative but where the absolute values of the autocorrelations decay exponentially quickly to zero. This in contrast to the typically power law decay for the 0.5 < H < 1 and 0 < H < 0.5 cases. 
+
+The basic Hurst exponent can be *related to the expected size of changes, as a function of the lag between observations*, as measured by $E(|X_{t+\tau}-X_t|^2)$. For the generalized form of the coefficient, the exponent here is replaced by a more general term, denoted by $q$. 
+ In particular, the H1 exponent indicates persistent (H1 > ½) or antipersistent (H1 < ½) behavior of the trend. 
+
+Long-range dependence (LRD), also called long memory or long-range persistence, is a phenomenon that may arise in the analysis of spatial or time series data. It relates to the rate of decay of statistical dependence of two points with increasing time interval or spatial distance between the points. A phenomenon is usually considered to have long-range dependence if the dependence decays more slowly than an exponential decay, typically a power-like decay
+
+Lévy-modulated correlated random walks are genuinely superdiffusive across multiple spatial and temporal scales, 
+whereas *correlated random walks appear superdiffusive (ballistic) only at short scales. The standard correlated random walk is diffusive at large scales.
+
+*see also hurstexp(x, d = 50, display = TRUE)*
+----
+
+
+```{r Hurst coefficient over path durations , fig.show="hold",fig.cap=" Hurst coefficients between the range of 1 > H > 1/2 indicates superdiffusion, while H > 1 indicates Balistic behaviour.", out.width="100%", echo=FALSE, cache=FALSE}
+
+## This uses the sliding time window data to estimate MSD per path duration 
+# and thus it does not reprwesent the distribution of path-durations
+
+#pdf(file= paste(strPlotExportPath,"/foraging/HurstVsTimewindow_log.pdf",sep=""),width=7,height=5)
 
 addPlot <- FALSE
 for (strG in vGroups)
@@ -2498,29 +2849,77 @@ for (strG in vGroups)
   n <- length( vhurstCoeff)
   if (!addPlot)
     plot( lMSDVsTimeData_Grouped[[strG]]$time[2:n], vhurstCoeff[2:n],
-        ylab="Hurst coefficient (log(MSD)/log(duration))", xlab="Path duration (sec)",type="b",
-        main="Hurst coefficient per path duration (Grouped)", ylim=c(0.5,4), log="xy", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]] )
+        ylab="Hurst coefficient (0.5xlog(MSD)/log(duration))", xlab="time window (sec)",type="b",
+        main="Hurst coefficient per time-window (Grouped)", ylim=c(0.5,4), log="xy", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]] )
   else
     lines( lMSDVsTimeData_Grouped[[strG]]$time[2:n], vhurstCoeff[2:n],type="b",
            col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]])
 
   addPlot <- TRUE
   message(strG," lin fit Hurst Coeff:",linFit$coefficients[2]/2, " Converge:", mean(tail(vhurstCoeff),na.rm=FALSE ) )
+  #Balistic H limit
+  segments(0,1,100,1)
 }
-```
 
+#dev.off()
+
+## Here I use data from the paths crossing circular  Domain analysis, and calculate msd be duration bin
+# then calculate Hurst coeff for each of those bins (1sec)
+DomainRadius <- 9
+lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+for (strG in vGroups[seq(1,6,2)])
+{ 
+    # EVOKED COnditions (Prey)
+     durationBreaks <- seq(0,150,1)
+     lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+     
+    vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+    vHurst <- 0.5*log(vMSDPerDuration)/log(durationBreaks[1:length(durationBreaks)-1])
+    #vHurst <- vHurst[!is.na(vHurst) & !is.nan(vHurst) & !is.infinite(vHurst) ]    
+    plot(durationBreaks[1:length(durationBreaks)-1],vHurst, xlab="Duration (sec)", ylab="log Hurst (0.5xlog(MSD)/log(duration)",log="xy",xaxt="n",type="b",ylim=c(0.5,4),
+         main=paste(strG," Domain R",DomainRadius," log Hurst Coefficient" ),
+         col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]]) 
+     
+       axis(side=1, at=durationBreaks[1:length(durationBreaks)-1], labels = durationBreaks[1:length(durationBreaks)-1])
+  # Spontaneous  (NO PREY)
+    strG <- vGroups[which(vGroups == strG  ) + 1] # Find the complementrary Group-Conditions
+    lBoundedTrackInfo[[strG]]$DurationBin <- cut(unlist(lBoundedTrackInfo[[strG]]$duration),breaks=durationBreaks)
+    vMSDPerDuration <- tapply(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement),lBoundedTrackInfo[[strG]]$DurationBin,mean)
+    vHurst <- 0.5*log(vMSDPerDuration)/log(durationBreaks[1:length(durationBreaks)-1])
+    lines(durationBreaks[1:length(durationBreaks)-1],vHurst,type="b",
+         col=colourDataScheme[[strG]],
+          pch=pointTypeScheme[[strG]]) 
+    segments(0,1,150,1)
+}
+
+
+     
+```
 
 The Hurst exponent equals half the slope in the double-log plot of the mean squared displacement versus time for a random walk.
 Alternatively, it equals the slope of the double-log plot of the root mean squared displacement (see #viswanathan2011physics pg. 28)
 
+The Hurst parameter H is a measure of the extent of long-range dependence in a time series (while it has another meaning in the context of self-similar processes). H takes on values from 0 to 1. A value of 0.5 indicates the absence of long-range dependence.[8] The closer H is to 1, the greater the degree of persistence or long-range dependence. H less than 0.5 corresponds to anti-persistency, which as the opposite of LRD indicates strong negative correlation so that the process fluctuates violently. 
+
+*Overall the evidence suggest that movements appear as a Correlated random walk (CRW).*
+The generalized Hurst exponent scales in power-law fashion against time-interval - which is evidence of  *long-range dependence (LRD)*.
+Slowly decaying variances, LRD, and a spectral density obeying a power-law are different manifestations of the property of the underlying covariance stationary process X. 
+Over small timescales <15 sec the exponent indicates persistent behaviour, which is indicative of *Balistic* motion (H>1). These are stronger in LE indicating the ontogeny of intermittent search strategies, through balistic relocations. 
+This is a result of experience because coefficients appear identical between controls in the respective test conditions.
+These look like correlated random walks (CRW), because CRWs appear superdiffusive (ballistic) only at short scales while the standard correlated random walk is diffusive at large scales, as here.
+
 Intermittent searches typically consist of alternating phases: a Brownian search phase alternating with ballistic relocations. The ballistic relocations help to reduce oversampling, in a manner similar to how Lévy walks help reduce oversampling.
-
-Thus evidence of *Balistic* motion (H>1) are stronger in LE indicating the ontogeny of intermittent search strategies, through balistic relocations. This is a result of experience because in controls the coefficients appear identical in the respective test conditions.
-
 Do intermittent searches correspond to the actual movements of real organisms? Intermittent searches appear to work 
 remarkably well for some species. For example, they may correctly describe the phenomenology of planktivorous fish and ground-foraging birds [304]. Atlantic bluefin tuna (Thunnus thynnus) also appear to switch between two search modes
-[262].
+[262]. 
+An intermittent search strategy would be consistent with Marques et al 2020 assuming a switch between exploitation and exploration mode.
 
+## Turn direction correlation
+
+**Note:** Persistence and auto-correlation of turn-direction changes with temperature, so good to check differences in autocorrelation of turn-direction.
+
+Check #dunn2016brain
 
 ## Distribution MSD over time per larva 
 
@@ -2635,7 +3034,10 @@ process_MSDVsPathLengthData <- function(ldatDispersion,strGroupID,addPlot=FALSE)
   vsdPooledMSDPerPathOft    <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, sd,na.rm=TRUE)
   names(dispBreaks)=names(vmeanPooledMSDPerPathOft)
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
-  return(list(muMSDPerT=vmeanPooledMSDPerPathOft,sdPooledMSDPerT=vsdPooledMSDPerPathOft,N=vcountPooledMSDPerPathOft,breaks=dispBreaks[1:length(vmeanPooledMSDPerPathOft)]  ) )
+  return(list(muMSDPerT=vmeanPooledMSDPerPathOft,
+              sdPooledMSDPerT=vsdPooledMSDPerPathOft,
+              N=vcountPooledMSDPerPathOft,
+              breaks=dispBreaks[1:length(vmeanPooledMSDPerPathOft)]  ) )
 }
 
 plot_MSDPerPathLengthSummary <- function(lMSDPathLStat)
@@ -2645,9 +3047,9 @@ plot_MSDPerPathLengthSummary <- function(lMSDPathLStat)
 
   if (!addPlot)
   {
-    plot(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
-         vmeanPooledMSDPerPathOverAllt,pch=pointTypeScheme[[strGroupID]],main=strTitle,xlab="Path Length (mm)",
-         ylim=c(0,YLIM),xlim=c(0,max(dispBreaks)),col=colourDataScheme[[strGroupID]],cex=0.7 )
+    plot(seq(1,max(dispBreaks), length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
+         vmeanPooledMSDPerPathOverAllt, pch=pointTypeScheme[[strGroupID]], main=strTitle, xlab="Path Length (mm)",
+         ylim=c(0,YLIM), xlim=c(0,max(dispBreaks)), col=colourDataScheme[[strGroupID]], cex=0.7 )
   }else
   {
     points(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
@@ -2669,9 +3071,6 @@ plot_MSDPerPathLengthSummary <- function(lMSDPathLStat)
   
 }
 
-#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerMSD.pdf",sep=""),width=7,height=7)
-## bottom, left,top, right
-#par(mar = c(4.3,4.3,2,1))
 makeMSDPathLengthSummary <- function ()
 {
   #vtimeWindows <- vsmallTimeWindows #c(1,2,10) #
@@ -2729,7 +3128,13 @@ if (!exists("lMSDStat"))
 
 lMSDStat <<- readRDS(paste0(strDataExportDir,"lMSDPerPathLength2mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
   
+
+
 # PLOT Summary per Path Range - Mean MSD Per Path Length over all T
+#pdf(file= paste(strPlotExportPath,"/foraging/MSDPerPathLength.pdf",sep=""),width=7,height=5)
+## bottom, left,top, right
+par(mar = c(4.3,4.3,2,1))
+
 baddPlot <- FALSE
 datmeanPooledMSDPerPathOft <- list()
 for (strG in vGroups)
@@ -2740,7 +3145,7 @@ for (strG in vGroups)
   if (!baddPlot)
   {
     plot(xtick, (datmeanPooledMSDPerPathOft[[strG]]),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
-         xlab="Path length (mm)",ylab=" Mean Squared Displacement (mm)",xaxt="n" ,ylim=c(0.2,250))
+         xlab="Path length (mm)",ylab=" Mean Squared Displacement (mm)",xaxt="n" ,ylim=c(1,250),log="y")
   
     axis(side=1, at=xtick, labels = names(lMSDStat[[strG]]$`2`$breaks))
     #axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
@@ -2758,7 +3163,7 @@ for (strG in vGroups)
          col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"black" ),
          pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
-
+#dev.off()
 
 ```
 
@@ -2769,12 +3174,66 @@ Findings:
 
 Compared to the linear Dispersion to mean-path length relationship (#path-length per dispersion), the MSD to path-length appears to be non-linear.
 
+## MSD While crossing fixed circular Domains
+
+I plot the cdf of MSD for paths crossing a circular domain of a fixed radius $R$ located in the centre of the ROI, and compare groups between conditions. 
+
+```{r MSD-cdf , fig.show="hold", out.width="33%", echo=FALSE, cache=FALSE}
+
+
+cdfplot_pathDisplacementCrossingDomain <- function(DomainRadius)
+{
+    lBoundedTrackInfo <- readRDS(file=paste0(strDataExportDir,"/stat_boundedPathsB_R",DomainRadius,"mm.rds") )
+    # 
+    dRad <- DomainRadius #head(unlist(lBoundedTrackInfo[[strG]]$DomainRadius),1 )
+    strG<- "LL"
+    plot(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement) ) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]], main=paste("LF CDF MSD vs duration crossing domain R",dRad),xlab="Displacement (mm)")
+    strG<- "LE"
+    lines(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]])
+    
+    strG<- "NL"
+    plot(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]],main=paste("NF CDF MSD vs duration crossing domain R",dRad),xlab="Displacement  (mm)")
+    strG<- "NE"
+    lines(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]])
+    strG<- "DL"
+    plot(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]],main=paste("DF CDF MSD vs duration crossing domain R",dRad),xlab="Displacement  (mm)")
+    strG<- "DE"
+    lines(ecdf(sqrt(unlist(lBoundedTrackInfo[[strG]]$SqDisplacement)) ), col=colourDataScheme[[strG]], pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]])
+}
+
+cdfplot_pathDisplacementCrossingDomain(2)
+cdfplot_pathDisplacementCrossingDomain(4)
+cdfplot_pathDisplacementCrossingDomain(8)
+cdfplot_pathDisplacementCrossingDomain(10)
+
+#hist(lBoundedTrackInfo$LL$duration )
+```
+
+Evoked conditions are more heavily tailed towards shorter displacements.
+Also it appears that the difference between conditions in NF is stronger, indicating that displacements increase strongly in the absence of prey, as NF seems to sway towards lower displacement in evoked conditions, than others, which could indicate a propensity to stay in region of prey. 
+Because DF and LF show almost identical MSD behaviours, the NF behaviour could interpreted  to be a result of increased risk taking in the presence of prey in response to prior experience of lack of food or due to immediate hunger(although each larva
+has settled with food for 1 hour).
+
+**Note Shorter MSDs in this context indicate that larvae exit the Domain over a shorter chord**, ie without crossing the diameter which is the maximum available displacement (padded by 0.5mm for boundary crossing detection).
+This may be indicative of more tortuous paths, higher turn rates etc.
+
+But results are not scale-free, they depend on the domain radius:
+
+  -  R=10mm I find that evoked-spontaneous differences are minimized for DF, LF, these still exist for NF
+  -  R=9mm *NF* show the strongest responses, with *shorter MSD in evoked*, and longer in spontaneous. *ie. propensity for shorter free paths in presence of prey*
+  -  R=5, again NF stand out with evoked having shorter overall displacement
+  -  R=4 *Surprise:* LF shows the largest E-S difference and skew towards longer MSD, while DF no difference, 
+  -  R=2, the same MSD is NF clearly distinct between E-Spont, but not in DF, LF 
+  -  R=1 NF maintains the E-Spont. Difference! but none of the controls do.
+
 ## Dispersion Vs MSD
+
 I obtained similar results when looking at MSD and Dispersion over time. These have obvious links, but is their relationship linear?
 There is a linear relationship of Dispersion against path-length, but this is supralinear for MSD vs path-length, so perhaps they are not linearly related. 
 
 
 ```{r  mean-squared-distance over Dispersion , fig.show="hold",fig.cap="Non-Linear relationship between dispersal and MSD, is likely evidence of superdiffussion (Disp. is linear to <Path-length>", out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
+
 ## iNvariance Principle Theoretical Mean Path Length
 theoreticalMeanLength <- function(D,propFactor=1.5)
 {
@@ -2783,11 +3242,11 @@ theoreticalMeanLength <- function(D,propFactor=1.5)
   return(round(100*(propFactor* pi*A/C)) /100 )
 }
 ##Integrate time out, and plot MSD per Dispersion size
-# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+# ie length to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
 process_MSDVsDispersion <- function(ldatDispersion,strGroupID,addPlot=FALSE)
 {
   YLIM <- 200
-  dispBreaks <- seq(1,13,0.5)
+  dispBreaks <- seq(0,13,0.25)
   vmeanPooledMSDPerPathOft  <- list()
   vsdPooledMSDPerPathOft    <- list()
   vcountPooledMSDPerPathOft <- list()
@@ -2803,18 +3262,23 @@ process_MSDVsDispersion <- function(ldatDispersion,strGroupID,addPlot=FALSE)
 
   datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"Dispersion" ],breaks=dispBreaks)
   
-  vmeanPooledMSDPerPathOft  <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, mean,na.rm=TRUE)
-  vcountPooledMSDPerPathOft <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, NROW)
-  vsdPooledMSDPerPathOft    <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, sd,na.rm=TRUE)
+  #vmeanPooledMSDPerPathOft  <- tapply(datGroupDispersion$DisplacementSq, datGroupDispersion$dispRange, mean,na.rm=TRUE)
+  vmeanPooledMSDPerPathOft  <- tapply(datGroupDispersion$MSD, datGroupDispersion$dispRange, mean,na.rm=TRUE)
+  vcountPooledMSDPerPathOft <- tapply(datGroupDispersion$MSD, datGroupDispersion$dispRange, NROW)
+  vsdPooledMSDPerPathOft    <- tapply(datGroupDispersion$MSD, datGroupDispersion$dispRange, sd,na.rm=TRUE)
   names(dispBreaks)=names(vmeanPooledMSDPerPathOft)
+  
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
-  return(list(muMSDPerT=vmeanPooledMSDPerPathOft,sdPooledMSDPerT=vsdPooledMSDPerPathOft,N=vcountPooledMSDPerPathOft,breaks=dispBreaks[1:length(vmeanPooledMSDPerPathOft)]  ) )
+  return(list(muMSDPerT=vmeanPooledMSDPerPathOft,
+              sdPooledMSDPerT=vsdPooledMSDPerPathOft,
+              N=vcountPooledMSDPerPathOft,
+              breaks=dispBreaks[1:length(vmeanPooledMSDPerPathOft)]  ) )
 }
 
 plot_MSDPerDispersionSummary <- function(lMSDPathLStat)
 {
   
-    strTitle <- paste("mean MSD per Dispersion size", strGroupID,"#")
+    strTitle <- paste("Root MSD vs dispersion", strGroupID,"#")
 
   if (!addPlot)
   {
@@ -2842,21 +3306,19 @@ plot_MSDPerDispersionSummary <- function(lMSDPathLStat)
   
 }
 
-#pdf(file= paste(strPlotExportPath,"/foraging/plot_meanPathLengthPerMSD.pdf",sep=""),width=7,height=7)
-## bottom, left,top, right
-#par(mar = c(4.3,4.3,2,1))
 makeMSDDispersionSummary <- function ()
 {
     ##Load All
   baddPlot <- FALSE
   lMSDStat <- list()
   datmeanPooledMSDPerPathOft <- data.frame()
+  useTimeWindowSubset <-  c(2,3,5,10,20,30)
   ## Loop to sequantially load and process Dispersion data across time scales - freeing memory before re-allocating
   for (strG in vGroups)
   {
     lMSDStat[[strG]] <- list()  
     
-    for (t in vtimeWindows)
+    for (t in useTimeWindowSubset)
     { 
       
       rm(ldatDispersion)   #Clear Mem
@@ -2880,8 +3342,8 @@ makeMSDDispersionSummary <- function ()
     }
   }
   
-  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
-  saveRDS(datmeanPooledMSDPerPathOft,paste0(strDataExportDir,"datMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  saveRDS(datmeanPooledMSDPerPathOft,paste0(strDataExportDir,"datMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
   return(datmeanPooledMSDPerPathOft)
 }
 
@@ -2890,8 +3352,8 @@ makeMSDDispersionSummary <- function ()
 try(
   {
     rm(lMSDDispersionStat)
-    datMSDVsDispersionSummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"));
-    lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+    datMSDVsDispersionSummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"));
+    lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
   }
 )
 if (!exists("lMSDDispersionStat"))
@@ -2899,50 +3361,410 @@ if (!exists("lMSDDispersionStat"))
   datMSDVsDispersionSummaryData <<- makeMSDDispersionSummary()
 }
 
-lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion05mmSummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+lMSDDispersionStat <<- readRDS(paste0(strDataExportDir,"lMSDPerDispersion025mmSummaryResults_F2",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+
   
-# PLOT Summary per Path Range - Mean MSD Per Path Length over all T
-baddPlot <- FALSE
-datmeanPooledMSDPerDispersionOft <- list()
-for (strG in vGroups)
-{
-  datmeanPooledMSDPerDispersionOft[[strG]] <- tapply(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"muMSDPerT"] , datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"],mean,na.rm=TRUE)
-  
-  datmeanPooledMeanDisplacementPerDispersionOft <- sqrt(datmeanPooledMSDPerDispersionOft[[strG]])
-  xtick <- unique(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"]) 
-  xtick <- xtick[!is.na(xtick)]
-  if (!baddPlot)
+#pdf(file= paste(strPlotExportPath,"/foraging/MSDPerDispersion025_F2.pdf",sep=""),width=7,height=5)
+  # c(bottom, left, top, right) gives the number of lines of margin to be specified on the four sides of the plot. 
+  par(mar = c(3.9,4.0,1,1))
+  ## Compare MSD to Dispersal
+  # PLOT Mean MSD Per Dispersion -
+  baddPlot <- FALSE
+  datmeanPooledMSDPerDispersionOft <- list()
+  for (strG in vGroups)
   {
-    plot(xtick, (datmeanPooledMeanDisplacementPerDispersionOft),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
-         xlab="Dispersion size (mm)",ylab=" Mean Displacement (mm)",xaxt="n" ,ylim=c(2,20),log="xy")
-  
-    axis(side=1, at=xtick, labels = names(lMSDDispersionStat[[strG]]$`2`$breaks))
-    #axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
+    datmeanPooledMSDPerDispersionOft[[strG]] <- tapply(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"muMSDPerT"] , datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"],mean,na.rm=TRUE)
+    
+    datmeanPooledMeanDisplacementPerDispersionOft <- sqrt(datmeanPooledMSDPerDispersionOft[[strG]])
+    xtick <- unique(datMSDVsDispersionSummaryData[datMSDVsDispersionSummaryData$groupID == strG,"breaks"]) 
+    xtick <- xtick[!is.na(xtick)]
+    if (!baddPlot)
+    {
+      plot(xtick, (datmeanPooledMeanDisplacementPerDispersionOft),col=colourDataScheme[[strG]],
+           pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b",
+           xlab="Dispersion size (mm)",ylab="Root Mean Squared Displacement (mm)",xaxt="n", 
+           ylim=c(0,15))
+    
+      axis(side=1, at=xtick, labels =names(lMSDDispersionStat[[strG]]$`2`$breaks))
+      #axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
+    }
+    else
+      points(xtick,(datmeanPooledMeanDisplacementPerDispersionOft),
+             col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
+    
+    baddPlot <- TRUE
   }
-  else
-    points(xtick,(datmeanPooledMeanDisplacementPerDispersionOft),col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],lty=lineTypeScheme[[strG]],type="b" )
-  
-  baddPlot <- TRUE
-}
-  ##Add Theoretical MSD growth vs Time
-  propFactor <- 1.0
-  lines(xtick ,(theoreticalMeanLength(xtick+0.5,propFactor )),pch=18,cex=0.5,type="b" ) #Up Lim
+    ##Add Theoretical MSD growth vs Time
+    propFactor <- 1.0
+    # 1-1 Diagonal (45 Deg)
+    lines(xtick ,xtick,lty=2,cex=0.5,type="l",col="grey",pch=18 ) #Up Lim
+    
+    ##Approx Line Pass Through Data
+    #lines(xtick ,(theoreticalMeanLength(xtick+0.5,propFactor )),pch=18,lty=2,cex=0.5,type="b" ) #
+    
+    legend("bottomright", legend=c(names(colourDataScheme)[4:9],"Linear "),
+           col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"grey" ),
+           pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
 
-  legend("bottomright", legend=c(names(colourDataScheme)[4:9],"Linear "),
-         col=c(unlist(colourDataScheme[names(colourDataScheme)[4:9]]),"black" ),
-         pch=c( unlist(pointTypeScheme[names(colourDataScheme)[4:9]]),18 ) )
+#dev.off()
 
-
+# Check Against Raw scatter MSD vs Dispersion
+#datD <- datDispersion[!is.na(datDispersion$Dispersion),]
+#datsD <- datD[sample(1:NROW(datD),10000), ]
+#plot(datsD$Dispersion,sqrt(datsD$MSD))
 
 ```
 
-I find that a the principle of invariance holds between dispersion and Mean Displacement (calculated as $\sqrt{MSD}$  ) that appears almost consistent across groups.
-Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement, albeit some differences between conditions appear to exist,
-*In the absence of prey, mean displacement is likely higher within dispersion sizes of 3-8mm*.
+Mean Displacement (calculated as $\sqrt{MSD}$ ) appears consistent against Dispersion, and these two measures are linearly related.
+Thus  not only are Dispersion and mean Path length near linearly related, but so is mean displacement.
 
 Note, the reason why  mean displacement be larger to dispersion is because dispersion is the *radius containing the path*, and thus the largest mean displacement can only be less or equal to the the diameter, twice the dispersion size.
 
+## MSD Vs Larva Size
 
+How does MSD relate to the Size or developmental time?
+I use Pearson Correlation to check how MSD over time intervals is related to larval size. 
+For MSD at t=5,10,20,50 I bootstrap the correlations and plot their estimated distribution.
+
+
+```{r  mean-squared-distance vs larval size, fig.show="hold",fig.cap="Examing if Development can explain MSD - we find negative correlations overal- Larger size/increased development is not behind increased MSD", out.width="33%", echo=FALSE, cache=TRUE, results=FALSE}
+
+library (plyr) #Split list, apply ldply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
+
+source("Stats/stat_InformationTheoryAndCorrelations_bootstrap_lib.r")
+
+datFlatPxLength <- readRDS(file= paste(strDataExportDir,"/FishLength_Updated3.rds",sep=""))
+message(paste(" Loading Measured fish length in pixels data ... "))
+datFlatPxLength <- datFlatPxLength[!is.na(datFlatPxLength$expID) ,]
+datFlatPxLength <- datFlatPxLength[!is.na(datFlatPxLength$LengthPx),]
+
+datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # 
+##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
+# I have only measured Larvae in the Evoked conditions (So I can link to hunt-success)
+# To Look at Correlation To MSD in spontaneous conditions I need to find the respective evoked Experiment
+## Link Evoked and Spontaneous Trajectories
+datHuntStat <- makeHuntStat(datHuntLabelledEventsSBMerged_fixed)
+datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+
+# Save A composite file of Lengths Across Both ExpID
+datLarvaSize <- merge(datExpPairs,datFlatPxLength,by.y="expID",by.x="expID.E")
+saveRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
+
+vMeanMSDVsSizeCorr <- list()
+vMeanMSDVsSHuntEvents <- list()
+vMeanMSDVsEHuntEvents <- list()
+datmuMSDtoSize_corr <- list()
+datmuMSDtoSHuntEvents_corr <- list()
+datmuMSDtoEHuntEvents_corr <- list()
+
+for (strG in vGroups)
+{
+    for (tt in names(lMSDSummaryData[[strG]]))
+    {
+      if (NROW(lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva) == 0)
+        next()
+      vMSD       <- lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva
+      
+      vExpID     <- names(lMSDSummaryData[[strG]][[tt]]$meanMSDPerLarva)
+      vExpID.S <- "" #initialize      
+      vExpID.E <- ""
+      
+      ##Length Is retrieved using Evoked Condition Exp ID
+      ##Check If Spontaneous Replace IDs with evoked so we can join Lenghts
+      if (strG %in% datExpPairs$groupID.S)
+      {
+        # Obtain Group Name for Spontaneous and Evoked Conditions
+        strG.S <- as.character(head(datExpPairs[as.character(datExpPairs$expID.S) %in% vExpID,]$groupID.S,1 ))
+        strG.E <- as.character(head(datExpPairs[as.character(datExpPairs$groupID.S) == strG.S,]$groupID.E,1 ))
+        vExpID.E <- as.character(datExpPairs[as.character(datExpPairs$expID.S) %in% vExpID,]$expID.E )
+        vExpID.S <- as.character(datExpPairs[as.character(datExpPairs$expID.E) %in% vExpID.E,]$expID.S ) 
+        
+        ##Fix In case of missing records / Repeated Evoked Exp.
+        vMSD <- vMSD[vExpID %in% as.character(vExpID.S)]
+        vExpID <- vExpID.E
+      }
+      
+      # In Evoked conditions
+      if (strG %in% datExpPairs$groupID.E)
+      {
+        strG.E <- as.character(head(datExpPairs[as.character(datExpPairs$expID.E) %in% vExpID,]$groupID.E,1 ))
+        strG.S <- as.character(head(datExpPairs[as.character(datExpPairs$groupID.E) %in% strG.E,]$groupID.S,1 ))
+        ##Need this to Match the extra Evoked Experiments  Associated with the Same Spontaneous One
+        vExpID.S <- as.character(datExpPairs[as.character(datExpPairs$expID.E) %in% vExpID,]$expID.S )
+        vExpID.E <- as.character(datExpPairs[as.character(datExpPairs$expID.S) %in% vExpID.S,]$expID.E )
+        vMSD <- vMSD[vExpID %in% as.character(vExpID.E)]
+        vExpID <- vExpID.E ##Remove those Evoked Repeats - Keep set of 60 
+      }
+
+      ##Retrieve Spont and Evoked Hunt Rate for MSD 
+      vHuntEventCount.S <- datHuntStat[,"vHLarvaEventCount"][[strG.S]][vExpID.S]
+      vHuntEventCount.E <- datHuntStat[,"vHLarvaEventCount"][[strG.E]][vExpID.E]
+
+      
+      #vExpID     <- vExpID[vExpID %in% datFlatPxLength$expID]
+      
+      datMSD     <- data.frame(expID=vExpID,meanMSD=vMSD,
+                               HuntEvents.S=as.vector(vHuntEventCount.S), 
+                               HuntEvents.E=as.vector(vHuntEventCount.E),
+                               HuntEvents.E.expID=names(vHuntEventCount.E), ##Sanity Check/Validation
+                               HuntEvents.S.expID=names(vHuntEventCount.S))
+      
+      datMSDvsLength <- merge(datFlatPxLength,datMSD,by.x="expID",by.y="expID")
+      ##plot(datMSDvsLength$LengthPx*DIM_MMPERPX,)
+      
+      YRange <- c(0,150)
+      XRange <- c(0,5)
+      pBw <- 0.05
+      vMeanMSDVsSizeCorr[[tt]]    <- cor(datMSDvsLength$LengthPx*DIM_MMPERPX, datMSDvsLength$meanMSD, method="pearson")
+      vMeanMSDVsSHuntEvents[[tt]] <- cor(datMSDvsLength$HuntEvents.S, datMSDvsLength$meanMSD, method="pearson")
+      vMeanMSDVsEHuntEvents[[tt]] <- cor(datMSDvsLength$HuntEvents.E, datMSDvsLength$meanMSD, method="pearson")
+      ##Selective Plot Of Densities
+      if (tt %in%  c("10","20","50"))
+      {
+        stat_MSDVsSize <- bootStrap_stat(datMSDvsLength$LengthPx*DIM_MMPERPX,datMSDvsLength$meanMSD,1000,XRange,YRange,"pearson")
+        plot(density(stat_MSDVsSize$corr,bw=pBw),main=paste("MSD vs Size ",strG," t",tt),
+             col=colourDataScheme[[strG]],lwd=3,xlim=c(-0.5,0.5))
+      }
+      
+    }
+  ##Summarize Group over time into dataframe
+  datmuMSDtoSize_corr[[strG]] <-  ldply ((vMeanMSDVsSizeCorr), data.frame)
+  names(datmuMSDtoSize_corr[[strG]]) <- c("t","corr")
+  datmuMSDtoSHuntEvents_corr[[strG]] <-  ldply ((vMeanMSDVsSHuntEvents), data.frame)
+  names(datmuMSDtoSHuntEvents_corr[[strG]]) <- c("t","corr")
+  datmuMSDtoEHuntEvents_corr[[strG]] <-  ldply ((vMeanMSDVsEHuntEvents), data.frame)
+  names(datmuMSDtoEHuntEvents_corr[[strG]]) <- c("t","corr")
+}
+
+## Plot Summarized MSD Correlation Coefficients Against Interval time
+for (g in c(1,3,5))
+{   strG <- vGroups[g]
+
+    plot(datmuMSDtoSize_corr[[strG]]$t,datmuMSDtoSize_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to larval size"), ylim=c(-0.6,0.6))
+    strG <- vGroups[g+1]
+    points(datmuMSDtoSize_corr[[strG]]$t,datmuMSDtoSize_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation",main=paste("MSD correlation to larval size"), ylim=c(-0.6,0.6),cex=1.2)
+
+}
+
+```
+Evidence that Developmental size/time does not explain MSD:
+  
+  * A inverse correlation of size to MSD exists in DF and NF, (like the HPI).
+  * While No apparent correlation in LF of MSD to size
+  
+## MSD Vs Hunt Rates 
+```{r  mean-squared-distance vs hunt-rate, fig.show="hold",fig.cap=" MSD vs Hunt Rate ", out.width="33%", echo=FALSE, cache=TRUE, results=FALSE}
+
+## Plot Summarized MSD Correlation Coefficients Against Interval time
+for (g in c(1,3,5))
+{ 
+    strG <- vGroups[g]
+    names(datmuMSDtoSHuntEvents_corr[[strG]]) <- c("t","corr")
+    names(datmuMSDtoEHuntEvents_corr[[strG]]) <- c("t","corr")
+    
+    plot(datmuMSDtoEHuntEvents_corr[[strG]]$t,datmuMSDtoEHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation",main=paste(strG," MSD correlation to Hunt Rate"), ylim=c(-0.6,0.6))
+    
+    strGP <- vGroups[g+1]
+    points(datmuMSDtoSHuntEvents_corr[[strG]]$t,datmuMSDtoSHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strGP]],pch=pointTypeScheme[[strGP]],
+       xlab="Time",ylab="Pearson Correlation", ylim=c(-0.6,0.6),cex=1.2)
+
+}
+
+## Plot Summarized MSD Correlation Coefficients Against Interval time
+for (g in c(2,4,6))
+{ 
+    strG  <- vGroups[g]
+    strGP <- vGroups[g-1]
+    names(datmuMSDtoSHuntEvents_corr[[strG]]) <- c("t","corr")
+    names(datmuMSDtoEHuntEvents_corr[[strG]]) <- c("t","corr")
+    
+    plot(datmuMSDtoEHuntEvents_corr[[strG]]$t,datmuMSDtoEHuntEvents_corr[[strG]]$corr, col=colourDataScheme[[strGP]],
+         pch=pointTypeScheme[[strGP]], xlab="Time", ylab="Pearson Correlation", main=paste(strG," MSD correlation to Hunt Rate"), ylim=c(-0.6,0.6))
+
+    points(datmuMSDtoSHuntEvents_corr[[strG]]$t,datmuMSDtoSHuntEvents_corr[[strG]]$corr,col=colourDataScheme[[strG]],pch=pointTypeScheme[[strG]],
+       xlab="Time",ylab="Pearson Correlation", ylim=c(-0.6,0.6),cex=1.2)
+
+}
+
+```
+
+
+## MSD vs Prey Density
+
+
+```{r  mean-squared-distance over prey density , fig.show="hold", out.width="100%", echo=FALSE, cache=TRUE}
+
+plot_MSDPerPreyDensitySummary <- function(lMSDPathLStat)
+{
+  
+    strTitle <- paste("mean MSD per Prey Density ", strGroupID,"#")
+
+  if (!addPlot)
+  {
+    plot(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
+         vmeanPooledMSDPerPathOverAllt,pch=pointTypeScheme[[strGroupID]],main=strTitle,xlab="Path Length (mm)",
+         ylim=c(0,YLIM),xlim=c(0,max(dispBreaks)),col=colourDataScheme[[strGroupID]],cex=0.7 )
+  }else
+  {
+    points(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
+         vmeanPooledMSDPerPathOverAllt,pch=16,main=strTitle,xlab="Path Length (mm)",
+         col=colourDataScheme[[strGroupID]],cex=0.7 )
+    lines(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
+         vmeanPooledMSDPerPathOverAllt,lwd=1,lty=lineTypeScheme[[strGroupID]])
+  }
+  
+  if (!addPlot)
+  {
+    propFactor <- 1.0
+    rpoints <- seq(0.5,max(dispBreaks), length.out = NROW(vmeanPooledMSDPerPathOverAllt) )
+    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+    points(seq(2,max(dispBreaks),1),theoreticalMeanLength(seq(2,max(dispBreaks),1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    points(seq(1,max(dispBreaks),1),theoreticalMeanLength(seq(1,max(dispBreaks),1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
+  }
+  
+}
+
+
+##Calc the mean pooled MSD from each integration Window and show mean diffusion
+plotMSDPer_Draft <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogLog=T)
+{
+  vMSD <- vector()
+  vTimeWindow <- vector()
+  for (i in 1:NROW(lModelwithMSD))
+  {
+    if (!is.null(lModelwithMSD[[i]]$meanPooledMSD)) ##If MSD values exist at this point
+    {
+      if (bUsePooledMean)
+        vMSD[i] <- lModelwithMSD[[i]]$meanPooledMSD
+      else ##Use Group Mean
+        vMSD[i] <- mean(lModelwithMSD[[i]]$meanMSDPerLarva,na.rm=T) ##Same As groupMean
+      
+      vTimeWindow[i] <- as.numeric( names(lModelwithMSD[i]) )
+    }
+   # return(0)
+  }
+  idxOrder <- order(vTimeWindow)
+  xLim <- c(1,max(vTimeWindow ) *1.10 )
+  #xLim <- c(2,110 *1.10 ) ##Zero covers -The overall Path Duration
+  if (!addPlot)
+  {
+    if(!bLogLog)
+          plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(1,200),
+         col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
+         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
+    else
+        plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(1,200),log="xy",
+         col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
+         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
+  }else
+    points(vTimeWindow[idxOrder],vMSD[idxOrder],
+           col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+           pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
+  
+  lines(vTimeWindow[idxOrder],vMSD[idxOrder], col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+        pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
+
+  vHurst <- 0.5*log(vMSD[idxOrder])/log(vTimeWindow[idxOrder])
+  message("mean Hurst Exponent:",mean(vHurst[2:length(vHurst)]))
+  return(cbind.data.frame(time=vTimeWindow[idxOrder][vTimeWindow > 0],MSD=vMSD[idxOrder][vTimeWindow > 0]) )
+}
+
+
+##Integrate time out, and plot MSD per path-length
+# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+process_MSDVsPreyDensityData <- function(ldatDispersion,strGroupID,addPlot=FALSE)
+{
+  YLIM <- 200
+  dispBreaks <- seq(0,500,5) ## Prey Count Bins - Max Set High To Avoid breaking due to  some Noisy measurements
+  vmeanPooledMSDPerPreyCount  <- list()
+  vsdPooledMSDPerPreyCount    <- list()
+  vcountPooledMSDPreyCount <- list()
+  message("Extracting ", strGroupID )
+
+  datGroupDispersion <- ldatDispersion[ldatDispersion$groupID %in% strGroupID & 
+                                                !is.na(ldatDispersion$PreyCount) ,]
+  if (NROW(datGroupDispersion) == 0)
+  {
+    warning("No prey count data for ", strGroupID)
+    return(list(muMSDPerT=NA,sdPooledMSDPerT=NA,N=NA,breaks=NA))
+  }
+
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"PreyCount" ],breaks=dispBreaks)
+  ## Estimate MSD per Prey-Density Bin
+  vmeanPooledMSDPerPreyCount  <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, mean,na.rm=TRUE)
+  vcountPooledMSDPerPreyCount <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, NROW)
+  vsdPooledMSDPerPreyCount    <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, sd,na.rm=TRUE)
+  names(dispBreaks)=names(vmeanPooledMSDPerPreyCount)
+  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+  return(list(muMSDPerT=vmeanPooledMSDPerPreyCount,
+              sdPooledMSDPerT=vsdPooledMSDPerPreyCount,
+              N=vcountPooledMSDPerPreyCount,
+              breaks=dispBreaks[1:length(vmeanPooledMSDPerPreyCount)]  ) )
+}
+
+
+
+makeMSDPreyDensitySummary <- function ()
+{
+  #vtimeWindows <- vsmallTimeWindows #c(1,2,10) #
+  ##Load All
+  baddPlot <- FALSE
+  lMSDStat <- list()
+  datmeanPooledMSDPerPreyCount <- data.frame()
+  ## Loop to sequantially load and process Dispersion data across time scales - freeing memory before re-allocating
+  for (strG in vGroups)
+  {
+    lMSDStat[[strG]] <- list()  
+    
+    for (t in vtimeWindows)
+    { 
+      
+      rm(ldatDispersion)   #Clear Mem
+      ldatDispersion<- list()
+      message("Processing dispersions of for timewindow:", t)
+      ##Load MSD /Dispersion/ Path Data
+      ldatDispersion[[as.character(t)]] <- loadDispersionData(TRUE,t)  
+      # Check If Prey Count Calculation Was included in this Dispersion
+      if ( !any(grepl("PreyCount",names(ldatDispersion[[as.character(t)]])) ) )
+      {
+        message("*Prey Count Missing - Re-Calculate Trajectory Dispersions")
+        loaddatAllFrames()
+        datDispersion <<- calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
+      }
+      
+      
+      
+      lMSDStat[[strG]][[as.character(t)]] <- process_MSDVsPreyDensityData(ldatDispersion[[as.character(t)]],strG)
+      
+      #plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
+    
+      datNewTable <- data.frame(do.call(cbind, lMSDStat[[strG]][[as.character(t)]] ))
+      datNewTable$T <- as.character(t)
+      datNewTable$groupID <- strG
+      datmeanPooledMSDPerPathOft <- rbind(datmeanPooledMSDPerPreyCount, datNewTable ) 
+      #vmeanPooledMSDPerPathOverAllt <- colMeans(datmeanPooledMSDPerPathOft,na.rm=TRUE)
+      #vmeanPooledMSDPerPathOverAllt <- as.matrix(vmeanPooledMSDPerPathOverAllt[names(vmeanPooledMSDPerPathOverAllt)]) #Convert to Vector 
+      #vmeansdPooledMSDPerPathOverAllt <- as.matrix(colMeans(do.call(rbind,vsdPooledMSDPerPathOft),na.rm=TRUE))
+      #vcountPooledMSDPerPathOverAllt <- as.matrix(colSums(do.call(rbind,vcountPooledMSDPerPathOft),na.rm=TRUE))
+    }
+  }
+  
+  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  saveRDS(datmeanPooledMSDPerPathOft,paste0(strDataExportDir,"datMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  return(datmeanPooledMSDPerPreyCount)
+}
+
+makeMSDPreyDensitySummary()
+
+```
+
+## MSD vs Hunting Success  
 
 # Statistical comparison of motion-trajectories 
 <!--Clustering Code Separated into a sub RMarkdown-->
@@ -2952,13 +3774,7 @@ Note, the reason why  mean displacement be larger to dispersion is because dispe
 
 # Identifying states of foraging behaviour
 
-```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=FALSE}
-```
-
-
-# Hunt initiation and foraging state
-
-```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=FALSE}
+```{r Clustering-Dispersion, child = 'ForagingStateAnalysis_Clustering.Rmd',eval=TRUE}
 ```
 
 
@@ -2978,6 +3794,13 @@ I will defer using Stan for this and go for my familiar Jags model implementatio
 To reveal how the macroscopic observations within the domain-constrained paths arise, I take each domain size (R=1...11mm) and analyze paths into bout sequences, measuring the angle change, distance traveled (straight line from start-end of bout), and the path lenght inscribed during the bout. 
 I am looking to see if free path-lengths,  turn-frequency or magnitudes can explain why LE leave the domains quicker than naive larvae.
 
+
+
+Used  Min bout turn-speed threshold=`r MIN_BOUT_TURN_SPEED `
+Min bout speed threshold=`r   G_THRES_MOTION_BOUT_SPEED `,
+  minimum turn size criterion/threshold :`r MIN_TURN_SIZE_THRES`,
+  minimum gap between frames `r MIN_GAP_FRAMES_BETWEEN_TURNS`.
+  
 ```{r  extract bout and turn structure from domain paths,eval=FALSE,out.width="100%", echo=FALSE, cache=TRUE, results=FALSE}
 
   #library(signal)
@@ -2985,12 +3808,6 @@ I am looking to see if free path-lengths,  turn-frequency or magnitudes can expl
   library (plyr) #Split list, apply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
   source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
   
-  MIN_BOUT_TURN_SPEED = 0.2
-  G_THRES_MOTION_BOUT_SPEED = 0.2
-  MIN_PATH_LENGTH     = 0.5 ##Also Set  in Previous Chunk
-  MIN_TURN_SIZE_THRES = 6 #Degrees - Reject As Non Turns If Overall Turn is less than 6 degrees
-  MIN_GAP_FRAMES_BETWEEN_TURNS = 50
-
 ########## BOUT DETECTION #################
 getTrajectoryTurnsAndRuns<- function(TrackLetInfo)  
 {
@@ -3183,8 +4000,13 @@ getTrajectoryTurnsAndRuns<- function(TrackLetInfo)
   
 ```
 
+I exclude bouts that belong to hunt events in order to reveal bout structure differences when the larvae are searching for prey and remove bias due to differences in hunt rate between spontaneous and evoked conditions.
+
+
 ```{r  analyse bout structure within domains, fig.show="hold",fig.cap="Distribution of free paths (Straight runs before turning)", out.width="50%", echo=FALSE, cache=TRUE, results=TRUE}
-MIN_TURN_SIZE_THRES <- 6
+#MIN_TURN_SIZE_THRES <- 6
+BOUT_MODE <- "Search"
+
 calcFreePathLength <- function(datTrackBouts)
 {
     datStraightMotionBouts <- datTrackBouts[datTrackBouts$turn_deg < MIN_TURN_SIZE_THRES,  ]
@@ -3263,20 +4085,33 @@ plotBoundedFreePath <- function(datBoundedTrack,strG,addPlot=FALSE,XLIM=20)
 }   # Plot Free Paths Distribution
 
 
+library (plyr) #Split list, apply ldply function #Thanks to https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
+
 ## Combine Bouts of a Radius onto a Single Data  frame and merge  Groups/Exp ID info
 ### Analyze Free Paths - Look at distribution Run lengths between turns For Each Domain Size
 ## Does not take long to calculate but in any case Saves Results To output Files :stat_BOUT_PerDomainSize.rds , stat_BOUT_FreePathPerDomainSize.rds
+# TODO: Revise  To Include Bout Mode- Hunt/Search Mode
 makeBoutAndFreePathSummary <- function()
 {
+  # Check Bouts against Hunt Events and Label Bout accordingly
+  #Default Time Window is 5 sec
+  datHEventDispersion <- loadHuntEventMergedWithPathStat(tsec_timeWindow)
+  
   vAvailableDomainRadius <- getAvailablePathDomainsSizes()
   ldatBoutsPerDomain <- list()
   ldatFreePathsPerDomain <- list()
+  
+  
+  
   for (DomainRadius in vAvailableDomainRadius)
   {
 
     strBoutAnalysisFile <- paste0(strDataExportDir,"/stat_BOUT_boundedPathsB_R",DomainRadius,"mm.rds")
     if (!file.exists(strBoutAnalysisFile))
+    {
+      warning("Missing ",strBoutAnalysisFile)
       next()
+    }
     
     message("Processing R:",DomainRadius)
     lMeanPathLengthAll <- readRDS(file=strBoutAnalysisFile )
@@ -3292,9 +4127,30 @@ makeBoutAndFreePathSummary <- function()
       {
         if (is.null(lMeanPathLengthAll[[trackID]]))
           next()
-        
+          
+          expID <- groupdomainTracks$expID[[trackID]] #groupdomainTracks[trackID,"expID"][[1]]
+          eventID <-groupdomainTracks$EventID[[trackID]]# groupdomainTracks[trackID,"EventID"][[1]]
+          
           n = NROW(lMeanPathLengthAll[[trackID]])
           datTrackBouts <- lMeanPathLengthAll[[trackID]]
+          
+          datTrackHuntEvents <- datHEventDispersion[datHEventDispersion$expID == expID &
+                                           datHEventDispersion$eventID == eventID ,  ]
+          
+          datTrackBouts$ForageMode <- factor("Search",levels=c("Search","Hunt","NA"))
+          
+          #If Huntevents Exist Check If bouts Are in Hunt Mode
+          for (idxEvent in 1:NROW(datTrackHuntEvents) )
+          {
+            if (NROW(datTrackHuntEvents) ==0 )
+              break;
+            # Mark Bouts included in Hunt Event -
+            datTrackBouts[datTrackBouts$boutStartFrame >=  datTrackHuntEvents[idxEvent,"frameN"] &
+                          datTrackBouts$boutStartFrame <=  datTrackHuntEvents[idxEvent,"endFrame"]
+                          ,"ForageMode"] <- factor("Hunt",levels=c("Search","Hunt","NA"))
+          }
+
+          
           # Remove Rounding <0 errors
           datTrackBouts$travelDistance_mm <- lapply(datTrackBouts$travelDistance_mm,max,c(0))
           datTrackBouts$pathLength_mm <- lapply(datTrackBouts$pathLength_mm,max,c(0))
@@ -3319,8 +4175,8 @@ makeBoutAndFreePathSummary <- function()
                                                 EventID=rep(groupdomainTracks$EventID[[trackID]],nP),
                                                 TrackletUID=rep(trackID,nP),#groupdomainTracks$TrackletUID[[trackID]]
                                                 groupID=rep(strGroup,nP) )
-      }
-    }
+      }##for (trackID in rownames( groupdomainTracks ) )
+    }##for (strGroup in names(lBoundedTrackInfo) )
     datBoutsPerDomain <- do.call(rbind.data.frame,lRundf)
     datFreePathsPerDomain <- do.call(rbind.data.frame,lFreePathdf)
 
@@ -3330,16 +4186,16 @@ makeBoutAndFreePathSummary <- function()
     ldatFreePathsPerDomain[[cD]] <- datFreePathsPerDomain[datFreePathsPerDomain$DomainRadius == cD ,]
   
   } ##For Each Domain Size
-  saveRDS(ldatBoutsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds") )
+  saveRDS(ldatBoutsPerDomain , file=paste0(strDataExportDir,"/stat_BOUTandMode_PerDomainSize.rds") )
   saveRDS(ldatFreePathsPerDomain , file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds") )
   
   return(list(boutsPerDomain=ldatBoutsPerDomain,freePathsPerDomain=ldatFreePathsPerDomain))
 } ##Make Bout And Free Path Per DOmain Summary
         
-if (!file.exists(paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds")))
+if (!file.exists(paste0(strDataExportDir,"/stat_BOUTandMode_PerDomainSize.rds")))
   makeBoutAndFreePathSummary()
 
-ldatBoutsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_PerDomainSize.rds"))
+ldatBoutsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUTandMode_PerDomainSize.rds"))
 ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreePathPerDomainSize.rds"))
            
   ##Calculate Mean Bout Length Per Group
@@ -3351,17 +4207,26 @@ ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreeP
     for (strG in vGroups)
     {
         i <- i + 1
-        meanBoutLengthPathPerDomain[[i]] <-list( meanBoutDistance = mean( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG &
-                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
-                                                 sdBoutDistancePath = sd( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG & 
-                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
-                                                 n = NROW(sd( unlist(ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG & 
-                                                                       ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                                                   ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T)),
-                                                groupID=strG,
-                                                DomainRadius = as.numeric(R))
+        meanBoutLengthPathPerDomain[[i]] <- 
+          list(meanBoutDistance = mean( unlist( 
+            ldatBoutsPerDomain[[R]][ldatBoutsPerDomain[[R]]$groupID == strG &
+                                      ldatBoutsPerDomain[[R]]$ForageMode == BOUT_MODE &
+                                  ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                  ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
+            
+               sdBoutDistancePath = sd( unlist(ldatBoutsPerDomain[[R]][
+                                                ldatBoutsPerDomain[[R]]$groupID == strG & 
+                                                ldatBoutsPerDomain[[R]]$ForageMode == "Search" &
+                                                ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                                ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T),
+            
+              n = NROW(sd( unlist(ldatBoutsPerDomain[[R]][
+                                  ldatBoutsPerDomain[[R]]$groupID == strG & 
+                                  ldatBoutsPerDomain[[R]]$ForageMode == BOUT_MODE &
+                                  ldatBoutsPerDomain[[R]]$turn_deg < MIN_TURN_SIZE_THRES &
+                                  ldatBoutsPerDomain[[R]]$boutSeqID > 0 ,"travelDistance_mm"]), na.rm = T)),
+              groupID=strG,
+              DomainRadius = as.numeric(R))
     }
   }
  datmeanBoutLengthPathPerDomain <- do.call(rbind.data.frame,meanBoutLengthPathPerDomain)
@@ -3501,6 +4366,9 @@ ldatFreePathsPerDomain <- readRDS(file=paste0(strDataExportDir,"/stat_BOUT_FreeP
   }
  
    
+#pdf(file= paste(strPlotExportPath,"/foraging/freePathBoutFrequency_cdf.pdf",sep=""),width=7,height=5)
+par(mar = c(3.9,4.0,1,1))
+   
    
 # Plot Distribution Of Bout Count Per Free Path
 addPlot <- FALSE
@@ -3511,25 +4379,40 @@ addPlot <- FALSE
    hist_bT <- hist(vBoutCount,  breaks=seq(0,200,1),plot=FALSE )
        message(paste("Bout Count",strG," mu:",mean(vBoutCount)) )
     if (!addPlot){
-        plot(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),log="xy",col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b",xlim=c(1,50),
-             xlab="Number of bouts",ylab="Log normalized bout frequency")
+      
+        #plot(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),log="xy",
+        #     col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b",xlim=c(1,50),
+       #     xlab="Number of bouts",ylab="Log normalized bout frequency")
+        
+          plot(ecdf(vBoutCount), col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+               xlab="Number of bouts",ylab="Cumulative Density Function ", xlim=c(0,15),ylim=c(0.5,1), main=NA)
        }
     else{
-        lines(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+      
+        #lines(hist_bT$mids,hist_bT$counts/sum(hist_bT$counts),
+        #      col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+       lines(ecdf(vBoutCount), col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],main=NA)
     }
    addPlot <- TRUE
  }
  title("Frequency of Bouts between-turns (free-path)")
    
+#dev.off()
  
+
+#pdf(file= paste(strPlotExportPath,"/foraging/InterBoutInterval_cdf.pdf",sep=""),width=7,height=5)
+#par(mar = c(3.9,4.0,1,1))
+
 ## Interbout Intervals & Pauses - Density
 addPlot <- FALSE
 for (strG in vGroups)
 {
-    vInterBoutInterval <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+    vInterBoutInterval <- ldatBoutsPerDomain[[cD]][
+                            ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                            ldatBoutsPerDomain[[R]]$ForageMode == BOUT_MODE &
                              ldatBoutsPerDomain[[cD]]$boutSeqID == 0 &
-                                ldatBoutsPerDomain[[cD]]$duration_sec < 50 ,"duration_sec"]
-    xbreaks <- c(seq(0,0.1,0.02),seq(0.11,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
+                                ldatBoutsPerDomain[[cD]]$duration_sec < 500 ,"duration_sec"]
+    xbreaks <- c(seq(0,0.1,0.02),seq(0.11,1,0.1),seq(1.5,500,1)) #,seq(10,60,1)
     #scaling <- c(rep(1/1,11),rep(1/10,98)) #,seq(10,60,1) ## Because We are Changing the bin size - The fractrions needs top be scaled according to bin size-rations
     
     #xbreaks <- seq(0,5,0.01)
@@ -3539,19 +4422,34 @@ for (strG in vGroups)
     message(paste("Mean inter-Bout Interval ",strG," :",mean(vInterBoutInterval) ))
     
     if (!addPlot){
-        plot(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
-             type="b",xlim=c(0.01,50),log="xy",
-             xlab="Inter-bouts interval (sec)",ylab="Log Density inter-bout interval ")
+        #plot(hist_IBI$mids,hist_IBI$density,
+        #     col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+        #     type="b",xlim=c(0.01,50),log="xy",
+        #     xlab="Inter-bouts interval (sec)",ylab="Log Density inter-bout interval ")
+        plot(ecdf(vInterBoutInterval) , col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],
+             do.points = FALSE,lty=lineTypeScheme[strG][[1]],lwd=3,
+             xlim=c(0.01,2.5),#log="xy",
+             xlab="Inter-bouts interval (sec)",ylab="Cumulative Density Function ",main=NA)
+
     }
     else{
-        lines(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b") #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+        #lines(hist_IBI$mids,hist_IBI$density,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],type="b")
+      #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
+       lines( ecdf(vInterBoutInterval) ,col=colourDataScheme[strG][[1]], 
+              pch=pointTypeScheme[strG][[1]],main=NA, lty=lineTypeScheme[strG][[1]],lwd=3) 
     }
+   # points( ecdf(vInterBoutInterval) ,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],main=NA ) 
    addPlot <- TRUE
 }
-title("Inter-bout interval ")
+title("CDF Inter-bout interval ")
+
+#dev.off()
+
 
 
 ```
+
+Using `r MIN_TURN_SIZE_THRES` as turn threshold to define bouts that belong to a straight (free-path).
 
 
 *The length of motion Bout is largest for LE*, while all groups show some reduction in motion-bout length, for LF this is effect is much stronger.
@@ -3562,14 +4460,20 @@ Found Difference between the distributions of free-paths (lengths of straight ru
 Number of bouts per free(straight)-path look the same between naive but it appears  *LF execute less bouts within a straight-path* (ie in a straight line before turning). Yet each bout is longer (at least in LE)
 
 Found bimodal distribution and that *inter-bout intervals are shorter for LF*, but also that long > 2 sec pauses are missing from LF, while naive fish will stay in one place, LF remain active.
-*LF do not do long-pauses between starting to move, especially in absence of prey*, which is contrary to what is seen for both DF and NF.
+*Evidence of fat-tails for DF and NF*:
+LF do not do long-pauses between starting to move, especially in absence of prey, which is contrary to what is seen for both DF and NF.
+
 
 ## Correlation of bout length to interbout interval
 
 Analytically if the step-length is decoupled from the pause time then we can treat them separatelly within in a correlated random walk processes (CRWP) 
 
 
-## Turn counts per path
+## Turn counts per domain R `r cD` path
+
+I compare the number of turns contained in each path crossing a domain of size R.
+
+Using `r MIN_TURN_SIZE_THRES` as turn threshold, and excluding bouts executed during hunt mode.
 
 ```{r path-turn-frequency per domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
 #  MIN_TURN_SIZE_THRES
@@ -3583,7 +4487,7 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
   XLIM <- c( min(log10(hist_D$mids),na.rm=TRUE), max(log10(hist_D$mids), na.rm=TRUE)*1.01)
   if (!addPlot)
   {
-      plot(log10(hist_D$mids),log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
+      plot(log10(hist_D$mids), log10( (100*hist_D$counts)/sum(hist_D$counts) ) , 
        main=strTitle,
        xlab="Turn count ", col=colourDataScheme[strG][[1]], pch=pointTypeScheme[strG][[1]],
        xlim=XLIM,
@@ -3597,7 +4501,7 @@ plotBoundedPathTurns <- function(turnsPerPath,strG,addPlot=FALSE)
 }#END OF FUNCTION   
 
 
-datTurnsPerDomain <- ldatBoutsPerDomain[["8"]]
+datTurnsPerDomain <- ldatBoutsPerDomain[[cD]]
 
 ## Count Turns Per Tracklet
 turnsPerPath <- list()
@@ -3606,11 +4510,13 @@ for (strG in vGroups)
 {
     turnsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
                                                      datTurnsPerDomain$turn_deg > MIN_TURN_SIZE_THRES &
+                                                     datTurnsPerDomain$ForageMode == BOUT_MODE  &
                                                      datTurnsPerDomain$boutSeqID > 0,],{
     as.data.frame( tapply(TrackletUID,TrackletUID, NROW), col.names = c("TurnCount") ) ##COUNT Turns Pewr
   })
     runsPerPath[[strG]] <- with(datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
                                                     datTurnsPerDomain$turn_deg < MIN_TURN_SIZE_THRES & 
+                                                    datTurnsPerDomain$ForageMode == BOUT_MODE  &
                                                     datTurnsPerDomain$boutSeqID > 0,],{ ##boutSeqID > 0 Ensures we are counting Active bouts 
     as.data.frame( tapply(TrackletUID,TrackletUID, NROW ),col.names = c("RunCount")) ##COUNT Turns Pewr 
   })
@@ -3634,37 +4540,13 @@ for (strG in vGroups)
    datBoundedTrack <- turnsPerPath[[strG]]  
    plotBoundedPathTurns(datBoundedTrack,strG,addPlot)
    addPlot <- TRUE
-   message(paste("Mean turn count per free-path ",strG,":", mean(unlist( turnsPerPath[[strG]] ),na.rm=TRUE )   ) )
+   message(paste("Mean turn count per path ",strG,":", mean(unlist( turnsPerPath[[strG]] ),na.rm=TRUE )   ) )
   }
     
   ##Clip Range
   #for (strG in vGroups)
   #  turnsPerPath[[strG]]$TurnCount <- sapply(turnsPerPath[[strG]]$TurnCount,min,c(70),na.rm=T )
   
- ##Turn Magnitude distributions
-  BW <- 5
-  addPlot <- FALSE
-  #par(mfrow=c(1,2))
-  i <- 1
-  for (strG in vGroups)
-  {
-    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & abs(datTurnsPerDomain$turn_deg) < 80 & abs(datTurnsPerDomain$turn_deg) > 1 &
-                                    datTurnsPerDomain$boutSeqID >0,] ##No Pause / no-moving Bouts
-    #hist(datGTurns$turn_deg,breaks=seq(-80,80,2),main=paste(strG) ,xlab="Turn deg") #ylim=c(0,80)
-    
-    if (!addPlot)
-      plot(density(datGTurns$turn_deg,bw=BW ),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],lwd=3,ylim=c(0,0.07),xlim=c(-60,60),
-           main=paste(strG,"Turns while crossing domain R",DomainRadius))
-    else
-     lines(density(datGTurns$turn_deg,bw=BW),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],lwd=3)
-   
-    addPlot <- i%%2
-    i = i +1 
-    
-    message(strG," Mean turn when crossing domain R",DomainRadius," : ",mean(datGTurns$turn_deg))
-  }
-  #mtext(paste("Turns while crossing domain R",DomainRadius), side=3, outer=TRUE, line=-1) 
-
 ```
 
 
@@ -3672,21 +4554,71 @@ for (strG in vGroups)
 - There is also a tiny right turn bias across groups
 These are related to the macroscopic observations differently.
 
-I also discover that the turn distributions of spontaneous events show a mode-tendency towards larger turns, near the 35-45 degrees, such as that I have previously found 
-is associated with successful hunt events
+### Turn magnitudes per domain R `r cD` path
+
+```{r turn magnitude per domain size, out.width="33%", echo=FALSE, cache=FALSE, results=FALSE}
+ ##Turn Magnitude distributions
+  BW <- 5
+  addPlot <- FALSE
+  #par(mfrow=c(1,2))
+  i <- 1
+  for (strG in vGroups)
+  {
+    datGTurns<- datTurnsPerDomain[datTurnsPerDomain$groupID == strG & 
+                                    abs(datTurnsPerDomain$turn_deg) < 120 & abs(datTurnsPerDomain$turn_deg) > 1 &
+                                    datTurnsPerDomain$boutSeqID >0,] ##No Pause / no-moving Bouts
+    #hist(datGTurns$turn_deg,breaks=seq(-80,80,2),main=paste(strG) ,xlab="Turn deg") #ylim=c(0,80)
+    
+    if (!addPlot)
+    {
+      plot(density(datGTurns$turn_deg,bw=BW ),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],lwd=3,ylim=c(0,0.05),xlim=c(-60,60),
+           main=paste(strG,"Turns while crossing domain R",DomainRadius))
+      legend("topleft",legend=paste(strG,"-R",DomainRadius,"mu:",format(mean(datGTurns$turn_deg),digits=3)  ),
+             lty=lineTypeScheme[strG][[1]],lwd=3, col=colourDataScheme[strG][[1]] )
+    }
+    else
+    {
+     lines(density(datGTurns$turn_deg,bw=BW),col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],lwd=3)
+      legend("topright",legend=paste(strG,"-R",DomainRadius,"mu:",format(mean(datGTurns$turn_deg),digits=3)  ),
+             lty=lineTypeScheme[strG][[1]],lwd=3, col=colourDataScheme[strG][[1]] )
+    }
+   
+    addPlot <- i%%2
+    i = i +1 
+    
+    #message(strG," Mean turn when crossing domain R",DomainRadius," : ",mean(datGTurns$turn_deg))
+  }
+  #mtext(paste("Turns while crossing domain R",DomainRadius), side=3, outer=TRUE, line=-1) 
+```
+
+I also discover that the turn distributions of *spontaneous events show a mode-tendency towards larger turns*, near the 35-45 degrees,  strangely,  these turns have been previously found to be is associated with successful hunt events.
 
 
-## Bout durations
+## Bout durations crossing domain R `r cD`
 
-```{r bout-duration for a domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE}
+Examine if macroscale search behaviour is modified by changing bout duration.
+
+These are compared only for bouts not while in hunt-mode, such that hunt-rates do not influence the comparison. 
+
+For clear search behaviour analysis Bout durations need to be examined without including motion during hunting episodes. This is because
+hunt rates go up in evoked conditions and this may bias bout durations.
+
+```{r bout-duration for a domain size, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE}
+
 #  MIN_TURN_SIZE_THRES
 #CD is radius of domain
 plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
 {
-    vBoutDuration <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
-                             ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
-                               ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,"duration_sec"]
+    datBouts <- ldatBoutsPerDomain[[cD]][
+              ldatBoutsPerDomain[[cD]]$groupID == strG & 
+              ldatBoutsPerDomain[[cD]]$ForageMode == BOUT_MODE &
+              ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
+              ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
+              ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,]
+    
+    # Label  Hunt Mode Bouts
+        
+    vBoutDuration <- datBouts$duration_sec
     xbreaks <- c(seq(0,0.5,0.02),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
 
     hist_BI <- hist(vBoutDuration,
@@ -3705,6 +4637,9 @@ plotBoundedPathBoutDuration <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD
 
 ## Interbout Intervals & Pauses - Density
 addPlot <- FALSE
+
+
+
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'NE',FALSE,cD)
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'NL',TRUE,cD)
 plotBoundedPathBoutDuration(ldatBoutsPerDomain,'LE',FALSE,cD)
@@ -3721,7 +4656,9 @@ legend("bottomright", legend=c(names(colourDataScheme)[4:9]),
 # Compare Pooled Bout Durations
  datPathBouts <- ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
-                                ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,]
+                               ldatBoutsPerDomain[[cD]]$ForageMode == BOUT_MODE &
+                               ldatBoutsPerDomain[[cD]]$duration_sec < 10 ,]
+ 
 boxplot(duration_sec ~ groupID,data=datPathBouts,main="Pooled bout durations",
         col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,0.35) )
 
@@ -3735,7 +4672,7 @@ t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[da
 # Group Bout Duration compared using means per Larva
 datPathBoutsDuration_perLarva <- tapply(datPathBouts$duration_sec,list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
 
-############################
+#
 # Group Distribution of mean bout duration among larvae- 
 histMeanBoutDurationsPerLarva <- function(datPathBoutsDuration_perLarva,strG,addPlot = FALSE)
 {
@@ -3800,14 +4737,18 @@ It appears that LE and NE bouts last longer, than their respective evoked condit
 The *LE, bouts are the longest*, which could also explain why LE travel faster (mean path length for fixed duration is longer).
 The same is true in NF, where presence of prey makes bout duration shorter, but importantly *bout duration in DF does not change between prey and non-prey conditions*.
 
-## Bout distance
+## Bout distance  crossing domain R `r cD`
 
-```{r bout-distance for fixed domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+These are compared only for bouts not while in hunt-mode, such that hunt-rates do not influence the comparison. 
+
+```{r bout-distance for fixed domain size, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
 #  MIN_TURN_SIZE_THRES
 #CD is radius of domain
 plotBoundedPathBoutDistance <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
 {
-    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][
+                            ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                              ldatBoutsPerDomain[[cD]]$ForageMode == BOUT_MODE &
                              ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"travelDistance_mm"])
@@ -3865,7 +4806,7 @@ t.test(datPathBouts[datPathBouts$groupID == "DE","travelDistance_mm"],datPathBou
 # Group Bout Duration compared using means per Larva
 datPathBoutsDistance_perLarva <- tapply(unlist(datPathBouts$travelDistance_mm),list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
 
-############################
+#
 # Group Distribution of mean bout duration among larvae- 
 histMeanBoutDistancePerLarva <- function(datPathBoutsDistance_perLarva,strG,addPlot = FALSE)
 {
@@ -3890,8 +4831,8 @@ densMeanBoutDistancePerLarva <- function(datPathBoutsDistance_perLarva,strG,addP
   
       if (!addPlot){
           plot(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],
-               type="l",lwd=3,xlim=c(0.0,3),ylim=c(0.0,5),#log="xy",
-               xlab="bout distance (mm)",ylab=" Density bout distance ",main="mean bout distance per larva")
+               type="l",lwd=3,xlim=c(0.0,3),ylim=c(0.0,1.5),#log="xy",
+               xlab="bout distance (mm)",ylab=" Density bout distance ",main="Mean bout distance per larva (Excl. hunt-events)")
       }else{
           lines(dens_GBD,col=colourDataScheme[strG][[1]],pch=pointTypeScheme[strG][[1]],lty=lineTypeScheme[strG][[1]],type="l",lwd=3) #scaling*hist_IBI$counts/(sum(hist_IBI$counts))
       }
@@ -3930,19 +4871,91 @@ In all groups bout distances are longer in  spontaneous conditions, and shorter 
 This agrees with spontaneous conditions having longer bout durations.
 I need to verify that this applies to exploratory movements, and i is not simply due to hunt event bouts being shorter in evoked conditions when reacting to prey, but in anycase the DF shows that this is not due to growth, and likely not due to interacting with prey either - because in DF bout distance does not change with test conditions.
 
-# Bout Speed
+### Bout Distance Correlation To Larval Size
+
+Examine if development can explain bout distances.
+I use Spearman correlation in order to reveal whether progressively, the larger the larva is the longer the bouts, as ranked within its rearing group.
+
+
+```{r bout-length to larval size correlation, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+datLarvaSize <- readRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
+datPathBoutsDistance_perLarva[,2]
+
+datMeanBoutLengthPerExp <- rbind.data.frame(
+      cbind.data.frame (names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,1]),1]),datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,1]),1]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,2]),2]), datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,2]),2]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,3]),3]), datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,3]),3]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,4]),4]), datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,4]),4]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,5]),5]),datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,5]),5]),
+      cbind.data.frame(names(datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,6]),6]),
+            datPathBoutsDistance_perLarva[!is.na(datPathBoutsDistance_perLarva[,6]),6])
+)
+names(datMeanBoutLengthPerExp)  <- c("expID","meanBoutLength")
+
+saveRDS(datMeanBoutLengthPerExp,file= paste(strDataExportDir,"/meanBoutLengthPerExp.rds",sep=""))
+
+# Combine With Length
+datBoutVsSize.E <- merge(datMeanBoutLengthPerExp,datLarvaSize,by.x="expID",by.y="expID.E")
+datBoutVsSize.S <- merge(datMeanBoutLengthPerExp,datLarvaSize,by.x="expID",by.y="expID.S") 
+
+
+lBoutVsSize_corr <- list()
+llBoutVsSize_corrDens <- list()
+llBoutVsSize_corrSuffDens <- list()
+
+for (g in  c(1,3,5))
+{
+  gStr <- vGroups[g]
+  XRange <- c(3,6)
+  YRange <- c(0,4)
+  
+  lBoutVsSize_corr[[gStr]] <- bootStrap_stat(datBoutVsSize.E[datBoutVsSize.E$groupID.E == gStr,]$LengthPx*DIM_MMPERPX,
+                 datBoutVsSize.E[datBoutVsSize.E$groupID.E == gStr,]$meanBoutLength,1000,XRange,YRange,"spearman" ) #spearman pearson
+  #Obtain Density Of Boot Strapped Correlation
+  llBoutVsSize_corrDens[[gStr]] <- density(lBoutVsSize_corr[[gStr]]$corr)
+  llBoutVsSize_corrSuffDens[[gStr]] <- density(lBoutVsSize_corr[[gStr]]$corr_suffled)
+  
+  gStr <- vGroups[g+1] # Spontaneous
+  lBoutVsSize_corr[[gStr]] <- bootStrap_stat(datBoutVsSize.S[datBoutVsSize.S$groupID.S == gStr,]$LengthPx*DIM_MMPERPX,
+                 datBoutVsSize.S[datBoutVsSize.S$groupID.S == gStr,]$meanBoutLength,1000,XRange,YRange,"spearman" ) #spearman
+
+  #Obtain Density Of Boot Strapped Correlation
+  llBoutVsSize_corrDens[[gStr]] <- density(lBoutVsSize_corr[[gStr]]$corr)
+  llBoutVsSize_corrSuffDens[[gStr]] <- density(lBoutVsSize_corr[[gStr]]$corr_suffled)
+  
+}
+
+for (strG in  vGroups)
+{
+  plot(llBoutVsSize_corrDens[[strG]],main=paste(" mean Bout-length vs larva size correlation "),xlim=c(-0.4,0.4), col=colourDataScheme[strG][[1]],lwd=3 )
+  lines(llBoutVsSize_corrSuffDens[[strG]],lwd=3,lty=2)
+  legend("topright",c(strG,"Suffled data"),col=c(colourDataScheme[strG][[1]],"black"),lty=c(1,2),lwd=3 )
+}
+
+```
+The Ranked correlation of larva size to bout length appears identically positive in both NF and LF: The larger a larva is the longer its bouts both in spontaneous and evoked conditions.
+*However, this correlation goes away in DF*, and larger larva no longer execute longer bouts!
+What is the interpretation of this? 
+
+  - It could be that DF slow down so the stay within the vicinity as their expectation is that the do not need to explore to find food.
+
+# Bout Speed for paths crossing domain R `r cD`
 
 ```{r bout-speed for fixed domain size, out.width="100%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
 #  MIN_TURN_SIZE_THRES
 #CD is radius of domain
 plotBoundedPathBoutSpeed <- function(ldatBoutsPerDomain,strG,addPlot=FALSE,cD="10")  
 {
-    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+    vBoutDistance <- unlist(ldatBoutsPerDomain[[cD]][
+                            ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                            ldatBoutsPerDomain[[cD]]$ForageMode == BOUT_MODE &
                              ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"travelDistance_mm"])
     
-    vBoutDuration <- unlist(ldatBoutsPerDomain[[cD]][ldatBoutsPerDomain[[cD]]$groupID == strG & 
+    vBoutDuration <- unlist(ldatBoutsPerDomain[[cD]][
+                            ldatBoutsPerDomain[[cD]]$groupID == strG & 
+                               ldatBoutsPerDomain[[cD]]$ForageMode == BOUT_MODE &
                              ldatBoutsPerDomain[[cD]]$boutSeqID != 0 &
                                ldatBoutsPerDomain[[cD]]$turn_deg < MIN_TURN_SIZE_THRES &
                                 ldatBoutsPerDomain[[cD]]$duration_sec < 1 ,"duration_sec"])
@@ -4002,8 +5015,8 @@ t.test(datPathBouts[datPathBouts$groupID == "DE","duration_sec"],datPathBouts[da
 # Group Bout Duration compared using means per Larva
 datPathBoutsSpeed_perLarva <- tapply(unlist(datPathBouts$travelDistance_mm)/unlist(datPathBouts$duration_sec),list(expID=datPathBouts$expID,groupID=datPathBouts$groupID),mean,na.rm=TRUE)
 
-############################
-# Group Distribution of mean bout duration among larvae- 
+#
+## Group Distribution of mean bout duration among larvae- 
 histMeanBoutSpeedPerLarva <- function(datPathBoutsSpeed_perLarva,strG,addPlot = FALSE)
 {
 xbreaks <- c(seq(0,10,0.5),seq(0.51,1,0.1),seq(1.5,50,1)) #,seq(10,60,1)
@@ -4047,7 +5060,7 @@ datMeanBoutSpeedPerLarva$speed_mmsec <- as.numeric(datMeanBoutSpeedPerLarva$spee
 
 
 boxplot(speed_mmsec ~ groupID,data=datMeanBoutSpeedPerLarva,main="Mean bout speed per larva",
-        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,40) )
+        col=c(colourDataScheme$LL, colourDataScheme$LE, colourDataScheme$NL, colourDataScheme$NE, colourDataScheme$DL, colourDataScheme$DE ),ylim=c(0,25) )
 
 
 #title("Mean larval bout duration ")
@@ -4072,6 +5085,76 @@ For DF, where actions converge this may be linked to adaptation to motor actions
   - Andalman et al.  found that 1.5–2 week old zebrafish exposed to inescapable shocks would first attempt to escape from these aversive stimuli, but then transitioned into a prolonged state of behavioral passiv- ity—no longer attempting to move because their actions were futile
   - Mu et al. examined fish in a closed- loop optomotor assay, where the fish’s fictive swimming behavior updated their visual environment (similar to Refs. [31,33]). When the authors suddenly made these swimming behaviors ineffective – no longer influencing the visual environment – fish first attempted vigorous movement before entering into an extended passive state
   
+## Bout Speed Vs Larva Size
+
+Here I bootstrap the correlation of mean larval bout speed and larva size data, in order to obtain a statistics for the correlation.
+
+```{r bout-speed to larval size correlation, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+datLarvaSize <- readRDS(datLarvaSize,file= paste(strDataExportDir,"/FishLength3_ExpIDPairs.rds",sep=""))
+datPathBoutsDistance_perLarva[,2]
+
+datMeanBoutSpeedPerExp <- rbind.data.frame(
+      cbind.data.frame (names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,1]),1]),datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,1]),1]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,2]),2]), datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,2]),2]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,3]),3]), datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,3]),3]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,4]),4]), datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,4]),4]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,5]),5]),datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,5]),5]),
+      cbind.data.frame(names(datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,6]),6]),
+            datPathBoutsSpeed_perLarva[!is.na(datPathBoutsSpeed_perLarva[,6]),6])
+)
+names(datMeanBoutSpeedPerExp)  <- c("expID","meanBoutSpeed")
+
+saveRDS(datMeanBoutSpeedPerExp,file= paste(strDataExportDir,"/meanBoutSpeedPerExp.rds",sep=""))
+
+# Combine With Length
+datBoutSpeedVsSize.E <- merge(datMeanBoutSpeedPerExp,datLarvaSize,by.x="expID",by.y="expID.E")
+datBoutSpeedVsSize.S <- merge(datMeanBoutSpeedPerExp,datLarvaSize,by.x="expID",by.y="expID.S") 
+
+lBoutSpeedVsSize_corr <- list()
+lBoutSpeedVsSize_corrDens <- list()
+lBoutSpeedVsSize_corrSuffDens <- list()
+
+for (g in  c(1,3,5))
+{
+  gStr <- vGroups[g]
+  XRange <- c(3,6)
+  YRange <- c(0,4)
+  
+  lBoutSpeedVsSize_corr[[gStr]] <- bootStrap_stat(datBoutSpeedVsSize.E[datBoutSpeedVsSize.E$groupID.E == gStr,]$LengthPx*DIM_MMPERPX,
+                 datBoutSpeedVsSize.E[datBoutSpeedVsSize.E$groupID.E == gStr,]$meanBoutSpeed,1000,XRange,YRange,"spearman" ) #spearman pearson
+  #Obtain Density Of Boot Strapped Correlation
+  lBoutSpeedVsSize_corrDens[[gStr]] <- density(lBoutSpeedVsSize_corr[[gStr]]$corr)
+  lBoutSpeedVsSize_corrSuffDens[[gStr]] <- density(lBoutSpeedVsSize_corr[[gStr]]$corr_suffled)
+  
+  gStr <- vGroups[g+1] # Spontaneous
+  lBoutSpeedVsSize_corr[[gStr]] <- bootStrap_stat(datBoutSpeedVsSize.S[datBoutSpeedVsSize.S$groupID.S == gStr,]$LengthPx*DIM_MMPERPX,
+                 datBoutSpeedVsSize.S[datBoutSpeedVsSize.S$groupID.S == gStr,]$meanBoutSpeed,1000,XRange,YRange,"spearman" ) #spearman
+
+  #Obtain Density Of Boot Strapped Correlation
+  lBoutSpeedVsSize_corrDens[[gStr]] <- density(lBoutSpeedVsSize_corr[[gStr]]$corr)
+  lBoutSpeedVsSize_corrSuffDens[[gStr]] <- density(lBoutSpeedVsSize_corr[[gStr]]$corr_suffled)
+  
+}
+
+for (strG in  vGroups)
+{
+  plot(  lBoutSpeedVsSize_corrDens[[strG]], main=paste(" mean Bout-speed vs larva size correlation "), 
+         xlim=c(-0.4,0.4), col=colourDataScheme[strG][[1]],lwd=3 )
+  lines(lBoutSpeedVsSize_corrSuffDens[[strG]],lwd=3,lty=2)
+  legend("topright",c(strG,"Suffled data"),col=c(colourDataScheme[strG][[1]],"black"),lty=c(1,2),lwd=3 )
+}
+
+```
+There is a positive correlation that shows larger larvae tend to have faster bouts. This is correlation is not affected by the presence of prey for NF and LF, but *the strange thing is it seems that the presence of prey changes Bout speed for DF! they are slow down for prey *
+Perhaps this is consistent with their tendency to remain in place, yet why don't NF and LF slow down when prey is there?
+ 
+
+# Hunt initiation and foraging motion
+
+```{r Analysis of Hunt Events, child = 'ForagingStateAnalysis_HuntEvents.Rmd',eval=TRUE}
+```
+ 
+ 
 # Full figure List of trajectories per experiment
 
 The following figures show the tracked trajectories per experiment of each group.
@@ -4187,6 +5270,9 @@ Foraging may be optimal in terms of maximizing food uptake, but may involve a a 
 Thus in these investigations I can include the my data showing how experience shapes the balance between hunt-rate and prey density (the gaussian process model of hunt-rate vs Prey Density).
 
 see also (#dunlap2012tracking) but also (#viswanathan2011physics)
+
+special, but we find that the extent of this ‘specialness’ depends on the
+subject’s prior experience of environmental change.
 
 # END
 

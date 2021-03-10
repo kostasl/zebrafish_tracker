@@ -98,6 +98,7 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
                                        DisplacementSq = lEventDispersionAndLength$DisplacementSq, ##Total Distance Travelled
                                        MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
                                        SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
+                                       PreyCount = mean(datEventFrames$PreyCount), #Estimated Mean Prey Count in Time Period
                                        frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
       )
       
@@ -124,7 +125,7 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
   
   datDispersion <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
   
-  saveRDS(datDispersion,file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
+  saveRDS(datDispersion,file=paste0(strDataStore,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
   
   return (datDispersion)
 } ## Calc Fuction
