@@ -115,7 +115,7 @@ Thus we explore whether animals evolved to exploit experience in their search pa
       - Increasing turn Modes around 40-50 deg, in spontaneous conditions, across groups. (Surprise as these turn modes are associated with Successful hunts)
       - *Bout Speed increases in absence of prey*, with LF having the fastest bouts on average and DF the slowest.
     
-    
+  22. _Prey Density Effect on Dispersion And MSD_  :
   
   
   
@@ -165,7 +165,6 @@ loaddatAllFrames <- function(forceReload = FALSE)
     attach(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
   }
 }
-
 
 #Original Dispersion Record per frame
 #datDispersion = readRDS(file=paste0(strDataExportDir,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
@@ -3035,7 +3034,10 @@ process_MSDVsPathLengthData <- function(ldatDispersion,strGroupID,addPlot=FALSE)
   vsdPooledMSDPerPathOft    <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, sd,na.rm=TRUE)
   names(dispBreaks)=names(vmeanPooledMSDPerPathOft)
   #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
-  return(list(muMSDPerT=vmeanPooledMSDPerPathOft,sdPooledMSDPerT=vsdPooledMSDPerPathOft,N=vcountPooledMSDPerPathOft,breaks=dispBreaks[1:length(vmeanPooledMSDPerPathOft)]  ) )
+  return(list(muMSDPerT=vmeanPooledMSDPerPathOft,
+              sdPooledMSDPerT=vsdPooledMSDPerPathOft,
+              N=vcountPooledMSDPerPathOft,
+              breaks=dispBreaks[1:length(vmeanPooledMSDPerPathOft)]  ) )
 }
 
 plot_MSDPerPathLengthSummary <- function(lMSDPathLStat)
@@ -3045,9 +3047,9 @@ plot_MSDPerPathLengthSummary <- function(lMSDPathLStat)
 
   if (!addPlot)
   {
-    plot(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
-         vmeanPooledMSDPerPathOverAllt,pch=pointTypeScheme[[strGroupID]],main=strTitle,xlab="Path Length (mm)",
-         ylim=c(0,YLIM),xlim=c(0,max(dispBreaks)),col=colourDataScheme[[strGroupID]],cex=0.7 )
+    plot(seq(1,max(dispBreaks), length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
+         vmeanPooledMSDPerPathOverAllt, pch=pointTypeScheme[[strGroupID]], main=strTitle, xlab="Path Length (mm)",
+         ylim=c(0,YLIM), xlim=c(0,max(dispBreaks)), col=colourDataScheme[[strGroupID]], cex=0.7 )
   }else
   {
     points(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
@@ -3589,6 +3591,178 @@ for (g in c(2,4,6))
 
 ```
 
+
+## MSD vs Prey Density
+
+
+```{r  mean-squared-distance over prey density , fig.show="hold", out.width="100%", echo=FALSE, cache=TRUE}
+
+plot_MSDPerPreyDensitySummary <- function(lMSDPathLStat)
+{
+  
+    strTitle <- paste("mean MSD per Prey Density ", strGroupID,"#")
+
+  if (!addPlot)
+  {
+    plot(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
+         vmeanPooledMSDPerPathOverAllt,pch=pointTypeScheme[[strGroupID]],main=strTitle,xlab="Path Length (mm)",
+         ylim=c(0,YLIM),xlim=c(0,max(dispBreaks)),col=colourDataScheme[[strGroupID]],cex=0.7 )
+  }else
+  {
+    points(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
+         vmeanPooledMSDPerPathOverAllt,pch=16,main=strTitle,xlab="Path Length (mm)",
+         col=colourDataScheme[[strGroupID]],cex=0.7 )
+    lines(seq(1,max(dispBreaks),length.out = NROW(vmeanPooledMSDPerPathOverAllt)),
+         vmeanPooledMSDPerPathOverAllt,lwd=1,lty=lineTypeScheme[[strGroupID]])
+  }
+  
+  if (!addPlot)
+  {
+    propFactor <- 1.0
+    rpoints <- seq(0.5,max(dispBreaks), length.out = NROW(vmeanPooledMSDPerPathOverAllt) )
+    points(rpoints,theoreticalMeanLength(rpoints,propFactor ),pch=2,cex=0.8 ) #Low Lim
+    points(seq(2,max(dispBreaks),1),theoreticalMeanLength(seq(2,max(dispBreaks),1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    points(seq(1,max(dispBreaks),1),theoreticalMeanLength(seq(1,max(dispBreaks),1),propFactor ),pch=2,cex=0.5 ) #Up Lim
+    legend("topleft",pch=c(16,2),legend=c("Data","Theory"),col=c(colourDataScheme[[strGroupID]],"black") )
+  }
+  
+}
+
+
+##Calc the mean pooled MSD from each integration Window and show mean diffusion
+plotMSDPer_Draft <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogLog=T)
+{
+  vMSD <- vector()
+  vTimeWindow <- vector()
+  for (i in 1:NROW(lModelwithMSD))
+  {
+    if (!is.null(lModelwithMSD[[i]]$meanPooledMSD)) ##If MSD values exist at this point
+    {
+      if (bUsePooledMean)
+        vMSD[i] <- lModelwithMSD[[i]]$meanPooledMSD
+      else ##Use Group Mean
+        vMSD[i] <- mean(lModelwithMSD[[i]]$meanMSDPerLarva,na.rm=T) ##Same As groupMean
+      
+      vTimeWindow[i] <- as.numeric( names(lModelwithMSD[i]) )
+    }
+   # return(0)
+  }
+  idxOrder <- order(vTimeWindow)
+  xLim <- c(1,max(vTimeWindow ) *1.10 )
+  #xLim <- c(2,110 *1.10 ) ##Zero covers -The overall Path Duration
+  if (!addPlot)
+  {
+    if(!bLogLog)
+          plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(1,200),
+         col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
+         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
+    else
+        plot(vTimeWindow[idxOrder],vMSD[idxOrder],xlim=xLim,ylim=c(1,200),log="xy",
+         col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+         pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]],
+         xlab="Path duration (sec)", ylab="Mean squared displacement (mm)")
+  }else
+    points(vTimeWindow[idxOrder],vMSD[idxOrder],
+           col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+           pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
+  
+  lines(vTimeWindow[idxOrder],vMSD[idxOrder], col=colourDataScheme[[lModelwithMSD[[1]]$groupID]],
+        pch=pointTypeScheme[[lModelwithMSD[[1]]$groupID]])
+
+  vHurst <- 0.5*log(vMSD[idxOrder])/log(vTimeWindow[idxOrder])
+  message("mean Hurst Exponent:",mean(vHurst[2:length(vHurst)]))
+  return(cbind.data.frame(time=vTimeWindow[idxOrder][vTimeWindow > 0],MSD=vMSD[idxOrder][vTimeWindow > 0]) )
+}
+
+
+##Integrate time out, and plot MSD per path-length
+# ie legth to hit the boundary of the observation circle, is only proportional to the circle (in 2D), volume in 3D- 
+process_MSDVsPreyDensityData <- function(ldatDispersion,strGroupID,addPlot=FALSE)
+{
+  YLIM <- 200
+  dispBreaks <- seq(0,500,5) ## Prey Count Bins - Max Set High To Avoid breaking due to  some Noisy measurements
+  vmeanPooledMSDPerPreyCount  <- list()
+  vsdPooledMSDPerPreyCount    <- list()
+  vcountPooledMSDPreyCount <- list()
+  message("Extracting ", strGroupID )
+
+  datGroupDispersion <- ldatDispersion[ldatDispersion$groupID %in% strGroupID & 
+                                                !is.na(ldatDispersion$PreyCount) ,]
+  if (NROW(datGroupDispersion) == 0)
+  {
+    warning("No prey count data for ", strGroupID)
+    return(list(muMSDPerT=NA,sdPooledMSDPerT=NA,N=NA,breaks=NA))
+  }
+
+  datGroupDispersion$dispRange <- cut(datGroupDispersion[datGroupDispersion$groupID %in% strGroupID ,"PreyCount" ],breaks=dispBreaks)
+  ## Estimate MSD per Prey-Density Bin
+  vmeanPooledMSDPerPreyCount  <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, mean,na.rm=TRUE)
+  vcountPooledMSDPerPreyCount <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, NROW)
+  vsdPooledMSDPerPreyCount    <- tapply(datGroupDispersion$DisplacementSq,datGroupDispersion$dispRange, sd,na.rm=TRUE)
+  names(dispBreaks)=names(vmeanPooledMSDPerPreyCount)
+  #boxplot(datGroupDispersion$Length~datGroupDispersion$dispRange,main=strTitle,col=colourDataScheme[[strGroupID]],ylim=c(0,35))
+  return(list(muMSDPerT=vmeanPooledMSDPerPreyCount,
+              sdPooledMSDPerT=vsdPooledMSDPerPreyCount,
+              N=vcountPooledMSDPerPreyCount,
+              breaks=dispBreaks[1:length(vmeanPooledMSDPerPreyCount)]  ) )
+}
+
+
+
+makeMSDPreyDensitySummary <- function ()
+{
+  #vtimeWindows <- vsmallTimeWindows #c(1,2,10) #
+  ##Load All
+  baddPlot <- FALSE
+  lMSDStat <- list()
+  datmeanPooledMSDPerPreyCount <- data.frame()
+  ## Loop to sequantially load and process Dispersion data across time scales - freeing memory before re-allocating
+  for (strG in vGroups)
+  {
+    lMSDStat[[strG]] <- list()  
+    
+    for (t in vtimeWindows)
+    { 
+      
+      rm(ldatDispersion)   #Clear Mem
+      ldatDispersion<- list()
+      message("Processing dispersions of for timewindow:", t)
+      ##Load MSD /Dispersion/ Path Data
+      ldatDispersion[[as.character(t)]] <- loadDispersionData(TRUE,t)  
+      # Check If Prey Count Calculation Was included in this Dispersion
+      if ( !any(grepl("PreyCount",names(ldatDispersion[[as.character(t)]])) ) )
+      {
+        message("*Prey Count Missing - Re-Calculate Trajectory Dispersions")
+        loaddatAllFrames()
+        datDispersion <<- calcTrajectoryDispersions(datAllFrames,tsec_timeWindow)
+      }
+      
+      
+      
+      lMSDStat[[strG]][[as.character(t)]] <- process_MSDVsPreyDensityData(ldatDispersion[[as.character(t)]],strG)
+      
+      #plotMSDPerIntegrationTime(ldatDispersion,"NE",lLinModel)
+    
+      datNewTable <- data.frame(do.call(cbind, lMSDStat[[strG]][[as.character(t)]] ))
+      datNewTable$T <- as.character(t)
+      datNewTable$groupID <- strG
+      datmeanPooledMSDPerPathOft <- rbind(datmeanPooledMSDPerPreyCount, datNewTable ) 
+      #vmeanPooledMSDPerPathOverAllt <- colMeans(datmeanPooledMSDPerPathOft,na.rm=TRUE)
+      #vmeanPooledMSDPerPathOverAllt <- as.matrix(vmeanPooledMSDPerPathOverAllt[names(vmeanPooledMSDPerPathOverAllt)]) #Convert to Vector 
+      #vmeansdPooledMSDPerPathOverAllt <- as.matrix(colMeans(do.call(rbind,vsdPooledMSDPerPathOft),na.rm=TRUE))
+      #vcountPooledMSDPerPathOverAllt <- as.matrix(colSums(do.call(rbind,vcountPooledMSDPerPathOft),na.rm=TRUE))
+    }
+  }
+  
+  saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  saveRDS(datmeanPooledMSDPerPathOft,paste0(strDataExportDir,"datMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  return(datmeanPooledMSDPerPreyCount)
+}
+
+makeMSDPreyDensitySummary()
+
+```
 
 ## MSD vs Hunting Success  
 

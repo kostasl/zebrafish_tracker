@@ -98,6 +98,7 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
                                        DisplacementSq = lEventDispersionAndLength$DisplacementSq, ##Total Distance Travelled
                                        MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
                                        SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
+                                       PreyCount = mean(datEventFrames$PreyCount), #Estimated Mean Prey Count in Time Period
                                        frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
       )
       
