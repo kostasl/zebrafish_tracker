@@ -80,6 +80,7 @@ I verify above that LF has larger detection range, the detection area has a rati
 I have already measured prey speed in my last paper.
 
 # Hunt Events Vs Prey density
+
 ```{r hunt-event vs Prey Density, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
 source("HuntingEventAnalysis_lib.r")
 source("DataLabelling/labelHuntEvents_lib.r")

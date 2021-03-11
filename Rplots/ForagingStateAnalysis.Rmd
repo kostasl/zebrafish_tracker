@@ -3761,18 +3761,21 @@ makeMSDPreyDensitySummary <- function (vtimeWindows = c(2) )
 }
 
 
+vtimeWindows <- 2
+
+
+lMSDStat <<- readRDS(paste0(strDataExportDir,"lMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+datMSDVsPreyDensitySummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+
+
 if (!exists("lMSDStat"))
 {
   datMSDVsPreyDensitySummaryData <<- makeMSDPreyDensitySummary()
 }
 
 
-
-lMSDStat <<- readRDS(paste0(strDataExportDir,"lMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
-datMSDVsPreyDensitySummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
-
 # PLOT Summary per PreyCount Range - Mean MSD Per Prey Count Length (over  T = 5)
-pdf(file= paste(strPlotExportPath,"/foraging/MSDPerPreyDensity.pdf",sep=""),width=7,height=7)
+#pdf(file= paste(strPlotExportPath,"/foraging/MSDPerPreyDensity.pdf",sep=""),width=7,height=7)
   ## bottom, left,top, right
   par(mar = c(4.3,4.3,2,1))
   
@@ -3809,7 +3812,7 @@ pdf(file= paste(strPlotExportPath,"/foraging/MSDPerPreyDensity.pdf",sep=""),widt
            col=c(unlist(colourDataScheme[names(strRG)])[c(2,4,6)]),
            pch=c( unlist(pointTypeScheme[names(strRG)][c(2,4,6)])), horiz=TRUE )
 
-dev.off()
+#dev.off()
 
 
 ```
