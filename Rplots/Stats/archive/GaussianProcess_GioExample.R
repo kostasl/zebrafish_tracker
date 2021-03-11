@@ -75,16 +75,6 @@ varnames=c("tau","rho","alpha","tau0")
 
 
 preyCntRange <- c(0,65)
-#load("data/setn-12-D-5-16-datHuntStat.RData")
-
-#load("./Stats/data/setn-12-D-5-16-datHuntStat.RData")
-
-#strProcDataFileName <-paste("setn14-D5-18-HuntEvents-Merged",sep="") ##To Which To Save After Loading
-#datHuntLabelledEventsKL <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-#datHuntStat <- makeHuntStat(datHuntLabelledEventsKL)
-#strProcDataFileName <-paste("setn-12-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
-#datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
 
 #### LOAD And prepare MODEL DATA #### 
   datHuntLabelledEventsKL <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
@@ -163,6 +153,11 @@ draw[["DL"]]=jags.samples(m[["DL"]],steps,thin=thin,variable.names=varnames)
 
 
 
+save(draw,data,m,
+     nFoodLL2,nFoodNL2,nFoodDL2,
+     nEventsLL2,nEventsNL2,nEventsDL2,
+     file=paste0(strDataExportDir,"/jags_FoodDensityVsHuntRate_GP.RData"))
+
 
 
 
@@ -186,7 +181,7 @@ pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey")
        cex=1.4,
        cex.axis = 1.7,
        cex.lab = 1.5,
-       xlim = preyCntRange,
+       xlim = c(0,80),##preyCntRange,
        pch=pointTypeScheme$LL,
        sub=paste("GP tau:",format(mean(draw[["LL"]]$tau),digits=4 ),
                  "tau0:",format(mean(draw[["LL"]]$tau0),digits=4 ) ,
@@ -210,6 +205,4 @@ pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey")
 
 dev.off()
 #points(datSliceLL[,1],datSliceLL[,2],col="black")
-
-save(draw,data,m,file=paste0(strDataExportDir,"/jags_FoodDensityVsHuntRate_GP.RData"))
 

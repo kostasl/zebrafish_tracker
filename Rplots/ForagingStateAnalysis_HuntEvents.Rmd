@@ -79,6 +79,89 @@ I verify above that LF has larger detection range, the detection area has a rati
 
 I have already measured prey speed in my last paper.
 
+# Hunt Events Vs Prey density
+```{r hunt-event vs Prey Density, out.width="50%", echo=FALSE, cache=FALSE, results=FALSE,warning=FALSE}
+source("HuntingEventAnalysis_lib.r")
+source("DataLabelling/labelHuntEvents_lib.r")
+source("Stats/stat_GProcess_HuntRateVsInitPrey.R")
+
+#### Plot Model ####
+colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
+tauRangeA <- 253
+Rho <-1
+ind = 10
+
+preCalcGPModelfile = paste0(strDataExportDir,"/jags_FoodDensityVsHuntRate_GP2.RData")
+
+if (file.exists(preCalcGPModelfile)){
+  load(file=paste0(strDataExportDir,"/jags_FoodDensityVsHuntRate_GP2.RData"))
+}else {
+  retM = inferGPModel_HuntRateVsPreyDensity(burn_in=140,steps=5000,thin=2)
+  draw <<- retM$draw
+  data <<- retM$data
+  
+}
+  
+## Plot Gaussian Process Of Hunt Rate Vs Density  
+  plot(data$LF$food,data$LF$n,col=colourH[1],
+       main = NA,
+       ylab="Number of Hunt Events in 10 min",
+       xlab="Initial Prey Density (Rotifers/10ml)",
+       cex=1.4,
+       cex.axis = 1.7,
+       cex.lab = 1.5,
+       xlim = c(1,80),##preyCntRange,
+       log="x",
+       pch=pointTypeScheme$LL,
+       sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
+                 "tau0:",format(mean(draw[["LF"]]$tau0),digits=4 ) ,
+                 "rho:",format(mean(draw[["LF"]]$rho),digits=4 ) )  
+  )
+  
+  legend("topleft",legend = c(paste("LF #",data$LF$N),paste("NF #",data$NF$N ),paste("DF #",data$DF$N)),
+         col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
+         pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ) )
+  
+  
+  plot_res(ind,draw[["LF"]],data$LF$food,data$LF$n, colourH[1],0.05,pointTypeScheme$LL)
+  
+  plot_res(ind,draw[["NF"]],data$NF$food,data$NF$n,colourH[2],0.05,pointTypeScheme$NL)
+  
+  #plot(nFoodDL2,nEventsDL2,col="blue")
+  
+  plot_res(ind,draw[["DF"]],data$DF$food,data$DF$n,colourH[3],0.05,pointTypeScheme$DL)
+  
+  
+## Plot - Compare initial Prey Density Between Rearing Groups experiments ###
+strCumPlotName <-  paste(strPlotExportPath,"/stat/fig2S2-InitPreyCount_CDF.pdf",sep="")
+#pdf(strCumPlotName,width=8,height=8,title="Compare prey density testing conditions between groups") 
+
+  par(mar = c(3.9,4.7,2,1))
+  plot(ecdf(foodlevelsNL),xlim=c(0,60),lwd=4,lty=1,col=colourLegL[1],main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,pch=pchL[1])
+  lines(ecdf(foodlevelsLL),xlim=c(0,60),lwd=4,lty=2,pch=pchL[2],col=colourLegL[2],cex=cex)
+  lines(ecdf(foodlevelsDL),xlim=c(0,60),lwd=4,lty=3,pch=pchL[3],col=colourLegL[3],cex=cex)
+  mtext(side = 1,cex=cex, line = 2.7, expression("Initial prey count in ROI (Tracker estimate)" ))
+  mtext(side = 2,cex=cex, line = 2.2, expression(" Cumulative distribution " ))
+  
+  legend("bottomright",pch=pchL,cex=cex,
+         legend = c(paste("NF #",nDatNL),paste("LF #",nDatLL),paste("DF #",nDatDL)),col=colourLegL)
+  
+  
+## Do Significance tests - Pairwise - 
+preyLevelsPerGroup <-( rbind(cbind(as.integer(datHuntStat[,"vHInitialPreyCount"]$LL),"LF"),
+                             cbind(as.integer(datHuntStat[,"vHInitialPreyCount"]$DL),"DF"),
+                             cbind(as.integer(datHuntStat[,"vHInitialPreyCount"]$NL),"NF")
+                             , cbind(as.integer(rbinom(60, 20, .5)),"Bin(0.5,20)") ## Just Ranodm Binomial
+))
+
+preyLevelsPerGroup <- data.frame(preyCount=as.integer(preyLevelsPerGroup[,1]),group=as.factor(preyLevelsPerGroup[,2]) )
+
+pairwise.t.test (preyLevelsPerGroup$preyCount ,preyLevelsPerGroup$group, pool.sd = TRUE,paired=FALSE)
+### Added NS diffe in prey ouunt to Fig Supp
+  
+
+```
+
 # Mean free-path between targets
 
 ## Hunt-events and dispersion-based foraging state

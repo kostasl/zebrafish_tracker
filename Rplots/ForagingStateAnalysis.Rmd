@@ -3630,7 +3630,7 @@ plot_MSDPerPreyDensitySummary <- function(lMSDPathLStat)
 
 
 ##Calc the mean pooled MSD from each integration Window and show mean diffusion
-plotMSDPer_Draft <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogLog=T)
+plotMSDPerPreyDensity <- function(lModelwithMSD,addPlot=FALSE,bUsePooledMean=TRUE,bLogLog=T)
 {
   vMSD <- vector()
   vTimeWindow <- vector()
@@ -3710,7 +3710,7 @@ process_MSDVsPreyDensityData <- function(ldatDispersion,strGroupID,addPlot=FALSE
 
 
 
-makeMSDPreyDensitySummary <- function ()
+makeMSDPreyDensitySummary <- function (vtimeWindows = c(2) )
 {
   #vtimeWindows <- vsmallTimeWindows #c(1,2,10) #
   ##Load All
@@ -3747,7 +3747,7 @@ makeMSDPreyDensitySummary <- function ()
       datNewTable <- data.frame(do.call(cbind, lMSDStat[[strG]][[as.character(t)]] ))
       datNewTable$T <- as.character(t)
       datNewTable$groupID <- strG
-      datmeanPooledMSDPerPathOft <- rbind(datmeanPooledMSDPerPreyCount, datNewTable ) 
+      datmeanPooledMSDPerPreyCount <- rbind(datmeanPooledMSDPerPreyCount, datNewTable ) 
       #vmeanPooledMSDPerPathOverAllt <- colMeans(datmeanPooledMSDPerPathOft,na.rm=TRUE)
       #vmeanPooledMSDPerPathOverAllt <- as.matrix(vmeanPooledMSDPerPathOverAllt[names(vmeanPooledMSDPerPathOverAllt)]) #Convert to Vector 
       #vmeansdPooledMSDPerPathOverAllt <- as.matrix(colMeans(do.call(rbind,vsdPooledMSDPerPathOft),na.rm=TRUE))
@@ -3756,11 +3756,61 @@ makeMSDPreyDensitySummary <- function ()
   }
   
   saveRDS(lMSDStat,paste0(strDataExportDir,"lMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
-  saveRDS(datmeanPooledMSDPerPathOft,paste0(strDataExportDir,"datMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+  saveRDS(datmeanPooledMSDPerPreyCount,paste0(strDataExportDir,"datMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
   return(datmeanPooledMSDPerPreyCount)
 }
 
-makeMSDPreyDensitySummary()
+
+if (!exists("lMSDStat"))
+{
+  datMSDVsPreyDensitySummaryData <<- makeMSDPreyDensitySummary()
+}
+
+
+
+lMSDStat <<- readRDS(paste0(strDataExportDir,"lMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+datMSDVsPreyDensitySummaryData <<- readRDS(paste0(strDataExportDir,"datMSDPerPreyDensitySummaryResults",min(vtimeWindows),"-",max(vtimeWindows),"sec.rds"))
+
+# PLOT Summary per PreyCount Range - Mean MSD Per Prey Count Length (over  T = 5)
+pdf(file= paste(strPlotExportPath,"/foraging/MSDPerPreyDensity.pdf",sep=""),width=7,height=7)
+  ## bottom, left,top, right
+  par(mar = c(4.3,4.3,2,1))
+  
+  baddPlot <- FALSE
+  strRG <- list(LF=c("LE","LL"),NF=c("NE","NL"),DF=c("DE","DL"))
+  datmeanPooledMSDPerPreyDensity <- list()
+  ## Correct Noise In Prey Count In Empty Conditions 
+  datMSDVsPreyDensitySummaryData[datMSDVsPreyDensitySummaryData$groupID %in% c("LE","DE","NE"),"breaks"] = 0
+  for (strG in names(strRG) )
+  {
+    ## Add Complemenatry test condition
+    datmeanPooledMSDPerPreyDensity[[strG]] <- tapply(datMSDVsPreyDensitySummaryData[datMSDVsPreyDensitySummaryData$groupID %in% strRG[[strG]],"muMSDPerT"],
+                                                     datMSDVsPreyDensitySummaryData[ datMSDVsPreyDensitySummaryData$groupID%in% strRG[[strG]],"breaks"], mean, na.rm=TRUE)
+    
+    xtick <- unique(datMSDVsPreyDensitySummaryData[datMSDVsPreyDensitySummaryData$groupID %in% strRG[[strG]],"breaks"]) 
+    xtick <- xtick[!is.na(xtick)]
+    if (!baddPlot)
+    {
+      plot(xtick, (datmeanPooledMSDPerPreyDensity[[strG]]),col=colourDataScheme[[strG]]$Evoked, pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]], type="b",
+           xlab="Prey Density (R/10ml)", ylab=" Mean Squared Displacement (mm/2sec)", ylim=c(1,50),xlim=c(5,70),asp=1,log="xy", xaxt="n",cex=1.3,cex.axes=1.3)#
+    
+      axis(side=1, at=xtick, labels = names(lMSDStat[[strG]]$`2`$breaks))
+  
+      ###axis(side=2, at=(axisTicks(c(0.3,2),log=TRUE,nint=5)), labels = axisTicks(c(0.3,2),log=TRUE,nint=5) )  
+    }
+    else
+      points(xtick,(datmeanPooledMSDPerPreyDensity[[strG]]), col=colourDataScheme[[strG]]$Evoked, pch=pointTypeScheme[[strG]], lty=lineTypeScheme[[strG]], type="b" )
+    
+    baddPlot <- TRUE
+  }
+    ##Add Theoretical MSD growth vs Time
+    
+    legend("bottomleft", legend=names(strRG)  ,
+           col=c(unlist(colourDataScheme[names(strRG)])[c(2,4,6)]),
+           pch=c( unlist(pointTypeScheme[names(strRG)][c(2,4,6)])), horiz=TRUE )
+
+dev.off()
+
 
 ```
 
@@ -5265,11 +5315,14 @@ plotExpNormDispersionTrajectories(c('DL','DE'),datAllFrames,datDispersion ,datHE
 # Final Notes
 
 
-##  Foraging and Predator Avoidance (#stephens2008)
-Foraging may be optimal in terms of maximizing food uptake, but may involve a a balance between other factors such as risk of predation. Discrepancies between optimal foraging models and empirical field data have already been noted (see Phys of Foraging pg 15), which have suiggested trade-offs between optimal foragings and predator risk.
+##  Foraging and Predator Avoidance (see (@stephens2008))
+Foraging in a variable environment presents a classic problem of decision making with incomplete information. see also (@dunlap2012tracking) but also (@viswanathan2011physics)
+
+Foraging may be optimal in terms of maximizing food uptake, but may involve a a balance between other factors such as risk of predation. Discrepancies between optimal foraging models and empirical field data have already been noted (see Phys of Foraging pg 15), which have suggested trade-offs between optimal foragings and predator risk.
 Thus in these investigations I can include the my data showing how experience shapes the balance between hunt-rate and prey density (the gaussian process model of hunt-rate vs Prey Density).
 
-see also (#dunlap2012tracking) but also (#viswanathan2011physics)
+
+
 
 special, but we find that the extent of this ‘specialness’ depends on the
 subject’s prior experience of environmental change.

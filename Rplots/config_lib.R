@@ -33,6 +33,7 @@ col2hex <- function(rgbcol) {
 DIM_PXRADIUS       <- 790 #Is the DIAMETER Of the dish In the Video
 DIM_PXDIAMETER       <- 790 #Is the DIAMETER Of the dish In the Video
 DIM_MMPERPX        <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
+DIM_DISHVOLUME     <- 1000*(0.035/2)^2*pi*0.01 ## in  Liters 
 DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
@@ -116,9 +117,9 @@ colourL        <-c("#03B303AF","#E60303AF","#0303E6AF")
 colourClusters <- c("#00AFBB", "#E7B800", "#FC4E07")
 
 pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, NL
-pointTypeScheme <- list(DL=pchL[5], LL=pchL[4], NL=pchL[6],DE=pchL[3], LE=pchL[2], NE=pchL[1])
+pointTypeScheme <- list(DL=pchL[5], LL=pchL[4], NL=pchL[6],DE=pchL[3], LE=pchL[2], NE=pchL[1],LF=pchL[4],NF=pchL[6],DF=pchL[5])
 lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
-lineTypeScheme <- list(DL=lineTypeL[2], LL=lineTypeL[2], NL=lineTypeL[2], DE=lineTypeL[1], LE=lineTypeL[1], NE=lineTypeL[1])
+lineTypeScheme <- list(DL=lineTypeL[2], LL=lineTypeL[2], NL=lineTypeL[2], DE=lineTypeL[1], LE=lineTypeL[1], NE=lineTypeL[1], DF=lineTypeL[2], LF=lineTypeL[2], NF=lineTypeL[2])
 lineTypeL.DF <- lineTypeL[1]
 lineTypeL.LF <- lineTypeL[2]
 lineTypeL.NF <- lineTypeL[3]
