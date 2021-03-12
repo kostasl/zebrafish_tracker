@@ -243,17 +243,17 @@ ind = 10
 strSuffix <- modelFileName[2]
 #load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
 
-retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[7])
+retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=300,thin=2,modelFileName[7])
 draw <- retM[[1]]
 modelData <- retM[[2]]
-
+plotPDFOutput(modelData,draw,modelFileName[7])
 
 #inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
 plotPDFOutput <- function(modelData,draw,modelFileName)
 {
   plot_Chain= 3
   #strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
-  strPlotName <-  paste(strPlotExportPath,"/stat_MSDVsPrey_",modelFileName,".pdf",sep="")
+  strPlotName <-  paste(strPlotExportPath,"/stat_MSDVsPreyN",modelData$LF$N,modelFileName,".pdf",sep="")
   pdf(strPlotName,width=8,height=8,title="GP Function of MSD Vs Prey Density") 
   par(mar = c(4.1,4.8,3,1))
   
@@ -265,7 +265,7 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
        cex.axis = 1.7,
        cex.lab = 1.5,
        ylim = c(0,20),##preyCntRange,
-       xlim = c(1,80),##preyCntRange,
+       xlim = c(1,65),##preyCntRange,
        #log="x",
        pch=pointTypeScheme$LL,
        #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
@@ -273,7 +273,7 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
        #           "rho:",format(mean(draw[["LF"]]$rho),digits=4 ) )  
   )
   
-  legend("topleft",legend = c(paste("LF #",modelData$LF$N),paste("NF #",modelData$NF$N ),paste("DF #",modelData$DF$N)),
+  legend("topright",legend = c(paste("LF #",modelData$LF$N),paste("NF #",modelData$NF$N ),paste("DF #",modelData$DF$N)),
          col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
          pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ),cex=1.5 )
   
@@ -283,16 +283,14 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
   #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=3)
   
   plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL)
-  
-  #plot(nFoodDL2,nEventsDL2,col="blue")
+  #plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=2)
+  #plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=3)
   
   plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL)
+  #plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=2)
+  #plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=3)
+  dev.off()
 }
-#legend(5,700,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
-
-#dev.off()
-#points(datSliceLL[,1],datSliceLL[,2],col="black")
-
 
 
 
