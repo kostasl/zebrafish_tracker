@@ -13,6 +13,10 @@ source("DataLabelling/labelHuntEvents_lib.r")
 # \return FileName Where New Model Was Saved
 model <- function(tauShape,tauRate,const_rho) 
 {
+  ## Show A little sample of what the correlation function looks like
+  plot(  ( rgamma(1,shape=tauShape,rate=tauRate)^2) * exp( - (const_rho*(seq(-50,50,1)) )^2 )  , 
+           log="y",ylim=c(0.01,100000) ) 
+  
   strMdl <- paste("model {
     # Likelihood
     
@@ -56,6 +60,7 @@ model <- function(tauShape,tauRate,const_rho)
 # Saves Sampls to RData file and returns Samples and Data - so they can be plotted
 inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=120,thin=2,modelFileName)
 {
+  library(rjags)
   
   modelData <- list()
   m<-list() ##model List
@@ -106,7 +111,7 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     
   }  
   
-  
+  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
   save(draw,modelData,m,steps,thin,
        file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
   
@@ -151,14 +156,14 @@ inits_func <- function(chain){
 #plot(dgamma(1:80,shape=1,rate=1),main="rho")
 #plot(dgamma(1:80,shape=100,rate=1),main="tau")
 ##Sample the Covariance Kernel
-plot( (rgamma(1:80,shape=100,rate=1)^2) * exp( - (0.25*(seq(-50,50,1)) )^2 ) ) 
+
 
 
 modelFileName <- vector()
 modelFileName[1] <-model(100,1,0.1)
 modelFileName[2] <-model(100,1,0.25)
-modelFileName[3] <-model(100,1,0.5)
-modelFileName[4] <-model(250,1,0.25)
+modelFileName[3] <-model(10,1,0.25)
+modelFileName[4] <-model(1,1,0.15)
 modelFileName[5] <-model(50,1,0.25)
 
 t = 2
@@ -168,20 +173,21 @@ message(paste(" Loading Dispersion Dat List to Analyse... "))
 datDispersion <- loadDispersionData(FALSE,t)  
 datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
 
+#inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
+#inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
 
 #setup parallel backend to use many processors
-cores=detectCores()
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-
-
-## Run Across Conditions
-vretM = foreach (t_model= modelFileName,.combine=c) %dopar%
-{
-  
-  inferGPModel_MSDVsPreyDensity(burn_in=150,steps=3000,dataSamples=200,thin=2,t_model)
-  
-}
+      cores=detectCores()
+      cl <- makeCluster(cores[1]-2) #not to overload your computer
+      registerDoParallel(cl)
+      
+      ## Run Across Conditions
+      vretM = foreach (t_model= modelFileName,.combine=c) %dopar%
+      {
+        
+        inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,t_model)
+        
+      }
 
 ## Select One to Plot from 
 retM <- vretM[1]
@@ -229,7 +235,15 @@ Rho <-1
 ind = 10
 
 # 
-#load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
+strSuffix <- modelFileName[2]
+#load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
+
+retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[3])
+modelData <- retM$modelData
+draw <- retM$draw
+
+#inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
+
 
 #strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
 strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tauRangeA,"-RhoMax",Rho,".pdf",sep="")
