@@ -125,8 +125,8 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
 inits_func <- function(chain){
   gen_list <- function(chain = chain){
     list( 
-      tau0 = rgamma(1, 1, rate=1/20),
-      tau = rgamma(1, 1, rate=1/20),
+      tau0 = rgamma(1, 50, rate=1),
+      tau = rgamma(1, 50, rate=1),
       #rho = rgamma(1, 1, rate=1),
       .RNG.name = switch(chain,
                          "1" = "base::Wichmann-Hill",
@@ -162,14 +162,18 @@ inits_func <- function(chain){
 
 
 modelFileName <- vector()
-modelFileName[1] <-model(10,1,0.025)
-modelFileName[2] <-model(50,1,0.025)
-modelFileName[3] <-model(150,1,0.025)
-modelFileName[4] <-model(250,1,0.025)
-modelFileName[5] <-model(10,1,0.015)
-modelFileName[6] <-model(50,1,0.015)
-modelFileName[7] <-model(150,1,0.015)
-modelFileName[8] <-model(250,1,0.015)
+modelFileName[1] <-model(10,1,0.035)
+modelFileName[2] <-model(50,1,0.035)
+modelFileName[3] <-model(150,1,0.035)
+modelFileName[4] <-model(250,1,0.035)
+modelFileName[5] <-model(10,1,0.025)
+modelFileName[6] <-model(50,1,0.025)
+modelFileName[7] <-model(150,1,0.025)
+modelFileName[8] <-model(250,1,0.025)
+modelFileName[9] <-model(10,1,0.015)
+modelFileName[10] <-model(50,1,0.015)
+modelFileName[11] <-model(150,1,0.015)
+modelFileName[12] <-model(250,1,0.015)
 
 t = 2
 ## Prepare Data - 
@@ -178,21 +182,19 @@ message(paste(" Loading Dispersion Dat List to Analyse... "))
 datDispersion <- loadDispersionData(FALSE,t)  
 datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
 
-#inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
-#inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
-
-#setup parallel backend to use many processors
-cores=detectCores()
-cl <- makeCluster(cores[1]-2) #not to overload your computer
-registerDoParallel(cl)
-
-## Run Across Conditions
-vretM = foreach (t_model= modelFileName,.combine=c) %dopar%
-{
-    
-    inferGPModel_MSDVsPreyDensity(burn_in=150,steps=2000,dataSamples=350,thin=2,t_model)
-    
-}
+# 
+# #setup parallel backend to use many processors
+# cores=detectCores()
+# cl <- makeCluster(cores[1]-2) #not to overload your computer
+# registerDoParallel(cl)
+# 
+# ## Run Across Conditions
+# vretM = foreach (t_model= modelFileName,.combine=c) %dopar%
+#   {
+#     
+#     inferGPModel_MSDVsPreyDensity(burn_in=150,steps=2000,dataSamples=350,thin=2,t_model)
+#     
+#   }
 
 ## Select One to Plot from 
 retM <- vretM[1]
@@ -233,21 +235,6 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16,chain=1){
 }
 
 
-
-colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
-tauRangeA <- 253
-Rho <-1
-ind = 10
-
-# 
-strSuffix <- modelFileName[2]
-#load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
-
-retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=300,thin=2,modelFileName[7])
-draw <- retM[[1]]
-modelData <- retM[[2]]
-plotPDFOutput(modelData,draw,modelFileName[7])
-
 #inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
 plotPDFOutput <- function(modelData,draw,modelFileName)
 {
@@ -264,8 +251,8 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
        cex=1.4,
        cex.axis = 1.7,
        cex.lab = 1.5,
-       ylim = c(0,20),##preyCntRange,
-       xlim = c(1,65),##preyCntRange,
+       ylim = c(0,60),##preyCntRange,
+       xlim = c(1,125),##preyCntRange,
        #log="x",
        pch=pointTypeScheme$LL,
        #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
@@ -279,19 +266,37 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
   
   
   plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=plot_Chain)
-  #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=2)
-  #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=3)
+  plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=2)
+  plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=3)
   
   plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL)
-  #plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=2)
-  #plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=3)
+  plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=2)
+  plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=3)
   
   plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL)
-  #plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=2)
-  #plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=3)
+  plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=2)
+  plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=3)
   dev.off()
 }
 
+
+
+colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
+tauRangeA <- 253
+Rho <-1
+ind = 10
+
+# 
+#strSuffix <- modelFileName[2]
+#load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
+
+for (t_model in sample(modelFileName) )
+{
+  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=390,thin=2,t_model)
+  draw <- retM[[1]]
+  modelData <- retM[[2]]
+  plotPDFOutput(modelData,draw,modelFileName[6])
+}
 
 
 ## Plot - Compare initial Prey Density Between Rearing Groups experiments ###
