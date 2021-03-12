@@ -15,7 +15,7 @@ model <- function(tauShape,tauRate,const_rho)
 {
   ## Show A little sample of what the correlation function looks like
   plot(  ( rgamma(1,shape=tauShape,rate=tauRate)^2) * exp( - (const_rho*(seq(-50,50,1)) )^2 )  , 
-           log="y",ylim=c(0.01,100000) ) 
+         log="y",ylim=c(0.01,100000) ) 
   
   strMdl <- paste("model {
     # Likelihood
@@ -50,7 +50,7 @@ model <- function(tauShape,tauRate,const_rho)
   fileConn=file(modelFileName)
   writeLines(strMdl,fileConn);
   close(fileConn)
-                        
+  
   return(modelFileName)
 }
 
@@ -75,14 +75,16 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
                                           !is.na(datDispersion$MSD) &
                                           datDispersion$groupID %in% strRG[[strG]] &
                                           datDispersion$PreyCount <= preyCntRange[2]/3, ]
-    idx_L = sample(1:NROW(datDispersionG_Low),size=dataSamples/2, replace=FALSE )
+    idx_L = sample(1:NROW(datDispersionG_Low),
+                   size=min(dataSamples/2,NROW(datDispersionG_Low)), replace=FALSE )
     
     datDispersionG_High <- datDispersion[!is.na(datDispersion$PreyCount) &
                                            !is.na(datDispersion$MSD) &
                                            datDispersion$groupID %in% strRG[[strG]] &
                                            datDispersion$PreyCount > preyCntRange[2]/3 & 
                                            datDispersion$PreyCount <= preyCntRange[2], ]
-    idx_H = sample(1:NROW(datDispersionG_High),size=dataSamples/2, replace=FALSE )
+    idx_H = sample(1:NROW(datDispersionG_High),
+                   size=min(dataSamples/2,NROW(datDispersionG_High)), replace=FALSE )
     
     ##Combine Low/High Range Samples
     ## Sample MSD and PreyDensity From Each Group equally at both ranges (Reduce error in Estimate High Range)
@@ -111,11 +113,11 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     
   }  
   
-  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
+  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_s",steps,"-",modelFileName,".RData"))
   save(draw,modelData,m,steps,thin,
        file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
   
-  return (list(draw,modelData))
+  return (list(draw=draw,data=modelData))
 }
 
 
@@ -160,11 +162,14 @@ inits_func <- function(chain){
 
 
 modelFileName <- vector()
-modelFileName[1] <-model(100,1,0.1)
-modelFileName[2] <-model(100,1,0.25)
-modelFileName[3] <-model(10,1,0.25)
-modelFileName[4] <-model(1,1,0.15)
-modelFileName[5] <-model(50,1,0.25)
+modelFileName[1] <-model(10,1,0.025)
+modelFileName[2] <-model(50,1,0.025)
+modelFileName[3] <-model(150,1,0.025)
+modelFileName[4] <-model(250,1,0.025)
+modelFileName[5] <-model(10,1,0.015)
+modelFileName[6] <-model(50,1,0.015)
+modelFileName[7] <-model(150,1,0.015)
+modelFileName[8] <-model(250,1,0.015)
 
 t = 2
 ## Prepare Data - 
@@ -177,17 +182,17 @@ datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
 #inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
 
 #setup parallel backend to use many processors
-      cores=detectCores()
-      cl <- makeCluster(cores[1]-2) #not to overload your computer
-      registerDoParallel(cl)
-      
-      ## Run Across Conditions
-      vretM = foreach (t_model= modelFileName,.combine=c) %dopar%
-      {
-        
-        inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,t_model)
-        
-      }
+cores=detectCores()
+cl <- makeCluster(cores[1]-2) #not to overload your computer
+registerDoParallel(cl)
+
+## Run Across Conditions
+vretM = foreach (t_model= modelFileName,.combine=c) %dopar%
+{
+    
+    inferGPModel_MSDVsPreyDensity(burn_in=150,steps=2000,dataSamples=350,thin=2,t_model)
+    
+}
 
 ## Select One to Plot from 
 retM <- vretM[1]
@@ -200,7 +205,7 @@ draw <- retM$draw
 SE <- function(Xi,Xj, rho,tau) tau^2*exp(-(Xi - Xj) ^ 2 * rho^2)
 covC <- function(X, Y, rho,tau) outer(X, Y, SE, rho,tau)
 
-plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
+plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16,chain=1){
   
   ord=order(Xn)
   Xn=Xn[ord] ##Place Points In order so we can draw the Polygon Bands
@@ -211,10 +216,10 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
   Ef=matrix(NA,ncol=length(x_predict),nrow=ind)
   for(j in 1:ind){
     #i=steps/thin-j+1
-    i=length(drawY$tau[]) - j+1
+    i=NROW(drawY$tau[,,chain]) - j+1
     ##print(i)
-    cov_xx_inv=solve(covC(Xn,Xn,drawY$rho[i],drawY$tau[i])+diag(drawY$tau0[i],length(Xn)))
-    Ef[j,] <- covC(x_predict, Xn,drawY$rho[i],drawY$tau[i]) %*% cov_xx_inv %*% Yn 
+    cov_xx_inv=solve(covC(Xn,Xn,drawY$rho[,i,chain],drawY$tau[,i,chain])+diag(drawY$tau0[,i,chain],length(Xn)))
+    Ef[j,] <- covC(x_predict, Xn,drawY$rho[,i,chain],drawY$tau[,i,chain]) %*% cov_xx_inv %*% Yn 
   }
   mu=apply(Ef,2,mean)
   sd=apply(Ef,2,sd)
@@ -238,47 +243,51 @@ ind = 10
 strSuffix <- modelFileName[2]
 #load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
 
-retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[3])
-modelData <- retM$modelData
-draw <- retM$draw
+retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[7])
+draw <- retM[[1]]
+modelData <- retM[[2]]
+
 
 #inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
-
-
-#strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
-strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tauRangeA,"-RhoMax",Rho,".pdf",sep="")
-#pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
-par(mar = c(4.1,4.8,3,1))
-
-plot(modelData$LF$prey,modelData$LF$MSD,col=colourH[1],
-     main = NA,
-     ylab="Mean squared displacement (mm/ 2 sec)",
-     xlab="Initial Prey Density (Rotifers/10ml)",
-     cex=1.4,
-     cex.axis = 1.7,
-     cex.lab = 1.5,
-     ylim = c(0,20),##preyCntRange,
-     xlim = c(1,80),##preyCntRange,
-     #log="x",
-     pch=pointTypeScheme$LL,
-     #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
-     #           "tau0:",format(mean(draw[["LF"]]$tau0),digits=4 ) ,
-     #           "rho:",format(mean(draw[["LF"]]$rho),digits=4 ) )  
-)
-
-legend("topleft",legend = c(paste("LF #",modelData$LF$N),paste("NF #",modelData$NF$N ),paste("DF #",modelData$DF$N)),
-       col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
-       pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ),cex=1.5 )
-
-
-plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL)
-
-plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL)
-
-#plot(nFoodDL2,nEventsDL2,col="blue")
-
-plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL)
-
+plotPDFOutput <- function(modelData,draw,modelFileName)
+{
+  plot_Chain= 3
+  #strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
+  strPlotName <-  paste(strPlotExportPath,"/stat_MSDVsPrey_",modelFileName,".pdf",sep="")
+  pdf(strPlotName,width=8,height=8,title="GP Function of MSD Vs Prey Density") 
+  par(mar = c(4.1,4.8,3,1))
+  
+  plot(modelData$LF$prey,modelData$LF$MSD,col=colourH[1],
+       main = NA,
+       ylab="Mean squared displacement (mm/ 2 sec)",
+       xlab="Initial Prey Density (Rotifers/10ml)",
+       cex=1.4,
+       cex.axis = 1.7,
+       cex.lab = 1.5,
+       ylim = c(0,20),##preyCntRange,
+       xlim = c(1,80),##preyCntRange,
+       #log="x",
+       pch=pointTypeScheme$LL,
+       #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
+       #           "tau0:",format(mean(draw[["LF"]]$tau0),digits=4 ) ,
+       #           "rho:",format(mean(draw[["LF"]]$rho),digits=4 ) )  
+  )
+  
+  legend("topleft",legend = c(paste("LF #",modelData$LF$N),paste("NF #",modelData$NF$N ),paste("DF #",modelData$DF$N)),
+         col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
+         pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ),cex=1.5 )
+  
+  
+  plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=plot_Chain)
+  #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=2)
+  #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=3)
+  
+  plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL)
+  
+  #plot(nFoodDL2,nEventsDL2,col="blue")
+  
+  plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL)
+}
 #legend(5,700,legend = c(paste("LL #",nDatLL),paste("NL #",nDatNL),paste("DL #",nDatDL)),fill=colourH)
 
 #dev.off()
