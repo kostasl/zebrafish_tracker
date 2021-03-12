@@ -181,7 +181,11 @@ loadDispersionData <- function(forceReload = FALSE, tsec_timeWindow=0)
   try(
     ##Check If Already Loaded
     if (!exists("datDispersion") | forceReload)
-      datDispersion <<- readRDS(file=paste0(strDataStore,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") )
+    {
+     strFile <- paste0(strDataStore,"/foragingState_Dispersion",tsec_timeWindow,"sec.rds") 
+      message(strFile)
+      datDispersion <<- readRDS(file=strFile )
+    }
   )
   
   if (!exists("datDispersion"))
