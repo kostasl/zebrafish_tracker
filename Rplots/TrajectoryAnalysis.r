@@ -9,7 +9,7 @@
 #KL:
 # Since nLarva can vary, I suggest looking at statistics of HuntRates and Durations as per fish in Group
 
-#################
+#~~~~~~~~~~~~~~~~~~~~~~
 
 source("TrackerDataFilesImport_lib.r")
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r") ##For Filter Initialization
@@ -219,7 +219,13 @@ calcTrajectoryDispersionAndLength <- function(datEventFrames,twindowSec=5)
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   time.taken
-  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,DispersionPathLength=vDispersionPathLength*DIM_MMPERPX,Length=vDistanceTravelledToFrame*DIM_MMPERPX,DisplacementSq=vSqDisplacement,MSD=vMSD,SD=vSD,FrameRowID=vFrameRow)
+  lRet <- list(Dispersion=vDispersionPerFrame*DIM_MMPERPX,
+               DispersionPathLength=vDispersionPathLength*DIM_MMPERPX,
+               Length=vDistanceTravelledToFrame*DIM_MMPERPX,
+               DisplacementSq=vSqDisplacement,
+               MSD=vMSD,SD=vSD,
+               FrameRowID=vFrameRow)
+  
   return( lRet)
 }
   
@@ -305,7 +311,7 @@ calcRecordingEventSpeed <- function(datAllFrames,vexpID,vdatasetID)
 
 ### Returns summary measurements for overall trajectories for each larva 
 ## Sinuoisity, Overall distance travelled, Speed (Avg,peak) etc
-#########################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 {
   message("## Start Trajectory Analysis For Group ##")
@@ -399,9 +405,9 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
 	        warning(paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) )
 	        message((paste("Speed is 0 on ",NROW(datEventFrames$frameN),"frames video , expID:",i,",eventID",k) ))
 	      }
-	      ###                                              ######
+	      
         ### Process Speed/ Extract Bouts Via Peak Speed    ####
-	      ###                                              ######
+	      
 	      
 	      ## TODO Add The Butterworth Filters Here filters ## 
 	      dEventSpeed_smooth   <- meanf(dEventSpeed,20)
@@ -576,10 +582,9 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
     
     #message("Hunting Events For This Larva:",nHuntingEventsForLarva)
   } ### For Each Larva In Group ####################
-  ###############################################
+  
   ### Collect LArva Stats to Make GROUP Stats ##
-  ##############################################
-  datGroupMotion = (do.call(rbind,lGroupMotion)) ##data.frame
+    datGroupMotion = (do.call(rbind,lGroupMotion)) ##data.frame
 #  datGroupHunting = as.data.frame(lGroupHunting)
   #vDisplacements = as.vector(do.call(rbind,lapply(datGroupMotion,"[[,","vDisplacements")))
   vDataSetID            <- unlist(datGroupMotion[,"dataSetID"])
@@ -663,22 +668,22 @@ calcMotionStat <- function(datAllFrames,vexpID,vdatasetID)
                            vIDLookupTable                = udatLT,
                             totalFrames   = nAnalysedFrames,
                             totalMotionFrames = nMotionFrames,
-                            vEventCounts   = vEventCounts, ##Vectors Containing Means Per Larva In Group
+                            vEventCounts   = vEventCounts, #Vectors Containing Means Per Larva In Group
                             vPathLengths   = vPathLengths,
                             vMovementRatio = vMovementRatio,
-                            vSpeed         = vmeanSpeed, ##Mean Speed Of Each LArva
-                            vSinuosity   = vmuSinuosity,#####
+                            vSpeed         = vmeanSpeed, #Mean Speed Of Each LArva
+                            vSinuosity   = vmuSinuosity,#
                             totalEventCount=totalEventCount,
                             meanEventCount= meanEventCount,
                             sdEventCount= sdEventCount,
                             seEventCount=sdEventCount/sqrt(nLarva),
                             motionRatio=groupMotionRatio,
-                            meanMotionRatio=meanMotionRatio,##Mean among Larvae - Not the Mean Event
+                            meanMotionRatio=meanMotionRatio,#Mean among Larvae - Not the Mean Event
                             sdMotionRatio     = sdMotionRatio, 
                             medmotionRatio    = medmotionRatio,
                             maxmotionRatio    = maxmotionRatio,
                             minmotionRatio    = minmotionRatio,
-                            meanPathLength    = meanGroupPathLength, ## Mean Of All Paths from The Group
+                            meanPathLength    = meanGroupPathLength, # Mean Of All Paths from The Group
                             sdPathLength = sdGroupPathLength,
                             sePathLength = sdGroupPathLength/sqrt(nLarva),
                             medPathLength = medGroupPathLength,
@@ -919,9 +924,9 @@ calcMotionStat2 <- function(datAllFrames,vexpID,vdatasetID)
     
     #message("Hunting Events For This Larva:",nHuntingEventsForLarva)
   } ### For Each Larva In Group ####################
-  ###############################################
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ### Collect LArva Stats to Make GROUP Stats ##
-  ##############################################
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   datGroupMotion = do.call(rbind,lGroupMotion)
   #  datGroupHunting = as.data.frame(lGroupHunting)
   #vDisplacements = as.vector(do.call(rbind,lapply(datGroupMotion,"[[,","vDisplacements")))

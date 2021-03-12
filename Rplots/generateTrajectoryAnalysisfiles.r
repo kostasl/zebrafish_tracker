@@ -27,3 +27,5 @@ generate_DispersionFiles <- function(timePointSequence = seq(2,30,2))
   for (tt in timePointSequence )
     calcTrajectoryDispersions(datAllFrames,tt)
 }
+
+generate_DispersionFiles(2)
