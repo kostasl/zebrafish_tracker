@@ -174,6 +174,8 @@ modelFileName[9] <-model(10,1,0.015)
 modelFileName[10] <-model(50,1,0.015)
 modelFileName[11] <-model(150,1,0.015)
 modelFileName[12] <-model(250,1,0.015)
+modelFileName[13] <-model(10,1,0.035) ## Works Nicely
+modelFileName[14] <-model(10,1/10,0.1) ## Try Weak Correlation - But Narrow Band
 
 t = 2
 ## Prepare Data - 
@@ -235,7 +237,7 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16,chain=1){
 }
 
 
-#inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=100,thin=2,modelFileName[2])
+
 plotPDFOutput <- function(modelData,draw,modelFileName)
 {
   plot_Chain= 3
@@ -247,22 +249,18 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
   plot(modelData$LF$prey,modelData$LF$MSD,col=colourH[1],
        main = NA,
        ylab="Mean squared displacement (mm/ 2 sec)",
-       xlab="Initial Prey Density (Rotifers/10ml)",
+       xlab="Prey Density (Rotifers/10ml)",
        cex=1.4,
        cex.axis = 1.7,
        cex.lab = 1.5,
        ylim = c(0,60),##preyCntRange,
-       xlim = c(1,125),##preyCntRange,
+       xlim = c(1,80),##preyCntRange,
        #log="x",
        pch=pointTypeScheme$LL,
        #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
        #           "tau0:",format(mean(draw[["LF"]]$tau0),digits=4 ) ,
        #           "rho:",format(mean(draw[["LF"]]$rho),digits=4 ) )  
   )
-  
-  legend("topright",legend = c(paste("LF #",modelData$LF$N),paste("NF #",modelData$NF$N ),paste("DF #",modelData$DF$N)),
-         col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
-         pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ),cex=1.5 )
   
   
   plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=plot_Chain)
@@ -276,6 +274,12 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
   plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL)
   plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=2)
   plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=3)
+  
+  legend("topright",legend = c(paste("LF #",modelData$LF$N),paste("NF #",modelData$NF$N ),paste("DF #",modelData$DF$N)),
+         col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
+         pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ),cex=1.5 )
+  
+  
   dev.off()
 }
 
@@ -286,16 +290,22 @@ tauRangeA <- 253
 Rho <-1
 ind = 10
 
+
+retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=600,thin=2,modelFileName[13] )
+
 # 
-#strSuffix <- modelFileName[2]
-#load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
+strSuffix <- "model-tauS100R1-rho0.1.tmp" #modelFileName[2]
+load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
+#load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSDmodel-tauS10R1-rho0.025.tmp.RData"))
+plotPDFOutput(modelData,draw,strSuffix)
+
 
 for (t_model in sample(modelFileName) )
 {
   retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=390,thin=2,t_model)
   draw <- retM[[1]]
   modelData <- retM[[2]]
-  plotPDFOutput(modelData,draw,modelFileName[6])
+  plotPDFOutput(modelData,draw,t_model)
 }
 
 
