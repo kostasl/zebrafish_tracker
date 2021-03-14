@@ -109,7 +109,7 @@ modelVarRho <- function(tauShape,tauRate,rhoShape,rhoRate)
 
 #### Run Model  #### 
 # Saves Sampls to RData file and returns Samples and Data - so they can be plotted
-inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=120,thin=2,modelFileName)
+inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=120,thin=2,modelFileName,inits_func = inits_func_fixRho)
 {
   library(rjags)
   
@@ -155,7 +155,7 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     
     varnames = c("tau","rho","alpha","tau0")
     ## MODEL INIT 
-    m[[strG]] = jags.modelFixedRho(file=modelFileName,data=modelData[[strG]], n.chains = 3,
+    m[[strG]] = jags.model(file=modelFileName,data=modelData[[strG]], n.chains = 3,
                            inits = inits_func);
     
     update(m[[strG]],burn_in)
@@ -173,12 +173,45 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
 
 
 ## Model Init Randomizer
-inits_func <- function(chain){
+inits_func_fixRho <- function(chain){
   gen_list <- function(chain = chain){
     list( 
       tau0 = rgamma(1, 50, rate=1),
       tau = rgamma(1, 50, rate=1),
-      rho = rgamma(1, 1, rate=1),
+      #rho = rgamma(1, 1, rate=1),
+      .RNG.name = switch(chain,
+                         "1" = "base::Wichmann-Hill",
+                         "2" = "base::Marsaglia-Multicarry",
+                         "3" = "base::Super-Duper",
+                         "4" = "base::Mersenne-Twister",
+                         "5" = "base::Wichmann-Hill",
+                         "6" = "base::Marsaglia-Multicarry",
+                         "7" = "base::Super-Duper",
+                         "8" = "base::Mersenne-Twister"),
+      .RNG.seed = sample(1:1e+06, 1)
+    )
+  }
+  return(switch(chain,           
+                "1" = gen_list(chain),
+                "2" = gen_list(chain),
+                "3" = gen_list(chain),
+                "4" = gen_list(chain),
+                "5" = gen_list(chain),
+                "6" = gen_list(chain),
+                "7" = gen_list(chain),
+                "8" = gen_list(chain)
+  )
+  )
+}
+
+
+## Model Init Randomizer
+inits_func_VarRho <- function(chain){
+  gen_list <- function(chain = chain){
+    list( 
+      tau0 = rgamma(1, 50, rate=1),
+      tau = rgamma(1, 50, rate=1),
+      rho = rgamma(1, 10, rate=1),
       .RNG.name = switch(chain,
                          "1" = "base::Wichmann-Hill",
                          "2" = "base::Marsaglia-Multicarry",
@@ -233,7 +266,7 @@ modelFileName[19] <-modelFixedRho(850,20,0.025) # ***Follow up from 17: Not Test
 modelFileName[20] <-modelFixedRho(1250,30,0.025) # ***Follow up from 17:   Not Tested
 modelFileName[21] <-modelFixedRho(2250,55,0.025) # ***Follow up from 17: - This Showed to be narrow band
 modelFileName[22] <-modelFixedRho(20,1/2,0.025) # ***Looks Good  / Follow up from 21: - Make Prior Broader Around Working Region 
-
+modelFileName[23] <-modelFixedRho(20,20,0.05) ## *****
 
 ##Variable Rho prior
 modelFileName[23] <-modelVarRho(20,1/2,1,10) # ***Follow up from 21: - Make Prior Broader Around Working Region 
@@ -363,16 +396,16 @@ colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5
 ind = 10
 
 ### RUN MOdel Sequence
-for (i in c(28,29,30,31))
+for (i in c(23))
 {
-  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=150,thin=2, modelFileName[i] )
+  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=150,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
   draw <- retM[[1]]
   modelData <- retM[[2]]
   plotPDFOutput(modelData,draw,modelFileName[i])
 }
 
 # 
-strSuffix <- "model-tauS10R1-rho0.035.tmp" #modelFileName[2]
+strSuffix <- "model-tauS10R20-rho0.05.tmp" #modelFileName[2]
 load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
 #load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSDmodel-tauS10R1-rho0.025.tmp.RData"))
 plotPDFOutput(modelData,draw,strSuffix)
