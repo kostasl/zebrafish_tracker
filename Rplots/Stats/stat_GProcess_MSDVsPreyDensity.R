@@ -11,11 +11,13 @@ source("DataLabelling/labelHuntEvents_lib.r")
 
 # Make Model with Parametrizable with Fixed Rho
 # \return FileName Where New Model Was Saved
-model <- function(tauShape,tauRate,const_rho) 
+modelFixedRho <- function(tauShape,tauRate,const_rho) 
 {
   ## Show A little sample of what the correlation function looks like
-  plot(  ( rgamma(1,shape=tauShape,rate=tauRate)^2) * exp( - (const_rho*(seq(-50,50,1)) )^2 )  , 
-         log="y",ylim=c(0.01,100000) ) 
+  par(mfrow=c(2,1))
+  plot(  ( rgamma(1,shape=tauShape,rate=tauRate)^2) * exp( - (const_rho*seq(-50,50,1) )^2 )  , 
+         log="y",ylim=c(0.01,100000),type="l" )
+  plot(dgamma(1:80,shape=tauShape,rate=tauRate),main="tau",type='l')
   
   strMdl <- paste("model {
     # Likelihood
@@ -46,6 +48,55 @@ model <- function(tauShape,tauRate,const_rho)
   
   ## Save to File And Return File Name
   modelFileName <-paste0("model-tauS",tauShape,"R",tauRate,"-rho",const_rho,".tmp")
+  
+  fileConn=file(modelFileName)
+  writeLines(strMdl,fileConn);
+  close(fileConn)
+  
+  return(modelFileName)
+}
+
+# Make Model with Parametrizable with Fixed Rho
+# \return FileName Where New Model Was Saved
+modelVarRho <- function(tauShape,tauRate,rhoShape,rhoRate) 
+{
+  ## Show A little sample of what the correlation function looks like
+  par(mfrow=c(3,1))
+  muRho <- mean(dgamma(1:1000,shape=rhoShape,rate=rhoRate))
+  plot(  ( rgamma(1,shape=tauShape,rate=tauRate)^2) * exp( - (muRho*seq(-50,50,1))^2) , 
+         log="y", ylim=c(0.01,1000000), type="l" ) 
+  plot(dgamma(1:100,shape=tauShape,rate=tauRate),main="tau",type='l')
+  plot(dgamma(1:100,shape=rhoShape,rate=rhoRate),main=paste("Rho mu:",muRho),type='l')
+  
+  strMdl <- paste("model {
+    # Likelihood
+    
+    MSD ~ dmnorm(Mu, Sigma.inv)
+    Sigma.inv <- inverse(Sigma)
+    
+    # Set up mean and covariance matrix
+    for(i in 1:N) {
+      Mu[i] <- alpha
+      Sigma[i,i] <- pow(tau, 2)+pow(tau0,2)
+    
+      for(j in (i+1):N) {
+        #Sigma[i,j] <- pow(tau,2) * exp( - 0.5* pow((prey[i] - prey[j])*rho, 2) )
+        ##exp(-0.5*(abs(X1[i]-X2[j])/l)^2)
+        
+        Sigma[i,j] <-   pow(tau,2) * exp( - pow(rho*(prey[i] - prey[j]), 2) )
+        Sigma[j,i] <- Sigma[i,j]
+      }
+    }
+   
+    alpha=0 
+    rho ~  dgamma(",rhoShape,",",rhoRate,") # Covariance Width / Links neighbouring Densities Between 
+    tau0 ~ dgamma(",tauShape,",",tauRate,") # Covariance Peak Strength
+    tau  ~ dgamma(",tauShape,",",tauRate,")  
+    
+  }")
+  
+  ## Save to File And Return File Name
+  modelFileName <-paste0("model-tauS",tauShape,"R",tauRate,"-rhoS",rhoShape,"R",rhoRate,".tmp")
   
   fileConn=file(modelFileName)
   writeLines(strMdl,fileConn);
@@ -104,7 +155,7 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     
     varnames = c("tau","rho","alpha","tau0")
     ## MODEL INIT 
-    m[[strG]] = jags.model(file=modelFileName,data=modelData[[strG]], n.chains = 3,
+    m[[strG]] = jags.modelFixedRho(file=modelFileName,data=modelData[[strG]], n.chains = 3,
                            inits = inits_func);
     
     update(m[[strG]],burn_in)
@@ -127,7 +178,7 @@ inits_func <- function(chain){
     list( 
       tau0 = rgamma(1, 50, rate=1),
       tau = rgamma(1, 50, rate=1),
-      #rho = rgamma(1, 1, rate=1),
+      rho = rgamma(1, 1, rate=1),
       .RNG.name = switch(chain,
                          "1" = "base::Wichmann-Hill",
                          "2" = "base::Marsaglia-Multicarry",
@@ -155,30 +206,50 @@ inits_func <- function(chain){
 
 
 
-#plot(dgamma(1:80,shape=1,rate=1),main="rho")
-#plot(dgamma(1:80,shape=100,rate=1),main="tau")
-##Sample the Covariance Kernel
 
 
 
 modelFileName <- vector()
-modelFileName[1] <-model(10,1,0.035)
-modelFileName[2] <-model(50,1,0.035)
-modelFileName[3] <-model(150,1,0.035)
-modelFileName[4] <-model(250,1,0.035)
-modelFileName[5] <-model(10,1,0.025)
-modelFileName[6] <-model(50,1,0.025)
-modelFileName[7] <-model(150,1,0.025)
-modelFileName[8] <-model(250,1,0.025)
-modelFileName[9] <-model(10,1,0.015)
-modelFileName[10] <-model(50,1,0.015)
-modelFileName[11] <-model(150,1,0.015)
-modelFileName[12] <-model(250,1,0.015)
-modelFileName[13] <-model(10,1,0.035) ## Works Nicely
-modelFileName[14] <-model(5,20,0.1) ## Try Weak Correlation - Wider Band
-modelFileName[15] <-model(10,20,0.05) ## *****
-modelFileName[16] <-model(15,40,0.05) ## Try Weak Correlation - Wider Band
-modelFileName[16] <-model(5,10,0.025) ## Try Weak Correlation - Wider Band
+modelFileName[1] <-modelFixedRho(10,1,0.035)
+modelFileName[2] <-modelFixedRho(50,1,0.035)
+modelFileName[3] <-modelFixedRho(150,1,0.035)
+modelFileName[4] <-modelFixedRho(250,1,0.035)
+modelFileName[5] <-modelFixedRho(10,1,0.025)
+modelFileName[6] <-modelFixedRho(50,1,0.025) #***
+modelFileName[7] <-modelFixedRho(150,1,0.025)
+modelFileName[8] <-modelFixedRho(250,1,0.025)
+modelFileName[9] <-modelFixedRho(10,1,0.015)
+modelFileName[10] <-modelFixedRho(50,1,0.015)
+modelFileName[11] <-modelFixedRho(150,1,0.015)
+modelFileName[12] <-modelFixedRho(250,1,0.015)
+modelFileName[13] <-modelFixedRho(10,1,0.035) ## Works Nicely
+modelFileName[14] <-modelFixedRho(5,20,0.1) ## Try Weak Correlation - Wider Band
+modelFileName[15] <-modelFixedRho(10,20,0.05) ## *****
+modelFileName[16] <-modelFixedRho(15,40,0.05) ## Try Weak Correlation - Wider Band
+modelFileName[16] <-modelFixedRho(5,10,0.025) ## Try Weak Correlation - Wider Band
+modelFileName[17] <-modelFixedRho(430,10,0.025) # *** Follow up from 6: Centre Tau more tight around 45 - Covariance Wide
+modelFileName[18] <-modelFixedRho(250,6,0.025) # ***Follow up from 17:  Make Tau Narrow So confidence Intervals remain wide
+modelFileName[19] <-modelFixedRho(850,20,0.025) # ***Follow up from 17: Not Tested
+modelFileName[20] <-modelFixedRho(1250,30,0.025) # ***Follow up from 17:   Not Tested
+modelFileName[21] <-modelFixedRho(2250,55,0.025) # ***Follow up from 17: - This Showed to be narrow band
+modelFileName[22] <-modelFixedRho(20,1/2,0.025) # ***Looks Good  / Follow up from 21: - Make Prior Broader Around Working Region 
+
+
+##Variable Rho prior
+modelFileName[23] <-modelVarRho(20,1/2,1,10) # ***Follow up from 21: - Make Prior Broader Around Working Region 
+modelFileName[24] <-modelVarRho(20,1/2,1/2,10) # ***Follow up from 21: - Make Prior Broader Around Working Region
+modelFileName[25] <-modelVarRho(50,1,1/2,10) # ***Follow up from 21: - Make Prior Broader Around Working Region
+modelFileName[26] <-modelVarRho(50,1,1,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
+modelFileName[27] <-modelVarRho(50,1,10,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
+
+modelFileName[28] <-modelVarRho(15,40,10,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
+modelFileName[29] <-modelVarRho(15,40,1,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
+modelFileName[30] <-modelVarRho(15,40,1,1/2) # ***Follow up from 21: - Make Prior Broader Around Working Region
+modelFileName[31] <-modelVarRho(15,40,1,1/4) # ***Follow up from 21: - Make Prior Broader Around Working Region 
+#mean(dgamma(-1000:10000,shape=1,rate=1))
+
+#plot(dgamma(1:80,shape=100,rate=1),main="tau")
+
 
 
 t = 2
@@ -258,7 +329,7 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
        cex.axis = 1.7,
        cex.lab = 1.5,
        ylim = c(0,60),##preyCntRange,
-       xlim = c(1,80),##preyCntRange,
+       xlim = c(1,70),##preyCntRange,
        asp=1,
        #log="x",
        pch=pointTypeScheme$LL,
@@ -269,16 +340,16 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
   
   
   plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=plot_Chain)
-  plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=2)
-  plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=3)
+  #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=2)
+  #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=3)
   
   plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL)
-  plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=2)
-  plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=3)
+  #plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=2)
+  #plot_res(ind,draw[["NF"]],modelData$NF$prey,modelData$NF$MSD,colourH[2],0.05,pointTypeScheme$NL,chain=3)
   
   plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL)
-  plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=2)
-  plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=3)
+  #plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=2)
+  #plot_res(ind,draw[["DF"]],modelData$DF$prey,modelData$DF$MSD,colourH[3],0.05,pointTypeScheme$DL,chain=3)
   
   legend("topright",legend = c(paste("LF #",modelData$LF$N),paste("NF #",modelData$NF$N ),paste("DF #",modelData$DF$N)),
          col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
@@ -288,21 +359,20 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
   dev.off()
 }
 
-
-
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
-tauRangeA <- 253
-Rho <-1
 ind = 10
 
-
-retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=200,thin=2,modelFileName[14] )
-draw <- retM[[1]]
-modelData <- retM[[2]]
-plotPDFOutput(modelData,draw,t_model)
+### RUN MOdel Sequence
+for (i in c(28,29,30,31))
+{
+  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=150,thin=2, modelFileName[i] )
+  draw <- retM[[1]]
+  modelData <- retM[[2]]
+  plotPDFOutput(modelData,draw,modelFileName[i])
+}
 
 # 
-strSuffix <- "model-tauS5R20-rho0.1.tmp" #modelFileName[2]
+strSuffix <- "model-tauS10R1-rho0.035.tmp" #modelFileName[2]
 load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
 #load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSDmodel-tauS10R1-rho0.025.tmp.RData"))
 plotPDFOutput(modelData,draw,strSuffix)

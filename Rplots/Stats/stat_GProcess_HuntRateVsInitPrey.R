@@ -158,14 +158,16 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
 
 
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
-tauRangeA <- 253
-Rho <-1
+
+
 ind = 10
 
 #
 load(file=paste0(strDataExportDir,"/jags_FoodDensityVsHuntRate_GP2.RData"))
+Rho <-format( mean(draw$LF$rho),digits=2)
+tau <- format( mean(draw$LF$tau),digits=2)
 #strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
-strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tauRangeA,"-RhoMax",Rho,".pdf",sep="")
+strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tau,"-Rho",Rho,".pdf",sep="")
 pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
 par(mar = c(4.1,4.8,3,1))
   
@@ -177,7 +179,7 @@ par(mar = c(4.1,4.8,3,1))
        cex.axis = 1.7,
        cex.lab = 1.5,
        xlim = c(1,80),##preyCntRange,
-       log="x",
+       #log="x",
        pch=pointTypeScheme$LL,
        #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
       #           "tau0:",format(mean(draw[["LF"]]$tau0),digits=4 ) ,
