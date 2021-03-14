@@ -113,7 +113,7 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     
   }  
   
-  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_s",steps,"-",modelFileName,".RData"))
+  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
   save(draw,modelData,m,steps,thin,
        file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
   
@@ -175,7 +175,11 @@ modelFileName[10] <-model(50,1,0.015)
 modelFileName[11] <-model(150,1,0.015)
 modelFileName[12] <-model(250,1,0.015)
 modelFileName[13] <-model(10,1,0.035) ## Works Nicely
-modelFileName[14] <-model(10,1/10,0.1) ## Try Weak Correlation - But Narrow Band
+modelFileName[14] <-model(5,20,0.1) ## Try Weak Correlation - Wider Band
+modelFileName[15] <-model(10,20,0.05) ## *****
+modelFileName[16] <-model(15,40,0.05) ## Try Weak Correlation - Wider Band
+modelFileName[16] <-model(5,10,0.025) ## Try Weak Correlation - Wider Band
+
 
 t = 2
 ## Prepare Data - 
@@ -255,6 +259,7 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
        cex.lab = 1.5,
        ylim = c(0,60),##preyCntRange,
        xlim = c(1,80),##preyCntRange,
+       asp=1,
        #log="x",
        pch=pointTypeScheme$LL,
        #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
@@ -291,10 +296,13 @@ Rho <-1
 ind = 10
 
 
-retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=600,thin=2,modelFileName[13] )
+retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=200,thin=2,modelFileName[14] )
+draw <- retM[[1]]
+modelData <- retM[[2]]
+plotPDFOutput(modelData,draw,t_model)
 
 # 
-strSuffix <- "model-tauS100R1-rho0.1.tmp" #modelFileName[2]
+strSuffix <- "model-tauS5R20-rho0.1.tmp" #modelFileName[2]
 load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
 #load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSDmodel-tauS10R1-rho0.025.tmp.RData"))
 plotPDFOutput(modelData,draw,strSuffix)
