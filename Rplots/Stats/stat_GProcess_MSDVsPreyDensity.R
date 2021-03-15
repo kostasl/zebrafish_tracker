@@ -106,9 +106,42 @@ modelVarRho <- function(tauShape,tauRate,rhoShape,rhoRate)
 }
 
 
+getUnifPreyCountSample <- function(datDispersionG,dataSamples,dispBreaks)
+{
+  library(dplyr)
+  #Set Factor Indicating Bin Of Prey Density
+  datDispersionG$dispRange <- cut(datDispersionG[ ,"PreyCount" ],breaks=dispBreaks,include.lowest = FALSE,right=FALSE)
+  
+  ##Sample Equally From Each bin so we obtain more uniform MSD data samples across densities
+  iSampleLoan <- 0 ##If samples Missing from A bin, then increase # samples for next bin
+  datDispersion_Subset <- NA
+  ## Sample MSD and PreyDensity From Each Group equally at both ranges (Reduce error in Estimate High Range)
+  for (pdbin in levels(datDispersionG$dispRange) )
+  {
+    #print(pdbin)
+    #idxs <- rownames()
+    datdatDispersionGBin <- datDispersionG[datDispersionG$dispRange %in% pdbin,]
+    ## Take Random Subset + add any samples missed from the previous bin
+    datDispersionBin_Subset <- sample_n(datdatDispersionGBin,size=iSampleLoan+round(min(dataSamples,NROW(datdatDispersionGBin))/length(dispBreaks)) ) 
+    
+    if (NROW(datDispersion_Subset) >0 ){
+      datDispersion_Subset <- rbind(datDispersion_Subset,datDispersionBin_Subset)
+    }
+    else
+    {
+      datDispersion_Subset <-datDispersionBin_Subset
+    }
+    
+    ##If Samples Where not enough within Bin
+    iSampleLoan <- iSampleLoan +  round(dataSamples/length(dispBreaks)) -NROW(datDispersionBin_Subset)
+  }
+  
+  return(datDispersion_Subset)
+}
 
 #### Run Model  #### 
 # Saves Sampls to RData file and returns Samples and Data - so they can be plotted
+# A total of n=dataSamples   Are taken Across preydensities equally - by bining  in widths of 5 
 inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=120,thin=2,modelFileName,inits_func = inits_func_fixRho)
 {
   library(rjags)
@@ -116,39 +149,38 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
   modelData <- list()
   m<-list() ##model List
   draw<-list()
+  ## Prey Count Bins - Max Set High To Avoid breaking due to  some Noisy measurements
+  dispBreaks <- seq(0,preyCntRange[2]+5,5) 
+  
+  # Truncate Prey Count To Maximum Of Range
+  datDispersion[!is.na(datDispersion$PreyCount) & 
+                  datDispersion$PreyCount >  preyCntRange[2],"PreyCount"] = preyCntRange[2]
+  
+ 
   
   strRG <- list(LF=c("LE","LL"),NF=c("NE","NL"),DF=c("DE","DL")) #LF=c("LE","LL")
   for (strG in names(strRG) )
   {
     message(strG) 
-    ## INcrease Sampling of the more rare High Density  
-    datDispersionG_Low <- datDispersion[!is.na(datDispersion$PreyCount) &
+   
+    
+    
+    ##Sample From Each Prey Density Bin Equally
+    datDispersionG <- datDispersion[!is.na(datDispersion$PreyCount) &
                                           !is.na(datDispersion$MSD) &
-                                          datDispersion$groupID %in% strRG[[strG]] &
-                                          datDispersion$PreyCount <= preyCntRange[2]/3, ]
-    idx_L = sample(1:NROW(datDispersionG_Low),
-                   size=min(dataSamples/2,NROW(datDispersionG_Low)), replace=FALSE )
-    
-    datDispersionG_High <- datDispersion[!is.na(datDispersion$PreyCount) &
-                                           !is.na(datDispersion$MSD) &
-                                           datDispersion$groupID %in% strRG[[strG]] &
-                                           datDispersion$PreyCount > preyCntRange[2]/3 & 
-                                           datDispersion$PreyCount <= preyCntRange[2], ]
-    idx_H = sample(1:NROW(datDispersionG_High),
-                   size=min(dataSamples/2,NROW(datDispersionG_High)), replace=FALSE )
-    
-    ##Combine Low/High Range Samples
-    ## Sample MSD and PreyDensity From Each Group equally at both ranges (Reduce error in Estimate High Range)
-    datDispersion_Subset <- rbind(datDispersionG_High[idx_H,],datDispersionG_Low[idx_L,])
+                                          datDispersion$groupID %in% strRG[[strG]], ]
+
     ## Correct Prey Count Noise in Empty Condition
-    datDispersion_Subset[datDispersion_Subset$groupID == strRG[[strG]][1],"PreyCount" ] = 0
+    datDispersionG[datDispersionG$groupID == strRG[[strG]][1],"PreyCount" ] = 0
+    
+    ##Sample Equally From Each bin so we obtain more uniform MSD data samples across densities
+    datDispersion_Subset <- getUnifPreyCountSample(datDispersionG,dataSamples,dispBreaks)
     
     # Show Data Points
     plot(datDispersion_Subset$PreyCount,datDispersion_Subset$MSD)
     
     #### LOAD And prepare MODEL DATA #### 
     assign("last.warning", NULL, envir = baseenv())
-    
     modelData[[strG]] = list(prey=datDispersion_Subset$PreyCount, 
                              MSD=as.numeric(datDispersion_Subset$MSD),
                              N = NROW(datDispersion_Subset) )
@@ -164,9 +196,9 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     
   }  
   
-  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
+  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",NROW(sampledRows),modelFileName,".RData"))
   save(draw,modelData,m,steps,thin,
-       file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",modelFileName,".RData"))
+       file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",NROW(sampledRows),modelFileName,".RData"))
   
   return (list(draw=draw,data=modelData))
 }
@@ -241,14 +273,14 @@ inits_func_VarRho <- function(chain){
 
 
 
-
 modelFileName <- vector()
 modelFileName[1] <-modelFixedRho(10,1,0.035)
-modelFileName[2] <-modelFixedRho(50,1,0.035)
-modelFileName[3] <-modelFixedRho(150,1,0.035)
+modelFileName[2] <-modelFixedRho(50,1,0.035) #**********
+modelFileName[3] <-modelFixedRho(50,1,0.075) #**********
+#modelFileName[3] <-modelFixedRho(150,1,0.035)
 modelFileName[4] <-modelFixedRho(250,1,0.035)
 modelFileName[5] <-modelFixedRho(10,1,0.025)
-modelFileName[6] <-modelFixedRho(50,1,0.025) #***
+modelFileName[6] <-modelFixedRho(50,1,0.025) #****
 modelFileName[7] <-modelFixedRho(150,1,0.025)
 modelFileName[8] <-modelFixedRho(250,1,0.025)
 modelFileName[9] <-modelFixedRho(10,1,0.015)
@@ -260,25 +292,25 @@ modelFileName[14] <-modelFixedRho(5,20,0.1) ## Try Weak Correlation - Wider Band
 modelFileName[15] <-modelFixedRho(10,20,0.05) ## *****
 modelFileName[16] <-modelFixedRho(15,40,0.05) ## Try Weak Correlation - Wider Band
 modelFileName[16] <-modelFixedRho(5,10,0.025) ## Try Weak Correlation - Wider Band
-modelFileName[17] <-modelFixedRho(430,10,0.025) # *** Follow up from 6: Centre Tau more tight around 45 - Covariance Wide
-modelFileName[18] <-modelFixedRho(250,6,0.025) # ***Follow up from 17:  Make Tau Narrow So confidence Intervals remain wide
-modelFileName[19] <-modelFixedRho(850,20,0.025) # ***Follow up from 17: Not Tested
-modelFileName[20] <-modelFixedRho(1250,30,0.025) # ***Follow up from 17:   Not Tested
-modelFileName[21] <-modelFixedRho(2250,55,0.025) # ***Follow up from 17: - This Showed to be narrow band
-modelFileName[22] <-modelFixedRho(20,1/2,0.025) # ***Looks Good  / Follow up from 21: - Make Prior Broader Around Working Region 
-modelFileName[23] <-modelFixedRho(20,20,0.05) ## *****
+modelFileName[17] <-modelFixedRho(430,10,0.025) # * Follow up from 6: Centre Tau more tight around 45 - Covariance Wide
+modelFileName[18] <-modelFixedRho(250,6,0.025) # *Follow up from 17:  Make Tau Narrow So confidence Intervals remain wide
+modelFileName[19] <-modelFixedRho(850,20,0.025) # *Follow up from 17: Not Tested
+modelFileName[20] <-modelFixedRho(1250,30,0.025) # *Follow up from 17:   Not Tested
+modelFileName[21] <-modelFixedRho(2250,55,0.025) # *Follow up from 17: - This Showed to be narrow band
+modelFileName[22] <-modelFixedRho(20,1/2,0.025) # *** Looks Good  / Follow up from 21: - Make Prior Broader Around Working Region 
+modelFileName[23] <-modelFixedRho(21,20,0.05) ## *** Looks Ok (Followup from 15)
 
 ##Variable Rho prior
-modelFileName[23] <-modelVarRho(20,1/2,1,10) # ***Follow up from 21: - Make Prior Broader Around Working Region 
+#modelFileName[23] <-modelVarRho(20,1/2,1,10) # ***Follow up from 21: - Make Prior Broader Around Working Region 
 modelFileName[24] <-modelVarRho(20,1/2,1/2,10) # ***Follow up from 21: - Make Prior Broader Around Working Region
 modelFileName[25] <-modelVarRho(50,1,1/2,10) # ***Follow up from 21: - Make Prior Broader Around Working Region
 modelFileName[26] <-modelVarRho(50,1,1,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
 modelFileName[27] <-modelVarRho(50,1,10,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
 
-modelFileName[28] <-modelVarRho(15,40,10,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
-modelFileName[29] <-modelVarRho(15,40,1,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
-modelFileName[30] <-modelVarRho(15,40,1,1/2) # ***Follow up from 21: - Make Prior Broader Around Working Region
-modelFileName[31] <-modelVarRho(15,40,1,1/4) # ***Follow up from 21: - Make Prior Broader Around Working Region 
+modelFileName[28] <-modelVarRho(15,40,10,1) # XX Straight line *Follow up from 21: 
+modelFileName[29] <-modelVarRho(15,40,1,1) # XX Straight line ***Follow up from 21: - Make Prior Broader Around Working Region
+modelFileName[30] <-modelVarRho(15,40,1,1/2) # XX Straight line***Follow up from 21: - Make Prior Broader Around Working Region
+modelFileName[31] <-modelVarRho(15,40,1,1/4) # XX Straight line ***Follow up from 21: - Make Prior Broader Around Working Region 
 #mean(dgamma(-1000:10000,shape=1,rate=1))
 
 #plot(dgamma(1:80,shape=100,rate=1),main="tau")
@@ -287,7 +319,7 @@ modelFileName[31] <-modelVarRho(15,40,1,1/4) # ***Follow up from 21: - Make Prio
 
 t = 2
 ## Prepare Data - 
-preyCntRange <- c(0,80) ## Prey Density Range to Include in Model
+preyCntRange <- c(0,70) ## Prey Density Range to Include in Model
 message(paste(" Loading Dispersion Dat List to Analyse... "))
 datDispersion <- loadDispersionData(FALSE,t)  
 datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
@@ -396,16 +428,16 @@ colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5
 ind = 10
 
 ### RUN MOdel Sequence
-for (i in c(23))
+for (i in c(2,3,6))
 {
-  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=150,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
+  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=180,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
   draw <- retM[[1]]
   modelData <- retM[[2]]
   plotPDFOutput(modelData,draw,modelFileName[i])
 }
 
 # 
-strSuffix <- "model-tauS10R20-rho0.05.tmp" #modelFileName[2]
+strSuffix <- "model-tauS50R1-rho0.025.tmp" #modelFileName[2]
 load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData"))
 #load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSDmodel-tauS10R1-rho0.025.tmp.RData"))
 plotPDFOutput(modelData,draw,strSuffix)
@@ -448,5 +480,62 @@ preyLevelsPerGroup <- data.frame(preyCount=as.integer(preyLevelsPerGroup[,1]),gr
 
 pairwise.t.test (preyLevelsPerGroup$preyCount ,preyLevelsPerGroup$group, pool.sd = TRUE,paired=FALSE)
 
-### Added NS diffe in prey ouunt to Fig Supp
 
+
+
+### TEST BSAR model 
+# bsamGP: An R Package for Bayesian Spectral Analysis Models Using Gaussian Process Priors Seongil
+
+library(bsamGP)
+
+##Sample Equally From Each bin so we obtain more uniform MSD data samples across densities
+datDispersion_Subset <- NA
+strRG <- list(LF=c("LE","LL"),NF=c("NE","NL"),DF=c("DE","DL")) #LF=c("LE","LL")
+strG <- "LF"
+  message(strG) 
+  ##Sample From Each Prey Density Bin Equally
+  datDispersionG <- datDispersion[!is.na(datDispersion$PreyCount) &
+                                    !is.na(datDispersion$MSD) &
+                                    datDispersion$groupID %in% strRG[[strG]], ]
+  
+  ## Correct Prey Count Noise in Empty Condition
+  datDispersionG[datDispersionG$groupID == strRG[[strG]][1],"PreyCount" ] = 0
+  ##Sample Equally From Each bin so we obtain more uniform MSD data samples across densities
+  datDispersion_Subset <- getUnifPreyCountSample(datDispersionG,dataSamples,dispBreaks)
+
+
+
+## Synthetic Data - Example
+n <- NROW(datDispersion_Subset)
+
+f <- function(x) {
+   5-10*x+8*exp(-100*(x-0.3)^2)-
+     8 * exp(- 100 * (x - 0.7) ^ 2)
+}
+
+w <- rnorm(n, sd = 0.5)
+x <- runif(n)
+y <- 2 * w + f(x) + rnorm(n, sd = 1)
+
+
+y <- datDispersion_Subset$MSD
+x <- datDispersion_Subset$PreyCount
+
+plot(x,y)
+
+nbasis <- 10
+prior <- list(beta_m0 = numeric(20), beta_v0 = diag(100, 2), w0 = 20,
+              tau2_m0 = 10, tau2_v0 = 10, sigma2_m0 = 5, sigma2_v0 = 10)
+
+mcmc <- list(nblow = 10000, nskip = 10, smcmc = 5000, ndisp = 5000)
+fout <- bsar(y ~ w + fs(x), nbasis = nbasis, mcmc = mcmc, prior = prior,
+             shape = "Free", marginal.likelihood = TRUE, spm.adequacy = TRUE)
+
+library("coda")
+post <- as.mcmc(data.frame(beta = fout$mcmc.draws$beta,                 sigma2 = fout$mcmc.draws$sigma2))
+plot(post)
+plot(fout)
+
+##Now Predict 
+fit <- fitted(fout, HPD = FALSE)
+plot(fit, ggplot2 = FALSE)
