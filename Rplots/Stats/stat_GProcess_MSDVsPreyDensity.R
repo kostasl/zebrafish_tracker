@@ -197,6 +197,7 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
   }  
   
   message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",NROW(sampledRows),modelFileName,".RData"))
+  
   save(draw,modelData,m,steps,thin,
        file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",NROW(sampledRows),modelFileName,".RData"))
   
@@ -280,7 +281,7 @@ modelFileName[3] <-modelFixedRho(50,1,0.075) #**********
 #modelFileName[3] <-modelFixedRho(150,1,0.035)
 modelFileName[4] <-modelFixedRho(250,1,0.035)
 modelFileName[5] <-modelFixedRho(10,1,0.025)
-modelFileName[6] <-modelFixedRho(50,1,0.025) #****
+modelFileName[6] <-modelFixedRho(50,1,0.025) #******** Best One 
 modelFileName[7] <-modelFixedRho(150,1,0.025)
 modelFileName[8] <-modelFixedRho(250,1,0.025)
 modelFileName[9] <-modelFixedRho(10,1,0.015)
