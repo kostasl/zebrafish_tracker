@@ -114,7 +114,7 @@ getUnifPreyCountSample <- function(datDispersionG,dataSamples,dispBreaks)
   
   ##Sample Equally From Each bin so we obtain more uniform MSD data samples across densities
   iSampleLoan <- 0 ##If samples Missing from A bin, then increase # samples for next bin
-  datDispersion_Subset <- NA
+  datDispersion_Subset <- data.frame()
   ## Sample MSD and PreyDensity From Each Group equally at both ranges (Reduce error in Estimate High Range)
   for (pdbin in levels(datDispersionG$dispRange) )
   {
@@ -196,10 +196,10 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     
   }  
   
-  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",NROW(sampledRows),modelFileName,".RData"))
+  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",dataSamples,modelFileName,".RData"))
   
   save(draw,modelData,m,steps,thin,
-       file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",NROW(sampledRows),modelFileName,".RData"))
+       file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",dataSamples,modelFileName,".RData"))
   
   return (list(draw=draw,data=modelData))
 }
@@ -317,10 +317,9 @@ modelFileName[31] <-modelVarRho(15,40,1,1/4) # XX Straight line ***Follow up fro
 #plot(dgamma(1:80,shape=100,rate=1),main="tau")
 
 
-
 t = 2
 ## Prepare Data - 
-preyCntRange <- c(0,70) ## Prey Density Range to Include in Model
+preyCntRange <- c(0,60) ## Prey Density Range to Include in Model
 message(paste(" Loading Dispersion Dat List to Analyse... "))
 datDispersion <- loadDispersionData(FALSE,t)  
 datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
@@ -393,11 +392,11 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
        xlab="Prey Density (Rotifers/10ml)",
        cex=1.4,
        cex.axis = 1.7,
-       cex.lab = 1.5,
-       ylim = c(0,60),##preyCntRange,
-       xlim = c(1,70),##preyCntRange,
-       asp=1,
-       #log="x",
+       cex.lab = 1.7,
+       ylim = c(0,31),##preyCntRange,
+       xlim = c(1,60),##preyCntRange,
+       #asp=1,
+       #log="y",
        pch=pointTypeScheme$LL,
        #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
        #           "tau0:",format(mean(draw[["LF"]]$tau0),digits=4 ) ,
@@ -429,9 +428,9 @@ colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5
 ind = 10
 
 ### RUN MOdel Sequence
-for (i in c(2,3,6))
+for (i in c(6))
 {
-  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=180,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
+  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=200,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
   draw <- retM[[1]]
   modelData <- retM[[2]]
   plotPDFOutput(modelData,draw,modelFileName[i])

@@ -177,8 +177,8 @@ par(mar = c(4.1,4.8,3,1))
        xlab="Initial Prey Density (Rotifers/10ml)",
        cex=1.4,
        cex.axis = 1.7,
-       cex.lab = 1.5,
-       xlim = c(1,80),##preyCntRange,
+       cex.lab = 1.7,
+       xlim = c(1,60),##preyCntRange,
        #log="x",
        pch=pointTypeScheme$LL,
        #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
@@ -186,7 +186,7 @@ par(mar = c(4.1,4.8,3,1))
       #           "rho:",format(mean(draw[["LF"]]$rho),digits=4 ) )  
   )
   
-  legend("topleft",legend = c(paste("LF #",data$LF$N),paste("NF #",data$NF$N ),paste("DF #",data$DF$N)),
+  legend("topright",legend = c(paste("LF #",data$LF$N),paste("NF #",data$NF$N ),paste("DF #",data$DF$N)),
          col=c(colourDataScheme[["LF"]]$Evoked,colourDataScheme[["NF"]]$Evoked,colourDataScheme[["DF"]]$Evoked),
          pch=c(pointTypeScheme$LL,pointTypeScheme$NL,pointTypeScheme$DL ),cex=1.5 )
   
