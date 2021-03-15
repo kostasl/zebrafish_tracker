@@ -290,7 +290,7 @@ modelFileName[11] <-modelFixedRho(150,1,0.015)
 modelFileName[12] <-modelFixedRho(250,1,0.015)
 modelFileName[13] <-modelFixedRho(10,1,0.035) ## Works Nicely
 modelFileName[14] <-modelFixedRho(5,20,0.1) ## Try Weak Correlation - Wider Band
-modelFileName[15] <-modelFixedRho(10,20,0.05) ## *****
+modelFileName[15] <-modelFixedRho(10,20,0.05) ## ***** Very Good
 modelFileName[16] <-modelFixedRho(15,40,0.05) ## Try Weak Correlation - Wider Band
 modelFileName[16] <-modelFixedRho(5,10,0.025) ## Try Weak Correlation - Wider Band
 modelFileName[17] <-modelFixedRho(430,10,0.025) # * Follow up from 6: Centre Tau more tight around 45 - Covariance Wide
@@ -300,6 +300,7 @@ modelFileName[20] <-modelFixedRho(1250,30,0.025) # *Follow up from 17:   Not Tes
 modelFileName[21] <-modelFixedRho(2250,55,0.025) # *Follow up from 17: - This Showed to be narrow band
 modelFileName[22] <-modelFixedRho(20,1/2,0.025) # *** Looks Good  / Follow up from 21: - Make Prior Broader Around Working Region 
 modelFileName[23] <-modelFixedRho(21,20,0.05) ## *** Looks Ok (Followup from 15)
+modelFileName[24] <-modelFixedRho(10,1/4,0.01) # Repeat (With UnifData) 
 
 ##Variable Rho prior
 #modelFileName[23] <-modelVarRho(20,1/2,1,10) # ***Follow up from 21: - Make Prior Broader Around Working Region 
@@ -428,7 +429,7 @@ colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5
 ind = 10
 
 ### RUN MOdel Sequence
-for (i in c(6))
+for (i in c(24))
 {
   retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=200,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
   draw <- retM[[1]]
