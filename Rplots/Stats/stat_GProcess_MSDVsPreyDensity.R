@@ -196,10 +196,10 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     
   }  
   
-  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",dataSamples,modelFileName,".RData"))
+  message("Save JAGS results to file:",paste0(strDataExportDir,"/jags_GPPreyDensityVsMSDt",t,"_N",dataSamples,modelFileName,".RData"))
   
   save(draw,modelData,m,steps,thin,
-       file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD_N",dataSamples,modelFileName,".RData"))
+       file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSDt",t,"_N",dataSamples,modelFileName,".RData"))
   
   return (list(draw=draw,data=modelData))
 }
@@ -300,14 +300,15 @@ modelFileName[20] <-modelFixedRho(1250,30,0.025) # *Follow up from 17:   Not Tes
 modelFileName[21] <-modelFixedRho(2250,55,0.025) # *Follow up from 17: - This Showed to be narrow band
 modelFileName[22] <-modelFixedRho(20,1/2,0.025) # *** Looks Good  / Follow up from 21: - Make Prior Broader Around Working Region 
 modelFileName[23] <-modelFixedRho(21,20,0.05) ## *** Looks Ok (Followup from 15)
-modelFileName[24] <-modelFixedRho(10,1/4,0.01) # Repeat (With UnifData) 
+modelFileName[24] <-modelFixedRho(10,1/4,0.01) # *** Very good Repeat (With UnifData) 
+modelFileName[25] <-modelFixedRho(200,5,0.025) # *** Very good Repeat (With UnifData) 
 
 ##Variable Rho prior
 #modelFileName[23] <-modelVarRho(20,1/2,1,10) # ***Follow up from 21: - Make Prior Broader Around Working Region 
-modelFileName[24] <-modelVarRho(20,1/2,1/2,10) # ***Follow up from 21: - Make Prior Broader Around Working Region
-modelFileName[25] <-modelVarRho(50,1,1/2,10) # ***Follow up from 21: - Make Prior Broader Around Working Region
-modelFileName[26] <-modelVarRho(50,1,1,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
-modelFileName[27] <-modelVarRho(50,1,10,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
+#modelFileName[24] <-modelVarRho(20,1/2,1/2,10) # ***Follow up from 21: - Make Prior Broader Around Working Region
+#modelFileName[25] <-modelVarRho(50,1,1/2,10) # ***Follow up from 21: - Make Prior Broader Around Working Region
+#modelFileName[26] <-modelVarRho(50,1,1,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
+#modelFileName[27] <-modelVarRho(50,1,10,1) # ***Follow up from 21: - Make Prior Broader Around Working Region
 
 modelFileName[28] <-modelVarRho(15,40,10,1) # XX Straight line *Follow up from 21: 
 modelFileName[29] <-modelVarRho(15,40,1,1) # XX Straight line ***Follow up from 21: - Make Prior Broader Around Working Region
@@ -372,9 +373,9 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16,chain=1){
   #band=apply(Ef,2,quantile,probs=c(qq,1-qq))
   band1= mu + 2*sd
   band2= mu - 2*sd
-  lines(x_predict,mu,lwd=3,col=colour,xlim=c(0,max(x_predict) ) )
+  lines(x_predict,mu,lwd=4,col=colour,xlim=c(0,max(x_predict) ) )
   #polygon(c(x_predict,rev(x_predict)),c(band[1,],rev(band[2,])),col=colour)
-  polygon(c(x_predict,rev(x_predict)),c(band1,rev(band2)),col=colour)
+  polygon(c(x_predict,rev(x_predict)),c(band1,rev(band2)),col=colour,border=colour,lwd=3)
 }
 
 
@@ -383,19 +384,20 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
 {
   plot_Chain= 3
   #strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
-  strPlotName <-  paste(strPlotExportPath,"/stat_MSDVsPreyN",modelData$LF$N,modelFileName,".pdf",sep="")
+  strPlotName <-  paste(strPlotExportPath,"/stat_MSDt",t,"VsPreyN",modelData$LF$N,modelFileName,".pdf",sep="")
   pdf(strPlotName,width=8,height=8,title="GP Function of MSD Vs Prey Density") 
   par(mar = c(4.1,4.8,3,1))
   
   plot(modelData$LF$prey,modelData$LF$MSD,col=colourH[1],
        main = NA,
-       ylab="Mean squared displacement (mm/ 2 sec)",
+       ylab=paste0("Mean squared displacement (mm/ ",t," sec)"),
        xlab="Prey Density (Rotifers/10ml)",
        cex=1.4,
        cex.axis = 1.7,
        cex.lab = 1.7,
-       ylim = c(0,31),##preyCntRange,
+       ylim = c(0,61),##preyCntRange,
        xlim = c(1,60),##preyCntRange,
+       lwd=5,
        #asp=1,
        #log="y",
        pch=pointTypeScheme$LL,
@@ -404,7 +406,7 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
        #           "rho:",format(mean(draw[["LF"]]$rho),digits=4 ) )  
   )
   
-  
+  ind = 100
   plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=plot_Chain)
   #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=2)
   #plot_res(ind,draw[["LF"]],modelData$LF$prey,modelData$LF$MSD, colourH[1],0.05,pointTypeScheme$LL,chain=3)
@@ -426,12 +428,12 @@ plotPDFOutput <- function(modelData,draw,modelFileName)
 }
 
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
-ind = 10
+ind = 100
 
 ### RUN MOdel Sequence
-for (i in c(24))
+for (i in c(6))
 {
-  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=200,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
+  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=601,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
   draw <- retM[[1]]
   modelData <- retM[[2]]
   plotPDFOutput(modelData,draw,modelFileName[i])
@@ -444,13 +446,13 @@ load(file=paste0(strDataExportDir,"/jags_GPPreyDensityVsMSD",strSuffix,".RData")
 plotPDFOutput(modelData,draw,strSuffix)
 
 
-for (t_model in sample(modelFileName) )
-{
-  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=390,thin=2,t_model)
-  draw <- retM[[1]]
-  modelData <- retM[[2]]
-  plotPDFOutput(modelData,draw,t_model)
-}
+#for (t_model in sample(modelFileName) )
+#{
+#  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=390,thin=2,t_model)
+#  draw <- retM[[1]]
+#  modelData <- retM[[2]]
+#  plotPDFOutput(modelData,draw,t_model)
+#}
 
 
 ## Plot - Compare initial Prey Density Between Rearing Groups experiments ###
