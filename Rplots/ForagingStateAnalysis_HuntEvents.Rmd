@@ -138,9 +138,9 @@ strCumPlotName <-  paste(strPlotExportPath,"/stat/fig2S2-InitPreyCount_CDF.pdf",
 #pdf(strCumPlotName,width=8,height=8,title="Compare prey density testing conditions between groups") 
 
   par(mar = c(3.9,4.7,2,1))
-  plot(ecdf(foodlevelsNL),xlim=c(0,60),lwd=4,lty=1,col=colourLegL[1],main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,pch=pchL[1])
-  lines(ecdf(foodlevelsLL),xlim=c(0,60),lwd=4,lty=2,pch=pchL[2],col=colourLegL[2],cex=cex)
-  lines(ecdf(foodlevelsDL),xlim=c(0,60),lwd=4,lty=3,pch=pchL[3],col=colourLegL[3],cex=cex)
+  plot(ecdf(nFoodNL2),xlim=c(0,60),lwd=4,lty=1,col=colourLegL[1],main=NA,xlab=NA,ylab=NA,cex=cex,cex.axis=cex,pch=pchL[1])
+  lines(ecdf(nFoodLL2),xlim=c(0,60),lwd=4,lty=2,pch=pchL[2],col=colourLegL[2],cex=cex)
+  lines(ecdf(nFoodDL2),xlim=c(0,60),lwd=4,lty=3,pch=pchL[3],col=colourLegL[3],cex=cex)
   mtext(side = 1,cex=cex, line = 2.7, expression("Initial prey count in ROI (Tracker estimate)" ))
   mtext(side = 2,cex=cex, line = 2.2, expression(" Cumulative distribution " ))
   

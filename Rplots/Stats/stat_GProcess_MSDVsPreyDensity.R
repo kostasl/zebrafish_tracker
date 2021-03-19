@@ -106,11 +106,15 @@ modelVarRho <- function(tauShape,tauRate,rhoShape,rhoRate)
 }
 
 
+# Exclude MSD during hunt - events
 getUnifPreyCountSample <- function(datDispersionG,dataSamples,dispBreaks)
 {
   library(dplyr)
+  #datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
+  
   #Set Factor Indicating Bin Of Prey Density
   datDispersionG$dispRange <- cut(datDispersionG[ ,"PreyCount" ],breaks=dispBreaks,include.lowest = FALSE,right=FALSE)
+  
   
   ##Sample Equally From Each bin so we obtain more uniform MSD data samples across densities
   iSampleLoan <- 0 ##If samples Missing from A bin, then increase # samples for next bin
@@ -120,18 +124,17 @@ getUnifPreyCountSample <- function(datDispersionG,dataSamples,dispBreaks)
   {
     #print(pdbin)
     #idxs <- rownames()
-    datdatDispersionGBin <- datDispersionG[datDispersionG$dispRange %in% pdbin,]
+    datDispersionGBin <- datDispersionG[datDispersionG$dispRange %in% pdbin,]
     ## Take Random Subset + add any samples missed from the previous bin
-    datDispersionBin_Subset <- sample_n(datdatDispersionGBin,size=iSampleLoan+round(min(dataSamples,NROW(datdatDispersionGBin))/length(dispBreaks)) ) 
+    datDispersionBin_Subset <- sample_n(datDispersionGBin,size=iSampleLoan+round(min(dataSamples,NROW(datDispersionGBin))/length(dispBreaks)) ) 
     
     if (NROW(datDispersion_Subset) >0 ){
       datDispersion_Subset <- rbind(datDispersion_Subset,datDispersionBin_Subset)
-    }
-    else
-    {
+    }else{
       datDispersion_Subset <-datDispersionBin_Subset
     }
     
+
     ##If Samples Where not enough within Bin
     iSampleLoan <- iSampleLoan +  round(dataSamples/length(dispBreaks)) -NROW(datDispersionBin_Subset)
   }
@@ -142,7 +145,7 @@ getUnifPreyCountSample <- function(datDispersionG,dataSamples,dispBreaks)
 #### Run Model  #### 
 # Saves Sampls to RData file and returns Samples and Data - so they can be plotted
 # A total of n=dataSamples   Are taken Across preydensities equally - by bining  in widths of 5 
-inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=120,thin=2,modelFileName,inits_func = inits_func_fixRho)
+inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=120,thin=2,modelFileName,inits_func = inits_func_fixRho,excludeHuntEvents = TRUE)
 {
   library(rjags)
   
@@ -168,7 +171,14 @@ inferGPModel_MSDVsPreyDensity <- function (burn_in=140,steps=10000,dataSamples=1
     ##Sample From Each Prey Density Bin Equally
     datDispersionG <- datDispersion[!is.na(datDispersion$PreyCount) &
                                           !is.na(datDispersion$MSD) &
-                                          datDispersion$groupID %in% strRG[[strG]], ]
+                                          datDispersion$groupID %in% strRG[[strG]]
+                                    , ]
+    
+    ##Remove Hunt Events Using Eye Vergence Threshold
+    if (excludeHuntEvents) ## The simplest and dumbest way can be the most clear and effective
+      datDispersionG <- datDispersionG[datDispersionG$eyeVergence < G_THRESHUNTVERGENCEANGLE,]
+    
+    
 
     ## Correct Prey Count Noise in Empty Condition
     datDispersionG[datDispersionG$groupID == strRG[[strG]][1],"PreyCount" ] = 0
@@ -324,7 +334,13 @@ t = 2
 preyCntRange <- c(0,60) ## Prey Density Range to Include in Model
 message(paste(" Loading Dispersion Dat List to Analyse... "))
 datDispersion <- loadDispersionData(FALSE,t)  
-datHuntLabelledEventsSBMerged <- getLabelledHuntEventsSet()
+
+## Add Eye Vergence so we can remove Movements that are part of hunt event
+if ((!any(names(datDispersion) == "eyeVergence"))){
+  loaddatAllFrames()
+  datDispersion$eyeVergence <- datAllFrames[datDispersion$frameRow,]$LEyeAngle-datAllFrames[datDispersion$frameRow,]$REyeAngle
+}
+
 
 # 
 # #setup parallel backend to use many processors
@@ -433,7 +449,7 @@ ind = 100
 ### RUN MOdel Sequence
 for (i in c(6))
 {
-  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=601,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
+  retM <- inferGPModel_MSDVsPreyDensity(burn_in=150,steps=1000,dataSamples=221,thin=2, modelFileName[i] ,inits_func = inits_func_fixRho)
   draw <- retM[[1]]
   modelData <- retM[[2]]
   plotPDFOutput(modelData,draw,modelFileName[i])
@@ -493,6 +509,8 @@ library(bsamGP)
 
 ##Sample Equally From Each bin so we obtain more uniform MSD data samples across densities
 datDispersion_Subset <- NA
+dispBreaks <- seq(0,preyCntRange[2]+5,5) 
+dataSamples <- 4000
 strRG <- list(LF=c("LE","LL"),NF=c("NE","NL"),DF=c("DE","DL")) #LF=c("LE","LL")
 strG <- "LF"
   message(strG) 
@@ -527,11 +545,11 @@ x <- datDispersion_Subset$PreyCount
 plot(x,y)
 
 nbasis <- 10
-prior <- list(beta_m0 = numeric(20), beta_v0 = diag(100, 2), w0 = 20,
+prior <- list(beta_m0 = numeric(2), beta_v0 = diag(100, 2), w0 = 20,
               tau2_m0 = 10, tau2_v0 = 10, sigma2_m0 = 5, sigma2_v0 = 10)
 
 mcmc <- list(nblow = 10000, nskip = 10, smcmc = 5000, ndisp = 5000)
-fout <- bsar(y ~ w + fs(x), nbasis = nbasis, mcmc = mcmc, prior = prior,
+fout <- bsar(y ~ w + fs(x), nbasis = nbasis, mcmc = mcmc, prior = prior,xmin=preyCntRange[1],xmax=preyCntRange[2],nint=preyCntRange[2],
              shape = "Free", marginal.likelihood = TRUE, spm.adequacy = TRUE)
 
 library("coda")
@@ -539,6 +557,9 @@ post <- as.mcmc(data.frame(beta = fout$mcmc.draws$beta,                 sigma2 =
 plot(post)
 plot(fout)
 
-##Now Predict 
+## Now Predict 
 fit <- fitted(fout, HPD = FALSE)
-plot(fit, ggplot2 = FALSE)
+
+plot(fit, ggplot2 = TRUE)
+
+plot(fit$x,fit$model)
