@@ -150,9 +150,9 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
   #band=apply(Ef,2,quantile,probs=c(qq,1-qq))
   band1= mu + 2*sd
   band2= mu - 2*sd
-  lines(x_predict,mu,lwd=3,col=colour,xlim=c(0,max(x_predict) ) )
+  lines(x_predict,mu,lwd=4,col=colour,xlim=c(0,max(x_predict) ) )
   #polygon(c(x_predict,rev(x_predict)),c(band[1,],rev(band[2,])),col=colour)
-  polygon(c(x_predict,rev(x_predict)),c(band1,rev(band2)),col=colour)
+  polygon(c(x_predict,rev(x_predict)),c(band1,rev(band2)),col=colour,border=colour)
 }
 
 
@@ -160,7 +160,7 @@ plot_res<- function(ind,drawY,Xn,Yn,colour='red ',qq=0.05,pPch=16){
 colourH <- c(rgb(0.01,0.7,0.01,0.5),rgb(0.9,0.01,0.01,0.5),rgb(0.01,0.01,0.9,0.5),rgb(0.00,0.00,0.0,1.0))
 
 
-ind = 10
+ind = 100
 
 #
 load(file=paste0(strDataExportDir,"/jags_FoodDensityVsHuntRate_GP2.RData"))
@@ -168,17 +168,17 @@ Rho <-format( mean(draw$LF$rho),digits=2)
 tau <- format( mean(draw$LF$tau),digits=2)
 #strPlotName <- paste("plots/stat_HuntEventRateVsPrey_GPEstimate-tauLL",round(mean(draw[["LL"]]$tau)),".pdf",sep="-")
 strPlotName <-  paste(strPlotExportPath,"/stat_HuntEventRateVsPrey_GioGPEstimate-tauMax",tau,"-Rho",Rho,".pdf",sep="")
-pdf(strPlotName,width=8,height=8,title="GP Function of Hunt Rate Vs Prey") 
+pdf(strPlotName,width=8,height=6,title="GP Function of Hunt Rate Vs Prey") 
 par(mar = c(4.1,4.8,3,1))
-  
   plot(data$LF$food,data$LF$n,col=colourH[1],
        main = NA,
-       ylab="Number of Hunt Events in 10 min",
-       xlab="Initial Prey Density (Rotifers/10ml)",
+       ylab="Hunt-events / 10 min",
+       xlab="Initial prey density (Rotifers/10ml)",
        cex=1.4,
        cex.axis = 1.7,
        cex.lab = 1.7,
-       xlim = c(1,60),##preyCntRange,
+       xlim = c(1,58),##preyCntRange,
+       ylim = c(0,41),##preyCntRange,
        #log="x",
        pch=pointTypeScheme$LL,
        #sub=paste("GP tau:",format(mean(draw[["LF"]]$tau),digits=4 ),
