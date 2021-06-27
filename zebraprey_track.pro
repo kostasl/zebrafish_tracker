@@ -1,9 +1,17 @@
 #Good to have compiled opencv with qt support so the window can autoresize.
 ##Suggestion Is though that for Qt5 do not Compile With With_QT=ON, as this will link to Qt4
+##Also: May get link error to OpenGL and Qt5Test.so.5 when OpenCV is linked a different version of QT than then one used
+# to compile project. SOLUTION: change soft links to Qt5 libs in OS dirs to point to the correct QT lib version ones:
+# e.g.:
+# sudo rm /usr/lib/x86_64-linux-gnu/libQt5Test.so.5
+# sudo ln -s /opt/Qt/5.15.0/gcc_64/lib/libQt5Test.so.5 /usr/lib/x86_64-linux-gnu/libQt5Test.so.5
+
 
 TEMPLATE = app
 
 QT += widgets gui qml quick
+#QTDIR = "/opt/Qt/"
+
 
 CONFIG += c++11
 CONFIG += warn_off
@@ -35,7 +43,7 @@ RC_ICONS = myappico.ico
 
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
-PKGCONFIG += opencv gsl #or whatever package here
+PKGCONFIG += opencv gsl  #or whatever package here
 
 ##pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3)
 #pkg-config --list-all

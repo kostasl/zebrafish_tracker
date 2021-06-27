@@ -186,6 +186,7 @@ int main(int argc, char *argv[])
     ssMsg << "Example: \n  Use checkFilesProcessed.sh script to generate list of videos to processes then execute as : " << std::endl;
     ssMsg << "./zebrafish_track -f=VidFilesToProcessSplit1.txt -o=/media/kostasl/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/Tracked30-11-17/" << std::endl;
     ssMsg << "-Make Sure QT can be found : use export LD_LIBRARY_PATH= path to Qt/5.11.1/gcc_64/lib/  " << std::endl;
+    ssMsg << "Double click on food item to start tracking it. Dbl click on Fish head to adjust Template position." << std::endl;
     parser.about(ssMsg.str() );
 
     gTrackerState.initGlobalParams(parser,gTrackerState.inVidFileNames);

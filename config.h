@@ -210,7 +210,7 @@ class trackerState
       bool bAddPreyManually   = false;
       bool bMeasure2pDistance = true; /// A mode allowing 2point distance measurement
       bool bTrackFish         = true;
-      bool bTrackAllPrey      = true; ///Track All detected Prey Models/Once established Active
+      bool bTrackAllPrey      = false; ///Track All detected Prey Models/Once established Active
       bool bRecordToFile      = true;
       bool bSaveImages            = false;
       bool gOptimizeShapeMatching = false; ///Set to false To disable matchShapes in FindMatching Contour

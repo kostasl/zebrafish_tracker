@@ -57,8 +57,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->mImageTemplateInset    = mInsetTemplateScene->addPixmap(pxMapEmpty3);
 
     this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
-    this->ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    this->ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    //this->ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded); //leave option down to  Form Editor
+        //this->ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
     this->ui->graphicsViewHead->setSceneRect(this->ui->graphicsViewHead->geometry()); // set the scene's bounding rect to rect of mainwindow
     this->ui->graphicsViewHead->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
