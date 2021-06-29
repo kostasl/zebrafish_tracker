@@ -131,6 +131,8 @@ private slots:
 
     void on_spinBoxEyeMaskW_valueChanged(int arg1);
 
+    void on_graphicsView_rubberBandChanged(const QRect &viewportRect, const QPointF &fromScenePoint, const QPointF &toScenePoint);
+
 private:
     void reportUserMeasurement(cv::Point ptMouse);
 

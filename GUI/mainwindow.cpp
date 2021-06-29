@@ -1,7 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+
 #include "config.h"
+#include <QtMath>
+#include <QScrollBar>
+#include <QEvent>
 #include "larvatrack.h" //For resetDataRecording()
 #include "QtOpencvCore.hpp"
 #include <QStringListModel>
@@ -44,6 +48,16 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->graphicsViewHead->setScene(this->mInsetScene);
     this->ui->graphicsViewTemplate->setScene(this->mInsetTemplateScene);
 
+
+    this->ui->graphicsViewHead->setSceneRect(this->ui->graphicsViewHead->geometry()); // set the scene's bounding rect to rect of mainwindow
+    this->ui->graphicsViewHead->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->ui->graphicsViewHead->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+
+    this->ui->graphicsViewTemplate->setSceneRect(this->ui->graphicsViewTemplate->geometry()); // set the scene's bounding rect to rect of mainwindow
+    this->ui->graphicsViewTemplate->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->ui->graphicsViewTemplate->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
     //this->ui->graphicsView->setFixedSize(1280,1024);
     //mScene->setSceneRect(this->ui->graphicsView->rect());
 
@@ -59,15 +73,6 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
     //this->ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded); //leave option down to  Form Editor
         //this->ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
-    this->ui->graphicsViewHead->setSceneRect(this->ui->graphicsViewHead->geometry()); // set the scene's bounding rect to rect of mainwindow
-    this->ui->graphicsViewHead->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    this->ui->graphicsViewHead->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-
-    this->ui->graphicsViewTemplate->setSceneRect(this->ui->graphicsViewTemplate->geometry()); // set the scene's bounding rect to rect of mainwindow
-    this->ui->graphicsViewTemplate->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    this->ui->graphicsViewTemplate->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 
     this->ui->horizontalSlider->setRange(0,50000);
@@ -462,8 +467,12 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         handleSliderChange(event);
 
     }
-    if (event->type() == QEvent::GraphicsSceneWheel) {
-        handleWheelOnGraphicsScene(dynamic_cast<QGraphicsSceneWheelEvent*> (event));
+
+    if (event->type() == QEvent::GraphicsSceneWheel)// QEvent::Wheel
+    { //
+
+        QGraphicsSceneWheelEvent *wheelEvent = dynamic_cast<QGraphicsSceneWheelEvent *>(event);
+        handleWheelOnGraphicsScene(wheelEvent);
 
         // Don't propagate
         event->accept();
@@ -618,36 +627,50 @@ void MainWindow::handleSliderChange(QEvent* event)
 
 void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent)
 {
-  const int degrees = scrollevent->delta()  / 8;
-  qDebug() << degrees;
+    //Using Native Graphics Scene Scale capabilities :
+    // thx to :https://stackoverflow.com/questions/19113532/qgraphicsview-zooming-in-and-out-under-mouse-position-using-mouse-wheel
+  //if (scrollevent->modifiers() & Qt::ControlModifier)
 
-  int steps = degrees / 15;
-  qDebug() << steps;
+        // Do a wheel-based zoom about the cursor position
+        //QPoint numPixels = scrollevent->pixelDelta();
+        //QPoint angle = scrollevent->angleDelta() / 8;
+        double factor = 1.0;
 
-  double scaleFactor = 1.0; //How fast we zoom
-  const qreal minFactor = -100.0;
-  const qreal maxFactor = 100.0;
-  qreal h11 = 1.0, h22 = 0;
+        int angle =  scrollevent->delta();
 
-  //ui->graphicsView->setFixedSize(ui->graphicsView->size()+steps);
+        //if (!angle.isNull())
+        //{
+           if (angle > 0){
+                    factor = 1.1;}
+            else{
+                    factor = 0.9;}
 
-//  if(steps > 0)
-//  {
-//     h11 = (h11 >= maxFactor) ? h11 : (h11 + scaleFactor);
-//     h22 = (h22 >= maxFactor) ? h22 : (h22 + scaleFactor);
-//  }
-//  else
-// {
-//     h11 = (h11 <= minFactor) ? minFactor : (h11 - scaleFactor);
-//     h22 = (h22 <= minFactor) ? minFactor : (h22 - scaleFactor);
-// }
-//    this->ui->graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
-//    this->ui->graphicsView->setTransform(QTransform(h11, 0, 0,0, h22, 0, 0,0,1));
-    //this->mImage->transform().scale(50,50);
+        qDebug() << " Angle:" << angle << " Zm:"<< factor;
+       // }
+        //double factor = qPow(1.0015, angle);
 
 
+        QPointF targetViewportPos = scrollevent->pos();
+        QPointF targetScenePos = this->ui->graphicsView->mapToScene(scrollevent->pos().x(),scrollevent->pos().y());
 
-  //this->mImage->transform().scale(this->mImage->scale()+ steps,this->mImage->scale()+ steps);
+        this->ui->graphicsView->scale(factor, factor);
+        this->ui->graphicsView->centerOn(targetScenePos);
+        QPointF deltaViewportPos = targetViewportPos - QPointF(this->ui->graphicsView->viewport()->width() / 2.0,
+                                                               this->ui->graphicsView->viewport()->height() / 2.0);
+        QPointF viewportCenter = this->ui->graphicsView->mapFromScene(targetScenePos) - deltaViewportPos;
+
+        //this->ui->graphicsView->centerOn(this->ui->graphicsView->mapToScene(viewportCenter.toPoint()));
+
+        const QPointF p1mouse =  this->ui->graphicsView->mapFromScene(targetScenePos);
+        const QPointF move = p1mouse - scrollevent->pos(); // The move
+
+        int hScroll = this->ui->graphicsView->horizontalScrollBar()->value();
+        int vScroll = this->ui->graphicsView->verticalScrollBar()->value();
+
+        this->ui->graphicsView->horizontalScrollBar()->setValue(targetScenePos.x() + hScroll);
+        this->ui->graphicsView->verticalScrollBar()->setValue(targetScenePos.y() + vScroll);
+
+    return;
 }
 
 
@@ -1223,3 +1246,11 @@ void MainWindow::on_spinBoxEyeMaskW_valueChanged(int arg1)
 {
     gTrackerState.iEyeMaskSepWidth = arg1;
 }
+
+
+
+void MainWindow::on_graphicsView_rubberBandChanged(const QRect &viewportRect, const QPointF &fromScenePoint, const QPointF &toScenePoint)
+{
+
+}
+
