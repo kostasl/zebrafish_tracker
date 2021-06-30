@@ -670,6 +670,12 @@ void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrolleven
         this->ui->graphicsView->horizontalScrollBar()->setValue(targetScenePos.x() + hScroll);
         this->ui->graphicsView->verticalScrollBar()->setValue(targetScenePos.y() + vScroll);
 
+                QRect bound = this->ui->graphicsView->geometry();
+                this->mScene->setSceneRect(bound);
+               //this->ui->graphicsView->fitInView(this->mImage->boundingRect(), Qt::KeepAspectRatio);
+                this->mImage->setPos(bound.topLeft().x() ,bound.topLeft().y());
+
+
     return;
 }
 

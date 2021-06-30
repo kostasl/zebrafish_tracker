@@ -174,6 +174,8 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
             else
             {//Frame Grabbed - Process It
 
+
+                assert(!frame.empty());
                 //Get Frame Position From Vid Sam
                 nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
                 window_main.nFrame = nFrame; //Update Window
@@ -611,11 +613,11 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             qDebug() << "C.Elongation filtered:" <<  dElongation;
             continue;
         }*/
-        //Check If Elongated Object Detected
+        //Check If Elongated Object  - Use Width Height Ratio
         cv::RotatedRect boundEllipse = cv::fitEllipse(curve);
         cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),cv::LINE_8);
-        if (boundEllipse.size.width/boundEllipse.size.height < 5 &&
-                boundEllipse.size.height/boundEllipse.size.width < 5)
+        if (boundEllipse.size.width/boundEllipse.size.height < 2.5 &&
+                boundEllipse.size.height/boundEllipse.size.width < 2.5)
             continue;
 
 
