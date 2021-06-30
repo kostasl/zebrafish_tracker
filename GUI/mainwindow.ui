@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>813</width>
-    <height>784</height>
+    <width>740</width>
+    <height>732</height>
    </rect>
   </property>
   <property name="font">
@@ -19,7 +19,10 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_2">
+   <layout class="QGridLayout" name="gridLayout_2" rowstretch="5,1" columnstretch="1,0,0,0,0,0,0,0,0,0" rowminimumheight="100,0" columnminimumwidth="15,0,0,0,0,0,0,0,0,0">
+    <property name="verticalSpacing">
+     <number>4</number>
+    </property>
     <item row="1" column="0">
      <widget class="QListView" name="listView">
       <property name="sizePolicy">
@@ -31,7 +34,7 @@
      </widget>
     </item>
     <item row="0" column="0">
-     <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,0,0,0,0" columnstretch="1,450,0,0,0" columnminimumwidth="0,0,0,3,170">
+     <layout class="QGridLayout" name="gridLayout" rowstretch="450,0,0" columnstretch="1,0,0,0,0" columnminimumwidth="0,0,110,5,0">
       <property name="sizeConstraint">
        <enum>QLayout::SetDefaultConstraint</enum>
       </property>
@@ -89,13 +92,13 @@
          <enum>QFrame::Raised</enum>
         </property>
         <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarAsNeeded</enum>
+         <enum>Qt::ScrollBarAlwaysOn</enum>
         </property>
         <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAsNeeded</enum>
+         <enum>Qt::ScrollBarAlwaysOn</enum>
         </property>
         <property name="sizeAdjustPolicy">
-         <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+         <enum>QAbstractScrollArea::AdjustToContents</enum>
         </property>
         <property name="sceneRect">
          <rectf>
@@ -113,14 +116,37 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
+      <item row="0" column="0" rowspan="2">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>5</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="2" column="1" colspan="2">
+       <widget class="QSlider" name="horizontalSlider">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
        <widget class="QSpinBox" name="spinBoxFrame">
         <property name="maximum">
          <number>200000</number>
         </property>
        </widget>
       </item>
-      <item row="1" column="3" colspan="2">
+      <item row="0" column="3" rowspan="2">
        <widget class="QGroupBox" name="groupBox_2">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -130,15 +156,18 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>200</width>
+          <width>150</width>
           <height>480</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>350</width>
+          <width>240</width>
           <height>2500</height>
          </size>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
         </property>
         <property name="title">
          <string>Fine Tuning</string>
@@ -146,8 +175,8 @@
         <widget class="QSpinBox" name="spinBoxFishThres">
          <property name="geometry">
           <rect>
-           <x>130</x>
-           <y>40</y>
+           <x>100</x>
+           <y>90</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -177,8 +206,8 @@
         <widget class="QSpinBox" name="spinBoxEyeThres">
          <property name="geometry">
           <rect>
-           <x>130</x>
-           <y>130</y>
+           <x>100</x>
+           <y>170</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -202,8 +231,8 @@
         <widget class="QSpinBox" name="spinBoxMinEllipse">
          <property name="geometry">
           <rect>
-           <x>0</x>
-           <y>240</y>
+           <x>50</x>
+           <y>270</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -224,8 +253,8 @@
         <widget class="QSpinBox" name="spinBoxMaxEllipse">
          <property name="geometry">
           <rect>
-           <x>120</x>
-           <y>240</y>
+           <x>170</x>
+           <y>270</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -243,8 +272,8 @@
         <widget class="QDoubleSpinBox" name="doubleSpinBoxSpineSegSize">
          <property name="geometry">
           <rect>
-           <x>0</x>
-           <y>340</y>
+           <x>130</x>
+           <y>360</y>
            <width>71</width>
            <height>26</height>
           </rect>
@@ -256,8 +285,8 @@
         <widget class="QLabel" name="label">
          <property name="geometry">
           <rect>
-           <x>0</x>
-           <y>40</y>
+           <x>10</x>
+           <y>90</y>
            <width>101</width>
            <height>20</height>
           </rect>
@@ -273,10 +302,17 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>130</y>
+           <y>150</y>
            <width>101</width>
            <height>21</height>
           </rect>
+         </property>
+         <property name="font">
+          <font>
+           <family>FreeMono</family>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
          </property>
          <property name="text">
           <string>Eye</string>
@@ -285,8 +321,8 @@
         <widget class="QLabel" name="label_3">
          <property name="geometry">
           <rect>
-           <x>0</x>
-           <y>220</y>
+           <x>10</x>
+           <y>250</y>
            <width>201</width>
            <height>20</height>
           </rect>
@@ -324,14 +360,17 @@
         <widget class="QLabel" name="label_6">
          <property name="geometry">
           <rect>
-           <x>80</x>
-           <y>340</y>
+           <x>10</x>
+           <y>360</y>
            <width>131</width>
            <height>20</height>
           </rect>
          </property>
          <property name="toolTip">
           <string>Length of each Spine segment in pixels</string>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::RightToLeft</enum>
          </property>
          <property name="text">
           <string>Tail Segment</string>
@@ -340,8 +379,8 @@
         <widget class="QSpinBox" name="spinBoxTemplateThres">
          <property name="geometry">
           <rect>
-           <x>130</x>
-           <y>100</y>
+           <x>100</x>
+           <y>120</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -371,8 +410,8 @@
         <widget class="QLabel" name="label_TemplateMatch">
          <property name="geometry">
           <rect>
-           <x>0</x>
-           <y>100</y>
+           <x>10</x>
+           <y>120</y>
            <width>131</width>
            <height>21</height>
           </rect>
@@ -384,9 +423,9 @@
         <widget class="QSpinBox" name="spinBoxMOGBGRatio">
          <property name="geometry">
           <rect>
-           <x>120</x>
-           <y>300</y>
-           <width>71</width>
+           <x>100</x>
+           <y>320</y>
+           <width>61</width>
            <height>26</height>
           </rect>
          </property>
@@ -416,7 +455,7 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>300</y>
+           <y>320</y>
            <width>101</width>
            <height>21</height>
           </rect>
@@ -429,10 +468,13 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>370</y>
+           <y>420</y>
            <width>161</width>
            <height>23</height>
           </rect>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::RightToLeft</enum>
          </property>
          <property name="text">
           <string>Noise Filtering</string>
@@ -442,10 +484,13 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>400</y>
+           <y>450</y>
            <width>191</width>
            <height>23</height>
           </rect>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::RightToLeft</enum>
          </property>
          <property name="text">
           <string>MOG BG Segmentation</string>
@@ -455,10 +500,13 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>430</y>
+           <y>480</y>
            <width>92</width>
            <height>23</height>
           </rect>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::RightToLeft</enum>
          </property>
          <property name="text">
           <string>Use GPU</string>
@@ -467,8 +515,8 @@
         <widget class="QSpinBox" name="spinBoxFoodThresMin">
          <property name="geometry">
           <rect>
-           <x>60</x>
-           <y>70</y>
+           <x>100</x>
+           <y>40</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -492,8 +540,8 @@
         <widget class="QSpinBox" name="spinBoxFoodThresMax">
          <property name="geometry">
           <rect>
-           <x>140</x>
-           <y>70</y>
+           <x>170</x>
+           <y>40</y>
            <width>51</width>
            <height>26</height>
           </rect>
@@ -537,8 +585,8 @@
         <widget class="QLabel" name="label_8">
          <property name="geometry">
           <rect>
-           <x>0</x>
-           <y>70</y>
+           <x>10</x>
+           <y>40</y>
            <width>101</width>
            <height>20</height>
           </rect>
@@ -553,11 +601,14 @@
         <widget class="QCheckBox" name="checkBoxHistEqualizer">
          <property name="geometry">
           <rect>
-           <x>1</x>
-           <y>200</y>
+           <x>-10</x>
+           <y>230</y>
            <width>191</width>
            <height>23</height>
           </rect>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::RightToLeft</enum>
          </property>
          <property name="text">
           <string> Enhance Contrast </string>
@@ -569,8 +620,8 @@
         <widget class="QSpinBox" name="spinBoxEyeMaskW">
          <property name="geometry">
           <rect>
-           <x>130</x>
-           <y>160</y>
+           <x>100</x>
+           <y>200</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -600,7 +651,7 @@
            <x>0</x>
            <y>160</y>
            <width>101</width>
-           <height>21</height>
+           <height>51</height>
           </rect>
          </property>
          <property name="text">
@@ -610,8 +661,8 @@
         <widget class="QGraphicsView" name="graphicsViewTemplate">
          <property name="geometry">
           <rect>
-           <x>200</x>
-           <y>40</y>
+           <x>170</x>
+           <y>90</y>
            <width>51</width>
            <height>51</height>
           </rect>
@@ -647,8 +698,8 @@
         <widget class="QGraphicsView" name="graphicsViewHead">
          <property name="geometry">
           <rect>
-           <x>200</x>
-           <y>100</y>
+           <x>170</x>
+           <y>170</y>
            <width>51</width>
            <height>51</height>
           </rect>
@@ -677,29 +728,6 @@
         </widget>
        </widget>
       </item>
-      <item row="3" column="1" colspan="2">
-       <widget class="QSlider" name="horizontalSlider">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0" rowspan="2">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Fixed</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>5</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </item>
    </layout>
@@ -709,7 +737,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>813</width>
+     <width>740</width>
      <height>20</height>
     </rect>
    </property>

@@ -214,8 +214,7 @@ int main(int argc, char *argv[])
 #endif
 
     frameDebugC = cv::Mat::zeros(640, 480, CV_8U);
-    //Setup Default ROI
-    gTrackerState.initROI();
+
 
     /// create Background Subtractor objects
     //(int history=500, double varThreshold=16, bool detectShadows=true
@@ -471,7 +470,8 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     if (gTrackerState.bROIChanged)
     {
         bgROIMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
-        gTrackerState.vRoi.at(0).drawMask(bgROIMask);
+        for (int i=0; i < gTrackerState.vRoi.size();i++ )
+            gTrackerState.vRoi.at(i).drawMask(bgROIMask);
     }
 
 
@@ -713,10 +713,16 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
 
     gTrackerState.setVidFps( capture.get(CAP_PROP_FPS) );
-
-
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
+    gTrackerState.frame_pxwidth = (uint)capture.get(CV_CAP_PROP_FRAME_WIDTH);
+    gTrackerState.frame_pxheight =  (uint)capture.get(CV_CAP_PROP_FRAME_HEIGHT);
+    //Default ROI
+    gTrackerState.initROI(gTrackerState.frame_pxwidth,gTrackerState.frame_pxheight);
+
     window_main.setTotalFrames(totFrames);
+
+    /// Make ROI //
+
     //window_main.nFrame = nFrame;
 
     //  Check If it contains no Frames And Exit

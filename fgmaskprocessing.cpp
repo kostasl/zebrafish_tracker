@@ -614,8 +614,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //Check If Elongated Object Detected
         cv::RotatedRect boundEllipse = cv::fitEllipse(curve);
         cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),cv::LINE_8);
-        if (boundEllipse.size.width/boundEllipse.size.height < 1.3 &&
-                boundEllipse.size.height/boundEllipse.size.width < 1.3)
+        if (boundEllipse.size.width/boundEllipse.size.height < 5 &&
+                boundEllipse.size.height/boundEllipse.size.width < 5)
             continue;
 
 

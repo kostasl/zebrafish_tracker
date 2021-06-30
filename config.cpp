@@ -185,7 +185,7 @@ int initDetectionTemplates()
     gszTemplateImg.height = lastfish_template_img.size().height; //Save TO Global Size Variable
 
     // Set Paster Region for Inset Image
-    gTrackerState.rect_pasteregion.x = (640-gszTemplateImg.width*2);
+    gTrackerState.rect_pasteregion.x = (gTrackerState.frame_pxwidth-gszTemplateImg.width*2);
     gTrackerState.rect_pasteregion.y = 0;
     gTrackerState.rect_pasteregion.width = gszTemplateImg.width*2; //For the upsampled image
     gTrackerState.rect_pasteregion.height = gszTemplateImg.height*2;
@@ -427,14 +427,15 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
 /// END OF INIT GLOBAL PARAMS //
 
 /// \brief Initializes ROI at start of tracking depending on user params / either large circle or user defined/configurable polygon
-void  trackerState::initROI()
+void  trackerState::initROI(uint framewidth,uint frameheight)
 {
     //Rect Roi Keep Away from L-R Edges to Avoid Tracking IR lightRing Edges
     ptROI1 = cv::Point(gFishBoundBoxSize*2+1,gFishBoundBoxSize/2);
-    ptROI2 = cv::Point(640-gFishBoundBoxSize*2,gFishBoundBoxSize/2);
-    ptROI3 = cv::Point(640-gFishBoundBoxSize*2,512-gFishBoundBoxSize/2);
-    ptROI4 = cv::Point(gFishBoundBoxSize*2+1,512-gFishBoundBoxSize/2);
+    ptROI2 = cv::Point(framewidth-gFishBoundBoxSize*2,gFishBoundBoxSize/2);
+    ptROI3 = cv::Point(framewidth-gFishBoundBoxSize*2,frameheight-gFishBoundBoxSize/2);
+    ptROI4 = cv::Point(gFishBoundBoxSize*2+1,frameheight-gFishBoundBoxSize/2);
 
+    vRoi.clear();
 
     /// Init Polygon ROI ///
     ///Make A Rectangular Roi Default //
@@ -447,10 +448,10 @@ void  trackerState::initROI()
      }
       else //Make Default ROI Region
     {
-        ptROI2.x = (640- gFishBoundBoxSize)/2;
+        ptROI2.x = (framewidth- gFishBoundBoxSize/2)/2;
         ptROI2.y = gszTemplateImg.height/3;
     //Add Global Roi - Center - Radius
-        ltROI newROI(cv::Point(640/2,520/2),ptROI2);
+        ltROI newROI(cv::Point(framewidth/2,(frameheight)/2),ptROI2);
         addROI(newROI);
     }
 }

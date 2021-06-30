@@ -126,7 +126,7 @@ class trackerState
      /// \brief Process user provided config params and set corresponding internal/global variables
      void initGlobalParams(cv::CommandLineParser& parser,QStringList& inVidFileNames); //Read Command Line/Config Options
      /// \brief Initializes ROI at start of tracking depending on user params / either large circle or user defined/configurable polygon
-     void  initROI();
+     void  initROI(uint framewidth,uint frameheight);
 
      /// \brief Load Q Resources
      static void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = cv::IMREAD_COLOR); //Load Resources
@@ -135,6 +135,9 @@ class trackerState
 
       /// VIDEO AND BACKGROUND PROCESSING //
       float gfVidfps                  = 410;
+      uint frame_pxwidth               = 640; //Video Frame pixel Dimensions/ Default Changed when Video Is opened
+      uint frame_pxheight              = 480;
+
       const unsigned int MOGhistory   = 100; //Use 100 frames Distributed across the video length To Find What the BGModel is
       double gdMOGBGRatio             = 0.05; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
