@@ -680,8 +680,10 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
             //Distance to closest Contour Edge, +ve inside, 0 on edge -ve outside
             // Invert so minimum is at centre of contour
             dResiduals[i] = -pointPolygonTest(contour, cv::Point2f(tmpspline[i].x,tmpspline[i].y), true );
+
             //Add Extra Grad Info/Cost for small segLength / thus pulling to longer spine length
-            //dResiduals[i] -= (0.0)*c_MaxSpineLengthLimit/tmpspline[i].spineSegLength;
+            //dResiduals[i] -= (1.0)*c_MaxSpineLengthLimit/tmpspline[i].spineSegLength;
+
             // Push to get Tail Pt Coincide with Last spine point
             double distToTailTip = cv::norm( gptTail - cv::Point(tmpspline[tmpspline.size()-1].x,tmpspline[tmpspline.size()-1].y) );
             dResiduals[i] -= (0.01)*distToTailTip ;
@@ -723,7 +725,7 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
 //            float pxi0 = frameImg_grey.at<uchar>(cv::Point(tmpspline[k].x,tmpspline[k].y));
 //            float pxi1 = frameImg_grey.at<uchar>(cv::Point(dsSpline[k].x,dsSpline[k].y));
 //            dGradi[k]           += (pxi1 - pxi0)/dq;
-/////       double dsi =std::max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
+/////       double dsi = max(1.0,cv::norm(cv::Point(tmpspline[k-2].x,tmpspline[k-2].y)-cv::Point(dsSpline[k-2].x,dsSpline[k-2].y)));
 //        }
 
         std::vector<double> cparams(c_spineParamCnt);
@@ -756,10 +758,11 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
     qDebug() << "ID:" <<  this->ID << cntpass << " EChange:" << dDifffitPtError_total;
 #endif
 
-
-
+        // Copy Fitted Spline On Fish Spline
         this->spline            = tmpspline;
-        this->c_spineSegL       = tmpspline[0].spineSegLength;
+
+        // Copy Fitted TailSeg Length - But Impose Limits on Tail Length (in case contour was too poor and tail is too small)
+        this->c_spineSegL       = std::max(c_MinSpineLengthLimit, std::min(c_MaxSpineLengthLimit, (double)tmpspline[0].spineSegLength));
         this->lastTailFitError = dfitPtError_total/c_spinePoints;
 
 

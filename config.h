@@ -141,7 +141,7 @@ class trackerState
 
       const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
       const double dLearningRateNominal         = 0.0001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
-
+      double dactiveMOGLearningRate             = dLearningRateNominal;
       //Processing Loop delay
       uint cFrameDelayms              = 1;
 
@@ -210,6 +210,7 @@ class trackerState
       bool bAddPreyManually   = false;
       bool bMeasure2pDistance = true; /// A mode allowing 2point distance measurement
       bool bTrackFish         = true;
+      bool bOnlyTrackFishinROI = false; /// Whether to attempt tracking outside of Defined ROI - or Stop Tracking of Fish when OUtside ROI,
       bool bTrackAllPrey      = false; ///Track All detected Prey Models/Once established Active
       bool bRecordToFile      = true;
       bool bSaveImages            = false;
@@ -231,7 +232,7 @@ class trackerState
       bool bDrawFoodBlob              = false; ///Draw circle around identified food blobs (prior to model matching)
       bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
       bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
-      bool bStaticAccumulatedBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+      bool bStaticAccumulatedBGMaskRemove       = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
@@ -258,11 +259,11 @@ class trackerState
       uint iSpineContourFitFramePeriod         = 20; //Check that Tail Fitting Matches Contour Every X Frames
 
       /// Segmentation / threshold  Params
-      int g_Segthresh             = 15; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
-      int g_SegFoodThesMin        = 10; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
-      int g_SegFoodThesMax        = g_Segthresh+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
+      int g_Segthresh             = 5; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+      int g_SegFoodThesMin        = g_Segthresh+5; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
+      int g_SegFoodThesMax        = g_SegFoodThesMin+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
-      int g_BGthresh              = 10; //BG threshold segmentation
+      int g_BGthresh              = 5; //BG threshold segmentation
       int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 
 
@@ -289,6 +290,9 @@ class trackerState
       int iEyeMaskSepWidth            = 25; //5 px width vertical line separates the eyes for segmentation
       double eyeStepIncrement         = 0.1;
       double gTemplateMatchThreshold  = 0.80; //If not higher than 0.9 The fish body can be matched at extremeties
+      double gTemplateMatchThreshold_LowLimit = 0.75;
+      double gTemplateMatchThreshold_UpLimit = 0.85;
+
       int iLastKnownGoodTemplateRow   = 0;
       int iFishAngleOffset            = 0;
       double gUserReward              = 0; //User feedback for reinforcement learning

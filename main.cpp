@@ -57,6 +57,8 @@
  /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
+ ///
+ /// \todo Use Kalman Filtering of Fish And Prey position
  ////////
 
 #include <config.h>  // Tracker Constant Defines
@@ -496,7 +498,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
         if (gTrackerState.bPaused) //Stop Mask Learning If Paused on the same Frame
             extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,0.0); //No BGModel Updating
         else
-            extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,gTrackerState.dLearningRateNominal); //Applies MOG if BGModelling Flag is set
+            extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,gTrackerState.dactiveMOGLearningRate); //Applies MOG if BGModelling Flag is set
 
         //Generates separate masks for Fish/Prey and Draws Fish Contourmask
         // Returns Fish Locations/Keypoints
@@ -580,14 +582,13 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
                     zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_HIGHLIGHT  | CV_TRACK_RENDER_PATH | CV_TRACK_RENDER_BOUNDING_CIRCLE, gTrackerState.trackFnt, gTrackerState.trackFntScale*1.1 ); //| CV_TRACK_RENDER_BOUNDING_BOX
 
                 else{
-                if (pfood->isActive)
-                {
+                    if (pfood->isActive)
+                    {
                         nFood++; //only count the rendered Food Items ie. Active Ones
                         zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_CIRCLE , gTrackerState.trackFnt,gTrackerState.trackFntScale );
+                    } //else
+                        //zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX ,gTrackerState.trackFnt ,gTrackerState.trackFntScale );
                 }
-                    else
-                        zftRenderTrack(pfood->zTrack, frame, outframe,CV_TRACK_RENDER_ID | CV_TRACK_RENDER_BOUNDING_BOX ,gTrackerState.trackFnt ,gTrackerState.trackFntScale );
-                 }
                 ++ft;
 
             }
@@ -1008,7 +1009,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     fishModel* pfish = NULL;
 
     fishModels::iterator ft;
-    bool bModelFound;
+    bool bModelFound =false;
 
      // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
     for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
@@ -1022,6 +1023,10 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         bModelFound = false;
         int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
         int iTemplCol = 0;
+
+        if ( gTrackerState.bOnlyTrackFishinROI)
+            if (!pointIsInROI(ptbcentre,fishblob->size/2.0))
+                continue;
 
         //Check Through Models And Find The Closest Fish To This FishBlob
         /// Note We do Template Matching On Previous Fish Coordinates First , (Not On Wobbly Blobs Coordinates)
@@ -1110,7 +1115,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             ptbcentre = ptSearch;
             maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
             //If New Blob Looks Like A Fish, Then Make  A New Model
-            if (maxMatchScore > gTrackerState.gTemplateMatchThreshold*0.90)
+            if (maxMatchScore > gTrackerState.gTemplateMatchThreshold)
             {
                 //Make new fish Model
                fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
@@ -1125,7 +1130,15 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore;
                //std::clog << nFrame << strmsg.str() << std::endl;
                pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
+               gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRateNominal;
+
+            }else //Need to get rid of that blob as it will cause delays
+            { //quick fix - Draw it on static mask - Or Let MOG learn It
+                gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRate/5.0;
+                //gTrackerState.dactiveMOGLearningRate = 2.0*gTrackerState.dactiveMOGLearningRate;
+                pwindow_main->LogEvent("2x BG learn rate ");
             }
+
 
         }
 //        //Report No Fish
@@ -1158,7 +1171,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         if (maxTemplateScore > gTrackerState.gTemplateMatchThreshold)
             pfishBest->inactiveFrames   = 0; //Reset Counter
     }
-
+   /// \NOTE: Tracking Continuous if fish moves Outside ROI
    /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
     ft = vfishmodels.begin();
     while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
@@ -1171,7 +1184,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //OtherWise Delete The model?
             //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
-            //If We found one then Delete the other instances waiting for a match - 1 Fish Tracker
+            //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
             if (bModelFound || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
             {
                 std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << "Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
@@ -1803,7 +1816,7 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
 }
 
 
-/// Updated Blob Processing
+/// \NOTE: Note
 /// \brief processFishBlobs Finds blobs that belong to fish
 /// \param frame
 /// \param maskFishimg
@@ -1835,9 +1848,9 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,zftbl
     /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
     ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
     /// WARNING Enabling filterByInertia Causes A Crash - (in Close.s-> thread)
-    params.filterByInertia      = false;
-    params.maxInertiaRatio      = 0.6;
-    params.minInertiaRatio      = 0.1;
+    params.filterByInertia      = true;
+    params.maxInertiaRatio      = 0.1;
+    params.minInertiaRatio      = 0.01;
 
 
     //params.filterByInertia = true;
@@ -1854,21 +1867,23 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,zftbl
     {
         cv::KeyPoint kp = keypoints[i];
 
-        ///Go Through Each ROI and Render Blobs -
-        unsigned int RoiID = 0;
-        for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
-        {
-            ltROI iroi = (ltROI)(*it);
-            RoiID++;
+        if(pointIsInROI(kp.pt,gTrackerState.gszTemplateImg.width))
+                 ptFishblobs.push_back(kp);
+
+        //Go Through Each ROI and Render Blobs -
+        //unsigned int RoiID = 0;
+        //for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
+        //{
+        //    ltROI iroi = (ltROI)(*it);
+        //    RoiID++;
             //Keypoint is in ROI so Add To Masked
 
-            if (iroi.contains(kp.pt,gTrackerState.gszTemplateImg.width ))
-                     ptFishblobs.push_back(kp);
-
+         //   if (iroi.contains(kp.pt,gTrackerState.gszTemplateImg.width ))
+         //       ptFishblobs.push_back(kp);
             //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
             //if (maskVal > 0)
              //keypoints_in_mask.push_back(kp);
-        }
+        //}
     }
 
 
@@ -2112,10 +2127,10 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt,float objectR
     {
         iroi = &(*it);
         if (iroi->contains(pnt,objectRadius))
-               break; //Exit Loop And Return pointer to roi
+               return(iroi) ; //Exit Loop And Return pointer to roi
     }
 
-    return iroi; //Couldn't find it
+    return nullptr; //Couldn't find it
 }
 
 ///
@@ -3091,7 +3106,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 //                 fish->c_spineSegL = gTrackerState.gFishTailSpineSegmentLength ;
 //                 pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                    pwindow_main->LogEvent(QString("[warning] lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
-                   //fish->resetSpine(); //No Solution Found So Reset
+                   fish->resetSpine(); //No Solution Found So Reset
                    //pwindow_main->LogEvent("[info] Reset Spine");
                    fish->lastTailFitError = 0;
                }

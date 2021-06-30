@@ -48,26 +48,13 @@ source("TrajectoryAnalysis.r")
 source("DataLabelling/labelHuntEvents_lib.r")
 ########
 
+
 strDataSetDirectories <- paste(strTrackInputPath, list(
-                              "/Tracked12-10-17/", ##Dataset 1
-                              "/Tracked26-10-17/",
-                              "/Tracked02-11-17/",##MDataset 3 -NOTE: Does not Larva ID on File Name 
-                              "Tracked08-11-17/", #4 350fps - Missing a condition WTDryFed3Roti - So removed One Set Larva of Data from other conditions to balance the dataset
-                              "/Tracked16-11-17/",#5 400fps - Strict Timer Dataset -  ANalysis Starts From here ***
-                              "/Tracked30-11-17/",#6 420fps ## Most Simular 
-                              "/Tracked07-12-17/",#7
-                              "/Tracked14-12-17/",#8
-                              "Tracked21-12-17/", # 9
-                              "/Tracked11-01-18/",#10
-                              "/Tracked18-01-18/",#11
-                              "/Tracked25-01-18/",#12
-                              "/Tracked01-02-18/",#13
-                              "/Tracked08-02-18/",#14
-                              "/Tracked15-02-18/",#15
-                              "/Tracked22-02-18/",#16
-                              "/Tracked_07-06-18/",##Dataset 17 
-                              "/Tracked14-06-18/",##Dataset 18
-                              "/Tracked_21-08-18/"##Dataset 19
+                              "HB80_7dpf_LF3/", ##Dataset 2
+                              "HB70_7dpf_NF1/",
+                              #"HB60_7dpf_LF2",
+                              "HB50_7dpf_NF0"
+                              #"HB40_7dpf_LF1"
                               ),sep="/")
 ##Add Source Directory
 
@@ -84,7 +71,7 @@ strCondR  <- "*.csv";
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
   lastDataSet = NROW(strDataSetDirectories)
-  firstDataSet = lastDataSet -14
+  firstDataSet = 1 
   source("runimportTrackerDataFiles.r") 
 
 ###### END OF IMPORT TRACKER DATA ############
@@ -99,8 +86,12 @@ strCondR  <- "*.csv";
   ##Warning : Merging is memory intensive
   #source("loadAllDataSets.r")
   ## Best to Load  a merged file datAllFrames instead :
-  load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
-  load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
+  #load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
+  #load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
+  
+  load(paste0(strDatDir,"datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep="/"))
+  load(paste0(strDatDir,"groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
+  
   load(file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##

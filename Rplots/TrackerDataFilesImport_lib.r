@@ -153,16 +153,18 @@ getFileSet <- function(strCondDir,strsrc,strCondR = "*.csv")
 {
   
   lfileList = list()
+  vRet <- vector()
   for (i in strsrc)
   {
     lfileList = append(lfileList, list.files(path=paste(i,strCondDir,sep = "/"), pattern=strCondR,full.names = TRUE))
-
-    if (length(unlist(lfileList)) < 1)
+    vRet <-unlist(lfileList)
+    if (length(vRet) < 1)
       warning(paste("No files found while loading from :",paste(i,strCondDir,sep = "/")))
-    
+    else
+      vRet <- normalizePath(vRet)
   }
   
-  return(unlist(lfileList))
+  return(vRet)
 }
 
 ##Load Files To Tracker Data and Filter Them Out##
@@ -177,21 +179,13 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
   groupDatIdx = 1;
   for (i in strCondTags)
   {
-    
-    
+
     TrackerData <- list();	
     subsetDat = listSrcFiles[[i]];
     temp <-  unlist(subsetDat[1])
-    groupTag <- lHuntEventTRACKSfileSrc[[i]][2] ## Extract the User definedImport Tag, and Add to data frame
+    #groupTag <- lHuntEventTRACKSfileSrc[[i]][2] ## Extract the User definedImport Tag, and Add to data frame
     TrackerData[[i]] = lapply(temp, read.delim)
     nDat = length(TrackerData[[i]])
-    
-    if (nDat >0)
-      message(paste("#### Load Data Files Of Group ",i,groupTag," ###############"))
-    else    {
-      message(paste("#### No Data Files Found for Group ",i,groupTag," ###############"))
-      next()
-    }
     
     
     groupDatIdx = 0;
@@ -199,12 +193,29 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
     ## FOR EACH DATA FIle IN Group - Filter Data And combine into Single DataFrame For Group ##
     for (j in 1:nDat)
     {
+      if (length(temp[[j]]) == 0)
+      {
+        message(j," NA filenames. skipping." )
+        next()
+      }
+      
       message(paste(j,". Filtering Data :",  basename( temp[[j]] ) ) )
       procDatFrames = procDatFrames + length(TrackerData[[i]][[j]]$frameN);
       message(paste("Found #Rec:",  length(TrackerData[[i]][[j]]$frameN) ))
       
       ## Extract fields values from filename using function name provided##
       lNameDat <- do.call(strNameFieldFUN, list(temp[[j]]) )
+      groupTag <-lNameDat$groupID
+      ##
+      if (nDat >0)
+        message(paste("#### Load Data Files Of Group ",i,groupTag," ###############"))
+      else{
+        message(paste("#### No Data Files Found for Group ",i,groupTag," ###############"))
+        next()
+      }
+      
+      ##
+      
       
       ## Save standart expected fields for experiments ##
       expID <- lNameDat$expID  #as.numeric(brokenname[[1]][length(brokenname[[1]])-3]);
@@ -535,6 +546,33 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
   
   
 }
+
+
+##Aux Functions used for importing data from CSV Files - Processes file name :
+#/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
+extractFileNameParams_HungerExp <- function(strFileName)
+{
+  ##Extract Experiment ID
+  basename <- basename(strFileName)
+  brokenname = unlist(strsplit(basename,"_"))
+  expID <-  as.numeric(gsub("[^0-9]","",brokenname[1]) )
+  eventID <- as.numeric(brokenname[4]);
+  camID <- (brokenname[3])
+  testCond <- brokenname[2]
+  larvaID <- as.numeric(gsub("[^0-9]","",brokenname[1]) );
+  
+  vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
+  expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
+  vexpDir <- unlist(strsplit(expDir,"_"))
+  stopifnot(vexpDir[1] == brokenname[1])
+
+  strGroupID <- vexpDir[3]
+  ageDPF <-    as.numeric(gsub("[^0-9]","",vexpDir[2]) );
+  fps = NA
+  
+  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,age=ageDPF) )
+}
+
 
 ##Aux Functions used for importing data from CSV Files - Processes file name :
 #/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay

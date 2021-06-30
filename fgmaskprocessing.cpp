@@ -442,6 +442,8 @@ int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Po
 {
     cv::Point ptHead2;
     int retIdx;
+    assert(curve.size() > 0);
+
     // Copy with a reshuffling of TailPoint to the zero index
     vector<cv::Point> vcurveR( curve.begin() + idxTail ,curve.end());
     vcurveR.insert(vcurveR.end(),curve.begin(),curve.begin() + std::max(0,idxTail) );
@@ -451,6 +453,8 @@ int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Po
     int maxLen = 0;
     int lenA,lenB; //Arc Lenght ClockWise, And AntiClockWise
     int idxA,idxB,idxT;
+    idxA = idxB = idxT = lenA = lenB = maxLen = 0;
+
     for (uint j=0; j < 2 ; j++) //Isolate to 1st found Tail Point
     {
         for (uint k=j+2; k< vcurveR.size(); k++)
@@ -480,6 +484,9 @@ int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Po
         }
     }
     //
+    /// CHECK Here For BUG
+    assert( idxTail < curve.size() );
+    assert( idxB < vcurveR.size() );
     //Check Which curve point is closest to the TailInflection Candidate - Initially Mark As Tail
     if (norm(curve[idxTail]-vcurveR[idxA]) < norm(curve[idxTail]-vcurveR[idxB]) )
     {
@@ -518,7 +525,9 @@ void getPreyMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFoodMask)
     if (gTrackerState.bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
         /// \note frameImg may already have FG mask applied to it
         bitwise_and(outFoodMask,fgMask,outFoodMask);
-    //Dilate prey so as to improve tracking
+    ///Removed because DEnse prey conditions Result in Large Blobs
+    //Shrink Dilate prey so as to improve tracking and remove Noise
+    cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //
     cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //
 
 }
@@ -576,6 +585,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         centroid.x = moments.m10/moments.m00;
         centroid.y = moments.m01/moments.m00;
 
+
         //If Contained In ROI
         if (!pointIsInROI(centroid,gTrackerState.gszTemplateImg.width)) //
             continue;
@@ -587,6 +597,29 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         if ((int)curve.size() < gTrackerState.gcFishContourSize/2)
             continue;
 
+        /// Elongation Filter//
+        /* double x = moments.m20 + moments.m02;
+        double y = 4.0*pow(moments.m11,2) + pow(moments.m20-moments.m02,2);
+        double g = (x-pow(y,0.5));
+        double dElongation = 0;
+        if (g>0)
+            dElongation = (x+pow(y,0.5))/g;
+
+        //Set Elongation Limit - To filter Fish Like Blobs
+        // See: Measuring Elongation from Shape Boundary 2008 , Milos Stojmenovic
+        if (dElongation < 2500){
+            qDebug() << "C.Elongation filtered:" <<  dElongation;
+            continue;
+        }*/
+        //Check If Elongated Object Detected
+        cv::RotatedRect boundEllipse = cv::fitEllipse(curve);
+        cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),cv::LINE_8);
+        if (boundEllipse.size.width/boundEllipse.size.height < 1.3 &&
+                boundEllipse.size.height/boundEllipse.size.width < 1.3)
+            continue;
+
+
+
         /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
 
         //Find Tail Point- As the one with the sharpest Angle
@@ -595,6 +628,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
         if (idxTail >= 0 )
         {
+            /// \TODO : Bug Hit Here
             idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
             /// \todo Check Template Matching Around Head / Verify Contour Belongs to fish
             gptHead = ptHead; //Hack To Get position For Template

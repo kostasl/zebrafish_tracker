@@ -399,7 +399,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
      std::stringstream ss;
      // Log As Message //
      if (ibestMatchRow < gTrackerState.gnumberOfTemplatesInCache)
-        ss << "Found row:" << ibestMatchRow << " but gives Low Match-pick next Randomly ->"  << startRow;
+        ss << "Found row:" << ibestMatchRow << " but gives Low Match score:"<< maxGVal << ". Pick next Randomly ->"  << startRow;
      else
      {
          ss << "Reached End of Templates row:" << ibestMatchRow << " Start Over on next";
@@ -409,17 +409,29 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 
  }else{ // If template matched then stay on the same template row
      startRow = ibestMatchRow;
-     //gTrackerState.gTemplateMatchThreshold += gTrackerState.gTemplateMatchThreshold*0.001;
+
+     //Move towards Match score
+     if (gTrackerState.gTemplateMatchThreshold < gTrackerState.gTemplateMatchThreshold_UpLimit &&
+             gTrackerState.gTemplateMatchThreshold >  gTrackerState.gTemplateMatchThreshold_LowLimit){
+            gTrackerState.gTemplateMatchThreshold += 0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
+            pwindow_main->updateTemplateThres();
+     }
+
      gTrackerState.iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
+
  }
 
  // Check if we are stuck with Too Many Template Match Fails, then Warn and lower match threshold.
  if (gTrackerState.iTemplateMatchFailCounter > gTrackerState.gnumberOfTemplatesInCache)
  {
-    gTrackerState.gTemplateMatchThreshold -= gTrackerState.gTemplateMatchThreshold*0.001;
-    pwindow_main->LogEvent("[warning] Too many template match failures, lowering match threshold.");
-    pwindow_main->updateTemplateThres();
-    gTrackerState.iTemplateMatchFailCounter = 0; //Restart Counting With New Threshold
+     //Do not Go Below Limit
+    if(gTrackerState.gTemplateMatchThreshold >  gTrackerState.gTemplateMatchThreshold_LowLimit)
+    {
+        pwindow_main->LogEvent("[warning] Too many template match failures, lowering threshold.");
+        gTrackerState.gTemplateMatchThreshold += 0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
+        pwindow_main->updateTemplateThres();
+        //gTrackerState.iTemplateMatchFailCounter = 0; //Restart Counting With New Threshold
+    }
  }
 
  if (templ_rot.cols > 0 && templ_rot.rows > 0)

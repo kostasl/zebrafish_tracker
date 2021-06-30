@@ -135,12 +135,13 @@ setEnvFileLocations <- function(strSetName)
     ## Required Variables - Locations -- Choose According To 
     # Home Desktop
     setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-    strVideoFilePath  <<- "//mnt/ARXEIO1TB/ExpData/zebrapreyCap/AnalysisSet/"
+    strVideoFilePath  <<- "/media/kostasl/ARXEIO1TB/Behaviour/" 
     strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release//" 
     strTrackeroutPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
-    strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/" ##Same As Working Dir
-    strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedSessionA" ##Where Are the Imported RData Stored
-    strDataExportDir  <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/"
+    #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
+    strTrackInputPath <<- "/media/kostasl/ARXEIO1TB/Behaviour/" 
+    strDatDir         <<-  "/media/kostasl/ARXEIO1TB/Behaviour/Rdat/" ##Where Are the Imported RData Stored
+    strDataExportDir  <<-  "/media/kostasl/ARXEIO1TB/Behaviour/Rdat/out/"
     strDataStore      <<-  "/media/kostasl/D445GB_ext4/kostasl/nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
   }

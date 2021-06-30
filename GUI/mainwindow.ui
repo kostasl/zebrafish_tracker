@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>779</width>
-    <height>800</height>
+    <width>813</width>
+    <height>784</height>
    </rect>
   </property>
   <property name="font">
@@ -20,7 +20,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="3" column="0">
+    <item row="1" column="0">
      <widget class="QListView" name="listView">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -30,8 +30,8 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="0">
-     <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,0,0,0,0" columnstretch="0,0,0,0,0">
+    <item row="0" column="0">
+     <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,0,0,0,0" columnstretch="1,450,0,0,0" columnminimumwidth="0,0,0,3,170">
       <property name="sizeConstraint">
        <enum>QLayout::SetDefaultConstraint</enum>
       </property>
@@ -113,37 +113,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
-       <widget class="QGraphicsView" name="graphicsViewTemplate">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>1</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>60</width>
-          <height>80</height>
-         </size>
-        </property>
-        <property name="baseSize">
-         <size>
-          <width>32</width>
-          <height>32</height>
-         </size>
-        </property>
-        <property name="whatsThis">
-         <string comment="Ψαροκεφαλι">Tracking of head Features</string>
-        </property>
-        <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="3">
        <widget class="QSpinBox" name="spinBoxFrame">
         <property name="maximum">
@@ -186,17 +155,23 @@
          <property name="toolTip">
           <string>Intensity Threshold for segmenting the food/fish from Background</string>
          </property>
+         <property name="statusTip">
+          <string extracomment="Intensity Threshold for segmenting the food/fish from Background"/>
+         </property>
+         <property name="whatsThis">
+          <string extracomment="Intensity Threshold for segmenting the food/fish from Background"/>
+         </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::PlusMinus</enum>
          </property>
          <property name="minimum">
-          <number>9</number>
+          <number>5</number>
          </property>
          <property name="maximum">
-          <number>80</number>
+          <number>100</number>
          </property>
          <property name="value">
-          <number>30</number>
+          <number>5</number>
          </property>
         </widget>
         <widget class="QSpinBox" name="spinBoxEyeThres">
@@ -588,7 +563,7 @@
           <string> Enhance Contrast </string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
         <widget class="QSpinBox" name="spinBoxEyeMaskW">
@@ -632,31 +607,74 @@
           <string>Mask Width</string>
          </property>
         </widget>
-       </widget>
-      </item>
-      <item row="0" column="3">
-       <widget class="QGraphicsView" name="graphicsViewHead">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>60</width>
-          <height>80</height>
-         </size>
-        </property>
-        <property name="whatsThis">
-         <string comment="Ψαροκεφαλι">Tracking of head Features</string>
-        </property>
-        <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
+        <widget class="QGraphicsView" name="graphicsViewTemplate">
+         <property name="geometry">
+          <rect>
+           <x>200</x>
+           <y>40</y>
+           <width>51</width>
+           <height>51</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>80</height>
+          </size>
+         </property>
+         <property name="baseSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="whatsThis">
+          <string comment="Ψαροκεφαλι">Tracking of head Features</string>
+         </property>
+         <property name="verticalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+         <property name="horizontalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+        </widget>
+        <widget class="QGraphicsView" name="graphicsViewHead">
+         <property name="geometry">
+          <rect>
+           <x>200</x>
+           <y>100</y>
+           <width>51</width>
+           <height>51</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>80</height>
+          </size>
+         </property>
+         <property name="whatsThis">
+          <string comment="Ψαροκεφαλι">Tracking of head Features</string>
+         </property>
+         <property name="verticalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+         <property name="horizontalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+        </widget>
        </widget>
       </item>
       <item row="3" column="1" colspan="2">
@@ -691,7 +709,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>779</width>
+     <width>813</width>
      <height>20</height>
     </rect>
    </property>

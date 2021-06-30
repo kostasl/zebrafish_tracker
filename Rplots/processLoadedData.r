@@ -12,7 +12,7 @@ lMotionStat   <- list();
 #source("plotTrackScatterAndDensities.r")
 ##########
 
-strCondTags <- names(groupsrcdatList)
+strCondTags <- unique(datAllFrames$group) ##names(groupsrcdatList)
 #### Process Files  #####
 ### Calculates Statistics/Makes Plots 
 ## Extracts Hunting events and saves them on output csv files / one for each conditiongroup - showing start-end frames and file

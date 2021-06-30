@@ -11,18 +11,8 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   d = strDataSetDirectories[[idxDataSet]]
   groupsrcdatList = list()
   strCondR  <- "*.csv"; 
-  groupsrcdatList[["LE"]] <- list(getFileSet("LiveFed/Empty/",d),"-LiveFed-Empty")
-  
-  groupsrcdatList[["LL"]] <- list(getFileSet("LiveFed/Live/",d),"-LiveFed-Live")
-  
-  groupsrcdatList[["NE"]] <- list(getFileSet("NotFed/Empty/",d),"-NotFed-Empty")
-  
-  groupsrcdatList[["NL"]] <- list(getFileSet("NotFed/Live/",d),"-NotFed-Live")
-  
-  groupsrcdatList[["DE"]] <- list(getFileSet("DryFed/Empty/",d),"-DryFed-Empty")
-  
-  groupsrcdatList[["DL"]] <- list(getFileSet("DryFed/Live/",d),"-DryFed-Live")
-  
+  groupsrcdatList[["LE"]] <- list((getFileSet("LE/",d,strCondR= "tracks_[0-9].csv")),"-TestEmpty")
+  groupsrcdatList[["LR"]] <- list((getFileSet("LR/",d,strCondR= "*tracks_[0-9].csv")),"-TestPrey")
   
   ##OutPutFIleName
   strDataSetIdentifier <- strsplit(d,"/")
@@ -31,11 +21,11 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   strDataFileNameRDS <- paste(strDataExportDir,"/setn1_Dataset_", strDataSetIdentifier,".rds",sep="") ##To Which To Save After Loading
   message(paste(" Importing to:",strDataFileName))
   ##RUN IMPORT FUNCTION
-  datAllFrames <-importTrackerFilesToFrame(groupsrcdatList,"extractFileNameParams_huntingExp")
+  datAllFrames <-importTrackerFilesToFrame(groupsrcdatList,"extractFileNameParams_HungerExp") ##"extractFileNameParams_huntingExp")
   datAllFrames$dataSet <- idxDataSet ##Identify DataSet
   
   datAllSets[[n]] <- datAllFrames
-  
+  message("Imported frames for GroupID:",unique(datAllFrames$groupID) )
   ##CHeck If Exp Ids not found 
   stopifnot(NROW(datAllFrames[which(is.na(datAllFrames$expID)), ]) == 0)
   
