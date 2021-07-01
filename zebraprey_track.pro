@@ -83,7 +83,7 @@ QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
 #QMAKE_LFLAGS += -Wl,--rpath=/home/klagogia1/OpenCV/opencv-3.3.1/build #Home
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/OpenCV/opencv-3.3.1/build #Office
 
-QMAKE_LFLAGS_RPATH=
+#QMAKE_LFLAGS_RPATH=
 ###Using command : cp `ldd larvatrack | sed -re s/^.+\=\>// | sed -re 's/^(.+) \(.+\)/\1/'` /libs
 
 # Default rules for deployment.
@@ -96,8 +96,8 @@ include(deployment.pri)
 #    cvBlob/cvBlobLib.pro~ \
 #    cvBlob/CMakeLists.txt
 
-SUBDIRS += \
-    cvBlob/cvBlobLib.pro
+#SUBDIRS += \
+#    cvBlob/cvBlobLib.pro
 
 HEADERS += \
     larvatrack.h \
