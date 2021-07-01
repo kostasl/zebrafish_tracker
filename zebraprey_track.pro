@@ -56,12 +56,10 @@ PKGCONFIG += opencv gsl   #or whatever package here
 ##Figure out VERSION : pkg-config --modversion opencv
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
 
-##LIBS+=-L/home/kostasl/Qt/5.8/gcc_64/lib/ #Compilation At office DEsktop
 #LIBS += `pkg-config opencv --libs`
 #LIBS +=-lgsl -lgslcblas -lm
 #LIBS +=-lm /home/kostasl/Qt/5.15.1/gcc_64/lib/libQt5OpenGL.so.5 /home/kostasl/Qt/5.15.1/gcc_64/lib/libQt5OpenGL.so.5 /home/kostasl/Qt/5.15.1/gcc_64/lib/libQt5Test.so.5
 #LIBS +=-lm /opt/Qt/5.15.0/gcc_64/lib/libQt5OpenGL.so.5
-#LIBS += -lm /opt/Qt/5.15.0/gcc_64/lib/libQt5Test.so.5
 
 #QMAKE_LIBDIR = /opt/Qt/5.15.0/gcc_64/lib/
 QMAKE_LIBDIR_OPENGL = $LD_LIBRARY_PATH #///opt/Qt/5.15.0/gcc_64/lib/
