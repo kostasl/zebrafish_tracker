@@ -52,9 +52,9 @@ source("DataLabelling/labelHuntEvents_lib.r")
 strDataSetDirectories <- paste(strTrackInputPath, list(
                               "HB80_7dpf_LF3/", ##Dataset 2
                               "HB70_7dpf_NF1/",
-                              #"HB60_7dpf_LF2",
-                              "HB50_7dpf_NF0"
-                              #"HB40_7dpf_LF1"
+                              "HB60_7dpf_LF2",
+                              "HB50_7dpf_NF0",
+                              "HB40_7dpf_LF1"
                               ),sep="/")
 ##Add Source Directory
 

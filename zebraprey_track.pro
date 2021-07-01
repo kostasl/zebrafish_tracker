@@ -9,8 +9,8 @@
 
 TEMPLATE = app
 
-QT += widgets gui qml quick
-#QTDIR = "/opt/Qt/"
+QT += widgets gui qml quick testlib
+#QTDIR = "/opt/Qt/5.15.0"
 
 
 CONFIG += c++11
@@ -43,17 +43,12 @@ RC_ICONS = myappico.ico
 
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
-PKGCONFIG += opencv gsl  #or whatever package here
+PKGCONFIG += opencv gsl   #or whatever package here
 
 ##pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3)
 #pkg-config --list-all
 
 #INCLUDEPATH += `pkg-config opencv --cflags`
-#INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.2.0/include
-#INCLUDEPATH += /home/kostasl/OpenCV/opencv-3.3.0/include
-#INCLUDEPATH += /media/kostasl/D445GB_ext4/opt/OpenCV/opencv-3.4.4/include
-#INCLUDEPATH += /usr/include/cvblob
-#INCLUDEPATH += ~/opencv/
 
 #INCLUDEPATH += /home/kostasl/workspace/cvblobLib
 ##Note: you can pass multiple items to pkg-config as input, so running
@@ -62,13 +57,15 @@ PKGCONFIG += opencv gsl  #or whatever package here
 ##Or Check CV_MAJOR_VERSION, CV_MINOR_VERSION
 
 ##LIBS+=-L/home/kostasl/Qt/5.8/gcc_64/lib/ #Compilation At office DEsktop
-#LIBS += -L /home/kostasl/OpenCV/opencv-3.2.0/build/lib
-#LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib
-#LIBS += -L /home/kostasl/OpenCV/opencv-3.3.0/build-Dbg/lib -lopencv_dnn -lopencv_ml -lopencv_objdetect -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_viz -lopencv_core
-#LIBS += -L /media/kostasl/D445GB_ext4/opt/OpenCV/opencv-3.4.4/build/lib  #Home
-#LIBS += -L /home/kostasl/OpenCV/opencv-3.3.1/build/lib #Office
 #LIBS += `pkg-config opencv --libs`
 #LIBS +=-lgsl -lgslcblas -lm
+#LIBS +=-lm /home/kostasl/Qt/5.15.1/gcc_64/lib/libQt5OpenGL.so.5 /home/kostasl/Qt/5.15.1/gcc_64/lib/libQt5OpenGL.so.5 /home/kostasl/Qt/5.15.1/gcc_64/lib/libQt5Test.so.5
+#LIBS +=-lm /opt/Qt/5.15.0/gcc_64/lib/libQt5OpenGL.so.5
+#LIBS += -lm /opt/Qt/5.15.0/gcc_64/lib/libQt5Test.so.5
+
+#QMAKE_LIBDIR = /opt/Qt/5.15.0/gcc_64/lib/
+QMAKE_LIBDIR_OPENGL = $LD_LIBRARY_PATH #///opt/Qt/5.15.0/gcc_64/lib/
+#unix|win32: LIBS += -lQt5OpenGL
 
 QMAKE_CFLAGS_DEBUG += -v -da -Q
 QMAKE_CFLAGS += -rdynamic
@@ -131,3 +128,5 @@ DISTFILES += \
     img/fishbodyb_tmp.pgm \
     zebraprey_track.supp \
     img/fishbody_tmp9.pgm
+
+

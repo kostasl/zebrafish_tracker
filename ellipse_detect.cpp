@@ -110,11 +110,12 @@ inline int getMax(int* darray,int length,double& votes)
 }
 
 /// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
+/// TODO:Hit A bug Seg Fault.
 void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
 {
    const float pxThres = 100.0; //threshold is non-zero
    //vedgepoint.clear();
-
+  assert(!imgEdgeIn.empty());
   for(int i=0; i<imgEdgeIn.rows; i++)
       for(int j=0; j<imgEdgeIn.cols; j++)
       { cv::Point pt(j,i); //x,y
@@ -670,6 +671,7 @@ void getBestEllipsoidFits(cv::Mat& imgRegion,std::priority_queue<tDetectedEllips
 
     if (gTrackerState.bUseEllipseEdgeFittingMethod)
     {
+        assert(!imgRegion.empty());
         getEdgePoints(imgRegion,vedgePoints_all);
         detectEllipse(imgRegion,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
     }
@@ -747,7 +749,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     std::vector<cv::Point> vREyeHull; //Left Eye
 
     cv::Point2f ptLEyeMid,ptREyeMid;
-
+    assert(!pimgIn.empty());
     //Upsamples an image which causes blur/interpolation it.
     cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
 

@@ -68,6 +68,8 @@
 #include <zfttracks.h>
 #include <fgmaskprocessing.h>
 #include "eyesdetector.h"
+#include <QtOpenGL/QtOpenGL> // Included so qmake selects correct lib location for these
+#include <QtTest/QTest>
 
 #include <errorhandlers.h> // My Custom Mem Fault Handling Functions and Debug
 
