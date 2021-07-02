@@ -41,6 +41,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ptDrag = 0;
     this->nFrame = 0;
     this->mScene = new QGraphicsScene(this->ui->graphicsView);
+    mScene->addText("Zebrafish Tracker Scene")->setPos(100,100);
+
     this->mInsetScene = new QGraphicsScene(this->ui->graphicsViewHead);
     this->mInsetTemplateScene = new QGraphicsScene(this->ui->graphicsViewTemplate);
 
@@ -48,29 +50,27 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->graphicsViewHead->setScene(this->mInsetScene);
     this->ui->graphicsViewTemplate->setScene(this->mInsetTemplateScene);
 
-
     this->ui->graphicsViewHead->setSceneRect(this->ui->graphicsViewHead->geometry()); // set the scene's bounding rect to rect of mainwindow
-    //this->ui->graphicsViewHead->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    //this->ui->graphicsViewHead->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-
     this->ui->graphicsViewTemplate->setSceneRect(this->ui->graphicsViewTemplate->geometry()); // set the scene's bounding rect to rect of mainwindow
-    //this->ui->graphicsViewTemplate->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    //this->ui->graphicsViewTemplate->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->ui->graphicsView->setSceneRect(QRect(0,0,3000,3000)); // set the scene's bounding rect to rect of mainwindow
+    this->ui->graphicsView->horizontalScrollBar()->setValue(1500); // set the scene's bounding rect to rect of mainwindow
+    this->ui->graphicsView->verticalScrollBar()->setValue(1500); // set the scene's bounding rect to rect of mainwindow
+    this->ui->graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    this->ui->graphicsView->setResizeAnchor(QGraphicsView::AnchorUnderMouse);
 
     //this->ui->graphicsView->setFixedSize(1280,1024);
-    //mScene->setSceneRect(this->ui->graphicsView->rect());
 
-    mScene->addText("Zebrafish Tracker Scene")->setPos(100,100);
+
     //Add Empty/New PixMap on Which we will set the images onto
-    QPixmap pxMapEmpty1(this->ui->graphicsView->geometry().width(),this->ui->graphicsView->geometry().height());
+    QPixmap pxMapEmpty1(250,250);
     QPixmap pxMapEmpty2(this->ui->graphicsViewHead->geometry().width(),this->ui->graphicsViewHead->geometry().height());
     QPixmap pxMapEmpty3(this->ui->graphicsViewTemplate->geometry().width(),this->ui->graphicsViewTemplate->geometry().height());
     this->mImage                 = mScene->addPixmap(pxMapEmpty1);
+    this->mImage->setPos(100,100);
     this->mImageInset            = mInsetScene->addPixmap(pxMapEmpty2);
     this->mImageTemplateInset    = mInsetTemplateScene->addPixmap(pxMapEmpty3);
 
-    this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
+
     //this->ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded); //leave option down to  Form Editor
         //this->ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
@@ -380,20 +380,22 @@ void MainWindow::showCVimg(cv::Mat& img)
 
     /// A Scene contains graphic objects, but rendering them requires a View.
     ///  The Scenes size can be larger than the View's
-    this->ui->graphicsView->setSceneRect(this->ui->graphicsView->geometry()); // set the scene's bounding rect to rect of mainwindow
-    QRect bound = this->ui->graphicsView->geometry();
-    this->mScene->setSceneRect(bound);
+    QRectF bound = this->ui->graphicsView->sceneRect(); // set the scene's bounding rect to rect of mainwindow
 
     //this->ui->graphicsView->setFixedSize(qimg.width(),qimg.height());
 
     mImage->setPixmap(pixMap);
+    QRectF imgbound = this->mImage->boundingRect();
+    //bound.setHeight(bound.height()*2);
+    //bound.setWidth(bound.width()*2);
+    //this->mScene->setSceneRect(bound);
+
+
+
+    this->mImage->setPos(bound.center().x()-imgbound.width()/2,
+                         bound.center().y()-imgbound.height()/2);
+
     //this->ui->graphicsView->fitInView(this->mImage->boundingRect(), Qt::KeepAspectRatio);
-
-    this->mImage->setPos(bound.topLeft().x() ,bound.topLeft().y());
-
-
-    //this->ui->graphicsView->fitInView(mImage, Qt::KeepAspectRatio);
-    //this->ui->graphicsView->show();
 
     //this->mpLastCVImg = &img; //Save Pointer to frame
     //mImage
@@ -629,51 +631,38 @@ void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrolleven
 {
     //Using Native Graphics Scene Scale capabilities :
     // thx to :https://stackoverflow.com/questions/19113532/qgraphicsview-zooming-in-and-out-under-mouse-position-using-mouse-wheel
-  //if (scrollevent->modifiers() & Qt::ControlModifier)
+  if (scrollevent->modifiers() & Qt::ControlModifier)
+      qDebug() << "Pan ";
+
 
         // Do a wheel-based zoom about the cursor position
-        //QPoint numPixels = scrollevent->pixelDelta();
-        //QPoint angle = scrollevent->angleDelta() / 8;
-        double factor = 1.0;
 
         int angle =  scrollevent->delta();
-
-        //if (!angle.isNull())
-        //{
-           if (angle > 0){
-                    factor = 1.1;}
-            else{
-                    factor = 0.9;}
+        double factor = qPow(1.0015, angle);
 
         qDebug() << " Angle:" << angle << " Zm:"<< factor;
-       // }
-        //double factor = qPow(1.0015, angle);
 
 
-        QPointF targetViewportPos = scrollevent->pos();
-        QPointF targetScenePos = this->ui->graphicsView->mapToScene(scrollevent->pos().x(),scrollevent->pos().y());
+        QPointF targetScenePos = scrollevent->scenePos(); // this->ui->graphicsView->mapToScene(scrollevent->pos().x(),scrollevent->pos().y());
+        QPoint targetScreenPos  = scrollevent->screenPos();
+
 
         this->ui->graphicsView->scale(factor, factor);
-        this->ui->graphicsView->centerOn(targetScenePos);
-        QPointF deltaViewportPos = targetViewportPos - QPointF(this->ui->graphicsView->viewport()->width() / 2.0,
-                                                               this->ui->graphicsView->viewport()->height() / 2.0);
-        QPointF viewportCenter = this->ui->graphicsView->mapFromScene(targetScenePos) - deltaViewportPos;
+        //Check Where Mouse Is On Scene After Transform
+        QPointF nScenePos = this->ui->graphicsView->mapToScene(targetScreenPos);
+        QPointF deltaViewportPos = targetScenePos-nScenePos;
+
+
+        //this->ui->graphicsView->translate(100,100);
+        //this->ui->graphicsView->centerOn(targetScenePos);
+        //QPointF deltaViewportPos = targetViewportPos - QPointF(this->ui->graphicsView->viewport()->width() / 2.0, this->ui->graphicsView->viewport()->height() / 2.0);
+        //QPointF viewportCenter = this->ui->graphicsView->mapFromScene(targetScenePos) - deltaViewportPos;
 
         //this->ui->graphicsView->centerOn(this->ui->graphicsView->mapToScene(viewportCenter.toPoint()));
 
-        const QPointF p1mouse =  this->ui->graphicsView->mapFromScene(targetScenePos);
-        const QPointF move = p1mouse - scrollevent->pos(); // The move
-
-        int hScroll = this->ui->graphicsView->horizontalScrollBar()->value();
-        int vScroll = this->ui->graphicsView->verticalScrollBar()->value();
-
-        this->ui->graphicsView->horizontalScrollBar()->setValue(targetScenePos.x() + hScroll);
-        this->ui->graphicsView->verticalScrollBar()->setValue(targetScenePos.y() + vScroll);
-
-                QRect bound = this->ui->graphicsView->geometry();
-                this->mScene->setSceneRect(bound);
-               //this->ui->graphicsView->fitInView(this->mImage->boundingRect(), Qt::KeepAspectRatio);
-                this->mImage->setPos(bound.topLeft().x() ,bound.topLeft().y());
+//       this->mScene->setSceneRect(bound);
+//        this->ui->graphicsView->fitInView(this->mImage->boundingRect(), Qt::KeepAspectRatio);
+        //this->mImage->setPos(bound.topLeft().x() ,bound.topLeft().y());
 
 
     return;

@@ -69,12 +69,16 @@ public:
     cv::Point2f alpha_beta_TrackingFilter_step(cv::Point2f blobPt); //Filter Position Updates based on a simple tuned g-h filter
     cv::Point2f ptEstimated; //Filter Internal Vars
     cv::Point2f ptPredicted;
-    double dx = 0.01;
-    double dy = 0.01;
+
+    double g_FPS_scaling = 400.0/gTrackerState.gfVidfps;
+    double dx = 0.01*g_FPS_scaling;
+    double dy = 0.01*g_FPS_scaling;
     // These values have been tested in R using pre-recorded Prey Data
-    double dt = 1.0;//gTrackerState.gfVidfps/3; // Filter TimeStep
-    constexpr static const double g = 1.0/100.0; //Measurement Scaling - 2orders Larger than h works best
-    constexpr static const double h = 1.0/1000.0; //Prediction Scaling - Gain Smaller when highly noisy environment
+    double dt = g_FPS_scaling*1.0; // Filter TimeStep (a dt 1.0 works when fps 410)
+
+    //constexpr static
+    double g = g_FPS_scaling*1.0/100.0; //Measurement Scaling - 2orders Larger than h works best
+    double h = g_FPS_scaling*1.0/1000.0; //Prediction Scaling - Gain Smaller when highly noisy environment
 
 
 };

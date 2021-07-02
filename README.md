@@ -98,3 +98,8 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 
 * Repo owner or admin (kostasl)
 * Other community or team contact
+
+## Prey Tracking
+
+I used an $\alpha-\beta$ filter to track the motion of the prey items. The filter params where adjusted against prey motion data, and these need to be scaled based on 
+video scaling spatial (field of view/resolution)  and time (fps). I have added crude scaling to the video fps and assume the video frame contains a 35 mm circular arena.

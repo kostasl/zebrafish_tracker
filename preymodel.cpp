@@ -51,7 +51,7 @@ preyModel::preyModel(zfdblob blob,zfdID ID):preyModel()
     headingTheta = M_PI;
     velocity.x = 0.0;
     velocity.y = 0.0;
-    df_propulsion =  muPropulsion+gsl_ran_gaussian(gTrackerState.r,sigmaPropulsion ); // g2prop.random(); //(float)random(-50,50)/1000.0f;
+    df_propulsion =  muPropulsion+gsl_ran_gaussian(gTrackerState.p_gsl_r,sigmaPropulsion ); // g2prop.random(); //(float)random(-50,50)/1000.0f;
     df_friction = 0.75;  /// Water Drag Force Coefficient / (prop to velocity)
     omegaDeg = 0; //Angular Velocity In Degrees
     mass     = 1.0; //Assume unity mass initially
@@ -213,7 +213,7 @@ void preyModel::updateState(zfdblob fblob,int Angle, cv::Point2f bcentre,unsigne
 
 
     //Time Since Last recorded Move
-    dt = std::max((uint)nFrame - this->nLastUpdateFrame,(uint)1);
+    dt = (std::max((uint)nFrame - this->nLastUpdateFrame,(uint)1))/gTrackerState.gfVidfps;
     cv::Point2f ptFiltered = alpha_beta_TrackingFilter_step(bcentre);
 
 

@@ -134,11 +134,11 @@ class trackerState
       enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
 
       /// VIDEO AND BACKGROUND PROCESSING //
-      float gfVidfps                  = 410;
+      float gfVidfps                  = 400;
       uint frame_pxwidth               = 640; //Video Frame pixel Dimensions/ Default Changed when Video Is opened
       uint frame_pxheight              = 480;
 
-      const unsigned int MOGhistory   = 100; //Use 100 frames Distributed across the video length To Find What the BGModel is
+      const unsigned int MOGhistory   = 10; //Use 100 frames Distributed across the video length To Find What the BGModel is
       double gdMOGBGRatio             = 0.05; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
@@ -167,7 +167,7 @@ class trackerState
       int gcMaxFishModelInactiveFrames          = 150; //Number of frames inactive until track is deleted
       int gcMaxFoodModelInactiveFrames          = gfVidfps/5; //Number of frames inactive (Not Matched to a Blob) until track is deleted
       int gcMinFoodModelActiveFrames            = gfVidfps/20; //Min Number of consecutive frames it needs to be active  otherwise its deleted
-      const int gMaxClusterRadiusFoodToBlob     = 4;
+      float gMaxClusterRadiusFoodToBlob           = 3; //Per Sec / This changes depending on FPS (setFPS)
       const int thActive                            = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
       const int gc_FishTailSpineSegmentLength_init  = 9;
       int gFoodReportInterval                       = (int)gfVidfps;
@@ -232,7 +232,7 @@ class trackerState
 
       bool bRenderToDisplay           = true; ///Updates Screen to User When True
       bool bRenderWithAlpha           = false;
-      bool bDrawFoodBlob              = false; ///Draw circle around identified food blobs (prior to model matching)
+      bool bDrawFoodBlob              = true; ///Draw circle around identified food blobs (prior to model matching)
       bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
       bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
       bool bStaticAccumulatedBGMaskRemove       = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
@@ -293,8 +293,8 @@ class trackerState
       int iEyeMaskSepWidth            = 25; //5 px width vertical line separates the eyes for segmentation
       double eyeStepIncrement         = 0.1;
       double gTemplateMatchThreshold  = 0.80; //If not higher than 0.9 The fish body can be matched at extremeties
-      double gTemplateMatchThreshold_LowLimit = 0.75;
-      double gTemplateMatchThreshold_UpLimit = 0.85;
+      double gTemplateMatchThreshold_LowLimit = 0.78;
+      double gTemplateMatchThreshold_UpLimit = 0.87;
 
       int iLastKnownGoodTemplateRow   = 0;
       int iFishAngleOffset            = 0;
@@ -304,7 +304,7 @@ class trackerState
 
       /// Random Number Generator
       const gsl_rng_type * T;
-      gsl_rng * r;
+      gsl_rng * p_gsl_r;
 
       // Other fonts:
       //   CV_FONT_HERSHEY_SIMPLEX, CV_FONT_HERSHEY_PLAIN,

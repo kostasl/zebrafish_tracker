@@ -222,7 +222,7 @@ trackerState::trackerState()
      gsl_rng_env_setup();
 
      T = gsl_rng_default;
-     r = gsl_rng_alloc (T);
+     p_gsl_r = gsl_rng_alloc (T);
 
 
 }
@@ -233,7 +233,7 @@ void trackerState::setVidFps(float fps)
     gcMaxFoodModelInactiveFrames  = gfVidfps*2; //Number of frames inactive (Not Matched to a Blob) until track is deleted
     gcMinFoodModelActiveFrames    = gfVidfps/20;
     gFoodReportInterval           = gfVidfps; //Report Food every second
-
+    gMaxClusterRadiusFoodToBlob   = ( (frame_pxwidth/3) /gfVidfps);
 }
 
 void trackerState::saveState(std::string strFilename)

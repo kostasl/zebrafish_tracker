@@ -1054,10 +1054,12 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 ptSearch = pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
                 iTemplRow = pfish->idxTemplateRow;
                 iTemplCol = pfish->idxTemplateCol;
+
                 maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
 
                 //Failed? Try the blob Head (From Enhance Mask) Detected position
-                if ( maxMatchScore < gTrackerState.gTemplateMatchThreshold)
+                if ( maxMatchScore < gTrackerState.gTemplateMatchThreshold &&
+                     !gTrackerState.bDraggingTemplateCentre)
                 {
                   ptSearch = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
                   ptbcentre = ptSearch;
@@ -1075,7 +1077,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                      //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                     ///Update Model State
                     // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
-                    if (!gTrackerState.bStoreThisTemplate && !gTrackerState.bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
+                    if (!gTrackerState.bStoreThisTemplate &&
+                        !gTrackerState.bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
                     {
                         pfish->updateState(fishblob,maxMatchScore,bestAngle+gTrackerState.iFishAngleOffset,ptbcentre,nFrame,gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
                     }
@@ -1110,7 +1113,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
        //then still create new model as this could be a fish we have not seen before -
        // And we avoid getting stuck searching for best model
        //
-       if (!bModelFound) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
+       if (!bModelFound && !gTrackerState.bDraggingTemplateCentre) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
         {
             //Check Template Match Score
             ptSearch = fishblob->pt;
@@ -1121,6 +1124,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             pwindow_main->LogEvent("No Fish model found for blob");
             cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
             ptbcentre = ptSearch;
+
             maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
             //If New Blob Looks Like A Fish, Then Make  A New Model
             if (maxMatchScore > gTrackerState.gTemplateMatchThreshold)
@@ -1130,6 +1134,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                fish->ID = ++gTrackerState.gi_MaxFishID;
                fish->idxTemplateRow = iTemplRow;
                fish->idxTemplateCol = iTemplCol;
+
                fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
 
                vfishmodels.insert(IDFishModel(fish->ID,fish));
@@ -1422,9 +1427,13 @@ void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdb
     /// Unmatched Keypoints/blobs handling -create new Food Models ///
     // Check For Unmatched Blobs And Make (A) New Food Item Each Time this function is called //
     //If There Are more Blobs Remaining / New Objects Allowed (Currently OFF for OpticFlow, and we are below the Count Limit
-    if (bAllowNew && (vfoodblobs_spare.size() > 1) && (vfoodmodels.size() < gTrackerState.gi_FoodModelNumberLimit) )
+    if (bAllowNew && (vfoodblobs_spare.size() > 1) &&
+            (vfoodmodels.size() < gTrackerState.gi_FoodModelNumberLimit) )
     {
-        zfdblob* foodblob= &vfoodblobs_spare[0]; //Take the 1st one Available And Make A food Model For it
+        //Pick A random Spare Blob - Otherwise Can get Stuck on blob near one with an existing model
+        int ridx = gsl_rng_uniform_int(gTrackerState.p_gsl_r,vfoodblobs_spare.size());
+        zfdblob* foodblob= &vfoodblobs_spare[ridx]; //Take A Random One
+
         pfood = pwindow_main->getFoodItemAtLocation(foodblob->pt); //Check for dublicated
         if (!pfood) //IF no dublicate Item there, then make new
         {
@@ -1977,21 +1986,19 @@ int processPreyBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     for(int i=0;i<keypoints.size();i++)
     {
         cv::KeyPoint kp = keypoints[i];
+        if (pointIsInROI((cv::Point)kp.pt,1))
+              ptFoodblobs.push_back(kp);
 
         ///Go Through Each ROI and Render Blobs - Split Between Fish and Food
-        unsigned int RoiID = 0;
-        for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
-        {
-            ltROI iroi = (ltROI)(*it);
-            RoiID++;
-            //Keypoint is in ROI so Add To Masked
-            if (iroi.contains(kp.pt))
-                     ptFoodblobs.push_back(kp);
-
-            //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
-            //if (maskVal > 0)
-             //keypoints_in_mask.push_back(kp);
-        }
+//        unsigned int RoiID = 0;
+//        for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
+//        {
+//            ltROI iroi = (ltROI)(*it);
+//            RoiID++;
+//            //Keypoint is in ROI so Add To Masked
+//            if (iroi.contains(kp.pt))
+//                ptFoodblobs.push_back(kp);
+//        }
     }
 
 
