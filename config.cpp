@@ -171,8 +171,8 @@ int initDetectionTemplates()
         trackerState::loadFromQrc(QString::fromStdString(gTrackerState.strTemplateImg + to_string(idxTempl+1) + std::string(".pgm")),lastfish_template_img,IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
         if (lastfish_template_img.empty())
         {
-            std::cerr << "Could not load template" << std::endl;
-            exit(-1);
+            std::cerr << "Could not load template :" << idxTempl << std::endl;
+            continue;
         }
         //Add to Global List Of Template Images
         gTrackerState.vTemplImg.push_back(lastfish_template_img);

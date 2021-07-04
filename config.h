@@ -277,13 +277,13 @@ class trackerState
       int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
-      int giEyeIsolationMaskRadius        = 10; ///Mask circle between eyes
+      int giEyeIsolationMaskRadius        = 8; ///Mask circle between eyes
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
       int gthresEyeSeg                    = -10; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
       int gthresEyeSegL                   = 2;
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold          = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-      int gFishBoundBoxSize               = 24; /// pixel width/radius of bounding Box When Isolating the fish's head From the image
+      int gFishBoundBoxSize               = 35; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gFishTailSpineSegmentLength     = 9;
 
 

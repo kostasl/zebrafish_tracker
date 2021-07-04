@@ -751,7 +751,8 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::Point2f ptLEyeMid,ptREyeMid;
     assert(!pimgIn.empty());
     //Upsamples an image which causes blur/interpolation it.
-    cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size(pimgIn.cols*2,pimgIn.rows*2));
+    const float g_EyesUpScale = 2.0;
+    cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size((int)pimgIn.cols*g_EyesUpScale,(int)pimgIn.rows*g_EyesUpScale));
 
     int lengthLine = 13;
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);

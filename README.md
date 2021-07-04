@@ -101,5 +101,9 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 
 ## Prey Tracking
 
-I used an $\alpha-\beta$ filter to track the motion of the prey items. The filter params where adjusted against prey motion data, and these need to be scaled based on 
+I used an G-H filter to track the motion of the prey items.
+This simple position filtering technique (G-H Filter) improves tracking between subsequent frames 
+ by removing any sudden non-prey like jumps and noise from the estimated prey position.
+
+The filter params where adjusted against prey motion data, and these need to be scaled based on 
 video scaling spatial (field of view/resolution)  and time (fps). I have added crude scaling to the video fps and assume the video frame contains a 35 mm circular arena.

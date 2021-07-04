@@ -87,13 +87,14 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
      //Locate Centroid Region at a point between blob Centroid And Detect HeadPoint on Curve
    // cv::Point centroid = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
 
-
+    /// BOUND SEARCH REGION ///
+    // Small Search Region When A Match has already been found
     cv::Point pBound1,pBound2;
-    int iSearchRegionSize = gTrackerState.gFishBoundBoxSize;
+    int iSearchRegionSize = 2*gTrackerState.gFishBoundBoxSize;
 
-//If We are not Following A known Fish, then Expand the Search Region
+    //Expand the Search Region If Fish Tracking Has been lost
     if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 5*gTrackerState.gFishBoundBoxSize;
+       iSearchRegionSize = 7*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));
@@ -104,9 +105,9 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
     // Debug //
     #ifdef _ZTFDEBUG_
-       cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150,30),1); //Ucomment to debug template search Region
+       cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1); //Ucomment to debug template search Region
     #endif
-
+    cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1); //Ucomment to debug template search Region
     cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
 
@@ -115,7 +116,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     // Crude Way to detect if this fish has been searched before/ First Time this blob is searched?
     bool findBestMatch = (iLastKnownGoodTemplateRow == 0 && iLastKnownGoodTemplateCol == 0);
     if (findBestMatch)
-        pwindow_main->LogEvent(QString("Look for Best Match in Templates"));
+        pwindow_main->LogEvent(QString("Search throughout templates for best match (slow)"));
 
    /// iLastKnownGoodTemplateRow will change to the row that matched the tracked larva
     int iLastTemplateRow = iLastKnownGoodTemplateRow;
@@ -410,10 +411,12 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
  }else{ // If template matched then stay on the same template row
      startRow = ibestMatchRow;
 
-     //Move towards Match score
+     /// ADJUST Threshold - Success - Move towards Match score
      if (gTrackerState.gTemplateMatchThreshold < gTrackerState.gTemplateMatchThreshold_UpLimit &&
              gTrackerState.gTemplateMatchThreshold >  gTrackerState.gTemplateMatchThreshold_LowLimit){
             gTrackerState.gTemplateMatchThreshold += 0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
+            gTrackerState.gTemplateMatchThreshold = std::min(gTrackerState.gTemplateMatchThreshold_UpLimit,
+                                                             std::max(gTrackerState.gTemplateMatchThreshold_LowLimit, gTrackerState.gTemplateMatchThreshold));
             pwindow_main->updateTemplateThres();
      }
 
@@ -424,11 +427,14 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
  // Check if we are stuck with Too Many Template Match Fails, then Warn and lower match threshold.
  if (gTrackerState.iTemplateMatchFailCounter > gTrackerState.gnumberOfTemplatesInCache)
  {
-     //Do not Go Below Limit
+     ///ADJUST THRESHOLD - Detect FAilures -
     if(gTrackerState.gTemplateMatchThreshold >  gTrackerState.gTemplateMatchThreshold_LowLimit)
     {
         pwindow_main->LogEvent("[warning] Too many template match failures, lowering threshold.");
-        gTrackerState.gTemplateMatchThreshold += 0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
+        gTrackerState.gTemplateMatchThreshold +=  0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
+        gTrackerState.gTemplateMatchThreshold = std::min(gTrackerState.gTemplateMatchThreshold_UpLimit,
+                                                         std::max(gTrackerState.gTemplateMatchThreshold_LowLimit, gTrackerState.gTemplateMatchThreshold));
+
         pwindow_main->updateTemplateThres();
         //gTrackerState.iTemplateMatchFailCounter = 0; //Restart Counting With New Threshold
     }

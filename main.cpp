@@ -2909,8 +2909,10 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
           //Draw A general Region Where the FIsh Is located,
           cv::Point centre = fish->ptRotCentre; //top_left + rotCentre;
           //cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
-          cv::Point pBound1 = cv::Point(max(0,min(frame_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)), max(0,min(frame_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
-          cv::Point pBound2 = cv::Point(max(0,min(frame_gray.cols,centre.x+gTrackerState.gFishBoundBoxSize)), max(0,min(frame_gray.rows,centre.y+gTrackerState.gFishBoundBoxSize)));
+          cv::Point pBound1 = cv::Point(max(0,min(frame_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)),
+                                        max(0,min(frame_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
+          cv::Point pBound2 = cv::Point(max(0,min(frame_gray.cols,centre.x+gTrackerState.gFishBoundBoxSize)),
+                                        max(0,min(frame_gray.rows,centre.y+gTrackerState.gFishBoundBoxSize)));
 
           cv::Rect rectFish(pBound1,pBound2);
 
@@ -2921,7 +2923,11 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
           ///Update Template Box Bound
           int bestAngleinDeg = fish->bearingAngle;
-          cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),bestAngleinDeg);
+          // Set Size Of Head Crop Image
+          cv::RotatedRect fishRotAnteriorBox(centre,
+                                             cv::Size(gTrackerState.gLastfishimg_template.cols,
+                                                      gTrackerState.gLastfishimg_template.rows),
+                                                       bestAngleinDeg);
           /// Save Anterior Bound
           fish->bodyRotBound = fishRotAnteriorBox;
 
@@ -2945,19 +2951,24 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
           //- Expand image so as to be able to fit the template When Rotated Orthonormally
           //Custom Bounding Box Needs to allow for RotRect To be rotated Orthonormally
           cv::Rect rectfishAnteriorBound = rectFish; //Use A square // fishRotAnteriorBox.boundingRect();
-          cv::Size szFishAnteriorNorm(min(rectfishAnteriorBound.width,rectfishAnteriorBound.height)+4,max(rectfishAnteriorBound.width,rectfishAnteriorBound.height)+4); //Size Of Norm Image
+          /// Size Of Norm Head Image
+          cv::Size szFishAnteriorNorm(min(rectfishAnteriorBound.width,rectfishAnteriorBound.height)+4,
+                                      max(rectfishAnteriorBound.width,rectfishAnteriorBound.height)+4);
           //Rot Centre Relative To Bounding Box Of UnNormed Image
           //cv::Point2f ptFishAnteriorRotCentre = (cv::Point2f)fishRotAnteriorBox.center-(cv::Point2f)rectfishAnteriorBound.tl();
 
           //Define Regions and Sizes for extracting Orthonormal Fish
           //Top Left Corner of templateSized Rect relative to Rectangle Centered in Normed Img
           cv::Size szTemplateImg = gTrackerState.gLastfishimg_template.size();
+
           //cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
-          cv::Point ptTopLeftTemplate(rectfishAnteriorBound.width/2-szTemplateImg.width/2,rectfishAnteriorBound.height/2-szTemplateImg.height/2);
+          cv::Point ptTopLeftTemplate(rectfishAnteriorBound.width/2-szTemplateImg.width/2,
+                                      rectfishAnteriorBound.height/2-szTemplateImg.height/2);
 
 
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
-          cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
+          cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),
+                             max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
 //          cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
           cv::Rect rectFishHeadBound = cv::Rect(ptTopLeftTemplate,szHeadImg);
 
