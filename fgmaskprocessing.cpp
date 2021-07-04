@@ -554,7 +554,9 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
     //Then Use ThresholdImage TO Trace More detailed Contours
     //cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
-    cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    assert(!fgEdgeMask.empty());
+    cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,
+                      cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
     ///Draw Only the largest contours that should belong to fish
     /// \todo Other Match Shapes Could be used here
@@ -655,7 +657,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     } //For Each Fish Contour
 
     // Release Should is done automatically anyway
-    fgEdgeMask.release();
+    //fgEdgeMask.release();
 
     return (vFilteredFishbodycontours);
 
@@ -682,7 +684,8 @@ void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
     cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
 
-    frameImg_gray = frameImg.clone();//frameImg.clone();
+    frameImg.copyTo(frameImg_gray);
+    //frameImg_gray = frameImg.clone();//frameImg.clone();
 
     // Check this Again / What is it doing?
     getPreyMask(frameImg_gray,fgMask,outFoodMask);

@@ -19,7 +19,6 @@ The tracker deals only with extracting information from image pixels, and so fil
 The application offers a GUI from which to select input video and where to export the CSV data files.
 These can also be set by command line options allowing to start the tracker through scripts and process multiple video files automatically.
 
-
 User:
  * Chooses input video file, then on the second dialogue choose the text file to export track info in CSV format.
 The directory where the data csv files are exported must have  format EXP_N_YYYYMMDD_Ssec giving the experiment number N (can be a range or anything really),the date when the embryos were collected, and the timelapse frame period in seconds).
@@ -88,6 +87,22 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 
 *Note:* The package of source files contains example MATLAB scripts that can process these output files, plot and extract statistics.
 
+## Fish detection
+
+A set of templates is included in the resources / img project subdirectory.
+All templates need to be of the same size - (rows,columns) and the the size of the 1st loaded template defines the 
+
+
+## Prey detection
+
+I used an G-H filter to track the motion of the prey items.
+This simple position filtering technique (G-H Filter) improves tracking between subsequent frames 
+ by removing any sudden non-prey like jumps and noise from the estimated prey position.
+
+The filter params where adjusted against prey motion data, and these need to be scaled based on 
+video scaling spatial (field of view/resolution)  and time (fps). I have added crude scaling to the video fps and assume the video frame contains a 35 mm circular arena.
+
+
 ### Contribution guidelines ###
 
 * Writing tests
@@ -98,12 +113,3 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 
 * Repo owner or admin (kostasl)
 * Other community or team contact
-
-## Prey Tracking
-
-I used an G-H filter to track the motion of the prey items.
-This simple position filtering technique (G-H Filter) improves tracking between subsequent frames 
- by removing any sudden non-prey like jumps and noise from the estimated prey position.
-
-The filter params where adjusted against prey motion data, and these need to be scaled based on 
-video scaling spatial (field of view/resolution)  and time (fps). I have added crude scaling to the video fps and assume the video frame contains a 35 mm circular arena.

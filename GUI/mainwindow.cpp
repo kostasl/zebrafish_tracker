@@ -356,7 +356,7 @@ void MainWindow::showInsetTemplateimg(cv::Mat& img)
 
 void MainWindow::showCVimg(cv::Mat& img)
 {
-    frameScene.release();
+    //frameScene.release();
     //frameScene = img.clone();
     img.copyTo(frameScene);
 

@@ -617,15 +617,15 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
     if (gTrackerState.bshowMask && gTrackerState.bTracking)
         cv::imshow("Segmented FG with Fish",fgFishImgMasked);
 
-    fgFishImgMasked.release();
-    fgFishMask.release();
-    fgFishImgMasked.release();
+   // fgFishImgMasked.release();
+   // fgFishMask.release();
+   // fgFishImgMasked.release();
 
    // int RefCount = frame_gray.u ? (frame_gray.u->refcount) : 0; //Its 1 at this point as required
     //assert(RefCount == 1);
     //qDebug() << "frame_gray.u->refcount:" << RefCount;
 
-    frame_gray.release();
+   // frame_gray.release();
 
 
 } //End Of Process Frame
@@ -3191,38 +3191,38 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
     //assert(maskedfishFeature_blur.u->refcount == 1);
 
-    maskedfishFeature_blur.release();
+   // maskedfishFeature_blur.release();
 
 
     //assert(Mrot.u->refcount == 1);
 
-    Mrot.release();
+   // Mrot.release();
 
 
     //assert(imgFishAnterior.u->refcount == 1);
 
-    imgFishAnterior.release();
+    //imgFishAnterior.release();
 
 
 
     //assert(imgFishAnterior_Norm.u->refcount == 1);
 
 
-    imgFishAnterior_Norm.release();
+    //imgFishAnterior_Norm.release();
 
 
     //assert(imgFishHead.u->refcount == 1);
 
-    imgFishHead.release();
+    //imgFishHead.release();
 
 
     //assert(imgFishHeadProcessed.u->refcount == 1);
-    imgFishHeadProcessed.release();
+    //imgFishHeadProcessed.release();
 
     //assert(maskedImg_gray.u->refcount == 2); //1 Ref Comes From InpuTIMgs
 
 
-    frame_gray.release();
+    //frame_gray.release();
 
 
 

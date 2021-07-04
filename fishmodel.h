@@ -119,7 +119,7 @@ public:
   double templateScore; ///Fishdetection Score - How well the detected model fish looks/matches the convolution of a fish template
 ///
 
-  unsigned int nLastUpdateFrame; ///<-Holds the frame Number of the last State Update
+  unsigned int nLastUpdateFrame = 0; ///<-Holds the frame Number of the last State Update
   uint uiFrameIterations; ///Counts number of iterations this fishModel (tracker) has been calc the same frame. - Used to improve estimates with time
 
   double leftEyeTheta; /// Theta is In Degrees

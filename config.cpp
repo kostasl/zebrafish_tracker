@@ -48,7 +48,6 @@ cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across
 
 
 
-cv::Size gszTemplateImg;
 
 //cv::Ptr<cv::BackgroundSubtractor> pMOG; //MOG Background subtractor
 //cv::Ptr<cv::BackgroundSubtractorKNN> pKNN; //MOG Background subtractor
@@ -180,15 +179,11 @@ int initDetectionTemplates()
         addTemplateToCache(lastfish_template_img,gFishTemplateCache,idxTempl); //Increments Index
     }
 
-    // Set Template Size
-    gszTemplateImg.width = lastfish_template_img.size().width; //Save TO Global Size Variable
-    gszTemplateImg.height = lastfish_template_img.size().height; //Save TO Global Size Variable
-
     // Set Paster Region for Inset Image
-    gTrackerState.rect_pasteregion.x = (gTrackerState.frame_pxwidth-gszTemplateImg.width*2);
+    gTrackerState.rect_pasteregion.x = (gTrackerState.frame_pxwidth-gTrackerState.gszTemplateImg.width*2);
     gTrackerState.rect_pasteregion.y = 0;
-    gTrackerState.rect_pasteregion.width = gszTemplateImg.width*2; //For the upsampled image
-    gTrackerState.rect_pasteregion.height = gszTemplateImg.height*2;
+    gTrackerState.rect_pasteregion.width = gTrackerState.gszTemplateImg.width*2; //For the upsampled image
+    gTrackerState.rect_pasteregion.height = gTrackerState.gszTemplateImg.height*2;
 
     gTrackerState.gstroutDirTemplates = gTrackerState.gstroutDirCSV + ("/templates/");
     int ifileCount = loadTemplatesFromDirectory(QString::fromStdString(  gTrackerState.gstroutDirTemplates) );
@@ -449,7 +444,7 @@ void  trackerState::initROI(uint framewidth,uint frameheight)
       else //Make Default ROI Region
     {
         ptROI2.x = (framewidth- gFishBoundBoxSize/2)/2;
-        ptROI2.y = gszTemplateImg.height/3;
+        ptROI2.y = gTrackerState.gszTemplateImg.height/3;
     //Add Global Roi - Center - Radius
         ltROI newROI(cv::Point(framewidth/2,(frameheight)/2),ptROI2);
         addROI(newROI);

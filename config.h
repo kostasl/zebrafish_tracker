@@ -187,6 +187,8 @@ class trackerState
       QStringList inVidFileNames; //List of Video Files to Process
       std::string  gstrvidFilename; //Currently Tracked Vid
       cv::Size gszTemplateImg;
+
+
       cv::Rect rect_pasteregion;//For Inset Pasting
 
       //Contours Shaping
@@ -253,7 +255,7 @@ class trackerState
       bool bUseEllipseEdgeFittingMethod         = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
       /// \todo Make this path relative or embed resource
       //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
-      std::string strTemplateImg = ":/img/fishbody_tmp"; ///Load From Resource
+      std::string strTemplateImg = ":/img/fishbody_Ltmp"; ///Load From Resource
 
       ///Specific To the Tracked Video Options//
       uint uiCurrentFrame = 1;
@@ -273,7 +275,7 @@ class trackerState
       /// Eye Tracking Params
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-      int gi_maxEllipseMajor      = 21; /// thres  for Eye Ellipse Detection methods
+      int gi_maxEllipseMajor      = 31; /// thres  for Eye Ellipse Detection methods
       int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse

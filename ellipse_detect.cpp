@@ -216,9 +216,12 @@ void getConnectedEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdg
 /// \returns vedgepoint list of connected pixels to the one in startpt
 void getPointsAlongEdge(cv::Mat imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint)
 {
-      cv::Mat imgEdgeIn_checked;// = imgEdgeIn.clone();
-      imgEdgeIn.copyTo(imgEdgeIn_checked);
-      getConnectedEdgePoints(imgEdgeIn_checked,startpt,vedgepoint);
+    assert(!imgEdgeIn.empty());
+    /// \bug hits here
+    // cv::Mat imgEdgeIn_checked = imgEdgeIn.clone();
+      //imgEdgeIn.copyTo(imgEdgeIn_checked);
+
+    getConnectedEdgePoints(imgEdgeIn,startpt,vedgepoint);
 
 }
 
@@ -390,7 +393,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
         {
             tEllipsoidEdges::iterator it2 = vedgePoints_pair.begin();
             it2 += distr(eng);
-            ptxy2 = (*it2).ptEdge;
+            ptxy2 = (*it2).ptEdge; //ValGrind: Invalid Read of size 4 -reported
             it2 = vedgePoints_pair.erase(it2);
     ////End of Random Pair //
 //        for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 ) {
@@ -729,6 +732,9 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 {
 
      cv::Mat imgFishHead_Lapl;
+     cv::Mat imgEdge_local_REye,imgEdge_local_LEye;// = imgEdge_local.clone();
+
+     cv::Mat imgEdge_local_Orig;// = imgEdge_local.clone();
 
     int ret = 0;//Return Value Is the Count Of Ellipses Detected (Eyes)
     //assert(pimgIn.cols == imgEdge.cols && pimgIn.rows == imgEdge.rows);
@@ -754,6 +760,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     const float g_EyesUpScale = 2.0;
     cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size((int)pimgIn.cols*g_EyesUpScale,(int)pimgIn.rows*g_EyesUpScale));
 
+    //cv::imshow("Eye Isolate Rect",imgUpsampled_gray);
     int lengthLine = 13;
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
     /// Make Mask regions to Separate Eyes //
@@ -806,16 +813,23 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::Mat imgIn_thres3,imgFishHead_Lapl2,imgFishHead_Lapl3;
     cv::threshold(imgUpsampled_gray, imgIn_thres,viThresEyeSeg[0],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     cv::threshold(imgUpsampled_gray, imgIn_thres2,viThresEyeSeg[1],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
-    cv::threshold(imgUpsampled_gray, imgIn_thres3,viThresEyeSeg[2],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
 
     //Try Laplacian CV_8U
     //cv::GaussianBlur(imgIn_thres,imgIn_thres,cv::Size(3,3),3,3);
     cv::Laplacian(imgIn_thres,imgFishHead_Lapl,imgIn_thres.type(),1);
     cv::Laplacian(imgIn_thres2,imgFishHead_Lapl2,imgIn_thres.type(),1);
-    cv::Laplacian(imgIn_thres3,imgFishHead_Lapl3,imgIn_thres.type(),1);
-    //imgFishHead_Lapl.copyTo(imgEdge_local);
-    imgEdge_local = imgFishHead_Lapl + imgFishHead_Lapl2 + imgFishHead_Lapl3;
 
+    //imgFishHead_Lapl.copyTo(imgEdge_local);
+    imgEdge_local = imgFishHead_Lapl + imgFishHead_Lapl2;
+
+    if (viThresEyeSeg.size() == 3)
+    {
+        cv::threshold(imgUpsampled_gray, imgIn_thres3,viThresEyeSeg[2],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+        cv::Laplacian(imgIn_thres3,imgFishHead_Lapl3,imgIn_thres.type(),1);
+        imgEdge_local = imgEdge_local + imgFishHead_Lapl3;
+    }
+
+    assert(!imgEdge_local.empty());
     /// Make Mask regions to Separate Eyes //
     //Add Thick Mid line to erase inner Eye Edges and artefacts
     cv::line(imgEdge_local,ptcentre,cv::Point(imgUpsampled_gray.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes with line111
@@ -854,15 +868,17 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::cvtColor( imgEdge_local, outHeadFrameMonitor, cv::COLOR_GRAY2RGB);
 
     // Here is a heurestic approach combines the opencv ability to detect ellipses , with the noisy fast ellipsoid detection method that returns goodness of fit
-    cv::Mat imgEdge_local_LEye = imgEdge_local.clone();
+    //imgEdge_local.copyTo(imgEdge_local_LEye );
 
     /// DETECT LEFT EYE COVER Right Eye
+    imgEdge_local.copyTo(imgEdge_local_Orig);
     cv::Rect r(imgEdge_local.cols/2,0,imgIn_thres.cols,imgIn_thres.rows);
-    cv::rectangle(imgEdge_local_LEye,r,cv::Scalar(0),-1);
+    cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
     //cv::imshow("LEftEye",imgEdge_local_LEye);
     // Get a ranked list of detected ellipsoids in the image
-    getBestEllipsoidFits(imgEdge_local_LEye,qEllipsoids);
-
+    getBestEllipsoidFits(imgEdge_local,qEllipsoids);
+    imgEdge_local_Orig.copyTo(imgEdge_local);
+    assert(!imgEdge_local.empty());
     ///Store Left Eye (Optional :Draw Detected Ellipsoid)
     //Make Mean Ellipsoid from List of Ellipses
     tDetectedEllipsoid lEllMean(qEllipsoids,gTrackerState.gi_MaxEllipseSamples);
@@ -882,15 +898,15 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     /// Cover Left half of the image
     //outHeadFrameMonitor = imgEdge_local.clone();
-    cv::Mat imgEdge_local_REye = imgEdge_local.clone();
+    imgEdge_local.copyTo(imgEdge_local_Orig);
     //Cover LEFT Eye Edges
     cv::Rect rl(0,0,imgEdge_local.cols/2,imgEdge_local.rows);
     //imgEdge.copyTo(imgEdge_local);
-    cv::rectangle(imgEdge_local_REye,rl,cv::Scalar(0),-1);
+    cv::rectangle(imgEdge_local,rl,cv::Scalar(0),-1);
 
     // Get a ranked list of detected ellipsoids in the image
-    getBestEllipsoidFits(imgEdge_local_REye,qEllipsoids);
-
+    getBestEllipsoidFits(imgEdge_local,qEllipsoids);
+    imgEdge_local_Orig.copyTo(imgEdge_local); //Restore
     //Initialize One Ellipse That is the mean of all detected ellipsoids
     tDetectedEllipsoid rEllMean(qEllipsoids,gTrackerState.gi_MaxEllipseSamples);
     if (qEllipsoids.size() > 0)

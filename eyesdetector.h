@@ -139,7 +139,7 @@ private:
     tStateValueMatrix mStateValue;
     int baseIdxRow; //Used to Translate State Value range to value table idxs
     int baseIdxCol;
-    bool bExploreMove;
+    bool bExploreMove = false;
     tEyeDetectorState currentState;
     std::default_random_engine generator;
     QString gsEyeDetectorFilename = "RLEyeDetector.xml";

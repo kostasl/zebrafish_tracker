@@ -414,10 +414,10 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
      /// ADJUST Threshold - Success - Move towards Match score
      if (gTrackerState.gTemplateMatchThreshold < gTrackerState.gTemplateMatchThreshold_UpLimit &&
              gTrackerState.gTemplateMatchThreshold >  gTrackerState.gTemplateMatchThreshold_LowLimit){
-            gTrackerState.gTemplateMatchThreshold += 0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
-            gTrackerState.gTemplateMatchThreshold = std::min(gTrackerState.gTemplateMatchThreshold_UpLimit,
-                                                             std::max(gTrackerState.gTemplateMatchThreshold_LowLimit, gTrackerState.gTemplateMatchThreshold));
-            pwindow_main->updateTemplateThres();
+            //gTrackerState.gTemplateMatchThreshold += 0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
+            //gTrackerState.gTemplateMatchThreshold = std::min(gTrackerState.gTemplateMatchThreshold_UpLimit,
+            //                                                 std::max(gTrackerState.gTemplateMatchThreshold_LowLimit, gTrackerState.gTemplateMatchThreshold));
+            //pwindow_main->updateTemplateThres();
      }
 
      gTrackerState.iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
@@ -457,6 +457,11 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 {
 
+    //Check If Image Size is compatible with Template
+    if (gTrackerState.gnumberOfTemplatesInCache > 0)
+        assert(imgTempl.rows ==  gTrackerState.gszTemplateImg.height &&
+               imgTempl.cols ==  gTrackerState.gszTemplateImg.width);
+
     //Make Variations And store in template Cache
     cv::Mat fishTemplateVar;
     cv::Mat mtCacheRow,mtEnlargedCache;
@@ -488,6 +493,10 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
 
     std::clog << "New Template added, Templ. Count now:" << gTrackerState.gnumberOfTemplatesInCache << std::endl;
 
+
+    // Set Template Size
+    gTrackerState.gszTemplateImg.width = imgTempl.size().width; //Save TO Global Size Variable
+    gTrackerState.gszTemplateImg.height = imgTempl.size().height; //Save TO Global Size Variable
 
    return ++idxTempl;
 }

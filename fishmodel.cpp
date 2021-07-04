@@ -568,7 +568,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 
     ///Update Template Box Bound
     //int bestAngleinDeg = fish->bearingAngle;
-    cv::RotatedRect fishRotAnteriorBox(bcentre,gszTemplateImg ,Angle);
+    cv::RotatedRect fishRotAnteriorBox(bcentre,gTrackerState.gszTemplateImg ,Angle);
     /// Save Anterior Bound
     this->bodyRotBound = fishRotAnteriorBox;
 
