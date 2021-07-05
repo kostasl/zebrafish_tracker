@@ -118,8 +118,12 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
   assert(!imgEdgeIn.empty());
   for(int i=0; i<imgEdgeIn.rows; i++)
       for(int j=0; j<imgEdgeIn.cols; j++)
-      { cv::Point pt(j,i); //x,y
-           //Check if Pixel Brightness is high enough to be an ON pixel
+      {
+          cv::Point pt(j,i); //x,y
+          //Check if Pixel Brightness is high enough to be an ON pixel
+          assert(imgEdgeIn.cols >= pt.x &&  imgEdgeIn.rows >= pt.y);
+          assert(pt.x >= 0 &&  pt.y >= 0);
+
            if ( imgEdgeIn.at<uchar>(pt) >  pxThres)
            {
                vedgepoint.push_back(tEllipsoidEdge(pt));
@@ -134,6 +138,9 @@ inline bool addPointEdge(cv::Mat& imgEdgeIn,cv::Point pt,tEllipsoidEdges& vedgep
 {
     const float pxThres = 100.0; //threshold is non-zero
     bool ret_pointWasEdge =false;
+    assert(imgEdgeIn.cols >= pt.x &&  imgEdgeIn.rows >= pt.y);
+    assert(pt.x >= 0 &&  pt.y >= 0);
+
     //Check if Pixel Brightness is high enough to be an ON pixel
        if ( imgEdgeIn.at<uchar>(pt) >  pxThres)
          {
@@ -389,10 +396,10 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
 
         std::uniform_int_distribution<> distr(1, std::max(1,(int)vedgePoints_pair.size()-1) ); // define the range
 
-        while (vedgePoints_pair.size() > 0)
+        while (vedgePoints_pair.size() > 1)
         {
             tEllipsoidEdges::iterator it2 = vedgePoints_pair.begin();
-            it2 += distr(eng);
+            it2 += distr(eng); //valgrind Suspect of mem corruption
             ptxy2 = (*it2).ptEdge; //ValGrind: Invalid Read of size 4 -reported
             it2 = vedgePoints_pair.erase(it2);
     ////End of Random Pair //
@@ -419,6 +426,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
 
             ///Step (6) - 3rd Pixel;
             vedgePoints_trial.clear();
+            /// Bug: mem hit in iterator :__normal_iterator
             for (tEllipsoidEdges::iterator it3 = vedgePoints_all.begin();it3 != vedgePoints_all.end(); ++it3 )
             {
 

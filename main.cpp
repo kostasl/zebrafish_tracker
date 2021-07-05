@@ -1054,6 +1054,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 ptSearch = pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
                 iTemplRow = pfish->idxTemplateRow;
                 iTemplCol = pfish->idxTemplateCol;
+                //Debug blob-Model Matchg
+                cv::circle(frameOut,ptSearch,pfish->zfishBlob.size+2 ,CV_RGB(250,15,250),1); //Mark Where Search Is Done
 
                 maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
 

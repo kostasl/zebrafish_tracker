@@ -90,11 +90,11 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     /// BOUND SEARCH REGION ///
     // Small Search Region When A Match has already been found
     cv::Point pBound1,pBound2;
-    int iSearchRegionSize = 2*gTrackerState.gFishBoundBoxSize;
+    int iSearchRegionSize = 1*gTrackerState.gFishBoundBoxSize;
 
     //Expand the Search Region If Fish Tracking Has been lost
     if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 7*gTrackerState.gFishBoundBoxSize;
+       iSearchRegionSize = 2*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));
@@ -430,10 +430,10 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
      ///ADJUST THRESHOLD - Detect FAilures -
     if(gTrackerState.gTemplateMatchThreshold >  gTrackerState.gTemplateMatchThreshold_LowLimit)
     {
-        pwindow_main->LogEvent("[warning] Too many template match failures, lowering threshold.");
-        gTrackerState.gTemplateMatchThreshold +=  0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
-        gTrackerState.gTemplateMatchThreshold = std::min(gTrackerState.gTemplateMatchThreshold_UpLimit,
-                                                         std::max(gTrackerState.gTemplateMatchThreshold_LowLimit, gTrackerState.gTemplateMatchThreshold));
+        //pwindow_main->LogEvent("[warning] Too many template match failures, lowering threshold.");
+        //gTrackerState.gTemplateMatchThreshold +=  0.01*(0.90*maxGVal-gTrackerState.gTemplateMatchThreshold);
+        //gTrackerState.gTemplateMatchThreshold = std::min(gTrackerState.gTemplateMatchThreshold_UpLimit,
+        //                                                 std::max(gTrackerState.gTemplateMatchThreshold_LowLimit, gTrackerState.gTemplateMatchThreshold));
 
         pwindow_main->updateTemplateThres();
         //gTrackerState.iTemplateMatchFailCounter = 0; //Restart Counting With New Threshold

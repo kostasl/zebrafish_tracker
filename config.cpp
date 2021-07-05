@@ -116,7 +116,7 @@ void installErrorHandlers()
 
      ///Install Error Hanlder //
      struct sigaction sigact;
-
+      sigemptyset(&sigact.sa_mask);//fixed after valgrind:Uninited byte act->sa_mask // specifies a mask of signals which should be blocked(i.e., added to the signal mask of the thread in which the signal handler is invoked) during execution of the signal handler.
       sigact.sa_sigaction = crit_err_hdlr;
       sigact.sa_flags = SA_RESTART | SA_SIGINFO;
 

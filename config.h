@@ -295,8 +295,8 @@ class trackerState
       int iEyeMaskSepWidth            = 25; //5 px width vertical line separates the eyes for segmentation
       double eyeStepIncrement         = 0.1;
       double gTemplateMatchThreshold  = 0.80; //If not higher than 0.9 The fish body can be matched at extremeties
-      double gTemplateMatchThreshold_LowLimit = 0.78;
-      double gTemplateMatchThreshold_UpLimit = 0.87;
+      double gTemplateMatchThreshold_LowLimit = 0.83;
+      double gTemplateMatchThreshold_UpLimit = 0.95;
 
       int iLastKnownGoodTemplateRow   = 0;
       int iFishAngleOffset            = 0;
