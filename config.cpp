@@ -181,7 +181,7 @@ int initDetectionTemplates()
 
     // Set Paster Region for Inset Image
     gTrackerState.rect_pasteregion.x = (gTrackerState.frame_pxwidth-gTrackerState.gszTemplateImg.width*2);
-    gTrackerState.rect_pasteregion.y = 0;
+    gTrackerState.rect_pasteregion.y = 5;
     gTrackerState.rect_pasteregion.width = gTrackerState.gszTemplateImg.width*2; //For the upsampled image
     gTrackerState.rect_pasteregion.height = gTrackerState.gszTemplateImg.height*2;
 

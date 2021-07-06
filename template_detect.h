@@ -51,6 +51,9 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 ///\brief Compiles Mean Image from List of Mat template Images by accummulating the matrices
 cv::Mat makeMeanTemplateImage(std::vector<cv::Mat> vTemplImg);
 
+
+static cv::Mat loadImage(const std::string& name);
+
 //expandTemplateCache(newTemplateImage)
 //templatefindFishInImage()
 #endif // TEMPLATE_DETECT_H

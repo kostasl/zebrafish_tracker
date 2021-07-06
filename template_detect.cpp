@@ -94,7 +94,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
     //Expand the Search Region If Fish Tracking Has been lost
     if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 2*gTrackerState.gFishBoundBoxSize;
+       iSearchRegionSize = 4*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));
@@ -181,22 +181,23 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
     //Should be one contour
     if (contours.size() == 1)
     {
-        cv::RotatedRect rectBody = fitEllipse(contours[0]);
-        // Make Slight Angle Corrections 0.5 Corrected
-        iAngleOffset = rectBody.angle; //Make 0 Angle  the vertical image axis
+        if (contours[0].size() > 4)
+        {
+            cv::RotatedRect rectBody = fitEllipse(contours[0]);
+            // Make Slight Angle Corrections 0.5 Corrected
+            iAngleOffset = rectBody.angle; //Make 0 Angle  the vertical image axis
 
-        if  ((iAngleOffset) > 90) iAngleOffset-=180;
-        if  ((iAngleOffset) < -90) iAngleOffset+=180;
+            if  ((iAngleOffset) > 90) iAngleOffset-=180;
+            if  ((iAngleOffset) < -90) iAngleOffset+=180;
 
+            //Debug Show Shape Centre //
+            cv::circle(templ_thres,rectBody.center,3,100,1);
+            //Correct For Centre Offset
 
-        //Debug Show Shape Centre //
-        cv::circle(templ_thres,rectBody.center,3,100,1);
-        //Correct For Centre Offset
-
-        ptCentreCorrection.x = tempCentre.x - rectBody.center.x;
-       // ptCentreCorrection.y //= tempCentre.x - rectBody.center.x;
-        std::clog << "[info] makeTemplateVar: correct Template DAngle : " << iAngleOffset << " DX:" << ptCentreCorrection.x <<  std::endl;
-
+            ptCentreCorrection.x = tempCentre.x - rectBody.center.x;
+           // ptCentreCorrection.y //= tempCentre.x - rectBody.center.x;
+            std::clog << "[info] makeTemplateVar: correct Template DAngle : " << iAngleOffset << " DX:" << ptCentreCorrection.x <<  std::endl;
+        }
     }else
     {
         std::clog << "[warning] makeTemplateVar: multiple contours detected on template " << std::endl;
@@ -206,8 +207,6 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
     // DEBUG //
     //std::string winname= QString(QString("TemplShape")+QString::number(gnumberOfTemplatesInCache)).toStdString();
     //cv::imshow(winname ,templ_thres);
-
-
 
     //Got through Each Angle
     for (int i=0;i<iAngleIncrements;i++)
@@ -220,7 +219,11 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
         //Get icon SubMatrix from Large Template Mat
         cv::Mat templ_rot = imgTemplateOut(templRegion);
         //ReLocate Template To Centre Of Large Canvas, Before Rotation
-        templateIn.copyTo(templ_rot(cv::Rect(0,0,templateIn.cols,templateIn.rows)+cntrdiff+ptCentreCorrection ));
+        cv::Point offset = cntrdiff+ptCentreCorrection;
+        //Watch Out for Boundaries
+        offset.x = (templateIn.cols+offset.x > templ_rot.cols)?0:offset.x;
+        offset.y = (templateIn.rows+offset.y > templ_rot.rows)?0:offset.y;
+        templateIn.copyTo(templ_rot(cv::Rect(0,0,templateIn.cols,templateIn.rows)+offset ));
         //Make Rotation Transformation
         cv::warpAffine(templ_rot,templ_rot,Mrot,templRegion.size());
 

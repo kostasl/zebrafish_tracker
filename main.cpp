@@ -717,7 +717,9 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     gTrackerState.setVidFps( capture.get(CAP_PROP_FPS) );
     uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
     gTrackerState.frame_pxwidth = (uint)capture.get(CV_CAP_PROP_FRAME_WIDTH);
+    gTrackerState.rect_pasteregion.x = (gTrackerState.frame_pxwidth-gTrackerState.gszTemplateImg.width*3);
     gTrackerState.frame_pxheight =  (uint)capture.get(CV_CAP_PROP_FRAME_HEIGHT);
+
     //Default ROI
     gTrackerState.initROI(gTrackerState.frame_pxwidth,gTrackerState.frame_pxheight);
 
@@ -2665,7 +2667,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
 
    if (!bContourfound)
    {
-       std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
+       //std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
        idxContour = -1;
    }
       //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
@@ -3000,11 +3002,14 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               //Need to fix size of Upright/Normed Image
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
 
+              //Cut Down To Template Size
+              imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
+              cv::imshow("ToDetector",imgFishAnterior);
+              float fR = gTrackerState.fishnet.netDetect(imgFishAnterior);
+
               /// Store Norm Image as Template - If Flag Is set
               if (gTrackerState.bStoreThisTemplate)
               {   std::stringstream ssMsg;
-                  //Cut Down To Template Size
-                  imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
                   addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
                   //Try This New Template On the Next Search
                   gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
@@ -3082,20 +3087,24 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               ///If Both Eyes Detected Then Print Vergence Angle
               ss.precision(3);
               cv::Scalar colTxt;
-              if (fitScoreReward > 100)
-                  colTxt = CV_RGB(250,250,50);
+              if (fR < 0.4)
+                  colTxt = CV_RGB(200,100,10);
               else
-                 colTxt = CV_RGB(250,20,20);
+                  colTxt = CV_RGB(100,200,10);
+
               {
                   ss.str(""); //Empty String
                   ss << "L:" << fish->leftEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
                   ss << "R:"  << fish->rightEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
-                  ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0; //Store to global variable
-                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,CV_RGB(250,250,0),1 );
+                  ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0;
+                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  ss.str("");
+                  ss << "nR:"  << ((int)((fR*1000.0)) /1000.0);
+                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+55),CV_FONT_NORMAL,0.4,colTxt,1 );
               }
 
 

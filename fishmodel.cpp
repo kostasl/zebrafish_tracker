@@ -998,8 +998,10 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
      out << "\t" << h.c_spineSegL;
      out << "\t" << h.templateScore;
      out << "\t" << h.lastTailFitError;
+     //if (h.leftEye)
      out << "\t" << h.leftEye.fitscore;
-     out << "\t" << h.rightEye.fitscore;
+     //if (h.rightEye)
+        out << "\t" << h.rightEye.fitscore;
      out << "\t" << h.nFailedEyeDetectionCount;
 
     return out;

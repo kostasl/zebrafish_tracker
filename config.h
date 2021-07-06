@@ -33,6 +33,7 @@
 #include <zfttracks.h>
 #include <CSS/CurveCSS.h>
 #include <template_detect.h>
+#include <fishdetector.h>
 
 //QT
 #include <QDirIterator>
@@ -327,7 +328,7 @@ class trackerState
       std::vector<cv::Mat> vTemplImg;
 
       cv::Point ptROI1,ptROI2,ptROI3,ptROI4;
-
+      fishdetector fishnet;
 
     /// overload size operator / return full state object size
      size_t size() const _GLIBCXX_NOEXCEPT
