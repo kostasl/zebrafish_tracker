@@ -527,9 +527,13 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             //processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
 
             // Check Blobs With Template And Update Fish Model
-            UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
-            /// Isolate Head, Get Eye models, and Get and draw Spine model
-            detectZfishFeatures(window_main, fgFishImgMasked,outframe,frameHead,outframeHeadEyeDetected, fgFishImgMasked, fishbodycontours,fishbodyhierarchy); //Creates & Updates Fish Models
+            UpdateFishModels(fgFishImgMasked, vfishmodels,ptFishblobs, nFrame, outframe);
+            if (vfishmodels.size() > 0)
+                /// Isolate Head, Get Eye models, and Get and draw Spine model
+                detectZfishFeatures(window_main, fgFishImgMasked, outframe,
+                                    frameHead,outframeHeadEyeDetected,
+                                    fgFishImgMasked, fishbodycontours,
+                                    fishbodyhierarchy); //Creates & Updates Fish Models
 
             //If A fish Is Detected Then Draw Its tracks
             fishModels::iterator ft = vfishmodels.begin();
@@ -1837,14 +1841,14 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
 }
 
 
-/// \NOTE: Note
+/// \NOTE: Blob Detect No Longer Needed - Keypoints detect from Mask Processing - faster processing//
 /// \brief processFishBlobs Finds blobs that belong to fish
 /// \param frame
 /// \param maskFishimg
 /// \param frameOut //Output Image With FishBlob Rendered
 /// \param ptFishblobs opencv keypoints vector of the Fish
 /// \return
-///
+/// NOT USED ANYMORE
 int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,zftblobs& ptFishblobs)
 {
 
@@ -1888,8 +1892,13 @@ int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,zftbl
     {
         cv::KeyPoint kp = keypoints[i];
 
-        if(pointIsInROI(kp.pt,gTrackerState.gszTemplateImg.width))
-                 ptFishblobs.push_back(kp);
+        if(!pointIsInROI(kp.pt,gTrackerState.gszTemplateImg.width))
+            continue;
+
+
+        // Pass Blob region Through FishDetector And Reject if it does not look like fish
+        //Classifier Modifies KeyPoint Adding score Modifying Orientation
+
 
         //Go Through Each ROI and Render Blobs -
         //unsigned int RoiID = 0;
@@ -2926,7 +2935,9 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
           //0 Degrees Is along the Y Axis Looking Upwards
 
           ///Update Template Box Bound
-          int bestAngleinDeg = fish->bearingAngle;
+          int bestAngleinDeg    = fish->bearingAngle;
+          fish->zfishBlob.angle = bestAngleinDeg;
+
           // Set Size Of Head Crop Image
           cv::RotatedRect fishRotAnteriorBox(centre,
                                              cv::Size(gTrackerState.gLastfishimg_template.cols,
@@ -3004,8 +3015,10 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
               //Cut Down To Template Size
               imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
-              cv::imshow("ToDetector",imgFishAnterior);
-              float fR = gTrackerState.fishnet.netDetect(imgFishAnterior);
+              //cv::imshow("ToDetector",imgFishAnterior);
+              //float fR = gTrackerState.fishnet.netDetect(imgFishAnterior);
+              float fR = fish->zfishBlob.response; //The FishNet Recognition Score
+
 
               /// Store Norm Image as Template - If Flag Is set
               if (gTrackerState.bStoreThisTemplate)
@@ -3087,7 +3100,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               ///If Both Eyes Detected Then Print Vergence Angle
               ss.precision(3);
               cv::Scalar colTxt;
-              if (fR < 0.4)
+              if (fR < gTrackerState.fishnet_L2_classifier)
                   colTxt = CV_RGB(200,100,10);
               else
                   colTxt = CV_RGB(100,200,10);

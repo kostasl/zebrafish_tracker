@@ -534,10 +534,22 @@ void getPreyMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFoodMask)
 
 }
 
+/// \brief Calculate Angle Between Pt 1 and pt 2 in degrees
+double ptangle_deg(const Point& v1, const Point& v2)
+{
+    double cosAngle = v1.dot(v2) / (cv::norm(v1) * cv::norm(v2));
+    if (cosAngle > 1.0)
+        return 0.0;
+    else if (cosAngle < -1.0)
+        return CV_PI;
+    return std::acos(cosAngle)* 180 / CV_PI;
+}
 
-/// \brief handles the processing of Prey Item Mask such that prey detection can be improved.
+
+/// \brief handles the processing of Fish Item Mask such that larval detection can be improved.
 std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,zftblobs& ptFishblobs)
 {
+    cv::Mat mask_fnetScore,imgFishAnterior_NetNorm; //For FishNet Detect
     cv::Mat fgEdgeMask;
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
     cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
@@ -563,6 +575,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     /// \todo Use WaterShed - Let MOG mask Be FG label and then watershed
     //int idxFishContour = -1;
     std::vector<cv::Point> curve; // THe Fish Contour to use for new Mask
+    int iHitCount = 0;
     for (int kk=0; kk< (int)fishbodycontours.size();kk++)
     {
         curve.clear();
@@ -622,6 +635,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                 boundEllipse.size.height/boundEllipse.size.width < 2.5)
             continue;
 
+        zftblob kp(centroid.x,centroid.y,area,boundEllipse.angle+90);
 
 
         /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
@@ -632,27 +646,45 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
         if (idxTail >= 0 )
         {
-            /// \TODO : Bug Hit Here
+            ///
             idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
-            /// \todo Check Template Matching Around Head / Verify Contour Belongs to fish
             gptHead = ptHead; //Hack To Get position For Template
             gptTail = ptTail;
+            //Correct Angle - 0 is Vertical Up
+            kp.angle = cv::fastAtan2(ptHead.y-ptTail.y,ptHead.x-ptTail.x)+90;
         }else
             gptHead.x = 0; gptHead.y = 0;
 
-        /// Add Keypoint for fish
-        zftblob kp(centroid.x,centroid.y,area);
-        ptFishblobs.push_back(kp);
+        /// Classify Keypoint for fish
+        float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,imgFishAnterior_NetNorm,mask_fnetScore);
+        QString strfRecScore = QString::number(fR,'g',3);
 
-        /// \todo Conditionally add this Contour to output if it matches template.
-        vFilteredFishbodycontours.push_back(curve);
+        qDebug() << "(" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
 
-        ///  COMBINE - DRAW CONTOURS
-        ///\bug drawContours produces freezing sometimes
-        //Draw New Smoothed One - the idx should be the last one in the vector
-        cv::drawContours( outFishMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
+        if (!imgFishAnterior_NetNorm.empty()){
+            cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
+            cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
+            cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
+        }
+
+
+        if (fR > gTrackerState.fishnet_L2_classifier)
+        {   iHitCount++;
+            ptFishblobs.push_back(kp);
+            /// \todo Conditionally add this Contour to output if it matches template.
+            vFilteredFishbodycontours.push_back(curve);
+
+            ///  COMBINE - DRAW CONTOURS
+            ///\bug drawContours produces freezing sometimes
+            //Draw New Smoothed One - the idx should be the last one in the vector
+            cv::drawContours( outFishMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
+
+        }
+
+
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
         cv::circle(outFishMask, ptTail,4,CV_RGB(255,255,255),cv::FILLED);
+        cv::putText(outFishMask,strfRecScore.toStdString(), kp.pt, gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
         //cv::circle(outFishMask, ptHead - (ptHead-centroid)/2,5,CV_RGB(255,255,255),cv::FILLED);
     } //For Each Fish Contour
 

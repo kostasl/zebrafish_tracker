@@ -20,6 +20,7 @@
 //extern float gDisplacementThreshold;
 //extern int gFishTailSpineSegmentLength;
 //extern uint gi_MaxFishID;
+class trackerState;
 extern trackerState gTrackerState;
 
 //extern const int gFishTailSpineSegmentCount;
@@ -35,9 +36,6 @@ typedef struct
 
 typedef std::vector<splineKnotf> t_fishspline;
 
-
-typedef cv::KeyPoint zftblob;
-typedef std::vector<zftblob> zftblobs;
 
 
 const cv::Scalar TRACKER_COLOURMAP[] ={

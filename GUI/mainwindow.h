@@ -133,6 +133,12 @@ private slots:
 
     void on_graphicsView_rubberBandChanged(const QRect &viewportRect, const QPointF &fromScenePoint, const QPointF &toScenePoint);
 
+    void on_spinBoxFishnetL1thres_textChanged(const QString &arg1);
+
+    void on_spinBoxFishnetL1thres_valueChanged(int arg1);
+
+    void on_spinBoxFishnetClassifierthres_valueChanged(int arg1);
+
 private:
     void reportUserMeasurement(cv::Point ptMouse);
 

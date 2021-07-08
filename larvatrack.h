@@ -50,12 +50,9 @@ class MainWindow;
 class fishModel;
 class vfish;
 
+
 typedef cv::KeyPoint zftblob;
 typedef std::vector<zftblob> zftblobs;
-
-//typedef cv::KeyPoint zftblob;
-//typedef std::vector<zftblob> zftblobs;
-
 
 
 /// \fn processVideo

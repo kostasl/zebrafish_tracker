@@ -94,7 +94,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
     //Expand the Search Region If Fish Tracking Has been lost
     if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 4*gTrackerState.gFishBoundBoxSize;
+       iSearchRegionSize = 2*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));
@@ -221,8 +221,8 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
         //ReLocate Template To Centre Of Large Canvas, Before Rotation
         cv::Point offset = cntrdiff+ptCentreCorrection;
         //Watch Out for Boundaries
-        offset.x = (templateIn.cols+offset.x > templ_rot.cols)?0:offset.x;
-        offset.y = (templateIn.rows+offset.y > templ_rot.rows)?0:offset.y;
+        offset.x = (templateIn.cols+offset.x > templ_rot.cols)?0:max(0,offset.x);
+        offset.y = (templateIn.rows+offset.y > templ_rot.rows)?0:max(0,offset.y);
         templateIn.copyTo(templ_rot(cv::Rect(0,0,templateIn.cols,templateIn.rows)+offset ));
         //Make Rotation Transformation
         cv::warpAffine(templ_rot,templ_rot,Mrot,templRegion.size());

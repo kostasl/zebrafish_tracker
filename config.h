@@ -272,6 +272,9 @@ class trackerState
       int g_BGthresh              = 5; //BG threshold segmentation
       int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 
+      /// Fishnet Classifier params
+      float fishnet_L1_threshold  = 10.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_L2_classifier  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
 
       /// Eye Tracking Params
       int gi_CannyThres           = 150;
@@ -286,7 +289,7 @@ class trackerState
       int gthresEyeSegL                   = 2;
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold          = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-      int gFishBoundBoxSize               = 35; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
+      int gFishBoundBoxSize               = 40; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gFishTailSpineSegmentLength     = 9;
 
 

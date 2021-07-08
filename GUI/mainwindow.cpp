@@ -1249,3 +1249,21 @@ void MainWindow::on_graphicsView_rubberBandChanged(const QRect &viewportRect, co
 
 }
 
+
+void MainWindow::on_spinBoxFishnetL1thres_textChanged(const QString &arg1)
+{
+
+}
+
+
+void MainWindow::on_spinBoxFishnetL1thres_valueChanged(int arg1)
+{
+    gTrackerState.fishnet_L1_threshold = arg1;
+}
+
+
+void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(int arg1)
+{
+    gTrackerState.fishnet_L2_classifier = (float)arg1/10;
+}
+
