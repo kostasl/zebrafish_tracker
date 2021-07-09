@@ -17,6 +17,7 @@ extern cv::Point gptTail,gptHead;
 
 fishModel::fishModel()
 {
+        bNewModel = true;
         stepUpdate = 1.0; // with fast rate and slow down with updates
         bearingAngle                = 0.0;
         lastTailFitError            = 0.0;
@@ -536,8 +537,9 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 /// \param bcentre
 ///
 
-void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
+bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
+
     //Check if frame advanced
     if (nLastUpdateFrame == nFrame)
         uiFrameIterations++; //Increment count of calculation cycles that we are stuck on same frame
@@ -545,6 +547,16 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     {
         nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
         uiFrameIterations = 0;
+    }
+
+    double stepDisplacement = cv::norm(fblob->pt - this->zTrack.centroid);
+
+    /// \todo Add Kalman FILTER //
+    ///  Reject Step
+    if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame)
+    {
+        inactiveFrames++;
+        return(false);
     }
 
     this->zTrack.id     = ID;
@@ -555,7 +567,7 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->zfishBlob      = *fblob;
     //this->c_spineSegL   = SpineSegLength;
     this->zTrack.pointStack.push_back(bcentre);
-    this->zTrack.effectiveDisplacement = cv::norm(fblob->pt-this->zTrack.centroid);
+    this->zTrack.effectiveDisplacement = stepDisplacement;
     this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
@@ -581,8 +593,9 @@ void fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->spline[0].y       = bcentre.y;
     //this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
 
-
+    bNewModel = false; //Flag THat this model Has been now positioned
     assert(!std::isnan(this->bearingRads));
+     return(true);
 
 }
 
@@ -794,10 +807,9 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     int bestAngleinDeg = this->bearingAngle;
     //cv::RotatedRect fishRotAnteriorBox(centre, cv::Size(gLastfishimg_template.cols,gLastfishimg_template.rows),bestAngleinDeg);
 
-
 //    stringstream strLbl;
 //    strLbl << "A: " << bestAngleinDeg;
-    QString strlbl("A: " + QString::number(bestAngleinDeg));
+
 
     cv::Scalar colour;
     if (this->templateScore >= gTrackerState.gTemplateMatchThreshold)
@@ -806,6 +818,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
         colour = CV_RGB(30,30,250);
 
 #ifdef _ZTFDEBUG_
+    QString strlbl("A: " + QString::number(bestAngleinDeg));
     cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),CV_FONT_NORMAL,0.4,colour,1);
 #endif
 

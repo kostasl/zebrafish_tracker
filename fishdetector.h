@@ -23,12 +23,14 @@ class fishdetector
 public:
     fishdetector();
     float netDetect(cv::Mat imgRegion);
-    float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& frameAnterior_Norm,cv::Mat& maskRegionScore);
+    float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
     float fL1_activity_thres = 10; //# Number of INput that need to be active for KC to fire/Activate
 
 private:
     cv::Mat mW_L1;
-    cv::Mat mW_L2;
+    cv::Mat mW_L2; //
+    cv::Mat mL1_out; ///Matrix Holding Result of Input*L1
+    cv::Mat mL2_out;
 };
 
 #endif // FISHDETECTOR_H

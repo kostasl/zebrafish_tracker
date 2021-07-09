@@ -74,7 +74,7 @@ public:
   fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter);
 
   //void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int TemplRow, int TemplCol);
-  void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol);
+  bool updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol);
   int updateEyeState(tEllipsoids& vLell,tEllipsoids& vRell);
   ///\note The lowest point in a rectangle is 0th vertex, and 1st, 2nd, 3rd vertices follow clockwise.
   /// Height is distance between 0th & 1st  (or 2nd & 3rd) vertices. And width is distance between 1st  & 2nd (or 0th & 3rd) vertices.
@@ -113,6 +113,7 @@ public:
   std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
 
   // Detection Scores //
+  bool bNewModel = true;
   double lastTailFitError; ///Holds Error Value Per Spine Point as Measured by Spine Fitting to Contour
   double templateScore; ///Fishdetection Score - How well the detected model fish looks/matches the convolution of a fish template
 ///

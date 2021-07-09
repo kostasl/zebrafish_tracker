@@ -38,9 +38,9 @@ matrix_paste <- function(src,target)
 
 img_dim <- c(38,28)
 n_top_px <- img_dim[2]*img_dim[1]
-N_KC = n_top_px*10 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- n_top_px/35 ## Number of pic Features each KC neuron Codes for
-KC_THRES <- N_SYN_per_KC/3 ## Number of INput that need to be active for KC to fire/Activate
+N_KC = n_top_px*3 ## Number of Kenyon Cells (Input layer High Dim Coding)
+N_SYN_per_KC <- n_top_px/55 ## Number of pic Features each KC neuron Codes for
+KC_THRES <- N_SYN_per_KC/2 ## Number of INput that need to be active for KC to fire/Activate
 
 ## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
 mat_KC <<- matrix(0,nrow=n_top_px,ncol=N_KC)
@@ -84,14 +84,12 @@ net_proc_images <- function(img_list,learningRate = 0.0)
     ##mypic = new("pixmapGrey", size=dim(mat_img),grey = mat_img);plot(mypic)
     dim(X) <- c(1,length(X)) ## Make into Row Vector
     ## Binarize Input Image 
-    X_bin <-  as.numeric(X > 0.3)
+    X_bin <-  as.numeric(X > mean(X))
     KC_out_act = X_bin %*% sMat 
     #hist( KC_out_act[1,])
     ## Calc Layer 1 output based on Activation Threshold Funciton for Units
     KC_output <- apply(KC_out_act, 2, KC_activation)
     dim(KC_output) <-c(1,length(KC_output)) ## Make into Row Vector
-    
-    
     
     ## Learn Positive Samples ##
     ## Take Active L1 outputs And Set L2 Input synapses of Output Neuron to High
@@ -108,7 +106,8 @@ net_proc_images <- function(img_list,learningRate = 0.0)
                               KC_total = nrow(KC_output)
                               )
     message("Recognition Output for Img ",in_img," is ",L2_out[[fileidx]]$L2_out," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
-    image(mat_img)
+    dim(X_bin) = dim(mat_img)
+    image(X_bin)
     title(main = paste(in_img," R:",L2_out[[fileidx]]$L2_out), font.main = 4)
   }
   
@@ -127,10 +126,10 @@ img_list_train_nonfish =  list.files(path=sPathTrainingNonSamples,pattern="*pgm"
 
 img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T)
 
-dLearningRate = 0.5 ## FALSE##TRUE
+dLearningRate = 0.2 ## FALSE##TRUE
 l_out <- net_proc_images(img_list_train_fish,dLearningRate)
 sum(W_L2)
-l_out_n <- net_proc_images(img_list_train_nonfish,-dLearningRate/5)
+l_out_n <- net_proc_images(img_list_train_nonfish,-dLearningRate/8)
 sum(W_L2)
 l_out_test <- net_proc_images(img_list_test,0.0)
 sum(W_L2)

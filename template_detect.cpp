@@ -90,11 +90,11 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     /// BOUND SEARCH REGION ///
     // Small Search Region When A Match has already been found
     cv::Point pBound1,pBound2;
-    int iSearchRegionSize = 1*gTrackerState.gFishBoundBoxSize;
+    int iSearchRegionSize = 0.5*gTrackerState.gFishBoundBoxSize;
 
     //Expand the Search Region If Fish Tracking Has been lost
     if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 2*gTrackerState.gFishBoundBoxSize;
+       iSearchRegionSize = 1*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));

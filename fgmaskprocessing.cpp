@@ -630,12 +630,12 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         }*/
         //Check If Elongated Object  - Use Width Height Ratio
         cv::RotatedRect boundEllipse = cv::fitEllipse(curve);
-        cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),cv::LINE_8);
+        cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),1,cv::LINE_8);
         if (boundEllipse.size.width/boundEllipse.size.height < 2.5 &&
                 boundEllipse.size.height/boundEllipse.size.width < 2.5)
             continue;
 
-        zftblob kp(centroid.x,centroid.y,area,boundEllipse.angle+90);
+        zftblob kp(centroid.x,centroid.y,area,(int)(boundEllipse.angle+90)%360);
 
 
         /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
@@ -651,25 +651,18 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             gptHead = ptHead; //Hack To Get position For Template
             gptTail = ptTail;
             //Correct Angle - 0 is Vertical Up
-            kp.angle = cv::fastAtan2(ptHead.y-ptTail.y,ptHead.x-ptTail.x)+90;
+            kp.angle = (int)(cv::fastAtan2(ptHead.y-ptTail.y,ptHead.x-ptTail.x)+90)%360;
         }else
             gptHead.x = 0; gptHead.y = 0;
 
         /// Classify Keypoint for fish
-        float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,imgFishAnterior_NetNorm,mask_fnetScore);
+        float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm, mask_fnetScore, QString::number(iHitCount).toStdString());
         QString strfRecScore = QString::number(fR,'g',3);
-
+        iHitCount++;
         qDebug() << "(" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
 
-        if (!imgFishAnterior_NetNorm.empty()){
-            cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
-            cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
-            cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
-        }
-
-
         if (fR > gTrackerState.fishnet_L2_classifier)
-        {   iHitCount++;
+        {
             ptFishblobs.push_back(kp);
             /// \todo Conditionally add this Contour to output if it matches template.
             vFilteredFishbodycontours.push_back(curve);
@@ -679,12 +672,18 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             //Draw New Smoothed One - the idx should be the last one in the vector
             cv::drawContours( outFishMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
 
+            //DEBUG - Show imgs
+            if (!imgFishAnterior_NetNorm.empty()){
+                cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
+                cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
+                cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
+            }
         }
 
 
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
         cv::circle(outFishMask, ptTail,4,CV_RGB(255,255,255),cv::FILLED);
-        cv::putText(outFishMask,strfRecScore.toStdString(), kp.pt, gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
+        cv::putText(outFishMask,strfRecScore.toStdString(), kp.pt +cv::Point2f(10,-10), gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
         //cv::circle(outFishMask, ptHead - (ptHead-centroid)/2,5,CV_RGB(255,255,255),cv::FILLED);
     } //For Each Fish Contour
 
@@ -711,17 +710,17 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours,zftblobs& ptFishblobs)
 {
 
-    cv::Mat frameImg_gray;
+    cv::Mat frameImg_gray_masked;
 
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
     cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
 
-    frameImg.copyTo(frameImg_gray);
+    frameImg.copyTo(frameImg_gray_masked,fgMask);
     //frameImg_gray = frameImg.clone();//frameImg.clone();
 
     // Check this Again / What is it doing?
-    getPreyMask(frameImg_gray,fgMask,outFoodMask);
-    vFilteredFishbodycontours = getFishMask(frameImg_gray,fgMask,outFishMask,ptFishblobs);
+    getPreyMask(frameImg_gray_masked,fgMask,outFoodMask);
+    vFilteredFishbodycontours = getFishMask(frameImg_gray_masked,fgMask,outFishMask,ptFishblobs);
 
     //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
     // Can invert Fish Mask And Apply on to Food Mask
