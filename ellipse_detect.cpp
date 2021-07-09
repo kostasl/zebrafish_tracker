@@ -138,7 +138,7 @@ inline bool addPointEdge(cv::Mat& imgEdgeIn,cv::Point pt,tEllipsoidEdges& vedgep
 {
     const float pxThres = 100.0; //threshold is non-zero
     bool ret_pointWasEdge =false;
-    assert(imgEdgeIn.cols >= pt.x &&  imgEdgeIn.rows >= pt.y);
+    assert(imgEdgeIn.cols > pt.x &&  imgEdgeIn.rows > pt.y);
     assert(pt.x >= 0 &&  pt.y >= 0);
 
     //Check if Pixel Brightness is high enough to be an ON pixel
@@ -169,24 +169,24 @@ void getNeighbourEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdg
         if (startpt.y > 0) //Left Top Corner
              addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y-1),vedgepoint);
 
-        if (startpt.y < imgEdgeIn.rows) //Left Bottom Corner
+        if (startpt.y < (imgEdgeIn.rows-1)) //Left Bottom Corner
              addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y+1),vedgepoint);
    }
 
-   if (startpt.y < imgEdgeIn.rows) //Bottom
+   if (startpt.y < (imgEdgeIn.rows-1)) //Bottom
         addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y+1),vedgepoint);
 
    if (startpt.y > 0) //Top
         addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y-1),vedgepoint);
 
-   if (startpt.x < imgEdgeIn.cols) //Left
+   if (startpt.x < (imgEdgeIn.cols-1)) //Left
    {
         addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y),vedgepoint);
 
         if (startpt.y > 0) //Right TOp Corner
              addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y-1),vedgepoint);
 
-        if (startpt.y < imgEdgeIn.rows) //Right Bottom Corner
+        if (startpt.y < (imgEdgeIn.rows-1)) //Right Bottom Corner
              addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y+1),vedgepoint);
 
    }
