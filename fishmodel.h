@@ -136,7 +136,7 @@ public:
 
   cv::Point mouthPoint;
   cv::Point midEyePoint;
-  cv::Point ptRotCentre; //Template Matching Body Centre
+  cv::Point2f ptRotCentre; //Template Matching Body Centre
   cv::Point tailTopPoint;
 
   //cvb::CvTrack* track; ///Pointer to Track Structure containing motion - Note track has the same Id as this Fish
@@ -155,7 +155,19 @@ public:
   const double c_MaxSpineLengthLimit = 20;//1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
   const double c_MinSpineLengthLimit = 7;//1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
   double stepUpdate; //Eye Angle incremental update rate
+
 private:
+  const int stateSize = 6;
+  const int measSize = 3;
+  const int contrSize = 0;
+  unsigned int type = CV_32F;
+
+  KalmanFilter KF;
+
+  Mat mState;  // [x,y,v_x,v_y,angle,angle_v]
+  Mat mMeasurement; // [z_x, z_y, angle]
+  Mat mProcessNoise; // [E_x,E_y, E_v_x,E_v_y ,E_angle,Eangle_v] //(2, 1, CV_32F);
+
 
   //std::vect mmor<double> splineTheta; ///Angles of fitted Spine Points
 };

@@ -189,6 +189,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 }
 
 /// \brief Applies pre-trained MB like NN on Binarized Input image
+/// Networks supports two L2
 float fishdetector::netDetect(cv::Mat imgRegion_bin)
 {
     fL1_activity_thres = gTrackerState.fishnet_L1_threshold;
@@ -205,18 +206,19 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin)
     // Threshold for Activation Function
     cv::threshold(mL1_out,mL1_out,fL1_activity_thres,1,cv::THRESH_BINARY);
     //Calc Output
-    mL2_out =  mL1_out*mW_L2.t();
+    mL2_out =  mL1_out*mW_L2;
 
     //cv::imshow("L1 Out", mL1_out);
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
-    float fOut = mL2_out.at<float>(0,0)/mW_L1.cols;
-
+    float fFishClass = mL2_out.at<float>(0,0)/mW_L1.cols;
+    // Check 2 row (neuron) output
+    float fNonFishClass = mL2_out.at<float>(0,1)/mW_L1.cols;
 
     //double minL1,maxL1;
     //cv::minMaxLoc(mL1_out,&minL1,&maxL1);
     //qDebug() << "***R: " << fOut << " KCmin: "<< minL1 << " KCmax: " << maxL1;
     //cv::imshow("output",mL2_out);
 
-    return(fOut);
+    return(fFishClass-fNonFishClass);
 }
 

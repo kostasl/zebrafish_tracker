@@ -1264,6 +1264,6 @@ void MainWindow::on_spinBoxFishnetL1thres_valueChanged(int arg1)
 
 void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(int arg1)
 {
-    gTrackerState.fishnet_L2_classifier = (float)arg1/10;
+    gTrackerState.fishnet_L2_classifier = (float)arg1/100;
 }
 

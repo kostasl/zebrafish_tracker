@@ -273,7 +273,7 @@ class trackerState
       int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 
       /// Fishnet Classifier params
-      float fishnet_L1_threshold  = 10.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_L1_threshold  = 30.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_L2_classifier  = 0.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
 
       /// Eye Tracking Params

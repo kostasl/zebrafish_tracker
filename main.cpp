@@ -1063,7 +1063,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 iTemplRow = pfish->idxTemplateRow;
                 iTemplCol = pfish->idxTemplateCol;
                 //Debug blob-Model Matchg
-                cv::circle(frameOut,ptSearch,pfish->zfishBlob.size+2 ,CV_RGB(250,15,250),1); //Mark Where Search Is Done
+                cv::circle(frameOut,ptSearch,pfish->zfishBlob.size/100 ,CV_RGB(250,15,250),1); //Mark Where Search Is Done
 
                 maxMatchScore = pfish->zfishBlob.response + gTrackerState.gTemplateMatchThreshold;
                 //doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
@@ -1124,7 +1124,9 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
        //then still create new model as this could be a fish we have not seen before -
        // And we avoid getting stuck searching for best model
        //
-       if (!bModelFound && !gTrackerState.bDraggingTemplateCentre) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
+       if (!bModelFound &&
+               !gTrackerState.bDraggingTemplateCentre &&
+               !gTrackerState.bStoreThisTemplate) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
         {
             //Check Template Match Score
             ptSearch = fishblob->pt;
@@ -1147,7 +1149,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                fish->idxTemplateRow = iTemplRow;
                fish->idxTemplateCol = iTemplCol;
 
-               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
+               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,
+                                 gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
 
                vfishmodels.insert(IDFishModel(fish->ID,fish));
                qfishrank.push(fish); //Add To Priority Queue

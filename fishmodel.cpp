@@ -2,6 +2,7 @@
 #include "ellipse_detect.h"
 #include "config.h"
 
+#include <opencv2/video/tracking.hpp>
 
 extern cv::Mat frameDebugC;
 extern cv::Size gszTemplateImg;
@@ -72,13 +73,59 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     //this->track     = NULL;
     this->bearingRads = bestTemplateOrientation*CV_PI/180.0;
     this->bearingAngle = bestTemplateOrientation;
-    this->ptRotCentre    = ptTemplateCenter;
-    zTrack.centroid = ptTemplateCenter;
+    this->ptRotCentre  = ptTemplateCenter;
+    zTrack.centroid    = ptTemplateCenter;
    // this->coreTriangle[2].x = this->zfishBlob.pt.x;
     //this->coreTriangle[2].y = this->zfishBlob.pt.y;
 
     templateScore           = 0;
     this->resetSpine();
+
+
+    // intialization of KF...
+    KF.init(stateSize, measSize, contrSize, type);
+
+
+    // Transition State Matrix A  [x,y,v_x,v_y,angle,angle_v]
+        // Note: set dT at each processing step!
+        // [ 1 0 dT 0  0 0 ]
+        // [ 0 1 0  dT 0 0 ]
+        // [ 0 0 1  0  0 0 ]
+        // [ 0 0 0  1  0 0 ]
+        // [ 0 0 0  0  1 0 ]
+        // [ 0 0 0  0  0 1 ]
+    cv::setIdentity(KF.transitionMatrix);
+
+    // Measure Matrix H  [z_x, z_y, angle]
+    // [ 1 0 0 0 0 0 ]
+    // [ 0 1 0 0 0 0 ]
+    // [ 0 0 0 0 1 0 ]
+    KF.measurementMatrix = cv::Mat::zeros(measSize, stateSize, type);
+    KF.measurementMatrix.at<float>(0) = 1.0f;
+    KF.measurementMatrix.at<float>(7) = 1.0f;
+    KF.measurementMatrix.at<float>(16) = 1.0f;
+
+
+//    // Process Noise Covariance Matrix Q  [E_x,E_y, E_v_x,E_v_y ,E_angle,Eangle_v]
+//        // [ Ex   0   0     0     0    0  ]
+//        // [ 0    Ey  0     0     0    0  ]
+//        // [ 0    0   Ev_x  0     0    0  ]
+//        // [ 0    0   0     Ev_y  0    0  ]
+//        // [ 0    0   0     0     Ea   0  ]
+//        // [ 0    0   0     0     0    Ea_v ]
+//        //cv::setIdentity(KF->processNoiseCov, cv::Scalar(1e-2));
+    KF.processNoiseCov.at<float>(0) = 1e-2;
+    KF.processNoiseCov.at<float>(7) = 1e-2;
+    KF.processNoiseCov.at<float>(14) = 5.0f;
+    KF.processNoiseCov.at<float>(21) = 5.0f;
+    KF.processNoiseCov.at<float>(28) = 1e-2;
+    KF.processNoiseCov.at<float>(35) = 5.0f;
+
+//    // Measures Noise Covariance Matrix R
+    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-1));
+
+    mMeasurement = cv::Mat::zeros(measSize,1,type);
+    mState =  cv::Mat::zeros(measSize,1,type);
 }
 
 fishModel::~fishModel()
@@ -88,6 +135,8 @@ fishModel::~fishModel()
     this->zTrack.pointStack.shrink_to_fit();
     this->zTrack.pointStackRender.clear();
     this->zTrack.pointStackRender.shrink_to_fit();
+
+
 }
 
 float fishModel::leftEyeAngle()
@@ -540,35 +589,32 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
 
-    //Check if frame advanced
-    if (nLastUpdateFrame == nFrame)
-        uiFrameIterations++; //Increment count of calculation cycles that we are stuck on same frame
-    else
-    {
-        nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
-        uiFrameIterations = 0;
-    }
 
-    double stepDisplacement = cv::norm(fblob->pt - this->zTrack.centroid);
+    /// Kalman FILTER //
 
-    /// \todo Add Kalman FILTER //
     ///  Reject Step
-    if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame)
-    {
-        inactiveFrames++;
-        return(false);
-    }
+
+
+    // >>>> Matrix A -  Note: set dT at each processing step :
+    KF.transitionMatrix.at<float>(2) = (nFrame-nLastUpdateFrame)/((int)gTrackerState.gfVidfps+1);
+    KF.transitionMatrix.at<float>(9) = (nFrame-nLastUpdateFrame)/((int)gTrackerState.gfVidfps+1);
+
+    mState = KF.predict();
+
+    double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
 
     this->zTrack.id     = ID;
     this->templateScore  = templatematchScore;
-    this->bearingAngle   = Angle;
-    this->bearingRads   =  Angle*CV_PI/180.0;
-    this->ptRotCentre    = bcentre;
+    this->bearingAngle   = mState.at<float>(4); // Angle;
+    this->bearingRads   =  this->bearingAngle*CV_PI/180.0;
+    assert(!std::isnan(this->bearingRads));
+    this->ptRotCentre    = cv::Point2f(mState.at<float>(0), mState.at<float>(1)); //bcentre;
     this->zfishBlob      = *fblob;
     //this->c_spineSegL   = SpineSegLength;
-    this->zTrack.pointStack.push_back(bcentre);
-    this->zTrack.effectiveDisplacement = stepDisplacement;
-    this->zTrack.centroid = bcentre;//fblob->pt; //Or Maybe bcentre
+    this->zTrack.pointStack.push_back(this->ptRotCentre);
+
+    this->zTrack.effectiveDisplacement = cv::norm(this->ptRotCentre - this->zTrack.centroid);;
+    this->zTrack.centroid = this->ptRotCentre;//fblob->pt; //Or Maybe bcentre
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
     {
@@ -578,23 +624,65 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
         this->zTrack.inactive++;
     }
 
+
     ///Update Template Box Bound
     //int bestAngleinDeg = fish->bearingAngle;
-    cv::RotatedRect fishRotAnteriorBox(bcentre,gTrackerState.gszTemplateImg ,Angle);
+    cv::RotatedRect fishRotAnteriorBox(bcentre,gTrackerState.gszTemplateImg ,this->bearingAngle);
     /// Save Anterior Bound
     this->bodyRotBound = fishRotAnteriorBox;
 
     this->idxTemplateCol = TemplCol;
     this->idxTemplateRow = TemplRow;
 
-
     //Set Spine Source to Rotation Centre
-    this->spline[0].x       = bcentre.x;
-    this->spline[0].y       = bcentre.y;
+    this->spline[0].x       = this->ptRotCentre.x;
+    this->spline[0].y       = this->ptRotCentre.y;
     //this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
 
-    bNewModel = false; //Flag THat this model Has been now positioned
-    assert(!std::isnan(this->bearingRads));
+
+    /// Kalman Update //
+    mMeasurement.at<float>(0) = bcentre.x;
+    mMeasurement.at<float>(1) = bcentre.y;
+    mMeasurement.at<float>(2) = Angle;
+
+    if (bNewModel) // First detection!
+    {
+        // >>>> Initialization
+        cv::setIdentity(KF.errorCovPre, cv::Scalar(1));
+        // [x,y,v_x,v_y,angle,angle_v]
+        mState.at<float>(0) = mMeasurement.at<float>(0); //X
+        mState.at<float>(1) = mMeasurement.at<float>(1); //Y
+        mState.at<float>(2) = 0;
+        mState.at<float>(3) = 0;
+        mState.at<float>(4) = mMeasurement.at<float>(2); //Angle (Deg)
+        mState.at<float>(5) = 0; //V Angle (Deg)
+        KF.statePost = mState;
+
+        bNewModel = false; //Flag THat this model Has been now positioned
+    }else
+    {
+        if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame){
+            inactiveFrames++;
+            return(false);
+        }
+        else
+            KF.correct(mMeasurement); // Kalman Correction
+            cout << "Measure matrix:" << endl << mMeasurement << endl;
+   }
+
+
+
+    //Check if frame advanced
+    if (nLastUpdateFrame == nFrame)
+        uiFrameIterations++; //Increment count of calculation cycles that we are stuck on same frame
+    else
+    {
+        nLastUpdateFrame = nFrame; //Set Last Update To Current Frame
+        uiFrameIterations = 0;
+    }
+
+
+
      return(true);
 
 }
