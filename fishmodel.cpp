@@ -116,13 +116,13 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //        //cv::setIdentity(KF->processNoiseCov, cv::Scalar(1e-2));
     KF.processNoiseCov.at<float>(0) = 1e-2;
     KF.processNoiseCov.at<float>(7) = 1e-2;
-    KF.processNoiseCov.at<float>(14) = 5.0f;
-    KF.processNoiseCov.at<float>(21) = 5.0f;
+    KF.processNoiseCov.at<float>(14) = 105.0f;
+    KF.processNoiseCov.at<float>(21) = 105.0f;
     KF.processNoiseCov.at<float>(28) = 1e-2;
-    KF.processNoiseCov.at<float>(35) = 5.0f;
+    KF.processNoiseCov.at<float>(35) = 105.0f;
 
 //    // Measures Noise Covariance Matrix R
-    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-1));
+    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(5));
 
     mMeasurement = cv::Mat::zeros(measSize,1,type);
     mState =  cv::Mat::zeros(measSize,1,type);
@@ -613,21 +613,20 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     //this->c_spineSegL   = SpineSegLength;
     this->zTrack.pointStack.push_back(this->ptRotCentre);
 
-    this->zTrack.effectiveDisplacement = cv::norm(this->ptRotCentre - this->zTrack.centroid);;
+    this->zTrack.effectiveDisplacement = cv::norm(this->ptRotCentre - this->zTrack.centroid);
     this->zTrack.centroid = this->ptRotCentre;//fblob->pt; //Or Maybe bcentre
     ///Optimization only Render Point If Displaced Enough from Last One
     if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
     {
-        this->zTrack.pointStackRender.push_back(bcentre);
+        this->zTrack.pointStackRender.push_back(this->ptRotCentre);
         this->zTrack.active++;
     }else {
         this->zTrack.inactive++;
     }
 
-
-    ///Update Template Box Bound
+    /// Update Template Box Bound
     //int bestAngleinDeg = fish->bearingAngle;
-    cv::RotatedRect fishRotAnteriorBox(bcentre,gTrackerState.gszTemplateImg ,this->bearingAngle);
+    cv::RotatedRect fishRotAnteriorBox(this->ptRotCentre,gTrackerState.gszTemplateImg ,this->bearingAngle);
     /// Save Anterior Bound
     this->bodyRotBound = fishRotAnteriorBox;
 
@@ -640,7 +639,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     //this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
 
 
-    /// Kalman Update //
+    /// Kalman Update - Measurements From Blob //
     mMeasurement.at<float>(0) = bcentre.x;
     mMeasurement.at<float>(1) = bcentre.y;
     mMeasurement.at<float>(2) = Angle;
@@ -667,7 +666,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
         }
         else
             KF.correct(mMeasurement); // Kalman Correction
-            cout << "Measure matrix:" << endl << mMeasurement << endl;
+            //cout << "Measure matrix:" << endl << mMeasurement << endl;
    }
 
 

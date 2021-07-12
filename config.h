@@ -139,7 +139,7 @@ class trackerState
       uint frame_pxwidth               = 640; //Video Frame pixel Dimensions/ Default Changed when Video Is opened
       uint frame_pxheight              = 480;
 
-      const unsigned int MOGhistory   = 10; //Use 100 frames Distributed across the video length To Find What the BGModel is
+      const unsigned int MOGhistory   = 60; //Use 100 frames Distributed across the video length To Find What the BGModel is
       double gdMOGBGRatio             = 0.05; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
