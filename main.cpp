@@ -3022,6 +3022,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
 
               //Cut Down To Template Size
+              /// \bug  (-215:Assertion failed) 0 <= roi.x && 0 <= roi.width && roi.x + roi.width <= m.cols && 0 <= roi.y && 0 <= roi.height && roi.y + roi.height <= m.rows
               imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
               //cv::imshow("ToDetector",imgFishAnterior);
               //float fR = gTrackerState.fishnet.netDetect(imgFishAnterior);

@@ -121,8 +121,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     KF.processNoiseCov.at<float>(28) = 1e-2;
     KF.processNoiseCov.at<float>(35) = 105.0f;
 
-//    // Measures Noise Covariance Matrix R
-    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(5));
+//    // Measures Noise Covariance Matrix R - Set Low so Filter Follows Measurment more closely
+    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-2));
 
     mMeasurement = cv::Mat::zeros(measSize,1,type);
     mState =  cv::Mat::zeros(measSize,1,type);
