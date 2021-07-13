@@ -139,7 +139,7 @@ class trackerState
       uint frame_pxwidth               = 640; //Video Frame pixel Dimensions/ Default Changed when Video Is opened
       uint frame_pxheight              = 480;
 
-      const unsigned int MOGhistory   = 60; //Use 100 frames Distributed across the video length To Find What the BGModel is
+      const unsigned int MOGhistory   = 15; //Use 100 frames Distributed across the video length To Find What the BGModel is
       double gdMOGBGRatio             = 0.05; ///If a foreground pixel keeps semi-constant value for about backgroundRatio*history frames, it's considered background and added to the model as a center of a new component.
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
@@ -205,6 +205,7 @@ class trackerState
      // Global Control Vars ///
      /// \brief bTracking
      ///// Option Flags //
+      bool bAllowOnlyOneTrackedItem = false;
       bool bshowMask; //True will show the BGSubstracted IMage/Processed Mask
       bool bStartPaused;
       bool bPaused;
@@ -272,10 +273,6 @@ class trackerState
       int g_BGthresh              = 5; //BG threshold segmentation
       int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 
-      /// Fishnet Classifier params
-      float fishnet_L1_threshold  = 30.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_L2_classifier  = 0.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-
       /// Eye Tracking Params
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
@@ -292,6 +289,10 @@ class trackerState
 
 
 
+
+      /// Fishnet Classifier params //
+      float fishnet_L1_threshold  = 30.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_L2_classifier  = 0.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;

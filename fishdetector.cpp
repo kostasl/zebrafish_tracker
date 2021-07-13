@@ -107,7 +107,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows-sztemplate.height,iSlidePx_V_begin+(int)(sztemplate.height/2) );
   int iSlidePx_V_step = 3;
 
-  float sc1,sc2; //Recognition Score tested in both Vertical Directions
+  float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
   // Do netDetect using a Sliding window
   cv::Mat imgFishAnterior_Norm_tmplcrop_vflip;
   for (int i=iSlidePx_H_begin;i <= iSlidePx_H_lim;i+=iSlidePx_H_step)
@@ -120,13 +120,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           //CROP Extract a Template sized subregion of Orthonormal Fish
           imgFishAnterior_Norm_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
 
-          sc1 = this->netDetect(imgFishAnterior_Norm_tmplcrop);
+          dscore = this->netDetect(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
           ///Do Not Test Orientation - Blob Should Have the correct Angle
           //Check Both Vertical Orientations
           //cv::flip(imgFishAnterior_Norm_tmplcrop, imgFishAnterior_Norm_tmplcrop_vflip, 0);
 
           ///  Store recognition score in Mask at(row,col)//
-          maskRegionScore_Norm.at<float>(j+sztemplate.height/2, i+sztemplate.width/2) = sc1;
+          maskRegionScore_Norm.at<float>(j+sztemplate.height/2, i+sztemplate.width/2) = scoreFish/(scoreFish + scoreNonFish + 1e-3);
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
 
         }//For Each Vertical
@@ -137,7 +137,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     /// Find Max Match Position In Non-Norm pic (original orientation)
     double minL1,maxL1;
     cv::Point ptmin,ptmax;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(5,9),5,10);
+    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(5,9),5,15);
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
 
     // Rotate Max Point Back to Original Orientation
@@ -190,7 +190,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 /// \brief Applies pre-trained MB like NN on Binarized Input image
 /// Networks supports two L2
-float fishdetector::netDetect(cv::Mat imgRegion_bin)
+float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
 {
     fL1_activity_thres = gTrackerState.fishnet_L1_threshold;
 
@@ -210,9 +210,9 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin)
 
     //cv::imshow("L1 Out", mL1_out);
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
-    float fFishClass = mL2_out.at<float>(0,0)/mW_L1.cols;
+    fFishClass = mL2_out.at<float>(0,0)/mW_L1.cols;
     // Check 2 row (neuron) output
-    float fNonFishClass = mL2_out.at<float>(0,1)/mW_L1.cols;
+    fNonFishClass = mL2_out.at<float>(0,1)/mW_L1.cols;
 
     //double minL1,maxL1;
     //cv::minMaxLoc(mL1_out,&minL1,&maxL1);

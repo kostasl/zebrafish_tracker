@@ -104,6 +104,7 @@ public:
   friend std::ostream& operator<<(std::ostream& out, const fishModel& h);
   friend QTextStream& operator<<(QTextStream& out, const fishModel& h);
 
+  bool isValid();
   zftID ID; /// Uid Of this Fish Instance
 
   //cvb::CvLabel blobLabel; //Legacy BlobLabel
@@ -193,12 +194,13 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h);
 typedef std::map<zftID,fishModel* > fishModels;
 
 
-
+// Defines the Criteria For Sorting fishModel Instances TO Score the most likely Fit
+// Added Inactivity so as penalize fish Models that have been inactive for longer against competing ones found on the same location.
 class CompareFishScore {
     public:
     bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is greater than t2 /Ordering Highest 1st
     {
-       return t1->templateScore < t2->templateScore;
+       return (t1->templateScore-t1->inactiveFrames/gTrackerState.gfVidfps) < (t2->templateScore - t2->inactiveFrames/gTrackerState.gfVidfps);
     }
 };
 

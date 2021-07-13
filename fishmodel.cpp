@@ -114,11 +114,11 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //        // [ 0    0   0     0     Ea   0  ]
 //        // [ 0    0   0     0     0    Ea_v ]
 //        //cv::setIdentity(KF->processNoiseCov, cv::Scalar(1e-2));
-    KF.processNoiseCov.at<float>(0) = 1e-2;
-    KF.processNoiseCov.at<float>(7) = 1e-2;
+    KF.processNoiseCov.at<float>(0) = 1e-1;
+    KF.processNoiseCov.at<float>(7) = 1e-1;
     KF.processNoiseCov.at<float>(14) = 105.0f;
     KF.processNoiseCov.at<float>(21) = 105.0f;
-    KF.processNoiseCov.at<float>(28) = 1e-2;
+    KF.processNoiseCov.at<float>(28) = 1e-1;
     KF.processNoiseCov.at<float>(35) = 105.0f;
 
 //    // Measures Noise Covariance Matrix R - Set Low so Filter Follows Measurment more closely
@@ -589,19 +589,33 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
 
+    double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
 
-    /// Kalman FILTER //
-
-    ///  Reject Step
-
+    mMeasurement.at<float>(0) = bcentre.x;
+    mMeasurement.at<float>(1) = bcentre.y;
+    mMeasurement.at<float>(2) = Angle;
 
     // >>>> Matrix A -  Note: set dT at each processing step :
     KF.transitionMatrix.at<float>(2) = (nFrame-nLastUpdateFrame)/((int)gTrackerState.gfVidfps+1);
     KF.transitionMatrix.at<float>(9) = (nFrame-nLastUpdateFrame)/((int)gTrackerState.gfVidfps+1);
 
-    mState = KF.predict();
+    if (bNewModel) // First detection!
+    {
+        // >>>> Initialization
+        cv::setIdentity(KF.errorCovPre, cv::Scalar(1));
+        // [x,y,v_x,v_y,angle,angle_v]
+        mState.at<float>(0) = bcentre.x; //X
+        mState.at<float>(1) = bcentre.y; //Y
+        mState.at<float>(2) = 0;
+        mState.at<float>(3) = 0;
+        mState.at<float>(4) = Angle;// (Deg)
+        mState.at<float>(5) = 0; //V Angle (Deg)
+        KF.statePost = mState;
+    }else
+        mState = KF.predict();
 
-    double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
+
+
 
     this->zTrack.id     = ID;
     this->templateScore  = templatematchScore;
@@ -640,34 +654,21 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 
 
     /// Kalman Update - Measurements From Blob //
-    mMeasurement.at<float>(0) = bcentre.x;
-    mMeasurement.at<float>(1) = bcentre.y;
-    mMeasurement.at<float>(2) = Angle;
+    /// generate measurement
+    //mMeasurement += KF.measurementMatrix*mState;
 
-    if (bNewModel) // First detection!
-    {
-        // >>>> Initialization
-        cv::setIdentity(KF.errorCovPre, cv::Scalar(1));
-        // [x,y,v_x,v_y,angle,angle_v]
-        mState.at<float>(0) = mMeasurement.at<float>(0); //X
-        mState.at<float>(1) = mMeasurement.at<float>(1); //Y
-        mState.at<float>(2) = 0;
-        mState.at<float>(3) = 0;
-        mState.at<float>(4) = mMeasurement.at<float>(2); //Angle (Deg)
-        mState.at<float>(5) = 0; //V Angle (Deg)
-        KF.statePost = mState;
+    /// Kalman FILTER //
+    ///  Re-Order - First adjust to measurement - then Predict
+    //Reject Updates That Are Beyond Bounds
+    if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame){
+        inactiveFrames++;
+    }else{ //Measurement valid - COnsume
+        //if(!bNewModel)
+       KF.correct(mMeasurement); // Kalman Correction
+    }
 
-        bNewModel = false; //Flag THat this model Has been now positioned
-    }else
-    {
-        if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame){
-            inactiveFrames++;
-            return(false);
-        }
-        else
-            KF.correct(mMeasurement); // Kalman Correction
-            //cout << "Measure matrix:" << endl << mMeasurement << endl;
-   }
+
+     //cout << "Measure matrix:" << endl << mMeasurement << endl;
 
 
 
@@ -681,10 +682,10 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     }
 
 
-
+    bNewModel = false; //Flag THat this model Has been now positioned
      return(true);
 
-}
+}//End of UpdateState
 
 
 /// \brief Revised fitSpineContour , V2- Faster as it focuses/iterates around the spine points not the contour points
@@ -886,8 +887,16 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
    // qDebug() << "D err:" << dDifffitPtError_total;
 }
 
+/// \brief Check if Model Position can be still considered to actively represent a fish's location
+bool fishModel::isValid()
+{
+    //templateScore >= gTrackerState.gTemplateMatchThreshold
+
+    return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier &&
+           inactiveFrames < 2);
 
 
+}
 void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
 {
 
@@ -899,10 +908,13 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
 
 
     cv::Scalar colour;
-    if (this->templateScore >= gTrackerState.gTemplateMatchThreshold)
-        colour = CV_RGB(250,250,0);
-    else
-        colour = CV_RGB(30,30,250);
+    colour = CV_RGB(30,30,250); //Blue - Means Not Validated/Fish Detected Region
+    if (this->isValid())
+        colour = CV_RGB(250,250,0); //Yellow Template Match
+
+    //if ()
+    //    colour = CV_RGB(50,250,0); //Green - FishNet Classified
+
 
 #ifdef _ZTFDEBUG_
     QString strlbl("A: " + QString::number(bestAngleinDeg));
@@ -936,7 +948,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
     const int step_size = this->c_spineSegL;
 
     //const int c_tailscanAngle = gFitTailIntensityScanAngleDeg;
-    if (inactiveFrames > 0)
+    if (!isValid())
         return; //Do not Calculate For Inactive Fish
 
     uint pxValMax;
@@ -1008,7 +1020,7 @@ void fishModel::drawSpine(cv::Mat& outFrame)
 {
     for (int j=0; j<c_spinePoints-1;j++) //Rectangle Eye
     {
-        if (inactiveFrames == 0)
+        if (isValid())
            cv::circle(outFrame,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
         else
            cv::circle(outFrame,cv::Point(spline[j].x,spline[j].y),2,CV_RGB(100,100,100),1);
@@ -1027,7 +1039,7 @@ void fishModel::drawSpine(cv::Mat& outFrame)
 //        }
     }
     //Draw Final Tail (imaginary Spine) Point
-    if (inactiveFrames == 0)
+    if (isValid())
         cv::circle(outFrame,cv::Point(spline[c_spinePoints-1].x,spline[c_spinePoints-1].y),2,TRACKER_COLOURMAP[c_spinePoints-1],1);
     else
         cv::circle(outFrame,cv::Point(spline[c_spinePoints-1].x,spline[c_spinePoints-1].y),2,CV_RGB(100,100,100),1);
