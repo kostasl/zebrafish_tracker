@@ -92,7 +92,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
         // [ 0 1 0  dT 0 0 ]
         // [ 0 0 1  0  0 0 ]
         // [ 0 0 0  1  0 0 ]
-        // [ 0 0 0  0  1 0 ]
+        // [ 0 0 0  0  1 dT ]
         // [ 0 0 0  0  0 1 ]
     cv::setIdentity(KF.transitionMatrix);
 
@@ -101,9 +101,10 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     // [ 0 1 0 0 0 0 ]
     // [ 0 0 0 0 1 0 ]
     KF.measurementMatrix = cv::Mat::zeros(measSize, stateSize, type);
-    KF.measurementMatrix.at<float>(0) = 1.0f;
-    KF.measurementMatrix.at<float>(7) = 1.0f;
-    KF.measurementMatrix.at<float>(16) = 1.0f;
+    cv::setIdentity(KF.measurementMatrix);
+    //KF.measurementMatrix.at<float>(0) = 1.0f;
+    //KF.measurementMatrix.at<float>(7) = 1.0f;
+    //KF.measurementMatrix.at<float>(16) = 1.0f;
 
 
 //    // Process Noise Covariance Matrix Q  [E_x,E_y, E_v_x,E_v_y ,E_angle,Eangle_v]
@@ -114,14 +115,14 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //        // [ 0    0   0     0     Ea   0  ]
 //        // [ 0    0   0     0     0    Ea_v ]
 //        //cv::setIdentity(KF->processNoiseCov, cv::Scalar(1e-2));
-    KF.processNoiseCov.at<float>(0) = 1e-1;
-    KF.processNoiseCov.at<float>(7) = 1e-1;
-    KF.processNoiseCov.at<float>(14) = 105.0f;
-    KF.processNoiseCov.at<float>(21) = 105.0f;
-    KF.processNoiseCov.at<float>(28) = 1e-1;
-    KF.processNoiseCov.at<float>(35) = 105.0f;
+    KF.processNoiseCov.at<float>(0) = 1e-2;
+    KF.processNoiseCov.at<float>(7) = 1e-2;
+    KF.processNoiseCov.at<float>(14) = 1e-2f;
+    KF.processNoiseCov.at<float>(21) = 1e-2f;
+    KF.processNoiseCov.at<float>(28) = 1e-2;
+    KF.processNoiseCov.at<float>(35) = 1e-2f;
 
-//    // Measures Noise Covariance Matrix R - Set Low so Filter Follows Measurment more closely
+//    // Measures Noise Covariance Matrix R - Set Low so Filter Follows Measurement more closely
     cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-2));
 
     mMeasurement = cv::Mat::zeros(measSize,1,type);
@@ -590,15 +591,20 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 {
 
     double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
+    double dT = (double)(nFrame-nLastUpdateFrame)/((double)gTrackerState.gfVidfps+1.0);
 
     mMeasurement.at<float>(0) = bcentre.x;
     mMeasurement.at<float>(1) = bcentre.y;
-    mMeasurement.at<float>(2) = Angle;
-
+    mMeasurement.at<float>(4) = Angle;
+    if (dT > 0){
+        mMeasurement.at<float>(2) = (bcentre.x-bodyRotBound.center.x)/dT;
+        mMeasurement.at<float>(3) = (bcentre.y-bodyRotBound.center.y)/dT; //Y speed;
+        mMeasurement.at<float>(5) = (Angle-this->bearingAngle)/dT; //Ang Speed
+    }else
+        mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = mMeasurement.at<float>(4) = 0;
     // >>>> Matrix A -  Note: set dT at each processing step :
-    KF.transitionMatrix.at<float>(2) = (nFrame-nLastUpdateFrame)/((int)gTrackerState.gfVidfps+1);
-    KF.transitionMatrix.at<float>(9) = (nFrame-nLastUpdateFrame)/((int)gTrackerState.gfVidfps+1);
 
+    cout << "T:" << KF.transitionMatrix << endl;
     if (bNewModel) // First detection!
     {
         // >>>> Initialization
@@ -606,13 +612,20 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
         // [x,y,v_x,v_y,angle,angle_v]
         mState.at<float>(0) = bcentre.x; //X
         mState.at<float>(1) = bcentre.y; //Y
-        mState.at<float>(2) = 0;
-        mState.at<float>(3) = 0;
+        mState.at<float>(2) = 0; //speed X
+        mState.at<float>(3) = 0; //speed Y
         mState.at<float>(4) = Angle;// (Deg)
-        mState.at<float>(5) = 0; //V Angle (Deg)
+        mState.at<float>(5) = 0; //Speed V Angle (Deg)
         KF.statePost = mState;
     }else
+    {
+        KF.transitionMatrix.at<float>(2) = dT;
+        KF.transitionMatrix.at<float>(9) = dT;
+        KF.transitionMatrix.at<float>(29) = dT;
+
         mState = KF.predict();
+        cout << "Sm:" << mState << endl;
+    }
 
 
 
@@ -890,10 +903,9 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
 /// \brief Check if Model Position can be still considered to actively represent a fish's location
 bool fishModel::isValid()
 {
-    //templateScore >= gTrackerState.gTemplateMatchThreshold
+    //templateScore >= gTrackerState.gTemplateMatchThreshold // inactiveFrames < 2
 
-    return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier &&
-           inactiveFrames < 2);
+    return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier);
 
 
 }

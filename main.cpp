@@ -662,7 +662,7 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
     //Count on Original Frame
     std::stringstream strCount;
     strCount << "Nf:" << (nLarva) << " Nr:" << nFood;
-    cv::rectangle(outframe, cv::Point(10, 25), cv::Point(80,45),  CV_RGB(10,10,10), CV_FILLED);
+    cv::rectangle(outframe, cv::Point(10, 25), cv::Point(90,45), CV_RGB(10,10,10), CV_FILLED);
     cv::putText(outframe, strCount.str(), cv::Point(15, 38),
            gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(150,80,50));
 
@@ -908,8 +908,8 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
             ///Paste Eye Processed Head IMage to Into Top Right corner of Larger Image
             gTrackerState.rect_pasteregion.width = outframeHeadEyeDetect.cols;
             gTrackerState.rect_pasteregion.height = outframeHeadEyeDetect.rows;
-            if (outframeHeadEyeDetect.u)
-              outframeHeadEyeDetect.copyTo(outframe(gTrackerState.rect_pasteregion) ) ;
+            //if (outframeHeadEyeDetect.u)
+            //  outframeHeadEyeDetect.copyTo(outframe(gTrackerState.rect_pasteregion) ) ;
 
 //          cv::imshow("headDetect",outframeHeadEyeDetect);
 
@@ -1056,7 +1056,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              ///Does this Blob Belong To A Known Fish Model?
              double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
-             if (dBlobToModelDist < gTrackerState.gFishBoundBoxSize) ////pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
+             if (dBlobToModelDist < gTrackerState.gFishBoundBoxSize*2) ////pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
              {
                 //Search first Using Fish Model Position/ last position may not have difted far-
                 ptbcentre = ptSearch = fishblob->pt; //pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
@@ -1066,7 +1066,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 //Debug blob-Model Matchg
                 cv::circle(frameOut,ptSearch,pfish->zfishBlob.size/100 ,CV_RGB(250,15,250),1); //Mark Where Search Is Done
 
-                maxMatchScore = pfish->zfishBlob.response;
+                maxMatchScore = pfish->zfishBlob.response;// - dBlobToModelDist/gTrackerState.gFishBoundBoxSize*2;
 
                 //doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
                 //Failed? Try the blob Head (From Enhance Mask) Detected position
@@ -1078,7 +1078,6 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 //  //Cancel Template Matching
                 //  maxMatchScore =  gTrackerState.gTemplateMatchThreshold;  //doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
                 //}
-
                 pfish->templateScore = maxMatchScore;
                 pfish->tailTopPoint = gptTail;
 
@@ -1200,8 +1199,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
    {
         //qfishrank.pop();//Remove From Priority Queue Rank
         maxTemplateScore = pfishBest->templateScore;
-        //If top Match fish has also had template Match, then reset inactive frames
-        if (maxTemplateScore >= gTrackerState.gTemplateMatchThreshold)
+                                    //If top Match fish has also had template Match, then reset inactive frames
+        if (pfishBest->isValid())// maxTemplateScore >= gTrackerState.gTemplateMatchThreshold)
             pfishBest->inactiveFrames   = 0; //Reset Counter
     }
    /// \NOTE: Tracking Continuous if fish moves Outside ROI
@@ -2920,6 +2919,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
     cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows));
    // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
 
+    cv::Rect pasteRegion = gTrackerState.rect_pasteregion;
 
 //    ///Detect Head Feature //
 //    std::cout << "Match template on #fish:" << vfishmodels.size() << std::endl;
@@ -3085,6 +3085,9 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               if (imgFishHeadProcessed.u)
                   imgFishHeadProcessed.copyTo(outimgFishHeadProcessed);
 
+              pasteRegion.width = outimgFishHeadProcessed.cols;
+              pasteRegion.height = outimgFishHeadProcessed.rows;
+
               // Debug test //
               //if (gthresEyeSeg < 0)
               //    gUserReward = -500;
@@ -3117,23 +3120,25 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               ss.precision(3);
               cv::Scalar colTxt;
               if (fR < gTrackerState.fishnet_L2_classifier)
-                  colTxt = CV_RGB(200,100,10);
+                  colTxt = CV_RGB(100,100,100);
               else
-                  colTxt = CV_RGB(100,200,10);
+                  colTxt = CV_RGB(200,50,0);
 
               {
+                  outimgFishHeadProcessed.copyTo(fullImgOut(pasteRegion) ) ;
+
                   ss.str(""); //Empty String
                   ss << "L:" << fish->leftEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+10),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45,pasteRegion.br().y+10),CV_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
                   ss << "R:"  << fish->rightEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+25),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+25),CV_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
                   ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+40),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+40),CV_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str("");
                   ss << "nR:"  << ((int)((fR*1000.0)) /1000.0);
-                  cv::putText(fullImgOut,ss.str(),cv::Point(gTrackerState.rect_pasteregion.br().x-45,gTrackerState.rect_pasteregion.br().y+55),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+55),CV_FONT_NORMAL,0.4,colTxt,1 );
               }
 
 
@@ -3195,6 +3200,16 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               }
              /// END OF Fit Spine ////
               //Eye Detection Ret > 0
+                //Shift Paste Region For Next info info
+              if ((pasteRegion.x-pasteRegion.width) > 0 )
+                  pasteRegion.x -= pasteRegion.width;
+              else{
+                  pasteRegion.x = gTrackerState.rect_pasteregion.x;
+                  if (pasteRegion.y < (frame_gray.rows-pasteRegion.height*2) )
+                      pasteRegion.y += pasteRegion.height*2;
+                  else
+                      pasteRegion.y = gTrackerState.rect_pasteregion.y;
+              }
     } //For eAch Fish Model
     gTrackerState.bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
 

@@ -159,7 +159,7 @@ public:
 
 private:
   const int stateSize = 6;
-  const int measSize = 3;
+  const int measSize = 6;
   const int contrSize = 0;
   unsigned int type = CV_32F;
 
