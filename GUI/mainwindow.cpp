@@ -108,8 +108,8 @@ MainWindow::MainWindow(QWidget *parent) :
 void MainWindow::createSpinBoxes()
 {
 
-    this->ui->spinBoxFrame->installEventFilter(this);
 
+    this->ui->spinBoxFrame->installEventFilter(this);
     this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setRange(-500,500); //-Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gTrackerState.gthresEyeSeg);
@@ -117,6 +117,7 @@ void MainWindow::createSpinBoxes()
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
 
+    this->ui->spinBoxEyeMaskW->setValue(gTrackerState.iEyeMaskSepWidth);
 
 
     this->ui->spinBoxFishThres->installEventFilter(this);
@@ -1265,5 +1266,11 @@ void MainWindow::on_spinBoxFishnetL1thres_valueChanged(int arg1)
 void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(int arg1)
 {
     gTrackerState.fishnet_L2_classifier = (float)arg1/100;
+}
+
+
+void MainWindow::on_spinBoxFishNetSparseness_valueChanged(int arg1)
+{
+    gTrackerState.fishnet_inputSparseness = (float)arg1/100.0;
 }
 

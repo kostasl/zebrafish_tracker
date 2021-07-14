@@ -1020,7 +1020,7 @@ bool operator<(const fishModel& a, const fishModel& b)
 void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
 
     qfishModels qfishrank;
-
+    cv::Mat imgFishAnterior_NetNorm,mask_fnetScore;
     fishModel* pfish = NULL;
 
     fishModels::iterator ft;
@@ -1056,7 +1056,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              ///Does this Blob Belong To A Known Fish Model?
              double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
-             if (dBlobToModelDist < gTrackerState.gFishBoundBoxSize*2) ////pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
+             if (dBlobToModelDist < gTrackerState.gDisplacementLimitPerFrame) ////pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
              {
                 //Search first Using Fish Model Position/ last position may not have difted far-
                 ptbcentre = ptSearch = fishblob->pt; //pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
@@ -1070,14 +1070,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
                 //doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
                 //Failed? Try the blob Head (From Enhance Mask) Detected position
-                //if ( maxMatchScore < gTrackerState.fishnet_L2_classifier &&
-                //     !gTrackerState.bDraggingTemplateCentre)
-                //{
-                //  ptSearch = ((cv::Point)fishblob->pt-gptHead)/3+gptHead;
-                //  ptbcentre = ptSearch;
-                //  //Cancel Template Matching
-                //  maxMatchScore =  gTrackerState.gTemplateMatchThreshold;  //doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
-                //}
+                //
+
                 pfish->templateScore = maxMatchScore;
                 pfish->tailTopPoint = gptTail;
 
@@ -2943,7 +2937,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                                         max(0,min(frame_gray.rows,centre.y+gTrackerState.gFishBoundBoxSize)));
 
           cv::Rect rectFish(pBound1,pBound2);
-
+          if (rectFish.area() < gTrackerState.gFishBoundBoxSize) //Skip If Invalid frame Region // Too small
+              continue;
           //cv::rectangle(fullImgOut,rectFish,CV_RGB(20,200,150),2); //Identify Fish Region Bound In Cyan Square
           // cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
@@ -2992,11 +2987,12 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
           cv::Size szTemplateImg = gTrackerState.gLastfishimg_template.size();
 
           //cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
-          cv::Point ptTopLeftTemplate(max(0,rectfishAnteriorBound.width/2-szTemplateImg.width/2),
-                                      max(0,rectfishAnteriorBound.height/2-szTemplateImg.height/2));
-
+          cv::Point ptTopLeftTemplate(min(szFishAnteriorNorm.width, max(0,szFishAnteriorNorm.width/2-szTemplateImg.width/2)),
+                                      min(szFishAnteriorNorm.height, max(0,szFishAnteriorNorm.height/2-szTemplateImg.height/2)) );
 
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
+
+
           cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),
                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
 //          cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
@@ -3028,8 +3024,13 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               //Need to fix size of Upright/Normed Image
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
 
+              // Break If FishAnterior Image is too small (Near boundary case)
+              if ((rectFishTemplateBound.width + rectFishTemplateBound.x) > imgFishAnterior_Norm.cols)
+                  return;
+              if ((rectFishTemplateBound.height + rectFishTemplateBound.y) > imgFishAnterior_Norm.rows)
+                  return;
+
               //Cut Down To Template Size
-              /// \bug  (-215:Assertion failed) 0 <= roi.x && 0 <= roi.width && roi.x + roi.width <= m.cols && 0 <= roi.y && 0 <= roi.height && roi.y + roi.height <= m.rows
               imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
               //cv::imshow("ToDetector",imgFishAnterior);
               //float fR = gTrackerState.fishnet.netDetect(imgFishAnterior);
@@ -3125,6 +3126,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   colTxt = CV_RGB(200,50,0);
 
               {
+                  // \bug Paste region out of bounds
                   outimgFishHeadProcessed.copyTo(fullImgOut(pasteRegion) ) ;
 
                   ss.str(""); //Empty String

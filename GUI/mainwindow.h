@@ -139,6 +139,8 @@ private slots:
 
     void on_spinBoxFishnetClassifierthres_valueChanged(int arg1);
 
+    void on_spinBoxFishNetSparseness_valueChanged(int arg1);
+
 private:
     void reportUserMeasurement(cv::Point ptMouse);
 

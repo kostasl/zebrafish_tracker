@@ -40,8 +40,8 @@ img_dim <- c(38,28)
 n_top_px <- img_dim[2]*img_dim[1]
 N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
 N_SYN_per_KC <- n_top_px/10 ## Number of pic Features each KC neuron Codes for
-KC_THRES <- N_SYN_per_KC*0.55 ## Number of INput that need to be active for KC to fire/Activate
-
+KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
+INPUT_SPARSENESS = 0.20
 ## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
 mat_KC <<- matrix(0,nrow=n_top_px,ncol=N_KC)
 sMat <<- apply(mat_KC,2,initKC)
@@ -83,8 +83,20 @@ net_proc_images <- function(img_list,learningRate = 0.0,outNeuronIdx=1)
     
     ##mypic = new("pixmapGrey", size=dim(mat_img),grey = mat_img);plot(mypic)
     dim(X) <- c(1,length(X)) ## Make into Row Vector
-    ## Binarize Input Image 
-    X_bin <-  as.numeric(X > mean(X))
+    ## Binarize Input Image ##
+    
+    pxsparse = 1.0
+    thres_bin = mean(X)
+    max_iter = 100
+    while (pxsparse > INPUT_SPARSENESS & max_iter > 0)
+    {
+      X_bin <-  as.numeric(X > thres_bin)
+      pxsparse <- sum(as.numeric(X_bin[X_bin > 0]))/length(X_bin)
+      thres_bin = thres_bin + 0.01;
+      max_iter = max_iter + 1
+    }
+    message("Sparseness:",pxsparse)
+    
     KC_out_act = X_bin %*% sMat 
     #hist( KC_out_act[1,])
     ## Calc Layer 1 output based on Activation Threshold Funciton for Units

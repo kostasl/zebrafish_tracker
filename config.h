@@ -269,7 +269,7 @@ class trackerState
       int g_Segthresh             = 5; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
       int g_SegFoodThesMin        = g_Segthresh+5; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegFoodThesMax        = g_SegFoodThesMin+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
-      int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
+      //int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
       int g_BGthresh              = 5; //BG threshold segmentation
       int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 
@@ -280,9 +280,9 @@ class trackerState
       int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
-      int giEyeIsolationMaskRadius        = 8; ///Mask circle between eyes
+      int giEyeIsolationMaskRadius        = 9; ///Mask circle between eyes
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -10; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
+      int gthresEyeSeg                    = -17; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
       int gthresEyeSegL                   = 2;
 
       int gFishTailSpineSegmentLength     = 9;
@@ -293,6 +293,7 @@ class trackerState
       /// Fishnet Classifier params //
       float fishnet_L1_threshold  = 30.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_L2_classifier  = 0.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_inputSparseness = 0.04; //Ratio of Active Pixels in Binarized input Image
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;
@@ -306,7 +307,7 @@ class trackerState
       int gFishBoundBoxSize               = 40; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-      int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*2; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
+      int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*3; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
 
       int iLastKnownGoodTemplateRow   = 0;
       int iFishAngleOffset            = 0;

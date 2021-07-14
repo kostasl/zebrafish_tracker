@@ -54,6 +54,7 @@ fishdetector::fishdetector()
 /// \brief Uses Neural Net to scan region around provided blog and provide a detection score as a mask (returns max score value)
 /// \todo could do image Pyramids to scan Across Scales
 /// @param regTag an Id for debugging purposes
+/// @outframeAnterior_Norm returns image of isolated head centered at best detection point according to NN
 float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,string regTag="0")
 {
   cv::Mat imgFishAnterior,imgFishAnterior_Norm,imgFishAnterior_Norm_bin,imgFishAnterior_Norm_tmplcrop;
@@ -88,10 +89,23 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   //Need to fix size of Upright/Normed Image
   cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
 
-  // Binarize Through Adaptive Threshold to enhance fish-like pattern
-  cv::adaptiveThreshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,3,0);
+  // Binarize Through Adaptive Threshold to enhance fish-like pattern // Substract - const val from mean
+  // Ideally We want to maintain input sparseness
+  double activePixRatio = 1.0;
+  int meanAdapt = 0;
+  int maxIter = 20;
+  // Regulate Input Sparseness
+  while (activePixRatio > gTrackerState.fishnet_inputSparseness &&
+         maxIter > 0)
+  {
+    cv::adaptiveThreshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,szFishAnteriorNorm.width,meanAdapt);
+    activePixRatio = (cv::sum(imgFishAnterior_Norm_bin)[0])/(imgFishAnterior_Norm_bin.cols*imgFishAnterior_Norm_bin.rows);
+    meanAdapt += (int)255*(gTrackerState.fishnet_inputSparseness-activePixRatio)-2;
+    maxIter--;
+  }
+  //cv::threshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,gTrackerState.g_Segthresh,1,cv::THRESH_BINARY);
   if (!imgFishAnterior_Norm_bin.empty())
-      cv::imshow("FIshBody Norm Bin",imgFishAnterior_Norm_bin*255);
+      cv::imshow("FIshBody Norm Bin"+regTag,imgFishAnterior_Norm_bin*255);
 
   //cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-gTrackerState.gLastfishimg_template.size().width/2,
   //                         szFishAnteriorNorm.height/2-gTrackerState.gLastfishimg_template.size().height/2);
@@ -99,12 +113,12 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
    //Check Center Of Image / If Something is found Do Sliding Window
 
   /// SliDing Window Scanning
-  int iSlidePx_H_begin = ptRotCenter.x- sztemplate.width/2;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_begin = ptRotCenter.x- sztemplate.width/2-5;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+10;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
     int iSlidePx_H_step = 3;
 
-  int iSlidePx_V_begin = std::max(0, (int)(ptRotCenter.y - sztemplate.height));
-  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows-sztemplate.height,iSlidePx_V_begin+(int)(sztemplate.height/2) );
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - sztemplate.height/2)-5); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - sztemplate.height, iSlidePx_V_begin +10); //(int)(sztemplate.height/2)
   int iSlidePx_V_step = 3;
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -125,8 +139,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           //Check Both Vertical Orientations
           //cv::flip(imgFishAnterior_Norm_tmplcrop, imgFishAnterior_Norm_tmplcrop_vflip, 0);
 
-          ///  Store recognition score in Mask at(row,col)//
-          maskRegionScore_Norm.at<float>(j+sztemplate.height/2, i+sztemplate.width/2) = scoreFish/(scoreFish + scoreNonFish + 1e-3);
+          /// Score Number of Bin Pix In cropped region so as to push for regions that fully contain the eyes
+          float activePixRatio = (1+cv::sum(imgFishAnterior_Norm_tmplcrop)[0])/(imgFishAnterior_Norm_tmplcrop.cols*imgFishAnterior_Norm_tmplcrop.rows);
+          ///  Store recognition score in Mask at(row,col) -//
+          maskRegionScore_Norm.at<float>(j+sztemplate.height/2, i+sztemplate.width/2) = (scoreFish/(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
+
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
 
         }//For Each Vertical
@@ -137,7 +154,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     /// Find Max Match Position In Non-Norm pic (original orientation)
     double minL1,maxL1;
     cv::Point ptmin,ptmax;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(5,9),5,15);
+    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(9,9),15,15);
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
 
     // Rotate Max Point Back to Original Orientation
@@ -189,7 +206,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 }
 
 /// \brief Applies pre-trained MB like NN on Binarized Input image
-/// Networks supports two L2
+/// Networks supports two L2 neurons - These recognition nets suffer from decreases in input sparseness :
+/// More active inputs increase the output scores - reducing the networks selectivity
 float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
 {
     fL1_activity_thres = gTrackerState.fishnet_L1_threshold;

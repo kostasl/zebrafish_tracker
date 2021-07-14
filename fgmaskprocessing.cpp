@@ -642,19 +642,26 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
         //Find Tail Point- As the one with the sharpest Angle
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
+         cv::Point2f ptSearch = kp.pt;
         int idxTail,idxHead ;
             idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
         if (idxTail >= 0 )
         {
             ///
             idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
-            gptHead = ptHead; //Hack To Get position For Template
+            gptHead = ptHead; //Hack To Get Head position to Classify fish image
             gptTail = ptTail;
+            //Move Search location Anteriorly - IMprove fishNet localization
+            ptSearch  = ((cv::Point)kp.pt-gptHead)/2+gptHead;
+
             //Correct Angle - 0 is Vertical Up
             kp.angle = (int)(cv::fastAtan2(ptHead.y-ptTail.y,ptHead.x-ptTail.x)+90)%360;
         }else
             gptHead.x = 0; gptHead.y = 0;
 
+        //Move fishNet Detection towards Anterior of Blob
+        cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
+        kp.pt = ptSearch;
         /// Classify Keypoint for fish
         float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm, mask_fnetScore, QString::number(iHitCount).toStdString());
         QString strfRecScore = QString::number(fR,'g',3);

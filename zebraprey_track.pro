@@ -6,6 +6,7 @@
 # sudo rm /usr/lib/x86_64-linux-gnu/libQt5Test.so.5
 # sudo ln -s /opt/Qt/5.15.0/gcc_64/lib/libQt5Test.so.5 /usr/lib/x86_64-linux-gnu/libQt5Test.so.5
 
+#--invideofile=/media/kostasl/zFish-Gamma-T7/HungerExp/HB40_7dpf_LF1/LR/HB40_LR_camB.mp4 --outputdir=/media/kostasl/ARXEIO1TB/Behaviour/train/
 
 TEMPLATE = app
 

@@ -158,14 +158,15 @@ public:
   double stepUpdate; //Eye Angle incremental update rate
 
 private:
-  const int stateSize = 6;
-  const int measSize = 6;
+  const int stateSize = 8;
+  const int measSize = 8;
   const int contrSize = 0;
   unsigned int type = CV_32F;
 
   KalmanFilter KF;
 
   Mat mState;  // [x,y,v_x,v_y,angle,angle_v]
+  cv::Mat mCorrected; // Kalman Output After Corrected Predition given Measurment
   Mat mMeasurement; // [z_x, z_y, angle]
   Mat mProcessNoise; // [E_x,E_y, E_v_x,E_v_y ,E_angle,Eangle_v] //(2, 1, CV_32F);
 
