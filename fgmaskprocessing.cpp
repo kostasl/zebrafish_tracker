@@ -668,7 +668,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         iHitCount++;
         //qDebug() << "(" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
 
-        if (fR > gTrackerState.fishnet_L2_classifier)
+        if (kp.response > gTrackerState.fishnet_L2_classifier)
         {
             ptFishblobs.push_back(kp);
             /// \todo Conditionally add this Contour to output if it matches template.

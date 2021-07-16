@@ -77,7 +77,8 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
     double maxMatchScore =0; //
     cv::Point gptmaxLoc; //point Of Bestr Match
-    cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows));
+    cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),
+                        std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows));
     assert(szTempIcon.width > 5 && szTempIcon.height> 5);
     cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
     ///
@@ -120,7 +121,9 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
    /// iLastKnownGoodTemplateRow will change to the row that matched the tracked larva
     int iLastTemplateRow = iLastKnownGoodTemplateRow;
-    int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,findBestMatch);
+    int AngleIdx = templatefindFishInImage(fishRegion,gFishTemplateCache,szTempIcon, maxMatchScore, gptmaxLoc,
+                                           iLastKnownGoodTemplateRow,iLastKnownGoodTemplateCol,
+                                           findBestMatch);
 
     //Log Change of Template Row
     if (iLastTemplateRow != iLastKnownGoodTemplateRow)
@@ -154,6 +157,9 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
     //Allocate Dark/Black Mat of appropriate Size to Fit All Replications of the templ.
     //Space Them Out Along Long Dim So no cutting Occurs
     int mxDim = std::max(templateIn.cols,templateIn.rows);
+
+    assert(mxDim == max(gTrackerState.gszTemplateImg.height,gTrackerState.gszTemplateImg.width));
+
     imgTemplateOut = cv::Mat::zeros(mxDim,mxDim*iAngleIncrements,CV_8UC1);
     cv::Point tempCentre = cv::Point(templateIn.cols/2,templateIn.rows/2);
     cv::Point ptbottomRight = cv::Point(mxDim,mxDim); //Square fitting Largest Dimension
@@ -241,6 +247,8 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \brief templatefindFishInImage Scans input image for templates and returns the best location
 ///  which that exceed a threshold value for a match
 /// \param templRegion Rect of template img Size to look for within the larger template Cache
+/// \param imgTemplCache Global large Mat 2D image having the array of Templates
+/// \param templSz The size of each template icon as saved in the Cache - These are a square along largest templ Dim
 /// \param startRow - Optimization So search begins from the most likely Template as of the last one
 /// \param startCol - Optimization So search begins from the most likely Template Angle
 /// \param findFirstMatch if true It Looks for 1st template row that exceeds threshold - otherwise it looks for best match through all cache
@@ -248,7 +256,8 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// if Row scanning is disabled when bTemplateSearchThroughRows is not set
 /// Use of UMat for matchTemplate is superfluous , as the GPU is not Utilized and it causes a dealloc mem bug to trigger -  Removed UMat
 /// A gpuAssisted  function for this is included in the bottom of the file.
-int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch)
+int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size templSz, double& matchScore,
+                            cv::Point& ptBestMatchlocation,int& startRow,int& startCol,bool findFirstMatch)
 {
   const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
   int matchColIdx = 0;
@@ -312,7 +321,8 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
       //for (int i=templSz.width*startCol; i<imgtempl.cols;i+=templRegion.width)
 
       ///Limit Search To Within FIXED (15) Degrees/Templates from Starting Col.Point If Not Searching From The top
-      while(templRegion.x < imgtemplCache.cols && ((Colidx-startCol) < TEMPLATE_COL_SEARCH_REGION || startCol==0))
+      while(templRegion.x < imgtemplCache.cols &&
+            ((Colidx-startCol) < TEMPLATE_COL_SEARCH_REGION || startCol==0))
       {
         //Obtain next Template At Angle
          imgtemplCache(templRegion).copyTo(templ_rot) ;
@@ -331,11 +341,12 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
         if (maxGVal < maxVal)
         {
             maxGVal         = maxVal;
-            ptGmaxLoc       = ptmaxLoc; //The calling Function needs to reposition maxLoc To the global Frame
+            ptGmaxLoc       =  cv::Point(ptmaxLoc.x+imgRegionIn.cols/2,
+                                         ptmaxLoc.y+imgRegionIn.rows/2); //The calling Function needs to reposition maxLoc To the global Frame
             matchColIdx     = Colidx;
             ibestMatchRow   = idRow;
             matchScore      = maxVal; //Save Score Of Best Match
-            locations_tl    = ptGmaxLoc;
+            ptBestMatchlocation = ptGmaxLoc;
 
         }
 
@@ -401,15 +412,15 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
      startCol = 0;
 
      std::stringstream ss;
-     // Log As Message //
-     if (ibestMatchRow < gTrackerState.gnumberOfTemplatesInCache)
-        ss << "Found row:" << ibestMatchRow << " but gives Low Match score:"<< maxGVal << ". Pick next Randomly ->"  << startRow;
-     else
-     {
-         ss << "Reached End of Templates row:" << ibestMatchRow << " Start Over on next";
-         startRow = 0;
-     }
-     pwindow_main->LogEvent(QString::fromStdString(ss.str()));
+//     // Log As Message //
+//     if (ibestMatchRow < gTrackerState.gnumberOfTemplatesInCache)
+//        ss << "Best row:" << ibestMatchRow << " but gives Low Match score:"<< maxGVal << ". Pick next Randomly ->"  << startRow;
+//     else
+//     {
+//         ss << "Reached End of Templates row:" << ibestMatchRow << " Start Over on next";
+//         startRow = 0;
+//     }
+//     pwindow_main->LogEvent(QString::fromStdString(ss.str()));
 
  }else{ // If template matched then stay on the same template row
      startRow = ibestMatchRow;
@@ -459,16 +470,21 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 ///
 int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
 {
+    cv::Mat imgTempl_std(gTrackerState.gszTemplateImg.height,gTrackerState.gszTemplateImg.width,imgTempl.type());
 
-    //Check If Image Size is compatible with Template
-    if (gTrackerState.gnumberOfTemplatesInCache > 0)
-        assert(imgTempl.rows ==  gTrackerState.gszTemplateImg.height &&
-               imgTempl.cols ==  gTrackerState.gszTemplateImg.width);
+    assert(imgTempl.rows <=  gTrackerState.gszTemplateImg.height &&
+           imgTempl.cols <=  gTrackerState.gszTemplateImg.width);
+
+    //Paste Template Into centre of Standard Template Frame Size
+    cv::Rect pasteRegion((gTrackerState.gszTemplateImg.width-imgTempl.cols)/2,
+                         (gTrackerState.gszTemplateImg.height-imgTempl.rows)/2
+                         ,imgTempl.cols,imgTempl.rows);
+    imgTempl.copyTo(imgTempl_std(pasteRegion));
 
     //Make Variations And store in template Cache
     cv::Mat fishTemplateVar;
     cv::Mat mtCacheRow,mtEnlargedCache;
-    makeTemplateVar(imgTempl,fishTemplateVar, gTrackerState.gFishTemplateAngleSteps);
+    makeTemplateVar(imgTempl_std,fishTemplateVar, gTrackerState.gFishTemplateAngleSteps);
 
     ///Initialize The Cache if this the 1st Template added
     if (idxTempl == 0)
@@ -498,8 +514,8 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
 
 
     // Set Template Size
-    gTrackerState.gszTemplateImg.width = imgTempl.size().width; //Save TO Global Size Variable
-    gTrackerState.gszTemplateImg.height = imgTempl.size().height; //Save TO Global Size Variable
+    //gTrackerState.gszTemplateImg.width = imgTempl.size().width; //Save TO Global Size Variable
+    //gTrackerState.gszTemplateImg.height = imgTempl.size().height; //Save TO Global Size Variable
 
    return ++idxTempl;
 }

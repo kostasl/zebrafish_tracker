@@ -52,7 +52,8 @@ L2_Neurons <<- 2
 W_L2 <<- matrix(0,ncol=L2_Neurons,nrow=N_KC)
 
 ## Process 2 Layer Network - Return Last Node Output produced for each input image
-net_proc_images <- function(img_list,learningRate = 0.0,outNeuronIdx=1)  
+## Target_output is vector of desired output for each output Neuron these I chose to be L2_1=1 (Fish) L2_2=1 (Non Fish)
+net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))  
 {
   L2_out <- list()
   fileidx <- 0
@@ -103,30 +104,37 @@ net_proc_images <- function(img_list,learningRate = 0.0,outNeuronIdx=1)
     KC_output <- apply(KC_out_act, 2, KC_activation)
     dim(KC_output) <-c(1,length(KC_output)) ## Make into Row Vector
     
-    ## Learn Positive Samples ##
+    ## Learn Positive Samples - Simple Perceptron Learning Rule - Over an augmented input X which is projected To High dim via sparse random matrix in L1##
     ## Take Active L1 outputs And Set L2 Input synapses of Output Neuron to High
-
-    ##W_L2[which(KC_output > 0.5),1] <-W_L2[which(KC_output > 0.5),1] + W_L2[which(KC_output > 0.5),1]*learningRate
-    W_L2[,outNeuronIdx] <<-  W_L2[,outNeuronIdx] +  t(learningRate*KC_output)
+    
+    DW <- t(learningRate*KC_output)%*% (Target_output - L2_Neurons_out)
+    W_L2 <<-  W_L2 + DW ## Update Weight Vector 
+    L2_Neurons_out <<- as.numeric(( KC_output %*%  W_L2)/N_KC)
+    
     ##W_L2[W_L2 < 1] <<- 1 ##Cap To Limit Values - Saturation Of Synapses
     ##W_L2[,outNeuronIdx][W_L2< -1] <<- -1
     
     stopifnot(ncol(KC_output) == nrow(W_L2))
     ## Calc Output Neuron - Perceptron 
-    L2_out[[fileidx]] <- list(L2_out=as.numeric(( KC_output %*%  W_L2)/N_KC),
+   
+    
+    L2_out[[fileidx]] <- list(L2_F=L2_Neurons_out[1],
+                              L2_NF=L2_Neurons_out[2],
                               KC_active = sum(KC_output),
-                              KC_total = nrow(KC_output)
+                              KC_total = length(KC_output),
+                              input_sparse= pxsparse
                               )
-    message("Recognition Output for Img ",in_img," is F:",L2_out[[fileidx]]$L2_out[1]," non-F:",L2_out[[fileidx]]$L2_out[2]," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
+    message("Recognition Output for Img ",in_img," is F:",L2_Neurons_out[1]," non-F:",L2_Neurons_out[2]," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
     dim(X_bin) = dim(mat_img)
     image(X_bin)
     strRes <- "Not a Fish"
-    if (L2_out[[fileidx]]$L2_out[1] > L2_out[[fileidx]]$L2_out[2])
+    if (L2_Neurons_out[1] > L2_Neurons_out[2])
       strRes <- "A Fish"
-    title(main = paste(in_img,strRes," R:",L2_out[[fileidx]]$L2_out[1]-L2_out[[fileidx]]$L2_out[2]), font.main = 4)
+    title(main = paste(in_img,strRes," R:",L2_Neurons_out[1]-L2_Neurons_out[2]), font.main = 4)
   }
   
-  return(L2_out)
+ 
+  return( data.frame( do.call(rbind,L2_out ) ))
 }
 
 ## Apply Input Image ##
@@ -141,14 +149,28 @@ img_list_train_nonfish =  list.files(path=sPathTrainingNonSamples,pattern="*pgm"
 
 img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T)
 
+# TRAIN On Fish Samples ##
 dLearningRate = 1.0 ## FALSE##TRUE
-l_out <- net_proc_images(img_list_train_fish,dLearningRate,1)
-l_out <- net_proc_images(img_list_train_fish,-dLearningRate/5,2)
+KC_THRES <- N_SYN_per_KC*0.30 ## Number of INput that need to be active for KC to fire/Activate
+
+dnetout_fish <- net_proc_images(img_list_train_fish,dLearningRate, c(1,-1))
+hist(unlist(dnetout_fish$L2_F),breaks=10,main="Class Fish Responses to F+ samples" )
+
+KC_THRES <- N_SYN_per_KC*0.30 ## Number of INput that need to be active for KC to fire/Activate
+dnetout_notfish <- net_proc_images(img_list_train_nonfish,dLearningRate,c(-1,1))
+hist(unlist(dnetout_notfish$L2_NF),breaks=10,main="Class Not Fish Responses to F- samples" )
+
+
+## Test Responses ## 
+dnetout_test <- net_proc_images(img_list_test,0.0,c(0,0))
+
+
+
 colSums(W_L2)
-l_out_n <- net_proc_images(img_list_train_nonfish,dLearningRate,2)
+
 l_out_n <- net_proc_images(img_list_train_nonfish,-dLearningRate/5,1)
 colSums(W_L2)
-l_out_test <- net_proc_images(img_list_test,0.0)
+
 colSums(W_L2)
 
 

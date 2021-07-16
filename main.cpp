@@ -68,6 +68,7 @@
 #include <zfttracks.h>
 #include <fgmaskprocessing.h>
 #include "eyesdetector.h"
+#include "fishdetector.h"
 #include <QtOpenGL/QtOpenGL> // Included so qmake selects correct lib location for these
 #include <QtTest/QTest>
 
@@ -1026,9 +1027,22 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     fishModels::iterator ft;
     bool bModelFound =false;
 
+    /// Call step Update All fish models to Predict next step
+    for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+    {
+         pfish = ft->second;
+         pfish->stepPredict(nFrame);
+         ///    Write Angle / Show Box   ///
+         //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
+         pfish->drawBodyTemplateBounds(frameOut);
+    }
+
+    /// Pass position Measurements to fish Models from Blobs that likely belong to the fishmodel //
+    /// \todo - REWRITE :
+    /// Score All Blob - Model Pairs - Decide if new Model needed //
      // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
     for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
-    {
+    { //For Each Blob //
         zftblob* fishblob = &(*it);
 
         cv::Point ptbcentre = fishblob->pt; //Start As First Guess - This is updated When TemplMatching
@@ -1053,6 +1067,10 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
              pfish = ft->second;
              assert(pfish);
+            //Model Already Taken
+             if (pfish->isFrameUpdated(nFrame))
+                 continue;
+
              ///Does this Blob Belong To A Known Fish Model?
              double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
@@ -1075,7 +1093,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 pfish->templateScore = maxMatchScore;
                 pfish->tailTopPoint = gptTail;
 
-                //Check If Fish Detected Via Template
+                //Check If Fish Detected
                  if (pfish->isValid() ||
                      pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0)//( maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
                  {
@@ -1107,13 +1125,11 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                          //qDebug() << nFrame << " Guessing next TemplCol:" << gTrackerState.iFishAngleOffset;
                  }
 
-                 ///    Write Angle / Show Box   ///
-                 //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
-                 pfish->drawBodyTemplateBounds(frameOut);
-                //Add To Priority Q So we can Rank - Only If Blob Ovelaps ?
-                qfishrank.push(pfish);
-             }//if Models Blob Overlaps with this Blob
+                  pfish->drawBodyTemplateBounds(frameOut);
 
+                 //Add To Priority Q So we can Rank - Only If Blob Ovelaps ?
+                qfishrank.push(pfish);
+             }//if Model is within Blob range Overlaps with this Blob
 
         } //For Each Fish Model
 
@@ -1137,7 +1153,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
             maxMatchScore = fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
             bestAngle = fishblob->angle;
-            //If New Blob Looks Like A Fish, Then Make  A New Model
+            //If New Blob Looks Like A Fish, and no existing model in vicinity Then Make  A New Model for blob
             if (maxMatchScore >= gTrackerState.fishnet_L2_classifier)
             {
                 //Make new fish Model
@@ -1174,7 +1190,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
         }
 
-    } //For Each Fish Blob
+    } // For Each Fish Blob //
 
     ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
     fishModel* pfishBest = 0;
@@ -1193,9 +1209,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
    {
         //qfishrank.pop();//Remove From Priority Queue Rank
         maxTemplateScore = pfishBest->templateScore;
-                                    //If top Match fish has also had template Match, then reset inactive frames
-        if (pfishBest->isValid())// maxTemplateScore >= gTrackerState.gTemplateMatchThreshold)
-            pfishBest->inactiveFrames   = 0; //Reset Counter
+        //Here I used to , then reset inactive frames to 0 / But this is not In UpdateState
     }
    /// \NOTE: Tracking Continuous if fish moves Outside ROI
    /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
@@ -2581,117 +2595,6 @@ void drawUserDefinedPoints(cv::Mat& frame)
 
 }
 
-///
-/// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
-/// \param contours source array in which to search
-/// \param hierarchy
-/// \param pt - Position around which we are searching
-/// \param level - The required hierarchy level description of the contour being searched for
-/// - if -1 (default) do not check hierarchy,
-/// - 0 only parent contours
-/// - 1 Needs to Have a parent
-/// - level == 2 Needs to be top Level Contour
-/// \return Index of *child*/Leaf contour closest to point
-///
-int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
-                              std::vector<cv::Vec4i>& hierarchy,
-                              cv::Point pt,
-                              int level=-1)
-{
-    int idxContour           = -1;
-    bool bContourfound       = false;
-    int mindistToCentroid    = +10000; //Start Far
-    int distToCentroid       = +10000;
-    int matchContourDistance = 10000;
-
-
-    assert((level > 0) &&  hierarchy.size() ==contours.size() || level ==-1  );
-
-
-    /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
-   ///Search Through Contours - Draw contours + hull results
-
-   ///Find Contour with Min Distance in shape and space -attach to closest contour
-   //In Not found Search Again By distance tp Full Contour
-       //Find Closest Contour
-       for( int i = 0; i< (int)contours.size(); i++ )
-       {
-
-          //Filter According to desired Level
-          if (level == 0) /// Only Process Parent Contours
-          {
-            if (hierarchy[i][3] != -1) // Need to have no parent
-               continue;
-            if (hierarchy[i][2] == -1)  // Need to have child
-                continue;
-            assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
-          }
-
-          if (level == 1) // Only Process Child Contours
-          {
-              if (hierarchy[i][3] == -1) // Need to have a parent
-                  continue;
-//                   //Parent should be root
-//                   if (hierarchy[hierarchy[i][3]][3] != -1)
-//                       continue;
-          }
-
-          if (level == 2) // Needs to be top Level Contour
-          {
-              if (hierarchy[i][3] != -1) // No Parent Contour
-                  continue;
-//                   //Parent should be root
-//                   if (hierarchy[hierarchy[i][3]][3] != -1)
-//                       continue;
-          }
-
-
-
-          //It returns positive (inside), negative (outside), or zero (on an edge)
-          //Invert Sign and then Rank From Smallest to largest distance
-          if (contours[i].size() > 0)
-            matchContourDistance = distToCentroid = -cv::pointPolygonTest(contours[i],pt,true);
-
-          //Measure Space Mod -Penalize Outside contour Hits - Convert Outside Contour Distances to X times further +ve (penalize)
-          //Make Distance alway positive
-          //matchContourDistance = (distToCentroid<0)?abs(distToCentroid)*20:distToCentroid;
-          // qDebug() << "-c" << i << " D:" <<  distToCentroid;
-
-
-
-          //Only Update if Spatial Distance is smaller but also moving from outside to inside of the shape
-          //-ve is outside - 0 on border -
-          //if(mindistToCentroid <= 0 && distToCentroid >= 0))
-          {
-               if (matchContourDistance < mindistToCentroid)
-               {
-                   //Otherwise Keep As blob Contour
-                   idxContour = i;
-                   mindistToCentroid = matchContourDistance;//New Min
-
-                   //qDebug() << "-----MinTD:"<< matchContourDistance << "<- HDist:" << dHudist << " Sp:" << distToCentroid << "AreaDist:" << abs(tArea - sArea) << "LengthDist:" << abs(tLength - sLength);
-
-                   //Reject match 0 in case contour is not actually there
-                   //if (matchContourDistance < gi_ThresholdMatching)
-                        bContourfound = true;
-               }
-           }
-
-       } //Loop through Contours
-
-
-   if (!bContourfound)
-   {
-       //std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
-       idxContour = -1;
-   }
-      //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
-
-   assert(idxContour < (int)contours.size());
-
-   return idxContour;
-}
-
 
 /////
 ///// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
@@ -2929,7 +2832,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                 continue;
 
           //Draw A general Region Where the FIsh Is located,
-          cv::Point centre = fish->ptRotCentre; //top_left + rotCentre;
+          cv::Point centre = fish->zfishBlob.pt; //fish->ptRotCentre; //top_left + rotCentre;
           //cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
           cv::Point pBound1 = cv::Point(max(0,min(frame_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)),
                                         max(0,min(frame_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
@@ -2946,12 +2849,12 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
           ///Update Template Box Bound
           int bestAngleinDeg    = fish->bearingAngle;
-          fish->zfishBlob.angle = bestAngleinDeg;
+          //fish->zfishBlob.angle = bestAngleinDeg;
 
           // Set Size Of Head Crop Image
           cv::RotatedRect fishRotAnteriorBox(centre,
-                                             cv::Size(gTrackerState.gLastfishimg_template.cols,
-                                                      gTrackerState.gLastfishimg_template.rows),
+                                             cv::Size(gTrackerState.gszTemplateImg.width,
+                                                      gTrackerState.gszTemplateImg.height),
                                                        bestAngleinDeg);
           /// Save Anterior Bound
           fish->bodyRotBound = fishRotAnteriorBox;
@@ -2970,7 +2873,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
           //cv:circle(frameDebugC,ptEyeMid,1,CV_RGB(155,155,15),1);
 
           //Make A rectangle that surrounds part of the image that has been template matched
-          cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(gTrackerState.gLastfishimg_template.cols/2+3,gTrackerState.gLastfishimg_template.cols/2+3),bestAngleinDeg);
+          //cv::RotatedRect fishEyeBox(ptEyeMid, cv::Size(gTrackerState.gszTemplateImg.width/2+10,gTrackerState.gszTemplateImg.height/2+10),bestAngleinDeg);
 
           // Get Image Region Where the template Match occured
           //- Expand image so as to be able to fit the template When Rotated Orthonormally
@@ -3019,10 +2922,22 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
               ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
               cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
+
               Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
               ///Make Rotation Transformation
               //Need to fix size of Upright/Normed Image
               cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+
+//             /// \todo Replace all this with Norm Image Provided By Fish Model - Cropped during detection
+//              cv::Point2f ptRotCenter_rev;
+//              int Angle_rev;
+//              getFishBlobCentreAndOrientation(imgFishAnterior_Norm,ptRotCenter,bestAngleinDeg,ptRotCenter_rev,Angle_rev);
+//              //Correct
+//              Mrot = cv::getRotationMatrix2D( ptRotCenter,Angle_rev,1.0); //Rotate Upwards
+//              ///Make Rotation Transformation
+//              //Need to fix size of Upright/Normed Image
+//              cv::warpAffine(imgFishAnterior_Norm,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+
 
               // Break If FishAnterior Image is too small (Near boundary case)
               if ((rectFishTemplateBound.width + rectFishTemplateBound.x) > imgFishAnterior_Norm.cols)

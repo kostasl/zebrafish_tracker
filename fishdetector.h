@@ -15,6 +15,12 @@
 typedef cv::KeyPoint zftblob;
 typedef std::vector<zftblob> zftblobs;
 
+int getFishBlobCentreAndOrientation(cv::Mat imgFishAnterior,cv::Point2f ptCentre,int Angle,cv::Point2f& ptRevised,int& RevisedAngle);
+int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
+                              std::vector<cv::Vec4i>& hierarchy,
+                              cv::Point pt,
+                              int level);
+
 /// /brief An Random Kernel - Mushroom body inspiried - recognition neural net implementation
 /// Matrices are learned offline in R script that uses Image Examples to set NN output layer weights
 /// see tracker_img_recognitionNN.R

@@ -41,6 +41,11 @@ fishModel::fishModel()
         leftEyeTheta          = 0; //In Degrees - A Value that looks wrong to show its not initialized
         rightEyeTheta         = 0; //In Degrees
         c_spineSegL           = gTrackerState.gFishTailSpineSegmentLength;
+
+        // KF State Vectors //
+        mMeasurement = cv::Mat::zeros(measSize,1,type);
+        mState =  cv::Mat::zeros(stateSize,1,type);
+
 }
 
 
@@ -75,15 +80,28 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     this->bearingAngle = bestTemplateOrientation;
     this->ptRotCentre  = ptTemplateCenter;
     zTrack.centroid    = ptTemplateCenter;
-   // this->coreTriangle[2].x = this->zfishBlob.pt.x;
-    //this->coreTriangle[2].y = this->zfishBlob.pt.y;
 
     templateScore           = 0;
     this->resetSpine();
 
 
+    // >>>> KF State Initialization
     // intialization of KF...
     KF.init(stateSize, measSize, contrSize, type);
+
+
+    cv::setIdentity(KF.errorCovPre, cv::Scalar(1));
+    // [x,y,v_x,v_y,angle,angle_v]
+    mState.at<float>(0) = ptTemplateCenter.x; //X
+    mState.at<float>(1) = ptTemplateCenter.y; //Y
+    mState.at<float>(2) = 0; //speed X
+    mState.at<float>(3) = 0; //speed Y
+    mState.at<float>(4) = bestTemplateOrientation;// (Deg)
+    mState.at<float>(5) = 0; //Speed V Angle (Deg)
+    mState.at<float>(6) = 10;// Left Eye
+    mState.at<float>(7) = -10; //Right Eye
+
+
 
     // declare an array of floats to feed into Kalman Filter Transition Matrix, also known as State Transition Model
     // Transition State Matrix A  [x,y,v_x,v_y,angle,angle_v]
@@ -116,7 +134,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //        // [ 0    0   0     0     0    Ea_v0  0]
           // [ 0    0   0     0     0    0   lE 0]
           // [ 0    0   0     0     0    0   0  rE]
-    cv::setIdentity(KF.processNoiseCov, cv::Scalar(1e-4)); // default is 1, for smoothing try 0.0001
+    cv::setIdentity(KF.processNoiseCov, cv::Scalar(1e-3)); // default is 1, for smoothing try 0.0001
     //KF.processNoiseCov.at<float>(0,0) = 1e-1;
     //KF.processNoiseCov.at<float>(7) = 1e-1;
     //KF.processNoiseCov.at<float>(14) = 1e-1f;
@@ -127,19 +145,23 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     //KF.processNoiseCov.at<float>(35) = 1e-1f;
 
 //    // Measures Noise Covariance Matrix R - Set Low so Filter Follows Measurement more closely
-    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-3)); // default is 1, for smoothing try 10
+    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-3)); // default is 1, increasing should smooth but I get erratic behaviour
 
     //KF.measurementNoiseCov.at<float>(2,2) = 0.1f; // X speed
-    KF.measurementNoiseCov.at<float>(0,3) = 1e-5f; //X Speed
-    KF.measurementNoiseCov.at<float>(2,4) = 1e-5f; //Y Speed
-    KF.measurementNoiseCov.at<float>(4,5) = 1e-5f; //Angular V
+    KF.measurementNoiseCov.at<float>(0,3) = 1e-5f; //X Speed - X
+    KF.measurementNoiseCov.at<float>(2,4) = 1e-5f; //Y Speed - Y
+    KF.measurementNoiseCov.at<float>(4,5) = 1e-6f; //Angular V-V_speed
+    KF.measurementNoiseCov.at<float>(4,4) = 1e-2f; //Angle
+    KF.measurementNoiseCov.at<float>(5,5) = 1e-2f; //Angle V
     //KF.measurementNoiseCov.at<float>(7,7) = 5.0f; //Angular V
 
 
-    cv::setIdentity(KF.errorCovPost, Scalar::all(0)); // default is 0, for smoothing try 0.1
+    cv::setIdentity(KF.errorCovPost, Scalar::all(1e-1f)); // default is 0, for smoothing try 0.1
 
-    mMeasurement = cv::Mat::zeros(measSize,1,type);
-    mState =  cv::Mat::zeros(measSize,1,type);
+
+
+    KF.statePost = mState;
+
 }
 
 fishModel::~fishModel()
@@ -592,8 +614,49 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 
 
 ///
-/// \brief fishModel::Update - Called On Every FrameProcessed To Update Model State
+/// \brief fishModel::Update - Called On Every Frame Processed To Update Model State
 /// The track point is set to the blob position and not the template centre
+/// \param fblob
+/// \param templatematchScore
+/// \param Angle
+/// \param bcentre
+///
+
+bool fishModel::stepPredict(unsigned int nFrame)
+{
+
+    double dT = (double)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
+
+    //cout << "T:" << KF.transitionMatrix << endl;
+    if (!bNewModel) // First detection!
+    { //Add  Speed Contributions
+        KF.transitionMatrix.at<float>(0,2) = 1.0;
+        KF.transitionMatrix.at<float>(1,3) = 1.0;
+        KF.transitionMatrix.at<float>(4,5) = 1.0; //Angular Diff Feeds into Angle
+
+        mState = KF.predict();
+        //cout << "Sm:" << mState << endl;
+
+        this->bearingAngle   = mState.at<float>(4); // Angle;
+        this->bearingRads   =  this->bearingAngle*CV_PI/180.0;
+        assert(!std::isnan(this->bearingRads));
+        this->ptRotCentre    = cv::Point2f(mState.at<float>(0), mState.at<float>(1)); //bcentre;
+        this->leftEyeTheta   = mState.at<float>(6); // Eye Angle Left;
+        this->rightEyeTheta   = mState.at<float>(7); // Eye Angle Right;
+
+
+        bPredictedPosition = true;
+
+        return (true);
+
+    }
+
+    return (false);
+}
+
+///
+/// \brief fishModel::Update - Called On Every Frame Where Measurements from Blob are available - To Update Model State
+/// The track point is set to the Kalman filtered blob state
 /// \param fblob
 /// \param templatematchScore
 /// \param Angle
@@ -603,9 +666,14 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
 
-
     double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
+    double angleDisplacement = cv::norm(Angle - this->bearingAngle);
     double dT = (double)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
+
+    KF.transitionMatrix.at<float>(0,2) = dT;
+    KF.transitionMatrix.at<float>(1,3) = dT;
+    KF.transitionMatrix.at<float>(4,5) = dT; //Angular Diff Feeds into Angle
+
 
     mMeasurement.at<float>(0) = bcentre.x;
     mMeasurement.at<float>(1) = bcentre.y;
@@ -622,33 +690,6 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
         mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = mMeasurement.at<float>(4) = 0;
     // >>>> Matrix A -  Note: set dT at each processing step :
 
-    //cout << "T:" << KF.transitionMatrix << endl;
-    if (bNewModel) // First detection!
-    {
-        // >>>> Initialization
-        cv::setIdentity(KF.errorCovPre, cv::Scalar(1));
-        // [x,y,v_x,v_y,angle,angle_v]
-        mState.at<float>(0) = bcentre.x; //X
-        mState.at<float>(1) = bcentre.y; //Y
-        mState.at<float>(2) = 0; //speed X
-        mState.at<float>(3) = 0; //speed Y
-        mState.at<float>(4) = Angle;// (Deg)
-        mState.at<float>(5) = 0; //Speed V Angle (Deg)
-        mState.at<float>(6) = mMeasurement.at<float>(6);
-        mState.at<float>(7) = mMeasurement.at<float>(7);
-
-        KF.statePost = mState;
-    }else
-    { //Add  Speed Contributions
-        KF.transitionMatrix.at<float>(0,2) = dT/1.0;
-        KF.transitionMatrix.at<float>(1,3) = dT/1.0;
-        KF.transitionMatrix.at<float>(4,5) = dT/1.0; //Angular Diff Feeds into Angle
-
-        mState = KF.predict();
-        //cout << "Sm:" << mState << endl;
-    }
-
-
     /// Kalman Update - Measurements From Blob //
     /// generate measurement
     //mMeasurement += KF.measurementMatrix*mState;
@@ -656,13 +697,13 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     /// Kalman FILTER //
     ///  Re-Order - First adjust to measurement - then Predict
     //Reject Updates That Are Beyond Bounds
-    if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame){
+    if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame ||
+        angleDisplacement > gTrackerState.gDisplacementLimitPerFrame){
         inactiveFrames++;
-    }else{ //Measurement valid - COnsume
-        //if(!bNewModel)
+    }else{ //Measurement valid - C0nsume
         mCorrected = KF.correct(mMeasurement); // Kalman Correction
+        inactiveFrames  = 0;
     }
-
 
 
     this->zTrack.id     = ID;
@@ -674,6 +715,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->leftEyeTheta   = mCorrected.at<float>(6); // Eye Angle Left;
     this->rightEyeTheta   = mCorrected.at<float>(7); // Eye Angle Right;
 
+    //Blob Position Is not FIltered
     this->zfishBlob      = *fblob;
     //this->c_spineSegL   = SpineSegLength;
     this->zTrack.pointStack.push_back(this->ptRotCentre);
@@ -704,11 +746,6 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     //this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
 
 
-
-     //cout << "Measure matrix:" << endl << mMeasurement << endl;
-
-
-
     //Check if frame advanced
     if (nLastUpdateFrame == nFrame)
         uiFrameIterations++; //Increment count of calculation cycles that we are stuck on same frame
@@ -720,6 +757,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 
 
     bNewModel = false; //Flag THat this model Has been now positioned
+    bPredictedPosition = false; // position is based on corrected measurement
      return(true);
 
 }//End of UpdateState
@@ -924,12 +962,17 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
    // qDebug() << "D err:" << dDifffitPtError_total;
 }
 
+bool fishModel::isFrameUpdated(uint nFrame)
+{
+    return (nLastUpdateFrame == nFrame);
+}
+
 /// \brief Check if Model Position can be still considered to actively represent a fish's location
 bool fishModel::isValid()
 {
     //templateScore >= gTrackerState.gTemplateMatchThreshold // inactiveFrames < 2
 
-    return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier);
+    return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier && inactiveFrames == 0);
 
 
 }
@@ -944,9 +987,17 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
 
     QString strlbl(QString::number(ID));
     cv::Scalar colour;
-    colour = CV_RGB(30,30,250); //Blue - Means Not Validated/Fish Detected Region
+    colour = CV_RGB(60,60,60); //Grey - Means Not Validated/Fish Detected Region
+
     if (this->isValid())
-        colour = CV_RGB(250,250,0); //Yellow Template Match
+    {
+        colour = CV_RGB(250,250,0); //Yellow Measured-Filtered Position
+        if (bPredictedPosition)
+            colour = CV_RGB(50,50,210); //Blue Predicted position
+    }
+
+
+
 
     //if ()
     //    colour = CV_RGB(50,250,0); //Green - FishNet Classified

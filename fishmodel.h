@@ -74,6 +74,7 @@ public:
   fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter);
 
   //void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int TemplRow, int TemplCol);
+  bool stepPredict(unsigned int nFrame); //Kalman Filter Predict - Call on every frame
   bool updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol);
   int updateEyeState(tEllipsoids& vLell,tEllipsoids& vRell);
   ///\note The lowest point in a rectangle is 0th vertex, and 1st, 2nd, 3rd vertices follow clockwise.
@@ -105,6 +106,7 @@ public:
   friend QTextStream& operator<<(QTextStream& out, const fishModel& h);
 
   bool isValid();
+  bool isFrameUpdated(uint nFrame);
   zftID ID; /// Uid Of this Fish Instance
 
   //cvb::CvLabel blobLabel; //Legacy BlobLabel
@@ -162,7 +164,7 @@ private:
   const int measSize = 8;
   const int contrSize = 0;
   unsigned int type = CV_32F;
-
+  bool bPredictedPosition = false; //When True A measurement Has now yet been added since Last prediction
   KalmanFilter KF;
 
   Mat mState;  // [x,y,v_x,v_y,angle,angle_v]

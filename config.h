@@ -187,7 +187,10 @@ class trackerState
       std::string  gstrinDirVid;
       QStringList inVidFileNames; //List of Video Files to Process
       std::string  gstrvidFilename; //Currently Tracked Vid
-      cv::Size gszTemplateImg;
+      cv::Size gszTemplateImg = cv::Size(28,38);
+      cv::Size sztemplateArray_Icon=  cv::Size(std::max(gszTemplateImg.width, gszTemplateImg.height),
+                                     std::max(gszTemplateImg.width, gszTemplateImg.height)
+                                    );
 
 
       cv::Rect rect_pasteregion;//For Inset Pasting
@@ -274,13 +277,15 @@ class trackerState
       int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 
       /// Eye Tracking Params
+
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
       int gi_maxEllipseMajor      = 31; /// thres  for Eye Ellipse Detection methods
       int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
-      int giEyeIsolationMaskRadius        = 9; ///Mask circle between eyes
+      int giEyeIsolationMaskRadius    = 9; ///Mask circle between eyes
+      int iEyeMaskSepWidth            = 9; //5 px width vertical line separates the eyes for segmentation
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
       int gthresEyeSeg                    = -17; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
       int gthresEyeSegL                   = 2;
@@ -293,18 +298,18 @@ class trackerState
       /// Fishnet Classifier params //
       float fishnet_L1_threshold  = 30.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_L2_classifier  = 0.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_inputSparseness = 0.04; //Ratio of Active Pixels in Binarized input Image
+      float fishnet_inputSparseness = 0.07; //Ratio of Active Pixels in Binarized input Image
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;
       int gEyeTemplateAngleSteps      = 5;
-      int iEyeMaskSepWidth            = 25; //5 px width vertical line separates the eyes for segmentation
+
       double eyeStepIncrement         = 0.1;
-      double gTemplateMatchThreshold  = 0.80; //If not higher than 0.9 The fish body can be matched at extremeties
-      double gTemplateMatchThreshold_LowLimit = 0.83;
+      double gTemplateMatchThreshold  = 0.70; //This is applied After Fish Net
+      double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
-      int gFishBoundBoxSize               = 40; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
+      int gFishBoundBoxSize               = 60; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
       int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*3; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
