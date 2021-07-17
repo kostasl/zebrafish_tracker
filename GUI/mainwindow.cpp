@@ -145,7 +145,9 @@ void MainWindow::createSpinBoxes()
 
     this->ui->spinBoxMOGBGRatio->setValue(gTrackerState.gdMOGBGRatio*100.0);
 
-
+    this->ui->spinBoxFishNetSparseness->setValue(gTrackerState.fishnet_inputSparseness*100.0);
+    this->ui->spinBoxFishnetL1thres->setValue(gTrackerState.fishnet_L1_threshold);
+    this->ui->spinBoxFishThres->setValue(gTrackerState.fishnet_L2_classifier*100.0);
     //this->connect(this->ui->spinBoxEyeThres, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this->ui->spinBoxEyeThres, &QSlider::setValue);
 
 //    QObject::connect(this->ui->spinBoxEyeThres,

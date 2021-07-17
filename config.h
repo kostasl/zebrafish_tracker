@@ -296,9 +296,9 @@ class trackerState
 
 
       /// Fishnet Classifier params //
-      float fishnet_L1_threshold  = 30.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_L2_classifier  = 0.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_inputSparseness = 0.07; //Ratio of Active Pixels in Binarized input Image
+      float fishnet_L1_threshold  = 100.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_L2_classifier  = 0.1; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_inputSparseness = 0.1; //Ratio of Active Pixels in Binarized input Image
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;
@@ -313,6 +313,7 @@ class trackerState
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
       int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*3; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
+      int  gAngleChangeLimitPerFrame    = 90; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
 
       int iLastKnownGoodTemplateRow   = 0;
       int iFishAngleOffset            = 0;
@@ -396,6 +397,8 @@ void initBGSubstraction();
 /// \brief Load internal and external template images memory cache //
 int initDetectionTemplates();
 
+
+int angleClosestDistance(int anglefrom,int angleTo);
 
 
 #endif // CONFIG_H

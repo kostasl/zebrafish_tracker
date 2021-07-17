@@ -471,3 +471,15 @@ void trackerState::loadFromQrc(QString qrc,cv::Mat& imRes,int flag )
     //qDebug() << "OpenCV loading time: " << toc;
 
 }
+
+
+int angleClosestDistance(int anglefrom,int angleTo)
+{
+    //Convert to -180 - +180
+    anglefrom = (anglefrom%360);
+    angleTo = (angleTo%360);
+    anglefrom = (anglefrom > 180)?(anglefrom-360):anglefrom;
+    angleTo = (angleTo > 180)?(angleTo-360):angleTo;
+
+    return(angleTo-anglefrom);
+}

@@ -1048,7 +1048,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         cv::Point ptbcentre = fishblob->pt; //Start As First Guess - This is updated When TemplMatching
         cv::Point ptSearch; //Where To Centre The Template Matching Searcrh
         int bestAngle =  fishblob->angle;
-        double  maxMatchScore = 0.0;
+        double  maxMatchScore = fishblob->response;
         bModelFound = false;
         int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
         int iTemplCol = 0;
@@ -1084,7 +1084,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 //Debug blob-Model Matchg
                 cv::circle(frameOut,ptSearch,pfish->zfishBlob.size/100 ,CV_RGB(250,15,250),1); //Mark Where Search Is Done
 
-                maxMatchScore = pfish->zfishBlob.response;// - dBlobToModelDist/gTrackerState.gFishBoundBoxSize*2;
+                //maxMatchScore = pfish->zfishBlob.response;// - dBlobToModelDist/gTrackerState.gFishBoundBoxSize*2;
 
                 //doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
                 //Failed? Try the blob Head (From Enhance Mask) Detected position
@@ -1098,7 +1098,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                      pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0)//( maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
                  {
                      //If Yes then assign the fish with the overlapping blob the template Match Score
-                    bModelFound = true;
+
 
                      //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
                     /// Update Model State
@@ -1107,6 +1107,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                         !gTrackerState.bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
                     {
                         pfish->updateState(fishblob,maxMatchScore,bestAngle+gTrackerState.iFishAngleOffset,ptbcentre,nFrame,gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
+                        bModelFound = pfish->isValid();
+
                     }
                     else
                     { //Rotate Template Box - Since this cannot be done Manually

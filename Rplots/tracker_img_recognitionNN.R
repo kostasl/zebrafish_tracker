@@ -39,7 +39,7 @@ matrix_paste <- function(src,target)
 img_dim <- c(38,28)
 n_top_px <- img_dim[2]*img_dim[1]
 N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- n_top_px/10 ## Number of pic Features each KC neuron Codes for
+N_SYN_per_KC <- n_top_px/5 ## Number of pic Features each KC neuron Codes for
 KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 INPUT_SPARSENESS = 0.20
 ## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
@@ -106,10 +106,12 @@ net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))
     
     ## Learn Positive Samples - Simple Perceptron Learning Rule - Over an augmented input X which is projected To High dim via sparse random matrix in L1##
     ## Take Active L1 outputs And Set L2 Input synapses of Output Neuron to High
+     # Continuous output /
+    L2_Neurons_out <<- (as.numeric(( KC_output %*%  W_L2)/N_KC))
+    # Weight Gradient -
+    DW <- t(KC_output)%*% (Target_output - L2_Neurons_out)/2
+    W_L2 <<-  W_L2 + learningRate*DW ## Update Weight Vector 
     
-    DW <- t(learningRate*KC_output)%*% (Target_output - L2_Neurons_out)
-    W_L2 <<-  W_L2 + DW ## Update Weight Vector 
-    L2_Neurons_out <<- as.numeric(( KC_output %*%  W_L2)/N_KC)
     
     ##W_L2[W_L2 < 1] <<- 1 ##Cap To Limit Values - Saturation Of Synapses
     ##W_L2[,outNeuronIdx][W_L2< -1] <<- -1
@@ -122,15 +124,17 @@ net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))
                               L2_NF=L2_Neurons_out[2],
                               KC_active = sum(KC_output),
                               KC_total = length(KC_output),
-                              input_sparse= pxsparse
+                              input_sparse= pxsparse,
+                              file=in_img
                               )
     message("Recognition Output for Img ",in_img," is F:",L2_Neurons_out[1]," non-F:",L2_Neurons_out[2]," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
     dim(X_bin) = dim(mat_img)
-    image(X_bin)
+    
     strRes <- "Not a Fish"
     if (L2_Neurons_out[1] > L2_Neurons_out[2])
       strRes <- "A Fish"
-    title(main = paste(in_img,strRes," R:",L2_Neurons_out[1]-L2_Neurons_out[2]), font.main = 4)
+    #image(X_bin)
+    #title(main = paste(in_img,strRes," R:",L2_Neurons_out[1]-L2_Neurons_out[2]), font.main = 4)
   }
   
  
@@ -140,29 +144,84 @@ net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))
 ## Apply Input Image ##
 ## list training files 
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-sPathTrainingSamples="../img/trainset/"
-sPathTrainingNonSamples="../img/nonfish/"
-sPathTestingSamples="../img/test/"
+sPathTrainingSamples="../img/trainset/fish"
+sPathTrainingNonSamples="../img/trainset/nonfish/"
+sPathTestingSamplesFish="../img/fish/"
+sPathTestingSamplesNonFish="../img/nonfish/"
 
 img_list_train_fish =  list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T)
+img_list_test_fish =  list.files(path=sPathTestingSamplesFish,pattern="*pgm",full.names = T)
 img_list_train_nonfish =  list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T)
+img_list_test_nonfish =  list.files(path=sPathTestingSamplesNonFish,pattern="*pgm",full.names = T)
 
 img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T)
 
 # TRAIN On Fish Samples ##
-dLearningRate = 1.0 ## FALSE##TRUE
-KC_THRES <- N_SYN_per_KC*0.30 ## Number of INput that need to be active for KC to fire/Activate
+KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 
-dnetout_fish <- net_proc_images(img_list_train_fish,dLearningRate, c(1,-1))
-hist(unlist(dnetout_fish$L2_F),breaks=10,main="Class Fish Responses to F+ samples" )
+dLearningRate <-1.0
+lFitError <- list()
+dfitRecord <- data.frame()
 
-KC_THRES <- N_SYN_per_KC*0.30 ## Number of INput that need to be active for KC to fire/Activate
-dnetout_notfish <- net_proc_images(img_list_train_nonfish,dLearningRate,c(-1,1))
-hist(unlist(dnetout_notfish$L2_NF),breaks=10,main="Class Not Fish Responses to F- samples" )
+
+for (i in 1:100)
+{
+  
+  dnetout_fish <- net_proc_images(img_list_train_fish,dLearningRate, c(1,-1))
+  ##Test 
+  dnetout_tfish <- dnetout_fish# net_proc_images(img_list_test_fish,dLearningRate, c(1,-1))
+  #hist(unlist(dnetout_fish$L2_F),breaks=10,main="Class Fish Responses to F+ samples" )
+  ##L1 threshold set too high - patterns do not propagate
+  stopifnot(sum(unlist(dnetout_tfish$KC_active)) > 1)
+    
+  SqError_FisF <- sum((1 -unlist(dnetout_tfish$L2_F))^2)/nrow(dnetout_tfish)
+  SqError_FisNotNF <- sum((-1 -unlist(dnetout_tfish$L2_NF))^2)/nrow(dnetout_tfish)
+  
+  message("Sq. Error: F+:",SqError_FisF," F-:",SqError_FisNotNF)
+  
+  dnetout_notfish <- net_proc_images(img_list_train_nonfish,dLearningRate,c(-1,1))
+  dnetout_tnotfish <- dnetout_notfish #net_proc_images(img_list_test_nonfish,0,c(-1,1))
+  ##hist(unlist(dnetout_notfish$L2_NF),breaks=10,main="Class Not Fish Responses to F- samples" )
+  
+  SqError_NFisNotF <- sum((-1 -unlist(dnetout_tnotfish$L2_F))^2)/nrow(dnetout_tnotfish)
+  SqError_NFisNF <- sum((1 -unlist(dnetout_tnotfish$L2_NF))^2)/nrow(dnetout_tnotfish)
+  
+  #message("Sq. Error: F+:",SqError_NFisNotF," F-:",SqError_NFisNF)
+
+  
+  SqClassError = sum(SqError_FisF,SqError_FisNotNF,SqError_NFisNotF,SqError_NFisNF)   
+  lFitError[[i]] = list(S_error=SqClassError,FishisFish=SqError_FisF,FishNotFish=SqError_FisNotNF,
+                        NotFishIsFish=SqError_NFisNotF,
+                        NotFishIsNotFish=SqError_NFisNF)
+  
+  dfitRecord <<- data.frame( do.call(rbind,lFitError ) )
+  plot(unlist(dfitRecord$S_error),xlim=c(1,100) ,xlab="Fit Error",ylim=c(0,2))
+}
+
+## Test Fish
+dnetout_testfish <- net_proc_images(img_list_test_fish,0,c(-1,1))
+##hist(unlist(dnetout_notfish$L2_NF),breaks=10,main="Class Not Fish Responses to F- samples" )
+dnetout_testnonfish <- net_proc_images(img_list_test_nonfish,0,c(-1,1))
+
+
+SqError_NFisNotF <- sum((-1 -unlist(dnetout_testfish$L2_F))^2)/nrow(dnetout_testfish)
+SqError_NFisNF <- sum((1 -unlist(dnetout_testfish$L2_NF))^2)/nrow(dnetout_testfish)
+
+
+
+
+plot(unlist(dfitRecord$S_error),xlim=c(1,100) ,xlab="Fit Error",ylim=c(00,800))
+
+plot(unlist(dfitRecord$FishisFish) )
+plot(unlist(dfitRecord$FishNotFish) )
+plot(unlist(dfitRecord$NotFishIsFish) )
+plot(unlist(dfitRecord$NotFishIsNotFish) )
+
 
 
 ## Test Responses ## 
 dnetout_test <- net_proc_images(img_list_test,0.0,c(0,0))
+dnetout_test_nonfish <- net_proc_images(img_list_train_nonfish,0.0,c(-1,1))
 
 
 
@@ -185,6 +244,8 @@ LW_shifted <- (W_L2/2.0)+0.5
 Lout_pic <- pixmapGrey(W_L2, nrow=nrow(W_L2),ncol=ncol(W_L2),cellres=1)
 plot(Lout_pic)
 write.pnm(Lout_pic,file="outputLayer_trained.pgm")
+
+
 
 hist(W_L2)
 

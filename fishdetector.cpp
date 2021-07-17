@@ -1,4 +1,6 @@
 /// \brief This class will contain the learning and heurestic required to detect fish and manage the update of their respective model instances
+/// classifier is trained in tracker_img_recognitionNN.R script using a collection of fish and non-fish images
+/// at size of a template img
 ///
 ///
 
@@ -30,174 +32,6 @@ static cv::Point2f rotateAboutPoint(const cv::Point2f& inPoint, const cv::Point2
     return rotate2d(inPoint - center, angRad) + center;
 }
 
-
-
-///
-/// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
-/// \param contours source array in which to search
-/// \param hierarchy
-/// \param pt - Position around which we are searching
-/// \param level - The required hierarchy level description of the contour being searched for
-/// - if -1 (default) do not check hierarchy,
-/// - 0 only parent contours
-/// - 1 Needs to Have a parent
-/// - level == 2 Needs to be top Level Contour
-/// \return Index of *child*/Leaf contour closest to point
-///
-int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
-                              std::vector<cv::Vec4i>& hierarchy,
-                              cv::Point pt,
-                              int level=-1)
-{
-    int idxContour           = -1;
-    bool bContourfound       = false;
-    int mindistToCentroid    = +10000; //Start Far
-    int distToCentroid       = +10000;
-    int matchContourDistance = 10000;
-
-
-    assert((level > 0) &&  hierarchy.size() ==contours.size() || level ==-1  );
-
-
-    /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
-   ///Search Through Contours - Draw contours + hull results
-
-   ///Find Contour with Min Distance in shape and space -attach to closest contour
-   //In Not found Search Again By distance tp Full Contour
-       //Find Closest Contour
-       for( int i = 0; i< (int)contours.size(); i++ )
-       {
-
-          //Filter According to desired Level
-          if (level == 0) /// Only Process Parent Contours
-          {
-            if (hierarchy[i][3] != -1) // Need to have no parent
-               continue;
-            if (hierarchy[i][2] == -1)  // Need to have child
-                continue;
-            assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
-          }
-
-          if (level == 1) // Only Process Child Contours
-          {
-              if (hierarchy[i][3] == -1) // Need to have a parent
-                  continue;
-//                   //Parent should be root
-//                   if (hierarchy[hierarchy[i][3]][3] != -1)
-//                       continue;
-          }
-
-          if (level == 2) // Needs to be top Level Contour
-          {
-              if (hierarchy[i][3] != -1) // No Parent Contour
-                  continue;
-//                   //Parent should be root
-//                   if (hierarchy[hierarchy[i][3]][3] != -1)
-//                       continue;
-          }
-
-
-
-          //It returns positive (inside), negative (outside), or zero (on an edge)
-          //Invert Sign and then Rank From Smallest to largest distance
-          if (contours[i].size() > 0)
-            matchContourDistance = distToCentroid = -cv::pointPolygonTest(contours[i],pt,true);
-
-          //Measure Space Mod -Penalize Outside contour Hits - Convert Outside Contour Distances to X times further +ve (penalize)
-          //Make Distance alway positive
-          //matchContourDistance = (distToCentroid<0)?abs(distToCentroid)*20:distToCentroid;
-          // qDebug() << "-c" << i << " D:" <<  distToCentroid;
-
-
-
-          //Only Update if Spatial Distance is smaller but also moving from outside to inside of the shape
-          //-ve is outside - 0 on border -
-          //if(mindistToCentroid <= 0 && distToCentroid >= 0))
-          {
-               if (matchContourDistance < mindistToCentroid)
-               {
-                   //Otherwise Keep As blob Contour
-                   idxContour = i;
-                   mindistToCentroid = matchContourDistance;//New Min
-
-                   //qDebug() << "-----MinTD:"<< matchContourDistance << "<- HDist:" << dHudist << " Sp:" << distToCentroid << "AreaDist:" << abs(tArea - sArea) << "LengthDist:" << abs(tLength - sLength);
-
-                   //Reject match 0 in case contour is not actually there
-                   //if (matchContourDistance < gi_ThresholdMatching)
-                        bContourfound = true;
-               }
-           }
-
-       } //Loop through Contours
-
-
-   if (!bContourfound)
-   {
-       //std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
-       idxContour = -1;
-   }
-      //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
-
-   assert(idxContour < (int)contours.size());
-
-   return idxContour;
-}
-
-
-// Attemts to Get Orientation and centre of an Elonged - FishLike Blob
-int getFishBlobCentreAndOrientation(cv::Mat imgFishAnterior,cv::Point2f ptCentre,int Angle,cv::Point2f& ptRevised,int& RevisedAngle)
-{
-    cv::Mat imgFishAnterior_blur,imgFishAnterior_thres;
-    // Correct Orientation and Centre
-    std::vector<std::vector<cv::Point> > contours;
-    std::vector<cv::Vec4i> hierarchy;
-    int iAngleOffset = Angle;
-    cv::Point2f ptCentreCorrection = ptCentre;
-
-    cv::GaussianBlur(imgFishAnterior,imgFishAnterior_blur,cv::Size(7,7),5,5);
-    cv::adaptiveThreshold(imgFishAnterior_blur, imgFishAnterior_thres,255,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,31,0); //Last Param Is const substracted from mean
-
-    /// Find contours //
-    cv::findContours( imgFishAnterior_thres, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
-
-
-    int idxContour = 0;
-    //Should be one contour
-    if (contours.size() > 1)
-        idxContour = findMatchingContour(contours,hierarchy,ptCentre);
-
-    if (contours[idxContour].size() > 4)
-    {
-        cv::RotatedRect rectBody = fitEllipse(contours[idxContour]);
-        // Make Slight Angle Corrections 0.5 Corrected
-        iAngleOffset = rectBody.angle; //Make 0 Angle  the vertical image axis
-
-        if  ((iAngleOffset) > 90) iAngleOffset-=180;
-        if  ((iAngleOffset) < -90) iAngleOffset+=180;
-
-        //Debug Show Shape Centre //
-        cv::circle(imgFishAnterior,rectBody.center,3,100,1);
-        //Correct For Centre Offset
-
-        ptCentreCorrection.x = ptCentre.x - rectBody.center.x;
-        ptCentreCorrection.y = ptCentre.y - rectBody.center.y;
-       // ptCentreCorrection.y //= tempCentre.x - rectBody.center.x;
-        std::clog << "[info] scoreBlobReg: correct Template DAngle : " << iAngleOffset << " DX:" << ptCentreCorrection.x <<  std::endl;
-    }
-
-
-    ptRevised = ptCentreCorrection;
-    if (abs(iAngleOffset-Angle) < 90 )
-        RevisedAngle = (iAngleOffset+180)%360;
-    else
-        RevisedAngle = iAngleOffset;
-
-
-    //cv::imshow("Fish Thresh",imgFishAnterior_thres);
-
-    return iAngleOffset;
-
-}
 
 static cv::Mat loadImage(const std::string& name)
 {
@@ -403,52 +237,50 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     maskRegionScore_Norm(rectFishTemplateBound).copyTo(outmaskRegionScore);
 
 
-    // Add Template detection correction to Fish Like Blobs  //
-    if (fishblob.response > gTrackerState.fishnet_L2_classifier)
-    {
+//    // Add Template detection correction to Fish Like Blobs  //
+//    if (fishblob.response > gTrackerState.fishnet_L2_classifier)
+//    {
 
-        double maxMatchScore =0; //
-        cv::Point gptmaxLoc; //point Of Bestr Match
-        int iLastKnownGoodTemplateRow = 0;
-        int iLastKnownGoodTemplateCol = 1;//(int)fishblob.angle; //Angle Should Correspond to Col in degrees
-        // outframeAnterior_Norm
-        int AngleIdx = templatefindFishInImage(imgFishAnterior_Norm_tmplcrop,gFishTemplateCache, gTrackerState.sztemplateArray_Icon,
-                                               maxMatchScore, gptmaxLoc,
-                                               iLastKnownGoodTemplateRow, iLastKnownGoodTemplateCol,
-                                               true);
+//        double maxMatchScore =0; //
+//        cv::Point gptmaxLoc; //point Of Bestr Match
+//        int iLastKnownGoodTemplateRow = 0;
+//        int iLastKnownGoodTemplateCol = 1;//(int)fishblob.angle; //Angle Should Correspond to Col in degrees
+//        // outframeAnterior_Norm
+//        int AngleIdx = templatefindFishInImage(imgFishAnterior_Norm_tmplcrop,gFishTemplateCache, gTrackerState.sztemplateArray_Icon,
+//                                               maxMatchScore, gptmaxLoc,
+//                                               iLastKnownGoodTemplateRow, iLastKnownGoodTemplateCol,
+//                                               true);
 
-        // Fail This Blob If Template Match Failed
+//        // Fail This Blob If Template Match Failed
 
-        if (maxMatchScore < gTrackerState.gTemplateMatchThreshold )
-            fishblob.response = 0;
+//        if (maxMatchScore < gTrackerState.gTemplateMatchThreshold )
+//            fishblob.response = 0;
 
-        else{ //Fish FOund Fix Location And Angle
-            int dAngle = 0;
+//        else{ //Fish FOund Fix Location And Angle
+//            int dAngle = 0;
 
-            // Angle Too Large Something is wrong - INvalidate the blob
-            if (AngleIdx >= 60 && AngleIdx <= 300) {
-                fishblob.response = 0;
-                qDebug() << QString::fromStdString(regTag) << " *Reject* Angle Correction=" << dAngle  << " TmplScore:"<<maxMatchScore;
-            }
-            else //Apply Correction
-            {
-                if (AngleIdx < 60)
-                    fishblob.angle += dAngle = AngleIdx; //Correct ClockWise
-                if (AngleIdx > 300)
-                    fishblob.angle += dAngle = AngleIdx-360; //Correct AntiClockWise
+//            // Angle Too Large Something is wrong - INvalidate the blob
+//            if (AngleIdx >= 60 && AngleIdx <= 300) {
+//                fishblob.response = 0;
+//                qDebug() << QString::fromStdString(regTag) << " *Reject* Angle Correction=" << dAngle  << " TmplScore:"<<maxMatchScore;
+//            }
+//            else //Apply Correction
+//            {
+//                if (AngleIdx < 60)
+//                    fishblob.angle += dAngle = AngleIdx; //Correct ClockWise
+//                if (AngleIdx > 300)
+//                    fishblob.angle += dAngle = AngleIdx-360; //Correct AntiClockWise
 
-                qDebug() << QString::fromStdString(regTag) << " Angle Correction=" << dAngle  << " TmplScore:"<<maxMatchScore;
-            }
+//                qDebug() << QString::fromStdString(regTag) << " Angle Correction=" << dAngle  << " TmplScore:"<<maxMatchScore;
+//            }
 
-            cv::circle(imgFishAnterior_Norm_tmplcrop,gptmaxLoc,2,CV_RGB(250,250,250),3);
+//            cv::circle(imgFishAnterior_Norm_tmplcrop,gptmaxLoc,2,CV_RGB(250,250,250),3);
 
-            //cv::threshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,gTrackerState.g_Segthresh,1,cv::THRESH_BINARY);
-            if (!imgFishAnterior_Norm.empty())
-                cv::imshow("FIshBody Norm Bin",imgFishAnterior_Norm_tmplcrop);
-
-        }
-
-    }
+//            //cv::threshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,gTrackerState.g_Segthresh,1,cv::THRESH_BINARY);
+//            if (!imgFishAnterior_Norm.empty())
+//                cv::imshow("FIshBody Norm Bin",imgFishAnterior_Norm_tmplcrop);
+//        }
+//      }
 
   return (maxL1);
 
@@ -470,8 +302,15 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     //to the Layer 1 output produce matrix C of size [a x c]
     mL1_out = vIn*mW_L1;
 
+
     // Threshold for Activation Function
     cv::threshold(mL1_out,mL1_out,fL1_activity_thres,1,cv::THRESH_BINARY);
+
+    // Display KC Thresholded Output
+    //cv::Mat KC_show = mL1_out.reshape(1,imgRegion_bin.rows*5);
+    //KC_show.convertTo(KC_show,imgRegion_bin.type());
+    //cv::imshow("KC out",KC_show*255);
+
     //Calc Output
     mL2_out =  mL1_out*mW_L2;
 

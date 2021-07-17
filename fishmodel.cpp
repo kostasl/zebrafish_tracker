@@ -662,13 +662,14 @@ bool fishModel::stepPredict(unsigned int nFrame)
 /// \param Angle
 /// \param bcentre
 ///
-
 bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
 
     double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
-    double angleDisplacement = cv::norm(Angle - this->bearingAngle);
+    double angleDisplacement = abs(angleClosestDistance(this->bearingAngle,Angle));
     double dT = (double)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
+    //Set to 1 frame minimum time step
+
 
     KF.transitionMatrix.at<float>(0,2) = dT;
     KF.transitionMatrix.at<float>(1,3) = dT;
@@ -686,6 +687,8 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
         mMeasurement.at<float>(2) = (bcentre.x-zfishBlob.pt.x)/dT;
         mMeasurement.at<float>(3) = (bcentre.y-zfishBlob.pt.y)/dT; //Y speed;
         mMeasurement.at<float>(5) = (Angle-zfishBlob.angle)/dT; //Ang Speed
+        stepDisplacement = stepDisplacement/dT;
+        angleDisplacement = angleDisplacement/dT;
     }else
         mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = mMeasurement.at<float>(4) = 0;
     // >>>> Matrix A -  Note: set dT at each processing step :
@@ -698,7 +701,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     ///  Re-Order - First adjust to measurement - then Predict
     //Reject Updates That Are Beyond Bounds
     if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame ||
-        angleDisplacement > gTrackerState.gDisplacementLimitPerFrame){
+        angleDisplacement > gTrackerState.gAngleChangeLimitPerFrame){
         inactiveFrames++;
     }else{ //Measurement valid - C0nsume
         mCorrected = KF.correct(mMeasurement); // Kalman Correction
@@ -758,7 +761,8 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 
     bNewModel = false; //Flag THat this model Has been now positioned
     bPredictedPosition = false; // position is based on corrected measurement
-     return(true);
+
+    return(true);
 
 }//End of UpdateState
 
