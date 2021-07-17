@@ -155,8 +155,8 @@ class trackerState
       const double dMeanBlobArea                  = 100; //Initial Value that will get updated
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
-      const unsigned int thresh_fishblobarea      = 350; //Min area above which to Filter The fish blobs
-      const unsigned int thresh_maxfishblobarea     = 2550; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_fishblobarea      = 250; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_maxfishblobarea     = 3650; //Min area above which to Filter The fish blobs
       const unsigned int gthres_maxfoodblobarea     = thresh_fishblobarea/3;
 
       const int gFitTailIntensityScanAngleDeg   = 60; //
